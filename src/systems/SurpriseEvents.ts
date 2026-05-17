@@ -403,16 +403,42 @@ function buildPointsFromLocations(
 }
 
 function generateInvasionPoints(state: GameStateShape, startAtTick: number, waveOverride: boolean): SurpriseEventSpawnPoint[] {
-  // 4 perimeter "breach" tiles: N/S/E/W mid-edges. The E point is
-  // inset to avoid the HUD button column on the right.
-  const midCol = Math.floor(GRID.COLS / 2);
-  const midRow = Math.floor(GRID.ROWS / 2);
+  // 2026-05-17 — Perimeter breach count expanded from 4 → 10 so the
+  // invasion reads as a TRUE perimeter assault (enemies coming from
+  // many points along every edge) instead of just 4 corners. The wave's
+  // spawn queue is round-robin distributed across all 10 points, so
+  // each fire spawns ~1-3 enemies depending on wave size — a varied,
+  // unpredictable spread instead of clustered single-point streams.
+  //
+  // Layout: 3 fires along the TOP edge, 3 along the BOTTOM, 2 along
+  // the LEFT, 2 along the RIGHT (right edge inset to dodge the HUD
+  // button column). Roughly even spacing per side.
   const wallSafeRight = GRID.COLS - 7;
+  const topRow = 1;
+  const botRow = GRID.ROWS - 2;
+  const leftCol = 1;
+  // 3 evenly-spaced columns for top/bottom edges
+  const colA = Math.floor(wallSafeRight * 0.25);
+  const colB = Math.floor(wallSafeRight * 0.50);
+  const colC = Math.floor(wallSafeRight * 0.75);
+  // 2 evenly-spaced rows for left/right edges
+  const rowA = Math.floor(GRID.ROWS * 0.33);
+  const rowB = Math.floor(GRID.ROWS * 0.66);
   const locations = [
-    { col: midCol, row: 1 },
-    { col: midCol, row: GRID.ROWS - 2 },
-    { col: 1, row: midRow },
-    { col: wallSafeRight, row: midRow },
+    // Top edge — 3 breaches
+    { col: colA, row: topRow },
+    { col: colB, row: topRow },
+    { col: colC, row: topRow },
+    // Bottom edge — 3 breaches
+    { col: colA, row: botRow },
+    { col: colB, row: botRow },
+    { col: colC, row: botRow },
+    // Left edge — 2 breaches
+    { col: leftCol, row: rowA },
+    { col: leftCol, row: rowB },
+    // Right edge — 2 breaches (inset for HUD safety)
+    { col: wallSafeRight, row: rowA },
+    { col: wallSafeRight, row: rowB },
   ];
   // In waveOverride mode the spawn-timing is driven by the wave queue
   // (not the per-point spawnAt), so we only need 1 entry per point
