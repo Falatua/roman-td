@@ -1,0 +1,473 @@
+// BossWarning — two-stage CRT-arcade verification screen that appears
+// before every scheduled boss wave (W5/W10/W15/W20 in the 20-wave
+// campaign). The game taunts the player twice before letting them
+// proceed. Same visual language as the Hall of Glory + loading screen:
+// dark CRT background, scanlines, screen flicker, gold/amber text,
+// deep red accents.
+//
+// Flow:
+//   1) showBossWarning(parent, wave, onConfirm)
+//      → Renders the FIRST confirmation screen
+//      → "YES, I AM READY" routes to step 2
+//      → "NO, I NEED MORE TIME" closes without firing onConfirm
+//   2) Second confirmation
+//      → "I ACCEPT MY FATE" → screen flash + shake → onConfirm()
+//      → "ACTUALLY... NO" closes without firing onConfirm
+//
+// Sprites: uses existing boss enemy sprites for the menacing portrait.
+
+import { tex } from './Assets';
+
+function spriteSrcFor(key: string): string | null {
+  const t = tex(key);
+  if (!t) return null;
+  const res: any = t.baseTexture?.resource;
+  return res?.src ?? res?.url ?? (t as any).__srcPath ?? null;
+}
+
+// ─── Boss-specific copy by wave ─────────────────────────────────────────
+interface BossDossier {
+  name: string;             // Display name
+  faction: string;          // Faction display string
+  sprite: string;           // Assets.ts key for boss sprite
+  warning: string[];        // Lines for FIRST screen (after the headline)
+  doom: string[];           // Lines for SECOND screen
+}
+
+const BOSS_DATA: Record<number, BossDossier> = {
+  5: {
+    name: 'CELTIC WARLORD',
+    faction: 'CELTS',
+    sprite: 'CELTIC_WARLORD',
+    warning: [
+      'The Celts already buried three of your towers and the wave hasn\'t started.',
+      'Their warlord rebirths at 35% HP. You don\'t. Plan accordingly.',
+      'The gods of Gallia are taking bets, general. You are not favored.',
+      'ARE YOU REALLY SURE?'
+    ],
+    doom: [
+      'You actually clicked yes. The warlord just heard.',
+      'Druidic Mist will eat 20% of your shots. We told you to read the Codex.',
+      'Your last prospect roll was, statistically, an insult to Rome.',
+      'The Senate has prepared a brief eulogy. They can edit it for victories. Probably.',
+      'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
+    ]
+  },
+  10: {
+    name: 'HANNIBAL BARCA',
+    faction: 'CARTHAGE',
+    sprite: 'HANNIBAL_BARCA',
+    warning: [
+      'You barely survived the warlord. Hannibal already knows.',
+      'He brings three war elephants. They are all bosses. They all leak 10 lives.',
+      'At 50% HP he rebirths, summons two more elephants, and adds +60% speed.',
+      'Your treasury cannot afford this. Your strategy is, frankly, optimistic.',
+      'ARE YOU REALLY SURE?'
+    ],
+    doom: [
+      'Hannibal sent his regards. He has read your tower placements.',
+      'He has crossed the Alps. Your maze is a speed bump.',
+      'You leaked a basic mob on wave 7. Don\'t pretend you didn\'t.',
+      'The historians are sharpening their pens. They write losers gently.',
+      'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
+    ]
+  },
+  15: {
+    name: 'UNDEAD WARLORD',
+    faction: 'UNDEAD_CELTS',
+    sprite: 'UNDEAD_WARLORD',
+    warning: [
+      'Hannibal pitied you. The dead will not.',
+      'The Undead Warlord ambushes 8 berserkers mid-path. Five seconds in.',
+      'At 40% HP he raises 4 more Undead Celts at his current tile.',
+      'Necrotic Miasma cuts your attack speed 15%. You will feel it.',
+      'ARE YOU REALLY SURE?'
+    ],
+    doom: [
+      'You said yes. The Undead Warlord smiled. He has a face for that now.',
+      'Your DoT plan is, at best, theoretical.',
+      'Poison-immune enemies are about to embarrass you publicly.',
+      'The Senate has moved your bust to the basement, just in case.',
+      'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
+    ]
+  },
+  20: {
+    name: 'DAEMON IMPERATOR',
+    faction: 'SUPER_DEMONS',
+    sprite: 'DAEMON_IMPERATOR',
+    warning: [
+      'THIS IS THE FINAL WAVE.',
+      'Wave 20 admits ZERO leaks. One step over the gate and Rome falls.',
+      'The Daemon Imperator hellscapes your towers every 12 seconds.',
+      'At 60% HP he rebirths Wrathful: +90% speed, status-immune, regenerating.',
+      'No banner pitied you. The Senate stopped watching at wave 14.',
+      'ARE YOU REALLY SURE?'
+    ],
+    doom: [
+      'You clicked yes. On the final wave. Against the Daemon Imperator. Bold.',
+      'The legends remember winners and warn about everyone else. You are between.',
+      'The Hall of Glory has a seat reserved. It is not the one you want.',
+      'Hellscape weather is already shortening your status durations 20%.',
+      'There is no wave 21. There is only victory or the leaderboard.',
+      'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
+    ]
+  }
+};
+
+// Fallback dossier — fires if a boss wave outside the table somehow triggers.
+const GENERIC_DOSSIER: BossDossier = {
+  name: 'A BOSS',
+  faction: 'UNKNOWN',
+  sprite: 'DAEMON_IMPERATOR',
+  warning: [
+    'You are about to face a boss. Your record is not encouraging.',
+    'The empire suggests reviewing the Codex one last time.',
+    'Your towers are positioned. They will not move themselves.',
+    'ARE YOU REALLY SURE?'
+  ],
+  doom: [
+    'You actually clicked yes. The boss is now in motion.',
+    'The Senate has begun drafting your replacement.',
+    'There is dignity in retreat. You have apparently chosen otherwise.',
+    'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
+  ]
+};
+
+// ─── Rotating flavor taunts (15+) ───────────────────────────────────────
+// Sprinkled onto either confirmation screen. Two random non-repeating
+// lines per modal.
+const ROTATING_TAUNTS = [
+  'YOUR LAST WIN WAS AN ACCIDENT AND YOU KNOW IT',
+  'THE ENEMY HAS STUDIED YOUR STRATEGY. THEY ARE NOT WORRIED.',
+  'STATISTICALLY SPEAKING, YOU SHOULD QUIT NOW',
+  'THE PREVIOUS BOSS LET YOU WIN OUT OF PITY',
+  'YOUR TOWERS ARE ADORABLE. THE BOSS FINDS THEM CUTE.',
+  'ROME DID NOT FALL IN A DAY. YOUR DEFENSE WILL.',
+  'WE HAVE REVIEWED YOUR PERFORMANCE. IT WAS NOT GOOD.',
+  'THE BOSS HAS SEEN BETTER GENERALS RETIRE IN SHAME',
+  'YOU SURVIVED LAST TIME BY ACCIDENT. THE ALGORITHM KNOWS.',
+  'HISTORIANS WILL NOT REMEMBER YOUR NAME',
+  'YOUR COMBINATION STRATEGY NEEDS WORK. A LOT OF WORK.',
+  'THE ENEMY LAUGHED WHEN THEY SAW YOUR SETUP',
+  'CONFIDENCE IS NOT A STRATEGY, GENERAL',
+  'THE GODS ARE WATCHING. THEY ARE EMBARRASSED FOR YOU.',
+  'PLEASE RECONSIDER. FOR ROME. FOR YOUR FAMILY. FOR YOURSELF.',
+  'YOUR MAZE IS LOVELY. UNFORTUNATELY THE ENEMY CAN READ MAPS.',
+  'YOU UNLOCKED ONE COMBO. THE BOSS HAS EATEN MEN WITH FOUR.',
+  'THE EAGLE STANDARD WEEPS FOR THIS COMPOSITION'
+];
+
+function pickTwoTaunts(): string[] {
+  const a = ROTATING_TAUNTS.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return [a[0], a[1]];
+}
+
+// ─── CRT styling (shared with BossWarning modals) ───────────────────────
+function ensureStyle() {
+  if (document.getElementById('boss-warning-style')) return;
+  const s = document.createElement('style');
+  s.id = 'boss-warning-style';
+  s.textContent = `
+    @keyframes bwScanlines {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 6px; }
+    }
+    @keyframes bwTitleFlash {
+      0%, 100% { color: #ffd34d; text-shadow: 0 0 14px #ffd34d, 0 0 28px #ffaa33, 4px 4px 0 #1a0808; }
+      50%      { color: #ff5050; text-shadow: 0 0 18px #ff5050, 0 0 32px #aa1a1a, 4px 4px 0 #1a0808; }
+    }
+    @keyframes bwFlicker {
+      0%, 96%, 100% { filter: brightness(1) saturate(1); }
+      97%           { filter: brightness(1.2) saturate(1.1); }
+      98%           { filter: brightness(0.75) saturate(0.85); }
+      99%           { filter: brightness(1.06); }
+    }
+    @keyframes bwBossSway {
+      0%, 100% { transform: translateX(0) rotate(0deg); }
+      25%      { transform: translateX(-6px) rotate(-1deg); }
+      75%      { transform: translateX(6px) rotate(1deg); }
+    }
+    @keyframes bwBossIn {
+      0%   { opacity: 0; transform: translateX(-120px) scale(0.6); }
+      60%  { transform: translateX(8px) scale(1.06); }
+      100% { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    @keyframes bwRowIn {
+      0%   { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bwScreenFlash {
+      0%   { background: rgba(255,255,255,0); }
+      30%  { background: rgba(255,255,255,0.85); }
+      100% { background: rgba(255,255,255,0); }
+    }
+    @keyframes bwShake {
+      0%, 100% { transform: translate(0,0) rotate(0); }
+      15%      { transform: translate(-8px, 4px) rotate(-0.5deg); }
+      30%      { transform: translate(7px, -5px) rotate(0.5deg); }
+      45%      { transform: translate(-5px, -4px) rotate(-0.3deg); }
+      60%      { transform: translate(6px, 4px) rotate(0.3deg); }
+      75%      { transform: translate(-3px, 2px); }
+    }
+    .bw-overlay {
+      position: absolute; inset: 0; z-index: 195;
+      background: radial-gradient(ellipse at center, #1a0808 0%, #0a0202 60%, #000 100%);
+      color: #ffd34d; font-family: 'Courier New', monospace;
+      display: flex; align-items: center; justify-content: center;
+      animation: bwFlicker 5.4s infinite;
+      overflow: hidden;
+    }
+    .bw-overlay.shake { animation: bwShake 520ms ease-in-out, bwFlicker 5.4s infinite; }
+    .bw-scanlines {
+      position: absolute; inset: 0; pointer-events: none; z-index: 1;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0,0,0,0) 0px,
+        rgba(0,0,0,0) 2px,
+        rgba(0,0,0,0.40) 2px,
+        rgba(0,0,0,0.40) 3px
+      );
+      mix-blend-mode: multiply;
+    }
+    .bw-vignette {
+      position: absolute; inset: 0; pointer-events: none; z-index: 1;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0) 50%, rgba(0,0,0,0.85) 100%);
+    }
+    .bw-flash {
+      position: absolute; inset: 0; pointer-events: none; z-index: 9999;
+      animation: bwScreenFlash 600ms ease-out forwards;
+    }
+    .bw-panel {
+      position: relative; z-index: 2;
+      width: min(820px, 94%); max-height: 90vh; padding: 30px 36px;
+      background: rgba(15,3,3,0.95);
+      border: 3px solid #aa1a1a;
+      box-shadow: 0 0 40px rgba(170,26,26,0.6), inset 0 0 50px rgba(0,0,0,0.8);
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      text-align: center;
+    }
+    .bw-headline {
+      font-size: clamp(28px, 5vw, 44px);
+      letter-spacing: clamp(4px, 0.7vw, 8px);
+      font-weight: 900;
+      animation: bwTitleFlash 1.4s ease-in-out infinite;
+      line-height: 1.1;
+    }
+    .bw-subhead {
+      font-size: 12px; letter-spacing: 5px; color: #aa4a1a;
+      font-weight: 900; text-shadow: 1px 1px 0 #000;
+    }
+    .bw-bossart {
+      display: flex; align-items: center; justify-content: center; gap: 18px;
+      margin: 6px 0 4px;
+    }
+    .bw-bossart img {
+      width: 96px; height: 96px; image-rendering: pixelated;
+      filter: drop-shadow(0 0 12px rgba(255,80,80,0.7)) drop-shadow(2px 2px 0 #000);
+      animation: bwBossIn 0.55s cubic-bezier(.2,1.4,.4,1) both, bwBossSway 2.4s ease-in-out 0.55s infinite;
+    }
+    .bw-bossname {
+      font-size: 22px; letter-spacing: 6px; font-weight: 900; color: #ee5050;
+      text-shadow: 0 0 10px #ee5050, 2px 2px 0 #000;
+    }
+    .bw-bossfaction {
+      font-size: 10px; letter-spacing: 4px; color: #aa9a4a; margin-top: 2px;
+    }
+    .bw-lines {
+      width: 100%; display: flex; flex-direction: column; gap: 6px;
+      margin: 8px 0;
+    }
+    .bw-lines > div {
+      font-size: 14px; letter-spacing: 1px; line-height: 1.5;
+      color: #fff8e0; font-weight: 900;
+      text-shadow: 1px 1px 0 #000;
+      animation: bwRowIn 0.35s ease-out both;
+    }
+    .bw-lines > div.final {
+      margin-top: 4px;
+      font-size: 16px; letter-spacing: 2px;
+      color: #ffd34d;
+      text-shadow: 0 0 10px #ffd34d, 2px 2px 0 #000;
+    }
+    .bw-taunts {
+      width: 100%; display: flex; flex-direction: column; gap: 4px;
+      padding: 8px 0; border-top: 1px dashed #5a1010; border-bottom: 1px dashed #5a1010;
+    }
+    .bw-taunts > div {
+      font-size: 10px; letter-spacing: 3px; color: #aa6a1a;
+      text-shadow: 1px 1px 0 #000;
+    }
+    .bw-buttons {
+      display: flex; gap: 14px; margin-top: 12px; flex-wrap: wrap; justify-content: center;
+    }
+    .bw-btn {
+      font-family: 'Courier New', monospace;
+      font-size: 14px; letter-spacing: 3px;
+      padding: 12px 22px;
+      cursor: pointer;
+      font-weight: 900;
+      border: 3px solid #fff8e0;
+      box-shadow: 0 0 16px rgba(255,80,80,0.3);
+      transition: transform 0.1s, box-shadow 0.15s;
+    }
+    .bw-btn:hover { transform: translateY(-2px); box-shadow: 0 0 26px rgba(255,80,80,0.7); }
+    .bw-btn:active { transform: translateY(1px); }
+    .bw-btn.danger {
+      background: linear-gradient(180deg, #aa1a1a, #5a0606);
+      color: #ffd34d;
+      text-shadow: 0 0 8px #ffd34d, 1px 1px 0 #000;
+    }
+    .bw-btn.safe {
+      background: linear-gradient(180deg, #3a3a3a, #1a1a1a);
+      color: #cdb98a;
+      border-color: #5a4a30;
+    }
+    .bw-buildup {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      z-index: 196; background: radial-gradient(circle, rgba(255,80,80,0.15), rgba(0,0,0,0.9));
+      font-family: 'Courier New', monospace; color: #ff5050; font-weight: 900;
+      font-size: clamp(48px, 8vw, 96px); letter-spacing: 12px;
+      text-shadow: 0 0 24px #ff5050, 4px 4px 0 #000;
+    }
+  `;
+  document.head.appendChild(s);
+}
+
+// ─── Render helper ──────────────────────────────────────────────────────
+interface RenderArgs {
+  parent: HTMLElement;
+  dossier: BossDossier;
+  taunts: string[];
+  headline: string;
+  subhead: string;
+  lines: string[];          // body lines; last one rendered with .final
+  confirmLabel: string;
+  cancelLabel: string;
+  isFinal: boolean;         // true for the second screen — adds the dramatic exit
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function renderScreen(args: RenderArgs): HTMLElement {
+  ensureStyle();
+  const wrap = document.createElement('div');
+  wrap.id = args.isFinal ? 'boss-warning-2' : 'boss-warning-1';
+  wrap.className = 'bw-overlay';
+  const portrait = spriteSrcFor(args.dossier.sprite);
+  const portraitHtml = portrait
+    ? `<img src="${portrait}" alt="${args.dossier.name}"/>`
+    : '<div style="width:96px;height:96px;border:2px solid #aa1a1a;background:#1a0404;color:#ee5050;display:flex;align-items:center;justify-content:center;font-size:11px;letter-spacing:2px">BOSS</div>';
+  const linesHtml = args.lines.map((line, idx) => {
+    const cls = idx === args.lines.length - 1 ? 'final' : '';
+    const delay = (idx * 0.08).toFixed(2);
+    return `<div class="${cls}" style="animation-delay:${delay}s">${line}</div>`;
+  }).join('');
+  const tauntsHtml = args.taunts.map(t => `<div>▸ ${t}</div>`).join('');
+  wrap.innerHTML = `
+    <div class="bw-scanlines"></div>
+    <div class="bw-vignette"></div>
+    <div class="bw-panel">
+      <div class="bw-subhead">${args.subhead}</div>
+      <div class="bw-headline">${args.headline}</div>
+      <div class="bw-bossart">
+        ${portraitHtml}
+        <div>
+          <div class="bw-bossname">${args.dossier.name}</div>
+          <div class="bw-bossfaction">${args.dossier.faction}</div>
+        </div>
+      </div>
+      <div class="bw-lines">${linesHtml}</div>
+      <div class="bw-taunts">${tauntsHtml}</div>
+      <div class="bw-buttons">
+        <button class="bw-btn danger" id="bw-confirm">${args.confirmLabel}</button>
+        <button class="bw-btn safe" id="bw-cancel">${args.cancelLabel}</button>
+      </div>
+    </div>`;
+  args.parent.appendChild(wrap);
+  (wrap.querySelector('#bw-confirm') as HTMLButtonElement).onclick = args.onConfirm;
+  (wrap.querySelector('#bw-cancel') as HTMLButtonElement).onclick = args.onCancel;
+  return wrap;
+}
+
+// ─── Public entry point ─────────────────────────────────────────────────
+export function showBossWarning(parent: HTMLElement, wave: number, onConfirm: () => void) {
+  ensureStyle();
+  const dossier = BOSS_DATA[wave] ?? GENERIC_DOSSIER;
+
+  // Try to play an alert SFX if the audio manager exposes one.
+  try {
+    const audio = (window as any).SFX ?? (window as any).__sfx;
+    if (audio && typeof audio.bossArrival === 'function') audio.bossArrival();
+  } catch { /* silent */ }
+
+  // ── First screen: warning ────────────────────────────────────────────
+  const firstScreen = renderScreen({
+    parent,
+    dossier,
+    taunts: pickTwoTaunts(),
+    subhead: 'INCOMING BOSS WAVE ' + wave,
+    headline: 'HALT, GENERAL.',
+    lines: dossier.warning,
+    confirmLabel: 'YES, I AM READY',
+    cancelLabel: 'NO, I NEED MORE TIME',
+    isFinal: false,
+    onConfirm: () => {
+      firstScreen.remove();
+      // ── Second screen: doom ────────────────────────────────────────
+      const secondScreen = renderScreen({
+        parent,
+        dossier,
+        taunts: pickTwoTaunts(),
+        subhead: 'FINAL CHANCE — WAVE ' + wave,
+        headline: 'YOU ACTUALLY CLICKED YES.',
+        lines: dossier.doom,
+        confirmLabel: 'I ACCEPT MY FATE',
+        cancelLabel: 'ACTUALLY... NO',
+        isFinal: true,
+        onConfirm: () => {
+          // Dramatic flash + shake on the second confirmation.
+          const flash = document.createElement('div');
+          flash.className = 'bw-flash';
+          secondScreen.appendChild(flash);
+          secondScreen.classList.add('shake');
+
+          // After flash/shake, show a brief countdown buildup, then fire.
+          const renderer: any = (window as any).__renderer;
+          if (renderer && typeof renderer.triggerShake === 'function') renderer.triggerShake(6, 0.6);
+          setTimeout(() => {
+            secondScreen.querySelector('.bw-panel')!.remove();
+            const buildup = document.createElement('div');
+            buildup.className = 'bw-buildup';
+            buildup.textContent = '3';
+            secondScreen.appendChild(buildup);
+            let n = 3;
+            const tick = setInterval(() => {
+              n -= 1;
+              if (n <= 0) {
+                clearInterval(tick);
+                secondScreen.remove();
+                onConfirm();
+                return;
+              }
+              buildup.textContent = String(n);
+            }, 500);
+          }, 600);
+        },
+        onCancel: () => {
+          secondScreen.remove();
+        }
+      });
+    },
+    onCancel: () => { firstScreen.remove(); }
+  });
+}
+
+// Helper used by main.ts to check if a wave should gate behind verification.
+// Currently any boss wave (type 'B') in the 20-wave schedule (W5/10/15/20).
+export function isVerifiedBossWave(wave: number): boolean {
+  return wave === 5 || wave === 10 || wave === 15 || wave === 20;
+}

@@ -1,0 +1,344 @@
+[
+  {
+    "wave": 1,
+    "type": "G",
+    "faction": "DOGS",
+    "hpMult": 1.0,
+    "gold": 8,
+    "spawns": [
+      {
+        "type": "FERAL_DOG",
+        "count": 30
+      }
+    ]
+  },
+  {
+    "wave": 2,
+    "type": "M",
+    "faction": "DOGS",
+    "hpMult": 1.0,
+    "gold": 9,
+    "spawns": [
+      {
+        "type": "RABID_DOG",
+        "count": 18
+      },
+      {
+        "type": "FERAL_DOG",
+        "count": 10
+      }
+    ]
+  },
+  {
+    "wave": 3,
+    "type": "M",
+    "faction": "DOGS",
+    "hpMult": 1.2,
+    "gold": 10,
+    "spawns": [
+      {
+        "type": "ALPHA_DOG",
+        "count": 1
+      },
+      {
+        "type": "FERAL_DOG",
+        "count": 22
+      }
+    ]
+  },
+  {
+    "wave": 4,
+    "type": "G",
+    "faction": "CELTS",
+    "hpMult": 1.25,
+    "gold": 9,
+    "spawns": [
+      {
+        "type": "CELTIC_FOOTMAN",
+        "count": 28
+      },
+      {
+        "type": "GALLIC_DRUID",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "wave": 5,
+    "type": "B",
+    "faction": "CELTS",
+    "hpMult": 5.0,
+    "gold": 16,
+    "spawns": [
+      {
+        "type": "CELTIC_WARLORD",
+        "count": 1
+      },
+      {
+        "type": "CELTIC_BERSERKER",
+        "count": 20
+      }
+    ]
+  },
+  {
+    "wave": 6,
+    "type": "F",
+    "faction": "CELTS",
+    "hpMult": 1.8,
+    "gold": 12,
+    "spawns": [
+      {
+        "type": "CELTIC_SCOUT",
+        "count": 48
+      }
+    ]
+  },
+  {
+    "wave": 7,
+    "type": "G",
+    "faction": "CARTHAGE",
+    "hpMult": 1.8,
+    "gold": 10,
+    "spawns": [
+      {
+        "type": "CARTHAGE_SPEARMAN",
+        "count": 48
+      },
+      {
+        "type": "NUMIDIAN_RIDER",
+        "count": 6
+      }
+    ]
+  },
+  {
+    "wave": 8,
+    "type": "M",
+    "faction": "CARTHAGE",
+    "hpMult": 2.1,
+    "gold": 11,
+    "spawns": [
+      {
+        "type": "CARTHAGE_ELITE_GUARD",
+        "count": 33
+      },
+      {
+        "type": "CARTHAGE_SPEARMAN",
+        "count": 18
+      },
+      {
+        "type": "NUMIDIAN_RIDER",
+        "count": 10
+      }
+    ]
+  },
+  {
+    "wave": 9,
+    "type": "G",
+    "faction": "CARTHAGE",
+    "hpMult": 2.4,
+    "gold": 13,
+    "spawns": [
+      {
+        "type": "WAR_ELEPHANT",
+        "count": 5
+      },
+      {
+        "type": "CARTHAGE_SPEARMAN",
+        "count": 33
+      },
+      {
+        "type": "CARTHAGE_ELITE_GUARD",
+        "count": 9
+      }
+    ]
+  },
+  {
+    "wave": 10,
+    "type": "B",
+    "faction": "CARTHAGE",
+    "hpMult": 5.5,
+    "gold": 20,
+    "spawns": [
+      {
+        "type": "HANNIBAL_BARCA",
+        "count": 1
+      },
+      {
+        "type": "WAR_ELEPHANT",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "wave": 11,
+    "type": "G",
+    "faction": "UNDEAD_CELTS",
+    "hpMult": 3.0,
+    "gold": 10,
+    "necromancy": true,
+    "spawns": [
+      {
+        "type": "UNDEAD_CELT",
+        "count": 42
+      }
+    ]
+  },
+  {
+    "wave": 12,
+    "type": "F",
+    "faction": "UNDEAD_CELTS",
+    "hpMult": 2.5,
+    "gold": 9,
+    "spawns": [
+      {
+        "type": "SPECTRAL_SCOUT",
+        "count": 39
+      }
+    ]
+  },
+  {
+    "wave": 13,
+    "type": "M",
+    "faction": "UNDEAD_CELTS",
+    "hpMult": 3.0,
+    "gold": 10,
+    "necromancy": true,
+    "spawns": [
+      {
+        "type": "UNDEAD_BERSERKER",
+        "count": 24
+      },
+      {
+        "type": "ZOMBIE_DRUID",
+        "count": 5
+      },
+      {
+        "type": "SPECTRAL_SCOUT",
+        "count": 14
+      }
+    ]
+  },
+  {
+    "wave": 14,
+    "type": "M",
+    "faction": "UNDEAD_CELTS",
+    "hpMult": 4.5,
+    "gold": 12,
+    "spawns": [
+      {
+        "type": "UNDEAD_WAR_ELEPHANT",
+        "count": 1
+      },
+      {
+        "type": "UNDEAD_CELT",
+        "count": 27
+      },
+      {
+        "type": "SPECTRAL_SCOUT",
+        "count": 8
+      }
+    ]
+  },
+  {
+    "wave": 15,
+    "type": "B",
+    "faction": "UNDEAD_CELTS",
+    "hpMult": 8.0,
+    "gold": 26,
+    "spawns": [
+      {
+        "type": "UNDEAD_WARLORD",
+        "count": 1
+      },
+      {
+        "type": "UNDEAD_CELT",
+        "count": 22
+      }
+    ]
+  },
+  {
+    "wave": 16,
+    "type": "G",
+    "faction": "UNDEAD_CARTHAGE",
+    "hpMult": 3.0,
+    "gold": 14,
+    "spawns": [
+      {
+        "type": "UNDEAD_SPEARMAN",
+        "count": 33
+      },
+      {
+        "type": "ARCHITECTUS",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "wave": 17,
+    "type": "M",
+    "faction": "UNDEAD_CARTHAGE",
+    "hpMult": 3.0,
+    "gold": 15,
+    "spawns": [
+      {
+        "type": "IRON_PHALANX",
+        "count": 15
+      },
+      {
+        "type": "UNDEAD_SPEARMAN",
+        "count": 21
+      },
+      {
+        "type": "GHOST_RIDER",
+        "count": 12
+      }
+    ]
+  },
+  {
+    "wave": 18,
+    "type": "F",
+    "faction": "UNDEAD_CARTHAGE",
+    "hpMult": 2.5,
+    "gold": 15,
+    "spawns": [
+      {
+        "type": "GHOST_RIDER",
+        "count": 39
+      }
+    ]
+  },
+  {
+    "wave": 19,
+    "type": "M",
+    "faction": "SUPER_DEMONS",
+    "hpMult": 3.5,
+    "gold": 17,
+    "spawns": [
+      {
+        "type": "DEMON_HELLHOUND",
+        "count": 21
+      },
+      {
+        "type": "CELTIC_FIRE_DEMON",
+        "count": 7
+      },
+      {
+        "type": "SHADOW_CAVALRY",
+        "count": 14
+      }
+    ]
+  },
+  {
+    "wave": 20,
+    "type": "B",
+    "faction": "SUPER_DEMONS",
+    "hpMult": 6.0,
+    "gold": 0,
+    "spawns": [
+      {
+        "type": "DAEMON_IMPERATOR",
+        "count": 1
+      }
+    ]
+  }
+]

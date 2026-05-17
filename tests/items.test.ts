@@ -1,0 +1,176 @@
+// Tests for item rules, inventory operations, and shop pool sampling.
+import { describe, it, expect } from 'vitest';
+import { itemFamily, canEquipItemFamily } from '../src/systems/ItemRules';
+import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, rollDrop } from '../src/systems/LootSystem';
+import { buildGateShop, buildMercatorStock, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
+
+describe('Item families', () => {
+  it('classifies items into the correct family', () => {
+    expect(itemFamily('SHARPENED_BLADE')).toBe('DAMAGE');
+    expect(itemFamily('TRAINING_SCROLL')).toBe('SPEED');
+    expect(itemFamily('WATCHTOWER_LENS')).toBe('RANGE');
+    // 2026-05 v9: DOT split into sub-families by kind.
+    expect(itemFamily('FIRE_OIL_FLASK')).toBe('DOT_BURN');
+    expect(itemFamily('POISONED_BLADE')).toBe('DOT_POISON');
+    expect(itemFamily('BARBED_GLADIUS')).toBe('DOT_BLEED');
+    expect(itemFamily('CENTURIONS_TRUMPET')).toBe('AURA');
+    expect(itemFamily('GOLD_PURSE')).toBe('ECONOMY');
+    expect(itemFamily('GALLIC_SHIELD_BOSS')).toBe('DEFENSE');
+  });
+
+  it('unknown items default to SPECIAL', () => {
+    expect(itemFamily('UNKNOWN_ITEM')).toBe('SPECIAL');
+  });
+});
+
+describe('Item equip family exclusivity', () => {
+  it('allows equipping a DAMAGE item when no DAMAGE is currently equipped', () => {
+    const result = canEquipItemFamily([], 'SHARPENED_BLADE');
+    expect(result.ok).toBe(true);
+    expect(result.family).toBe('DAMAGE');
+  });
+
+  it('blocks a second item of the same family', () => {
+    const result = canEquipItemFamily(['SHARPENED_BLADE'], 'IRON_TIP');
+    expect(result.ok).toBe(false);
+    expect(result.family).toBe('DAMAGE');
+  });
+
+  it('allows mixing items from different families', () => {
+    const equipped = ['SHARPENED_BLADE', 'TRAINING_SCROLL'];
+    expect(canEquipItemFamily(equipped, 'WATCHTOWER_LENS').ok).toBe(true);
+  });
+
+  it('SPECIAL items always stack (no exclusivity)', () => {
+    const equipped = ['BERSERKERS_MUZZLE'];
+    expect(canEquipItemFamily(equipped, 'DRUIDS_TORC').ok).toBe(true);
+  });
+});
+
+describe('Inventory operations', () => {
+  it('adds an item and returns true', () => {
+    const inv = createInventory();
+    const ok = inventoryAdd(inv, 'SHARPENED_BLADE', 'COMMON');
+    expect(ok).toBe(true);
+    expect(inv.slots.length).toBe(1);
+  });
+
+  it('records buyPrice when provided (purchased items)', () => {
+    const inv = createInventory();
+    inventoryAdd(inv, 'IRON_TIP', 'COMMON', false, 8);
+    expect(inv.slots[0].buyPrice).toBe(8);
+  });
+
+  it('removes an item by id', () => {
+    const inv = createInventory();
+    inventoryAdd(inv, 'SHARPENED_BLADE', 'COMMON');
+    const removed = inventoryRemove(inv, inv.slots[0].id);
+    expect(removed).not.toBeNull();
+    expect(inv.slots.length).toBe(0);
+  });
+
+  it('returns null for a non-existent removal', () => {
+    const inv = createInventory();
+    expect(inventoryRemove(inv, 'nonexistent')).toBeNull();
+  });
+
+  it('rejects adding past INVENTORY_SIZE', () => {
+    const inv = createInventory();
+    for (let i = 0; i < 25; i++) inventoryAdd(inv, 'SHARPENED_BLADE', 'COMMON');
+    const overflow = inventoryAdd(inv, 'IRON_TIP', 'COMMON');
+    expect(overflow).toBe(false);
+  });
+});
+
+describe('Item permanence classification', () => {
+  it('isPermanent identifies permanent items', () => {
+    expect(isPermanent('SHARPENED_BLADE')).toBe(true);
+  });
+
+  it('isConsumable always returns false (consumables removed 2026-05)', () => {
+    expect(isConsumable('RAGE_POTION')).toBe(false);
+    expect(isConsumable('SHARPENED_BLADE')).toBe(false);
+  });
+
+  it('every item is permanent (no consumables)', () => {
+    expect(isPermanent('SHARPENED_BLADE')).toBe(true);
+  });
+});
+
+describe('Loot drop rolling', () => {
+  it('always returns a valid drop with rarity and itemId', () => {
+    for (let i = 0; i < 100; i++) {
+      const drop = rollDrop();
+      expect(drop).not.toBeNull();
+      expect(drop!.itemId).toBeTruthy();
+      expect(['COMMON','UNCOMMON','RARE','LEGENDARY','UNIQUE']).toContain(drop!.rarity);
+    }
+  });
+});
+
+describe('Merchant — gate shop', () => {
+  it('produces 9 offers (3 common + 3 uncommon + 2 rare + 1 legendary)', () => {
+    // 2026-05 v11: gate shop gained a guaranteed rotating LEGENDARY slot
+    // (one per refresh, filtered against owned legendaries). Bumps the
+    // total from 8 to 9 offers.
+    const shop = buildGateShop();
+    expect(shop.type).toBe('GATE');
+    expect(shop.offers.length).toBe(9);
+    const commons = shop.offers.filter(o => o.rarity === 'COMMON');
+    const uncommons = shop.offers.filter(o => o.rarity === 'UNCOMMON');
+    const rares = shop.offers.filter(o => o.rarity === 'RARE');
+    const legendaries = shop.offers.filter(o => o.rarity === 'LEGENDARY');
+    expect(commons.length).toBe(3);
+    expect(uncommons.length).toBe(3);
+    expect(rares.length).toBe(2);
+    expect(legendaries.length).toBe(1);
+  });
+
+  it('contains no duplicate offers within a single visit', () => {
+    for (let trial = 0; trial < 20; trial++) {
+      const shop = buildGateShop();
+      const ids = shop.offers.map(o => o.itemId);
+      expect(new Set(ids).size).toBe(ids.length);
+    }
+  });
+});
+
+describe('Merchant — Mercator stock', () => {
+  it('always includes 4 Legendaries + 1 Rare + 1 Mercator-exclusive Rare + 3 mid (no consumables, 2026-05 v6)', () => {
+    const shop = buildMercatorStock();
+    expect(shop.type).toBe('MERCATOR');
+    const legendaries = shop.offers.filter(o => o.rarity === 'LEGENDARY');
+    const rare = shop.offers.filter(o => o.rarity === 'RARE');
+    const cons = shop.offers.filter(o => o.isConsumable);
+    expect(legendaries.length).toBe(4);
+    // Now: 1 regular rare + 1 exclusive rare = 2 rares minimum.
+    expect(rare.length).toBeGreaterThanOrEqual(2);
+    expect(cons.length).toBe(0);
+    expect(shop.offers.length).toBe(9);
+  });
+
+  it('Mercator legendaries are priced significantly higher than gate shop rares', () => {
+    const merc = buildMercatorStock();
+    const legPrices = merc.offers.filter(o => o.rarity === 'LEGENDARY').map(o => o.price);
+    expect(Math.min(...legPrices)).toBeGreaterThan(30);
+  });
+});
+
+describe('Merchant — wave timing predicates', () => {
+  it('isMercatorWave flags the 20-wave campaign waves (W4/9/14/19)', () => {
+    expect(isMercatorWave(4)).toBe(true);
+    expect(isMercatorWave(9)).toBe(true);
+    expect(isMercatorWave(14)).toBe(true);
+    expect(isMercatorWave(19)).toBe(true);
+    expect(isMercatorWave(8)).toBe(false);
+    expect(isMercatorWave(10)).toBe(false);
+  });
+
+  it('gateShopRefreshDue triggers every 4 waves (excluding wave 0)', () => {
+    expect(gateShopRefreshDue(0)).toBe(false);
+    expect(gateShopRefreshDue(4)).toBe(true);
+    expect(gateShopRefreshDue(8)).toBe(true);
+    expect(gateShopRefreshDue(12)).toBe(true);
+    expect(gateShopRefreshDue(7)).toBe(false);
+  });
+});

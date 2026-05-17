@@ -1,0 +1,673 @@
+[
+  {
+    "result": "HORSEMAN",
+    "tier": 2,
+    "ingredients": [
+      {
+        "type": "MILITES",
+        "minTier": 2
+      },
+      {
+        "type": "MILITES",
+        "minTier": 2
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "SCORPION_BOLT",
+    "tier": 2,
+    "ingredients": [
+      {
+        "type": "SCORPIO",
+        "minTier": 2
+      },
+      {
+        "type": "VELITES",
+        "minTier": 2
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "COHORT_GUARD",
+    "tier": 2,
+    "ingredients": [
+      {
+        "type": "HASTATI",
+        "minTier": 2
+      },
+      {
+        "type": "TRIARIUS",
+        "minTier": 2
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "WAR_CHARIOT",
+    "tier": 3,
+    "ingredients": [
+      {
+        "type": "HORSEMAN",
+        "minTier": 2
+      },
+      {
+        "type": "DECURION",
+        "minTier": 3
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "EAGLE_STANDARD",
+    "tier": 3,
+    "ingredients": [
+      {
+        "type": "TRIARIUS",
+        "minTier": 3
+      },
+      {
+        "type": "CENTURION",
+        "minTier": 3
+      },
+      {
+        "type": "LEGATE",
+        "minTier": 2
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "PLAGUE_CART",
+    "tier": 3,
+    "ingredients": [
+      {
+        "type": "VELITES",
+        "minTier": 3
+      },
+      {
+        "type": "HASTATI",
+        "minTier": 2
+      },
+      {
+        "type": "VELITES",
+        "minTier": 3
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "NUMIDIAN_CAVALRY",
+    "tier": 3,
+    "ingredients": [
+      {
+        "type": "DECURION",
+        "minTier": 3
+      },
+      {
+        "type": "SAGITTARIUS",
+        "minTier": 3
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "PRAETORIAN_WALL",
+    "tier": 3,
+    "ingredients": [
+      {
+        "type": "PRIMUS_PILUS",
+        "minTier": 3
+      },
+      {
+        "type": "CENTURION",
+        "minTier": 3
+      },
+      {
+        "type": "HASTATI",
+        "minTier": 3
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "AERARIUM",
+    "tier": 3,
+    "ingredients": [
+      {
+        "type": "LEGATE",
+        "minTier": 2
+      },
+      {
+        "type": "TRIARIUS",
+        "minTier": 2
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "SIEGE_ONAGER",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "SCORPIO",
+        "minTier": 4
+      },
+      {
+        "type": "SCORPIO",
+        "minTier": 3
+      },
+      {
+        "type": "PRIMUS_PILUS",
+        "minTier": 3
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "AQUILIFER_TITAN",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "EAGLE_STANDARD",
+        "minTier": 3
+      },
+      {
+        "type": "CENTURION",
+        "minTier": 4
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "INFERNO_CART",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "PLAGUE_CART",
+        "minTier": 3
+      },
+      {
+        "type": "DECURION",
+        "minTier": 4
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "FROZEN_LEGION",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "HORSEMAN",
+        "minTier": 3
+      },
+      {
+        "type": "VELITES",
+        "minTier": 4
+      },
+      {
+        "type": "SAGITTARIUS",
+        "minTier": 4
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "JULIUS_CAESAR",
+    "tier": 5,
+    "ingredients": [
+      {
+        "type": "LEGATE",
+        "minTier": 5
+      },
+      {
+        "type": "PRIMUS_PILUS",
+        "minTier": 5
+      },
+      {
+        "type": "EAGLE_STANDARD",
+        "minTier": 4
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "HANNIBALS_NIGHTMARE",
+    "tier": 5,
+    "ingredients": [
+      {
+        "type": "SIEGE_ONAGER",
+        "minTier": 4
+      },
+      {
+        "type": "SCORPION_BOLT",
+        "minTier": 2
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "GOD_OF_WAR",
+    "tier": 5,
+    "ingredients": [
+      {
+        "type": "JULIUS_CAESAR",
+        "minTier": 5
+      },
+      {
+        "type": "COHORT_GUARD",
+        "minTier": 4
+      },
+      {
+        "type": "INFERNO_CART",
+        "minTier": 4
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "VEXILLATION",
+    "tier": 2,
+    "ingredients": [
+      {
+        "type": "MILITES",
+        "minTier": 2
+      },
+      {
+        "type": "AUXILIA",
+        "minTier": 2
+      },
+      {
+        "type": "ACCENSUS",
+        "minTier": 2
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "TESSERARIUS",
+    "tier": 2,
+    "ingredients": [
+      {
+        "type": "OPTIO",
+        "minTier": 2
+      },
+      {
+        "type": "RETIARIUS",
+        "minTier": 2
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "SCOUT_VEXILLUM",
+    "tier": 2,
+    "ingredients": [
+      {
+        "type": "FUNDIBULUS",
+        "minTier": 2
+      },
+      {
+        "type": "RORARIUS",
+        "minTier": 2
+      },
+      {
+        "type": "VELITES",
+        "minTier": 2
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "STORMCALLER",
+    "tier": 3,
+    "ingredients": [
+      {
+        "type": "FLAMEN",
+        "minTier": 3
+      },
+      {
+        "type": "LEGATE",
+        "minTier": 3
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "SACER_VESTAL",
+    "tier": 3,
+    "ingredients": [
+      {
+        "type": "FLAMEN",
+        "minTier": 3
+      },
+      {
+        "type": "AUGUR",
+        "minTier": 3
+      },
+      {
+        "type": "HARUSPEX",
+        "minTier": 3
+      }
+    ],
+    "cost": 10
+  },
+  {
+    "result": "TRIBUNUS_LATICLAVIUS",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "CENTURION",
+        "minTier": 4
+      },
+      {
+        "type": "LEGATE",
+        "minTier": 4
+      },
+      {
+        "type": "PRAEFECTUS",
+        "minTier": 4
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "NEMESIS_ENGINE",
+    "tier": 5,
+    "ingredients": [
+      {
+        "type": "COLOSSUS_ONAGER",
+        "minTier": 5
+      },
+      {
+        "type": "CARROBALLISTA",
+        "minTier": 4
+      },
+      {
+        "type": "VULCAN_ENGINEER",
+        "minTier": 4
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "TRIUMPHATOR",
+    "tier": 5,
+    "ingredients": [
+      {
+        "type": "EVOCATUS",
+        "minTier": 4
+      },
+      {
+        "type": "IMPERATOR_GUARD",
+        "minTier": 5
+      },
+      {
+        "type": "PRAEFECTUS",
+        "minTier": 4
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "PONTIFEX_MAXIMUS",
+    "tier": 5,
+    "ingredients": [
+      {
+        "type": "SOLAR_PRIEST",
+        "minTier": 5
+      },
+      {
+        "type": "AUGUR",
+        "minTier": 4
+      },
+      {
+        "type": "HARUSPEX",
+        "minTier": 4
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "TURMA_LANCERS",
+    "tier": 3,
+    "ingredients": [
+      {
+        "type": "HORSEMAN",
+        "minTier": 3
+      },
+      {
+        "type": "HORSEMAN",
+        "minTier": 3
+      }
+    ],
+    "cost": 25
+  },
+  {
+    "result": "AURORA_LEGION",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "EAGLE_STANDARD",
+        "minTier": 4
+      },
+      {
+        "type": "PRAETORIAN_WALL",
+        "minTier": 4
+      }
+    ],
+    "cost": 60
+  },
+  {
+    "result": "STORM_VEXILLATION",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "STORMCALLER",
+        "minTier": 4
+      },
+      {
+        "type": "EAGLE_STANDARD",
+        "minTier": 4
+      }
+    ],
+    "cost": 60
+  },
+  {
+    "result": "IMPERIUM_ETERNUM",
+    "tier": 5,
+    "ingredients": [
+      {
+        "type": "GOD_OF_WAR",
+        "minTier": 5
+      },
+      {
+        "type": "JULIUS_CAESAR",
+        "minTier": 5
+      },
+      {
+        "type": "AQUILIFER_TITAN",
+        "minTier": 5
+      },
+      {
+        "type": "PONTIFEX_MAXIMUS",
+        "minTier": 4
+      }
+    ],
+    "cost": 150
+  },
+  {
+    "result": "CARTHAGE_SCOURGE",
+    "tier": 5,
+    "ingredients": [
+      {
+        "type": "HANNIBALS_NIGHTMARE",
+        "minTier": 5
+      },
+      {
+        "type": "NEMESIS_ENGINE",
+        "minTier": 5
+      },
+      {
+        "type": "SCORPION_BOLT",
+        "minTier": 5
+      }
+    ],
+    "cost": 120
+  },
+  {
+    "result": "TRIUMVIRATE",
+    "tier": 5,
+    "ingredients": [
+      {
+        "type": "JULIUS_CAESAR",
+        "minTier": 5
+      },
+      {
+        "type": "AQUILIFER_TITAN",
+        "minTier": 4
+      },
+      {
+        "type": "EAGLE_STANDARD",
+        "minTier": 4
+      }
+    ],
+    "cost": 100
+  },
+  {
+    "result": "TRIPLEX_ACIES",
+    "tier": 2,
+    "ingredients": [
+      {
+        "type": "MILITES",
+        "minTier": 2
+      },
+      {
+        "type": "HASTATI",
+        "minTier": 2
+      },
+      {
+        "type": "TRIARIUS",
+        "minTier": 2
+      },
+      {
+        "type": "CENTURION",
+        "minTier": 2
+      },
+      {
+        "type": "AUXILIA",
+        "minTier": 2
+      }
+    ],
+    "cost": 30
+  },
+  {
+    "result": "LEGION_PRIME",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "VENATOR",
+        "minTier": 3
+      },
+      {
+        "type": "IGNIFER",
+        "minTier": 3
+      },
+      {
+        "type": "SPECULATOR",
+        "minTier": 3
+      },
+      {
+        "type": "FLAMEN",
+        "minTier": 3
+      },
+      {
+        "type": "CARROBALLISTA",
+        "minTier": 3
+      }
+    ],
+    "cost": 100
+  },
+  {
+    "result": "CONSULAR_FATEBINDER",
+    "tier": 5,
+    "ingredients": [
+      {
+        "type": "PRAEFECTUS",
+        "minTier": 5
+      },
+      {
+        "type": "VULCAN_ENGINEER",
+        "minTier": 5
+      },
+      {
+        "type": "IMPERATOR_GUARD",
+        "minTier": 5
+      },
+      {
+        "type": "SOLAR_PRIEST",
+        "minTier": 5
+      },
+      {
+        "type": "COLOSSUS_ONAGER",
+        "minTier": 5
+      }
+    ],
+    "cost": 250
+  },
+  {
+    "result": "SIGNIFERS_DRACONARIUS",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "IGNIFER",
+        "minTier": 3
+      },
+      {
+        "type": "TRIARIUS",
+        "minTier": 3
+      },
+      {
+        "type": "SAGITTARIUS",
+        "minTier": 3
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "BESTIARIUS",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "VENATOR",
+        "minTier": 3
+      },
+      {
+        "type": "AUXILIA",
+        "minTier": 3
+      },
+      {
+        "type": "HASTATI",
+        "minTier": 3
+      }
+    ],
+    "cost": 50
+  },
+  {
+    "result": "CLIBANARIUS",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "PUGIO_ASSASSIN",
+        "minTier": 2
+      },
+      {
+        "type": "CATAPHRACT",
+        "minTier": 3
+      }
+    ],
+    "cost": 50
+  }
+]

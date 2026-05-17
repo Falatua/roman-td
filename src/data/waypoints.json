@@ -1,0 +1,13 @@
+{
+  "spawn": { "col": 3,  "row": 4  },
+  "gate":  { "col": 35, "row": 23 },
+  "waypoints": [
+    { "index": 1, "topLeft": { "col": 10, "row": 5  }, "emblem": "AQUILA"   },
+    { "index": 2, "topLeft": { "col": 10, "row": 13 }, "emblem": "LAUREL"   },
+    { "index": 3, "topLeft": { "col": 30, "row": 13 }, "emblem": "SHE_WOLF" },
+    { "index": 4, "topLeft": { "col": 30, "row": 5  }, "emblem": "SPQR"     },
+    { "index": 5, "topLeft": { "col": 20, "row": 5  }, "emblem": "JUPITER"  },
+    { "index": 6, "topLeft": { "col": 20, "row": 19 }, "emblem": "WP6"      },
+    { "index": 7, "topLeft": { "col": 30, "row": 19 }, "emblem": "WP7"      }
+  ]
+}

@@ -1,0 +1,345 @@
+{
+  "SHARPENED_BLADE": {
+    "name": "Sharpened Blade",
+    "rarity": "COMMON",
+    "buy": 8,
+    "sell": 3,
+    "effect": "+12% damage"
+  },
+  "IRON_TIP": {
+    "name": "Iron Tip",
+    "rarity": "COMMON",
+    "buy": 10,
+    "sell": 3,
+    "effect": "MELEE ONLY: bypass 20% of enemy resistance."
+  },
+  "TRAINING_SCROLL": {
+    "name": "Training Scroll",
+    "rarity": "COMMON",
+    "buy": 8,
+    "sell": 3,
+    "effect": "+12% attack speed"
+  },
+  "QUICKDRAW_GLOVES": {
+    "name": "Quickdraw Gloves",
+    "rarity": "COMMON",
+    "buy": 10,
+    "sell": 3,
+    "effect": "+15% attack speed"
+  },
+  "WATCHTOWER_LENS": {
+    "name": "Watchtower Lens",
+    "rarity": "COMMON",
+    "buy": 10,
+    "sell": 3,
+    "effect": "Range +1 tile"
+  },
+  "BARBED_GLADIUS": {
+    "name": "Barbed Gladius",
+    "rarity": "COMMON",
+    "buy": 10,
+    "sell": 3,
+    "effect": "MELEE ONLY: applies Bleed (2.0% HP/sec, 10s) on hit."
+  },
+  "FLYER_BANE": {
+    "name": "Flyer Bane",
+    "rarity": "UNCOMMON",
+    "buy": 16,
+    "sell": 6,
+    "effect": "RANGED ONLY: +30% damage vs Flyers."
+  },
+  "FIRE_OIL_FLASK": {
+    "name": "Fire Oil Flask",
+    "rarity": "UNCOMMON",
+    "buy": 16,
+    "sell": 6,
+    "effect": "RANGED ONLY: applies Burn (4% HP/sec, 3s) with 1-tile splash on impact."
+  },
+  "POISONED_BLADE": {
+    "name": "Poisoned Blade",
+    "rarity": "UNCOMMON",
+    "buy": 16,
+    "sell": 6,
+    "effect": "MELEE ONLY: applies Poison (6% HP/sec, 4s) on hit."
+  },
+  "CAVALRY_SPUR": {
+    "name": "Cavalry Spur",
+    "rarity": "UNCOMMON",
+    "buy": 18,
+    "sell": 6,
+    "effect": "MELEE ONLY: +30% attack speed, +0.5 tile range."
+  },
+  "MERCURY_FEATHER": {
+    "name": "Mercury Feather",
+    "rarity": "UNCOMMON",
+    "buy": 18,
+    "sell": 6,
+    "effect": "Any tower: +22% attack speed. Universal speed boost \u2014 no class restriction."
+  },
+  "CENTURIONS_TRUMPET": {
+    "name": "Centurion's Trumpet",
+    "rarity": "RARE",
+    "buy": 30,
+    "sell": 10,
+    "effect": "Aura 2 tiles: allies gain +12% attack speed"
+  },
+  "GOLD_PURSE": {
+    "name": "Gold Purse",
+    "rarity": "RARE",
+    "buy": 32,
+    "sell": 10,
+    "effect": "+1 Denarii per kill"
+  },
+  "BATTLE_STANDARD": {
+    "name": "Battle Standard",
+    "rarity": "RARE",
+    "buy": 32,
+    "sell": 10,
+    "effect": "Aura 2 tiles: allies gain +10% damage"
+  },
+  "HOURGLASS_OF_SATURN": {
+    "name": "Hourglass of Saturn",
+    "rarity": "RARE",
+    "buy": 34,
+    "sell": 12,
+    "effect": "+30% attack speed"
+  },
+  "STORM_JAVELIN": {
+    "name": "Storm Javelin",
+    "rarity": "RARE",
+    "buy": 34,
+    "sell": 12,
+    "effect": "RANGED ONLY: +22% damage."
+  },
+  "TYRIAN_DYE": {
+    "name": "Tyrian Dye",
+    "rarity": "UNCOMMON",
+    "buy": 22,
+    "sell": 8,
+    "effect": "MERCATOR EXCLUSIVE \u2014 +25% damage to Elites and Bosses."
+  },
+  "SCIPIO_PLAYBOOK": {
+    "name": "Scipio's Playbook",
+    "rarity": "RARE",
+    "buy": 38,
+    "sell": 14,
+    "effect": "MERCATOR EXCLUSIVE \u2014 +20% damage to whichever enemy in range has the highest HP."
+  },
+  "AQUILIFER_BANNER": {
+    "name": "Aquilifer's Banner",
+    "rarity": "RARE",
+    "buy": 42,
+    "sell": 15,
+    "effect": "MERCATOR EXCLUSIVE \u2014 AURA 2.5 tiles: nearby towers +14% damage and +10% attack speed."
+  },
+  "PUNIC_LEDGER": {
+    "name": "Punic Ledger",
+    "rarity": "RARE",
+    "buy": 36,
+    "sell": 13,
+    "effect": "MERCATOR EXCLUSIVE \u2014 Doubles kill-bonus accumulation rate (faster ramp to the +10% cap)."
+  },
+  "ALPHA_PACK_FANG": {
+    "name": "Alpha Pack Fang",
+    "rarity": "LEGENDARY",
+    "buy": 120,
+    "sell": 35,
+    "effect": "MELEE ONLY: applies heavy Bleed (2.4% HP/sec, 14s) on hit."
+  },
+  "WAR_HOUND_COLLAR": {
+    "name": "War Hound Collar",
+    "rarity": "LEGENDARY",
+    "buy": 120,
+    "sell": 35,
+    "effect": "Aura 2.5 tiles: allies gain +18% attack speed"
+  },
+  "BERSERKERS_MUZZLE": {
+    "name": "Berserker's Muzzle",
+    "rarity": "LEGENDARY",
+    "buy": 130,
+    "sell": 40,
+    "effect": "MELEE ONLY: +25% damage, +20% attack speed."
+  },
+  "DRUIDS_TORC": {
+    "name": "Druid's Torc",
+    "rarity": "LEGENDARY",
+    "buy": 120,
+    "sell": 35,
+    "effect": "Aura 2.5 tiles: allies gain +18% damage"
+  },
+  "CELTIC_LONGSWORD": {
+    "name": "Celtic Longsword",
+    "rarity": "LEGENDARY",
+    "buy": 120,
+    "sell": 35,
+    "effect": "MELEE ONLY: +25% damage."
+  },
+  "WARLORDS_WAR_PAINT": {
+    "name": "Warlord's War Paint",
+    "rarity": "LEGENDARY",
+    "buy": 140,
+    "sell": 45,
+    "effect": "+40% damage vs Bosses"
+  },
+  "GALLIC_SHIELD_BOSS": {
+    "name": "Gallic Shield Boss",
+    "rarity": "LEGENDARY",
+    "buy": 130,
+    "sell": 40,
+    "effect": "+18% damage, range +1 tile"
+  },
+  "DRUID_STAFF_FRAGMENT": {
+    "name": "Druid Staff Fragment",
+    "rarity": "LEGENDARY",
+    "buy": 130,
+    "sell": 40,
+    "effect": "Range +2 tiles"
+  },
+  "ELEPHANT_TUSK": {
+    "name": "Elephant Tusk",
+    "rarity": "LEGENDARY",
+    "buy": 130,
+    "sell": 40,
+    "effect": "+30% damage vs Bosses"
+  },
+  "HANNIBALS_STRATEGY_SCROLL": {
+    "name": "Hannibal's Strategy Scroll",
+    "rarity": "LEGENDARY",
+    "buy": 140,
+    "sell": 45,
+    "effect": "+2 Denarii per kill"
+  },
+  "NUMIDIAN_SADDLE": {
+    "name": "Numidian Saddle",
+    "rarity": "LEGENDARY",
+    "buy": 130,
+    "sell": 40,
+    "effect": "RANGED ONLY: +35% attack speed."
+  },
+  "FALCATA_BLADE": {
+    "name": "Falcata Blade",
+    "rarity": "LEGENDARY",
+    "buy": 120,
+    "sell": 35,
+    "effect": "MELEE ONLY: applies hot Bleed (3.0% HP/sec, 8s) on hit. Front-loaded vs Alpha Pack Fang."
+  },
+  "BARCA_WAR_HORN": {
+    "name": "Barca War Horn",
+    "rarity": "LEGENDARY",
+    "buy": 140,
+    "sell": 45,
+    "effect": "Aura 3 tiles: allies gain +12% damage, +10% attack speed"
+  },
+  "GILDED_SCALE_ARMOR": {
+    "name": "Gilded Scale Armor",
+    "rarity": "LEGENDARY",
+    "buy": 140,
+    "sell": 45,
+    "effect": "+22% damage, range +1 tile"
+  },
+  "CURSED_TORC": {
+    "name": "Cursed Torc",
+    "rarity": "LEGENDARY",
+    "buy": 130,
+    "sell": 40,
+    "effect": "Aura 2 tiles: enemies in range take +18% damage from all sources"
+  },
+  "NECROTIC_LONGSWORD": {
+    "name": "Necrotic Longsword",
+    "rarity": "LEGENDARY",
+    "buy": 130,
+    "sell": 40,
+    "effect": "MELEE ONLY: +28% damage."
+  },
+  "UNDEAD_ELEPHANT_BONE": {
+    "name": "Undead Elephant Bone",
+    "rarity": "LEGENDARY",
+    "buy": 150,
+    "sell": 50,
+    "effect": "+50% damage vs Bosses"
+  },
+  "LICH_GENERALS_SEAL": {
+    "name": "Lich General's Seal",
+    "rarity": "LEGENDARY",
+    "buy": 150,
+    "sell": 50,
+    "effect": "Aura 3 tiles: allies gain +12% damage, +15% attack speed"
+  },
+  "AQUILA_TALONS": {
+    "name": "Aquila Talons",
+    "rarity": "LEGENDARY",
+    "buy": 140,
+    "sell": 45,
+    "effect": "MELEE ONLY: tower can target flyers in melee range."
+  },
+  "SPEAR_OF_MARS": {
+    "name": "Spear of Mars",
+    "rarity": "LEGENDARY",
+    "buy": 150,
+    "sell": 50,
+    "effect": "MELEE ONLY: +5 tile range. Tower throws a visible spear at every target."
+  },
+  "JUPITERS_WRATH": {
+    "name": "Jupiter's Wrath",
+    "rarity": "LEGENDARY",
+    "buy": 160,
+    "sell": 50,
+    "effect": "Every attack arcs lightning to 3 nearby enemies (60% damage decay per jump) and stuns the primary 0.4s. Projectile sprite swaps to a thunder-bolt."
+  },
+  "FALX_BLADE": {
+    "name": "Falx Blade",
+    "rarity": "UNCOMMON",
+    "buy": 20,
+    "sell": 7,
+    "effect": "MELEE ONLY: grants CLEAVE. Each swing now hits EVERY enemy in melee range; secondary targets take 60% damage. Stacks with native cleave towers (Hastati, Triarius, Cohort Guard, etc.) by upgrading their cleave from 70% to 90% on secondaries."
+  },
+  "VOLLEY_QUIVER": {
+    "name": "Volley Quiver",
+    "rarity": "UNCOMMON",
+    "buy": 20,
+    "sell": 7,
+    "effect": "RANGED ONLY: +1 target per attack. A single-shot tower becomes dual-shot; an existing 2-shot becomes triple. Stacks additively on multi-shot combos (Decurion 2 → 3, Numidian Cavalry 3 → 4, Scorpion Bolt 3 → 4)."
+  },
+  "SIGIL_OF_SOL_INVICTUS": {
+    "name": "Sigil of Sol Invictus",
+    "rarity": "LEGENDARY",
+    "buy": 140,
+    "sell": 45,
+    "effect": "Any tower: +85% damage vs ALL Demon-faction enemies (Hellhounds, Fire Demons, Shadow Cavalry, Demon Legate, Daemon Imperator). Sun-god’s sigil burns the dark. Anti-Super-Demons specialist — carries W19/W20 endgame."
+  },
+  "TYRANTS_LAUREL": {
+    "name": "Tyrant's Laurel",
+    "rarity": "LEGENDARY",
+    "buy": 150,
+    "sell": 50,
+    "effect": "Any tower: +75% damage vs Bosses. The dedicated boss-hunter legendary — stacks multiplicatively with native boss bonuses (Primus Pilus, Scorpio, Triumphator). One per run."
+  },
+  "VESTAL_PYRE": {
+    "name": "Vestal Pyre",
+    "rarity": "UNCOMMON",
+    "buy": 20,
+    "sell": 7,
+    "effect": "Any tower: every attack applies BURN (5% maxHP/sec for 3s) on hit. Counts as a FIRE-damage source."
+  },
+  "VENOM_TIPPED_ARROWS": {
+    "name": "Venom-Tipped Arrows",
+    "rarity": "UNCOMMON",
+    "buy": 18,
+    "sell": 6,
+    "effect": "RANGED ONLY: applies POISON (5% maxHP/sec for 4s) on hit. The ranged-tower answer to Poisoned Blade — finally lets archers / scorpios / numidians stack a DoT."
+  },
+  "SERPENT_AMULET": {
+    "name": "Serpent Amulet",
+    "rarity": "UNCOMMON",
+    "buy": 22,
+    "sell": 7,
+    "effect": "Any tower: applies POISON (3% maxHP/sec for 5s) on hit. Gentler stack than Poisoned Blade but equips on ANY tower (melee or ranged)."
+  },
+  "WITCHS_VENOM": {
+    "name": "Witch's Venom",
+    "rarity": "RARE",
+    "buy": 38,
+    "sell": 12,
+    "effect": "Any tower: applies POISON (8% maxHP/sec for 5s) on hit. Heavy poison — the strongest non-Legendary DoT in the catalog. Pairs with bleed / burn items for tri-DoT stacks."
+  }
+}
