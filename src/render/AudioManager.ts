@@ -62,7 +62,7 @@ function tone(freq: number, durationSec: number, type: OscillatorType = 'sine', 
 
 export const SFX = {
   // ─── MELEE FAMILY (distinct from ranged twangs) ──────────────────────────
-  // Quick high slash — light melee (Milites, Auxilia, Pugio Assassin)
+  // Quick high slash — light melee (Milites, Skizzer, Pugio Assassin)
   meleeSwordLight: () => { tone(540, 0.07, 'sawtooth', 0.14, 220); },
   // Heavy clang + low thud — Centurion, Primus Pilus, Imperator Guard, Cohort Guard, Praetorian Wall, Cataphract, Evocatus
   meleeSwordHeavy: () => { tone(180, 0.10, 'square', 0.20, 90); setTimeout(()=>tone(110, 0.18, 'sawtooth', 0.22, 60), 35); },
