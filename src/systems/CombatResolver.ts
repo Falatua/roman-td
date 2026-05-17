@@ -1500,8 +1500,15 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       break;
     }
     case TowerType.HORSEMAN:
-      // CHARGE: marks the target so the next hit (from anyone) hits +20% harder
+      // CHARGE: marks the target so the next hit (from anyone) hits +20% harder.
+      // 2026-05-17 — POISON ADDITION: every Horseman strike now also applies
+      // a 4-second poison DoT (5% maxHP/sec, scales with tier). The poison
+      // ticks through other DoTs because it's a per-tower signature, not an
+      // equipped item slot — stacks with marks, burns, and bleeds. Lore: the
+      // cavalryman's lance tip is smeared with venom from the Pontic herbal
+      // tradition (a real practice in late-Republican mercenary cavalry).
       pushStatus(target, StatusEffectKind.MARK, dur(2), 0.20, tier);
+      pushStatus(target, StatusEffectKind.POISON, dur(4), 0.05, tier);
       break;
     case TowerType.TURMA_LANCERS:
       // CHARGE: heavier double-stack mark (+35% vs +20% Horseman baseline).

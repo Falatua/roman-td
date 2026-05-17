@@ -60,15 +60,19 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   //
   // CARTHAGE_SPEARMAN: linen-padded armor pre-treated with Carthaginian
   //   pitch — drilled to handle fire arrows. Modest divine resist (Baal
-  //   worship). Full siege (heavy stone breaks them like everyone else).
-  [EnemyType.CARTHAGE_SPEARMAN]: { ranged: 0.55, melee: 0.75, bleed: 0.65, fire: 0.65, divine: 0.75 },
-  // NUMIDIAN_RIDER: light cavalry skirmisher. Hardest to land siege
-  //   shots on (constantly moving). Full fire / divine — light kit.
-  [EnemyType.NUMIDIAN_RIDER]: { ranged: 0.7, slow: 0.35, bleed: 0.7, siege: 0.55 },
-  // CARTHAGE_ELITE_GUARD: bronze cuirass + ritual blessing. Resists
-  //   divine (sacred armor) and fire (bronze conducts but doesn't
-  //   ignite). Siege still bypasses metal armor (crushing blows).
-  [EnemyType.CARTHAGE_ELITE_GUARD]: { melee: 0.6, ranged: 0.45, bleed: 0.5, fire: 0.6, divine: 0.55 },
+  //   worship). 2026-05-17 — bumped siege to 1.30× (+30%): heavy stones
+  //   pulverize lightly-armored line infantry; siege is now the clean
+  //   answer for the W7-W8 Spearman wall.
+  [EnemyType.CARTHAGE_SPEARMAN]: { ranged: 0.55, melee: 0.75, bleed: 0.65, fire: 0.65, divine: 0.75, siege: 1.30 },
+  // NUMIDIAN_RIDER: light cavalry skirmisher. 2026-05-17 — flipped from
+  //   siege-resistant (0.55) to siege-vulnerable (1.15). A bouncing
+  //   ballista shot through a packed cavalry line ruins horses, not just
+  //   riders. Faction-wide siege weakness applies here too.
+  [EnemyType.NUMIDIAN_RIDER]: { ranged: 0.7, slow: 0.35, bleed: 0.7, siege: 1.15 },
+  // CARTHAGE_ELITE_GUARD: bronze cuirass + ritual blessing. 2026-05-17 —
+  //   siege bumped from default 1.0 to 1.40× (+40%). Bronze armor cracks
+  //   under crushing stone; this is the unit's hardest counter now.
+  [EnemyType.CARTHAGE_ELITE_GUARD]: { melee: 0.6, ranged: 0.45, bleed: 0.5, fire: 0.6, divine: 0.55, siege: 1.40 },
   // WAR ELEPHANT — melee resist buffed 0.40 → 0.25 (hide is much tougher
   // to crack with swords now) and bleed dropped 0.35 → 0.20 (elephants
   // don't bleed easily — thick hide). Combined effect: melee + bleed
@@ -81,7 +85,11 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // dedicated answer for elephant waves. The previous 0.55 (siege-
   // resistant) reading was inverted on purpose.
   [EnemyType.WAR_ELEPHANT]: { melee: 0.25, ranged: 0.6, slow: 0.25, burn: 0.6, poison: 0.3, bleed: 0.20, siege: 1.45 },
-  [EnemyType.HANNIBAL_BARCA]: { melee: 0.65, ranged: 0.5, slow: 0.2, poison: 0.4, bleed: 0.55, burn: 0.85 },
+  // HANNIBAL_BARCA: 2026-05-17 — siege bumped from default 1.0 to 1.25×
+  // (+25%). The whole Carthaginian roster is now siege-soft, the boss
+  // included. Siege towers (Onager, Ballistarius, Carroballista, Vulcan
+  // Engineer, Colossus Onager) are the clean carry for W10.
+  [EnemyType.HANNIBAL_BARCA]: { melee: 0.65, ranged: 0.5, slow: 0.2, poison: 0.4, bleed: 0.55, burn: 0.85, siege: 1.25 },
 
   // LATE-WAVE RANGED RESISTANCE PASS (2026-05): every non-boss enemy
   // that shows up after W10 had its `ranged` multiplier tightened so

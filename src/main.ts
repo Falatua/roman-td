@@ -1436,10 +1436,10 @@ async function boot() {
       body: `Wave <b>${nextWave}</b> has Undead Celts. Faction takes <b style="color:#ffd34d">+25% FIRE damage</b> and <b style="color:#ffd34d">+50% DIVINE damage</b> — burn the bones, smite the spirits. <b style="color:#ff5050">Poison and bleed deal 0</b> (no flesh to corrupt), so DoT-stacker builds will whiff this wave.`,
       color: '#ff8a22'
     });
-    // Living Carthage — melee favored.
+    // Living Carthage — melee + SIEGE favored.
     if (hasLivingCarthage && !isBossWave) tips.push({
-      headline: '⚔ CARTHAGE — GET CLOSE',
-      body: `Wave <b>${nextWave}</b> brings living Carthage troops. Faction takes <b style="color:#ffd34d">+30% MELEE damage</b> and resists ranged by 20%. Push your <b style="color:#ffd34d">Centurion / Primus Pilus / Cohort Guard / Imperator Guard</b> right up against the path. Spearmen drilled in pitch-treated linen also resist fire — bleed is the safer DoT here.`,
+      headline: '⚔ CARTHAGE — MELEE + SIEGE WIN',
+      body: `Wave <b>${nextWave}</b> brings living Carthage troops. Faction takes <b style="color:#ffd34d">+30% MELEE</b> and resists ranged by 20%. <b style="color:#ff9933">SIEGE is now a hard answer too</b> — every Carthage unit is siege-vulnerable: Spearman <b>+30%</b>, Numidian Rider <b>+15%</b>, Sacred Band Elite Guard <b>+40%</b>, Hannibal himself <b>+25%</b>. Park Onagers + Ballistarius on the path alongside your <b>Centurion / Primus Pilus / Cohort Guard / Imperator Guard</b>. Spearmen drilled in pitch-treated linen still resist fire — bleed is the safer DoT.`,
       color: '#ff7733'
     });
     // Undead Carthage — fire-immune.

@@ -493,7 +493,7 @@
     "melee": true,
     "spriteSheet": 2,
     "spriteCell": 1,
-    "ability": "POLEARM REACH (range 2.0): CHARGE: applies Mark on hit (+20% next damage from anyone). Fast cavalry, +20% ground.",
+    "ability": "POLEARM REACH (range 2.0): CHARGE applies MARK on hit (+20% next damage from anyone). 2026-05-17 — every strike also smears VENOM on the lance: 4s POISON DoT (5% maxHP/sec, scales with tier). Mark + poison + +20% vs ground = fast cavalry that erodes single targets while everyone else piles on.",
     "critChance": 0.18,
     "critMult": 2.2
   },

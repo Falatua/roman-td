@@ -524,7 +524,7 @@ function renderTab(tab: string): string {
           ${noteCard('Solar Flare (Solar Priest)', 'Damage IGNORES all faction resistances. The endgame answer to Undead/Demon.')}
           ${noteCard('Earthshatter (Colossus Onager)', 'Every hit knocks the target backward along the path.')}
           ${noteCard('Siege Kickback (Ballistarius)', 'Every 3rd shot knocks the target back.')}
-          ${noteCard('Charge (Horseman combo)', 'Every hit Marks target +20% next-damage from anyone.')}
+          ${noteCard('Charge + Venom (Horseman combo)', 'Every hit MARKS target (+20% next-damage from anyone) <b>AND</b> applies <b style="color:#88ff88">POISON</b> (5% maxHP/sec, 4s, scales with tier). Mark + DoT + +20% vs ground = the early-game answer to any single priority target.')}
           ${noteCard('Trample (War Chariot combo)', 'Every 4th attack stuns AND knocks back ground enemies. +50% vs bosses.')}
           ${noteCard('Damage-Type Identity', 'Scorpio +40% vs Bosses · Sagittarius +45% vs Flyers · Venator +45% vs Flyers · Aquila Venator +75% vs Flyers · Horseman +20% vs ground · Turma Lancers +30% vs ground · Scorpion Bolt +12% vs Flyers/Bosses · Nemesis Engine +200% vs Flyers · Pontifex +200% vs Bosses · Carthage Scourge +250% vs Bosses · Hannibal\'s Nightmare +200% vs War Elephants.')}
           ${noteCard('Triarius Global Aura', '+12% global damage to every other tower while a Triarius is on the field.')}
