@@ -978,5 +978,31 @@
     "ability": "BEAST FURY (gauge): each consecutive attack on the SAME target builds 1 fury stack (max 8). At 8, the next strike is a FRENZY: 6× damage + 1s STUN, then gauge resets. Vs Bosses, gauge fills 2× faster AND FRENZY damage rises to 8×. Polearm reach 2.0. No aura — stack-payoff sustained burst.",
     "critChance": 0.18,
     "critMult": 2.2
+  },
+  "BEAST_HUNTER": {
+    "name": "Beast Hunter",
+    "damageType": "PHYS_MELEE",
+    "baseDps": 22,
+    "attackSpeed": 2.8,
+    "range": 1.5,
+    "kind": "BASE",
+    "melee": true,
+    "tierBand": 1,
+    "ability": "BEAST-BANE: +200% damage vs animal-faction enemies (Feral / Rabid / Alpha Dog · Demon Hellhound · War Elephant · Undead War Elephant). Lightning-fast dual-blade slashes (2.8/s). No combos — standalone tower designed to carry the early-game dog and elephant pressure. Pure melee, range 1.5.",
+    "critChance": 0.10,
+    "critMult": 1.8
+  },
+  "BEAST_SLAYER": {
+    "name": "Beast Slayer",
+    "damageType": "PHYS_MELEE",
+    "baseDps": 36,
+    "attackSpeed": 2.6,
+    "range": 1.5,
+    "kind": "BASE",
+    "melee": true,
+    "tierBand": 2,
+    "ability": "BEAST-BANE: +200% damage vs animal-faction enemies. Veteran Beast Hunter upgrade — heavier strike, still fast (2.6/s), better crit profile (15% / 2.0×). Standalone tower (no combo recipes), pure melee, range 1.5. Specialist answer to the W3 Alpha Dog, the W9-10 War Elephant pair, and the W14 Undead Elephant.",
+    "critChance": 0.15,
+    "critMult": 2.0
   }
 }

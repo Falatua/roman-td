@@ -160,8 +160,12 @@ export const BASE_TOWER_TYPES: TowerType[] = [
 // (the original 6 + these 5), making T3 the deepest pool in the game.
 // T1 has no bonus towers — all T1 rolls draw from the 10-strong BASE pool.
 export const TIER_BONUS_TOWER_TYPES: Record<number, TowerType[]> = {
-  1: [],
-  2: [TowerType.RETIARIUS, TowerType.BALLISTARIUS, TowerType.OPTIO, TowerType.PUGIO_ASSASSIN, TowerType.ARCUBALLISTA],
+  // 2026-05-17 — Beast Hunter (T1) + Beast Slayer (T2) added as
+  // standalone early-game beast-bane towers. Players see them in the
+  // standard prospect roll. No combo dependencies, so they can sit on
+  // the field permanently without being "stuck" ingredients.
+  1: [TowerType.BEAST_HUNTER],
+  2: [TowerType.RETIARIUS, TowerType.BALLISTARIUS, TowerType.OPTIO, TowerType.PUGIO_ASSASSIN, TowerType.ARCUBALLISTA, TowerType.BEAST_SLAYER],
   3: [
     TowerType.VENATOR, TowerType.IGNIFER, TowerType.SPECULATOR, TowerType.FLAMEN, TowerType.CARROBALLISTA, TowerType.AQUILA_VENATOR,
     // ── 2026-05-15 v9 promotions ───────────────────────────────────────

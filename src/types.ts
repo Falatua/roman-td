@@ -126,7 +126,13 @@ export enum TowerType {
   //   • BESTIARIUS — first tower with a RAGE GAUGE that builds per-hit
   //     and unleashes a high-multiplier FRENZY STRIKE + stun.
   SIGNIFERS_DRACONARIUS = 'SIGNIFERS_DRACONARIUS',
-  BESTIARIUS = 'BESTIARIUS'
+  BESTIARIUS = 'BESTIARIUS',
+  // 2026-05-17 — two early-game beast-hunter towers (T1 + T2). Specialize
+  // in killing animal-faction enemies (dogs, hellhounds, war elephants).
+  // Standalone — not part of any combo recipe. Visually a darker-skinned
+  // shirtless dual-blade gladiator (Roman DIMACHAERUS class).
+  BEAST_HUNTER = 'BEAST_HUNTER',
+  BEAST_SLAYER = 'BEAST_SLAYER'
 }
 
 export enum EnemyType {

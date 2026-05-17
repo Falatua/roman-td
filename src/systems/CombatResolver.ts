@@ -16,7 +16,7 @@
 // Pure data; no DOM/Pixi imports. Tested in tests/damage.test.ts +
 // tests/towers.test.ts.
 
-import { Tower, Enemy, TargetingMode, DamageType, StatusEffectKind, EntityType, TowerType } from '../types';
+import { Tower, Enemy, TargetingMode, DamageType, StatusEffectKind, EntityType, TowerType, EnemyType } from '../types';
 import { GameStateShape } from '../GameState';
 import { GRID, KILL_BONUS_RATE, KILL_BONUS_MAX_PCT, FACTION_WEATHER } from '../constants';
 import { towerEffectiveStats, towerPerAttackDamageBase } from './TowerSystem';
@@ -80,6 +80,19 @@ export interface CombatHooks {
   onProjectileFire: (tower: Tower, target: Enemy, damage: number) => void;
 }
 
+// 2026-05-17 — BEAST_ENEMY_TYPES: animal-faction enemies that take +200%
+// damage from Beast Hunter + Beast Slayer towers. Covers the early-game
+// dog pressure (W1-W3), the W9-W10 elephant pair, the W14 undead elephant
+// rebirth, and the W19 hellhound demon swarm.
+const BEAST_ENEMY_TYPES = new Set<EnemyType>([
+  EnemyType.FERAL_DOG,
+  EnemyType.RABID_DOG,
+  EnemyType.ALPHA_DOG,
+  EnemyType.DEMON_HELLHOUND,
+  EnemyType.WAR_ELEPHANT,
+  EnemyType.UNDEAD_WAR_ELEPHANT,
+]);
+
 // Tower types that fight in melee (no projectile, instant damage with slash VFX).
 const MELEE_TYPES = new Set<TowerType>([
   TowerType.MILITES, TowerType.HASTATI, TowerType.TRIARIUS, TowerType.CENTURION,
@@ -92,6 +105,9 @@ const MELEE_TYPES = new Set<TowerType>([
   // wields a sanctified ritual blade; the Rite of Doom + Hellfire curse
   // applies on melee strike rather than from divine range.
   TowerType.PONTIFEX_MAXIMUS,
+  // 2026-05-17 — Beast-hunter pair (T1 + T2). Dual-blade gladiators
+  // specializing in killing animals; standalone (no combo recipes).
+  TowerType.BEAST_HUNTER, TowerType.BEAST_SLAYER,
   // RETIARIUS (renamed from LANCEARIUS in 2026-05 v9 along with a sprite
   // swap to the trident+net gladiator) and CLIBANARIUS are both melee.
   // Retiarius keeps the first-hit ×2 signature (now flavored as the net
@@ -579,6 +595,15 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if ((t.type === TowerType.SAGITTARIUS || t.type === TowerType.VENATOR) && target.isFlyer) damage *= 1.45;
       if (t.type === TowerType.AQUILA_VENATOR && target.isFlyer) damage *= 1.75;
       if (t.equippedItems.includes('FLYER_BANE') && target.isFlyer) damage *= 1.30;
+      // 2026-05-17 — BEAST-BANE. Beast Hunter (T1) + Beast Slayer (T2)
+      // deal +200% damage (×3 total) to animal-faction enemies: dogs
+      // (Feral / Rabid / Alpha), Demon Hellhound, and both elephant
+      // variants. Standalone early-game answer to the W1-W3 dog wave
+      // and the W9-W10 + W14 elephant pressure. Stacks multiplicatively
+      // with marks, items, and other riders.
+      if ((t.type === TowerType.BEAST_HUNTER || t.type === TowerType.BEAST_SLAYER) && BEAST_ENEMY_TYPES.has(target.type)) {
+        damage *= 3.0;
+      }
       // 2026-05-15 SIGIL OF SOL INVICTUS — +85% damage vs any Demon-
       // faction enemy. Anti-late-game-Super-Demons carry. Stacks
       // multiplicatively with other archetype riders and items.
