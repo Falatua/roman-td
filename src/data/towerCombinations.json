@@ -641,7 +641,7 @@
     "tier": 4,
     "ingredients": [
       {
-        "type": "VENATOR",
+        "type": "BEAST_SLAYER",
         "minTier": 3
       },
       {

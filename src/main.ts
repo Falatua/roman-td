@@ -4238,19 +4238,13 @@ async function boot() {
           if (target && target.hp > 0) {
             const tw = state.towers.get(p.sourceTowerId);
             if (tw) applyDamageAndStatus(state, tw, target, p.damage, combatHooks);
-            // STUCK ARROWS — bosses retain up to 5 embedded shafts visually for
-            // the rest of the wave. Embed-flagged projectiles only (arrows,
-            // javelins, pilums, hastas). Cap 5 per boss; pop oldest on overflow.
-            if (target.isBoss && p.embedAfter) {
-              if (!target.stuckArrows) target.stuckArrows = [];
-              const inboundAngle = Math.atan2(target.y - p.spawnY, target.x - p.spawnX);
-              // Small random offset within the boss silhouette so multiple
-              // arrows don't stack directly on the same pixel.
-              const offX = (Math.random() - 0.5) * 14;
-              const offY = (Math.random() - 0.5) * 14;
-              target.stuckArrows.push({ spriteKey: p.spriteKey, angle: inboundAngle, offX, offY });
-              if (target.stuckArrows.length > 5) target.stuckArrows.shift();
-            }
+            // 2026-05-17 — STUCK ARROWS REMOVED. The per-boss embedded
+            // shafts (up to 5 sprites per boss, redrawn every frame with
+            // per-frame Math.atan2/random offset math) were a non-trivial
+            // perf tax in heavy late-game waves with twin / ambush /
+            // surprise bosses on screen. The hit-spark + typed-impact
+            // VFX from onHit still fires, so projectile impacts still
+            // read clearly — we just don't keep a visual residue.
             // splash: damage other enemies in radius
             if (p.splash > 0) {
               const r = p.splash * GRID.TILE;

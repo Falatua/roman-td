@@ -41,7 +41,7 @@ const MANIFEST: Record<string, string> = {
   AQUILA_VENATOR: 't_new_aquila_venator.png',
 
   COHORT_GUARD: 't2_cohort_guard.png', WAR_CHARIOT: 't2_war_chariot.png', EAGLE_STANDARD: 't2_eagle_standard.png',
-  PLAGUE_CART: 't2_plague_cart.png', NUMIDIAN_CAVALRY: 't2_numidian_cavalry.png', PRAETORIAN_WALL: 't2_praetorian_wall.png',
+  PLAGUE_CART: 't2_plague_cart.png', NUMIDIAN_CAVALRY: 't_new_eques.png', PRAETORIAN_WALL: 't2_praetorian_wall.png',
   AERARIUM: 't3_aerarium.png', SIEGE_ONAGER: 't3_siege_onager.png', AQUILIFER_TITAN: 't3_aquilifer_titan.png',
   INFERNO_CART: 't3_inferno_cart.png', FROZEN_LEGION: 't3_frozen_legion.png', JULIUS_CAESAR: 't3_julius_caesar.png',
   HANNIBALS_NIGHTMARE: 't3_hannibals_nightmare.png', GOD_OF_WAR: 't3_god_of_war.png', DECOY_TOTEM: 't3_decoy_totem.png',

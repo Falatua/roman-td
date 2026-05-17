@@ -1835,42 +1835,13 @@ export class RenderEngine {
         entry.wounds.x = entry.sp.x;
         entry.wounds.y = entry.sp.y;
       }
-      // ─── STUCK ARROWS ON BOSS ───────────────────────────────────────
-      // For bosses only: render up to 5 embedded projectiles around the
-      // boss silhouette. Rebuild the bin only when the count changes so
-      // we don't churn child Sprites every frame.
-      if (e.isBoss) {
-        if (!entry.stuckArrowsBin) {
-          entry.stuckArrowsBin = new Container();
-          this.layers.enemies.addChild(entry.stuckArrowsBin);
-        }
-        const bin = entry.stuckArrowsBin;
-        const stuck = e.stuckArrows ?? [];
-        if (stuck.length !== (entry.stuckArrowsCount ?? 0)) {
-          while (bin.children.length > 0) {
-            const c = bin.children[bin.children.length - 1];
-            bin.removeChild(c);
-            (c as any).destroy?.();
-          }
-          for (const st of stuck) {
-            const arrowTex = tex(st.spriteKey) ?? tex('PROJ_ARROW');
-            if (!arrowTex) continue;
-            const sp = new Sprite(arrowTex);
-            sp.anchor.set(0.5, 0.5);
-            sp.width = 22; sp.height = 22;
-            sp.x = st.offX;
-            sp.y = st.offY;
-            // Rotate the shaft so its tail points back where it came from —
-            // visually it reads as "stuck and pointing into the boss."
-            sp.rotation = st.angle;
-            sp.alpha = 0.95;
-            bin.addChild(sp);
-          }
-          entry.stuckArrowsCount = stuck.length;
-        }
-        bin.x = entry.sp.x;
-        bin.y = entry.sp.y;
-      }
+      // 2026-05-17 — STUCK ARROWS REMOVED for perf (per-frame Sprite
+      // rebuild on count change + per-boss bin container update each
+      // frame was non-trivial in twin/ambush boss combat). The hit-spark
+      // + typed-impact VFX from drawGore / damage-type-impact still
+      // fires on every projectile landing, so the player still sees the
+      // hit clearly. The stuckArrowsBin / stuckArrowsCount fields on
+      // entry are kept as legacy no-ops so the type stays stable.
       // ─── STATUS BAR RESET (2026-05 perf) ──────────────────────────
       // Clear all per-frame children of statusBar FIRST. Previously the
       // clear ran AFTER the shield/mutation indicators were added (line

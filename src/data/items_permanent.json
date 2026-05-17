@@ -298,7 +298,7 @@
     "rarity": "UNCOMMON",
     "buy": 20,
     "sell": 7,
-    "effect": "RANGED ONLY: +1 target per attack. A single-shot tower becomes dual-shot; an existing 2-shot becomes triple. Stacks additively on multi-shot combos (Decurion 2 → 3, Numidian Cavalry 3 → 4, Scorpion Bolt 3 → 4)."
+    "effect": "RANGED ONLY: +1 target per attack. A single-shot tower becomes dual-shot; an existing 2-shot becomes triple. Stacks additively on multi-shot combos (Decurion 2 → 3, Eques 3 → 4, Scorpion Bolt 3 → 4)."
   },
   "SIGIL_OF_SOL_INVICTUS": {
     "name": "Sigil of Sol Invictus",
