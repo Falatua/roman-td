@@ -1,5 +1,20 @@
 import { defineConfig } from 'vite';
 import fs from 'fs';
+import { execSync } from 'child_process';
+
+// 2026-05-17 — Build-time version string baked into index.html via the
+// `vite-html-version` plugin below. Format: "v<semver> · YYYY-MM-DD ·
+// <short-sha>" so players can confirm at a glance which deploy they're
+// running, and the user can compare against the latest commit on GitHub.
+//
+// All pieces are read at build time, so each `vite build` produces a
+// stamp that uniquely identifies the deploy. Failures (missing file,
+// no git history, no internet on a stale clone) fall back gracefully.
+const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
+let gitSha = '';
+try { gitSha = execSync('git rev-parse --short HEAD').toString().trim(); } catch { /* not a git checkout */ }
+const buildDate = new Date().toISOString().slice(0, 10);  // YYYY-MM-DD (UTC)
+const APP_VERSION = `v${pkg.version}${gitSha ? ' · ' + gitSha : ''} · ${buildDate}`;
 
 export default defineConfig({
   base: './',
@@ -41,6 +56,15 @@ export default defineConfig({
             res.statusCode = 200; res.end('ok');
           });
         });
+      }
+    },
+    // 2026-05-17 — Substitutes %APP_VERSION% in index.html at build time
+    // (and on the dev server) so the loading screen shows the current
+    // semver + short git SHA + build date above the eagle banner.
+    {
+      name: 'html-version',
+      transformIndexHtml(html: string) {
+        return html.replace(/%APP_VERSION%/g, APP_VERSION);
       }
     }
   ]
