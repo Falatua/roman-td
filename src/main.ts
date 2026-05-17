@@ -182,19 +182,32 @@ async function boot() {
     next.node.style.cursor = 'pointer';
     const stack = ensureBannerStack();
     stack.appendChild(next.node);
-    const finish = () => {
+    const finishCurrent = () => {
       if (bannerActive?.node !== next.node) return;
       if (bannerActive.timer != null) clearTimeout(bannerActive.timer);
       next.node.remove();
       bannerActive = null;
       processBannerQueue();
     };
-    // Universal click-to-skip — keeps modals' behavior, also lets the player
-    // dismiss informational banners they've already absorbed.
-    next.node.addEventListener('click', finish, { once: true });
+    // 2026-05-17 — ONE-CLICK QUEUE DISMISS. Previously, clicking the active
+    // banner only removed it and slid the next one in. On the first run
+    // (or after a wave clear) up to five banners could queue back-to-back,
+    // forcing the player through five separate clicks. Now a single click
+    // on ANY banner removes the current one AND empties the rest of the
+    // queue — one click = everything dismissed. Auto-timer dismissal still
+    // advances the queue normally (auto-dismissed informational banners
+    // shouldn't suppress queued modals the player may want to read).
+    const finishAllOnClick = () => {
+      // Drain any queued banner nodes that weren't shown yet so the
+      // player isn't ambushed by a fresh banner sliding in after the
+      // click. Discarded nodes never attached to the DOM so no removal.
+      bannerQueue.length = 0;
+      finishCurrent();
+    };
+    next.node.addEventListener('click', finishAllOnClick, { once: true });
     let timer: number | null = null;
     if (next.durationMs > 0 && !next.opts.modal) {
-      timer = window.setTimeout(finish, next.durationMs);
+      timer = window.setTimeout(finishCurrent, next.durationMs);
     }
     bannerActive = { node: next.node, timer };
   }
