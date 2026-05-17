@@ -1184,6 +1184,78 @@ async function boot() {
     }, 14000);
   }
 
+  // 2026-05-17 — Surprise event info chip. Fires once at the start of an
+  // invasion / uprising event so the player isn't lost when the screen
+  // suddenly tints + enemies spawn from unusual locations. Non-blocking
+  // small chip in the top-left of the play area, dismissible by click,
+  // auto-fades after 6 seconds. Color-coded to match the event tint
+  // (red for invasion, purple for uprising).
+  function showSurpriseEventInfoChip(kind: 'INVASION' | 'UPRISING') {
+    document.getElementById('surprise-info-chip')?.remove();
+    const stage = document.getElementById('stage-wrap');
+    if (!stage) return;
+    const accent = kind === 'INVASION' ? '#ff7733' : '#a050ff';
+    const headline = kind === 'INVASION' ? '⚔ INVASION' : '☠ UPRISING';
+    const body = kind === 'INVASION'
+      ? 'Barbarians breach the perimeter! Enemies are coming from all four sides of the map this wave — not from the cave. Survive to claim a reward.'
+      : 'The dead are rising! Skeletal portals open in the center of the map this wave — enemies emerge from the ground, not the cave. Survive to claim a reward.';
+    const chip = document.createElement('div');
+    chip.id = 'surprise-info-chip';
+    chip.style.cssText = `
+      position:absolute;
+      top:54px; left:12px;
+      width:240px;
+      padding:10px 24px 10px 12px;
+      background:linear-gradient(180deg,#1a1410,#0c0a08);
+      border:2px solid ${accent};
+      color:#e8d6a8;
+      font-family:'Courier New',monospace;
+      font-size:11px;
+      letter-spacing:0.6px;
+      line-height:1.45;
+      box-shadow:0 0 16px ${accent}55;
+      z-index:58;
+      cursor:pointer;
+      animation:surpriseChipIn 0.40s ease-out both;
+    `;
+    chip.innerHTML = `
+      <div style="font-size:10px;letter-spacing:2.5px;color:${accent};font-weight:bold;margin-bottom:5px">${headline}</div>
+      <div>${body}</div>
+      <button id="surprise-info-x" title="Dismiss"
+        style="position:absolute;top:4px;right:4px;background:transparent;border:none;color:#aa9a4a;font-size:14px;line-height:1;cursor:pointer;padding:2px 6px;font-weight:bold">×</button>
+    `;
+    if (!document.getElementById('surprise-info-style')) {
+      const s = document.createElement('style');
+      s.id = 'surprise-info-style';
+      s.textContent = `
+        @keyframes surpriseChipIn {
+          0% { opacity:0; transform:translateX(-8px); }
+          100% { opacity:1; transform:translateX(0); }
+        }
+        @keyframes surpriseChipOut {
+          0% { opacity:1; transform:translateX(0); }
+          100% { opacity:0; transform:translateX(-8px); }
+        }
+        #surprise-info-x:hover { color:#fff8e0; }
+      `;
+      document.head.appendChild(s);
+    }
+    stage.appendChild(chip);
+    const dismiss = () => {
+      chip.style.animation = 'surpriseChipOut 0.35s ease-in both';
+      setTimeout(() => chip.remove(), 380);
+    };
+    (chip.querySelector('#surprise-info-x') as HTMLButtonElement | null)?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dismiss();
+    });
+    // Auto-fade after 6 seconds. Long enough to read, short enough to
+    // not clutter the screen mid-combat.
+    setTimeout(() => {
+      if (document.getElementById('surprise-info-chip')) dismiss();
+    }, 6000);
+  }
+
   function showPhalanxWarning(thisWave: number) {
     document.getElementById('phalanx-warning')?.remove();
     const b = document.createElement('div');
@@ -1678,23 +1750,49 @@ async function boot() {
       if (chip) chip.remove();
       return;
     }
+    // 2026-05-17 — moved from bottom-left → top-left of stage so it
+    // stops blocking the wave-brief content beneath. Also collapsible
+    // now via ▾/▸ caret in the top-right of the chip; localStorage
+    // remembers the player's preference across waves.
+    const collapseKey = 'roman_td_tower_queue_collapsed';
+    let collapsed = false;
+    try { collapsed = localStorage.getItem(collapseKey) === '1'; } catch { /* ignore */ }
     if (!chip) {
       chip = document.createElement('div');
       chip.id = 'tower-queue-chip';
-      // 2026-05 v6: chip is interactive — click PUT BACK to refund the
-      // head of the queue. Mirrors the prospect put-back affordance.
-      chip.style.cssText = `position:absolute;left:8px;bottom:8px;padding:8px 12px;background:linear-gradient(180deg,#1a3a20,#0c1a08);border:2px solid #88ff88;color:#fff8e0;font-family:'Courier New',monospace;font-size:11px;z-index:62;box-shadow:0 0 14px rgba(136,255,136,0.4);text-shadow:1px 1px 0 #000;`;
+      chip.style.cssText = `position:absolute;left:8px;top:8px;padding:8px 12px;background:linear-gradient(180deg,#1a3a20,#0c1a08);border:2px solid #88ff88;color:#fff8e0;font-family:'Courier New',monospace;font-size:11px;z-index:62;box-shadow:0 0 14px rgba(136,255,136,0.4);text-shadow:1px 1px 0 #000;max-width:200px;`;
       document.getElementById('stage-wrap')?.appendChild(chip);
     }
     const head = queue[0];
     const headPrice = purchasedTowerPrice(head);
     const moreLine = queue.length > 1 ? `<div style="font-size:9px;color:#cdb98a;margin-top:2px">+${queue.length - 1} more queued</div>` : '';
-    chip.innerHTML = `
-      <div style="font-size:9px;letter-spacing:2px;color:#88ff88;font-weight:bold">📥 PLACE NEXT</div>
-      <div style="font-size:13px;font-weight:bold;color:#ffd34d;margin-top:2px">${head.type.replace(/_/g,' ')} <span style="color:#fff">T${head.tier}</span></div>
-      <div style="font-size:9px;color:#cdb98a;margin-top:1px">click any empty tile</div>
-      ${moreLine}
-      <button id="tower-queue-putback" style="margin-top:6px;width:100%;background:#3a1a1a;color:#e8d6a8;border:1px solid #a04040;padding:3px 6px;font-family:inherit;font-size:10px;letter-spacing:1px;cursor:pointer">PUT BACK (refund ${headPrice}g)</button>`;
+    const toggleBtn = `<button id="tower-queue-toggle" title="${collapsed ? 'Expand' : 'Collapse'}" style="position:absolute;top:2px;right:4px;background:transparent;border:none;color:#88ff88;font-size:13px;line-height:1;cursor:pointer;padding:2px 4px;font-weight:bold">${collapsed ? '▸' : '▾'}</button>`;
+    if (collapsed) {
+      chip.style.padding = '6px 22px 6px 10px';
+      chip.style.maxWidth = '';
+      chip.innerHTML = `
+        ${toggleBtn}
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:14px">📥</span>
+          <span style="font-size:11px;color:#ffd34d;font-weight:bold">${queue.length} TOWER${queue.length === 1 ? '' : 'S'}</span>
+        </div>`;
+    } else {
+      chip.style.padding = '8px 22px 8px 12px';
+      chip.style.maxWidth = '200px';
+      chip.innerHTML = `
+        ${toggleBtn}
+        <div style="font-size:9px;letter-spacing:2px;color:#88ff88;font-weight:bold">📥 PLACE NEXT</div>
+        <div style="font-size:13px;font-weight:bold;color:#ffd34d;margin-top:2px">${head.type.replace(/_/g,' ')} <span style="color:#fff">T${head.tier}</span></div>
+        <div style="font-size:9px;color:#cdb98a;margin-top:1px">click any empty tile</div>
+        ${moreLine}
+        <button id="tower-queue-putback" style="margin-top:6px;width:100%;background:#3a1a1a;color:#e8d6a8;border:1px solid #a04040;padding:3px 6px;font-family:inherit;font-size:10px;letter-spacing:1px;cursor:pointer">PUT BACK (refund ${headPrice}g)</button>`;
+    }
+    const toggleEl = chip.querySelector<HTMLButtonElement>('#tower-queue-toggle');
+    if (toggleEl) toggleEl.onclick = (ev) => {
+      ev.stopPropagation();
+      try { localStorage.setItem(collapseKey, collapsed ? '0' : '1'); } catch { /* ignore */ }
+      updateTowerQueueIndicator();
+    };
     const btn = chip.querySelector<HTMLButtonElement>('#tower-queue-putback');
     if (btn) btn.onclick = (ev) => {
       ev.stopPropagation();
@@ -3638,6 +3736,11 @@ async function boot() {
           (state as any).__surpriseEventStingFired = true;
           surpriseEventSting(ev.kind);
           if (renderer?.triggerShake) renderer.triggerShake(6, 0.45);
+          // 2026-05-17 — info tooltip explaining what just happened so the
+          // player isn't lost when the screen suddenly tints red/purple
+          // and enemies spawn from unusual locations. Auto-dismisses
+          // after 6 seconds, dismissible by click, non-blocking.
+          showSurpriseEventInfoChip(ev.kind === 'INVASION' ? 'INVASION' : 'UPRISING');
         }
       }
       if (!ev) {
