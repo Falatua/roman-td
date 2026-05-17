@@ -443,16 +443,16 @@ function renderTab(tab: string): string {
           ${noteCard('🟠 Group March', 'Bunched enemies (3+ within 2 tiles) gain +20% speed. Maze-induced clustering is now risky.')}
         </div>
       `)}
-      ${foldSection('⚠ SURPRISE EVENTS — mid-wave ambushes', `
-        <div style="margin-bottom:8px;padding:8px 10px;background:#2a0c08;border:1px solid #ff7733;color:#ffd1cc;font-size:11px;line-height:1.5">
-          <b style="color:#ff7733">Spoiler.</b> The campaign hides two ambient events behind a no-warning trigger so the first encounter lands as a real <i>"what just happened?"</i> moment. Read on only if you want to know the schedule and the rules before you see it in play.
+      ${foldSection('⚠ SURPRISE EVENTS — random ambushes', `
+        <div style="margin-bottom:8px;padding:10px 12px;background:#2a0c08;border:2px solid #ff7733;color:#ffd1cc;font-size:12px;line-height:1.5">
+          <b style="color:#ff7733">🎲 RANDOM CHANCE — YOU WON'T KNOW.</b> Both events fire on a roll, not a fixed schedule. The campaign rolls roughly <b>2 Invasions + 2 Uprisings</b> across a 20-wave run, but which specific waves they hit is intentionally NOT telegraphed in this codex. The audio sting + screen tint + camera shake are your only warning. Endless mode rolls the same dice every wave with a 25% chance.
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('⚔ Invasion (W7 and W18)', '<b style="color:#ff7733">TEN FIRE BREACHES</b> erupt around the map perimeter — 3 along the top edge, 3 along the bottom, 2 on each side. The ENTIRE wave\'s spawn queue routes through them round-robin, so enemies pour in from every direction at once (cave spawn disabled for this wave). Each enemy snaps onto the nearest path tile from its breach point. The screen tints warm red and a low-brass sting plays. Survive the wave to claim a free RARE-tier item from a 3-card choice modal.')}
-          ${noteCard('☠ Skeletal Uprising (W11 and W14)', 'Only fires during <b style="color:#aa66ff">undead waves</b>. A diamond of <b style="color:#aa66ff">FOUR SKULL URNS</b> erupts from the ground in the map center (5×5 randomized zone) with a ground-crack particle and a discordant organ sting. One undead emerges from each urn — again 4 surprise enemies, staggered. The screen washes sickly purple. After the event ends, urn silhouettes remain as visual scars. Enemies that spawn from urns may overlap your towers (the towers stay; the urn just rises through them — they look like the dead are crawling out from under your defenses).')}
+          ${noteCard('⚔ Invasion', '<b style="color:#ff7733">TEN FIRE BREACHES</b> erupt around the map perimeter — 3 along the top edge, 3 along the bottom, 2 on each side. The ENTIRE wave\'s spawn queue routes through them round-robin, so enemies pour in from every direction at once (cave spawn disabled for this wave). Each enemy snaps onto the nearest path tile from its breach point. The screen tints warm red and a low-brass sting plays. Survive the wave to claim a free RARE-tier item from a 3-card choice modal.')}
+          ${noteCard('☠ Skeletal Uprising', 'Only fires during <b style="color:#aa66ff">undead waves</b>. A diamond of <b style="color:#aa66ff">FOUR SKULL URNS</b> erupts from the ground in the map center (5×5 randomized zone) with a ground-crack particle and a discordant organ sting. The wave\'s spawn queue routes through them — undead emerge from the urns instead of the cave. The screen washes sickly purple. Enemies overlap your towers harmlessly (urns just rise through them; the towers stay).')}
           ${noteCard('🛡 Indestructible Portals', 'Fires and urns are <b>cosmetic only</b>. You cannot kill them, push them, or extinguish a breach. They light up, deliver their enemies, then fade. Focus your fire on the spawned enemies instead.')}
           ${noteCard('🎁 Reward — your pick', 'After the last surprise enemy dies (or leaks), the game pauses and a 3-card choice modal opens. Pick ONE <b style="color:#7ec3ff">RARE</b> or <b style="color:#7ee07e">UNCOMMON</b> item from the existing pool — no new items invented, no DoT rolls (those stay Mercator-exclusive). If your inventory is full at pick time, the reward is forfeited (clear a slot before the event if you can predict one is coming).')}
-          ${noteCard('⏱ Cooldown', 'Minimum <b>3 waves</b> between any two events, regardless of type. Boss waves (5/10/15/20) and flyer waves are exempt — events never fire on them. The fixed campaign schedule (W7 → W11 → W14 → W18) already respects all rules; in Endless mode each wave rolls a 25% chance with the same cooldown.')}
+          ${noteCard('⏱ Rules + Cooldown', 'Minimum <b>3 waves</b> between any two events. Boss waves (W5 / W10 / W15 / W20) and flyer-heavy waves are exempt — events never fire on those. Uprisings additionally require the wave to be undead-faction (W11-W18). The first event of a campaign can land anywhere after the early-game intro waves.')}
           ${noteCard('🎵 Audio identity', '<b style="color:#ff7733">Invasion:</b> heavy low-brass descending triad + crackling fire hiss + low impact thud. <b style="color:#aa66ff">Uprising:</b> dissonant minor-second church-organ stab + bone-rattle clicks + deep dirge note. The two are deliberately tuned to be IDENTIFIABLE by sound alone — close your eyes and you can name the event.')}
         </div>
       `)}
@@ -926,6 +926,11 @@ function renderTab(tab: string): string {
     //      books but the runtime never spawns them)
     const firstWaveByEnemy = new Map<string, any>();
     const strippedFirstWave = new Map<string, any>();
+    // 2026-05-17 — Track EVERY wave each enemy is authored into so the
+    // Codex Enemies tab can show the full appearance list ("W1, W2, W3")
+    // instead of just the first wave. Player feedback: consistency
+    // across all enemies and visibility of recurring spawns.
+    const allWavesByEnemy = new Map<string, number[]>();
     for (const w of waves as any[]) {
       const isBossWave = w.type === 'B';
       for (const grp of w.spawns) {
@@ -936,6 +941,10 @@ function renderTab(tab: string): string {
           continue;
         }
         if (!firstWaveByEnemy.has(grp.type)) firstWaveByEnemy.set(grp.type, w);
+        // Also append to the full waves list (every authored appearance).
+        const list = allWavesByEnemy.get(grp.type) ?? [];
+        list.push(w.wave);
+        allWavesByEnemy.set(grp.type, list);
       }
     }
     // Find the earliest necromancy wave where ANY enemy that reanimates
@@ -1060,9 +1069,23 @@ function renderTab(tab: string): string {
       })
       .map(({ id, def, ctx }) => {
         const { hp, wave, explain, note } = ctx;
-        const waveTag = note
-          ? `<span style="color:#aa55ff;font-size:9px">on W${wave} (${note})</span>`
-          : `<span style="color:#9be0ff;font-size:9px">on W${wave}</span>`;
+        // 2026-05-17 — Show every wave the enemy is authored into, not
+        // just the first. For enemies that only appear once, this reads
+        // as a single "on W3". For recurring enemies (e.g. Feral Dog
+        // on W1+W2+W3, Carthage Spearman on W7+W8), the list reads as
+        // "on W1, W2, W3" / "on W7, W8". Reanim / split / orphan rows
+        // keep their existing note-style format since their wave
+        // context is non-direct.
+        let waveTag: string;
+        if (note) {
+          waveTag = `<span style="color:#aa55ff;font-size:9px">on W${wave} (${note})</span>`;
+        } else {
+          const allWaves = allWavesByEnemy.get(id) ?? (wave != null ? [wave] : []);
+          const waveListStr = allWaves.length > 0
+            ? allWaves.map(w => `W${w}`).join(', ')
+            : (wave != null ? `W${wave}` : '?');
+          waveTag = `<span style="color:#9be0ff;font-size:9px">on ${waveListStr}</span>`;
+        }
         const hpLabel = `${hp.toLocaleString()} HP <br/>${waveTag} <span style="opacity:0.55;font-size:9px" title="${explain}">ⓘ</span>`;
       return `
       <tr><td>${spriteImg(id, 36)}</td>
