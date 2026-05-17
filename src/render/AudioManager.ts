@@ -195,17 +195,17 @@ export const SFX = {
   // One-shot MP3s for placement / keep / combo. All route through the
   // master × sfx bus and respect mute — same control surface as every
   // other SFX in this module.
-  prospectPlace:  () => playSample('/assets/sfx/prospect_place.mp3', 0.65),
-  prospectKeep:   () => playSample('/assets/sfx/prospect_keep.mp3',  0.7),
-  comboMade:      () => playSample('/assets/sfx/combo_made.mp3',     0.7),
-  waveStartBlast: () => playSample('/assets/sfx/wave_start.mp3',     0.65),
-  bossKilled:     () => playSample('/assets/sfx/boss_killed.mp3',    0.75),
-  waveSurvived:   () => playSample('/assets/sfx/wave_survived.mp3',  0.7),
-  flyerKilled:    () => playSample('/assets/sfx/flyer_killed.mp3',   0.7),
-  poolUpgrade:    () => playSample('/assets/sfx/pool_upgrade.mp3',   0.7),
-  bossWaveStart:  () => playSample('/assets/sfx/boss_wave_start.mp3', 0.8),
-  coinSlot:       () => playSample('/assets/sfx/coin_slot.mp3',      0.7),
-  codexOpen:      () => playSample('/assets/sfx/codex_open.mp3',     0.7),
+  prospectPlace:  () => playSample(sfx('assets/sfx/prospect_place.mp3'), 0.65),
+  prospectKeep:   () => playSample(sfx('assets/sfx/prospect_keep.mp3'),  0.7),
+  comboMade:      () => playSample(sfx('assets/sfx/combo_made.mp3'),     0.7),
+  waveStartBlast: () => playSample(sfx('assets/sfx/wave_start.mp3'),     0.65),
+  bossKilled:     () => playSample(sfx('assets/sfx/boss_killed.mp3'),    0.75),
+  waveSurvived:   () => playSample(sfx('assets/sfx/wave_survived.mp3'),  0.7),
+  flyerKilled:    () => playSample(sfx('assets/sfx/flyer_killed.mp3'),   0.7),
+  poolUpgrade:    () => playSample(sfx('assets/sfx/pool_upgrade.mp3'),   0.7),
+  bossWaveStart:  () => playSample(sfx('assets/sfx/boss_wave_start.mp3'), 0.8),
+  coinSlot:       () => playSample(sfx('assets/sfx/coin_slot.mp3'),      0.7),
+  codexOpen:      () => playSample(sfx('assets/sfx/codex_open.mp3'),     0.7),
   // 2026-05 v10 — themed-music drops. Each one is a real licensed/
   // referential cue from the original brief; the engine plays them
   // through the standard MP3 sample path.
@@ -214,9 +214,9 @@ export const SFX = {
   // Looping cues (loading screen, W20 boss, prospect-phase reminder)
   // and the boss low-HP one-shot are wired below via dedicated
   // helpers so they can respect start/stop semantics.
-  coin3:          () => playSample('/assets/sfx/coin_3.mp3',         0.55),
-  fatality:       () => playSample('/assets/sfx/fatality_5.mp3',     0.85),
-  finishHim:      () => playSample('/assets/sfx/finish_him.mp3',     0.85)
+  coin3:          () => playSample(sfx('assets/sfx/coin_3.mp3'),         0.55),
+  fatality:       () => playSample(sfx('assets/sfx/fatality_5.mp3'),     0.85),
+  finishHim:      () => playSample(sfx('assets/sfx/finish_him.mp3'),     0.85)
 };
 
 // 2026-05-16 — SURPRISE EVENT STINGS. Each event gets a unique sinister
@@ -249,6 +249,25 @@ export function surpriseEventSting(kind: 'INVASION' | 'UPRISING'): void {
   }
 }
 
+// 2026-05-17 — RELATIVE-PATH BUG FIX. We were using `/assets/sfx/foo.mp3`
+// everywhere, which is an ABSOLUTE path. On GitHub Pages the game lives
+// under `/roman-td/`, so `/assets/...` resolves to the root domain and
+// every mp3 silently 404s. `sfx()` prepends the Vite-supplied BASE_URL
+// (which is `./` in our config) so the same string works in both `npm
+// run dev` (page at `/`) and on the deployed site (page at `/roman-td/`).
+//
+// Call this for every mp3 url instead of writing a literal string with
+// a leading `/`. Sample call sites use it directly below.
+export function sfx(path: string): string {
+  // Vite injects BASE_URL into the bundle at build time; in `npm run dev`
+  // it's `/`, on GitHub Pages with `base: './'` it becomes `./`.
+  // (Cast to any avoids a tsc complaint without needing the `vite/client`
+  // ambient types in tsconfig.)
+  const base = (import.meta as any).env?.BASE_URL || './';
+  const clean = path.replace(/^\/+/, '');     // strip leading slashes if any
+  return base.endsWith('/') ? base + clean : base + '/' + clean;
+}
+
 // Sample cache: decoded AudioBuffers keyed by URL.
 const sampleCache = new Map<string, AudioBuffer>();
 const samplePending = new Map<string, Promise<AudioBuffer>>();
@@ -269,6 +288,38 @@ async function loadSample(url: string): Promise<AudioBuffer> {
   })();
   samplePending.set(url, p);
   return p;
+}
+
+// 2026-05-17 — Preload every mp3 SFX at boot so the first play is
+// instant. Without this, each unique sound has a perceptible delay on
+// first trigger (fetch + decode latency, typically 100-500ms on the
+// public CDN). Preload runs in parallel and silently swallows errors so
+// a missing file doesn't block gameplay.
+//
+// The list mirrors every `playSample(sfx('assets/sfx/...'))` call site
+// in this module — keep them in sync when adding a new sample.
+const PRELOAD_SFX_PATHS = [
+  'assets/sfx/prospect_place.mp3',
+  'assets/sfx/prospect_keep.mp3',
+  'assets/sfx/combo_made.mp3',
+  'assets/sfx/wave_start.mp3',
+  'assets/sfx/boss_killed.mp3',
+  'assets/sfx/wave_survived.mp3',
+  'assets/sfx/flyer_killed.mp3',
+  'assets/sfx/pool_upgrade.mp3',
+  'assets/sfx/boss_wave_start.mp3',
+  'assets/sfx/coin_slot.mp3',
+  'assets/sfx/codex_open.mp3',
+  'assets/sfx/coin_3.mp3',
+  'assets/sfx/fatality_5.mp3',
+  'assets/sfx/finish_him.mp3'
+];
+
+export async function preloadAllSamples(): Promise<void> {
+  // Fire all loads in parallel. Web Audio decode is CPU-bound so the
+  // browser will serialize the decode step regardless, but the fetches
+  // can race in parallel.
+  await Promise.allSettled(PRELOAD_SFX_PATHS.map(p => loadSample(sfx(p))));
 }
 
 // Plays a decoded sample through the SFX bus. Fires-and-forgets — safe to

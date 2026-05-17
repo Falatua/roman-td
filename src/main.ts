@@ -38,7 +38,7 @@ import { Logger } from './Logger';
 import { towerName, enemyName, factionName, pretty } from './format';
 import { showEnemyInspect, showEnemyInspectByType } from './render/EnemyInspect';
 import { armorProfileForGroup, armorDamageTypeShortLabel } from './systems/EnemyResistances';
-import { SFX, setFactionBGM, setMuted, isMuted, playMusicTrack, stopMusicTrack, stopAllMusicTracks, surpriseEventSting } from './render/AudioManager';
+import { SFX, setFactionBGM, setMuted, isMuted, playMusicTrack, stopMusicTrack, stopAllMusicTracks, surpriseEventSting, sfx, preloadAllSamples } from './render/AudioManager';
 import { tickSurpriseEvents, notifySurpriseEnemyResolved, clearSurpriseEventsForWaveEnd } from './systems/SurpriseEvents';
 import { showSurpriseRewardModal } from './render/SurpriseReward';
 
@@ -2739,12 +2739,21 @@ async function boot() {
   // interaction. The fanfare also gets a direct attempt right away —
   // if the browser allows it (often the case after a recent gesture
   // on the page, e.g. tab activation), it plays immediately.
-  const LOADING_MUSIC_URL = '/assets/sfx/ff7_victory_fanfare.mp3';
+  const LOADING_MUSIC_URL = sfx('assets/sfx/ff7_victory_fanfare.mp3');
   playMusicTrack('loading', LOADING_MUSIC_URL, { loop: true, gain: 0.55 });
   const primeLoadingMusic = () => {
     playMusicTrack('loading', LOADING_MUSIC_URL, { loop: true, gain: 0.55, replace: false });
   };
   document.addEventListener('pointerdown', primeLoadingMusic, { once: true });
+
+  // 2026-05-17 — Preload every mp3 SFX in parallel during the loading
+  // screen. Without this, the first time each unique sound plays the
+  // browser has to fetch + decode it (100-500ms latency on the public
+  // CDN), so combat ticks, prospect placements, wave starts etc. feel
+  // delayed for new players. After preload the cache is hot and every
+  // call plays instantly. Fire-and-forget — if anything fails we still
+  // fall back to synth tones for missing samples.
+  void preloadAllSamples();
 
   // Loading copy: rotating, self-aware, slightly menacing one-liners.
   // Typewriter-effect each line in, hold ~2.4s, then move on. The list
@@ -2934,7 +2943,7 @@ async function boot() {
           // round) so the moment of decision is musically loud.
           if (!(state as any).__chooseCharFiredThisRound) {
             (state as any).__chooseCharFiredThisRound = true;
-            playMusicTrack('choose-char', '/assets/sfx/smash_bros_choose.mp3', { loop: false, gain: 0.55 });
+            playMusicTrack('choose-char', sfx('assets/sfx/smash_bros_choose.mp3'), { loop: false, gain: 0.55 });
           }
           return;       // wave does NOT start yet — pick first
         }
@@ -3054,7 +3063,7 @@ async function boot() {
         // Stops on wave end OR game over (handled in checkWaveEnd
         // callback + GAME_OVER hook below).
         if (state.wave === 20 && justStarted?.type === 'B') {
-          playMusicTrack('boss20', '/assets/sfx/ff7_one_winged_angel.mp3', { loop: true, gain: 0.7 });
+          playMusicTrack('boss20', sfx('assets/sfx/ff7_one_winged_angel.mp3'), { loop: true, gain: 0.7 });
         }
         // BOSS VIGNETTE (2026-05 v6 polish): fade in the subtle red-shifted
         // corner darken on boss waves; the per-frame tween in
@@ -3611,7 +3620,7 @@ async function boot() {
         // player feels the moment of choice. Stamped state flag dedupes.
         if (!(state as any).__chooseCharFiredThisRound) {
           (state as any).__chooseCharFiredThisRound = true;
-          playMusicTrack('choose-char', '/assets/sfx/smash_bros_choose.mp3', { loop: false, gain: 0.55 });
+          playMusicTrack('choose-char', sfx('assets/sfx/smash_bros_choose.mp3'), { loop: false, gain: 0.55 });
         }
         return;
       }
@@ -3625,7 +3634,7 @@ async function boot() {
         // before keeping any — they're stuck on the keep decision.
         if (state.prospectsPlaced > 0 && (state.keepsRemainingThisRound ?? 0) > 0 && !(state as any).__chooseCharFiredThisRound) {
           (state as any).__chooseCharFiredThisRound = true;
-          playMusicTrack('choose-char', '/assets/sfx/smash_bros_choose.mp3', { loop: false, gain: 0.55 });
+          playMusicTrack('choose-char', sfx('assets/sfx/smash_bros_choose.mp3'), { loop: false, gain: 0.55 });
         }
         return;
       }
