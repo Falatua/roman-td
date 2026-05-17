@@ -384,6 +384,24 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         }
       }
     }
+    // FROZEN_LEGION — GLACIAL PULSE: every 10s, freeze EVERY enemy on the
+    // field for 2.5s, no range cap. This is the headline mechanic of the
+    // combo (separate from its per-hit freeze, which lands in the
+    // per-tower status-effect switch below). Pairs with the global Frozen
+    // Synergy rule (frozen enemies take +50% damage from all sources), so
+    // a single Frozen Legion on the field turns every 10-second window
+    // into a battlefield-wide damage amp. Tower-tier scales the FREEZE
+    // duration via pushStatus.
+    if (t.type === TowerType.FROZEN_LEGION) {
+      const next = (t as any).__nextFrozenLegionPulseTick ?? 0;
+      if (state.tick >= next && !asleep) {
+        (t as any).__nextFrozenLegionPulseTick = state.tick + 10.0;
+        for (const e of state.enemies.values()) {
+          if (e.hp <= 0) continue;
+          pushStatus(e, StatusEffectKind.FREEZE, 2.5, 0, t.qualityTier);
+        }
+      }
+    }
     // SUPER COMBOS — 5-base-tower mega recipes
     if (t.type === TowerType.TRIPLEX_ACIES && !auraOff) {
       // +20% atk-speed aura to towers within 3 tiles.

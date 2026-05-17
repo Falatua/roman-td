@@ -529,8 +529,9 @@ function renderTab(tab: string): string {
           ${noteCard('Damage-Type Identity', 'Scorpio +40% vs Bosses · Sagittarius +45% vs Flyers · Venator +45% vs Flyers · Aquila Venator +75% vs Flyers · Horseman +20% vs ground · Turma Lancers +30% vs ground · Scorpion Bolt +12% vs Flyers/Bosses · Nemesis Engine +200% vs Flyers · Pontifex +200% vs Bosses · Carthage Scourge +250% vs Bosses · Hannibal\'s Nightmare +200% vs War Elephants.')}
           ${noteCard('Triarius Global Aura', '+12% global damage to every other tower while a Triarius is on the field.')}
           ${noteCard('Cohort Guard Aura', 'Projects a 3-tile +15% damage aura to nearby towers in addition to its cleave + slow.')}
-          ${noteCard('Frozen Synergy', 'Any enemy currently FROZEN takes <b style="color:#88ddff">+50% damage from every source</b>. Frozen Legion + a single freeze proc makes the whole battlefield squishier.')}
-          ${noteCard('Periodic AoE Freeze', 'Hannibal\'s Nightmare freezes everything in range every 10s. Carthage Scourge does the same every 8s.')}
+          ${noteCard('Frozen Synergy', 'Any enemy currently FROZEN takes <b style="color:#88ddff">+50% damage from every source</b> for the duration of the freeze. This is a <i>global</i> rule — any tower hitting a frozen enemy gets the amp, not just the one that froze them.')}
+          ${noteCard('Frozen Legion (deep dive)', 'Three layered mechanics: <b style="color:#88ddff">(1)</b> every attack freezes its target for 2.5s · <b style="color:#88ddff">(2)</b> every 10 seconds, a <b>GLACIAL PULSE</b> freezes EVERY enemy on the map (no range cap) for 2.5s · <b style="color:#88ddff">(3)</b> those frozen enemies inherit the global Frozen Synergy +50% damage amp from every other tower for the duration. One Frozen Legion turns each 10s window into a battlefield-wide damage spike.')}
+          ${noteCard('Periodic AoE Freeze', '<b style="color:#88ddff">Frozen Legion</b> — every 10s, freezes EVERY enemy on the map (no range cap) for 2.5s. <b>Hannibal\'s Nightmare</b> — every 10s, freezes everything in its 6.5-tile range for 1.5s. <b>Carthage Scourge</b> — every 8s, freezes everything in its 7-tile range for 1.5s.')}
         </div>
       `)}
       ${foldSection('STATUS GLOSSARY', `
@@ -909,7 +910,10 @@ function renderTab(tab: string): string {
         <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#5a4a30;display:inline-block;border:1px solid #000"></span> LOCKED — none owned</span>
       </div>`;
     return `${section('COMBINATION LOGIC',
-      `<div style="font-size:11px;color:#cdb98a;line-height:1.5">Recipes listed in DIFFICULTY ORDER — easiest single-step builds first, cross-combos and super combos at the bottom. Color-coded against the towers you have: <b style="color:#88ff88">Green</b> = committed towers, <b style="color:#ff9933">orange</b> = pending prospects (you'll have to KEEP them first).</div>${legend}`)}
+      `<div style="font-size:11px;color:#cdb98a;line-height:1.5">Recipes listed in DIFFICULTY ORDER — easiest single-step builds first, cross-combos and super combos at the bottom. Color-coded against the towers you have: <b style="color:#88ff88">Green</b> = committed towers, <b style="color:#ff9933">orange</b> = pending prospects (you'll have to KEEP them first). Each result card carries a <b style="color:#c4731a">DAMAGE-TYPE</b> chip (Melee / Ranged / Siege / Fire / Divine) and a <b style="color:#5aa6d4">MODE</b> chip (Melee swing vs Projectile) so you can spot a combo's role at a glance before reading the ability.</div>${legend}
+      <div style="margin-top:8px;background:#0c1418;border:1px solid #4a6a88;padding:8px 10px;font-size:11px;color:#cdb98a;line-height:1.5">
+        <span style="color:#88ddff;font-weight:bold;letter-spacing:1.5px">❄ FROZEN LEGION SPOTLIGHT</span> — Most-asked combo in the codex. Three layered mechanics: every attack freezes its target for 2.5s, every <b>10 seconds</b> it releases a <b>GLACIAL PULSE</b> that freezes EVERY enemy on the map (no range cap) for 2.5s, and the global <b>Frozen Synergy</b> rule means frozen enemies take <b style="color:#88ddff">+50% damage from every other source</b>. One Frozen Legion converts every 10-second window into a battlefield-wide damage spike. Recipe pairs with Stormcaller / Aurora Legion / chain-lightning towers especially well — they all get the +50% amp on every frozen target during the pulse window.
+      </div>`)}
       <div style="display:grid;grid-template-columns:1fr;gap:8px">${cards}</div>`;
   }
   if (tab === 'ENEMIES') {
@@ -1362,6 +1366,32 @@ function comboTooltipHtml(def: any): string {
   </div>`;
 }
 
+// 2026-05-17 — Damage-type + mode chip row used by the combo cards.
+// Pulls the damageType + melee flag straight off towers.json so the
+// COMBINATIONS tab visibly tells the player what attack class each
+// combo tower lands as (Melee / Ranged / Siege / Fire / Divine), and
+// whether it physically swings or fires a projectile. The chip color
+// matches the damage-type ink used in tooltips so nothing reads as a
+// new visual language.
+function damageTypeChips(def: any): string {
+  const dt: string | undefined = def?.damageType;
+  const chipFor: Record<string, { bg: string; fg: string; label: string }> = {
+    PHYS_MELEE:     { bg: '#c4731a', fg: '#1a1410', label: '⚔ MELEE' },
+    PHYS_RANGED:    { bg: '#5aa6d4', fg: '#0c1a22', label: '🏹 RANGED' },
+    SIEGE:          { bg: '#8a6a3a', fg: '#1a1410', label: '🏰 SIEGE' },
+    ELEMENTAL_FIRE: { bg: '#d4521a', fg: '#1a1410', label: '🔥 FIRE' },
+    DIVINE:         { bg: '#e8d070', fg: '#1a1410', label: '✨ DIVINE' }
+  };
+  const c = (dt && chipFor[dt]) || { bg: '#5a4a30', fg: '#cdb98a', label: 'PHYSICAL' };
+  const modeLabel = def?.melee ? '⚔ Melee swing' : '🏹 Projectile';
+  const modeBg = def?.melee ? '#2a1f12' : '#0c1a22';
+  const modeBd = def?.melee ? '#c4731a' : '#5aa6d4';
+  return `<div style="display:flex;justify-content:center;gap:4px;margin-top:4px;flex-wrap:wrap">
+      <span style="font-size:9px;background:${c.bg};color:${c.fg};padding:2px 7px;letter-spacing:1.5px;font-weight:bold;border:1px solid #1a1410">${c.label}</span>
+      <span style="font-size:9px;background:${modeBg};color:#cdb98a;padding:2px 7px;letter-spacing:1px;font-weight:bold;border:1px solid ${modeBd}">${modeLabel}</span>
+    </div>`;
+}
+
 function renderComboCard(c: any, cs?: { state: 'ready'|'prospect'|'partial'|'none'; matches: ('owned'|'prospect'|'missing')[]; matched: number; total: number }): string {
   ensureComboTooltipStyle();
   const resultDef: any = (towers as any)[c.result] ?? {};
@@ -1436,6 +1466,7 @@ function renderComboCard(c: any, cs?: { state: 'ready'|'prospect'|'partial'|'non
         </div>
         <div style="color:#ffd34d;font-weight:bold;font-size:14px">${resultDef.name ?? c.result}</div>
         <div style="font-size:11px;color:#9be0ff">Result: Tier ${c.tier}</div>
+        ${damageTypeChips(resultDef)}
         <div style="font-size:10px;color:#f0c040;margin-top:3px">Cost: ${c.cost}g</div>
         <div style="font-size:10px;color:#cdb98a;margin-top:5px;line-height:1.35">${resultDef.ability ?? ''}</div>
         ${pinBtnHtml}

@@ -665,7 +665,7 @@
     "melee": false,
     "spriteSheet": 3,
     "spriteCell": 4,
-    "ability": "Freezes 2.5s. Frozen enemies +50% taken.",
+    "ability": "Every hit FREEZES the target 2.5s. Frozen enemies take +50% damage from ALL sources (global synergy). Plus every 10s, releases a GLACIAL PULSE — all enemies on the field freeze for 2.5s, no range cap.",
     "critChance": 0.14,
     "critMult": 2.4
   },
