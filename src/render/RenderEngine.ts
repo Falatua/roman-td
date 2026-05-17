@@ -57,16 +57,13 @@ export class RenderEngine {
     knockX?: number;
     knockY?: number;
     knockTimer?: number;
-    // Persistent wound overlay: cuts, stuck arrows, blood drips that accumulate
-    // visibly on the enemy as it takes damage.
+    // Persistent wound overlay: cuts, blood drips that accumulate visibly
+    // on the enemy as it takes damage.
     wounds?: Container;
     woundCount?: number;
     nextDripTick?: number;
-    // Stuck-arrow overlay container (boss only). Holds up to 5 child sprites,
-    // one per stuckArrow record on the enemy. Replaced wholesale when the
-    // enemy's stuckArrows array changes length (cheap — at most 5 children).
-    stuckArrowsBin?: Container;
-    stuckArrowsCount?: number;
+    // (Removed 2026-05-17: stuckArrowsBin + stuckArrowsCount — embedded-
+    // shaft overlay pulled for perf. See onProjectileHit handler in main.ts.)
     // 2026-05 v7 perf: pooled shield indicator. Created ONCE on first
     // render, repositioned + alpha-tweened each frame, destroyed only on
     // shield-break or enemy death. Was previously 3 fresh Pixi objects
@@ -1835,13 +1832,12 @@ export class RenderEngine {
         entry.wounds.x = entry.sp.x;
         entry.wounds.y = entry.sp.y;
       }
-      // 2026-05-17 — STUCK ARROWS REMOVED for perf (per-frame Sprite
-      // rebuild on count change + per-boss bin container update each
-      // frame was non-trivial in twin/ambush boss combat). The hit-spark
-      // + typed-impact VFX from drawGore / damage-type-impact still
-      // fires on every projectile landing, so the player still sees the
-      // hit clearly. The stuckArrowsBin / stuckArrowsCount fields on
-      // entry are kept as legacy no-ops so the type stays stable.
+      // 2026-05-17 — STUCK ARROWS REMOVED for perf. Each projectile impact
+      // on a boss used to append a Sprite to a per-boss Container that was
+      // repositioned every frame and rebuilt on count change. With twin /
+      // ambush bosses on screen that's a real frame-budget tax. The hit-
+      // spark + typed-impact VFX from drawGore still fires on every
+      // projectile landing, so projectile hits read clearly.
       // ─── STATUS BAR RESET (2026-05 perf) ──────────────────────────
       // Clear all per-frame children of statusBar FIRST. Previously the
       // clear ran AFTER the shield/mutation indicators were added (line
@@ -2021,7 +2017,6 @@ export class RenderEngine {
       if (!seenEnemyIds.has(id)) {
         entry.sp.destroy(); entry.hp.destroy(); entry.statusBar.destroy();
         if (entry.wounds) entry.wounds.destroy();
-        if (entry.stuckArrowsBin) entry.stuckArrowsBin.destroy({ children: true });
         if (entry.shieldBin) entry.shieldBin.destroy({ children: true });
         // BUGFIX 2026-05: the archetype tag (ARMORED / RESISTANT / BOSS / …)
         // was added directly to this.layers.enemies and stashed on the

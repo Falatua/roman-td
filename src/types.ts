@@ -401,10 +401,10 @@ export interface Enemy {
   shieldBroken?: boolean;
   // Stuck arrows/javelins/pilums embedded in the boss after a projectile hit.
   // Cap 5 per boss — oldest is removed when a 6th lands. Each entry stores the
-  // sprite key (PROJ_ARROW etc.), the inbound angle (radians) so the projectile
-  // can be drawn pointing into the boss, and a small random offset within the
-  // boss sprite so multiple stuck shafts don't overlap exactly.
-  stuckArrows?: { spriteKey: string; angle: number; offX: number; offY: number }[];
+  // (Removed 2026-05-17: stuckArrows field — embedded-shaft visuals were
+  // pulled for perf. The hit-spark + typed-impact VFX from onHit still
+  // play, so projectile hits read clearly without the per-frame sprite
+  // bin rebuild.)
   // CHECKPOINT HEAL: select ground non-boss enemies regain a fraction of maxHp
   // (e.g. 0.25) every time they reach a fresh waypoint tile along the path.
   // The set tracks which waypoint indices have already healed this enemy so

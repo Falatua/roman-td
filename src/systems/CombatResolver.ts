@@ -206,7 +206,7 @@ function sigilOfSolMult(t: Tower, target: Enemy): number {
 }
 
 // Multi-shot ranged — fires N projectiles at N distinct targets per attack.
-// Numidian Cavalry already fires at ground+air; Scorpion Bolt fires a 3-bolt spread.
+// Eques already fires at ground+air; Scorpion Bolt fires a 3-bolt spread.
 const MULTI_SHOT_COUNT: Partial<Record<TowerType, number>> = {
   [TowerType.SCORPION_BOLT]: 3,
   [TowerType.NUMIDIAN_CAVALRY]: 3,   // 2 → 3 (2026-05-15 v2 buff): TRIPLE VOLLEY upgrade
@@ -611,7 +611,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // 2026-05-15 TYRANT'S LAUREL legendary: +75% damage vs Bosses.
       // Dedicated boss-hunter item, occupies the DAMAGE slot. Stacks
       // multiplicatively with native per-tower boss bonuses (Primus
-      // Pilus, Scorpio, Triumphator, Numidian Cavalry, etc.).
+      // Pilus, Scorpio, Triumphator, Eques, etc.).
       if (t.equippedItems.includes('TYRANTS_LAUREL') && target.isBoss) damage *= 1.75;
       // 2026-05 v6 Mercator-exclusive items:
       if (t.equippedItems.includes('TYRIAN_DYE') && (target.archetype === 'ELITE' || target.isBoss)) {
@@ -756,7 +756,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.SCORPIO && hitN % 5 === 0) damage *= 3;                                  // HEAVY BOLT
       if (t.type === TowerType.RETIARIUS && (t as any).__lastTargetId !== target.id) damage *= 2;      // TRIDENT & NET first-hit
       (t as any).__lastTargetId = target.id;
-      // Numidian Cavalry crits = 3× per spec (2026-05 v11: rate 15% → 25%).
+      // Eques crits = 3× per spec (2026-05 v11: rate 15% → 25%).
       // NUMIDIAN_CAVALRY signature crit (2026-05-15 v2 buff): 25%→30%.
       if (t.type === TowerType.NUMIDIAN_CAVALRY && Math.random() < 0.30) damage *= 3;
       // NUMIDIAN_CAVALRY archetype riders (2026-05-15 v2): +40% Flyers
@@ -1102,7 +1102,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         // progress. 2026-05-15: helper consults `MULTI_SHOT_COUNT` AND
         // adds +1 if VOLLEY_QUIVER is equipped. A single-shot tower
         // becomes dual-shot with the item; existing 3-shot combos like
-        // Scorpion Bolt and Numidian Cavalry become 4-shot.
+        // Scorpion Bolt and Eques become 4-shot.
         const shots = multiShotCountFor(t);
         if (shots > 1) {
           const ordered = inRange.slice().sort((a: Enemy, b: Enemy) => (b.pathIndex + b.pathProgress) - (a.pathIndex + a.pathProgress));

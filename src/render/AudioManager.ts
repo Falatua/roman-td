@@ -74,7 +74,7 @@ export const SFX = {
   bowstring: () => tone(640, 0.07, 'square', 0.10, 360),
   // Crossbow click-snap — Arcuballista, Carroballista
   crossbow: () => { tone(900, 0.04, 'square', 0.10, 700); setTimeout(()=>tone(420, 0.06, 'sawtooth', 0.12, 280), 30); },
-  // Heavy javelin throw — Decurion, Clibanarius, Praefectus, Numidian Cavalry, Frozen Legion
+  // Heavy javelin throw — Decurion, Clibanarius, Praefectus, Eques, Frozen Legion
   javelinThrow: () => { tone(560, 0.06, 'sawtooth', 0.12, 320); setTimeout(()=>tone(320, 0.07, 'square', 0.10, 220), 35); },
   // Divine staff cast — Legate, Flamen, Augur, Haruspex, Solar Priest
   staffCast: () => { tone(880, 0.10, 'sine', 0.12); setTimeout(()=>tone(1320, 0.12, 'sine', 0.10), 60); },
