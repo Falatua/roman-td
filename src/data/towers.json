@@ -747,7 +747,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 2,
-    "ability": "BATTLE PAINTER: every 4s applies MARK (+20% taken) to ALL enemies in range. Light javelin chip support.",
+    "ability": "BATTLE PAINTER: every 4s applies MARK (+20% taken) to ALL enemies in range. 2026-05-17 — javelins are now dipped in BOG VENOM: every hit also applies POISON (5% maxHP/sec, 4s, scales with tier). Mark + per-target DoT + range 4.8 = early-game force multiplier.",
     "critChance": 0.22,
     "critMult": 1.8
   },

@@ -1585,8 +1585,17 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       // APEX SUPER: stun on hit (doesn't matter much, every enemy is hit anyway).
       pushStatus(target, StatusEffectKind.STUN, dur(0.4), 0, tier);
       break;
-    // VEXILLATION, SCOUT_VEXILLUM, SACER_VESTAL handled via passive logic
-    // outside the per-hit switch (cleave + mark/sanctum auras).
+    // VEXILLATION, SACER_VESTAL handled via passive logic outside the
+    // per-hit switch (cleave + sanctum auras).
+    // 2026-05-17 — SCOUT_VEXILLUM also gets a per-hit POISON now. Its
+    // passive 4-second mass-mark aura still fires from the passive
+    // logic above; this per-hit poison stacks on top. 4s duration,
+    // 5% maxHP/sec, scales with tier. Lore: javelin shafts dipped in
+    // distilled bog-poison (a documented Celtic skirmisher trick that
+    // Roman scout regiments adopted for frontier patrols).
+    case TowerType.SCOUT_VEXILLUM:
+      pushStatus(target, StatusEffectKind.POISON, dur(4), 0.05, tier);
+      break;
   }
   // Item-granted status effects. These previously gated on melee-only — that
   // was confusing because the player would equip a "Poisoned Blade" on a
