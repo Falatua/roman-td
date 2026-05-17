@@ -143,7 +143,7 @@
     "critMult": 2
   },
   "AUXILIA": {
-    "name": "Medicus",
+    "name": "Skizzer",
     "damageType": "PHYS_MELEE",
     "baseDps": 32,
     "attackSpeed": 2.45,
@@ -151,7 +151,7 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 3,
-    "ability": "Tier III auxiliary. Lightning-fast single-target melee (2.45/s) with an elite crit profile (22% / x2.1). Hit-and-run swordsman that combos viciously with a Centurion's Armor Shred.",
+    "ability": "Tier III arena gladiator (the historical Scissor class — curved blade strapped to the forearm). Lightning-fast single-target melee (2.45/s) with an elite crit profile (22% / x2.1). Hit-and-run slicer that combos viciously with a Centurion's Armor Shred.",
     "critChance": 0.22,
     "critMult": 2.1
   },

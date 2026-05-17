@@ -23,7 +23,7 @@ const MANIFEST: Record<string, string> = {
   SAGITTARIUS: 't1_sagittarius.png', SCORPIO: 't1_scorpio.png', TRIARIUS: 't1_triarius.png',
   DECURION: 't1_decurion.png', CENTURION: 't1_centurion.png', PRIMUS_PILUS: 't1_primus_pilus.png',
   LEGATE: 't2_legate.png', HORSEMAN: 't2_horseman.png', SCORPION_BOLT: 't2_scorpion_bolt.png',
-  AUXILIA: 't_new_auxilia.png', FUNDIBULUS: 't_new_fundibulus.png',
+  AUXILIA: 't_new_skizzer.png', FUNDIBULUS: 't_new_fundibulus.png',
   RORARIUS: 't_new_rorarius.png', LIBRITOR: 't_new_libritor.png', ACCENSUS: 't_new_accensus.png',
   RETIARIUS: 't_new_retiarius.png', BALLISTARIUS: 't_new_ballistarius.png',
   OPTIO: 't_new_optio.png', PUGIO_ASSASSIN: 't_new_pugio_assassin.png', ARCUBALLISTA: 't_new_arcuballista.png',
