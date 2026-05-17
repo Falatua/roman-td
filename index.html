@@ -263,16 +263,64 @@
         font-size: 10px; letter-spacing: 3px; color: #ffd34d; font-weight: 900;
         text-shadow: 1px 1px 0 #000;
       }
-      /* The dropping coin */
+      /* The dropping coin
+         2026-05-17 — Path was '/assets/sprites/u_badge_gold.png' (absolute,
+         resolves to the root domain). On GitHub Pages the game lives at
+         /roman-td/ so the absolute path 404'd and the coin was invisible.
+         Relative path resolves correctly under both dev (root) and Pages. */
       #loading-coin-hint {
         position: absolute; left: 50%; top: -56px;
         transform: translate(-50%, 0);
         width: 48px; height: 48px;
-        background: url('/assets/sprites/u_badge_gold.png') no-repeat center/contain;
+        background: url('./assets/sprites/u_badge_gold.png') no-repeat center/contain;
         image-rendering: pixelated;
         filter: drop-shadow(0 0 8px rgba(255,211,77,0.7)) drop-shadow(2px 2px 0 #000);
         animation: coinHover 1.6s ease-in-out infinite;
       }
+
+      /* 2026-05-17 — HARD-RESET TIP. New banner on the loading screen
+         that tells players how to clear browser cache so they get the
+         latest build. Caching is what causes the "I made a change but
+         my friends still see the old version" problem. */
+      #loading-tip {
+        margin-top: 22px;
+        padding: 12px 16px;
+        max-width: 620px;
+        border: 1px dashed #aa7733;
+        background: linear-gradient(180deg, rgba(20, 10, 5, 0.85), rgba(34, 18, 9, 0.85));
+        color: #f0c089;
+        font-size: 12px;
+        line-height: 1.55;
+        text-align: center;
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 0 #000;
+        opacity: 0;
+        animation: tipFadeIn 0.6s ease-out 0.8s forwards;
+      }
+      #loading-tip .tip-title {
+        display: block;
+        font-weight: 900;
+        letter-spacing: 3px;
+        font-size: 11px;
+        color: #ffd34d;
+        margin-bottom: 4px;
+      }
+      #loading-tip kbd {
+        display: inline-block;
+        padding: 2px 7px;
+        margin: 0 2px;
+        background: #2a1f12;
+        border: 1px solid #5a4a30;
+        border-bottom-width: 2px;
+        border-radius: 3px;
+        color: #ffd34d;
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        font-weight: bold;
+        text-shadow: none;
+        letter-spacing: 0;
+      }
+      @keyframes tipFadeIn { to { opacity: 1; } }
       @keyframes coinHover {
         0%, 100% { transform: translate(-50%, 0); }
         50%      { transform: translate(-50%, -6px); }
@@ -334,6 +382,14 @@
             <div id="loading-coinslot-label">★ COIN SLOT ★</div>
           </div>
           <div id="loading-insert">▶ CLICK TO INSERT COIN ◀</div>
+        </div>
+        <div id="loading-tip">
+          <span class="tip-title">⚡ PRO TIP — GET THE LATEST BUILD</span>
+          Browsers cache aggressively. If something looks off or you suspect an old version, hard-refresh first:
+          <br/>
+          <b>Mac:</b> <kbd>⌘ Cmd</kbd> + <kbd>⇧ Shift</kbd> + <kbd>R</kbd>
+          &nbsp;·&nbsp;
+          <b>Windows / Linux:</b> <kbd>Ctrl</kbd> + <kbd>⇧ Shift</kbd> + <kbd>R</kbd> (or <kbd>Ctrl</kbd> + <kbd>F5</kbd>)
         </div>
       </div>
     </div>

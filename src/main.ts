@@ -2740,25 +2740,35 @@ async function boot() {
   // if the browser allows it (often the case after a recent gesture
   // on the page, e.g. tab activation), it plays immediately.
   const LOADING_MUSIC_URL = sfx('assets/sfx/ff7_victory_fanfare.mp3');
-  // First attempt: try autoplay (works in Chrome when the user has prior
-  // engagement with the page, e.g. coming back from another tab).
+  // First attempt: try autoplay (succeeds for returning visitors with
+  // prior page engagement, or when the user followed an in-document link
+  // — both count as user activation under the autoplay policy).
   playMusicTrack('loading', LOADING_MUSIC_URL, { loop: true, gain: 0.55 });
-  // 2026-05-17 — Primer fix. Originally we only primed on `pointerdown`,
-  // but the user's first pointerdown IS the coin-slot click — which fires
-  // the music start AND the music stop in the same event tick, so the
-  // fanfare never actually played on the loading screen. Now we ALSO
-  // prime on the first `mousemove`, which fires the moment the user moves
-  // the cursor over the page — well before they reach the coin slot. The
-  // music gets a real moment to play during the loading screen. Both
-  // primers use { once: true } so they self-clean.
+  // 2026-05-17 v2 — Primer net cast as wide as possible so the fanfare
+  // kicks in on essentially any sign of user presence. The autoplay
+  // policy requires SOME user gesture before play() succeeds; any of
+  // these counts:
+  //   • mousemove  — the moment the cursor enters the page (most users)
+  //   • pointerdown / click — covers mobile + keyboard-only users who
+  //                           never move a cursor before clicking
+  //   • keydown    — tab-into / pre-click keyboard activity
+  //   • touchstart — mobile / tablet first tap on the loading screen
+  //   • focus      — covers returning visitors whose browser blocked the
+  //                  initial autoplay until the tab regained focus
+  //   • visibilitychange — same idea, fires when the tab becomes visible
+  // All use { once: true } so each handler self-removes after firing —
+  // the primer only re-attempts on cold start, not every event.
   const primeLoadingMusic = () => {
     playMusicTrack('loading', LOADING_MUSIC_URL, { loop: true, gain: 0.55, replace: false });
   };
   document.addEventListener('mousemove', primeLoadingMusic, { once: true, passive: true });
   document.addEventListener('pointerdown', primeLoadingMusic, { once: true });
-  // Keyboard interaction also counts as a gesture — covers users who tab
-  // into the page without moving the mouse.
   document.addEventListener('keydown', primeLoadingMusic, { once: true });
+  document.addEventListener('touchstart', primeLoadingMusic, { once: true, passive: true });
+  window.addEventListener('focus', primeLoadingMusic, { once: true });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') primeLoadingMusic();
+  }, { once: true });
 
   // 2026-05-17 — Preload every mp3 SFX in parallel during the loading
   // screen. Without this, the first time each unique sound plays the
@@ -2839,10 +2849,15 @@ async function boot() {
       // 2026-05 v10 — stop the FF7 fanfare loop the moment the coin
       // drops. The arcade is open; the lobby music ends.
       stopMusicTrack('loading');
-      // Clean up every primer listener (mousemove / pointerdown / keydown).
+      // Clean up every primer listener — mousemove / pointerdown / keydown
+      // / touchstart / focus. visibilitychange uses an inline arrow so it
+      // can't be removed by reference, but it's { once: true } so it
+      // self-removes after firing once.
       document.removeEventListener('mousemove', primeLoadingMusic);
       document.removeEventListener('pointerdown', primeLoadingMusic);
       document.removeEventListener('keydown', primeLoadingMusic);
+      document.removeEventListener('touchstart', primeLoadingMusic);
+      window.removeEventListener('focus', primeLoadingMusic);
       // 1) Coin drops into the slot.
       if (coinHint) coinHint.classList.add('dropping');
       // 2) Immediate screen shake — cabinet just got hit.

@@ -400,50 +400,107 @@ function preRenderToCrispBitmap(source: HTMLImageElement | HTMLCanvasElement, ta
   } catch { return null; }
 }
 
+// Load a single sprite by [key, file] pair. Used by both the critical
+// path (awaited before the coin-slot unlocks) and the deferred path
+// (kicked off as a background pool). Returns nothing — populates the
+// shared `cache` map and runs the same prerender/NEAREST pipeline.
+async function loadOneSprite(key: string, file: string): Promise<void> {
+  try {
+    const url = BASE + file;
+    let tex = await PixiAssets.load(url);
+    if (tex && shouldPrerender(file)) {
+      const baseRes: any = (tex as any).baseTexture?.resource;
+      const srcEl: HTMLImageElement | HTMLCanvasElement | undefined =
+        baseRes?.source ?? baseRes?.imageBitmap ?? baseRes?.image;
+      if (srcEl) {
+        const bmp = preRenderToCrispBitmap(srcEl, SPRITE_PRERENDER_SIZE);
+        if (bmp) tex = Texture.from(bmp);
+      }
+    }
+    if (tex && (tex as any).baseTexture) {
+      (tex as any).baseTexture.scaleMode = SCALE_MODES.NEAREST;
+    }
+    (tex as any).__srcPath = url;
+    cache.set(key, tex);
+  } catch (e) {
+    console.warn('Asset load failed:', file, e);
+  }
+}
+
+// 2026-05-17 — CRITICAL ASSET PREDICATE.
+// The loading screen used to await every single sprite (~280 of them)
+// in a sequential for-await loop, blocking the coin slot for the whole
+// download. That was the slowest part of first-load on GitHub Pages.
+//
+// Now we split the manifest into two buckets:
+//   1. CRITICAL — needed for the first wave to render correctly:
+//      map tiles, waypoints, base T1 towers, W1-W5 enemies, primary
+//      projectiles, status badges. ~80 sprites total.
+//   2. DEFERRED — everything else: combo towers, late-game enemies,
+//      endless-mode roster, item icons, advanced projectiles, etc.
+//
+// Critical assets load in PARALLEL (Promise.all over the bucket) — the
+// browser can saturate its HTTP/2 connection rather than serializing
+// one sprite at a time. Deferred assets stream in the background while
+// the player is still on the loading screen or in the early waves; by
+// the time they unlock a combo tower or open the shop, those assets
+// are almost certainly already cached.
+//
+// File-prefix predicate covers the manifest cleanly:
+//   m_  → map tiles                CRITICAL
+//   w_  → waypoint coins           CRITICAL
+//   t1_ → tier-1 base tower art    CRITICAL
+//   t2_ → tier-2 base tower art    CRITICAL (W2+ promotions show up fast)
+//   e1_ → W1-W4 enemies            CRITICAL
+//   p_  → primary projectiles      CRITICAL
+//   s_  → status badges            CRITICAL
+//   u_  → ui badges/tier rings     CRITICAL
+//   ab_ → ally aura ring textures  CRITICAL
+//   eb_ → enemy aura ring textures CRITICAL
+//   t_new_ → reskinned base + a few combos; treat as CRITICAL too
+//   everything else (tc_, tcc_, ts_, e2_, e3_, e_, i_, l_, c_, mb_,
+//   wx_, v_, endless/, etc.) → DEFERRED
+function isCriticalAsset(file: string): boolean {
+  return /^(m_|w_|t1_|t2_|e1_|p_|s_|u_|ab_|eb_|t_new_)/.test(file);
+}
+
 export async function loadAllAssets(onProgress?: (loaded: number, total: number) => void) {
   const entries = Object.entries(MANIFEST);
+  const critical = entries.filter(([, file]) => isCriticalAsset(file));
+  const deferred = entries.filter(([, file]) => !isCriticalAsset(file));
+
   let loaded = 0;
-  for (const [key, file] of entries) {
-    try {
-      const url = BASE + file;
-      let tex = await PixiAssets.load(url);
-      // Pre-render path: downscale large sprite PNGs to a crisp small
-      // bitmap and rebuild the texture from that bitmap. Affects only
-      // tower / enemy / item sprite families — UI / aura / decoration
-      // assets are already at sensible sizes and skip this step.
-      if (tex && shouldPrerender(file)) {
-        const baseRes: any = (tex as any).baseTexture?.resource;
-        const srcEl: HTMLImageElement | HTMLCanvasElement | undefined =
-          baseRes?.source ?? baseRes?.imageBitmap ?? baseRes?.image;
-        if (srcEl) {
-          const bmp = preRenderToCrispBitmap(srcEl, SPRITE_PRERENDER_SIZE);
-          if (bmp) {
-            // Build a fresh Texture from the downscaled canvas. The new
-            // texture's baseTexture is owned by Pixi; NEAREST mode is
-            // applied below alongside the regular cache entry.
-            tex = Texture.from(bmp);
-          }
-        }
-      }
-      // Force NEAREST sampling per-texture even if the global default
-      // missed this one (defensive — defaultOptions covers BaseTexture
-      // CONSTRUCTOR calls, but PixiAssets.load() can hit a cache path).
-      if (tex && (tex as any).baseTexture) {
-        (tex as any).baseTexture.scaleMode = SCALE_MODES.NEAREST;
-      }
-      // Stash the source path on the texture so DOM-side UIs (TowerMenu
-      // portrait, codex thumbnails) can use a plain <img src=...> at
-      // the FULL source resolution even though the in-game PIXI texture
-      // is the downscaled bitmap. Both paths look great because each
-      // does its own appropriate downsample.
-      (tex as any).__srcPath = url;
-      cache.set(key, tex);
-    } catch (e) {
-      console.warn('Asset load failed:', file, e);
-    }
+  const totalCritical = critical.length;
+
+  // PARALLEL critical-asset load. Pixi's Assets.load() is safe to call
+  // concurrently — its internal cache deduplicates same-URL requests.
+  // Promise.all lets the browser fire all critical fetches at once and
+  // saturate HTTP/2 multiplexing.
+  await Promise.all(critical.map(async ([key, file]) => {
+    await loadOneSprite(key, file);
     loaded++;
-    onProgress?.(loaded, entries.length);
-  }
+    onProgress?.(loaded, totalCritical);
+  }));
+
+  // Coin slot unlocks here. The deferred bucket loads in the background
+  // without blocking the player; we don't await this Promise. By the
+  // time the player reaches W6+ or opens the shop, the relevant deferred
+  // assets are almost always already in cache. Missing-asset fallback
+  // (a blank texture) is handled gracefully by Pixi if we ever miss.
+  // Concurrency-limited to 12 parallel loads so we don't choke the
+  // browser's connection pool on networks with a low per-origin cap.
+  (async () => {
+    const CONCURRENCY = 12;
+    let next = 0;
+    const workers = Array.from({ length: CONCURRENCY }, async () => {
+      while (next < deferred.length) {
+        const idx = next++;
+        const [key, file] = deferred[idx];
+        await loadOneSprite(key, file);
+      }
+    });
+    await Promise.all(workers);
+  })();
 }
 
 export function tex(key: string): Texture | null {
