@@ -1100,6 +1100,77 @@ async function boot() {
     pushBanner(b, 4500);
     SFX.bossArrival();
   }
+  // 2026-05-17 — W2 CODEX-PIN TOOLTIP. Subtle, dismissible callout
+  // pointing toward the CODEX button. Fires once when wave 2 starts
+  // (after the player has seen a placement + combat loop). Persists
+  // a dismissed flag in localStorage so it never re-shows. Auto-fades
+  // after 14 seconds even without dismissal. Non-blocking — sits in
+  // the top-right corner of the stage so the player can keep playing.
+  function showCodexPinTip() {
+    const STORE_KEY = 'roman_td_codex_pin_tip_dismissed_v1';
+    try {
+      if (localStorage.getItem(STORE_KEY) === '1') return;
+    } catch { /* private mode — show the tip anyway */ }
+    if (document.getElementById('codex-pin-tip')) return;
+    const stage = document.getElementById('stage-wrap');
+    if (!stage) return;
+    const tip = document.createElement('div');
+    tip.id = 'codex-pin-tip';
+    tip.style.cssText = `
+      position:absolute;
+      top:54px; right:12px;
+      width:228px;
+      padding:10px 26px 10px 12px;
+      background:linear-gradient(180deg,#1a1410,#0c0a08);
+      border:2px solid #ffd34d;
+      color:#e8d6a8;
+      font-family:'Courier New',monospace;
+      font-size:11px;
+      letter-spacing:0.7px;
+      line-height:1.45;
+      box-shadow:0 0 14px rgba(255,211,77,0.35);
+      z-index:55;
+      cursor:default;
+      animation:codexPinTipIn 0.45s ease-out both;
+    `;
+    tip.innerHTML = `
+      <div style="font-size:10px;letter-spacing:2.5px;color:#ffd34d;font-weight:bold;margin-bottom:5px">📌 PRO TIP</div>
+      <div>Pin recipes from the <b style="color:#ffd34d">CODEX → COMBINATIONS</b> tab. Click <b style="color:#ffd34d">📌 PIN</b> on any combo to keep its ingredients + cost visible in your side panel during battle — no more guessing which towers to merge.</div>
+      <button id="codex-pin-tip-x" title="Dismiss"
+        style="position:absolute;top:4px;right:4px;background:transparent;border:none;color:#aa9a4a;font-size:14px;line-height:1;cursor:pointer;padding:2px 6px;font-weight:bold">×</button>
+    `;
+    // Inject one-shot fade-in keyframes if not already present.
+    if (!document.getElementById('codex-pin-tip-style')) {
+      const s = document.createElement('style');
+      s.id = 'codex-pin-tip-style';
+      s.textContent = `
+        @keyframes codexPinTipIn {
+          0%   { opacity:0; transform:translateY(-6px); }
+          100% { opacity:1; transform:translateY(0); }
+        }
+        @keyframes codexPinTipOut {
+          0%   { opacity:1; transform:translateY(0); }
+          100% { opacity:0; transform:translateY(-6px); }
+        }
+        #codex-pin-tip-x:hover { color:#ffd34d; }
+      `;
+      document.head.appendChild(s);
+    }
+    stage.appendChild(tip);
+    const dismiss = () => {
+      try { localStorage.setItem(STORE_KEY, '1'); } catch { /* ignore */ }
+      tip.style.animation = 'codexPinTipOut 0.4s ease-in both';
+      setTimeout(() => tip.remove(), 420);
+    };
+    (tip.querySelector('#codex-pin-tip-x') as HTMLButtonElement | null)?.addEventListener('click', dismiss);
+    // Auto-fade after 14 seconds if the player didn't dismiss it. The
+    // localStorage flag is set on auto-fade too so it doesn't reappear
+    // on the next session — once seen, it's seen.
+    setTimeout(() => {
+      if (document.getElementById('codex-pin-tip')) dismiss();
+    }, 14000);
+  }
+
   function showPhalanxWarning(thisWave: number) {
     document.getElementById('phalanx-warning')?.remove();
     const b = document.createElement('div');
@@ -2713,6 +2784,15 @@ async function boot() {
         startWave(state);
         // User-supplied wave-start bumper SFX (plays the moment the wave starts).
         SFX.waveStartBlast();
+        // 2026-05-17 — W2 PINNED-RECIPE TIP. First subtle teaching moment
+        // for the codex-pinning feature, fired exactly once per device
+        // (localStorage gates re-fires). The tip is non-blocking — it
+        // sits in the top-right corner of the play area with a clear
+        // × dismiss, auto-fades after 14 seconds, and points toward the
+        // CODEX button in the right panel.
+        if (state.wave === 2 && !state.endlessMode) {
+          showCodexPinTip();
+        }
         // 2026-05 v10 — ENDLESS WAVE START. state.wave is frozen at 20
         // so wavesData[19] is the W20 boss config — playing W20 boss
         // music + banner + vignette on every endless wave is wrong.
