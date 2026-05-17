@@ -74,7 +74,14 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   modal.appendChild(panel);
   parent.appendChild(modal);
 
-  const tabs = ['SYSTEMS', 'MECHANICS', 'QUESTS', 'POOL', 'LEGIONS', 'COMBINATIONS', 'ENEMIES', 'ITEMS', 'WAVES'] as const;
+  // 2026-05-17 — WAVES tab removed per design feedback. The per-wave
+  // spawn table duplicated info already in the pre-wave brief + ENEMIES
+  // tab without adding actionable detail, and it spoiled the upcoming
+  // wave composition that the pre-wave tip is calibrated to reveal in
+  // a more readable form. The renderTab('WAVES') branch below is now
+  // dead code; leaving it in place rather than scrubbing keeps the diff
+  // minimal in case a future "Codex Pro" mode wants it back.
+  const tabs = ['SYSTEMS', 'MECHANICS', 'QUESTS', 'POOL', 'LEGIONS', 'COMBINATIONS', 'ENEMIES', 'ITEMS'] as const;
   const tabsEl = panel.querySelector('#codex-tabs')!;
   const bodyEl = panel.querySelector('#codex-body')! as HTMLElement;
   let active: typeof tabs[number] = 'SYSTEMS';
