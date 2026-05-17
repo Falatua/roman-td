@@ -50,7 +50,11 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        # Use `npm install` rather than `npm ci`. The lockfile and
+        # package.json drift slightly when transitive dependencies update
+        # locally; `npm install` reconciles them rather than failing. We
+        # don't need bit-for-bit reproducibility for a public game build.
+        run: npm install --no-audit --no-fund
 
       # Test gate — if any of the 260 vitest cases fail, the deploy stops
       # here. The error surfaces in the Actions log so the next push can
