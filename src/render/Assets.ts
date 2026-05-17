@@ -56,7 +56,7 @@ const MANIFEST: Record<string, string> = {
   // Enemies
   FERAL_DOG: 'e1_feral_dog.png', RABID_DOG: 'e1_rabid_dog.png', ALPHA_DOG: 'e1_alpha_dog.png',
   CELTIC_FOOTMAN: 'e1_celtic_footman.png', CELTIC_BERSERKER: 'e1_celtic_berserker.png', GALLIC_DRUID: 'e1_gallic_druid.png',
-  CELTIC_SCOUT: 'e1_celtic_scout.png', CELTIC_WARLORD: 'e1_brennus.png', CARTHAGE_SPEARMAN: 'e1_carthage_spearman.png',
+  CELTIC_SCOUT: 'e1_celtic_scout.png', CELTIC_WARLORD: 'e1_celtic_warlord.png', CARTHAGE_SPEARMAN: 'e1_carthage_spearman.png',
   NUMIDIAN_RIDER: 'e2_numidian_rider.png', CARTHAGE_ELITE_GUARD: 'e2_carthage_elite_guard.png', WAR_ELEPHANT: 'e2_war_elephant.png',
   HANNIBAL_BARCA: 'e2_hannibal_barca.png', UNDEAD_CELT: 'e2_undead_celt.png', ZOMBIE_DRUID: 'e2_zombie_druid.png',
   UNDEAD_BERSERKER: 'e2_undead_berserker.png', SPECTRAL_SCOUT: 'e2_spectral_scout.png', UNDEAD_WARLORD: 'e2_undead_warlord.png',
@@ -278,7 +278,7 @@ const MANIFEST: Record<string, string> = {
   // ─── ROUND 2 SPRITES (sheets 24-27) ────────────────────────────────
   // Boss portraits — used in boss banner + Codex BOSS SIGNATURES
   BP_ALPHA_DOG: 'bp_alpha_dog.png',
-  BP_CELTIC_WARLORD: 'bp_brennus.png',
+  BP_CELTIC_WARLORD: 'bp_celtic_warlord.png',
   BP_HANNIBAL_BARCA: 'bp_hannibal_barca.png',
   BP_WAR_ELEPHANT: 'bp_war_elephant.png',
   BP_UNDEAD_WARLORD: 'bp_undead_warlord.png',

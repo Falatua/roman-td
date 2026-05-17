@@ -519,22 +519,37 @@ export class RenderEngine {
     g.clear();
     for (const e of state.enemies.values()) {
       if (!e.isBoss) continue;
+      if (e.hp <= 0) continue;
       const ratio = e.hp / e.maxHp;
-      if (ratio >= 0.25 || ratio <= 0) continue;
-      // Tighter ring when lower HP — visual urgency curve.
-      const dangerT = 1 - (ratio / 0.25);          // 0 at 25%, 1 at death
-      const pulse = 0.5 + 0.5 * Math.sin(state.tick * 3 * Math.PI);
+      // 2026-05-17 — ALL BOSSES now get a subtle pulsing red glow at full
+      // health, escalating to the urgency-ring when they drop below 25%
+      // HP. The base glow tells the player "this is a boss" at a glance
+      // without needing to read the HP bar. The escalation at low HP
+      // signals the kill window. Single Graphics pass for both layers.
+      const lowHp = ratio < 0.25;
+      const dangerT = lowHp ? 1 - (ratio / 0.25) : 0;     // 0 at 25%+, 1 at death
+      const pulse = 0.5 + 0.5 * Math.sin(state.tick * (lowHp ? 3 : 1.6) * Math.PI);
       const baseR = GRID.TILE * 1.6;
-      const r = baseR * (1 + 0.10 * pulse + 0.06 * dangerT);
-      const alpha = (0.25 + 0.35 * pulse) * (0.6 + 0.4 * dangerT);
-      // Outer halo
-      g.beginFill(0xff2222, alpha * 0.18);
-      g.drawCircle(e.x, e.y, r * 1.18);
+      const r = baseR * (1 + (lowHp ? 0.10 : 0.05) * pulse + 0.06 * dangerT);
+      // Base passive glow: gentle red halo even at full health.
+      const baseAlpha = (0.10 + 0.06 * pulse);
+      g.beginFill(0xcc1818, baseAlpha * 0.55);
+      g.drawCircle(e.x, e.y, r * 1.05);
       g.endFill();
-      // Inner ring
-      g.lineStyle(3 + dangerT * 2, 0xff3030, alpha);
+      // Soft outer ring stroke for definition.
+      g.lineStyle(1.5, 0xff4040, baseAlpha + 0.10);
       g.drawCircle(e.x, e.y, r);
       g.lineStyle(0);
+      // Low-HP urgency layer — only renders when boss < 25% HP.
+      if (lowHp) {
+        const alpha = (0.25 + 0.35 * pulse) * (0.6 + 0.4 * dangerT);
+        g.beginFill(0xff2222, alpha * 0.18);
+        g.drawCircle(e.x, e.y, r * 1.18);
+        g.endFill();
+        g.lineStyle(3 + dangerT * 2, 0xff3030, alpha);
+        g.drawCircle(e.x, e.y, r);
+        g.lineStyle(0);
+      }
     }
   }
   // BOSS-FIGHT VIGNETTE (2026-05 v6 polish):
@@ -600,9 +615,12 @@ export class RenderEngine {
     // with the wave-banner stack at the top. Sits ~10px above the canvas
     // bottom edge with the label *above* the bar (so the bar reads as the
     // "floor" of the field).
+    // 2026-05-17 — moved UP from y = CANVAS_H - 14 - 14 to leave clearance
+    // for the world-zoom crop. Bar now sits ~52px above the bottom edge so
+    // the zoomed viewport never clips the label or the bar body.
     const w = 360, h = 14;
     const x = (GRID.CANVAS_W - w) / 2;
-    const y = GRID.CANVAS_H - h - 14;
+    const y = GRID.CANVAS_H - h - 52;
     const frac = Math.max(0, boss.hp / boss.maxHp);
     // Outer frame
     g.beginFill(0x000000, 0.65).drawRect(x - 4, y - 4, w + 8, h + 8).endFill();
@@ -1314,25 +1332,17 @@ export class RenderEngine {
       this.layers.bg.addChild(cs);
     }
 
-    // GATE: Roman wall fortification with stone bastions, gold-trim eagle banner above
+    // GATE: 2026-05-17 — stone bastion frame REMOVED. The world-zoom was
+    // cropping the bastion towers + crenellations off-screen; the player
+    // saw a clipped-looking castle. Now we just draw the ROMAN_GATE sprite
+    // itself with the soft gold glow underneath. Cleaner read at any zoom.
     const gateCx = waypointsData.gate.col * GRID.TILE + GRID.TILE / 2;
     const gateCy = waypointsData.gate.row * GRID.TILE + GRID.TILE / 2;
     const gateFrame = new Graphics();
-    // Stone bastion towers flanking
-    gateFrame.beginFill(0x6e6359, 1).drawRect(gateCx - 64, gateCy - 56, 24, 112).endFill();
-    gateFrame.beginFill(0x6e6359, 1).drawRect(gateCx + 40, gateCy - 56, 24, 112).endFill();
-    gateFrame.beginFill(0x82786c, 1).drawRect(gateCx - 60, gateCy - 56, 16, 8).endFill();
-    gateFrame.beginFill(0x82786c, 1).drawRect(gateCx + 44, gateCy - 56, 16, 8).endFill();
-    // Crenellations
-    for (let i = 0; i < 3; i++) {
-      gateFrame.beginFill(0x82786c, 1).drawRect(gateCx - 60 + i * 8, gateCy - 60, 5, 6).endFill();
-      gateFrame.beginFill(0x82786c, 1).drawRect(gateCx + 44 + i * 8, gateCy - 60, 5, 6).endFill();
-    }
-    // Wall body between
-    gateFrame.beginFill(0x5a5048, 1).drawRect(gateCx - 40, gateCy - 30, 80, 60).endFill();
-    // Gold glow underneath (warmth — civilization to defend)
-    gateFrame.beginFill(0xd4af37, 0.18).drawCircle(gateCx, gateCy, 88).endFill();
-    gateFrame.beginFill(0xd4af37, 0.10).drawCircle(gateCx, gateCy, 110).endFill();
+    // Gold glow underneath (warmth — civilization to defend). Tightened
+    // radius so the glow doesn't bleed into the cropped perimeter.
+    gateFrame.beginFill(0xd4af37, 0.20).drawCircle(gateCx, gateCy, 56).endFill();
+    gateFrame.beginFill(0xd4af37, 0.12).drawCircle(gateCx, gateCy, 78).endFill();
     this.layers.bg.addChild(gateFrame);
     const gate = tex('ROMAN_GATE');
     if (gate) {
@@ -1513,10 +1523,35 @@ export class RenderEngine {
       // pinned to the tower corner still marks milestones; the MVP halo
       // (if/when added) reads off state.lastWaveMvpId. Sprite size is
       // pinned to a single tile + the existing attack-flash pop.
-      const totalScale = flashScale;
+      //
+      // 2026-05-17 — PROSPECT HOVER HIGHLIGHT. During prospect placement
+      // and pick-keeper phases, if the player's cursor is over THIS tower
+      // (either via canvas mousemove → hoveredTowerId, or via prospect
+      // side-panel hover → selectedTowerId), the sprite gets:
+      //   • +15% scale pop so it visually pushes forward
+      //   • Pulsing alpha (sin oscillation, range 0.65..1.0) so the focus
+      //     reads as "blinking" — the player sees instantly which prospect
+      //     they're considering, whether they're hovering on the map or
+      //     scrolling the side panel.
+      // The effect only fires for PENDING towers (prospects). Kept towers
+      // get the standard sprite render so the prospect flow stays clean.
+      const isFocusedProspect = tw.pending && (
+        tw.id === this.hoveredTowerId || tw.id === this.selectedTowerId
+      );
+      let focusScale = 1;
+      let focusAlpha = 1;
+      if (isFocusedProspect) {
+        focusScale = 1.15;
+        // Pulse between 0.55 and 1.0 alpha at ~3.5 Hz — fast enough to
+        // read as a "blink" without being seizure-inducing.
+        focusAlpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(state.tick * 7));
+      }
+      const totalScale = flashScale * focusScale;
       entry.sp.scale.set((GRID.TILE * 1.5 / (entry.sp.texture?.width || 1)) * totalScale,
                          (GRID.TILE * 1.5 / (entry.sp.texture?.height || 1)) * totalScale);
-      if (tw.pending) {
+      if (isFocusedProspect) {
+        entry.sp.alpha = focusAlpha;
+      } else if (tw.pending) {
         entry.sp.alpha = 0.7 + 0.2 * (0.5 + 0.5 * Math.sin(state.tick * 6));
       } else {
         entry.sp.alpha = 1;

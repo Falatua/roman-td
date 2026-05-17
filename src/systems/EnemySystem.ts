@@ -503,7 +503,11 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     const dx = tx - e.x;
     const dy = ty - e.y;
     const dist = Math.max(1, Math.hypot(dx, dy));
-    const speed = GRID.TILE * 3.5; // travels ~3.5 tiles/sec — slow, dodgeable
+    // 2026-05-17 — dart speed lowered from 3.5 → 2.2 tiles/sec per player feedback.
+    // Slower telegraph = more reaction window for the player to kill the druid
+    // before the sleep lands, and the trailing cyan/purple orb reads as a real
+    // threat instead of a blur.
+    const speed = GRID.TILE * 2.2;
     const darts = (state as any).__druidSleepDarts ?? ((state as any).__druidSleepDarts = []);
     darts.push({
       x: e.x,

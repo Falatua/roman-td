@@ -66,15 +66,16 @@ const VFX_HOLD_AFTER_LAST = 0.25;
 const VFX_FADEOUT_SECONDS = 0.7;
 
 // Triggered from WaveManager.startWave after the standard spawn queue
-// is built. If this wave matches the schedule, kicks off the event 8s
-// into the wave so the player has time to settle into combat first.
+// is built. If this wave matches the schedule, kicks off the event
+// IMMEDIATELY in WAVE-OVERRIDE mode: every enemy in the wave will spawn
+// from a perimeter fire (Invasion) or center urn (Uprising), not the cave.
 export function maybeTriggerSurpriseEventForWave(state: GameStateShape): void {
   if (state.endlessMode) return;
   const kind = SURPRISE_EVENT_SCHEDULE[state.wave];
   if (!kind) return;
   const lastWave = state.lastSurpriseEventWave ?? 0;
   if (state.wave - lastWave < 3) return;
-  scheduleSurpriseEvent(state, kind, state.tick + 8);
+  scheduleSurpriseEvent(state, kind, state.tick + 0.5, /*waveOverride=*/true);
 }
 
 // Endless-mode trigger. ~25% chance per endless wave with 3-wave cooldown.
@@ -85,16 +86,21 @@ export function maybeTriggerEndlessSurpriseEvent(state: GameStateShape, factionK
   if (Math.random() > 0.25) return;
   const isUndeadFaction = factionKey === 'UNDEAD_CELTS' || factionKey === 'UNDEAD_CARTHAGE';
   const kind = isUndeadFaction && Math.random() < 0.5 ? SurpriseEventKind.UPRISING : SurpriseEventKind.INVASION;
-  scheduleSurpriseEvent(state, kind, state.tick + 6);
+  // Endless mode also uses waveOverride — full perimeter / center spawn flow.
+  scheduleSurpriseEvent(state, kind, state.tick + 0.5, /*waveOverride=*/true);
 }
 
-// Called when an enemy dies or leaks. If it was the last event-spawned
-// enemy alive, queues the reward modal (main.ts watches pendingSurpriseReward).
+// Called when an enemy dies or leaks. In WAVE-OVERRIDE mode the reward
+// modal trigger has been moved to WaveManager.checkWaveEnd — we only
+// remove the enemy from the live tracking set here. (In legacy non-override
+// mode, this method still detected "last event enemy resolved → reward",
+// but no current caller uses that path.)
 export function notifySurpriseEnemyResolved(state: GameStateShape, enemyId: string): void {
   const ev = state.activeSurpriseEvent;
   if (!ev || ev.rewardGiven) return;
   if (!ev.spawnedEnemyIds.has(enemyId)) return;
   ev.spawnedEnemyIds.delete(enemyId);
+  if (ev.waveOverride) return;     // reward fires at wave-end, not per-enemy
   const allFired = ev.spawnPoints.every(p => p.fired);
   if (allFired && ev.spawnedEnemyIds.size === 0) {
     ev.endedAt = state.tick;
@@ -104,56 +110,100 @@ export function notifySurpriseEnemyResolved(state: GameStateShape, enemyId: stri
   }
 }
 
-// Per-frame tick: drains spawn entries whose spawnAt has elapsed, then
-// transitions the event to fade-out / cleared as the schedule completes.
+// Called from WaveManager.checkWaveEnd when a wave ends. If the wave had an
+// active waveOverride surprise event AND the player is still alive, fires
+// the reward modal trigger. Player gets to pick their accomplishment reward.
+export function notifySurpriseEventWaveEnded(state: GameStateShape): void {
+  const ev = state.activeSurpriseEvent;
+  if (!ev || !ev.waveOverride || ev.rewardGiven) return;
+  if (state.lives <= 0) return;     // dead player gets no reward
+  ev.endedAt = state.tick;
+  ev.rewardGiven = true;
+  state.pendingSurpriseReward = { kind: ev.kind === SurpriseEventKind.INVASION ? 'INVASION' : 'UPRISING' };
+  state.surpriseEventsCompleted = (state.surpriseEventsCompleted ?? 0) + 1;
+  // Trigger the VFX fade-out so fires/urns retreat after the reward picks.
+  if (ev.vfxFadeOutAt === 0) ev.vfxFadeOutAt = state.tick;
+}
+
+// Per-frame tick. In legacy (non-override) mode this drains the fixed 8-spawn
+// schedule. In WAVE-OVERRIDE mode the actual spawns are driven by
+// WaveManager.tickSpawns (which reads eventPointIdx off each spawn queue
+// entry and routes via spawnAtSurpriseEventPoint below); this tick is a
+// no-op for spawning but still handles VFX fade-out detection.
 export function tickSurpriseEvents(state: GameStateShape): void {
   const ev = state.activeSurpriseEvent;
   if (!ev) return;
-  // Drain ready spawn entries.
-  for (const point of ev.spawnPoints) {
-    if (point.fired) continue;
-    if (state.tick < point.spawnAt) continue;
-    const enemyType = point.enemyType as EnemyType;
-    const wIdx = Math.max(0, Math.min(wavesData.length - 1, state.wave - 1));
-    const w = wavesData[wIdx];
-    const isBossSpawn = !!(enemiesData as any)[enemyType]?.isBoss;
-    const isFlyerSpawn = !!(enemiesData as any)[enemyType]?.isFlyer;
-    const basicHpMult = effectiveWaveHpMult(state.wave, w.hpMult, false);
-    const layerMult = lateGameLayerMult(state.wave, isBossSpawn, isFlyerSpawn);
-    const spawnHpMult = (isBossSpawn
-      ? effectiveWaveHpMult(state.wave, w.hpMult, true)
-      : basicHpMult) * layerMult;
-    const e = spawnEnemy(state, enemyType, spawnHpMult);
-    if (point.pathIndex >= 0 && point.pathIndex < state.groundPath.length) {
-      e.pathIndex = point.pathIndex;
-      e.pathProgress = 0;
-      const pt = state.groundPath[point.pathIndex];
-      e.x = pt.col * GRID.TILE + GRID.TILE / 2;
-      e.y = pt.row * GRID.TILE + GRID.TILE / 2;
-      e.prevX = e.x;
-      e.prevY = e.y;
-    }
-    // Emergence-VFX tags. Renderer reads these on the enemy each frame.
-    (e as any).__surpriseSpawn = true;
-    (e as any).__surpriseKind = ev.kind === SurpriseEventKind.INVASION ? 'INVASION' : 'UPRISING';
-    (e as any).__surpriseSpawnVfxX = point.vfxX;
-    (e as any).__surpriseSpawnVfxY = point.vfxY;
-    (e as any).__surpriseSpawnTick = state.tick;
-    ev.spawnedEnemyIds.add(e.id);
-    point.fired = true;
-    ev.lastSpawnFiredAt = state.tick;
-  }
-  // Transition: once every point fired AND the hold + fadeout window
-  // passed, clear the VFX (the event object itself stays alive until
-  // the last enemy resolves so the reward modal can fire).
-  const allFired = ev.spawnPoints.every(p => p.fired);
-  if (allFired) {
-    const fadeStart = ev.lastSpawnFiredAt + VFX_HOLD_AFTER_LAST;
-    const fadeEnd = fadeStart + VFX_FADEOUT_SECONDS;
-    if (state.tick > fadeEnd && ev.vfxFadeOutAt === 0) {
-      ev.vfxFadeOutAt = fadeStart;     // signal: VFX is done
+  if (!ev.waveOverride) {
+    // Legacy path: drain the fixed schedule (unused by current campaign
+    // since maybeTrigger* always passes waveOverride=true, but kept for
+    // back-compat if a future caller schedules a non-override event).
+    for (const point of ev.spawnPoints) {
+      if (point.fired) continue;
+      if (state.tick < point.spawnAt) continue;
+      const enemyType = point.enemyType as EnemyType;
+      const wIdx = Math.max(0, Math.min(wavesData.length - 1, state.wave - 1));
+      const w = wavesData[wIdx];
+      const isBossSpawn = !!(enemiesData as any)[enemyType]?.isBoss;
+      const isFlyerSpawn = !!(enemiesData as any)[enemyType]?.isFlyer;
+      const basicHpMult = effectiveWaveHpMult(state.wave, w.hpMult, false);
+      const layerMult = lateGameLayerMult(state.wave, isBossSpawn, isFlyerSpawn);
+      const spawnHpMult = (isBossSpawn
+        ? effectiveWaveHpMult(state.wave, w.hpMult, true)
+        : basicHpMult) * layerMult;
+      const e = spawnEnemy(state, enemyType, spawnHpMult);
+      attachSurpriseSpawnTags(state, e, ev, point);
+      point.fired = true;
+      ev.lastSpawnFiredAt = state.tick;
     }
   }
+  // VFX fade-out detection. In override mode this only fires once the wave
+  // ends (clearSurpriseEventsForWaveEnd will trigger the fadeout). In legacy
+  // mode it fires once all 8 points have drained + the hold window passed.
+  if (!ev.waveOverride) {
+    const allFired = ev.spawnPoints.every(p => p.fired);
+    if (allFired) {
+      const fadeStart = ev.lastSpawnFiredAt + VFX_HOLD_AFTER_LAST;
+      const fadeEnd = fadeStart + VFX_FADEOUT_SECONDS;
+      if (state.tick > fadeEnd && ev.vfxFadeOutAt === 0) {
+        ev.vfxFadeOutAt = fadeStart;
+      }
+    }
+  }
+}
+
+// Called from WaveManager.tickSpawns in WAVE-OVERRIDE mode to repoint a
+// freshly-spawned enemy onto an event spawn location. Picks the spawn
+// point via round-robin (queueIdx % 4) so all four fires/urns are active
+// throughout the wave. Returns true if the enemy was successfully redirected.
+export function spawnAtSurpriseEventPoint(
+  state: GameStateShape, enemy: any, queueIdx: number
+): boolean {
+  const ev = state.activeSurpriseEvent;
+  if (!ev || !ev.waveOverride || ev.spawnPoints.length === 0) return false;
+  const point = ev.spawnPoints[queueIdx % ev.spawnPoints.length];
+  if (!point) return false;
+  if (point.pathIndex >= 0 && point.pathIndex < state.groundPath.length) {
+    enemy.pathIndex = point.pathIndex;
+    enemy.pathProgress = 0;
+    const pt = state.groundPath[point.pathIndex];
+    enemy.x = pt.col * GRID.TILE + GRID.TILE / 2;
+    enemy.y = pt.row * GRID.TILE + GRID.TILE / 2;
+    enemy.prevX = enemy.x;
+    enemy.prevY = enemy.y;
+  }
+  attachSurpriseSpawnTags(state, enemy, ev, point);
+  point.fired = true;
+  ev.lastSpawnFiredAt = state.tick;
+  ev.spawnedEnemyIds.add(enemy.id);
+  return true;
+}
+
+function attachSurpriseSpawnTags(state: GameStateShape, enemy: any, ev: SurpriseEventState, point: SurpriseEventSpawnPoint): void {
+  enemy.__surpriseSpawn = true;
+  enemy.__surpriseKind = ev.kind === SurpriseEventKind.INVASION ? 'INVASION' : 'UPRISING';
+  enemy.__surpriseSpawnVfxX = point.vfxX;
+  enemy.__surpriseSpawnVfxY = point.vfxY;
+  enemy.__surpriseSpawnTick = state.tick;
 }
 
 // Called from WaveManager.checkWaveEnd. Clears any in-flight event state.
@@ -168,10 +218,10 @@ export function clearSurpriseEventsForWaveEnd(state: GameStateShape): void {
 
 // ─── INTERNAL: SCHEDULING + POINT GENERATION ──────────────────────────
 
-function scheduleSurpriseEvent(state: GameStateShape, kind: SurpriseEventKind, startAtTick: number) {
+function scheduleSurpriseEvent(state: GameStateShape, kind: SurpriseEventKind, startAtTick: number, waveOverride: boolean = false) {
   const points = kind === SurpriseEventKind.INVASION
-    ? generateInvasionPoints(state, startAtTick)
-    : generateUprisingPoints(state, startAtTick);
+    ? generateInvasionPoints(state, startAtTick, waveOverride)
+    : generateUprisingPoints(state, startAtTick, waveOverride);
   if (points.length === 0) return;
   const atmosProps = kind === SurpriseEventKind.INVASION
     ? generateInvasionAtmosphere(state, points)
@@ -185,7 +235,8 @@ function scheduleSurpriseEvent(state: GameStateShape, kind: SurpriseEventKind, s
     vfxFadeOutAt: 0,
     lastSpawnFiredAt: 0,
     rewardGiven: false,
-    atmosProps
+    atmosProps,
+    waveOverride
   };
   state.activeSurpriseEvent = ev;
   state.lastSurpriseEventWave = state.wave;
@@ -346,7 +397,7 @@ function buildPointsFromLocations(
   return out;
 }
 
-function generateInvasionPoints(state: GameStateShape, startAtTick: number): SurpriseEventSpawnPoint[] {
+function generateInvasionPoints(state: GameStateShape, startAtTick: number, waveOverride: boolean): SurpriseEventSpawnPoint[] {
   // 4 perimeter "breach" tiles: N/S/E/W mid-edges. The E point is
   // inset to avoid the HUD button column on the right.
   const midCol = Math.floor(GRID.COLS / 2);
@@ -358,11 +409,32 @@ function generateInvasionPoints(state: GameStateShape, startAtTick: number): Sur
     { col: 1, row: midRow },
     { col: wallSafeRight, row: midRow },
   ];
+  // In waveOverride mode the spawn-timing is driven by the wave queue
+  // (not the per-point spawnAt), so we only need 1 entry per point
+  // representing the VISUAL location. tickSpawns reads pointId on each
+  // queue entry to choose the spawn location.
+  if (waveOverride) {
+    return locations.map((pos, i) => {
+      const vfxX = pos.col * GRID.TILE + GRID.TILE / 2;
+      const vfxY = pos.row * GRID.TILE + GRID.TILE / 2;
+      const nearest = nearestPathIndex(state, pos.col, pos.row);
+      return {
+        vfxX, vfxY,
+        pathTileX: state.groundPath[nearest]?.col ?? pos.col,
+        pathTileY: state.groundPath[nearest]?.row ?? pos.row,
+        pathIndex: nearest,
+        spawnAt: startAtTick,
+        enemyType: '',     // unused in override mode
+        fired: false,      // gets repurposed: "has any enemy spawned here this wave"
+        pointId: i
+      };
+    });
+  }
   const enemyType = pickSurpriseEnemyType(state, /*undeadOnly=*/false);
   return buildPointsFromLocations(locations, SurpriseEventKind.INVASION, enemyType, startAtTick, state);
 }
 
-function generateUprisingPoints(state: GameStateShape, startAtTick: number): SurpriseEventSpawnPoint[] {
+function generateUprisingPoints(state: GameStateShape, startAtTick: number, waveOverride: boolean): SurpriseEventSpawnPoint[] {
   // Center-of-map diamond. Anchor at map center ± jitter. Urns at
   // radius 2 (N/S/E/W of center).
   const midCol = Math.floor(GRID.COLS / 2);
@@ -377,6 +449,23 @@ function generateUprisingPoints(state: GameStateShape, startAtTick: number): Sur
     { col: cx - 2, row: cy },
     { col: cx + 2, row: cy },
   ];
+  if (waveOverride) {
+    return locations.map((pos, i) => {
+      const vfxX = pos.col * GRID.TILE + GRID.TILE / 2;
+      const vfxY = pos.row * GRID.TILE + GRID.TILE / 2;
+      const nearest = nearestPathIndex(state, pos.col, pos.row);
+      return {
+        vfxX, vfxY,
+        pathTileX: state.groundPath[nearest]?.col ?? pos.col,
+        pathTileY: state.groundPath[nearest]?.row ?? pos.row,
+        pathIndex: nearest,
+        spawnAt: startAtTick,
+        enemyType: '',
+        fired: false,
+        pointId: i
+      };
+    });
+  }
   const enemyType = pickSurpriseEnemyType(state, /*undeadOnly=*/true);
   return buildPointsFromLocations(locations, SurpriseEventKind.UPRISING, enemyType, startAtTick, state);
 }

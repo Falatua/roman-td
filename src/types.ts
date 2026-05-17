@@ -252,6 +252,12 @@ export interface SurpriseEventState {
   // Atmospheric dressing props (small fires / blood stains / smoke haze).
   // Generated at event-schedule time; fade in/out with the main VFX.
   atmosProps: SurpriseAtmosProp[];
+  // 2026-05-17 — WAVE OVERRIDE mode. When true, this event takes over the
+  // entire wave's spawn flow: every enemy in waves.json spawns at one of
+  // the 4 event points (round-robin) instead of from the cave. The wave's
+  // spawn queue is tagged with eventPointIdx at startWave; tickSpawns
+  // reroutes spawn position accordingly. VFX persists for the whole wave.
+  waveOverride: boolean;
 }
 
 export enum TowerMode { MELEE, RANGED }

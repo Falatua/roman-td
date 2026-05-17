@@ -39,7 +39,7 @@ import { towerName, enemyName, factionName, pretty } from './format';
 import { showEnemyInspect, showEnemyInspectByType } from './render/EnemyInspect';
 import { armorProfileForGroup, armorDamageTypeShortLabel } from './systems/EnemyResistances';
 import { SFX, setFactionBGM, setMuted, isMuted, playMusicTrack, stopMusicTrack, stopAllMusicTracks, surpriseEventSting } from './render/AudioManager';
-import { tickSurpriseEvents, notifySurpriseEnemyResolved } from './systems/SurpriseEvents';
+import { tickSurpriseEvents, notifySurpriseEnemyResolved, clearSurpriseEventsForWaveEnd } from './systems/SurpriseEvents';
 import { showSurpriseRewardModal } from './render/SurpriseReward';
 
 async function boot() {
@@ -980,6 +980,12 @@ async function boot() {
       brief.style.minWidth = '260px';
     }
   }
+  // 2026-05-17 — Modifier chip REDESIGNED. The old sprite-scroll background
+  // (CB_BANNER_SMALL) read as a busy stage prop that didn't match the rest
+  // of the HUD. New version uses the same dark-panel/gold-border vocabulary
+  // as the wave brief, with a collapse caret in the top-right so the player
+  // can hide the chip entirely when they need to see the field beneath.
+  // Collapsed state shows just a small ⚡ icon + caret to expand again.
   function updateModifierChip() {
     let chip = document.getElementById('modifier-chip') as HTMLElement | null;
     const mod = state.waveModifier ? WAVE_MODIFIERS.find(m => m.key === state.waveModifier) : null;
@@ -988,34 +994,50 @@ async function boot() {
       return;
     }
     const colorHex = '#' + mod.color.toString(16).padStart(6, '0');
+    const collapseKey = 'roman_td_modifier_chip_collapsed';
+    let collapsed = false;
+    try { collapsed = localStorage.getItem(collapseKey) === '1'; } catch { /* ignore */ }
     if (!chip) {
       chip = document.createElement('div');
       chip.id = 'modifier-chip';
-      const bannerSrc = imgSrc('CB_BANNER_SMALL');
-      const baseStyle = bannerSrc
-        ? `background-image:url('${bannerSrc}');background-size:100% 100%;background-repeat:no-repeat;`
-        : `background:rgba(12,10,8,0.85);border:2px solid ${colorHex};`;
-      // MODIFIER-CHIP SCROLL TEXT (2026-05 v4): BOLD BLACK on parchment, no
-      // shadow. Dark fallback (no banner sprite) gets cream + black drop
-      // shadow because pure black on dark backgrounds is unreadable.
-      const textColor = bannerSrc ? '#000' : '#fff8e0';
-      const textShadow = bannerSrc ? 'none' : '0 0 4px #000,1px 1px 0 #000';
-      chip.style.cssText = `position:absolute;top:8px;right:8px;padding:14px 20px;${baseStyle}color:${textColor};font-family:'Courier New',monospace;font-size:14px;letter-spacing:2px;font-weight:900;z-index:60;pointer-events:none;display:flex;align-items:center;gap:6px;text-shadow:${textShadow};box-shadow:0 0 14px ${colorHex}66;`;
+      // Clean wave-brief-style panel: dark gradient, gold border, monospace.
+      chip.style.cssText = `position:absolute;top:8px;right:8px;padding:8px 12px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid ${colorHex};color:#e8d6a8;font-family:'Courier New',monospace;font-size:12px;letter-spacing:1.5px;font-weight:bold;z-index:60;display:flex;flex-direction:column;gap:4px;min-width:180px;max-width:240px;box-shadow:0 0 16px ${colorHex}55;`;
       document.getElementById('stage-wrap')?.appendChild(chip);
+    } else {
+      chip.style.borderColor = colorHex;
+      chip.style.boxShadow = `0 0 16px ${colorHex}55`;
     }
-    chip.style.boxShadow = `0 0 14px ${colorHex}66`;
-    // Sprite icon based on modifier key
     const ICON_KEY: Record<string, string> = {
       BLOOD_MOON: 'MB_BLOOD_MOON', STORM_SURGE: 'MB_STORM_SURGE',
       DEATH_PACT: 'MB_DEATH_PACT', VEIL: 'MB_VEIL',
       REVENANT: 'MB_REVENANT', GROUP_MARCH: 'MB_GROUP_MARCH'
     };
     const src = texUrl(ICON_KEY[mod.key]);
-    const imgHtml = src ? `<img src="${src}" alt="" style="width:18px;height:18px;image-rendering:pixelated"/>` : '⚡';
-    // Append a one-line stake reminder so the player can see the deal at a
-    // glance even after the modifier banner fades. In voice: RNG event, two
-    // outcomes, gold/score numbers.
-    chip.innerHTML = `${imgHtml} ${mod.name.toUpperCase()}<span style="display:block;font-size:10px;letter-spacing:1.5px;margin-top:2px;font-weight:900">🎲 RNG · SURVIVE = +25g +ITEM +1000 PTS</span>`;
+    const imgHtml = src ? `<img src="${src}" alt="" style="width:18px;height:18px;image-rendering:pixelated;flex-shrink:0"/>` : '<span style="font-size:14px;flex-shrink:0">⚡</span>';
+    if (collapsed) {
+      chip.style.padding = '4px 8px';
+      chip.style.minWidth = '0';
+      chip.innerHTML = `<div style="display:flex;align-items:center;gap:6px">${imgHtml}<button id="modifier-chip-toggle" title="Expand" style="background:transparent;border:none;color:${colorHex};font-size:14px;line-height:1;cursor:pointer;padding:0 2px;font-weight:bold">▸</button></div>`;
+    } else {
+      chip.style.padding = '8px 12px';
+      chip.style.minWidth = '180px';
+      chip.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px">
+          ${imgHtml}
+          <span style="flex:1;color:${colorHex};font-size:12px;letter-spacing:2px">${mod.name.toUpperCase()}</span>
+          <button id="modifier-chip-toggle" title="Collapse" style="background:transparent;border:none;color:#aa9a4a;font-size:13px;line-height:1;cursor:pointer;padding:0 2px;font-weight:bold">▾</button>
+        </div>
+        <div style="font-size:9.5px;letter-spacing:1.2px;color:#aa9a4a;font-weight:normal;line-height:1.4">🎲 RNG WAVE · survive = <b style="color:#88ff88">+25g · +ITEM · +1000 pts</b></div>
+      `;
+    }
+    const toggleBtn = chip.querySelector('#modifier-chip-toggle') as HTMLButtonElement | null;
+    if (toggleBtn) {
+      toggleBtn.onclick = (e) => {
+        e.stopPropagation();
+        try { localStorage.setItem(collapseKey, collapsed ? '0' : '1'); } catch { /* ignore */ }
+        updateModifierChip();     // re-render with new state
+      };
+    }
   }
   function showWeatherBanner(profile: { name: string; blurb: string; color: number }) {
     document.getElementById('weather-banner')?.remove();
@@ -3539,6 +3561,10 @@ async function boot() {
         showSurpriseRewardModal(app, kind, inventory, state, () => {
           // Modal closed — clear the one-shot guard so next event's modal can open.
           (state as any).__surpriseRewardModalShown = false;
+          // 2026-05-17 — In waveOverride mode the active event was held
+          // open until the reward modal closed (so the modal could read
+          // its kind). Clear it now that the player has picked.
+          clearSurpriseEventsForWaveEnd(state);
         });
       }
       // Bonus-boss announcement: WaveManager sets this when a surprise boss arrives.

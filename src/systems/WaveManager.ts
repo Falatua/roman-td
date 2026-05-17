@@ -19,7 +19,7 @@ import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
 import { spawnEnemy } from './EnemySystem';
 import { generateEndlessWave, EndlessWaveConfig, endlessClearScore } from './EndlessMode';
-import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, clearSurpriseEventsForWaveEnd } from './SurpriseEvents';
+import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, clearSurpriseEventsForWaveEnd, spawnAtSurpriseEventPoint, notifySurpriseEventWaveEnded } from './SurpriseEvents';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
 const FACTION_BOSS: Record<string, string> = {
@@ -257,6 +257,10 @@ export function tickSpawns(state: GameStateShape, dt: number) {
   // per tickSpawns; bosses use a separate linear-only path below.
   const basicHpMult = effectiveWaveHpMult(state.wave, w.hpMult, false);
   const bossWaveSoloBuff = w.type === 'B' ? 2.0 : 1.0;     // +100% HP when boss is alone
+  // 2026-05-17 — Round-robin counter for surprise-event waveOverride mode.
+  // Each spawn off the queue gets the next point in sequence so all 4
+  // fires/urns stay active throughout the wave instead of just one.
+  let surpriseSpawnIdx = (state as any).__surpriseSpawnRoundIdx ?? 0;
   while (state.spawnQueue.length > 0 && state.spawnQueue[0].spawnAt <= state.spawnElapsed) {
     const item = state.spawnQueue.shift()!;
     // Boss vs basic split (2026-05 v5): bosses scale LINEARLY across the
@@ -274,6 +278,15 @@ export function tickSpawns(state: GameStateShape, dt: number) {
       ? effectiveWaveHpMult(state.wave, w.hpMult, true) * bossWaveSoloBuff
       : basicHpMult) * layerMult;
     const e = spawnEnemy(state, item.type as EnemyType, spawnHpMult);
+    // 2026-05-17 — Surprise event waveOverride: redirect this enemy to
+    // spawn at a perimeter fire (Invasion) or center urn (Uprising)
+    // instead of the cave. Round-robin across the 4 visual points so
+    // all four stay active. Bosses skip the redirect — boss waves
+    // never coincide with surprise events anyway, but defensive guard.
+    if (!isBossSpawn) {
+      spawnAtSurpriseEventPoint(state, e, surpriseSpawnIdx);
+      surpriseSpawnIdx++;
+    }
     // WAVE 1 EXCEPTION (2026-05): every enemy that spawns on wave 1 is
     // pinned to a flat 100 HP regardless of baseHp / hpMult / per-wave /
     // boss-cleared scaling. W1 is the player's onboarding moment — they
@@ -336,6 +349,9 @@ export function tickSpawns(state: GameStateShape, dt: number) {
       }
     }
   }
+  // Persist the round-robin counter across ticks so subsequent spawns
+  // continue from where the last batch left off.
+  (state as any).__surpriseSpawnRoundIdx = surpriseSpawnIdx;
 }
 
 export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) => void) {
@@ -369,7 +385,12 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
       state.weatherKey = null;
       state.weatherIntensity = 1;
       state.waveModifier = null;
-      clearSurpriseEventsForWaveEnd(state);
+      (state as any).__surpriseSpawnRoundIdx = 0;
+      // 2026-05-17 — Fire reward modal trigger BEFORE clearing the event,
+      // so the modal can read activeSurpriseEvent.kind. clearSurpriseEventsForWaveEnd
+      // is then deferred until the reward closes (main.ts handles this).
+      notifySurpriseEventWaveEnded(state);
+      if (!state.pendingSurpriseReward) clearSurpriseEventsForWaveEnd(state);
       onWaveEnd(goldAward);
       return;
     }
@@ -402,8 +423,14 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
     state.weatherIntensity = 1;
     state.waveModifier = null;
     (state as any).bloodMoonHpMult = 1;
-    // Surprise events: scars + active event clear on wave end.
-    clearSurpriseEventsForWaveEnd(state);
+    (state as any).__surpriseSpawnRoundIdx = 0;
+    // 2026-05-17 — Surprise event wave clear path. notifySurpriseEventWaveEnded
+    // sets pendingSurpriseReward IF the event was in waveOverride mode AND
+    // the player survived. The active event stays alive until the reward
+    // modal closes (main.ts re-fires clearSurpriseEventsForWaveEnd there).
+    // Otherwise we clear immediately like before.
+    notifySurpriseEventWaveEnded(state);
+    if (!state.pendingSurpriseReward) clearSurpriseEventsForWaveEnd(state);
     onWaveEnd(w.gold);   // callback may override phase (e.g. VICTORY)
   }
 }

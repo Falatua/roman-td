@@ -36,17 +36,17 @@ interface BossDossier {
 
 const BOSS_DATA: Record<number, BossDossier> = {
   5: {
-    name: 'CELTIC WARLORD',
+    name: 'BRENNUS',
     faction: 'CELTS',
     sprite: 'CELTIC_WARLORD',
     warning: [
       'The Celts already buried three of your towers and the wave hasn\'t started.',
-      'Their warlord rebirths at 35% HP. You don\'t. Plan accordingly.',
+      'Brennus once sacked Rome. He is here to repeat the lesson.',
       'The gods of Gallia are taking bets, general. You are not favored.',
       'ARE YOU REALLY SURE?'
     ],
     doom: [
-      'You actually clicked yes. The warlord just heard.',
+      'You actually clicked yes. Brennus just heard.',
       'Druidic Mist will eat 20% of your shots. We told you to read the Codex.',
       'Your last prospect roll was, statistically, an insult to Rome.',
       'The Senate has prepared a brief eulogy. They can edit it for victories. Probably.',
@@ -58,7 +58,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     faction: 'CARTHAGE',
     sprite: 'HANNIBAL_BARCA',
     warning: [
-      'You barely survived the warlord. Hannibal already knows.',
+      'You barely survived Brennus. Hannibal already knows.',
       'He brings three war elephants. They are all bosses. They all leak 10 lives.',
       'At 50% HP he rebirths, summons two more elephants, and adds +60% speed.',
       'Your treasury cannot afford this. Your strategy is, frankly, optimistic.',

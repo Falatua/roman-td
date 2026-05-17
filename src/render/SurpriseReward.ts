@@ -88,14 +88,21 @@ export function showSurpriseRewardModal(
     return;
   }
 
+  // 2026-05-17 — Accomplishment-flavored copy. The reward fires AFTER the
+  // entire wave is over (all enemies killed or leaked, player still alive),
+  // so the framing leans into "you survived a true ordeal" rather than the
+  // older "the breach is sealed mid-wave." Style matches the rest of the
+  // game's voice (Roman, slightly grim, the Senate is watching).
   const accent = kind === 'INVASION' ? '#ff7733' : '#a050ff';
   const headline = kind === 'INVASION'
-    ? 'THE BREACH IS SEALED'
-    : 'THE DEAD ARE BANISHED';
+    ? 'YOU SURVIVED THE INVASION'
+    : 'YOU SURVIVED THE UPRISING';
   const subline = kind === 'INVASION'
-    ? 'Smoke clears over the fallen invaders. Salvage one trophy from the wreckage.'
-    : 'The urns crumble back into dust. Claim one relic from the ritual circle.';
-  const eyebrow = kind === 'INVASION' ? '⚔ INVASION REPELLED' : '☠ UPRISING QUELLED';
+    ? 'The perimeter held. Smoke clears over the broken siege lines, and Rome stands. The Senate has prepared a trophy from the wreckage — claim one and continue the campaign.'
+    : 'The ground falls silent. The urns crack open and crumble; whatever rose from them has been put back. The empire honors your defense with one relic from the ritual circle.';
+  const eyebrow = kind === 'INVASION'
+    ? '⚔ ACCOMPLISHMENT — INVASION REPELLED'
+    : '☠ ACCOMPLISHMENT — UPRISING QUELLED';
 
   const modal = document.createElement('div');
   modal.id = 'surprise-reward-modal';

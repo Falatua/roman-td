@@ -163,8 +163,12 @@ function ensureStyle() {
     #${TAB_ID} {
       position: absolute;
       right: 12px; bottom: 12px;
-      min-width: 220px;
-      padding: 10px 14px 10px 10px;
+      /* 2026-05-17 — slimmer profile (min-width 220 → 180) so the tab
+         doesn't dominate the bottom-right corner. The collapse caret
+         shrinks this further to ~50px when the player wants the tower
+         beneath fully visible. */
+      min-width: 180px;
+      padding: 8px 12px 8px 8px;
       background: linear-gradient(180deg, #2d1d0e, #1a1209);
       border: 3px solid #d4af37;
       color: #ffd34d;
@@ -181,6 +185,46 @@ function ensureStyle() {
         inset 0 0 12px rgba(212,175,55,0.10);
       animation: mercatorTabPulse 2.2s ease-in-out infinite;
       transition: transform 0.12s, box-shadow 0.12s;
+      position: absolute;     /* re-applied so collapse caret can position inside */
+    }
+    /* COLLAPSED state — square portrait-only chip with an ▸ expand caret. */
+    #${TAB_ID}.is-collapsed {
+      min-width: 0;
+      padding: 4px;
+      gap: 0;
+    }
+    #${TAB_ID}.is-collapsed .tab-portrait {
+      width: 40px;
+      height: 40px;
+    }
+    #${TAB_ID}.is-collapsed .tab-portrait img {
+      width: 36px;
+      height: 36px;
+    }
+    /* Collapse / expand toggle buttons. Sit top-right inside the tab. */
+    #${TAB_ID} .tab-collapse,
+    #${TAB_ID} .tab-expand {
+      position: absolute;
+      top: 2px; right: 4px;
+      background: transparent;
+      border: none;
+      color: #ffd34d;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 4px;
+      letter-spacing: 0;
+      opacity: 0.7;
+      z-index: 2;
+    }
+    #${TAB_ID} .tab-collapse:hover,
+    #${TAB_ID} .tab-expand:hover { opacity: 1; }
+    #${TAB_ID}.is-collapsed .tab-expand {
+      position: static;
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+      padding: 0 4px;
     }
     #${TAB_ID}:hover {
       transform: translateY(-2px);
@@ -324,6 +368,20 @@ export function showMercatorBanner(parent: HTMLElement, visitWave: number, hooks
   };
 }
 
+// 2026-05-17 — Mercator tab redesigned: now collapsible. Default state
+// is FULL (portrait + label + chips + BROWSE button). A ▼ caret in the
+// top-right collapses it to a compact 42×42 portrait-only chip that
+// stays clickable to view wares. Click the chip in collapsed state to
+// re-open. Collapse state persists in localStorage so the player's
+// preference survives across waves.
+const COLLAPSE_KEY = 'roman_td_mercator_tab_collapsed';
+function isMercatorTabCollapsed(): boolean {
+  try { return localStorage.getItem(COLLAPSE_KEY) === '1'; } catch { return false; }
+}
+function setMercatorTabCollapsed(v: boolean): void {
+  try { localStorage.setItem(COLLAPSE_KEY, v ? '1' : '0'); } catch { /* ignore */ }
+}
+
 export function showMercatorTab(parent: HTMLElement, hooks: MercatorBannerHooks) {
   ensureStyle();
   if (document.getElementById(TAB_ID)) return;
@@ -333,25 +391,53 @@ export function showMercatorTab(parent: HTMLElement, hooks: MercatorBannerHooks)
   const portraitInner = merchantArt
     ? `<img src="${merchantArt}" alt=""/>`
     : '<span class="tab-icon">⚱</span>';
-  // 2026-05 v10: bottom-right pill with portrait, MERCATOR label, a
-  // one-line subtitle, three price chips (T5 towers / legendary trophies
-  // / lives), and a gold "BROWSE" CTA. Whole pill is clickable; the CTA
-  // just gives the eye a clear hit-target.
-  tab.innerHTML = `
-    <div class="tab-portrait">${portraitInner}</div>
-    <div class="tab-text">
-      <div class="tab-title">MERCATOR</div>
-      <div class="tab-sub">Traveling merchant — this wave only</div>
-      <div class="tab-pricerow">
-        <span class="tab-chip t">T5 · 50g</span>
-        <span class="tab-chip">★ Trophies</span>
-        <span class="tab-chip l">+ Lives 7g</span>
+
+  const collapsed = isMercatorTabCollapsed();
+  if (collapsed) tab.classList.add('is-collapsed');
+
+  const renderFull = () => {
+    tab.innerHTML = `
+      <button class="tab-collapse" title="Collapse — hide details">▾</button>
+      <div class="tab-portrait">${portraitInner}</div>
+      <div class="tab-text">
+        <div class="tab-title">MERCATOR</div>
+        <div class="tab-sub">Traveling merchant — this wave only</div>
+        <div class="tab-pricerow">
+          <span class="tab-chip t">T5 · 50g</span>
+          <span class="tab-chip">★ Trophies</span>
+          <span class="tab-chip l">+ Lives 7g</span>
+        </div>
       </div>
-    </div>
-    <div class="tab-cta">BROWSE</div>
-  `;
-  tab.title = 'Mercator is in town this wave only. Click to view wares — the Gate Shop stays open beside him.';
-  tab.onclick = () => hooks.onView();
+      <div class="tab-cta">BROWSE</div>
+    `;
+    tab.title = 'Mercator is in town this wave only. Click to view wares — the Gate Shop stays open beside him.';
+    (tab.querySelector('.tab-collapse') as HTMLElement)?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setMercatorTabCollapsed(true);
+      tab.classList.add('is-collapsed');
+      renderCollapsed();
+    });
+  };
+  const renderCollapsed = () => {
+    tab.innerHTML = `
+      <button class="tab-expand" title="Expand — Mercator wares">▸</button>
+      <div class="tab-portrait">${portraitInner}</div>
+    `;
+    tab.title = 'Mercator (collapsed). Click ▸ to expand, or click the portrait to browse.';
+    (tab.querySelector('.tab-expand') as HTMLElement)?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setMercatorTabCollapsed(false);
+      tab.classList.remove('is-collapsed');
+      renderFull();
+    });
+  };
+
+  if (collapsed) renderCollapsed(); else renderFull();
+  tab.addEventListener('click', (e) => {
+    // Don't fire view-wares when the player clicked a control button (caret).
+    if ((e.target as HTMLElement)?.closest('.tab-collapse, .tab-expand')) return;
+    hooks.onView();
+  });
   parent.appendChild(tab);
 }
 

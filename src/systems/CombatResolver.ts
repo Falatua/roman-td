@@ -88,6 +88,10 @@ const MELEE_TYPES = new Set<TowerType>([
   TowerType.EVOCATUS, TowerType.IMPERATOR_GUARD,
   TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
   TowerType.TURMA_LANCERS,
+  // 2026-05-17 — Pontifex Maximus converted to melee. The High Priest now
+  // wields a sanctified ritual blade; the Rite of Doom + Hellfire curse
+  // applies on melee strike rather than from divine range.
+  TowerType.PONTIFEX_MAXIMUS,
   // RETIARIUS (renamed from LANCEARIUS in 2026-05 v9 along with a sprite
   // swap to the trident+net gladiator) and CLIBANARIUS are both melee.
   // Retiarius keeps the first-hit ×2 signature (now flavored as the net

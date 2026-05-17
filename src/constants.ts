@@ -13,12 +13,19 @@ export const GRID = {
 
 // 2026-05-17 — WORLD ZOOM. The outer 1-tile BORDER ring (trees/boulders)
 // is no longer drawn; we use that freed real estate to zoom the play area
-// in by ~1 tile-width on each side. Pixi stage is scaled + center-offset
-// at init; mouse coords inverse-transform via screenToWorld helper.
+// in. Pixi stage is scaled + center-offset at init; mouse coords inverse-
+// transform via screenToWorld helper.
+//
+// v2 tuning: zoom dialed back 1.07 → 1.04 because the heavier 1.07 crop
+// was clipping ~18px (≈half a tile) off towers placed on the outermost
+// buildable columns/rows. At 1.04 the crop is 16-24px per side — fully
+// inside the unbuildable BORDER ring, so no tower or gameplay element
+// ever lands in the cropped region. Boss HP bar moved up + gate frame
+// simplified in the same pass to prevent any further bottom-edge clips.
 export const WORLD = {
-  ZOOM: 1.07,                                          // ~6.5% zoom
-  OFFSET_X: -((38 * 32) * (1.07 - 1)) / 2,             // ≈ -42.6 px
-  OFFSET_Y: -((26 * 32) * (1.07 - 1)) / 2              // ≈ -29.1 px
+  ZOOM: 1.04,                                          // ~4% zoom (subtle but visible)
+  OFFSET_X: -((38 * 32) * (1.04 - 1)) / 2,             // ≈ -24.3 px
+  OFFSET_Y: -((26 * 32) * (1.04 - 1)) / 2              // ≈ -16.6 px
 } as const;
 
 export const ECONOMY = {

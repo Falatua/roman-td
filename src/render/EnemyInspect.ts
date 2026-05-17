@@ -207,7 +207,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     const reanimDef: any = (enemiesData as any)[def.reanimateAs];
     const reanimName = reanimDef?.name ?? String(def.reanimateAs).replace(/_/g, ' ');
     const alwaysReanim = def.faction === 'UNDEAD_CELTS' || def.faction === 'UNDEAD_CARTHAGE';
-    const trigger = alwaysReanim ? 'on every death (undead factions reanim always)' : 'on necromancy waves (W5/W11/W13)';
+    const trigger = alwaysReanim ? 'on every death (undead factions reanim always)' : 'on necromancy waves (W11 / W13)';
     traits.push({ label: `NECROMANCY — ${trigger}, every kill spawns 6-9 × ${reanimName} at 85-100% HP at the death tile (risen units can't chain)`, color: '#aa55ff' });
   }
   // -- Gold theft (Ghost Rider) --
