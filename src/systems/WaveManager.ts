@@ -399,24 +399,24 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
     const w = wavesData[state.wave - 1] ?? { gold: 30, faction: 'SUPER_DEMONS', type: 'B', spawns: [], hpMult: 1 };
     state.phase = GamePhase.BUILD_PHASE;
     // RNG-event reward (2026-05): if a wave modifier rolled and the
-    // player cleared the wave, pay a flat +40g bonus on top of the
+    // player cleared the wave, pay a generous bonus on top of the
     // standard wave gold. Also bumps the score-formula counter.
+    // 2026-05-17 — score reward bumped 1500 → 4000 + gold 40 → 60 so
+    // the RNG modifier survival feels like a real payoff. Players also
+    // get a free Uncommon item on launch (see main.ts launchWave).
     let modBonus = 0;
+    let modScoreBonus = 0;
     if (state.waveModifier) {
       state.modifierWavesSurvived = (state.modifierWavesSurvived ?? 0) + 1;
-      // 2026-05 v6 BUFF: modifier wave survival bumped 15g → 40g + 1500
-      // score. Combined with the free Uncommon item grant on launch
-      // (see main.ts launchWave) the player feels meaningfully rewarded
-      // for shrugging off Blood Moon / Storm Surge / Death Pact / Veil /
-      // Revenant / Group March instead of paying a small consolation.
-      modBonus = 40;
+      modBonus = 60;
+      modScoreBonus = 4000;
       state.denarii += modBonus;
-      state.score = (state.score ?? 0) + 1500;
+      state.score = (state.score ?? 0) + modScoreBonus;
       // Transient flag so main.ts can fire a celebration banner this
       // frame. Cleared by the wave-end callback after the banner shows.
       (state as any).__modifierJustSurvived = state.waveModifier;
     }
-    const modSuffix = modBonus > 0 ? ` +${modBonus}g RNG bonus +1500 score.` : '';
+    const modSuffix = modBonus > 0 ? ` +${modBonus}g RNG bonus +${modScoreBonus} score.` : '';
     state.hint = `Wave ${state.wave} survived. +${w.gold} Denarii.${modSuffix} The empire pretends not to be impressed.`;
     // Clear weather + modifier — sky clears between waves.
     state.weatherKey = null;

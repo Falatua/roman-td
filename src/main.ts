@@ -724,7 +724,7 @@ async function boot() {
       <div style="margin-top:12px;padding:10px 14px;background:rgba(0,0,0,0.55);border:1px solid ${colorHex};display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left">
         <div>
           <div style="font-size:10px;font-weight:bold;letter-spacing:3px;color:#88ff88;text-shadow:1px 1px 0 #000;margin-bottom:3px">★ SURVIVE</div>
-          <div style="font-size:11px;font-weight:bold;color:#cdffce;line-height:1.45;text-shadow:1px 1px 0 #000">Survive: +40g + 1500 score. Free Uncommon item is already in your inventory. The Senate notices.</div>
+          <div style="font-size:11px;font-weight:bold;color:#cdffce;line-height:1.45;text-shadow:1px 1px 0 #000">Survive: +60g + 4000 score. Free Uncommon item is already in your inventory. The Senate notices.</div>
         </div>
         <div>
           <div style="font-size:10px;font-weight:bold;letter-spacing:3px;color:#ff7766;text-shadow:1px 1px 0 #000;margin-bottom:3px">✗ FAIL</div>
@@ -1013,8 +1013,45 @@ async function boot() {
     if (!chip) {
       chip = document.createElement('div');
       chip.id = 'modifier-chip';
-      // Clean wave-brief-style panel: dark gradient, gold border, monospace.
-      chip.style.cssText = `position:absolute;top:8px;right:8px;padding:8px 12px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid ${colorHex};color:#e8d6a8;font-family:'Courier New',monospace;font-size:12px;letter-spacing:1.5px;font-weight:bold;z-index:60;display:flex;flex-direction:column;gap:4px;min-width:180px;max-width:240px;box-shadow:0 0 16px ${colorHex}55;`;
+      // 2026-05-17 — Pulsing glow animation around the chip border so RNG
+      // waves are unmistakably flagged. Sits above all other HUD chrome.
+      chip.style.cssText = `position:absolute;top:8px;right:8px;padding:8px 12px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid ${colorHex};color:#e8d6a8;font-family:'Courier New',monospace;font-size:12px;letter-spacing:1.5px;font-weight:bold;z-index:60;display:flex;flex-direction:column;gap:4px;min-width:200px;max-width:260px;box-shadow:0 0 16px ${colorHex}55;animation:modifierChipPulse 1.8s ease-in-out infinite;`;
+      if (!document.getElementById('modifier-chip-style')) {
+        const s = document.createElement('style');
+        s.id = 'modifier-chip-style';
+        s.textContent = `
+          @keyframes modifierChipPulse {
+            0%, 100% { box-shadow: 0 0 16px ${colorHex}55; }
+            50%      { box-shadow: 0 0 28px ${colorHex}aa, 0 0 8px ${colorHex}ff; }
+          }
+          #modifier-chip .mod-rng-tag {
+            cursor: help;
+            position: relative;
+            border-bottom: 1px dotted ${colorHex};
+          }
+          #modifier-chip .mod-rng-tag:hover .mod-tooltip { display: block; }
+          #modifier-chip .mod-tooltip {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 260px;
+            padding: 10px 12px;
+            background: linear-gradient(180deg, #0c0a08, #1a1410);
+            border: 2px solid ${colorHex};
+            color: #e8d6a8;
+            font-size: 11px;
+            font-weight: normal;
+            letter-spacing: 0.5px;
+            line-height: 1.5;
+            text-shadow: 1px 1px 0 #000;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.7);
+            z-index: 80;
+            text-transform: none;
+          }
+        `;
+        document.head.appendChild(s);
+      }
       document.getElementById('stage-wrap')?.appendChild(chip);
     } else {
       chip.style.borderColor = colorHex;
@@ -1030,17 +1067,27 @@ async function boot() {
     if (collapsed) {
       chip.style.padding = '4px 8px';
       chip.style.minWidth = '0';
-      chip.innerHTML = `<div style="display:flex;align-items:center;gap:6px">${imgHtml}<button id="modifier-chip-toggle" title="Expand" style="background:transparent;border:none;color:${colorHex};font-size:14px;line-height:1;cursor:pointer;padding:0 2px;font-weight:bold">▸</button></div>`;
+      chip.innerHTML = `<div style="display:flex;align-items:center;gap:6px">${imgHtml}<span style="font-size:11px;color:${colorHex};font-weight:bold">🎲</span><button id="modifier-chip-toggle" title="Expand" style="background:transparent;border:none;color:${colorHex};font-size:14px;line-height:1;cursor:pointer;padding:0 2px;font-weight:bold">▸</button></div>`;
     } else {
-      chip.style.padding = '8px 12px';
-      chip.style.minWidth = '180px';
+      chip.style.padding = '10px 12px';
+      chip.style.minWidth = '200px';
+      // Hover-detail tooltip on the "RNG WAVE" tag — shows mod.blurb (the
+      // exact mechanic explanation pulled from constants.ts WAVE_MODIFIERS).
+      const blurbEsc = mod.blurb.replace(/</g, '&lt;').replace(/>/g, '&gt;');
       chip.innerHTML = `
         <div style="display:flex;align-items:center;gap:8px">
           ${imgHtml}
-          <span style="flex:1;color:${colorHex};font-size:12px;letter-spacing:2px">${mod.name.toUpperCase()}</span>
+          <span style="flex:1;color:${colorHex};font-size:13px;letter-spacing:2px">${mod.name.toUpperCase()}</span>
           <button id="modifier-chip-toggle" title="Collapse" style="background:transparent;border:none;color:#aa9a4a;font-size:13px;line-height:1;cursor:pointer;padding:0 2px;font-weight:bold">▾</button>
         </div>
-        <div style="font-size:9.5px;letter-spacing:1.2px;color:#aa9a4a;font-weight:normal;line-height:1.4">🎲 RNG WAVE · survive = <b style="color:#88ff88">+25g · +ITEM · +1000 pts</b></div>
+        <div style="font-size:10px;letter-spacing:1.5px;color:#cdb98a;font-weight:bold;line-height:1.4;margin-top:2px">
+          🎲 <span class="mod-rng-tag" title="">RNG WAVE</span> · survive = <b style="color:#88ff88">+60g · +ITEM · +4000 pts</b>
+          <div class="mod-tooltip">
+            <div style="font-size:10px;letter-spacing:2px;color:${colorHex};margin-bottom:5px;font-weight:bold">🎲 ${mod.name.toUpperCase()}</div>
+            <div style="margin-bottom:6px">${blurbEsc}</div>
+            <div style="font-size:10px;color:#88ff88;letter-spacing:1px;border-top:1px solid #3a3025;padding-top:5px">SURVIVE → <b>+60g · +1 UNCOMMON ITEM · +4000 score</b></div>
+          </div>
+        </div>
       `;
     }
     const toggleBtn = chip.querySelector('#modifier-chip-toggle') as HTMLButtonElement | null;
@@ -3722,6 +3769,24 @@ async function boot() {
       dt *= speedMult;     // fast-forward applied uniformly to game-time delta
     }
     state.tick += dt;
+    // 2026-05-17 — REWARD MODAL TRIGGER (relocated). Fires the instant
+    // pendingSurpriseReward is set, regardless of game phase. Previous
+    // placement was inside the WAVE_PHASE conditional, but WaveManager's
+    // checkWaveEnd transitions to BUILD_PHASE in the same tick that
+    // sets the flag — the modal trigger then sat dormant until the
+    // NEXT wave's WAVE_PHASE ran, opening the modal at the wrong time.
+    // Moving the check out here means the modal opens within ~16ms of
+    // the last enemy dying (or leaking), exactly when the player
+    // expects the "you survived the invasion" payoff.
+    if (state.pendingSurpriseReward && !(state as any).__surpriseRewardModalShown) {
+      (state as any).__surpriseRewardModalShown = true;
+      const kind = state.pendingSurpriseReward.kind;
+      state.pendingSurpriseReward = null;
+      showSurpriseRewardModal(app, kind, inventory, state, () => {
+        (state as any).__surpriseRewardModalShown = false;
+        clearSurpriseEventsForWaveEnd(state);
+      });
+    }
     if (state.phase === GamePhase.WAVE_PHASE) {
       tickSpawns(state, dt);
       // 2026-05-16 — SURPRISE EVENTS tick. Drains the 4-point spawn
@@ -3746,22 +3811,6 @@ async function boot() {
       if (!ev) {
         // Reset the one-shot when the event clears so the next event re-fires.
         (state as any).__surpriseEventStingFired = false;
-      }
-      // 2026-05-16 — REWARD MODAL TRIGGER. When the last surprise-event
-      // enemy dies, SurpriseEvents sets pendingSurpriseReward. We open the
-      // modal here. The modal handles its own game-pause (sets state.__surpriseRewardOpen).
-      if (state.pendingSurpriseReward && !(state as any).__surpriseRewardModalShown) {
-        (state as any).__surpriseRewardModalShown = true;
-        const kind = state.pendingSurpriseReward.kind;
-        state.pendingSurpriseReward = null;
-        showSurpriseRewardModal(app, kind, inventory, state, () => {
-          // Modal closed — clear the one-shot guard so next event's modal can open.
-          (state as any).__surpriseRewardModalShown = false;
-          // 2026-05-17 — In waveOverride mode the active event was held
-          // open until the reward modal closed (so the modal could read
-          // its kind). Clear it now that the player has picked.
-          clearSurpriseEventsForWaveEnd(state);
-        });
       }
       // Bonus-boss announcement: WaveManager sets this when a surprise boss arrives.
       if ((state as any).bonusBossAnnouncement) {
@@ -4436,14 +4485,14 @@ async function boot() {
         // 2026-05 v6: MODIFIER WAVE SURVIVED celebration. WaveManager
         // stamps __modifierJustSurvived with the modifier key when the
         // wave ends with the modifier flag still active. Show the player
-        // a real banner so the +40g / +1500 score / +1 item reward feels
+        // a real banner so the +60g / +4000 score / +1 item reward feels
         // like a victory, not just a number tick.
         const modSurvived = (state as any).__modifierJustSurvived;
         if (modSurvived) {
           (state as any).__modifierJustSurvived = null;
           const modDef = WAVE_MODIFIERS.find(m => m.key === modSurvived);
           const modName = modDef?.name ?? String(modSurvived).replace(/_/g, ' ');
-          showBonusBossBanner(`✨ ${modName.toUpperCase()} SURVIVED — +40g, +1500 SCORE, +1 ITEM ✨`);
+          showBonusBossBanner(`✨ ${modName.toUpperCase()} SURVIVED — +60g, +4000 SCORE, +1 ITEM ✨`);
           // Violet celebration ring at center of map.
           if (renderer?.triggerImpactRing) {
             renderer.triggerImpactRing(GRID.CANVAS_W / 2, GRID.CANVAS_H / 2, state.tick, 80, 0xc070ff);

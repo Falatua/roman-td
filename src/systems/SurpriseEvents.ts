@@ -90,23 +90,28 @@ export function maybeTriggerEndlessSurpriseEvent(state: GameStateShape, factionK
   scheduleSurpriseEvent(state, kind, state.tick + 0.5, /*waveOverride=*/true);
 }
 
-// Called when an enemy dies or leaks. In WAVE-OVERRIDE mode the reward
-// modal trigger has been moved to WaveManager.checkWaveEnd — we only
-// remove the enemy from the live tracking set here. (In legacy non-override
-// mode, this method still detected "last event enemy resolved → reward",
-// but no current caller uses that path.)
+// Called when an enemy dies or leaks. Fires the reward modal trigger
+// the MOMENT the last event-spawned enemy resolves AND the spawn schedule
+// has fully drained — i.e. the moment the player kills the last enemy
+// of an invasion / uprising wave. Works in both waveOverride and legacy
+// modes; the schedule-empty check (no more pending spawns) ensures we
+// don't fire prematurely mid-wave.
 export function notifySurpriseEnemyResolved(state: GameStateShape, enemyId: string): void {
   const ev = state.activeSurpriseEvent;
   if (!ev || ev.rewardGiven) return;
   if (!ev.spawnedEnemyIds.has(enemyId)) return;
   ev.spawnedEnemyIds.delete(enemyId);
-  if (ev.waveOverride) return;     // reward fires at wave-end, not per-enemy
   const allFired = ev.spawnPoints.every(p => p.fired);
-  if (allFired && ev.spawnedEnemyIds.size === 0) {
+  // In waveOverride mode, the spawn schedule is the wave's spawn queue
+  // (which lives on state.spawnQueue). We need that to be drained too.
+  const spawnQueueEmpty = !ev.waveOverride || state.spawnQueue.length === 0;
+  if (allFired && spawnQueueEmpty && ev.spawnedEnemyIds.size === 0) {
+    if (state.lives <= 0) return;     // dead player gets no reward
     ev.endedAt = state.tick;
     ev.rewardGiven = true;
     state.pendingSurpriseReward = { kind: ev.kind === SurpriseEventKind.INVASION ? 'INVASION' : 'UPRISING' };
     state.surpriseEventsCompleted = (state.surpriseEventsCompleted ?? 0) + 1;
+    if (ev.vfxFadeOutAt === 0) ev.vfxFadeOutAt = state.tick;
   }
 }
 
