@@ -882,7 +882,14 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     }
     // Apply knockback as a path-progress reversal. Magnitude is "path units"
     // (e.g. 0.6 ≈ slightly more than half a tile). Stops at the segment start.
-    if (knockbackImpulse > 0) {
+    // 2026-05-17 — FREEZE is now a HARD STOP: while an enemy is frozen it
+    // cannot be displaced by knockback either. The whole "encased in ice
+    // for the duration" read should be literal — currentSpeed is already
+    // zeroed above (line ~771); this matching gate ensures even one-shot
+    // knockback impulses don't slide a frozen target. Stun-knockback is
+    // intentionally left intact: a stunned enemy tripping backward still
+    // reads. (User-confirmed.)
+    if (knockbackImpulse > 0 && !frozen) {
       let kb = knockbackImpulse;
       while (kb > 0 && (e.pathIndex > 0 || e.pathProgress > 0)) {
         if (e.pathProgress >= kb) {

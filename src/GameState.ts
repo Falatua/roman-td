@@ -76,6 +76,12 @@ export interface GameStateShape {
   // set of quest ids that have already paid out their reward.
   questProgress?: Record<string, number>;
   completedQuests?: string[];
+  // 2026-05-17 — Tier completion bonus tracker. Once every quest in a
+  // tier (EARLY / MID / LATE) is finished, the player banks a one-time
+  // gold bonus. A fourth flag fires when ALL quests are done (grand
+  // completion capstone). Storing the tier strings as flags keeps the
+  // grant idempotent across save loads.
+  questTierBonusGranted?: ('EARLY' | 'MID' | 'LATE' | 'ALL')[];
   bossesKilled?: number;
   combosBuilt?: number;
   combosBuiltUniqueTypes?: string[];

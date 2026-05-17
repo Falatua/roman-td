@@ -15,7 +15,7 @@ import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel } from './systems/EconomySystem';
 import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles } from './systems/TowerSystem';
 import { scanCombos, executeCombo } from './systems/CombinationEngine';
-import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier } from './systems/QuestSystem';
+import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
 import itemsData from './data/items_permanent.json';
 import { loadAllAssets, tex as getTexture, texUrl } from './render/Assets';
@@ -1996,9 +1996,57 @@ async function boot() {
         <div style="font-size:10px;color:#aa9a4a;margin-top:3px">${prog} / ${q.target}</div>
       </div>`;
     };
-    const ordered = [...all.EARLY, ...all.MID, ...all.LATE];
-    const list = ordered.map(renderQuest).join('') ||
-      `<div style="text-align:center;color:#aa9a4a;padding:20px;font-style:italic">All quests complete. Glory to the legion.</div>`;
+    // 2026-05-17 — Tier banner. Per-tier completion pays a one-time gold
+    // bonus (50 / 100 / 200) and the full clear pays a 500g capstone.
+    // Banner shows current progress, the gold value, and a paid-out tag
+    // once the bonus has already banked.
+    const granted = new Set(state.questTierBonusGranted ?? []);
+    const tierBonusValues: Record<'EARLY'|'MID'|'LATE', number> = { EARLY: 50, MID: 100, LATE: 200 };
+    const tierTitle: Record<'EARLY'|'MID'|'LATE', string> = { EARLY: '🌱 EARLY GAME', MID: '⚔ MID GAME', LATE: '👑 LATE GAME' };
+    const renderTierBanner = (tierKey: 'EARLY'|'MID'|'LATE') => {
+      const tierQuests = QUESTS.filter(q => q.tier === tierKey);
+      const done = tierQuests.filter(q => completed.includes(q.id)).length;
+      const total = tierQuests.length;
+      const paid = granted.has(tierKey);
+      const status = paid
+        ? `<span style="color:#88ff88;font-weight:bold;letter-spacing:1px">✓ PAID OUT</span>`
+        : (done === total
+            ? `<span style="color:#ffd34d;font-weight:bold;letter-spacing:1px">READY — bonus next tick</span>`
+            : `<span style="color:#aa9a4a">${done} / ${total} done</span>`);
+      return `<div style="background:linear-gradient(180deg,#1a1410,#0c0a08);border:1px solid ${tierColor[tierKey]};border-left:4px solid ${tierColor[tierKey]};padding:7px 10px;margin:10px 0 6px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="color:${tierColor[tierKey]};font-weight:bold;letter-spacing:2px;font-size:12px">${tierTitle[tierKey]}</div>
+          <div style="font-size:10px;color:#cdb98a;margin-top:2px">Complete all ${total} for a <b style="color:#88ff88">+${tierBonusValues[tierKey]}g</b> bonus</div>
+        </div>
+        <div style="font-size:10px;text-align:right">${status}</div>
+      </div>`;
+    };
+    const renderTierSection = (tierKey: 'EARLY'|'MID'|'LATE') => {
+      const banner = renderTierBanner(tierKey);
+      const quests = all[tierKey];
+      const body = quests.length > 0
+        ? quests.map(renderQuest).join('')
+        : `<div style="text-align:center;color:#aa9a4a;padding:8px;font-style:italic;font-size:11px">All ${tierKey.toLowerCase()}-game quests done.</div>`;
+      return banner + body;
+    };
+    // Grand-completion capstone banner — shown at the top of the modal so
+    // players can see the prize before they finish.
+    const allPaid = granted.has('ALL');
+    const allDone = QUESTS.every(q => completed.includes(q.id));
+    const grandStatus = allPaid
+      ? `<span style="color:#88ff88;font-weight:bold">✓ PAID OUT</span>`
+      : (allDone
+          ? `<span style="color:#ffd34d;font-weight:bold">READY — capstone banks next tick</span>`
+          : `<span style="color:#aa9a4a">${completed.length} / ${QUESTS.length} done</span>`);
+    const grandBanner = `<div style="background:linear-gradient(180deg,#2a1f12,#1a1410);border:2px solid #d4af37;padding:9px 12px;margin-bottom:8px;text-align:center">
+      <div style="color:#ffd34d;font-weight:bold;letter-spacing:2px;font-size:13px">🏆 GRAND COMPLETION</div>
+      <div style="font-size:10px;color:#cdb98a;margin-top:3px">Clear all 18 quests to bank an additional <b style="color:#88ff88">+500g</b> capstone</div>
+      <div style="font-size:10px;margin-top:4px">${grandStatus}</div>
+    </div>`;
+    const list = QUESTS.length === completed.length
+      ? grandBanner + renderTierSection('EARLY') + renderTierSection('MID') + renderTierSection('LATE') +
+        `<div style="text-align:center;color:#88ff88;padding:14px 8px;font-style:italic;font-size:12px;margin-top:8px">All quests complete. Glory to the legion.</div>`
+      : grandBanner + renderTierSection('EARLY') + renderTierSection('MID') + renderTierSection('LATE');
     const completedHtml = completed.length > 0
       ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #5a4a30;font-size:11px;color:#aa9a4a"><b style="color:#88ff88">Completed:</b> ${completed.length} / 18</div>`
       : '';
@@ -2027,6 +2075,32 @@ async function boot() {
     ensureQuestState(state);
     const newly = evaluateQuests(state);
     for (const q of newly) grantQuestReward(q);
+    // 2026-05-17 — Tier completion bonuses. After individual quest
+    // rewards land, check whether a whole tier (or all 18) just closed
+    // and pop a separate bonus banner with the gold reward.
+    const newTiers = evaluateQuestTierBonuses(state);
+    for (const tierKey of newTiers) grantQuestTierBonus(tierKey);
+  }
+  // Pays out the tier-completion gold bonus and pops a celebratory
+  // banner. Hooks into the same toast stack the per-quest grants use,
+  // but with louder copy so the player feels the milestone.
+  function grantQuestTierBonus(tierKey: 'EARLY' | 'MID' | 'LATE' | 'ALL') {
+    const amount = QUEST_TIER_BONUS[tierKey];
+    earnGold(state, amount);
+    const titles: Record<'EARLY' | 'MID' | 'LATE' | 'ALL', string> = {
+      EARLY: 'EARLY-GAME QUESTS CLEARED',
+      MID:   'MID-GAME QUESTS CLEARED',
+      LATE:  'LATE-GAME QUESTS CLEARED',
+      ALL:   'EVERY QUEST CLEARED — GRAND COMPLETION'
+    };
+    const lines: Record<'EARLY' | 'MID' | 'LATE' | 'ALL', string> = {
+      EARLY: 'All six early-game quests done. The treasury rewards opening discipline.',
+      MID:   'All six mid-game quests done. Real campaign currency for a real campaign run.',
+      LATE:  'All six late-game quests done. Apex tier work, apex tier purse.',
+      ALL:   'All 18 quests in the campaign. A legendary clear — capstone bonus paid.'
+    };
+    showQuestBanner(titles[tierKey], `+${amount}g`, lines[tierKey]);
+    SFX.bossArrival();
   }
   function grantQuestReward(q: QuestDef) {
     const r = q.reward;

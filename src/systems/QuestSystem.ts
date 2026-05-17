@@ -221,10 +221,53 @@ export const QUESTS: QuestDef[] = [
 export function ensureQuestState(s: GameStateShape) {
   if (!s.questProgress) s.questProgress = {};
   if (!s.completedQuests) s.completedQuests = [];
+  if (!s.questTierBonusGranted) s.questTierBonusGranted = [];
   if (s.bossesKilled === undefined) s.bossesKilled = 0;
   if (s.combosBuilt === undefined) s.combosBuilt = 0;
   if (!s.combosBuiltUniqueTypes) s.combosBuiltUniqueTypes = [];
   if (s.stonesPlaced === undefined) s.stonesPlaced = 0;
+}
+
+// 2026-05-17 — Quest tier-completion bonuses.
+//   EARLY tier cleared → +50g
+//   MID   tier cleared → +100g
+//   LATE  tier cleared → +200g
+//   ALL quests cleared → +500g capstone (in addition to the LATE bonus)
+// Each bonus fires exactly once. The grant set lives on GameState so it
+// survives save/load.
+export const QUEST_TIER_BONUS: Record<'EARLY' | 'MID' | 'LATE' | 'ALL', number> = {
+  EARLY: 50,
+  MID:   100,
+  LATE:  200,
+  ALL:   500
+};
+
+// Returns any tier flags that just became eligible this frame. Caller
+// (main.ts) is responsible for paying gold and showing the banner. Order
+// guaranteed: tier flags first (EARLY → MID → LATE), then 'ALL' last so
+// the grand-completion banner shows after its companion LATE banner.
+export function evaluateQuestTierBonuses(s: GameStateShape): ('EARLY' | 'MID' | 'LATE' | 'ALL')[] {
+  ensureQuestState(s);
+  const granted = new Set(s.questTierBonusGranted!);
+  const completed = new Set(s.completedQuests!);
+  // Group quests by tier so we know which set is fully done.
+  const tiers: ('EARLY' | 'MID' | 'LATE')[] = ['EARLY', 'MID', 'LATE'];
+  const newly: ('EARLY' | 'MID' | 'LATE' | 'ALL')[] = [];
+  for (const tier of tiers) {
+    if (granted.has(tier)) continue;
+    const tierQuests = QUESTS.filter(q => q.tier === tier);
+    if (tierQuests.length === 0) continue;
+    if (tierQuests.every(q => completed.has(q.id))) {
+      s.questTierBonusGranted!.push(tier);
+      newly.push(tier);
+    }
+  }
+  // Grand completion — every quest done.
+  if (!granted.has('ALL') && QUESTS.every(q => completed.has(q.id))) {
+    s.questTierBonusGranted!.push('ALL');
+    newly.push('ALL');
+  }
+  return newly;
 }
 
 // Recompute progress on every quest. Returns the list of quest defs whose

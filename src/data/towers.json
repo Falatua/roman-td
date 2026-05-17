@@ -665,7 +665,7 @@
     "melee": false,
     "spriteSheet": 3,
     "spriteCell": 4,
-    "ability": "Every hit FREEZES the target 2.5s. Frozen enemies take +50% damage from ALL sources (global synergy). Plus every 10s, releases a GLACIAL PULSE — all enemies on the field freeze for 2.5s, no range cap.",
+    "ability": "Every hit FREEZES the target 2.5s — locked in place, no movement, no knockback displacement. Plus every 10s, releases a GLACIAL PULSE — all enemies on the field freeze for 2.5s, no range cap.",
     "critChance": 0.14,
     "critMult": 2.4
   },
@@ -679,7 +679,7 @@
     "melee": true,
     "spriteSheet": 3,
     "spriteCell": 5,
-    "ability": "MELEE: gladius strike at 1.5 tiles. Global +45% damage aura. Pulses a 5.5-tile AoE stun every 3s — the magisterial command extends well past sword reach. Bosses in the pulse take ARMOR_SHRED.",
+    "ability": "MELEE: gladius strike at 1.5 tiles. Global +45% damage aura. Pulses a 5.5-tile AoE stun every 3s — the magisterial command extends well past sword reach. Bosses in the pulse take Armor Shred.",
     "critChance": 0.18,
     "critMult": 2.5
   },
@@ -930,7 +930,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 4,
-    "ability": "SUPER COMBO (5 BASE T3): heavy AoE divine artillery. +25% damage aura to all towers within 3 tiles. Applies SLOW + ARMOR_SHRED on every hit.",
+    "ability": "SUPER COMBO (5 BASE T3): heavy AoE divine artillery. +25% damage aura to all towers within 3 tiles. Applies SLOW + Armor Shred on every hit.",
     "critChance": 0.2,
     "critMult": 2.5
   },
@@ -962,7 +962,7 @@
     "burnsGround": true,
     "fireAura": true,
     "fireAuraRadius": 2.0,
-    "ability": "MELEE DRACO BREATH (60° cone, polearm reach 2.0): the dragon-standard bearer charges in close, sweeping a fire-breath cone that hits every enemy in arc. Each hit stacks DRAGON MARK (+25%/stack, cap +75%). PROXIMITY BURN ignites enemies within 2 tiles passively. +60% vs Bosses. PHYS_MELEE damage class — pair with melee aura buffs (Centurion's Trumpet, Cavalry Spur).",
+    "ability": "MELEE DRACO BREATH (60° cone, polearm reach 2.0): the dragon-standard bearer charges in close, sweeping a fire-breath cone that hits every enemy in arc. Each hit stacks DRAGON MARK (+25%/stack, cap +75%). PROXIMITY BURN ignites enemies within 2 tiles passively. +60% vs Bosses. Physical-melee damage class — pair with melee aura buffs (Centurion's Trumpet, Cavalry Spur).",
     "critChance": 0.15,
     "critMult": 2.5
   },

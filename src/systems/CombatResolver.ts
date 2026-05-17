@@ -737,8 +737,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (target.isFlyer)                 damage *= 1.60;  // +60% vs Flyers
         if (target.isBoss)                  damage *= 1.30;  // +30% vs Bosses
       }
-      // Frozen enemies take +50% damage from all sources (Frozen Legion's UI claim).
-      if (target.statusEffects.some(s => s.kind === StatusEffectKind.FREEZE)) damage *= 1.50;
+      // 2026-05-17 — Frozen Synergy (+50% damage on frozen targets) removed
+      // per user request. FREEZE is now purely a hard-stop crowd-control
+      // effect: target locks in place for the full duration with no
+      // additional damage amplification.
       // ─── DIFFERENTIATED RESIST-BREAKERS ──────────────────────────────
       // Three towers used to all "ignore resists" identically. Now each
       // has its own flavor so they don't dilute each other:
