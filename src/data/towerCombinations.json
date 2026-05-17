@@ -669,5 +669,24 @@
       }
     ],
     "cost": 50
+  },
+  {
+    "result": "MURMILLO",
+    "tier": 4,
+    "ingredients": [
+      {
+        "type": "BALLISTARIUS",
+        "minTier": 3
+      },
+      {
+        "type": "LIBRITOR",
+        "minTier": 3
+      },
+      {
+        "type": "ARCUBALLISTA",
+        "minTier": 3
+      }
+    ],
+    "cost": 50
   }
 ]

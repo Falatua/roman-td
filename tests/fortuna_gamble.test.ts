@@ -49,10 +49,11 @@ describe('Fortuna\'s Wheel — 500g combo-tower gamble', () => {
     }
   });
 
-  it('pool has 32 towers (37 combos minus 5 apex)', () => {
-    // 37 total combos (post 2026-05-15 v13 CLIBANARIUS conversion) minus
-    // the 5 apex super-combos blocked in 2026-05 v9 = 32 buyable combos.
-    expect(FORTUNA_GAMBLE_POOL.length).toBe(32);
+  it('pool has 33 towers (38 combos minus 5 apex)', () => {
+    // 2026-05-17 — MURMILLO combo added (Ballistarius + Librator + Arcuballista
+    // anti-Carthage specialist). Pool count: 38 total combos minus 5 apex
+    // super-combos still blocked = 33 buyable combos.
+    expect(FORTUNA_GAMBLE_POOL.length).toBe(33);
   });
 
   it('rollFortunaCombo returns only valid COMBO tower IDs', () => {

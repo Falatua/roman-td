@@ -132,7 +132,14 @@ export enum TowerType {
   // Standalone — not part of any combo recipe. Visually a darker-skinned
   // shirtless dual-blade gladiator (Roman DIMACHAERUS class).
   BEAST_HUNTER = 'BEAST_HUNTER',
-  BEAST_SLAYER = 'BEAST_SLAYER'
+  BEAST_SLAYER = 'BEAST_SLAYER',
+  // 2026-05-17 — MURMILLO (T4 mid-game combo). Roman heavyweight gladiator
+  // (the "fish-helmet" type — galea + scutum + gladius). Anti-Carthage
+  // specialist: signature PUNIC HUNTER bonus damage vs CARTHAGE +
+  // UNDEAD_CARTHAGE factions, plus a SCUTUM BASH every 4th swing (stun +
+  // knockback combined — rare control combo). Recipe pulls from the
+  // previously-unused base towers: BALLISTARIUS + LIBRITOR + ARCUBALLISTA.
+  MURMILLO = 'MURMILLO'
 }
 
 export enum EnemyType {

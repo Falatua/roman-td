@@ -58,6 +58,10 @@ const MANIFEST: Record<string, string> = {
   // (cone attack + rage gauge). Both sprites are user-supplied, chroma-
   // keyed clean via tools/slice_sprite_sheet.py (zero magenta residue).
   SIGNIFERS_DRACONARIUS: 'tc_signifers_draconarius.png', BESTIARIUS: 'tc_bestiarius.png',
+  // 2026-05-17 — MURMILLO (T4 mid-game combo). Heavy Roman gladiator with
+  // fish-helmet + scutum + gladius. Sliced from the user-supplied gladiator
+  // roster sheet (top-left cell); chroma-keyed via the standard pipeline.
+  MURMILLO: 't_new_murmillo.png',
   // Enemies
   FERAL_DOG: 'e1_feral_dog.png', RABID_DOG: 'e1_rabid_dog.png', ALPHA_DOG: 'e1_alpha_dog.png',
   CELTIC_FOOTMAN: 'e1_celtic_footman.png', CELTIC_BERSERKER: 'e1_celtic_berserker.png', GALLIC_DRUID: 'e1_gallic_druid.png',

@@ -16,7 +16,7 @@
 // Pure data; no DOM/Pixi imports. Tested in tests/damage.test.ts +
 // tests/towers.test.ts.
 
-import { Tower, Enemy, TargetingMode, DamageType, StatusEffectKind, EntityType, TowerType, EnemyType } from '../types';
+import { Tower, Enemy, TargetingMode, DamageType, StatusEffectKind, EntityType, TowerType, EnemyType, EnemyFaction } from '../types';
 import { GameStateShape } from '../GameState';
 import { GRID, KILL_BONUS_RATE, KILL_BONUS_MAX_PCT, FACTION_WEATHER } from '../constants';
 import { towerEffectiveStats, towerPerAttackDamageBase } from './TowerSystem';
@@ -134,6 +134,10 @@ const MELEE_TYPES = new Set<TowerType>([
   // never reached the fury gauge code. Adding it here flips on the
   // entire melee swing path including the FRENZY/STUN logic.
   TowerType.BESTIARIUS,
+  // 2026-05-17 — MURMILLO (T4 mid-game combo). Roman heavy gladiator
+  // with scutum + gladius; Punic Hunter damage bonus + Scutum Bash stun-
+  // and-knockback every 4th swing. Pure melee, range 1.5.
+  TowerType.MURMILLO,
   // 2026-05 v9: Consular Fatebinder converted from ranged DIVINE to a
   // melee strike (still keeps TRUE-damage primary + map-wide 60% splash
   // + global aura). The melee identity matches its character art (consul
@@ -634,6 +638,19 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // with marks, items, and other riders.
       if ((t.type === TowerType.BEAST_HUNTER || t.type === TowerType.BEAST_SLAYER) && BEAST_ENEMY_TYPES.has(target.type)) {
         damage *= 3.0;
+      }
+      // 2026-05-17 — PUNIC HUNTER. The Murmillo gladiator's signature
+      // anti-Carthage rage. +75% damage vs CARTHAGE faction (W7-W10 living
+      // Punic columns) and +50% damage vs UNDEAD_CARTHAGE (W16-W18 risen
+      // Sacred Band lines). Stacks multiplicatively with the faction
+      // melee-resistance row (-30% for CARTHAGE, -25% for UNDEAD_CARTHAGE
+      // = those factions already take more melee damage) and any item /
+      // mark / aura multipliers. Other factions take normal damage from
+      // the Murmillo, so this combo is a deliberate counter-pick — strong
+      // on Punic Wars waves, fine elsewhere.
+      if (t.type === TowerType.MURMILLO) {
+        if (target.faction === EnemyFaction.CARTHAGE)              damage *= 1.75;
+        else if (target.faction === EnemyFaction.UNDEAD_CARTHAGE)  damage *= 1.50;
       }
       // 2026-05-15 SIGIL OF SOL INVICTUS — +85% damage vs any Demon-
       // faction enemy. Anti-late-game-Super-Demons carry. Stacks
@@ -1529,6 +1546,26 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       if (hc > 0 && hc % 4 === 0 && !target.isFlyer) {
         pushStatus(target, StatusEffectKind.STUN, dur(0.6), 0, tier);
         pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.5, tier);
+      }
+      break;
+    }
+    case TowerType.MURMILLO: {
+      // 2026-05-17 — SCUTUM BASH. Every 4th swing the Murmillo slams his
+      // heavy rectangular scutum into the target: a HEAVY 1.2s STUN + a
+      // HEAVY 0.8-tile knockback. The damage bonus vs Carthage / Undead-
+      // Carthage is applied separately in the damage pipeline (PUNIC
+      // HUNTER block). Bosses are stun-immune by design so the stun lands
+      // only on non-bosses; the knockback still pushes bosses but at the
+      // standard 25% boss-effectiveness scale (handled in EnemySystem),
+      // so a boss bash translates to roughly 0.2 tile of slip. The combined
+      // long stun + long push is uniquely heavy compared to War Chariot's
+      // (0.6s / 0.5 tile) and Praetorian Wall's (0 stun / 0.6 tile every
+      // 10th hit) — Murmillo's mechanic is the heaviest single-shot CC in
+      // the melee roster.
+      const hc = (t as any).__hitCount ?? 0;
+      if (hc > 0 && hc % 4 === 0) {
+        pushStatus(target, StatusEffectKind.STUN, dur(1.2), 0, tier);
+        pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.8, tier);
       }
       break;
     }
