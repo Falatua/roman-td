@@ -115,6 +115,12 @@ const MELEE_TYPES = new Set<TowerType>([
   // adjacent to the path like Horseman / Turma Lancers. Both keep
   // range 2.0 (polearm reach) so they stay useful as second-rank melee.
   TowerType.LIBRITOR, TowerType.WAR_CHARIOT,
+  // 2026-05-17 v3 — Draconarius (T4 combo) now melee. The dragon-
+  // standard bearer charges into close range with a fire-breath cone
+  // at polearm reach 2.0 instead of standing back. DRAGON MARK + cone
+  // damage + proximity burn aura intact; just routed through the
+  // melee swing path (slash arc + melee sword SFX).
+  TowerType.SIGNIFERS_DRACONARIUS,
   // RETIARIUS (renamed from LANCEARIUS in 2026-05 v9 along with a sprite
   // swap to the trident+net gladiator) and CLIBANARIUS are both melee.
   // Retiarius keeps the first-hit ×2 signature (now flavored as the net
