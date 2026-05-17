@@ -2740,11 +2740,25 @@ async function boot() {
   // if the browser allows it (often the case after a recent gesture
   // on the page, e.g. tab activation), it plays immediately.
   const LOADING_MUSIC_URL = sfx('assets/sfx/ff7_victory_fanfare.mp3');
+  // First attempt: try autoplay (works in Chrome when the user has prior
+  // engagement with the page, e.g. coming back from another tab).
   playMusicTrack('loading', LOADING_MUSIC_URL, { loop: true, gain: 0.55 });
+  // 2026-05-17 — Primer fix. Originally we only primed on `pointerdown`,
+  // but the user's first pointerdown IS the coin-slot click — which fires
+  // the music start AND the music stop in the same event tick, so the
+  // fanfare never actually played on the loading screen. Now we ALSO
+  // prime on the first `mousemove`, which fires the moment the user moves
+  // the cursor over the page — well before they reach the coin slot. The
+  // music gets a real moment to play during the loading screen. Both
+  // primers use { once: true } so they self-clean.
   const primeLoadingMusic = () => {
     playMusicTrack('loading', LOADING_MUSIC_URL, { loop: true, gain: 0.55, replace: false });
   };
+  document.addEventListener('mousemove', primeLoadingMusic, { once: true, passive: true });
   document.addEventListener('pointerdown', primeLoadingMusic, { once: true });
+  // Keyboard interaction also counts as a gesture — covers users who tab
+  // into the page without moving the mouse.
+  document.addEventListener('keydown', primeLoadingMusic, { once: true });
 
   // 2026-05-17 — Preload every mp3 SFX in parallel during the loading
   // screen. Without this, the first time each unique sound plays the
@@ -2825,7 +2839,10 @@ async function boot() {
       // 2026-05 v10 — stop the FF7 fanfare loop the moment the coin
       // drops. The arcade is open; the lobby music ends.
       stopMusicTrack('loading');
+      // Clean up every primer listener (mousemove / pointerdown / keydown).
+      document.removeEventListener('mousemove', primeLoadingMusic);
       document.removeEventListener('pointerdown', primeLoadingMusic);
+      document.removeEventListener('keydown', primeLoadingMusic);
       // 1) Coin drops into the slot.
       if (coinHint) coinHint.classList.add('dropping');
       // 2) Immediate screen shake — cabinet just got hit.

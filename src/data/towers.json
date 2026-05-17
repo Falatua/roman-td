@@ -962,7 +962,7 @@
     "burnsGround": true,
     "fireAura": true,
     "fireAuraRadius": 2.0,
-    "ability": "MELEE DRACO BREATH (60° cone, polearm reach 2.0): the dragon-standard bearer charges in close, sweeping a fire-breath cone that hits every enemy in arc. Each hit stacks DRAGON MARK (+25%/stack, cap +75%). PROXIMITY BURN ignites enemies within 2 tiles passively. +60% vs Bosses. Physical-melee damage class — pair with melee aura buffs (Centurion's Trumpet, Cavalry Spur).",
+    "ability": "60° fire-breath CONE at polearm reach 2.0 hits every enemy in the arc. Each hit stacks DRAGON MARK (+25%/stack, cap +75%). PROXIMITY BURN auto-ignites enemies within 2 tiles. +60% vs Bosses.",
     "critChance": 0.15,
     "critMult": 2.5
   },

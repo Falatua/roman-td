@@ -217,10 +217,7 @@ function renderTab(tab: string): string {
           ${noteCard('Per-Tower Crit Chance', 'Every tower has its own crit profile. Fast attackers (Pugio Assassin 25%, Eques signature 25%) crit often for modest bonuses. Heavy siege (Colossus Onager 6%, Vulcan Engineer 8%) crits rarely for huge multipliers (×3.0–×3.5).')}
           ${noteCard('Same-Tier Merging', '3 identical towers of the same tier merge into the next tier — automatic recipe, no special button. <b style="color:#88ff88">Works for combo towers too</b>: stack 3× Horseman T2 to merge into Horseman T3, all the way up. The survivor gets <b style="color:#88ff88">+15% damage</b> (stacking on each merge). Cheapest path to T5 for any unit.')}
           ${noteCard('Combination Recipes (40 total)', 'Cross-unit recipes turn ingredient towers into a named combo tower. Three classes: <b>single combos</b> (2-3 ingredients), <b>cross-combos</b> (combos as ingredients), and <b>super combos</b> (5 base towers — hardest in the game). <b style="color:#88ff88">Combine in ANY pre-wave phase</b> — execute recipes the moment they\'re completed, even while prospects are still pending placement. Full sortable list in the COMBINATIONS tab.')}
-          ${noteCard('🐲 Draconarius (T4 — MELEE)', 'Mid-game <b style="color:#ff7733">MELEE</b> combo, the only physical-melee tower with a fire-breath cone. Each swing sweeps a 60° forward CONE at <b>polearm reach 2.0</b> hitting <b>every enemy in the arc for FULL damage</b> (not splash-decayed). Every hit stacks <b style="color:#ffd34d">DRAGON MARK</b>: +25% damage taken per stack (cap 3 = <b>+75%</b>), 3 s / <b>5 s on Bosses</b>. The mark amps damage from <b>every tower</b> on the marked enemy. <b style="color:#ff5050">PROXIMITY BURN passive</b>: any enemy within the 2-tile fire-radius is auto-ignited (BURN, 6% maxHp/sec) every half-second, even with zero attacks — walking past is enough. <b style="color:#ff5050">+60% base damage vs Bosses.</b> Pairs with melee aura items (Centurion\'s Trumpet, Cavalry Spur) and aura towers (Eagle Standard, Praetorian Wall). Recipe: <b>Ignifer T3 + Triarius T3 + Sagittarius T3 — 50g</b>.')}
-          ${noteCard('🦁 Bestiarius (T4)', 'Mid-game melee with the FIRST <b style="color:#ffd34d">RAGE GAUGE</b> mechanic. Each consecutive attack on the SAME enemy builds 1 fury stack (cap 8). At 8 stacks the next strike is a <b style="color:#ff7733">FRENZY</b>: <b>6× damage + 1 s STUN</b>, then gauge resets to 0. Vs Bosses, the gauge fills <b>2× faster</b> and FRENZY becomes <b>8× damage</b>. Stacks reset when the target dies, the Bestiarius re-targets, or 4 s pass without a hit — pick chokepoints with sustained bosses to milk the payoff. Polearm reach 2.0. No aura. Recipe: <b>Beast Slayer T3 + Skizzer T3 + Hastati T3 — 50g</b>.')}
-          ${noteCard('🛡 Murmillo (T4 — anti-Carthage)', 'Mid-game heavy melee combo, sole tower with a dedicated <b style="color:#ff5050">anti-Carthage signature</b>: <b style="color:#ff7733">PUNIC HUNTER</b> deals <b>+75% damage vs CARTHAGE faction</b> (W7-W10 living Punic columns) and <b>+50% vs UNDEAD_CARTHAGE</b> (W16-W18 risen Sacred Band). Stacks multiplicatively with the existing −30% melee resist row on CARTHAGE, so a Carthage Spearman effectively takes <b>~2.3×</b> from a Murmillo swing. Plus a heavy <b style="color:#ffd34d">SCUTUM BASH</b> every 4th attack: <b>1.2s STUN + 0.8 tile knockback</b> (heaviest single-shot CC in the melee roster — bosses skip the stun but still take the knockback at 25%). Pure melee, range 1.5. Recipe takes the three orphan base towers: <b>Turris T3 (Ballistarius) + Librator T3 + Arcuballista T3 — 50g</b>.')}
-          ${noteCard('🐺 Beast Hunter (T1) + Beast Slayer (T2)', 'Dual-blade gladiator pair (historical <b>Dimachaerus</b> class — darker-skinned arena fighter with a short sword in each hand). Both melee, both standalone — <b style="color:#ff5050">no combo recipes</b>, no aura, no special mechanic past their core ability: <b style="color:#ff7733">BEAST-BANE +200% damage</b> against animal-faction enemies. Affected enemies: <b>Feral Dog · Rabid Dog · Alpha Dog</b> (W1-W3 boss), <b>Demon Hellhound</b> (W19), <b>War Elephant</b> (W9-W10), <b>Undead War Elephant</b> (W14). <b style="color:#88ff88">Beast Hunter (T1):</b> 22 DPS, 2.8/s atk, 10% crit @ 1.8× — fast and cheap, designed to clean up the early dog rush. <b style="color:#88ff88">Beast Slayer (T2):</b> 36 DPS, 2.6/s atk, 15% crit @ 2.0× — veteran upgrade, still fast, better burst. Build one or two before W3 to soft-counter the Alpha Dog, and keep them on the field for the W9 elephant pair. They roll in the normal prospect pool at low pool levels.')}
+          ${noteCard('🔥 Standout Towers (full stats in LEGIONS tab)', '<b style="color:#ffd34d">🐲 Draconarius (T4):</b> 60° fire-breath cone + DRAGON MARK stacking debuff. <b style="color:#ffd34d">🦁 Bestiarius (T4):</b> rage gauge — every 8th hit on the same target is a 6× FRENZY + stun (8× on bosses). <b style="color:#ffd34d">🛡 Murmillo (T4):</b> anti-Carthage specialist (+75%/+50% vs Carthage/Undead Carthage) + 1.2s stun + 0.8-tile knockback every 4th swing. <b style="color:#ffd34d">🐺 Beast Hunter (T1) + Beast Slayer (T2):</b> +200% vs animal enemies (dogs, hellhound, war elephants). Open the LEGIONS tab for full DPS / attack speed / range numbers and the COMBINATIONS tab for the recipe ingredients.')}
           ${noteCard('Kill Bonus', 'Veteran towers earn a slow flat-DPS bonus per kill, capped at +10% of base T1 DPS. Bronze (50 kills), Silver (200), Gold (500) badges mark milestones.')}
           ${noteCard('Aura Rings — color = role', 'Every local aura on the field draws a visible ring:<br/>• <b style="color:#c070ff">VIOLET</b> — ally buff (damage / speed / range)<br/>• <b style="color:#ff5566">DASHED CRIMSON</b> — enemy debuff (+taken% / slow / mark)<br/>• <b style="color:#ffd34d">GOLD</b> — tower attack range (kept distinct so the three layers never confuse)<br/><br/><b>Native aura towers:</b> Eagle Standard, Praetorian Wall, Cohort Guard, Triplex Acies, Legion Prime, Aquilifer, Vestalis. <b>Aura items:</b> Centurion\'s Trumpet, Battle Standard, War Hound Collar, Druid\'s Torc, Barca War Horn, Lich General\'s Seal, Aquilifer\'s Banner, Cursed Torc. <b>Global auras</b> (Triarius +12%, Caesar +45%, Triumvirate, Imperium, Consular) cover the whole map and don\'t draw rings.<br/><br/><b style="color:#ff9933">STACKING CAP:</b> auras compound multiplicatively but combined damage AND speed per tower cap at <b>2.00× each (max +100%)</b>. Past 5 sources you\'re at the ceiling — diversify into items, pool damage, marks, or enemy-vulnerability auras.<br/><br/><b style="color:#aaccff">Sleep / Nullification:</b> a tower asleep (druid dart) or inside an Architectus 2-tile bubble silently drops its aura contributions and its periodic abilities (Caesar stun pulse, Hannibal\'s Nightmare freeze). The aura ring dims to mark the suspension.<br/><br/><b style="color:#cdb98a">Enemy auras:</b> druids + Demon Legate emit a tower-slow aura (2-3 tile, 20-30%); war elephants emit a dust shield (2 tiles, ranged-immunity to nearby ground allies). Kill the source, the aura drops.')}
           ${noteCard('🎨 Projectile Visual Code', 'Glance at the field and you can tell what kind of damage is in flight: <b style="color:#ffe066">GOLD HALO + rotating sun rays</b> = DIVINE damage (Flamen, Augur, Haruspex, Solar Priest, Pontifex, Imperium Eternum, Fatebinder). <b style="color:#ff8a22">PULSING OUTER RING</b> around a projectile = SPLASH on impact (Vulcan Engineer, Colossus Onager, Siege Onager, Carroballista, Inferno Cart, Plague Cart, Solar Priest, etc.) — the ring shows the splash radius before the hit lands. On hit, splash projectiles drop a tan/cream shockwave ring at the impact point. <b style="color:#88ddff">CLEAVER MELEE</b> (Hastati, Triarius, Cohort Guard, Praetorian Wall, Imperator Guard, Vexillation, Triumphator, Triplex Acies, or anyone with Falx Blade equipped) draws a WIDER primary slash + a trailing echo-arc + a faint tan ring on every swing, so a cleaver reads as a cleaver even hitting a single target.')}
@@ -285,25 +282,22 @@ function renderTab(tab: string): string {
         </div>
       `)}
       ${foldSection('⚡ TIPS & TRICKS — UNCOMFORTABLE TRUTHS', `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('COMBINE OR DIE', 'Combine your towers. Or refuse. The enemy prefers you refuse.')}
-          ${noteCard('CHECK RESISTANCES FIRST', 'Look at enemy resistances before placing towers. Unless you enjoy watching them stroll past unbothered.')}
-          ${noteCard('HOARD A LITTLE GOLD', 'Save some denarii. You will need it when everything goes wrong. And it will go wrong.')}
-          ${noteCard('QUESTS PAY REAL GOLD', 'Complete quests. The rewards are real. Your excuses for skipping them are not.')}
-          ${noteCard('PLACEMENT > QUANTITY', 'Fewer towers in smarter spots beats more towers in worse spots. The enemy does not care how many you built. Only where.')}
-          ${noteCard('SPAM PROSPECTS', 'Every click costs 1g and shapes the maze. The unkept ones become walls. The "wasted" gold paid for engineering.')}
-          ${noteCard('DOT BREAKS REGEN', 'Burn, poison, and bleed count as damage. Apply one to anything that regenerates and watch it scream into a wall instead.')}
-          ${noteCard('DOWNGRADE FOR RECIPES', 'A T4 tower can drop to T3 for 2g and slot into the recipe you were hoarding for. Pride loses runs.')}
-          ${noteCard('AURAS ARE NOT DECORATIVE', 'Every local aura now draws a ring — VIOLET for ally buffs (Eagle Standard, Praetorian Wall, Cohort Guard, Triplex Acies, Legion Prime, Vestalis, plus Centurion\'s Trumpet / Battle Standard / War Hound Collar / Druid\'s Torc / Barca War Horn / Lich General\'s Seal / Aquilifer\'s Banner items) and CRIMSON for enemy debuffs (Aquilifer — solid bright ring at 5 tiles for the +20% damage zone; Cursed Torc item — dashed crimson). Stand inside the violet rings, force enemies to cross the crimson ones.')}
-          ${noteCard('MERCATOR SELLS T5 ONLY', 'Mercator only stocks Tier 5 towers, flat 50g each. If a recipe is missing one ingredient, this is where you buy it.')}
-          ${noteCard('EMPTY ROUND = +12G', 'Press START WAVE without doing anything and the Senate rewards your patience with 12g. Use the lull to think before you spend.')}
-          ${noteCard('SHORT PATH = SHORT GAME', 'If the enemy walks straight to Rome, you lose. Every twist you force is another shot fired. Mazing is the difference.')}
-          ${noteCard('KEEP TWO PROSPECTS', 'Two keeps per round. Forever. Pick the ones that fit your build, not the ones that look impressive standalone.')}
-          ${noteCard('BOSSES REBORN ON LEAK', '10 lives per leak. The boss dies at the gate, then comes back on the next wave AT THE HP HE HAD WHEN HE LEAKED. Chip damage carries over — so a leak at 20% HP means an easier finish next round, just 10 lives more expensive than killing him on the spot.')}
-          ${noteCard('FLYER WAVES ARRIVE FAST', 'Flyer waves arrive at W6, W12, W18 — every 6 waves. If your last leg has no ranged tower, you are sponsoring their parade.')}
-          ${noteCard('POOL L2 IS THE FIRST DAMAGE', 'L1 only shifts roll probabilities. The +3% global damage starts at L2 and stacks every level after. Get to L2 fast.')}
-          ${noteCard('BOSS-KILL = +22+round(wave×3.5) GOLD', 'Killing a boss pays a flat bounty on top of wave-end gold. W20 final boss ≈ +92g. Loot the corpse — the Senate is generous when it works out.')}
-          ${noteCard('THE CODEX IS NOT OPTIONAL', 'You are reading it now. You should read it more. Every recipe, every resistance, every regret avoided lives here.')}
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px">
+          ${noteCard('SHORT PATH = SHORT GAME', 'Every twist you force is another shot fired. Mazing > towers.')}
+          ${noteCard('SPAM PROSPECTS', 'Every click costs 1g and shapes the maze. Unkept ones become walls — the "wasted" gold paid for engineering.')}
+          ${noteCard('PLACEMENT > QUANTITY', 'Fewer towers in smart spots beats more towers in dumb ones.')}
+          ${noteCard('COMBINE OR LOSE', 'Combo towers carry the mid + late game. Refuse to combine and the wave does it for you.')}
+          ${noteCard('CHECK RESISTANCES', 'Read the enemy tab before placing. Wrong damage type = enemies walk past unbothered.')}
+          ${noteCard('DOT BREAKS REGEN', 'Burn / poison / bleed counts as damage. Any DOT on a Hannibal / druid / hellhound shuts off its heal.')}
+          ${noteCard('DOWNGRADE FOR RECIPES', 'A T4 → T3 for 2g slots into the recipe you were hoarding for. Pride loses runs.')}
+          ${noteCard('FLYERS ARRIVE W6 / W12 / W18', 'Every 6 waves. No ranged tower on your last leg = sponsored parade.')}
+          ${noteCard('BOSSES REBORN ON LEAK', '10 lives per leak. Boss returns next wave at the HP he had at the gate. Chip damage carries.')}
+          ${noteCard('POOL L2 = FIRST DAMAGE', 'L1 only shifts probabilities. +3% damage / level starts at L2 and stacks. Get there fast.')}
+          ${noteCard('EMPTY ROUND = +12g', 'Press START WAVE with nothing placed → +12g for strategic patience.')}
+          ${noteCard('MERCATOR = T5 ONLY', 'Stocks Tier 5 towers at flat 50g. If a recipe is missing one ingredient, this is where you buy it.')}
+          ${noteCard('AURAS ARE NOT DECORATION', 'Violet rings = ally buffs (stand inside). Crimson rings = enemy debuffs (force enemies to cross).')}
+          ${noteCard('BOSS-KILL BOUNTY', '+22 + round(wave × 3.5)g per boss kill. W20 ≈ +92g on top of wave gold.')}
+          ${noteCard('QUEST TIER BONUS', '+50 / +100 / +200g per cleared tier, +500g for all 18. Quest progress = real money.')}
         </div>
       `)}
       ${foldSection('📜 ROMAN MILITARY HISTORY — LATIN ETYMOLOGY GLOSSARY', `
@@ -519,25 +513,25 @@ function renderTab(tab: string): string {
         </div>
       `)}
       ${foldSection('TOWER SIGNATURES', `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('Cleave Melee', 'Hastati, Triarius, Cohort Guard, Praetorian Wall, Imperator Guard, Vexillation, Triumphator, Triplex Acies hit ALL enemies in melee range. Secondaries take 70%.')}
-          ${noteCard('Multi-Shot Ranged', 'Decurion (2), Carroballista (2), Eques (3), Hannibals Nightmare (2), Scorpion Bolt (3), Aurora Legion (4 piercing line), Carthage Scourge (6) fire multiple shots per attack.')}
-          ${noteCard('Anti-Air Only', 'Aquila Venator only targets flyers. Useless on ground waves but devastating on flyer waves.')}
-          ${noteCard('Trident & Net (Retiarius)', 'First hit on a NEW target deals 2× — the net pins them, the trident drives home. Applies Armor Shred on every strike.')}
-          ${noteCard('Brutal Opener (Accensus)', '+60% damage on enemies above 85% HP.')}
-          ${noteCard('Backstab (Pugio Assassin)', '+50% damage vs Runner archetype.')}
-          ${noteCard('Marked Prey (Venator)', 'Hits on flyers Mark them for +25% damage from all sources.')}
+        <div style="font-size:11px;color:#cdb98a;margin-bottom:6px;line-height:1.45">Per-tower mechanics that aren\'t obvious from the stat line. Click any tower on the field for its full breakdown — these are just the unusual ones worth memorizing.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          ${noteCard('Cleave Melee', 'Hits ALL enemies in melee range, secondaries take 70%. Towers: Hastati, Triarius, Cohort Guard, Praetorian Wall, Imperator Guard, Vexillation, Triumphator, Triplex Acies.')}
+          ${noteCard('Multi-Shot Ranged', 'Multiple bolts per attack. Decurion (2), Carroballista (2), Eques (3), Hannibals Nightmare (2), Scorpion Bolt (3), Aurora Legion (4 piercing), Carthage Scourge (6).')}
+          ${noteCard('Anti-Air Only', 'Aquila Venator ignores ground entirely. Dead weight on ground waves, devastating on flyers.')}
+          ${noteCard('Trident & Net (Retiarius)', 'First hit on a new target = 2× damage. Armor Shred every strike.')}
+          ${noteCard('Brutal Opener (Accensus)', '+60% damage above 85% HP. Front-load damage on fresh enemies.')}
+          ${noteCard('Backstab (Pugio Assassin)', '+50% vs Runner archetype.')}
+          ${noteCard('Marked Prey (Venator)', 'Hits on flyers Mark them for +25% damage from any source.')}
           ${noteCard('Spotter (Speculator)', 'Applies Mark (+15%) AND Armor Shred together.')}
           ${noteCard('Tactical Stacks (Evocatus)', '+5% damage per kill, capped at +50%. Kept Evocati get terrifying.')}
           ${noteCard('Foresight (Haruspex)', '20% chance to double-strike.')}
-          ${noteCard('Solar Flare (Solar Priest)', 'Damage IGNORES all faction resistances. The endgame answer to Undead/Demon.')}
-          ${noteCard('Earthshatter (Colossus Onager)', 'Every hit knocks the target backward along the path.')}
-          ${noteCard('Siege Kickback (Ballistarius)', 'Every 3rd shot knocks the target back.')}
-          ${noteCard('Charge + Venom (Horseman combo)', 'Every hit MARKS target (+20% next-damage from anyone) <b>AND</b> applies <b style="color:#88ff88">POISON</b> (5% maxHP/sec, 4s, scales with tier). Mark + DoT + +20% vs ground = the early-game answer to any single priority target.')}
-          ${noteCard('Trample (War Chariot combo)', 'Every 4th attack stuns AND knocks back ground enemies. +50% vs bosses.')}
-          ${noteCard('Damage-Type Identity', 'Scorpio +40% vs Bosses · Sagittarius +45% vs Flyers · Venator +45% vs Flyers · Aquila Venator +75% vs Flyers · Horseman +20% vs ground · Turma Lancers +30% vs ground · Scorpion Bolt +12% vs Flyers/Bosses · Nemesis Engine +200% vs Flyers · Pontifex +200% vs Bosses · Carthage Scourge +250% vs Bosses · Hannibal\'s Nightmare +200% vs War Elephants.')}
-          ${noteCard('Triarius Global Aura', '+12% global damage to every other tower while a Triarius is on the field.')}
-          ${noteCard('Cohort Guard Aura', 'Projects a 3-tile +15% damage aura to nearby towers in addition to its cleave + slow.')}
+          ${noteCard('Solar Flare (Solar Priest)', 'Damage IGNORES faction resists. The endgame answer to Undead / Demons.')}
+          ${noteCard('Earthshatter (Colossus Onager)', 'Every hit knocks target back along the path.')}
+          ${noteCard('Siege Kickback (Ballistarius)', 'Every 3rd shot knocks target back.')}
+          ${noteCard('Charge + Venom (Horseman)', 'Every hit MARKS (+20%) AND applies POISON (5% maxHp/sec, 4s).')}
+          ${noteCard('Trample (War Chariot)', 'Every 4th attack stuns + knocks back ground. +50% vs bosses.')}
+          ${noteCard('Damage-Type vs Archetype', '<b>Bosses:</b> Scorpio +40, Pontifex +200, Carthage Scourge +250. <b>Flyers:</b> Sagittarius / Venator +45, Aquila Venator +75, Nemesis Engine +200. <b>Ground:</b> Horseman +20, Turma Lancers +30. <b>Elephants:</b> Hannibal\'s Nightmare +200, Beast Hunter/Slayer +200. All values % bonus damage.')}
+          ${noteCard('Native Auras', 'Triarius +12% global · Cohort Guard 3-tile +15% local · Eagle Standard / Praetorian Wall / Aquilifer / Vestalis / Triplex Acies / Legion Prime / Fatebinder all draw violet rings — stand inside.')}
           ${noteCard('Frozen Legion (deep dive)', 'Two layered freeze mechanics: <b style="color:#88ddff">(1)</b> every attack freezes its target for 2.5s — locked in place, no movement, no knockback displacement · <b style="color:#88ddff">(2)</b> every 10 seconds, a <b>GLACIAL PULSE</b> freezes EVERY enemy on the map (no range cap) for 2.5s. The pulse turns each 10s window into a battlefield-wide hard-stop window so your damage towers can finish kills uncontested.')}
           ${noteCard('Periodic AoE Freeze', '<b style="color:#88ddff">Frozen Legion</b> — every 10s, freezes EVERY enemy on the map (no range cap) for 2.5s. <b>Hannibal\'s Nightmare</b> — every 10s, freezes everything in its 6.5-tile range for 1.5s. <b>Carthage Scourge</b> — every 8s, freezes everything in its 7-tile range for 1.5s.')}
         </div>
@@ -605,18 +599,11 @@ function renderTab(tab: string): string {
       `)}
       ${foldSection('VISUAL CUES — WHAT THEY MEAN', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">
-          ${noteCard('Top-left chip', 'Active faction weather + penalties.')}
-          ${noteCard('Top-right chip', 'Active wave modifier (when one is rolled).')}
-          ${noteCard('Lower-left chip (new)', 'Wave Brief — consolidated special-mechanics summary for the current wave.')}
-          ${noteCard('Pulsing red ring on tower', 'Eligible to combine. Click to see options inside the tower menu.')}
-          ${noteCard('Gold ring + dots above tower', 'Tower tier (1-5 dots, color-keyed).')}
-          ${noteCard('Translucent colored circle', "Aura range. <b style=\"color:#c070ff\">VIOLET</b> = ally buff (damage/speed/range). <b style=\"color:#ff5566\">DASHED CRIMSON</b> = enemy debuff (+taken%/slow). Stays distinct from the <b style=\"color:#ffd34d\">GOLD</b> tower-attack-range circle. Every local aura source — tower native or aura item — draws its ring consistently.")}
-          ${noteCard('Pink X over tower', "Silenced — won't fire for the duration.")}
-          ${noteCard('Pulsing colored dot on tower', "Weather is reducing this tower's attack speed.")}
-          ${noteCard('Bronze shield over enemy', 'Shielded — needs melee hit before ranged can target.')}
-          ${noteCard('Colored ring around enemy', 'Elite mutation (color = mutation type).')}
-          ${noteCard('Status badges above enemy', 'Active status effects with sliced-sprite icons.')}
-          ${noteCard('Pulsing red border on play area', "You're below 10 lives — danger.")}
+          ${noteCard('Chips around the play area', '<b>Top-left:</b> active faction weather + penalty. <b>Top-right:</b> active wave modifier (when one is rolled). <b>Lower-left:</b> Wave Brief — consolidated special-mechanics summary for the current wave.')}
+          ${noteCard('Tower indicators', '<b>Pulsing red ring:</b> eligible to combine — click for options. <b>Gold ring + dots above tower:</b> tier (1-5, color-keyed). <b>Pink X:</b> silenced. <b>Pulsing colored dot:</b> weather is slowing attack speed.')}
+          ${noteCard('Aura rings (colored circles)', '<b style="color:#c070ff">VIOLET</b> = ally buff (damage/speed/range). <b style="color:#ff5566">DASHED CRIMSON</b> = enemy debuff (+taken%/slow). <b style="color:#ffd34d">GOLD</b> = tower attack range. Three distinct colors so the layers never confuse.')}
+          ${noteCard('Enemy indicators', '<b>Bronze shield:</b> needs melee hit before ranged can target. <b>Colored ring around enemy:</b> elite mutation (color = mutation type). <b>Status badges above:</b> active status effects.')}
+          ${noteCard('Play-area warnings', '<b>Pulsing red border:</b> you\'re below 10 lives — danger.')}
         </div>
       `)}
     `;
