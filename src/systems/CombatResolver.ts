@@ -108,6 +108,13 @@ const MELEE_TYPES = new Set<TowerType>([
   // 2026-05-17 — Beast-hunter pair (T1 + T2). Dual-blade gladiators
   // specializing in killing animals; standalone (no combo recipes).
   TowerType.BEAST_HUNTER, TowerType.BEAST_SLAYER,
+  // 2026-05-17 v2 — Librator (T3 base) + War Chariot (T2 combo)
+  // reclassified to melee per design feedback. Librator now wields a
+  // polearm (the historical librator carried sling + dagger; we lean
+  // into the dagger here for the melee identity), War Chariot rolls
+  // adjacent to the path like Horseman / Turma Lancers. Both keep
+  // range 2.0 (polearm reach) so they stay useful as second-rank melee.
+  TowerType.LIBRITOR, TowerType.WAR_CHARIOT,
   // RETIARIUS (renamed from LANCEARIUS in 2026-05 v9 along with a sprite
   // swap to the trident+net gladiator) and CLIBANARIUS are both melee.
   // Retiarius keeps the first-hit ×2 signature (now flavored as the net

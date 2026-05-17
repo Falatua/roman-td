@@ -690,6 +690,10 @@ function renderTab(tab: string): string {
       CARROBALLISTA: 'EARLY', AQUILA_VENATOR: 'EARLY',
       AUXILIA: 'EARLY', FUNDIBULUS: 'EARLY', RORARIUS: 'EARLY',
       LIBRITOR: 'EARLY', ACCENSUS: 'EARLY',
+      // 2026-05-17 — Beast Hunter (T1) + Beast Slayer (T2): early-game
+      // beast-bane standalone towers. Roll in the normal prospect pool
+      // at pool levels 0-3; no combo dependencies.
+      BEAST_HUNTER: 'EARLY', BEAST_SLAYER: 'EARLY',
       CATAPHRACT: 'EARLY', AUGUR: 'EARLY', EVOCATUS: 'EARLY',
       HARUSPEX: 'EARLY',
       // CLIBANARIUS — moved to MID stage in 2026-05-15 v13 (now a combo).
