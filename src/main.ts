@@ -3052,24 +3052,33 @@ async function boot() {
   if (barEl) barEl.style.width = '100%';
   // 2026-05-17 — JAMMED COIN SLOT MINI-GAME.
   // The coin requires 10 clicks to be hammered into the slot. Each
-  // click nudges the coin down a fraction, shakes the cabinet a beat,
-  // pops a different "the coin slot is jammed" funny line, and (as a
-  // side benefit) every click counts as user activation so the loading
-  // music kicks into audible play if it wasn't already.
+  // click nudges the coin down a fraction and shakes the cabinet a
+  // beat. The cabinet's loading fanfare keeps playing UNDISTURBED in
+  // the background (no rewind, no replay) — the player hears one
+  // continuous song while they whack the coin.
   //
-  // Funny copy rotation — random pull each click, with a final "you
-  // beat it" line on the 10th hit.
+  // Sound policy (per user feedback 2026-05-17):
+  //   • Clicks 1-9: silent except for the cabinet rattle animation.
+  //     No coin SFX, no music primer call. The visual jolt + new
+  //     taunt copy is the feedback.
+  //   • Click 10: SFX.coinSlot() fires once on commit. The big "coin
+  //     drops in" payoff sound lands only when the coin actually
+  //     goes in.
+  //
+  // Taunt policy: each of the 9 pre-commit clicks shows a UNIQUE
+  // taunt in sequence (no repeats, no random pulls). The arc walks
+  // from polite-explanation to mock-frustration so the player feels
+  // the cabinet getting more annoyed with every whack.
   const JAM_TAUNTS = [
-    'The coin slot is JAMMED. Hit it again, soldier.',
-    'Some idiot crammed a denarius the wrong way. Persist.',
-    'The Senate hasn\'t fixed this machine in 4 centuries.',
-    'This cabinet has eaten more coins than a Carthaginian general.',
-    'Smack it like you mean it.',
-    'Older than the Republic. Twice as stubborn.',
-    'Aerarium budget cuts. Maintenance was the first thing to go.',
-    'Are you Roman or are you Greek? Hit it harder.',
-    'Hannibal\'s elephants are easier to move than this coin.',
-    'One more whack. One more whack. ONE — MORE — WHACK.'
+    'The coin slot is JAMMED. Whack it, soldier.',
+    'Some idiot crammed a denarius in sideways. Try the slot again.',
+    'The Senate has not fixed this cabinet since the Punic Wars. Keep hitting.',
+    'This machine has eaten more coins than a Carthaginian quartermaster. One more.',
+    'Smack it like you mean it, citizen.',
+    'The Aerarium cut maintenance from the budget. YOU are the maintenance now.',
+    'Are you Roman or are you Greek? Hit the slot harder.',
+    'Hannibal\'s elephants were easier to move than this coin. Press on.',
+    'One last whack. The coin can smell glory. So can you.'
   ];
   const COIN_SLOT_CLICKS_REQUIRED = 10;
   await new Promise<void>(resolve => {
@@ -3080,12 +3089,18 @@ async function boot() {
     const insertEl = document.getElementById('loading-insert');
     const coinJamHandler = () => {
       clicks++;
-      // Every click triggers the loading-music primer (idempotent —
-      // first one starts the song, the rest are no-ops).
-      primeLoadingMusic();
-      // Light coin SFX on every tap (the proper SFX.coinSlot only
-      // fires on the final commit, see below).
-      try { SFX.coinSlot(); } catch {/* ignore */}
+      // 2026-05-17 — Do NOT call primeLoadingMusic() here. The
+      // document-level pointerdown primer (registered with
+      // { once: true } in the music boot block above) ALREADY fires
+      // before this click handler runs and unmutes the track from t=0.
+      // Calling it again on every click rewinds currentTime to 0,
+      // which interrupts the song the player is enjoying. The
+      // listener removes itself after firing once, so we don't need
+      // to do anything here for music.
+      //
+      // 2026-05-17 — Coin SFX moved out of the per-click branch. It
+      // now fires ONLY on the 10th-click commit (see below) so the
+      // pre-commit whacks rely on the visual jolt for feedback.
       // Brief cabinet jitter on each whack so the player feels feedback.
       loadingEl.classList.remove('jolt');
       // Force reflow so the animation restarts even on rapid clicks.
@@ -3099,9 +3114,11 @@ async function boot() {
         if (coinHint) {
           (coinHint as HTMLElement).style.setProperty('--coin-progress', String(progress));
         }
-        // Update the insert-coin label with a funny taunt.
+        // Update the insert-coin label with the SEQUENTIAL taunt for
+        // this click number. JAM_TAUNTS has exactly 9 entries — one
+        // per pre-commit click (clicks 1..9 → indices 0..8).
         if (insertEl) {
-          const taunt = JAM_TAUNTS[Math.floor(Math.random() * (JAM_TAUNTS.length - 1))];
+          const taunt = JAM_TAUNTS[clicks - 1] ?? JAM_TAUNTS[JAM_TAUNTS.length - 1];
           insertEl.textContent = `▶ ${taunt} ◀  (${clicks}/${COIN_SLOT_CLICKS_REQUIRED})`;
         }
         return;       // not yet committed — wait for more clicks
