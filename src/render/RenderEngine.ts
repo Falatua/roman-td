@@ -2598,6 +2598,11 @@ export class RenderEngine {
   private surpriseDustPuffsEmitted = new Set<string>();   // event-id::point-index → one-shot guard
   private surpriseEmberClock = 0;                          // throttle counter for ember emission
   private surpriseAtmosSprites: Sprite[] = [];             // pooled atmospheric prop sprites
+  // 2026-05-17 — DEATH UPRISING over-the-top overlay. Single Graphics
+  // drawn beneath the urn sprites; carries pulsing dark-aura rings,
+  // ground cracks, orbiting floating skulls, and a vertical soul column
+  // per urn. Cleared and redrawn every frame the event is alive.
+  private uprisingOverlayGfx?: Graphics;
   drawBurnPatches(state: GameStateShape, tick: number) {
     const patches = state.burnPatches;
     // Reset pool index; we'll claim entries as we iterate live patches.
@@ -2717,14 +2722,22 @@ export class RenderEngine {
           }
         } else {
           // UPRISING: urn rises from below over the RISE window.
+          // 2026-05-17 — OVER-THE-TOP PASS. Urns are now 1.5× larger
+          // (1.3 → 1.95 tile-widths), wobble harder, and the overlay
+          // pass below draws orbiting skulls + soul column + aura ring
+          // + ground cracks per urn. Spawn impact rings are doubled in
+          // radius and ember bursts tripled — Death Uprising should
+          // feel like a portal to the underworld is opening, not a
+          // polite ceramic pot popping out of the ground.
           const tx = tex('SKULL_URN');
           if (tx) sp.texture = tx;
-          // y offset: starts +18 px below the tile floor, lerps to floor
-          // over the rise window. After rise, urn breathes + wobbles.
+          // y offset: starts +28 px below (was +22) for a taller rise,
+          // lerps to floor over the rise window. After rise, urn
+          // breathes harder + wobbles further.
           const riseT = Math.max(0, Math.min(1, (tick - (meta.firstSpawnAt - VFX_TIMING.RISE_SECONDS)) / VFX_TIMING.RISE_SECONDS));
-          const yOffset = (1 - riseT) * 22;
-          const breathe = 1 + 0.06 * Math.sin(tick * 2.4 + pointId * 0.9);
-          const wobble = Math.sin(tick * 1.5 + pointId * 0.6) * 0.06;     // ±3.5°
+          const yOffset = (1 - riseT) * 28;
+          const breathe = 1 + 0.10 * Math.sin(tick * 2.4 + pointId * 0.9);   // 0.06 → 0.10
+          const wobble = Math.sin(tick * 1.5 + pointId * 0.6) * 0.10;        // ±3.5° → ±5.7°
           // Pre-spawn "rumble" — in the 0.25s before each spawn at this
           // point, wobble amplitude triples to signal "minion about to
           // emerge". Read by checking remaining time to next un-fired spawn.
@@ -2736,20 +2749,25 @@ export class RenderEngine {
               preSpawnShake = Math.max(preSpawnShake, (1 - remaining / 0.25));
             }
           }
-          const rumble = preSpawnShake * (Math.sin(tick * 40) * 1.5);
-          const baseSize = GRID.TILE * 1.3;
+          const rumble = preSpawnShake * (Math.sin(tick * 40) * 2.5);        // 1.5 → 2.5 px
+          const baseSize = GRID.TILE * 1.95;                                  // 1.3 → 1.95
           sp.width = baseSize * breathe;
           sp.height = baseSize * breathe;
-          sp.rotation = wobble + preSpawnShake * Math.sin(tick * 35) * 0.12;
+          sp.rotation = wobble + preSpawnShake * Math.sin(tick * 35) * 0.18;  // 0.12 → 0.18
           sp.x = meta.vfxX + rumble;
           sp.y = meta.vfxY + GRID.TILE * 0.45 + yOffset;
           sp.anchor.set(0.5, 1.0);
           sp.alpha = alpha;
           sp.visible = true;
-          // Mouth glow — purple ember escapes the urn's cavity every
-          // ~5 frames during the active phase. Subtle but sells "alive".
-          if (riseT > 0.7 && (this.surpriseEmberClock += 1) % 5 === 0) {
+          // Mouth glow — purple ember escapes the urn's cavity faster
+          // now (every ~3 frames vs 5). Sells the "alive and hungry"
+          // feel, contrasts with the slower-burning invasion fires.
+          if (riseT > 0.7 && (this.surpriseEmberClock += 1) % 3 === 0) {
             this.spawnEmberParticle(meta.vfxX, meta.vfxY - 4, /*warm=*/false);
+            // Occasional "tall" soul wisp — 2x lifespan, slower velocity.
+            if (Math.random() < 0.3) {
+              this.spawnSoulWisp(meta.vfxX + (Math.random() - 0.5) * 12, meta.vfxY - 8);
+            }
           }
         }
         activeIdx++;
@@ -2762,17 +2780,34 @@ export class RenderEngine {
 
     // ── Per-spawn dust puff (one-shot on each enemy emergence) ────────
     if (ev) {
+      const isUprising = ev.kind === SurpriseEventKind.UPRISING;
       for (let i = 0; i < ev.spawnPoints.length; i++) {
         const p = ev.spawnPoints[i];
         if (!p.fired) continue;
         const key = `${ev.startedAt.toFixed(2)}::${i}`;
         if (this.surpriseDustPuffsEmitted.has(key)) continue;
         this.surpriseDustPuffsEmitted.add(key);
-        const ringColor = ev.kind === SurpriseEventKind.INVASION ? 0xff8844 : 0xaa66ff;
-        // Two-pulse impact ring + ember burst.
-        this.triggerImpactRing(p.vfxX, p.vfxY + GRID.TILE * 0.4, tick, 24, ringColor);
-        this.triggerImpactRing(p.vfxX, p.vfxY + GRID.TILE * 0.4, tick + 0.06, 38, ringColor);
-        for (let k = 0; k < 4; k++) this.spawnEmberParticle(p.vfxX, p.vfxY, ev.kind === SurpriseEventKind.INVASION);
+        const ringColor = isUprising ? 0xaa66ff : 0xff8844;
+        // 2026-05-17 — UPRISING gets a much bigger spawn punch: three
+        // rings instead of two, doubled radii, and a triple-color outer
+        // ring (deep purple) to read as a portal opening. Invasion path
+        // stays as it was — the empire's on fire, no portal cosmology.
+        if (isUprising) {
+          this.triggerImpactRing(p.vfxX, p.vfxY + GRID.TILE * 0.4, tick,        48, ringColor);
+          this.triggerImpactRing(p.vfxX, p.vfxY + GRID.TILE * 0.4, tick + 0.06, 76, ringColor);
+          this.triggerImpactRing(p.vfxX, p.vfxY + GRID.TILE * 0.4, tick + 0.12, 110, 0x6622aa);
+          // 12-ember burst (was 4) + 6 soul wisps drifting upward.
+          for (let k = 0; k < 12; k++) this.spawnEmberParticle(p.vfxX, p.vfxY, false);
+          for (let k = 0; k < 6; k++) {
+            this.spawnSoulWisp(p.vfxX + (Math.random() - 0.5) * 18, p.vfxY - Math.random() * 6);
+          }
+          // Brief camera punch for each emergence — sells the moment.
+          try { this.triggerShake?.(2, 0.18); } catch { /* renderer may not expose shake yet */ }
+        } else {
+          this.triggerImpactRing(p.vfxX, p.vfxY + GRID.TILE * 0.4, tick,        24, ringColor);
+          this.triggerImpactRing(p.vfxX, p.vfxY + GRID.TILE * 0.4, tick + 0.06, 38, ringColor);
+          for (let k = 0; k < 4; k++) this.spawnEmberParticle(p.vfxX, p.vfxY, true);
+        }
       }
       if (this.surpriseDustPuffsEmitted.size > 64) {
         const drop = Array.from(this.surpriseDustPuffsEmitted).slice(0, 32);
@@ -2780,6 +2815,144 @@ export class RenderEngine {
       }
     } else {
       if (this.surpriseDustPuffsEmitted.size > 0) this.surpriseDustPuffsEmitted.clear();
+    }
+
+    // ── UPRISING-only over-the-top overlay (skulls, soul columns,
+    //    aura rings, ground cracks). Drawn on a dedicated Graphics that
+    //    sits in the fx layer above the urn sprite. Cleared every frame.
+    if (!this.uprisingOverlayGfx) {
+      this.uprisingOverlayGfx = new Graphics();
+      this.layers.fx.addChildAt(this.uprisingOverlayGfx, 0);
+    }
+    const ug = this.uprisingOverlayGfx;
+    ug.clear();
+    if (ev && ev.kind === SurpriseEventKind.UPRISING) {
+      // Same per-point envelope used by the urn sprite above so the
+      // overlay fades in / out in lockstep.
+      const pointMeta = new Map<number, { vfxX: number; vfxY: number; firstSpawnAt: number }>();
+      for (const p of ev.spawnPoints) {
+        const m = pointMeta.get(p.pointId);
+        if (!m) pointMeta.set(p.pointId, { vfxX: p.vfxX, vfxY: p.vfxY, firstSpawnAt: p.spawnAt });
+        else m.firstSpawnAt = Math.min(m.firstSpawnAt, p.spawnAt);
+      }
+      for (const [pointId, meta] of pointMeta) {
+        const fadeIn = Math.max(0, Math.min(1, (tick - (meta.firstSpawnAt - VFX_TIMING.RISE_SECONDS)) / VFX_TIMING.RISE_SECONDS));
+        let envAlpha = fadeIn;
+        if (ev.vfxFadeOutAt > 0) {
+          const fp = (tick - ev.vfxFadeOutAt) / VFX_TIMING.FADEOUT_SECONDS;
+          envAlpha = Math.max(0, 1 - fp);
+        }
+        if (envAlpha <= 0.01) continue;
+        const cx = meta.vfxX;
+        const cy = meta.vfxY + GRID.TILE * 0.45;          // urn base y (matches sprite anchor)
+        const tilesPulse = 1 + 0.18 * Math.sin(tick * 1.8 + pointId * 0.9);
+        // 1. GROUND CRACKS — 8 jagged purple lines radiating from the urn
+        //    base. Drawn first so they sit under everything else.
+        const crackR = GRID.TILE * 1.4 * tilesPulse;
+        const crackAlpha = 0.55 * envAlpha;
+        ug.lineStyle(2, 0x5e1a8a, crackAlpha);
+        for (let a = 0; a < 8; a++) {
+          const baseAng = (a / 8) * Math.PI * 2 + pointId * 0.13;
+          const jitter = Math.sin(tick * 3 + pointId + a) * 0.12;
+          const ang = baseAng + jitter;
+          const x1 = cx + Math.cos(ang) * (GRID.TILE * 0.25);
+          const y1 = cy + Math.sin(ang) * (GRID.TILE * 0.10);
+          // Two-segment crack: kink halfway out for an organic look.
+          const midAng = ang + Math.sin(tick * 2 + a) * 0.30;
+          const xm = cx + Math.cos(midAng) * (crackR * 0.55);
+          const ym = cy + Math.sin(midAng) * (crackR * 0.30);     // squashed Y → ground perspective
+          const xe = cx + Math.cos(ang) * crackR;
+          const ye = cy + Math.sin(ang) * crackR * 0.50;
+          ug.moveTo(x1, y1).lineTo(xm, ym).lineTo(xe, ye);
+        }
+        // 2. PULSING DARK-AURA RING — two stacked elliptical rings, the
+        //    outer one breathes wider than the inner. Both squashed Y to
+        //    sit on the ground plane.
+        const innerR = GRID.TILE * 1.05 * tilesPulse;
+        const outerR = GRID.TILE * 1.55 * tilesPulse;
+        ug.lineStyle(3, 0xaa66ff, 0.45 * envAlpha);
+        ug.drawEllipse(cx, cy + 4, innerR, innerR * 0.42);
+        ug.lineStyle(2, 0x6622aa, 0.30 * envAlpha);
+        ug.drawEllipse(cx, cy + 4, outerR, outerR * 0.42);
+        // 3. SOUL COLUMN — vertical column of purple energy rising from
+        //    the urn's mouth. Triangular gradient simulated with three
+        //    semi-transparent rects of decreasing width.
+        const colH = GRID.TILE * 2.6;
+        const colTopY = cy - GRID.TILE * 1.95 - Math.sin(tick * 2.5 + pointId) * 4;
+        const swell = 1 + 0.15 * Math.sin(tick * 4 + pointId * 1.7);
+        const widths = [22, 14, 8];
+        const colors = [0x4a1574, 0x8833cc, 0xcc88ff];
+        const alphas = [0.18, 0.32, 0.48];
+        for (let i = 0; i < widths.length; i++) {
+          ug.beginFill(colors[i], alphas[i] * envAlpha);
+          ug.drawRect(cx - (widths[i] * swell) / 2, colTopY, widths[i] * swell, colH);
+          ug.endFill();
+        }
+        // Capping ellipse at the bottom of the column for a smooth blend
+        // into the urn's mouth.
+        ug.beginFill(0x8833cc, 0.40 * envAlpha);
+        ug.drawEllipse(cx, cy - GRID.TILE * 0.55, 14, 5);
+        ug.endFill();
+        // 4. ORBITING FLOATING SKULLS — 4 skulls per urn drifting in an
+        //    elliptical orbit. Each skull is drawn with 3 ellipses (head
+        //    + jaw bevel + eye sockets) and 1 mouth line.
+        const SKULLS_PER_URN = 4;
+        for (let s = 0; s < SKULLS_PER_URN; s++) {
+          const orbitT = tick * 0.55 + (s / SKULLS_PER_URN) * Math.PI * 2 + pointId * 0.7;
+          const orbitR = GRID.TILE * 1.25;
+          const sx = cx + Math.cos(orbitT) * orbitR;
+          const sy = cy - GRID.TILE * 0.55 + Math.sin(orbitT) * orbitR * 0.42
+                       + Math.sin(tick * 2.5 + s) * 2.5;                       // gentle bob
+          // Behind-the-urn skulls get half alpha so depth reads correctly.
+          const behind = Math.sin(orbitT) < 0;
+          const sa = (behind ? 0.35 : 0.85) * envAlpha;
+          const sz = 7 + (behind ? -1 : 1);                                    // tiny depth scale
+          // Skull body (ivory) — slight purple tint.
+          ug.beginFill(0xe8d6a8, sa * 0.92);
+          ug.drawEllipse(sx, sy, sz, sz * 1.05);
+          ug.endFill();
+          // Jaw — narrower ellipse just below.
+          ug.beginFill(0xc9b88a, sa * 0.92);
+          ug.drawEllipse(sx, sy + sz * 0.55, sz * 0.7, sz * 0.45);
+          ug.endFill();
+          // Eye sockets — two black ovals.
+          ug.beginFill(0x12080c, sa);
+          ug.drawEllipse(sx - sz * 0.32, sy - sz * 0.15, sz * 0.22, sz * 0.30);
+          ug.drawEllipse(sx + sz * 0.32, sy - sz * 0.15, sz * 0.22, sz * 0.30);
+          ug.endFill();
+          // Faint purple glow inside the eyes — gives them life.
+          ug.beginFill(0xaa66ff, sa * 0.7);
+          ug.drawCircle(sx - sz * 0.32, sy - sz * 0.15, sz * 0.10);
+          ug.drawCircle(sx + sz * 0.32, sy - sz * 0.15, sz * 0.10);
+          ug.endFill();
+          // Tiny mouth gap.
+          ug.lineStyle(1, 0x3a1a4a, sa);
+          ug.moveTo(sx - sz * 0.30, sy + sz * 0.45).lineTo(sx + sz * 0.30, sy + sz * 0.45);
+          ug.lineStyle(0);
+        }
+        // 5. EXTRA ROAMING SKULLS at larger orbits — 2 per urn that
+        //    drift slower and wider, so the whole zone reads "haunted"
+        //    rather than just "this urn has skulls around it".
+        for (let s = 0; s < 2; s++) {
+          const orbitT = tick * 0.32 + (s / 2) * Math.PI + pointId * 1.2;
+          const orbitR = GRID.TILE * 2.05;
+          const sx = cx + Math.cos(orbitT) * orbitR;
+          const sy = cy - GRID.TILE * 0.95 + Math.sin(orbitT) * orbitR * 0.36;
+          const sa = 0.55 * envAlpha;
+          const sz = 5.5;
+          ug.beginFill(0xc8b890, sa * 0.9);
+          ug.drawEllipse(sx, sy, sz, sz * 1.05);
+          ug.endFill();
+          ug.beginFill(0x12080c, sa);
+          ug.drawEllipse(sx - sz * 0.32, sy - sz * 0.15, sz * 0.20, sz * 0.28);
+          ug.drawEllipse(sx + sz * 0.32, sy - sz * 0.15, sz * 0.20, sz * 0.28);
+          ug.endFill();
+          ug.beginFill(0xaa66ff, sa * 0.6);
+          ug.drawCircle(sx - sz * 0.32, sy - sz * 0.15, sz * 0.09);
+          ug.drawCircle(sx + sz * 0.32, sy - sz * 0.15, sz * 0.09);
+          ug.endFill();
+        }
+      }
     }
 
     // v2 — NO PERSISTENT SCAR DRAWING. The user explicitly asked to
@@ -2907,6 +3080,27 @@ export class RenderEngine {
       life: 0.45 + Math.random() * 0.35,
       size: 1.6 + Math.random() * 1.2,
       color: warm ? (Math.random() < 0.5 ? 0xffaa44 : 0xff5522) : (Math.random() < 0.5 ? 0xcc66ff : 0x8833cc)
+    });
+    if (gore.particles.length > 400) gore.particles.shift();
+  }
+
+  // 2026-05-17 — UPRISING SOUL WISP. Larger, slower, longer-lived particle
+  // than a regular ember. Reads as a "released soul" drifting up from the
+  // skull urn. Same pool as embers (gore particles) but starts higher,
+  // climbs slower, lives longer, and renders brighter/larger.
+  private spawnSoulWisp(x: number, y: number): void {
+    const gore: any = (this.app as any).__attachedGore;
+    if (!gore) return;
+    const a = -Math.PI / 2 + (Math.random() - 0.5) * 0.4;     // tighter cone — wisps go up
+    const sp = 28 + Math.random() * 22;                        // slower than embers
+    gore.particles.push({
+      x: x + (Math.random() - 0.5) * 6,
+      y: y - 6,
+      vx: Math.cos(a) * sp + Math.sin(Math.random() * 6) * 6,  // gentle horizontal drift
+      vy: Math.sin(a) * sp,
+      life: 1.1 + Math.random() * 0.6,                         // 2-3× ember lifespan
+      size: 2.6 + Math.random() * 1.4,                         // larger than embers
+      color: Math.random() < 0.5 ? 0xddaaff : 0xb060ff
     });
     if (gore.particles.length > 400) gore.particles.shift();
   }

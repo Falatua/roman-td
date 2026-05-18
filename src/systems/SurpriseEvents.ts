@@ -310,21 +310,18 @@ function generateUprisingAtmosphere(state: GameStateShape, mainPoints: SurpriseE
   for (const p of mainPoints) { cx += p.vfxX; cy += p.vfxY; }
   cx /= mainPoints.length;
   cy /= mainPoints.length;
-  // 4 blood stains at offset positions inside the 5x5 zone (NOT on the
-  // 4 urns themselves). Stain sprites tinted purple-red for necrotic feel.
-  const stainOffsets = [
-    { dx: -GRID.TILE * 1.2, dy: -GRID.TILE * 1.2 },
-    { dx:  GRID.TILE * 1.2, dy: -GRID.TILE * 1.2 },
-    { dx: -GRID.TILE * 1.2, dy:  GRID.TILE * 1.2 },
-    { dx:  GRID.TILE * 1.2, dy:  GRID.TILE * 1.2 },
-  ];
+  // 2026-05-17 — OVER-THE-TOP PASS. Double the stains (4 → 10) scattered
+  // at varied radii, doubled smoke puffs (3 → 8), and a wider zone so
+  // the death-uprising feels like a graveyard ritual is consuming the
+  // whole center of the map. Stain placement still skips path/tower
+  // tiles so we never paint blood on gameplay elements.
   const STAIN_KEYS = ['BLOOD_HEAVY', 'BLOOD_MEDIUM', 'BLOOD_SATURATED', 'BLOOD_LIGHT'];
-  for (let i = 0; i < stainOffsets.length; i++) {
-    const o = stainOffsets[i];
-    const px = cx + o.dx + (Math.random() - 0.5) * 8;
-    const py = cy + o.dy + (Math.random() - 0.5) * 8;
-    // Validate the tile is EMPTY — skip stain if the position lands on a
-    // tower / path / gate so we don't paint blood ON gameplay elements.
+  const STAIN_COUNT = 10;
+  for (let i = 0; i < STAIN_COUNT; i++) {
+    const angle = (i / STAIN_COUNT) * Math.PI * 2 + Math.random() * 0.4;
+    const radius = GRID.TILE * (0.9 + Math.random() * 1.6);     // 0.9 .. 2.5 tiles
+    const px = cx + Math.cos(angle) * radius + (Math.random() - 0.5) * 6;
+    const py = cy + Math.sin(angle) * radius + (Math.random() - 0.5) * 6;
     const tc = Math.floor(px / GRID.TILE);
     const tr = Math.floor(py / GRID.TILE);
     const t = state.tiles[tr]?.[tc];
@@ -333,27 +330,29 @@ function generateUprisingAtmosphere(state: GameStateShape, mainPoints: SurpriseE
       spriteKey: STAIN_KEYS[i % STAIN_KEYS.length],
       x: px,
       y: py,
-      scale: 0.75 + Math.random() * 0.35,
+      scale: 0.65 + Math.random() * 0.45,                       // wider range
       rotation: Math.random() * Math.PI * 2,
       tint: 0x885aff,        // necrotic purple cast
       flickerSeed: Math.random() * Math.PI * 2,
       kind: 'STAIN'
     });
   }
-  // 3 drifting smoke puffs at random positions inside the diamond zone,
-  // tinted purple. These animate (slow drift + alpha pulse) in render.
-  for (let i = 0; i < 3; i++) {
-    const angle = (i / 3) * Math.PI * 2 + Math.random() * 0.3;
-    const radius = GRID.TILE * (1.4 + Math.random() * 0.6);
+  // 8 drifting smoke puffs at varied radii — closer ring + outer ring so
+  // the haze fills the zone, not just hugs the center.
+  const SMOKE_COUNT = 8;
+  for (let i = 0; i < SMOKE_COUNT; i++) {
+    const ring = i < 4 ? 0 : 1;                                  // inner ring, outer ring
+    const angle = ((i % 4) / 4) * Math.PI * 2 + ring * Math.PI * 0.25 + Math.random() * 0.3;
+    const radius = GRID.TILE * (ring === 0 ? 1.2 : 2.2) + Math.random() * 0.4 * GRID.TILE;
     const px = cx + Math.cos(angle) * radius;
-    const py = cy + Math.sin(angle) * radius;
+    const py = cy + Math.sin(angle) * radius - GRID.TILE * 0.2;
     props.push({
       spriteKey: 'SMOKE_PUFF',
       x: px,
       y: py - GRID.TILE * 0.3,
-      scale: 0.7 + Math.random() * 0.4,
+      scale: 0.7 + Math.random() * 0.55,
       rotation: Math.random() * Math.PI * 2,
-      tint: 0x9966cc,
+      tint: ring === 0 ? 0x9966cc : 0x6633aa,                    // outer ring darker
       flickerSeed: Math.random() * Math.PI * 2,
       kind: 'HAZE'
     });
@@ -586,22 +585,28 @@ export function surpriseEventTintRGBA(state: GameStateShape): { r: number; g: nu
   if (!ev) return null;
   const elapsed = state.tick - ev.startedAt;
   if (elapsed < 0) return null;
-  let alpha = 0.22;
+  // 2026-05-17 — UPRISING tint pushed higher (0.22 → 0.32 peak) so the
+  // necrotic purple wash reads as "screen is being eaten by the
+  // underworld". Invasion fire tint stays at 0.22 — fires are localized,
+  // the screen-wide tint shouldn't dominate.
+  const isUprising = ev.kind === SurpriseEventKind.UPRISING;
+  const peak = isUprising ? 0.32 : 0.22;
+  let alpha = peak;
   // Fade-in across the rise window.
-  if (elapsed < VFX_RISE_SECONDS) alpha = 0.22 * (elapsed / VFX_RISE_SECONDS);
+  if (elapsed < VFX_RISE_SECONDS) alpha = peak * (elapsed / VFX_RISE_SECONDS);
   // Fade-out after vfxFadeOutAt is set.
   if (ev.vfxFadeOutAt > 0) {
     const fadeProgress = (state.tick - ev.vfxFadeOutAt) / VFX_FADEOUT_SECONDS;
     if (fadeProgress >= 1) return null;
-    alpha = 0.22 * Math.max(0, 1 - fadeProgress);
+    alpha = peak * Math.max(0, 1 - fadeProgress);
   }
   if (alpha <= 0.001) return null;
-  if (ev.kind === SurpriseEventKind.INVASION) {
+  if (isUprising) {
+    // Sickly green-purple necrotic tint, slightly more saturated.
+    return { r: 0.40, g: 0.04, b: 0.62, a: alpha };
+  } else {
     // Warm red-orange fire tint.
     return { r: 0.85, g: 0.15, b: 0.05, a: alpha };
-  } else {
-    // Sickly green-purple necrotic tint.
-    return { r: 0.35, g: 0.05, b: 0.55, a: alpha };
   }
 }
 
