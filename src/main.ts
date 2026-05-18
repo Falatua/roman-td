@@ -13,7 +13,7 @@ import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercator
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel } from './systems/EconomySystem';
-import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAuraTileKind } from './systems/TowerSystem';
+import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAuraTileKind, towerEffectiveStats } from './systems/TowerSystem';
 import { scanCombos, executeCombo } from './systems/CombinationEngine';
 import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
@@ -1793,17 +1793,26 @@ async function boot() {
         const tw = state.towers.get(id);
         if (tw) inspectTower(tw);
       };
-      (el as HTMLElement).onmouseenter = () => {
+      (el as HTMLElement).onmouseenter = (ev: MouseEvent) => {
         // Save the current selection so we can restore on leave.
         if (renderer.selectedTowerId !== id) {
           (panel as any).__prevSelectedId = renderer.selectedTowerId;
           renderer.selectedTowerId = id;
         }
+        // 2026-05-19 — Also show the tower hover preview so players
+        // can read the stats of each prospect from the sidebar without
+        // clicking through. Mirrors the canvas-hover preview path.
+        updateTowerHoverPreview(id, ev.clientX, ev.clientY);
+      };
+      (el as HTMLElement).onmousemove = (ev: MouseEvent) => {
+        // Keep the preview tracking the cursor across the cell.
+        updateTowerHoverPreview(id, ev.clientX, ev.clientY);
       };
       (el as HTMLElement).onmouseleave = () => {
         const prev = (panel as any).__prevSelectedId;
         renderer.selectedTowerId = prev ?? null;
         (panel as any).__prevSelectedId = null;
+        document.getElementById('tower-hover-preview')?.remove();
       };
     });
   }
@@ -3821,13 +3830,66 @@ async function boot() {
     // 2026-05-19 — Aura tile tooltip. Hovering one of the 5 fixed
     // buff tiles pops a small chip explaining the tile's effect.
     updateAuraTileTooltip(t.col, t.row, e.clientX, e.clientY);
+    // 2026-05-19 — TOWER HOVER PREVIEW. When the cursor is over a
+    // placed tower, show a floating panel with its key stats so
+    // the player can scan tower info without opening the full menu.
+    // Click still opens the interactive menu for sell/combine/equip.
+    updateTowerHoverPreview(hoverTowerId, e.clientX, e.clientY);
   });
   canvas.addEventListener('mouseleave', () => {
     hoverCol = -1; hoverRow = -1;
     renderer.drawHover(-1, -1, false);
     renderer.hoveredTowerId = null;
     document.getElementById('aura-tile-tooltip')?.remove();
+    document.getElementById('tower-hover-preview')?.remove();
   });
+  // 2026-05-19 — Tower hover preview helper. Shows a floating chip with
+  // name / tier / DPS / range / attack speed / item count / kill count.
+  // Auto-tracks the cursor and hides when the cursor leaves any tower.
+  function updateTowerHoverPreview(towerId: string | null, mouseX: number, mouseY: number) {
+    let tip = document.getElementById('tower-hover-preview');
+    if (!towerId) { tip?.remove(); return; }
+    const t = state.towers.get(towerId);
+    if (!t) { tip?.remove(); return; }
+    const def: any = (towersData as any)[t.type] ?? {};
+    const tierCol = ['#aaaaaa','#aaaaaa','#b87333','#c0c0c0','#ffd34d','#ff5050'][t.qualityTier] ?? '#aaaaaa';
+    const stats = towerEffectiveStats(t);
+    const pendingTag = t.pending ? '<span style="color:#ff9933;font-weight:bold">PENDING — keep to activate</span>' : '';
+    const auraKind = towerAuraTileKind(t);
+    const auraTag = auraKind
+      ? `<span style="color:#${AURA_TILE_EFFECTS[auraKind].color.toString(16).padStart(6,'0')};font-weight:bold;font-size:9px;letter-spacing:1.5px">★ ON ${AURA_TILE_EFFECTS[auraKind].label}</span>`
+      : '';
+    const items = (t.equippedItems ?? []).length;
+    const niceName = def.name ?? String(t.type).replace(/_/g, ' ');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'tower-hover-preview';
+      tip.style.cssText = `position:fixed;pointer-events:none;z-index:100;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid ${tierCol};padding:8px 12px;font-family:'Courier New',monospace;color:#e8d6a8;font-size:10.5px;letter-spacing:0.5px;line-height:1.5;box-shadow:0 0 18px rgba(0,0,0,0.6);min-width:200px;max-width:280px;`;
+      document.body.appendChild(tip);
+    } else {
+      tip.style.borderColor = tierCol;
+    }
+    tip.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;border-bottom:1px solid #3a3025;padding-bottom:4px">
+        <div style="color:${tierCol};font-weight:bold;font-size:12px;letter-spacing:1px">${niceName}</div>
+        <div style="color:${tierCol};font-weight:bold">T${t.qualityTier}</div>
+      </div>
+      ${pendingTag ? `<div style="margin-bottom:4px">${pendingTag}</div>` : ''}
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:11px">
+        <span style="color:#aa9a4a">DPS</span><b style="color:#fff8e0">${Math.round(stats.dps).toLocaleString()}</b>
+        <span style="color:#aa9a4a">Range</span><b style="color:#fff8e0">${stats.range.toFixed(1)} tiles</b>
+        <span style="color:#aa9a4a">Atk Speed</span><b style="color:#fff8e0">${stats.attackSpeed.toFixed(2)}/sec</b>
+        <span style="color:#aa9a4a">Items</span><b style="color:#fff8e0">${items} equipped</b>
+        <span style="color:#aa9a4a">Kills</span><b style="color:#88ff88">${t.killCount ?? 0}</b>
+      </div>
+      ${auraTag ? `<div style="margin-top:5px;padding-top:4px;border-top:1px dashed #3a3025">${auraTag}</div>` : ''}
+      <div style="margin-top:6px;font-size:9px;color:#aa9a4a;letter-spacing:1px;font-style:italic">click for full menu</div>`;
+    const tipW = 280, tipH = 160;
+    const left = Math.min(window.innerWidth - tipW - 8, Math.max(8, mouseX + 16));
+    const top  = Math.min(window.innerHeight - tipH - 8, Math.max(8, mouseY + 16));
+    tip.style.left = left + 'px';
+    tip.style.top  = top + 'px';
+  }
   // 2026-05-19 — Aura-tile hover tooltip helper. Lazy-creates the
   // popup element on first hover, positions it near the cursor, hides
   // when the cursor leaves an aura tile. Constant lookup since there
