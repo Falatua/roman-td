@@ -63,7 +63,14 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   modal.id = 'codex-modal';
   modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:60;`;
   const panel = document.createElement('div');
-  panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:14px;width:min(720px,96vw);max-height:90vh;overflow:auto;font-family:'Courier New',monospace;font-size:12px;box-shadow:0 0 28px rgba(212,175,55,0.35);`;
+  // 2026-05-18 — Codex window enlarged so the dense per-tab tables
+  // (Items, Enemies, Combinations) have more horizontal breathing room
+  // and the player can scan rows without horizontal cramping. Width
+  // bumped from 720px → 1040px (clamped to 96vw), max-height 90vh →
+  // 92vh. The body padding inside cards stays as-is — only the modal
+  // grew, so cards naturally widen by ~40% which is where the
+  // readability win lives.
+  panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:18px;width:min(1040px,96vw);max-height:92vh;overflow:auto;font-family:'Courier New',monospace;font-size:12px;box-shadow:0 0 28px rgba(212,175,55,0.35);`;
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
     <h2 style="margin:0;color:#d4af37;letter-spacing:3px">LEGION CODEX</h2>
     <button id="codex-close" style="background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:6px 12px;cursor:pointer;font-family:inherit">CLOSE</button>
@@ -247,6 +254,19 @@ function renderTab(tab: string): string {
           ${noteCard('Iron Phalanx (W17)', 'Melee-immune armored group joins the W17 spawn. Only RANGED damage can hurt them. Plan a ranged backbone before W17.')}
           ${noteCard('Boss Waves (solo, +HP)', 'Scheduled bosses arrive <b style="color:#ff5050">ALONE with 2× HP</b> — no mob horde. The wave is one focused fight. Faction weather intensifies ×1.5. No atmospheric hazards on boss waves — the play area stays clean so positioning reads clearly.')}
           ${noteCard('Boss Leak Toll', '<b style="color:#ff5050">Every boss costs 10 lives when it reaches Rome</b>. The boss dies at the gate but is <b>REBORN ON THE NEXT WAVE with the HP he had at the gate</b> — chip damage carries over (Hannibal leaks at 5% HP, returns at 5% HP). The 10 lives is the real toll; the rebirth is a second swing for you to finish him.')}
+        </div>
+      `)}
+      ${foldSection('🌀 SURPRISE EVENTS — INVASION, UPRISING, GATES OF HELL', `
+        <div style="font-size:11px;color:#cdb98a;line-height:1.6;margin-bottom:10px;background:#0c0a08;padding:10px 14px;border-left:3px solid #ff7733">
+          Three scripted "events" disrupt the normal wave flow on specific 20-wave campaign waves. Each one changes WHERE enemies enter the path and adds dramatic VFX. Surviving an event opens a reward modal — <b style="color:#ff9933">choose 1 of 3 LEGENDARY trophies</b> drawn exclusively from that event's pool (these items are obtainable nowhere else: not the shop, not the Mercator, not boss drops). All event-spawned enemies skip waypoints 1 and 2 but must still walk waypoints 3 → 4 → 5 → 6 → 7 in linear order before they reach the gate — no shortcuts to Rome regardless of where the fire/urn/gate appears on the map.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          ${noteCard('⚔ INVASION (W7, W18)', '<b style="color:#ff7733">The empire is besieged.</b> 18 perimeter fires light up along every edge of the playable area, with the wave\'s spawn queue round-robin distributing through all 18 breach points. Spawn cadence is tight (every 0.18s a new enemy emerges from a fire). Every invader spawns at <b style="color:#ff7733">+25% base speed</b> — they run at the gate. <br/><br/><b style="color:#ff9933">Reward pool (Legendary, pick one of 3):</b><br/>• <b>Vanguard Pilum</b> — any tower +35% damage, +1 range<br/>• <b>Aquila Rampart</b> — +50% damage vs enemies above 70% HP (execute role)<br/>• <b>Perimeter Torch</b> — +25% damage AND +25% attack speed')}
+          ${noteCard('☠ DEATH UPRISING (W11, W14)', '<b style="color:#a050ff">The dead rise.</b> 4 skull urns rise from the center of the map in a diamond. The wave\'s enemies emerge from the urns (not the cave) with a ground-rise VFX. Overlay around each urn: ground cracks, pulsing dark aura, orbiting floating skulls, a vertical soul column rising from the mouth. <b style="color:#a050ff">Necromancy is in effect</b> on these waves — killed grunts reanimate as bone variants. <br/><br/><b style="color:#a050ff">Reward pool (Legendary, pick one of 3):</b><br/>• <b>Gravekeeper\'s Scythe</b> — +60% damage vs undead-faction enemies<br/>• <b>Soulfire Brand</b> — applies HELLFIRE on hit (true damage, bypasses every resist)<br/>• <b>Necromancer\'s Lantern</b> — aura 3 tiles: enemies take +25% damage from all sources AND can\'t regen')}
+          ${noteCard('🔥 GATES OF HELL (W16)', '<b style="color:#ff4422">The underworld breaks open.</b> Two destructible <b>Hell Gate</b> structures rise at waypoints WP3 and WP4. Each gate has <b>~500k HP</b> and pumps out a <b>Fire Giant</b> (~500k HP, slow but tanky) every 2 seconds, alternating gates so the player sees a new giant every second for 15 seconds. The gates AUTO-SEAL at the 15-second mark, but the player can <b style="color:#ff7733">destroy them early</b> to stop the giant flood. Fire giants are immune to fire and bleed, vulnerable to divine and siege.<br/><br/><b style="color:#ff4422">Reward pool (Legendary, pick one of 3):</b><br/>• <b>Hellgate Brand</b> — +50% damage, +25% attack speed, silence-immune<br/>• <b>Demonsworn Crown</b> — +100% damage vs demons AND +50% vs bosses<br/>• <b>Inferno Standard</b> — aura: +25% damage, applies BURN on hit')}
+        </div>
+        <div style="font-size:11px;color:#cdb98a;line-height:1.6;margin-top:10px;background:#0c0a08;padding:10px 14px;border-left:3px solid #ffd34d">
+          <b style="color:#ffd34d">Endless mode chaos:</b> In Endless, events can STACK. Once the primary event fires there\'s a 40% chance to add a second event of a different kind 0.6s later, and (if a second fired) a 25% chance to add a third 1.2s after that. A triple-stack Endless wave can have invasion fires across every edge, uprising urns in the center, AND hell gates at WP3/WP4 — all firing at once. Each stacked event still drops its own reward modal queued back-to-back.
         </div>
       `)}
       ${foldSection('ECONOMY & VENDORS — WHERE THE GOLD GOES', `
@@ -1125,8 +1145,26 @@ function renderTab(tab: string): string {
       ★ Enemies that only appear via splits or necromancy waves show their HP on the earliest wave that summons them.<br/>
       ★ The random <b>BLOOD MOON</b> wave modifier adds +25% HP on top when it rolls (rare).
     </div>`;
+    // 2026-05-18 — Surprise-event enemies (Hell Gate + Fire Giant) and
+    // the events themselves get a top-of-tab summary so the player
+    // sees what to expect on W7 / W11 / W14 / W16 / W18 before they
+    // scan the main table. The HELL_GATE + FIRE_GIANT rows still
+    // appear in the main table below — this block is a heads-up
+    // companion, not a replacement.
+    const surpriseSummary = `<div data-codex-row style="background:#0c0a08;border:1px solid #3a3025;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:10px;color:#aa9a4a;letter-spacing:2px;margin-bottom:6px">🌀 SURPRISE EVENTS — INVASION / UPRISING / GATES OF HELL</div>
+      <div style="font-size:11px;color:#cdb98a;line-height:1.55;margin-bottom:8px">
+        Three scripted events disrupt the normal spawn flow on specific campaign waves. Enemies enter the path AFTER waypoint 2 but still walk WP3→4→5→6→7 in linear order — no shortcuts. Surviving each event opens a 3-card Legendary reward modal drawn from a pool exclusive to that event.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        ${noteCard('⚔ INVASION · W7 + W18', '18 perimeter fires light up along every edge. The wave\'s enemies spawn from the fires (not the cave) at <b style="color:#ff7733">+25% speed</b>. Tight 0.18s spawn cadence — the breach pours.')}
+        ${noteCard('☠ DEATH UPRISING · W11 + W14', '4 skull urns rise at the center of the map. Enemies emerge from the urns. <b style="color:#a050ff">Necromancy active</b>: killed grunts reanimate as bone variants. Floating skulls + soul columns overlay the urns.')}
+        ${noteCard('🔥 GATES OF HELL · W16', 'Two destructible <b style="color:#ff4422">Hell Gate</b> structures (~500k HP each) rise at WP3 and WP4. Each pumps out a <b style="color:#ff4422">Fire Giant</b> (~500k HP, slow + bulky) every 2s for 15s, alternating gates. Destroy the gates early to stop the flood.')}
+      </div>
+    </div>`;
     return `${renderFactionResistances()}
       ${scaleNote}
+      ${surpriseSummary}
       <table style="width:100%;border-collapse:collapse;font-size:11px">
       <thead><tr style="color:#aa9a4a"><th></th><th style="text-align:left">Name</th><th>Faction</th><th>Spawn HP</th><th>Speed</th><th>Type</th><th style="text-align:left">🛡 Armor</th><th style="text-align:left">Specific Resist</th><th style="text-align:left">Traits</th></tr></thead>
       <tbody>${rows}</tbody></table>`;
@@ -1141,6 +1179,7 @@ function renderTab(tab: string): string {
       COMMON:    '⚪ COMMON — White tier',
       UNCOMMON:  '🟢 UNCOMMON — Green tier',
       RARE:      '🔵 RARE — Blue tier',
+      EPIC:      '🟣 EPIC — Purple tier',         // 2026-05-18 — new tier
       LEGENDARY: '🟠 LEGENDARY — Orange tier'
     };
     const itemRows: string[] = [];
@@ -1152,11 +1191,22 @@ function renderTab(tab: string): string {
       itemRows.push(`<tr><td colspan="5" style="background:#1a1410;color:${RAR[rarity]};font-weight:bold;letter-spacing:2px;padding:8px 10px;border-top:2px solid ${RAR[rarity]};border-bottom:1px solid #5a4a30;font-size:11px">${RARITY_LABEL[rarity]} · ${inTier.length} item${inTier.length === 1 ? '' : 's'}</td></tr>`);
       for (const [id, def] of inTier) {
         const d: any = def;
+        // 2026-05-18 — Event-exclusive legendaries don't have a buy
+        // price (you can't purchase them), so the cost column shows
+        // their source event instead. The full reward badge color-
+        // matches the event (orange invasion / purple uprising /
+        // hellfire-red gates) for at-a-glance recognition.
+        const evx = d.eventExclusive as string | undefined;
+        const costCell = evx
+          ? (evx === 'INVASION' ? '<span style="color:#ff7733">⚔ INVASION</span>'
+            : evx === 'UPRISING' ? '<span style="color:#a050ff">☠ UPRISING</span>'
+            : '<span style="color:#ff4422">🔥 GATES</span>')
+          : `${d.buy}g`;
         itemRows.push(`<tr>
           <td><b style="color:${RAR[d.rarity]}">${d.name}</b></td>
           <td style="color:#9be0ff">${itemFamily(id)}</td>
           <td style="color:${RAR[d.rarity]}">${pretty(d.rarity)}</td>
-          <td>${d.buy}g</td>
+          <td>${costCell}</td>
           <td style="opacity:0.85">${d.effect}</td></tr>`);
       }
     }
@@ -1165,6 +1215,13 @@ function renderTab(tab: string): string {
     // codex only shows the permanent table.
     void consumables;
     return `${section('ITEM EQUIP RULES', '<div style="font-size:11px;color:#cdb98a">Same item stacking is blocked. Family-restricted items are mutually exclusive per tower: a tower cannot carry two speed items, two damage items, two range items, etc. <b style="color:#88ff88">Exception: DoT items (burn / poison / bleed) and SPECIAL trophies stack freely</b> — equip as many DoT items as you have slots for and watch the ticks compound. Every item is permanent — there are no one-use items.<br/><br/><b style="color:#ff9933">Attack-class gates:</b> every restricted item opens its effect with <b style="color:#88ddff">MELEE ONLY</b> or <b style="color:#ff7733">RANGED ONLY</b> in CAPS. The inventory grid greys out incompatible items with the matching <b>ONLY</b> tag at equip time.<br/><br/><b style="color:#ff9933">Legendary uniqueness:</b> you can only hold ONE of each legendary at a time. The Mercator and boss drops automatically rotate to a different legendary you don\'t already own. Sell one and it cycles back into the pool.<br/><br/><b style="color:#66ccff">Projectile-sprite swaps:</b> equip <b>Storm Javelin</b> or <b>Jupiter\'s Wrath</b> and your ranged tower throws a crackling thunder-bolt instead of its usual pilum or arrow. <b>Fire Oil Flask</b> turns physical-projectile units (pilum / arrow / javelin / hasta) into oil-barrel lobs that splash and burn on impact. <b>Spear of Mars</b> turns a melee tower into a thrown-spear unit — you see the cast every swing.</div>')}
+      ${section('🟣 EPIC TIER & 🌀 EVENT-EXCLUSIVE LEGENDARIES (2026-05-18)', `<div style="font-size:11px;color:#cdb98a;line-height:1.55">
+        <b style="color:#a060ff">EPIC (purple) tier</b> sits between RARE and LEGENDARY at a flat <b>60g</b> buy / 30g sell. Six items live here: three melee-stat trophies demoted from legendary (Berserker's Muzzle, Celtic Longsword, Necrotic Longsword) and three new picks (Lictor's Fasces, Auxiliary Sling, Optio's Whistle). Epics are <b style="color:#a060ff">Mercator-exclusive</b> — the gate shop never carries them; the Mercator stocks 2 random Epic slots per visit.
+        <br/><br/><b style="color:#ff9933">Event-exclusive Legendaries</b> drop ONLY from their event's reward modal (no shop / no Mercator / no boss drop). The cost column shows the source event instead of a price:
+        <br/>• <b style="color:#ff7733">⚔ INVASION</b> pool: Vanguard Pilum, Aquila Rampart, Perimeter Torch
+        <br/>• <b style="color:#a050ff">☠ UPRISING</b> pool: Gravekeeper's Scythe, Soulfire Brand, Necromancer's Lantern
+        <br/>• <b style="color:#ff4422">🔥 GATES OF HELL</b> pool: Hellgate Brand, Demonsworn Crown, Inferno Standard
+      </div>`)}
       <h3 style="margin:8px 0 4px;color:#d4af37">PERMANENT ITEMS — sorted by rarity, cheapest first within each tier</h3>
       <table style="width:100%;border-collapse:collapse;font-size:11px">
       <thead><tr style="color:#aa9a4a"><th style="text-align:left">Name</th><th>Family</th><th>Rarity</th><th>Cost</th><th style="text-align:left">Effect</th></tr></thead>
