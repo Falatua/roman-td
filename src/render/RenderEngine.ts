@@ -855,12 +855,17 @@ export class RenderEngine {
       sp.anchor.set(0.5);
       sp.x = x; sp.y = y;
       sp.rotation = angle;
-      // 2026-05 v11 PERF: trimmed slash visuals to lower overdraw and keep
-      // the field readable on heavy combat frames.
-      //   • Base size  30 → 18 (~40% smaller footprint per slash)
-      //   • Heavy mult also reduced via main.ts caller (1.6 → 1.3)
-      //   • Alpha 0.95 → 0.85 so layered slashes don't pile to opaque
-      //   • Life      0.22 → 0.16 (shorter on-screen window = less concurrent overdraw)
+      // 2026-05-18 — Slash VFX restored to be visible/satisfying again.
+      // The v11 perf trim went too far — slashes were barely on-screen
+      // (0.16s life, 18px) and felt invisible during combat. New tuning
+      // is a middle ground between the original (30px / 0.22s / 0.95α)
+      // and the perf-trimmed (18px / 0.16s / 0.85α). Still cheaper to
+      // render than the original but the player can actually SEE the
+      // melee swing.
+      //   • Base size  18 → 26  (44% bigger footprint per slash)
+      //   • Life       0.16 → 0.22  (37% longer on screen)
+      //   • Alpha      0.85 → 0.92  (more punch, still avoids pure-white pile)
+      //   • Heavy mult bumped in main.ts caller (1.3 → 1.5)
       //
       // 2026-05 v10 — CLEAVER VISUAL: cleave-capable towers (Hastati,
       // Triarius, Cohort Guard, Praetorian Wall, Imperator Guard,
@@ -869,14 +874,14 @@ export class RenderEngine {
       // a slightly offset angle. The two-slash arc reads as a sweeping
       // cleave swing even when only one target is in range, so the
       // player can identify a cleaver at a glance.
-      const widthMult = cleaver ? 1.35 : 1.0;
-      const baseW = 18 * size * widthMult;
+      const widthMult = cleaver ? 1.4 : 1.0;
+      const baseW = 26 * size * widthMult;
       sp.width = baseW; sp.height = baseW;
-      sp.alpha = 0.85;
+      sp.alpha = 0.92;
       this.layers.fx.addChild(sp);
-      this.slashes.push({ sp, born: tick, life: 0.16, size: baseW });
+      this.slashes.push({ sp, born: tick, life: 0.22, size: baseW });
       if (cleaver) {
-        // Echo slash — narrower, slightly offset angle, half-life so it
+        // Echo slash — narrower, slightly offset angle, shorter life so it
         // reads as a trailing follow-through rather than two distinct hits.
         const echo = new Sprite(t);
         echo.anchor.set(0.5);
@@ -884,9 +889,9 @@ export class RenderEngine {
         echo.rotation = angle + 0.35;     // ~20° offset
         echo.width = baseW * 0.85;
         echo.height = baseW * 0.85;
-        echo.alpha = 0.55;
+        echo.alpha = 0.65;
         this.layers.fx.addChild(echo);
-        this.slashes.push({ sp: echo, born: tick, life: 0.13, size: baseW * 0.85 });
+        this.slashes.push({ sp: echo, born: tick, life: 0.18, size: baseW * 0.85 });
       }
     }
     // Heavy hits get a ground impact shockwave ring + dust. Threshold
@@ -1450,25 +1455,31 @@ export class RenderEngine {
       const baseX = tw.tileX * GRID.TILE + GRID.TILE / 2;
       const baseY = tw.tileY * GRID.TILE + GRID.TILE / 2;
       const isAttacking = tw.attackFlash > 0;
-      // ─── FLOATING IDLE BREATH (2026-05-15 v2) ────────────────────────
+      // ─── FLOATING IDLE BREATH (2026-05-18 v3) ────────────────────────
       // Kept (non-pending) towers gently bob + sway when NOT attacking so
       // the field reads as "alive" — every Roman is subtly breathing, not
       // a statue. Each tower has its own phase offset hashed from its
       // tile coordinates so a wall of towers doesn't bob in lockstep.
-      //   • bob   = vertical sine, 1.6 px amplitude (≈3% of 48 px sprite)
-      //   • sway  = horizontal cosine at a slower de-tuned frequency
-      //   • frequency state.tick * 1.2 → ~5 s full cycle (slow breath)
       // Pending prospects keep their pulsing-alpha animation lower in the
       // block; this idle motion only kicks in once KEEP commits the tower.
       // Suppressed during the 0.18 s attackFlash window so the strike
       // motion stays clean — wouldn't want a breathing wobble cancelling
       // the lunge.
+      //
+      // 2026-05-18 — amplitude bumped 1.6 → 2.6 px vertical, 0.4 → 0.8 px
+      // horizontal so the idle is actually visible at the 32-px tile
+      // size. The previous values (1.6 / 0.4) were so subtle that at
+      // typical viewing distance towers looked frozen. New values land
+      // at ~5% of sprite height — visible but still gentle (not a
+      // bouncing-mascot wobble). Applies uniformly to EVERY tower
+      // including Tesserarius / Optio / combo towers that previously
+      // appeared static.
       let idleBob = 0;
       let idleSway = 0;
       if (!tw.pending && !isAttacking) {
         const phase = state.tick * 1.2 + (tw.tileX * 0.7 + tw.tileY * 0.4);
-        idleBob = Math.sin(phase) * 1.6;
-        idleSway = Math.cos(phase * 0.7) * 0.4;
+        idleBob = Math.sin(phase) * 2.6;
+        idleSway = Math.cos(phase * 0.7) * 0.8;
       }
       // (The Hastati attack-animation texture cycle and per-frame body
       // swap have been removed — Hastati now uses its base sprite at all

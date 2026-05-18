@@ -4169,11 +4169,11 @@ async function boot() {
             const sy = t.tileY * GRID.TILE + GRID.TILE / 2;
             const angle = Math.atan2(e.y - sy, e.x - sx);
             const HEAVY = new Set(['PRIMUS_PILUS','TRIARIUS','CENTURION','COHORT_GUARD','PRAETORIAN_WALL','IMPERATOR_GUARD','EVOCATUS','CATAPHRACT','HORSEMAN']);
-            // 2026-05 v11 PERF: heavy multiplier 1.6 → 1.3 to pair with the
-            // smaller base slash size (RenderEngine.triggerMeleeSlash) — the
-            // heavy hit still reads as bigger than a light slash without
-            // dominating the screen on every swing.
-            const size = HEAVY.has(t.type) ? 1.3 : 1.0;
+            // 2026-05-18: heavy multiplier 1.3 → 1.5. Paired with the
+            // restored base slash size (RenderEngine.triggerMeleeSlash:
+            // 18 → 26 px). Heavy hits now visibly dominate over light
+            // ones without being overwhelming on stacked combat frames.
+            const size = HEAVY.has(t.type) ? 1.5 : 1.0;
             // 2026-05 v10 — pass cleave flag so cleavers draw a wider
             // primary slash + a trailing echo arc on every swing.
             const cleaver = hasCleave(t);
