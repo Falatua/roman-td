@@ -13,7 +13,29 @@ import { execSync } from 'child_process';
 const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
 let gitSha = '';
 try { gitSha = execSync('git rev-parse --short HEAD').toString().trim(); } catch { /* not a git checkout */ }
-const buildDate = new Date().toISOString().slice(0, 10);  // YYYY-MM-DD (UTC)
+// 2026-05-17 — Date sourced from the GIT COMMIT date, not the build
+// clock. Previously used new Date().toISOString().slice(0, 10) which
+// returned UTC; CI servers are always in UTC so a US-evening commit
+// showed "tomorrow" on the loading screen. Even using local-timezone
+// new Date() doesn't help because CI builds the date wherever it ran.
+//
+// `git log -1 --format=%cs` returns the short commit date (YYYY-MM-DD)
+// in the COMMITTER's local timezone (you, on your laptop). That date
+// is baked into the commit and travels with it, so the build date on
+// the loading screen always matches the day you actually shipped the
+// code regardless of where/when the build runs.
+//
+// Falls back to local-clock if we're not in a git checkout.
+let buildDate: string;
+try {
+  buildDate = execSync('git log -1 --format=%cs').toString().trim();
+} catch {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  buildDate = `${yyyy}-${mm}-${dd}`;
+}
 const APP_VERSION = `v${pkg.version}${gitSha ? ' · ' + gitSha : ''} · ${buildDate}`;
 
 export default defineConfig({
