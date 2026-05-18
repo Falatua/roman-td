@@ -494,7 +494,7 @@ async function boot() {
       <div style="margin-top:14px;font-size:13px;color:#fff8e0;letter-spacing:1px;line-height:1.5">
         Wave 20 cleared — name submitted to the Hall of Glory.<br/>
         Now <b style="color:#ff5050">they're coming back. All of them.</b><br/>
-        Mongols, Egyptians, and every banner you ever faced.<br/><br/>
+        Huns, Egyptians, and every banner you ever faced.<br/><br/>
         <b>Difficulty scales aggressively per wave.</b> Gold is unstable.<br/>
         Every cleared Endless wave is added to your Endless score.<br/>
         Lose your last life → the run ends.<br/>
@@ -567,7 +567,7 @@ async function boot() {
     const isBossWave = upcomingEndlessIdx % 5 === 0;
     const subline = isBossWave
       ? `<b style="color:#ff5050">BOSS WAVE</b> — every 5th Endless wave anchors on a boss. Twin bosses possible past E10.`
-      : 'Mongols, Egyptians, and returning hordes. No faction rules. Mechanics stack.';
+      : 'Huns, Egyptians, and returning hordes. No faction rules. Mechanics stack.';
     const b = document.createElement('div');
     b.id = 'endless-pre-banner';
     b.innerHTML = `
@@ -789,7 +789,7 @@ async function boot() {
     // frozen at 20 in endless so the W11+ / W17 / boss-crescendo
     // checks below would all misfire — skip them entirely.
     if (endlessCfg) {
-      briefLines.push({ text: `☠ ENDLESS WAVE ${state.endlessWave} · Mongols, Egyptians, and returning hordes. Mechanics stack freely.`, cat: 'BOSS' });
+      briefLines.push({ text: `☠ ENDLESS WAVE ${state.endlessWave} · Huns, Egyptians, and returning hordes. Mechanics stack freely.`, cat: 'BOSS' });
       if (endlessCfg.type === 'B') briefLines.push({ text: '⚔ ENDLESS BOSS WAVE · expect twin bosses past E10.', cat: 'BOSS' });
       if (endlessCfg.necromancy) briefLines.push({ text: '💀 NECROMANCY · slain grunts rise as 6-9 undead per kill.', cat: 'MECHANIC' });
       for (const m of (endlessCfg.combinedMechanics ?? [])) {
@@ -947,7 +947,9 @@ async function boot() {
       else if (r.armorPct >= 30) { display = `${r.armorPct}%`;               color = '#ffaa55'; }
       else if (r.armorPct > 0)   { display = `${r.armorPct}%`;               color = '#ffd34d'; }
       else if (r.armorPct === 0) { display = '—';                            color = '#cdb98a'; }
-      else                       { display = `+${Math.abs(r.armorPct)}%`;    color = '#7896c8'; }
+      // 2026-05-17 — drop "+" prefix; consistent unsigned percentage,
+      // color (sky blue) signals vulnerability.
+      else                       { display = `${Math.abs(r.armorPct)}%`;    color = '#7896c8'; }
       return `<span style="flex:1;text-align:center;background:#0c0a08;padding:4px 2px;border:1px solid #3a3025;font-size:10px;letter-spacing:0.5px;line-height:1.25">
         <div style="color:#aa9a4a;font-size:8.5px;letter-spacing:1px">${label}</div>
         <div style="color:${color};font-weight:bold">${display}</div>
@@ -2361,6 +2363,203 @@ async function boot() {
     // Subtle camera punch so it feels like the field acknowledges the moment.
     try { renderer.triggerShake(3, 0.35); } catch {}
   }
+
+  // ─── W20 OVER-THE-TOP HP CALLOUT ────────────────────────────────────────
+  // 2026-05-17 — When wave 20 actually starts (the player clicks past the
+  // BossWarning gate and the Daemon Imperator walks onto the field), swap
+  // the normal "BOSS APPROACHES" banner for a cartoonishly exaggerated HP
+  // readout. The Daemon Imperator carries 100M baseHp × 6.0 wave hpMult =
+  // 600M effective HP — comically large by tower-defense standards, and
+  // the user wants the banner to acknowledge that publicly with humor.
+  // The HP number counts up in a slot-machine reel while satirical
+  // captions cycle ("ACTUALLY HOW MUCH?" → "YES, REALLY"). Auto-dismisses
+  // after ~5.5s; the wave continues normally underneath.
+  function showFinalBossHpBanner() {
+    document.getElementById('boss-banner')?.remove();
+    document.getElementById('final-boss-hp')?.remove();
+    // Compute the actual display HP from data so it stays correct if the
+    // designer retunes baseHp / hpMult later.
+    const def: any = (enemiesData as any).DAEMON_IMPERATOR;
+    const baseHp = def?.baseHp ?? 100000000;
+    const waveDef: any = (wavesData as any[])[19]; // W20 = index 19
+    const hpMult = waveDef?.hpMult ?? 6.0;
+    const finalHp = Math.round(baseHp * hpMult);
+    const portraitSrc = imgSrc(bossPortraitKey('SUPER_DEMONS') ?? '');
+    // Inject one-shot style block (animations are unique to this banner).
+    if (!document.getElementById('final-boss-hp-style')) {
+      const s = document.createElement('style');
+      s.id = 'final-boss-hp-style';
+      s.textContent = `
+        @keyframes fbhpHeadlinePulse {
+          0%, 100% { color:#ffd34d; text-shadow:0 0 18px #ffd34d, 0 0 32px #ffaa33, 4px 4px 0 #000; }
+          50%      { color:#ff5050; text-shadow:0 0 22px #ff5050, 0 0 40px #aa1010, 4px 4px 0 #000; }
+        }
+        @keyframes fbhpBossIn {
+          0%   { opacity:0; transform:translateX(-180px) scale(0.4) rotate(-8deg); }
+          55%  { transform:translateX(14px) scale(1.15) rotate(2deg); }
+          100% { opacity:1; transform:translateX(0) scale(1) rotate(0); }
+        }
+        @keyframes fbhpBossSway {
+          0%, 100% { transform:translate(0,0) rotate(0); }
+          25%      { transform:translate(-4px,2px) rotate(-1.5deg); }
+          75%      { transform:translate(4px,-2px) rotate(1.5deg); }
+        }
+        @keyframes fbhpNumberKick {
+          0%   { transform:scale(0.7); opacity:0; filter:blur(8px); }
+          60%  { transform:scale(1.18); filter:blur(0); }
+          100% { transform:scale(1); opacity:1; filter:blur(0); }
+        }
+        @keyframes fbhpCaptionSwap {
+          0%, 18%   { opacity:0; transform:translateY(8px); }
+          22%, 78%  { opacity:1; transform:translateY(0); }
+          82%, 100% { opacity:0; transform:translateY(-8px); }
+        }
+        @keyframes fbhpZeroFlash {
+          0%, 100% { color:#fff8e0; text-shadow:0 0 12px #ffd34d, 3px 3px 0 #000; }
+          50%      { color:#ff5050; text-shadow:0 0 24px #ff5050, 3px 3px 0 #000; }
+        }
+        @keyframes fbhpStripe {
+          0% { background-position: 0 0; }
+          100% { background-position: 80px 0; }
+        }
+        .fbhp-wrap {
+          width:min(680px,94%);
+          padding:22px 30px 18px;
+          background:
+            repeating-linear-gradient(135deg, rgba(0,0,0,0.0) 0 24px, rgba(255,170,0,0.06) 24px 48px),
+            radial-gradient(ellipse,#3a0808,#0c0a08 80%);
+          background-size: 80px 80px, auto;
+          animation: fbhpStripe 3.6s linear infinite;
+          border:4px solid #ffd34d;
+          box-shadow:0 0 56px rgba(255,80,80,0.7), inset 0 0 32px rgba(0,0,0,0.75);
+          font-family:'Courier New',monospace;
+          text-align:center;
+          color:#fff8e0;
+        }
+        .fbhp-eyebrow {
+          font-size:11px; letter-spacing:6px; font-weight:bold; color:#ff5050;
+          text-shadow:0 0 8px #ff5050;
+        }
+        .fbhp-headline {
+          margin-top:6px; font-size:30px; font-weight:900; letter-spacing:6px;
+          line-height:1.05;
+          animation: fbhpHeadlinePulse 1.2s ease-in-out infinite;
+        }
+        .fbhp-portrait {
+          margin:10px auto 4px; width:112px; height:112px;
+          image-rendering:pixelated;
+          filter:drop-shadow(0 0 16px rgba(255,80,80,0.85)) drop-shadow(3px 3px 0 #000);
+          animation: fbhpBossIn 0.6s cubic-bezier(.2,1.5,.3,1) both, fbhpBossSway 2.2s ease-in-out 0.7s infinite;
+        }
+        .fbhp-bossname {
+          font-size:22px; letter-spacing:6px; font-weight:900; color:#ee5050;
+          text-shadow:0 0 12px #ee5050, 2px 2px 0 #000; margin-top:4px;
+        }
+        .fbhp-hp-block {
+          margin:14px 0 6px; padding:14px 16px;
+          background:rgba(0,0,0,0.55); border:2px dashed #ff5050;
+        }
+        .fbhp-hp-label {
+          font-size:10px; letter-spacing:5px; color:#ffaa00; font-weight:900;
+          text-shadow:1px 1px 0 #000;
+        }
+        .fbhp-hp-number {
+          margin-top:6px;
+          font-size:clamp(34px, 6vw, 56px); font-weight:900; letter-spacing:3px;
+          color:#fff8e0;
+          text-shadow:0 0 14px #ffd34d, 3px 3px 0 #000;
+          animation: fbhpNumberKick 0.55s cubic-bezier(.2,1.6,.3,1) both;
+          font-variant-numeric: tabular-nums;
+        }
+        .fbhp-hp-unit {
+          margin-top:2px; font-size:13px; letter-spacing:5px; color:#ffd34d;
+          font-weight:bold;
+        }
+        .fbhp-caption {
+          margin-top:8px; font-size:14px; letter-spacing:3px; font-weight:900;
+          color:#fff8e0; text-shadow:1px 1px 0 #000, 0 0 10px #ffaa00aa;
+          min-height:1.4em;
+          animation: fbhpCaptionSwap 1.8s ease-in-out infinite;
+        }
+        .fbhp-footer {
+          margin-top:10px; font-size:10px; letter-spacing:4px; color:#aa9a4a;
+        }
+      `;
+      document.head.appendChild(s);
+    }
+    const b = document.createElement('div');
+    b.id = 'final-boss-hp';
+    b.className = 'fbhp-wrap';
+    const portraitHtml = portraitSrc
+      ? `<img class="fbhp-portrait" src="${portraitSrc}" alt="Daemon Imperator"/>`
+      : `<div class="fbhp-portrait" style="display:flex;align-items:center;justify-content:center;background:#1a0404;border:3px solid #aa1010;color:#ee5050;font-size:14px;letter-spacing:3px">BOSS</div>`;
+    b.innerHTML = `
+      <div class="fbhp-eyebrow">⚔ THE GATE OPENS ⚔</div>
+      <div class="fbhp-headline">WAVE 20 — DAEMON IMPERATOR</div>
+      ${portraitHtml}
+      <div class="fbhp-bossname">EMPEROR OF THE NINTH PIT</div>
+      <div class="fbhp-hp-block">
+        <div class="fbhp-hp-label">⚠ HIT POINTS UNDER MANAGEMENT ⚠</div>
+        <div class="fbhp-hp-number" id="fbhp-num">0</div>
+        <div class="fbhp-hp-unit">HP · YES, REALLY</div>
+      </div>
+      <div class="fbhp-caption" id="fbhp-cap">HOW MUCH HEALTH DOES HE HAVE?</div>
+      <div class="fbhp-footer">[ glory or the column · the wave begins ]</div>
+    `;
+    pushBanner(b, 5500, { modal: false });
+    SFX.bossArrival();
+    try { renderer.triggerShake(5, 0.6); } catch {}
+    // ── Slot-reel HP counter — climbs through ~12 milestones, each kick
+    //    is a satisfying tick. Final value lands at finalHp with a flash.
+    const numEl = b.querySelector('#fbhp-num') as HTMLElement | null;
+    const capEl = b.querySelector('#fbhp-cap') as HTMLElement | null;
+    if (numEl) {
+      const steps = [
+        100, 5000, 50000, 250000, 1500000, 8000000,
+        25000000, 60000000, 120000000, 250000000, 400000000, finalHp
+      ].filter(v => v <= finalHp).concat([finalHp]);
+      // De-dupe in case finalHp was already in the list.
+      const uniq = Array.from(new Set(steps));
+      let i = 0;
+      const tick = () => {
+        if (i >= uniq.length) {
+          // Final flash — lock the number with a tinted color.
+          numEl.style.color = '#ffd34d';
+          numEl.style.animation = 'fbhpZeroFlash 0.9s ease-in-out infinite';
+          return;
+        }
+        numEl.textContent = uniq[i].toLocaleString();
+        // Re-trigger kick animation each step.
+        numEl.style.animation = 'none';
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        numEl.offsetHeight; // force reflow
+        numEl.style.animation = 'fbhpNumberKick 0.32s cubic-bezier(.2,1.6,.3,1) both';
+        i++;
+        if (i < uniq.length) setTimeout(tick, 220);
+        else setTimeout(tick, 260);
+      };
+      tick();
+    }
+    if (capEl) {
+      const captions = [
+        'HOW MUCH HEALTH DOES HE HAVE?',
+        'OK BUT ACTUALLY HOW MUCH?',
+        'THAT CAN\'T BE RIGHT.',
+        'IT IS RIGHT. WE CHECKED.',
+        'SIX HUNDRED MILLION. ROUNDED DOWN.',
+        'YOU\'RE GOING TO NEED EVERY TOWER.',
+        'GLORY OR THE COLUMN — CHOOSE.'
+      ];
+      let ci = 0;
+      capEl.textContent = captions[ci];
+      const cycle = setInterval(() => {
+        ci++;
+        if (ci >= captions.length) { clearInterval(cycle); return; }
+        capEl.textContent = captions[ci];
+      }, 800);
+    }
+  }
+
   // PICK-KEEPER GUIDE — modal popup that fires whenever the player tries
   // to START WAVE while prospects are still pending decisions. Tells them
   // exactly what to do, names the keep count, and is dismissed with a
@@ -3182,7 +3381,14 @@ async function boot() {
         if (w) {
           setFactionBGM(w.faction);
           if (w.type === 'B') {
-            showBossBanner(`WAVE ${state.wave} — ${factionName(w.faction).toUpperCase()} BOSS APPROACHES`, w.faction);
+            // 2026-05-17 — W20 swaps the regular boss banner for the over-
+            // the-top HP callout (counts up to 600M with satirical
+            // captions). Every other boss wave keeps the standard banner.
+            if (state.wave === 20) {
+              showFinalBossHpBanner();
+            } else {
+              showBossBanner(`WAVE ${state.wave} — ${factionName(w.faction).toUpperCase()} BOSS APPROACHES`, w.faction);
+            }
           } else if (state.wave === 17) {
             showPhalanxWarning(state.wave);
           }

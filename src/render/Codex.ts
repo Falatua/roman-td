@@ -169,7 +169,7 @@ function renderTab(tab: string): string {
             <li><b style="color:#66ff88">Checkpoint heal:</b> Celtic Berserkers, Sacred Band, Undead Celts, Undead Berserkers, and Undead Spearmen regain 20% HP every time they cross a waypoint coin. Pinch the path right BEFORE coins so the kill window stays narrow.</li>
             <li>Recipe wants T3 but your tower is T4? <b style="color:#ffd34d">DOWNGRADE</b> (2g, in the tower menu) drops it one tier. Pride loses runs.</li>
             <li>This is a 20-wave run. Every leaked enemy hurts. Every BOSS leak costs <b style="color:#ff5050">10 lives</b> AND the boss is REBORN ON THE NEXT WAVE at the HP he had when he reached Rome (chip damage carries over — small consolation). The math is still not on your side.</li>
-            <li><b style="color:#ff5050">ENDLESS MODE (post-game):</b> clearing W20 with the gate intact unlocks Endless. After you submit your name to the Hall of Glory, the game transitions to a procedural chaos mode — <b>Mongols and Egyptians attack with returning W1-W20 enemies mixed in</b>, mechanics stack freely (necromancy + dust shield + sleep curse all at once is legal), and each wave clear adds to a separate <b style="color:#ff5050">Endless leaderboard</b>. Difficulty scales aggressively (HP × 1.5 + 0.45 per Endless wave, compounding past E5; +6% tower damage / +4% atk speed / +1 tile range per Endless wave to fight back; tower class-balance nerfs lifted). The run ends when your last life drops.</li>
+            <li><b style="color:#ff5050">ENDLESS MODE (post-game):</b> clearing W20 with the gate intact unlocks Endless. After you submit your name to the Hall of Glory, the game transitions to a procedural chaos mode — <b>Huns and Egyptians attack with returning W1-W20 enemies mixed in</b>, mechanics stack freely (necromancy + dust shield + sleep curse all at once is legal), and each wave clear adds to a separate <b style="color:#ff5050">Endless leaderboard</b>. Difficulty scales aggressively (HP × 1.5 + 0.45 per Endless wave, compounding past E5; +6% tower damage / +4% atk speed / +1 tile range per Endless wave to fight back; tower class-balance nerfs lifted). The run ends when your last life drops.</li>
           </ul>
         </div>
       `, true)}
@@ -268,7 +268,7 @@ function renderTab(tab: string): string {
           <b style="color:#9be0ff">Physical melee</b> dominates chokepoints — and swings at empty air vs flyers. Iron Phalanx laughs at it.
           <b style="color:#9be0ff">Physical ranged</b> handles flyers, phalanxes, long lanes. The bread and butter of every legion.
           <b style="color:#9be0ff">Siege</b> clears clusters in one shot. Slow reloads — give it a sight line worth its time.
-          <b style="color:#9be0ff">Fire, poison, bleed, slow</b> win when the enemy lets you. Most undead are poison-immune (and Undead-Carthage is fire-immune too). <b>Super Demons are fully fire-immune</b> — bring divine or physical, not a barrel of burning oil. Read the room. <b style="color:#ffd34d">Demons take BONUS divine damage</b> (×1.5 minion / ×1.3 boss on top of the faction's +100% divine row) — Flamen, Augur, Haruspex, and Solar Priest are the dedicated demon-busters.
+          <b style="color:#9be0ff">Fire, poison, bleed, slow</b> win when the enemy lets you. Most undead are poison-immune, and a swath of undead are now <b style="color:#ee5555">fully fire-immune</b> too: Undead Celt, Undead Berserker, Reanimated Berserker, Undead Spearman, Undead Warlord, and Undead War Elephant — bone bodies don't smolder. <b>Super Demons are also fully fire-immune</b> — bring divine or physical, not a barrel of burning oil. Read the room. <b style="color:#ffd34d">Demons take BONUS divine damage</b> (×1.5 minion / ×1.3 boss on top of the faction's +100% divine row) — Flamen, Augur, Haruspex, and Solar Priest are the dedicated demon-busters.
           <b style="color:#9be0ff">Divine</b> is the cheat code into heavy resistance. Solar Priest ignores faction resists entirely. Build one. The empire will thank you.
         </div>
       `)}
@@ -549,7 +549,8 @@ function renderTab(tab: string): string {
           ${noteCard('Armor Shred', 'Reduces enemy faction resistance for the duration.')}
           ${noteCard('FEAR', 'Enemy walks AWAY from gate briefly.')}
           ${noteCard('KNOCKBACK', 'One-shot path-progress reversal. Bosses 25% effectiveness.')}
-          ${noteCard('MARK', 'Target takes +X% damage from any source. Stacks with itself only as max(magnitude).')}
+          ${noteCard('MARK', 'Target takes +X% damage from any source. Stacks with itself only as max(magnitude). <b style="color:#88ddff">Affects DIRECT tower hits only — DoT ticks ignore MARK.</b>')}
+          ${noteCard('DoTs are unaffected by tower auras', 'All DoT tick damage (BURN / POISON / BLEED / HELLFIRE / burning ground) is computed purely from <b>enemy maxHp × magnitude × status resistance × boss-mod (×0.18)</b>. Tower damage auras (Triarius +12% global, Cohort Guard +15% local, Caesar +45% global, etc.) and MARK debuffs DO NOT amplify DoT ticks — they only boost the tower\'s DIRECT instant strikes. Stacking damage auras to chain-melt a poisoned enemy doesn\'t work; the DoT bleeds at its own fixed % maxHp/sec. Use DoTs to apply pressure / counter regen; use direct damage to actually finish enemies.')}
           ${noteCard('DOT items: Mercator-only + attack-class gated', '<b style="color:#ff9933">DOT items no longer appear in random drops or the gate shop</b> — your only path to them is the Mercator (W4/9/14/19) and boss legendary tables. Attack-class twins: <b style="color:#88ddff">Poisoned Blade</b> is <b>MELEE-ONLY</b> (single-target 6%/s poison, 4s), <b style="color:#ff7733">Fire Oil Flask</b> is <b>RANGED-ONLY</b> (4%/s burn for 3s + 1-tile splash). Barbed Gladius (melee, light bleed), Falcata Blade / Alpha Pack Fang (any tower, heavy bleed legendaries) round out the family.')}
         </div>
       `)}
@@ -1236,8 +1237,11 @@ function renderArmorChips(id: string): string {
     else if (r.armorPct >= 70) { display = `${r.armorPct}%`;               color = '#ff6b3a'; }
     else if (r.armorPct >= 30) { display = `${r.armorPct}%`;               color = '#ffaa55'; }
     else if (r.armorPct > 0)   { display = `${r.armorPct}%`;               color = '#ffd34d'; }
-    else if (r.armorPct === 0) { display = '0';                            color = '#cdb98a'; }
-    else                       { display = `+${Math.abs(r.armorPct)}`;     color = '#7896c8'; }
+    else if (r.armorPct === 0) { display = '0%';                           color = '#cdb98a'; }
+    // 2026-05-17 — vulnerable chips now read "200%" (sky-blue) not
+    // "+200" (was also missing %). Consistent format across the row,
+    // color carries the resist-vs-vulnerable signal.
+    else                       { display = `${Math.abs(r.armorPct)}%`;     color = '#7896c8'; }
     return `<span title="${armorDamageTypeShortLabel(r.damageType)}" style="display:inline-block;margin:0 2px 2px 0;padding:1px 4px;background:#0c0a08;border:1px solid #3a3025;color:${color};font-size:9.5px;line-height:1.2"><b style="color:#aa9a4a;font-size:8px;letter-spacing:0.5px">${armorDamageTypeShortLabel(r.damageType).slice(0,3).toUpperCase()}</b> ${display}</span>`;
   }).join('');
 }

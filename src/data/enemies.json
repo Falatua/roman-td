@@ -62,7 +62,7 @@
     "immuneSlow": true,
     "lowHpSpeedBoost": 1.6,
     "phaseHits": 1,
-    "checkpointHealPct": 0.20,
+    "checkpointHealPct": 0.2,
     "reanimateAs": "REANIMATED_SKELETON"
   },
   "GALLIC_DRUID": {
@@ -78,7 +78,7 @@
     "auraTowerSlow": 0.2,
     "reanimateAs": "REANIMATED_LICH",
     "requiresMeleeBreak": true,
-    "dodgeChance": 0.30
+    "dodgeChance": 0.3
   },
   "CELTIC_SCOUT": {
     "name": "Celtic Scout",
@@ -144,7 +144,7 @@
     "requiresMeleeBreak": true,
     "shieldBlockChance": 0.4,
     "outOfCombatRegen": 0.049,
-    "checkpointHealPct": 0.20
+    "checkpointHealPct": 0.2
   },
   "WAR_ELEPHANT": {
     "name": "War Elephant",
@@ -183,8 +183,9 @@
     "spriteSheet": 5,
     "spriteCell": 4,
     "immunePoison": true,
+    "immuneFire": true,
     "rebirthAtPct": 0.25,
-    "checkpointHealPct": 0.20,
+    "checkpointHealPct": 0.2,
     "reanimateAs": "REANIMATED_ZOMBIE"
   },
   "ZOMBIE_DRUID": {
@@ -217,9 +218,10 @@
     "immuneFreeze": true,
     "immunePoison": true,
     "immuneStun": true,
+    "immuneFire": true,
     "phaseHits": 1,
     "lowHpSpeedBoost": 1.5,
-    "checkpointHealPct": 0.20,
+    "checkpointHealPct": 0.2,
     "reanimateAs": "REANIMATED_SKELETON"
   },
   "SPECTRAL_SCOUT": {
@@ -245,7 +247,8 @@
     "livesCost": 10,
     "spriteSheet": 5,
     "spriteCell": 8,
-    "meleeImmune": true
+    "meleeImmune": true,
+    "immuneFire": true
   },
   "UNDEAD_SPEARMAN": {
     "name": "Undead Spearman",
@@ -260,10 +263,11 @@
     "reanimateAs": "REANIMATED_ZOMBIE",
     "regenPctPerSec": 0.0196,
     "immunePoison": true,
+    "immuneFire": true,
     "requiresMeleeBreak": true,
     "shieldBlockChance": 0.35,
     "phaseHits": 1,
-    "checkpointHealPct": 0.20
+    "checkpointHealPct": 0.2
   },
   "GHOST_RIDER": {
     "name": "Ghost Rider",
@@ -296,6 +300,7 @@
     "outOfCombatRegen": 0.028,
     "immuneSlow": true,
     "immuneFreeze": true,
+    "immuneFire": true,
     "auraTowerSlow": 0.25
   },
   "DEMON_HELLHOUND": {
@@ -415,6 +420,7 @@
     "spriteCell": 0,
     "immunePoison": true,
     "immuneFreeze": true,
+    "immuneFire": true,
     "lowHpSpeedBoost": 1.5
   },
   "REANIMATED_ZOMBIE": {
@@ -503,7 +509,7 @@
     "isBoss": false,
     "livesCost": 2,
     "auraTowerSlow": 0.25,
-    "healAllyPctPerSec": 0.020,
+    "healAllyPctPerSec": 0.02,
     "immunePoison": true
   },
   "SOBEK_WARRIOR": {
@@ -525,7 +531,7 @@
     "isBoss": false,
     "livesCost": 2,
     "immunePoison": true,
-    "outOfCombatRegen": 0.040,
+    "outOfCombatRegen": 0.04,
     "reanimateAs": "MUMMY_WARRIOR"
   },
   "SPHINX": {
@@ -549,10 +555,10 @@
     "immuneSlow": true,
     "immuneStun": true,
     "outOfCombatRegen": 0.022,
-    "auraTowerSlow": 0.30
+    "auraTowerSlow": 0.3
   },
   "MONGOL_HORSE_ARCHER": {
-    "name": "Mongol Horse Archer",
+    "name": "Hun Horse Archer",
     "faction": "MONGOLS",
     "baseHp": 380,
     "speed": 1.6,
@@ -562,7 +568,7 @@
     "dodgeChance": 0.25
   },
   "MONGOL_SPEAR_RIDER": {
-    "name": "Mongol Spear Rider",
+    "name": "Hun Spear Rider",
     "faction": "MONGOLS",
     "baseHp": 620,
     "speed": 1.5,
@@ -580,11 +586,11 @@
     "isBoss": false,
     "livesCost": 4,
     "dodgeChance": 0.25,
-    "outOfCombatRegen": 0.030,
+    "outOfCombatRegen": 0.03,
     "lowHpSpeedBoost": 1.5
   },
   "MONGOL_FOOTMAN": {
-    "name": "Mongol Footman",
+    "name": "Hun Footman",
     "faction": "MONGOLS",
     "baseHp": 360,
     "speed": 1.1,
@@ -593,7 +599,7 @@
     "livesCost": 1
   },
   "MONGOL_SPEARMAN": {
-    "name": "Mongol Spearman",
+    "name": "Hun Spearman",
     "faction": "MONGOLS",
     "baseHp": 540,
     "speed": 1.0,
@@ -602,7 +608,7 @@
     "livesCost": 1
   },
   "MONGOL_BERSERKER": {
-    "name": "Mongol Berserker",
+    "name": "Hun Berserker",
     "faction": "MONGOLS",
     "baseHp": 850,
     "speed": 1.4,
@@ -612,17 +618,20 @@
     "lowHpSpeedBoost": 1.6
   },
   "MONGOL_SCOUT": {
-    "name": "Mongol Scout",
+    "name": "Hun Scout",
     "faction": "MONGOLS",
     "baseHp": 280,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
-    "stealthInterval": { "period": 6, "duration": 1.0 }
+    "stealthInterval": {
+      "period": 6,
+      "duration": 1.0
+    }
   },
   "MONGOL_SHAMAN": {
-    "name": "Mongol Shaman",
+    "name": "Hun Shaman",
     "faction": "MONGOLS",
     "baseHp": 980,
     "speed": 0.9,
@@ -634,7 +643,7 @@
     "immunePoison": true
   },
   "MONGOL_CAPTAIN": {
-    "name": "Mongol Captain",
+    "name": "Hun Captain",
     "faction": "MONGOLS",
     "baseHp": 2200,
     "speed": 1.1,

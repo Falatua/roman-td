@@ -38,7 +38,12 @@ export function itemName(id: string): string {
 }
 
 // Faction display: "UNDEAD_CARTHAGE" -> "Undead Carthage".
+// 2026-05-17 — Special-case MONGOLS to display as "Huns" since the
+// Romans historically fought Attila the Hun, not Mongols. Internal
+// enum / file IDs stay MONGOLS for save-game compatibility; only the
+// player-facing label changes.
 export function factionName(raw: string): string {
+  if (raw === 'MONGOLS') return 'Huns';
   return pretty(raw);
 }
 

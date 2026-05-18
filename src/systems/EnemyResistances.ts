@@ -194,6 +194,17 @@ export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
 }
 
 export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): number {
+  // 2026-05-17 — `immuneFire` JSON flag is a hard short-circuit for
+  // ELEMENTAL_FIRE damage. The 6 undead types (Undead Celt, Undead
+  // Berserker, Reanimated Berserker, Undead Spearman, Undead Warlord,
+  // Undead War Elephant) all carry this flag — they walk through fire
+  // unharmed (lore: bone bodies, no flesh to ignite). Direct fire
+  // damage (Vulcan Engineer, Sagittarius Ignis, Ignifer, Inferno Cart,
+  // Plague Cart, etc.) returns 0. Burn DoT is short-circuited in
+  // statusEffectiveness below. HELLFIRE is a divine-fire stamp and is
+  // NOT covered — angels still get to punish the dead.
+  const def: any = (enemiesData as any)[enemy.type];
+  if (def?.immuneFire && damageType === DamageType.ELEMENTAL_FIRE) return 0;
   const r = enemyResistanceProfile(enemy.type);
   let base = 1;
   if (damageType === DamageType.PHYS_MELEE) base = r.melee ?? 1;
@@ -238,6 +249,11 @@ export function statusEffectiveness(enemy: Enemy, kind: StatusEffectKind): numbe
   if (def?.immuneFreeze && kind === StatusEffectKind.FREEZE) return 0;
   if (def?.immuneStun && kind === StatusEffectKind.STUN) return 0;
   if (def?.immunePoison && kind === StatusEffectKind.POISON) return 0;
+  // 2026-05-17 — immuneFire covers BURN DoT too (oil flasks, ignis
+  // arrows, inferno cart, etc. all apply BURN). Bone bodies don't
+  // smolder. HELLFIRE intentionally NOT covered — it's divine-fire,
+  // bypasses statusEffectiveness anyway via a separate code path.
+  if (def?.immuneFire && kind === StatusEffectKind.BURN) return 0;
   const r = enemyResistanceProfile(enemy.type);
   let base = 1;
   if (kind === StatusEffectKind.SLOW) base = r.slow ?? 1;
@@ -337,8 +353,13 @@ export function armorProfile(type: EnemyType): ArmorRow[] {
     else if (dt === 'SIEGE' && typeof specific.siege === 'number') specificMult = specific.siege;
     else if (dt === 'ELEMENTAL_FIRE' && typeof specific.fire === 'number') specificMult = specific.fire;
     else if (dt === 'DIVINE' && typeof specific.divine === 'number') specificMult = specific.divine;
-    const finalMult = factionMult * specificMult;
-    const immune = factionImmune || finalMult <= 0;
+    // 2026-05-17 — JSON `immuneFire` flag forces FIRE row to IMMUNE in
+    // every UI surface (Codex chips, wave armor strip, EnemyInspect armor
+    // cells). Faction + per-enemy multipliers above are bypassed because
+    // the flag is a hard short-circuit in enemyDamageMultiplier too.
+    const fireImmune = dt === 'ELEMENTAL_FIRE' && !!enemyDef.immuneFire;
+    const finalMult = fireImmune ? 0 : factionMult * specificMult;
+    const immune = factionImmune || fireImmune || finalMult <= 0;
     const armorPct = immune ? 100 : Math.round((1 - finalMult) * 100);
     return { damageType: dt, finalMult, armorPct, immune };
   });

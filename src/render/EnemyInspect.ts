@@ -31,19 +31,18 @@ const FACTION_KEY: Record<number, string> = {
 // banner color still cues the role at a glance.
 
 function fmtRes(v: number | 'IMMUNE'): { label: string; color: string } {
-  // 2026-05-17 — Wording simplified per user feedback. The "+25% taken"
-  // and "-25% reduced" labels were misleading — players reading "+25%
-  // taken" thought it meant the enemy RESISTS 25% rather than takes
-  // 25% MORE. Now the label is just the signed percentage (e.g. "+25%"
-  // for vulnerability, "-25%" for resistance) and the color carries
-  // the direction signal:
-  //   orange / yellow = vulnerability (the enemy takes extra damage)
-  //   blue            = resistance    (the enemy shrugs off damage)
-  //   red             = IMMUNE        (no damage at all)
+  // 2026-05-17 — Wording simplified per user feedback. The "+/-" prefixes
+  // were confusing; players couldn't tell whether "+25%" meant "takes 25%
+  // more" or "resists 25%". Now the label is JUST the unsigned percentage
+  // and the color carries the direction signal:
+  //   orange / gold = vulnerability (the enemy takes extra damage)
+  //   blue          = resistance    (the enemy shrugs off damage)
+  //   red           = IMMUNE        (no damage at all)
+  //   grey          = normal        (full damage, no modifier)
   if (v === 'IMMUNE') return { label: 'IMMUNE', color: '#aa3a3a' };
-  if (v > 0.5)  return { label: '+' + Math.round(v * 100) + '%', color: '#ffaa33' };
-  if (v > 0.10) return { label: '+' + Math.round(v * 100) + '%', color: '#ffd34d' };
-  if (v < -0.10) return { label: Math.round(v * 100) + '%',      color: '#7896c8' };
+  if (v > 0.5)  return { label: Math.round(v * 100) + '%',           color: '#ffaa33' };
+  if (v > 0.10) return { label: Math.round(v * 100) + '%',           color: '#ffd34d' };
+  if (v < -0.10) return { label: Math.abs(Math.round(v * 100)) + '%', color: '#7896c8' };
   return { label: 'normal', color: '#888' };
 }
 
@@ -116,11 +115,13 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     else if (r.armorPct >= 30) { display = `${r.armorPct}% armor`; color = '#ffaa55'; }
     else if (r.armorPct > 0)   { display = `${r.armorPct}% armor`; color = '#ffd34d'; }
     else if (r.armorPct === 0) { display = 'no armor';             color = '#cdb98a'; }
-    // 2026-05-17 — Negative armor = vulnerable. Use clearer wording
-    // than "+X% taken" — that phrasing was confusing players who read
-    // it as resistance. "+X% damage" reads as "this enemy takes more
-    // damage from this type" directly.
-    else                       { display = `+${Math.abs(r.armorPct)}% damage`; color = '#7896c8'; }
+    // 2026-05-17 — Negative armor = vulnerable. Display the unsigned
+    // percentage and let the sky-blue color carry the "this enemy takes
+    // extra damage from this type" signal. The "+" prefix was confusing
+    // because positive-armor chips above (resistance) DON'T have a
+    // matching "-" prefix — they just show "30%". Now both directions
+    // read the same way and the color is the differentiator.
+    else                       { display = `${Math.abs(r.armorPct)}% damage`; color = '#7896c8'; }
     return `<div style="background:#0c0a08;padding:8px 6px;text-align:center;font-size:11px">
       <div style="color:#aa9a4a;letter-spacing:1px;font-size:9px">${label}</div>
       <div style="color:${color};font-size:12px;font-weight:bold;margin-top:3px;letter-spacing:0.5px">${display}</div>
@@ -181,6 +182,10 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   if (def?.immuneFreeze) traits.push({ label: 'IMMUNE TO FREEZE' });
   if (def?.immuneStun) traits.push({ label: 'IMMUNE TO STUN' });
   if (def?.immunePoison) traits.push({ label: 'IMMUNE TO POISON' });
+  // 2026-05-17 — fire immunity for undead types (bone bodies don't
+  // smolder). Covers direct ELEMENTAL_FIRE damage AND the BURN DoT
+  // tick. HELLFIRE divine-fire is separate and still applies.
+  if (def?.immuneFire) traits.push({ label: 'IMMUNE TO FIRE — direct fire damage and BURN DoT both deal 0 (HELLFIRE divine-fire still applies)', color: '#ee5555' });
   // -- Healing / regen --
   if (def?.regenPctPerSec) traits.push({ label: `REGEN — ${(def.regenPctPerSec*100).toFixed(2)}% maxHP/sec always-on (paused by DoT)`, color: '#88ff88' });
   if (def?.outOfCombatRegen) traits.push({ label: `OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 0.5s without damage (DoT counts as damage)`, color: '#88ff88' });
