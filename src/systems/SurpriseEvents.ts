@@ -34,17 +34,33 @@ import waypointsData from '../data/waypoints.json';
 // ─── PUBLIC API ────────────────────────────────────────────────────────
 
 // Fixed trigger schedule for the 20-wave campaign. All non-boss, non-flyer
-// waves. Cooldown ≥3 waves. Uprising gated to undead factions only.
+// waves. Cooldown ≥3 waves (W14→W16 is 2 apart, but GATES_OF_HELL is
+// special: it doesn't override the wave's normal spawn flow, so the
+// cooldown rule is relaxed for it specifically).
 //   W7  — Invasion (CARTHAGE faction)
 //   W11 — Uprising (UNDEAD_CELTS)
 //   W14 — Uprising (UNDEAD_CELTS)
+//   W16 — Gates of Hell (SUPER_DEMONS) — destructible gates at WP3/WP4
+//         pump out fire giants for 15s. Player can shut them down by
+//         destroying the gates. Bridges the undead → demon faction
+//         transition heading into W20.
 //   W18 — Invasion (UNDEAD_CARTHAGE)
 export const SURPRISE_EVENT_SCHEDULE: Record<number, SurpriseEventKind> = {
   7:  SurpriseEventKind.INVASION,
   11: SurpriseEventKind.UPRISING,
   14: SurpriseEventKind.UPRISING,
+  16: SurpriseEventKind.GATES_OF_HELL,
   18: SurpriseEventKind.INVASION,
 };
+
+// ─── GATES OF HELL TUNING ─────────────────────────────────────────────
+// 2-second cadence per gate, alternating phases so the player sees a
+// new fire giant pop out every second. 15-second window total. After
+// that the gates auto-seal (no more spawns) regardless of whether the
+// player destroyed them. Already-spawned giants persist normally and
+// the wave still has to clear them.
+const GATES_OF_HELL_WINDOW_SECONDS = 15;
+const GATES_OF_HELL_CADENCE_SECONDS = 2;
 
 // v2 spawn tuning. Each of the 4 visual points (fire or urn) spawns
 // TWO enemies. Total enemies per event = 8 (still feels surprising
@@ -78,8 +94,16 @@ export function maybeTriggerSurpriseEventForWave(state: GameStateShape): void {
   const kind = SURPRISE_EVENT_SCHEDULE[state.wave];
   if (!kind) return;
   const lastWave = state.lastSurpriseEventWave ?? 0;
-  if (state.wave - lastWave < 3) return;
-  scheduleSurpriseEvent(state, kind, state.tick + 0.5, /*waveOverride=*/true);
+  // 2026-05-17 — Cooldown rule relaxed for GATES_OF_HELL since it doesn't
+  // override the wave's normal spawn flow. The other two event kinds
+  // would feel oppressive back-to-back; gates run in parallel with the
+  // wave's regular enemies so the player can still focus-fire normally.
+  if (kind !== SurpriseEventKind.GATES_OF_HELL && state.wave - lastWave < 3) return;
+  // GATES_OF_HELL uses waveOverride=false (its spawns are EXTRA, not
+  // a replacement for the wave queue). Invasion/Uprising stay on the
+  // existing waveOverride=true path so back-compat holds.
+  const waveOverride = kind !== SurpriseEventKind.GATES_OF_HELL;
+  scheduleSurpriseEvent(state, kind, state.tick + 0.5, waveOverride);
 }
 
 // Endless-mode trigger. ~25% chance per endless wave with 3-wave cooldown.
@@ -113,7 +137,11 @@ export function notifySurpriseEnemyResolved(state: GameStateShape, enemyId: stri
     if (state.lives <= 0) return;     // dead player gets no reward
     ev.endedAt = state.tick;
     ev.rewardGiven = true;
-    state.pendingSurpriseReward = { kind: ev.kind === SurpriseEventKind.INVASION ? 'INVASION' : 'UPRISING' };
+    state.pendingSurpriseReward = {
+      kind: ev.kind === SurpriseEventKind.INVASION ? 'INVASION'
+          : ev.kind === SurpriseEventKind.UPRISING ? 'UPRISING'
+          : 'GATES_OF_HELL'
+    };
     state.surpriseEventsCompleted = (state.surpriseEventsCompleted ?? 0) + 1;
     if (ev.vfxFadeOutAt === 0) ev.vfxFadeOutAt = state.tick;
   }
@@ -143,12 +171,22 @@ export function tickSurpriseEvents(state: GameStateShape): void {
   const ev = state.activeSurpriseEvent;
   if (!ev) return;
   if (!ev.waveOverride) {
-    // Legacy path: drain the fixed schedule (unused by current campaign
-    // since maybeTrigger* always passes waveOverride=true, but kept for
-    // back-compat if a future caller schedules a non-override event).
+    // Legacy path: drain the fixed schedule. Active for GATES_OF_HELL,
+    // which uses waveOverride=false so its 2 gates + 15 fire giants
+    // spawn on a custom 2s alternating cadence rather than rerouting
+    // the wave's normal spawn queue.
     for (const point of ev.spawnPoints) {
       if (point.fired) continue;
       if (state.tick < point.spawnAt) continue;
+      // 2026-05-17 — GATE-DEATH DEQUEUE. If the gate at this pointId is
+      // already destroyed (marked via __gateDestroyed flag on the
+      // event), skip spawns from that point. The remaining schedule
+      // entries get flagged fired=true so they drain cleanly.
+      const destroyed = (ev as any).__destroyedPointIds as Set<number> | undefined;
+      if (destroyed && destroyed.has(point.pointId) && point.enemyType === 'FIRE_GIANT') {
+        point.fired = true;
+        continue;
+      }
       const enemyType = point.enemyType as EnemyType;
       const wIdx = Math.max(0, Math.min(wavesData.length - 1, state.wave - 1));
       const w = wavesData[wIdx];
@@ -160,9 +198,41 @@ export function tickSurpriseEvents(state: GameStateShape): void {
         ? effectiveWaveHpMult(state.wave, w.hpMult, true)
         : basicHpMult) * layerMult;
       const e = spawnEnemy(state, enemyType, spawnHpMult);
+      // Reposition the spawn onto the event's path index. For
+      // HELL_GATE this also pins the position (speed 0 means it stays
+      // there); for FIRE_GIANT it sets the starting waypoint so the
+      // giant walks WP3-7 or WP4-7 depending on which gate spawned it.
+      if (point.pathIndex >= 0 && point.pathIndex < state.groundPath.length) {
+        e.pathIndex = point.pathIndex;
+        e.pathProgress = 0;
+        const pt = state.groundPath[point.pathIndex];
+        e.x = pt.col * GRID.TILE + GRID.TILE / 2;
+        e.y = pt.row * GRID.TILE + GRID.TILE / 2;
+        e.prevX = e.x;
+        e.prevY = e.y;
+      }
       attachSurpriseSpawnTags(state, e, ev, point);
+      ev.spawnedEnemyIds.add(e.id);
       point.fired = true;
       ev.lastSpawnFiredAt = state.tick;
+    }
+
+    // 2026-05-17 — GATES OF HELL auto-seal. After the 15s window
+    // expires, any HELL_GATE that's still alive self-destructs (sets
+    // hp to 0). The normal enemy-death handler then runs: dequeues
+    // remaining fire-giant spawns from that gate's queue, triggers
+    // the shatter VFX, removes the gate from the enemy pool. Player
+    // can still ignore the event and survive; the wave just won't
+    // hang waiting on the gates to be killed.
+    if (ev.kind === SurpriseEventKind.GATES_OF_HELL) {
+      const sealTick = ev.startedAt + VFX_RISE_SECONDS + GATES_OF_HELL_WINDOW_SECONDS + GATES_OF_HELL_CADENCE_SECONDS;
+      if (state.tick > sealTick) {
+        for (const e of state.enemies.values()) {
+          if (e.type === 'HELL_GATE' && e.hp > 0) {
+            e.hp = 0;
+          }
+        }
+      }
     }
   }
   // VFX fade-out detection. In override mode this only fires once the wave
@@ -209,10 +279,29 @@ export function spawnAtSurpriseEventPoint(
 
 function attachSurpriseSpawnTags(state: GameStateShape, enemy: any, ev: SurpriseEventState, point: SurpriseEventSpawnPoint): void {
   enemy.__surpriseSpawn = true;
-  enemy.__surpriseKind = ev.kind === SurpriseEventKind.INVASION ? 'INVASION' : 'UPRISING';
+  enemy.__surpriseKind = ev.kind === SurpriseEventKind.INVASION ? 'INVASION'
+    : ev.kind === SurpriseEventKind.UPRISING ? 'UPRISING'
+    : 'GATES_OF_HELL';
   enemy.__surpriseSpawnVfxX = point.vfxX;
   enemy.__surpriseSpawnVfxY = point.vfxY;
   enemy.__surpriseSpawnTick = state.tick;
+  // Carry the pointId so the gate-destruction handler can flag the
+  // matching spawn schedule entries when this enemy dies.
+  enemy.__surprisePointId = point.pointId;
+}
+
+// 2026-05-17 — Called from the death-handling code when a HELL_GATE
+// enemy dies. Marks the matching pointId as destroyed so future
+// fire-giant spawns from that gate get skipped (the gate's been
+// breached, no more demons can come through). The OTHER gate keeps
+// spawning on its schedule until the player breaks it too OR the 15s
+// window expires.
+export function notifyHellGateDestroyed(state: GameStateShape, pointId: number): void {
+  const ev = state.activeSurpriseEvent;
+  if (!ev || ev.kind !== SurpriseEventKind.GATES_OF_HELL) return;
+  const evAny = ev as any;
+  if (!evAny.__destroyedPointIds) evAny.__destroyedPointIds = new Set<number>();
+  evAny.__destroyedPointIds.add(pointId);
 }
 
 // Called from WaveManager.checkWaveEnd. Clears any in-flight event state.
@@ -228,13 +317,20 @@ export function clearSurpriseEventsForWaveEnd(state: GameStateShape): void {
 // ─── INTERNAL: SCHEDULING + POINT GENERATION ──────────────────────────
 
 function scheduleSurpriseEvent(state: GameStateShape, kind: SurpriseEventKind, startAtTick: number, waveOverride: boolean = false) {
-  const points = kind === SurpriseEventKind.INVASION
-    ? generateInvasionPoints(state, startAtTick, waveOverride)
-    : generateUprisingPoints(state, startAtTick, waveOverride);
+  let points: SurpriseEventSpawnPoint[];
+  let atmosProps: SurpriseAtmosProp[];
+  if (kind === SurpriseEventKind.INVASION) {
+    points = generateInvasionPoints(state, startAtTick, waveOverride);
+    atmosProps = generateInvasionAtmosphere(state, points);
+  } else if (kind === SurpriseEventKind.UPRISING) {
+    points = generateUprisingPoints(state, startAtTick, waveOverride);
+    atmosProps = generateUprisingAtmosphere(state, points);
+  } else {
+    // GATES_OF_HELL
+    points = generateGatesOfHellPoints(state, startAtTick);
+    atmosProps = generateGatesOfHellAtmosphere(state, points);
+  }
   if (points.length === 0) return;
-  const atmosProps = kind === SurpriseEventKind.INVASION
-    ? generateInvasionAtmosphere(state, points)
-    : generateUprisingAtmosphere(state, points);
   const ev: SurpriseEventState = {
     kind,
     startedAt: startAtTick,
@@ -356,6 +452,186 @@ function generateUprisingAtmosphere(state: GameStateShape, mainPoints: SurpriseE
       flickerSeed: Math.random() * Math.PI * 2,
       kind: 'HAZE'
     });
+  }
+  return props;
+}
+
+// ─── GATES OF HELL POINT + ATMOSPHERE GENERATORS (2026-05-17) ────────
+//
+// Two visual points: one at WP3, one at WP4. Each gate spawns ONE
+// HELL_GATE at t=0 (the structure that towers shoot to shut the event
+// down) followed by FIRE_GIANT spawns on a 2s cadence, alternating
+// between the gates so the player sees a new fire giant every second.
+// Total fire giants over the 15s window: 15 (8 from gate-3, 7 from
+// gate-4 since gate-3 fires first).
+//
+// Path positioning: HELL_GATE itself doesn't walk (speed 0); the fire
+// giants snap to WP3's or WP4's path index and walk the remainder of
+// the path normally. The renderer puts the gate sprite AT the
+// waypoint's pixel position.
+function generateGatesOfHellPoints(state: GameStateShape, startAtTick: number): SurpriseEventSpawnPoint[] {
+  // Resolve WP3 and WP4 tile positions from the waypoints data.
+  const wp3 = (waypointsData as any).waypoints.find((w: any) => w.index === 3);
+  const wp4 = (waypointsData as any).waypoints.find((w: any) => w.index === 4);
+  if (!wp3 || !wp4) return [];
+  const locations = [
+    { col: wp3.topLeft.col, row: wp3.topLeft.row, pointId: 0 },
+    { col: wp4.topLeft.col, row: wp4.topLeft.row, pointId: 1 }
+  ];
+  const out: SurpriseEventSpawnPoint[] = [];
+  // First, spawn the HELL_GATE structures at each location. Both fire
+  // at startAtTick + VFX_RISE_SECONDS (gate rises out of the ground
+  // simultaneously with its sibling — symmetric opening).
+  for (const loc of locations) {
+    const vfxX = loc.col * GRID.TILE + GRID.TILE / 2;
+    const vfxY = loc.row * GRID.TILE + GRID.TILE / 2;
+    // Find path index AT or NEAR this waypoint. The fire giants
+    // emerging from this gate will start at this path index.
+    const nearest = nearestPathIndexAtWaypoint(state, loc.col, loc.row);
+    out.push({
+      vfxX, vfxY,
+      pathTileX: loc.col,
+      pathTileY: loc.row,
+      pathIndex: nearest,
+      spawnAt: startAtTick + VFX_RISE_SECONDS,
+      enemyType: 'HELL_GATE',
+      fired: false,
+      pointId: loc.pointId
+    });
+  }
+  // Then schedule the FIRE_GIANT spawns. Alternating cadence: gate 3
+  // fires at t=2, 4, 6, 8, 10, 12, 14, 16; gate 4 fires at t=3, 5, 7,
+  // 9, 11, 13, 15. Window 15s starts AFTER the gates rise (so the
+  // first giant emerges 2s after the gates open). All offsets relative
+  // to (startAtTick + VFX_RISE_SECONDS).
+  const baseStart = startAtTick + VFX_RISE_SECONDS;
+  // Gate 3 fires every 2s starting at t=2 (so the gate is visible for
+  // 2 full seconds before the first giant emerges — sells the rumble).
+  for (let i = 0; i < 8; i++) {
+    const offset = GATES_OF_HELL_CADENCE_SECONDS + i * (GATES_OF_HELL_CADENCE_SECONDS * 2);
+    if (offset > GATES_OF_HELL_WINDOW_SECONDS + 1) break;
+    out.push({
+      vfxX: locations[0].col * GRID.TILE + GRID.TILE / 2,
+      vfxY: locations[0].row * GRID.TILE + GRID.TILE / 2,
+      pathTileX: locations[0].col,
+      pathTileY: locations[0].row,
+      pathIndex: nearestPathIndexAtWaypoint(state, locations[0].col, locations[0].row),
+      spawnAt: baseStart + offset,
+      enemyType: 'FIRE_GIANT',
+      fired: false,
+      pointId: 0
+    });
+  }
+  // Gate 4 fires every 2s starting at t=3 (offset by 1s from gate 3,
+  // so the player sees alternating-gate emergence).
+  for (let i = 0; i < 7; i++) {
+    const offset = GATES_OF_HELL_CADENCE_SECONDS + 1 + i * (GATES_OF_HELL_CADENCE_SECONDS * 2);
+    if (offset > GATES_OF_HELL_WINDOW_SECONDS + 1) break;
+    out.push({
+      vfxX: locations[1].col * GRID.TILE + GRID.TILE / 2,
+      vfxY: locations[1].row * GRID.TILE + GRID.TILE / 2,
+      pathTileX: locations[1].col,
+      pathTileY: locations[1].row,
+      pathIndex: nearestPathIndexAtWaypoint(state, locations[1].col, locations[1].row),
+      spawnAt: baseStart + offset,
+      enemyType: 'FIRE_GIANT',
+      fired: false,
+      pointId: 1
+    });
+  }
+  return out;
+}
+
+// Find the path index nearest to a waypoint tile. Unlike
+// nearestPathIndexAfterWP2 this doesn't clamp — fire giants from gate-3
+// can start at WP3's path index (walking WP4-7), gate-4 giants at WP4's
+// path index (walking WP5-7).
+function nearestPathIndexAtWaypoint(state: GameStateShape, col: number, row: number): number {
+  let best = 0;
+  let bestD = Infinity;
+  for (let i = 0; i < state.groundPath.length; i++) {
+    const p = state.groundPath[i];
+    const d = Math.abs(p.col - col) + Math.abs(p.row - row);
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  // Step one tile past the waypoint so the spawn doesn't accidentally
+  // trigger a "crossed this waypoint" event (matches the WP2 logic
+  // in getMinSurprisePathIndex).
+  return Math.min(state.groundPath.length - 1, best + 1);
+}
+
+// GATES OF HELL atmosphere: heavy fire dressing around both gates. 12
+// small fires scattered in a ring around each gate position, 6 smoke
+// puffs tinted red-orange, 4 blood-style scorch stains. Reads as "the
+// underworld is bleeding through the seams of reality".
+function generateGatesOfHellAtmosphere(state: GameStateShape, mainPoints: SurpriseEventSpawnPoint[]): SurpriseAtmosProp[] {
+  const props: SurpriseAtmosProp[] = [];
+  // Group main points by pointId to get the 2 gate locations
+  const gatePositions: { x: number; y: number }[] = [];
+  const seen = new Set<number>();
+  for (const p of mainPoints) {
+    if (seen.has(p.pointId)) continue;
+    seen.add(p.pointId);
+    gatePositions.push({ x: p.vfxX, y: p.vfxY });
+  }
+  // Around each gate: ring of 6 small fires + 3 smoke puffs + 2 stains.
+  const FIRES_PER_GATE = 6;
+  const SMOKE_PER_GATE = 3;
+  const STAINS_PER_GATE = 2;
+  for (const gp of gatePositions) {
+    for (let i = 0; i < FIRES_PER_GATE; i++) {
+      const angle = (i / FIRES_PER_GATE) * Math.PI * 2 + Math.random() * 0.4;
+      const radius = GRID.TILE * (1.6 + Math.random() * 0.8);   // ring at 1.6-2.4 tiles out
+      const px = gp.x + Math.cos(angle) * radius;
+      const py = gp.y + Math.sin(angle) * radius;
+      const tc = Math.floor(px / GRID.TILE);
+      const tr = Math.floor(py / GRID.TILE);
+      const t = state.tiles[tr]?.[tc];
+      if (t !== TileType.EMPTY) continue;
+      props.push({
+        spriteKey: Math.random() < 0.5 ? 'FIRE_LARGE' : 'FIRE_SMALL',
+        x: px,
+        y: py,
+        scale: 0.6 + Math.random() * 0.45,
+        rotation: (Math.random() - 0.5) * 0.3,
+        flickerSeed: Math.random() * Math.PI * 2,
+        kind: 'FIRE'
+      });
+    }
+    for (let i = 0; i < SMOKE_PER_GATE; i++) {
+      const angle = (i / SMOKE_PER_GATE) * Math.PI * 2 + Math.random() * 0.5;
+      const radius = GRID.TILE * (1.0 + Math.random() * 1.4);
+      props.push({
+        spriteKey: 'SMOKE_PUFF',
+        x: gp.x + Math.cos(angle) * radius,
+        y: gp.y + Math.sin(angle) * radius - GRID.TILE * 0.4,
+        scale: 0.8 + Math.random() * 0.4,
+        rotation: Math.random() * Math.PI * 2,
+        tint: 0xff7a33,             // warm red-orange smoke (vs uprising's purple)
+        flickerSeed: Math.random() * Math.PI * 2,
+        kind: 'HAZE'
+      });
+    }
+    for (let i = 0; i < STAINS_PER_GATE; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = GRID.TILE * (0.7 + Math.random() * 0.9);
+      const px = gp.x + Math.cos(angle) * radius;
+      const py = gp.y + Math.sin(angle) * radius;
+      const tc = Math.floor(px / GRID.TILE);
+      const tr = Math.floor(py / GRID.TILE);
+      const t = state.tiles[tr]?.[tc];
+      if (t !== TileType.EMPTY) continue;
+      props.push({
+        spriteKey: Math.random() < 0.5 ? 'BLOOD_HEAVY' : 'BLOOD_SATURATED',
+        x: px,
+        y: py,
+        scale: 0.7 + Math.random() * 0.35,
+        rotation: Math.random() * Math.PI * 2,
+        tint: 0xaa3322,             // dark crimson (scorch + blood)
+        flickerSeed: Math.random() * Math.PI * 2,
+        kind: 'STAIN'
+      });
+    }
   }
   return props;
 }

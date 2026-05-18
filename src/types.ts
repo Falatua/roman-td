@@ -205,14 +205,27 @@ export enum EnemyType {
   MONGOL_BERSERKER = 'MONGOL_BERSERKER',
   MONGOL_SCOUT = 'MONGOL_SCOUT',
   MONGOL_SHAMAN = 'MONGOL_SHAMAN',
-  MONGOL_CAPTAIN = 'MONGOL_CAPTAIN'
+  MONGOL_CAPTAIN = 'MONGOL_CAPTAIN',
+  // ─── GATES OF HELL (2026-05-17 surprise event) ───────────────────────
+  // HELL_GATE — stationary "enemy" that anchors the event at WP3/WP4.
+  // Has HP, takes tower fire, dies via the regular death path. Its
+  // death script dequeues any pending FIRE_GIANT spawns from that gate.
+  // FIRE_GIANT — bulky, slow, fire-immune semi-boss that the gates
+  // spawn every 2s (alternating between the two gates). Walks the
+  // path from its origin waypoint to Rome.
+  HELL_GATE = 'HELL_GATE',
+  FIRE_GIANT = 'FIRE_GIANT'
 }
 
 // ─── SURPRISE EVENTS (2026-05-16) ─────────────────────────────────────
 // Mid-wave ambient events that surprise the player. Two kinds: INVASION
 // (perimeter fire breaches, any wave) and UPRISING (center-map urn
 // portals, undead waves only). Spawned via SurpriseEvents.ts.
-export enum SurpriseEventKind { INVASION = 'INVASION', UPRISING = 'UPRISING' }
+// 2026-05-17 — third event kind: GATES_OF_HELL fires on W16. Two
+// destructible HELL_GATE structures spawn at the WP3 and WP4 tiles
+// and pump out FIRE_GIANT semi-bosses on a 2s alternating cadence
+// for 15s. Player can shut it down early by destroying the gates.
+export enum SurpriseEventKind { INVASION = 'INVASION', UPRISING = 'UPRISING', GATES_OF_HELL = 'GATES_OF_HELL' }
 export interface SurpriseEventSpawnPoint {
   // Pixel position of the visual VFX (fire or urn)
   vfxX: number;

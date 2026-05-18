@@ -150,6 +150,34 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // reading.
   [EnemyType.TRAINING_DUMMY]: {},
 
+  // 2026-05-17 — GATES OF HELL surprise event (W16). Fire Giant: tanky
+  // semi-boss. Heavy melee + moderate ranged resistance, fire-immune
+  // (bone + magma body), SIEGE and DIVINE both ~+50% damage taken
+  // (siege cracks magma stone, divine punishes hellspawn). Poison and
+  // bleed still land at modest effectiveness — DoT is a real angle.
+  [EnemyType.FIRE_GIANT]: {
+    melee: 0.20,         // 80% reduction — basic infantry chip but don't crack
+    ranged: 0.40,        // 60% reduction — moderate, ballistae/scorpio chip slowly
+    siege: 1.50,         // +50% — siege onagers and ballistas crush this thing
+    fire: 0,             // immune (also covered by immuneFire JSON flag)
+    divine: 1.50,        // +50% — divine answers hellspawn
+    burn: 0,             // immune to BURN DoT (matches fire immunity)
+    slow: 0.50,          // partial slow effectiveness — slow it more, buy more time
+    poison: 0.85,        // mild resistance
+    bleed: 0.70          // mild resistance
+  },
+  // Hell Gate: stationary structure. No movement, no behavior. Takes
+  // full damage from melee / ranged / siege (no faction baseline
+  // either — see below for the per-enemy ELEMENTAL_FIRE override that
+  // makes it fire-immune for thematic reasons). Divine +50% so divine
+  // towers are the cleanest crack-and-shut answer.
+  [EnemyType.HELL_GATE]: {
+    fire: 0,             // immune (gates of HELL don't burn)
+    burn: 0,
+    divine: 1.50,        // +50% — divine vs gates of hell tracks lore-cleanly
+    siege: 1.25          // +25% — siege also useful, but divine is the cleanest answer
+  },
+
   // Iron Phalanx — totally immune to melee. Ranged armor tightened too.
   [EnemyType.IRON_PHALANX]: { melee: 0, ranged: 0.5, slow: 0.55, bleed: 0.45, poison: 0.55, burn: 0.7 },
   // Architectus — heavy plate, shrugs off ranged hits until the shield is

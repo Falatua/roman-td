@@ -154,7 +154,7 @@ export interface GameStateShape {
   lastSurpriseEventWave?: number;
   // Pending reward modal — set when an event ends and last enemy dies.
   // main.ts opens the reward modal when this is non-null and pauses.
-  pendingSurpriseReward?: { kind: 'INVASION' | 'UPRISING' } | null;
+  pendingSurpriseReward?: { kind: 'INVASION' | 'UPRISING' | 'GATES_OF_HELL' } | null;
   // Number of completed surprise events this run (stats / leaderboard hook).
   surpriseEventsCompleted?: number;
 }

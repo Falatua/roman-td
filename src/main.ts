@@ -39,7 +39,7 @@ import { towerName, enemyName, factionName, pretty } from './format';
 import { showEnemyInspect, showEnemyInspectByType } from './render/EnemyInspect';
 import { armorProfileForGroup, armorDamageTypeShortLabel } from './systems/EnemyResistances';
 import { SFX, setFactionBGM, setMuted, isMuted, playMusicTrack, stopMusicTrack, stopAllMusicTracks, surpriseEventSting, sfx, preloadAllSamples, unmuteAndRestartMusicTrack } from './render/AudioManager';
-import { tickSurpriseEvents, notifySurpriseEnemyResolved, clearSurpriseEventsForWaveEnd } from './systems/SurpriseEvents';
+import { tickSurpriseEvents, notifySurpriseEnemyResolved, clearSurpriseEventsForWaveEnd, notifyHellGateDestroyed } from './systems/SurpriseEvents';
 import { showSurpriseRewardModal } from './render/SurpriseReward';
 
 async function boot() {
@@ -1239,15 +1239,21 @@ async function boot() {
   // small chip in the top-left of the play area, dismissible by click,
   // auto-fades after 6 seconds. Color-coded to match the event tint
   // (red for invasion, purple for uprising).
-  function showSurpriseEventInfoChip(kind: 'INVASION' | 'UPRISING') {
+  function showSurpriseEventInfoChip(kind: 'INVASION' | 'UPRISING' | 'GATES_OF_HELL') {
     document.getElementById('surprise-info-chip')?.remove();
     const stage = document.getElementById('stage-wrap');
     if (!stage) return;
-    const accent = kind === 'INVASION' ? '#ff7733' : '#a050ff';
-    const headline = kind === 'INVASION' ? '⚔ INVASION' : '☠ UPRISING';
+    const accent = kind === 'INVASION' ? '#ff7733'
+                 : kind === 'UPRISING' ? '#a050ff'
+                 : '#ff4422';                           // GATES_OF_HELL hellfire red
+    const headline = kind === 'INVASION' ? '⚔ INVASION'
+                   : kind === 'UPRISING' ? '☠ UPRISING'
+                   : '🔥 GATES OF HELL';
     const body = kind === 'INVASION'
       ? 'Barbarians breach the perimeter! Enemies are coming from all four sides of the map this wave — not from the cave. Survive to claim a reward.'
-      : 'The dead are rising! Skeletal portals open in the center of the map this wave — enemies emerge from the ground, not the cave. Survive to claim a reward.';
+      : kind === 'UPRISING'
+        ? 'The dead are rising! Skeletal portals open in the center of the map this wave — enemies emerge from the ground, not the cave. Survive to claim a reward.'
+        : 'The Underworld breaks open at checkpoints 3 and 4! Two gates pump out fire giants — 500,000 HP each, fire-immune, slow but lethal. Crack the gates with siege or divine to shut them down before they overrun you.';
     const chip = document.createElement('div');
     chip.id = 'surprise-info-chip';
     chip.style.cssText = `
@@ -4209,7 +4215,7 @@ async function boot() {
           // player isn't lost when the screen suddenly tints red/purple
           // and enemies spawn from unusual locations. Auto-dismisses
           // after 6 seconds, dismissible by click, non-blocking.
-          showSurpriseEventInfoChip(ev.kind === 'INVASION' ? 'INVASION' : 'UPRISING');
+          showSurpriseEventInfoChip(ev.kind === 'INVASION' ? 'INVASION' : ev.kind === 'UPRISING' ? 'UPRISING' : 'GATES_OF_HELL');
         }
       }
       if (!ev) {
@@ -4325,6 +4331,45 @@ async function boot() {
           }
           // 2026-05-16 — surprise-event resolution check (death path).
           notifySurpriseEnemyResolved(state, e.id);
+          // 2026-05-17 — GATES OF HELL. If a HELL_GATE just died, mark
+          // its pointId destroyed so future fire-giant spawns from
+          // that gate get skipped. If a FIRE_GIANT just died, drop a
+          // burn-ground tile on its corpse that lasts the rest of the
+          // wave.
+          if (e.type === 'HELL_GATE' && typeof (e as any).__surprisePointId === 'number') {
+            notifyHellGateDestroyed(state, (e as any).__surprisePointId);
+            // Dramatic shatter VFX: fire-ring eruption + screen shake +
+            // ember burst at the gate's center. The gate sprite will
+            // fade naturally via the regular enemy-death animation
+            // hook in the renderer.
+            try {
+              renderer.triggerImpactRing?.(e.x, e.y, state.tick, 56, 0xff8833);
+              renderer.triggerImpactRing?.(e.x, e.y, state.tick + 0.08, 92, 0xff5511);
+              renderer.triggerImpactRing?.(e.x, e.y, state.tick + 0.16, 132, 0xaa1010);
+              renderer.triggerShake?.(6, 0.7);
+            } catch { /* renderer hooks optional */ }
+          }
+          if (e.type === 'FIRE_GIANT') {
+            // Permanent (wave-long) burn patch at the giant's death
+            // tile. Uses the existing burnPatches system with a huge
+            // `life` so it survives until clearWaveState wipes the
+            // array at wave end. sourceTier 5 = max DoT.
+            const patches = state.burnPatches ?? (state.burnPatches = []);
+            patches.push({
+              id: 'fg-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+              x: e.x,
+              y: e.y,
+              born: state.tick,
+              life: 9999,            // effectively wave-end-bound
+              sourceTier: 5
+            });
+            // Dramatic fire-pillar eruption on death.
+            try {
+              renderer.triggerImpactRing?.(e.x, e.y, state.tick, 42, 0xff7733);
+              renderer.triggerImpactRing?.(e.x, e.y, state.tick + 0.10, 68, 0xff4411);
+              renderer.triggerShake?.(4, 0.4);
+            } catch { /* optional */ }
+          }
           state.enemiesKilledThisWave++;
           state.score += Math.round(10 * e.maxHp / 10);
           // BLOATED mutation: explode into 3 minions of the same base type at

@@ -225,7 +225,7 @@ export const SFX = {
 //   • UPRISING → discordant church organ + bone-rattle clicks (necrotic ritual).
 // Both are synth-only (no sample files yet) so they ship without an asset
 // dependency. Each fires once at the moment the first spawn point lights up.
-export function surpriseEventSting(kind: 'INVASION' | 'UPRISING'): void {
+export function surpriseEventSting(kind: 'INVASION' | 'UPRISING' | 'GATES_OF_HELL'): void {
   if (kind === 'INVASION') {
     // Heavy low-brass descending triad — "the gates are burning"
     tone(165, 0.55, 'sawtooth', 0.30, 110);     // F3
@@ -235,7 +235,7 @@ export function surpriseEventSting(kind: 'INVASION' | 'UPRISING'): void {
     setTimeout(() => { for (let i = 0; i < 6; i++) setTimeout(() => tone(1800 + Math.random()*900, 0.04, 'square', 0.08, 600), i*55); }, 200);
     // Closing low impact thud
     setTimeout(() => { tone(45, 0.5, 'sawtooth', 0.34, 22); tone(110, 0.3, 'square', 0.20, 55); }, 1100);
-  } else {
+  } else if (kind === 'UPRISING') {
     // UPRISING — dissonant minor-second church organ stab + bone clicks
     tone(196, 0.7, 'triangle', 0.22, 196);      // G3 sustain
     setTimeout(() => tone(207, 0.7, 'triangle', 0.22, 207), 60);     // G#3 (minor 2nd) — instant "wrong"
@@ -246,6 +246,31 @@ export function surpriseEventSting(kind: 'INVASION' | 'UPRISING'): void {
     });
     // Closing dirge note — deep dissonant fundamental
     setTimeout(() => { tone(58, 0.9, 'sawtooth', 0.32, 28); tone(87, 0.7, 'square', 0.20, 55); }, 1200);
+  } else {
+    // GATES_OF_HELL (2026-05-17) — deep demonic horn + stone crack +
+    // sustained tritone. Lower and more menacing than Invasion fire,
+    // less ritualistic than Uprising. Reads as "something massive
+    // just tore open." Tritone (G + Db) is the classic "diabolus in
+    // musica" — perfect for hellgate opening.
+    tone(73, 1.20, 'sawtooth', 0.40, 36);        // D2 — very low sustained
+    setTimeout(() => tone(104, 1.10, 'sawtooth', 0.32, 52), 80);    // G#2 — tritone overlap
+    setTimeout(() => tone(55,  1.40, 'square',   0.30, 28), 220);   // A1 deep rumble
+    // Stone-crack impacts — three sharp low thuds spaced like a portal
+    // splitting open.
+    [400, 720, 1080].forEach((d, i) => {
+      setTimeout(() => {
+        tone(35 + i * 6, 0.20, 'sawtooth', 0.42, 18);     // sub-bass thump
+        tone(140 + i * 30, 0.10, 'square', 0.28, 70);      // crack overtone
+      }, d);
+    });
+    // Demonic chant — distant chorale of slightly-detuned voices
+    setTimeout(() => {
+      tone(146, 0.9, 'triangle', 0.18, 73);
+      tone(148, 0.9, 'triangle', 0.16, 74);     // slight detune for chorus effect
+      tone(220, 0.9, 'triangle', 0.14, 110);
+    }, 900);
+    // Closing scream-impact — fire eruption climax
+    setTimeout(() => { tone(40, 0.7, 'sawtooth', 0.38, 20); tone(123, 0.4, 'square', 0.22, 60); }, 1700);
   }
 }
 

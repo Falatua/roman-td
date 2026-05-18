@@ -69,7 +69,7 @@ function pickThreeOffers(): { id: string; rarity: string; def: any }[] {
 
 export function showSurpriseRewardModal(
   parent: HTMLElement,
-  kind: 'INVASION' | 'UPRISING',
+  kind: 'INVASION' | 'UPRISING' | 'GATES_OF_HELL',
   inventory: InventoryState,
   state: GameStateShape,
   onClose: () => void
@@ -80,7 +80,16 @@ export function showSurpriseRewardModal(
   // Cleared by closeModal() below — guarantees we never leave a stuck pause.
   (state as any).__surpriseRewardOpen = true;
 
-  const offers = pickThreeOffers();
+  // 2026-05-17 — GATES OF HELL reward is a single fixed legendary
+  // (LICH_GENERALS_SEAL — the dedicated boss-hunter, +75% damage vs
+  // bosses). Invasion / Uprising still show the 3-card picker. Build
+  // the offer list accordingly.
+  const offers = kind === 'GATES_OF_HELL'
+    ? (() => {
+        const def: any = (itemsData as any).LICH_GENERALS_SEAL;
+        return def ? [{ id: 'LICH_GENERALS_SEAL', rarity: 'LEGENDARY', def }] : [];
+      })()
+    : pickThreeOffers();
   if (offers.length === 0) {
     // Pool empty for some reason — fail safe, just close and skip reward.
     (state as any).__surpriseRewardOpen = false;
@@ -93,16 +102,24 @@ export function showSurpriseRewardModal(
   // so the framing leans into "you survived a true ordeal" rather than the
   // older "the breach is sealed mid-wave." Style matches the rest of the
   // game's voice (Roman, slightly grim, the Senate is watching).
-  const accent = kind === 'INVASION' ? '#ff7733' : '#a050ff';
+  const accent = kind === 'INVASION' ? '#ff7733'
+               : kind === 'UPRISING' ? '#a050ff'
+               : '#ff4422';                          // GATES_OF_HELL hellfire red
   const headline = kind === 'INVASION'
     ? 'YOU SURVIVED THE INVASION'
-    : 'YOU SURVIVED THE UPRISING';
+    : kind === 'UPRISING'
+      ? 'YOU SURVIVED THE UPRISING'
+      : 'YOU SHUT THE GATES OF HELL';
   const subline = kind === 'INVASION'
     ? 'The perimeter held. Smoke clears over the broken siege lines, and Rome stands. The Senate has prepared a trophy from the wreckage — claim one and continue the campaign.'
-    : 'The ground falls silent. The urns crack open and crumble; whatever rose from them has been put back. The empire honors your defense with one relic from the ritual circle.';
+    : kind === 'UPRISING'
+      ? 'The ground falls silent. The urns crack open and crumble; whatever rose from them has been put back. The empire honors your defense with one relic from the ritual circle.'
+      : 'The fires die down. The gates have closed and the demons have fled back to where they were summoned. The Senate awards you a legendary trophy fit for the slayer of the boss tier.';
   const eyebrow = kind === 'INVASION'
     ? '⚔ ACCOMPLISHMENT — INVASION REPELLED'
-    : '☠ ACCOMPLISHMENT — UPRISING QUELLED';
+    : kind === 'UPRISING'
+      ? '☠ ACCOMPLISHMENT — UPRISING QUELLED'
+      : '🔥 ACCOMPLISHMENT — GATES SEALED';
 
   const modal = document.createElement('div');
   modal.id = 'surprise-reward-modal';
@@ -115,9 +132,9 @@ export function showSurpriseRewardModal(
       <div style="font-size:11px;font-weight:bold;letter-spacing:5px;color:${accent};text-shadow:1px 1px 0 #000">${eyebrow}</div>
       <div style="font-size:22px;font-weight:bold;letter-spacing:4px;color:${accent};text-shadow:2px 2px 0 #000;margin-top:6px">${headline}</div>
       <div style="font-size:12px;color:#e8d6a8;line-height:1.5;margin-top:8px;letter-spacing:1px">${subline}</div>
-      <div style="font-size:10px;color:#aa9a4a;margin-top:4px;letter-spacing:2px">CHOOSE ONE</div>
+      <div style="font-size:10px;color:#aa9a4a;margin-top:4px;letter-spacing:2px">${kind === 'GATES_OF_HELL' ? 'CLAIM YOUR LEGENDARY' : 'CHOOSE ONE'}</div>
     </div>
-    <div id="surprise-reward-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>
+    <div id="surprise-reward-cards" style="display:grid;grid-template-columns:${kind === 'GATES_OF_HELL' ? '1fr' : 'repeat(3,1fr)'};gap:10px;${kind === 'GATES_OF_HELL' ? 'max-width:300px;margin:0 auto;' : ''}"></div>
     <div style="margin-top:14px;text-align:center;font-size:10px;color:#aa9a4a;letter-spacing:1px;font-style:italic">
       The game is paused. The Senate will wait.
     </div>

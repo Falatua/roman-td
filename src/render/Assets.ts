@@ -73,6 +73,11 @@ const MANIFEST: Record<string, string> = {
   DEMON_HELLHOUND: 'e3_demon_hellhound.png', CELTIC_FIRE_DEMON: 'e3_celtic_fire_demon.png', SHADOW_CAVALRY: 'e3_shadow_cavalry.png',
   DEMON_LEGATE: 'e3_demon_legate.png', DAEMON_IMPERATOR: 'e3_daemon_imperator.png', ARCHITECTUS: 'e3_architectus.png',
   IRON_PHALANX: 'e2_iron_phalanx.png',
+  // 2026-05-17 — GATES OF HELL surprise event (W16 only). Hell gate is
+  // a stationary "enemy" with HP that pumps out fire giants every 2s
+  // alternating; fire giant is the bulky slow semi-boss.
+  HELL_GATE: 'e3_hell_gate.png',
+  FIRE_GIANT: 'e3_fire_giant.png',
   // 2026-05 v11: DPS CHECK training dummy — a Roman pack mule with loot
   // crates. Walks the path harmlessly while the player measures damage.
   TRAINING_DUMMY: 'e_training_dummy.png',

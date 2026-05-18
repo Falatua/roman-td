@@ -1682,7 +1682,15 @@ export class RenderEngine {
         const t = tex(e.type);
         const sp = new Sprite(t || undefined);
         sp.anchor.set(0.5);
-        const size = e.isBoss ? GRID.TILE * 2.4 : GRID.TILE * 1.75;
+        // 2026-05-17 — Initial-claim sizing matches the per-frame
+        // sizing logic below so GATES OF HELL spawns don't pop in
+        // at the wrong size for the first frame.
+        const initIsHellGate = e.type === 'HELL_GATE';
+        const initIsFireGiant = e.type === 'FIRE_GIANT';
+        const size = initIsHellGate ? GRID.TILE * 3.0
+                   : initIsFireGiant ? GRID.TILE * 2.4
+                   : e.isBoss ? GRID.TILE * 2.4
+                   : GRID.TILE * 1.75;
         sp.width = size; sp.height = size;
         const hp = new Graphics();
         const statusBar = new Container();
@@ -1696,17 +1704,49 @@ export class RenderEngine {
       const smoothing = Math.min(1, Math.max(0.35, frameDt * 28));
       entry.displayX += (e.x - entry.displayX) * smoothing;
       entry.displayY += (e.y - entry.displayY) * smoothing;
+      // 2026-05-17 — GATES OF HELL type checks hoisted early so the bob,
+      // stride, size, and footstep logic below all share the same flags.
+      const isHellGate = e.type === 'HELL_GATE';
+      const isFireGiant = e.type === 'FIRE_GIANT';
       // Weight-based bob (game feel §6.2): boss = slow heavy sway, flyer = quick light hover, ground = mid
       const bobFreq = e.isBoss ? 1.4 : (e.isFlyer ? 6.0 : 3.4);
-      const bobAmp  = e.isBoss ? 1.8 : (e.isFlyer ? 4.0 : 0.8);
+      // 2026-05-17 — FIRE_GIANT gets the slow-heavy boss-tier bob amp
+      // so its walk reads as a real giant. HELL_GATE skips the bob
+      // entirely (it's a stationary structure).
+      const bobAmp  = isHellGate ? 0
+                    : isFireGiant ? 2.6
+                    : e.isBoss ? 1.8
+                    : (e.isFlyer ? 4.0 : 0.8);
       const strideRate = Math.max(2.5, e.currentSpeed * 5.2);
       const stride = Math.sin(state.tick * strideRate + e.pathIndex * 0.7);
-      const bobOff = e.currentSpeed > 0
-        ? Math.abs(stride) * bobAmp
-        : Math.sin(state.tick * bobFreq + (e.x + e.y) * 0.01) * bobAmp * 0.35;
+      const bobOff = isHellGate ? 0
+                   : e.currentSpeed > 0
+                     ? Math.abs(stride) * bobAmp
+                     : Math.sin(state.tick * bobFreq + (e.x + e.y) * 0.01) * bobAmp * 0.35;
+      // 2026-05-17 — FIRE GIANT FOOTSTEP. Drop a dust puff + scorch
+      // ember each time the stride completes a step (sin crosses zero
+      // descending, roughly twice per stride cycle). Tower-tremor: any
+      // tower within 0.6 tiles of the giant's feet feels a brief
+      // shake (handled in main.ts; here we just spawn the puff).
+      if (isFireGiant && e.currentSpeed > 0) {
+        const lastStride = (entry as any).__lastStrideSign ?? stride;
+        if (lastStride > 0 && stride <= 0) {
+          // Mid-step landing.
+          this.spawnEmberParticle(entry.displayX, entry.displayY + GRID.TILE * 0.35, /*warm=*/true);
+          this.spawnEmberParticle(entry.displayX + (Math.random() - 0.5) * 16, entry.displayY + GRID.TILE * 0.35, /*warm=*/true);
+          // Small ground char ring — reuse triggerImpactRing in a low-key warm tone.
+          this.triggerImpactRing(entry.displayX, entry.displayY + GRID.TILE * 0.35, state.tick, 14, 0x884422);
+        }
+        (entry as any).__lastStrideSign = stride;
+      }
       const dirX = (e.dirX ?? Math.sign(e.x - (e.prevX ?? e.x))) || 1;
       const dirY = (e.dirY ?? Math.sign(e.y - (e.prevY ?? e.y))) || 0;
-      const size = e.isBoss ? GRID.TILE * 2.4 : GRID.TILE * 1.75;
+      // 2026-05-17 — GATES OF HELL sprite sizing (isHellGate/isFireGiant
+      // declared earlier at the top of the per-enemy block).
+      const size = isHellGate ? GRID.TILE * 3.0
+                 : isFireGiant ? GRID.TILE * 2.4
+                 : e.isBoss ? GRID.TILE * 2.4
+                 : GRID.TILE * 1.75;
       const baseScaleX = size / (entry.sp.texture?.width || 1);
       const baseScaleY = size / (entry.sp.texture?.height || 1);
       const runAmt = e.currentSpeed > 0 ? Math.min(1, e.currentSpeed / 2.4) : 0;
@@ -1791,6 +1831,17 @@ export class RenderEngine {
             // that the position assignment respects).
             (entry as any).__surpriseRiseOffset = (1 - emergeT) * 22;
             entry.sp.alpha = Math.max(0.2, emergeT);
+          } else if (kind === 'GATES_OF_HELL') {
+            // Gates rise dramatically (40px below → up) with a warm
+            // red-orange tint that fades to white as they lock into
+            // place. Fire giants get the same rise but shorter (28px)
+            // and faster (since they emerge AFTER the gate).
+            const rise = isHellGate ? 40 : 28;
+            (entry as any).__surpriseRiseOffset = (1 - emergeT) * rise;
+            entry.sp.alpha = Math.max(0.15, emergeT);
+            // Warm orange-red tint blending to white.
+            const warmColor = blendWithWhite(0xff5522, emergeT);
+            entry.sp.tint = warmColor;
           }
         }
       } else if ((entry as any).__surpriseRiseOffset) {
@@ -2603,6 +2654,12 @@ export class RenderEngine {
   // ground cracks, orbiting floating skulls, and a vertical soul column
   // per urn. Cleared and redrawn every frame the event is alive.
   private uprisingOverlayGfx?: Graphics;
+  // 2026-05-17 — GATES OF HELL warm-portal overlay. Mirrors the uprising
+  // overlay pattern but uses fire colors. Draws around the live
+  // HELL_GATE enemies (which render via the regular enemy sprite path)
+  // — ground cracks in red-orange, pulsing fire aura ring, orbiting
+  // ember demons, ground-shimmer.
+  private gatesOfHellOverlayGfx?: Graphics;
   drawBurnPatches(state: GameStateShape, tick: number) {
     const patches = state.burnPatches;
     // Reset pool index; we'll claim entries as we iterate live patches.
@@ -2662,7 +2719,14 @@ export class RenderEngine {
     const ev = state.activeSurpriseEvent;
     let activeIdx = 0;
 
-    if (ev) {
+    // 2026-05-17 — GATES OF HELL doesn't use the surpriseActiveSprites
+    // pool (the HELL_GATE enemy renders via the normal enemy sprite
+    // pipeline). Skip the sprite-pool loop for this kind so we don't
+    // draw a phantom fire/urn over the gate enemy.
+    if (ev && ev.kind === SurpriseEventKind.GATES_OF_HELL) {
+      // Hide any leftover sprite pool entries from a prior event.
+      for (const sp of this.surpriseActiveSprites) sp.visible = false;
+    } else if (ev) {
       const isInvasion = ev.kind === SurpriseEventKind.INVASION;
       // ── Per-point visual state (one sprite per pointId 0..3) ────────
       // Collect the unique pointIds in this event + the FIRST spawnAt
@@ -2959,6 +3023,116 @@ export class RenderEngine {
     // "pull it away" after spawning to keep the wave clean. Any sprites
     // still in the scar pool from a prior frame are hidden.
     for (const sp of this.surpriseScarSprites) sp.visible = false;
+
+    // ── GATES OF HELL warm-portal overlay (2026-05-17). Drawn around
+    //    each live HELL_GATE enemy. Mirrors the uprising overlay layer
+    //    pattern but in fire colors: ground cracks red-orange, pulsing
+    //    fire aura rings, orbiting ember demons, vertical fire pillar
+    //    through the arch. Fades with the event envelope so a
+    //    destroyed gate's overlay decays naturally.
+    if (!this.gatesOfHellOverlayGfx) {
+      this.gatesOfHellOverlayGfx = new Graphics();
+      this.layers.fx.addChildAt(this.gatesOfHellOverlayGfx, 0);
+    }
+    const gg = this.gatesOfHellOverlayGfx;
+    gg.clear();
+    if (ev && ev.kind === SurpriseEventKind.GATES_OF_HELL) {
+      // Find each live gate by its enemy entry. Stationary, so the
+      // overlay sits at the enemy's current x/y.
+      for (const e of state.enemies.values()) {
+        if (e.type !== 'HELL_GATE') continue;
+        // Fade-in factor based on time since spawn (matches the rise
+        // window the gate sprite uses).
+        const spawnTick = (e as any).__surpriseSpawnTick ?? state.tick;
+        const fadeIn = Math.max(0, Math.min(1, (state.tick - spawnTick + VFX_TIMING.RISE_SECONDS) / VFX_TIMING.RISE_SECONDS));
+        let envAlpha = fadeIn;
+        // HP-based dim: as the gate takes damage, the overlay fades.
+        // A near-dead gate has a half-strength overlay.
+        const hpFrac = Math.max(0, e.hp / e.maxHp);
+        envAlpha *= 0.35 + 0.65 * hpFrac;
+        if (ev.vfxFadeOutAt > 0) {
+          const fp = (state.tick - ev.vfxFadeOutAt) / VFX_TIMING.FADEOUT_SECONDS;
+          envAlpha *= Math.max(0, 1 - fp);
+        }
+        if (envAlpha <= 0.01) continue;
+        const cx = e.x;
+        const cy = e.y + GRID.TILE * 0.45;             // ground anchor
+        const tilesPulse = 1 + 0.18 * Math.sin(state.tick * 2.2);
+        // 1. GROUND CRACKS — 10 jagged red-orange lines radiating from
+        //    the gate base. Two-segment with mid-kink for organic feel.
+        const crackR = GRID.TILE * 2.0 * tilesPulse;
+        gg.lineStyle(2.5, 0xff5511, 0.50 * envAlpha);
+        for (let a = 0; a < 10; a++) {
+          const baseAng = (a / 10) * Math.PI * 2;
+          const jitter = Math.sin(state.tick * 3 + a) * 0.14;
+          const ang = baseAng + jitter;
+          const x1 = cx + Math.cos(ang) * (GRID.TILE * 0.35);
+          const y1 = cy + Math.sin(ang) * (GRID.TILE * 0.12);
+          const midAng = ang + Math.sin(state.tick * 2.5 + a) * 0.32;
+          const xm = cx + Math.cos(midAng) * (crackR * 0.55);
+          const ym = cy + Math.sin(midAng) * (crackR * 0.30);
+          const xe = cx + Math.cos(ang) * crackR;
+          const ye = cy + Math.sin(ang) * crackR * 0.50;
+          gg.moveTo(x1, y1).lineTo(xm, ym).lineTo(xe, ye);
+        }
+        // 2. PULSING FIRE AURA RING — two stacked elliptical rings,
+        //    outer breathes wider than inner.
+        const innerR = GRID.TILE * 1.4 * tilesPulse;
+        const outerR = GRID.TILE * 2.1 * tilesPulse;
+        gg.lineStyle(4, 0xff7733, 0.50 * envAlpha);
+        gg.drawEllipse(cx, cy + 4, innerR, innerR * 0.42);
+        gg.lineStyle(2.5, 0xaa3311, 0.35 * envAlpha);
+        gg.drawEllipse(cx, cy + 4, outerR, outerR * 0.42);
+        // 3. FIRE PILLAR through the arch — vertical 3-layer red-
+        //    orange gradient rising from the gate's center.
+        const colH = GRID.TILE * 3.2;
+        const colTopY = cy - GRID.TILE * 2.5 - Math.sin(state.tick * 2.5) * 4;
+        const swell = 1 + 0.18 * Math.sin(state.tick * 4.5);
+        const widths = [28, 18, 10];
+        const colors = [0x551100, 0xaa3311, 0xff7733];
+        const alphas = [0.16, 0.30, 0.45];
+        for (let i = 0; i < widths.length; i++) {
+          gg.beginFill(colors[i], alphas[i] * envAlpha);
+          gg.drawRect(cx - (widths[i] * swell) / 2, colTopY, widths[i] * swell, colH);
+          gg.endFill();
+        }
+        // Cap ellipse at the bottom of the pillar.
+        gg.beginFill(0xff7733, 0.45 * envAlpha);
+        gg.drawEllipse(cx, cy - GRID.TILE * 0.45, 18, 6);
+        gg.endFill();
+        // 4. ORBITING EMBER DEMONS — 5 small fire orbs drifting in an
+        //    elliptical orbit around the gate. Each is just a circle
+        //    with a halo, no per-frame allocation.
+        const ORBS = 5;
+        for (let s = 0; s < ORBS; s++) {
+          const orbitT = state.tick * 0.7 + (s / ORBS) * Math.PI * 2;
+          const orbitR = GRID.TILE * 1.8;
+          const sx = cx + Math.cos(orbitT) * orbitR;
+          const sy = cy - GRID.TILE * 0.55 + Math.sin(orbitT) * orbitR * 0.42
+                       + Math.sin(state.tick * 2.8 + s) * 2.5;
+          const behind = Math.sin(orbitT) < 0;
+          const sa = (behind ? 0.4 : 0.85) * envAlpha;
+          const sz = 4 + (behind ? -0.5 : 0.5);
+          // Outer halo glow
+          gg.beginFill(0xff5522, sa * 0.40);
+          gg.drawCircle(sx, sy, sz * 1.8);
+          gg.endFill();
+          // Inner bright core
+          gg.beginFill(0xffaa44, sa);
+          gg.drawCircle(sx, sy, sz);
+          gg.endFill();
+          // Brightest center
+          gg.beginFill(0xfff0aa, sa * 0.9);
+          gg.drawCircle(sx, sy, sz * 0.4);
+          gg.endFill();
+        }
+        // Emit an ember particle every ~5 frames into the gore pool
+        // for extra fire-fluff around the gate.
+        if ((this.surpriseEmberClock += 1) % 5 === 0) {
+          this.spawnEmberParticle(cx + (Math.random() - 0.5) * 14, cy - 8, /*warm=*/true);
+        }
+      }
+    }
 
     // ── ATMOSPHERIC PROPS (2026-05-16 polish) ──────────────────────────
     // Small scattered fires (Invasion = "city is besieged"), or ritual

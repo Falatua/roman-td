@@ -277,7 +277,7 @@
     "wave": 17,
     "type": "M",
     "faction": "UNDEAD_CARTHAGE",
-    "hpMult": 3.0,
+    "hpMult": 3.75,
     "gold": 15,
     "spawns": [
       {
@@ -298,7 +298,7 @@
     "wave": 18,
     "type": "F",
     "faction": "UNDEAD_CARTHAGE",
-    "hpMult": 2.5,
+    "hpMult": 3.25,
     "gold": 15,
     "spawns": [
       {
@@ -311,7 +311,7 @@
     "wave": 19,
     "type": "M",
     "faction": "SUPER_DEMONS",
-    "hpMult": 3.5,
+    "hpMult": 4.0,
     "gold": 17,
     "spawns": [
       {
