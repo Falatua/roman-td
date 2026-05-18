@@ -61,23 +61,35 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   closeGameModals();
   const modal = document.createElement('div');
   modal.id = 'codex-modal';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:60;`;
+  // 2026-05-18 v2 — RESPONSIVE CLAMPING. The modal scrolls vertically
+  // and aligns from the top of the viewport so an enlarged panel can
+  // never push its tabs / close button above the top edge regardless
+  // of viewport height (fullscreen vs windowed, mobile orientation
+  // changes, devtools open, etc.). align-items:flex-start anchors
+  // the top; padding clamps a small breathing strip from the top
+  // edge; overflow:auto on the modal lets the user scroll the
+  // whole modal if the panel is taller than the viewport — even
+  // when the panel itself has overflow set.
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.6);z-index:60;padding:16px 8px;box-sizing:border-box;overflow:auto;`;
   const panel = document.createElement('div');
   // 2026-05-18 — Codex window enlarged so the dense per-tab tables
   // (Items, Enemies, Combinations) have more horizontal breathing room
   // and the player can scan rows without horizontal cramping. Width
-  // bumped from 720px → 1040px (clamped to 96vw), max-height 90vh →
-  // 92vh. The body padding inside cards stays as-is — only the modal
-  // grew, so cards naturally widen by ~40% which is where the
-  // readability win lives.
-  panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:18px;width:min(1040px,96vw);max-height:92vh;overflow:auto;font-family:'Courier New',monospace;font-size:12px;box-shadow:0 0 28px rgba(212,175,55,0.35);`;
+  // bumped from 720px → 1040px (clamped to 96vw). max-height removed
+  // in favor of letting the MODAL scroll (responsive clamping above)
+  // — that way the codex top tabs are always reachable even when
+  // the viewport is very short.
+  panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:18px;width:min(1040px,96vw);font-family:'Courier New',monospace;font-size:12px;box-shadow:0 0 28px rgba(212,175,55,0.35);`;
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
     <h2 style="margin:0;color:#d4af37;letter-spacing:3px">LEGION CODEX</h2>
     <button id="codex-close" style="background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:6px 12px;cursor:pointer;font-family:inherit">CLOSE</button>
   </div>
   <div id="codex-tabs" style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;position:sticky;top:0;background:#1a1410;padding:4px 0;z-index:5;border-bottom:1px solid #3a3025"></div>
   <input id="codex-search" type="text" placeholder="🔍 Filter cards in this tab..." style="width:100%;box-sizing:border-box;padding:6px 10px;margin-bottom:8px;background:#0c0a08;border:1px solid #5a4a30;color:#e8d6a8;font-family:'Courier New',monospace;font-size:11px;letter-spacing:1px;outline:none;"/>
-  <div id="codex-body" style="padding-top:6px"></div>`;
+  <div id="codex-body" style="padding-top:6px"></div>
+  <div style="display:flex;justify-content:center;margin-top:12px;padding-top:10px;border-top:1px solid #3a3025">
+    <button id="codex-close-bottom" style="background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:8px 18px;cursor:pointer;font-family:inherit;letter-spacing:2px">CLOSE</button>
+  </div>`;
   modal.appendChild(panel);
   parent.appendChild(modal);
 
@@ -145,10 +157,18 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   // 2026-05 v11: bind the body-portal hover handler so combo-sprite tooltips
   // escape the codex modal's overflow boundary and never clip again.
   bindComboTooltipPortal(modal);
-  document.getElementById('codex-close')!.onclick = () => {
+  const closeCodex = () => {
     modal.remove();
     document.getElementById('combo-tooltip-portal')?.remove();
+    document.removeEventListener('keydown', escClose);
   };
+  document.getElementById('codex-close')!.onclick = closeCodex;
+  document.getElementById('codex-close-bottom')!.onclick = closeCodex;
+  // 2026-05-19 — ESC closes the codex (universal-escape behavior).
+  function escClose(e: KeyboardEvent) {
+    if (e.key === 'Escape') { e.stopPropagation(); closeCodex(); }
+  }
+  document.addEventListener('keydown', escClose);
 }
 
 function renderTab(tab: string): string {
@@ -168,7 +188,7 @@ function renderTab(tab: string): string {
             <li>A tower with a <span style="color:#ee5555">pulsing red ring AND glittery sparkles</span> can combine into something nasty. Click it.</li>
             <li>Click any tower to see its full <b style="color:#88ff88">stat breakdown</b> — base damage, every modifier, the actual final number. No hidden math.</li>
             <li>Click any enemy on the field to see exactly what it resists and why your shots aren't landing.</li>
-            <li>Hotkeys: <b>SPACE</b> starts a wave, <b>C</b> opens this Codex, <b>B</b>/<b>G</b> opens the gate shop, <b>M</b> opens the Mercator (when he's in town), <b>ESC</b> closes anything.</li>
+            <li>Hotkeys: <b>C</b> opens this Codex, <b>B</b>/<b>G</b> opens the gate shop, <b>M</b> opens the Mercator (when he's in town), <b>P</b> toggles pause, <b>ESC</b> closes any open menu. (No SPACE-to-start anymore — use the START WAVE button.)</li>
             <li>You can press START WAVE whenever you want. Leftover prospects auto-convert to walls. The game won't wait for you to be ready; it'll just punish you faster.</li>
             <li>The <b style="color:#88ff88">QUEST panel</b> bottom-right gives away free gold, items, and towers. Pretending it's not there is a choice.</li>
             <li><b style="color:#ffd34d">Mercator</b> (W4/9/14/19) sells real T5 towers at flat 50g — that's how you fill a recipe gap you can't roll. He has his own <b>★ MERCATOR</b> button in the HUD; the regular SHOP button still works for the gate at the same time.</li>
@@ -254,6 +274,18 @@ function renderTab(tab: string): string {
           ${noteCard('Iron Phalanx (W17)', 'Melee-immune armored group joins the W17 spawn. Only RANGED damage can hurt them. Plan a ranged backbone before W17.')}
           ${noteCard('Boss Waves (solo, +HP)', 'Scheduled bosses arrive <b style="color:#ff5050">ALONE with 2× HP</b> — no mob horde. The wave is one focused fight. Faction weather intensifies ×1.5. No atmospheric hazards on boss waves — the play area stays clean so positioning reads clearly.')}
           ${noteCard('Boss Leak Toll', '<b style="color:#ff5050">Every boss costs 10 lives when it reaches Rome</b>. The boss dies at the gate but is <b>REBORN ON THE NEXT WAVE with the HP he had at the gate</b> — chip damage carries over (Hannibal leaks at 5% HP, returns at 5% HP). The 10 lives is the real toll; the rebirth is a second swing for you to finish him.')}
+        </div>
+      `)}
+      ${foldSection('✨ AURA BUFF TILES — FIVE GLOWING SPOTS ON THE MAP', `
+        <div style="font-size:11px;color:#cdb98a;line-height:1.6;margin-bottom:10px;background:#0c0a08;padding:10px 14px;border-left:3px solid #a060ff">
+          Five glowing tiles sit at fixed positions across the map. A tower placed on one inherits the tile's bonus — auras stack multiplicatively with items and other buffs, so a Tempo Tile + Cavalry Spur combo lands at <b>1.30 × 1.30 = 1.69× attack speed</b>. Tile positions never change between runs so every player has the same five strategic anchors to plan around. <b>Hover</b> any tile to see its full effect; the glowing ring brightens when a tower is sitting on top. Stone walls placed on an aura tile do nothing — the bonus only fires for actual towers.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          ${noteCard('🟣 TEMPO TILE (Purple)', '<b style="color:#a060ff">+30% attack speed</b> for any tower placed on it. Best for fast-firing towers (Velites, Eques, Pugio Assassin) and DoT carriers that want more tick applications.')}
+          ${noteCard('🔵 WAR TILE (Blue)', '<b style="color:#66aaff">+30% damage</b> for any tower placed on it. Universal stat boost — flatter than the tempo tile but works on every tower role from siege to melee.')}
+          ${noteCard('🔴 TYRANT TILE (Red)', '<b style="color:#ff5050">+50% damage vs Bosses</b>. Specialized — a boss-killer tower (Pontifex, Scorpio, Triumphator) here becomes legitimately scary on W5/10/15/20.')}
+          ${noteCard('🟢 AETHER TILE (Cyan)', '<b style="color:#66ffdd">Any tower on this tile can target FLYERS</b>, including melee towers without Aquila Talons. A cheaper alternative to the legendary item — but only one tower at a time benefits.')}
+          ${noteCard('🟡 TREASURY TILE (Gold)', '<b style="color:#ffd34d">+2 Denarii per kill</b> on top of any other gold sources. A high-traffic tower placed here pays for itself in 2-3 waves.')}
         </div>
       `)}
       ${foldSection('🌀 SURPRISE EVENTS — INVASION, UPRISING, GATES OF HELL', `
@@ -921,11 +953,22 @@ function renderTab(tab: string): string {
       }
       return header + renderComboCard(c, cs);
     }).join('');
+    // 2026-05-19 — Legend bumped to a proper section block above the
+    // ingredient list. Player feedback: the previous inline strip
+    // was easy to miss + the color meanings weren't being noticed.
+    // Now it's a fixed banner stacked at the top of the tab with
+    // bigger color chips and one-word labels.
     const legend = `
-      <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:#cdb98a;flex-wrap:wrap">
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#88ff88;display:inline-block;border:1px solid #000"></span> READY — kept towers fit, build now</span>
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ff9933;display:inline-block;border:1px solid #000"></span> PROSPECT — needs a pending prospect kept</span>
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ffd34d;display:inline-block;border:1px solid #000"></span> PARTIAL — have some ingredients</span>
+      <div style="display:flex;gap:14px;margin:8px 0 12px;padding:10px 14px;background:#0c0a08;border:2px solid #5a4a30;font-size:11px;color:#cdb98a;flex-wrap:wrap;align-items:center">
+        <span style="font-size:10px;letter-spacing:3px;color:#ffd34d;font-weight:bold">INGREDIENT COLORS:</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:14px;background:#88ff88;display:inline-block;border:1px solid #000;border-radius:2px"></span><b style="color:#88ff88">GREEN</b> — owned (kept tower fits)</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:14px;background:#ff9933;display:inline-block;border:1px solid #000;border-radius:2px"></span><b style="color:#ff9933">ORANGE</b> — pending prospect (keep it first)</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:14px;background:#5a4a30;display:inline-block;border:1px solid #000;border-radius:2px"></span><b style="color:#aa9a4a">GRAY</b> — missing (roll, buy, or combine)</span>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:-4px;margin-bottom:8px;font-size:10px;color:#cdb98a;flex-wrap:wrap;padding-left:6px">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#88ff88;display:inline-block;border:1px solid #000"></span> READY — all ingredients owned, build now</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ff9933;display:inline-block;border:1px solid #000"></span> NEEDS PROSPECT — keep a prospect to unlock</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ffd34d;display:inline-block;border:1px solid #000"></span> PARTIAL — have some, missing some</span>
         <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#5a4a30;display:inline-block;border:1px solid #000"></span> LOCKED — none owned</span>
       </div>`;
     return `${section('COMBINATION LOGIC',

@@ -1,5 +1,5 @@
 import { GamePhase, TileType, TowerType, TargetingMode, DrawCard, DamageType } from './types';
-import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD } from './constants';
+import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS } from './constants';
 import { createGameState } from './GameState';
 import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
@@ -13,7 +13,7 @@ import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercator
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel } from './systems/EconomySystem';
-import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles } from './systems/TowerSystem';
+import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAuraTileKind } from './systems/TowerSystem';
 import { scanCombos, executeCombo } from './systems/CombinationEngine';
 import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
@@ -962,13 +962,27 @@ async function boot() {
         <div style="display:flex;gap:2px">${armorChips}</div>
       </div>
     `;
-    // Rows — each gets a left-stripe accent in its category color.
+    // 2026-05-19 — Tag layout: short callouts render as compact chips
+    // (flex-wrap, blocky border, small font) so 4-6 tags stack
+    // cleanly without colliding. Long callouts (>60 chars, e.g.
+    // mechanic explainers) fall back to full-width rows so the
+    // detail is still readable. Both styles share the category
+    // accent color so the visual taxonomy stays consistent.
     const rows = allLines.map(l => {
       const accent = COLOR[l.cat];
+      const isShort = l.text.length <= 60;
+      if (isShort) {
+        return `<span style="display:inline-block;background:rgba(255,255,255,0.04);border-left:3px solid ${accent};padding:3px 8px 3px 6px;margin:2px 4px 2px 0;font-size:10.5px;color:#e8d6a8;letter-spacing:0.4px;line-height:1.35;vertical-align:top">${l.text}</span>`;
+      }
       return `<div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0 4px 8px;border-left:3px solid ${accent};margin:2px 0;background:rgba(255,255,255,0.02)">
-        <span style="flex:1;color:#e8d6a8;font-size:12px;letter-spacing:0.5px;word-break:break-word">${l.text}</span>
+        <span style="flex:1;color:#e8d6a8;font-size:11.5px;letter-spacing:0.4px;line-height:1.4;word-break:break-word">${l.text}</span>
       </div>`;
     }).join('');
+    // Wrap the chips in a flex container so they wrap and never
+    // overflow the panel's max-width.
+    const rowsHtml = `<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0 2px;padding-top:4px">${rows}</div>`;
+    // (the older variable used downstream is renamed to rowsHtml)
+    void rows;
     // When collapsed, only the header row renders — the body content
     // (armor strip + callouts) is hidden so the panel shrinks to a
     // compact bar. The collapse button stays clickable so the player
@@ -981,7 +995,7 @@ async function boot() {
     // rebuild when the content signature is unchanged from the last
     // tick. Toggle clicks update localStorage which IS part of the sig
     // so the next frame DOES rebuild with the new state.
-    const newHtml = collapsed ? header : (header + armorStrip + rows);
+    const newHtml = collapsed ? header : (header + armorStrip + rowsHtml);
     const newSig = `${collapsed ? '1' : '0'}|${newHtml.length}|${allLines.length}|${state.wave}|e${state.endlessWave ?? 0}`;
     if ((brief as any).__sig !== newSig) {
       (brief as any).__sig = newSig;
@@ -1628,12 +1642,18 @@ async function boot() {
     if (!bar) {
       bar = document.createElement('div');
       bar.id = 'prospect-reminder';
-      bar.style.cssText = `position:absolute;top:8px;left:50%;transform:translateX(-50%);padding:8px 16px;background:linear-gradient(180deg,rgba(26,20,16,0.96),rgba(12,10,8,0.96));border:2px solid #ffd34d;color:#fff8e0;font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:1.5px;z-index:75;cursor:pointer;text-shadow:1px 1px 0 #000;box-shadow:0 0 16px rgba(255,211,77,0.45);display:flex;align-items:center;gap:10px;`;
+      // 2026-05-19 — Banner tightened. Was a wide top-center bar that
+      // collided with the wave-brief panel and the codex/shop buttons
+      // on smaller viewports. Now a compact pill stacked into a corner
+      // with shorter copy. Top-right is clear of the wave-brief
+      // (lower-left) and the right-side HUD column.
+      bar.style.cssText = `position:absolute;top:8px;right:14px;padding:6px 12px;background:linear-gradient(180deg,rgba(26,20,16,0.96),rgba(12,10,8,0.96));border:2px solid #ffd34d;color:#fff8e0;font-family:'Courier New',monospace;font-size:10.5px;font-weight:bold;letter-spacing:1.2px;z-index:75;cursor:pointer;text-shadow:1px 1px 0 #000;box-shadow:0 0 12px rgba(255,211,77,0.45);display:flex;flex-direction:column;align-items:center;gap:2px;max-width:200px;text-align:center;`;
       bar.addEventListener('click', () => { bumpDismissCount(); bar?.remove(); }, { once: true });
       document.getElementById('stage-wrap')?.appendChild(bar);
     }
     const left = state.keepsRemainingThisRound ?? 2;
-    bar.innerHTML = `<span style="color:#ffd34d">⚠</span> KEEP UP TO <span style="color:#ffd34d">2 PROSPECTS</span> THIS ROUND (${left} left) — the rest cement into walls <span style="color:#aa9a4a;font-weight:normal;font-size:10px;letter-spacing:1px">— click to dismiss</span>`;
+    bar.innerHTML = `<span style="color:#ffd34d">⚠ KEEP <b>${left}</b> OF 2 PROSPECTS</span>
+      <span style="color:#aa9a4a;font-weight:normal;font-size:9px;letter-spacing:1px">rest cement → walls · click ✕</span>`;
   }
   // ─── Prospect sidebar ──────────────────────────────────────────────────
   // Right-edge vertical panel showing every prospect for the current round
@@ -3798,12 +3818,46 @@ async function boot() {
       if (tw.tileX === t.col && tw.tileY === t.row) { hoverTowerId = tw.id; break; }
     }
     renderer.hoveredTowerId = hoverTowerId;
+    // 2026-05-19 — Aura tile tooltip. Hovering one of the 5 fixed
+    // buff tiles pops a small chip explaining the tile's effect.
+    updateAuraTileTooltip(t.col, t.row, e.clientX, e.clientY);
   });
   canvas.addEventListener('mouseleave', () => {
     hoverCol = -1; hoverRow = -1;
     renderer.drawHover(-1, -1, false);
     renderer.hoveredTowerId = null;
+    document.getElementById('aura-tile-tooltip')?.remove();
   });
+  // 2026-05-19 — Aura-tile hover tooltip helper. Lazy-creates the
+  // popup element on first hover, positions it near the cursor, hides
+  // when the cursor leaves an aura tile. Constant lookup since there
+  // are only 5 fixed tiles.
+  function updateAuraTileTooltip(col: number, row: number, mouseX: number, mouseY: number) {
+    const aura = AURA_TILES.find(a => a.col === col && a.row === row);
+    let tip = document.getElementById('aura-tile-tooltip');
+    if (!aura) {
+      if (tip) tip.remove();
+      return;
+    }
+    const eff = AURA_TILE_EFFECTS[aura.kind];
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'aura-tile-tooltip';
+      tip.style.cssText = `position:fixed;pointer-events:none;z-index:120;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid #d4af37;padding:8px 12px;font-family:'Courier New',monospace;color:#e8d6a8;font-size:11px;letter-spacing:0.5px;line-height:1.5;box-shadow:0 0 14px rgba(0,0,0,0.55);max-width:240px;`;
+      document.body.appendChild(tip);
+    }
+    const colorHex = '#' + eff.color.toString(16).padStart(6, '0');
+    tip.innerHTML = `
+      <div style="font-size:10px;letter-spacing:2px;color:${colorHex};font-weight:bold;margin-bottom:4px">${eff.label}</div>
+      <div style="font-size:11px;color:#fff8e0;line-height:1.45">${eff.description}</div>
+      <div style="margin-top:4px;font-size:9px;color:#aa9a4a;letter-spacing:1px;font-style:italic">place a tower on this tile to activate</div>`;
+    // Position: slightly below-right of cursor, clamped to viewport.
+    const w = 260, h = 80;
+    const left = Math.min(window.innerWidth - w - 8, Math.max(8, mouseX + 14));
+    const top  = Math.min(window.innerHeight - h - 8, Math.max(8, mouseY + 14));
+    tip.style.left = left + 'px';
+    tip.style.top  = top + 'px';
+  }
   canvas.addEventListener('click', (e: MouseEvent) => { try { return _handleCanvasClick(e); } catch (err) { Logger.error('CanvasClick', err); return; } });
   function _handleCanvasClick(e: MouseEvent) {
     const rect = canvas.getBoundingClientRect();
@@ -4129,8 +4183,38 @@ async function boot() {
         renderShop(app, mercatorShop, state, inventory, { onClose: () => document.getElementById('shop-modal')?.remove() });
       }
     }
-    else if (k === ' ') { e.preventDefault(); /* Start wave */ const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('START WAVE')) as HTMLButtonElement | undefined; btn?.click(); }
-    else if (k === 'escape') { document.getElementById('tower-menu')?.remove(); document.getElementById('shop-modal')?.remove(); document.getElementById('codex-modal')?.remove(); }
+    // 2026-05-19 — SPACE start-wave hotkey removed. Players were
+    // accidentally launching waves with stray taps during placement;
+    // the explicit START WAVE button is the only way now.
+    else if (k === 'escape') {
+      // 2026-05-19 — Universal ESC: close ANY open modal. Adds the
+      // major modals we've shipped since the original 3 (tower /
+      // shop / codex):
+      //   • tower-leaderboard (live wave breakdown)
+      //   • enemy-inspect (click-on-enemy details)
+      //   • settings-panel / pause-overlay aren't modals, skip
+      //   • surprise-reward-modal — pause-blocking, ESC closes
+      //   • inventory-modal — already had its own ESC, this is a
+      //     belt-and-suspenders catch
+      //   • mercator-shop / gate-shop both render through shop-modal
+      //   • dps-check-summary
+      //   • settings-panel
+      const modalsToClose = [
+        'tower-menu', 'shop-modal', 'codex-modal', 'tower-leaderboard',
+        'enemy-inspect', 'surprise-reward-modal', 'inventory-modal',
+        'dps-check-summary', 'settings-panel', 'hall-of-glory',
+        'end-summary', 'endless-failure', 'pick-keeper-guide',
+        'final-hour-hype', 'boss-warning-1', 'boss-warning-2',
+        'final-boss-hp'
+      ];
+      for (const id of modalsToClose) document.getElementById(id)?.remove();
+      // Also clear any in-flight "click a row" modes triggered by the
+      // SELL STONES button — pressing ESC mid-mode aborts cleanly.
+      if ((state as any).__sellStoneMode) {
+        (state as any).__sellStoneMode = false;
+        (state as any).__sellStoneSelection = new Set<string>();
+      }
+    }
   });
 
   // 2026-05 v11 (B1 Pause helpers).
@@ -4646,6 +4730,14 @@ async function boot() {
           // enemy. Stack additively if both are equipped.
           if (t.equippedItems?.includes('GOLD_PURSE'))                  { earnGold(state, 1); goldEarnedHere += 1; }
           if (t.equippedItems?.includes('HANNIBALS_STRATEGY_SCROLL'))   { earnGold(state, 2); goldEarnedHere += 2; }
+          // 2026-05-19 — Gate-exclusive PRAETORIAN_COIN: +1g per kill.
+          // Cheaper / weaker than GOLD_PURSE (+1) at Mercator; same
+          // family (ECONOMY) so they can't both be equipped.
+          if (t.equippedItems?.includes('PRAETORIAN_COIN'))              { earnGold(state, 1); goldEarnedHere += 1; }
+          // 2026-05-19 — TREASURY TILE (GOLD aura tile): +2g per kill.
+          // Stacks with PRAETORIAN_COIN / GOLD_PURSE / Aerarium — all
+          // independent gold-on-kill sources.
+          if (towerAuraTileKind(t) === 'GOLD')                            { earnGold(state, 2); goldEarnedHere += 2; }
           if (goldEarnedHere > 0 && t) {
             const tcx = t.tileX * 32 + 16;
             const tcy = t.tileY * 32 + 16;
@@ -5228,6 +5320,9 @@ async function boot() {
     renderer.drawImpactOverlays(state.tick);
     renderer.applyShake(dt, state.tick);
     renderer.drawGore(gore, state.tick);
+    // 2026-05-19 — Aura buff tiles: 5 fixed glowing tiles with
+    // per-frame pulse animation.
+    renderer.drawAuraTiles(state, state.tick);
     renderer.drawComboFx(state, state.tick);
     renderer.drawCheckpointHealFx(state, state.tick);
     renderer.drawReanimationFx(state, state.tick);

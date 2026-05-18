@@ -19,7 +19,7 @@
 import { Tower, Enemy, TargetingMode, DamageType, StatusEffectKind, EntityType, TowerType, EnemyType, EnemyFaction } from '../types';
 import { GameStateShape } from '../GameState';
 import { GRID, KILL_BONUS_RATE, KILL_BONUS_MAX_PCT, FACTION_WEATHER } from '../constants';
-import { towerEffectiveStats, towerPerAttackDamageBase } from './TowerSystem';
+import { towerEffectiveStats, towerPerAttackDamageBase, towerAuraTileKind } from './TowerSystem';
 import { resistanceModifier } from './DamageTypeSystem';
 import { spawnPhoenixMinions } from './EnemySystem';
 import { spawnProjectile, spawnCosmeticProjectile } from './ProjectileSystem';
@@ -705,6 +705,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (target.isBoss && t.equippedItems.includes('ELEPHANT_TUSK'))        damage *= 1.30;
       if (target.isBoss && t.equippedItems.includes('WARLORDS_WAR_PAINT'))   damage *= 1.40;
       if (target.isBoss && t.equippedItems.includes('UNDEAD_ELEPHANT_BONE')) damage *= 1.50;
+      // 2026-05-19 — AURA TILE: TYRANT TILE (RED). Tower on a red tile
+      // deals +50% damage vs bosses. Stacks with the trophies above.
+      if (target.isBoss && towerAuraTileKind(t) === 'RED') damage *= 1.50;
       // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES.
       //
       // INVASION rewards:
@@ -948,7 +951,13 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const isMeleeRow = MELEE_TYPES.has(t.type);
       // AQUILA TALONS unlocks anti-air for melee towers — eagle talons let
       // the gladius claw down passing flyers at melee range.
-      const meleeHitsFlyers = isMeleeRow && t.equippedItems.includes('AQUILA_TALONS');
+      // 2026-05-19 — AETHER TILE (CYAN) also unlocks anti-air for any
+      // melee tower placed on it, regardless of equipped items. Cheap
+      // alternative to the legendary item.
+      const meleeHitsFlyers = isMeleeRow && (
+        t.equippedItems.includes('AQUILA_TALONS') ||
+        towerAuraTileKind(t) === 'CYAN'
+      );
       const inRange: Enemy[] = enemies.filter((e: Enemy) => {
         if (Math.hypot(e.x - tcx, e.y - tcy) > rPx) return false;
         if (isMeleeRow && e.isFlyer && !meleeHitsFlyers) return false;
@@ -1244,7 +1253,12 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   // AQUILA TALONS — melee towers carrying this legendary can target flyers
   // in their range too. Mirrors the same flag used in the per-tick attack
   // loop above so target-acquisition and damage-application agree.
-  const meleeAirEnabled = isMelee && t.equippedItems.includes('AQUILA_TALONS');
+  // 2026-05-19 — AETHER TILE (CYAN) also enables melee anti-air, same
+  // as AQUILA_TALONS.
+  const meleeAirEnabled = isMelee && (
+    t.equippedItems.includes('AQUILA_TALONS') ||
+    towerAuraTileKind(t) === 'CYAN'
+  );
   const canHitFlyers = !isMelee || meleeAirEnabled;
   const antiAirOnly = ANTI_AIR_ONLY_TYPES.has(t.type);
   let inRange = enemies.filter(e => {

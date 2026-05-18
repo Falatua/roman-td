@@ -270,3 +270,46 @@ export const FACTION_WEATHER: Record<string, WeatherProfile> = {
 };
 
 export const COIN_FOOTPRINT_TILES = 1; // 1x1 waypoint coin footprint (smaller, less invasive)
+
+// 2026-05-19 — AURA BUFF TILES. Five fixed glowing tiles spread across
+// the map. A tower placed on one of these tiles inherits the tile's
+// effect (stacks multiplicatively with any other source of the same
+// stat). Positions are fixed (not random) so every player faces the
+// same opportunities + every maze plan can pivot around them.
+//
+// Min separation ≥11 manhattan tiles so no two glows overlap visually
+// or competitively. All positions are off the cave (3,4) and gate
+// (35,23), off every waypoint coin, and inside the buildable area
+// (col ≤ 31 — HUD button column starts at 32).
+export interface AuraTile {
+  col: number;
+  row: number;
+  kind: 'PURPLE' | 'BLUE' | 'RED' | 'CYAN' | 'GOLD';
+}
+export const AURA_TILES: AuraTile[] = [
+  { col: 6,  row: 9,  kind: 'PURPLE' },  // early-left  · +30% attack speed
+  { col: 15, row: 12, kind: 'BLUE'   },  // central     · +30% damage
+  { col: 28, row: 8,  kind: 'RED'    },  // right-mid   · +50% damage vs bosses
+  { col: 24, row: 19, kind: 'CYAN'   },  // bottom-mid  · melee can hit flyers
+  { col: 11, row: 19, kind: 'GOLD'   }   // bottom-left · +2 gold per kill
+];
+// Effect lookup table — used by stat math, combat hooks, and tooltips
+// so the same numbers come out of one source. Multipliers are applied
+// multiplicatively in TowerSystem.towerEffectiveStats and the combat
+// hook for the boss-damage variant.
+export const AURA_TILE_EFFECTS: Record<AuraTile['kind'], {
+  color: number;          // hex color for the glow
+  label: string;          // short tooltip header (e.g. "ATTACK SPEED")
+  description: string;    // full description shown on hover
+  dmgMult?: number;       // optional damage multiplier
+  spdMult?: number;       // optional attack-speed multiplier
+  bossMult?: number;      // optional vs-boss damage multiplier
+  goldPerKill?: number;   // optional gold-per-kill bonus
+  meleeFlyer?: boolean;   // optional anti-air for melee towers
+}> = {
+  PURPLE: { color: 0xa060ff, label: 'TEMPO TILE', description: 'Tower on this tile fires +30% faster.', spdMult: 1.30 },
+  BLUE:   { color: 0x66aaff, label: 'WAR TILE', description: 'Tower on this tile deals +30% damage.', dmgMult: 1.30 },
+  RED:    { color: 0xff5050, label: 'TYRANT TILE', description: 'Tower on this tile deals +50% damage vs Bosses.', bossMult: 1.50 },
+  CYAN:   { color: 0x66ffdd, label: 'AETHER TILE', description: 'Any tower on this tile can target FLYERS, even melee.', meleeFlyer: true },
+  GOLD:   { color: 0xffd34d, label: 'TREASURY TILE', description: 'Tower on this tile earns +2 Denarii per kill.', goldPerKill: 2 }
+};

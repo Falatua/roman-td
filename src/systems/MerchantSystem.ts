@@ -29,13 +29,19 @@ const ITEMS = items as Record<string, any>;
 //   • EPIC = the new purple tier (2026-05-18). Three demoted melee
 //     legendaries + three new 60g items live here.
 //   • LEGENDARY = build-defining trophies, same set as before.
+// 2026-05-19 — Gate-exclusive items added (5 new) so the gate shop
+// actually carries a rotating lineup again, while keeping every
+// Mercator pool fully exclusive (no overlap). Each item is tagged
+// `gateExclusive: true` in items_permanent.json so the free-grant
+// pool also skips them — they're Gate-only the way Mercator items
+// are Mercator-only.
 const GATE_COMMON = [
-  'SHARPENED_BLADE','WATCHTOWER_LENS'
+  'SHARPENED_BLADE','WATCHTOWER_LENS',
+  'PRAETORIAN_COIN','BRONZE_GREAVES','RUSTED_HASTA'
 ];
-// 2026-05-18 — Empty pools. The gate sells COMMON only; everything
-// else routes through Mercator. Kept as exported names for back-
-// compat with the sampling code, which already handles empty arrays.
-const GATE_UNCOMMON: string[] = [];
+const GATE_UNCOMMON: string[] = [
+  'AUGUR_SCROLL','CONSULAR_TOKEN'
+];
 const GATE_RARE: string[] = [];
 const MERCATOR_RARE = [
   'HOURGLASS_OF_SATURN','STORM_JAVELIN','BATTLE_STANDARD','CENTURIONS_TRUMPET',
@@ -183,11 +189,24 @@ export const MERCATOR_WAVES = [4, 9, 14, 19];
 // Mercator stops, not a meaningful loot rotation.
 // `ownedLegendaries` kept for back-compat with the call sites but
 // unused now that the legendary slot is removed.
+// 2026-05-19 — Gate shop now samples FROM the gate-exclusive pools.
+// Visit produces 3-4 Common offers + 1-2 Uncommon, all drawn from
+// the gate-only pools so Mercator stays exclusive. ownedLegendaries
+// kept for back-compat with the call sites but unused (gate doesn't
+// carry legendaries).
 export function buildGateShop(_refreshSeed = 0, _ownedLegendaries?: Set<string>): ShopState {
   const offers: ShopOffer[] = [];
-  for (const id of GATE_COMMON) {
-    const def = ITEMS[id];
-    if (def) offers.push({ itemId: id as ItemId, rarity: asRarity(def.rarity), price: def.buy, isConsumable: false });
+  // Sample 4 commons. The pool only has 5, so the player sees 4-of-5
+  // each visit — predictable enough that they know what's coming,
+  // varied enough that they don't always see the same lineup.
+  const commons = sampleN(entries(GATE_COMMON), Math.min(4, GATE_COMMON.length));
+  for (const [id, def] of commons) {
+    offers.push({ itemId: id, rarity: 'COMMON', price: def?.buy ?? 8, isConsumable: false });
+  }
+  // Sample 2 uncommons (the pool has 2, so always both for now).
+  const uncommons = sampleN(entries(GATE_UNCOMMON), Math.min(2, GATE_UNCOMMON.length));
+  for (const [id, def] of uncommons) {
+    offers.push({ itemId: id, rarity: 'UNCOMMON', price: def?.buy ?? 18, isConsumable: false });
   }
   return { type: 'GATE', offers, livesPrice: 5, livesMaxThisVisit: 5, livesBoughtThisVisit: 0 };
 }

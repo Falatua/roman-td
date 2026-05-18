@@ -1,8 +1,19 @@
 import { Tower, TowerType, DamageType, TargetingMode, DrawCard } from '../types';
 import { GameStateShape } from '../GameState';
-import { TIER_MULTS, ECONOMY, POOL_PROBABILITIES, GRID } from '../constants';
+import { TIER_MULTS, ECONOMY, POOL_PROBABILITIES, GRID, AURA_TILES, AURA_TILE_EFFECTS } from '../constants';
 import towersData from '../data/towers.json';
 import { damageTypeFromString } from './DamageTypeSystem';
+
+// 2026-05-19 — AURA TILE LOOKUP. Returns the kind of aura tile the
+// tower sits on, or null. Used by stat math + combat hooks so every
+// tile-bonus path reads the same source-of-truth lookup. O(5) per
+// call (5 fixed tiles), no need to cache.
+export function towerAuraTileKind(t: Tower): typeof AURA_TILES[number]['kind'] | null {
+  for (const a of AURA_TILES) {
+    if (a.col === t.tileX && a.row === t.tileY) return a.kind;
+  }
+  return null;
+}
 
 // 2026-05 v10 — CLASS-BASED DAMAGE SCALARS
 //
@@ -255,6 +266,16 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   //                localAuras pass below, no self-buff here.
   if (t.equippedItems.includes('LICTOR_FASCES')) itemDmgMult *= 1.18;
   if (t.equippedItems.includes('AUXILIARY_SLING') && (t.damageType === DamageType.PHYS_RANGED)) itemDmgMult *= 1.30;
+  // 2026-05-19 — GATE-EXCLUSIVE COMMONS/UNCOMMONS. Five new items
+  // that live only at the gate shop:
+  //   • RUSTED_HASTA: +10% damage
+  //   • AUGUR_SCROLL: +12% attack speed
+  //   • CONSULAR_TOKEN: +8% damage, +0.5 range (range below)
+  //   • PRAETORIAN_COIN: +1 gold per kill (wired in main.ts kill hook)
+  //   • BRONZE_GREAVES: +0.5 tile range (below in extraRange)
+  if (t.equippedItems.includes('RUSTED_HASTA')) itemDmgMult *= 1.10;
+  if (t.equippedItems.includes('AUGUR_SCROLL')) itemSpeedMult *= 1.12;
+  if (t.equippedItems.includes('CONSULAR_TOKEN')) itemDmgMult *= 1.08;
   // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES (atk-speed half).
   // PERIMETER_TORCH (invasion):    +25% atk speed (damage in CombatResolver)
   // HELLGATE_BRAND   (gates):      +25% atk speed (damage in CombatResolver)
@@ -274,6 +295,9 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // 2026-05-18 — EPIC LICTOR_FASCES: +1 tile range alongside its
     // +18% damage (applied above in itemDmgMult).
     (t.equippedItems.includes('LICTOR_FASCES') ? 1 : 0) +
+    // 2026-05-19 — Gate-exclusive range items.
+    (t.equippedItems.includes('BRONZE_GREAVES') ? 0.5 : 0) +
+    (t.equippedItems.includes('CONSULAR_TOKEN') ? 0.5 : 0) +
     // SPEAR OF MARS — converts a melee tower into a thrown-spear unit by
     // adding five tiles of reach. CombatResolver spawns a visible PROJ_HASTA
     // flying from the tower to the target whenever a melee swing fires
@@ -301,9 +325,24 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // +1 tile range flat (matches the Watchtower Lens bonus).
     endlessRangeBoost = 1;
   }
+  // 2026-05-19 — AURA TILE BUFFS. If the tower sits on one of the 5
+  // fixed aura tiles, apply that tile's damage / attack-speed
+  // multiplier here. Stacks multiplicatively with items and the
+  // class scalar so a Tempo tile + Cavalry Spur combo lands at
+  // 1.30 × 1.30 = 1.69× speed (no cap). Boss-damage variant is
+  // applied in CombatResolver per-hit so it can check target.isBoss.
+  // Anti-air variant is handled in the target-selection pass.
+  let auraDmgMult = 1;
+  let auraSpdMult = 1;
+  const auraKind = towerAuraTileKind(t);
+  if (auraKind) {
+    const eff = AURA_TILE_EFFECTS[auraKind];
+    if (eff.dmgMult) auraDmgMult *= eff.dmgMult;
+    if (eff.spdMult) auraSpdMult *= eff.spdMult;
+  }
   return {
-    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost,
-    attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost,
+    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult,
+    attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult,
     range: t.range + extraRange + endlessRangeBoost
   };
 }

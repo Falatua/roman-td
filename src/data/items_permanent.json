@@ -363,6 +363,46 @@
     "sell": 30,
     "effect": "Aura 2 tiles: nearby allies gain +12% attack speed. The drill master's command — keeps every tower in his hearing range a half-step quicker."
   },
+  "PRAETORIAN_COIN": {
+    "name": "Praetorian Coin",
+    "rarity": "COMMON",
+    "buy": 10,
+    "sell": 4,
+    "gateExclusive": true,
+    "effect": "GATE-SHOP EXCLUSIVE: +1 Denarii per kill. The same minted bronze the Praetorian Guard kept in their belt pouches — a small economic edge for the early game."
+  },
+  "BRONZE_GREAVES": {
+    "name": "Bronze Greaves",
+    "rarity": "COMMON",
+    "buy": 9,
+    "sell": 4,
+    "gateExclusive": true,
+    "effect": "GATE-SHOP EXCLUSIVE: +0.5 tile range. Bronze leg armor lets a tower step half a pace further into the lane without breaking line."
+  },
+  "RUSTED_HASTA": {
+    "name": "Rusted Hasta",
+    "rarity": "COMMON",
+    "buy": 8,
+    "sell": 3,
+    "gateExclusive": true,
+    "effect": "GATE-SHOP EXCLUSIVE: Any tower: +10% damage. Old spear — chips, doesn't shatter."
+  },
+  "AUGUR_SCROLL": {
+    "name": "Augur's Scroll",
+    "rarity": "UNCOMMON",
+    "buy": 18,
+    "sell": 7,
+    "gateExclusive": true,
+    "effect": "GATE-SHOP EXCLUSIVE: Any tower: +12% attack speed. The augur read the birds and reported favorable signs — tempo bonus for the patient tower."
+  },
+  "CONSULAR_TOKEN": {
+    "name": "Consular Token",
+    "rarity": "UNCOMMON",
+    "buy": 22,
+    "sell": 8,
+    "gateExclusive": true,
+    "effect": "GATE-SHOP EXCLUSIVE: Any tower: +8% damage, +0.5 tile range. Lead seal of consular authority — small bonus to two stats at once."
+  },
   "VANGUARD_PILUM": {
     "name": "Vanguard Pilum",
     "rarity": "LEGENDARY",

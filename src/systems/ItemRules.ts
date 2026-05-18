@@ -162,7 +162,16 @@ const FAMILY: Record<string, ItemFamily> = {
   // with Centurion's Trumpet / Druid's Torc / similar.
   LICTOR_FASCES: 'DAMAGE',
   AUXILIARY_SLING: 'DAMAGE',
-  OPTIO_WHISTLE: 'AURA'
+  OPTIO_WHISTLE: 'AURA',
+  // 2026-05-19 — GATE-EXCLUSIVE STARTER ITEMS. Five new items only
+  // sold at the gate shop. Family assignments keep them slotted with
+  // the existing exclusivity rules so they conflict appropriately
+  // with Mercator items of the same family.
+  PRAETORIAN_COIN: 'ECONOMY',
+  BRONZE_GREAVES: 'RANGE',
+  RUSTED_HASTA: 'DAMAGE',
+  AUGUR_SCROLL: 'SPEED',
+  CONSULAR_TOKEN: 'DAMAGE'
 };
 
 export function itemFamily(itemId: ItemId): ItemFamily {

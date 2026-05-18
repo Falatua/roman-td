@@ -111,18 +111,26 @@ describe('Loot drop rolling', () => {
 });
 
 describe('Merchant — gate shop', () => {
-  it('produces 2 COMMON-tier offers (gate is now a thin starter shop)', () => {
-    // 2026-05-18: gate shop trimmed to a 2-COMMON starter set
-    // (SHARPENED_BLADE + WATCHTOWER_LENS) — every other rarity / item
-    // moved to Mercator-exclusive pools. Honors the design rule that
-    // every Mercator item is exclusive to Mercator.
+  it('produces 6 offers (4 commons + 2 uncommons, all gate-exclusive)', () => {
+    // 2026-05-19: gate shop expanded with 5 new gate-exclusive items
+    // (3 commons + 2 uncommons) on top of the existing 2 commons. A
+    // visit samples 4 commons from the 5-item common pool and both
+    // uncommons. Mercator pools remain fully exclusive — none of
+    // the 7 gate items appear at Mercator.
     const shop = buildGateShop();
     expect(shop.type).toBe('GATE');
-    expect(shop.offers.length).toBe(2);
+    expect(shop.offers.length).toBe(6);
     const commons = shop.offers.filter(o => o.rarity === 'COMMON');
-    expect(commons.length).toBe(2);
-    const ids = shop.offers.map(o => o.itemId).sort();
-    expect(ids).toEqual(['SHARPENED_BLADE', 'WATCHTOWER_LENS']);
+    const uncommons = shop.offers.filter(o => o.rarity === 'UNCOMMON');
+    expect(commons.length).toBe(4);
+    expect(uncommons.length).toBe(2);
+    // Every offered item must be drawn from the gate's exclusive pool.
+    const gateOnlyIds = new Set([
+      'SHARPENED_BLADE','WATCHTOWER_LENS',
+      'PRAETORIAN_COIN','BRONZE_GREAVES','RUSTED_HASTA',
+      'AUGUR_SCROLL','CONSULAR_TOKEN'
+    ]);
+    for (const o of shop.offers) expect(gateOnlyIds.has(o.itemId)).toBe(true);
   });
 
   it('contains no duplicate offers within a single visit', () => {

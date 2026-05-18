@@ -1,5 +1,5 @@
 import { Application, Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
-import { GRID, TIER_COLORS, FACTION_WEATHER, WAVE_MODIFIERS, WORLD } from '../constants';
+import { GRID, TIER_COLORS, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS } from '../constants';
 import { TileType, GamePhase, TowerType, DamageType } from '../types';
 import { GameStateShape } from '../GameState';
 import { GoreState } from '../systems/GoreSystem';
@@ -41,6 +41,8 @@ export class RenderEngine {
   // 2026-05 v6 polish
   bossAuraGfx: Graphics;
   bossVignetteGfx: Graphics;
+  // 2026-05-19 — Aura tile glow layer.
+  auraTileGfx: Graphics;
   bossVignetteBaked = false;        // draw-once flag
   bossVignetteTargetAlpha = 0;      // 0 outside boss waves, ~0.18 during
   // Boss-death blood rain: each drop is a falling Sprite that lands and
@@ -128,6 +130,11 @@ export class RenderEngine {
     this.bossVignetteGfx.alpha = 0;
     this.layers.bg.addChild(this.bgGfx);
     this.layers.bg.addChild(this.stainGfx);   // stains live above grass, below corpses/towers
+    // 2026-05-19 — Aura tile overlay. Cleared and redrawn each frame
+    // for the pulse animation. Sits on the bg layer above stains but
+    // below corpses/towers so the glow reads as ground-level magic.
+    this.auraTileGfx = new Graphics();
+    this.layers.bg.addChild(this.auraTileGfx);
     this.layers.fx.addChild(this.bloodGfx);
     this.layers.fx.addChild(this.projGfx);
     this.layers.overlay.addChild(this.auraGfx, this.comboGfx, this.overlayGfx, this.rangeGfx);
@@ -337,6 +344,55 @@ export class RenderEngine {
       g.lineStyle(0);
       g.beginFill(color, alpha).drawCircle(fx.x, fx.y, 4 * (1 - t)).endFill();
       g.beginFill(0xffffff, alpha * 0.85).drawCircle(fx.x, fx.y, 2 * (1 - t)).endFill();
+    }
+  }
+
+  // 2026-05-19 — AURA BUFF TILES (5 fixed positions). Each frame the
+  // tile pulses its colored ring; when a tower sits on top, the
+  // glow brightens to signal the buff is live. Tooltips are
+  // implemented in main.ts via hit-test on hover; the renderer just
+  // paints the visual cue.
+  drawAuraTiles(_state: GameStateShape, tick: number): void {
+    const gfx = this.auraTileGfx;
+    gfx.clear();
+    const towerTilesOccupied = new Set<string>();
+    for (const t of _state.towers.values()) {
+      if (t.pending) continue;
+      towerTilesOccupied.add(`${t.tileX},${t.tileY}`);
+    }
+    for (const a of AURA_TILES) {
+      const eff = AURA_TILE_EFFECTS[a.kind];
+      const cx = a.col * GRID.TILE + GRID.TILE / 2;
+      const cy = a.row * GRID.TILE + GRID.TILE / 2;
+      const occupied = towerTilesOccupied.has(`${a.col},${a.row}`);
+      // Slow 0.9 Hz pulse so the eye picks the tile up without it
+      // becoming visually noisy.
+      const pulse = 0.5 + 0.5 * Math.sin(tick * 1.8 + a.col * 0.3 + a.row * 0.27);
+      const baseAlpha = occupied ? 0.55 : 0.30;
+      const ringAlpha = baseAlpha * (0.6 + 0.4 * pulse);
+      // Filled tile (translucent backdrop). Use 1.0 tile so it slots
+      // exactly into the grid square.
+      gfx.beginFill(eff.color, 0.12 * (0.7 + 0.3 * pulse));
+      gfx.drawRect(a.col * GRID.TILE, a.row * GRID.TILE, GRID.TILE, GRID.TILE);
+      gfx.endFill();
+      // Pulsing inner ring.
+      gfx.lineStyle(2, eff.color, ringAlpha);
+      gfx.drawCircle(cx, cy, GRID.TILE * 0.38 + pulse * 2);
+      // Brighter outer ring when occupied (signals "buff is active").
+      if (occupied) {
+        gfx.lineStyle(1.5, eff.color, 0.45 * (0.6 + 0.4 * pulse));
+        gfx.drawCircle(cx, cy, GRID.TILE * 0.52 + pulse * 3);
+      }
+      // Tiny corner dots so the tile reads as a "special" square even
+      // when the pulse is at its dim trough.
+      const dotR = 1.5;
+      const dotA = 0.55;
+      gfx.beginFill(eff.color, dotA);
+      gfx.drawCircle(a.col * GRID.TILE + 3, a.row * GRID.TILE + 3, dotR);
+      gfx.drawCircle(a.col * GRID.TILE + GRID.TILE - 3, a.row * GRID.TILE + 3, dotR);
+      gfx.drawCircle(a.col * GRID.TILE + 3, a.row * GRID.TILE + GRID.TILE - 3, dotR);
+      gfx.drawCircle(a.col * GRID.TILE + GRID.TILE - 3, a.row * GRID.TILE + GRID.TILE - 3, dotR);
+      gfx.endFill();
     }
   }
 
