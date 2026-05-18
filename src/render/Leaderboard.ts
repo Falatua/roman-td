@@ -13,6 +13,7 @@
 // Keeps top 20. New entry pulses; top 3 ranks render gold/silver/bronze.
 
 import { GameStateShape } from '../GameState';
+import { fetchTopScores, submitScore, toRemoteRow, hasRemoteLeaderboard } from '../services/SupabaseLeaderboard';
 
 export interface ScoreBreakdown {
   waveBonus: number;       // waves completed
@@ -389,20 +390,33 @@ export function promptForName(parent: HTMLElement, defaultName: string, onSubmit
 }
 
 // ─── Hall of Glory — full leaderboard screen ────────────────────────────
+// 2026-05-19 — Supports a GLOBAL view (Supabase top-N if env vars are
+// configured) alongside the LOCAL view (always available via
+// localStorage). A LOCAL / GLOBAL tab switch sits above the table so
+// the player can flip between their own history and the world ranking.
 export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEntry | null, onRestart: () => void) {
   document.getElementById('hall-of-glory')?.remove();
   ensureStyle();
   const entries = loadLeaderboard();
+  const remoteAvailable = hasRemoteLeaderboard();
 
   const wrap = document.createElement('div');
   wrap.id = 'hall-of-glory';
   wrap.className = 'hog-overlay';
+  // Tab strip is conditional: if no Supabase config, no tabs (LOCAL only).
+  const tabsHtml = remoteAvailable
+    ? `<div id="hog-tabs" style="display:flex;justify-content:center;gap:8px;margin:8px 0 12px;font-family:'Courier New',monospace">
+         <button id="hog-tab-global" data-active="1" style="background:#ffd34d;color:#1a1410;border:2px solid #ffd34d;padding:8px 18px;letter-spacing:3px;font-weight:bold;cursor:pointer;font-family:inherit">🌐 GLOBAL</button>
+         <button id="hog-tab-local"  data-active="0" style="background:transparent;color:#ffd34d;border:2px solid #ffd34d;padding:8px 18px;letter-spacing:3px;font-weight:bold;cursor:pointer;font-family:inherit">📜 LOCAL (this device)</button>
+       </div>`
+    : `<div style="text-align:center;color:#aa6a1a;letter-spacing:2px;font-size:10px;margin:6px 0 10px">— local scores only · global leaderboard offline —</div>`;
   wrap.innerHTML = `
     <div class="hog-scanlines"></div>
     <div class="hog-vignette"></div>
     <div class="hog-content">
       <div class="hog-title">HALL OF GLORY</div>
-      <div class="hog-subtitle">TOP XX LEGIONS OF ROMA</div>
+      <div class="hog-subtitle" id="hog-subtitle">TOP X LEGIONS OF ROMA</div>
+      ${tabsHtml}
       <div class="hog-table-scroll">
         <table class="hog-table">
           <thead>
@@ -425,9 +439,18 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
   parent.appendChild(wrap);
 
   const tbody = wrap.querySelector('#hog-tbody') as HTMLElement;
-  if (entries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— THE HALL AWAITS ITS FIRST CHAMPION —</td></tr>`;
-  } else {
+  const subtitle = wrap.querySelector('#hog-subtitle') as HTMLElement;
+
+  // Painter helper — renders either local or remote entries into the
+  // shared table body. Both paths use the same row shape so the visual
+  // is identical apart from the "◀ YOU" badge (only local can match).
+  function paintLocalRows() {
+    subtitle.textContent = `TOP ${Math.min(entries.length, 20)} LEGIONS OF ROMA · LOCAL`;
+    if (entries.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— THE HALL AWAITS ITS FIRST CHAMPION —</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = '';
     entries.forEach((e, idx) => {
       const rankNumeral = roman(idx + 1);
       const isYou = !!currentEntry &&
@@ -455,6 +478,56 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
     });
   }
 
+  async function paintRemoteRows() {
+    subtitle.textContent = '🌐 FETCHING GLOBAL LEADERBOARD…';
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— LOADING —</td></tr>`;
+    const rows = await fetchTopScores('campaign', 10);
+    if (!rows || rows.length === 0) {
+      subtitle.textContent = '🌐 GLOBAL LEADERBOARD · CONNECTION TIMED OUT OR EMPTY';
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— ${rows ? 'NO ENTRIES YET — BE THE FIRST' : 'GLOBAL BOARD UNREACHABLE'} —</td></tr>`;
+      return;
+    }
+    subtitle.textContent = `🌐 TOP ${rows.length} LEGIONS OF ROMA · GLOBAL`;
+    tbody.innerHTML = '';
+    rows.forEach((e, idx) => {
+      const rankNumeral = roman(idx + 1);
+      const rankClass = idx === 0 ? 'hog-rank-1' : idx === 1 ? 'hog-rank-2' : idx === 2 ? 'hog-rank-3' : '';
+      const wlBadge = e.won
+        ? '<span style="color:#88ff88;font-weight:900">W</span>'
+        : '<span style="color:#ee5050;font-weight:900">L</span>';
+      const tr = document.createElement('tr');
+      tr.className = rankClass;
+      tr.style.animationDelay = `${idx * 0.06}s`;
+      tr.innerHTML = `
+        <td class="${rankClass}">${rankNumeral}</td>
+        <td class="${rankClass}">${e.name}</td>
+        <td class="num ${rankClass}">${e.score.toLocaleString()}</td>
+        <td class="${rankClass}">Wave ${e.wave}</td>
+        <td class="num ${rankClass}">${e.towers_combined}</td>
+        <td class="num ${rankClass}">${e.quests_completed}</td>
+        <td class="${rankClass}">${wlBadge}</td>
+        <td class="${rankClass}">${formatDateShort(e.date_str)}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Initial paint — global is default when remote is configured.
+  if (remoteAvailable) {
+    paintRemoteRows();
+    const globalBtn = wrap.querySelector('#hog-tab-global') as HTMLButtonElement;
+    const localBtn  = wrap.querySelector('#hog-tab-local')  as HTMLButtonElement;
+    const setActive = (which: 'global' | 'local') => {
+      const a = which === 'global' ? globalBtn : localBtn;
+      const b = which === 'global' ? localBtn  : globalBtn;
+      a.style.background = '#ffd34d'; a.style.color = '#1a1410'; a.dataset.active = '1';
+      b.style.background = 'transparent'; b.style.color = '#ffd34d'; b.dataset.active = '0';
+    };
+    globalBtn.onclick = () => { setActive('global'); paintRemoteRows(); };
+    localBtn.onclick  = () => { setActive('local');  paintLocalRows(); };
+  } else {
+    paintLocalRows();
+  }
+
   // ENTER → restart. Click anywhere on the prompt area also restarts.
   const restart = () => { wrap.remove(); document.removeEventListener('keydown', onKey); onRestart(); };
   const promptEl = wrap.querySelector('.hog-prompt') as HTMLElement;
@@ -480,7 +553,12 @@ export function runEndOfGameFlow(
   onPostVictory?: (name: string) => void
 ) {
   showEndSummary(parent, state, won, (finalScore) => {
-    promptForName(parent, 'UNKNOWN', (name) => {
+    // 2026-05-19 — Pre-fill the end-of-run name prompt with the
+    // player's saved "etched" name from the cold-start modal. They
+    // can still change it before submitting; the default just means
+    // SKIP commits to the same name they used at the start.
+    const savedName: string = ((state as any).playerName ?? '').trim() || 'UNKNOWN';
+    promptForName(parent, savedName, (name) => {
       const entry: LeaderboardEntry = {
         name: name || 'UNKNOWN',
         score: finalScore,
@@ -492,6 +570,14 @@ export function runEndOfGameFlow(
         ts: Date.now()
       };
       insertEntry(entry);
+      // 2026-05-19 — Also submit to the remote leaderboard if Supabase
+      // is configured. Fire-and-forget: never blocks the UI flow, the
+      // local insert above is the source-of-truth for the player's
+      // own device. Network failures are silent (logged via the
+      // service's null-return contract); the GLOBAL tab in
+      // showLeaderboard below will still try to fetch even if the
+      // submit failed.
+      submitScore(toRemoteRow(entry, 'campaign'));
       // If a post-victory hook is wired (Endless transition), invoke it
       // INSTEAD of showing the static leaderboard. The leaderboard is
       // still reachable from the main menu after the run ends.

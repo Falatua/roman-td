@@ -63,6 +63,15 @@ jobs:
         run: npm test
 
       - name: Build production bundle
+        # 2026-05-19 — Inject Supabase leaderboard credentials from repo
+        # secrets so the deployed bundle can talk to the global
+        # leaderboard. When the secrets aren't set the bundle still
+        # builds; the game just falls back to localStorage-only
+        # leaderboards (see LEADERBOARD_SETUP.md). Both vars must
+        # start with VITE_ to make it into the client bundle.
+        env:
+          VITE_SUPABASE_URL:      ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Upload Pages artifact

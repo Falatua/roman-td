@@ -138,6 +138,11 @@ export interface GameStateShape {
   endlessWave?: number;
   endlessScore?: number;
   endlessPlayerName?: string;
+  // 2026-05-19 — Player's chosen name from the "etch your name in the
+  // history of Rome" cold-start modal. Persisted to localStorage and
+  // reused as the default in the end-of-run leaderboard prompt so the
+  // player doesn't have to type it twice.
+  playerName?: string;
   // ─── SURPRISE EVENTS (2026-05-16) ─────────────────────────────────────
   // INVASION = perimeter fire breaches (any wave from W6+).
   // UPRISING = center-map skull-urn portals (undead waves only).

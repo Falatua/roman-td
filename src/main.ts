@@ -3279,6 +3279,81 @@ async function boot() {
   (renderer.app as any).__attachedGore = gore;
   renderer.drawStatic(state);
 
+  // 2026-05-19 — "Etch your name in the history of Rome" prompt.
+  // Fires once per page load before the player can interact with
+  // prospects. The chosen name persists in localStorage so reload
+  // pre-fills it; the prompt is suppressed entirely if a saved name
+  // is already on file (player can change via the settings panel).
+  // Stored on `state.playerName` so the leaderboard pre-fills it
+  // automatically at end-of-run.
+  const SAVED_NAME_KEY = 'roman_td_player_name';
+  function readSavedName(): string {
+    try { return (localStorage.getItem(SAVED_NAME_KEY) ?? '').toUpperCase(); }
+    catch { return ''; }
+  }
+  function writeSavedName(name: string) {
+    try { localStorage.setItem(SAVED_NAME_KEY, name); } catch { /* ignore */ }
+  }
+  const existingName = readSavedName();
+  if (existingName) {
+    (state as any).playerName = existingName;
+  } else {
+    // Player has no saved name → show the etch-your-name modal. Block
+    // start-wave / prospect placement clicks via a translucent overlay
+    // until they commit a name.
+    showEtchNameModal((name) => {
+      writeSavedName(name);
+      (state as any).playerName = name;
+    });
+  }
+  function showEtchNameModal(onSubmit: (name: string) => void) {
+    const modal = document.createElement('div');
+    modal.id = 'etch-name-modal';
+    modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#1a1410,#0c0a08);z-index:130;font-family:'Courier New',monospace;`;
+    modal.innerHTML = `
+      <div style="position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,0.30) 2px,rgba(0,0,0,0.30) 3px);pointer-events:none;mix-blend-mode:multiply"></div>
+      <div style="position:relative;width:min(560px,92%);padding:32px 36px;background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 38px rgba(212,175,55,0.55),inset 0 0 32px rgba(0,0,0,0.7);text-align:center">
+        <div style="font-size:11px;letter-spacing:6px;color:#aa6a1a;font-weight:bold;margin-bottom:10px">▾ SENATUS POPULUSQUE ROMANUS ▾</div>
+        <div style="font-size:26px;font-weight:900;letter-spacing:6px;color:#ffd34d;text-shadow:0 0 14px #ffaa00,3px 3px 0 #000;line-height:1.1;margin-bottom:18px">ETCH YOUR NAME<br/>IN THE HISTORY OF ROME</div>
+        <div style="font-size:13px;color:#fff8e0;line-height:1.6;letter-spacing:0.5px;text-shadow:1px 1px 0 #000;margin-bottom:24px;text-align:left;padding:0 8px">
+          Before the wave begins, the Senate requires a name for the marble. They like to know who to honor — or, more often, who to forget. The Hall of Glory has space for the worthy. Don't disappoint them.
+        </div>
+        <input id="etch-name-input" type="text" maxlength="12" placeholder="LEGATUS"
+          style="width:100%;box-sizing:border-box;background:#0c0a08;border:2px solid #5a4a30;color:#ffd34d;font-family:'Courier New',monospace;font-size:24px;font-weight:bold;letter-spacing:6px;padding:14px 12px;text-align:center;text-transform:uppercase;outline:none;margin-bottom:16px"/>
+        <div style="font-size:9px;color:#aa6a1a;letter-spacing:2.5px;margin-bottom:18px">12 CHARS · LETTERS + NUMBERS · NO VULGARITY</div>
+        <button id="etch-name-submit" style="width:100%;padding:16px 18px;background:linear-gradient(180deg,#aa1a1a,#5a0606);border:3px solid #ffd34d;color:#ffd34d;font-family:inherit;font-size:14px;font-weight:bold;letter-spacing:4px;cursor:pointer;text-shadow:0 0 8px #ffd34d,1px 1px 0 #000;box-shadow:0 0 18px rgba(255,80,80,0.35)">⚔  CARRY THE EAGLE  ⚔</button>
+        <div style="margin-top:14px;font-size:10px;color:#5a4a30;letter-spacing:2px;font-style:italic">— ROME REMEMBERS EVERY NAME ENTERED HERE —</div>
+      </div>`;
+    document.body.appendChild(modal);
+    const input = modal.querySelector('#etch-name-input') as HTMLInputElement;
+    const btn = modal.querySelector('#etch-name-submit') as HTMLButtonElement;
+    // Autofocus the input on a slight delay so the modal animation
+    // has time to render before the cursor lands inside it.
+    setTimeout(() => input.focus(), 80);
+    const commit = () => {
+      let raw = (input.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+      if (!raw) raw = 'LEGATUS';
+      // Profanity gate uses the same list as the end-of-run prompt.
+      // Avoid coupling to that module here — quick inline check.
+      const lower = raw.toLowerCase();
+      const PROFANE = ['fuck','shit','bitch','cunt','nigg','niger','hitler','nazi','kkk','rape'];
+      for (const w of PROFANE) {
+        if (lower.includes(w)) {
+          input.value = '';
+          input.placeholder = 'TRY A SENATE-APPROVED NAME';
+          input.focus();
+          return;
+        }
+      }
+      modal.remove();
+      onSubmit(raw);
+    };
+    btn.onclick = commit;
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+    });
+  }
+
   // UI
   let selectedTowerId: string | null = null;
   const ui = new UIManager(app, {
