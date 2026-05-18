@@ -9,10 +9,12 @@ describe('Item families', () => {
     expect(itemFamily('SHARPENED_BLADE')).toBe('DAMAGE');
     expect(itemFamily('TRAINING_SCROLL')).toBe('SPEED');
     expect(itemFamily('WATCHTOWER_LENS')).toBe('RANGE');
-    // 2026-05 v9: DOT split into sub-families by kind.
-    expect(itemFamily('FIRE_OIL_FLASK')).toBe('DOT_BURN');
-    expect(itemFamily('POISONED_BLADE')).toBe('DOT_POISON');
-    expect(itemFamily('BARBED_GLADIUS')).toBe('DOT_BLEED');
+    // 2026-05-17 — DoT items moved to SPECIAL family so they stack
+    // freely on a tower (multiple DoTs ticking simultaneously). Was
+    // split into DOT_BURN / DOT_POISON / DOT_BLEED sub-families pre-fix.
+    expect(itemFamily('FIRE_OIL_FLASK')).toBe('SPECIAL');
+    expect(itemFamily('POISONED_BLADE')).toBe('SPECIAL');
+    expect(itemFamily('BARBED_GLADIUS')).toBe('SPECIAL');
     expect(itemFamily('CENTURIONS_TRUMPET')).toBe('AURA');
     expect(itemFamily('GOLD_PURSE')).toBe('ECONOMY');
     expect(itemFamily('GALLIC_SHIELD_BOSS')).toBe('DEFENSE');

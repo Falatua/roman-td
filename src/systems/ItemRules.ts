@@ -75,15 +75,17 @@ const FAMILY: Record<string, ItemFamily> = {
   WATCHTOWER_LENS: 'RANGE',
   DRUID_STAFF_FRAGMENT: 'RANGE',
 
-  // DoT items — sub-family encodes which status they apply, so a tower
-  // can stack different DoT *kinds* (burn + poison + bleed) but never two
-  // of the same kind. Mid-game design pressure: spread DoTs across towers
-  // or accept the single-DoT slot.
-  FIRE_OIL_FLASK: 'DOT_BURN',
-  POISONED_BLADE: 'DOT_POISON',
-  BARBED_GLADIUS: 'DOT_BLEED',
-  FALCATA_BLADE: 'DOT_BLEED',
-  ALPHA_PACK_FANG: 'DOT_BLEED',
+  // 2026-05-17 — DoT items moved to SPECIAL so a tower can stack any
+  // combination of DoT items freely. Previously DoT was split into
+  // sub-families (DOT_BURN / DOT_POISON / DOT_BLEED) so one of each
+  // type could coexist, but two of the same type were blocked. Per
+  // user direction: DoT items now all stack — build a dedicated
+  // "DoT specialist" tower with burn + poison + bleed + venom + etc.
+  FIRE_OIL_FLASK: 'SPECIAL',
+  POISONED_BLADE: 'SPECIAL',
+  BARBED_GLADIUS: 'SPECIAL',
+  FALCATA_BLADE: 'SPECIAL',
+  ALPHA_PACK_FANG: 'SPECIAL',
   // CURSED_TORC moved out of DOT (description was actually +30% damage)
   // into AURA — now emits an enemy-debuff (nearby enemies take +18%).
 
@@ -128,16 +130,16 @@ const FAMILY: Record<string, ItemFamily> = {
   FALX_BLADE: 'SPECIAL',
   VOLLEY_QUIVER: 'SPECIAL',
   SIGIL_OF_SOL_INVICTUS: 'SPECIAL',
-  // 2026-05-15: anti-boss legendary and fire-damage uncommon.
   // TYRANTS_LAUREL is DAMAGE family (occupies the same slot as Sharpened
-  // Blade / Iron Tip), VESTAL_PYRE is DOT family (occupies the burn /
-  // poison / bleed slot — applies BURN status on hit).
+  // Blade / Iron Tip). 2026-05-17 — VESTAL_PYRE / VENOM_TIPPED_ARROWS /
+  // SERPENT_AMULET / WITCHS_VENOM moved to SPECIAL with the rest of
+  // the DoT family so the "stack as many DoTs as you want" rule applies
+  // uniformly.
   TYRANTS_LAUREL: 'DAMAGE',
-  VESTAL_PYRE: 'DOT_BURN',
-  // 2026-05 v9 — new mid-game POISON items (Mercator stock).
-  VENOM_TIPPED_ARROWS: 'DOT_POISON',  // RANGED counterpart to Poisoned Blade
-  SERPENT_AMULET: 'DOT_POISON',       // ANY tower, gentler poison
-  WITCHS_VENOM: 'DOT_POISON'          // RARE — heavier poison, ANY tower
+  VESTAL_PYRE: 'SPECIAL',
+  VENOM_TIPPED_ARROWS: 'SPECIAL',
+  SERPENT_AMULET: 'SPECIAL',
+  WITCHS_VENOM: 'SPECIAL'
 };
 
 export function itemFamily(itemId: ItemId): ItemFamily {
