@@ -69,6 +69,7 @@ const RARITY_COLOR: Record<string, string> = {
   COMMON: '#cccccc',
   UNCOMMON: '#5cd05c',
   RARE: '#5ca0ff',
+  EPIC: '#a060ff',           // 2026-05-18 — purple Epic tier
   LEGENDARY: '#ff9933',
   UNIQUE: '#ffd34d'
 };
@@ -255,7 +256,7 @@ function renderMercatorShop(
 
     // Sort: legendary → rare → uncommon → common so the apex trophies
     // sit at the top of the player's eye line.
-    const RARITY_ORDER: Record<string, number> = { LEGENDARY: 0, UNIQUE: 1, RARE: 2, UNCOMMON: 3, COMMON: 4 };
+    const RARITY_ORDER: Record<string, number> = { LEGENDARY: 0, UNIQUE: 1, EPIC: 2, RARE: 3, UNCOMMON: 4, COMMON: 5 };
     const sortedOffers = shop.offers.slice().sort((a, b) =>
       (RARITY_ORDER[a.rarity] ?? 9) - (RARITY_ORDER[b.rarity] ?? 9)
     );
@@ -763,6 +764,7 @@ export const SELL_PRICE: Record<string, number> = {
   COMMON: 4,        // half of average 8g buy
   UNCOMMON: 9,      // half of average 18g buy
   RARE: 18,         // half of average 36g buy
+  EPIC: 30,         // 2026-05-18 — half of 60g Epic buy
   LEGENDARY: 65,    // half of average 130g buy
   UNIQUE: 75
 };

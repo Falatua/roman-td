@@ -4,7 +4,13 @@ import { GRID, INVENTORY_SIZE, LOOT_DROP_RATES } from '../constants';
 import items from '../data/items_permanent.json';
 import consumables from '../data/items_consumable.json';
 
-export type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'LEGENDARY' | 'UNIQUE';
+// 2026-05-18 — EPIC tier inserted between RARE and LEGENDARY. Visual
+// color is purple (#a060ff). Standard buy price is 60g — sits cleanly
+// between RARE's ~38-42g and LEGENDARY's 120-150g. Used for the demoted
+// melee-stat legendaries (Berserker's Muzzle, Celtic Longsword,
+// Necrotic Longsword) and for new "premium-but-not-build-defining"
+// items that fill the gap between Rare and Legendary.
+export type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'UNIQUE';
 
 let nextId = 1;
 function newId(): string { return `lo${nextId++}`; }

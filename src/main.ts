@@ -1117,8 +1117,9 @@ async function boot() {
   // item dropped straight into the inventory to soften the swing.
   // Items are sampled from `items_permanent.json` at or above the rarity
   // floor passed in. Returns the granted item id, or null if no slot.
-  function grantBonusItem(rarityFloor: 'COMMON' | 'UNCOMMON' | 'RARE' | 'LEGENDARY'): string | null {
-    const order = ['COMMON','UNCOMMON','RARE','LEGENDARY'];
+  function grantBonusItem(rarityFloor: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY'): string | null {
+    // 2026-05-18 — EPIC tier inserted between RARE and LEGENDARY.
+    const order = ['COMMON','UNCOMMON','RARE','EPIC','LEGENDARY'];
     const floor = order.indexOf(rarityFloor);
     // 2026-05 v6: DOT items (BARBED_GLADIUS, FIRE_OIL_FLASK, POISONED_BLADE,
     // FALCATA_BLADE, ALPHA_PACK_FANG) are excluded from free-grant pools so

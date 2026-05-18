@@ -12,25 +12,31 @@ export interface ShopOffer {
 const ITEMS = items as Record<string, any>;
 // Wider pools so each 5-wave rotation actually looks different.
 // Items shown are rolled distinct (no dupes within a single visit).
-// 2026-05 v6: DOT items pulled from the gate shop pools entirely so
-// damage-over-time builds require a deliberate Mercator visit. Gate
-// shop now offers only direct-stat / aura / range / speed items.
-// 2026-05 v10: BARBED_GLADIUS (MELEE-only Bleed, 1%/s for 10s) added
-// back to GATE_COMMON. It's a melee-only entry-point bleed — players
-// who lean into melee builds now get a basic bleed option without
-// having to wait for Mercator. Heavier bleeds (Falcata, Alpha Pack
-// Fang) still gate behind boss drops + Mercator.
+// 2026-05-18 — MERCATOR-EXCLUSIVE RESTRUCTURE. Every item that appears
+// in any Mercator pool is now ABSENT from gate pools, so the Mercator
+// truly is the only source for those wares. The gate shop becomes a
+// thin "starter stat" stop that sells SHARPENED_BLADE and
+// WATCHTOWER_LENS as guaranteed commons — both items unique to the
+// gate (Mercator never carries them). Players between Mercator visits
+// can buy basic damage / range pickups from the gate; everything
+// else requires a deliberate Mercator visit.
+//
+// Mercator's offerings split across four tiers:
+//   • MID = uncommon-tier mostly-stat items (the previous gate
+//     uncommons + Mercator-mids, all consolidated here).
+//   • RARE = aura + utility items (the previous gate rares + Mercator
+//     rares + Mercator-exclusive rares, all consolidated here).
+//   • EPIC = the new purple tier (2026-05-18). Three demoted melee
+//     legendaries + three new 60g items live here.
+//   • LEGENDARY = build-defining trophies, same set as before.
 const GATE_COMMON = [
-  'SHARPENED_BLADE','TRAINING_SCROLL','WATCHTOWER_LENS',
-  'IRON_TIP','QUICKDRAW_GLOVES','BARBED_GLADIUS'
+  'SHARPENED_BLADE','WATCHTOWER_LENS'
 ];
-const GATE_UNCOMMON = [
-  'FLYER_BANE','CAVALRY_SPUR','MERCURY_FEATHER'
-];
-const GATE_RARE = [
-  'CENTURIONS_TRUMPET','BATTLE_STANDARD','GOLD_PURSE','STORM_JAVELIN',
-  'HOURGLASS_OF_SATURN'
-];
+// 2026-05-18 — Empty pools. The gate sells COMMON only; everything
+// else routes through Mercator. Kept as exported names for back-
+// compat with the sampling code, which already handles empty arrays.
+const GATE_UNCOMMON: string[] = [];
+const GATE_RARE: string[] = [];
 const MERCATOR_RARE = [
   'HOURGLASS_OF_SATURN','STORM_JAVELIN','BATTLE_STANDARD','CENTURIONS_TRUMPET',
   'GOLD_PURSE'
@@ -57,17 +63,27 @@ const MERCATOR_EXCLUSIVE_RARE = [
   // guarantees an exclusive-rare per visit.
   'WITCHS_VENOM'
 ];
+// 2026-05-18 — NEW EPIC TIER. Six items live here: 3 demoted legendary
+// melee items (Berserker's Muzzle, Celtic Longsword, Necrotic Longsword)
+// and 3 brand-new 60g picks (Lictor's Fasces, Auxiliary Sling, Optio's
+// Whistle). Mercator-exclusive — gate never carries Epic items.
+const MERCATOR_EPIC = [
+  'BERSERKERS_MUZZLE','CELTIC_LONGSWORD','NECROTIC_LONGSWORD',
+  'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE'
+];
 // Premium Mercator stock — Legendary trophies that the Gate Shop never carries.
 // These cost 3-5× a normal item but offer build-defining effects.
 const MERCATOR_LEGENDARY = [
-  'ALPHA_PACK_FANG','WAR_HOUND_COLLAR','CELTIC_LONGSWORD','ELEPHANT_TUSK',
+  'ALPHA_PACK_FANG','WAR_HOUND_COLLAR','ELEPHANT_TUSK',
   'NUMIDIAN_SADDLE','FALCATA_BLADE','BARCA_WAR_HORN','GILDED_SCALE_ARMOR',
-  'NECROTIC_LONGSWORD','LICH_GENERALS_SEAL','HANNIBALS_STRATEGY_SCROLL',
+  'LICH_GENERALS_SEAL','HANNIBALS_STRATEGY_SCROLL',
   'DRUID_STAFF_FRAGMENT',
   // 2026-05 build-defining legendaries — anti-air enabler, spear-throw
   // melee, chain lightning. All rotated through the same per-run
   // uniqueness filter so the player never sees a duplicate.
   'AQUILA_TALONS','SPEAR_OF_MARS','JUPITERS_WRATH'
+  // CELTIC_LONGSWORD + NECROTIC_LONGSWORD removed from this list — they
+  // are now EPIC (see MERCATOR_EPIC).
 ];
 // Legendary trophies baseline at 150g (set in items_permanent.json).
 // Mercator no longer marks them up — codex price == Mercator price for
@@ -158,45 +174,20 @@ function asRarity(s: string): Rarity { return s as Rarity; }
 // boss (W5/W10/W15/W20). Visits: W4, W9, W14, W19.
 export const MERCATOR_WAVES = [4, 9, 14, 19];
 
-// 2026-05 v10: BARBED_GLADIUS is a guaranteed gate-shop staple from the
-// very first visit — melee-only bleed should always be reachable for
-// pure-melee builds, not gated behind a lucky 3-of-6 common roll. The
-// guarantee is implemented by reserving one of the 3 common slots for
-// BARBED_GLADIUS and sampling the other 2 from the remaining pool.
-const GATE_GUARANTEED_COMMONS = ['BARBED_GLADIUS'];
-
-export function buildGateShop(_refreshSeed = 0, ownedLegendaries?: Set<string>): ShopState {
+// 2026-05-18 — Gate shop is now a thin starter shop: it sells the
+// two gate-exclusive commons (SHARPENED_BLADE + WATCHTOWER_LENS) and
+// nothing else. Every other item — uncommon, rare, epic, legendary —
+// requires a Mercator visit. This honors the design rule "all items
+// at Mercator are exclusive to Mercator." The 2-item offering is
+// always the same so the gate shop is predictable filler between
+// Mercator stops, not a meaningful loot rotation.
+// `ownedLegendaries` kept for back-compat with the call sites but
+// unused now that the legendary slot is removed.
+export function buildGateShop(_refreshSeed = 0, _ownedLegendaries?: Set<string>): ShopState {
   const offers: ShopOffer[] = [];
-  // Reserved slot(s): always-stocked common items. Pulled from the same
-  // items_permanent.json source so price + rarity stay consistent.
-  for (const id of GATE_GUARANTEED_COMMONS) {
+  for (const id of GATE_COMMON) {
     const def = ITEMS[id];
     if (def) offers.push({ itemId: id as ItemId, rarity: asRarity(def.rarity), price: def.buy, isConsumable: false });
-  }
-  // Random commons drawn from the rest of the pool (skip the guaranteed
-  // ones so the player can't see a duplicate).
-  const remainingCommons = GATE_COMMON.filter(id => !GATE_GUARANTEED_COMMONS.includes(id));
-  const commonsNeeded = Math.max(0, 3 - GATE_GUARANTEED_COMMONS.length);
-  const commons = sampleN(entries(remainingCommons), commonsNeeded);
-  const uncommons = sampleN(entries(GATE_UNCOMMON), 3);
-  const rares = sampleN(entries(GATE_RARE), 2);
-  for (const [id, def] of commons) offers.push({ itemId: id, rarity: 'COMMON', price: def.buy, isConsumable: false });
-  for (const [id, def] of uncommons) offers.push({ itemId: id, rarity: 'UNCOMMON', price: def.buy, isConsumable: false });
-  for (const [id, def] of rares) offers.push({ itemId: id, rarity: 'RARE', price: def.buy, isConsumable: false });
-  // 2026-05 v11: ONE rotating LEGENDARY slot per gate-shop refresh. Keeps
-  // the gate shop relevant past the early game without devaluing the
-  // Mercator (which still offers FOUR legendaries per visit + the T5
-  // armory). Filters out anything the player already owns so the slot
-  // always rotates fresh. Falls through to a random pick if nothing is
-  // available (every legendary owned — extremely rare).
-  const legendaryPool = ownedLegendaries
-    ? MERCATOR_LEGENDARY.filter(id => !ownedLegendaries.has(id))
-    : MERCATOR_LEGENDARY;
-  const legendarySource = legendaryPool.length > 0 ? legendaryPool : MERCATOR_LEGENDARY;
-  const picked = legendarySource[Math.floor(Math.random() * legendarySource.length)];
-  const legendaryDef = ITEMS[picked];
-  if (legendaryDef) {
-    offers.push({ itemId: picked as ItemId, rarity: 'LEGENDARY', price: legendaryDef.buy, isConsumable: false });
   }
   return { type: 'GATE', offers, livesPrice: 5, livesMaxThisVisit: 5, livesBoughtThisVisit: 0 };
 }
@@ -251,6 +242,16 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   for (const [id, def] of mids) {
     if (!def) continue;
     offers.push({ itemId: id, rarity: asRarity(def.rarity), price: (def.buy ?? 5) + 4, isConsumable: false });
+  }
+
+  // 2026-05-18 — 2 GUARANTEED EPIC slots. Pulled from the new purple
+  // tier (3 demoted melee legendaries + 3 new Epics). Price is the
+  // flat 60g baseline from items_permanent.json, no markup — the
+  // user set the Epic price specifically.
+  const epics = sampleN(entries(MERCATOR_EPIC), 2);
+  for (const [id, def] of epics) {
+    if (!def) continue;
+    offers.push({ itemId: id, rarity: 'EPIC' as Rarity, price: def.buy ?? 60, isConsumable: false });
   }
 
   return { type: 'MERCATOR', offers, livesPrice: 7, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };

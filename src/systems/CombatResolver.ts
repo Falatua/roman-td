@@ -446,6 +446,14 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     if (t.equippedItems.includes('AQUILIFER_BANNER') && !auraOff) {
       localAuras.push({ x: cx, y: cy, r: 2.5 * GRID.TILE, dmg: 0.14, spd: 0.10 });
     }
+    // 2026-05-18 — OPTIO_WHISTLE (Epic): +12% attack speed aura, 2-tile
+    // radius. Drill-master's command — gives allies the crisp tempo
+    // boost without a damage bonus. Cheap, broadly useful, sits cleanly
+    // below Centurion's Trumpet's RARE version (+12% spd same radius
+    // but different family).
+    if (t.equippedItems.includes('OPTIO_WHISTLE') && !auraOff) {
+      localAuras.push({ x: cx, y: cy, r: 2 * GRID.TILE, spd: 0.12 });
+    }
     // 2026-05-18 — EVENT-EXCLUSIVE AURAS.
     // NECROMANCERS_LANTERN (uprising): enemies in 3 tiles take +25%
     // damage from all sources. Regen-block is enforced separately

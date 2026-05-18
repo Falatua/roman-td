@@ -155,9 +155,9 @@
   },
   "BERSERKERS_MUZZLE": {
     "name": "Berserker's Muzzle",
-    "rarity": "LEGENDARY",
-    "buy": 130,
-    "sell": 40,
+    "rarity": "EPIC",
+    "buy": 60,
+    "sell": 30,
     "effect": "MELEE ONLY: +25% damage, +20% attack speed."
   },
   "DRUIDS_TORC": {
@@ -169,9 +169,9 @@
   },
   "CELTIC_LONGSWORD": {
     "name": "Celtic Longsword",
-    "rarity": "LEGENDARY",
-    "buy": 120,
-    "sell": 35,
+    "rarity": "EPIC",
+    "buy": 60,
+    "sell": 30,
     "effect": "MELEE ONLY: +25% damage."
   },
   "WARLORDS_WAR_PAINT": {
@@ -246,9 +246,9 @@
   },
   "NECROTIC_LONGSWORD": {
     "name": "Necrotic Longsword",
-    "rarity": "LEGENDARY",
-    "buy": 130,
-    "sell": 40,
+    "rarity": "EPIC",
+    "buy": 60,
+    "sell": 30,
     "effect": "MELEE ONLY: +28% damage."
   },
   "UNDEAD_ELEPHANT_BONE": {
@@ -341,6 +341,27 @@
     "buy": 38,
     "sell": 12,
     "effect": "Any tower: applies POISON (8% maxHP/sec for 5s) on hit. Heavy poison — the strongest non-Legendary DoT in the catalog. Pairs with bleed / burn items for tri-DoT stacks."
+  },
+  "LICTOR_FASCES": {
+    "name": "Lictor's Fasces",
+    "rarity": "EPIC",
+    "buy": 60,
+    "sell": 30,
+    "effect": "Any tower: +18% damage, +1 tile range. The magistrate's ceremonial bundle — small bonus everywhere, none of it specialized."
+  },
+  "AUXILIARY_SLING": {
+    "name": "Auxiliary Sling",
+    "rarity": "EPIC",
+    "buy": 60,
+    "sell": 30,
+    "effect": "RANGED ONLY: +30% damage. The light skirmisher's lead bullet — sized for archers, scorpios, and ballista crews."
+  },
+  "OPTIO_WHISTLE": {
+    "name": "Optio's Whistle",
+    "rarity": "EPIC",
+    "buy": 60,
+    "sell": 30,
+    "effect": "Aura 2 tiles: nearby allies gain +12% attack speed. The drill master's command — keeps every tower in his hearing range a half-step quicker."
   },
   "VANGUARD_PILUM": {
     "name": "Vanguard Pilum",

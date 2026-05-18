@@ -474,7 +474,7 @@ export interface LootOrb {
   x: number;     // pixel
   y: number;
   itemId: ItemId;
-  rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'LEGENDARY' | 'UNIQUE';
+  rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'UNIQUE';
 }
 
 export interface DrawCard {

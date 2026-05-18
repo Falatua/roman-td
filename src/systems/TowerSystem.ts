@@ -248,6 +248,13 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   // DRUIDS_TORC converted to AURA — applies via CombatResolver localAuras.
   if (t.equippedItems.includes('GALLIC_SHIELD_BOSS')) itemDmgMult *= 1.18;
   if (t.equippedItems.includes('GILDED_SCALE_ARMOR')) itemDmgMult *= 1.22;
+  // 2026-05-18 — EPIC TIER (purple) STATS.
+  // LICTOR_FASCES: +18% damage (range +1 below in extraRange).
+  // AUXILIARY_SLING: ranged-only +30% damage.
+  // OPTIO_WHISTLE: +12% attack speed aura — applied via CombatResolver
+  //                localAuras pass below, no self-buff here.
+  if (t.equippedItems.includes('LICTOR_FASCES')) itemDmgMult *= 1.18;
+  if (t.equippedItems.includes('AUXILIARY_SLING') && (t.damageType === DamageType.PHYS_RANGED)) itemDmgMult *= 1.30;
   // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES (atk-speed half).
   // PERIMETER_TORCH (invasion):    +25% atk speed (damage in CombatResolver)
   // HELLGATE_BRAND   (gates):      +25% atk speed (damage in CombatResolver)
@@ -264,6 +271,9 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // 2026-05-18 — INVASION-exclusive VANGUARD_PILUM: +1 tile range
     // alongside its +35% damage (applied in CombatResolver).
     (t.equippedItems.includes('VANGUARD_PILUM') ? 1 : 0) +
+    // 2026-05-18 — EPIC LICTOR_FASCES: +1 tile range alongside its
+    // +18% damage (applied above in itemDmgMult).
+    (t.equippedItems.includes('LICTOR_FASCES') ? 1 : 0) +
     // SPEAR OF MARS — converts a melee tower into a thrown-spear unit by
     // adding five tiles of reach. CombatResolver spawns a visible PROJ_HASTA
     // flying from the tower to the target whenever a melee swing fires

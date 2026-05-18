@@ -105,16 +105,24 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // cleave, DoT, and divine become legitimately necessary in the
   // back half of the run. Numbers are takes-X%-of-damage multipliers
   // (0.55 = takes 55% of the incoming ranged damage).
-  [EnemyType.UNDEAD_CELT]: { melee: 0.7, ranged: 0.55, poison: 0, bleed: 0 },
+  // 2026-05-18 — UNDEAD MINION FIRE VULNERABILITY restored. The wave
+  // brief tells the player "weak to fire and divine", so the data has
+  // to back that up. Minion-tier undead now take +25% from FIRE damage
+  // (burn 1.25). Bosses Undead Warlord + Undead War Elephant keep
+  // their lore-thematic immuneFire flag; minions don't.
+  [EnemyType.UNDEAD_CELT]: { melee: 0.7, ranged: 0.55, poison: 0, bleed: 0, fire: 1.25, burn: 1.25 },
   // 2026-05-17 — same melee vulnerability bump as the living druid (+25%).
   // Necrotic robes are no thicker than living-druid linen — melee strikes
   // through them with extra bite.
   [EnemyType.ZOMBIE_DRUID]: { melee: 1.25, slow: 0.55, burn: 0.6, poison: 0, bleed: 0, ranged: 0.55 },
-  [EnemyType.UNDEAD_BERSERKER]: { melee: 0.5, ranged: 0.6, slow: 0.5, burn: 0.85, poison: 0, bleed: 0 },
+  // 2026-05-18 — Burn flipped from 0.85 (resist) to 1.20 (vulnerable)
+  // to match the wave-brief promise that minion undead burn.
+  [EnemyType.UNDEAD_BERSERKER]: { melee: 0.5, ranged: 0.6, slow: 0.5, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
   [EnemyType.SPECTRAL_SCOUT]: { melee: 0.25, ranged: 0.55, slow: 0.2, burn: 0.45, poison: 0, bleed: 0 },
   [EnemyType.UNDEAD_WARLORD]: { melee: 0.45, ranged: 0.55, slow: 0.25, burn: 0.5, poison: 0, bleed: 0 },
 
-  [EnemyType.UNDEAD_SPEARMAN]: { ranged: 0.45, melee: 0.85, burn: 0.65, poison: 0, bleed: 0 },
+  // 2026-05-18 — Burn flipped from 0.65 (resist) to 1.15 (vulnerable).
+  [EnemyType.UNDEAD_SPEARMAN]: { ranged: 0.45, melee: 0.85, fire: 1.15, burn: 1.15, poison: 0, bleed: 0 },
   [EnemyType.GHOST_RIDER]: { melee: 0.2, ranged: 0.55, slow: 0.15, burn: 0.55, poison: 0, bleed: 0 },
   // UNDEAD WAR ELEPHANT — same melee-resist + bleed-immune buff as the
   // living War Elephant. The undead variant is already heavily slated;

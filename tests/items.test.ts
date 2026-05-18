@@ -111,21 +111,18 @@ describe('Loot drop rolling', () => {
 });
 
 describe('Merchant — gate shop', () => {
-  it('produces 9 offers (3 common + 3 uncommon + 2 rare + 1 legendary)', () => {
-    // 2026-05 v11: gate shop gained a guaranteed rotating LEGENDARY slot
-    // (one per refresh, filtered against owned legendaries). Bumps the
-    // total from 8 to 9 offers.
+  it('produces 2 COMMON-tier offers (gate is now a thin starter shop)', () => {
+    // 2026-05-18: gate shop trimmed to a 2-COMMON starter set
+    // (SHARPENED_BLADE + WATCHTOWER_LENS) — every other rarity / item
+    // moved to Mercator-exclusive pools. Honors the design rule that
+    // every Mercator item is exclusive to Mercator.
     const shop = buildGateShop();
     expect(shop.type).toBe('GATE');
-    expect(shop.offers.length).toBe(9);
+    expect(shop.offers.length).toBe(2);
     const commons = shop.offers.filter(o => o.rarity === 'COMMON');
-    const uncommons = shop.offers.filter(o => o.rarity === 'UNCOMMON');
-    const rares = shop.offers.filter(o => o.rarity === 'RARE');
-    const legendaries = shop.offers.filter(o => o.rarity === 'LEGENDARY');
-    expect(commons.length).toBe(3);
-    expect(uncommons.length).toBe(3);
-    expect(rares.length).toBe(2);
-    expect(legendaries.length).toBe(1);
+    expect(commons.length).toBe(2);
+    const ids = shop.offers.map(o => o.itemId).sort();
+    expect(ids).toEqual(['SHARPENED_BLADE', 'WATCHTOWER_LENS']);
   });
 
   it('contains no duplicate offers within a single visit', () => {
@@ -138,17 +135,21 @@ describe('Merchant — gate shop', () => {
 });
 
 describe('Merchant — Mercator stock', () => {
-  it('always includes 4 Legendaries + 1 Rare + 1 Mercator-exclusive Rare + 3 mid (no consumables, 2026-05 v6)', () => {
+  it('always includes 4 Legendaries + 2 Rare + 3 mid + 2 Epic (2026-05-18 — EPIC tier added)', () => {
     const shop = buildMercatorStock();
     expect(shop.type).toBe('MERCATOR');
     const legendaries = shop.offers.filter(o => o.rarity === 'LEGENDARY');
     const rare = shop.offers.filter(o => o.rarity === 'RARE');
+    const epic = shop.offers.filter(o => o.rarity === 'EPIC');
     const cons = shop.offers.filter(o => o.isConsumable);
     expect(legendaries.length).toBe(4);
-    // Now: 1 regular rare + 1 exclusive rare = 2 rares minimum.
+    // 1 regular rare + 1 exclusive rare = 2 rares minimum.
     expect(rare.length).toBeGreaterThanOrEqual(2);
+    // 2026-05-18 — 2 guaranteed EPIC slots per visit.
+    expect(epic.length).toBe(2);
     expect(cons.length).toBe(0);
-    expect(shop.offers.length).toBe(9);
+    // 4 legendary + 2 rare + 3 mid + 2 epic = 11 offers.
+    expect(shop.offers.length).toBe(11);
   });
 
   it('Mercator legendaries are priced significantly higher than gate shop rares', () => {

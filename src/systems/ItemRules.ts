@@ -50,7 +50,8 @@ const EQUIP_MODE: Record<string, EquipMode> = {
   FLYER_BANE: 'RANGED',
   FIRE_OIL_FLASK: 'RANGED',
   NUMIDIAN_SADDLE: 'RANGED',         // Numidian skirmisher — ranged identity
-  VENOM_TIPPED_ARROWS: 'RANGED'      // 2026-05 v9: ranged-poison Mercator stock
+  VENOM_TIPPED_ARROWS: 'RANGED',     // 2026-05 v9: ranged-poison Mercator stock
+  AUXILIARY_SLING: 'RANGED'          // 2026-05-18: Epic ranged sling
   // SERPENT_AMULET and WITCHS_VENOM omitted → default ANY (equip on any tower).
 };
 
@@ -153,7 +154,15 @@ const FAMILY: Record<string, ItemFamily> = {
   NECROMANCERS_LANTERN: 'SPECIAL',
   HELLGATE_BRAND: 'SPECIAL',
   DEMONSWORN_CROWN: 'SPECIAL',
-  INFERNO_STANDARD: 'SPECIAL'
+  INFERNO_STANDARD: 'SPECIAL',
+  // 2026-05-18 — EPIC TIER ITEMS. Three new at this rarity (Lictor's
+  // Fasces, Auxiliary Sling, Optio's Whistle). DAMAGE for the two stat
+  // sticks so they conflict with Sharpened Blade / Iron Tip (sensible —
+  // one damage item per tower), AURA for the whistle so it conflicts
+  // with Centurion's Trumpet / Druid's Torc / similar.
+  LICTOR_FASCES: 'DAMAGE',
+  AUXILIARY_SLING: 'DAMAGE',
+  OPTIO_WHISTLE: 'AURA'
 };
 
 export function itemFamily(itemId: ItemId): ItemFamily {

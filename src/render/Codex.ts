@@ -40,7 +40,7 @@ function spriteImg(key: string, size = 28): string {
   return `<span style="display:inline-block;width:${size}px;height:${size}px"></span>`;
 }
 
-const RAR: Record<string, string> = { COMMON: '#cccccc', UNCOMMON: '#5cd05c', RARE: '#5ca0ff', LEGENDARY: '#ff9933', UNIQUE: '#ffd34d' };
+const RAR: Record<string, string> = { COMMON: '#cccccc', UNCOMMON: '#5cd05c', RARE: '#5ca0ff', EPIC: '#a060ff', LEGENDARY: '#ff9933', UNIQUE: '#ffd34d' };
 
 interface CodexCtx {
   poolLevel: number; heroLevel: number; totalKills: number;
@@ -268,7 +268,7 @@ function renderTab(tab: string): string {
           <b style="color:#9be0ff">Physical melee</b> dominates chokepoints — and swings at empty air vs flyers. Iron Phalanx laughs at it.
           <b style="color:#9be0ff">Physical ranged</b> handles flyers, phalanxes, long lanes. The bread and butter of every legion.
           <b style="color:#9be0ff">Siege</b> clears clusters in one shot. Slow reloads — give it a sight line worth its time.
-          <b style="color:#9be0ff">Fire, poison, bleed, slow</b> win when the enemy lets you. Most undead are poison-immune, and a swath of undead are now <b style="color:#ee5555">fully fire-immune</b> too: Undead Celt, Undead Berserker, Reanimated Berserker, Undead Spearman, Undead Warlord, and Undead War Elephant — bone bodies don't smolder. <b>Super Demons are also fully fire-immune</b> — bring divine or physical, not a barrel of burning oil. Read the room. <b style="color:#ffd34d">Demons take BONUS divine damage</b> (×1.5 minion / ×1.3 boss on top of the faction's +100% divine row) — Flamen, Augur, Haruspex, and Solar Priest are the dedicated demon-busters.
+          <b style="color:#9be0ff">Fire, poison, bleed, slow</b> win when the enemy lets you. Most undead are poison-immune, and the two undead BOSSES — <b style="color:#ee5555">Undead Warlord and Undead War Elephant</b> — are also fire-immune. Minion undead (Undead Celt, Undead Berserker, Reanimated Berserker, Undead Spearman) BURN normally and take +25% fire damage on top — the wave briefs call them fire-vulnerable for a reason. <b>Super Demons are fully fire-immune</b> — bring divine or physical, not a barrel of burning oil. <b style="color:#ffd34d">Demons take BONUS divine damage</b> (×1.5 minion / ×1.3 boss on top of the faction's +100% divine row) — Flamen, Augur, Haruspex, and Solar Priest are the dedicated demon-busters.
           <b style="color:#9be0ff">Divine</b> is the cheat code into heavy resistance. Solar Priest ignores faction resists entirely. Build one. The empire will thank you.
         </div>
       `)}
@@ -1136,7 +1136,7 @@ function renderTab(tab: string): string {
     // Orange) so the page reads top-to-bottom from cheap commons to apex
     // legendaries. Each tier gets a colored section header so the visual
     // grouping is obvious even before the player reads the Rarity column.
-    const RARITY_ORDER: Array<'COMMON'|'UNCOMMON'|'RARE'|'LEGENDARY'> = ['COMMON','UNCOMMON','RARE','LEGENDARY'];
+    const RARITY_ORDER: Array<'COMMON'|'UNCOMMON'|'RARE'|'EPIC'|'LEGENDARY'> = ['COMMON','UNCOMMON','RARE','EPIC','LEGENDARY'];
     const RARITY_LABEL: Record<string, string> = {
       COMMON:    '⚪ COMMON — White tier',
       UNCOMMON:  '🟢 UNCOMMON — Green tier',

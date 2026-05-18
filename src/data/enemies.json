@@ -183,7 +183,6 @@
     "spriteSheet": 5,
     "spriteCell": 4,
     "immunePoison": true,
-    "immuneFire": true,
     "rebirthAtPct": 0.25,
     "checkpointHealPct": 0.2,
     "reanimateAs": "REANIMATED_ZOMBIE"
@@ -218,7 +217,6 @@
     "immuneFreeze": true,
     "immunePoison": true,
     "immuneStun": true,
-    "immuneFire": true,
     "phaseHits": 1,
     "lowHpSpeedBoost": 1.5,
     "checkpointHealPct": 0.2,
@@ -263,7 +261,6 @@
     "reanimateAs": "REANIMATED_ZOMBIE",
     "regenPctPerSec": 0.0196,
     "immunePoison": true,
-    "immuneFire": true,
     "requiresMeleeBreak": true,
     "shieldBlockChance": 0.35,
     "phaseHits": 1,
@@ -453,7 +450,6 @@
     "spriteCell": 0,
     "immunePoison": true,
     "immuneFreeze": true,
-    "immuneFire": true,
     "lowHpSpeedBoost": 1.5
   },
   "REANIMATED_ZOMBIE": {

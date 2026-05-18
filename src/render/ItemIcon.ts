@@ -11,6 +11,7 @@ const RARITY_HEX: Record<string, string> = {
   COMMON: '#cccccc',
   UNCOMMON: '#5cd05c',
   RARE: '#5ca0ff',
+  EPIC: '#a060ff',           // 2026-05-18 — purple tier between RARE and LEGENDARY
   LEGENDARY: '#ff9933',
   UNIQUE: '#ffd34d'
 };
