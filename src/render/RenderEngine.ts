@@ -911,7 +911,11 @@ export class RenderEngine {
   // Color keyed to damage flavor so divine hits look different from siege.
   private muzzleFlashes: { x: number; y: number; born: number; life: number; color: number }[] = [];
   triggerMuzzleFlash(x: number, y: number, color: number, tick: number) {
-    this.muzzleFlashes.push({ x, y, born: tick, life: 0.14, color });
+    // 2026-05-18 — life 0.14 → 0.22 so the tip flash is actually
+    // perceivable when ranged towers fire. Still short enough that
+    // rapid-fire units (Velites, Eques, Pugio) don't get a continuous
+    // glow at the firing tip.
+    this.muzzleFlashes.push({ x, y, born: tick, life: 0.22, color });
   }
   // Generic ground ring (used by heavy melee + boss death).
   triggerImpactRing(x: number, y: number, tick: number, maxR = 24, color = 0xffffff) {

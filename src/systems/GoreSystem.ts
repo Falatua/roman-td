@@ -70,7 +70,10 @@ export function emitFloatingNumber(gore: GoreState, x: number, y: number, dmg: n
 }
 
 export function emitHitSplatter(gore: GoreState, x: number, y: number, big = false) {
-  const n = big ? 14 : 6;
+  // 2026-05-18 — non-boss count bumped 6 → 9 to make each kill feel
+  // visibly weightier without overrunning the particle pool. Boss
+  // splatter unchanged (already meaty at 14).
+  const n = big ? 14 : 9;
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2;
     const sp = 40 + Math.random() * (big ? 220 : 90);
@@ -85,8 +88,9 @@ export function emitHitSplatter(gore: GoreState, x: number, y: number, big = fal
 }
 
 // Yellow-white spark burst on impact (game feel §6.2 — distinct from red blood)
+// 2026-05-18 — spark count 4 → 6 so every hit pops more clearly.
 export function emitHitSpark(gore: GoreState, x: number, y: number) {
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 6; i++) {
     const a = Math.random() * Math.PI * 2;
     const sp = 80 + Math.random() * 100;
     gore.particles.push({

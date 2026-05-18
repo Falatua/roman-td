@@ -2740,26 +2740,25 @@ async function boot() {
   // if the browser allows it (often the case after a recent gesture
   // on the page, e.g. tab activation), it plays immediately.
   const LOADING_MUSIC_URL = sfx('assets/sfx/ff7_victory_fanfare.mp3');
-  // 2026-05-17 v3 — MUTED-AUTOPLAY-FIRST strategy. Browsers UNIVERSALLY
-  // allow muted audio to autoplay (no user-gesture required). We start
-  // the track muted the instant the page loads, so the audio element is
-  // already playing silently as soon as the loading bar appears.
+  // 2026-05-18 v4 — AUDIBLE-AUTOPLAY-FIRST strategy. Most users
+  // reaching this page have prior engagement with the falatua.github.io
+  // origin (they followed a link, used a bookmark, or it's a return
+  // visit), which means Chrome's Media Engagement Index has accumulated
+  // and audible autoplay will succeed on the first .play() call. The
+  // user hears the fanfare the instant the loading screen renders, no
+  // gesture required.
   //
-  // When ANY user gesture fires (the primer net below), we flip
-  // muted=false AND rewind to currentTime=0 — the user hears the song
-  // FROM THE BEGINNING the moment they move their mouse, press a key,
-  // tap the screen, focus the tab, or anything else. Zero perceived
-  // latency. No load delay because the audio has been streaming in the
-  // background the whole time.
-  //
-  // playMusicTrack also has internal fallback: if it tries audible play
-  // first and gets a NotAllowedError, it retries muted automatically.
-  // So even if startMuted=true gets accidentally set to false somewhere,
-  // we still end up with a muted track ready for the unmute primer.
+  // playMusicTrack's internal fallback handles the cold-load case: if
+  // audible play() is rejected (NotAllowedError, brand-new visitor in
+  // incognito with zero MEI), it automatically retries with muted=true.
+  // The audio still streams silently, and the unmute primers below
+  // flip it audible on the first user gesture (mousemove / click /
+  // key / touch / focus) with currentTime=0 so they hear the song
+  // from the beginning. Both paths land at "song plays as fast as
+  // browser policy allows."
   playMusicTrack('loading', LOADING_MUSIC_URL, {
     loop: true,
-    gain: 0.55,
-    startMuted: true
+    gain: 0.55
   });
   // Primer net: any sign of user presence flips muted -> unmuted +
   // rewinds to 0 so the player hears the song from the start.
@@ -4358,6 +4357,19 @@ async function boot() {
           // the per-attack pipeline. Removing the kill-pulse logic also
           // drops the `t.__bloodKills` counter, which is no longer read.
           emitDeathSplatter(gore, e, state.tick);
+          // 2026-05-18 — KILL POP ring. Every enemy death now drops a
+          // small expanding white ring at the death position so the kill
+          // reads as a snappy "pop" instead of just particles. Bosses get
+          // a bigger gold ring to mark the milestone. Cheap — uses the
+          // pooled impactRing graphics (no new allocations).
+          if (renderer?.triggerImpactRing) {
+            if (e.isBoss) {
+              renderer.triggerImpactRing(e.x, e.y, state.tick, 48, 0xffd34d);
+              renderer.triggerImpactRing(e.x, e.y, state.tick + 0.06, 80, 0xffe88c);
+            } else {
+              renderer.triggerImpactRing(e.x, e.y, state.tick, 18, 0xffffff);
+            }
+          }
           // BONUS BOSS reward — double the gold the wave would normally pay,
           // plus a flashy floating "+Xg BONUS" banner above the corpse.
           if (e.isBonusBoss) {
