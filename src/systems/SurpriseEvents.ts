@@ -29,6 +29,7 @@ import { spawnEnemy } from './EnemySystem';
 import { effectiveWaveHpMult, lateGameLayerMult } from './WaveManager';
 import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
+import waypointsData from '../data/waypoints.json';
 
 // ─── PUBLIC API ────────────────────────────────────────────────────────
 
@@ -381,7 +382,7 @@ function buildPointsFromLocations(
     const pos = locations[pIdx];
     const vfxX = pos.col * GRID.TILE + GRID.TILE / 2;
     const vfxY = pos.row * GRID.TILE + GRID.TILE / 2;
-    const nearest = nearestPathIndex(state, pos.col, pos.row);
+    const nearest = nearestPathIndexAfterWP2(state, pos.col, pos.row);
     const pathTileX = state.groundPath[nearest]?.col ?? pos.col;
     const pathTileY = state.groundPath[nearest]?.row ?? pos.row;
     const baseStart = startAtTick + VFX_RISE_SECONDS + pIdx * INTER_POINT_OFFSET;
@@ -448,7 +449,7 @@ function generateInvasionPoints(state: GameStateShape, startAtTick: number, wave
     return locations.map((pos, i) => {
       const vfxX = pos.col * GRID.TILE + GRID.TILE / 2;
       const vfxY = pos.row * GRID.TILE + GRID.TILE / 2;
-      const nearest = nearestPathIndex(state, pos.col, pos.row);
+      const nearest = nearestPathIndexAfterWP2(state, pos.col, pos.row);
       return {
         vfxX, vfxY,
         pathTileX: state.groundPath[nearest]?.col ?? pos.col,
@@ -484,7 +485,7 @@ function generateUprisingPoints(state: GameStateShape, startAtTick: number, wave
     return locations.map((pos, i) => {
       const vfxX = pos.col * GRID.TILE + GRID.TILE / 2;
       const vfxY = pos.row * GRID.TILE + GRID.TILE / 2;
-      const nearest = nearestPathIndex(state, pos.col, pos.row);
+      const nearest = nearestPathIndexAfterWP2(state, pos.col, pos.row);
       return {
         vfxX, vfxY,
         pathTileX: state.groundPath[nearest]?.col ?? pos.col,
@@ -522,10 +523,46 @@ function pickSurpriseEnemyType(state: GameStateShape, undeadOnly: boolean): stri
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-function nearestPathIndex(state: GameStateShape, col: number, row: number): number {
-  let best = 0;
+// 2026-05-17 — Surprise events (Invasion + Skeletal Uprising) drop
+// enemies onto the path AT OR AFTER waypoint 3. Per design: the breach
+// arrivals SKIP waypoints 1 + 2 (they didn't walk from the cave) but
+// must still touch waypoints 3, 4, 5, 6, 7 in order before reaching
+// the gate. This guarantees the maze still pressures them through
+// the back half of the path — single-tile chokes at WP3-7 still work,
+// and the player's late-stage tower placements still see them.
+//
+// Cached on first access because the path doesn't change after build.
+let _wp3PathIndex: number | null = null;
+function getMinSurprisePathIndex(state: GameStateShape): number {
+  if (_wp3PathIndex !== null && state.groundPath.length > 0) return _wp3PathIndex;
+  // Find WP2's path index — the tile on the path closest to WP2.
+  // Spawning AT OR JUST AFTER WP2 means the enemy still has WP3-7 ahead.
+  const wp2 = (waypointsData as any).waypoints.find((w: any) => w.index === 2);
+  if (!wp2) { _wp3PathIndex = 0; return 0; }
+  let bestIdx = 0;
   let bestD = Infinity;
   for (let i = 0; i < state.groundPath.length; i++) {
+    const p = state.groundPath[i];
+    const d = Math.abs(p.col - wp2.topLeft.col) + Math.abs(p.row - wp2.topLeft.row);
+    if (d < bestD) { bestD = d; bestIdx = i; }
+  }
+  // Step one tile PAST WP2 so the spawn doesn't accidentally trigger
+  // a "crossed WP2" event (relevant for the checkpoint-heal mechanic).
+  // Cap at path-length-1 in case WP2 is the last tile (it isn't, but
+  // defensive).
+  _wp3PathIndex = Math.min(state.groundPath.length - 1, bestIdx + 1);
+  return _wp3PathIndex;
+}
+
+// Variant of nearestPathIndex that clamps the result so the enemy can
+// never spawn BEFORE waypoint 3. The result is always >= getMinSurprisePathIndex.
+// Used by the surprise-event spawn-snap so Invasion/Uprising enemies
+// skip WP1+WP2 but still walk WP3-7 in order.
+function nearestPathIndexAfterWP2(state: GameStateShape, col: number, row: number): number {
+  const minIdx = getMinSurprisePathIndex(state);
+  let best = minIdx;
+  let bestD = Infinity;
+  for (let i = minIdx; i < state.groundPath.length; i++) {
     const p = state.groundPath[i];
     const d = Math.abs(p.col - col) + Math.abs(p.row - row);
     if (d < bestD) { bestD = d; best = i; }
