@@ -201,9 +201,36 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
   }
   paintRows();
 
+  // 2026-05-18 — LIVE UPDATE during the wave. Refresh the rows every
+  // 600ms while the modal is open so the player can watch their
+  // towers' wave damage / kill counts climb in real time. Auto-clears
+  // on close (modal removal + ESC + outside-click all route through
+  // hooks.onClose, which triggers the same cleanup path).
+  const liveTimer = window.setInterval(() => {
+    if (!document.body.contains(modal)) {
+      window.clearInterval(liveTimer);
+      return;
+    }
+    paintRows();
+  }, 600);
   // ESC closes modal
   const onKey = (ev: KeyboardEvent) => {
-    if (ev.key === 'Escape') { hooks.onClose(); document.removeEventListener('keydown', onKey); }
+    if (ev.key === 'Escape') {
+      hooks.onClose();
+      document.removeEventListener('keydown', onKey);
+      window.clearInterval(liveTimer);
+    }
   };
   document.addEventListener('keydown', onKey);
+  // Headline updates with the current wave number too (in case the
+  // wave advances while the modal is open).
+  const headerTitleEl = panel.querySelector('div:first-child > div:first-child > div:first-child') as HTMLElement | null;
+  if (headerTitleEl) {
+    // Re-paint header text each tick too so "WAVE N" stays in sync.
+    const headerTimer = window.setInterval(() => {
+      if (!document.body.contains(modal)) { window.clearInterval(headerTimer); return; }
+      const waveDisplayNow = state.wave > 0 ? `WAVE ${state.wave}` : 'PRE-WAVE 1';
+      headerTitleEl.innerHTML = `⚔ WAVE BREAKDOWN — <span style="color:#9be0ff">${waveDisplayNow}</span><span style="font-size:9px;color:#88ff88;margin-left:8px;letter-spacing:2px">● LIVE</span>`;
+    }, 1000);
+  }
 }

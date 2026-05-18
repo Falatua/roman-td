@@ -24,47 +24,32 @@ const RARITY_COLOR: Record<string, string> = {
   UNIQUE: '#ff7ee0'
 };
 
-// Items eligible to be offered by surprise-event rewards.
-// Design lock: REWARDS COME FROM EXISTING ITEMS — no new items invented.
-// DoT items remain excluded (Mercator-only, matches grantBonusItem rule).
-const DOT_ITEMS = new Set([
-  'BARBED_GLADIUS', 'FIRE_OIL_FLASK', 'POISONED_BLADE',
-  'FALCATA_BLADE', 'ALPHA_PACK_FANG'
-]);
+// 2026-05-18 — EVENT-EXCLUSIVE REWARD POOLS. Each of the three surprise
+// events has its own pool of 3 LEGENDARY items that ONLY drop from
+// that event. The player picks one of the three at the end-of-event
+// reward modal. Items are tagged with `eventExclusive` in
+// items_permanent.json so the shop / Mercator / generic free-grant
+// pools all skip them (kept exclusive to event rewards).
+const EVENT_REWARD_POOL: Record<'INVASION' | 'UPRISING' | 'GATES_OF_HELL', string[]> = {
+  INVASION:      ['VANGUARD_PILUM', 'AQUILA_RAMPART', 'PERIMETER_TORCH'],
+  UPRISING:      ['GRAVEKEEPERS_SCYTHE', 'SOULFIRE_BRAND', 'NECROMANCERS_LANTERN'],
+  GATES_OF_HELL: ['HELLGATE_BRAND', 'DEMONSWORN_CROWN', 'INFERNO_STANDARD'],
+};
 
-// Build the candidate pool. Surprise events reward RARE-tier or
-// UNCOMMON-tier items (no commons — events are too dramatic for a
-// junk reward; no legendaries — those stay reserved for boss kills).
-function buildRewardPool(): { id: string; rarity: string; def: any }[] {
+// Build the 3-item offer for a given event kind. Always returns 3
+// distinct legendaries from that event's exclusive pool (each pool
+// has exactly 3 entries, so no random rolling — the player sees the
+// same three picks every time, but choosing ONE makes the run feel
+// shaped by which legendary they took for that event).
+function pickEventOffers(kind: 'INVASION' | 'UPRISING' | 'GATES_OF_HELL'): { id: string; rarity: string; def: any }[] {
+  const ids = EVENT_REWARD_POOL[kind] ?? [];
   const out: { id: string; rarity: string; def: any }[] = [];
-  for (const [id, def] of Object.entries(itemsData as any)) {
-    const d = def as any;
-    if (!d?.rarity) continue;
-    if (DOT_ITEMS.has(id)) continue;
-    if (d.rarity !== 'RARE' && d.rarity !== 'UNCOMMON') continue;
-    out.push({ id, rarity: d.rarity, def: d });
+  for (const id of ids) {
+    const def: any = (itemsData as any)[id];
+    if (!def) continue;
+    out.push({ id, rarity: def.rarity ?? 'LEGENDARY', def });
   }
   return out;
-}
-
-// Pick 3 distinct items, weighted ~70% RARE / 30% UNCOMMON for a feel
-// of "this event paid out something meaningful most of the time."
-function pickThreeOffers(): { id: string; rarity: string; def: any }[] {
-  const pool = buildRewardPool();
-  const rares = pool.filter(p => p.rarity === 'RARE');
-  const uncommons = pool.filter(p => p.rarity === 'UNCOMMON');
-  const picks: { id: string; rarity: string; def: any }[] = [];
-  const seen = new Set<string>();
-  while (picks.length < 3) {
-    const wantRare = Math.random() < 0.7;
-    const src = (wantRare && rares.length > 0) ? rares : (uncommons.length > 0 ? uncommons : rares);
-    if (src.length === 0) break;
-    const cand = src[Math.floor(Math.random() * src.length)];
-    if (seen.has(cand.id)) continue;
-    seen.add(cand.id);
-    picks.push(cand);
-  }
-  return picks;
 }
 
 export function showSurpriseRewardModal(
@@ -80,16 +65,14 @@ export function showSurpriseRewardModal(
   // Cleared by closeModal() below — guarantees we never leave a stuck pause.
   (state as any).__surpriseRewardOpen = true;
 
-  // 2026-05-17 — GATES OF HELL reward is a single fixed legendary
-  // (LICH_GENERALS_SEAL — the dedicated boss-hunter, +75% damage vs
-  // bosses). Invasion / Uprising still show the 3-card picker. Build
-  // the offer list accordingly.
-  const offers = kind === 'GATES_OF_HELL'
-    ? (() => {
-        const def: any = (itemsData as any).LICH_GENERALS_SEAL;
-        return def ? [{ id: 'LICH_GENERALS_SEAL', rarity: 'LEGENDARY', def }] : [];
-      })()
-    : pickThreeOffers();
+  // 2026-05-18 — Every event offers a 3-card pick from its own
+  // event-exclusive legendary pool. Items in the pool can ONLY be
+  // obtained from this event — they're locked out of the shop, the
+  // Mercator, free-grants, and boss drops by the `eventExclusive`
+  // flag in items_permanent.json. Player chooses ONE; the other two
+  // are dropped (can come back next time this event fires in
+  // endless mode, but only one copy per event resolution).
+  const offers = pickEventOffers(kind);
   if (offers.length === 0) {
     // Pool empty for some reason — fail safe, just close and skip reward.
     (state as any).__surpriseRewardOpen = false;
@@ -111,10 +94,10 @@ export function showSurpriseRewardModal(
       ? 'YOU SURVIVED THE UPRISING'
       : 'YOU SHUT THE GATES OF HELL';
   const subline = kind === 'INVASION'
-    ? 'The perimeter held. Smoke clears over the broken siege lines, and Rome stands. The Senate has prepared a trophy from the wreckage — claim one and continue the campaign.'
+    ? 'The perimeter held. Three legendaries recovered from the wreckage — only one can be carried. The other two stay buried under the breach. Choose carefully.'
     : kind === 'UPRISING'
-      ? 'The ground falls silent. The urns crack open and crumble; whatever rose from them has been put back. The empire honors your defense with one relic from the ritual circle.'
-      : 'The fires die down. The gates have closed and the demons have fled back to where they were summoned. The Senate awards you a legendary trophy fit for the slayer of the boss tier.';
+      ? 'The ground falls silent. Three relics surface from the ritual circle — only one will come with you. Necromancy made these; turn them on what made them.'
+      : 'The fires die down. Three trophies forged in the gates themselves — only one fits the player who survived this. The others sink back into the pit.';
   const eyebrow = kind === 'INVASION'
     ? '⚔ ACCOMPLISHMENT — INVASION REPELLED'
     : kind === 'UPRISING'
@@ -132,9 +115,9 @@ export function showSurpriseRewardModal(
       <div style="font-size:11px;font-weight:bold;letter-spacing:5px;color:${accent};text-shadow:1px 1px 0 #000">${eyebrow}</div>
       <div style="font-size:22px;font-weight:bold;letter-spacing:4px;color:${accent};text-shadow:2px 2px 0 #000;margin-top:6px">${headline}</div>
       <div style="font-size:12px;color:#e8d6a8;line-height:1.5;margin-top:8px;letter-spacing:1px">${subline}</div>
-      <div style="font-size:10px;color:#aa9a4a;margin-top:4px;letter-spacing:2px">${kind === 'GATES_OF_HELL' ? 'CLAIM YOUR LEGENDARY' : 'CHOOSE ONE'}</div>
+      <div style="font-size:10px;color:#aa9a4a;margin-top:4px;letter-spacing:2px">CHOOSE ONE LEGENDARY</div>
     </div>
-    <div id="surprise-reward-cards" style="display:grid;grid-template-columns:${kind === 'GATES_OF_HELL' ? '1fr' : 'repeat(3,1fr)'};gap:10px;${kind === 'GATES_OF_HELL' ? 'max-width:300px;margin:0 auto;' : ''}"></div>
+    <div id="surprise-reward-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>
     <div style="margin-top:14px;text-align:center;font-size:10px;color:#aa9a4a;letter-spacing:1px;font-style:italic">
       The game is paused. The Senate will wait.
     </div>

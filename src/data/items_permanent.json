@@ -341,5 +341,77 @@
     "buy": 38,
     "sell": 12,
     "effect": "Any tower: applies POISON (8% maxHP/sec for 5s) on hit. Heavy poison — the strongest non-Legendary DoT in the catalog. Pairs with bleed / burn items for tri-DoT stacks."
+  },
+  "VANGUARD_PILUM": {
+    "name": "Vanguard Pilum",
+    "rarity": "LEGENDARY",
+    "buy": 0,
+    "sell": 60,
+    "eventExclusive": "INVASION",
+    "effect": "INVASION REWARD ONLY: Any tower: +35% damage, +1 tile range. Roman frontier issue — recovered from the breach."
+  },
+  "AQUILA_RAMPART": {
+    "name": "Aquila Rampart",
+    "rarity": "LEGENDARY",
+    "buy": 0,
+    "sell": 60,
+    "eventExclusive": "INVASION",
+    "effect": "INVASION REWARD ONLY: Any tower: +50% damage vs enemies above 70% HP. Front-line execute — finish the breach early before they spread."
+  },
+  "PERIMETER_TORCH": {
+    "name": "Perimeter Torch",
+    "rarity": "LEGENDARY",
+    "buy": 0,
+    "sell": 60,
+    "eventExclusive": "INVASION",
+    "effect": "INVASION REWARD ONLY: Any tower: +25% damage AND +25% attack speed. The torch carried through the broken gate."
+  },
+  "GRAVEKEEPERS_SCYTHE": {
+    "name": "Gravekeeper's Scythe",
+    "rarity": "LEGENDARY",
+    "buy": 0,
+    "sell": 60,
+    "eventExclusive": "UPRISING",
+    "effect": "UPRISING REWARD ONLY: Any tower: +60% damage vs Undead-faction enemies (Undead Celts, Undead Carthage, reanimated forms). Bone breaks easy."
+  },
+  "SOULFIRE_BRAND": {
+    "name": "Soulfire Brand",
+    "rarity": "LEGENDARY",
+    "buy": 0,
+    "sell": 60,
+    "eventExclusive": "UPRISING",
+    "effect": "UPRISING REWARD ONLY: Any tower: applies HELLFIRE on hit (4% maxHP/sec for 4s) — true damage that ignores every resist and immunity. Divine fire from the urns."
+  },
+  "NECROMANCERS_LANTERN": {
+    "name": "Necromancer's Lantern",
+    "rarity": "LEGENDARY",
+    "buy": 0,
+    "sell": 60,
+    "eventExclusive": "UPRISING",
+    "effect": "UPRISING REWARD ONLY: Aura 3 tiles: enemies in range take +25% damage from all sources AND cannot regenerate. The lantern that drowns the dead."
+  },
+  "HELLGATE_BRAND": {
+    "name": "Hellgate Brand",
+    "rarity": "LEGENDARY",
+    "buy": 0,
+    "sell": 60,
+    "eventExclusive": "GATES_OF_HELL",
+    "effect": "GATES OF HELL REWARD ONLY: Any tower: +50% damage, +25% attack speed, immune to silence/tower-slow auras. Forged in the gates themselves."
+  },
+  "DEMONSWORN_CROWN": {
+    "name": "Demonsworn Crown",
+    "rarity": "LEGENDARY",
+    "buy": 0,
+    "sell": 60,
+    "eventExclusive": "GATES_OF_HELL",
+    "effect": "GATES OF HELL REWARD ONLY: Any tower: +100% damage vs Demon-faction enemies AND +50% damage vs Bosses. The crown that judges hellspawn."
+  },
+  "INFERNO_STANDARD": {
+    "name": "Inferno Standard",
+    "rarity": "LEGENDARY",
+    "buy": 0,
+    "sell": 60,
+    "eventExclusive": "GATES_OF_HELL",
+    "effect": "GATES OF HELL REWARD ONLY: Aura 3 tiles: nearby allies gain +25% damage AND every attack applies BURN (5% maxHP/sec for 3s) on hit."
   }
 }

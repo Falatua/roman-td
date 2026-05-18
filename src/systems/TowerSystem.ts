@@ -248,6 +248,11 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   // DRUIDS_TORC converted to AURA — applies via CombatResolver localAuras.
   if (t.equippedItems.includes('GALLIC_SHIELD_BOSS')) itemDmgMult *= 1.18;
   if (t.equippedItems.includes('GILDED_SCALE_ARMOR')) itemDmgMult *= 1.22;
+  // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES (atk-speed half).
+  // PERIMETER_TORCH (invasion):    +25% atk speed (damage in CombatResolver)
+  // HELLGATE_BRAND   (gates):      +25% atk speed (damage in CombatResolver)
+  if (t.equippedItems.includes('PERIMETER_TORCH')) itemSpeedMult *= 1.25;
+  if (t.equippedItems.includes('HELLGATE_BRAND')) itemSpeedMult *= 1.25;
   // CURSED_TORC, LICH_GENERALS_SEAL, BARCA_WAR_HORN all converted to
   // AURA emitters in CombatResolver (2026-05). Self-buff lines removed
   // so a tower no longer double-dips its own aura.
@@ -256,6 +261,9 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     (t.equippedItems.includes('DRUID_STAFF_FRAGMENT') ? 2 : 0) +
     (t.equippedItems.includes('GALLIC_SHIELD_BOSS') ? 1 : 0) +
     (t.equippedItems.includes('GILDED_SCALE_ARMOR') ? 1 : 0) +
+    // 2026-05-18 — INVASION-exclusive VANGUARD_PILUM: +1 tile range
+    // alongside its +35% damage (applied in CombatResolver).
+    (t.equippedItems.includes('VANGUARD_PILUM') ? 1 : 0) +
     // SPEAR OF MARS — converts a melee tower into a thrown-spear unit by
     // adding five tiles of reach. CombatResolver spawns a visible PROJ_HASTA
     // flying from the tower to the target whenever a melee swing fires

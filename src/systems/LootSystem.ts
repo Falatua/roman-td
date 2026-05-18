@@ -149,7 +149,12 @@ export function rollBossDrop(
   // late-game player who has the whole CARTHAGE table already shouldn't get
   // a dead boss-kill bonus.
   if (pool.length === 0) {
-    const allLegendaries = Object.keys(items).filter(id => (items as any)[id]?.rarity === 'LEGENDARY');
+    // 2026-05-18 — Boss drops also skip event-exclusive legendaries.
+    // Those are reserved for surprise-event reward modals only.
+    const allLegendaries = Object.keys(items).filter(id => {
+      const def: any = (items as any)[id];
+      return def?.rarity === 'LEGENDARY' && !def?.eventExclusive;
+    });
     pool = allLegendaries.filter(id => !owned.has(id));
   }
   if (pool.length === 0) return null; // player owns every legendary in the game — rare flex

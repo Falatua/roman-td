@@ -139,7 +139,21 @@ const FAMILY: Record<string, ItemFamily> = {
   VESTAL_PYRE: 'SPECIAL',
   VENOM_TIPPED_ARROWS: 'SPECIAL',
   SERPENT_AMULET: 'SPECIAL',
-  WITCHS_VENOM: 'SPECIAL'
+  WITCHS_VENOM: 'SPECIAL',
+  // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES. All registered SPECIAL
+  // so they stack with any other equipped item (DoT, damage, range,
+  // aura). The intention is event rewards feel additive to whatever
+  // build the player already has, not "you have to drop your damage
+  // item to use this".
+  VANGUARD_PILUM: 'SPECIAL',
+  AQUILA_RAMPART: 'SPECIAL',
+  PERIMETER_TORCH: 'SPECIAL',
+  GRAVEKEEPERS_SCYTHE: 'SPECIAL',
+  SOULFIRE_BRAND: 'SPECIAL',
+  NECROMANCERS_LANTERN: 'SPECIAL',
+  HELLGATE_BRAND: 'SPECIAL',
+  DEMONSWORN_CROWN: 'SPECIAL',
+  INFERNO_STANDARD: 'SPECIAL'
 };
 
 export function itemFamily(itemId: ItemId): ItemFamily {

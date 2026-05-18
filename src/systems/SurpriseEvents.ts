@@ -67,11 +67,11 @@ const GATES_OF_HELL_CADENCE_SECONDS = 2;
 // without overwhelming the wave already in motion).
 const SPAWNS_PER_POINT = 2;
 const POINT_COUNT = 4;
-// Stagger between consecutive spawns AT THE SAME point. 2026-05-17:
-// tightened (Invasion 0.7 → 0.35s, Uprising 0.5 → 0.30s) so the
-// emerging enemies pour out faster — was feeling sluggish, the user
-// wants the breach to read as an actual sudden burst.
-const INTRA_POINT_STAGGER = { INVASION: 0.35, UPRISING: 0.30 };
+// Stagger between consecutive spawns AT THE SAME point. 2026-05-18:
+// Invasion cadence tightened HARD (0.35 → 0.18s) so 18 perimeter fires
+// each pumping enemies = a wall of incoming threats. Uprising kept at
+// 0.30s — undead waves are about pressure, not velocity.
+const INTRA_POINT_STAGGER = { INVASION: 0.18, UPRISING: 0.30 };
 // Offset added between consecutive POINTS so all 4 don't fire at the
 // same tick. Tightened 0.3 → 0.15 to keep the multi-point burst tight.
 const INTER_POINT_OFFSET = 0.15;
@@ -413,6 +413,16 @@ function attachSurpriseSpawnTags(state: GameStateShape, enemy: any, ev: Surprise
   // Carry the pointId so the gate-destruction handler can flag the
   // matching spawn schedule entries when this enemy dies.
   enemy.__surprisePointId = point.pointId;
+  // 2026-05-18 — INVASION AGGRESSION BUFF. Every invader gains +25%
+  // base speed to sell the "frenzied breach" feel. They run at the
+  // gate instead of plodding — the player has less time to redirect
+  // tower fire after the breach lights up. HP intentionally kept at
+  // baseline so the wave-preview HP numbers still match what spawns
+  // (the preview-parity tests would break if we touched maxHp here).
+  if (ev.kind === SurpriseEventKind.INVASION) {
+    enemy.baseSpeed *= 1.25;
+    enemy.currentSpeed = enemy.baseSpeed;
+  }
 }
 
 // 2026-05-17 — Called from the death-handling code when a HELL_GATE
@@ -473,12 +483,15 @@ function scheduleSurpriseEvent(state: GameStateShape, kind: SurpriseEventKind, s
   state.lastSurpriseEventWave = state.wave;
 }
 
-// INVASION atmosphere: 8 small fires scattered along the OUTER edge of
+// INVASION atmosphere: small fires scattered along the OUTER edge of
 // the playable area. "The empire is besieged" reading — purely cosmetic.
 // Never on path tiles, never on towers, never in the HUD button column.
+// 2026-05-18 — Doubled the count (8 → 16) so the perimeter glow reads
+// as a TRUE city-under-siege, matching the 18 breach fires from the
+// main spawn-point pass.
 function generateInvasionAtmosphere(state: GameStateShape, mainPoints: SurpriseEventSpawnPoint[]): SurpriseAtmosProp[] {
   const props: SurpriseAtmosProp[] = [];
-  const TARGET = 8;
+  const TARGET = 16;
   // Build a candidate pool of valid perimeter tiles (tiles within 2 of
   // any edge, excluding HUD column + path + non-empty tiles).
   const hudSafe = GRID.COLS - 7;
@@ -808,43 +821,40 @@ function buildPointsFromLocations(
 }
 
 function generateInvasionPoints(state: GameStateShape, startAtTick: number, waveOverride: boolean): SurpriseEventSpawnPoint[] {
-  // 2026-05-17 — Perimeter breach count expanded from 4 → 10 so the
-  // invasion reads as a TRUE perimeter assault (enemies coming from
-  // many points along every edge) instead of just 4 corners. The wave's
-  // spawn queue is round-robin distributed across all 10 points, so
-  // each fire spawns ~1-3 enemies depending on wave size — a varied,
-  // unpredictable spread instead of clustered single-point streams.
-  //
-  // Layout: 3 fires along the TOP edge, 3 along the BOTTOM, 2 along
-  // the LEFT, 2 along the RIGHT (right edge inset to dodge the HUD
-  // button column). Roughly even spacing per side.
+  // 2026-05-18 — INVASION OVER-THE-TOP PASS. Perimeter breach count
+  // expanded again: 10 → 18 fires across every edge so the player
+  // sees a TRUE perimeter assault, not just a few corner fires. Per-
+  // edge breakdown:
+  //   • TOP edge: 5 fires evenly spaced
+  //   • BOTTOM edge: 5 fires evenly spaced
+  //   • LEFT edge: 4 fires evenly spaced
+  //   • RIGHT edge: 4 fires evenly spaced (inset 7 cols for HUD safety)
+  // 18 visible fires + the wave's enemies pouring out of each in
+  // round-robin distribution = the "oh crap" moment the user asked for.
   const wallSafeRight = GRID.COLS - 7;
   const topRow = 1;
   const botRow = GRID.ROWS - 2;
   const leftCol = 1;
-  // 3 evenly-spaced columns for top/bottom edges
-  const colA = Math.floor(wallSafeRight * 0.25);
-  const colB = Math.floor(wallSafeRight * 0.50);
-  const colC = Math.floor(wallSafeRight * 0.75);
-  // 2 evenly-spaced rows for left/right edges
-  const rowA = Math.floor(GRID.ROWS * 0.33);
-  const rowB = Math.floor(GRID.ROWS * 0.66);
-  const locations = [
-    // Top edge — 3 breaches
-    { col: colA, row: topRow },
-    { col: colB, row: topRow },
-    { col: colC, row: topRow },
-    // Bottom edge — 3 breaches
-    { col: colA, row: botRow },
-    { col: colB, row: botRow },
-    { col: colC, row: botRow },
-    // Left edge — 2 breaches
-    { col: leftCol, row: rowA },
-    { col: leftCol, row: rowB },
-    // Right edge — 2 breaches (inset for HUD safety)
-    { col: wallSafeRight, row: rowA },
-    { col: wallSafeRight, row: rowB },
+  // 5 columns for top/bottom edges (evenly spaced across the playable width).
+  const colTopBot = [
+    Math.floor(wallSafeRight * 0.10),
+    Math.floor(wallSafeRight * 0.30),
+    Math.floor(wallSafeRight * 0.50),
+    Math.floor(wallSafeRight * 0.70),
+    Math.floor(wallSafeRight * 0.90),
   ];
+  // 4 rows for left/right edges.
+  const rowSides = [
+    Math.floor(GRID.ROWS * 0.18),
+    Math.floor(GRID.ROWS * 0.40),
+    Math.floor(GRID.ROWS * 0.60),
+    Math.floor(GRID.ROWS * 0.82),
+  ];
+  const locations: { col: number; row: number }[] = [];
+  for (const c of colTopBot) locations.push({ col: c, row: topRow });
+  for (const c of colTopBot) locations.push({ col: c, row: botRow });
+  for (const r of rowSides) locations.push({ col: leftCol, row: r });
+  for (const r of rowSides) locations.push({ col: wallSafeRight, row: r });
   // In waveOverride mode the spawn-timing is driven by the wave queue
   // (not the per-point spawnAt), so we only need 1 entry per point
   // representing the VISUAL location. tickSpawns reads pointId on each
@@ -958,20 +968,22 @@ function getMinSurprisePathIndex(state: GameStateShape): number {
   return _wp3PathIndex;
 }
 
-// Variant of nearestPathIndex that clamps the result so the enemy can
-// never spawn BEFORE waypoint 3. The result is always >= getMinSurprisePathIndex.
-// Used by the surprise-event spawn-snap so Invasion/Uprising enemies
-// skip WP1+WP2 but still walk WP3-7 in order.
-function nearestPathIndexAfterWP2(state: GameStateShape, col: number, row: number): number {
-  const minIdx = getMinSurprisePathIndex(state);
-  let best = minIdx;
-  let bestD = Infinity;
-  for (let i = minIdx; i < state.groundPath.length; i++) {
-    const p = state.groundPath[i];
-    const d = Math.abs(p.col - col) + Math.abs(p.row - row);
-    if (d < bestD) { bestD = d; best = i; }
-  }
-  return best;
+// 2026-05-18 — FIXED. All Invasion/Uprising spawns now enter the path
+// at the WP3 entry index regardless of where their visual fire/urn
+// spawns on the map. Skips WP1+WP2 (design intent) but forces every
+// breach enemy to walk WP3→WP4→WP5→WP6→WP7 in linear order before
+// they reach the gate. Previously this searched for the nearest
+// path tile to the spawn position, which meant a right-side
+// perimeter spawn snapped onto the path near WP7 and ran straight
+// to the gate, skipping 3/4/5/6 entirely. Visual disconnect between
+// the perimeter fire and the WP3 path entry is masked by the
+// teleport-in / ground-rise emergence VFX on each enemy.
+//
+// Hell Gates keep their own per-gate snap (see
+// nearestPathIndexAtWaypoint) so a WP3 gate spawns at WP3 and a WP4
+// gate spawns at WP4 — that's the intentional per-gate progression.
+function nearestPathIndexAfterWP2(state: GameStateShape, _col: number, _row: number): number {
+  return getMinSurprisePathIndex(state);
 }
 
 export function isSurpriseEventActive(state: GameStateShape): boolean {

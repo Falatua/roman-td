@@ -1129,7 +1129,10 @@ async function boot() {
       'BARBED_GLADIUS','FIRE_OIL_FLASK','POISONED_BLADE','FALCATA_BLADE','ALPHA_PACK_FANG'
     ]);
     const pool: [string, any][] = Object.entries(itemsData as any)
-      .filter(([id, def]: any) => order.indexOf(def.rarity) >= floor && !DOT_ITEMS.has(id));
+      // 2026-05-18 — Event-exclusive legendaries (Invasion / Uprising /
+      // Gates of Hell rewards) are NEVER offered by the free-grant pool.
+      // They only drop from their event's reward modal.
+      .filter(([id, def]: any) => order.indexOf(def.rarity) >= floor && !DOT_ITEMS.has(id) && !def.eventExclusive);
     if (pool.length === 0) return null;
     const [id, def]: any = pool[Math.floor(Math.random() * pool.length)];
     const ok = inventoryAdd(inventory, id as any, def.rarity, false);
@@ -1567,16 +1570,16 @@ async function boot() {
   }
   function showComboNudge(wave: number) {
     document.getElementById('combo-nudge')?.remove();
-    // Wave-specific copy that escalates as the player gets deeper. Generic
-    // base towers won't keep up past W10 — combos are the answer.
+    // 2026-05-18 — Copy tightened. Each tip is one short sentence with the
+    // hook word highlighted. Players read these as glances, not essays.
     const messages: Record<number, { headline: string; body: string }> = {
-      5:  { headline: '★ THE FORGE IS OPEN', body: 'Stack 3 of a kind or follow a recipe — your towers can fuse into something the next wave will respect. Open the <span style="color:#ffd34d">CODEX</span>. Pretending combinations aren\'t real is a fast way to lose.' },
-      10: { headline: '⚠ START COMBINING OR START DYING', body: 'Past W10, raw base towers <span style="color:#ff5050">fall off a cliff</span>. Combos hit harder, bring abilities, and don\'t care that your enemies got fatter. The <span style="color:#ffd34d">CODEX</span> has every recipe. Read it.' },
-      15: { headline: '⚠ COMBINE OR EXPLAIN YOUR LOSS', body: 'Iron Phalanx waves and elites are tuned around <span style="color:#ff5050">combo damage</span>. No combos by now = ROMA HAS FALLEN screen incoming. Roll for ingredients before you press START.' },
-      20: { headline: '★ MID-CAMPAIGN POWER SPIKE', body: 'Mid-tier combos unlock real abilities — <span style="color:#ffd34d">chain lightning</span>, <span style="color:#ffd34d">status extension</span>, <span style="color:#ffd34d">piercing line shots</span>. Build at least one of those. The <span style="color:#ffd34d">CODEX</span> shows which recipes deliver which abilities.' },
-      25: { headline: '⚠ T5 OR BUST', body: 'Enemy HP is DOUBLING per cleared boss now. If your build still looks the same as wave 10, the gate is doing the math for you. Aim for <span style="color:#ffd34d">apex-tier abilities</span> — <span style="color:#ffd34d">true damage</span>, <span style="color:#ffd34d">universal auras</span>, <span style="color:#ffd34d">multi-target volleys</span>. Plan T5 ingredients TODAY.' },
-      30: { headline: '★ APEX COMBOS WIN GAMES', body: 'Apex combos bring abilities a base tower simply cannot — <span style="color:#ffd34d">global damage auras</span>, <span style="color:#ffd34d">resist-piercing divine</span>, <span style="color:#ffd34d">true-damage quakes</span>. The <span style="color:#ffd34d">CODEX</span> lists every recipe by effect.' },
-      40: { headline: '⚠ NO COMBO, NO CHANCE', body: 'Apex combos or apex consequences. Boss waves arrive solo with double HP and zero remorse. Make a god-tier tower or watch one come for you.' }
+      5:  { headline: '★ THE FORGE IS OPEN', body: 'Stack 3-of-a-kind or follow a recipe in the <span style="color:#ffd34d">CODEX</span>.' },
+      10: { headline: '⚠ COMBINE OR FALL OFF', body: 'Base towers stop scaling here. <span style="color:#ff5050">Combos carry mid-game</span>.' },
+      15: { headline: '⚠ ELITES DEMAND COMBOS', body: 'Iron Phalanx is tuned around combo damage. <span style="color:#ff5050">Build one.</span>' },
+      20: { headline: '★ MID-TIER ABILITIES UNLOCKED', body: 'Chain lightning, line-pierce, status extend. Pick a recipe in the <span style="color:#ffd34d">CODEX</span>.' },
+      25: { headline: '⚠ T5 OR BUST', body: 'Boss HP doubles per cleared boss. <span style="color:#ff5050">Plan T5 ingredients now.</span>' },
+      30: { headline: '★ APEX COMBOS WIN GAMES', body: 'Global auras, true damage, divine pierce — apex combos only.' },
+      40: { headline: '⚠ NO COMBO, NO CHANCE', body: 'Solo bosses, double HP. Apex tower or apex obituary.' }
     };
     const tipId = `combo_nudge_${wave}`;
     if (tipAlreadySeen(tipId)) return;     // returning player has seen this tip
@@ -1591,25 +1594,13 @@ async function boot() {
     b.addEventListener('click', () => { markTipSeen(tipId); }, { once: true });
     pushBanner(b, 4000);
   }
-  // Downgrade tip — periodically reminds players that they can DOWNGRADE a
-  // tower a tier (for 2g) to satisfy a recipe's minTier requirement. Often
-  // a stuck high-tier tower can be dropped a tier and slot perfectly into
-  // an early-game combo recipe whose ingredients call for lower tiers.
-  function showDowngradeTip() {
-    if (tipAlreadySeen('downgrade_tip')) return;
-    document.getElementById('downgrade-tip')?.remove();
-    const b = document.createElement('div');
-    b.id = 'downgrade-tip';
-    b.innerHTML = `
-      <div style="font-size:14px;font-weight:bold;letter-spacing:3px;color:#ffd34d;text-shadow:2px 2px 0 #000">⚙ TIER MISMATCH? RANK HIM DOWN.</div>
-      <div style="margin-top:8px;font-size:11px;letter-spacing:0.5px;color:#fff8e0;line-height:1.55">
-        Click any tower → <b style="color:#ffd34d">DOWNGRADE</b> (2g) drops it one tier so it slots into the recipe you were ignoring. The <b style="color:#ffd34d">CODEX</b> shows every recipe's tier floor. Pride loses runs.
-      </div>
-      <div style="margin-top:8px;font-size:9px;letter-spacing:1px;color:#aa9a4a">[ click to dismiss · won't show again ]</div>`;
-    b.style.cssText = `width:min(440px,82%);text-align:center;padding:12px 18px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid #ffd34d;box-shadow:0 0 22px rgba(255,211,77,0.45);font-family:'Courier New',monospace;text-shadow:1px 1px 0 #000;cursor:pointer;`;
-    b.addEventListener('click', () => { markTipSeen('downgrade_tip'); }, { once: true });
-    pushBanner(b, 5500);
-  }
+  // 2026-05-18 — Downgrade tip retired. Recipes no longer use "minTier",
+  // they use "tier 2+ / 3+ at least one ingredient" semantics, so
+  // ranking a tower DOWN doesn't unlock recipes — it just costs you
+  // a tier. The tip nudged the wrong intuition. Function kept as a
+  // no-op so the wave-start scheduler still compiles; the calls in
+  // the wave-start dispatch are stubbed out.
+  function showDowngradeTip() { /* retired 2026-05-18 */ }
   // ─── Prospect-phase reminder banner ────────────────────────────────────
   // Persistent thin banner at the TOP of the play area during prospect
   // placement. Reminds the player they can KEEP UP TO 2 each round. The
@@ -3420,13 +3411,11 @@ async function boot() {
         // drawBossVignette eases it from 0 → 0.32 over ~0.35s. Cleared
         // at wave-end (checkWaveEnd callback below) back to 0.
         renderer.setBossWaveActive(justStarted?.type === 'B');
-        // Periodic combo nudges + downgrade / quest tips.
+        // Periodic combo nudges + quest tips (downgrade tip retired 2026-05-18).
         if (state.wave === 5 || state.wave === 10 || state.wave === 15 ||
             state.wave === 20 || state.wave === 25 || state.wave === 30 ||
             state.wave === 40) {
           showComboNudge(state.wave);
-        } else if (state.wave === 8 || state.wave === 18 || state.wave === 28) {
-          showDowngradeTip();
         } else if (state.wave === 3 || state.wave === 12 || state.wave === 22 || state.wave === 32) {
           showQuestTip();
         }

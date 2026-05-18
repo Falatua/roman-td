@@ -446,6 +446,21 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     if (t.equippedItems.includes('AQUILIFER_BANNER') && !auraOff) {
       localAuras.push({ x: cx, y: cy, r: 2.5 * GRID.TILE, dmg: 0.14, spd: 0.10 });
     }
+    // 2026-05-18 — EVENT-EXCLUSIVE AURAS.
+    // NECROMANCERS_LANTERN (uprising): enemies in 3 tiles take +25%
+    // damage from all sources. Regen-block is enforced separately
+    // in EnemySystem via the existing __regenBlocked flag (set below
+    // when this aura is active).
+    // HELLGATE_BRAND immunity to silence/tower-slow is set on the
+    // tower as __silenceImmune so EnemySystem's silence loop skips it.
+    // INFERNO_STANDARD: +25% damage aura, 3 tiles. Burn-on-hit handled
+    // in the on-hit pass.
+    if (t.equippedItems.includes('NECROMANCERS_LANTERN') && !auraOff) {
+      enemyTakenAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, pct: 0.25 });
+    }
+    if (t.equippedItems.includes('INFERNO_STANDARD') && !auraOff) {
+      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.25 });
+    }
     // SCOUT_VEXILLUM — every 4 seconds, mass-mark every enemy in range.
     if (t.type === TowerType.SCOUT_VEXILLUM) {
       const next = (t as any).__nextMarkTick ?? 0;
@@ -682,6 +697,41 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (target.isBoss && t.equippedItems.includes('ELEPHANT_TUSK'))        damage *= 1.30;
       if (target.isBoss && t.equippedItems.includes('WARLORDS_WAR_PAINT'))   damage *= 1.40;
       if (target.isBoss && t.equippedItems.includes('UNDEAD_ELEPHANT_BONE')) damage *= 1.50;
+      // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES.
+      //
+      // INVASION rewards:
+      //   • VANGUARD_PILUM: +35% damage (range +1 is applied in stats)
+      //   • AQUILA_RAMPART: +50% damage vs enemies above 70% HP
+      //   • PERIMETER_TORCH: +25% damage (atk speed in stats)
+      if (t.equippedItems.includes('VANGUARD_PILUM')) damage *= 1.35;
+      if (t.equippedItems.includes('AQUILA_RAMPART') && (target.hp / target.maxHp) > 0.70) damage *= 1.50;
+      if (t.equippedItems.includes('PERIMETER_TORCH')) damage *= 1.25;
+      //
+      // UPRISING rewards:
+      //   • GRAVEKEEPERS_SCYTHE: +60% damage vs UNDEAD-faction enemies
+      //   • SOULFIRE_BRAND: HELLFIRE applied separately in attack-hook
+      //   • NECROMANCERS_LANTERN: aura mark (applied via debuff loop)
+      if (t.equippedItems.includes('GRAVEKEEPERS_SCYTHE')) {
+        const fk = String(target.faction ?? '');
+        // EnemyFaction enum stringifies to 'UNDEAD_CELTS' / 'UNDEAD_CARTHAGE'
+        // for those factions; numeric enum values won't string-equal, so we
+        // also accept the numeric form by checking target.type prefix as a
+        // fallback for reanimated forms.
+        const isUndead = fk === 'UNDEAD_CELTS' || fk === 'UNDEAD_CARTHAGE'
+          || fk === '3' || fk === '4'
+          || String(target.type ?? '').startsWith('REANIMATED_');
+        if (isUndead) damage *= 1.60;
+      }
+      //
+      // GATES OF HELL rewards:
+      //   • HELLGATE_BRAND: +50% damage (atk speed in stats, silence imm in flag)
+      //   • DEMONSWORN_CROWN: +100% vs demons, +50% vs bosses (stacks)
+      //   • INFERNO_STANDARD: aura applied separately
+      if (t.equippedItems.includes('HELLGATE_BRAND')) damage *= 1.50;
+      if (t.equippedItems.includes('DEMONSWORN_CROWN')) {
+        if (DEMON_TYPES.has(target.type as string)) damage *= 2.0;
+        if (target.isBoss) damage *= 1.50;
+      }
       if (t.type === TowerType.PRAEFECTUS && (target.archetype === 'ELITE' || target.archetype === 'BOSS')) damage *= 1.25;
       // ─── NEW COMBOS: identity damage multipliers ─────────────────────
       if (t.type === TowerType.NEMESIS_ENGINE && target.isFlyer) damage *= 3.0;          // SKY-RIPPER: +200% vs flyers
@@ -1695,6 +1745,21 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
     // Single-target but deeper — 6% HP/sec for 4s vs the old 2s. Identity:
     // sustained single-target finisher applied with every cut.
     if (t.equippedItems.includes('POISONED_BLADE')) pushStatus(target, StatusEffectKind.POISON, 4, 0.06, tier);
+    // 2026-05-18 — UPRISING-exclusive SOULFIRE_BRAND: stamps HELLFIRE
+    // on the target. HELLFIRE bypasses every resistance and immunity
+    // (it's divine fire) so this is the dedicated answer to anything
+    // that shrugs off normal burns — fire-immune undead, regenerators,
+    // bosses. 4% maxHP/sec for 4s = 16% maxHP per application; stacks
+    // with the in-system HELLFIRE-on-hit from RITE OF DOOM towers.
+    if (t.equippedItems.includes('SOULFIRE_BRAND')) {
+      pushStatus(target, StatusEffectKind.HELLFIRE, 4, 0.04, tier);
+    }
+    // 2026-05-18 — GATES OF HELL-exclusive INFERNO_STANDARD: aura
+    // damage buff is handled in the localAuras pass; the on-hit
+    // BURN ride-along stamps a BURN status on every direct hit.
+    if (t.equippedItems.includes('INFERNO_STANDARD')) {
+      pushStatus(target, StatusEffectKind.BURN, 3, 0.05, tier);
+    }
     // 2026-05 v11 BLEED BOOST: bleed items felt under-tuned relative to the
     // poison / burn family. Each tier doubled-ish to make bleed a real
     // competitive DoT path. Total bleed damage per application:
