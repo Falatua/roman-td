@@ -245,8 +245,7 @@
     "livesCost": 10,
     "spriteSheet": 5,
     "spriteCell": 8,
-    "meleeImmune": true,
-    "immuneFire": true
+    "meleeImmune": true
   },
   "UNDEAD_SPEARMAN": {
     "name": "Undead Spearman",
@@ -297,7 +296,6 @@
     "outOfCombatRegen": 0.028,
     "immuneSlow": true,
     "immuneFreeze": true,
-    "immuneFire": true,
     "auraTowerSlow": 0.25
   },
   "DEMON_HELLHOUND": {

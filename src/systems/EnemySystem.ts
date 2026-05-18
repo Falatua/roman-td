@@ -126,13 +126,17 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   };
   // ─── ELITE MUTATIONS ────────────────────────────────────────────────
   // Late-wave spawns roll a small chance to be "elites" — single-modifier
-  // champions with a tactical wrinkle. Bosses are exempt; ramp starts at W10.
-  // Roll rate: 0% before W10, 4% at W10, 12% at W30, 20% at W50.
+  // champions with a tactical wrinkle. Bosses are exempt.
   // 2026-05-17 — `skipMutation` flag exempts surprise-event spawns
   // (HELL_GATE, FIRE_GIANT) so the player gets exactly the threat the
   // event was designed around, not a random +50% HP veteran gate.
-  if (!e.isBoss && !def.skipMutation && state.wave >= 10) {
-    const eliteChance = Math.min(0.20, 0.04 + (state.wave - 10) * 0.005);
+  // 2026-05-18 v2 — ENDLESS-MODE ONLY. The 20-wave campaign is fully
+  // deterministic (no RNG per the design rule). Elite mutations only
+  // roll in Endless. Roll rate ramps with endlessWave: 4% at endless
+  // start (W21+), 12% at W30, 20% at W50.
+  if (!e.isBoss && !def.skipMutation && state.endlessMode) {
+    const ew = state.endlessWave ?? 1;
+    const eliteChance = Math.min(0.20, 0.04 + ew * 0.005);
     if (Math.random() < eliteChance) {
       const pool: Array<NonNullable<Enemy['mutation']>> = ['VETERAN','SWIFT','BLOATED','WARDED','AURA_STAR'];
       const m = pool[Math.floor(Math.random() * pool.length)];

@@ -105,32 +105,24 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // cleave, DoT, and divine become legitimately necessary in the
   // back half of the run. Numbers are takes-X%-of-damage multipliers
   // (0.55 = takes 55% of the incoming ranged damage).
-  // 2026-05-18 — UNDEAD MINION FIRE VULNERABILITY restored. The wave
-  // brief tells the player "weak to fire and divine", so the data has
-  // to back that up. Minion-tier undead now take +25% from FIRE damage
-  // (burn 1.25). Bosses Undead Warlord + Undead War Elephant keep
-  // their lore-thematic immuneFire flag; minions don't.
+  // 2026-05-18 v2 — ALL UNDEAD ARE FIRE-VULNERABLE, BLEED-IMMUNE,
+  // POISON-IMMUNE. Player rule: undead burn. The faction-level row
+  // sets the baseline (+25% fire on UNDEAD_CELTS, +30% on UNDEAD_
+  // CARTHAGE after the fix below); per-enemy entries layer extra
+  // vulnerability on top for the most flammable units. Boss undead
+  // (Undead Warlord, Undead War Elephant) NO LONGER have immuneFire
+  // and follow the same burn-vulnerable rule as their minions.
   [EnemyType.UNDEAD_CELT]: { melee: 0.7, ranged: 0.55, poison: 0, bleed: 0, fire: 1.25, burn: 1.25 },
-  // 2026-05-17 — same melee vulnerability bump as the living druid (+25%).
-  // Necrotic robes are no thicker than living-druid linen — melee strikes
-  // through them with extra bite.
-  [EnemyType.ZOMBIE_DRUID]: { melee: 1.25, slow: 0.55, burn: 0.6, poison: 0, bleed: 0, ranged: 0.55 },
-  // 2026-05-18 — Burn flipped from 0.85 (resist) to 1.20 (vulnerable)
-  // to match the wave-brief promise that minion undead burn.
+  [EnemyType.ZOMBIE_DRUID]: { melee: 1.25, slow: 0.55, fire: 1.20, burn: 1.20, poison: 0, bleed: 0, ranged: 0.55 },
   [EnemyType.UNDEAD_BERSERKER]: { melee: 0.5, ranged: 0.6, slow: 0.5, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
-  [EnemyType.SPECTRAL_SCOUT]: { melee: 0.25, ranged: 0.55, slow: 0.2, burn: 0.45, poison: 0, bleed: 0 },
-  [EnemyType.UNDEAD_WARLORD]: { melee: 0.45, ranged: 0.55, slow: 0.25, burn: 0.5, poison: 0, bleed: 0 },
-
-  // 2026-05-18 — Burn flipped from 0.65 (resist) to 1.15 (vulnerable).
+  [EnemyType.SPECTRAL_SCOUT]: { melee: 0.25, ranged: 0.55, slow: 0.2, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
+  [EnemyType.UNDEAD_WARLORD]: { melee: 0.45, ranged: 0.55, slow: 0.25, fire: 1.25, burn: 1.25, poison: 0, bleed: 0 },
   [EnemyType.UNDEAD_SPEARMAN]: { ranged: 0.45, melee: 0.85, fire: 1.15, burn: 1.15, poison: 0, bleed: 0 },
-  [EnemyType.GHOST_RIDER]: { melee: 0.2, ranged: 0.55, slow: 0.15, burn: 0.55, poison: 0, bleed: 0 },
-  // UNDEAD WAR ELEPHANT — same melee-resist + bleed-immune buff as the
-  // living War Elephant. The undead variant is already heavily slated;
-  // this just enforces the "elephant hide doesn't bleed" rule uniformly.
-  // 2026-05 v10 — same siege vulnerability as the living War Elephant.
-  // Bone-hide still cracks under heavy stones; siege is the unified
-  // answer for both elephant variants.
-  [EnemyType.UNDEAD_WAR_ELEPHANT]: { melee: 0.20, ranged: 0.45, slow: 0.2, burn: 0.5, poison: 0, bleed: 0, siege: 1.40 },
+  [EnemyType.GHOST_RIDER]: { melee: 0.2, ranged: 0.55, slow: 0.15, fire: 1.15, burn: 1.15, poison: 0, bleed: 0 },
+  // UNDEAD WAR ELEPHANT — bone hide still cracks; siege + fire are
+  // both real angles. Boss-tier so burn vulnerability is slightly
+  // lower than minions' (1.20 vs 1.25).
+  [EnemyType.UNDEAD_WAR_ELEPHANT]: { melee: 0.20, ranged: 0.45, slow: 0.2, fire: 1.20, burn: 1.20, poison: 0, bleed: 0, siege: 1.40 },
 
   // SUPER DEMONS — fire-immune across the board (lore: born from
   // hellfire). Poison and bleed land HARDER on demons (×1.30 / ×1.25)
@@ -190,15 +182,21 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.IRON_PHALANX]: { melee: 0, ranged: 0.5, slow: 0.55, bleed: 0.45, poison: 0.55, burn: 0.7 },
   // Architectus — heavy plate, shrugs off ranged hits until the shield is
   // broken. Bleed-immune as an undead minion.
-  [EnemyType.ARCHITECTUS]: { melee: 0.65, ranged: 0.45, slow: 0.35, burn: 0.6, poison: 0.5, bleed: 0 },
+  // 2026-05-18 v2 — Architectus is an UNDEAD_CARTHAGE engineer. By the
+  // "all undead are bleed/poison-immune AND fire-vulnerable" rule:
+  // poison 0.5 → 0 (immune), burn 0.6 → 1.20 (vulnerable).
+  [EnemyType.ARCHITECTUS]: { melee: 0.65, ranged: 0.45, slow: 0.35, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
   // NECROMANCY-RISEN UNDEAD — they came back wrong. Bone bodies shrug
   // off poison AND bleed (no flesh to rot), drink fire (dry kindling),
   // and are slowed less than the living. Skeleton/zombie variants still
   // take a real melee hit; the lich is a fragile caster. Bleed locked
   // to 0 across all three risen forms — undead don't bleed.
-  [EnemyType.REANIMATED_SKELETON]: { ranged: 0.85, slow: 0.5, poison: 0, bleed: 0, burn: 1.2 },
-  [EnemyType.REANIMATED_ZOMBIE]:   { ranged: 0.9, slow: 0.55, poison: 0, bleed: 0, burn: 1.15 },
-  [EnemyType.REANIMATED_LICH]:     { melee: 0.85, slow: 0.45, poison: 0, bleed: 0, burn: 0.8 },
+  // 2026-05-18 v2 — Reanimated forms inherit the "undead burn" rule.
+  // Lich's burn flipped from 0.8 (resist) to 1.15 (vulnerable) to
+  // match the rule that ALL undead are fire-vulnerable.
+  [EnemyType.REANIMATED_SKELETON]: { ranged: 0.85, slow: 0.5, poison: 0, bleed: 0, fire: 1.20, burn: 1.20 },
+  [EnemyType.REANIMATED_ZOMBIE]:   { ranged: 0.9, slow: 0.55, poison: 0, bleed: 0, fire: 1.15, burn: 1.15 },
+  [EnemyType.REANIMATED_LICH]:     { melee: 0.85, slow: 0.45, poison: 0, bleed: 0, fire: 1.15, burn: 1.15 },
   // ─── ENDLESS MODE (2026-05 v10) ──────────────────────────────────────
   // Empty defaults — faction row carries the base resistances, and the
   // Endless wave generator stamps a per-spawn __lateResistMult on top
