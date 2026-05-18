@@ -31,10 +31,19 @@ const FACTION_KEY: Record<number, string> = {
 // banner color still cues the role at a glance.
 
 function fmtRes(v: number | 'IMMUNE'): { label: string; color: string } {
+  // 2026-05-17 — Wording simplified per user feedback. The "+25% taken"
+  // and "-25% reduced" labels were misleading — players reading "+25%
+  // taken" thought it meant the enemy RESISTS 25% rather than takes
+  // 25% MORE. Now the label is just the signed percentage (e.g. "+25%"
+  // for vulnerability, "-25%" for resistance) and the color carries
+  // the direction signal:
+  //   orange / yellow = vulnerability (the enemy takes extra damage)
+  //   blue            = resistance    (the enemy shrugs off damage)
+  //   red             = IMMUNE        (no damage at all)
   if (v === 'IMMUNE') return { label: 'IMMUNE', color: '#aa3a3a' };
-  if (v > 0.5) return { label: '+' + Math.round(v * 100) + '% taken', color: '#ffaa33' };
-  if (v > 0.10) return { label: '+' + Math.round(v * 100) + '% taken', color: '#ffd34d' };
-  if (v < -0.10) return { label: Math.round(v * 100) + '% reduced', color: '#7896c8' };
+  if (v > 0.5)  return { label: '+' + Math.round(v * 100) + '%', color: '#ffaa33' };
+  if (v > 0.10) return { label: '+' + Math.round(v * 100) + '%', color: '#ffd34d' };
+  if (v < -0.10) return { label: Math.round(v * 100) + '%',      color: '#7896c8' };
   return { label: 'normal', color: '#888' };
 }
 
@@ -107,7 +116,11 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     else if (r.armorPct >= 30) { display = `${r.armorPct}% armor`; color = '#ffaa55'; }
     else if (r.armorPct > 0)   { display = `${r.armorPct}% armor`; color = '#ffd34d'; }
     else if (r.armorPct === 0) { display = 'no armor';             color = '#cdb98a'; }
-    else                       { display = `+${Math.abs(r.armorPct)}% taken`; color = '#7896c8'; }
+    // 2026-05-17 — Negative armor = vulnerable. Use clearer wording
+    // than "+X% taken" — that phrasing was confusing players who read
+    // it as resistance. "+X% damage" reads as "this enemy takes more
+    // damage from this type" directly.
+    else                       { display = `+${Math.abs(r.armorPct)}% damage`; color = '#7896c8'; }
     return `<div style="background:#0c0a08;padding:8px 6px;text-align:center;font-size:11px">
       <div style="color:#aa9a4a;letter-spacing:1px;font-size:9px">${label}</div>
       <div style="color:${color};font-size:12px;font-weight:bold;margin-top:3px;letter-spacing:0.5px">${display}</div>

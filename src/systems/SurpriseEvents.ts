@@ -51,15 +51,18 @@ export const SURPRISE_EVENT_SCHEDULE: Record<number, SurpriseEventKind> = {
 // without overwhelming the wave already in motion).
 const SPAWNS_PER_POINT = 2;
 const POINT_COUNT = 4;
-// Stagger between consecutive spawns AT THE SAME point. Tighter for
-// uprising (the user asked for "quick" emergence speed).
-const INTRA_POINT_STAGGER = { INVASION: 0.7, UPRISING: 0.5 };
+// Stagger between consecutive spawns AT THE SAME point. 2026-05-17:
+// tightened (Invasion 0.7 → 0.35s, Uprising 0.5 → 0.30s) so the
+// emerging enemies pour out faster — was feeling sluggish, the user
+// wants the breach to read as an actual sudden burst.
+const INTRA_POINT_STAGGER = { INVASION: 0.35, UPRISING: 0.30 };
 // Offset added between consecutive POINTS so all 4 don't fire at the
-// same tick. The first point starts at lead-in + 0; the next at + this.
-const INTER_POINT_OFFSET = 0.3;
+// same tick. Tightened 0.3 → 0.15 to keep the multi-point burst tight.
+const INTER_POINT_OFFSET = 0.15;
 // Lead-in: how long the fire/urn sprite breathes ALIVE on-screen before
-// its FIRST enemy spawns. The audio sting + tint cover this window.
-const VFX_RISE_SECONDS = 0.55;
+// its FIRST enemy spawns. Shortened 0.55 → 0.30 so enemies start
+// emerging almost immediately after the sting.
+const VFX_RISE_SECONDS = 0.30;
 // How long after the LAST spawn fires before the VFX starts fading.
 // Kept short so the play area stays clean during the wave.
 const VFX_HOLD_AFTER_LAST = 0.25;

@@ -422,7 +422,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     r: ELEPHANT_AURA_RADIUS,
     isUndead: el.type === 'UNDEAD_WAR_ELEPHANT'
   }));
-  // ─── TOWER SILENCE: Spectral Scout / Ghost Rider passing within 1.2 tiles
+  // ─── TOWER SILENCE: Spectral Scout / Ghost Rider passing within 1.0 tile
   // of a tower forces the tower into a 0.6s cooldown spike. They literally
   // walk past and disrupt the legion's rhythm.
   const SILENCERS = new Set(['SPECTRAL_SCOUT','GHOST_RIDER']);
@@ -432,7 +432,12 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       if (t.pending) continue;
       const cx = t.tileX * GRID.TILE + GRID.TILE / 2;
       const cy = t.tileY * GRID.TILE + GRID.TILE / 2;
-      if (Math.hypot(cx - e.x, cy - e.y) <= GRID.TILE * 1.2) {
+      // 2026-05-17 — Silence radius tightened 1.2 → 1.0 tile per
+      // user direction. Spectral Scout / Ghost Rider now have to pass
+      // directly adjacent to a tower (within 1 tile) to silence it,
+      // instead of the previous wider 1.2-tile aura that could clip
+      // off-path towers.
+      if (Math.hypot(cx - e.x, cy - e.y) <= GRID.TILE * 1.0) {
         const until = t.silencedUntil ?? 0;
         if (state.tick > until - 0.2) {
           t.silencedUntil = state.tick + 0.6;

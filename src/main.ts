@@ -2851,18 +2851,73 @@ async function boot() {
   // Assets are in — reveal the coin slot and hand off to the player.
   if (slotWrap) slotWrap.classList.add('ready');
   if (barEl) barEl.style.width = '100%';
+  // 2026-05-17 — JAMMED COIN SLOT MINI-GAME.
+  // The coin requires 10 clicks to be hammered into the slot. Each
+  // click nudges the coin down a fraction, shakes the cabinet a beat,
+  // pops a different "the coin slot is jammed" funny line, and (as a
+  // side benefit) every click counts as user activation so the loading
+  // music kicks into audible play if it wasn't already.
+  //
+  // Funny copy rotation — random pull each click, with a final "you
+  // beat it" line on the 10th hit.
+  const JAM_TAUNTS = [
+    'The coin slot is JAMMED. Hit it again, soldier.',
+    'Some idiot crammed a denarius the wrong way. Persist.',
+    'The Senate hasn\'t fixed this machine in 4 centuries.',
+    'This cabinet has eaten more coins than a Carthaginian general.',
+    'Smack it like you mean it.',
+    'Older than the Republic. Twice as stubborn.',
+    'Aerarium budget cuts. Maintenance was the first thing to go.',
+    'Are you Roman or are you Greek? Hit it harder.',
+    'Hannibal\'s elephants are easier to move than this coin.',
+    'One more whack. One more whack. ONE — MORE — WHACK.'
+  ];
+  const COIN_SLOT_CLICKS_REQUIRED = 10;
   await new Promise<void>(resolve => {
     if (!slotEl) { resolve(); return; }
-    slotEl.addEventListener('click', () => {
-      // User-supplied coin-slot SFX — fires the instant the player commits
-      // to entering the game, on top of the visual coin-drop + shake + warp.
+    let clicks = 0;
+    // Stash the coin's starting Y position so each click can lerp it
+    // down by a fraction of the total distance to the slit.
+    const insertEl = document.getElementById('loading-insert');
+    const coinJamHandler = () => {
+      clicks++;
+      // Every click triggers the loading-music primer (idempotent —
+      // first one starts the song, the rest are no-ops).
+      primeLoadingMusic();
+      // Light coin SFX on every tap (the proper SFX.coinSlot only
+      // fires on the final commit, see below).
+      try { SFX.coinSlot(); } catch {/* ignore */}
+      // Brief cabinet jitter on each whack so the player feels feedback.
+      loadingEl.classList.remove('jolt');
+      // Force reflow so the animation restarts even on rapid clicks.
+      void loadingEl.offsetWidth;
+      loadingEl.classList.add('jolt');
+      if (clicks < COIN_SLOT_CLICKS_REQUIRED) {
+        // Lerp the coin downward — each click closes 1/10th of the gap
+        // to the slit. CSS uses the --coin-progress custom property to
+        // translate the coin Y position.
+        const progress = clicks / COIN_SLOT_CLICKS_REQUIRED;
+        if (coinHint) {
+          (coinHint as HTMLElement).style.setProperty('--coin-progress', String(progress));
+        }
+        // Update the insert-coin label with a funny taunt.
+        if (insertEl) {
+          const taunt = JAM_TAUNTS[Math.floor(Math.random() * (JAM_TAUNTS.length - 1))];
+          insertEl.textContent = `▶ ${taunt} ◀  (${clicks}/${COIN_SLOT_CLICKS_REQUIRED})`;
+        }
+        return;       // not yet committed — wait for more clicks
+      }
+      // Final hit — commit the coin and transition into the game.
+      slotEl.removeEventListener('click', coinJamHandler);
+      if (insertEl) insertEl.textContent = '▶ COIN ACCEPTED — GLORY AWAITS ◀';
+      // User-supplied coin-slot SFX — fires on commit, on top of the
+      // visual coin-drop + shake + warp.
       SFX.coinSlot();
-      // 2026-05 v10 — stop the FF7 fanfare loop the moment the coin
-      // drops. The arcade is open; the lobby music ends.
+      // Stop the FF7 fanfare loop the moment the coin commits.
       stopMusicTrack('loading');
-      // Clean up every primer listener — mousemove / pointerdown / keydown
-      // / touchstart / focus. visibilitychange uses an inline arrow so it
-      // can't be removed by reference, but it's { once: true } so it
+      // Clean up every primer listener (mousemove / pointerdown / keydown
+      // / touchstart / focus). visibilitychange uses an inline arrow so
+      // it can't be removed by reference, but it's { once: true } so it
       // self-removes after firing once.
       document.removeEventListener('mousemove', primeLoadingMusic);
       document.removeEventListener('pointerdown', primeLoadingMusic);
@@ -2879,7 +2934,6 @@ async function boot() {
       setTimeout(() => {
         loadingEl.classList.remove('shake');
         loadingEl.classList.add('warp');
-        // Stop the rotating copy so it doesn't paint over the warp frame.
         copyLoopAlive = false;
         typewriterAbort = true;
       }, 900);
@@ -2889,7 +2943,8 @@ async function boot() {
         setTimeout(() => loadingEl.remove(), 200);
         resolve();
       }, 1620);
-    }, { once: true });
+    };
+    slotEl.addEventListener('click', coinJamHandler);
   });
   // ─── Auto-scale stage to viewport ─────────────────────────────────────
   // 2026-05-15 v8: now scales UP as well as DOWN. Previously the scale was

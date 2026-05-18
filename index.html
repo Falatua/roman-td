@@ -289,8 +289,15 @@
          /roman-td/ so the absolute path 404'd and the coin was invisible.
          Relative path resolves correctly under both dev (root) and Pages. */
       #loading-coin-hint {
+        /* 2026-05-17 v2 — Coin now responds to the JAMMED COIN SLOT
+           mini-game. --coin-progress is updated by JS from 0..1 as the
+           player whacks the slot; the coin lerps DOWN with each whack
+           until it commits on click #10 and the existing .dropping
+           animation fires. transition makes the descent smooth. */
         position: absolute; left: 50%; top: -56px;
-        transform: translate(-50%, 0);
+        --coin-progress: 0;
+        transform: translate(-50%, calc(var(--coin-progress) * 52px));
+        transition: transform 0.20s cubic-bezier(0.4, 0, 0.6, 1);
         width: 48px; height: 48px;
         background: url('./assets/sprites/u_badge_gold.png') no-repeat center/contain;
         image-rendering: pixelated;
@@ -342,15 +349,28 @@
       }
       @keyframes tipFadeIn { to { opacity: 1; } }
       @keyframes coinHover {
-        0%, 100% { transform: translate(-50%, 0); }
-        50%      { transform: translate(-50%, -6px); }
+        /* Hover bob keys read --coin-progress so the coin still bobs
+           gently at whatever Y position the player has whacked it down to. */
+        0%, 100% { transform: translate(-50%, calc(var(--coin-progress) * 52px)); }
+        50%      { transform: translate(-50%, calc(var(--coin-progress) * 52px - 6px)); }
       }
       @keyframes coinDrop {
-        0%   { transform: translate(-50%, 0)    rotate(0deg);   opacity: 1; }
+        0%   { transform: translate(-50%, calc(var(--coin-progress, 0) * 52px)) rotate(0deg);   opacity: 1; }
         70%  { transform: translate(-50%, 60px) rotate(540deg); opacity: 1; }
         100% { transform: translate(-50%, 64px) rotate(720deg); opacity: 0; }
       }
       #loading-coin-hint.dropping { animation: coinDrop 460ms cubic-bezier(0.55, 0, 0.95, 0.55) forwards; }
+
+      /* 2026-05-17 — Cabinet jolt fired on every coin-slot whack in
+         the JAMMED-SLOT mini-game. Quick 140-ms shudder so the player
+         feels the impact without disrupting the rest of the screen. */
+      @keyframes loadingJolt {
+        0%, 100% { transform: translate(0, 0); }
+        25%      { transform: translate(-3px, 1px); }
+        50%      { transform: translate(2px, -1px); }
+        75%      { transform: translate(-1px, 2px); }
+      }
+      #loading.jolt #loading-stage { animation: loadingJolt 0.14s ease-out; }
 
       #loading-insert {
         font-size: clamp(14px, 1.8vw, 18px);

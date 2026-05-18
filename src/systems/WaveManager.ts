@@ -157,26 +157,14 @@ export function startWave(state: GameStateShape) {
   // W17 (the wave's spawns already list the phalanx group in waves.json so
   // we no longer append a separate tail here — wave 17 is type 'M' and the
   // Phalanx units come through normal spawn processing).
-  // (Legacy %15 trigger removed.)
-  // BONUS-BOSS SYSTEM:
-  //   • After wave 20, scheduled boss waves (type 'B') have a 25% chance to
-  //     spawn a SECOND boss alongside the authored one.
-  //   • After wave 40, ANY wave has a 15% chance to spawn a surprise extra boss.
-  // Bonus bosses give 2× gold on kill (handled in main.ts onKill).
-  let bonusBossType: string | null = null;
-  let bonusReason = '';
-  // 20-WAVE CAMPAIGN: twin-boss roll active after W11; ambush-boss after W16.
-  // 2026-05 v7: W20 is RNG-FREE — no twin bosses, no ambush bosses, no
-  // wave modifier roll. The final encounter is the Daemon Imperator
-  // standalone; nothing else competes for the player's attention.
-  const isFinalWave = state.wave === 20;
-  if (!isFinalWave && state.wave > 11 && w.type === 'B' && Math.random() < 0.25) {
-    bonusBossType = FACTION_BOSS[w.faction] ?? 'CELTIC_WARLORD';
-    bonusReason = 'TWIN BOSSES — TWO COLUMNS, ONE LEGION';
-  } else if (!isFinalWave && state.wave > 16 && Math.random() < 0.15) {
-    bonusBossType = FACTION_BOSS[w.faction] ?? 'CELTIC_WARLORD';
-    bonusReason = 'AMBUSH BOSS — THE PATROL WALKED INTO YOU';
-  }
+  // 2026-05-17 — TWIN/AMBUSH BOSS RNG REMOVED FROM CAMPAIGN.
+  // Per user direction: the 20-wave campaign is now fully deterministic
+  // for boss spawns. No random twin-boss roll on W15 (was 25%), no
+  // random ambush-boss roll on W17-W19 (was 15%). The campaign reads
+  // exactly the same every run; players can plan around a known
+  // schedule instead of getting blindsided.
+  const bonusBossType: string | null = null;
+  const bonusReason = '';
   // BOSS REBIRTH (2026-05 v6): any boss that leaked to Rome on a prior
   // wave is queued here with the HP it had at leak time. We append each
   // to this wave's spawn schedule and stash the HP carry on a sibling
@@ -219,21 +207,18 @@ export function startWave(state: GameStateShape) {
   // Boss hazards removed 2026-05 — kept the field zero'd so any leftover
   // renderer code reads null and bails.
   (state as any).bossHazardKey = null;
-  // Roll a wave modifier — 30% chance from W3 onward (20-WAVE CAMPAIGN),
-  // never on the dedicated Iron Phalanx wave. Boss waves CAN roll one
-  // for extra stakes.
+  // 2026-05-17 — WAVE MODIFIER RNG REMOVED FROM CAMPAIGN.
+  // Per user direction the 30%-from-W3 wave-modifier roll (Blood Moon /
+  // Storm Surge / Death Pact / Veil / Revenant / Group March) is no
+  // longer fired during the 20-wave campaign. The campaign is now
+  // 100% deterministic — same waves, same enemies, same difficulty
+  // every run. RNG mechanics are reserved for Endless mode where the
+  // procedural wave generator already handles its own variability.
+  // Stamping null here clears any stale value carried over from a
+  // prior wave or game-reset path.
   state.waveModifier = null;
   state.waveModifierTick = 0;
-  const isPhalanxWave = state.wave === 17;
-  // W20 RNG-FREE rule also blocks the wave-modifier roll. The final
-  // wave is a clean, deterministic Daemon Imperator fight.
-  if (state.wave >= 3 && !isPhalanxWave && !isFinalWave && Math.random() < 0.30) {
-    const m = WAVE_MODIFIERS[Math.floor(Math.random() * WAVE_MODIFIERS.length)];
-    state.waveModifier = m.key;
-    // BLOOD_MOON: stat-based modifier — bake the +25% HP into the wave hpMult
-    // by stuffing a flag the spawn loop will use to scale per-enemy maxHp.
-    if (m.key === 'BLOOD_MOON') (state as any).bloodMoonHpMult = 1.25;
-  }
+  void WAVE_MODIFIERS;     // import preserved for potential Endless wiring
   const carry = state.enemies.size > 0 ? ` ${state.enemies.size} enemies carried over.` : '';
   state.hint = `Wave ${state.wave} — ${w.faction}.${carry}`;
   // 2026-05-16 — SURPRISE EVENTS (Invasion + Skeletal Uprising). Fires
