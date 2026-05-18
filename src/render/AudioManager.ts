@@ -420,12 +420,22 @@ const musicTracks = new Map<string, HTMLAudioElement>();
 export function playMusicTrack(
   id: string,
   url: string,
-  opts: { loop?: boolean; gain?: number; replace?: boolean } = {}
+  opts: { loop?: boolean; gain?: number; replace?: boolean; startMuted?: boolean } = {}
 ) {
   if (muted) return;
   const loop = opts.loop ?? true;
   const gain = opts.gain ?? 0.7;
   const replace = opts.replace ?? true;
+  // 2026-05-17 — `startMuted` lets callers ask for the track to begin
+  // playback in a muted state. Browsers UNIVERSALLY allow muted autoplay,
+  // so the audio element is "running" the moment the page loads — the
+  // playhead advances silently, the file streams in, and the moment the
+  // user interacts (any gesture: mousemove, click, key, touch, focus)
+  // the calling site flips muted=false + seeks to 0 so the user hears
+  // the song from the beginning with zero perceived latency. Without
+  // this, the audio element would just be paused until first gesture,
+  // adding a several-second wait while it loads + decodes.
+  const startMuted = opts.startMuted ?? false;
   // If the same id is already loaded but PAUSED (browser autoplay
   // rejection), attempt to play it again — the calling site is
   // typically inside a user gesture so this second try succeeds.
@@ -446,16 +456,43 @@ export function playMusicTrack(
     audio.loop = loop;
     audio.volume = Math.max(0, Math.min(1, gain * masterVol * musicVol));
     audio.preload = 'auto';
-    // Some browsers reject autoplay without a prior user gesture. The
-    // calling site is responsible for being downstream of one (click,
-    // wave-start, etc.). On rejection, log silently — the next call
-    // will retry.
+    audio.muted = startMuted;
+    // First attempt with the requested muted state. If startMuted=false
+    // and the browser blocks it (NotAllowedError on cold pages), retry
+    // muted — that almost always succeeds and the unmute primers will
+    // handle the audible flip later.
     const promise = audio.play();
     if (promise && typeof promise.catch === 'function') {
-      promise.catch(() => { /* autoplay-blocked — silent fallback */ });
+      promise.catch(() => {
+        if (!audio.muted) {
+          audio.muted = true;
+          const retry = audio.play();
+          if (retry && typeof retry.catch === 'function') retry.catch(() => { /* still blocked, give up */ });
+        }
+      });
     }
     musicTracks.set(id, audio);
   } catch { /* ignore decode/load errors */ }
+}
+
+// 2026-05-17 — Companion to startMuted: called from the gesture primers
+// on the loading screen. Unmutes a previously-muted track and (for the
+// loading track specifically) rewinds to 0 so the user hears the song
+// from the beginning the moment they first interact, no matter how
+// long the page was open silently before that. If the track is paused
+// for any reason, also kicks it back into play. Safe to call multiple
+// times — idempotent.
+export function unmuteAndRestartMusicTrack(id: string, rewind: boolean = true) {
+  const existing = musicTracks.get(id);
+  if (!existing) return;
+  existing.muted = false;
+  if (rewind) {
+    try { existing.currentTime = 0; } catch { /* readiness not yet set, ignore */ }
+  }
+  if (existing.paused) {
+    const p = existing.play();
+    if (p && typeof p.catch === 'function') p.catch(() => { /* still blocked */ });
+  }
 }
 
 export function stopMusicTrack(id: string) {

@@ -38,7 +38,7 @@ import { Logger } from './Logger';
 import { towerName, enemyName, factionName, pretty } from './format';
 import { showEnemyInspect, showEnemyInspectByType } from './render/EnemyInspect';
 import { armorProfileForGroup, armorDamageTypeShortLabel } from './systems/EnemyResistances';
-import { SFX, setFactionBGM, setMuted, isMuted, playMusicTrack, stopMusicTrack, stopAllMusicTracks, surpriseEventSting, sfx, preloadAllSamples } from './render/AudioManager';
+import { SFX, setFactionBGM, setMuted, isMuted, playMusicTrack, stopMusicTrack, stopAllMusicTracks, surpriseEventSting, sfx, preloadAllSamples, unmuteAndRestartMusicTrack } from './render/AudioManager';
 import { tickSurpriseEvents, notifySurpriseEnemyResolved, clearSurpriseEventsForWaveEnd } from './systems/SurpriseEvents';
 import { showSurpriseRewardModal } from './render/SurpriseReward';
 
@@ -2740,26 +2740,38 @@ async function boot() {
   // if the browser allows it (often the case after a recent gesture
   // on the page, e.g. tab activation), it plays immediately.
   const LOADING_MUSIC_URL = sfx('assets/sfx/ff7_victory_fanfare.mp3');
-  // First attempt: try autoplay (succeeds for returning visitors with
-  // prior page engagement, or when the user followed an in-document link
-  // — both count as user activation under the autoplay policy).
-  playMusicTrack('loading', LOADING_MUSIC_URL, { loop: true, gain: 0.55 });
-  // 2026-05-17 v2 — Primer net cast as wide as possible so the fanfare
-  // kicks in on essentially any sign of user presence. The autoplay
-  // policy requires SOME user gesture before play() succeeds; any of
-  // these counts:
-  //   • mousemove  — the moment the cursor enters the page (most users)
-  //   • pointerdown / click — covers mobile + keyboard-only users who
-  //                           never move a cursor before clicking
-  //   • keydown    — tab-into / pre-click keyboard activity
-  //   • touchstart — mobile / tablet first tap on the loading screen
-  //   • focus      — covers returning visitors whose browser blocked the
-  //                  initial autoplay until the tab regained focus
-  //   • visibilitychange — same idea, fires when the tab becomes visible
-  // All use { once: true } so each handler self-removes after firing —
-  // the primer only re-attempts on cold start, not every event.
+  // 2026-05-17 v3 — MUTED-AUTOPLAY-FIRST strategy. Browsers UNIVERSALLY
+  // allow muted audio to autoplay (no user-gesture required). We start
+  // the track muted the instant the page loads, so the audio element is
+  // already playing silently as soon as the loading bar appears.
+  //
+  // When ANY user gesture fires (the primer net below), we flip
+  // muted=false AND rewind to currentTime=0 — the user hears the song
+  // FROM THE BEGINNING the moment they move their mouse, press a key,
+  // tap the screen, focus the tab, or anything else. Zero perceived
+  // latency. No load delay because the audio has been streaming in the
+  // background the whole time.
+  //
+  // playMusicTrack also has internal fallback: if it tries audible play
+  // first and gets a NotAllowedError, it retries muted automatically.
+  // So even if startMuted=true gets accidentally set to false somewhere,
+  // we still end up with a muted track ready for the unmute primer.
+  playMusicTrack('loading', LOADING_MUSIC_URL, {
+    loop: true,
+    gain: 0.55,
+    startMuted: true
+  });
+  // Primer net: any sign of user presence flips muted -> unmuted +
+  // rewinds to 0 so the player hears the song from the start.
+  //   • mousemove   — most desktop users (cursor enters the page)
+  //   • pointerdown — covers users who click without moving mouse
+  //   • keydown     — keyboard-only / tab-into users
+  //   • touchstart  — mobile / tablet
+  //   • focus       — tab regains focus
+  //   • visibilitychange — tab becomes visible
+  // All { once: true } so each fires at most once and self-removes.
   const primeLoadingMusic = () => {
-    playMusicTrack('loading', LOADING_MUSIC_URL, { loop: true, gain: 0.55, replace: false });
+    unmuteAndRestartMusicTrack('loading');
   };
   document.addEventListener('mousemove', primeLoadingMusic, { once: true, passive: true });
   document.addEventListener('pointerdown', primeLoadingMusic, { once: true });
