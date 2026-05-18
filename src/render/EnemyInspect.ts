@@ -31,18 +31,21 @@ const FACTION_KEY: Record<number, string> = {
 // banner color still cues the role at a glance.
 
 function fmtRes(v: number | 'IMMUNE'): { label: string; color: string } {
-  // 2026-05-17 — Wording simplified per user feedback. The "+/-" prefixes
-  // were confusing; players couldn't tell whether "+25%" meant "takes 25%
-  // more" or "resists 25%". Now the label is JUST the unsigned percentage
-  // and the color carries the direction signal:
-  //   orange / gold = vulnerability (the enemy takes extra damage)
-  //   blue          = resistance    (the enemy shrugs off damage)
-  //   red           = IMMUNE        (no damage at all)
-  //   grey          = normal        (full damage, no modifier)
+  // 2026-05-18 — Sign convention inverted to match player intuition
+  // ("+" = positive defense, "−" = negative defense):
+  //   • "+25%"  → enemy RESISTS this damage type (positive defense,
+  //              player should avoid using it).  Color: blue.
+  //   • "−25%"  → enemy is VULNERABLE to this type (less defense, takes
+  //              extra damage). Color: gold/orange — player's answer.
+  //   • IMMUNE  → no damage at all. Color: red.
+  //   • normal  → full damage, no modifier. Color: grey.
+  // The raw `v` value comes from factionResistances.json where:
+  //   v > 0  means takes EXTRA damage (vulnerable) → shows "−X%"
+  //   v < 0  means takes LESS damage   (resistant) → shows "+X%"
   if (v === 'IMMUNE') return { label: 'IMMUNE', color: '#aa3a3a' };
-  if (v > 0.5)  return { label: Math.round(v * 100) + '%',           color: '#ffaa33' };
-  if (v > 0.10) return { label: Math.round(v * 100) + '%',           color: '#ffd34d' };
-  if (v < -0.10) return { label: Math.abs(Math.round(v * 100)) + '%', color: '#7896c8' };
+  if (v > 0.5)  return { label: '−' + Math.round(v * 100) + '%',          color: '#ffaa33' };
+  if (v > 0.10) return { label: '−' + Math.round(v * 100) + '%',          color: '#ffd34d' };
+  if (v < -0.10) return { label: '+' + Math.abs(Math.round(v * 100)) + '%', color: '#7896c8' };
   return { label: 'normal', color: '#888' };
 }
 
@@ -110,18 +113,18 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     const label = armorDamageTypeShortLabel(r.damageType);
     let display: string;
     let color: string;
+    // 2026-05-18 — Sign convention is the player's defense-stat read:
+    //   "+"  = positive defense, enemy RESISTS this type (avoid)
+    //   "−"  = less defense,     enemy is VULNERABLE to this type (use)
+    // armorPct is positive when the enemy resists (damage reduction) and
+    // negative when the enemy takes extra damage. We always display the
+    // magnitude with the appropriate sign in front.
     if (r.immune) { display = 'IMMUNE'; color = '#ee2a2a'; }
-    else if (r.armorPct >= 70) { display = `${r.armorPct}% armor`; color = '#ff6b3a'; }
-    else if (r.armorPct >= 30) { display = `${r.armorPct}% armor`; color = '#ffaa55'; }
-    else if (r.armorPct > 0)   { display = `${r.armorPct}% armor`; color = '#ffd34d'; }
+    else if (r.armorPct >= 70) { display = `+${r.armorPct}% armor`; color = '#ff6b3a'; }
+    else if (r.armorPct >= 30) { display = `+${r.armorPct}% armor`; color = '#ffaa55'; }
+    else if (r.armorPct > 0)   { display = `+${r.armorPct}% armor`; color = '#ffd34d'; }
     else if (r.armorPct === 0) { display = 'no armor';             color = '#cdb98a'; }
-    // 2026-05-17 — Negative armor = vulnerable. Display the unsigned
-    // percentage and let the sky-blue color carry the "this enemy takes
-    // extra damage from this type" signal. The "+" prefix was confusing
-    // because positive-armor chips above (resistance) DON'T have a
-    // matching "-" prefix — they just show "30%". Now both directions
-    // read the same way and the color is the differentiator.
-    else                       { display = `${Math.abs(r.armorPct)}% damage`; color = '#7896c8'; }
+    else                       { display = `−${Math.abs(r.armorPct)}% damage`; color = '#7896c8'; }
     return `<div style="background:#0c0a08;padding:8px 6px;text-align:center;font-size:11px">
       <div style="color:#aa9a4a;letter-spacing:1px;font-size:9px">${label}</div>
       <div style="color:${color};font-size:12px;font-weight:bold;margin-top:3px;letter-spacing:0.5px">${display}</div>

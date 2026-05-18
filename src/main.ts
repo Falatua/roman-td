@@ -942,14 +942,15 @@ async function boot() {
       const label = armorDamageTypeShortLabel(r.damageType);
       let display: string;
       let color: string;
+      // 2026-05-18 — Defense-stat sign convention. "+" = positive defense
+      // (enemy resists, player should avoid). "−" = less defense (enemy
+      // is vulnerable, player should use). Color also differs.
       if (r.immune)              { display = 'IMMUNE';                       color = '#ee2a2a'; }
-      else if (r.armorPct >= 70) { display = `${r.armorPct}%`;               color = '#ff6b3a'; }
-      else if (r.armorPct >= 30) { display = `${r.armorPct}%`;               color = '#ffaa55'; }
-      else if (r.armorPct > 0)   { display = `${r.armorPct}%`;               color = '#ffd34d'; }
+      else if (r.armorPct >= 70) { display = `+${r.armorPct}%`;              color = '#ff6b3a'; }
+      else if (r.armorPct >= 30) { display = `+${r.armorPct}%`;              color = '#ffaa55'; }
+      else if (r.armorPct > 0)   { display = `+${r.armorPct}%`;              color = '#ffd34d'; }
       else if (r.armorPct === 0) { display = '—';                            color = '#cdb98a'; }
-      // 2026-05-17 — drop "+" prefix; consistent unsigned percentage,
-      // color (sky blue) signals vulnerability.
-      else                       { display = `${Math.abs(r.armorPct)}%`;    color = '#7896c8'; }
+      else                       { display = `−${Math.abs(r.armorPct)}%`;    color = '#7896c8'; }
       return `<span style="flex:1;text-align:center;background:#0c0a08;padding:4px 2px;border:1px solid #3a3025;font-size:10px;letter-spacing:0.5px;line-height:1.25">
         <div style="color:#aa9a4a;font-size:8.5px;letter-spacing:1px">${label}</div>
         <div style="color:${color};font-weight:bold">${display}</div>
@@ -3218,6 +3219,35 @@ async function boot() {
   setTimeout(fitStageToViewport, 100);
   setTimeout(fitStageToViewport, 600);
 
+  // 2026-05-18 — Page-exit guard. When the player tries to close the
+  // tab, refresh the page, or navigate away mid-game, prompt them to
+  // confirm so they don't accidentally throw away their run progress.
+  // Browsers no longer honor custom messages here (Chrome/Firefox/
+  // Safari all show a generic "Leave site? Changes you made may not
+  // be saved." dialog) so the only control we have is whether the
+  // dialog appears at all — call event.preventDefault() + set
+  // returnValue to trigger it.
+  //
+  // Gated on actual mid-run state: only prompt if the player is
+  // actually in the middle of a campaign or endless run with
+  // unsaved progress. Don't prompt on the loading screen, fresh
+  // game-start, or after victory/game-over (no progress to lose).
+  window.addEventListener('beforeunload', (event) => {
+    // No run in progress yet? Skip — the player hasn't started.
+    // Wave 0 + lives at starting value means they haven't engaged.
+    if (state.wave <= 0) return;
+    // Already won or lost? No progress to lose.
+    if (state.phase === GamePhase.GAME_OVER || state.phase === GamePhase.VICTORY) return;
+    // Player IS mid-run. Fire the confirm dialog. The browser shows
+    // its generic localized message; we can't customize the text.
+    event.preventDefault();
+    // returnValue is the legacy API — still required by some browsers
+    // for the dialog to appear. Setting it to a non-empty string is
+    // the canonical "show the prompt" signal.
+    event.returnValue = 'Are you sure? You will lose your current run progress.';
+    return 'Are you sure? You will lose your current run progress.';
+  });
+
   // Renderer
   const renderer = new RenderEngine();
   (window as any).__renderer = renderer;
@@ -4194,7 +4224,16 @@ async function boot() {
       state.pendingSurpriseReward = null;
       showSurpriseRewardModal(app, kind, inventory, state, () => {
         (state as any).__surpriseRewardModalShown = false;
-        clearSurpriseEventsForWaveEnd(state);
+        // 2026-05-18 — Stacked-event handling. If the player resolved
+        // multiple events back-to-back, there may be queued rewards
+        // waiting. Pop the next one and let main's per-tick check
+        // fire it on the next frame. Only clear surprise state once
+        // ALL queued rewards are processed.
+        if (state.queuedSurpriseRewards && state.queuedSurpriseRewards.length > 0) {
+          state.pendingSurpriseReward = state.queuedSurpriseRewards.shift()!;
+        } else {
+          clearSurpriseEventsForWaveEnd(state);
+        }
       });
     }
     if (state.phase === GamePhase.WAVE_PHASE) {
@@ -4204,23 +4243,40 @@ async function boot() {
       // sinister-sting audio + camera shake on the FIRST spawn of an
       // active event (one-shot, gated by __surpriseEventStingFired).
       tickSurpriseEvents(state);
-      const ev = state.activeSurpriseEvent;
-      if (ev && !(state as any).__surpriseEventStingFired) {
-        // First spawn-point fired this event? Trigger the sting now.
-        if (ev.spawnPoints.some(p => p.fired)) {
-          (state as any).__surpriseEventStingFired = true;
-          surpriseEventSting(ev.kind);
-          if (renderer?.triggerShake) renderer.triggerShake(6, 0.45);
-          // 2026-05-17 — info tooltip explaining what just happened so the
-          // player isn't lost when the screen suddenly tints red/purple
-          // and enemies spawn from unusual locations. Auto-dismisses
-          // after 6 seconds, dismissible by click, non-blocking.
+      // 2026-05-18 — Iterate primary + extras. Each event fires its
+      // own sting + camera shake once its first spawn lights up. The
+      // info chip shows only for the FIRST event to fire (avoids 3
+      // overlapping chips on a triple-stacked endless wave). The
+      // sting-fired tracker is per-event, keyed by ev.startedAt
+      // (unique per scheduling).
+      const stingFired: Set<number> = ((state as any).__surpriseStingFired ??= new Set<number>());
+      // Iterate every active event — primary + extras.
+      // Build the array inline so it's only one allocation per frame.
+      const allActiveEvs: any[] = [];
+      if (state.activeSurpriseEvent) allActiveEvs.push(state.activeSurpriseEvent);
+      if (state.extraSurpriseEvents) for (const ex of state.extraSurpriseEvents) allActiveEvs.push(ex);
+      for (const ev of allActiveEvs) {
+        if (stingFired.has(ev.startedAt)) continue;
+        if (!ev.spawnPoints.some((p: any) => p.fired)) continue;
+        stingFired.add(ev.startedAt);
+        surpriseEventSting(ev.kind);
+        if (renderer?.triggerShake) renderer.triggerShake(6, 0.45);
+        // Only the first event in this session pops the explanatory
+        // chip. If multiple events stack in endless, the player just
+        // sees the screen go nuclear and feels the chaos — no chip
+        // pile-up.
+        if (stingFired.size === 1) {
           showSurpriseEventInfoChip(ev.kind === 'INVASION' ? 'INVASION' : ev.kind === 'UPRISING' ? 'UPRISING' : 'GATES_OF_HELL');
+        } else if (stingFired.size === 2) {
+          // Quick HUD hint that more is coming.
+          state.hint = '⚠ ANOTHER EVENT JUST OPENED — endless chaos stacks';
+        } else if (stingFired.size === 3) {
+          state.hint = '☠ A THIRD EVENT ON THE SAME WAVE — Rome will not forget this run';
         }
       }
-      if (!ev) {
-        // Reset the one-shot when the event clears so the next event re-fires.
-        (state as any).__surpriseEventStingFired = false;
+      if (allActiveEvs.length === 0) {
+        // Reset when no events active so the next event re-fires the sting.
+        stingFired.clear();
       }
       // Bonus-boss announcement: WaveManager sets this when a surprise boss arrives.
       if ((state as any).bonusBossAnnouncement) {

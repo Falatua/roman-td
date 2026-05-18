@@ -1233,15 +1233,15 @@ function renderArmorChips(id: string): string {
   return rows.map(r => {
     let display: string;
     let color: string;
+    // 2026-05-18 — Defense-stat sign convention. "+" = positive defense
+    // (resists), "−" = less defense (vulnerable). Color also differs:
+    // warm = resist, blue = vulnerable.
     if (r.immune)              { display = 'IMM';                          color = '#ee2a2a'; }
-    else if (r.armorPct >= 70) { display = `${r.armorPct}%`;               color = '#ff6b3a'; }
-    else if (r.armorPct >= 30) { display = `${r.armorPct}%`;               color = '#ffaa55'; }
-    else if (r.armorPct > 0)   { display = `${r.armorPct}%`;               color = '#ffd34d'; }
+    else if (r.armorPct >= 70) { display = `+${r.armorPct}%`;              color = '#ff6b3a'; }
+    else if (r.armorPct >= 30) { display = `+${r.armorPct}%`;              color = '#ffaa55'; }
+    else if (r.armorPct > 0)   { display = `+${r.armorPct}%`;              color = '#ffd34d'; }
     else if (r.armorPct === 0) { display = '0%';                           color = '#cdb98a'; }
-    // 2026-05-17 — vulnerable chips now read "200%" (sky-blue) not
-    // "+200" (was also missing %). Consistent format across the row,
-    // color carries the resist-vs-vulnerable signal.
-    else                       { display = `${Math.abs(r.armorPct)}%`;     color = '#7896c8'; }
+    else                       { display = `−${Math.abs(r.armorPct)}%`;    color = '#7896c8'; }
     return `<span title="${armorDamageTypeShortLabel(r.damageType)}" style="display:inline-block;margin:0 2px 2px 0;padding:1px 4px;background:#0c0a08;border:1px solid #3a3025;color:${color};font-size:9.5px;line-height:1.2"><b style="color:#aa9a4a;font-size:8px;letter-spacing:0.5px">${armorDamageTypeShortLabel(r.damageType).slice(0,3).toUpperCase()}</b> ${display}</span>`;
   }).join('');
 }

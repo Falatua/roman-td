@@ -106,16 +106,103 @@ export function maybeTriggerSurpriseEventForWave(state: GameStateShape): void {
   scheduleSurpriseEvent(state, kind, state.tick + 0.5, waveOverride);
 }
 
-// Endless-mode trigger. ~25% chance per endless wave with 3-wave cooldown.
+// Endless-mode trigger. ~25% base chance per endless wave with 3-wave
+// cooldown for the FIRST event. 2026-05-18 — once the primary fires,
+// roll for 1-2 ADDITIONAL stacked events ("Endless is pure chaos" per
+// design ask). Stacked events get pushed to state.extraSurpriseEvents
+// and live alongside the primary; the renderer, tick loop, and spawn
+// flow all iterate primary + extras together.
+//
+// Stack chances (independent rolls, gated by "primary already fired"):
+//   • 40% chance to add a SECOND event of a different kind
+//   • If a second was added, 25% chance to add a THIRD of a third kind
+//
+// Each extra event is scheduled at a tick OFFSET (0.6s and 1.2s after
+// the primary) so the visual / audio impact staggers instead of
+// landing all at once — keeps the perf hit smooth and the player can
+// process each one. Extras NEVER override the wave queue — only the
+// primary gets waveOverride=true. Extras run as ADDITIONAL spawn
+// sources (legacy-path schedule), same model GATES_OF_HELL uses on
+// the campaign W16.
 export function maybeTriggerEndlessSurpriseEvent(state: GameStateShape, factionKey: string): void {
   const lastWave = state.lastSurpriseEventWave ?? 0;
   const endlessWaveNum = (state.endlessWave ?? 1) + 20;
   if (endlessWaveNum - lastWave < 3) return;
   if (Math.random() > 0.25) return;
   const isUndeadFaction = factionKey === 'UNDEAD_CELTS' || factionKey === 'UNDEAD_CARTHAGE';
-  const kind = isUndeadFaction && Math.random() < 0.5 ? SurpriseEventKind.UPRISING : SurpriseEventKind.INVASION;
+  // Pick the primary event kind (existing 50/50 invasion-vs-uprising
+  // on undead waves, invasion-only on non-undead).
+  const primary = isUndeadFaction && Math.random() < 0.5 ? SurpriseEventKind.UPRISING : SurpriseEventKind.INVASION;
   // Endless mode also uses waveOverride — full perimeter / center spawn flow.
-  scheduleSurpriseEvent(state, kind, state.tick + 0.5, /*waveOverride=*/true);
+  scheduleSurpriseEvent(state, primary, state.tick + 0.5, /*waveOverride=*/true);
+  // ─── Stack rolls ─────────────────────────────────────────────────
+  // Pool of OTHER kinds (different from primary) to draw from.
+  const allKinds: SurpriseEventKind[] = [
+    SurpriseEventKind.INVASION,
+    SurpriseEventKind.UPRISING,
+    SurpriseEventKind.GATES_OF_HELL
+  ];
+  const others = allKinds.filter(k => k !== primary);
+  // Shuffle the "others" pool so each stack pick is random.
+  for (let i = others.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [others[i], others[j]] = [others[j], others[i]];
+  }
+  // Second event: 40% chance.
+  if (Math.random() < 0.40 && others.length > 0) {
+    const second = others.shift()!;
+    scheduleExtraSurpriseEvent(state, second, state.tick + 1.1);
+    // Third event: 25% chance only if a second was added.
+    if (Math.random() < 0.25 && others.length > 0) {
+      const third = others.shift()!;
+      scheduleExtraSurpriseEvent(state, third, state.tick + 1.7);
+    }
+  }
+}
+
+// Return primary + all extras as a flat array. Consumers iterate this
+// instead of the single field so endless-mode stacking just works.
+export function getAllActiveSurpriseEvents(state: GameStateShape): SurpriseEventState[] {
+  const out: SurpriseEventState[] = [];
+  if (state.activeSurpriseEvent) out.push(state.activeSurpriseEvent);
+  if (state.extraSurpriseEvents && state.extraSurpriseEvents.length > 0) {
+    for (const ev of state.extraSurpriseEvents) out.push(ev);
+  }
+  return out;
+}
+
+// Schedule an EXTRA stacked event. Same generators + atmosphere as the
+// primary path, just pushed to extraSurpriseEvents instead of
+// overwriting activeSurpriseEvent. Always waveOverride=false (only
+// the primary gets to reroute the wave's spawn queue).
+function scheduleExtraSurpriseEvent(state: GameStateShape, kind: SurpriseEventKind, startAtTick: number): void {
+  let points: SurpriseEventSpawnPoint[];
+  let atmosProps: SurpriseAtmosProp[];
+  if (kind === SurpriseEventKind.INVASION) {
+    points = generateInvasionPoints(state, startAtTick, /*waveOverride=*/false);
+    atmosProps = generateInvasionAtmosphere(state, points);
+  } else if (kind === SurpriseEventKind.UPRISING) {
+    points = generateUprisingPoints(state, startAtTick, /*waveOverride=*/false);
+    atmosProps = generateUprisingAtmosphere(state, points);
+  } else {
+    points = generateGatesOfHellPoints(state, startAtTick);
+    atmosProps = generateGatesOfHellAtmosphere(state, points);
+  }
+  if (points.length === 0) return;
+  const ev: SurpriseEventState = {
+    kind,
+    startedAt: startAtTick,
+    spawnPoints: points,
+    spawnedEnemyIds: new Set<string>(),
+    scarPersistsThroughTick: 0,
+    vfxFadeOutAt: 0,
+    lastSpawnFiredAt: 0,
+    rewardGiven: false,
+    atmosProps,
+    waveOverride: false
+  };
+  if (!state.extraSurpriseEvents) state.extraSurpriseEvents = [];
+  state.extraSurpriseEvents.push(ev);
 }
 
 // Called when an enemy dies or leaks. Fires the reward modal trigger
@@ -125,25 +212,46 @@ export function maybeTriggerEndlessSurpriseEvent(state: GameStateShape, factionK
 // modes; the schedule-empty check (no more pending spawns) ensures we
 // don't fire prematurely mid-wave.
 export function notifySurpriseEnemyResolved(state: GameStateShape, enemyId: string): void {
-  const ev = state.activeSurpriseEvent;
-  if (!ev || ev.rewardGiven) return;
-  if (!ev.spawnedEnemyIds.has(enemyId)) return;
-  ev.spawnedEnemyIds.delete(enemyId);
-  const allFired = ev.spawnPoints.every(p => p.fired);
-  // In waveOverride mode, the spawn schedule is the wave's spawn queue
-  // (which lives on state.spawnQueue). We need that to be drained too.
-  const spawnQueueEmpty = !ev.waveOverride || state.spawnQueue.length === 0;
-  if (allFired && spawnQueueEmpty && ev.spawnedEnemyIds.size === 0) {
-    if (state.lives <= 0) return;     // dead player gets no reward
-    ev.endedAt = state.tick;
-    ev.rewardGiven = true;
-    state.pendingSurpriseReward = {
-      kind: ev.kind === SurpriseEventKind.INVASION ? 'INVASION'
-          : ev.kind === SurpriseEventKind.UPRISING ? 'UPRISING'
-          : 'GATES_OF_HELL'
-    };
-    state.surpriseEventsCompleted = (state.surpriseEventsCompleted ?? 0) + 1;
-    if (ev.vfxFadeOutAt === 0) ev.vfxFadeOutAt = state.tick;
+  // 2026-05-18 — Iterate primary + extras. Each event tracks its own
+  // spawnedEnemyIds, so an enemy belongs to at most one event. The
+  // matching event's reward gate fires when its own spawn schedule
+  // drains, independent of the others. In endless this means stacked
+  // events each award their own reward as they resolve.
+  for (const ev of getAllActiveSurpriseEvents(state)) {
+    if (ev.rewardGiven) continue;
+    if (!ev.spawnedEnemyIds.has(enemyId)) continue;
+    ev.spawnedEnemyIds.delete(enemyId);
+    const allFired = ev.spawnPoints.every(p => p.fired);
+    const spawnQueueEmpty = !ev.waveOverride || state.spawnQueue.length === 0;
+    if (allFired && spawnQueueEmpty && ev.spawnedEnemyIds.size === 0) {
+      if (state.lives <= 0) return;     // dead player gets no reward
+      ev.endedAt = state.tick;
+      ev.rewardGiven = true;
+      // Queue the reward only if none is already pending (one modal
+      // at a time). Subsequent events keep their rewardGiven flag so
+      // they don't re-queue; the player gets one modal per surviving
+      // event, processed in the order they resolved.
+      if (!state.pendingSurpriseReward) {
+        state.pendingSurpriseReward = {
+          kind: ev.kind === SurpriseEventKind.INVASION ? 'INVASION'
+              : ev.kind === SurpriseEventKind.UPRISING ? 'UPRISING'
+              : 'GATES_OF_HELL'
+        };
+      } else {
+        // A reward is already queued — bank this one so the next-modal-
+        // closes path can pick it up.
+        if (!state.queuedSurpriseRewards) state.queuedSurpriseRewards = [];
+        state.queuedSurpriseRewards.push({
+          kind: ev.kind === SurpriseEventKind.INVASION ? 'INVASION'
+              : ev.kind === SurpriseEventKind.UPRISING ? 'UPRISING'
+              : 'GATES_OF_HELL'
+        });
+      }
+      state.surpriseEventsCompleted = (state.surpriseEventsCompleted ?? 0) + 1;
+      if (ev.vfxFadeOutAt === 0) ev.vfxFadeOutAt = state.tick;
+      return;     // Only one event resolves per enemy (no cross-event leakage).
+    }
+    return;       // Enemy belonged to this event; stop searching.
   }
 }
 
@@ -151,12 +259,21 @@ export function notifySurpriseEnemyResolved(state: GameStateShape, enemyId: stri
 // active waveOverride surprise event AND the player is still alive, fires
 // the reward modal trigger. Player gets to pick their accomplishment reward.
 export function notifySurpriseEventWaveEnded(state: GameStateShape): void {
+  // 2026-05-18 — Also iterate extras. Each waveOverride event fires
+  // its own reward at wave-end (only the primary is waveOverride in
+  // endless, but extras still get their non-override reward path
+  // through notifySurpriseEnemyResolved). Here we only handle the
+  // primary's wave-override case for back-compat.
   const ev = state.activeSurpriseEvent;
   if (!ev || !ev.waveOverride || ev.rewardGiven) return;
   if (state.lives <= 0) return;     // dead player gets no reward
   ev.endedAt = state.tick;
   ev.rewardGiven = true;
-  state.pendingSurpriseReward = { kind: ev.kind === SurpriseEventKind.INVASION ? 'INVASION' : 'UPRISING' };
+  state.pendingSurpriseReward = {
+    kind: ev.kind === SurpriseEventKind.INVASION ? 'INVASION'
+        : ev.kind === SurpriseEventKind.UPRISING ? 'UPRISING'
+        : 'GATES_OF_HELL'
+  };
   state.surpriseEventsCompleted = (state.surpriseEventsCompleted ?? 0) + 1;
   // Trigger the VFX fade-out so fires/urns retreat after the reward picks.
   if (ev.vfxFadeOutAt === 0) ev.vfxFadeOutAt = state.tick;
@@ -168,8 +285,16 @@ export function notifySurpriseEventWaveEnded(state: GameStateShape): void {
 // entry and routes via spawnAtSurpriseEventPoint below); this tick is a
 // no-op for spawning but still handles VFX fade-out detection.
 export function tickSurpriseEvents(state: GameStateShape): void {
-  const ev = state.activeSurpriseEvent;
-  if (!ev) return;
+  // 2026-05-18 — Iterate primary + extras. Each event runs its own
+  // spawn schedule independently. In endless this is how stacked
+  // events pump out enemies in parallel without stepping on each
+  // other.
+  for (const ev of getAllActiveSurpriseEvents(state)) {
+    tickSingleSurpriseEvent(state, ev);
+  }
+}
+
+function tickSingleSurpriseEvent(state: GameStateShape, ev: SurpriseEventState): void {
   if (!ev.waveOverride) {
     // Legacy path: drain the fixed schedule. Active for GATES_OF_HELL,
     // which uses waveOverride=false so its 2 gates + 15 fire giants
@@ -306,9 +431,10 @@ export function notifyHellGateDestroyed(state: GameStateShape, pointId: number):
 
 // Called from WaveManager.checkWaveEnd. Clears any in-flight event state.
 export function clearSurpriseEventsForWaveEnd(state: GameStateShape): void {
-  if (state.activeSurpriseEvent) {
+  if (state.activeSurpriseEvent || (state.extraSurpriseEvents && state.extraSurpriseEvents.length > 0)) {
     state.lastSurpriseEventWave = state.wave;
     state.activeSurpriseEvent = null;
+    state.extraSurpriseEvents = [];
   }
   state.surpriseEventScars = [];
   state.pendingSurpriseReward = null;
@@ -849,39 +975,57 @@ function nearestPathIndexAfterWP2(state: GameStateShape, col: number, row: numbe
 }
 
 export function isSurpriseEventActive(state: GameStateShape): boolean {
-  const ev = state.activeSurpriseEvent;
-  if (!ev) return false;
-  return ev.vfxFadeOutAt === 0 || state.tick < ev.vfxFadeOutAt + VFX_FADEOUT_SECONDS;
+  // Any live event (primary or extras) counts as active. Used by HUD
+  // checks that just want a boolean "is something dramatic happening".
+  for (const ev of getAllActiveSurpriseEvents(state)) {
+    if (ev.vfxFadeOutAt === 0 || state.tick < ev.vfxFadeOutAt + VFX_FADEOUT_SECONDS) return true;
+  }
+  return false;
 }
 
 // Screen tint envelope: trapezoid from event start through last-spawn +
-// fade window. Returns null when no tint should paint.
+// fade window. Returns null when no tint should paint. With stacked
+// endless events, blends each active event's tint together — the
+// chaos screen shows red-orange + purple + hellfire-red merged.
 export function surpriseEventTintRGBA(state: GameStateShape): { r: number; g: number; b: number; a: number } | null {
-  const ev = state.activeSurpriseEvent;
-  if (!ev) return null;
+  const events = getAllActiveSurpriseEvents(state);
+  if (events.length === 0) return null;
+  let rSum = 0, gSum = 0, bSum = 0, aSum = 0, aMax = 0;
+  for (const ev of events) {
+    const t = singleEventTint(state, ev);
+    if (!t) continue;
+    rSum += t.r * t.a;
+    gSum += t.g * t.a;
+    bSum += t.b * t.a;
+    aSum += t.a;
+    if (t.a > aMax) aMax = t.a;
+  }
+  if (aSum <= 0.001) return null;
+  // Cap combined alpha at 0.45 so a 3-event stack doesn't black out
+  // the screen. Each individual peak is 0.22-0.32.
+  const a = Math.min(0.45, aMax + (aSum - aMax) * 0.5);
+  return { r: rSum / aSum, g: gSum / aSum, b: bSum / aSum, a };
+}
+
+function singleEventTint(state: GameStateShape, ev: SurpriseEventState): { r: number; g: number; b: number; a: number } | null {
   const elapsed = state.tick - ev.startedAt;
   if (elapsed < 0) return null;
-  // 2026-05-17 — UPRISING tint pushed higher (0.22 → 0.32 peak) so the
-  // necrotic purple wash reads as "screen is being eaten by the
-  // underworld". Invasion fire tint stays at 0.22 — fires are localized,
-  // the screen-wide tint shouldn't dominate.
-  const isUprising = ev.kind === SurpriseEventKind.UPRISING;
-  const peak = isUprising ? 0.32 : 0.22;
+  const peak = ev.kind === SurpriseEventKind.UPRISING ? 0.32
+             : ev.kind === SurpriseEventKind.GATES_OF_HELL ? 0.28
+             : 0.22;
   let alpha = peak;
-  // Fade-in across the rise window.
   if (elapsed < VFX_RISE_SECONDS) alpha = peak * (elapsed / VFX_RISE_SECONDS);
-  // Fade-out after vfxFadeOutAt is set.
   if (ev.vfxFadeOutAt > 0) {
     const fadeProgress = (state.tick - ev.vfxFadeOutAt) / VFX_FADEOUT_SECONDS;
     if (fadeProgress >= 1) return null;
     alpha = peak * Math.max(0, 1 - fadeProgress);
   }
   if (alpha <= 0.001) return null;
-  if (isUprising) {
-    // Sickly green-purple necrotic tint, slightly more saturated.
+  if (ev.kind === SurpriseEventKind.UPRISING) {
     return { r: 0.40, g: 0.04, b: 0.62, a: alpha };
+  } else if (ev.kind === SurpriseEventKind.GATES_OF_HELL) {
+    return { r: 0.90, g: 0.10, b: 0.08, a: alpha };
   } else {
-    // Warm red-orange fire tint.
     return { r: 0.85, g: 0.15, b: 0.05, a: alpha };
   }
 }

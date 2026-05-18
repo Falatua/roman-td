@@ -146,6 +146,14 @@ export interface GameStateShape {
   // urn-shadows) persist independently for the rest of the wave via
   // surpriseEventScars below.
   activeSurpriseEvent?: SurpriseEventState | null;
+  // 2026-05-18 — ENDLESS-MODE STACKING. Endless waves can roll 1-2
+  // ADDITIONAL surprise events on top of the primary one (rare, ~20%
+  // chance to add a second event, ~5% chance to add a third). These
+  // live in extraSurpriseEvents so the existing single-event reads
+  // and reward-flow on the campaign side stay untouched. The
+  // renderer, tick loop, and spawn flow iterate primary + extras
+  // via getAllActiveSurpriseEvents() so visuals + behavior stack.
+  extraSurpriseEvents?: SurpriseEventState[];
   // Persistent VFX after an event ends — burn zone sprites for invasion,
   // urn silhouettes for uprising. Cleared at wave-end. The renderer reads
   // this array each frame and paints sprites at the recorded pixel coords.
@@ -155,6 +163,11 @@ export interface GameStateShape {
   // Pending reward modal — set when an event ends and last enemy dies.
   // main.ts opens the reward modal when this is non-null and pauses.
   pendingSurpriseReward?: { kind: 'INVASION' | 'UPRISING' | 'GATES_OF_HELL' } | null;
+  // 2026-05-18 — Stacked endless events can resolve back-to-back; if
+  // a second reward fires while the first modal is still open, the
+  // second is banked here. The modal-close handler in main.ts pops
+  // one off this queue when the player dismisses the current modal.
+  queuedSurpriseRewards?: { kind: 'INVASION' | 'UPRISING' | 'GATES_OF_HELL' }[];
   // Number of completed surprise events this run (stats / leaderboard hook).
   surpriseEventsCompleted?: number;
 }

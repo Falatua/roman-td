@@ -7,7 +7,7 @@ import { towerEffectiveStats } from '../systems/TowerSystem';
 import { tex } from './Assets';
 import waypointsData from '../data/waypoints.json';
 import enemiesData from '../data/enemies.json';
-import { surpriseEventTintRGBA, VFX_TIMING } from '../systems/SurpriseEvents';
+import { surpriseEventTintRGBA, VFX_TIMING, getAllActiveSurpriseEvents } from '../systems/SurpriseEvents';
 import { SurpriseEventKind } from '../types';
 
 export class RenderEngine {
@@ -2716,16 +2716,41 @@ export class RenderEngine {
   //       INVASION → teleport-in: cyan→white→full alpha ramp over 0.3s
   //       UPRISING → ground-rise: enemy y starts +18 below ground, rises
   drawSurpriseEvents(state: GameStateShape, tick: number): void {
-    const ev = state.activeSurpriseEvent;
+    // 2026-05-18 — Iterate primary + extras. In endless mode, up to 3
+    // surprise events can stack on the same wave (configured in
+    // SurpriseEvents.maybeTriggerEndlessSurpriseEvent). The renderer
+    // accumulates sprite-pool + atmos-pool indices across all events
+    // so a 2-3 event stack renders each event's visuals without
+    // stomping on the others. Overlay Graphics are cleared once at
+    // the start and each event's overlay strokes accumulate into them.
+    const events = getAllActiveSurpriseEvents(state);
     let activeIdx = 0;
+    let atmosIdx = 0;
 
+    // Clear overlay graphics ONCE so multiple events can accumulate.
+    if (!this.uprisingOverlayGfx) {
+      this.uprisingOverlayGfx = new Graphics();
+      this.layers.fx.addChildAt(this.uprisingOverlayGfx, 0);
+    }
+    this.uprisingOverlayGfx.clear();
+    if (!this.gatesOfHellOverlayGfx) {
+      this.gatesOfHellOverlayGfx = new Graphics();
+      this.layers.fx.addChildAt(this.gatesOfHellOverlayGfx, 0);
+    }
+    this.gatesOfHellOverlayGfx.clear();
+
+    // ─── PER-EVENT VISUALS (urn/fire sprites, dust puffs, uprising
+    //     overlay, atmos props). Iterates each active event so stacked
+    //     endless chaos draws all of them. Gates-of-hell overlay sits
+    //     after the loop because it iterates LIVE enemies, not points.
+    for (const ev of events) {
     // 2026-05-17 — GATES OF HELL doesn't use the surpriseActiveSprites
     // pool (the HELL_GATE enemy renders via the normal enemy sprite
     // pipeline). Skip the sprite-pool loop for this kind so we don't
     // draw a phantom fire/urn over the gate enemy.
-    if (ev && ev.kind === SurpriseEventKind.GATES_OF_HELL) {
-      // Hide any leftover sprite pool entries from a prior event.
-      for (const sp of this.surpriseActiveSprites) sp.visible = false;
+    if (ev.kind === SurpriseEventKind.GATES_OF_HELL) {
+      // No sprite-pool entries to draw for gates; the live enemy
+      // sprite handles it. Skip to the next section.
     } else if (ev) {
       const isInvasion = ev.kind === SurpriseEventKind.INVASION;
       // ── Per-point visual state (one sprite per pointId 0..3) ────────
@@ -2837,13 +2862,9 @@ export class RenderEngine {
         activeIdx++;
       }
     }
-    // Hide unused pool entries.
-    for (let i = activeIdx; i < this.surpriseActiveSprites.length; i++) {
-      this.surpriseActiveSprites[i].visible = false;
-    }
 
     // ── Per-spawn dust puff (one-shot on each enemy emergence) ────────
-    if (ev) {
+    {
       const isUprising = ev.kind === SurpriseEventKind.UPRISING;
       for (let i = 0; i < ev.spawnPoints.length; i++) {
         const p = ev.spawnPoints[i];
@@ -2877,20 +2898,14 @@ export class RenderEngine {
         const drop = Array.from(this.surpriseDustPuffsEmitted).slice(0, 32);
         for (const k of drop) this.surpriseDustPuffsEmitted.delete(k);
       }
-    } else {
-      if (this.surpriseDustPuffsEmitted.size > 0) this.surpriseDustPuffsEmitted.clear();
     }
 
     // ── UPRISING-only over-the-top overlay (skulls, soul columns,
-    //    aura rings, ground cracks). Drawn on a dedicated Graphics that
-    //    sits in the fx layer above the urn sprite. Cleared every frame.
-    if (!this.uprisingOverlayGfx) {
-      this.uprisingOverlayGfx = new Graphics();
-      this.layers.fx.addChildAt(this.uprisingOverlayGfx, 0);
-    }
-    const ug = this.uprisingOverlayGfx;
-    ug.clear();
-    if (ev && ev.kind === SurpriseEventKind.UPRISING) {
+    //    aura rings, ground cracks). Drawn on the shared Graphics
+    //    cleared once at the top of the function so multiple uprising
+    //    events accumulate into a single batch.
+    const ug = this.uprisingOverlayGfx!;
+    if (ev.kind === SurpriseEventKind.UPRISING) {
       // Same per-point envelope used by the urn sprite above so the
       // overlay fades in / out in lockstep.
       const pointMeta = new Map<number, { vfxX: number; vfxY: number; firstSpawnAt: number }>();
@@ -3019,24 +3034,13 @@ export class RenderEngine {
       }
     }
 
-    // v2 — NO PERSISTENT SCAR DRAWING. The user explicitly asked to
-    // "pull it away" after spawning to keep the wave clean. Any sprites
-    // still in the scar pool from a prior frame are hidden.
-    for (const sp of this.surpriseScarSprites) sp.visible = false;
-
     // ── GATES OF HELL warm-portal overlay (2026-05-17). Drawn around
     //    each live HELL_GATE enemy. Mirrors the uprising overlay layer
-    //    pattern but in fire colors: ground cracks red-orange, pulsing
-    //    fire aura rings, orbiting ember demons, vertical fire pillar
-    //    through the arch. Fades with the event envelope so a
-    //    destroyed gate's overlay decays naturally.
-    if (!this.gatesOfHellOverlayGfx) {
-      this.gatesOfHellOverlayGfx = new Graphics();
-      this.layers.fx.addChildAt(this.gatesOfHellOverlayGfx, 0);
-    }
-    const gg = this.gatesOfHellOverlayGfx;
-    gg.clear();
-    if (ev && ev.kind === SurpriseEventKind.GATES_OF_HELL) {
+    //    pattern but in fire colors. Iterates LIVE enemies (not points)
+    //    so it draws for every HELL_GATE on the field regardless of
+    //    which event kind they belong to. Cleared once at top.
+    const gg = this.gatesOfHellOverlayGfx!;
+    if (ev.kind === SurpriseEventKind.GATES_OF_HELL) {
       // Find each live gate by its enemy entry. Stationary, so the
       // overlay sits at the enemy's current x/y.
       for (const e of state.enemies.values()) {
@@ -3139,9 +3143,10 @@ export class RenderEngine {
     // blood stains + purple smoke drift (Uprising = "burial ground").
     // Fade-in / fade-out tied to the same envelope as the main VFX so
     // the screen returns to clean once spawns drain. Per-prop animation
-    // gives the dressing life without dominating attention.
-    let atmosIdx = 0;
-    if (ev && ev.atmosProps) {
+    // gives the dressing life without dominating attention. atmosIdx
+    // accumulates across events (declared once at the top of the
+    // function).
+    if (ev.atmosProps) {
       // Reuse the same fade envelope the main fire/urn sprites use.
       let envAlpha = Math.max(0, Math.min(1, (tick - (ev.startedAt - 0.1)) / VFX_TIMING.RISE_SECONDS));
       if (ev.vfxFadeOutAt > 0) {
@@ -3205,9 +3210,26 @@ export class RenderEngine {
         }
       }
     }
+    }   // ← end per-event for loop
+
+    // ─── POST-LOOP ONE-TIME CLEANUP ───────────────────────────────
+    // Hide unused active-sprite pool entries (urn/fire sprites).
+    for (let i = activeIdx; i < this.surpriseActiveSprites.length; i++) {
+      this.surpriseActiveSprites[i].visible = false;
+    }
     // Hide unused atmospheric sprite pool entries.
     for (let i = atmosIdx; i < this.surpriseAtmosSprites.length; i++) {
       this.surpriseAtmosSprites[i].visible = false;
+    }
+    // v2 — NO PERSISTENT SCAR DRAWING. Any sprites still in the scar
+    // pool from a prior frame are hidden.
+    for (const sp of this.surpriseScarSprites) sp.visible = false;
+    // If no events are active, clear the dust-puff cache so the next
+    // event starts fresh (was previously gated by "else" of the
+    // per-event check; moved here now that the per-event work is
+    // inside the for-loop).
+    if (events.length === 0 && this.surpriseDustPuffsEmitted.size > 0) {
+      this.surpriseDustPuffsEmitted.clear();
     }
 
     // ── Screen tint overlay ────────────────────────────────────────────
