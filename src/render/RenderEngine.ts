@@ -511,6 +511,13 @@ export class RenderEngine {
   // that pulses with the boss HP-bar tempo (sin at ~3Hz). Shared
   // Graphics, cleared each frame, no per-boss allocations. Multiple
   // bosses on screen (twin/ambush boss waves) all share the gfx.
+  //
+  // 2026-05-17 v2 — Removed the always-on passive red halo that used
+  // to wrap every boss at full health. The persistent glow was visual
+  // noise; bosses already announce themselves via the top-of-screen
+  // HP bar + the boss-arrival banner. Only the LOW-HP URGENCY RING
+  // remains — kicks in below 25% HP to signal the kill window. Bosses
+  // at full / mid HP now render exactly like other enemies (no halo).
   drawBossLowHpAura(state: GameStateShape) {
     const g = this.bossAuraGfx;
     g.clear();
@@ -518,35 +525,19 @@ export class RenderEngine {
       if (!e.isBoss) continue;
       if (e.hp <= 0) continue;
       const ratio = e.hp / e.maxHp;
-      // 2026-05-17 — ALL BOSSES now get a subtle pulsing red glow at full
-      // health, escalating to the urgency-ring when they drop below 25%
-      // HP. The base glow tells the player "this is a boss" at a glance
-      // without needing to read the HP bar. The escalation at low HP
-      // signals the kill window. Single Graphics pass for both layers.
-      const lowHp = ratio < 0.25;
-      const dangerT = lowHp ? 1 - (ratio / 0.25) : 0;     // 0 at 25%+, 1 at death
-      const pulse = 0.5 + 0.5 * Math.sin(state.tick * (lowHp ? 3 : 1.6) * Math.PI);
+      // ONLY render when the boss is below 25% HP. No passive glow.
+      if (ratio >= 0.25) continue;
+      const dangerT = 1 - (ratio / 0.25);     // 0 at 25%, 1 at death
+      const pulse = 0.5 + 0.5 * Math.sin(state.tick * 3 * Math.PI);
       const baseR = GRID.TILE * 1.6;
-      const r = baseR * (1 + (lowHp ? 0.10 : 0.05) * pulse + 0.06 * dangerT);
-      // Base passive glow: gentle red halo even at full health.
-      const baseAlpha = (0.10 + 0.06 * pulse);
-      g.beginFill(0xcc1818, baseAlpha * 0.55);
-      g.drawCircle(e.x, e.y, r * 1.05);
+      const r = baseR * (1 + 0.10 * pulse + 0.06 * dangerT);
+      const alpha = (0.25 + 0.35 * pulse) * (0.6 + 0.4 * dangerT);
+      g.beginFill(0xff2222, alpha * 0.18);
+      g.drawCircle(e.x, e.y, r * 1.18);
       g.endFill();
-      // Soft outer ring stroke for definition.
-      g.lineStyle(1.5, 0xff4040, baseAlpha + 0.10);
+      g.lineStyle(3 + dangerT * 2, 0xff3030, alpha);
       g.drawCircle(e.x, e.y, r);
       g.lineStyle(0);
-      // Low-HP urgency layer — only renders when boss < 25% HP.
-      if (lowHp) {
-        const alpha = (0.25 + 0.35 * pulse) * (0.6 + 0.4 * dangerT);
-        g.beginFill(0xff2222, alpha * 0.18);
-        g.drawCircle(e.x, e.y, r * 1.18);
-        g.endFill();
-        g.lineStyle(3 + dangerT * 2, 0xff3030, alpha);
-        g.drawCircle(e.x, e.y, r);
-        g.lineStyle(0);
-      }
     }
   }
   // BOSS-FIGHT VIGNETTE (2026-05 v6 polish):
