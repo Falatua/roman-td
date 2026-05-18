@@ -84,12 +84,20 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // bleed and existing tough melee profile, siege becomes the
   // dedicated answer for elephant waves. The previous 0.55 (siege-
   // resistant) reading was inverted on purpose.
-  [EnemyType.WAR_ELEPHANT]: { melee: 0.25, ranged: 0.6, slow: 0.25, burn: 0.6, poison: 0.3, bleed: 0.20, siege: 1.45 },
+  // 2026-05-17 — Poison resistance bumped 0.30 → 0.10 (90% reduction).
+  // Thick elephant hide and the mass of the animal shrug off poison
+  // procs that would melt a footman. Bleed already at 0.20 (80% resist)
+  // for the same anatomical reason.
+  [EnemyType.WAR_ELEPHANT]: { melee: 0.25, ranged: 0.6, slow: 0.25, burn: 0.6, poison: 0.10, bleed: 0.20, siege: 1.45 },
   // HANNIBAL_BARCA: 2026-05-17 — siege bumped from default 1.0 to 1.25×
   // (+25%). The whole Carthaginian roster is now siege-soft, the boss
   // included. Siege towers (Onager, Ballistarius, Carroballista, Vulcan
   // Engineer, Colossus Onager) are the clean carry for W10.
-  [EnemyType.HANNIBAL_BARCA]: { melee: 0.65, ranged: 0.5, slow: 0.2, poison: 0.4, bleed: 0.55, burn: 0.85, siege: 1.25 },
+  // 2026-05-17 — Hannibal rides an elephant; poison resist bumped
+  // 0.40 → 0.15 (85% reduction). Same elephant-hide reasoning as
+  // WAR_ELEPHANT — Hannibal's poison vulnerability shouldn't be a
+  // soft underbelly for elephant counterplay.
+  [EnemyType.HANNIBAL_BARCA]: { melee: 0.65, ranged: 0.5, slow: 0.2, poison: 0.15, bleed: 0.55, burn: 0.85, siege: 1.25 },
 
   // LATE-WAVE RANGED RESISTANCE PASS (2026-05): every non-boss enemy
   // that shows up after W10 had its `ranged` multiplier tightened so

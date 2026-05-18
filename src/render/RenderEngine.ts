@@ -790,8 +790,25 @@ export class RenderEngine {
   // ranged until the elephant dies".
   drawElephantAura(state: GameStateShape) {
     this.elephantAuraGfx.clear();
-    const sources: any[] = (state as any).__elephantAuraSources ?? [];
-    if (sources.length === 0) return;
+    // 2026-05-17 — Re-validate sources against state.enemies every frame
+    // so a stale __elephantAuraSources (e.g. left over from a tick where
+    // tickEnemies didn't run) can't draw a ghost aura. Walk state.enemies
+    // directly for the canonical list of live war/undead elephants. If
+    // none are alive, gfx stays cleared and we bail.
+    const liveElephants: Array<{ x: number; y: number; r: number; isUndead: boolean }> = [];
+    const ELEPHANT_TYPES = new Set(['WAR_ELEPHANT', 'UNDEAD_WAR_ELEPHANT']);
+    for (const e of state.enemies.values()) {
+      if (!ELEPHANT_TYPES.has(e.type)) continue;
+      if (e.hp <= 0) continue;
+      liveElephants.push({
+        x: e.x,
+        y: e.y,
+        r: GRID.TILE * 2.0,
+        isUndead: e.type === 'UNDEAD_WAR_ELEPHANT'
+      });
+    }
+    if (liveElephants.length === 0) return;
+    const sources = liveElephants;
     for (const src of sources) {
       // Two-tone dome: outer thin brown ring + inner dust haze.
       const dustOuter = src.isUndead ? 0x88aa99 : 0xc09060;
