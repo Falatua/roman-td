@@ -23,7 +23,7 @@ import { RenderEngine } from './render/RenderEngine';
 import { UIManager } from './render/UIManager';
 import { renderShop, renderInventoryButton, showInventoryModal, inventorySellPrice } from './render/ShopUI';
 import { showGameOver, showVictory } from './render/EndScreens';
-import { runEndOfGameFlow, insertEndlessEntry, showEndlessLeaderboard } from './render/Leaderboard';
+import { runEndOfGameFlow, insertEndlessEntry, showEndlessLeaderboard, showLeaderboard } from './render/Leaderboard';
 import { showBossWarning, isVerifiedBossWave } from './render/BossWarning';
 import { showCodex } from './render/Codex';
 import { showTowerMenu } from './render/TowerMenu';
@@ -3214,17 +3214,23 @@ async function boot() {
         return;       // not yet committed — wait for more clicks
       }
       // Final hit — commit the coin and transition into the game.
+      commitCoinAndStart();
+    };
+    slotEl.addEventListener('click', coinJamHandler);
+    // 2026-05-19 — Extracted commit-to-game sequence so it can be
+    // called from BOTH the 5th-click handler above AND the Hall-of-
+    // Glory "ENTER THE GAME" button (when the player previews the
+    // leaderboard from the loading screen). Single source of truth
+    // for the SFX → shake → warp → fade-out → resolve cascade.
+    let committed = false;
+    const commitCoinAndStart = () => {
+      if (committed) return;
+      committed = true;
       slotEl.removeEventListener('click', coinJamHandler);
       if (insertEl) insertEl.textContent = '▶ COIN ACCEPTED — GLORY AWAITS ◀';
-      // User-supplied coin-slot SFX — fires on commit, on top of the
-      // visual coin-drop + shake + warp.
       SFX.coinSlot();
-      // Stop the FF7 fanfare loop the moment the coin commits.
       stopMusicTrack('loading');
-      // Clean up every primer listener (mousemove / pointerdown / keydown
-      // / touchstart / focus). visibilitychange uses an inline arrow so
-      // it can't be removed by reference, but it's { once: true } so it
-      // self-removes after firing once.
+      // Tear down every primer listener.
       document.removeEventListener('mousemove', primeLoadingMusic);
       document.removeEventListener('pointerdown', primeLoadingMusic);
       document.removeEventListener('keydown', primeLoadingMusic);
@@ -3233,9 +3239,7 @@ async function boot() {
       // 1) Coin drops into the slot.
       if (coinHint) coinHint.classList.add('dropping');
       // 2) Immediate screen shake — cabinet just got hit.
-      setTimeout(() => {
-        loadingEl.classList.add('shake');
-      }, 380);
+      setTimeout(() => { loadingEl.classList.add('shake'); }, 380);
       // 3) After the shake settles, zoom-warp into the game.
       setTimeout(() => {
         loadingEl.classList.remove('shake');
@@ -3250,7 +3254,28 @@ async function boot() {
         resolve();
       }, 1620);
     };
-    slotEl.addEventListener('click', coinJamHandler);
+    // 2026-05-19 — Wire the "🏛 VIEW HALL OF GLORY" preview button on
+    // the loading screen. Opens the leaderboard in loadingMode so its
+    // bottom controls are "ENTER THE GAME" (→ commitCoinAndStart) and
+    // "← BACK TO COIN SLOT" (→ just close the modal). Player can peek
+    // at the global rankings before committing.
+    const viewLbBtn = document.getElementById('loading-view-leaderboard');
+    if (viewLbBtn) {
+      viewLbBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        // Defer the import to runtime to avoid pulling Leaderboard.ts
+        // into the synchronous bootstrap path; the module is already
+        // imported at the top of main.ts so this is essentially free.
+        showLeaderboard(
+          document.body,
+          null,
+          // onRestart in loadingMode = enter-the-game callback.
+          () => { commitCoinAndStart(); },
+          // onBack = silent close so the loading screen reappears.
+          { loadingMode: true, onBack: () => { /* no-op; modal removes itself */ } }
+        );
+      });
+    }
   });
   // ─── Auto-scale stage to viewport ─────────────────────────────────────
   // 2026-05-15 v8: now scales UP as well as DOWN. Previously the scale was

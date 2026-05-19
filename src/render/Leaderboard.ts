@@ -415,7 +415,20 @@ export function promptForName(parent: HTMLElement, defaultName: string, onSubmit
 // configured) alongside the LOCAL view (always available via
 // localStorage). A LOCAL / GLOBAL tab switch sits above the table so
 // the player can flip between their own history and the world ranking.
-export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEntry | null, onRestart: () => void) {
+//
+// `opts.loadingMode`: when TRUE, the leaderboard was opened from the
+// pre-game loading screen instead of post-run. In that case the
+// bottom controls become "ENTER THE GAME" + "← BACK TO COIN SLOT" so
+// the player can either commit to playing or return to the loading
+// screen. `onRestart` is repurposed as the enter-game callback in
+// this mode.
+export function showLeaderboard(
+  parent: HTMLElement,
+  currentEntry: LeaderboardEntry | null,
+  onRestart: () => void,
+  opts?: { loadingMode?: boolean; onBack?: () => void }
+) {
+  const isLoadingMode = !!opts?.loadingMode;
   document.getElementById('hall-of-glory')?.remove();
   ensureStyle();
   const entries = loadLeaderboard();
@@ -455,7 +468,12 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
           <tbody id="hog-tbody"></tbody>
         </table>
       </div>
-      <div class="hog-prompt">▶ PRESS ENTER TO PLAY AGAIN ◀</div>
+      ${isLoadingMode
+        ? `<div style="display:flex;flex-direction:column;align-items:center;gap:clamp(10px,1vw,18px);margin-top:clamp(8px,1vw,16px)">
+             <div class="hog-prompt">▶ PRESS ENTER TO BEGIN YOUR RUN ▶</div>
+             <button id="hog-back-to-loading" type="button" style="background:transparent;border:1px solid #5a4a30;color:#aa9a4a;font-family:'Courier New',monospace;font-size:clamp(10px,0.9vw,14px);letter-spacing:clamp(2px,0.3vw,4px);font-weight:bold;padding:clamp(7px,0.8vw,11px) clamp(14px,1.5vw,22px);cursor:pointer;text-shadow:1px 1px 0 #000">← BACK TO COIN SLOT</button>
+           </div>`
+        : `<div class="hog-prompt">▶ PRESS ENTER TO PLAY AGAIN ◀</div>`}
     </div>`;
   // 2026-05-19 — Mount the Hall of Glory directly on document.body
   // instead of inside the scaled #app container. This lets the
@@ -637,7 +655,8 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
     paintLocalRows();
   }
 
-  // ENTER → restart. Click anywhere on the prompt area also restarts.
+  // ENTER → restart (post-game) OR commit-to-game (loading-mode).
+  // Click anywhere on the prompt area also triggers it.
   const restart = () => {
     stopAutoRefresh();
     wrap.remove();
@@ -651,6 +670,21 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
     if (ev.key === 'Enter') restart();
   };
   document.addEventListener('keydown', onKey);
+  // 2026-05-19 — In loading mode, the "← BACK TO COIN SLOT" button
+  // closes the leaderboard without firing onRestart (which would
+  // commit-to-game). Falls back to wrap.remove() so the loading
+  // screen sitting underneath becomes interactive again.
+  if (isLoadingMode) {
+    const backBtn = wrap.querySelector('#hog-back-to-loading') as HTMLButtonElement | null;
+    if (backBtn) {
+      backBtn.onclick = () => {
+        stopAutoRefresh();
+        wrap.remove();
+        document.removeEventListener('keydown', onKey);
+        if (opts?.onBack) opts.onBack();
+      };
+    }
+  }
 }
 
 // ─── Convenience: full end-of-game flow (summary → name → leaderboard) ─

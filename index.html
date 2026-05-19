@@ -281,6 +281,32 @@
         transition: opacity 0.5s;
       }
       #loading-coinslot-wrap.ready { opacity: 1; }
+
+      /* 2026-05-19 — Loading-screen leaderboard preview button. Lets
+         players peek at the Hall of Glory before committing the coin.
+         Subtle (smaller than the COIN SLOT, dimmer color) so it
+         doesn't compete with the primary call-to-action. */
+      #loading-view-leaderboard {
+        margin-top: clamp(10px, 1vw, 18px);
+        background: transparent;
+        border: 1px solid #5a4a30;
+        color: #aa9a4a;
+        font-family: 'Courier New', monospace;
+        font-size: clamp(10px, 0.9vw, 14px);
+        letter-spacing: clamp(2px, 0.3vw, 4px);
+        font-weight: bold;
+        padding: clamp(7px, 0.8vw, 11px) clamp(14px, 1.5vw, 22px);
+        cursor: pointer;
+        transition: all 0.18s ease-out;
+        text-shadow: 1px 1px 0 #000;
+      }
+      #loading-view-leaderboard:hover {
+        background: rgba(212,175,55,0.10);
+        border-color: #d4af37;
+        color: #ffd34d;
+        box-shadow: 0 0 14px rgba(212,175,55,0.30);
+      }
+      #loading-view-leaderboard:active { transform: translateY(1px); }
       /* 2026-05-19 — Scales up on big monitors so the coin-slot mini-
          game is readable. Stays 140x90 on phones / 1080p, grows to
          ~220x140 on 4K. */
@@ -454,6 +480,7 @@
             <div id="loading-coinslot-label">★ COIN SLOT ★</div>
           </div>
           <div id="loading-insert">▶ CLICK TO INSERT COIN ◀</div>
+          <button id="loading-view-leaderboard" type="button">🏛 VIEW HALL OF GLORY</button>
         </div>
         <div id="loading-tip">
           <span class="tip-title">⚡ PRO TIP — GET THE LATEST BUILD</span>
