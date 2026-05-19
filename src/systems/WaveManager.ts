@@ -304,9 +304,15 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // basicHpBuff math problem. Bosses don't spawn on W1 in the
     // schedule, so this only ever affects the 30 Feral Dogs intended for
     // the calibration wave.
+    //
+    // 2026-05-19 — Hero-comp +15% applies to the W1 pin too so the
+    // preview helper (which already factors hero comp on W1) doesn't
+    // drift from real spawn HP. Without this, the wave-preview chip
+    // says "115 HP" while real spawns are 100.
     if (state.wave === 1) {
-      e.maxHp = 100;
-      e.hp = 100;
+      const w1Hp = state.activeHeroId ? 115 : 100;
+      e.maxHp = w1Hp;
+      e.hp = w1Hp;
     }
     // 2026-05 v6: BOSS HP CARRY. If this boss is queued via the rebirth
     // path, restore the HP it had at leak time (capped to the new wave's
