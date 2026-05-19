@@ -1555,13 +1555,23 @@ export class RenderEngine {
         const t = tex(tw.type);
         const sp = new Sprite(t || undefined);
         sp.anchor.set(0.5);
-        // 2026-05-19 — Heroes render at 2× tile (vs. normal 1.5×) so
-        // they're visibly distinct from regular towers at a glance.
-        // Also apply the hero's per-def tint color (towers.json:
-        // tint field) so each hero reads as their identity color
-        // even with placeholder sprites.
+        // 2026-05-19 — Per-type sprite scale. Most towers render at
+        // 1.5× tile. Heroes get a touch more (1.6×) so they read
+        // as slightly larger / more important without towering over
+        // the field — user feedback: "hero towers a little too small,
+        // about the size of everything else." Beast Hunter's source
+        // PNG carries tight cropping that makes it appear oversized
+        // at 1.5×, so it gets a dedicated 1.25× override to bring it
+        // back in line with the rest of the tower roster.
         const isHeroSprite = !!tw.isHero;
-        const sz = isHeroSprite ? GRID.TILE * 2.0 : GRID.TILE * 1.5;
+        const PER_TYPE_SCALE: Record<string, number> = {
+          BEAST_HUNTER: 1.25,
+          BEAST_SLAYER: 1.25
+        };
+        const scale = isHeroSprite
+          ? 1.6
+          : (PER_TYPE_SCALE[tw.type] ?? 1.5);
+        const sz = GRID.TILE * scale;
         sp.width = sz; sp.height = sz;
         if (isHeroSprite) {
           // 2026-05-19 — Tint only when the dedicated hero sprite is
@@ -1716,8 +1726,23 @@ export class RenderEngine {
         focusAlpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(state.tick * 7));
       }
       const totalScale = flashScale * focusScale;
-      entry.sp.scale.set((GRID.TILE * 1.5 / (entry.sp.texture?.width || 1)) * totalScale,
-                         (GRID.TILE * 1.5 / (entry.sp.texture?.height || 1)) * totalScale);
+      // 2026-05-19 — Per-frame scale must honor the same per-type
+      // scaling rule used at sprite creation (line ~1564). Heroes
+      // run at 1.6× tile; Beast Hunter / Slayer at 1.25× to offset
+      // their tight source-PNG cropping; everything else at the
+      // canonical 1.5×. Without this branch the per-frame update
+      // would silently force every sprite back to 1.5× and undo the
+      // creation-time size override.
+      const PER_TYPE_SCALE_FRAME: Record<string, number> = {
+        BEAST_HUNTER: 1.25,
+        BEAST_SLAYER: 1.25
+      };
+      const baseScale = tw.isHero
+        ? 1.6
+        : (PER_TYPE_SCALE_FRAME[tw.type] ?? 1.5);
+      const tileScale = GRID.TILE * baseScale;
+      entry.sp.scale.set((tileScale / (entry.sp.texture?.width  || 1)) * totalScale,
+                         (tileScale / (entry.sp.texture?.height || 1)) * totalScale);
       if (isFocusedProspect) {
         entry.sp.alpha = focusAlpha;
       } else if (tw.pending) {
