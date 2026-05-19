@@ -493,7 +493,7 @@
     "melee": true,
     "spriteSheet": 2,
     "spriteCell": 1,
-    "ability": "POLEARM REACH (range 2.0): CHARGE applies MARK on hit (+20% next damage from anyone). 2026-05-17 — every strike also smears VENOM on the lance: 4s POISON DoT (5% maxHP/sec, scales with tier). Mark + poison + +20% vs ground = fast cavalry that erodes single targets while everyone else piles on.",
+    "ability": "POLEARM REACH (range 2.0): CHARGE applies MARK on hit (+20% next damage from anyone). Every strike also smears VENOM on the lance: 4s POISON DoT (5% maxHP/sec, scales with tier). Mark + poison + +20% vs ground = fast cavalry that erodes single targets while everyone else piles on.",
     "critChance": 0.18,
     "critMult": 2.2
   },
@@ -747,7 +747,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 2,
-    "ability": "BATTLE PAINTER: every 4s applies MARK (+20% taken) to ALL enemies in range. 2026-05-17 — javelins are now dipped in BOG VENOM: every hit also applies POISON (5% maxHP/sec, 4s, scales with tier). Mark + per-target DoT + range 4.8 = early-game force multiplier.",
+    "ability": "BATTLE PAINTER: every 4s applies MARK (+20% taken) to ALL enemies in range. Javelins are dipped in BOG VENOM: every hit also applies POISON (5% maxHP/sec, 4s, scales with tier). Mark + per-target DoT + range 4.8 = early-game force multiplier.",
     "critChance": 0.22,
     "critMult": 1.8
   },
