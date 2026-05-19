@@ -54,19 +54,23 @@ export function mountSandboxPanel(state: GameStateShape, hooks: SandboxPanelHook
   panel.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:6px;margin-top:6px;background:linear-gradient(180deg,#2a0820,#1a0410);border:2px dashed #ff5cc8;box-shadow:inset 0 0 12px rgba(255,92,200,0.2)';
   panel.innerHTML = '<div style="font-size:9px;color:#ff5cc8;letter-spacing:2px;text-align:center;font-weight:bold;margin-bottom:2px">🧪 DEV TOOLS</div>';
 
-  const mkSbBtn = (label: string, onClick: () => void): HTMLButtonElement => {
+  const mkSbBtn = (label: string, onClick: () => void, tooltip?: string): HTMLButtonElement => {
     const b = document.createElement('button');
     b.textContent = label;
     b.style.cssText = 'background:#2a1a25;border:1px solid #ff5cc8;color:#ff5cc8;padding:6px 8px;font-family:inherit;font-size:11px;letter-spacing:1px;font-weight:bold;cursor:pointer;text-align:center';
+    if (tooltip) b.title = tooltip;
     b.onmouseenter = () => { b.style.background = '#3a2535'; };
     b.onmouseleave = () => { b.style.background = '#2a1a25'; };
     b.onclick = onClick;
     return b;
   };
 
-  panel.appendChild(mkSbBtn('▶ JUMP TO WAVE', () => showWavePicker(hooks)));
-  panel.appendChild(mkSbBtn('+ SPAWN TOWER', () => showTowerPicker(hooks)));
-  panel.appendChild(mkSbBtn('💰 +1000g', () => hooks.onAddGold()));
+  panel.appendChild(mkSbBtn('▶ JUMP TO WAVE', () => showWavePicker(hooks),
+    'Hard-reset to any wave 1-20 or jump into Endless mode. Clears enemies, projectiles, loot, and surprise-event state. Towers and the maze are PRESERVED (use WIPE TOWERS for a clean slate).'));
+  panel.appendChild(mkSbBtn('+ SPAWN TOWER', () => showTowerPicker(hooks),
+    'Direct tower spawn — pick any tower at any tier (T1-T5, base or combo). Bypasses the prospect / recipe flow entirely. Click an empty tile to drop. Free.'));
+  panel.appendChild(mkSbBtn('💰 +1000g', () => hooks.onAddGold(),
+    'Add 1000 gold to your treasury. Sandbox starts with 999,999g so you rarely need it — useful for testing exact buy thresholds.'));
   // SANDBOX 2026-05-19: red-bordered wipe button. Visually distinct
   // (red instead of pink) so it can't be confused with the
   // additive actions above. confirm() guards against accidental
@@ -74,7 +78,7 @@ export function mountSandboxPanel(state: GameStateShape, hooks: SandboxPanelHook
   const wipeBtn = mkSbBtn('🗑 WIPE TOWERS', () => {
     if (!confirm('Wipe ALL towers and stones? The path will be reset to its empty baseline. This is irreversible.')) return;
     hooks.onWipeAllTowers();
-  });
+  }, 'Wipe every tower and stone-wall on the map and rebuild the path to its empty baseline. Use when you want a clean maze. Confirms before firing — irreversible.');
   wipeBtn.style.borderColor = '#ff5050';
   wipeBtn.style.color = '#ff8080';
   wipeBtn.onmouseenter = () => { wipeBtn.style.background = '#3a1a1a'; };

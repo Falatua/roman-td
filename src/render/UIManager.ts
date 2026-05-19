@@ -74,8 +74,10 @@ export class UIManager {
     rightPanel.appendChild(buttons);
 
     this.startBtn = mkBtn('START WAVE', '#7a1a1a');
+    this.startBtn.title = 'Begin the next wave. Builds and item-purchases lock in until the wave ends.';
     this.startBtn.onclick = () => cb.onConfirmCard();
     this.upgradeBtn = mkBtn('UPGRADE POOL', '#1a4a7a');
+    this.upgradeBtn.title = 'Improve your tower-draw pool. Higher pool levels raise the odds of rolling rarer, stronger towers when you reveal a prospect.';
     this.upgradeBtn.onclick = () => cb.onPoolUpgrade();
     // Combine button removed: combinations are now triggered from inside the
     // tower menu (click any glowing tower → choose a recipe).
@@ -84,6 +86,7 @@ export class UIManager {
     this.comboBtn.onclick = () => cb.onComboList();
     const shopBtn = mkBtn('SHOP', '#7a5a1a');
     shopBtn.id = 'shop-btn';
+    shopBtn.title = 'Open the gate shop. Buy items (DoTs, stat boosts, auras, legendaries) and extra lives. Stock rotates every 4 waves. Open mid-wave too.';
     shopBtn.onclick = () => cb.onOpenShop();
     // MERCATOR button — only visible during a Mercator visit wave. The
     // gate shop button stays available alongside; the two are separate
@@ -136,26 +139,31 @@ export class UIManager {
     // stays available so the Settings panel checkbox can call it.
     const speedBtn = mkBtn('▶ 1×', '#222');
     speedBtn.id = 'speed-btn';
+    speedBtn.title = 'Cycle game speed: 1× → 2× → 3× → 1×. Same simulation, just faster. Use during routine waves to save real time.';
     speedBtn.onclick = () => (cb as any).onToggleSpeed?.(speedBtn);
     // 2026-05 v11 (B1 Pause): pause button. Click or press P to toggle.
     // Auto-pause on tab blur is wired separately in main.ts.
     const pauseBtn = mkBtn('⏸ PAUSE', '#222');
     pauseBtn.id = 'pause-btn';
+    pauseBtn.title = 'Pause the wave (also bound to the P key). Auto-pauses if you tab away from the window.';
     pauseBtn.onclick = () => (cb as any).onTogglePause?.(pauseBtn);
     // 2026-05 v11 (B7 Sell stones): bulk-refund every stone wall on the
     // map. main.ts handles the actual loop; the button just dispatches.
     const sellStonesBtn = mkBtn('🪨 SELL STONES', '#222');
     sellStonesBtn.id = 'sell-stones-btn';
+    sellStonesBtn.title = 'Bulk-refund stone walls. Click to enter selection mode, click stones on the map to mark them, then confirm to sell. Only available between waves.';
     sellStonesBtn.onclick = () => (cb as any).onSellAllStones?.();
     // 2026-05 v11 (B2 Settings): opens audio settings panel.
     const settingsBtn = mkBtn('⚙ SETTINGS', '#222');
     settingsBtn.id = 'settings-btn';
+    settingsBtn.title = 'Open settings: master volume, music, SFX, mute toggle, and UI preferences.';
     settingsBtn.onclick = () => (cb as any).onOpenSettings?.();
     // 2026-05 v11 DPS CHECK: spawns a harmless training dummy so the player
     // can measure maze throughput between waves. Button disables itself
     // while a dummy is on the field.
     const dpsBtn = mkBtn('🎯 DPS CHECK', '#10243a');
     dpsBtn.id = 'dps-check-btn';
+    dpsBtn.title = 'Spawn an invincible training dummy that walks the path so you can measure your maze\'s throughput. Free, deals 0 damage on leak. Click again to cancel mid-run.';
     dpsBtn.style.color = '#9be0ff';
     dpsBtn.style.border = '2px solid #9be0ff';
     dpsBtn.style.fontWeight = 'bold';
@@ -168,7 +176,7 @@ export class UIManager {
     // overlay, dismisses on selection or on a re-click of the button.
     const targetAllBtn = mkBtn('🎯 TARGET ALL', '#3a1a2a');
     targetAllBtn.id = 'target-all-btn';
-    targetAllBtn.title = 'Set every placed tower\'s targeting mode at once';
+    targetAllBtn.title = 'Bulk-retarget EVERY placed tower at once. Click to open the mode picker (FIRST / LAST / STRONG / WEAKEST / CLOSE / FLYERS / FAST), pick a mode, and every tower on the map switches to it. Saves you from opening each tower individually.';
     targetAllBtn.style.color = '#ffb3d9';
     targetAllBtn.style.border = '2px solid #ffb3d9';
     targetAllBtn.style.fontWeight = 'bold';
