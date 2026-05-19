@@ -4,7 +4,7 @@ import { createGameState } from './GameState';
 import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
 import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards } from './systems/EnemySystem';
-import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo } from './systems/WaveManager';
+import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } from './systems/WaveManager';
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
@@ -2486,13 +2486,15 @@ async function boot() {
   function showFinalBossHpBanner() {
     document.getElementById('boss-banner')?.remove();
     document.getElementById('final-boss-hp')?.remove();
-    // Compute the actual display HP from data so it stays correct if the
-    // designer retunes baseHp / hpMult later.
+    // 2026-05-19 (bugfix) — Use previewSpawnHp so the banner shows the
+    // ACTUAL spawn HP the player will fight. Previous version was
+    // baseHp × hpMult only (= 600M), missing the soloBuff ×2.0 +
+    // lateGameLayerMult ×2.10 that the W20 boss path applies. Real
+    // spawn HP is ~13.5 billion — the banner was wildly understating
+    // by ~22×.
     const def: any = (enemiesData as any).DAEMON_IMPERATOR;
-    const baseHp = def?.baseHp ?? 100000000;
     const waveDef: any = (wavesData as any[])[19]; // W20 = index 19
-    const hpMult = waveDef?.hpMult ?? 6.0;
-    const finalHp = Math.round(baseHp * hpMult);
+    const finalHp = previewSpawnHp(def, 20, waveDef?.type ?? 'B', waveDef?.hpMult ?? 6.0);
     const portraitSrc = imgSrc(bossPortraitKey('SUPER_DEMONS') ?? '');
     // Inject one-shot style block (animations are unique to this banner).
     if (!document.getElementById('final-boss-hp-style')) {

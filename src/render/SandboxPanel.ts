@@ -105,13 +105,20 @@ export function mountSandboxPanel(state: GameStateShape, hooks: SandboxPanelHook
 //                 sandboxResetForWave fires)
 export function updateSandboxBanner(state: GameStateShape): void {
   if (!state.sandboxMode) return;
+  // GamePhase enum order (kept inline so this module doesn't need the
+  // import — easier to delete later): BUILD=0, WAVE=1, GAME_OVER=2,
+  // VICTORY=3, PROSPECT_PLACEMENT=4, PICK_KEEPER=5.
+  // 2026-05-19 — During pre-wave phases (BUILD/PROSPECT/PICK_KEEPER),
+  // state.wave is the LAST COMPLETED wave (or one-less than the jump
+  // target because startWave bumps it on START WAVE). To show the
+  // tester the wave they're about to play, we display state.wave + 1
+  // in pre-wave phases. During WAVE_PHASE state.wave is already the
+  // current wave, so no offset is needed.
+  const isPreWave = state.phase === 0 || state.phase === 4 || state.phase === 5;
+  const displayWaveNum = isPreWave ? Math.min(20, (state.wave || 0) + 1) : (state.wave || 1);
   const wave = (state as any).endlessMode
     ? `ENDLESS W${(state as any).endlessWave ?? 1}`
-    : `W${state.wave || 1}`;
-  // Read phase numerically to avoid importing GamePhase here (keeps
-  // this module's import footprint minimal — easier to delete later).
-  // GamePhase enum order: BUILD=0, WAVE=1, GAME_OVER=2, VICTORY=3,
-  // PROSPECT_PLACEMENT=4, PICK_KEEPER=5.
+    : `W${displayWaveNum}`;
   const phaseTag = state.phase === 1 ? ' · IN COMBAT'
     : state.phase === 0 ? ' · BUILD'
     : state.phase === 4 ? ' · PLACING PROSPECTS'

@@ -101,7 +101,12 @@ describe('Sandbox wave reset', () => {
     expect(s.towers.size).toBe(2);
     expect(s.lootOrbs.length).toBe(1);
     sandboxResetForWave(s, 10);
-    expect(s.wave).toBe(10);
+    // 2026-05-19 (bugfix) — state.wave is the LAST COMPLETED wave;
+    // startWave's first action is state.wave += 1, so sandboxResetForWave
+    // sets state.wave to targetWave - 1 so the next START WAVE plays
+    // the requested wave. Click W10 → state.wave = 9 → next START
+    // WAVE runs W10.
+    expect(s.wave).toBe(9);
     // CRITICAL: towers survive the jump (the user-facing contract).
     expect(s.towers.size).toBe(2);
     expect(s.tiles[4][4]).not.toBe(0);    // tile still marked TOWER
@@ -117,15 +122,15 @@ describe('Sandbox wave reset', () => {
     }
   });
 
-  it('clamps wave to 1..20', () => {
+  it('clamps wave to 1..20 (with the -1 startWave-compensation offset)', () => {
     const s = bootstrapState();
     activateSandbox(s);
     sandboxResetForWave(s, 0);
-    expect(s.wave).toBe(1);
+    expect(s.wave).toBe(0);     // clamped to 1, then -1 for startWave-compensation
     sandboxResetForWave(s, 30);
-    expect(s.wave).toBe(20);
+    expect(s.wave).toBe(19);    // clamped to 20, then -1 for startWave-compensation
     sandboxResetForWave(s, -5);
-    expect(s.wave).toBe(1);
+    expect(s.wave).toBe(0);     // clamped to 1, then -1
   });
 
   it('refuses to act when sandboxMode is false', () => {
@@ -138,13 +143,13 @@ describe('Sandbox wave reset', () => {
     expect(s.gold).toBe(goldBefore);
   });
 
-  it('endless jump sets endlessMode + wave 21', () => {
+  it('endless jump sets endlessMode + wave clamped at 20 (startWave will not bump it)', () => {
     const s = bootstrapState();
     activateSandbox(s);
     sandboxJumpToEndless(s);
     expect(s.endlessMode).toBe(true);
-    expect(s.wave).toBe(21);
-    expect(s.endlessWave).toBe(1);
+    expect(s.wave).toBe(20);
+    expect(s.endlessWave).toBe(0);  // generator increments to 1 on first START WAVE
   });
 });
 

@@ -130,7 +130,15 @@ export function sandboxSpawnTowerDirect(
 // re-runs the build → startWave flow with the new wave number.
 export function sandboxResetForWave(state: GameStateShape, targetWave: number): void {
   if (!state.sandboxMode) return;
-  state.wave = Math.max(1, Math.min(20, Math.floor(targetWave)));
+  // 2026-05-19 (bugfix) — WaveManager.startWave begins with
+  // `state.wave += 1`, which means whatever we set here gets bumped by
+  // 1 the moment the player presses START WAVE. To make "click W19 →
+  // play W19" actually work, we set state.wave = targetWave - 1 so
+  // the increment lands on targetWave. The banner display logic
+  // (updateSandboxBanner) shows state.wave + 1 during pre-wave
+  // phases so the tester never sees the "off by one" number.
+  const clamped = Math.max(1, Math.min(20, Math.floor(targetWave)));
+  state.wave = clamped - 1;
   state.tick = 0;
   state.phase = GamePhase.BUILD_PHASE;
   state.gold = 999_999;
@@ -203,7 +211,11 @@ export function sandboxWipeAllTowers(state: GameStateShape): void {
 export function sandboxJumpToEndless(state: GameStateShape): void {
   if (!state.sandboxMode) return;
   sandboxResetForWave(state, 20);
-  state.wave = 21;
+  // sandboxResetForWave set state.wave to 19 (one less than targetWave
+  // 20) so the next startWave lands on W20. For Endless we want the
+  // generator's first wave to be Endless W1 with state.wave clamped
+  // at 20 — set explicitly.
+  state.wave = 20;
   state.endlessMode = true;
-  state.endlessWave = 1;
+  state.endlessWave = 0;
 }
