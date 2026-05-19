@@ -9,7 +9,7 @@
     "melee": true,
     "spriteSheet": 1,
     "spriteCell": 0,
-    "ability": "Bread-and-butter swordsman. Solid sustained single-target DPS at chokepoints. 12% crit at 2\u00d7 \u2014 fast enough that a Cavalry Spur turns him into a meat grinder.",
+    "ability": "Bread-and-butter swordsman. Solid sustained single-target DPS at chokepoints. 12% crit at 2× — fast enough that a Cavalry Spur turns him into a meat grinder.",
     "critChance": 0.12,
     "critMult": 2.0
   },
@@ -38,7 +38,7 @@
     "dual": true,
     "spriteSheet": 1,
     "spriteCell": 2,
-    "ability": "POLEARM REACH (range 2.0): CLEAVE: hits every enemy in melee range each swing (secondaries 70%). Front-line workhorse \u2014 pile multiple enemies into a chokepoint to multiply effective DPS.",
+    "ability": "POLEARM REACH (range 2.0): CLEAVE: hits every enemy in melee range each swing (secondaries 70%). Front-line workhorse — pile multiple enemies into a chokepoint to multiply effective DPS.",
     "critChance": 0.12,
     "critMult": 2.2
   },
@@ -53,14 +53,14 @@
     "spriteSheet": 1,
     "spriteCell": 3,
     "antiAirOnly": true,
-    "ability": "ANTI-AIR ONLY \u2014 fires only at flyers. Cannot target ground. Heavy damage (68 base DPS, +45% on flyers via signature crit), long range. The premier flyer-killer of the early game.",
+    "ability": "ANTI-AIR ONLY — fires only at flyers. Cannot target ground. Heavy damage (68 base DPS, +45% on flyers via signature crit), long range. The premier flyer-killer of the early game.",
     "critChance": 0.22,
     "critMult": 2.5
   },
   "SCORPIO": {
     "name": "Scorpio",
     "damageType": "SIEGE",
-    "baseDps": 28,
+    "baseDps": 25,
     "attackSpeed": 0.35,
     "range": 6.5,
     "kind": "BASE",
@@ -110,7 +110,7 @@
     "melee": true,
     "spriteSheet": 1,
     "spriteCell": 7,
-    "ability": "Heavy sword + ARMOR SHRED on every hit (3s) \u2014 drops enemy resists so ranged towers behind him chunk through faster. Cornerstone of any melee chokepoint.",
+    "ability": "Heavy sword + ARMOR SHRED on every hit (3s) — drops enemy resists so ranged towers behind him chunk through faster. Cornerstone of any melee chokepoint.",
     "critChance": 0.14,
     "critMult": 2.2
   },
@@ -138,7 +138,7 @@
     "melee": false,
     "spriteSheet": 2,
     "spriteCell": 0,
-    "ability": "Commander staff. Slow divine projectile with 1.0-tile splash. Single-target SLOW (40% for 2.5s) on primary hit. Mid-range support unit \u2014 solid baseline AoE for clearing waves.",
+    "ability": "Commander staff. Slow divine projectile with 1.0-tile splash. Single-target SLOW (40% for 2.5s) on primary hit. Mid-range support unit — solid baseline AoE for clearing waves.",
     "critChance": 0.1,
     "critMult": 2
   },
@@ -164,7 +164,7 @@
     "kind": "BASE",
     "melee": false,
     "tierBand": 3,
-    "ability": "Tier III Balearic slinger. Arcing sling-stone with 0.6-tile splash. Applies SLOW (30% for 2.5s) on every hit \u2014 kites entire grouped lanes through chokepoints.",
+    "ability": "Tier III Balearic slinger. Arcing sling-stone with 0.6-tile splash. Applies SLOW (30% for 2.5s) on every hit — kites entire grouped lanes through chokepoints.",
     "critChance": 0.12,
     "critMult": 2.0
   },
@@ -177,7 +177,7 @@
     "kind": "BASE",
     "melee": false,
     "tierBand": 3,
-    "ability": "Tier III skirmisher. Extremely fast darts (2.75/s) \u2014 +35% damage vs Runners. Specializes in pinning swarm waves at chokepoints with sustained chip damage.",
+    "ability": "Tier III skirmisher. Extremely fast darts (2.75/s) — +35% damage vs Runners. Specializes in pinning swarm waves at chokepoints with sustained chip damage.",
     "critChance": 0.24,
     "critMult": 1.8
   },
@@ -190,7 +190,7 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 3,
-    "ability": "Tier III melee bruiser (POLEARM REACH 2.0). Every 3rd swing applies a 0.7s STUN to the target \u2014 the maker of openings, perfect for stacking with cleave allies and follow-up burst. PHYSICAL-MELEE damage; bring him to the front line, not the back row.",
+    "ability": "Tier III melee bruiser (POLEARM REACH 2.0). Every 3rd swing applies a 0.7s STUN to the target — the maker of openings, perfect for stacking with cleave allies and follow-up burst. PHYSICAL-MELEE damage; bring him to the front line, not the back row.",
     "critChance": 0.1,
     "critMult": 2.5
   },
@@ -203,7 +203,7 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 3,
-    "ability": "Tier III shock infantry. BRUTAL OPENER: +75% damage on enemies above 85% HP \u2014 front-loads damage on fresh spawns and shredded shielded enemies. Synergizes hard with Shield Bash + cleave towers.",
+    "ability": "Tier III shock infantry. BRUTAL OPENER: +75% damage on enemies above 85% HP — front-loads damage on fresh spawns and shredded shielded enemies. Synergizes hard with Shield Bash + cleave towers.",
     "critChance": 0.18,
     "critMult": 2.0
   },
@@ -216,14 +216,14 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 2,
-    "ability": "POLEARM REACH (range 2.0): TRIDENT & NET (melee): first hit on a new target deals 2\u00d7 damage (the net pins them before the trident drives home). Applies Armor Shred on every strike \u2014 the on-hit shred AND the first-strike spike scale dramatically with tier.",
+    "ability": "POLEARM REACH (range 2.0): TRIDENT & NET (melee): first hit on a new target deals 2× damage (the net pins them before the trident drives home). Applies Armor Shred on every strike — the on-hit shred AND the first-strike spike scale dramatically with tier.",
     "critChance": 0.18,
     "critMult": 2.2
   },
   "BALLISTARIUS": {
     "name": "Turris",
     "damageType": "SIEGE",
-    "baseDps": 75,
+    "baseDps": 68,
     "attackSpeed": 0.34,
     "range": 7,
     "kind": "BASE",
@@ -255,20 +255,20 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 2,
-    "ability": "BACKSTAB: +50% damage vs Runner archetype. Very fast melee (2.05/s) with a 28% crit profile \u2014 the prime assassin for Celtic Scouts, Spectral Scouts, Numidian Riders, Ghost Riders, Shadow Cavalry.",
+    "ability": "BACKSTAB: +50% damage vs Runner archetype. Very fast melee (2.05/s) with a 28% crit profile — the prime assassin for Celtic Scouts, Spectral Scouts, Numidian Riders, Ghost Riders, Shadow Cavalry.",
     "critChance": 0.28,
     "critMult": 2.2
   },
   "ARCUBALLISTA": {
     "name": "Arcuballista",
     "damageType": "PHYS_RANGED",
-    "baseDps": 30,
+    "baseDps": 27,
     "attackSpeed": 0.58,
     "range": 5.6,
     "kind": "BASE",
     "melee": false,
     "tierBand": 2,
-    "ability": "Slow heavy bolt \u2014 single-target (no splash). 10% crit \u00d7 2.4 makes spike-shots common; pairs with damage items for boss pressure.",
+    "ability": "Slow heavy bolt — single-target (no splash). 10% crit × 2.4 makes spike-shots common; pairs with damage items for boss pressure.",
     "critChance": 0.1,
     "critMult": 2.4
   },
@@ -295,7 +295,7 @@
     "melee": false,
     "tierBand": 3,
     "burnsGround": true,
-    "ability": "Tier III fire-bearer. Hits leave BURNING GROUND for 3s \u2014 anything walking through takes burn.",
+    "ability": "Tier III fire-bearer. Hits leave BURNING GROUND for 3s — anything walking through takes burn.",
     "critChance": 0.1,
     "critMult": 2
   },
@@ -329,7 +329,7 @@
     "name": "Carroballista",
     "damageType": "PHYS_RANGED",
     "baseDps": 23.4,
-    "attackSpeed": 0.30,
+    "attackSpeed": 0.3,
     "range": 7.1,
     "kind": "BASE",
     "melee": false,
@@ -347,7 +347,7 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 4,
-    "ability": "POLEARM REACH (range 2.0): Tier IV armored cavalry. Slow lance charges with bone-cracking crit profile (14% \u00d7 2.6) \u2014 every hit feels like a hammer drop. Pairs perfectly with chokepoint mazing.",
+    "ability": "POLEARM REACH (range 2.0): Tier IV armored cavalry. Slow lance charges with bone-cracking crit profile (14% × 2.6) — every hit feels like a hammer drop. Pairs perfectly with chokepoint mazing.",
     "critChance": 0.14,
     "critMult": 2.6
   },
@@ -373,7 +373,7 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 4,
-    "ability": "TACTICAL STACKS: +5% damage per kill, capped at +50%. Veteran called back to service \u2014 at cap (10 kills) deals 1.50\u00d7 damage from the next swing on. Plant him at the kill funnel and watch him snowball.",
+    "ability": "TACTICAL STACKS: +5% damage per kill, capped at +50%. Veteran called back to service — at cap (10 kills) deals 1.50× damage from the next swing on. Plant him at the kill funnel and watch him snowball.",
     "critChance": 0.18,
     "critMult": 2.2
   },
@@ -399,7 +399,7 @@
     "kind": "COMBO",
     "melee": true,
     "tierBand": 4,
-    "ability": "POLEARM REACH (range 2.0). BOSS HUNTER: +75% damage vs Bosses. Every 4th hit on a Boss is a CHARGED LANCE EXECUTE \u2014 3\u00d7 damage (rhythm: 3 stabs \u2192 1 lance strike).",
+    "ability": "POLEARM REACH (range 2.0). BOSS HUNTER: +75% damage vs Bosses. Every 4th hit on a Boss is a CHARGED LANCE EXECUTE — 3× damage (rhythm: 3 stabs → 1 lance strike).",
     "critChance": 0.2,
     "critMult": 2.7
   },
@@ -419,14 +419,14 @@
   "VULCAN_ENGINEER": {
     "name": "Vulcan Engineer",
     "damageType": "SIEGE",
-    "baseDps": 18,
-    "attackSpeed": 0.20,
+    "baseDps": 16,
+    "attackSpeed": 0.2,
     "range": 7.0,
     "kind": "BASE",
     "melee": false,
     "tierBand": 5,
     "burnsGround": true,
-    "ability": "Tier V siege artisan. Extremely slow attack (0.45/s base) but lobs a fire-barrel with a 2.0-tile splash. Every hit stamps a BURNING GROUND patch (4s, 4\u20137% maxHP/sec scaling with tier) covering everyone in the splash zone.",
+    "ability": "Tier V siege artisan. Extremely slow attack (0.45/s base) but lobs a fire-barrel with a 2.0-tile splash. Every hit stamps a BURNING GROUND patch (4s, 4–7% maxHP/sec scaling with tier) covering everyone in the splash zone.",
     "critChance": 0.06,
     "critMult": 3
   },
@@ -439,7 +439,7 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 5,
-    "ability": "ELITE CLEAVE + IMPERIAL GUARD: hits every enemy in melee range each swing (70% to secondaries). Apex T5 melee \u2014 heavy DPS, monstrous crit profile (20% \u00d7 2.6), single-handedly holds a chokepoint against most non-boss ground waves.",
+    "ability": "ELITE CLEAVE + IMPERIAL GUARD: hits every enemy in melee range each swing (70% to secondaries). Apex T5 melee — heavy DPS, monstrous crit profile (20% × 2.6), single-handedly holds a chokepoint against most non-boss ground waves.",
     "critChance": 0.2,
     "critMult": 2.6
   },
@@ -479,7 +479,7 @@
     "melee": false,
     "tierBand": 3,
     "antiAirOnly": true,
-    "ability": "Tier III sky hunter. ANTI-AIR ONLY \u2014 fires only at flyers. Cannot target ground. Two-shot per attack and devastating crit profile \u2014 premier flyer killer of the mid-game.",
+    "ability": "Tier III sky hunter. ANTI-AIR ONLY — fires only at flyers. Cannot target ground. Two-shot per attack and devastating crit profile — premier flyer killer of the mid-game.",
     "critChance": 0.28,
     "critMult": 3.0
   },
@@ -549,7 +549,7 @@
     "melee": false,
     "spriteSheet": 2,
     "spriteCell": 5,
-    "ability": "Global +15% damage aura (scales to ~+19.5% at T5). Nearby towers (5 tiles) gain +18% attack speed. Pure support \u2014 does no direct damage.",
+    "ability": "Global +15% damage aura (scales to ~+19.5% at T5). Nearby towers (5 tiles) gain +18% attack speed. Pure support — does no direct damage.",
     "critChance": 0,
     "critMult": 1
   },
@@ -622,7 +622,7 @@
     "spriteSheet": 3,
     "spriteCell": 1,
     "burnsGround": true,
-    "ability": "Massive 2.0-tile splash AoE. Every hit applies a 0.7s STUN to the primary target and stamps a BURNING GROUND patch (4s, 5\u20138% maxHP/sec scaled by tier) at the impact point.",
+    "ability": "Massive 2.0-tile splash AoE. Every hit applies a 0.7s STUN to the primary target and stamps a BURNING GROUND patch (4s, 5–8% maxHP/sec scaled by tier) at the impact point.",
     "critChance": 0.1,
     "critMult": 3
   },
@@ -812,7 +812,7 @@
     "kind": "COMBO",
     "melee": true,
     "tierBand": 5,
-    "ability": "VICTOR'S SWEEP: cleaves all enemies in melee range. Every 5th hit unleashes a radial NOVA for 4\u00d7 damage in 2.5 tiles. TRIUMPHAL WREATH: each kill this wave adds +1.5% damage (cap +30%, resets between waves). +40% damage vs Bosses (+55% at T5). Applies Bleed on every hit.",
+    "ability": "VICTOR'S SWEEP: cleaves all enemies in melee range. Every 5th hit unleashes a radial NOVA for 4× damage in 2.5 tiles. TRIUMPHAL WREATH: each kill this wave adds +1.5% damage (cap +30%, resets between waves). +40% damage vs Bosses (+55% at T5). Applies Bleed on every hit.",
     "critChance": 0.2,
     "critMult": 2.5
   },
@@ -851,7 +851,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 4,
-    "ability": "COMBO-OF-COMBO (T4): divine artillery. Pierces 4 targets per attack. +50% damage vs ELITE archetype. PROVIDENCE BLAST: every 4th attack fires a divine nova in a 1.8-tile radius around the primary target dealing 2.5\u00d7 damage to all enemies inside (radiant burst).",
+    "ability": "COMBO-OF-COMBO (T4): divine artillery. Pierces 4 targets per attack. +50% damage vs ELITE archetype. PROVIDENCE BLAST: every 4th attack fires a divine nova in a 1.8-tile radius around the primary target dealing 2.5× damage to all enemies inside (radiant burst).",
     "critChance": 0.2,
     "critMult": 2.5
   },
@@ -878,7 +878,7 @@
     "melee": false,
     "tierBand": 5,
     "burnsGround": true,
-    "ability": "COMBO-OF-COMBO (T5 APEX): every hit detonates a divine quake \u2014 3-tile AoE at 65% damage as TRUE damage (primary projectile still takes resist). Leaves burning ground. Global +20% atk speed aura.",
+    "ability": "COMBO-OF-COMBO (T5 APEX): every hit detonates a divine quake — 3-tile AoE at 65% damage as TRUE damage (primary projectile still takes resist). Leaves burning ground. Global +20% atk speed aura.",
     "critChance": 0.25,
     "critMult": 3
   },
@@ -904,7 +904,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 5,
-    "ability": "COMBO-OF-COMBO (T5 SUPPORT): triple-aura. +35% global damage, +25% global attack speed, all enemies take +25% damage. Pure support \u2014 does no direct damage.",
+    "ability": "COMBO-OF-COMBO (T5 SUPPORT): triple-aura. +35% global damage, +25% global attack speed, all enemies take +25% damage. Pure support — does no direct damage.",
     "critChance": 0,
     "critMult": 1
   },
@@ -989,7 +989,7 @@
     "melee": true,
     "tierBand": 1,
     "ability": "BEAST-BANE: +200% damage vs animal-faction enemies (Feral / Rabid / Alpha Dog · Demon Hellhound · War Elephant · Undead War Elephant). Lightning-fast dual-blade slashes (2.8/s). No combos — standalone tower designed to carry the early-game dog and elephant pressure. Pure melee, range 1.5.",
-    "critChance": 0.10,
+    "critChance": 0.1,
     "critMult": 1.8
   },
   "BEAST_SLAYER": {
