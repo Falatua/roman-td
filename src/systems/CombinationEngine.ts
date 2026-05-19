@@ -134,6 +134,42 @@ export function scanCombos(state: GameStateShape): AvailableCombo[] {
   return out;
 }
 
+// 2026-05-19 — REALIZABLE-COMBO FILTER. The raw scanCombos() result
+// surfaces every recipe whose ingredients are present on the board,
+// kept or pending. That's fine for the educational tower-menu list
+// (shows what's POSSIBLE) and for the execution path (players can
+// combine pending prospects directly without keeping them first if
+// they know the trick). But it produces a misleading GLOW on the
+// field: a player with 10 prospects placed sees a glow signaling
+// "you can combine these three!" — except the keep budget for the
+// round is only 2, so they literally can't save the third prospect
+// to realize the combo. Worse with 4-ingredient recipes (budget 2,
+// pending need 4, simply impossible).
+//
+// This wrapper filters out any combo whose pending-ingredient count
+// exceeds the keep budget remaining for the round. Used at the
+// player-facing signal surfaces (glow, combo-alert chip, picker)
+// during PROSPECT_PLACEMENT / PICK_KEEPER. Outside those phases the
+// budget doesn't constrain anything — by BUILD_PHASE every prospect
+// has either been kept (no longer pending) or converted to a wall,
+// so the filter is a no-op there.
+//
+// Already-kept towers from prior waves still count as ingredients
+// for free — they don't consume any of this round's keep budget.
+// So a 3-ingredient recipe with 1 prior kept tower and 2 prospects
+// is realizable on a 2-keep budget and stays surfaced.
+export function realizableCombos(state: GameStateShape): AvailableCombo[] {
+  const combos = scanCombos(state);
+  const inKeepPhase = state.phase === GamePhase.PROSPECT_PLACEMENT
+                   || state.phase === GamePhase.PICK_KEEPER;
+  if (!inKeepPhase) return combos;
+  const budget = (state as any).keepsRemainingThisRound ?? 0;
+  return combos.filter(cb => {
+    const pendingNeeded = cb.ingredients.filter(t => t.pending).length;
+    return pendingNeeded <= budget;
+  });
+}
+
 // Predictive helper: would adding a tower of (type, tier) to the current board
 // finish a recipe that isn't already finishable? Used by the Mercator shop UI
 // (and any other purchase surface) to flag offers that complete a combo so the

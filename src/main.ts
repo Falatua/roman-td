@@ -14,7 +14,7 @@ import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } 
 import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel } from './systems/EconomySystem';
 import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAuraTileKind, towerEffectiveStats } from './systems/TowerSystem';
-import { scanCombos, executeCombo } from './systems/CombinationEngine';
+import { scanCombos, realizableCombos, executeCombo } from './systems/CombinationEngine';
 import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
 import itemsData from './data/items_permanent.json';
@@ -1820,7 +1820,12 @@ async function boot() {
     // PENDING. As soon as the player saves the first prospect, the ones
     // that were orange flip to green here — instant visual feedback that
     // the combo state has progressed.
-    const combos = scanCombos(state).filter(cb =>
+    // 2026-05-19 — wave-side "RECIPES IN PROGRESS" panel uses
+    // realizableCombos so it doesn't list a combo the player can't
+    // actually finish given the keep budget. Previously, placing the
+    // third prospect that satisfied a 3-ingredient recipe lit this
+    // panel up green even though the keep budget was 2.
+    const combos = realizableCombos(state).filter(cb =>
       cb.ingredients.some(ing => placedPending.some(p => p.id === ing.id))
     );
     let recipeHtml = '';
@@ -3704,7 +3709,12 @@ async function boot() {
       }
     },
     onComboList: () => {
-      const combos = scanCombos(state);
+      // 2026-05-19 — Picker also respects the keep budget so the list
+      // doesn't include combos that need more pending keeps than the
+      // player has left this round. Outside PROSPECT_PLACEMENT /
+      // PICK_KEEPER this is a no-op (every combo in scanCombos is
+      // already realizable since prospects no longer exist).
+      const combos = realizableCombos(state);
       showComboPicker(app, combos, state, {
         onPick: (combo, resultTileTowerId) => {
           // Snapshot result tile coords + merge flag BEFORE executeCombo for
@@ -5671,19 +5681,20 @@ async function boot() {
     updateTowerQueueIndicator();
     updateWavePreviewChip();
     // Pulsing red glow on towers that are ingredients in an available combo.
-    // The connecting line + centroid are intentionally NOT drawn — combos are
-    // executed from inside the tower menu now.
-    // Combo glow runs in every pre-wave phase (2026-05): BUILD_PHASE,
-    // PROSPECT_PLACEMENT, and PICK_KEEPER. The combo engine already
-    // treats pending prospects as eligible ingredients, so the sparkle
-    // ring fires on any prospect whose KEEP would complete a recipe.
-    // No more clicking into every prospect to check.
+    // 2026-05-19 — switched from scanCombos to realizableCombos so the
+    // glow + chip + chime only signal combos the player can actually
+    // finish this round. Previously a 3-ingredient recipe glowed on
+    // three fresh prospects even though the player only had 2 keep
+    // slots for the round, which was correctly called out as
+    // misleading. realizableCombos filters by pending count vs.
+    // keepsRemainingThisRound during PROSPECT_PLACEMENT / PICK_KEEPER
+    // and is a no-op during BUILD_PHASE.
     let comboCount = 0;
     const showComboGlow = state.phase === GamePhase.BUILD_PHASE
                        || state.phase === GamePhase.PROSPECT_PLACEMENT
                        || state.phase === GamePhase.PICK_KEEPER;
     if (showComboGlow) {
-      const combos = scanCombos(state);
+      const combos = realizableCombos(state);
       comboCount = combos.length;
       const eligibleIds = new Set<string>();
       for (const cb of combos) for (const ing of cb.ingredients) eligibleIds.add(ing.id);

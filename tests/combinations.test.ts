@@ -1,6 +1,6 @@
 // Tests for tower combination logic: same-tier merge + every recipe in towerCombinations.json.
 import { describe, it, expect } from 'vitest';
-import { scanCombos, executeCombo } from '../src/systems/CombinationEngine';
+import { scanCombos, realizableCombos, executeCombo } from '../src/systems/CombinationEngine';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
 import { TowerType, GamePhase, TileType } from '../src/types';
@@ -146,5 +146,72 @@ describe('Combo execution', () => {
       const ok = executeCombo(s, aer, aer.ingredients[0].id);
       expect(ok).toBe(false);
     }
+  });
+});
+
+describe('realizableCombos — keep-budget filter (2026-05-19)', () => {
+  // The wrapper hides combos that need more pending keeps than the round
+  // budget allows. Active in PROSPECT_PLACEMENT and PICK_KEEPER; no-op in
+  // BUILD_PHASE (no pending towers exist by then anyway).
+
+  it('hides a 3-pending-ingredient combo when keep budget is 2', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.PROSPECT_PLACEMENT;
+    (s as any).keepsRemainingThisRound = 2;
+    // PRAETORIAN_WALL needs PRIMUS_PILUS T3+, CENTURION T3+, HASTATI T3+.
+    // Place all three as pending prospects.
+    const a = placeTower(s, TowerType.PRIMUS_PILUS, 3, 1, 1); a.pending = true;
+    const b = placeTower(s, TowerType.CENTURION,    3, 1, 2); b.pending = true;
+    const c = placeTower(s, TowerType.HASTATI,      3, 1, 3); c.pending = true;
+    const all = scanCombos(s).filter(cb => !cb.isSameTierMerge);
+    const visible = realizableCombos(s).filter(cb => !cb.isSameTierMerge);
+    expect(all.length).toBeGreaterThan(0);   // recipe is detectable
+    expect(visible.length).toBe(0);          // but filtered out for player
+  });
+
+  it('shows a 3-ingredient combo when 1 ingredient is kept + 2 are pending (budget 2)', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.PROSPECT_PLACEMENT;
+    (s as any).keepsRemainingThisRound = 2;
+    const a = placeTower(s, TowerType.PRIMUS_PILUS, 3, 1, 1); a.pending = false; // kept from prior wave
+    const b = placeTower(s, TowerType.CENTURION,    3, 1, 2); b.pending = true;
+    const c = placeTower(s, TowerType.HASTATI,      3, 1, 3); c.pending = true;
+    const visible = realizableCombos(s).filter(cb => cb.result === TowerType.PRAETORIAN_WALL);
+    expect(visible.length).toBeGreaterThan(0);  // 2 pending fits the 2-keep budget
+  });
+
+  it('hides a 3-of-a-kind same-tier merge when all 3 are pending and budget is 2', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.PROSPECT_PLACEMENT;
+    (s as any).keepsRemainingThisRound = 2;
+    const a = placeTower(s, TowerType.MILITES, 1, 1, 1); a.pending = true;
+    const b = placeTower(s, TowerType.MILITES, 1, 1, 2); b.pending = true;
+    const c = placeTower(s, TowerType.MILITES, 1, 1, 3); c.pending = true;
+    const visibleMerges = realizableCombos(s).filter(cb => cb.isSameTierMerge);
+    expect(visibleMerges.length).toBe(0);
+  });
+
+  it('shows a 2-of-a-kind combo when both are pending and budget is 2', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.PROSPECT_PLACEMENT;
+    (s as any).keepsRemainingThisRound = 2;
+    // HORSEMAN needs 2× MILITES T2+ — exactly the keep budget.
+    const a = placeTower(s, TowerType.MILITES, 2, 1, 1); a.pending = true;
+    const b = placeTower(s, TowerType.MILITES, 2, 1, 2); b.pending = true;
+    const visible = realizableCombos(s).filter(cb => cb.result === TowerType.HORSEMAN);
+    expect(visible.length).toBeGreaterThan(0);
+  });
+
+  it('outside PROSPECT_PLACEMENT / PICK_KEEPER, no filtering is applied', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.BUILD_PHASE;   // budget irrelevant here
+    (s as any).keepsRemainingThisRound = 0;
+    // 3-ingredient recipe — all kept (no pending).
+    placeTower(s, TowerType.PRIMUS_PILUS, 3, 1, 1);
+    placeTower(s, TowerType.CENTURION,    3, 1, 2);
+    placeTower(s, TowerType.HASTATI,      3, 1, 3);
+    const all = scanCombos(s);
+    const visible = realizableCombos(s);
+    expect(visible.length).toBe(all.length);
   });
 });
