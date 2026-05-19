@@ -563,12 +563,19 @@ export function runEndOfGameFlow(
   onPostVictory?: (name: string) => void
 ) {
   showEndSummary(parent, state, won, (finalScore) => {
-    // 2026-05-19 — Pre-fill the end-of-run name prompt with the
-    // player's saved "etched" name from the cold-start modal. They
-    // can still change it before submitting; the default just means
-    // SKIP commits to the same name they used at the start.
-    const savedName: string = ((state as any).playerName ?? '').trim() || 'UNKNOWN';
-    promptForName(parent, savedName, (name) => {
+    // The player ALWAYS sets a name in the "etch your name in the history
+    // of Rome" cold-start modal before they can start playing, and that
+    // name persists in localStorage across sessions. So by the time we
+    // reach end-of-run we already know what to record — no second prompt
+    // needed. The leaderboard inserts silently and we jump straight to
+    // the Hall of Glory with the player's score on the board.
+    const savedName: string = ((state as any).playerName ?? '').trim().toUpperCase() || 'UNKNOWN';
+
+    // Build + commit the entry. Local first (source of truth on this
+    // device), then fire-and-forget to Supabase. Network failures are
+    // logged via the service; the GLOBAL tab will still attempt to
+    // fetch on open regardless.
+    const finalize = (name: string) => {
       const entry: LeaderboardEntry = {
         name: name || 'UNKNOWN',
         score: finalScore,
@@ -580,13 +587,6 @@ export function runEndOfGameFlow(
         ts: Date.now()
       };
       insertEntry(entry);
-      // 2026-05-19 — Also submit to the remote leaderboard if Supabase
-      // is configured. Fire-and-forget: never blocks the UI flow, the
-      // local insert above is the source-of-truth for the player's
-      // own device. Network failures are silent (logged via the
-      // service's null-return contract); the GLOBAL tab in
-      // showLeaderboard below will still try to fetch even if the
-      // submit failed.
       submitScore(toRemoteRow(entry, 'campaign'));
       // If a post-victory hook is wired (Endless transition), invoke it
       // INSTEAD of showing the static leaderboard. The leaderboard is
@@ -596,7 +596,17 @@ export function runEndOfGameFlow(
         return;
       }
       showLeaderboard(parent, entry, onRestart);
-    });
+    };
+
+    // Safety fallback: if somehow the player has no saved name (cleared
+    // localStorage mid-run, etc.), fall back to the legacy prompt so
+    // their score still gets attributed instead of vanishing as
+    // "UNKNOWN". In the normal flow this branch is skipped.
+    if (savedName === 'UNKNOWN') {
+      promptForName(parent, savedName, finalize);
+    } else {
+      finalize(savedName);
+    }
   });
 }
 
