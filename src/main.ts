@@ -5237,45 +5237,26 @@ async function boot() {
             state.hint = `HERO LEVEL ${newLvl}! Higher-tier towers now possible.`;
             SFX.combo();
           }
-          // 2026-05: EVERY boss-flagged kill guarantees a legendary drop,
-          // regardless of wave type or whether other bosses fell first this
-          // wave. Champion adds (W3 Alpha Dog, W14 Undead War Elephant,
-          // W17 Architectus), Hannibal's escort elephants, and twin/ambush
-          // boss spawns all qualify. Boss loot is the marquee reward path.
+          // 2026-05-19 — EVERY boss-flagged kill now drops a legendary,
+          // period. No probability roll, no per-wave cap, no wave-type
+          // gate. The user explicitly asked for "any boss you kill
+          // should always drop a legendary." That covers:
+          //   • Scheduled bosses (W5/W10/W15/W20 + bonus boss)
+          //   • Twin / ambush / surprise bosses sharing those waves
+          //   • Champion adds (Alpha Dog W3, Undead War Elephant W14,
+          //     Architectus W17, Hannibal's escort elephants W9-10, etc.)
+          // The only path that can still produce "no drop" is if the
+          // player already owns every legendary in the game — in which
+          // case rollBossDrop returns null cleanly. The
+          // `bossLegendaryDropped` flag is retained for analytics but
+          // no longer gates anything.
           const w = wavesData[state.wave - 1];
           const orbsBefore = state.lootOrbs.length;
           if (e.isBoss) {
-            // 2026-05 v11: legendary drop tracks the BOSS, not the wave.
-            // The `isScheduledBoss` flag is set at spawn for the authored
-            // boss of a 'B' wave and persists across leak/respawn — so the
-            // legendary fires when you actually kill the boss, even if it
-            // carried over into a non-boss wave. Twin/ambush/bonus bosses
-            // sharing a 'B' wave still get guaranteed drops (the wave-type
-            // check covers them). Off-wave champion adds (Alpha Dog,
-            // Hannibal's escort elephants, Architectus, surprise ambush
-            // bosses on non-B waves) keep the 35% probabilistic drop.
-            // 2026-05 v11 cap: non-B waves with multiple boss-flagged
-            // enemies (W9 War Elephants ×5, W10 Hannibal's escort herd,
-            // etc.) are capped at ONE legendary per wave total. Once
-            // `bossLegendaryDropped` is true on a non-B wave, subsequent
-            // boss kills skip the legendary roll. Scheduled-boss kills on
-            // B waves bypass the cap (twin bosses still each pay out).
-            // 2026-05 v11: `guaranteesLegendary` flag on the enemy def
-            // (data/enemies.json) marks specific champion adds — like the W3
-            // Alpha Dog — as ALWAYS-drops bosses. The flag bypasses both the
-            // wave-type check AND the per-wave cap, so kills of these enemies
-            // pay the legendary even if a prior boss kill on this wave
-            // already tripped `bossLegendaryDropped`.
-            const enemyDef: any = (window as any).__enemiesData?.[e.type] ?? {};
-            const alwaysLegendary = !!enemyDef.guaranteesLegendary;
-            const guaranteed = !!e.isScheduledBoss || w.type === 'B' || alwaysLegendary;
-            const capHit = bossLegendaryDropped && w.type !== 'B' && !alwaysLegendary;
-            if (!capHit && (guaranteed || Math.random() < 0.35)) {
-              const drop = rollBossDrop(w.faction, state, inventory);
-              if (drop) {
-                spawnLootAt(state, e, drop);
-                bossLegendaryDropped = true;
-              }
+            const drop = rollBossDrop(w.faction, state, inventory);
+            if (drop) {
+              spawnLootAt(state, e, drop);
+              bossLegendaryDropped = true;
             }
           } else {
             // Non-boss enemies still roll the regular common/uncommon table
