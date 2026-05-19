@@ -1652,7 +1652,7 @@ async function boot() {
   // a tier. The tip nudged the wrong intuition. Function kept as a
   // no-op so the wave-start scheduler still compiles; the calls in
   // the wave-start dispatch are stubbed out.
-  function showDowngradeTip() { /* retired 2026-05-18 */ }
+  function showDowngradeTip() { /* retired — kept as no-op stub */ }
   // ─── Prospect-phase reminder banner ────────────────────────────────────
   // Persistent thin banner at the TOP of the play area during prospect
   // placement. Reminds the player they can KEEP UP TO 2 each round. The

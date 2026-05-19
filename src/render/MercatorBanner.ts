@@ -44,10 +44,9 @@ function ensureStyle() {
 
     #${BANNER_ID} {
       position: absolute;
-      /* 2026-05 v11: moved from top:50% → top:62% so the Mercator card */
-      /* clears the pre-wave tip banner (anchored to top:2%, can grow */
-      /* tall on multi-mechanic waves). Pair-tuned with main.ts's        */
-      /* ensureBannerStack offset so both fit on screen without overlap. */
+      /* top:62% (not 50%) keeps the Mercator card clear of the pre-wave
+         tip banner above; pair-tuned with main.ts ensureBannerStack so
+         both fit without overlap. */
       left: 50%; top: 62%;
       transform: translate(-50%, -50%);
       width: min(420px, 92%);
@@ -155,11 +154,9 @@ function ensureStyle() {
       background: linear-gradient(180deg, #ffd34d, #b58820);
     }
 
-    /* 2026-05 v10 — Mercator floating tab REDESIGN. Was a thin vertical
-       strip at right:8px top:38% (cramped, easy to miss). Now lives in
-       the BOTTOM-RIGHT corner as a horizontal pill with a portrait, a
-       MERCATOR label, and a price hint. Same click-to-open behavior,
-       far better readability. */
+    /* Mercator floating tab — horizontal pill in the bottom-right
+       corner with portrait + MERCATOR label + price hint. Click to
+       open the shop. */
     #${TAB_ID} {
       position: absolute;
       right: 12px; bottom: 12px;
