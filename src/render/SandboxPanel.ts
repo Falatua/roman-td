@@ -42,7 +42,9 @@ export function mountSandboxPanel(state: GameStateShape, hooks: SandboxPanelHook
   const banner = document.createElement('div');
   banner.id = 'sandbox-banner';
   banner.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:175;background:linear-gradient(90deg,#5a1a4a,#ff5cc8,#5a1a4a);color:#1a0820;padding:6px 18px;font-family:"Courier New",monospace;font-size:11px;letter-spacing:3px;font-weight:bold;box-shadow:0 4px 14px rgba(255,92,200,0.4);border-bottom:2px solid #ff5cc8;pointer-events:none';
-  banner.textContent = '🧪 SANDBOX MODE · TESTING ONLY · NO LEADERBOARD · NO QUEST PROGRESS';
+  // Initial text — updateSandboxBanner() fills in the current wave on
+  // the first render tick.
+  banner.textContent = '🧪 SANDBOX MODE · TESTING ONLY · NO LEADERBOARD';
   document.body.appendChild(banner);
 
   // ── Right-panel button block ──
@@ -52,7 +54,12 @@ export function mountSandboxPanel(state: GameStateShape, hooks: SandboxPanelHook
   const panel = document.createElement('div');
   panel.id = 'sandbox-panel';
   panel.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:6px;margin-top:6px;background:linear-gradient(180deg,#2a0820,#1a0410);border:2px dashed #ff5cc8;box-shadow:inset 0 0 12px rgba(255,92,200,0.2)';
-  panel.innerHTML = '<div style="font-size:9px;color:#ff5cc8;letter-spacing:2px;text-align:center;font-weight:bold;margin-bottom:2px">🧪 DEV TOOLS</div>';
+  // Header + live wave readout. The #sandbox-current-wave span is
+  // refreshed by updateSandboxBanner() each render tick so the
+  // tester can glance at the panel and see W14 / W19 / ENDLESS W3
+  // without scrolling up to the banner.
+  panel.innerHTML = '<div style="font-size:9px;color:#ff5cc8;letter-spacing:2px;text-align:center;font-weight:bold;margin-bottom:2px">🧪 DEV TOOLS</div>' +
+    '<div id="sandbox-current-wave" style="font-size:13px;color:#ffd34d;letter-spacing:2px;text-align:center;font-weight:bold;background:#0c0410;border:1px solid #ff5cc8;padding:4px 6px;margin-bottom:4px">— W? —</div>';
 
   const mkSbBtn = (label: string, onClick: () => void, tooltip?: string): HTMLButtonElement => {
     const b = document.createElement('button');
@@ -85,6 +92,38 @@ export function mountSandboxPanel(state: GameStateShape, hooks: SandboxPanelHook
   wipeBtn.onmouseleave = () => { wipeBtn.style.background = '#2a1a25'; };
   panel.appendChild(wipeBtn);
   rightPanel.appendChild(panel);
+}
+
+// SANDBOX 2026-05-19: live-update the banner with the current wave +
+// phase so the tester always knows what they're testing. Called from
+// main.ts every render tick alongside other HUD updates. No-op
+// outside sandbox or before the banner exists. Phase tag:
+//   BUILD_PHASE → " · BUILD"
+//   WAVE_PHASE  → " · IN COMBAT"
+//   GAME_OVER   → " · RUN ENDED" (sandbox skips the actual game-over
+//                 ceremony so this only flashes briefly before
+//                 sandboxResetForWave fires)
+export function updateSandboxBanner(state: GameStateShape): void {
+  if (!state.sandboxMode) return;
+  const wave = (state as any).endlessMode
+    ? `ENDLESS W${(state as any).endlessWave ?? 1}`
+    : `W${state.wave || 1}`;
+  // Read phase numerically to avoid importing GamePhase here (keeps
+  // this module's import footprint minimal — easier to delete later).
+  // GamePhase enum order: BUILD=0, WAVE=1, GAME_OVER=2, VICTORY=3,
+  // PROSPECT_PLACEMENT=4, PICK_KEEPER=5.
+  const phaseTag = state.phase === 1 ? ' · IN COMBAT'
+    : state.phase === 0 ? ' · BUILD'
+    : state.phase === 4 ? ' · PLACING PROSPECTS'
+    : state.phase === 5 ? ' · PICK KEEPER'
+    : state.phase === 2 ? ' · RUN ENDED'
+    : state.phase === 3 ? ' · CLEARED' : '';
+  const banner = document.getElementById('sandbox-banner');
+  if (banner) banner.textContent = `🧪 SANDBOX · ${wave}${phaseTag} · NO LEADERBOARD`;
+  // Mirror the wave readout into the right-panel dev block so the
+  // tester can see it without looking up at the banner.
+  const panelWaveEl = document.getElementById('sandbox-current-wave');
+  if (panelWaveEl) panelWaveEl.textContent = `— ${wave}${phaseTag.replace(' · ', ' / ')} —`;
 }
 
 // ── WAVE PICKER MODAL ──

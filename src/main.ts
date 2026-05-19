@@ -4060,9 +4060,14 @@ async function boot() {
 
   // SANDBOX: mount the dev panel + pinned banner if sandboxMode is on.
   // Lazy import so the panel module only loads when actually needed
-  // (real-mode players never pay the cost).
+  // (real-mode players never pay the cost). Cache the
+  // updateSandboxBanner function reference so the per-frame call in
+  // the render loop below is a direct function call, not a fresh
+  // dynamic-import lookup every tick.
+  let sandboxBannerUpdater: ((state: any) => void) | null = null;
   if (state.sandboxMode) {
-    import('./render/SandboxPanel').then(({ mountSandboxPanel }) => {
+    import('./render/SandboxPanel').then(({ mountSandboxPanel, updateSandboxBanner }) => {
+      sandboxBannerUpdater = updateSandboxBanner;
       mountSandboxPanel(state, {
         onJumpToWave: (wave: number) => {
           if (wave === -1) {
@@ -5924,6 +5929,10 @@ async function boot() {
       info = `Build phase. Pick a card, click a tile. Next wave: ${factionName(getNextWaveInfo(state).faction)}.`;
     }
     ui.update(state, info);
+    // SANDBOX: keep the pinned banner's wave + phase tag fresh.
+    // Direct call (no per-frame dynamic import) — the function ref
+    // was cached during mount above.
+    if (state.sandboxMode && sandboxBannerUpdater) sandboxBannerUpdater(state);
     renderInventoryButton(app, inventory, { onOpen: () => (ui as any).cb.onOpenInventory?.() });
     // 2026-05 v11 (Pin Recipe QoL): floats the player's pinned combo recipe
     // below the INVENTORY button with live ingredient status colors.
