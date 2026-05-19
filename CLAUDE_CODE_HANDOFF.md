@@ -304,7 +304,7 @@ Assets:
 - Same-tier merge: 3 identical towers of same tier become next tier.
 - Cross-unit recipe combos use `minTier` requirements in `towerCombinations.json`.
 - Pending prospects are intentionally non-combat and cannot equip items.
-- Starting Denarii is set to 4 in `src/main.ts`, overriding `ECONOMY.STARTING_DENARII`.
+- Starting Gold is set to 4 in `src/main.ts`, overriding `ECONOMY.STARTING_GOLD`.
 
 ## Important Current Behavior To Preserve
 

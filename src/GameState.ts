@@ -8,7 +8,7 @@ export interface GameStateShape {
   tick: number;
   wave: number;            // current wave number (1..50). 0 = pre-game.
   lives: number;
-  denarii: number;
+  gold: number;
   poolLevel: number;       // 0..5 — gold-purchased
   heroLevel: number;       // 0..5 — kill-XP earned (Gem TD style)
   totalKills: number;      // cumulative across run
@@ -183,7 +183,7 @@ export function createGameState(): GameStateShape {
     tick: 0,
     wave: 0,
     lives: ECONOMY.STARTING_LIVES,
-    denarii: ECONOMY.STARTING_DENARII,
+    gold: ECONOMY.STARTING_GOLD,
     poolLevel: 0,
     heroLevel: 0,
     totalKills: 0,

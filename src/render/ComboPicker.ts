@@ -59,7 +59,7 @@ export function showComboPicker(parent: HTMLElement, combos: AvailableCombo[], s
       card.appendChild(abil);
     }
 
-    const canAfford = state.denarii >= cb.cost;
+    const canAfford = state.gold >= cb.cost;
 
     const ingredientsHint = document.createElement('div');
     ingredientsHint.style.cssText = `font-size:10px;opacity:0.7;margin-top:2px;color:#cdb887`;
@@ -91,7 +91,7 @@ export function showComboPicker(parent: HTMLElement, combos: AvailableCombo[], s
       card.style.opacity = '0.45';
       const warn = document.createElement('div');
       warn.style.cssText = `font-size:10px;color:#cc6666;font-weight:bold`;
-      warn.textContent = `NEED ${cb.cost - state.denarii}g MORE`;
+      warn.textContent = `NEED ${cb.cost - state.gold}g MORE`;
       card.appendChild(warn);
     }
     list.appendChild(card);

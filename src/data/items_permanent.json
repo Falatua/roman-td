@@ -88,7 +88,7 @@
     "rarity": "RARE",
     "buy": 32,
     "sell": 10,
-    "effect": "+1 Denarii per kill"
+    "effect": "+1 Gold per kill"
   },
   "BATTLE_STANDARD": {
     "name": "Battle Standard",
@@ -207,7 +207,7 @@
     "rarity": "LEGENDARY",
     "buy": 140,
     "sell": 45,
-    "effect": "+2 Denarii per kill"
+    "effect": "+2 Gold per kill"
   },
   "NUMIDIAN_SADDLE": {
     "name": "Numidian Saddle",
@@ -369,7 +369,7 @@
     "buy": 10,
     "sell": 4,
     "gateExclusive": true,
-    "effect": "GATE-SHOP EXCLUSIVE: +1 Denarii per kill. The same minted bronze the Praetorian Guard kept in their belt pouches — a small economic edge for the early game."
+    "effect": "GATE-SHOP EXCLUSIVE: +1 Gold per kill. The same minted bronze the Praetorian Guard kept in their belt pouches — a small economic edge for the early game."
   },
   "BRONZE_GREAVES": {
     "name": "Bronze Greaves",

@@ -6,7 +6,7 @@ import { ECONOMY, HERO_XP_THRESHOLDS } from '../src/constants';
 
 describe('Economy — gold spend/earn', () => {
   let state: ReturnType<typeof createGameState>;
-  beforeEach(() => { state = createGameState(); state.denarii = 10; });
+  beforeEach(() => { state = createGameState(); state.gold = 10; });
 
   it('canAfford returns true when gold is sufficient and false otherwise', () => {
     expect(canAfford(state, 5)).toBe(true);
@@ -17,25 +17,25 @@ describe('Economy — gold spend/earn', () => {
   it('spendGold deducts when affordable and returns true', () => {
     const ok = spendGold(state, 7);
     expect(ok).toBe(true);
-    expect(state.denarii).toBe(3);
+    expect(state.gold).toBe(3);
   });
 
   it('spendGold returns false and does NOT mutate gold when unaffordable', () => {
     const ok = spendGold(state, 20);
     expect(ok).toBe(false);
-    expect(state.denarii).toBe(10);
+    expect(state.gold).toBe(10);
   });
 
   it('earnGold increases gold by the given amount', () => {
     earnGold(state, 5);
-    expect(state.denarii).toBe(15);
+    expect(state.gold).toBe(15);
   });
 
   it('earnGold tolerates 0 and does not throw on negative amounts', () => {
     earnGold(state, 0);
-    expect(state.denarii).toBe(10);
+    expect(state.gold).toBe(10);
     earnGold(state, -3);
-    expect(state.denarii).toBe(7);
+    expect(state.gold).toBe(7);
   });
 });
 

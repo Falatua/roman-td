@@ -395,13 +395,13 @@ async function boot() {
   // The tooltip is purely visual; no interaction required to dismiss.
   function showInsufficientGoldToast(cost: number, anchorX?: number, anchorY?: number) {
     try { (SFX as any).uiCancel?.(); } catch { /* SFX not loaded, ignore */ }
-    const need = Math.max(0, cost - state.denarii);
+    const need = Math.max(0, cost - state.gold);
     document.getElementById('insuff-gold-toast')?.remove();
     const toast = document.createElement('div');
     toast.id = 'insuff-gold-toast';
     toast.innerHTML = `<div style="font-size:10px;letter-spacing:3px;color:#ffd34d;margin-bottom:2px">⛔ NOT ENOUGH GOLD</div>
       <div style="font-size:14px;color:#fff8e0;line-height:1.3;font-weight:bold">Need <span style="color:#ffd34d">${need}g</span> more</div>
-      <div style="font-size:10px;color:#bba886;margin-top:3px">Cost: ${cost}g · You have: ${state.denarii}g</div>`;
+      <div style="font-size:10px;color:#bba886;margin-top:3px">Cost: ${cost}g · You have: ${state.gold}g</div>`;
     // Anchor — prefer caller-supplied screen coords; fall back to last
     // mouse position; final fallback is top-center of the stage.
     let px = anchorX, py = anchorY;
@@ -485,7 +485,7 @@ async function boot() {
     // launching pad for E1 (Endless explicitly punishes economy, so the
     // initial pad helps the transition feel like a reward).
     state.lives = Math.max(state.lives, 25);
-    state.denarii += 100;
+    state.gold += 100;
     // Banner: "CHAOS MODE" intro card.
     const b = document.createElement('div');
     b.id = 'endless-intro';
@@ -1537,7 +1537,7 @@ async function boot() {
   (state as any).ghostPath = path.slice();
   state.flyerPath = buildFlyerPath();
   state.draw = []; // unused in Gem TD mode
-  state.denarii = ECONOMY.STARTING_DENARII;     // 10g — enough for an early stone-maze + a couple of pool draws
+  state.gold = ECONOMY.STARTING_GOLD;     // 10g — enough for an early stone-maze + a couple of pool draws
 
   // Roll 5 random prospects into a queue. Player will click 5 empty tiles to "reveal" them.
   function rollProspects() {
@@ -1686,7 +1686,7 @@ async function boot() {
       panel.id = 'prospect-sidebar';
       // 2026-05-15 v4: relocated from the right edge of the canvas
       // (96 px absolute column floating over the playfield) into the
-      // LEFT HUD panel, directly below the wave/lives/denarii block.
+      // LEFT HUD panel, directly below the wave/lives/gold block.
       // The previous absolute-positioning ate canvas space and made
       // long lists scroll. Now it flows naturally in the left flex
       // column, fills the full 200–240 px panel width, and grows
@@ -2139,7 +2139,7 @@ async function boot() {
     if (r.kind === 'GOLD') {
       earnGold(state, r.amount ?? 0);
       rewardLabel = `+${r.amount}g`;
-      destination = `Added directly to your treasury (now ${state.denarii}g).`;
+      destination = `Added directly to your treasury (now ${state.gold}g).`;
       SFX.bossArrival();
     } else if (r.kind === 'LIFE') {
       state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + (r.amount ?? 1));
@@ -2335,9 +2335,9 @@ async function boot() {
     const poolNote = eff >= ECONOMY.POOL_MAX_LEVEL
       ? `<span style="color:#88ff88">Pool is MAXED — your rolls cannot get hotter.</span>`
       : `<span style="color:#ffd34d">Pool is L${eff}/${ECONOMY.POOL_MAX_LEVEL}.</span> One more upgrade swings every remaining roll.`;
-    const goldNote = state.denarii >= 50
+    const goldNote = state.gold >= 50
       ? `<span style="color:#88ff88">Treasury looks healthy.</span>`
-      : `<span style="color:#ff7766">Treasury thin — every denarius matters now.</span>`;
+      : `<span style="color:#ff7766">Treasury thin — every gold piece matters now.</span>`;
     const livesNote = state.lives >= 15
       ? `<span style="color:#88ff88">Lives intact: ${state.lives}.</span>`
       : state.lives >= 8
@@ -2647,7 +2647,7 @@ async function boot() {
     buildPhaseSnapshot = {
       tiles: state.tiles.map(row => row.slice()),
       towers: Array.from(state.towers.entries()).map(([id, t]) => [id, { ...t, equippedItems: [...t.equippedItems], builtFrom: [...t.builtFrom] }]),
-      denarii: state.denarii,
+      gold: state.gold,
       score: state.score,
       lives: state.lives,
       goldTowerCount: state.goldTowerCount,
@@ -2663,7 +2663,7 @@ async function boot() {
     state.tiles = s.tiles.map((row: number[]) => row.slice());
     state.towers.clear();
     for (const [id, t] of s.towers) state.towers.set(id, { ...t, equippedItems: [...t.equippedItems], builtFrom: [...t.builtFrom] });
-    state.denarii = s.denarii;
+    state.gold = s.gold;
     state.score = s.score;
     state.lives = s.lives;
     state.goldTowerCount = s.goldTowerCount;
@@ -3099,7 +3099,7 @@ async function boot() {
   // the cabinet getting more annoyed with every whack.
   const JAM_TAUNTS = [
     'The coin slot is JAMMED. Whack it, soldier.',
-    'Some idiot crammed a denarius in sideways. Try the slot again.',
+    'Some idiot crammed a coin in sideways. Try the slot again.',
     'The Senate has not fixed this cabinet since the Punic Wars. Keep hitting.',
     'This machine has eaten more coins than a Carthaginian quartermaster. One more.',
     'Smack it like you mean it, citizen.',
@@ -3411,8 +3411,8 @@ async function boot() {
       }
       // Soft low-defense warning (Build Phase Doc §7.4)
       const activeTowers = Array.from(state.towers.values()).filter(t => !t.pending && t.damageType !== 5).length;
-      if (state.wave > 0 && activeTowers === 0 && state.denarii >= 5) {
-        if (!confirm(`Warning: You have NO active towers and ${state.denarii} unspent gold.\nStarting now will likely lose lives.\n\nStart wave anyway?`)) {
+      if (state.wave > 0 && activeTowers === 0 && state.gold >= 5) {
+        if (!confirm(`Warning: You have NO active towers and ${state.gold} unspent gold.\nStarting now will likely lose lives.\n\nStart wave anyway?`)) {
           return;
         }
       }
@@ -4162,7 +4162,7 @@ async function boot() {
         }
         return;
       }
-      if (state.denarii < 1) {
+      if (state.gold < 1) {
         // 2026-05 v10: surface insufficient-gold as a floating tooltip,
         // not just a status hint. Players were missing the hint and
         // clicking repeatedly without realising they were broke.
@@ -4577,9 +4577,9 @@ async function boot() {
           // GHOST RIDER signature: on leak, also steal gold (5g + 1g per wave/10).
           // Punishes letting them through, adds to their thematic threat.
           if (e.type === 'GHOST_RIDER') {
-            const stolen = Math.min(state.denarii, 5 + Math.floor(state.wave / 10));
+            const stolen = Math.min(state.gold, 5 + Math.floor(state.wave / 10));
             if (stolen > 0) {
-              state.denarii -= stolen;
+              state.gold -= stolen;
               state.hint = `💀 GHOST RIDER STOLE ${stolen}g!`;
             }
           }
@@ -4857,13 +4857,13 @@ async function boot() {
           }
           // 2026-05 v6: tactile gold feedback. Every gold-earning hook
           // emits a small golden floater + pulse at the earning tower so
-          // the player can SEE the denarii being minted, not just watch
+          // the player can SEE the gold being minted, not just watch
           // the HUD counter tick. Cheap — uses the existing floating
           // number system + impact-ring renderer (no new allocations).
           let goldEarnedHere = 0;
           if (t.isAerarium) { earnGold(state, ECONOMY.AERARIUM_BONUS); goldEarnedHere += ECONOMY.AERARIUM_BONUS; }
           // GOLD-PER-KILL TROPHIES (2026-05): straightforward economy items
-          // that earn extra denarii every time the killing tower drops an
+          // that earn extra gold every time the killing tower drops an
           // enemy. Stack additively if both are equipped.
           if (t.equippedItems?.includes('GOLD_PURSE'))                  { earnGold(state, 1); goldEarnedHere += 1; }
           if (t.equippedItems?.includes('HANNIBALS_STRATEGY_SCROLL'))   { earnGold(state, 2); goldEarnedHere += 2; }
@@ -5589,7 +5589,7 @@ async function boot() {
       last = performance.now() - dt * 1000;
       frame();
     }
-    return { phase: state.phase, wave: state.wave, lives: state.lives, denarii: state.denarii, enemies: state.enemies.size, queue: state.spawnQueue.length, killed: state.enemiesKilledThisWave, leaked: state.enemiesLeakedThisWave };
+    return { phase: state.phase, wave: state.wave, lives: state.lives, gold: state.gold, enemies: state.enemies.size, queue: state.spawnQueue.length, killed: state.enemiesKilledThisWave, leaked: state.enemiesLeakedThisWave };
   };
 }
 

@@ -39,7 +39,7 @@ function bootstrap() {
   if (p) s.groundPath = p;
   s.flyerPath = buildFlyerPath();
   s.phase = GamePhase.BUILD_PHASE;
-  s.denarii = 5000;
+  s.gold = 5000;
   return s;
 }
 
@@ -238,9 +238,9 @@ describe('Aerarium combo respects the gold-tower cap', () => {
 // 6. Combo cost / gold-debit semantics
 // ───────────────────────────────────────────────────────────────────────
 describe('Combo cost / gold debit', () => {
-  it('successful combo debits exactly its cost from denarii', () => {
+  it('successful combo debits exactly its cost from gold', () => {
     const s = bootstrap();
-    s.denarii = 200;
+    s.gold = 200;
     const a = place(s, TowerType.MILITES, 1, 1, 1);
     place(s, TowerType.MILITES, 1, 1, 2);
     place(s, TowerType.MILITES, 1, 1, 3);
@@ -248,12 +248,12 @@ describe('Combo cost / gold debit', () => {
     const cost = merge!.cost;
     const ok = executeCombo(s, merge!, a.id);
     expect(ok).toBe(true);
-    expect(s.denarii).toBe(200 - cost);
+    expect(s.gold).toBe(200 - cost);
   });
 
-  it('combo with cost > denarii is refused; gold unchanged', () => {
+  it('combo with cost > gold is refused; gold unchanged', () => {
     const s = bootstrap();
-    s.denarii = 0;
+    s.gold = 0;
     const a = place(s, TowerType.MILITES, 1, 1, 1);
     place(s, TowerType.MILITES, 1, 1, 2);
     place(s, TowerType.MILITES, 1, 1, 3);
@@ -261,7 +261,7 @@ describe('Combo cost / gold debit', () => {
     if (merge && merge.cost > 0) {
       const ok = executeCombo(s, merge, a.id);
       expect(ok).toBe(false);
-      expect(s.denarii).toBe(0);
+      expect(s.gold).toBe(0);
     }
   });
 });

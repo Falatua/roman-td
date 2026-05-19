@@ -138,14 +138,14 @@ function renderMercatorShop(
   panel.appendChild(header);
 
   // ── Sticky resources bar (gold + inventory + lives this visit) ────
-  const goldFill = state.denarii;
+  const goldFill = state.gold;
   const invUsed = inv.slots.length;
   const invCap = INVENTORY_SIZE;
   const resourcesBar = document.createElement('div');
   resourcesBar.style.cssText = `background:#0c0a08;border-bottom:2px solid #5a4a30;padding:10px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;flex-shrink:0;font-size:11px;letter-spacing:1px`;
   resourcesBar.innerHTML = `
     <div>
-      <div style="color:#aa9a4a;font-size:9px;letter-spacing:2px">DENARII</div>
+      <div style="color:#aa9a4a;font-size:9px;letter-spacing:2px">GOLD</div>
       <div style="color:#f0c040;font-size:18px;font-weight:bold">${goldFill}g</div>
     </div>
     <div>
@@ -210,16 +210,16 @@ function renderMercatorShop(
         </div>
         <div style="font-size:9.5px;color:#cdb98a;line-height:1.35;margin-top:3px;min-height:34px">${ability}</div>
         <div style="color:#f0c040;font-size:12px;font-weight:bold;margin-top:2px">${offer.price}g</div>`;
-      const canAfford = state.denarii >= offer.price;
+      const canAfford = state.gold >= offer.price;
       const buy = document.createElement('button');
-      buy.textContent = canAfford ? 'BUY' : 'NEED ' + (offer.price - state.denarii) + 'g';
+      buy.textContent = canAfford ? 'BUY' : 'NEED ' + (offer.price - state.gold) + 'g';
       // 2026-05 v9: leave the button CLICKABLE even when unaffordable so the
       // failed click pops the floating insufficient-gold tooltip. Disabled
       // buttons swallow the click silently — that wasn't enough feedback.
       buy.className = 'merc-buy';
       buy.style.cssText = `background:${canAfford ? '#3a5520' : '#2a2a2a'};color:${canAfford ? '#e8d6a8' : '#666'};width:100%;margin-top:4px;cursor:${canAfford ? 'pointer' : 'not-allowed'};`;
       buy.onclick = (ev) => {
-        if (state.denarii < offer.price) {
+        if (state.gold < offer.price) {
           const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
           const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
           const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
@@ -287,7 +287,7 @@ function renderMercatorShop(
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:4px;border-top:1px dashed #3a3025">
           <span style="color:#f0c040;font-size:13px;font-weight:bold">${offer.price}g</span>
         </div>`;
-      const canAfford = state.denarii >= offer.price;
+      const canAfford = state.gold >= offer.price;
       const invFull = inv.slots.length >= INVENTORY_SIZE;
       const buyBtn = document.createElement('button');
       buyBtn.className = 'merc-buy';
@@ -295,11 +295,11 @@ function renderMercatorShop(
       // failure mode — no tooltip benefit) but the gold-short case pops
       // the floating tooltip on click.
       buyBtn.disabled = invFull;
-      buyBtn.textContent = invFull ? 'INV FULL' : canAfford ? 'BUY' : 'NEED ' + (offer.price - state.denarii) + 'g';
+      buyBtn.textContent = invFull ? 'INV FULL' : canAfford ? 'BUY' : 'NEED ' + (offer.price - state.gold) + 'g';
       buyBtn.style.cssText = `background:${(canAfford && !invFull) ? '#3a5520' : '#2a2a2a'};color:${(canAfford && !invFull) ? '#e8d6a8' : '#666'};cursor:${(canAfford && !invFull) ? 'pointer' : 'not-allowed'};`;
       buyBtn.onclick = (ev) => {
         if (inv.slots.length >= INVENTORY_SIZE) return;
-        if (state.denarii < offer.price) {
+        if (state.gold < offer.price) {
           const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
           const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
           const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
@@ -378,11 +378,11 @@ function renderMercatorShop(
 
   const fortunaBuyWrap = document.createElement('div');
   fortunaBuyWrap.style.cssText = `display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;`;
-  const fortunaCanAfford = state.denarii >= FORTUNA_GAMBLE_COST;
+  const fortunaCanAfford = state.gold >= FORTUNA_GAMBLE_COST;
   const fortunaBtn = document.createElement('button');
   fortunaBtn.className = 'merc-buy fortuna-spin-btn';
   // 2026-05 v9: leave clickable so failed click pops the gold tooltip.
-  fortunaBtn.textContent = fortunaCanAfford ? `🎰 SPIN ${FORTUNA_GAMBLE_COST}g` : `NEED ${FORTUNA_GAMBLE_COST - state.denarii}g`;
+  fortunaBtn.textContent = fortunaCanAfford ? `🎰 SPIN ${FORTUNA_GAMBLE_COST}g` : `NEED ${FORTUNA_GAMBLE_COST - state.gold}g`;
   fortunaBtn.style.cssText = `background:${fortunaCanAfford ? '#7a5a14' : '#2a2a2a'};color:${fortunaCanAfford ? '#fff8e0' : '#666'};padding:10px 14px;font-size:12px;font-weight:bold;letter-spacing:1.5px;cursor:${fortunaCanAfford ? 'pointer' : 'not-allowed'};${fortunaCanAfford ? 'box-shadow:0 0 8px rgba(212,175,55,0.6);' : ''}`;
 
   // Spin animation: cycle through random combo-tower portraits at a
@@ -391,7 +391,7 @@ function renderMercatorShop(
   // pendingPurchasedTowers so the player can place it. The button is
   // disabled mid-spin so the player can't double-roll.
   fortunaBtn.onclick = (ev) => {
-    if (state.denarii < FORTUNA_GAMBLE_COST) {
+    if (state.gold < FORTUNA_GAMBLE_COST) {
       const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
       const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
       const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
@@ -466,7 +466,7 @@ function renderMercatorShop(
   livesCard.className = 'merc-card';
   livesCard.style.cssText = `border:2px solid #7a1a1a;padding:10px 14px;background:#0c0a08;display:flex;justify-content:space-between;align-items:center;gap:12px;`;
   const livesCapped = shop.livesBoughtThisVisit >= shop.livesMaxThisVisit;
-  const livesCanAfford = state.denarii >= shop.livesPrice;
+  const livesCanAfford = state.gold >= shop.livesPrice;
   livesCard.innerHTML = `
     <div>
       <div style="color:#ee5555;font-weight:bold;font-size:14px">❤ +1 LIFE</div>
@@ -480,11 +480,11 @@ function renderMercatorShop(
   // 2026-05 v9: leave clickable so failed click pops the gold tooltip
   // (MAX-REACHED stays disabled — different failure mode, not gold).
   buyLifeBtn.disabled = livesCapped;
-  buyLifeBtn.textContent = livesCapped ? 'MAX REACHED' : livesCanAfford ? 'BUY LIFE' : 'NEED ' + (shop.livesPrice - state.denarii) + 'g';
+  buyLifeBtn.textContent = livesCapped ? 'MAX REACHED' : livesCanAfford ? 'BUY LIFE' : 'NEED ' + (shop.livesPrice - state.gold) + 'g';
   buyLifeBtn.style.cssText = `background:${(!livesCapped && livesCanAfford) ? '#7a1a1a' : '#2a2a2a'};color:${(!livesCapped && livesCanAfford) ? '#e8d6a8' : '#666'};cursor:${(!livesCapped && livesCanAfford) ? 'pointer' : 'not-allowed'};`;
   buyLifeBtn.onclick = (ev) => {
     if (shop.livesBoughtThisVisit >= shop.livesMaxThisVisit) return;
-    if (state.denarii < shop.livesPrice) {
+    if (state.gold < shop.livesPrice) {
       const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
       const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
       const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
@@ -601,7 +601,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
     buyBtn.textContent = 'BUY';
     buyBtn.style.cssText = `background:#3a5520;color:#e8d6a8;border:1px solid #5a4a30;padding:4px 8px;cursor:pointer;font-family:inherit;font-size:11px;`;
     buyBtn.onclick = (ev) => {
-      if (state.denarii < offer.price) {
+      if (state.gold < offer.price) {
         const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
         const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
         const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
@@ -633,7 +633,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   buyLifeBtn.style.cssText = `background:#7a1a1a;color:#e8d6a8;border:1px solid #5a4a30;padding:4px 10px;cursor:pointer;font-family:inherit;font-size:11px;`;
   buyLifeBtn.onclick = (ev) => {
     if (shop.livesBoughtThisVisit >= shop.livesMaxThisVisit) { state.hint = 'Life purchase cap reached.'; return; }
-    if (state.denarii < shop.livesPrice) {
+    if (state.gold < shop.livesPrice) {
       const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
       const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
       const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
@@ -693,7 +693,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
       buy.textContent = 'BUY';
       buy.style.cssText = `background:#3a5520;color:#e8d6a8;border:1px solid #5a4a30;padding:4px 6px;cursor:pointer;font-family:inherit;font-size:11px;`;
       buy.onclick = (ev) => {
-        if (state.denarii < offer.price) {
+        if (state.gold < offer.price) {
           const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
           const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
           const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
@@ -793,7 +793,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   panel.style.cssText = `width:560px;background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:14px;`;
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div><div style="font-size:18px;color:#d4af37;font-weight:bold;letter-spacing:3px">ARMARIUM</div><div style="font-size:11px;color:#aa9a4a;letter-spacing:1px">ITEM VAULT ${inv.slots.length}/${INVENTORY_SIZE}</div></div>
-    <div style="font-size:11px;color:#cdb98a;text-align:right;max-width:240px;line-height:1.4">Click an item to inspect it.<br/>Use the SELL button to convert it to Denarii.</div>
+    <div style="font-size:11px;color:#cdb98a;text-align:right;max-width:240px;line-height:1.4">Click an item to inspect it.<br/>Use the SELL button to convert it to Gold.</div>
   </div>`;
 
   // Selection state: which slot is currently selected.

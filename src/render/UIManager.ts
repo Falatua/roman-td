@@ -230,7 +230,7 @@ export class UIManager {
     left.innerHTML = `
       ${waveDisplay}
       <span class="hud-icon"><span class="ic ic-life"></span><b>LIVES</b> ${state.lives}</span>
-      <span class="hud-icon"><span class="ic ic-gold"></span><b>DENARII</b> ${state.denarii}</span>
+      <span class="hud-icon"><span class="ic ic-gold"></span><b>GOLD</b> ${state.gold}</span>
       ${waveCounter}
     `;
     const right = document.createElement('div');

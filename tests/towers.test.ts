@@ -138,19 +138,19 @@ describe('Tower downgrade logic', () => {
 
   it('downgradeTower lowers tier and marks hasBeenDowngraded, charges 2g', () => {
     const state = createGameState();
-    state.denarii = 10;
+    state.gold = 10;
     const t = createTower(TowerType.MILITES, 3, 0, 0, 0);
     state.towers.set(t.id, t);
     const ok = downgradeTower(state, t, () => {});
     expect(ok).toBe(true);
     expect(t.qualityTier).toBe(2);
     expect(t.hasBeenDowngraded).toBe(true);
-    expect(state.denarii).toBe(10 - ECONOMY.DOWNGRADE_COST);
+    expect(state.gold).toBe(10 - ECONOMY.DOWNGRADE_COST);
   });
 
   it('downgradeTower fails on tier-1 tower', () => {
     const state = createGameState();
-    state.denarii = 10;
+    state.gold = 10;
     const t = createTower(TowerType.MILITES, 1, 0, 0, 0);
     const ok = downgradeTower(state, t, () => {});
     expect(ok).toBe(false);

@@ -22,7 +22,7 @@ export function showStoneMenu(parent: HTMLElement, col: number, row: number, sta
     <div style="padding:14px;border-bottom:1px solid #3a3025">
       <div style="font-size:14px;color:#d4af37;font-weight:bold;letter-spacing:2px">Blocking Object</div>
       <div style="font-size:11px;color:#cdb98a;margin-top:6px;line-height:1.5">
-        This stone extends your maze and changes the enemy route. Sell it here when you want to reopen pathing or recover Denarii.
+        This stone extends your maze and changes the enemy route. Sell it here when you want to reopen pathing or recover Gold.
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#3a3025;margin-top:12px">
         <div style="background:#1a1410;padding:8px 10px"><div style="color:#aa9a4a;font-size:9px;letter-spacing:1px">REFUND</div><div style="color:#ffd34d;font-size:14px;font-weight:bold">${ECONOMY.STONE_COST}g</div></div>

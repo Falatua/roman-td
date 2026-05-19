@@ -52,7 +52,7 @@ export function computeSpeedBonus(state: GameStateShape): SpeedBonusBreakdown {
 export function computeFinalScore(state: GameStateShape, won: boolean): number {
   let s = state.score;
   s += state.lives * 100;     // +100 per life remaining
-  s += state.denarii * 10;    // +10 per unspent denarii
+  s += state.gold * 10;    // +10 per unspent gold
   // 2026-05 v10: speed bonus — clearing waves quickly is rewarded.
   s += computeSpeedBonus(state).total;
   if (won) s += 10000;

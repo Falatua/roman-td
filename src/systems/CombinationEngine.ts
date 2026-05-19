@@ -234,7 +234,7 @@ export function executeCombo(state: GameStateShape, combo: AvailableCombo, resul
     return false;
   }
   if (!spendGold(state, combo.cost)) {
-    state.hint = `Not enough Denarii (need ${combo.cost}).`;
+    state.hint = `Not enough Gold (need ${combo.cost}).`;
     return false;
   }
   const killSum = combo.ingredients.reduce((s, t) => s + t.killCount, 0);

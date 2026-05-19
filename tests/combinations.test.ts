@@ -14,7 +14,7 @@ function bootstrapState() {
   const p = buildGroundPath(s);
   if (p) s.groundPath = p;
   s.phase = GamePhase.BUILD_PHASE;
-  s.denarii = 1000;     // unlimited for test
+  s.gold = 1000;     // unlimited for test
   return s;
 }
 
@@ -125,14 +125,14 @@ describe('Combo execution', () => {
 
   it('refunds gold to player when combo cost exceeds available gold', () => {
     const s = bootstrapState();
-    s.denarii = 1;     // not enough
+    s.gold = 1;     // not enough
     placeTower(s, TowerType.MILITES, 1, 1, 1);
     placeTower(s, TowerType.MILITES, 1, 1, 2);
     placeTower(s, TowerType.MILITES, 1, 1, 3);
     const merge = scanCombos(s).find(c => c.isSameTierMerge);
     const ok = executeCombo(s, merge!, merge!.ingredients[0].id);
     expect(ok).toBe(false);
-    expect(s.denarii).toBe(1);    // unchanged
+    expect(s.gold).toBe(1);    // unchanged
   });
 
   it('Aerarium combo is blocked when goldTowerCount is already at max', () => {

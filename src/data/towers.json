@@ -607,7 +607,7 @@
     "melee": false,
     "spriteSheet": 3,
     "spriteCell": 0,
-    "ability": "TREASURY: every kill it lands pays +4 Denarii. Max 3 on the map. Strong enough to earn its own gold without a babysitter tower.",
+    "ability": "TREASURY: every kill it lands pays +4 Gold. Max 3 on the map. Strong enough to earn its own gold without a babysitter tower.",
     "critChance": 0.12,
     "critMult": 2.2
   },

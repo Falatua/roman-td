@@ -540,7 +540,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
         const resultDef: any = (towersData as any)[cb.result];
         const tierColor = tierColorHex(cb.resultTier);
         const card = document.createElement('div');
-        const canAfford = state.denarii >= cb.cost;
+        const canAfford = state.gold >= cb.cost;
         card.style.cssText = `padding:8px 10px;background:#0c0a08;margin-bottom:4px;border:2px solid ${tierColor};display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:${canAfford ? 'pointer' : 'not-allowed'};${canAfford ? '' : 'opacity:0.45;'}`;
         // Each ingredient gets BOTH a color tag and an explicit role tag so
         // the player can instantly tell which slot is which:
@@ -582,7 +582,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
           </div>
           <div style="text-align:right">
             <div style="color:#f0c040;font-size:12px;font-weight:bold">${cb.cost}g</div>
-            ${canAfford ? '<div style="color:#66cc55;font-size:10px;letter-spacing:1px">▶ COMBINE</div>' : `<div style="color:#cc6666;font-size:9px">NEED ${cb.cost - state.denarii}g</div>`}
+            ${canAfford ? '<div style="color:#66cc55;font-size:10px;letter-spacing:1px">▶ COMBINE</div>' : `<div style="color:#cc6666;font-size:9px">NEED ${cb.cost - state.gold}g</div>`}
           </div>`;
         card.onmouseenter = () => { if (canAfford) card.style.background = '#1d1714'; };
         card.onmouseleave = () => { card.style.background = '#0c0a08'; };
@@ -711,7 +711,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   const downgradeBtn = mkBtn(canDowngrade(t) ? `DOWNGRADE (2g)` : 'DOWNGRADED', '#5a3a1a');
   if (!canDowngrade(t)) downgradeBtn.disabled = true;
   downgradeBtn.onclick = () => {
-    if (!confirm(`Downgrade ${t.type} from T${t.qualityTier} to T${t.qualityTier - 1}?\nThis destroys ${t.killCount} kills and +${t.killBonusFlat.toFixed(1)} flat bonus permanently.\nCosts 2 Denarii.`)) return;
+    if (!confirm(`Downgrade ${t.type} from T${t.qualityTier} to T${t.qualityTier - 1}?\nThis destroys ${t.killCount} kills and +${t.killBonusFlat.toFixed(1)} flat bonus permanently.\nCosts 2 Gold.`)) return;
     const ok = downgradeTower(state, t, (id) => {
       const idef: any = (permItems as any)[id] ?? (consumables as any)[id];
       inventoryAdd(inv, id, idef?.rarity ?? 'COMMON', false);

@@ -35,7 +35,7 @@ export const ECONOMY = {
   // stockpile a cushion. Set to STARTING_LIVES so you can never exceed the
   // amount you started with.
   MAX_LIVES: 30,
-  STARTING_DENARII: 100,
+  STARTING_GOLD: 100,
   // 20-WAVE CAMPAIGN POOL CURVE (2026-05): trimmed from 10 levels to 8
   // so endgame pool is actually reachable in a 20-wave run. Curve flattens
   // — each step still feels meaningful but the apex (~200g for L8) lands
@@ -311,5 +311,5 @@ export const AURA_TILE_EFFECTS: Record<AuraTile['kind'], {
   BLUE:   { color: 0x66aaff, label: 'WAR TILE', description: 'Tower on this tile deals +30% damage.', dmgMult: 1.30 },
   RED:    { color: 0xff5050, label: 'TYRANT TILE', description: 'Tower on this tile deals +50% damage vs Bosses.', bossMult: 1.50 },
   CYAN:   { color: 0x66ffdd, label: 'AETHER TILE', description: 'Any tower on this tile can target FLYERS, even melee.', meleeFlyer: true },
-  GOLD:   { color: 0xffd34d, label: 'TREASURY TILE', description: 'Tower on this tile earns +2 Denarii per kill.', goldPerKill: 2 }
+  GOLD:   { color: 0xffd34d, label: 'TREASURY TILE', description: 'Tower on this tile earns +2 Gold per kill.', goldPerKill: 2 }
 };

@@ -395,14 +395,14 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
       state.modifierWavesSurvived = (state.modifierWavesSurvived ?? 0) + 1;
       modBonus = 60;
       modScoreBonus = 4000;
-      state.denarii += modBonus;
+      state.gold += modBonus;
       state.score = (state.score ?? 0) + modScoreBonus;
       // Transient flag so main.ts can fire a celebration banner this
       // frame. Cleared by the wave-end callback after the banner shows.
       (state as any).__modifierJustSurvived = state.waveModifier;
     }
     const modSuffix = modBonus > 0 ? ` +${modBonus}g RNG bonus +${modScoreBonus} score.` : '';
-    state.hint = `Wave ${state.wave} survived. +${w.gold} Denarii.${modSuffix} The empire pretends not to be impressed.`;
+    state.hint = `Wave ${state.wave} survived. +${w.gold} Gold.${modSuffix} The empire pretends not to be impressed.`;
     // Clear weather + modifier — sky clears between waves.
     state.weatherKey = null;
     state.weatherIntensity = 1;

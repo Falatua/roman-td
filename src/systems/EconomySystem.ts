@@ -2,17 +2,17 @@ import { ECONOMY, HERO_XP_THRESHOLDS, POOL_PROBABILITIES } from '../constants';
 import { GameStateShape } from '../GameState';
 
 export function canAfford(state: GameStateShape, cost: number): boolean {
-  return state.denarii >= cost;
+  return state.gold >= cost;
 }
 
 export function spendGold(state: GameStateShape, cost: number): boolean {
   if (!canAfford(state, cost)) return false;
-  state.denarii -= cost;
+  state.gold -= cost;
   return true;
 }
 
 export function earnGold(state: GameStateShape, amount: number) {
-  state.denarii += amount;
+  state.gold += amount;
 }
 
 export function effectivePoolLevel(state: GameStateShape): number {
