@@ -2712,6 +2712,45 @@ async function boot() {
       };
     }, 0);
   }
+
+  // EMPTY-DEFENSE GUIDE — fires on the very first START WAVE press if the
+  // player has placed zero prospects, kept zero towers, and has no
+  // defenses on the field. Catches new players who would otherwise launch
+  // wave 1 with nothing and instantly lose. Explains the prospect roll
+  // and keep flow in plain language.
+  function showEmptyDefenseGuide() {
+    document.getElementById('empty-defense-guide')?.remove();
+    const b = document.createElement('div');
+    b.id = 'empty-defense-guide';
+    b.innerHTML = `
+      <div style="font-size:11px;letter-spacing:6px;color:#ffd34d;font-weight:bold;text-shadow:0 0 8px #ffaa00">⚠ HOLD THE GATE, COMMANDER ⚠</div>
+      <div style="margin-top:8px;font-size:22px;font-weight:bold;letter-spacing:4px;color:#fff8e0;text-shadow:2px 2px 0 #000,0 0 14px #ffaa00cc">PLACE YOUR TOWERS FIRST</div>
+      <div style="margin-top:14px;font-size:13px;font-weight:bold;color:#fff8e0;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(0,0,0,0.45);border-left:3px solid #ffd34d;padding:10px 14px">
+        You haven't placed any towers yet. Sending the legions out with no defenses means a one-wave loss.
+      </div>
+      <div style="margin-top:14px;font-size:12px;color:#cdb98a;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(40,40,40,0.45);border:1px dashed #5a4a30;padding:10px 14px">
+        <b style="color:#88ff88">HOW TO BUILD YOUR FIRST DEFENSE:</b><br/>
+        ★ <b style="color:#ffd34d">Click any empty tile</b> on the map to roll a prospect tower for <b style="color:#f0c040">1 gold</b>.<br/>
+        ★ Keep clicking different tiles to fill out the maze — every prospect costs 1g.<br/>
+        ★ When you're happy, press <b style="color:#ffd34d">START WAVE</b> again to enter the KEEP phase.<br/>
+        ★ Click a glowing prospect and press <b style="color:#ffd34d">KEEP</b> to save it as a permanent tower. The rest become stone walls.<br/>
+        ★ <b style="color:#88ddff">Click any thumbnail in the left sidebar</b> for full stats + combo recipes for that tower.
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:center">
+        <button id="edg-ok" style="background:#3a5520;color:#e8d6a8;border:2px solid #88ff88;padding:10px 22px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">GOT IT — LET ME BUILD</button>
+      </div>`;
+    b.style.cssText = `width:min(580px,90%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #ffd34d;box-shadow:0 0 36px rgba(255,170,0,0.55),inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;`;
+    pushBanner(b, 0, { modal: true, clickDismiss: false });
+    setTimeout(() => {
+      const okBtn = document.getElementById('edg-ok');
+      if (okBtn) okBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        b.remove();
+        processBannerQueue();
+      };
+    }, 0);
+  }
+
   function snapshotBuildPhase() {
     buildPhaseSnapshot = {
       tiles: state.tiles.map(row => row.slice()),
@@ -3478,8 +3517,20 @@ async function boot() {
         showPickKeeperGuide();
         return;
       }
-      // Soft low-defense warning (Build Phase Doc §7.4)
+      // First-wave empty-defense guard. A brand-new player who clicks
+      // START WAVE before doing anything else would otherwise launch
+      // wave 1 with zero towers and zero prospects — instant defeat,
+      // no learning moment. Catch that case with a teaching modal that
+      // explains how to roll + keep prospects. We only block the
+      // VERY first wave; later waves can be started dry if the player
+      // really wants to (the soft confirm() below covers that path).
       const activeTowers = Array.from(state.towers.values()).filter(t => !t.pending && t.damageType !== 5).length;
+      const isFirstWaveStart = state.wave === 0 && !state.hasKeptAnyTowerEver;
+      if (isFirstWaveStart && activeTowers === 0 && state.prospectsPlaced === 0) {
+        showEmptyDefenseGuide();
+        return;
+      }
+      // Soft low-defense warning (Build Phase Doc §7.4)
       if (state.wave > 0 && activeTowers === 0 && state.gold >= 5) {
         if (!confirm(`Warning: You have NO active towers and ${state.gold} unspent gold.\nStarting now will likely lose lives.\n\nStart wave anyway?`)) {
           return;

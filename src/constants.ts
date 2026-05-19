@@ -307,7 +307,7 @@ export const AURA_TILE_EFFECTS: Record<AuraTile['kind'], {
   goldPerKill?: number;   // optional gold-per-kill bonus
   meleeFlyer?: boolean;   // optional anti-air for melee towers
 }> = {
-  PURPLE: { color: 0xa060ff, label: 'TEMPO TILE', description: 'Tower on this tile fires +30% faster.', spdMult: 1.30 },
+  PURPLE: { color: 0xa060ff, label: 'TEMPO TILE', description: 'Tower on this tile attacks +30% faster.', spdMult: 1.30 },
   BLUE:   { color: 0x66aaff, label: 'WAR TILE', description: 'Tower on this tile deals +30% damage.', dmgMult: 1.30 },
   RED:    { color: 0xff5050, label: 'TYRANT TILE', description: 'Tower on this tile deals +50% damage vs Bosses.', bossMult: 1.50 },
   CYAN:   { color: 0x66ffdd, label: 'AETHER TILE', description: 'Any tower on this tile can target FLYERS, even melee.', meleeFlyer: true },

@@ -41,36 +41,58 @@ export function hasRemoteLeaderboard(): boolean {
   return !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 }
 
-// Common Supabase REST headers. apikey + Authorization are both
-// required for table-level RLS to recognize the request.
-function headers(extra?: Record<string, string>): Record<string, string> {
+// Auth headers (apikey + Bearer) for ALL requests. RLS reads these
+// to recognize the call as authenticated by the anon role.
+function authHeaders(): Record<string, string> {
   return {
     'apikey': SUPABASE_ANON_KEY,
     'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  };
+}
+
+// Write-request headers — add Content-Type when sending a body.
+function writeHeaders(extra?: Record<string, string>): Record<string, string> {
+  return {
+    ...authHeaders(),
     'Content-Type': 'application/json',
-    ...(extra ?? {})
+    ...(extra ?? {}),
   };
 }
 
 // Fetch the top N scores for a given mode. Returns null if remote
 // isn't configured, the network errors, or the API returns a non-OK
 // response — every consumer treats null as "fall back to local".
+// Successful empty table returns []; that's distinct from null and
+// the UI uses the distinction to differentiate "no entries yet" from
+// "couldn't reach the server".
 export async function fetchTopScores(
   mode: LeaderboardMode = 'campaign',
   limit = 10
 ): Promise<RemoteScoreRow[] | null> {
-  if (!hasRemoteLeaderboard()) return null;
+  if (!hasRemoteLeaderboard()) {
+    // Surface this in the console so a curious player / dev can tell
+    // why the GLOBAL tab is silent: the bundle didn't get the env vars.
+    console.warn('[leaderboard] Remote disabled — VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY missing from this build.');
+    return null;
+  }
   try {
     // PostgREST query format: ?mode=eq.X&order=score.desc&limit=N
     const url = `${SUPABASE_URL}/rest/v1/scores`
       + `?mode=eq.${encodeURIComponent(mode)}`
       + `&order=score.desc,created_at.desc`
       + `&limit=${limit}`;
-    const r = await fetch(url, { method: 'GET', headers: headers() });
-    if (!r.ok) return null;
+    // Note: NO Content-Type header on GET — including it triggers a
+    // CORS preflight for every read, doubling network round-trips on
+    // first leaderboard open. apikey + Authorization are sufficient.
+    const r = await fetch(url, { method: 'GET', headers: authHeaders() });
+    if (!r.ok) {
+      console.error(`[leaderboard] Supabase SELECT returned HTTP ${r.status}`);
+      return null;
+    }
     return await r.json() as RemoteScoreRow[];
-  } catch {
+  } catch (err) {
     // Network / CORS / JSON parse failure — fall back to local.
+    console.error('[leaderboard] Supabase SELECT failed:', err);
     return null;
   }
 }
@@ -86,9 +108,12 @@ export async function submitScore(
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/scores`, {
       method: 'POST',
-      headers: headers({ 'Prefer': 'return=minimal' }),
+      headers: writeHeaders({ 'Prefer': 'return=minimal' }),
       body: JSON.stringify(row)
     });
+    if (!r.ok) {
+      console.error(`[leaderboard] Supabase INSERT returned HTTP ${r.status}`);
+    }
     return r.ok;
   } catch {
     return false;

@@ -482,9 +482,19 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
     subtitle.textContent = '🌐 FETCHING GLOBAL LEADERBOARD…';
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— LOADING —</td></tr>`;
     const rows = await fetchTopScores('campaign', 10);
-    if (!rows || rows.length === 0) {
-      subtitle.textContent = '🌐 GLOBAL LEADERBOARD · CONNECTION TIMED OUT OR EMPTY';
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— ${rows ? 'NO ENTRIES YET — BE THE FIRST' : 'GLOBAL BOARD UNREACHABLE'} —</td></tr>`;
+    // Three distinct states get three distinct copy treatments so the
+    // player can tell what's actually happening:
+    //   1. rows === null    → couldn't reach the server (real error)
+    //   2. rows.length === 0 → reached the server, table is empty
+    //   3. rows.length > 0   → normal render path below
+    if (rows === null) {
+      subtitle.textContent = '🌐 GLOBAL LEADERBOARD · OFFLINE FOR NOW';
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa9a4a;letter-spacing:1px;line-height:1.7"><div style="font-size:13px;color:#cdb98a;margin-bottom:8px">Cannot reach the global leaderboard right now.</div><div style="font-size:11px;color:#88aaaa">Your scores are still being saved locally — check the 📜 LOCAL tab. Global scores will sync the next time you load the game.</div></td></tr>`;
+      return;
+    }
+    if (rows.length === 0) {
+      subtitle.textContent = '🌐 GLOBAL LEADERBOARD · WAITING FOR THE FIRST CONQUEROR';
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#88ff88;letter-spacing:1px;line-height:1.7"><div style="font-size:14px;color:#88ff88;letter-spacing:3px;font-weight:bold;margin-bottom:8px">🏛 NO NAMES IN THE MARBLE YET 🏛</div><div style="font-size:11px;color:#cdb98a">Survive a wave — even one — and your name will be the first the Empire records.</div></td></tr>`;
       return;
     }
     subtitle.textContent = `🌐 TOP ${rows.length} LEGIONS OF ROMA · GLOBAL`;
