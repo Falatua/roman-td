@@ -1057,9 +1057,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           target.lastDamagedTick = state.tick;
           // 2026-05-19 — DAMNATIO MEMORIAE execute: after damage lands,
           // any non-boss enemy that's now below 25% maxHp is instantly
-          // killed by this tower's attacks. Bosses are immune so the
-          // item can't trivialize the W5/W10/W15/W20 boss fights.
-          if (target.hp > 0 && !target.isBoss && t.equippedItems.includes('DAMNATIO_MEMORIAE')) {
+          // killed by this tower's attacks. Bosses are immune. MELEE
+          // only (equip-gated in ItemRules so a ranged tower can't
+          // mount it; the damageType guard below is a defense-in-depth
+          // belt to match the player-facing copy "MELEE ONLY").
+          if (target.hp > 0 && !target.isBoss && t.equippedItems.includes('DAMNATIO_MEMORIAE') && t.damageType === DamageType.PHYS_MELEE) {
             if (target.hp / target.maxHp < 0.25) {
               target.hp = 0;
             }
@@ -1362,8 +1364,8 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   target.hpFlashTimer = 0.16;
   target.lastDamagedTick = state.tick;
   // 2026-05-19 — DAMNATIO MEMORIAE execute (see line ~1055 for the
-  // primary hit-site copy). Bosses immune.
-  if (target.hp > 0 && !target.isBoss && t.equippedItems.includes('DAMNATIO_MEMORIAE')) {
+  // primary hit-site copy). Bosses immune. MELEE only.
+  if (target.hp > 0 && !target.isBoss && t.equippedItems.includes('DAMNATIO_MEMORIAE') && t.damageType === DamageType.PHYS_MELEE) {
     if (target.hp / target.maxHp < 0.25) {
       target.hp = 0;
     }

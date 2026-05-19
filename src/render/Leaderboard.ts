@@ -511,33 +511,52 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
   // switched to LOCAL or closed the modal entirely).
   let activeTab: 'global' | 'local' = remoteAvailable ? 'global' : 'local';
 
+  // 2026-05-19 — Prevent overlapping fetch chains. The 6s timeout × 3
+  // retries can take ~18s total. The 15s auto-refresh timer was
+  // firing a SECOND chain mid-flight, causing UI flicker and possibly
+  // confusing the user about which retry was current. Guard with a
+  // simple in-flight flag.
+  let remotePaintInFlight = false;
+
   async function paintRemoteRows() {
-    subtitle.textContent = '🌐 FETCHING GLOBAL LEADERBOARD…';
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— LOADING —</td></tr>`;
-    const rows = await fetchTopScores('campaign', 10);
-    const meta = getLastFetchMeta();
-    // If the player has switched tabs while we were fetching, don't
-    // overwrite their current view.
-    if (activeTab !== 'global') return;
-    // Four distinct states get four distinct copy treatments so the
-    // player can always tell what's happening:
-    //   • 'failed'  → both fetch + cache failed (truly offline)
-    //   • 'cached'  → fetch failed BUT we have a recent snapshot
-    //   • 'empty'   → fetch succeeded, table has no entries yet
-    //   • 'fresh'   → live data, table has scores → normal render
-    if (rows === null) {
-      // Failed AND no cache. Surface a retry button so the player can
-      // try again without leaving the modal.
-      subtitle.textContent = '🌐 GLOBAL LEADERBOARD · OFFLINE FOR NOW';
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa9a4a;letter-spacing:1px;line-height:1.7">
-        <div style="font-size:13px;color:#cdb98a;margin-bottom:8px">Cannot reach the global leaderboard right now.</div>
-        <div style="font-size:11px;color:#88aaaa;margin-bottom:12px">Your scores are still being saved locally — check the 📜 LOCAL tab. We auto-retry every 15 seconds.</div>
-        <button id="hog-retry-now" style="background:#3a2a14;color:#ffd34d;border:2px solid #d4af37;padding:8px 16px;font-family:inherit;font-size:11px;letter-spacing:2px;font-weight:bold;cursor:pointer">↻ RETRY NOW</button>
-      </td></tr>`;
-      const retryBtn = wrap.querySelector('#hog-retry-now') as HTMLButtonElement | null;
-      if (retryBtn) retryBtn.onclick = () => paintRemoteRows();
-      return;
-    }
+    if (remotePaintInFlight) return;
+    remotePaintInFlight = true;
+    try {
+      subtitle.textContent = '🌐 FETCHING GLOBAL LEADERBOARD…';
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— LOADING —</td></tr>`;
+      const rows = await fetchTopScores('campaign', 10);
+      const meta = getLastFetchMeta();
+      // If the player has switched tabs while we were fetching, don't
+      // overwrite their current view.
+      if (activeTab !== 'global') return;
+      // Four distinct states get four distinct copy treatments so the
+      // player can always tell what's happening:
+      //   • 'failed'  → both fetch + cache failed (truly offline)
+      //   • 'cached'  → fetch failed BUT we have a recent snapshot
+      //   • 'empty'   → fetch succeeded, table has no entries yet
+      //   • 'fresh'   → live data, table has scores → normal render
+      if (rows === null) {
+        // 2026-05-19 — DIAGNOSTIC SURFACE. The previous UI showed a
+        // generic "cannot reach" message and the player had no way to
+        // self-diagnose. Now we show the classified error reason
+        // (extension-blocked, timeout, auth rejected, server error)
+        // plus the raw error string. If the reason mentions an ad-
+        // blocker, the player can disable it and retry without
+        // contacting support.
+        subtitle.textContent = '🌐 GLOBAL LEADERBOARD · OFFLINE FOR NOW';
+        const reason = meta?.errorReason ?? 'Cannot reach the global leaderboard right now.';
+        const detail = meta?.errorDetail ? `<div style="font-size:10px;color:#5a8a8a;margin-top:6px;letter-spacing:0;font-family:'Courier New',monospace;background:#0c1010;padding:6px 8px;border:1px solid #1a2424">${meta.errorDetail.replace(/</g, '&lt;')}</div>` : '';
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:left;padding:24px 32px;color:#aa9a4a;letter-spacing:0.5px;line-height:1.7">
+          <div style="font-size:13px;color:#ffd34d;letter-spacing:2px;text-align:center;margin-bottom:10px;font-weight:bold">⚠ GLOBAL LEADERBOARD UNREACHABLE</div>
+          <div style="font-size:12px;color:#cdb98a;margin-bottom:8px">${reason}</div>
+          ${detail}
+          <div style="font-size:10px;color:#5a7a7a;margin-top:10px;text-align:center">Your scores are still being saved locally — check the 📜 LOCAL tab. We auto-retry every 15 seconds.</div>
+          <div style="text-align:center;margin-top:12px"><button id="hog-retry-now" style="background:#3a2a14;color:#ffd34d;border:2px solid #d4af37;padding:8px 16px;font-family:inherit;font-size:11px;letter-spacing:2px;font-weight:bold;cursor:pointer">↻ RETRY NOW</button></div>
+        </td></tr>`;
+        const retryBtn = wrap.querySelector('#hog-retry-now') as HTMLButtonElement | null;
+        if (retryBtn) retryBtn.onclick = () => paintRemoteRows();
+        return;
+      }
     if (rows.length === 0) {
       subtitle.textContent = '🌐 GLOBAL LEADERBOARD · WAITING FOR THE FIRST CONQUEROR';
       tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#88ff88;letter-spacing:1px;line-height:1.7"><div style="font-size:14px;color:#88ff88;letter-spacing:3px;font-weight:bold;margin-bottom:8px">🏛 NO NAMES IN THE MARBLE YET 🏛</div><div style="font-size:11px;color:#cdb98a">Survive a wave — even one — and your name will be the first the Empire records.</div></td></tr>`;
@@ -572,6 +591,9 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
         <td class="${rankClass}">${formatDateShort(e.date_str)}</td>`;
       tbody.appendChild(tr);
     });
+    } finally {
+      remotePaintInFlight = false;
+    }
   }
 
   // ─── AUTO-REFRESH (2026-05-19) ────────────────────────────────────

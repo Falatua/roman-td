@@ -64,6 +64,9 @@ export interface FetchMeta {
   ts: number;          // when this result was produced (ms epoch)
   cacheAgeMs?: number; // if source==='cached', age of the cache snapshot
   attempts?: number;   // how many retries were burned (0-3)
+  errorReason?: string;// short user-readable hint about WHY all retries failed
+  errorDetail?: string;// raw error string from the last failure (for the diagnostic)
+  lastStatus?: number; // last HTTP status code if any retry returned a non-OK response
 }
 
 let lastFetchMeta: FetchMeta | null = null;
@@ -98,10 +101,14 @@ export async function fetchTopScores(
   // attempt has a 6-second timeout via AbortController so a network
   // stall can't hang the whole leaderboard view.
   const MAX_ATTEMPTS = 3;
+  let lastErrorDetail = '';
+  let lastStatus: number | undefined;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const r = await fetchWithTimeout(url, { method: 'GET', headers: authHeaders() }, 6000);
       if (!r.ok) {
+        lastStatus = r.status;
+        lastErrorDetail = `HTTP ${r.status}`;
         console.error(`[leaderboard] Attempt ${attempt}/${MAX_ATTEMPTS} → HTTP ${r.status}`);
         if (attempt < MAX_ATTEMPTS) await sleep(400 * Math.pow(3, attempt - 1));
         continue;
@@ -117,9 +124,26 @@ export async function fetchTopScores(
       };
       return rows;
     } catch (err) {
+      const errStr = (err as any)?.message || String(err);
+      lastErrorDetail = errStr;
       console.error(`[leaderboard] Attempt ${attempt}/${MAX_ATTEMPTS} failed:`, err);
       if (attempt < MAX_ATTEMPTS) await sleep(400 * Math.pow(3, attempt - 1));
     }
+  }
+
+  // Classify the failure so the UI can give the player a useful hint.
+  let reason = 'Network request failed.';
+  const errLow = lastErrorDetail.toLowerCase();
+  if (lastStatus === 401 || lastStatus === 403) {
+    reason = 'Authentication rejected by Supabase (HTTP ' + lastStatus + '). Check that VITE_SUPABASE_ANON_KEY is current in GitHub Actions secrets.';
+  } else if (lastStatus && lastStatus >= 500) {
+    reason = 'Supabase returned HTTP ' + lastStatus + '. The leaderboard backend is having issues — try again in a minute.';
+  } else if (errLow.includes('failed to fetch') || errLow.includes('networkerror')) {
+    reason = 'Browser blocked the request to supabase.co. Most common cause: an ad-blocker or privacy extension (uBlock Origin, Brave Shields, Privacy Badger) is blocking *.supabase.co. Try disabling it for this site, or open the leaderboard in an incognito window.';
+  } else if (errLow.includes('abort') || errLow.includes('timeout')) {
+    reason = 'Connection to supabase.co timed out 3 times in a row. Likely slow internet or a regional Supabase issue.';
+  } else if (errLow) {
+    reason = 'Fetch error: ' + errLow;
   }
 
   // All attempts failed — try the cache as a graceful fallback so the
@@ -131,12 +155,22 @@ export async function fetchTopScores(
       source: 'cached',
       ts: Date.now(),
       cacheAgeMs: Date.now() - cached.ts,
-      attempts: MAX_ATTEMPTS
+      attempts: MAX_ATTEMPTS,
+      errorReason: reason,
+      errorDetail: lastErrorDetail,
+      lastStatus
     };
     return cached.rows;
   }
 
-  lastFetchMeta = { source: 'failed', ts: Date.now(), attempts: MAX_ATTEMPTS };
+  lastFetchMeta = {
+    source: 'failed',
+    ts: Date.now(),
+    attempts: MAX_ATTEMPTS,
+    errorReason: reason,
+    errorDetail: lastErrorDetail,
+    lastStatus
+  };
   return null;
 }
 

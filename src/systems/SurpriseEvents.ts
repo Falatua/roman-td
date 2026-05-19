@@ -112,6 +112,15 @@ export function maybeTriggerSurpriseEventForWave(state: GameStateShape): void {
   if (kind === SurpriseEventKind.INVASION && state.activeSurpriseEvent?.waveOverride) {
     flattenInvasionSpawnSchedule(state);
   }
+  // 2026-05-19 — UPRISING = CLUSTER BURSTS. Each urn erupts a group of
+  // skeletons together (5-6 at a time over ~0.4s) then pauses 1.0s
+  // before the next cluster. Visually reads as "a collection of bone-
+  // risers pouring out of each urn" — the user's exact ask. Without
+  // this, the wave queue's 0.6s SPAWN_INTERVAL produced a slow
+  // single-file trickle that didn't look like a true uprising.
+  if (kind === SurpriseEventKind.UPRISING && state.activeSurpriseEvent?.waveOverride) {
+    clusterUprisingSpawnSchedule(state);
+  }
 }
 
 // Called right after an INVASION event is scheduled in waveOverride
@@ -125,6 +134,40 @@ function flattenInvasionSpawnSchedule(state: GameStateShape): void {
     const isBossSpawn = !!(enemiesData as any)[item.type]?.isBoss;
     if (isBossSpawn) continue;
     item.spawnAt = burstAt;
+  }
+}
+
+// UPRISING CLUSTER SIZE — how many enemies emerge from a single urn as
+// one visual group. 6 reads as "a pile" without overwhelming the
+// renderer. Bosses are excluded from clustering and keep their
+// original schedule (they come from the cave, not the urns).
+export const UPRISING_CLUSTER_SIZE = 6;
+const UPRISING_INTRA_CLUSTER_GAP = 0.08;  // ~80ms between members of the same cluster
+const UPRISING_INTER_CLUSTER_GAP = 1.0;   // 1s pause between cluster releases
+
+// Reshape the spawn queue's timing into bursts. Walks the queue in
+// order, groups non-boss entries into clusters of UPRISING_CLUSTER_SIZE,
+// and stamps spawnAt values so each cluster fires in tight succession
+// then pauses before the next cluster.
+//
+// The CLUSTER → URN routing is handled in spawnAtSurpriseEventPoint
+// (which now divides queueIdx by UPRISING_CLUSTER_SIZE before mod-ing
+// against the 4 urn points). So cluster 0 → urn 0, cluster 1 → urn 1,
+// cluster 2 → urn 2, cluster 3 → urn 3, cluster 4 → urn 0, etc.
+function clusterUprisingSpawnSchedule(state: GameStateShape): void {
+  let timeCursor = VFX_RISE_SECONDS;
+  let inClusterIdx = 0;
+  for (const item of state.spawnQueue) {
+    const isBossSpawn = !!(enemiesData as any)[item.type]?.isBoss;
+    if (isBossSpawn) continue;
+    item.spawnAt = timeCursor;
+    inClusterIdx++;
+    if (inClusterIdx >= UPRISING_CLUSTER_SIZE) {
+      timeCursor += UPRISING_INTER_CLUSTER_GAP;
+      inClusterIdx = 0;
+    } else {
+      timeCursor += UPRISING_INTRA_CLUSTER_GAP;
+    }
   }
 }
 
@@ -416,7 +459,18 @@ export function spawnAtSurpriseEventPoint(
 ): boolean {
   const ev = state.activeSurpriseEvent;
   if (!ev || !ev.waveOverride || ev.spawnPoints.length === 0) return false;
-  const point = ev.spawnPoints[queueIdx % ev.spawnPoints.length];
+  // 2026-05-19 — Routing strategy depends on event kind:
+  //   • INVASION: each enemy gets its OWN unique perimeter tile, so
+  //     route per-enemy via `queueIdx % spawnPoints.length`.
+  //   • UPRISING: each urn erupts a CLUSTER (UPRISING_CLUSTER_SIZE
+  //     enemies in a tight burst), so route per-cluster via
+  //     `floor(queueIdx / CLUSTER_SIZE) % spawnPoints.length`. Result:
+  //     skeletons emerge from each urn as a group, not single-file.
+  const isUprising = ev.kind === SurpriseEventKind.UPRISING;
+  const pointIdx = isUprising
+    ? Math.floor(queueIdx / UPRISING_CLUSTER_SIZE) % ev.spawnPoints.length
+    : queueIdx % ev.spawnPoints.length;
+  const point = ev.spawnPoints[pointIdx];
   if (!point) return false;
   const isInvasion = ev.kind === SurpriseEventKind.INVASION;
   if (point.pathIndex >= 0 && point.pathIndex < state.groundPath.length) {

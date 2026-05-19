@@ -45,6 +45,11 @@ const EQUIP_MODE: Record<string, EquipMode> = {
   // items left ungated.
   FALCATA_BLADE: 'MELEE',
   ALPHA_PACK_FANG: 'MELEE',
+  // 2026-05-19 — DAMNATIO MEMORIAE execute is MELEE only. The visceral
+  // "the gladius drops them" reading; a ranged tower picking off
+  // sub-25% enemies from across the map is too sweeping. Restricting
+  // to melee makes the player invest in a frontline killer to use it.
+  DAMNATIO_MEMORIAE: 'MELEE',
   // RANGED-only — projectile / saddle / shot themed items
   STORM_JAVELIN: 'RANGED',
   FLYER_BANE: 'RANGED',

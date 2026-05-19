@@ -480,6 +480,6 @@
     "rarity": "LEGENDARY",
     "buy": 150,
     "sell": 50,
-    "effect": "EXECUTE: any non-Boss enemy below 25% HP is instantly killed by this tower's attacks. Bosses are immune. The Senate's verdict on the unworthy — no name, no record, no funeral."
+    "effect": "MELEE ONLY: any non-Boss enemy below 25% HP is instantly executed by this tower's attacks. Bosses are immune. The Senate's verdict on the unworthy — no name, no record, no funeral."
   }
 }
