@@ -1451,6 +1451,15 @@ export class RenderEngine {
       label.y = cy + GRID.TILE / 2 + 6;
       this.layers.waypoints.addChild(label);
     });
+    // 2026-05-19 fix — re-attach the aura-tile graphics on top of the bg
+    // layer. The clear loop above (~line 1263) removes all bg children
+    // past index 2, which silently detached `auraTileGfx` and left the
+    // five glowing tiles invisible for the entire run. Re-adding here
+    // also bumps the graphics object to the END of the bg child list so
+    // the glow paints OVER the terrain + decor sprites instead of under
+    // them. addChild on an already-parented object moves it, so this is
+    // safe to call repeatedly across drawStatic invocations.
+    this.layers.bg.addChild(this.auraTileGfx);
   }
 
   // Render dynamic state each frame.

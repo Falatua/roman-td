@@ -4862,14 +4862,15 @@ async function boot() {
           // number system + impact-ring renderer (no new allocations).
           let goldEarnedHere = 0;
           if (t.isAerarium) { earnGold(state, ECONOMY.AERARIUM_BONUS); goldEarnedHere += ECONOMY.AERARIUM_BONUS; }
-          // GOLD-PER-KILL TROPHIES (2026-05): straightforward economy items
-          // that earn extra gold every time the killing tower drops an
-          // enemy. Stack additively if both are equipped.
-          if (t.equippedItems?.includes('GOLD_PURSE'))                  { earnGold(state, 1); goldEarnedHere += 1; }
-          if (t.equippedItems?.includes('HANNIBALS_STRATEGY_SCROLL'))   { earnGold(state, 2); goldEarnedHere += 2; }
-          // 2026-05-19 — Gate-exclusive PRAETORIAN_COIN: +1g per kill.
-          // Cheaper / weaker than GOLD_PURSE (+1) at Mercator; same
-          // family (ECONOMY) so they can't both be equipped.
+          // GOLD-PER-KILL TROPHIES — linear rarity ladder (2026-05-19
+          // rebalance): Common +1 → Rare +2 → Legendary +3. Stack
+          // additively if multiple are equipped (rare in practice — same
+          // ECONOMY family, so only one fits per tower slot anyway).
+          if (t.equippedItems?.includes('GOLD_PURSE'))                  { earnGold(state, 2); goldEarnedHere += 2; }
+          if (t.equippedItems?.includes('HANNIBALS_STRATEGY_SCROLL'))   { earnGold(state, 3); goldEarnedHere += 3; }
+          // Gate-exclusive PRAETORIAN_COIN (Common): +1g per kill.
+          // Cheaper than the Rare GOLD_PURSE (+2); same ECONOMY family
+          // so they can't both be equipped on the same tower.
           if (t.equippedItems?.includes('PRAETORIAN_COIN'))              { earnGold(state, 1); goldEarnedHere += 1; }
           // 2026-05-19 — TREASURY TILE (GOLD aura tile): +2g per kill.
           // Stacks with PRAETORIAN_COIN / GOLD_PURSE / Aerarium — all

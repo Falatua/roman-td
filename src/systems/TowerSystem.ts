@@ -246,7 +246,10 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   // 2026-05 v6: CAVALRY niche dropped — CAVALRY_SPUR is now MELEE-only
   // (equip gate in ItemRules); NUMIDIAN_SADDLE is now RANGED-only. Both
   // apply universally within their class with no per-tower cavalry filter.
-  if (t.equippedItems.includes('CAVALRY_SPUR') && t.damageType === DamageType.PHYS_MELEE) itemSpeedMult *= 1.30;
+  // 2026-05-19 rarity rebalance — Cavalry Spur tuned from +30% → +22%
+  // atk speed so it sits cleanly in the UNCOMMON tier next to Mercury
+  // Feather (+22% any-tower). Keeps the +0.5 range bonus from below.
+  if (t.equippedItems.includes('CAVALRY_SPUR') && t.damageType === DamageType.PHYS_MELEE) itemSpeedMult *= 1.22;
   // WAR_HOUND_COLLAR converted to AURA (2026-05) — applies to nearby
   // towers via CombatResolver's localAuras pass, not as a self-buff.
   if (t.equippedItems.includes('NUMIDIAN_SADDLE') && t.damageType === DamageType.PHYS_RANGED) itemSpeedMult *= 1.35;
@@ -269,12 +272,12 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   // 2026-05-19 — GATE-EXCLUSIVE COMMONS/UNCOMMONS. Five new items
   // that live only at the gate shop:
   //   • RUSTED_HASTA: +10% damage
-  //   • AUGUR_SCROLL: +12% attack speed
+  //   • AUGUR_SCROLL: +20% attack speed (gate-exclusive Uncommon)
   //   • CONSULAR_TOKEN: +8% damage, +0.5 range (range below)
   //   • PRAETORIAN_COIN: +1 gold per kill (wired in main.ts kill hook)
   //   • BRONZE_GREAVES: +0.5 tile range (below in extraRange)
   if (t.equippedItems.includes('RUSTED_HASTA')) itemDmgMult *= 1.10;
-  if (t.equippedItems.includes('AUGUR_SCROLL')) itemSpeedMult *= 1.12;
+  if (t.equippedItems.includes('AUGUR_SCROLL')) itemSpeedMult *= 1.20;
   if (t.equippedItems.includes('CONSULAR_TOKEN')) itemDmgMult *= 1.08;
   // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES (atk-speed half).
   // PERIMETER_TORCH (invasion):    +25% atk speed (damage in CombatResolver)
@@ -424,7 +427,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
   if (items.includes('QUICKDRAW_GLOVES')) spdMods.push({ source: 'Quickdraw Gloves', multiplier: 1.15 });
   if (items.includes('MERCURY_FEATHER')) spdMods.push({ source: 'Mercury Feather', multiplier: 1.22 });
   if (items.includes('HOURGLASS_OF_SATURN')) spdMods.push({ source: 'Hourglass of Saturn', multiplier: 1.30 });
-  if (items.includes('CAVALRY_SPUR') && t.damageType === DamageType.PHYS_MELEE) spdMods.push({ source: 'Cavalry Spur (melee)', multiplier: 1.30 });
+  if (items.includes('CAVALRY_SPUR') && t.damageType === DamageType.PHYS_MELEE) spdMods.push({ source: 'Cavalry Spur (melee)', multiplier: 1.22 });
   // WAR_HOUND_COLLAR is an AURA (2026-05) — buff appears via the
   // cross-tower aura pass below, not on self.
   if (items.includes('NUMIDIAN_SADDLE') && t.damageType === DamageType.PHYS_RANGED) spdMods.push({ source: 'Numidian Saddle (ranged)', multiplier: 1.35 });

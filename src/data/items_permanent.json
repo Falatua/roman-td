@@ -67,7 +67,7 @@
     "rarity": "UNCOMMON",
     "buy": 18,
     "sell": 6,
-    "effect": "MELEE ONLY: +30% attack speed, +0.5 tile range."
+    "effect": "MELEE ONLY: +22% attack speed, +0.5 tile range."
   },
   "MERCURY_FEATHER": {
     "name": "Mercury Feather",
@@ -88,7 +88,7 @@
     "rarity": "RARE",
     "buy": 32,
     "sell": 10,
-    "effect": "+1 Gold per kill"
+    "effect": "+2 Gold per kill"
   },
   "BATTLE_STANDARD": {
     "name": "Battle Standard",
@@ -207,7 +207,7 @@
     "rarity": "LEGENDARY",
     "buy": 140,
     "sell": 45,
-    "effect": "+2 Gold per kill"
+    "effect": "+3 Gold per kill"
   },
   "NUMIDIAN_SADDLE": {
     "name": "Numidian Saddle",
@@ -288,16 +288,16 @@
   },
   "FALX_BLADE": {
     "name": "Falx Blade",
-    "rarity": "UNCOMMON",
-    "buy": 20,
-    "sell": 7,
+    "rarity": "RARE",
+    "buy": 32,
+    "sell": 11,
     "effect": "MELEE ONLY: grants CLEAVE. Each swing now hits EVERY enemy in melee range; secondary targets take 60% damage. Stacks with native cleave towers (Hastati, Triarius, Cohort Guard, etc.) by upgrading their cleave from 70% to 90% on secondaries."
   },
   "VOLLEY_QUIVER": {
     "name": "Volley Quiver",
-    "rarity": "UNCOMMON",
-    "buy": 20,
-    "sell": 7,
+    "rarity": "RARE",
+    "buy": 32,
+    "sell": 11,
     "effect": "RANGED ONLY: +1 target per attack. A single-shot tower becomes dual-shot; an existing 2-shot becomes triple. Stacks additively on multi-shot combos (Decurion 2 → 3, Eques 3 → 4, Scorpion Bolt 3 → 4)."
   },
   "SIGIL_OF_SOL_INVICTUS": {
@@ -393,7 +393,7 @@
     "buy": 18,
     "sell": 7,
     "gateExclusive": true,
-    "effect": "GATE-SHOP EXCLUSIVE: Any tower: +12% attack speed. The augur read the birds and reported favorable signs — tempo bonus for the patient tower."
+    "effect": "GATE-SHOP EXCLUSIVE: Any tower: +20% attack speed. The augur read the birds and reported favorable signs — tempo bonus for the patient tower."
   },
   "CONSULAR_TOKEN": {
     "name": "Consular Token",

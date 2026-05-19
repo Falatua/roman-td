@@ -85,7 +85,9 @@ describe('Tower effective stats', () => {
     ranged.equippedItems.push('CAVALRY_SPUR');
     melee.equippedItems.push('CAVALRY_SPUR');
     expect(towerEffectiveStats(ranged).attackSpeed).toBeCloseTo(rangedBefore, 4);  // ranged: no effect
-    expect(towerEffectiveStats(melee).attackSpeed).toBeCloseTo(meleeBefore * 1.30, 4);
+    // 2026-05-19 rarity rebalance: Cavalry Spur tuned 1.30 → 1.22 so it
+    // fits the UNCOMMON tier next to Mercury Feather (+22%).
+    expect(towerEffectiveStats(melee).attackSpeed).toBeCloseTo(meleeBefore * 1.22, 4);
   });
 });
 
