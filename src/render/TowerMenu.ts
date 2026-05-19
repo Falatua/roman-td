@@ -611,7 +611,17 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
 
   // Recipes this tower could be part of — surfaces ALL recipes that involve this type
   // (not just currently-eligible). Highlights the ones the player has all ingredients for.
-  const allTowers = Array.from(state.towers.values()).filter(tt => !tt.pending || tt.id === t.id);
+  // 2026-05-19 — Match against EVERY tower, kept or pending. The old filter
+  // excluded other pending prospects, which caused the confusing case where
+  // two glowing prospects (eligible for the same combo) were each shown the
+  // recipe with ONLY THEMSELVES counted — the partner prospect appeared as
+  // missing (gray "0/1") even though it was sitting right next to them on
+  // the board. The greedy match below still prefers KEPT towers first via
+  // matchOrder, so the green-vs-orange honesty rule (green = all kept,
+  // orange = ≥1 pending) survives. Other pending prospects now correctly
+  // count toward the slot, lighting up "READY IF KEPT" the way the player
+  // expects when two prospects can be combined together.
+  const allTowers = Array.from(state.towers.values());
   const matchingRecipes = comboData.filter(rcp => rcp.ingredients.some(ing => ing.type === t.type));
   if (matchingRecipes.length > 0) {
     const rcpRow = document.createElement('div');
