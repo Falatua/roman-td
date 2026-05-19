@@ -247,7 +247,19 @@ export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): num
   // the W6-W9 resist pass to break the "siege+fire+divine is a universal
   // answer key" feel of the mid game. Multiplies BEFORE the late-game
   // __lateResistMult stamp below so both stack.
-  else if (damageType === DamageType.SIEGE) base = r.siege ?? 1;
+  else if (damageType === DamageType.SIEGE) {
+    base = r.siege ?? 1;
+    // 2026-05-19 — Flyers take +20% siege damage globally. Heavy
+    // ballista bolts and onager stones punch flying targets harder
+    // than ranged arrows. Multiplies on top of the per-enemy siege
+    // multiplier so the existing nuance survives (Celtic Scout
+    // siege:0.7 × 1.20 = 0.84 — still nimbler than baseline ground;
+    // Numidian Rider siege:1.15 × 1.20 = 1.38 — fragile rider takes
+    // real punishment). Flyers without a per-enemy siege entry pick
+    // up the flat +20% (Spectral Scout, Sphinx, Shadow Cavalry,
+    // Hun riders, etc.).
+    if (enemy.isFlyer) base *= 1.20;
+  }
   else if (damageType === DamageType.ELEMENTAL_FIRE) base = r.fire ?? 1;
   else if (damageType === DamageType.DIVINE) base = r.divine ?? 1;
   // Late-stage W11+ resistance buff (set by spawnEnemy on ground / boss

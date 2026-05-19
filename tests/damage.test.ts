@@ -95,4 +95,45 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     const wardedSlow = statusEffectiveness(e, StatusEffectKind.SLOW);
     expect(wardedSlow).toBeCloseTo(baseSlow * 0.30, 4);
   });
+
+  it('flyers take +20% siege damage globally (2026-05-19)', () => {
+    // A flyer without a per-enemy siege entry gets the flat +20%.
+    // SPECTRAL_SCOUT has no siege entry in the resistance table.
+    const ghost = makeEnemy(EnemyType.SPECTRAL_SCOUT, EnemyFaction.UNDEAD_CELTS);
+    ghost.isFlyer = true;
+    const m = enemyDamageMultiplier(ghost, DamageType.SIEGE);
+    expect(m).toBeCloseTo(1.20, 4);
+  });
+
+  it('flyer siege bonus stacks multiplicatively with per-enemy siege resist', () => {
+    // CELTIC_SCOUT has siege:0.7 in the resistance table. With the
+    // +20% flyer bonus, the effective multiplier is 0.7 × 1.20 = 0.84.
+    const scout = makeEnemy(EnemyType.CELTIC_SCOUT, EnemyFaction.CELTS);
+    scout.isFlyer = true;
+    const m = enemyDamageMultiplier(scout, DamageType.SIEGE);
+    expect(m).toBeCloseTo(0.84, 4);
+  });
+
+  it('flyer siege bonus also stacks on a siege-vulnerable flyer', () => {
+    // NUMIDIAN_RIDER has siege:1.15 in the resistance table. With
+    // +20% flyer bonus: 1.15 × 1.20 = 1.38.
+    const rider = makeEnemy(EnemyType.NUMIDIAN_RIDER, EnemyFaction.CARTHAGE);
+    rider.isFlyer = true;
+    const m = enemyDamageMultiplier(rider, DamageType.SIEGE);
+    expect(m).toBeCloseTo(1.38, 4);
+  });
+
+  it('ground enemies do NOT get the flyer siege bonus', () => {
+    const ground = makeEnemy(EnemyType.CELTIC_FOOTMAN, EnemyFaction.CELTS);
+    ground.isFlyer = false;
+    const m = enemyDamageMultiplier(ground, DamageType.SIEGE);
+    expect(m).toBeCloseTo(1.0, 4);   // CELTIC_FOOTMAN has no siege override
+  });
+
+  it('flyer siege bonus does NOT apply to non-siege damage types', () => {
+    const ghost = makeEnemy(EnemyType.SPECTRAL_SCOUT, EnemyFaction.UNDEAD_CELTS);
+    ghost.isFlyer = true;
+    const ranged = enemyDamageMultiplier(ghost, DamageType.PHYS_RANGED);
+    expect(ranged).not.toBeCloseTo(1.20, 4);   // ranged uses its own profile
+  });
 });
