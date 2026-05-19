@@ -4075,6 +4075,14 @@ async function boot() {
       const label = (TargetingMode as any)[mode] ?? String(mode);
       state.hint = `🎯 Retargeted ${n} tower${n === 1 ? '' : 's'} → ${label}.`;
     },
+    // 2026-05-19 — Hero HUD chip click → open hero inspect panel.
+    // Routes through inspectTower for the hero tower id; the panel
+    // recognizes tower.isHero and renders the hero-specific layout
+    // (added in C9).
+    onHeroInspect: (heroTowerId: string) => {
+      const hero = state.towers.get(heroTowerId);
+      if (hero) inspectTower(hero);
+    },
     // DPS CHECK: spawn a training dummy for damage measurement, OR cancel
     // the active dummy if one is already on the path. Player-side cancel
     // lets them clear a stuck/no-longer-wanted measurement without

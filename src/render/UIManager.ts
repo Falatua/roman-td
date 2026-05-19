@@ -1,5 +1,8 @@
 import { GameStateShape } from '../GameState';
 import { GamePhase, TowerType, TargetingMode } from '../types';
+// 2026-05-19 — Hero defs for HUD chip rendering. Reads tier title,
+// XP thresholds, and ability tier requirements off the JSON.
+import HERO_DEFS_TABLE from '../data/herodefs.json';
 import { ECONOMY, GRID, POOL_PROBABILITIES } from '../constants';
 import { tex } from './Assets';
 import { canAfford, poolUpgradeCost } from '../systems/EconomySystem';
@@ -33,6 +36,9 @@ export interface UICallbacks {
   // a global retarget (e.g. flip everything to WEAKEST during a
   // grunt-clearing wave, then back to STRONG for the boss).
   onSetAllTargeting?: (mode: TargetingMode) => void;
+  // 2026-05-19 — Hero HUD chip → inspect panel handler. Fired when
+  // the player clicks the chip below the GOLD/LIVES block.
+  onHeroInspect?: (heroTowerId: string) => void;
 }
 
 // Vanilla-DOM HUD overlay positioned above the canvas.
@@ -571,6 +577,63 @@ export class UIManager {
                 ? `Wave ${state.wave} in progress. Towers fight automatically. Click any enemy to inspect resistances.`
                 : state.hint;
       tipText.textContent = selectedTowerInfo ?? phaseTip ?? state.hint;
+    }
+    // 2026-05-19 — HERO HUD CHIP. Renders below the GOLD/LIVES block
+    // when state.activeHeroId is set. Click → opens hero inspect
+    // panel (TowerMenu short-circuits on tower.isHero in C9).
+    if (state.activeHeroId) {
+      const heroDef: any = (HERO_DEFS_TABLE as any)[state.activeHeroId];
+      if (heroDef) {
+        const tier = state.heroTier ?? 0;
+        const xp = state.heroXp ?? 0;
+        const thresholds: number[] = heroDef.xpThresholds ?? [0, 75, 280, 650, 1300];
+        const tierTitles: string[] = heroDef.tierTitles ?? ['TIRO','LEGATUS','CONSUL','IMPERATOR','DIVUS'];
+        const nextThreshold = thresholds[Math.min(thresholds.length - 1, tier + 1)] ?? thresholds[thresholds.length - 1];
+        const curThreshold = thresholds[tier] ?? 0;
+        const pctToNext = tier >= 4
+          ? 100
+          : Math.max(0, Math.min(100, ((xp - curThreshold) / Math.max(1, nextThreshold - curThreshold)) * 100));
+        const tint = heroDef.visual?.tierUpColor ?? '#ffd34d';
+        const chip = document.createElement('div');
+        chip.id = 'hero-hud-chip';
+        chip.title = 'Click to inspect the hero (XP, abilities, items).';
+        chip.style.cssText = `
+          margin-top: 6px;
+          padding: 8px 10px;
+          background: linear-gradient(180deg, rgba(34,25,18,0.95), rgba(10,6,4,0.95));
+          border: 2px solid ${tint};
+          color: ${tint};
+          cursor: pointer;
+          font-family: 'Courier New', monospace;
+          box-shadow: 0 0 10px ${tint}33;
+          transition: box-shadow 0.18s, transform 0.12s;
+        `;
+        chip.onmouseenter = () => { chip.style.boxShadow = `0 0 20px ${tint}88`; chip.style.transform = 'translateY(-1px)'; };
+        chip.onmouseleave = () => { chip.style.boxShadow = `0 0 10px ${tint}33`; chip.style.transform = ''; };
+        chip.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+            <div style="font-size:11px;font-weight:bold;letter-spacing:2px">⚔ ${(heroDef.name ?? '').toUpperCase()}</div>
+            <div style="font-size:9px;color:#cdb98a;letter-spacing:1px">${tierTitles[tier] ?? ''}</div>
+          </div>
+          <div style="position:relative;background:#0c0a08;border:1px solid #5a4a30;height:8px;overflow:hidden">
+            <div style="width:${pctToNext}%;height:100%;background:linear-gradient(90deg, ${tint}, ${tint}aa);transition:width 0.3s"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:9px;color:#aa9a4a;letter-spacing:1px">
+            <span>XP ${xp}${tier < 4 ? ` / ${nextThreshold}` : ''}</span>
+            <span>${(heroDef.abilities ?? []).map((a: any, i: number) => {
+              const unlocked = (tier >= a.level);
+              const dot = unlocked ? tint : '#3a3025';
+              return `<span title="${(a.name ?? a.id)}" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dot};margin-left:3px;box-shadow:${unlocked ? `0 0 6px ${tint}` : 'none'}"></span>`;
+            }).join('')}</span>
+          </div>
+        `;
+        chip.onclick = () => {
+          // Click → re-route to the hero's tower-tile click flow.
+          const heroTowerId = state.activeHeroTowerId;
+          if (heroTowerId && this.cb?.onHeroInspect) this.cb.onHeroInspect(heroTowerId);
+        };
+        this.hud.appendChild(chip);
+      }
     }
   }
 }
