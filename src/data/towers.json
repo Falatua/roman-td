@@ -600,7 +600,7 @@
     "name": "Aerarium",
     "damageType": "PHYS_RANGED",
     "baseDps": 38,
-    "attackSpeed": 1.6,
+    "attackSpeed": 2.0,
     "range": 4.2,
     "kind": "COMBO",
     "tierBand": 3,
