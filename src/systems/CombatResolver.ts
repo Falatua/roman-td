@@ -1303,9 +1303,20 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
       return best;
     }
     case TargetingMode.STRONG: {
-      let best: Enemy | null = null; let bestHp = -1;
-      for (const e of inRange) if (e.hp > bestHp) { bestHp = e.hp; best = e; }
-      return best;
+      // 2026-05-19 — Bosses get priority. If ANY boss is in range,
+      // pick the highest-HP boss (locks the tower onto the most
+      // dangerous threat regardless of incidental grunts). Only if
+      // no boss is present do we fall back to the raw highest-HP
+      // enemy. Without this, a chip-damaged boss whose HP dropped
+      // below a fresh War Elephant minion would lose the tower's
+      // attention mid-fight — confusing and bad for boss DPS.
+      let bestBoss: Enemy | null = null; let bestBossHp = -1;
+      let bestAny:  Enemy | null = null; let bestAnyHp  = -1;
+      for (const e of inRange) {
+        if (e.isBoss && e.hp > bestBossHp) { bestBossHp = e.hp; bestBoss = e; }
+        if (e.hp > bestAnyHp)              { bestAnyHp  = e.hp; bestAny  = e; }
+      }
+      return bestBoss ?? bestAny;
     }
     case TargetingMode.CLOSE: {
       let best: Enemy | null = null; let bestD = Infinity;

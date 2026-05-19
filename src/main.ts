@@ -3148,37 +3148,29 @@ async function boot() {
   // Assets are in — reveal the coin slot and hand off to the player.
   if (slotWrap) slotWrap.classList.add('ready');
   if (barEl) barEl.style.width = '100%';
-  // 2026-05-17 — JAMMED COIN SLOT MINI-GAME.
-  // The coin requires 10 clicks to be hammered into the slot. Each
-  // click nudges the coin down a fraction and shakes the cabinet a
-  // beat. The cabinet's loading fanfare keeps playing UNDISTURBED in
-  // the background (no rewind, no replay) — the player hears one
-  // continuous song while they whack the coin.
+  // JAMMED COIN SLOT MINI-GAME.
+  // 2026-05-19 — Trimmed from 10 clicks → 5 clicks per user feedback.
+  // Each click nudges the coin down 1/5 of the gap so the motion
+  // reads as bigger, snappier jumps. The cabinet's loading fanfare
+  // keeps playing UNDISTURBED in the background.
   //
-  // Sound policy (per user feedback 2026-05-17):
-  //   • Clicks 1-9: silent except for the cabinet rattle animation.
-  //     No coin SFX, no music primer call. The visual jolt + new
-  //     taunt copy is the feedback.
-  //   • Click 10: SFX.coinSlot() fires once on commit. The big "coin
+  // Sound policy:
+  //   • Clicks 1-4: silent except for the cabinet rattle animation.
+  //     The visual jolt + new taunt copy is the feedback.
+  //   • Click 5: SFX.coinSlot() fires once on commit. The big "coin
   //     drops in" payoff sound lands only when the coin actually
   //     goes in.
   //
-  // Taunt policy: each of the 9 pre-commit clicks shows a UNIQUE
-  // taunt in sequence (no repeats, no random pulls). The arc walks
-  // from polite-explanation to mock-frustration so the player feels
-  // the cabinet getting more annoyed with every whack.
+  // Taunt policy: each of the 4 pre-commit clicks shows a UNIQUE
+  // taunt — a curated arc from polite-explanation to mock-glory so
+  // the cabinet feels alive over the shortened sequence.
   const JAM_TAUNTS = [
     'The coin slot is JAMMED. Whack it, soldier.',
-    'Some idiot crammed a coin in sideways. Try the slot again.',
     'The Senate has not fixed this cabinet since the Punic Wars. Keep hitting.',
-    'This machine has eaten more coins than a Carthaginian quartermaster. One more.',
     'Smack it like you mean it, citizen.',
-    'The Aerarium cut maintenance from the budget. YOU are the maintenance now.',
-    'Are you Roman or are you Greek? Hit the slot harder.',
-    'Hannibal\'s elephants were easier to move than this coin. Press on.',
     'One last whack. The coin can smell glory. So can you.'
   ];
-  const COIN_SLOT_CLICKS_REQUIRED = 10;
+  const COIN_SLOT_CLICKS_REQUIRED = 5;
   await new Promise<void>(resolve => {
     if (!slotEl) { resolve(); return; }
     let clicks = 0;
