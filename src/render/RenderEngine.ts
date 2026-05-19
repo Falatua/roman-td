@@ -347,11 +347,26 @@ export class RenderEngine {
     }
   }
 
-  // 2026-05-19 — AURA BUFF TILES (5 fixed positions). Each frame the
+  // 2026-05-19 v2 — AURA BUFF TILES (5 fixed positions). Each frame the
   // tile pulses its colored ring; when a tower sits on top, the
-  // glow brightens to signal the buff is live. Tooltips are
-  // implemented in main.ts via hit-test on hover; the renderer just
-  // paints the visual cue.
+  // glow brightens + rotating spokes appear to signal the buff is live.
+  // Visual stack (drawn back-to-front so the strongest layers land on
+  // top):
+  //   1. OUTER HALO — large, fuzzy radial glow extending past the tile
+  //      edge so the tile reads as "magic ground" from a few tiles away.
+  //   2. INNER HALO — smaller denser radial.
+  //   3. TILE FILL — saturated translucent color wash inside the tile
+  //      rect (0.28 baseline, +0.10 with pulse).
+  //   4. SOLID BORDER — 1.5px tile outline at 0.95 alpha so the tile
+  //      always reads as special even when the pulse hits its trough.
+  //   5. INNER RING — main pulsing accent ring + white contrast ring.
+  //   6. OCCUPIED EXTRAS — secondary outer ring + 4 rotating spokes when
+  //      a tower is sitting on the tile (buff is live).
+  //   7. CORNER ACCENTS — 4 bigger dots with white hotspots so the tile
+  //      reads as anchored to the grid square.
+  //   8. CENTER PIP — small pulsing dot at the tile center.
+  // Tooltips are implemented in main.ts via hit-test on hover; the
+  // renderer just paints the visual cue.
   drawAuraTiles(_state: GameStateShape, tick: number): void {
     const gfx = this.auraTileGfx;
     gfx.clear();
@@ -362,36 +377,82 @@ export class RenderEngine {
     }
     for (const a of AURA_TILES) {
       const eff = AURA_TILE_EFFECTS[a.kind];
-      const cx = a.col * GRID.TILE + GRID.TILE / 2;
-      const cy = a.row * GRID.TILE + GRID.TILE / 2;
+      const x0 = a.col * GRID.TILE;
+      const y0 = a.row * GRID.TILE;
+      const cx = x0 + GRID.TILE / 2;
+      const cy = y0 + GRID.TILE / 2;
       const occupied = towerTilesOccupied.has(`${a.col},${a.row}`);
       // Slow 0.9 Hz pulse so the eye picks the tile up without it
       // becoming visually noisy.
       const pulse = 0.5 + 0.5 * Math.sin(tick * 1.8 + a.col * 0.3 + a.row * 0.27);
-      const baseAlpha = occupied ? 0.55 : 0.30;
-      const ringAlpha = baseAlpha * (0.6 + 0.4 * pulse);
-      // Filled tile (translucent backdrop). Use 1.0 tile so it slots
-      // exactly into the grid square.
-      gfx.beginFill(eff.color, 0.12 * (0.7 + 0.3 * pulse));
-      gfx.drawRect(a.col * GRID.TILE, a.row * GRID.TILE, GRID.TILE, GRID.TILE);
+
+      // ── 1. OUTER HALO (large soft glow, bleeds past tile edge) ──
+      gfx.beginFill(eff.color, 0.08 + 0.05 * pulse);
+      gfx.drawCircle(cx, cy, GRID.TILE * 0.85 + pulse * 6);
       gfx.endFill();
-      // Pulsing inner ring.
-      gfx.lineStyle(2, eff.color, ringAlpha);
-      gfx.drawCircle(cx, cy, GRID.TILE * 0.38 + pulse * 2);
-      // Brighter outer ring when occupied (signals "buff is active").
+
+      // ── 2. INNER HALO (denser, smaller) ──
+      gfx.beginFill(eff.color, 0.14 + 0.06 * pulse);
+      gfx.drawCircle(cx, cy, GRID.TILE * 0.62 + pulse * 4);
+      gfx.endFill();
+
+      // ── 3. TILE FILL (saturated color wash — 2.3× stronger than before) ──
+      gfx.beginFill(eff.color, 0.28 + 0.10 * pulse);
+      gfx.drawRect(x0, y0, GRID.TILE, GRID.TILE);
+      gfx.endFill();
+
+      // ── 4. SOLID BORDER (always visible — won't fade with pulse) ──
+      gfx.lineStyle(1.5, eff.color, 0.95);
+      gfx.drawRect(x0 + 0.75, y0 + 0.75, GRID.TILE - 1.5, GRID.TILE - 1.5);
+
+      // ── 5. INNER RING (main pulsing accent — 1.5× stronger alpha) ──
+      const ringR = GRID.TILE * 0.40 + pulse * 2.5;
+      gfx.lineStyle(2.5, eff.color, 0.75 + 0.20 * pulse);
+      gfx.drawCircle(cx, cy, ringR);
+      // White contrast ring just inside so the colored ring "pops"
+      gfx.lineStyle(1.5, 0xffffff, 0.18 + 0.12 * pulse);
+      gfx.drawCircle(cx, cy, ringR - 2);
+
+      // ── 6. OCCUPIED EXTRAS (buff-is-live indicator) ──
       if (occupied) {
-        gfx.lineStyle(1.5, eff.color, 0.45 * (0.6 + 0.4 * pulse));
-        gfx.drawCircle(cx, cy, GRID.TILE * 0.52 + pulse * 3);
+        // Secondary brighter ring outside the main one
+        gfx.lineStyle(2, eff.color, 0.70 + 0.20 * pulse);
+        gfx.drawCircle(cx, cy, GRID.TILE * 0.55 + pulse * 3);
+        // 4 rotating spokes (slow clockwise drift — signals "active power")
+        gfx.lineStyle(2, eff.color, 0.65);
+        const spokeR0 = GRID.TILE * 0.58 + pulse * 2;
+        const spokeR1 = spokeR0 + 4;
+        const ang0 = (tick * 0.025) % (Math.PI * 2);
+        for (let i = 0; i < 4; i++) {
+          const a1 = ang0 + i * (Math.PI / 2);
+          const cosA = Math.cos(a1); const sinA = Math.sin(a1);
+          gfx.moveTo(cx + cosA * spokeR0, cy + sinA * spokeR0);
+          gfx.lineTo(cx + cosA * spokeR1, cy + sinA * spokeR1);
+        }
       }
-      // Tiny corner dots so the tile reads as a "special" square even
-      // when the pulse is at its dim trough.
-      const dotR = 1.5;
-      const dotA = 0.55;
-      gfx.beginFill(eff.color, dotA);
-      gfx.drawCircle(a.col * GRID.TILE + 3, a.row * GRID.TILE + 3, dotR);
-      gfx.drawCircle(a.col * GRID.TILE + GRID.TILE - 3, a.row * GRID.TILE + 3, dotR);
-      gfx.drawCircle(a.col * GRID.TILE + 3, a.row * GRID.TILE + GRID.TILE - 3, dotR);
-      gfx.drawCircle(a.col * GRID.TILE + GRID.TILE - 3, a.row * GRID.TILE + GRID.TILE - 3, dotR);
+
+      // ── 7. CORNER ACCENTS (bigger dots, white hotspots) ──
+      const dotR = 2.5;
+      gfx.beginFill(eff.color, 0.90);
+      gfx.drawCircle(x0 + 3, y0 + 3, dotR);
+      gfx.drawCircle(x0 + GRID.TILE - 3, y0 + 3, dotR);
+      gfx.drawCircle(x0 + 3, y0 + GRID.TILE - 3, dotR);
+      gfx.drawCircle(x0 + GRID.TILE - 3, y0 + GRID.TILE - 3, dotR);
+      gfx.endFill();
+      // White hot-spot in each corner dot — sells the "glowing" look
+      gfx.beginFill(0xffffff, 0.60);
+      gfx.drawCircle(x0 + 3, y0 + 3, 0.9);
+      gfx.drawCircle(x0 + GRID.TILE - 3, y0 + 3, 0.9);
+      gfx.drawCircle(x0 + 3, y0 + GRID.TILE - 3, 0.9);
+      gfx.drawCircle(x0 + GRID.TILE - 3, y0 + GRID.TILE - 3, 0.9);
+      gfx.endFill();
+
+      // ── 8. CENTER PIP (pulsing anchor dot) ──
+      gfx.beginFill(eff.color, 0.70 + 0.20 * pulse);
+      gfx.drawCircle(cx, cy, 2 + pulse * 0.6);
+      gfx.endFill();
+      gfx.beginFill(0xffffff, 0.35 + 0.20 * pulse);
+      gfx.drawCircle(cx, cy, 1);
       gfx.endFill();
     }
   }
