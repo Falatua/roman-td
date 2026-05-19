@@ -1046,12 +1046,18 @@ function renderTab(tab: string): string {
       }
       return null;
     }
+    // 2026-05-19 — Codex HP previews must factor in the +15% hero-comp
+    // multiplier when the player has drafted a hero, so the Codex never
+    // disagrees with the wave-preview chip or the W20 banner. Read off
+    // globalThis.__game (set on every state mutation in main.ts); falls
+    // back to false in unit-test contexts where __game isn't wired.
+    const codexHeroActive = !!(((globalThis as any).__game)?.activeHeroId);
     // Compute runtime HP for any enemy on a given wave + hp-fraction.
     // Delegates to `previewSpawnHp` (single source of truth shared with
     // spawnEnemy in EnemySystem.ts). The hpFrac multiplier handles
     // reanim (~92%) and split children (their splitOnDeath.hpFraction).
     function computeHp(def: any, w: any, hpFrac = 1.0): number {
-      return Math.round(previewSpawnHp(def, w.wave, w.type, w.hpMult) * hpFrac);
+      return Math.round(previewSpawnHp(def, w.wave, w.type, w.hpMult, codexHeroActive) * hpFrac);
     }
     function spawnHpForEnemy(id: string, def: any): { hp: number; wave: number | null; explain: string; note?: string } {
       // 1. Direct authored spawn — preferred path. computeHp delegates
@@ -1059,7 +1065,13 @@ function renderTab(tab: string): string {
       // formula automatically.
       const w = firstWaveByEnemy.get(id);
       if (w) {
-        if (w.wave === 1) return { hp: 100, wave: 1, explain: 'Wave 1 (introductory wave — every spawn pinned to 100 HP).' };
+        if (w.wave === 1) {
+          // 2026-05-19 — Hero-comp +15% applies even to the W1 pin so the
+          // Codex stays consistent with the wave-preview chip.
+          const w1 = codexHeroActive ? 115 : 100;
+          const w1Note = codexHeroActive ? ' Hero comp adds +15%.' : '';
+          return { hp: w1, wave: 1, explain: `Wave 1 (introductory wave — pinned to ${w1} HP).${w1Note}` };
+        }
         const hp = computeHp(def, w);
         return { hp, wave: w.wave, explain: `Final HP on its first wave (W${w.wave}).` };
       }

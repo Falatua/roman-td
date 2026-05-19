@@ -24,6 +24,7 @@ import { createTower } from '../src/systems/TowerSystem';
 import { createGameState, GameStateShape } from '../src/GameState';
 import { TowerType } from '../src/types';
 import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
+import { previewSpawnHp } from '../src/systems/WaveManager';
 import HERO_DEFS from '../src/data/herodefs.json';
 
 function freshState(): GameStateShape {
@@ -335,6 +336,41 @@ describe('herodefs.json shape (single source of tuning)', () => {
     expect(filters).toContain('ELEMENTAL_FIRE');
     // VS_BOSS is the Scipio filter; Caesar carries no filter at all.
     expect(filters).toContain('VS_BOSS');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// HP COMPENSATION (hero-active runs face +15% enemy HP)
+// ─────────────────────────────────────────────────────────────────────
+describe('Enemy HP compensation when a hero is active', () => {
+  // The fake def shape mirrors what enemies.json carries. We pin a base
+  // 1000 HP non-boss + 1000 HP boss so the math is easy to verify.
+  const dogDef = { baseHp: 1000, isBoss: false, isFlyer: false };
+  const bossDef = { baseHp: 1000, isBoss: true, isFlyer: false };
+
+  it('previewSpawnHp adds 15% on regular waves when heroActive=true', () => {
+    // W5 G-type at hpMult 1.0 → basicBuff 1.70 → 1700 base, ×1.15 = 1955.
+    const base = previewSpawnHp(dogDef, 5, 'G', 1.0, false);
+    const hero = previewSpawnHp(dogDef, 5, 'G', 1.0, true);
+    expect(hero / base).toBeCloseTo(1.15, 2);
+  });
+
+  it('previewSpawnHp adds 15% on boss waves when heroActive=true', () => {
+    // W10 B-type with bossDef → basicBuff 1.0 (boss exempt) plus soloBuff 2.0.
+    const base = previewSpawnHp(bossDef, 10, 'B', 3.0, false);
+    const hero = previewSpawnHp(bossDef, 10, 'B', 3.0, true);
+    expect(hero / base).toBeCloseTo(1.15, 2);
+  });
+
+  it('previewSpawnHp keeps W1 pin behaviour: 100 base, 115 with hero', () => {
+    expect(previewSpawnHp(dogDef, 1, 'G', 1.0, false)).toBe(100);
+    expect(previewSpawnHp(dogDef, 1, 'G', 1.0, true)).toBe(115);
+  });
+
+  it('previewSpawnHp defaults to no hero comp when the arg is omitted (back-compat)', () => {
+    const noArg = previewSpawnHp(dogDef, 5, 'G', 1.0);
+    const explicitFalse = previewSpawnHp(dogDef, 5, 'G', 1.0, false);
+    expect(noArg).toBe(explicitFalse);
   });
 });
 

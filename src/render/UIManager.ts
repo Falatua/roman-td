@@ -491,7 +491,7 @@ export class UIManager {
         const fmt = (n: number) => n >= 1000 ? `${(n/1000).toFixed(1)}k` : `${n}`;
         const enemies = w.spawns.map((s: any) => {
           const def = enemiesData?.[s.type];
-          const hp = def ? previewSpawnHp(def, idx + 1, w.type, w.hpMult) : 0;
+          const hp = def ? previewSpawnHp(def, idx + 1, w.type, w.hpMult, !!state.activeHeroId) : 0;
           return `<span style="color:#e8d6a8">${s.count}× ${enemyName(s.type)}</span> <span style="color:#aa9a4a;font-size:10px">(${fmt(hp)} HP)</span>`;
         }).join(', ');
         // Carried-over enemies still walking the path from the previous wave.

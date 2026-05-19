@@ -105,15 +105,30 @@ export function lateGameLayerMult(waveNumber: number, isBoss: boolean, isFlyer: 
 // preview can't know in advance). Both the Codex ENEMIES table and the
 // wave-preview chip's enemy-inspect modal call this so the numbers always
 // agree and always match the in-game spawn.
-export function previewSpawnHp(def: any, waveNumber: number, wType: 'B' | 'M' | 'G' | 'F', hpMult: number): number {
-  if (waveNumber === 1) return 100;       // W1 is pinned to 100 HP for every spawn
+//
+// 2026-05-19 — Added optional `heroActive` flag. When the player has
+// drafted a hero, every spawn picks up a +15% HP comp multiplier (see
+// EnemySystem.spawnEnemy:heroComp). The preview has to factor this in
+// or the Codex / wave-preview chip / W20 banner will all underreport
+// the real number by 15%. Default false so existing callers that
+// pre-date the hero system keep their old numbers (e.g. internal
+// non-game-loop math, future tests).
+export function previewSpawnHp(def: any, waveNumber: number, wType: 'B' | 'M' | 'G' | 'F', hpMult: number, heroActive: boolean = false): number {
+  if (waveNumber === 1) {
+    // W1 is pinned to 100 HP for every spawn. The +15% hero comp still
+    // applies in real spawnEnemy because the pin is mathematical (the
+    // base * waveMult math collapses), so reflect that here too —
+    // otherwise W1 previews lie by 15.
+    return heroActive ? 115 : 100;
+  }
   const isBoss  = !!def.isBoss;
   const isFlyer = !!def.isFlyer;
   const waveMult = effectiveWaveHpMult(waveNumber, hpMult, isBoss);
   const soloBuff = (isBoss && wType === 'B') ? 2.0 : 1.0;
   const layer    = lateGameLayerMult(waveNumber, isBoss, isFlyer);
   const basicBuff = isBoss ? 1.0 : 1.70;
-  return Math.round(def.baseHp * waveMult * soloBuff * layer * basicBuff);
+  const heroComp = heroActive ? 1.15 : 1.00;
+  return Math.round(def.baseHp * waveMult * soloBuff * layer * basicBuff * heroComp);
 }
 
 export function startWave(state: GameStateShape) {

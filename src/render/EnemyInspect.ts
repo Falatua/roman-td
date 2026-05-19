@@ -380,8 +380,12 @@ export function showEnemyInspectByType(parent: HTMLElement, type: string, forWav
       }
     }
   }
+  // 2026-05-19 — Read activeHeroId off globalThis.__game so the preview
+  // matches the +15% hero-comp HP applied at spawn. Falls back to false
+  // when the global isn't wired (test runners, isolated unit harnesses).
+  const heroActive = !!(((globalThis as any).__game)?.activeHeroId);
   const scaledHp = waveCtx
-    ? previewSpawnHp(def, waveCtx.wave, waveCtx.type, waveCtx.hpMult)
+    ? previewSpawnHp(def, waveCtx.wave, waveCtx.type, waveCtx.hpMult, heroActive)
     : def.baseHp;
   // ARCHETYPE map — kept in sync with EnemySystem.ts ARCHETYPE. Used here
   // only when the live enemy stub doesn't carry an archetype.

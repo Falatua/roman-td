@@ -94,7 +94,17 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   // the relevant mechanic counter (DoT for regen, melee for shielded,
   // ranged for phalanx, etc). Bosses are balanced separately, untouched.
   const basicHpBuff = def.isBoss ? 1.0 : 1.70;
-  const finalHp = def.baseHp * hpMult * moonBoost * basicHpBuff;
+  // HERO HP COMPENSATION (2026-05-19): a run with an active hero gets an
+  // effectively-free extra tower from the moment the draft completes,
+  // and that hero grows into a ~30% map-wide damage multiplier by DIVUS.
+  // Bump enemy HP +15% across the board (regular + boss) to offset the
+  // free-tower contribution without crushing the curve. Gated on
+  // `state.activeHeroId` so non-hero runs (sandbox tests, pre-hero
+  // save migration) keep the original curve. Bosses get the same +15%
+  // — Scipio's +25% vs-boss already nets them slightly harder against
+  // his roster pick so a uniform bump is the right call.
+  const heroComp = state.activeHeroId ? 1.15 : 1.00;
+  const finalHp = def.baseHp * hpMult * moonBoost * basicHpBuff * heroComp;
   const e: Enemy = {
     id: newId(),
     type,

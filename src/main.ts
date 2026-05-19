@@ -2500,7 +2500,10 @@ async function boot() {
     // by ~22×.
     const def: any = (enemiesData as any).DAEMON_IMPERATOR;
     const waveDef: any = (wavesData as any[])[19]; // W20 = index 19
-    const finalHp = previewSpawnHp(def, 20, waveDef?.type ?? 'B', waveDef?.hpMult ?? 6.0);
+    // 2026-05-19 — Thread state.activeHeroId so the W20 banner reflects
+    // the +15% hero-comp HP applied at spawn. Without this the banner
+    // under-reports the boss HP by ~15% when a hero is active.
+    const finalHp = previewSpawnHp(def, 20, waveDef?.type ?? 'B', waveDef?.hpMult ?? 6.0, !!state.activeHeroId);
     const portraitSrc = imgSrc(bossPortraitKey('SUPER_DEMONS') ?? '');
     // Inject one-shot style block (animations are unique to this banner).
     if (!document.getElementById('final-boss-hp-style')) {
