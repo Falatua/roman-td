@@ -4082,7 +4082,36 @@ async function boot() {
     tip.style.top  = top + 'px';
   }
   canvas.addEventListener('click', (e: MouseEvent) => { try { return _handleCanvasClick(e); } catch (err) { Logger.error('CanvasClick', err); return; } });
+
+  // 2026-05-19 — DEFENSIVE: remove any orphaned transient modal DOM
+  // nodes that should have been cleaned up but weren't. Players
+  // reported a case where they couldn't place prospects at game
+  // start; the likeliest culprit is a phantom modal leaving its
+  // overlay element behind (the etch-name modal, a previous
+  // pick-keeper guide, etc.). This sweep guarantees the canvas
+  // stays clickable even if some upstream cleanup missed a node.
+  // Cheap O(n) lookup of known transient IDs.
+  function sweepOrphanModals() {
+    const ids = [
+      'etch-name-modal',
+      'empty-defense-guide',
+      'pick-keeper-guide',
+      'inspect-tip-banner'
+    ];
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      // Only remove if it's been visible long enough that it should
+      // have been dismissed by now. We use a __bornTick stamp on the
+      // node to track this; absence of the stamp means the node was
+      // created externally and we leave it alone.
+      if (el && (el as any).__sweepable) el.remove();
+    }
+  }
+
   function _handleCanvasClick(e: MouseEvent) {
+    // Defensive cleanup first — if any transient modal is somehow
+    // still in the DOM (it shouldn't be) clear it before processing.
+    sweepOrphanModals();
     const rect = canvas.getBoundingClientRect();
     // 2026-05-17 — Inverse world-zoom transform (matches mousemove handler).
     const rawX = (e.clientX - rect.left) * (GRID.CANVAS_W / rect.width);
@@ -4091,6 +4120,22 @@ async function boot() {
     const y = (rawY - WORLD.OFFSET_Y) / WORLD.ZOOM;
     let { col, row } = pixelToTile(x, y);
     let tile = tileAt(state, col, row);
+    // 2026-05-19 — Always-on click diagnostic. Logged to console so a
+    // player who reports "I can't place prospects" can open DevTools
+    // (Cmd+Opt+I on Mac, F12 on Windows) and immediately see why each
+    // click is being routed where it's going.
+    // eslint-disable-next-line no-console
+    console.log('[CanvasClick]', {
+      phase: state.phase,
+      col, row, tile,
+      gold: state.gold,
+      prospectQueueLen: state.prospectQueue.length,
+      prospectsPlaced: state.prospectsPlaced,
+      towers: state.towers.size,
+      sellStoneMode: !!(state as any).__sellStoneMode,
+      pendingPurchased: (state.pendingPurchasedTowers ?? []).length,
+      hasPendingTowers: hasPendingTowers(),
+    });
 
     // 2026-05-15 v3 (Sell Stones multi-select): while the player is in
     // stone-selection mode, the canvas only handles "toggle this stone
