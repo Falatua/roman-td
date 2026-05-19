@@ -459,6 +459,14 @@ export function spawnAtSurpriseEventPoint(
 ): boolean {
   const ev = state.activeSurpriseEvent;
   if (!ev || !ev.waveOverride || ev.spawnPoints.length === 0) return false;
+  // 2026-05-19 — Belt-and-suspenders: refuse to redirect flyers. The
+  // call site in WaveManager.tickSpawns already guards on isFlyerSpawn,
+  // but if a future caller forgets, doing the redirect would set a
+  // ground-path pathIndex that the flyer-path-follow loop misreads as
+  // "past the gate" → instant leak on spawn. W14 (Uprising + 8
+  // SPECTRAL_SCOUTs) hit this in the wild before the call-site guard
+  // was added. The function now refuses to corrupt flyer state.
+  if (enemy?.isFlyer) return false;
   // 2026-05-19 — Routing strategy depends on event kind:
   //   • INVASION: each enemy gets its OWN unique perimeter tile, so
   //     route per-enemy via `queueIdx % spawnPoints.length`.

@@ -268,7 +268,17 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // instead of the cave. Round-robin across the 4 visual points so
     // all four stay active. Bosses skip the redirect — boss waves
     // never coincide with surprise events anyway, but defensive guard.
-    if (!isBossSpawn) {
+    // 2026-05-19 — FLYERS ALSO SKIP. The redirect sets pathIndex against
+    // state.groundPath, but the path-follow loop reads flyer pathIndex
+    // against state.flyerPath. Since the ground path is much longer than
+    // the flyer path, the resolved ground index typically exceeds
+    // flyerPath.length-1, which trips the gate-leak check on the very
+    // first move tick — every flyer leaks INSTANTLY on spawn, draining
+    // lives before any combat. W14 (Uprising + 8 SPECTRAL_SCOUTs)
+    // produced the auto-death this guard fixes. Flyers now always
+    // spawn from the normal flyer cave entry regardless of any active
+    // surprise event.
+    if (!isBossSpawn && !isFlyerSpawn) {
       spawnAtSurpriseEventPoint(state, e, surpriseSpawnIdx);
       surpriseSpawnIdx++;
     }
