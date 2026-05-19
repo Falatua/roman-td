@@ -317,6 +317,30 @@ describe('herodefs.json shape (single source of tuning)', () => {
     }
   });
 
+  // 2026-05-19 — Regression test for the Agricola passive-display
+  // bug. His passive uses `kind:'DUAL'` with nested global+local
+  // descriptions instead of the flat description shape the other
+  // heroes carry; before this fix the choose-hero modal rendered an
+  // empty PASSIVE row for him because the UI read `passive.description`
+  // directly. Pinning that EVERY hero exposes a non-empty description
+  // (top-level OR assembled from nested global/local) keeps any
+  // future DUAL-kind hero from regressing the same UI surface.
+  it('every hero exposes a non-empty passive description (top-level or DUAL)', () => {
+    for (const id of HERO_POOL) {
+      const def: any = (HERO_DEFS as any)[id];
+      const p = def.passive;
+      // Treat a DUAL passive as valid if it carries a description OR
+      // if at least one nested global/local description is present —
+      // matches the rendering fallback used in the modal / Codex /
+      // inspect panel.
+      const flat   = p?.description ?? '';
+      const global = p?.global?.description ?? '';
+      const local  = p?.local?.description ?? '';
+      const combined = flat || `${global} ${local}`.trim();
+      expect(combined.length, `${id} has empty passive description`).toBeGreaterThan(0);
+    }
+  });
+
   // 2026-05-19 — Damage-type distribution test. The roster ships with
   // 5-type coverage: 1 melee / 2 ranged / 1 siege / 1 divine / 1 fire.
   // Pins the spread so a future hero-aura tuning pass can't quietly

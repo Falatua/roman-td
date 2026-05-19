@@ -1252,6 +1252,18 @@ function renderTab(tab: string): string {
   // draft modal use the same data, so this stays in sync automatically.
   if (tab === 'HEROES') {
     const HERO_POOL_IDS = ['HERO_MARIUS', 'HERO_AGRIPPA', 'HERO_AGRICOLA', 'HERO_SCIPIO', 'HERO_CAESAR', 'HERO_SULLA'];
+    // 2026-05-19 — Defensive passive lookup matches the helper in
+    // ChooseHeroModal. Agricola declares passive.kind='DUAL' with
+    // nested global+local descriptions; this fallback assembles a
+    // combined string so the PASSIVE row never renders empty here.
+    const passiveText = (p: any): string => {
+      if (!p) return '';
+      if (p.description) return p.description;
+      const bits: string[] = [];
+      if (p.global?.description) bits.push(`Global: ${p.global.description}`);
+      if (p.local?.description)  bits.push(`Local: ${p.local.description}`);
+      return bits.join(' ');
+    };
     const cards = HERO_POOL_IDS.map(id => {
       const def: any = (heroDefs as any)[id];
       if (!def) return '';
@@ -1279,7 +1291,7 @@ function renderTab(tab: string): string {
           </div>
           <div style="padding:10px 14px;border-bottom:1px solid #3a3025">
             <div style="font-size:10px;color:#aa9a4a;letter-spacing:2px;margin-bottom:4px">⚜ PASSIVE</div>
-            <div style="font-size:11px;color:#cdb98a;line-height:1.5">${def.passive?.description ?? ''}</div>
+            <div style="font-size:11px;color:#cdb98a;line-height:1.5">${passiveText(def.passive)}</div>
           </div>
           <div style="padding:10px 14px;border-bottom:1px solid #3a3025">
             <div style="font-size:10px;color:#aa9a4a;letter-spacing:2px;margin-bottom:4px">⚔ ABILITIES</div>

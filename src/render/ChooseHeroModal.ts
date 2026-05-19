@@ -22,6 +22,22 @@ import { GameStateShape } from '../GameState';
 import { draftHeroChoices, pickHero, type HeroId } from '../systems/HeroSystem';
 import HERO_DEFS from '../data/herodefs.json';
 
+// 2026-05-19 — Defensive passive-description lookup. Most heroes
+// declare a single flat `passive.description`, but Agricola uses a
+// `kind:'DUAL'` shape with nested `global` and `local` blocks. This
+// helper falls back to assembling a combined string from those
+// nested entries when the top-level field is missing, so the
+// PASSIVE row in the modal / Codex / inspect panel never renders
+// empty for a DUAL hero. Future DUAL heroes work without code edits.
+function passiveDescription(passive: any): string {
+  if (!passive) return '';
+  if (passive.description) return passive.description;
+  const parts: string[] = [];
+  if (passive.global?.description) parts.push(`Global: ${passive.global.description}`);
+  if (passive.local?.description)  parts.push(`Local: ${passive.local.description}`);
+  return parts.join(' ');
+}
+
 export function showChooseHeroModal(state: GameStateShape): void {
   if (document.getElementById('choose-hero-modal')) return;   // already open
 
@@ -303,8 +319,10 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
     `
     : '';
 
-  // Passive aura
-  const passiveText = def.passive?.description ?? '';
+  // Passive aura — pulls through the defensive helper so DUAL-kind
+  // heroes (Agricola) render a real description instead of an empty
+  // block. See passiveDescription() at the top of this file.
+  const passiveText = passiveDescription(def.passive);
   const passive = `
     <div style="font-size: 9px; color: #aa9a4a; letter-spacing: 2px; margin-bottom: 4px;">PASSIVE</div>
     <div style="font-size: clamp(11px, 1.25vh, 13px); color: #cdb98a; line-height: 1.5; margin-bottom: clamp(12px, 1.8vh, 18px); padding: 8px 10px; background: rgba(0,0,0,0.35); border-left: 2px solid #5a4a30;">${passiveText}</div>

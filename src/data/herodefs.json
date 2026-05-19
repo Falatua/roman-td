@@ -152,7 +152,8 @@
         "filter": "PHYS_RANGED",
         "dmgBonusPercent": 20,
         "description": "Every RANGED tower within 3 tiles gains +20% damage."
-      }
+      },
+      "description": "Global: every tower on the map — including melee — can target flyers. Local: every RANGED tower within 3 tiles gains +20% damage."
     },
     "abilities": [
       {

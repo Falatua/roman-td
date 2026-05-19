@@ -866,10 +866,20 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
     panel.appendChild(bf);
   }
 
-  // Passive
+  // Passive — defensive lookup handles DUAL-kind heroes (Agricola)
+  // whose top-level passive.description is empty but nested
+  // global/local.description fields carry the real text.
+  const p: any = heroDef.passive;
+  let passiveText: string = p?.description ?? '';
+  if (!passiveText && p) {
+    const bits: string[] = [];
+    if (p.global?.description) bits.push(`Global: ${p.global.description}`);
+    if (p.local?.description)  bits.push(`Local: ${p.local.description}`);
+    passiveText = bits.join(' ');
+  }
   const passive = document.createElement('div');
   passive.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025';
-  passive.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:4px">⚜ PASSIVE</div><div style="font-size:11px;color:#cdb98a;line-height:1.5">${heroDef.passive?.description ?? ''}</div>`;
+  passive.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:4px">⚜ PASSIVE</div><div style="font-size:11px;color:#cdb98a;line-height:1.5">${passiveText}</div>`;
   panel.appendChild(passive);
 
   // Item slots — heroes have exactly 2 regardless of tier
