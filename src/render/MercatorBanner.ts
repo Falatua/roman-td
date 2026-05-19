@@ -163,10 +163,9 @@ function ensureStyle() {
     #${TAB_ID} {
       position: absolute;
       right: 12px; bottom: 12px;
-      /* 2026-05-17 — slimmer profile (min-width 220 → 180) so the tab
-         doesn't dominate the bottom-right corner. The collapse caret
-         shrinks this further to ~50px when the player wants the tower
-         beneath fully visible. */
+      /* Slim profile so the tab doesn't dominate the bottom-right
+         corner. The collapse caret shrinks this further to ~50px
+         when the player wants the tower beneath fully visible. */
       min-width: 180px;
       padding: 8px 12px 8px 8px;
       background: linear-gradient(180deg, #2d1d0e, #1a1209);
