@@ -112,12 +112,19 @@ export function sandboxSpawnTowerDirect(
   return t;
 }
 
-// SANDBOX: Hard-reset to the start of a target wave. Clears every
-// in-flight enemy, projectile, loot orb, tower, and burn patch, then
-// pins the wave number so the next startWave call uses the chosen
-// wave's spawn config. Tile grid is reset to empty (path-rebuild
-// happens on the next reach into PathFinder via initializeGrid in
-// the caller).
+// SANDBOX: Soft-reset to the start of a target wave. Clears every
+// in-flight RUNTIME entity (enemies, projectiles, loot orbs, spawn
+// queue, burn patches, status effects) so the new wave spawns fresh.
+//
+// PRESERVES (intentional, per user request 2026-05-19):
+//   • state.towers — keep the player's tower placements between jumps
+//   • state.tiles — keep the tower-tile + stone-wall layout
+//   • state.goldTowerCount — preserve Aerarium count
+//   • state.combosBuilt / kill counters on towers — kept
+//
+// The dev workflow: build a maze at W15, jump to W19, the SAME maze
+// is now defending W19 enemies. Wipe via the dedicated WIPE TOWERS
+// button when a clean slate is actually wanted.
 //
 // Used by the JUMP TO WAVE button. The caller is main.ts which then
 // re-runs the build → startWave flow with the new wave number.
@@ -135,7 +142,9 @@ export function sandboxResetForWave(state: GameStateShape, targetWave: number): 
   state.enemies.clear();
   state.projectiles.length = 0;
   state.lootOrbs.length = 0;
-  state.towers.clear();
+  // SANDBOX 2026-05-19: towers + tiles + goldTowerCount intentionally
+  // NOT cleared so the maze survives wave jumps. Use
+  // sandboxWipeAllTowers() for a clean slate.
   state.spawnQueue.length = 0;
   state.spawnElapsed = 0;
   if (state.burnPatches) state.burnPatches.length = 0;
@@ -143,7 +152,6 @@ export function sandboxResetForWave(state: GameStateShape, targetWave: number): 
   state.prospectQueue.length = 0;
   state.prospectsPlaced = 0;
   state.keepsRemainingThisRound = 999;
-  state.goldTowerCount = 0;
   state.gameOverAt = -1;
   state.victoryAt = -1;
   state.activeSurpriseEvent = null;
@@ -156,7 +164,37 @@ export function sandboxResetForWave(state: GameStateShape, targetWave: number): 
   state.bossesKilled = 0;
   state.bonusBossesKilled = 0;
   state.surpriseEventsCompleted = 0;
+  // Per-tower per-wave counters reset so each new wave starts fresh
+  // stats. Lifetime kill counts + flat kill bonus carry over (they
+  // represent the maze's accumulated experience).
+  for (const t of state.towers.values()) {
+    t.killsThisWave = 0;
+    t.damageThisWave = 0;
+    t.attackFlash = 0;
+    t.attackCooldown = 0;
+  }
   void TIER_MULTS;     // import preserved for future tier-related logic
+}
+
+// SANDBOX: Wipe every tower + reset the tile grid to its empty
+// baseline. Used by the dedicated "WIPE TOWERS" button when the dev
+// actually wants to start over with a blank maze. Path is rebuilt
+// after this returns — the caller should call buildGroundPath().
+export function sandboxWipeAllTowers(state: GameStateShape): void {
+  if (!state.sandboxMode) return;
+  // Convert every TOWER / STONE tile back to EMPTY. Keep SPAWN,
+  // GATE, WAYPOINT, BORDER intact so the path skeleton survives.
+  for (let r = 0; r < state.tiles.length; r++) {
+    const row = state.tiles[r];
+    for (let c = 0; c < row.length; c++) {
+      if (row[c] === TileType.TOWER || row[c] === TileType.STONE) {
+        row[c] = TileType.EMPTY;
+      }
+    }
+  }
+  state.towers.clear();
+  state.goldTowerCount = 0;
+  state.projectiles.length = 0;
 }
 
 // SANDBOX: Endless mode trigger. Stamps the endless flag and forces

@@ -4,11 +4,11 @@
 // real-game state (leaderboard, quests, save data). These tests
 // pin that contract so future refactors can't quietly break it.
 import { describe, it, expect } from 'vitest';
-import { activateSandbox, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, sandboxAddGold, sandboxAllTowerOptions, SANDBOX_PASSWORD } from '../src/systems/SandboxMode';
+import { activateSandbox, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, sandboxAddGold, sandboxAllTowerOptions, sandboxWipeAllTowers, SANDBOX_PASSWORD } from '../src/systems/SandboxMode';
 import { createGameState } from '../src/GameState';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath } from '../src/systems/PathFinder';
-import { TowerType, GamePhase } from '../src/types';
+import { TowerType, GamePhase, TileType } from '../src/types';
 
 function bootstrapState() {
   const s = createGameState();
@@ -86,10 +86,15 @@ describe('Sandbox tower spawning', () => {
 });
 
 describe('Sandbox wave reset', () => {
-  it('clears towers / enemies / projectiles / loot when jumping waves', () => {
+  // 2026-05-19 (UPDATED CONTRACT): wave jump PRESERVES towers + tiles.
+  // The dev workflow is "build a maze, test it against multiple
+  // different waves." Clearing the maze on every jump made that
+  // impossible. The dedicated WIPE TOWERS button (sandboxWipeAllTowers
+  // below) is the path for explicitly clearing the maze.
+  it('PRESERVES towers + tiles when jumping waves; clears only runtime state', () => {
     const s = bootstrapState();
     activateSandbox(s);
-    // Plant some state to verify it gets cleaned.
+    // Plant some state.
     sandboxSpawnTowerDirect(s, TowerType.MILITES, 1, 4, 4);
     sandboxSpawnTowerDirect(s, TowerType.SCORPIO, 3, 6, 6);
     (s.lootOrbs as any).push({ id: 'orb1', x: 0, y: 0, itemId: 'GOLD_PURSE', rarity: 'RARE' });
@@ -97,10 +102,19 @@ describe('Sandbox wave reset', () => {
     expect(s.lootOrbs.length).toBe(1);
     sandboxResetForWave(s, 10);
     expect(s.wave).toBe(10);
-    expect(s.towers.size).toBe(0);
+    // CRITICAL: towers survive the jump (the user-facing contract).
+    expect(s.towers.size).toBe(2);
+    expect(s.tiles[4][4]).not.toBe(0);    // tile still marked TOWER
+    expect(s.tiles[6][6]).not.toBe(0);
+    // Runtime state IS cleared.
     expect(s.lootOrbs.length).toBe(0);
     expect(s.gold).toBe(999_999);
     expect(s.phase).toBe(GamePhase.BUILD_PHASE);
+    // Per-tower per-wave counters reset (each tower starts the new wave fresh).
+    for (const t of s.towers.values()) {
+      expect(t.killsThisWave).toBe(0);
+      expect(t.damageThisWave).toBe(0);
+    }
   });
 
   it('clamps wave to 1..20', () => {
@@ -131,6 +145,35 @@ describe('Sandbox wave reset', () => {
     expect(s.endlessMode).toBe(true);
     expect(s.wave).toBe(21);
     expect(s.endlessWave).toBe(1);
+  });
+});
+
+describe('Sandbox wipe all towers (explicit dev action)', () => {
+  it('wipes every tower + resets TOWER/STONE tiles to EMPTY', () => {
+    const s = bootstrapState();
+    activateSandbox(s);
+    sandboxSpawnTowerDirect(s, TowerType.MILITES, 1, 5, 5);
+    sandboxSpawnTowerDirect(s, TowerType.SCORPIO, 3, 7, 7);
+    // Place a stone too via the tile array directly (simulates the
+    // pre-game stones-as-walls placement).
+    s.tiles[3][3] = TileType.STONE;
+    expect(s.towers.size).toBe(2);
+    sandboxWipeAllTowers(s);
+    expect(s.towers.size).toBe(0);
+    expect(s.tiles[5][5]).toBe(TileType.EMPTY);
+    expect(s.tiles[7][7]).toBe(TileType.EMPTY);
+    expect(s.tiles[3][3]).toBe(TileType.EMPTY);  // stone wiped too
+    expect(s.goldTowerCount).toBe(0);
+  });
+
+  it('refuses when sandboxMode is false', () => {
+    const s = bootstrapState();
+    s.sandboxMode = false;
+    // We can't use sandboxSpawnTowerDirect (it also refuses outside
+    // sandbox), so place via the tile array + towers map directly.
+    s.tiles[5][5] = TileType.TOWER;
+    sandboxWipeAllTowers(s);
+    expect(s.tiles[5][5]).toBe(TileType.TOWER);   // unchanged
   });
 });
 

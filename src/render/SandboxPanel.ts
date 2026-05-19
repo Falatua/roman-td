@@ -26,6 +26,10 @@ export interface SandboxPanelHooks {
   onPickTower: (type: TowerType, tier: 1 | 2 | 3 | 4 | 5) => void;
   // Called when the player clicks the +1000g button.
   onAddGold: () => void;
+  // SANDBOX 2026-05-19: full tower wipe. Wave jumps preserve towers
+  // by default; this is the explicit "start over with a blank maze"
+  // button. Called after a confirm() prompt in the panel itself.
+  onWipeAllTowers: () => void;
 }
 
 // Mount the persistent banner + right-panel buttons. Idempotent —
@@ -63,6 +67,19 @@ export function mountSandboxPanel(state: GameStateShape, hooks: SandboxPanelHook
   panel.appendChild(mkSbBtn('▶ JUMP TO WAVE', () => showWavePicker(hooks)));
   panel.appendChild(mkSbBtn('+ SPAWN TOWER', () => showTowerPicker(hooks)));
   panel.appendChild(mkSbBtn('💰 +1000g', () => hooks.onAddGold()));
+  // SANDBOX 2026-05-19: red-bordered wipe button. Visually distinct
+  // (red instead of pink) so it can't be confused with the
+  // additive actions above. confirm() guards against accidental
+  // wipe after building a complicated maze.
+  const wipeBtn = mkSbBtn('🗑 WIPE TOWERS', () => {
+    if (!confirm('Wipe ALL towers and stones? The path will be reset to its empty baseline. This is irreversible.')) return;
+    hooks.onWipeAllTowers();
+  });
+  wipeBtn.style.borderColor = '#ff5050';
+  wipeBtn.style.color = '#ff8080';
+  wipeBtn.onmouseenter = () => { wipeBtn.style.background = '#3a1a1a'; };
+  wipeBtn.onmouseleave = () => { wipeBtn.style.background = '#2a1a25'; };
+  panel.appendChild(wipeBtn);
   rightPanel.appendChild(panel);
 }
 

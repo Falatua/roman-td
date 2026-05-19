@@ -17,7 +17,7 @@ import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAur
 import { scanCombos, realizableCombos, executeCombo } from './systems/CombinationEngine';
 // SANDBOX: dev-mode imports. Delete this line + every line tagged
 // `// SANDBOX:` to remove sandbox mode entirely.
-import { activateSandbox, sandboxAddGold, sandboxAllTowerOptions, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, SANDBOX_PASSWORD } from './systems/SandboxMode';
+import { activateSandbox, sandboxAddGold, sandboxAllTowerOptions, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, sandboxWipeAllTowers, SANDBOX_PASSWORD } from './systems/SandboxMode';
 import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
 import itemsData from './data/items_permanent.json';
@@ -4089,6 +4089,14 @@ async function boot() {
         onAddGold: () => {
           sandboxAddGold(state, 1000);
           state.hint = `🧪 +1000g (now ${state.gold.toLocaleString()}g).`;
+        },
+        onWipeAllTowers: () => {
+          // SANDBOX: wipe + rebuild the path so the cleared tiles
+          // become walkable again.
+          sandboxWipeAllTowers(state);
+          const p = buildGroundPath(state);
+          if (p) { state.groundPath = p; resnapEnemiesToPath(state, p); }
+          state.hint = '🧪 SANDBOX → all towers + stones wiped. Maze is blank.';
         }
       });
     });
@@ -5753,6 +5761,21 @@ async function boot() {
     // 12-char alphanumeric name (profanity-blocked), then the Hall of
     // Glory leaderboard. Player presses ENTER to play again.
     if (state.phase === GamePhase.GAME_OVER && !document.getElementById('end-summary') && !document.getElementById('hall-of-glory') && !document.getElementById('endless-failure')) {
+      // SANDBOX: skip the entire end-of-run ceremony (no defeat SFX
+      // fatality, no Hall of Glory, no name etch, no leaderboard).
+      // Dev runs aren't real runs — losing is part of testing. Soft-
+      // reset to the current wave so the dev can keep iterating
+      // without a forced reload. The pinned banner + dev panel stay.
+      if (state.sandboxMode) {
+        const here = state.wave || 1;
+        sandboxResetForWave(state, here);
+        // Path may need a rebuild if the prior run was modifying
+        // tiles via stones/combos that we just cleared.
+        const p = buildGroundPath(state);
+        if (p) { state.groundPath = p; resnapEnemiesToPath(state, p); }
+        state.hint = `🧪 SANDBOX — run ended at W${here}. Soft-reset. Towers preserved. Click START WAVE or JUMP TO WAVE.`;
+        return;
+      }
       SFX.defeat();
       // 2026-05 v10 — fatality SFX punctuates the loss state. Plays on
       // top of the existing defeat synth so the audio reads as
@@ -5774,6 +5797,14 @@ async function boot() {
       }
     }
     if (state.phase === GamePhase.VICTORY && !document.getElementById('end-summary') && !document.getElementById('hall-of-glory')) {
+      // SANDBOX: same skip as GAME_OVER above. Winning W20 in dev
+      // mode shouldn't trigger the leaderboard submit or the post-
+      // victory endless transition; the dev was just testing W20.
+      if (state.sandboxMode) {
+        state.hint = `🧪 SANDBOX — W20 cleared. Pick another wave from JUMP TO WAVE or jump to ENDLESS.`;
+        state.phase = GamePhase.BUILD_PHASE;
+        return;
+      }
       SFX.victory();
       document.getElementById('end-screen')?.remove();
       void showVictory;
