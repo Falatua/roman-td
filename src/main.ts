@@ -386,6 +386,43 @@ async function boot() {
     setTimeout(() => toast.remove(), 1900);
   }
 
+  // ─── First-time INSPECT tip (one-time teaching banner) ─────────────────
+  // 2026-05-19 — Shown ONCE per device (localStorage flag) the first time
+  // the player places a prospect. Teaches the click-to-inspect interaction
+  // for both sidebar thumbnails AND towers placed on the field. Stays on
+  // screen until the player clicks "GOT IT" or 12 seconds pass, whichever
+  // comes first.
+  function showInspectTip() {
+    if (document.getElementById('inspect-tip-banner')) return;
+    const stage = document.getElementById('stage-wrap');
+    if (!stage) return;
+    const banner = document.createElement('div');
+    banner.id = 'inspect-tip-banner';
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 18px">
+        <div style="font-size:30px">💡</div>
+        <div style="flex:1">
+          <div style="font-size:11px;letter-spacing:3px;color:#88ddff;font-weight:bold;margin-bottom:5px">PROTIP — INSPECT TOWERS</div>
+          <div style="font-size:12px;color:#fff8e0;line-height:1.5">
+            <b style="color:#ffd34d">Click any tower</b> — either a thumbnail in the sidebar OR a placed tower on the map — to open its full detail panel.
+            You'll see <b style="color:#88ff88">live stats</b>, equipped items, and every <b style="color:#88ff88">combo recipe</b> that uses this tower.
+          </div>
+        </div>
+        <button id="inspect-tip-dismiss" style="background:#2a5520;color:#e8d6a8;border:2px solid #5a8a3a;padding:8px 14px;font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:1.5px;cursor:pointer;align-self:center">GOT IT</button>
+      </div>`;
+    banner.style.cssText = `position:absolute;left:50%;top:24px;transform:translateX(-50%);max-width:560px;background:linear-gradient(180deg,#1a2030,#0c1018);border:2px solid #88ddff;color:#fff8e0;font-family:'Courier New',monospace;box-shadow:0 0 24px rgba(136,221,255,0.45);z-index:90;animation:inspectTipFade 0.35s ease-out;`;
+    if (!document.getElementById('inspect-tip-style')) {
+      const st = document.createElement('style');
+      st.id = 'inspect-tip-style';
+      st.textContent = `@keyframes inspectTipFade { 0% { opacity:0; transform:translate(-50%, -8px); } 100% { opacity:1; transform:translate(-50%, 0); } }`;
+      document.head.appendChild(st);
+    }
+    stage.appendChild(banner);
+    const dismiss = () => { banner.style.opacity = '0'; setTimeout(() => banner.remove(), 250); };
+    banner.querySelector('#inspect-tip-dismiss')?.addEventListener('click', dismiss);
+    setTimeout(dismiss, 12000);
+  }
+
   // ─── Insufficient-gold floating tooltip ────────────────────────────────
   // 2026-05 v9: anywhere the player tries to spend gold they don't have,
   // a small "NEED Xg" tooltip pops near the cursor (or anchor point) and
@@ -1704,6 +1741,21 @@ async function boot() {
       leftPanel?.appendChild(panel);
       markScrollable(panel);   // gold scrollbar + "▼ SCROLL FOR MORE" hint
     }
+    // 2026-05-19 — Inject the cell :hover CSS exactly once. Brightens
+    // the border + adds a cyan glow so the click affordance is obvious
+    // before the player commits. Pairs with the "▶ INSPECT" pill drawn
+    // inside each cell.
+    if (!document.getElementById('ps-cell-hover-style')) {
+      const st = document.createElement('style');
+      st.id = 'ps-cell-hover-style';
+      st.textContent = `
+        .ps-cell[data-tower-id]:hover {
+          border-color: #88ddff !important;
+          box-shadow: 0 0 10px rgba(136, 221, 255, 0.55);
+        }
+      `;
+      document.head.appendChild(st);
+    }
     const TIER_HEX: Record<number,string> = { 1:'#aaaaaa',2:'#b87333',3:'#c0c0c0',4:'#ffd34d',5:'#ff5050' };
     const keepsLeft = state.keepsRemainingThisRound ?? 2;
     const headline = state.phase === GamePhase.PICK_KEEPER
@@ -1711,7 +1763,16 @@ async function boot() {
       : `${placedPending.length} PLACED`;
     // 2026-05-15 v4: header bumped from 9 px to 12 px now that the
     // panel sits in the wider left HUD column — it can breathe.
-    const headerHtml = `<div style="text-align:center;font-size:12px;letter-spacing:3px;color:#ffd34d;font-weight:bold;text-shadow:1px 1px 0 #000;padding-bottom:6px;border-bottom:1px solid #5a4a30;margin-bottom:4px">${headline}</div>`;
+    // 2026-05-19 — Added a two-line click-affordance tip below the
+    // headline so players actually realize the thumbnails are clickable
+    // and that clicking shows the same tower UI they get from clicking
+    // a tower on the map (stats, items, RECIPES list, upgrade buttons).
+    // The CRIT/T-tier row above is a quick read; the click opens the
+    // full detail panel.
+    const headerHtml = `<div style="text-align:center;padding-bottom:6px;border-bottom:1px solid #5a4a30;margin-bottom:4px">
+      <div style="font-size:12px;letter-spacing:3px;color:#ffd34d;font-weight:bold;text-shadow:1px 1px 0 #000">${headline}</div>
+      <div style="font-size:9px;letter-spacing:0.8px;color:#88ddff;font-weight:bold;margin-top:3px">🖱 CLICK ANY TOWER FOR FULL INFO + RECIPES</div>
+    </div>`;
     const cellHtml = (sprKey: string, type: string, tier: number, opts: { towerId?: string; queued?: boolean; bumped?: number } = {}) => {
       const src = texUrl(sprKey) ?? '';
       const bumpTag = opts.bumped ? `<span style="position:absolute;top:-3px;left:-3px;background:#ee55cc;color:#fff;font-size:7px;font-weight:bold;padding:1px 3px;border:1px solid #000">+${opts.bumped}</span>` : '';
@@ -1730,7 +1791,14 @@ async function boot() {
       // bumped to 11 px so it's actually readable, CRIT row keeps
       // its yellow accent. Names wrap to 2 lines if they're long
       // (no more "AQUILIFER…" truncation in a 96 px column).
-      return `<div class="ps-cell" ${dataAttr} style="position:relative;border:2px solid ${TIER_HEX[tier]};background:#0c0a08;padding:6px;cursor:${cursor};display:flex;flex-direction:column;align-items:center;gap:3px">
+      // 2026-05-19 — Added a small "▶ INSPECT" pill at the bottom of
+      // every clickable cell so the click affordance is explicit. The
+      // CSS :hover rule (injected once below) also brightens the cell
+      // border on hover to confirm clickability before commit.
+      const inspectPill = opts.towerId
+        ? `<div style="font-size:9px;color:#88ddff;letter-spacing:1px;font-weight:bold;margin-top:2px;padding:2px 6px;background:rgba(136,221,255,0.08);border:1px solid rgba(136,221,255,0.35);border-radius:2px">▶ INSPECT</div>`
+        : '';
+      return `<div class="ps-cell" ${dataAttr} style="position:relative;border:2px solid ${TIER_HEX[tier]};background:#0c0a08;padding:6px;cursor:${cursor};display:flex;flex-direction:column;align-items:center;gap:3px;transition:border-color 120ms ease, box-shadow 120ms ease">
         ${bumpTag}
         <div style="position:relative;width:92px;height:92px">
           ${src ? `<img src="${src}" style="width:92px;height:92px;image-rendering:pixelated;display:block"/>` : ''}
@@ -1739,6 +1807,7 @@ async function boot() {
         <div style="font-size:11px;color:${TIER_HEX[tier]};font-weight:bold;letter-spacing:1px">T${tier}</div>
         <div style="font-size:10px;color:#cdb98a;text-align:center;line-height:1.2;letter-spacing:0.5px;word-break:break-word;font-weight:bold">${type.replace(/_/g,' ')}</div>
         <div style="font-size:9px;color:${critCol};letter-spacing:0.7px;font-weight:bold">CRIT ${critTxt}</div>
+        ${inspectPill}
       </div>`;
     };
     const placedHtml = placedPending.map(t =>
@@ -4202,6 +4271,14 @@ async function boot() {
       // 2026-05 v11: user-supplied bumper SFX every time a prospect lands.
       SFX.prospectPlace();
       state.towersBuilt = (state.towersBuilt ?? 0) + 1;
+      // 2026-05-19 — One-time learning tip the FIRST time a player ever
+      // places a prospect. Surfaces the click-to-inspect interaction so
+      // they discover the full tower UI (stats, items, RECIPES). Stored
+      // in localStorage so it never fires again after first dismiss.
+      if (!localStorage.getItem('roman_td_seen_inspect_tip')) {
+        localStorage.setItem('roman_td_seen_inspect_tip', '1');
+        showInspectTip();
+      }
       const remainingProspects = Math.max(0, 10 - state.prospectsPlaced);
       state.hint = remainingProspects > 0
         ? `Rolled ${towerName(t.type)} T${t.qualityTier} (-1g). ${remainingProspects} more roll${remainingProspects === 1 ? '' : 's'} before the Senate cuts you off.`
