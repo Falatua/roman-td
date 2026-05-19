@@ -12,6 +12,10 @@ import { InventoryState, inventoryAdd, inventoryRemove } from '../systems/LootSy
 import permItems from '../data/items_permanent.json';
 import consumables from '../data/items_consumable.json';
 import towersData from '../data/towers.json';
+// 2026-05-19 — Hero defs for the inspect panel short-circuit at the
+// top of showTowerMenu. Renderer reads tier titles, XP thresholds,
+// ability list, and biography off this single source of truth.
+import HERO_DEFS_FOR_INSPECT from '../data/herodefs.json';
 import comboData from '../data/towerCombinations.json';
 import { canEquipItemFamily, canEquipItemOnDamageType, itemEquipMode, itemFamily } from '../systems/ItemRules';
 import { markScrollable } from './ScrollCues';
@@ -113,6 +117,14 @@ function spriteSrc(towerType: string): string | null {
 
 export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateShape, inv: InventoryState, hooks: TowerMenuHooks) {
   closeGameModals();
+  // 2026-05-19 — Hero inspect panel short-circuit. Heroes have their
+  // own layout: no SELL/COMBINE/DOWNGRADE actions, fixed 2 item
+  // slots, biography + 3 ability cards. Delegated to a dedicated
+  // renderer so the regular tower-menu code below stays clean.
+  if (t.isHero) {
+    showHeroInspectPanel(parent, t, state, inv, hooks);
+    return;
+  }
   // Refresh in place — used after equip / unequip so the menu reflects the
   // new state without the player having to reopen the tower. Re-renders
   // with the same tower + inventory references so equipped slots, the
@@ -787,4 +799,150 @@ function mkBtn(label: string, bg: string): HTMLButtonElement {
 
 function itemInitials(name: string): string {
   return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// HERO INSPECT PANEL (2026-05-19)
+// Dedicated layout shown when the player clicks the hero tile or the
+// HUD hero chip. Mirrors the tower-menu CSS pattern (responsive
+// clamping, fixed-width panel) but with hero-specific content blocks:
+// portrait + tier + XP bar + kill bonus, 2 item slots, 3 ability
+// cards (locked badge if heroTier < ability.level), biography, no
+// sell/combine/downgrade.
+// ─────────────────────────────────────────────────────────────────────
+function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateShape, inv: InventoryState, hooks: TowerMenuHooks): void {
+  const heroDef: any = (HERO_DEFS_FOR_INSPECT as any)[t.type] ?? {};
+  const tint = heroDef.visual?.tierUpColor ?? '#ffd34d';
+  const tier = state.heroTier ?? 0;
+  const xp = state.heroXp ?? 0;
+  const thresholds: number[] = heroDef.xpThresholds ?? [0, 75, 280, 650, 1300];
+  const tierTitles: string[] = heroDef.tierTitles ?? ['TIRO','LEGATUS','CONSUL','IMPERATOR','DIVUS'];
+  const curTh = thresholds[tier] ?? 0;
+  const nextTh = thresholds[Math.min(thresholds.length - 1, tier + 1)] ?? thresholds[thresholds.length - 1];
+  const pctXp = tier >= 4 ? 100 : Math.max(0, Math.min(100, ((xp - curTh) / Math.max(1, nextTh - curTh)) * 100));
+
+  const refresh = () => { document.getElementById('tower-menu')?.remove(); showHeroInspectPanel(parent, t, state, inv, hooks); };
+
+  const modal = document.createElement('div');
+  modal.id = 'tower-menu';
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:55;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
+  const panel = document.createElement('div');
+  panel.style.cssText = `background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid ${tint};color:#e8d6a8;width:min(560px,96vw);box-shadow:0 0 30px ${tint}44;`;
+
+  // Banner
+  const banner = document.createElement('div');
+  banner.style.cssText = `background:${tint};color:#1a1410;padding:8px 12px;display:flex;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px`;
+  banner.innerHTML = `<span>⚔ HERO</span><span>${tierTitles[tier]}</span>`;
+  panel.appendChild(banner);
+
+  // Header: name, title, tier, XP bar
+  const head = document.createElement('div');
+  head.style.cssText = 'padding:14px 16px;border-bottom:1px solid #3a3025;background:#1a1410';
+  head.innerHTML = `
+    <div style="font-size:20px;color:${tint};letter-spacing:3px;font-weight:bold;text-shadow:0 0 8px ${tint}88">${(heroDef.name ?? t.type).toUpperCase()}</div>
+    <div style="font-size:11px;color:#cdb98a;letter-spacing:2px;margin-top:3px">${heroDef.title ?? ''}</div>
+    <div style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#aa9a4a;letter-spacing:1px;margin-bottom:3px">
+        <span>XP TO ${tierTitles[Math.min(4, tier + 1)] ?? 'MAX'}</span>
+        <span>${tier >= 4 ? 'MAXED' : `${xp} / ${nextTh}`}</span>
+      </div>
+      <div style="background:#0c0a08;border:1px solid #5a4a30;height:10px;overflow:hidden">
+        <div style="width:${pctXp}%;height:100%;background:linear-gradient(90deg,${tint},${tint}aa);transition:width 0.3s"></div>
+      </div>
+    </div>
+    <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px">
+      <div><div style="color:#aa9a4a;font-size:9px;letter-spacing:1px">KILLS</div><div style="color:#d4af37;font-size:14px;font-weight:bold">${t.killCount}</div></div>
+      <div><div style="color:#aa9a4a;font-size:9px;letter-spacing:1px">KILL BONUS</div><div style="color:#9be0ff;font-size:14px;font-weight:bold">+${t.killBonusFlat.toFixed(1)} DPS</div></div>
+      <div><div style="color:#aa9a4a;font-size:9px;letter-spacing:1px">SPECIALTY</div><div style="color:${tint};font-size:12px;font-weight:bold">${heroDef.specialty ?? ''}</div></div>
+    </div>
+  `;
+  panel.appendChild(head);
+
+  // Built for
+  if (heroDef.playerProblemSolved) {
+    const bf = document.createElement('div');
+    bf.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025;background:#12100d;font-size:11px;color:#cdb98a;line-height:1.5;font-style:italic;border-left:3px solid ' + tint + ';margin:0';
+    bf.innerHTML = `<span style="color:#aa9a4a;font-style:normal;letter-spacing:2px;font-size:9px">BUILT FOR </span>${heroDef.playerProblemSolved}`;
+    panel.appendChild(bf);
+  }
+
+  // Passive
+  const passive = document.createElement('div');
+  passive.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025';
+  passive.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:4px">⚜ PASSIVE</div><div style="font-size:11px;color:#cdb98a;line-height:1.5">${heroDef.passive?.description ?? ''}</div>`;
+  panel.appendChild(passive);
+
+  // Item slots — heroes have exactly 2 regardless of tier
+  const eqRow = document.createElement('div');
+  eqRow.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025';
+  eqRow.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:6px">⚒ EQUIPPED (${t.equippedItems.length}/2)</div>`;
+  const eqGrid = document.createElement('div');
+  eqGrid.style.cssText = 'display:grid;grid-template-columns:repeat(2,64px);gap:6px;padding:6px;background:#0c0a08;border:2px solid ' + tint + ';';
+  for (let i = 0; i < 2; i++) {
+    const itemId = t.equippedItems[i];
+    const idef: any = itemId ? ((permItems as any)[itemId] ?? (consumables as any)[itemId]) : null;
+    const rarity = idef?.rarity ?? 'COMMON';
+    const color = itemId ? RAR[rarity] : '#3a3025';
+    const slot = document.createElement('div');
+    slot.style.cssText = `width:64px;height:64px;border:2px solid ${color};background:linear-gradient(180deg,#1a1410,#100c09);display:flex;align-items:center;justify-content:center;color:${color};cursor:${itemId ? 'pointer' : 'default'};font-size:9px;text-align:center;line-height:1.1`;
+    if (itemId) {
+      slot.innerHTML = `<div>${idef?.name ?? itemId}</div>`;
+      attachItemTooltip(slot, itemId, rarity, idef, true);
+      slot.onclick = () => {
+        if (inv.slots.length >= INVENTORY_SIZE) { state.hint = 'Inventory full. Sell something first to unequip.'; return; }
+        const idx = t.equippedItems.indexOf(itemId);
+        if (idx >= 0) t.equippedItems.splice(idx, 1);
+        inventoryAdd(inv, itemId, rarity, false);
+        refresh();
+      };
+    } else {
+      slot.textContent = 'EMPTY';
+    }
+    eqGrid.appendChild(slot);
+  }
+  eqRow.appendChild(eqGrid);
+  panel.appendChild(eqRow);
+
+  // Ability cards
+  const abilityBlock = document.createElement('div');
+  abilityBlock.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025';
+  abilityBlock.innerHTML = '<div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:6px">⚔ ABILITIES</div>';
+  for (const ability of (heroDef.abilities ?? [])) {
+    const unlocked = tier >= ability.level;
+    const cooldownStamp = (t.__heroCooldowns ?? {})[ability.id] ?? 0;
+    const timeToNext = Math.max(0, cooldownStamp - state.tick);
+    const cdText = unlocked && timeToNext > 0 ? `⏱ ${timeToNext.toFixed(1)}s` : `⏱ ${ability.cooldownSec}s`;
+    const card = document.createElement('div');
+    card.style.cssText = `margin-bottom:6px;padding:8px 10px;background:rgba(0,0,0,0.3);border-left:3px solid ${unlocked ? tint : '#5a4a30'};opacity:${unlocked ? 1 : 0.55}`;
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+        <div style="font-size:12px;color:${unlocked ? tint : '#aa9a4a'};font-weight:bold;letter-spacing:1px">${unlocked ? '✓' : '🔒'} ${ability.name}</div>
+        <div style="font-size:9px;color:#aa9a4a;letter-spacing:1px">${tierTitles[ability.level] ?? `T${ability.level}`} · ${cdText}</div>
+      </div>
+      <div style="font-size:10.5px;color:#cdb98a;line-height:1.5">${ability.description}</div>
+    `;
+    abilityBlock.appendChild(card);
+  }
+  panel.appendChild(abilityBlock);
+
+  // Biography (subtle)
+  if (heroDef.biography) {
+    const bio = document.createElement('div');
+    bio.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025;background:#0c0a08;font-size:10px;color:#aa9a4a;line-height:1.5;font-style:italic';
+    bio.textContent = '"' + heroDef.biography + '"';
+    panel.appendChild(bio);
+  }
+
+  // Close button only — no sell, no combine, no downgrade for heroes
+  const closeRow = document.createElement('div');
+  closeRow.style.cssText = 'padding:10px;display:flex;justify-content:center;background:linear-gradient(180deg,#1a1410,#0c0a08)';
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'CLOSE';
+  closeBtn.style.cssText = 'background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:8px 22px;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:2px';
+  closeBtn.onclick = () => hooks.onClose();
+  closeRow.appendChild(closeBtn);
+  panel.appendChild(closeRow);
+
+  modal.appendChild(panel);
+  parent.appendChild(modal);
 }
