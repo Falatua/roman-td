@@ -106,7 +106,12 @@ export function createTower(type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: numbe
     killsThisWave: 0,
     damageThisWave: 0,
     mvpAwards: 0,
-    costPaid: ECONOMY.TIER_PLACE_COST[tier] ?? 0
+    costPaid: ECONOMY.TIER_PLACE_COST[tier] ?? 0,
+    // 2026-05-19 — Hero placement is free and the hero cannot be sold,
+    // combined, moved, or downgraded. itemSlots and combineable
+    // checks elsewhere read isHero off the Tower instance. Slot cap
+    // for heroes is fixed at 2 regardless of tier (see TowerMenu).
+    isHero: !!(def as any).isHero
   };
 }
 

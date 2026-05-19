@@ -18,6 +18,10 @@ import { scanCombos, realizableCombos, executeCombo } from './systems/Combinatio
 // SANDBOX: dev-mode imports. Delete this line + every line tagged
 // `// SANDBOX:` to remove sandbox mode entirely.
 import { activateSandbox, sandboxAddGold, sandboxAllTowerOptions, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, sandboxWipeAllTowers, SANDBOX_PASSWORD } from './systems/SandboxMode';
+// HERO SYSTEM (2026-05-19). Imports for the 6-hero / 3-card-draft
+// feature. awardHeroXp hooks into the kill handler; tickHeroAbilities
+// runs once per WAVE_PHASE frame.
+import { awardHeroXp as heroAwardXp, tickHeroAbilities, type HeroHooks } from './systems/HeroSystem';
 import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
 import itemsData from './data/items_permanent.json';
@@ -1964,6 +1968,8 @@ async function boot() {
   // to recover). Tower types from `pendingPurchasedTowers` carry .source.
   function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' }): number {
     if (entry.source === 'mercator') return 50;
+    // 2026-05-19 — Hero placement is free and yields no refund.
+    if (entry.source === 'hero') return 0;
     return (ECONOMY.TIER_PLACE_COST as Record<number, number>)[entry.tier] ?? 5;
   }
   // ─── Wave-preview chip (bottom-left) ────────────────────────────────
@@ -3390,7 +3396,29 @@ async function boot() {
   // Renderer
   const renderer = new RenderEngine();
   (window as any).__renderer = renderer;
+  // 2026-05-19 — Expose state on globalThis.__game so the
+  // TowerSystem.extraRange computation (and other globalState
+  // helpers) can read the live hero/tower set. Set BEFORE first
+  // render call so the first frame has a valid reference.
+  (globalThis as any).__game = state;
   renderer.attachTo(wrap);
+
+  // 2026-05-19 — Hero system render/banner hooks. Passed into
+  // awardHeroXp + tickHeroAbilities so HeroSystem stays decoupled
+  // from the renderer and DOM. Each hook is optional — missing
+  // ones degrade gracefully.
+  const heroSystemHooks: HeroHooks = {
+    triggerImpactRing: (x, y, tick, maxR, color) => renderer.triggerImpactRing?.(x, y, tick, maxR, color),
+    triggerShake: (intensity, dur) => renderer.triggerShake?.(intensity, dur),
+    pushTierUpBanner: (text: string) => {
+      const el = document.createElement('div');
+      el.className = 'hero-tierup-banner';
+      el.style.cssText = 'background:linear-gradient(90deg,#3a1a4a,#ffd34d,#3a1a4a);color:#1a0820;padding:8px 18px;font-family:"Courier New",monospace;font-size:13px;letter-spacing:3px;font-weight:bold;text-align:center';
+      el.textContent = `⚔ ${text}`;
+      pushBanner(el, 4500, { modal: false });
+    },
+    resnapEnemiesToPath: (path) => resnapEnemiesToPath(state, path)
+  };
   // 2026-05-16 — give the renderer access to the gore particle pool so
   // surprise-event ember helpers can push particles into the same capped
   // pool the rest of the game uses (no extra allocation, no leak).
@@ -4460,6 +4488,20 @@ async function boot() {
       state.towers.set(tw.id, tw);
       state.pendingPurchasedTowers = queue;
       state.pendingPurchasedTower = null;
+      // 2026-05-19 — Hero placement bookkeeping. When the queued
+      // token has source: 'hero', track the tower id on state so
+      // findHeroTower() can resolve it, and fire the first-time
+      // teaching tip via the localStorage flag.
+      if (head.source === 'hero') {
+        state.activeHeroTowerId = tw.id;
+        if (!state.sandboxMode && !localStorage.getItem('roman_td_seen_hero_tip')) {
+          const tipEl = document.createElement('div');
+          tipEl.style.cssText = 'background:linear-gradient(90deg,#3a1a4a,#ffd34d,#3a1a4a);color:#1a0820;padding:10px 18px;font-family:"Courier New",monospace;font-size:12px;letter-spacing:2px;font-weight:bold;text-align:center';
+          tipEl.textContent = '★ HERO TIP — Your hero gains XP from every kill. Abilities unlock as they grow stronger. Click their tile any time to inspect progress.';
+          pushBanner(tipEl, 12000, { modal: false });
+          try { localStorage.setItem('roman_td_seen_hero_tip', '1'); } catch { /* ignore */ }
+        }
+      }
       const remaining = queue.length;
       state.hint = remaining > 0
         ? `Placed ${head.type.replace(/_/g,' ')} T${head.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
@@ -5294,6 +5336,20 @@ async function boot() {
           // QUEST TRACKING — total kills + boss-kill counter for quest progress.
           state.totalKills = (state.totalKills ?? 0) + 1;
           if (e.isBoss) state.bossesKilled = (state.bossesKilled ?? 0) + 1;
+          // ── HERO SYSTEM (2026-05-19) ────────────────────────────
+          // Hero earns XP from EVERY kill on the field, not just kills
+          // they personally landed. +1 non-boss, +20 boss. Hooks pass
+          // tier-up banner + ring-burst back to the renderer; defined
+          // once near the top of main.ts.
+          if (state.activeHeroId) {
+            heroAwardXp(state, !!e.isBoss, heroSystemHooks);
+          }
+          // Sulla Fortune's Bolt heal: the heal credit is applied
+          // inline inside executeFORTUNES_BOLT (HeroSystem.ts) when
+          // the bolt's damage actually drops an enemy to 0. Splash /
+          // burn-patch chains where Sulla "tagged" the enemy but
+          // another mechanic finishes the kill are not credited — a
+          // simplification we accept for v1.
           // BOSS-KILL gold bonus — extra reward separate from wave-end gold.
           // Scales with wave so late-game bosses pay proper bounties.
           if (e.isBoss) {
