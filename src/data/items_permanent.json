@@ -74,7 +74,7 @@
     "rarity": "UNCOMMON",
     "buy": 18,
     "sell": 6,
-    "effect": "Any tower: +22% attack speed. Universal speed boost \u2014 no class restriction."
+    "effect": "Any tower: +22% attack speed."
   },
   "CENTURIONS_TRUMPET": {
     "name": "Centurion's Trumpet",
@@ -116,28 +116,28 @@
     "rarity": "UNCOMMON",
     "buy": 22,
     "sell": 8,
-    "effect": "MERCATOR EXCLUSIVE \u2014 +25% damage to Elites and Bosses."
+    "effect": "MERCATOR EXCLUSIVE — +25% damage to Elites and Bosses."
   },
   "SCIPIO_PLAYBOOK": {
     "name": "Scipio's Playbook",
     "rarity": "RARE",
     "buy": 38,
     "sell": 14,
-    "effect": "MERCATOR EXCLUSIVE \u2014 +20% damage to whichever enemy in range has the highest HP."
+    "effect": "MERCATOR EXCLUSIVE — +20% damage to whichever enemy in range has the highest HP."
   },
   "AQUILIFER_BANNER": {
     "name": "Aquilifer's Banner",
     "rarity": "RARE",
     "buy": 42,
     "sell": 15,
-    "effect": "MERCATOR EXCLUSIVE \u2014 AURA 2.5 tiles: nearby towers +14% damage and +10% attack speed."
+    "effect": "MERCATOR EXCLUSIVE — AURA 2.5 tiles: nearby towers +14% damage and +10% attack speed."
   },
   "PUNIC_LEDGER": {
     "name": "Punic Ledger",
     "rarity": "RARE",
     "buy": 36,
     "sell": 13,
-    "effect": "MERCATOR EXCLUSIVE \u2014 Doubles kill-bonus accumulation rate (faster ramp to the +10% cap)."
+    "effect": "MERCATOR EXCLUSIVE — Doubles kill-bonus accumulation rate."
   },
   "ALPHA_PACK_FANG": {
     "name": "Alpha Pack Fang",
@@ -221,7 +221,7 @@
     "rarity": "LEGENDARY",
     "buy": 120,
     "sell": 35,
-    "effect": "MELEE ONLY: applies hot Bleed (3.0% HP/sec, 8s) on hit. Front-loaded vs Alpha Pack Fang."
+    "effect": "MELEE ONLY: applies hot Bleed (3.0% HP/sec, 8s) on hit."
   },
   "BARCA_WAR_HORN": {
     "name": "Barca War Horn",
@@ -277,91 +277,91 @@
     "rarity": "LEGENDARY",
     "buy": 150,
     "sell": 50,
-    "effect": "MELEE ONLY: +5 tile range. Tower throws a visible spear at every target."
+    "effect": "MELEE ONLY: +5 tile range."
   },
   "JUPITERS_WRATH": {
     "name": "Jupiter's Wrath",
     "rarity": "LEGENDARY",
     "buy": 160,
     "sell": 50,
-    "effect": "Every attack arcs lightning to 3 nearby enemies (60% damage decay per jump) and stuns the primary 0.4s. Projectile sprite swaps to a thunder-bolt."
+    "effect": "Every attack arcs lightning to 3 nearby enemies (60% damage decay per jump) and stuns the primary 0.4s."
   },
   "FALX_BLADE": {
     "name": "Falx Blade",
     "rarity": "RARE",
     "buy": 32,
     "sell": 11,
-    "effect": "MELEE ONLY: grants CLEAVE. Each swing now hits EVERY enemy in melee range; secondary targets take 60% damage. Stacks with native cleave towers (Hastati, Triarius, Cohort Guard, etc.) by upgrading their cleave from 70% to 90% on secondaries."
+    "effect": "MELEE ONLY: grants CLEAVE. Each swing hits every enemy in melee range; secondary targets take 60% damage. On native cleave towers, upgrades secondary damage from 70% to 90%."
   },
   "VOLLEY_QUIVER": {
     "name": "Volley Quiver",
     "rarity": "RARE",
     "buy": 32,
     "sell": 11,
-    "effect": "RANGED ONLY: +1 target per attack. A single-shot tower becomes dual-shot; an existing 2-shot becomes triple. Stacks additively on multi-shot combos (Decurion 2 → 3, Eques 3 → 4, Scorpion Bolt 3 → 4)."
+    "effect": "RANGED ONLY: +1 target per attack. Stacks additively on multi-shot towers."
   },
   "SIGIL_OF_SOL_INVICTUS": {
     "name": "Sigil of Sol Invictus",
     "rarity": "LEGENDARY",
     "buy": 140,
     "sell": 45,
-    "effect": "Any tower: +85% damage vs ALL Demon-faction enemies (Hellhounds, Fire Demons, Shadow Cavalry, Demon Legate, Daemon Imperator). Sun-god’s sigil burns the dark. Anti-Super-Demons specialist — carries W19/W20 endgame."
+    "effect": "Any tower: +85% damage vs Demon-faction enemies."
   },
   "TYRANTS_LAUREL": {
     "name": "Tyrant's Laurel",
     "rarity": "LEGENDARY",
     "buy": 150,
     "sell": 50,
-    "effect": "Any tower: +75% damage vs Bosses. The dedicated boss-hunter legendary — stacks multiplicatively with native boss bonuses (Primus Pilus, Scorpio, Triumphator). One per run."
+    "effect": "Any tower: +75% damage vs Bosses. Stacks multiplicatively with native boss bonuses. One per run."
   },
   "VESTAL_PYRE": {
     "name": "Vestal Pyre",
     "rarity": "UNCOMMON",
     "buy": 20,
     "sell": 7,
-    "effect": "Any tower: every attack applies BURN (5% maxHP/sec for 3s) on hit. Counts as a FIRE-damage source."
+    "effect": "Any tower: applies BURN (5% maxHP/sec for 3s) on hit. Counts as a FIRE-damage source."
   },
   "VENOM_TIPPED_ARROWS": {
     "name": "Venom-Tipped Arrows",
     "rarity": "UNCOMMON",
     "buy": 18,
     "sell": 6,
-    "effect": "RANGED ONLY: applies POISON (5% maxHP/sec for 4s) on hit. The ranged-tower answer to Poisoned Blade — finally lets archers / scorpios / numidians stack a DoT."
+    "effect": "RANGED ONLY: applies POISON (5% maxHP/sec for 4s) on hit."
   },
   "SERPENT_AMULET": {
     "name": "Serpent Amulet",
     "rarity": "UNCOMMON",
     "buy": 22,
     "sell": 7,
-    "effect": "Any tower: applies POISON (3% maxHP/sec for 5s) on hit. Gentler stack than Poisoned Blade but equips on ANY tower (melee or ranged)."
+    "effect": "Any tower: applies POISON (3% maxHP/sec for 5s) on hit."
   },
   "WITCHS_VENOM": {
     "name": "Witch's Venom",
     "rarity": "RARE",
     "buy": 38,
     "sell": 12,
-    "effect": "Any tower: applies POISON (8% maxHP/sec for 5s) on hit. Heavy poison — the strongest non-Legendary DoT in the catalog. Pairs with bleed / burn items for tri-DoT stacks."
+    "effect": "Any tower: applies POISON (8% maxHP/sec for 5s) on hit."
   },
   "LICTOR_FASCES": {
     "name": "Lictor's Fasces",
     "rarity": "EPIC",
     "buy": 60,
     "sell": 30,
-    "effect": "Any tower: +18% damage, +1 tile range. The magistrate's ceremonial bundle — small bonus everywhere, none of it specialized."
+    "effect": "Any tower: +18% damage, +1 tile range."
   },
   "AUXILIARY_SLING": {
     "name": "Auxiliary Sling",
     "rarity": "EPIC",
     "buy": 60,
     "sell": 30,
-    "effect": "RANGED ONLY: +30% damage. The light skirmisher's lead bullet — sized for archers, scorpios, and ballista crews."
+    "effect": "RANGED ONLY: +30% damage."
   },
   "OPTIO_WHISTLE": {
     "name": "Optio's Whistle",
     "rarity": "EPIC",
     "buy": 60,
     "sell": 30,
-    "effect": "Aura 2 tiles: nearby allies gain +12% attack speed. The drill master's command — keeps every tower in his hearing range a half-step quicker."
+    "effect": "Aura 2 tiles: nearby allies gain +12% attack speed."
   },
   "PRAETORIAN_COIN": {
     "name": "Praetorian Coin",
@@ -369,7 +369,7 @@
     "buy": 10,
     "sell": 4,
     "gateExclusive": true,
-    "effect": "GATE-SHOP EXCLUSIVE: +1 Gold per kill. The same minted bronze the Praetorian Guard kept in their belt pouches — a small economic edge for the early game."
+    "effect": "GATE-SHOP EXCLUSIVE: +1 Gold per kill."
   },
   "BRONZE_GREAVES": {
     "name": "Bronze Greaves",
@@ -377,7 +377,7 @@
     "buy": 9,
     "sell": 4,
     "gateExclusive": true,
-    "effect": "GATE-SHOP EXCLUSIVE: +0.5 tile range. Bronze leg armor lets a tower step half a pace further into the lane without breaking line."
+    "effect": "GATE-SHOP EXCLUSIVE: +0.5 tile range."
   },
   "RUSTED_HASTA": {
     "name": "Rusted Hasta",
@@ -385,7 +385,7 @@
     "buy": 8,
     "sell": 3,
     "gateExclusive": true,
-    "effect": "GATE-SHOP EXCLUSIVE: Any tower: +10% damage. Old spear — chips, doesn't shatter."
+    "effect": "GATE-SHOP EXCLUSIVE: Any tower: +10% damage."
   },
   "AUGUR_SCROLL": {
     "name": "Augur's Scroll",
@@ -393,7 +393,7 @@
     "buy": 18,
     "sell": 7,
     "gateExclusive": true,
-    "effect": "GATE-SHOP EXCLUSIVE: Any tower: +20% attack speed. The augur read the birds and reported favorable signs — tempo bonus for the patient tower."
+    "effect": "GATE-SHOP EXCLUSIVE: Any tower: +20% attack speed."
   },
   "CONSULAR_TOKEN": {
     "name": "Consular Token",
@@ -401,7 +401,7 @@
     "buy": 22,
     "sell": 8,
     "gateExclusive": true,
-    "effect": "GATE-SHOP EXCLUSIVE: Any tower: +8% damage, +0.5 tile range. Lead seal of consular authority — small bonus to two stats at once."
+    "effect": "GATE-SHOP EXCLUSIVE: Any tower: +8% damage, +0.5 tile range."
   },
   "VANGUARD_PILUM": {
     "name": "Vanguard Pilum",
@@ -409,7 +409,7 @@
     "buy": 0,
     "sell": 60,
     "eventExclusive": "INVASION",
-    "effect": "INVASION REWARD ONLY: Any tower: +35% damage, +1 tile range. Roman frontier issue — recovered from the breach."
+    "effect": "INVASION REWARD ONLY: Any tower: +35% damage, +1 tile range."
   },
   "AQUILA_RAMPART": {
     "name": "Aquila Rampart",
@@ -417,7 +417,7 @@
     "buy": 0,
     "sell": 60,
     "eventExclusive": "INVASION",
-    "effect": "INVASION REWARD ONLY: Any tower: +50% damage vs enemies above 70% HP. Front-line execute — finish the breach early before they spread."
+    "effect": "INVASION REWARD ONLY: Any tower: +50% damage vs enemies above 70% HP."
   },
   "PERIMETER_TORCH": {
     "name": "Perimeter Torch",
@@ -425,7 +425,7 @@
     "buy": 0,
     "sell": 60,
     "eventExclusive": "INVASION",
-    "effect": "INVASION REWARD ONLY: Any tower: +25% damage AND +25% attack speed. The torch carried through the broken gate."
+    "effect": "INVASION REWARD ONLY: Any tower: +25% damage and +25% attack speed."
   },
   "GRAVEKEEPERS_SCYTHE": {
     "name": "Gravekeeper's Scythe",
@@ -433,7 +433,7 @@
     "buy": 0,
     "sell": 60,
     "eventExclusive": "UPRISING",
-    "effect": "UPRISING REWARD ONLY: Any tower: +60% damage vs Undead-faction enemies (Undead Celts, Undead Carthage, reanimated forms). Bone breaks easy."
+    "effect": "UPRISING REWARD ONLY: Any tower: +60% damage vs Undead-faction enemies."
   },
   "SOULFIRE_BRAND": {
     "name": "Soulfire Brand",
@@ -441,7 +441,7 @@
     "buy": 0,
     "sell": 60,
     "eventExclusive": "UPRISING",
-    "effect": "UPRISING REWARD ONLY: Any tower: applies HELLFIRE on hit (4% maxHP/sec for 4s) — true damage that ignores every resist and immunity. Divine fire from the urns."
+    "effect": "UPRISING REWARD ONLY: Any tower: applies HELLFIRE on hit (4% maxHP/sec for 4s). True damage — ignores all resists and immunities."
   },
   "NECROMANCERS_LANTERN": {
     "name": "Necromancer's Lantern",
@@ -449,7 +449,7 @@
     "buy": 0,
     "sell": 60,
     "eventExclusive": "UPRISING",
-    "effect": "UPRISING REWARD ONLY: Aura 3 tiles: enemies in range take +25% damage from all sources AND cannot regenerate. The lantern that drowns the dead."
+    "effect": "UPRISING REWARD ONLY: Aura 3 tiles: enemies in range take +25% damage from all sources and cannot regenerate."
   },
   "HELLGATE_BRAND": {
     "name": "Hellgate Brand",
@@ -457,7 +457,7 @@
     "buy": 0,
     "sell": 60,
     "eventExclusive": "GATES_OF_HELL",
-    "effect": "GATES OF HELL REWARD ONLY: Any tower: +50% damage, +25% attack speed, immune to silence/tower-slow auras. Forged in the gates themselves."
+    "effect": "GATES OF HELL REWARD ONLY: Any tower: +50% damage, +25% attack speed. Immune to silence and tower-slow auras."
   },
   "DEMONSWORN_CROWN": {
     "name": "Demonsworn Crown",
@@ -465,7 +465,7 @@
     "buy": 0,
     "sell": 60,
     "eventExclusive": "GATES_OF_HELL",
-    "effect": "GATES OF HELL REWARD ONLY: Any tower: +100% damage vs Demon-faction enemies AND +50% damage vs Bosses. The crown that judges hellspawn."
+    "effect": "GATES OF HELL REWARD ONLY: Any tower: +100% damage vs Demon-faction enemies and +50% damage vs Bosses."
   },
   "INFERNO_STANDARD": {
     "name": "Inferno Standard",
@@ -473,13 +473,13 @@
     "buy": 0,
     "sell": 60,
     "eventExclusive": "GATES_OF_HELL",
-    "effect": "GATES OF HELL REWARD ONLY: Aura 3 tiles: nearby allies gain +25% damage AND every attack applies BURN (5% maxHP/sec for 3s) on hit."
+    "effect": "GATES OF HELL REWARD ONLY: Aura 3 tiles: nearby allies gain +25% damage and every attack applies BURN (5% maxHP/sec for 3s) on hit."
   },
   "DAMNATIO_MEMORIAE": {
     "name": "Damnatio Memoriae",
     "rarity": "LEGENDARY",
     "buy": 150,
     "sell": 50,
-    "effect": "MELEE ONLY: any non-Boss enemy below 25% HP is instantly executed by this tower's attacks. Bosses are immune. The Senate's verdict on the unworthy — no name, no record, no funeral."
+    "effect": "MELEE ONLY: instantly executes any non-Boss enemy below 25% HP. Bosses are immune."
   }
 }
