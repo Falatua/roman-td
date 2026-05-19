@@ -1,4 +1,4 @@
-// Roman TD — Supabase leaderboard client (2026-05-19).
+// Roman TD — Supabase leaderboard client (2026-05-19 v2 RESILIENT).
 //
 // Talks to a Supabase Postgres table over the REST API using the
 // project's ANON key. No SDK — bundle stays lean and there's no
@@ -9,6 +9,14 @@
 // build (production). When either is missing the leaderboard
 // silently falls back to localStorage — the game stays fully
 // playable without remote infrastructure.
+//
+// Resilience features (v2):
+//   • 3-attempt retry with exponential backoff on every fetch
+//   • 6-second per-attempt timeout (prevents indefinite hangs)
+//   • localStorage cache of the last successful read (24h TTL)
+//     — fetchTopScores returns the cache if all 3 attempts fail
+//   • getLastFetchMeta() exposes whether the last result was fresh,
+//     cached, or failed so the UI can show the appropriate message
 //
 // See `supabase/schema.sql` for the table layout + RLS policies.
 
@@ -33,6 +41,8 @@ export interface RemoteScoreRow {
   created_at?: string;
 }
 
+// ─── PUBLIC API ─────────────────────────────────────────────────────
+
 // Whether the remote leaderboard is configured. Used by the UI to
 // decide between a "GLOBAL" badge or a "LOCAL ONLY" badge on the
 // leaderboard panel — and to skip the round-trip when there's no
@@ -41,83 +51,121 @@ export function hasRemoteLeaderboard(): boolean {
   return !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 }
 
-// Auth headers (apikey + Bearer) for ALL requests. RLS reads these
-// to recognize the call as authenticated by the anon role.
-function authHeaders(): Record<string, string> {
-  return {
-    'apikey': SUPABASE_ANON_KEY,
-    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-  };
+// Where the last fetched data came from. The UI uses this to decide
+// what status message to display:
+//   • 'fresh'  → just-fetched from the live server, fully current
+//   • 'cached' → all retries failed; serving from local cache
+//   • 'failed' → all retries failed AND no cache available
+//   • 'empty'  → fetch succeeded but the table is empty
+//   • 'disabled' → env vars missing — no remote configured
+export type FetchSource = 'fresh' | 'cached' | 'failed' | 'empty' | 'disabled';
+export interface FetchMeta {
+  source: FetchSource;
+  ts: number;          // when this result was produced (ms epoch)
+  cacheAgeMs?: number; // if source==='cached', age of the cache snapshot
+  attempts?: number;   // how many retries were burned (0-3)
 }
 
-// Write-request headers — add Content-Type when sending a body.
-function writeHeaders(extra?: Record<string, string>): Record<string, string> {
-  return {
-    ...authHeaders(),
-    'Content-Type': 'application/json',
-    ...(extra ?? {}),
-  };
+let lastFetchMeta: FetchMeta | null = null;
+
+// Read the metadata of the most recent fetchTopScores call. The UI
+// reads this AFTER fetchTopScores resolves so it can render the
+// right status banner (fresh vs cached vs offline).
+export function getLastFetchMeta(): FetchMeta | null {
+  return lastFetchMeta;
 }
 
-// Fetch the top N scores for a given mode. Returns null if remote
-// isn't configured, the network errors, or the API returns a non-OK
-// response — every consumer treats null as "fall back to local".
-// Successful empty table returns []; that's distinct from null and
-// the UI uses the distinction to differentiate "no entries yet" from
-// "couldn't reach the server".
+// Fetch the top N scores for a given mode. Returns rows array on
+// success (or cache hit), or null only if both fetch + cache fail.
+// Empty array is distinct from null and means "table is empty".
+// Whichever path was taken is reflected in getLastFetchMeta().
 export async function fetchTopScores(
   mode: LeaderboardMode = 'campaign',
   limit = 10
 ): Promise<RemoteScoreRow[] | null> {
   if (!hasRemoteLeaderboard()) {
-    // Surface this in the console so a curious player / dev can tell
-    // why the GLOBAL tab is silent: the bundle didn't get the env vars.
     console.warn('[leaderboard] Remote disabled — VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY missing from this build.');
+    lastFetchMeta = { source: 'disabled', ts: Date.now() };
     return null;
   }
-  try {
-    // PostgREST query format: ?mode=eq.X&order=score.desc&limit=N
-    const url = `${SUPABASE_URL}/rest/v1/scores`
-      + `?mode=eq.${encodeURIComponent(mode)}`
-      + `&order=score.desc,created_at.desc`
-      + `&limit=${limit}`;
-    // Note: NO Content-Type header on GET — including it triggers a
-    // CORS preflight for every read, doubling network round-trips on
-    // first leaderboard open. apikey + Authorization are sufficient.
-    const r = await fetch(url, { method: 'GET', headers: authHeaders() });
-    if (!r.ok) {
-      console.error(`[leaderboard] Supabase SELECT returned HTTP ${r.status}`);
-      return null;
+
+  const url = `${SUPABASE_URL}/rest/v1/scores`
+    + `?mode=eq.${encodeURIComponent(mode)}`
+    + `&order=score.desc,created_at.desc`
+    + `&limit=${limit}`;
+
+  // 3 attempts with exponential backoff (0ms, 400ms, 1200ms). Each
+  // attempt has a 6-second timeout via AbortController so a network
+  // stall can't hang the whole leaderboard view.
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const r = await fetchWithTimeout(url, { method: 'GET', headers: authHeaders() }, 6000);
+      if (!r.ok) {
+        console.error(`[leaderboard] Attempt ${attempt}/${MAX_ATTEMPTS} → HTTP ${r.status}`);
+        if (attempt < MAX_ATTEMPTS) await sleep(400 * Math.pow(3, attempt - 1));
+        continue;
+      }
+      const rows = await r.json() as RemoteScoreRow[];
+      // Cache the successful read so a future fetch-failure can show
+      // a (potentially slightly-stale) snapshot instead of "offline".
+      writeRemoteCache(mode, rows);
+      lastFetchMeta = {
+        source: rows.length === 0 ? 'empty' : 'fresh',
+        ts: Date.now(),
+        attempts: attempt
+      };
+      return rows;
+    } catch (err) {
+      console.error(`[leaderboard] Attempt ${attempt}/${MAX_ATTEMPTS} failed:`, err);
+      if (attempt < MAX_ATTEMPTS) await sleep(400 * Math.pow(3, attempt - 1));
     }
-    return await r.json() as RemoteScoreRow[];
-  } catch (err) {
-    // Network / CORS / JSON parse failure — fall back to local.
-    console.error('[leaderboard] Supabase SELECT failed:', err);
-    return null;
   }
+
+  // All attempts failed — try the cache as a graceful fallback so the
+  // player at least sees recent leaderboard data instead of nothing.
+  const cached = readRemoteCache(mode);
+  if (cached) {
+    console.warn(`[leaderboard] All attempts failed — serving cache from ${new Date(cached.ts).toISOString()}`);
+    lastFetchMeta = {
+      source: 'cached',
+      ts: Date.now(),
+      cacheAgeMs: Date.now() - cached.ts,
+      attempts: MAX_ATTEMPTS
+    };
+    return cached.rows;
+  }
+
+  lastFetchMeta = { source: 'failed', ts: Date.now(), attempts: MAX_ATTEMPTS };
+  return null;
 }
 
-// Insert a single score row. Returns true on success. Quietly fails
-// (returns false) if remote isn't configured or the network is down;
-// the caller is responsible for surfacing this to the player as a
-// "local only" badge on the leaderboard panel.
+// Insert a single score row. Returns true on success. Retries up to
+// 3 times so a transient network hiccup doesn't lose a player's
+// score. Quietly fails (returns false) if remote isn't configured
+// or every retry fails; the caller treats false as "local only".
 export async function submitScore(
   row: Omit<RemoteScoreRow, 'id' | 'created_at'>
 ): Promise<boolean> {
   if (!hasRemoteLeaderboard()) return false;
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/scores`, {
-      method: 'POST',
-      headers: writeHeaders({ 'Prefer': 'return=minimal' }),
-      body: JSON.stringify(row)
-    });
-    if (!r.ok) {
-      console.error(`[leaderboard] Supabase INSERT returned HTTP ${r.status}`);
+  const url = `${SUPABASE_URL}/rest/v1/scores`;
+  const body = JSON.stringify(row);
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const r = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: writeHeaders({ 'Prefer': 'return=minimal' }),
+        body
+      }, 6000);
+      if (r.ok) return true;
+      console.error(`[leaderboard] INSERT attempt ${attempt}/${MAX_ATTEMPTS} → HTTP ${r.status}`);
+    } catch (err) {
+      console.error(`[leaderboard] INSERT attempt ${attempt}/${MAX_ATTEMPTS} failed:`, err);
     }
-    return r.ok;
-  } catch {
-    return false;
+    if (attempt < MAX_ATTEMPTS) await sleep(400 * Math.pow(3, attempt - 1));
   }
+  return false;
 }
 
 // Convenience: build a remote-row from the existing local
@@ -138,4 +186,91 @@ export function toRemoteRow(
     date_str: entry.date,
     mode
   };
+}
+
+// ─── INTERNAL ───────────────────────────────────────────────────────
+
+// Auth headers (apikey + Bearer) for ALL requests. RLS reads these
+// to recognize the call as authenticated by the anon role.
+function authHeaders(): Record<string, string> {
+  return {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  };
+}
+
+// Write-request headers — add Content-Type when sending a body.
+function writeHeaders(extra?: Record<string, string>): Record<string, string> {
+  return {
+    ...authHeaders(),
+    'Content-Type': 'application/json',
+    ...(extra ?? {}),
+  };
+}
+
+// fetch() with a per-request timeout. Returns a rejected promise if
+// the timeout fires before the response. AbortController is the
+// idiomatic browser approach; falls back to a manual timer in case
+// AbortController isn't available (very old browsers).
+function fetchWithTimeout(url: string, opts: RequestInit, timeoutMs: number): Promise<Response> {
+  if (typeof AbortController !== 'undefined') {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), timeoutMs);
+    return fetch(url, { ...opts, signal: ac.signal })
+      .finally(() => clearTimeout(timer));
+  }
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+    fetch(url, opts)
+      .then(r => { clearTimeout(timer); resolve(r); })
+      .catch(err => { clearTimeout(timer); reject(err); });
+  });
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// ─── localStorage cache (offline fallback) ──────────────────────────
+// We keep the last successful SELECT result around so a transient
+// network failure still produces a usable leaderboard view. Cache TTL
+// is 24 hours; past that we discard so a player who's offline for
+// days doesn't see ancient scores.
+const CACHE_KEY = 'roman_td_leaderboard_cache_v1';
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+interface CachedScores { ts: number; rows: RemoteScoreRow[] }
+
+function writeRemoteCache(mode: LeaderboardMode, rows: RemoteScoreRow[]) {
+  try {
+    const all = readAllCachedScores();
+    all[mode] = { ts: Date.now(), rows };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(all));
+  } catch {
+    // QuotaExceeded / private-mode write fail — non-fatal, just lose
+    // the cache benefit. The game still works.
+  }
+}
+
+function readRemoteCache(mode: LeaderboardMode): CachedScores | null {
+  try {
+    const all = readAllCachedScores();
+    const entry = all[mode];
+    if (!entry || !Array.isArray(entry.rows)) return null;
+    if (Date.now() - entry.ts > CACHE_TTL_MS) return null;
+    return entry;
+  } catch {
+    return null;
+  }
+}
+
+function readAllCachedScores(): Record<string, CachedScores> {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return (typeof parsed === 'object' && parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
 }

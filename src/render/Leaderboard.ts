@@ -13,7 +13,7 @@
 // Keeps top 20. New entry pulses; top 3 ranks render gold/silver/bronze.
 
 import { GameStateShape } from '../GameState';
-import { fetchTopScores, submitScore, toRemoteRow, hasRemoteLeaderboard } from '../services/SupabaseLeaderboard';
+import { fetchTopScores, submitScore, toRemoteRow, hasRemoteLeaderboard, getLastFetchMeta } from '../services/SupabaseLeaderboard';
 
 export interface ScoreBreakdown {
   waveBonus: number;       // waves completed
@@ -480,18 +480,36 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
     });
   }
 
+  // Tracks the currently-active tab so the auto-refresh poller only
+  // re-paints the GLOBAL view (and stops painting if the player has
+  // switched to LOCAL or closed the modal entirely).
+  let activeTab: 'global' | 'local' = remoteAvailable ? 'global' : 'local';
+
   async function paintRemoteRows() {
     subtitle.textContent = '🌐 FETCHING GLOBAL LEADERBOARD…';
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— LOADING —</td></tr>`;
     const rows = await fetchTopScores('campaign', 10);
-    // Three distinct states get three distinct copy treatments so the
-    // player can tell what's actually happening:
-    //   1. rows === null    → couldn't reach the server (real error)
-    //   2. rows.length === 0 → reached the server, table is empty
-    //   3. rows.length > 0   → normal render path below
+    const meta = getLastFetchMeta();
+    // If the player has switched tabs while we were fetching, don't
+    // overwrite their current view.
+    if (activeTab !== 'global') return;
+    // Four distinct states get four distinct copy treatments so the
+    // player can always tell what's happening:
+    //   • 'failed'  → both fetch + cache failed (truly offline)
+    //   • 'cached'  → fetch failed BUT we have a recent snapshot
+    //   • 'empty'   → fetch succeeded, table has no entries yet
+    //   • 'fresh'   → live data, table has scores → normal render
     if (rows === null) {
+      // Failed AND no cache. Surface a retry button so the player can
+      // try again without leaving the modal.
       subtitle.textContent = '🌐 GLOBAL LEADERBOARD · OFFLINE FOR NOW';
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa9a4a;letter-spacing:1px;line-height:1.7"><div style="font-size:13px;color:#cdb98a;margin-bottom:8px">Cannot reach the global leaderboard right now.</div><div style="font-size:11px;color:#88aaaa">Your scores are still being saved locally — check the 📜 LOCAL tab. Global scores will sync the next time you load the game.</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa9a4a;letter-spacing:1px;line-height:1.7">
+        <div style="font-size:13px;color:#cdb98a;margin-bottom:8px">Cannot reach the global leaderboard right now.</div>
+        <div style="font-size:11px;color:#88aaaa;margin-bottom:12px">Your scores are still being saved locally — check the 📜 LOCAL tab. We auto-retry every 15 seconds.</div>
+        <button id="hog-retry-now" style="background:#3a2a14;color:#ffd34d;border:2px solid #d4af37;padding:8px 16px;font-family:inherit;font-size:11px;letter-spacing:2px;font-weight:bold;cursor:pointer">↻ RETRY NOW</button>
+      </td></tr>`;
+      const retryBtn = wrap.querySelector('#hog-retry-now') as HTMLButtonElement | null;
+      if (retryBtn) retryBtn.onclick = () => paintRemoteRows();
       return;
     }
     if (rows.length === 0) {
@@ -499,7 +517,14 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
       tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#88ff88;letter-spacing:1px;line-height:1.7"><div style="font-size:14px;color:#88ff88;letter-spacing:3px;font-weight:bold;margin-bottom:8px">🏛 NO NAMES IN THE MARBLE YET 🏛</div><div style="font-size:11px;color:#cdb98a">Survive a wave — even one — and your name will be the first the Empire records.</div></td></tr>`;
       return;
     }
-    subtitle.textContent = `🌐 TOP ${rows.length} LEGIONS OF ROMA · GLOBAL`;
+    // Cached fallback path — show the data we have, but mark it.
+    const isCached = meta?.source === 'cached';
+    if (isCached && meta?.cacheAgeMs !== undefined) {
+      const ageMin = Math.max(1, Math.round(meta.cacheAgeMs / 60000));
+      subtitle.textContent = `🌐 TOP ${rows.length} · CACHED (${ageMin}m ago) · auto-retry…`;
+    } else {
+      subtitle.textContent = `🌐 TOP ${rows.length} LEGIONS OF ROMA · GLOBAL`;
+    }
     tbody.innerHTML = '';
     rows.forEach((e, idx) => {
       const rankNumeral = roman(idx + 1);
@@ -523,12 +548,36 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
     });
   }
 
+  // ─── AUTO-REFRESH (2026-05-19) ────────────────────────────────────
+  // Poll the global leaderboard every 15 seconds while the GLOBAL tab
+  // is active. Also re-fetch immediately when the player switches back
+  // to the tab (visibilitychange). Both are scoped to this modal —
+  // when the player closes the leaderboard, the interval + listener
+  // are removed so we don't leak handlers.
+  let pollTimer: number | null = null;
+  const onVisibility = () => {
+    if (!document.hidden && activeTab === 'global') paintRemoteRows();
+  };
+  function startAutoRefresh() {
+    stopAutoRefresh();
+    pollTimer = window.setInterval(() => {
+      if (activeTab === 'global' && !document.hidden) paintRemoteRows();
+    }, 15000);
+    document.addEventListener('visibilitychange', onVisibility);
+  }
+  function stopAutoRefresh() {
+    if (pollTimer !== null) { clearInterval(pollTimer); pollTimer = null; }
+    document.removeEventListener('visibilitychange', onVisibility);
+  }
+
   // Initial paint — global is default when remote is configured.
   if (remoteAvailable) {
     paintRemoteRows();
+    startAutoRefresh();
     const globalBtn = wrap.querySelector('#hog-tab-global') as HTMLButtonElement;
     const localBtn  = wrap.querySelector('#hog-tab-local')  as HTMLButtonElement;
     const setActive = (which: 'global' | 'local') => {
+      activeTab = which;
       const a = which === 'global' ? globalBtn : localBtn;
       const b = which === 'global' ? localBtn  : globalBtn;
       a.style.background = '#ffd34d'; a.style.color = '#1a1410'; a.dataset.active = '1';
@@ -541,7 +590,12 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
   }
 
   // ENTER → restart. Click anywhere on the prompt area also restarts.
-  const restart = () => { wrap.remove(); document.removeEventListener('keydown', onKey); onRestart(); };
+  const restart = () => {
+    stopAutoRefresh();
+    wrap.remove();
+    document.removeEventListener('keydown', onKey);
+    onRestart();
+  };
   const promptEl = wrap.querySelector('.hog-prompt') as HTMLElement;
   promptEl.style.cursor = 'pointer';
   promptEl.addEventListener('click', restart);
