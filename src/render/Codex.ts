@@ -1,6 +1,8 @@
 import towers from '../data/towers.json';
 import enemies from '../data/enemies.json';
 import combos from '../data/towerCombinations.json';
+// 2026-05-19 — Hero definitions for the HEROES Codex tab.
+import heroDefs from '../data/herodefs.json';
 import { QUESTS } from '../systems/QuestSystem';
 import permItems from '../data/items_permanent.json';
 import consumables from '../data/items_consumable.json';
@@ -100,7 +102,7 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   // a more readable form. The renderTab('WAVES') branch below is now
   // dead code; leaving it in place rather than scrubbing keeps the diff
   // minimal in case a future "Codex Pro" mode wants it back.
-  const tabs = ['SYSTEMS', 'MECHANICS', 'QUESTS', 'POOL', 'LEGIONS', 'COMBINATIONS', 'ENEMIES', 'ITEMS'] as const;
+  const tabs = ['SYSTEMS', 'MECHANICS', 'QUESTS', 'POOL', 'LEGIONS', 'COMBINATIONS', 'ENEMIES', 'ITEMS', 'HEROES'] as const;
   const tabsEl = panel.querySelector('#codex-tabs')!;
   const bodyEl = panel.querySelector('#codex-body')! as HTMLElement;
   let active: typeof tabs[number] = 'SYSTEMS';
@@ -1230,6 +1232,54 @@ function renderTab(tab: string): string {
       <table style="width:100%;border-collapse:collapse;font-size:11px">
       <thead><tr style="color:#aa9a4a"><th style="text-align:left">Name</th><th>Family</th><th>Rarity</th><th>Cost</th><th style="text-align:left">Effect</th></tr></thead>
       <tbody>${perm}</tbody></table>`;
+  }
+  // ── HEROES TAB (2026-05-19) ──────────────────────────────────────
+  // Shows all 6 heroes regardless of which 3 the current run drafted.
+  // Source-of-truth read from herodefs.json; the inspect panel and
+  // draft modal use the same data, so this stays in sync automatically.
+  if (tab === 'HEROES') {
+    const HERO_POOL_IDS = ['HERO_MARIUS', 'HERO_AGRIPPA', 'HERO_AGRICOLA', 'HERO_SCIPIO', 'HERO_CAESAR', 'HERO_SULLA'];
+    const cards = HERO_POOL_IDS.map(id => {
+      const def: any = (heroDefs as any)[id];
+      if (!def) return '';
+      const tint = def.visual?.tierUpColor ?? '#ffd34d';
+      const tierTitles: string[] = def.tierTitles ?? ['TIRO','LEGATUS','CONSUL','IMPERATOR','DIVUS'];
+      const xpThr: number[] = def.xpThresholds ?? [0,75,280,650,1300];
+      const abilities = (def.abilities ?? []).map((a: any) => `
+        <div style="margin-bottom:6px;padding:6px 10px;background:rgba(0,0,0,0.3);border-left:3px solid ${tint}88">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div style="font-size:11px;color:${tint};font-weight:bold;letter-spacing:1px">${a.name ?? a.id}</div>
+            <div style="font-size:9px;color:#aa9a4a;letter-spacing:1px">${tierTitles[a.level] ?? `T${a.level}`} · ⏱ ${a.cooldownSec ?? 0}s</div>
+          </div>
+          <div style="font-size:10.5px;color:#cdb98a;line-height:1.5;margin-top:3px">${a.description ?? ''}</div>
+        </div>`).join('');
+      return `
+        <div style="background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid ${tint};margin-bottom:12px;overflow:hidden">
+          <div style="background:${tint};color:#1a1410;padding:6px 12px;display:flex;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px">
+            <span>⚔ ${(def.name ?? id).toUpperCase()}</span>
+            <span>${def.specialty ?? ''}</span>
+          </div>
+          <div style="padding:10px 14px;border-bottom:1px solid #3a3025">
+            <div style="font-size:11px;color:#cdb98a;letter-spacing:2px;margin-bottom:6px">${def.title ?? ''}</div>
+            <div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;margin-bottom:3px">BUILT FOR</div>
+            <div style="font-size:11px;color:#e8d6a8;line-height:1.5;font-style:italic;padding-left:10px;border-left:3px solid ${tint}">${def.playerProblemSolved ?? ''}</div>
+          </div>
+          <div style="padding:10px 14px;border-bottom:1px solid #3a3025">
+            <div style="font-size:10px;color:#aa9a4a;letter-spacing:2px;margin-bottom:4px">⚜ PASSIVE</div>
+            <div style="font-size:11px;color:#cdb98a;line-height:1.5">${def.passive?.description ?? ''}</div>
+          </div>
+          <div style="padding:10px 14px;border-bottom:1px solid #3a3025">
+            <div style="font-size:10px;color:#aa9a4a;letter-spacing:2px;margin-bottom:4px">⚔ ABILITIES</div>
+            ${abilities}
+          </div>
+          <div style="padding:8px 14px;font-size:10px;color:#aa9a4a;letter-spacing:1px">
+            XP THRESHOLDS &nbsp;${xpThr.map((x: number, i: number) => `<span style="color:#cdb98a">${tierTitles[i]}</span>:${x}`).join(' &nbsp;·&nbsp; ')}
+          </div>
+          <div style="padding:10px 14px;font-size:10px;color:#aa9a4a;font-style:italic;line-height:1.5;background:#0c0a08">"${def.biography ?? ''}"</div>
+        </div>`;
+    }).join('');
+    return `${section('THE ROSTER', '<div style="font-size:11px;color:#cdb98a;line-height:1.5">Six historical Roman generals stand in the hero pool. Every run shuffles the pool and offers a 3-card draft — only one champion serves you per campaign. Study all six even though you will not see them all in any single run; knowing the full roster lets you adapt to whichever three the draft shows. Heroes earn XP from every kill on the field (+1 non-boss / +20 boss) and tier up through five ranks. They occupy a single tile, carry exactly 2 item slots, and cannot be sold, combined, moved, or downgraded.</div>')}
+      ${cards}`;
   }
   if (tab === 'WAVES') {
     const rows = (waves as any[]).map(w => {
