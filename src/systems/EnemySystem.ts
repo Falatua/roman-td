@@ -779,6 +779,17 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       }
     }
     e.currentSpeed = (frozen || stunned) ? 0 : e.baseSpeed * speedMult;
+    // 2026-05-19 — HERO ABILITY WINDOWS that mutate enemy speed:
+    //   • Frontier Wall (Agricola Tier 2): flyers slowed during window
+    //   • Zama (Scipio Tier 3): bosses move at 50% speed during window
+    const frontierUntil = (state as any).__frontierWallUntilTick ?? 0;
+    if (state.tick < frontierUntil && e.isFlyer) {
+      e.currentSpeed *= (state as any).__frontierWallFlyerSpeedMult ?? 0.3;
+    }
+    const zamaUntil = (state as any).__zamaUntilTick ?? 0;
+    if (state.tick < zamaUntil && e.isBoss) {
+      e.currentSpeed *= (state as any).__zamaBossSpeedMult ?? 0.5;
+    }
 
     // Regen for special enemies — both constant and out-of-combat
     // varieties. DoT suppression rule: if the enemy has ANY active

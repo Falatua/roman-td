@@ -264,6 +264,24 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // L10 caps at +27%. L1 only gives the probability shift, no damage.
   let globalDmgBonus = 0.03 * Math.max(0, (state.poolLevel ?? 0) - 1);
   let globalSpeedMult = 1;
+  // ── HERO PASSIVE AURAS (2026-05-19) ────────────────────────────────
+  // Caesar: +10% damage and +10% attack speed for every tower while
+  // he's active. Stacks with other aura sources (capped at the
+  // existing 2.00× AURA_CAP downstream).
+  // Scipio: +30% damage vs Bosses globally — applied later in the
+  // damage resolution loop where target.isBoss is known.
+  if (state.activeHeroId === 'HERO_CAESAR') {
+    globalDmgBonus += 0.10;
+    globalSpeedMult *= 1.10;
+  }
+  const scipioActive = state.activeHeroId === 'HERO_SCIPIO';
+  // Resolve hero tower position ONCE for per-tower local-aura checks
+  // below. Avoids a per-tower state.towers.get lookup.
+  const heroTowerForAura = state.activeHeroTowerId
+    ? state.towers.get(state.activeHeroTowerId) ?? null
+    : null;
+  const heroAuraCx = heroTowerForAura ? heroTowerForAura.tileX * GRID.TILE + GRID.TILE / 2 : 0;
+  const heroAuraCy = heroTowerForAura ? heroTowerForAura.tileY * GRID.TILE + GRID.TILE / 2 : 0;
   const localAuras: Array<{ x: number; y: number; r: number; dmg?: number; spd?: number }> = [];
   const enemyTakenAuras: Array<{ x: number; y: number; r: number; pct: number }> = [];
   // AURA NULLIFIER enemies (Architectus on W16): if alive AND within 2 tiles
@@ -514,6 +532,53 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (a.spd) sm *= 1 + a.spd;
       }
     }
+    // ── HERO LOCAL AURAS (2026-05-19) ────────────────────────────────
+    // Mirrors the Cohort-Guard distance scan above but filters by the
+    // tower's damage type. Hero must be placed (heroTowerForAura set)
+    // for any of these to fire. Skip the hero itself.
+    if (heroTowerForAura && t.id !== heroTowerForAura.id) {
+      const dh = Math.hypot(heroAuraCx - cx, heroAuraCy - cy);
+      if (state.activeHeroId === 'HERO_MARIUS'
+          && t.damageType === DamageType.PHYS_MELEE
+          && dh <= 3 * GRID.TILE) {
+        dm *= 1.25;
+      }
+      if (state.activeHeroId === 'HERO_AGRIPPA'
+          && t.damageType === DamageType.PHYS_RANGED
+          && dh <= 3 * GRID.TILE) {
+        dm *= 1.20;
+      }
+      if (state.activeHeroId === 'HERO_AGRICOLA'
+          && t.damageType === DamageType.PHYS_RANGED
+          && dh <= 3 * GRID.TILE) {
+        dm *= 1.20;
+      }
+      if (state.activeHeroId === 'HERO_SULLA'
+          && t.damageType === DamageType.DIVINE
+          && dh <= 4 * GRID.TILE) {
+        dm *= 1.35;
+      }
+    }
+    // Marian Formation per-tower stamp: 3 nearest melee get +X% speed
+    // + shared-crit access during the window. Crit comes from the
+    // Tower's own crit application later; here we just compound speed.
+    const marianUntil = (t as any).__marianFormationUntilTick ?? 0;
+    if (state.tick < marianUntil) {
+      const sMult = (t as any).__marianSpeedMult ?? 1.0;
+      sm *= sMult;
+    }
+    // Ides of March window: every tower fires at double speed.
+    const idesUntil = (state as any).__idesUntilTick ?? 0;
+    if (state.tick < idesUntil) {
+      sm *= (state as any).__idesTowerSpeedMult ?? 2.0;
+    }
+    // Battle of Actium window: ranged towers fire double shots
+    // (same effect via 2× attack speed; resMod=1 for ranged is set
+    // in the per-shot damage path so resistances are bypassed too).
+    const actiumLocalUntil = (state as any).__actiumUntilTick ?? 0;
+    if (state.tick < actiumLocalUntil && t.damageType === DamageType.PHYS_RANGED) {
+      sm *= (state as any).__actiumRangedSpeedMult ?? 2.0;
+    }
     // Cap the aggregate aura multipliers at 2.00× (max +100% bonus).
     if (dm > AURA_CAP) dm = AURA_CAP;
     if (sm > AURA_CAP) sm = AURA_CAP;
@@ -617,7 +682,18 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       t.attackCooldown = interval;
       const perAttackBase = towerPerAttackDamageBase(t);
       const armorShred = target.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED);
-      let resMod = resistanceModifier(target.faction, t.damageType, armorShred) * enemyDamageMultiplier(target, t.damageType);
+      // 2026-05-19 — Proscription (Sulla Tier 2) overrides this attack's
+      // damage type to DIVINE for the duration. Battle of Actium (Agrippa
+      // Tier 3) sets resMod = 1 on ranged shots to bypass faction
+      // resistances entirely.
+      let effectiveDmgType = t.damageType;
+      const proscriptionUntil = (state as any).__proscriptionUntilTick ?? 0;
+      if (state.tick < proscriptionUntil) effectiveDmgType = DamageType.DIVINE;
+      let resMod = resistanceModifier(target.faction, effectiveDmgType, armorShred) * enemyDamageMultiplier(target, effectiveDmgType);
+      const actiumUntil = (state as any).__actiumUntilTick ?? 0;
+      if (state.tick < actiumUntil && t.damageType === DamageType.PHYS_RANGED) {
+        resMod = 1;     // Actium: ranged ignores all resistance for the window
+      }
       // 2026-05 v9: post-W7 GROUND units get +25% ranged resistance — they
       // take 25% less damage from PHYS_RANGED + SIEGE. Forces the player
       // to diversify into melee or magic damage types from W8 onward.
@@ -708,6 +784,36 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // 2026-05-19 — AURA TILE: TYRANT TILE (RED). Tower on a red tile
       // deals +50% damage vs bosses. Stacks with the trophies above.
       if (target.isBoss && towerAuraTileKind(t) === 'RED') damage *= 1.50;
+      // ── HERO PASSIVES + ABILITY WINDOWS (2026-05-19) ──────────────
+      // Scipio passive: every tower deals +30% damage vs Bosses.
+      if (scipioActive && target.isBoss) damage *= 1.30;
+      // Zama (Scipio Tier 3): tower vs-boss damage × 2.0 during the
+      // active window. Stacks multiplicatively with the Scipio
+      // passive above.
+      const zamaUntil = (state as any).__zamaUntilTick ?? 0;
+      if (state.tick < zamaUntil && target.isBoss) {
+        damage *= (state as any).__zamaTowerVsBossDmgMult ?? 2.0;
+      }
+      // Triumph (Marius Tier 3): every melee tower deals +100% damage
+      // during the active window. State-flag-driven so we don't need
+      // a per-tower stamp.
+      const triumphUntil = (state as any).__triumphUntilTick ?? 0;
+      if (state.tick < triumphUntil && t.damageType === DamageType.PHYS_MELEE) {
+        damage *= (state as any).__triumphMeleeDmgMult ?? 2.0;
+      }
+      // Frontier Wall (Agricola Tier 2): tower damage vs flyers
+      // increases during window. Stacks with Eagle Scout's per-enemy
+      // mark.
+      const frontierUntil = (state as any).__frontierWallUntilTick ?? 0;
+      if (state.tick < frontierUntil && target.isFlyer) {
+        damage *= (state as any).__frontierWallVsFlyerDmgMult ?? 1.30;
+      }
+      // Eagle Scout (Agricola Tier 1): flyers carry an
+      // __eagleScoutUntilTick + __eagleScoutDmgMult stamp for 3s.
+      const eagleUntil = (target as any).__eagleScoutUntilTick ?? 0;
+      if (state.tick < eagleUntil) {
+        damage *= (target as any).__eagleScoutDmgMult ?? 1.60;
+      }
       // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES.
       //
       // INVASION rewards:
@@ -954,7 +1060,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // 2026-05-19 — AETHER TILE (CYAN) also unlocks anti-air for any
       // melee tower placed on it, regardless of equipped items. Cheap
       // alternative to the legendary item.
+      // 2026-05-19 — Agricola hero passive extends the CYAN/AQUILA_TALONS
+      // melee-vs-flyer unlock to EVERY tower on the map. Same pipeline
+      // — just sets the flag map-wide while Agricola is active.
+      const agricolaActive = state.activeHeroId === 'HERO_AGRICOLA';
       const meleeHitsFlyers = isMeleeRow && (
+        agricolaActive ||
         t.equippedItems.includes('AQUILA_TALONS') ||
         towerAuraTileKind(t) === 'CYAN'
       );
@@ -1266,7 +1377,10 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   // loop above so target-acquisition and damage-application agree.
   // 2026-05-19 — AETHER TILE (CYAN) also enables melee anti-air, same
   // as AQUILA_TALONS.
+  // 2026-05-19 — Agricola hero global passive extends the
+  // CYAN/AQUILA_TALONS unlock to ALL melee towers map-wide.
   const meleeAirEnabled = isMelee && (
+    state.activeHeroId === 'HERO_AGRICOLA' ||
     t.equippedItems.includes('AQUILA_TALONS') ||
     towerAuraTileKind(t) === 'CYAN'
   );
