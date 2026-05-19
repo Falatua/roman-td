@@ -3448,6 +3448,11 @@ async function boot() {
   const existingName = readSavedName();
   if (existingName) {
     (state as any).playerName = existingName;
+    // 2026-05-19 — Hero draft fires whenever no hero is set for this
+    // run, regardless of whether the name is freshly etched or reloaded.
+    if (!state.activeHeroId) {
+      maybeShowChooseHeroModal();
+    }
   } else {
     // Player has no saved name → show the etch-your-name modal. Block
     // start-wave / prospect placement clicks via a translucent overlay
@@ -3455,6 +3460,23 @@ async function boot() {
     showEtchNameModal((name) => {
       writeSavedName(name);
       (state as any).playerName = name;
+      // After name commits, draft a hero before the run proceeds.
+      maybeShowChooseHeroModal();
+    });
+  }
+  // 2026-05-19 — Lazy-import the ChooseHeroModal so the file can be
+  // built in C6 without main.ts breaking before that. Defer until
+  // C6 lands a real module; until then a fallback auto-pick keeps
+  // the run flow walkable.
+  function maybeShowChooseHeroModal(): void {
+    if (state.sandboxMode) return;     // sandbox bypasses hero draft
+    import('./render/ChooseHeroModal').then(({ showChooseHeroModal }) => {
+      showChooseHeroModal(state);
+    }).catch(() => {
+      // ChooseHeroModal not yet implemented (C5 ships before C6).
+      // Fallback: silently leave activeHeroId null so the game runs
+      // without a hero. C6 wires the real UI and removes this catch.
+      console.warn('[hero] ChooseHeroModal not yet available — proceeding without hero');
     });
   }
   // SANDBOX: password modal for the dev-mode entry on the loading
@@ -4916,6 +4938,13 @@ async function boot() {
       }
       applyEnemyAuras(state);
       tickBossScripts(state, dt, bossRuntime, waveStartTick);
+      // 2026-05-19 — Hero ability dispatcher. Mirrors the
+      // tickBossScripts cadence (once per WAVE_PHASE frame). Reads
+      // cooldown stamps off (heroTower as any).__heroCooldowns and
+      // fires each ability when its tier is unlocked and its
+      // cooldown has elapsed. Drains state.__heroTimedEvents
+      // (Triarii Wall revert, Ides of March execute pulse).
+      tickHeroAbilities(state, heroSystemHooks);
       tickBurnPatches(state, dt);
       tickBossHazards(state, dt);
       // 2026-05 v10 — BOSS LOW-HP CUE. Per-frame scan: if ANY boss on
