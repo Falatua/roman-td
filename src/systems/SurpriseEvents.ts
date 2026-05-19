@@ -137,36 +137,33 @@ function flattenInvasionSpawnSchedule(state: GameStateShape): void {
   }
 }
 
-// UPRISING CLUSTER SIZE — how many enemies emerge from a single urn as
-// one visual group. 6 reads as "a pile" without overwhelming the
-// renderer. Bosses are excluded from clustering and keep their
-// original schedule (they come from the cave, not the urns).
-export const UPRISING_CLUSTER_SIZE = 6;
-const UPRISING_INTRA_CLUSTER_GAP = 0.08;  // ~80ms between members of the same cluster
-const UPRISING_INTER_CLUSTER_GAP = 1.0;   // 1s pause between cluster releases
-
-// Reshape the spawn queue's timing into bursts. Walks the queue in
-// order, groups non-boss entries into clusters of UPRISING_CLUSTER_SIZE,
-// and stamps spawnAt values so each cluster fires in tight succession
-// then pauses before the next cluster.
+// 2026-05-19 (REDESIGNED) — Uprising spawns from ALL 4 urns
+// SIMULTANEOUSLY each burst. Previous version dumped 6 enemies from
+// one urn before moving to the next; player only saw one urn active
+// at a time. New design: each "wave" of the uprising is 4 enemies
+// — one from each urn at the same instant — followed by a 1s pause,
+// repeat until the queue drains.
 //
-// The CLUSTER → URN routing is handled in spawnAtSurpriseEventPoint
-// (which now divides queueIdx by UPRISING_CLUSTER_SIZE before mod-ing
-// against the 4 urn points). So cluster 0 → urn 0, cluster 1 → urn 1,
-// cluster 2 → urn 2, cluster 3 → urn 3, cluster 4 → urn 0, etc.
+// Naming: UPRISING_BURST_SIZE = 4 (one per urn). Kept the
+// UPRISING_CLUSTER_SIZE alias for back-compat with any tests/imports
+// that might reference it, but the semantic shifted.
+export const UPRISING_CLUSTER_SIZE = 4;        // one enemy per urn per burst
+const UPRISING_INTER_BURST_GAP = 1.0;          // 1s pause between bursts
+
+// Reshape the spawn queue's timing: 4 consecutive non-boss entries
+// share the same spawnAt (so they emerge from all 4 urns at once),
+// then a 1s gap before the next burst of 4.
 function clusterUprisingSpawnSchedule(state: GameStateShape): void {
-  let timeCursor = VFX_RISE_SECONDS;
-  let inClusterIdx = 0;
+  let burstTime = VFX_RISE_SECONDS;
+  let inBurstIdx = 0;
   for (const item of state.spawnQueue) {
     const isBossSpawn = !!(enemiesData as any)[item.type]?.isBoss;
     if (isBossSpawn) continue;
-    item.spawnAt = timeCursor;
-    inClusterIdx++;
-    if (inClusterIdx >= UPRISING_CLUSTER_SIZE) {
-      timeCursor += UPRISING_INTER_CLUSTER_GAP;
-      inClusterIdx = 0;
-    } else {
-      timeCursor += UPRISING_INTRA_CLUSTER_GAP;
+    item.spawnAt = burstTime;        // every enemy in this burst shares the timestamp
+    inBurstIdx++;
+    if (inBurstIdx >= UPRISING_CLUSTER_SIZE) {
+      burstTime += UPRISING_INTER_BURST_GAP;
+      inBurstIdx = 0;
     }
   }
 }
@@ -467,17 +464,16 @@ export function spawnAtSurpriseEventPoint(
   // SPECTRAL_SCOUTs) hit this in the wild before the call-site guard
   // was added. The function now refuses to corrupt flyer state.
   if (enemy?.isFlyer) return false;
-  // 2026-05-19 — Routing strategy depends on event kind:
-  //   • INVASION: each enemy gets its OWN unique perimeter tile, so
-  //     route per-enemy via `queueIdx % spawnPoints.length`.
-  //   • UPRISING: each urn erupts a CLUSTER (UPRISING_CLUSTER_SIZE
-  //     enemies in a tight burst), so route per-cluster via
-  //     `floor(queueIdx / CLUSTER_SIZE) % spawnPoints.length`. Result:
-  //     skeletons emerge from each urn as a group, not single-file.
-  const isUprising = ev.kind === SurpriseEventKind.UPRISING;
-  const pointIdx = isUprising
-    ? Math.floor(queueIdx / UPRISING_CLUSTER_SIZE) % ev.spawnPoints.length
-    : queueIdx % ev.spawnPoints.length;
+  // 2026-05-19 (REDESIGNED) — Routing strategy:
+  //   • INVASION: each enemy gets its OWN unique perimeter tile
+  //     (queueIdx % spawnPoints.length).
+  //   • UPRISING: each BURST of 4 enemies fills all 4 urns
+  //     simultaneously. queueIdx % 4 gives the urn assignment, and
+  //     the spawn-schedule reshaper above ensures each block of 4
+  //     consecutive enemies shares the same spawnAt. Result: every
+  //     burst is a synchronized 4-urn eruption, exactly what the
+  //     player asked for (no more "only one urn active").
+  const pointIdx = queueIdx % ev.spawnPoints.length;
   const point = ev.spawnPoints[pointIdx];
   if (!point) return false;
   const isInvasion = ev.kind === SurpriseEventKind.INVASION;
@@ -712,8 +708,10 @@ function generateUprisingAtmosphere(state: GameStateShape, mainPoints: SurpriseE
 // HELL_GATE at t=0 (the structure that towers shoot to shut the event
 // down) followed by FIRE_GIANT spawns on a 2s cadence, alternating
 // between the gates so the player sees a new fire giant every second.
-// Total fire giants over the 15s window: 15 (8 from gate-3, 7 from
-// gate-4 since gate-3 fires first).
+// 2026-05-19 — Gate 4 fires FIRST (per the player's "out of four
+// and then come out of three and then come out of four and then
+// come out of three" description). Total fire giants over the 15s
+// window: 15 (8 from gate-4, 7 from gate-3).
 //
 // Path positioning: HELL_GATE itself doesn't walk (speed 0); the fire
 // giants snap to WP3's or WP4's path index and walk the remainder of
@@ -749,33 +747,16 @@ function generateGatesOfHellPoints(state: GameStateShape, startAtTick: number): 
       pointId: loc.pointId
     });
   }
-  // Then schedule the FIRE_GIANT spawns. Alternating cadence: gate 3
-  // fires at t=2, 4, 6, 8, 10, 12, 14, 16; gate 4 fires at t=3, 5, 7,
-  // 9, 11, 13, 15. Window 15s starts AFTER the gates rise (so the
-  // first giant emerges 2s after the gates open). All offsets relative
-  // to (startAtTick + VFX_RISE_SECONDS).
+  // 2026-05-19 — Gate 4 fires FIRST (pointId 1), then gate 3 (pointId 0),
+  // alternating. Player asked for "out of four and then come out of three
+  // and then come out of four and then come out of three." Offsets:
+  //   • Gate 4 fires at t=2, 6, 10, 14, 18 (every 4s starting at 2)
+  //   • Gate 3 fires at t=3, 7, 11, 15      (every 4s starting at 3)
+  // Window 15s starts AFTER the gates rise.
   const baseStart = startAtTick + VFX_RISE_SECONDS;
-  // Gate 3 fires every 2s starting at t=2 (so the gate is visible for
-  // 2 full seconds before the first giant emerges — sells the rumble).
+  // Gate 4 (locations[1]) fires first.
   for (let i = 0; i < 8; i++) {
     const offset = GATES_OF_HELL_CADENCE_SECONDS + i * (GATES_OF_HELL_CADENCE_SECONDS * 2);
-    if (offset > GATES_OF_HELL_WINDOW_SECONDS + 1) break;
-    out.push({
-      vfxX: locations[0].col * GRID.TILE + GRID.TILE / 2,
-      vfxY: locations[0].row * GRID.TILE + GRID.TILE / 2,
-      pathTileX: locations[0].col,
-      pathTileY: locations[0].row,
-      pathIndex: nearestPathIndexAtWaypoint(state, locations[0].col, locations[0].row),
-      spawnAt: baseStart + offset,
-      enemyType: 'FIRE_GIANT',
-      fired: false,
-      pointId: 0
-    });
-  }
-  // Gate 4 fires every 2s starting at t=3 (offset by 1s from gate 3,
-  // so the player sees alternating-gate emergence).
-  for (let i = 0; i < 7; i++) {
-    const offset = GATES_OF_HELL_CADENCE_SECONDS + 1 + i * (GATES_OF_HELL_CADENCE_SECONDS * 2);
     if (offset > GATES_OF_HELL_WINDOW_SECONDS + 1) break;
     out.push({
       vfxX: locations[1].col * GRID.TILE + GRID.TILE / 2,
@@ -787,6 +768,22 @@ function generateGatesOfHellPoints(state: GameStateShape, startAtTick: number): 
       enemyType: 'FIRE_GIANT',
       fired: false,
       pointId: 1
+    });
+  }
+  // Gate 3 (locations[0]) fires 1s after each gate-4 pulse.
+  for (let i = 0; i < 7; i++) {
+    const offset = GATES_OF_HELL_CADENCE_SECONDS + 1 + i * (GATES_OF_HELL_CADENCE_SECONDS * 2);
+    if (offset > GATES_OF_HELL_WINDOW_SECONDS + 1) break;
+    out.push({
+      vfxX: locations[0].col * GRID.TILE + GRID.TILE / 2,
+      vfxY: locations[0].row * GRID.TILE + GRID.TILE / 2,
+      pathTileX: locations[0].col,
+      pathTileY: locations[0].row,
+      pathIndex: nearestPathIndexAtWaypoint(state, locations[0].col, locations[0].row),
+      spawnAt: baseStart + offset,
+      enemyType: 'FIRE_GIANT',
+      fired: false,
+      pointId: 0
     });
   }
   return out;
