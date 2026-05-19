@@ -1962,7 +1962,7 @@ async function boot() {
   // Refund price for queued purchased towers. Mercator T5 flat 50g; quest
   // grants refund the wave's place cost as a fair stand-in (no purchase price
   // to recover). Tower types from `pendingPurchasedTowers` carry .source.
-  function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' }): number {
+  function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' }): number {
     if (entry.source === 'mercator') return 50;
     return (ECONOMY.TIER_PLACE_COST as Record<number, number>)[entry.tier] ?? 5;
   }

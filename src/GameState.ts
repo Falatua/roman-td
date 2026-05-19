@@ -93,7 +93,7 @@ export interface GameStateShape {
   // QUEUE of towers waiting to be placed. Each empty-tile click pops the
   // front of the queue. Both Mercator purchases and quest rewards append
   // here, so neither can overwrite the other.
-  pendingPurchasedTowers?: { type: string; tier: number; source: 'mercator' | 'quest' }[];
+  pendingPurchasedTowers?: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' }[];
   // Legacy single-slot — kept for back-compat reads but new code uses the
   // queue. Set to null on every place; queue is the source of truth.
   pendingPurchasedTower?: { type: string; tier: number } | null;
@@ -183,6 +183,20 @@ export interface GameStateShape {
   // sandbox-only code path is tagged with a `// SANDBOX:` comment so
   // a future cleanup pass can grep and remove them all in one go.
   sandboxMode?: boolean;
+  // ── HERO SYSTEM (2026-05-19) ─────────────────────────────────────────
+  // Set when the 3-card draft completes at run start. activeHeroId is
+  // one of HERO_MARIUS / HERO_AGRIPPA / HERO_AGRICOLA / HERO_SCIPIO /
+  // HERO_CAESAR / HERO_SULLA — see src/data/herodefs.json for the
+  // single source of tuning.
+  //
+  // Naming note: the existing `heroLevel` field is per-tower kill-XP
+  // (Gem TD style) and is a different concept; the activeHero* prefix
+  // keeps the two systems clearly separated.
+  activeHeroId?: string | null;        // 'HERO_MARIUS' | ... | null
+  activeHeroTowerId?: string | null;   // tower instance id once placed
+  heroXp?: number;                     // cumulative XP this run
+  heroTier?: 0 | 1 | 2 | 3 | 4;        // cached; recomputed on each XP award
+  heroLifeHealedThisRun?: number;      // Sulla cap tracker — max +20 per run
 }
 
 export function createGameState(): GameStateShape {
@@ -229,7 +243,14 @@ export function createGameState(): GameStateShape {
     modifierWavesSurvived: 0,
     // SANDBOX: defaults to false. Only the loading-screen sandbox
     // entry flips this on after the 1027 password is accepted.
-    sandboxMode: false
+    sandboxMode: false,
+    // HERO: defaults to null/0. Set by the 3-card draft modal after
+    // name entry at run start.
+    activeHeroId: null,
+    activeHeroTowerId: null,
+    heroXp: 0,
+    heroTier: 0,
+    heroLifeHealedThisRun: 0
   };
 }
 

@@ -139,7 +139,21 @@ export enum TowerType {
   // UNDEAD_CARTHAGE factions, plus a SCUTUM BASH every 4th swing (stun +
   // knockback combined — rare control combo). Recipe pulls from the
   // previously-unused base towers: BALLISTARIUS + LIBRITOR + ARCUBALLISTA.
-  MURMILLO = 'MURMILLO'
+  MURMILLO = 'MURMILLO',
+  // ── HEROES (2026-05-19) ──────────────────────────────────────────────
+  // 6-hero pool; 3-card draft picks one per run. All historical Roman
+  // generals. Heroes are placed towers with their own basic attack +
+  // auto-pulse abilities; they earn XP from every kill on the field and
+  // tier up through TIRO → LEGATUS → CONSUL → IMPERATOR → DIVUS.
+  // Tunable data lives in src/data/herodefs.json; placement rules
+  // (no sell / no combine / no move / 2 item slots) live in
+  // TowerSystem.createTower.
+  HERO_MARIUS   = 'HERO_MARIUS',
+  HERO_AGRIPPA  = 'HERO_AGRIPPA',
+  HERO_AGRICOLA = 'HERO_AGRICOLA',
+  HERO_SCIPIO   = 'HERO_SCIPIO',
+  HERO_CAESAR   = 'HERO_CAESAR',
+  HERO_SULLA    = 'HERO_SULLA'
 }
 
 export enum EnemyType {
@@ -372,6 +386,19 @@ export interface Tower {
   killsThisWave: number;    // resets at wave start
   damageThisWave: number;   // resets at wave start
   mvpAwards: number;        // # of waves this tower was MVP
+  // 2026-05-19 — Hero flag. Set true for any HERO_* TowerType in
+  // TowerSystem.createTower. Heroes are placed towers with their own
+  // basic attack + auto-pulse abilities (see HeroSystem.ts). When
+  // true: tower cannot be sold / combined / moved / downgraded, has
+  // exactly 2 item slots regardless of tier, and is excluded from
+  // combine recipe lookups.
+  isHero?: boolean;
+  // 2026-05-19 — Per-hero ability cooldown scratchpad. Keys are
+  // ability ids from herodefs.json; values are the tick at which the
+  // ability is next allowed to fire. Same idiom as the existing
+  // __nextCaesarStunTick / __nextHannibalFreezeTick scratchpad
+  // patterns used throughout CombatResolver.
+  __heroCooldowns?: Record<string, number>;
 }
 
 export interface Enemy {

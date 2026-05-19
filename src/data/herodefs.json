@@ -1,0 +1,413 @@
+{
+  "HERO_MARIUS": {
+    "id": "HERO_MARIUS",
+    "name": "Gaius Marius",
+    "title": "Father of the Legion",
+    "specialty": "MELEE",
+    "playerProblemSolved": "Melee waves overwhelm me before my ranged towers can clean them up.",
+    "biography": "Marius rebuilt Rome's army from scratch, opening the legions to every citizen regardless of birth. On this field, his presence makes every melee tower fight like a veteran.",
+    "passive": {
+      "kind": "LOCAL_AURA",
+      "radiusTiles": 3,
+      "filter": "PHYS_MELEE",
+      "dmgBonusPercent": 25,
+      "description": "Every MELEE tower within 3 tiles gains +25% damage permanently."
+    },
+    "abilities": [
+      {
+        "level": 1,
+        "id": "MARIAN_FORMATION",
+        "name": "Marian Formation",
+        "cooldownSec": 8,
+        "durationSec": 3,
+        "params": { "nearestMeleeTowers": 3, "atkSpeedMultPercent": 40, "shareCrit": true },
+        "description": "The 3 nearest melee towers form ranks for 3s — shared crit chance and +40% attack speed.",
+        "vfxColor": "#cc44ff",
+        "vfxStyle": "VIOLET_RANK_LINE"
+      },
+      {
+        "level": 2,
+        "id": "TRIARII_WALL",
+        "name": "Triarii Wall",
+        "cooldownSec": 14,
+        "durationSec": 5,
+        "params": { "wallDurationSec": 5, "targetTile": "FARTHEST_PATH_TILE_FROM_GATE" },
+        "description": "Spawns a temporary stone wall on the farthest path tile from the gate for 5s, forcing a U-turn. Path rebuilds on spawn and removal.",
+        "vfxColor": "#cc44ff",
+        "vfxStyle": "WALL_RISE_PARTICLES"
+      },
+      {
+        "level": 3,
+        "id": "TRIUMPH",
+        "name": "Triumph of Aquae Sextiae",
+        "cooldownSec": 60,
+        "durationSec": 8,
+        "params": { "meleeDmgMultPercent": 100, "immunities": ["SILENCE", "SLOW"] },
+        "description": "For 8s, every melee tower on the map deals +100% damage and is immune to SILENCE and SLOW.",
+        "vfxColor": "#ffe066",
+        "vfxStyle": "GOLD_FLASH_MAP_WIDE"
+      }
+    ],
+    "xpThresholds": [0, 75, 280, 650, 1300],
+    "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
+    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
+    "bannerCopy": [
+      "Marius takes the field. The legions reform.",
+      "MARIUS reached LEGATUS — Marian Formation locks the line.",
+      "MARIUS reached CONSUL — Triarii Wall rises.",
+      "MARIUS reached IMPERATOR — Triumph unlocked.",
+      "MARIUS reached DIVUS — the father of the legion at full strength."
+    ],
+    "visual": {
+      "particleColor": "#aa44ff", "particleIntervalSec": 1.2, "particleRadiusTiles": 1.5,
+      "floorEffectColor": "#cc4400", "tierUpColor": "#cc44ff",
+      "idleSfxId": "sfx_hero_marius_hum", "companionType": "NONE"
+    }
+  },
+  "HERO_AGRIPPA": {
+    "id": "HERO_AGRIPPA",
+    "name": "Marcus Agrippa",
+    "title": "Admiral of the Fleet",
+    "specialty": "RANGED VOLUME",
+    "playerProblemSolved": "My ranged towers spread too thin against high-HP single targets. I need bombardment power.",
+    "biography": "Agrippa's naval genius delivered Rome the Mediterranean. Under his command, ranged towers reach farther and hit harder while mortar shells scatter the enemy line.",
+    "passive": {
+      "kind": "LOCAL_AURA",
+      "radiusTiles": 3,
+      "filter": "PHYS_RANGED",
+      "dmgBonusPercent": 20,
+      "rangeBonusTiles": 0.5,
+      "description": "Every RANGED tower within 3 tiles gains +20% damage and +0.5 tiles of range permanently."
+    },
+    "abilities": [
+      {
+        "level": 1,
+        "id": "PILUM_VOLLEY",
+        "name": "Pilum Volley",
+        "cooldownSec": 6,
+        "durationSec": 0,
+        "params": { "javelinCount": 5, "targetType": "HIGHEST_HP", "pierceCount": 2 },
+        "description": "Fires 5 javelins simultaneously at the 5 highest-HP enemies in range. Each pierces 2 targets.",
+        "vfxColor": "#5599ff",
+        "vfxStyle": "JAVELIN_FAN_ARC"
+      },
+      {
+        "level": 2,
+        "id": "NAVAL_BOMBARDMENT",
+        "name": "Naval Bombardment",
+        "cooldownSec": 12,
+        "durationSec": 0,
+        "params": { "shellCount": 3, "targetType": "RANDOM_PATH_TILE", "splashRadiusTiles": 2, "stunSec": 1.5 },
+        "description": "3 mortar shells drop on random path tiles. Each explodes with 2-tile splash and 1.5s stun.",
+        "vfxColor": "#4499ff",
+        "vfxStyle": "MORTAR_SHELL_BURST"
+      },
+      {
+        "level": 3,
+        "id": "BATTLE_OF_ACTIUM",
+        "name": "Battle of Actium",
+        "cooldownSec": 60,
+        "durationSec": 8,
+        "params": { "rangedShotMultiplier": 2, "ignoreAllResistances": true },
+        "description": "For 8s, every RANGED tower fires DOUBLE shots and all ranged projectiles ignore faction resistances.",
+        "vfxColor": "#0077ff",
+        "vfxStyle": "NAVAL_BANNER_SWEEP"
+      }
+    ],
+    "xpThresholds": [0, 75, 280, 650, 1300],
+    "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
+    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
+    "bannerCopy": [
+      "Agrippa commands the line. The volleys begin.",
+      "AGRIPPA reached LEGATUS — Pilum Volley cleared for launch.",
+      "AGRIPPA reached CONSUL — Naval Bombardment unlocked.",
+      "AGRIPPA reached IMPERATOR — Battle of Actium prepared.",
+      "AGRIPPA reached DIVUS — the admiral at full command."
+    ],
+    "visual": {
+      "particleColor": "#5599ff", "particleIntervalSec": 2.5, "particleRadiusTiles": 1.5,
+      "floorEffectColor": "#3377cc", "tierUpColor": "#5599ff",
+      "idleSfxId": "sfx_hero_agrippa_hum",
+      "companionType": "SPECTRAL_GALLEY",
+      "companionDescription": "A small spectral galley orbits Agrippa's tile, one revolution every ~4 seconds."
+    }
+  },
+  "HERO_AGRICOLA": {
+    "id": "HERO_AGRICOLA",
+    "name": "Gnaeus Agricola",
+    "title": "Governor of the Frontier",
+    "specialty": "FLYERS / ANTI-AIR",
+    "playerProblemSolved": "I keep forgetting about flyer waves and losing lives to them.",
+    "biography": "Agricola pacified Rome's British frontier through relentless surveillance and aggressive response. On this field, no flyer goes unnoticed and none goes unpunished.",
+    "passive": {
+      "kind": "DUAL",
+      "global": {
+        "enableMeleeVsFlyers": true,
+        "description": "Every tower on the map — including MELEE — can target and attack flyers for the duration of the run."
+      },
+      "local": {
+        "radiusTiles": 3,
+        "filter": "PHYS_RANGED",
+        "dmgBonusPercent": 20,
+        "description": "Every RANGED tower within 3 tiles gains +20% damage."
+      }
+    },
+    "abilities": [
+      {
+        "level": 1,
+        "id": "EAGLE_SCOUT",
+        "name": "Eagle Scout",
+        "cooldownSec": 5,
+        "durationSec": 3,
+        "params": { "targets": "ALL_FLYERS", "dmgTakenIncreasePercent": 60 },
+        "description": "Every flyer on the map is marked for 3s. Marked flyers take +60% damage from all sources.",
+        "vfxColor": "#aaccff",
+        "vfxStyle": "SILVER_MARK_BURST"
+      },
+      {
+        "level": 2,
+        "id": "FRONTIER_WALL",
+        "name": "Frontier Wall",
+        "cooldownSec": 12,
+        "durationSec": 4,
+        "params": { "flyerSpeedReductionPercent": 70, "dmgVsFlyersIncreasePercent": 30 },
+        "description": "For 4s, all flyers slow 70% AND every tower gains +30% damage vs. flyers. Stacks with Eagle Scout for +90% total during overlap.",
+        "vfxColor": "#aaccff",
+        "vfxStyle": "SILVER_WALL_SHIMMER"
+      },
+      {
+        "level": 3,
+        "id": "AQUILA_SQUADRON",
+        "name": "Aquila Squadron",
+        "cooldownSec": 55,
+        "durationSec": 12,
+        "params": { "eagleCount": 4, "killsPerEagle": 6, "eagleDurationSec": 12, "instakillFlyers": true },
+        "description": "Summons 4 spectral eagle spirits that instakill any flyer they touch. Each eagle persists 12s or until it hits 6 flyers.",
+        "vfxColor": "#ffffff",
+        "vfxStyle": "EAGLE_SUMMON_BURST"
+      }
+    ],
+    "xpThresholds": [0, 75, 280, 650, 1300],
+    "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
+    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
+    "bannerCopy": [
+      "Agricola takes the field. The skies are no longer safe.",
+      "AGRICOLA reached LEGATUS — Eagle Scout marks every wing.",
+      "AGRICOLA reached CONSUL — Frontier Wall slows the air assault.",
+      "AGRICOLA reached IMPERATOR — Aquila Squadron ready.",
+      "AGRICOLA reached DIVUS — total air dominance."
+    ],
+    "visual": {
+      "particleColor": "#ddeeff", "particleIntervalSec": 1.5, "particleRadiusTiles": 1.0,
+      "floorEffectColor": "#aad0ff", "tierUpColor": "#aaccff",
+      "idleSfxId": "sfx_hero_agricola_hum",
+      "companionType": "SPECTRAL_EAGLE",
+      "companionDescription": "A spectral white eagle perches on Agricola's shoulder. Wings shift occasionally."
+    }
+  },
+  "HERO_SCIPIO": {
+    "id": "HERO_SCIPIO",
+    "name": "Scipio Africanus",
+    "title": "Conqueror of Carthage",
+    "specialty": "BOSS HUNTER",
+    "playerProblemSolved": "Bosses walk through my maze at 80% HP and eat my lives.",
+    "biography": "Scipio studied Carthage for years before he attacked — patient, methodical, without mercy. He has never lost to a boss and does not intend to start.",
+    "passive": {
+      "kind": "GLOBAL_AURA",
+      "filter": "VS_BOSS",
+      "dmgBonusPercent": 30,
+      "description": "Every tower on the map permanently deals +30% damage against Boss-type enemies. No radius limit."
+    },
+    "abilities": [
+      {
+        "level": 1,
+        "id": "CORNU_CHARGE",
+        "name": "Cornu Charge",
+        "cooldownSec": 8,
+        "durationSec": 0,
+        "params": { "target": "HIGHEST_HP_BOSS", "dmgMultiplier": 5.0, "ignoreResistances": true },
+        "description": "Pierces the highest-HP boss for 5x Scipio's normal attack damage. Ignores all resistances.",
+        "vfxColor": "#ff8800",
+        "vfxStyle": "RED_LANCE_ARC"
+      },
+      {
+        "level": 2,
+        "id": "CARTHAGO_DELENDA_EST",
+        "name": "Carthago Delenda Est",
+        "cooldownSec": 15,
+        "durationSec": 0,
+        "params": { "targets": "ALL_BOSSES", "maxHpTrueDmgPercent": 10 },
+        "description": "Every boss on the field instantly loses 10% max HP as true damage. Bypasses all resistances, shields, and damage reduction.",
+        "vfxColor": "#ff4400",
+        "vfxStyle": "FIRE_DUST_WAVE"
+      },
+      {
+        "level": 3,
+        "id": "ZAMA",
+        "name": "Zama",
+        "cooldownSec": 60,
+        "durationSec": 6,
+        "params": { "towerDmgVsBossMultiplier": 2.0, "bossSpeedMultiplier": 0.5 },
+        "description": "For 6s, all towers deal double damage to bosses AND all bosses move at 50% speed.",
+        "vfxColor": "#c87822",
+        "vfxStyle": "DUST_STORM_SWEEP"
+      }
+    ],
+    "xpThresholds": [0, 75, 280, 650, 1300],
+    "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
+    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
+    "bannerCopy": [
+      "Scipio takes the field. Carthage must fall.",
+      "SCIPIO reached LEGATUS — Cornu Charge is ready.",
+      "SCIPIO reached CONSUL — Carthago Delenda Est unlocked.",
+      "SCIPIO reached IMPERATOR — Zama awaits.",
+      "SCIPIO reached DIVUS — the conqueror at full power."
+    ],
+    "visual": {
+      "particleColor": "#c87822", "particleIntervalSec": 2.0, "particleRadiusTiles": 1.0,
+      "floorEffectColor": "#d4a85a", "tierUpColor": "#d4883a",
+      "idleSfxId": "sfx_hero_scipio_hum",
+      "companionType": "WAR_TABLE",
+      "companionDescription": "A small war-table with a parchment map sits at Scipio's feet. Sword glints every 2s."
+    }
+  },
+  "HERO_CAESAR": {
+    "id": "HERO_CAESAR",
+    "name": "Julius Caesar",
+    "title": "Dictator of Rome",
+    "specialty": "SUPPORT / CONTROL",
+    "playerProblemSolved": "I have a great tower build and I want everything to hit harder — and I want control of the battlefield.",
+    "biography": "Caesar did not wait for opportunity — he manufactured it. Under his command, Rome's defenders act faster, hit harder, and leave nothing alive that's already dying.",
+    "passive": {
+      "kind": "GLOBAL_AURA",
+      "dmgBonusPercent": 10,
+      "speedMultPercent": 10,
+      "description": "Every tower on the map permanently gains +10% damage and +10% attack speed. Stacks with all other aura towers."
+    },
+    "abilities": [
+      {
+        "level": 1,
+        "id": "SPQR_DECREE",
+        "name": "SPQR Decree",
+        "cooldownSec": 8,
+        "durationSec": 0,
+        "params": { "forceBonusAttack": true, "targets": "ALL_TOWERS" },
+        "description": "Forces every tower on the map to immediately fire one bonus attack at its current target.",
+        "vfxColor": "#ffe066",
+        "vfxStyle": "GOLD_RING_SWEEP"
+      },
+      {
+        "level": 2,
+        "id": "PAX_ROMANA",
+        "name": "Pax Romana",
+        "cooldownSec": 12,
+        "durationSec": 2,
+        "params": { "enemySpeedReductionPercent": 60, "targets": "ALL_ENEMIES" },
+        "description": "Every enemy on the field is slowed 60% for 2 seconds. Uses existing SLOW status effect pipeline.",
+        "vfxColor": "#ffe066",
+        "vfxStyle": "PALE_GOLD_PATH_SHIMMER"
+      },
+      {
+        "level": 3,
+        "id": "IDES_OF_MARCH",
+        "name": "Ides of March",
+        "cooldownSec": 60,
+        "durationSec": 6,
+        "params": { "towerSpeedMultiplier": 2.0, "executeThresholdPercent": 30 },
+        "description": "For 6s, every tower fires at DOUBLE speed. Then every enemy currently below 30% HP is instantly executed.",
+        "vfxColor": "#ffe066",
+        "vfxStyle": "GOLD_WHITE_SCREEN_FLASH"
+      }
+    ],
+    "xpThresholds": [0, 75, 280, 650, 1300],
+    "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
+    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
+    "bannerCopy": [
+      "Caesar takes the field. The Rubicon is crossed.",
+      "CAESAR reached LEGATUS — SPQR Decree goes out.",
+      "CAESAR reached CONSUL — Pax Romana imposed.",
+      "CAESAR reached IMPERATOR — Ides of March approaches.",
+      "CAESAR reached DIVUS — the dictator at full power."
+    ],
+    "visual": {
+      "particleColor": "#ffe066", "particleIntervalSec": 0.6, "particleRadiusTiles": 1.0,
+      "floorEffectColor": "#c8a820", "tierUpColor": "#ffe066",
+      "idleSfxId": "sfx_hero_caesar_hum",
+      "companionType": "NONE",
+      "companionDescription": "Gold sparks arc from Caesar's tile constantly."
+    }
+  },
+  "HERO_SULLA": {
+    "id": "HERO_SULLA",
+    "name": "Lucius Sulla",
+    "title": "The Fortunate",
+    "specialty": "DIVINE / LIFESAVER",
+    "playerProblemSolved": "I keep leaking lives and can't recover once I start losing.",
+    "biography": "Sulla was famously lucky — he said so himself, and Rome believed him. On this field, his luck translates into lives: every kill he lands could be the one that saves Rome.",
+    "passive": {
+      "kind": "LOCAL_AURA",
+      "radiusTiles": 4,
+      "filter": "DIVINE",
+      "dmgBonusPercent": 35,
+      "description": "Every DIVINE tower within 4 tiles gains +35% damage permanently."
+    },
+    "abilities": [
+      {
+        "level": 1,
+        "id": "FORTUNES_BOLT",
+        "name": "Fortune's Bolt",
+        "cooldownSec": 10,
+        "durationSec": 0,
+        "params": { "healGateOnKill": 1, "lifetimeHealCap": 20 },
+        "description": "Fires a DIVINE bolt. If this bolt lands the killing blow, the gate is healed +1 LIFE. Capped at +20 lives healed total per run.",
+        "vfxColor": "#fff5cc",
+        "vfxStyle": "WHITE_GOLD_BOLT"
+      },
+      {
+        "level": 2,
+        "id": "PROSCRIPTION",
+        "name": "Proscription",
+        "cooldownSec": 14,
+        "durationSec": 5,
+        "params": { "overrideDmgTypeTo": "DIVINE", "appliesToAll": true },
+        "description": "For 5s, every tower's damage type is overridden to DIVINE, bypassing all faction resistances. Uses existing CombatResolver damage-type override logic.",
+        "vfxColor": "#ff9900",
+        "vfxStyle": "WHITE_FLAME_PULSE"
+      },
+      {
+        "level": 3,
+        "id": "SULLAS_MARCH",
+        "name": "Sulla's March",
+        "cooldownSec": 60,
+        "durationSec": 0,
+        "params": { "executeThresholdPercent": 25, "healGateAmount": 5, "lifetimeHealCap": 20 },
+        "description": "Global divine pulse: instantly executes every enemy below 25% HP. Simultaneously restores 5 LIVES (subject to the +20 per-run cap).",
+        "vfxColor": "#ffffff",
+        "vfxStyle": "DIVINE_SCREEN_FLASH"
+      }
+    ],
+    "xpThresholds": [0, 75, 280, 650, 1300],
+    "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
+    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
+    "bannerCopy": [
+      "Sulla lights the flame. Rome does not fall tonight.",
+      "SULLA reached LEGATUS — Fortune's Bolt guards the gate.",
+      "SULLA reached CONSUL — Proscription overrides all resistance.",
+      "SULLA reached IMPERATOR — Sulla's March stands ready.",
+      "SULLA reached DIVUS — fortune fully awakened."
+    ],
+    "visual": {
+      "particleColor": "#ffe066", "particleIntervalSec": 1.0, "particleRadiusTiles": 1.2,
+      "floorEffectColor": "#ff9922", "tierUpColor": "#fff5cc",
+      "idleSfxId": "sfx_hero_sulla_hum",
+      "companionType": "CANDLE_RING",
+      "companionDescription": "Six small candle flames orbit Sulla's tile slowly. They brighten briefly whenever a life is healed."
+    }
+  }
+}
