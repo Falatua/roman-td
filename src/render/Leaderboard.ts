@@ -729,7 +729,13 @@ export function runEndOfGameFlow(
         date: formatDateLong(new Date()),
         ts: Date.now()
       };
-      insertEntry(entry);
+      // SANDBOX: skip the local insertEntry too. Dev-mode runs never
+      // pollute the local leaderboard so the player's real-mode
+      // records stay clean. The "submitting…" overlay still shows
+      // briefly below so the post-victory flow looks the same.
+      if (!(state as any).sandboxMode) {
+        insertEntry(entry);
+      }
       // Show a brief "submitting…" overlay while we wait for the
       // remote write. Up to 3 retries × 6s = 18s in the worst case.
       const overlay = document.createElement('div');
@@ -741,13 +747,20 @@ export function runEndOfGameFlow(
           <div style="font-size:11px;color:#aa9a4a;letter-spacing:2px">${name || 'UNKNOWN'} · ${finalScore.toLocaleString()} pts</div>
         </div>`;
       document.body.appendChild(overlay);
-      try {
-        await submitScore(toRemoteRow(entry, 'campaign'));
-      } catch (err) {
-        console.error('[leaderboard] submit threw:', err);
-      } finally {
-        overlay.remove();
+      // SANDBOX: never submit dev-test scores to the global leaderboard.
+      // The whole point of sandbox mode is risk-free testing — a score
+      // earned by jumping to W20 with 999k gold and free T5 towers
+      // would pollute the Hall of Glory. The local insertEntry above
+      // also gets reverted below so even the local board stays clean.
+      const sandbox = !!(state as any).sandboxMode;
+      if (!sandbox) {
+        try {
+          await submitScore(toRemoteRow(entry, 'campaign'));
+        } catch (err) {
+          console.error('[leaderboard] submit threw:', err);
+        }
       }
+      overlay.remove();
       // If a post-victory hook is wired (Endless transition), invoke it
       // INSTEAD of showing the static leaderboard. The leaderboard is
       // still reachable from the main menu after the run ends.

@@ -175,6 +175,14 @@ export interface GameStateShape {
   queuedSurpriseRewards?: { kind: 'INVASION' | 'UPRISING' | 'GATES_OF_HELL' }[];
   // Number of completed surprise events this run (stats / leaderboard hook).
   surpriseEventsCompleted?: number;
+  // SANDBOX: dev-only mode flag. When true, the game runs in an
+  // isolated developer-testing environment: no leaderboard submission,
+  // no quest progress saved, no localStorage writes (saved name, last
+  // hero, hard-refresh flag, etc.). Set ONLY by the loading-screen
+  // sandbox entry after the password (1027) is accepted. Every
+  // sandbox-only code path is tagged with a `// SANDBOX:` comment so
+  // a future cleanup pass can grep and remove them all in one go.
+  sandboxMode?: boolean;
 }
 
 export function createGameState(): GameStateShape {
@@ -218,7 +226,10 @@ export function createGameState(): GameStateShape {
     towersBuilt: 0,
     runStartedAt: Date.now(),
     bonusBossesKilled: 0,
-    modifierWavesSurvived: 0
+    modifierWavesSurvived: 0,
+    // SANDBOX: defaults to false. Only the loading-screen sandbox
+    // entry flips this on after the 1027 password is accepted.
+    sandboxMode: false
   };
 }
 

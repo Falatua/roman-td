@@ -15,6 +15,9 @@ import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel } from './systems/EconomySystem';
 import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAuraTileKind, towerEffectiveStats } from './systems/TowerSystem';
 import { scanCombos, realizableCombos, executeCombo } from './systems/CombinationEngine';
+// SANDBOX: dev-mode imports. Delete this line + every line tagged
+// `// SANDBOX:` to remove sandbox mode entirely.
+import { activateSandbox, sandboxAddGold, sandboxAllTowerOptions, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, SANDBOX_PASSWORD } from './systems/SandboxMode';
 import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
 import itemsData from './data/items_permanent.json';
@@ -2176,6 +2179,10 @@ async function boot() {
   // rewards exactly once per quest, and pops a celebratory banner so the
   // player notices.
   function tickQuests() {
+    // SANDBOX: skip quest progression in dev-test mode. Quests
+    // ratchet permanent run-state and pay gold; in sandbox we want
+    // a clean slate every jump and no real-economy bleed-in.
+    if ((state as any).sandboxMode) return;
     ensureQuestState(state);
     const newly = evaluateQuests(state);
     for (const q of newly) grantQuestReward(q);
@@ -3281,6 +3288,23 @@ async function boot() {
         );
       });
     }
+    // SANDBOX: dev-mode entry. Click → password modal. Right password
+    // (SANDBOX_PASSWORD in SandboxMode.ts) → sandbox flag flips on and
+    // the game starts. Wrong password → toast + stays on loading screen.
+    const sbBtn = document.getElementById('loading-sandbox-entry');
+    if (sbBtn) {
+      sbBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        showSandboxPasswordModal(() => {
+          // SANDBOX: stamp the state, then commit the coin to enter
+          // the game with sandboxMode active. activateSandbox sets
+          // gold/pool/hero/keeps to dev-friendly values; the rest
+          // of the run flow proceeds exactly as a normal coin-insert.
+          activateSandbox(state);
+          commitCoinAndStart();
+        });
+      });
+    }
   });
   // ─── Auto-scale stage to viewport ─────────────────────────────────────
   // 2026-05-15 v8: now scales UP as well as DOWN. Previously the scale was
@@ -3384,6 +3408,11 @@ async function boot() {
     catch { return ''; }
   }
   function writeSavedName(name: string) {
+    // SANDBOX: never overwrite the real player's saved name. A dev
+    // who enters sandbox after starting a real run has a name like
+    // "ALICE" persisted; sandbox setting it to "SANDBOX" or some
+    // other test value would corrupt that on next normal-mode launch.
+    if ((state as any).sandboxMode) return;
     try { localStorage.setItem(SAVED_NAME_KEY, name); } catch { /* ignore */ }
   }
   const existingName = readSavedName();
@@ -3396,6 +3425,46 @@ async function boot() {
     showEtchNameModal((name) => {
       writeSavedName(name);
       (state as any).playerName = name;
+    });
+  }
+  // SANDBOX: password modal for the dev-mode entry on the loading
+  // screen. Wrong password → red flash + message + stays open.
+  // Right password → modal removes itself and onOk fires.
+  // Plaintext compare against SANDBOX_PASSWORD; the security model
+  // here is "soft barrier against casual cheating," not real auth.
+  function showSandboxPasswordModal(onOk: () => void) {
+    const modal = document.createElement('div');
+    modal.id = 'sandbox-password-modal';
+    modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);z-index:240;font-family:'Courier New',monospace;`;
+    modal.innerHTML = `
+      <div style="position:relative;width:min(420px,92%);padding:28px 32px;background:linear-gradient(180deg,#1a0820,#0c0410);border:3px solid #ff5cc8;color:#ffb3d9;box-shadow:0 0 38px rgba(255,92,200,0.45),inset 0 0 32px rgba(0,0,0,0.7);text-align:center">
+        <div style="font-size:18px;letter-spacing:4px;font-weight:bold;color:#ff5cc8;margin-bottom:6px">🧪 DEV SANDBOX</div>
+        <div style="font-size:11px;letter-spacing:2px;color:#aa6090;margin-bottom:14px">DEVELOPER TESTING MODE</div>
+        <div style="font-size:12px;color:#cdb98a;margin-bottom:14px;line-height:1.5">Enter the password to enable risk-free wave / tower testing.<br/><span style="color:#aa9a4a;font-size:11px">No leaderboard. No quest progress. No save data touched.</span></div>
+        <input id="sandbox-password-input" type="password" autocomplete="off" style="width:100%;padding:10px 12px;background:#0c0410;border:2px solid #5a3a4a;color:#ffb3d9;font-family:inherit;font-size:14px;letter-spacing:4px;text-align:center;box-sizing:border-box" placeholder="••••" />
+        <div id="sandbox-password-error" style="font-size:11px;color:#ff5050;margin-top:8px;min-height:14px;letter-spacing:1px"></div>
+        <div style="display:flex;gap:8px;margin-top:14px;justify-content:center">
+          <button id="sandbox-pw-cancel" style="padding:8px 16px;background:#2a1a25;border:1px solid #5a3a4a;color:#aa6090;font-family:inherit;font-size:11px;letter-spacing:2px;font-weight:bold;cursor:pointer">CANCEL</button>
+          <button id="sandbox-pw-ok" style="padding:8px 22px;background:#ff5cc8;border:1px solid #ff5cc8;color:#0c0410;font-family:inherit;font-size:11px;letter-spacing:2px;font-weight:bold;cursor:pointer">ENTER</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const input = modal.querySelector('#sandbox-password-input') as HTMLInputElement;
+    const errorEl = modal.querySelector('#sandbox-password-error') as HTMLElement;
+    const okBtn = modal.querySelector('#sandbox-pw-ok') as HTMLButtonElement;
+    const cancelBtn = modal.querySelector('#sandbox-pw-cancel') as HTMLButtonElement;
+    setTimeout(() => input?.focus(), 30);
+    const dismiss = () => modal.remove();
+    const tryAccept = () => {
+      const v = (input.value ?? '').trim();
+      if (v === SANDBOX_PASSWORD) { dismiss(); onOk(); }
+      else { errorEl.textContent = '✗ ACCESS DENIED'; input.value = ''; input.focus(); }
+    };
+    okBtn.addEventListener('click', tryAccept);
+    cancelBtn.addEventListener('click', dismiss);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); tryAccept(); }
+      if (e.key === 'Escape') { e.preventDefault(); dismiss(); }
     });
   }
   function showEtchNameModal(onSubmit: (name: string) => void) {
@@ -3989,6 +4058,42 @@ async function boot() {
     }
   });
 
+  // SANDBOX: mount the dev panel + pinned banner if sandboxMode is on.
+  // Lazy import so the panel module only loads when actually needed
+  // (real-mode players never pay the cost).
+  if (state.sandboxMode) {
+    import('./render/SandboxPanel').then(({ mountSandboxPanel }) => {
+      mountSandboxPanel(state, {
+        onJumpToWave: (wave: number) => {
+          if (wave === -1) {
+            sandboxJumpToEndless(state);
+            state.hint = '🧪 SANDBOX → ENDLESS mode. Click START WAVE.';
+          } else {
+            sandboxResetForWave(state, wave);
+            state.hint = `🧪 SANDBOX → W${wave}. Tile grid + towers cleared. Click START WAVE.`;
+          }
+          // Rebuild the ground path since the tile reset may have
+          // pruned tower-blocked tiles. The PathFinder picks the
+          // freshest empty layout.
+          const p = buildGroundPath(state);
+          if (p) { state.groundPath = p; resnapEnemiesToPath(state, p); }
+        },
+        onPickTower: (type, tier) => {
+          // Queue the tower into the placement system. The next empty-
+          // tile click consumes it. Uses the existing pending purchased
+          // tower queue with a sandbox-flagged entry so the placement
+          // handler knows this is free (no gold cost).
+          (state as any).__sandboxPendingTower = { type, tier };
+          state.hint = `🧪 SANDBOX → click any empty tile to drop ${type} T${tier} (free).`;
+        },
+        onAddGold: () => {
+          sandboxAddGold(state, 1000);
+          state.hint = `🧪 +1000g (now ${state.gold.toLocaleString()}g).`;
+        }
+      });
+    });
+  }
+
   // (Old HUD mute-button sync block removed 2026-05 v11 — the standalone
   //  SOUND button no longer exists. Mute toggle now lives in the Settings
   //  panel's SOUND tab; persistence handled by AudioManager.)
@@ -4289,6 +4394,36 @@ async function boot() {
     }
     if (isPreWavePhase() && tile === TileType.STONE) {
       inspectStone(col, row);
+      return;
+    }
+
+    // SANDBOX: direct tower spawn. If the player picked a tower from
+    // the dev panel, the sandbox-pending entry sits in __sandboxPendingTower
+    // and the next empty-tile click drops it. No gold, no prospects,
+    // no combo. Path is rebuilt + verified before commit so a
+    // sandbox tower can't seal Rome.
+    const sbPending = (state as any).__sandboxPendingTower as { type: TowerType; tier: 1|2|3|4|5 } | undefined;
+    if (state.sandboxMode && sbPending && tile === TileType.EMPTY) {
+      const dropped = sandboxSpawnTowerDirect(state, sbPending.type, sbPending.tier, col, row);
+      if (dropped) {
+        // Verify path remains valid (sandbox towers can still block the gate).
+        const np = buildGroundPath(state);
+        if (!np) {
+          state.towers.delete(dropped.id);
+          setTile(state, col, row, TileType.EMPTY);
+          if (dropped.isAerarium) state.goldTowerCount = Math.max(0, state.goldTowerCount - 1);
+          showBlockedAlert(col, row, '🧪 SANDBOX — that tile seals the path. Try a different spot.');
+          return;
+        }
+        state.groundPath = np;
+        resnapEnemiesToPath(state, np);
+        state.hint = `🧪 Placed ${sbPending.type} T${sbPending.tier}. Click another empty tile to spawn another, or open the panel to pick a different tower.`;
+        // Don't auto-clear; let the player drop multiple of the same
+        // tower until they explicitly pick another from the panel.
+      } else {
+        state.hint = '🧪 SANDBOX — placement failed (tile not empty?). Try a different tile.';
+        (state as any).__sandboxPendingTower = undefined;
+      }
       return;
     }
 

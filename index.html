@@ -327,6 +327,30 @@
         box-shadow: 0 0 14px rgba(212,175,55,0.30);
       }
       #loading-view-leaderboard:active { transform: translateY(1px); }
+      /* SANDBOX: discreet dev-mode entry button. Smaller + dimmer than
+         the leaderboard preview so it doesn't compete with the
+         loading-screen flow. Hovered/focus styles match the leaderboard
+         button's accent color for consistency. */
+      #loading-sandbox-entry {
+        margin-top: clamp(2px, 0.4vh, 6px);
+        background: transparent;
+        border: 1px dashed #3a3025;
+        color: #5a4a30;
+        font-family: 'Courier New', monospace;
+        font-size: clamp(8px, min(1vh, 0.8vw), 11px);
+        letter-spacing: clamp(1px, 0.2vw, 3px);
+        font-weight: bold;
+        padding: clamp(3px, 0.6vh, 7px) clamp(8px, 1vw, 14px);
+        cursor: pointer;
+        transition: all 0.18s ease-out;
+        text-shadow: 1px 1px 0 #000;
+      }
+      #loading-sandbox-entry:hover {
+        background: rgba(255, 80, 200, 0.08);
+        border-color: #ff5cc8;
+        color: #ff5cc8;
+      }
+      #loading-sandbox-entry:active { transform: translateY(1px); }
       /* 2026-05-19 v2 — Coin-slot sized by min(vh, vw) so it stays
          readable on big monitors without crowding short viewports.
          Width derives from height to keep the cabinet ratio constant. */
@@ -513,6 +537,11 @@
           </div>
           <div id="loading-insert">▶ CLICK TO INSERT COIN ◀</div>
           <button id="loading-view-leaderboard" type="button">🏛 VIEW HALL OF GLORY</button>
+          <!-- SANDBOX: dev-only entry. Password protected (see SandboxMode.ts).
+               Visually de-emphasized so it doesn't compete with the primary
+               coin-insert action. Delete this block + the password modal +
+               sandbox CSS when the sandbox feature is no longer wanted. -->
+          <button id="loading-sandbox-entry" type="button" title="Developer testing mode (password protected)">🧪 DEV SANDBOX</button>
         </div>
         <div id="loading-tip">
           <span class="tip-title">⚡ HARD-REFRESH FOR THE LATEST BUILD</span>
