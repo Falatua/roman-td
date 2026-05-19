@@ -85,15 +85,19 @@
         background: radial-gradient(ellipse at center, #1a0808 0%, #0a0202 60%, #000 100%);
         color: #ffd34d;
         z-index: 200;
-        /* 2026-05-19 — was `overflow: hidden`. On a SHORT viewport
-           (laptop maximized) the content cluster (~800px tall) was
-           taller than the visible area, and `align-items: center`
-           caused the top portion to be clipped above the viewport.
-           Switching to `auto` lets the user scroll if needed; the
-           combined flex-start change in #loading-stage anchors the
-           content to the top so the title is always visible without
-           any scroll on most monitors. */
-        overflow: auto;
+        /* 2026-05-19 v2 — Hard "fit on any aspect ratio, never scroll"
+           pass. Previous version allowed `overflow: auto` because
+           vw-driven sizing pushed content past the bottom on short
+           viewports (1080p laptop maximized). The new sizing strategy
+           drives ALL vertical-sensitive clamps off `vh` so the cluster
+           reflows to the viewport HEIGHT, and the stage is locked to
+           100vh/100dvh so the bottom edge is the bottom edge — period.
+           overflow: hidden enforces the contract: if anything ever
+           overruns it WILL get clipped, which is now obvious in QA.
+           dvh is used alongside vh for mobile browsers that hide their
+           URL bar on scroll (vh is locked to the largest viewport on
+           those, dvh follows the actual visible area). */
+        overflow: hidden;
         transition: opacity 0.45s, transform 0.45s;
         font-family: 'Courier New', monospace;
         transform-origin: center center;
@@ -145,23 +149,27 @@
       }
       #loading.warp { animation: loadingWarp 720ms cubic-bezier(0.55, 0, 0.85, 0.6) forwards, loadingCrtFlicker 5.4s infinite; }
 
-      /* Main content stack — gap scales with viewport so the rhythm
-         of stacked elements (eagle / title / subtitle / copy / bar /
-         coin slot) reads naturally on small AND huge monitors.
-         2026-05-19 — switched `justify-content: center` → `flex-start`
-         + added explicit top padding. The previous centered layout
-         clipped content at the TOP when the cluster was taller than
-         the viewport (laptop maximized, ultrawide-but-short windows,
-         etc.). Anchoring at the top guarantees the title is always
-         visible; the bottom can scroll if needed. */
+      /* Main content stack — locked to exactly viewport height with
+         vh-driven gap so the rhythm of stacked elements (version /
+         eagle / title / subtitle / copy / bar / coin slot + insert
+         label + leaderboard button / tip) compresses or expands to
+         fill exactly the available height.
+         2026-05-19 v2 — Now uses `height: 100vh` (was `min-height: 100%`)
+         and `justify-content: space-evenly` (was `flex-start` + heavy
+         padding). The previous version anchored content at the top and
+         let it overflow the bottom on short viewports; the new layout
+         distributes the cluster across the entire viewport height
+         which makes it impossible to overflow regardless of aspect
+         ratio. dvh shadow handles mobile URL-bar movement. */
       #loading-stage {
         position: relative; z-index: 4;
-        min-height: 100%;
+        height: 100vh;
+        height: 100dvh;
         width: 100%;
-        display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-        padding: clamp(40px, 5vh, 80px) clamp(24px, 2vw, 48px) clamp(32px, 3vw, 64px);
+        display: flex; flex-direction: column; align-items: center; justify-content: space-evenly;
+        padding: clamp(8px, 1.5vh, 20px) clamp(16px, 2vw, 48px);
         box-sizing: border-box;
-        gap: clamp(22px, 2vw, 38px);
+        gap: clamp(4px, 1vh, 14px);
         text-align: center;
       }
 
@@ -169,15 +177,18 @@
          2026-05-17 — path fix: '/assets/...' was an absolute path that
          404'd on GitHub Pages (resolved to root domain). './assets/...'
          resolves correctly under any deploy path. */
-      /* 2026-05-19 — Scales with viewport so the eagle reads big on
-         large monitors instead of staying at a 64px postage stamp. */
+      /* 2026-05-19 v2 — Eagle sized by viewport height so it never
+         crowds the title on a short viewport. min(vw, vh) keeps it
+         from blowing up on ultra-wide tall monitors where 8vh would
+         be huge. */
       #loading-eagle {
-        width: clamp(64px, 6vw, 128px);
-        height: clamp(64px, 6vw, 128px);
+        width: clamp(40px, min(7vh, 8vw), 120px);
+        height: clamp(40px, min(7vh, 8vw), 120px);
         background: url('./assets/sprites/i_aquila_standard.png') no-repeat center/contain;
         image-rendering: pixelated;
         filter: drop-shadow(0 0 12px rgba(255,170,51,0.5)) drop-shadow(2px 2px 0 #000);
         opacity: 0.85;
+        flex-shrink: 0;
       }
 
       /* 2026-05-17 — Build version stamp ABOVE the eagle.
@@ -188,13 +199,14 @@
          version plugin at build time so the bytes are baked into the
          HTML (no JS round-trip needed). */
       #loading-version {
-        font-size: clamp(10px, 0.9vw, 16px);
-        letter-spacing: clamp(3px, 0.3vw, 5px);
+        font-size: clamp(9px, min(1.2vh, 1vw), 16px);
+        letter-spacing: clamp(2px, 0.3vw, 5px);
         color: #aa9a4a;
         opacity: 0.7;
-        margin-bottom: -8px;
+        margin-bottom: 0;
         text-shadow: 1px 1px 0 #000;
         font-weight: bold;
+        flex-shrink: 0;
       }
 
       /* Title */
@@ -213,38 +225,44 @@
         60%  { transform: scale(1.08) translateY(5px); }
         100% { opacity: 1; transform: scale(1) translateY(0); }
       }
-      /* 2026-05-19 — Caps bumped for big monitors. Was capping at 96px
-         title / 16px subtitle on 4K screens, leaving a tiny content
-         cluster in the middle of a huge dark frame. New caps scale up
-         to 1.8x so the loading screen reads BIG on any monitor. */
+      /* 2026-05-19 v2 — Title sized by min(vh, vw) so it caps to the
+         smaller dimension. On a 1080p laptop maximized the previous
+         9vw clamp produced a 168px title that ate ~16% of the
+         vertical space alone; the new min(13vh, 8vw) tops out around
+         140px on 1080p and stays well clear of the bottom of the
+         viewport. Still scales BIG on 4K (where 13vh = 280, capped
+         at 160). */
       #loading-title-main {
-        font-size: clamp(48px, 9vw, 168px);
-        letter-spacing: clamp(8px, 1.4vw, 24px);
+        font-size: clamp(40px, min(13vh, 8vw), 160px);
+        letter-spacing: clamp(6px, 1vw, 20px);
         font-weight: 900;
         color: #ffd34d;
-        line-height: 1;
+        line-height: 0.95;
+        flex-shrink: 0;
         animation:
           loadingTitleIn 0.7s cubic-bezier(.2,1.4,.4,1) both,
           loadingTitleGlow 3s ease-in-out 0.7s infinite,
           loadingTitleFlicker 5.4s 0.7s infinite;
       }
       #loading-subtitle {
-        font-size: clamp(11px, 1.6vw, 28px);
-        letter-spacing: clamp(6px, 0.6vw, 10px);
+        font-size: clamp(10px, min(1.8vh, 1.5vw), 24px);
+        letter-spacing: clamp(4px, 0.5vw, 9px);
         color: #aa4a1a;
         text-shadow: 1px 1px 0 #000, 0 0 8px rgba(170,74,26,0.6);
         font-weight: 900;
+        flex-shrink: 0;
       }
 
       /* Rotating copy lines */
       #loading-copy {
-        min-height: 28px;
-        font-size: clamp(13px, 1.7vw, 28px);
-        letter-spacing: clamp(3px, 0.3vw, 5px);
+        min-height: clamp(18px, 2.4vh, 32px);
+        font-size: clamp(11px, min(1.8vh, 1.5vw), 24px);
+        letter-spacing: clamp(2px, 0.3vw, 5px);
         color: #ffd34d;
         text-shadow: 0 0 8px #ffd34d, 1px 1px 0 #000;
         font-weight: 900;
         max-width: min(1100px, 80vw);
+        flex-shrink: 0;
       }
       #loading-copy.typing::after {
         content: '_';
@@ -257,11 +275,12 @@
          on big monitors so the bar reads at-a-glance across the room. */
       #loading-bar-wrap {
         width: min(820px, 60vw);
-        height: clamp(16px, 1.6vw, 26px);
+        height: clamp(12px, min(2vh, 1.4vw), 24px);
         border: 2px solid #aa1a1a;
         background: #1a0404;
         box-shadow: inset 0 0 12px #000, 0 0 16px rgba(170,26,26,0.4);
         padding: 2px;
+        flex-shrink: 0;
       }
       #loading-bar {
         height: 100%; width: 0%;
@@ -275,10 +294,11 @@
 
       /* Coin slot + insert-coin prompt */
       #loading-coinslot-wrap {
-        display: flex; flex-direction: column; align-items: center; gap: 12px;
-        margin-top: 8px;
+        display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vh, 12px);
+        margin-top: 0;
         opacity: 0;
         transition: opacity 0.5s;
+        flex-shrink: 0;
       }
       #loading-coinslot-wrap.ready { opacity: 1; }
 
@@ -287,15 +307,15 @@
          Subtle (smaller than the COIN SLOT, dimmer color) so it
          doesn't compete with the primary call-to-action. */
       #loading-view-leaderboard {
-        margin-top: clamp(10px, 1vw, 18px);
+        margin-top: clamp(4px, 0.8vh, 14px);
         background: transparent;
         border: 1px solid #5a4a30;
         color: #aa9a4a;
         font-family: 'Courier New', monospace;
-        font-size: clamp(10px, 0.9vw, 14px);
+        font-size: clamp(9px, min(1.3vh, 1vw), 14px);
         letter-spacing: clamp(2px, 0.3vw, 4px);
         font-weight: bold;
-        padding: clamp(7px, 0.8vw, 11px) clamp(14px, 1.5vw, 22px);
+        padding: clamp(5px, 0.9vh, 11px) clamp(12px, 1.5vw, 22px);
         cursor: pointer;
         transition: all 0.18s ease-out;
         text-shadow: 1px 1px 0 #000;
@@ -307,15 +327,16 @@
         box-shadow: 0 0 14px rgba(212,175,55,0.30);
       }
       #loading-view-leaderboard:active { transform: translateY(1px); }
-      /* 2026-05-19 — Scales up on big monitors so the coin-slot mini-
-         game is readable. Stays 140x90 on phones / 1080p, grows to
-         ~220x140 on 4K. */
+      /* 2026-05-19 v2 — Coin-slot sized by min(vh, vw) so it stays
+         readable on big monitors without crowding short viewports.
+         Width derives from height to keep the cabinet ratio constant. */
       #loading-coinslot {
         position: relative;
-        width: clamp(140px, 12vw, 220px);
-        height: clamp(90px, 7.5vw, 140px);
+        height: clamp(70px, min(13vh, 10vw), 140px);
+        width: clamp(108px, min(20vh, 15vw), 220px);
         cursor: pointer;
         transition: transform 0.12s;
+        flex-shrink: 0;
       }
       #loading-coinslot:hover { transform: translateY(-3px); }
       #loading-coinslot:active { transform: translateY(2px); }
@@ -365,41 +386,51 @@
       /* 2026-05-17 — HARD-RESET TIP. New banner on the loading screen
          that tells players how to clear browser cache so they get the
          latest build. Caching is what causes the "I made a change but
-         my friends still see the old version" problem. */
+         my friends still see the old version" problem.
+         2026-05-19 v2 — Compacted to a single-line horizontal layout
+         so it occupies one row instead of four. Same information
+         density (no content removed), much smaller vertical footprint
+         so the rest of the cluster fits a 1080p laptop comfortably. */
       #loading-tip {
-        margin-top: 22px;
-        padding: 12px 16px;
-        max-width: 620px;
+        margin-top: 0;
+        padding: clamp(4px, 0.8vh, 10px) clamp(10px, 1.4vw, 18px);
+        max-width: min(92vw, 1100px);
         border: 1px dashed #aa7733;
         background: linear-gradient(180deg, rgba(20, 10, 5, 0.85), rgba(34, 18, 9, 0.85));
         color: #f0c089;
-        font-size: 12px;
-        line-height: 1.55;
+        font-size: clamp(9px, min(1.3vh, 1vw), 13px);
+        line-height: 1.4;
         text-align: center;
         letter-spacing: 0.5px;
         text-shadow: 1px 1px 0 #000;
         opacity: 0;
         animation: tipFadeIn 0.6s ease-out 0.8s forwards;
+        flex-shrink: 0;
+        display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: clamp(6px, 1vw, 14px);
       }
       #loading-tip .tip-title {
-        display: block;
         font-weight: 900;
-        letter-spacing: 3px;
-        font-size: 11px;
+        letter-spacing: 2px;
+        font-size: clamp(9px, min(1.3vh, 1vw), 13px);
         color: #ffd34d;
-        margin-bottom: 4px;
+        margin-bottom: 0;
+        white-space: nowrap;
+      }
+      #loading-tip .tip-row {
+        display: inline-flex; align-items: center; gap: 4px;
+        white-space: nowrap;
       }
       #loading-tip kbd {
         display: inline-block;
-        padding: 2px 7px;
-        margin: 0 2px;
+        padding: 1px 6px;
+        margin: 0 1px;
         background: #2a1f12;
         border: 1px solid #5a4a30;
         border-bottom-width: 2px;
         border-radius: 3px;
         color: #ffd34d;
         font-family: 'Courier New', monospace;
-        font-size: 11px;
+        font-size: clamp(9px, min(1.2vh, 1vw), 12px);
         font-weight: bold;
         text-shadow: none;
         letter-spacing: 0;
@@ -430,12 +461,13 @@
       #loading.jolt #loading-stage { animation: loadingJolt 0.14s ease-out; }
 
       #loading-insert {
-        font-size: clamp(14px, 1.8vw, 18px);
-        letter-spacing: 5px;
+        font-size: clamp(11px, min(1.6vh, 1.3vw), 18px);
+        letter-spacing: clamp(3px, 0.4vw, 5px);
         font-weight: 900;
         color: #ffd34d;
         text-shadow: 0 0 10px #ffd34d, 2px 2px 0 #000;
         animation: insertBlink 1.0s steps(1) infinite;
+        flex-shrink: 0;
       }
       @keyframes insertBlink {
         0%, 49% { opacity: 1; }
@@ -483,12 +515,9 @@
           <button id="loading-view-leaderboard" type="button">🏛 VIEW HALL OF GLORY</button>
         </div>
         <div id="loading-tip">
-          <span class="tip-title">⚡ PRO TIP — GET THE LATEST BUILD</span>
-          Browsers cache aggressively. If something looks off or you suspect an old version, hard-refresh first:
-          <br/>
-          <b>Mac:</b> <kbd>⌘ Cmd</kbd> + <kbd>⇧ Shift</kbd> + <kbd>R</kbd>
-          &nbsp;·&nbsp;
-          <b>Windows / Linux:</b> <kbd>Ctrl</kbd> + <kbd>⇧ Shift</kbd> + <kbd>R</kbd> (or <kbd>Ctrl</kbd> + <kbd>F5</kbd>)
+          <span class="tip-title">⚡ HARD-REFRESH FOR THE LATEST BUILD</span>
+          <span class="tip-row"><b>Mac:</b> <kbd>⌘ Cmd</kbd>+<kbd>⇧ Shift</kbd>+<kbd>R</kbd></span>
+          <span class="tip-row"><b>Win / Linux:</b> <kbd>Ctrl</kbd>+<kbd>⇧ Shift</kbd>+<kbd>R</kbd> (or <kbd>Ctrl</kbd>+<kbd>F5</kbd>)</span>
         </div>
       </div>
     </div>
