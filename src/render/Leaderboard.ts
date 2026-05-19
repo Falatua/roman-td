@@ -676,10 +676,15 @@ export function runEndOfGameFlow(
     const savedName: string = ((state as any).playerName ?? '').trim().toUpperCase() || 'UNKNOWN';
 
     // Build + commit the entry. Local first (source of truth on this
-    // device), then fire-and-forget to Supabase. Network failures are
-    // logged via the service; the GLOBAL tab will still attempt to
-    // fetch on open regardless.
-    const finalize = (name: string) => {
+    // device), then AWAIT the remote submit before opening the
+    // leaderboard. The previous fire-and-forget had a race condition:
+    // showLeaderboard's first fetch could fire BEFORE the player's
+    // submit landed on Supabase, so the player wouldn't see their own
+    // score on the global tab for ~10-20 seconds. Awaiting closes
+    // that gap — by the time we open the leaderboard, the submit has
+    // either succeeded (player visible immediately) or its 3 retries
+    // have exhausted (the offline diagnostic kicks in instead).
+    const finalize = async (name: string) => {
       const entry: LeaderboardEntry = {
         name: name || 'UNKNOWN',
         score: finalScore,
@@ -691,7 +696,24 @@ export function runEndOfGameFlow(
         ts: Date.now()
       };
       insertEntry(entry);
-      submitScore(toRemoteRow(entry, 'campaign'));
+      // Show a brief "submitting…" overlay while we wait for the
+      // remote write. Up to 3 retries × 6s = 18s in the worst case.
+      const overlay = document.createElement('div');
+      overlay.id = 'submit-score-overlay';
+      overlay.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);z-index:210;font-family:'Courier New',monospace;color:#ffd34d;`;
+      overlay.innerHTML = `
+        <div style="text-align:center;padding:22px 32px;background:#0a0202;border:3px solid #d4af37;box-shadow:0 0 28px rgba(212,175,55,0.55)">
+          <div style="font-size:14px;letter-spacing:4px;font-weight:bold;margin-bottom:8px">📜 SUBMITTING SCORE TO THE EMPIRE…</div>
+          <div style="font-size:11px;color:#aa9a4a;letter-spacing:2px">${name || 'UNKNOWN'} · ${finalScore.toLocaleString()} pts</div>
+        </div>`;
+      document.body.appendChild(overlay);
+      try {
+        await submitScore(toRemoteRow(entry, 'campaign'));
+      } catch (err) {
+        console.error('[leaderboard] submit threw:', err);
+      } finally {
+        overlay.remove();
+      }
       // If a post-victory hook is wired (Endless transition), invoke it
       // INSTEAD of showing the static leaderboard. The leaderboard is
       // still reachable from the main menu after the run ends.

@@ -85,7 +85,15 @@
         background: radial-gradient(ellipse at center, #1a0808 0%, #0a0202 60%, #000 100%);
         color: #ffd34d;
         z-index: 200;
-        overflow: hidden;
+        /* 2026-05-19 — was `overflow: hidden`. On a SHORT viewport
+           (laptop maximized) the content cluster (~800px tall) was
+           taller than the visible area, and `align-items: center`
+           caused the top portion to be clipped above the viewport.
+           Switching to `auto` lets the user scroll if needed; the
+           combined flex-start change in #loading-stage anchors the
+           content to the top so the title is always visible without
+           any scroll on most monitors. */
+        overflow: auto;
         transition: opacity 0.45s, transform 0.45s;
         font-family: 'Courier New', monospace;
         transform-origin: center center;
@@ -139,12 +147,19 @@
 
       /* Main content stack — gap scales with viewport so the rhythm
          of stacked elements (eagle / title / subtitle / copy / bar /
-         coin slot) reads naturally on small AND huge monitors. */
+         coin slot) reads naturally on small AND huge monitors.
+         2026-05-19 — switched `justify-content: center` → `flex-start`
+         + added explicit top padding. The previous centered layout
+         clipped content at the TOP when the cluster was taller than
+         the viewport (laptop maximized, ultrawide-but-short windows,
+         etc.). Anchoring at the top guarantees the title is always
+         visible; the bottom can scroll if needed. */
       #loading-stage {
         position: relative; z-index: 4;
-        width: 100%; height: 100%;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: clamp(32px, 3vw, 64px) clamp(24px, 2vw, 48px);
+        min-height: 100%;
+        width: 100%;
+        display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+        padding: clamp(40px, 5vh, 80px) clamp(24px, 2vw, 48px) clamp(32px, 3vw, 64px);
         box-sizing: border-box;
         gap: clamp(22px, 2vw, 38px);
         text-align: center;
