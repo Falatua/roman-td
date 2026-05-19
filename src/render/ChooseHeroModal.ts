@@ -21,6 +21,23 @@
 import { GameStateShape } from '../GameState';
 import { draftHeroChoices, pickHero, type HeroId } from '../systems/HeroSystem';
 import HERO_DEFS from '../data/herodefs.json';
+// 2026-05-19 — towers.json carries the hero's combat stats (baseDps,
+// attackSpeed, range, damageType, critChance). The draft modal pulls
+// these so the card surfaces the same numbers the in-game inspect
+// panel will show after the player places the hero, helping them
+// compare heroes head-to-head with the rest of their roster.
+import TOWERS_DATA from '../data/towers.json';
+
+// Pretty-print a damageType string (e.g. PHYS_MELEE → "MELEE").
+function prettyDamageType(dt: any): string {
+  const s = String(dt ?? '');
+  if (s === 'PHYS_MELEE')      return 'MELEE';
+  if (s === 'PHYS_RANGED')     return 'RANGED';
+  if (s === 'SIEGE')           return 'SIEGE';
+  if (s === 'ELEMENTAL_FIRE')  return 'FIRE';
+  if (s === 'DIVINE')          return 'DIVINE';
+  return s.replace(/_/g, ' ');
+}
 
 // 2026-05-19 — Defensive passive-description lookup. Most heroes
 // declare a single flat `passive.description`, but Agricola uses a
@@ -311,6 +328,39 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
     </div>
   `;
 
+  // Tower-style stats block (DPS / atk speed / range / damage type /
+  // crit). Pulls baseDps × the global +10% spawn buff used by
+  // TowerSystem.createTower so the displayed DPS exactly matches
+  // what the player will see in the in-game inspect panel when they
+  // place the hero. Per-hit damage = baseDps / attackSpeed.
+  const towerStats: any = (TOWERS_DATA as any)[heroId] ?? {};
+  const baseDpsRaw = (towerStats.baseDps ?? 0) * 1.10;   // matches createTower
+  const atkSpd     = towerStats.attackSpeed ?? 1.0;
+  const rangeTiles = towerStats.range ?? 0;
+  const perHit     = atkSpd > 0 ? baseDpsRaw / atkSpd : baseDpsRaw;
+  const dmgTypeLbl = prettyDamageType(towerStats.damageType);
+  const critPct    = Math.round((towerStats.critChance ?? 0) * 100);
+  const critMult   = towerStats.critMult ?? 2.0;
+  // Mini "stat-box" matches the regular tower menu's stat-grid format:
+  // small uppercase label on top, bold value below.
+  const statBox = (label: string, value: string, color = '#e8d6a8') =>
+    `<div style="background:rgba(0,0,0,0.35);padding:6px 8px;border:1px solid #3a2a1a">
+       <div style="color:#aa9a4a;letter-spacing:1.5px;text-transform:uppercase;font-size:8.5px">${label}</div>
+       <div style="color:${color};font-size:13px;font-weight:bold;margin-top:2px">${value}</div>
+     </div>`;
+  const stats = `
+    <div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:6px">STATS (TIRO BASE)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:clamp(12px,1.8vh,18px)">
+      ${statBox('DAMAGE / HIT', perHit.toFixed(1), '#ee9966')}
+      ${statBox('ATK SPEED',    atkSpd.toFixed(2) + ' /s')}
+      ${statBox('RANGE',        rangeTiles + ' tiles')}
+      ${statBox('DPS',          baseDpsRaw.toFixed(1), '#ffbe7a')}
+      ${statBox('CRIT',         critPct + '%' + (critPct > 0 ? ' × ' + critMult.toFixed(1) : ''))}
+      ${statBox('TYPE',         dmgTypeLbl, tint)}
+    </div>
+    <div style="font-size:9px;color:#5a8a5a;letter-spacing:1px;margin-top:-10px;margin-bottom:clamp(10px,1.6vh,16px);font-style:italic">↑ Scales 1.0× → 2.4× across the 5 tiers as XP rises.</div>
+  `;
+
   // "Built for:" callout
   const builtFor = def.playerProblemSolved
     ? `
@@ -354,6 +404,7 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
     ${slotChip}
     ${lastPickBadge}
     <div style="padding: clamp(14px, 2vh, 22px) clamp(14px, 2vw, 20px);">
+      ${stats}
       ${builtFor}
       ${passive}
       <div style="font-size: 9px; color: #aa9a4a; letter-spacing: 2px; margin-bottom: 6px; padding-top: 4px; border-top: 1px dashed #3a2a1a;">ABILITIES</div>

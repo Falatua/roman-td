@@ -1021,7 +1021,7 @@
   "HERO_MARIUS": {
     "name": "Gaius Marius",
     "damageType": "PHYS_MELEE",
-    "baseDps": 22,
+    "baseDps": 55,
     "attackSpeed": 1.3,
     "range": 1.5,
     "kind": "BASE",
@@ -1037,7 +1037,7 @@
   "HERO_AGRIPPA": {
     "name": "Marcus Agrippa",
     "damageType": "SIEGE",
-    "baseDps": 20,
+    "baseDps": 55,
     "attackSpeed": 1.0,
     "range": 4.5,
     "kind": "BASE",
@@ -1053,7 +1053,7 @@
   "HERO_AGRICOLA": {
     "name": "Gnaeus Agricola",
     "damageType": "PHYS_RANGED",
-    "baseDps": 18,
+    "baseDps": 50,
     "attackSpeed": 1.1,
     "range": 5.0,
     "kind": "BASE",
@@ -1069,7 +1069,7 @@
   "HERO_SCIPIO": {
     "name": "Scipio Africanus",
     "damageType": "PHYS_RANGED",
-    "baseDps": 15,
+    "baseDps": 70,
     "attackSpeed": 0.4,
     "range": 4.5,
     "kind": "BASE",
@@ -1085,7 +1085,7 @@
   "HERO_CAESAR": {
     "name": "Julius Caesar",
     "damageType": "DIVINE",
-    "baseDps": 16,
+    "baseDps": 60,
     "attackSpeed": 0.6,
     "range": 4.0,
     "kind": "BASE",
@@ -1101,7 +1101,7 @@
   "HERO_SULLA": {
     "name": "Lucius Sulla",
     "damageType": "ELEMENTAL_FIRE",
-    "baseDps": 18,
+    "baseDps": 55,
     "attackSpeed": 0.9,
     "range": 3.5,
     "kind": "BASE",
