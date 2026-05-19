@@ -811,7 +811,15 @@ function itemInitials(name: string): string {
 // sell/combine/downgrade.
 // ─────────────────────────────────────────────────────────────────────
 function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateShape, inv: InventoryState, hooks: TowerMenuHooks): void {
+  // 2026-05-19 (rebuild) — Hero panel now mirrors the regular tower
+  // menu's chrome and layout. Same banner shape, same 96px portrait
+  // frame, same stats grid with breakdowns (DAMAGE/HIT · ATK SPEED ·
+  // RANGE · EFFECTIVE DPS), same item-slot row, same close-row
+  // footer. Hero-specific elements (XP bar, tier titles, tier-locked
+  // ability cards, kill bonus) layer on top so the panel reads as
+  // an enriched tower menu rather than a separate UI altogether.
   const heroDef: any = (HERO_DEFS_FOR_INSPECT as any)[t.type] ?? {};
+  const towerDef: any = (towersData as any)[t.type] ?? {};
   const tint = heroDef.visual?.tierUpColor ?? '#ffd34d';
   const tier = state.heroTier ?? 0;
   const xp = state.heroXp ?? 0;
@@ -821,6 +829,20 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   const nextTh = thresholds[Math.min(thresholds.length - 1, tier + 1)] ?? thresholds[thresholds.length - 1];
   const pctXp = tier >= 4 ? 100 : Math.max(0, Math.min(100, ((xp - curTh) / Math.max(1, nextTh - curTh)) * 100));
 
+  // Stats — pull the breakdown helper (same one the regular tower
+  // menu uses). Heroes have a basic-attack scale per tier on their
+  // def: `basicAtkScalePerTier[tier]`. We bake that into the
+  // displayed "Damage / hit" by injecting it as a synthetic damage
+  // modifier so the player can see the per-tier scaling visibly.
+  const effective = towerEffectiveStats(t);
+  const breakdown = towerStatBreakdown(t, state);
+  const tierScales: number[] = heroDef.basicAtkScalePerTier ?? [1, 1.2, 1.5, 1.9, 2.4];
+  const tierScale = tierScales[tier] ?? 1;
+  if (tierScale !== 1) {
+    breakdown.damageMods.push({ source: `${tierTitles[tier]} basic-atk scale`, multiplier: tierScale });
+    breakdown.damageFinal *= tierScale;
+  }
+
   const refresh = () => { document.getElementById('tower-menu')?.remove(); showHeroInspectPanel(parent, t, state, inv, hooks); };
 
   const modal = document.createElement('div');
@@ -829,36 +851,134 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   const panel = document.createElement('div');
   panel.style.cssText = `background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid ${tint};color:#e8d6a8;width:min(560px,96vw);box-shadow:0 0 30px ${tint}44;`;
 
-  // Banner
+  // ── Top banner (mirrors tower menu — "TIER N" on the right) ───────
   const banner = document.createElement('div');
-  banner.style.cssText = `background:${tint};color:#1a1410;padding:8px 12px;display:flex;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px`;
-  banner.innerHTML = `<span>⚔ HERO</span><span>${tierTitles[tier]}</span>`;
+  banner.style.cssText = `background:${tint};color:#1a1410;padding:6px 10px;display:flex;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px`;
+  banner.innerHTML = `<span>⚔ HERO · ${tierTitles[tier]}</span><span>TIER ${tier + 1}/5</span>`;
   panel.appendChild(banner);
 
-  // Header: name, title, tier, XP bar
+  // ── Header: 96px sprite portrait + name + tag chips (matches the
+  // regular tower menu's `head` layout). The sprite comes from the
+  // same Pixi-cached `spriteSrc(t.type)` lookup the tower menu uses,
+  // so the same Higgs-Field hero PNG that renders on the map shows
+  // up in the inspect panel — no separate asset wiring.
   const head = document.createElement('div');
-  head.style.cssText = 'padding:14px 16px;border-bottom:1px solid #3a3025;background:#1a1410';
-  head.innerHTML = `
-    <div style="font-size:20px;color:${tint};letter-spacing:3px;font-weight:bold;text-shadow:0 0 8px ${tint}88">${(heroDef.name ?? t.type).toUpperCase()}</div>
-    <div style="font-size:11px;color:#cdb98a;letter-spacing:2px;margin-top:3px">${heroDef.title ?? ''}</div>
-    <div style="margin-top:10px">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:#aa9a4a;letter-spacing:1px;margin-bottom:3px">
-        <span>XP TO ${tierTitles[Math.min(4, tier + 1)] ?? 'MAX'}</span>
-        <span>${tier >= 4 ? 'MAXED' : `${xp} / ${nextTh}`}</span>
-      </div>
-      <div style="background:#0c0a08;border:1px solid #5a4a30;height:10px;overflow:hidden">
-        <div style="width:${pctXp}%;height:100%;background:linear-gradient(90deg,${tint},${tint}aa);transition:width 0.3s"></div>
-      </div>
+  head.style.cssText = 'display:grid;grid-template-columns:96px 1fr;gap:12px;padding:12px;border-bottom:1px solid #3a3025;background:#1a1410';
+  const portFrame = document.createElement('div');
+  portFrame.style.cssText = `width:96px;height:96px;border:2px solid ${tint};background:#0c0a08;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 8px ${tint}88;overflow:hidden`;
+  const portraitUrl = spriteSrc(t.type);
+  if (portraitUrl) {
+    const img = document.createElement('img');
+    img.src = portraitUrl;
+    img.style.cssText = 'width:88px;height:88px;image-rendering:pixelated;image-rendering:crisp-edges';
+    portFrame.appendChild(img);
+  } else {
+    portFrame.innerHTML = `<div style="font-size:42px;color:${tint};text-shadow:0 0 8px ${tint}">⚔</div>`;
+  }
+  head.appendChild(portFrame);
+
+  const headInfo = document.createElement('div');
+  // Damage-type label resolved from the tower def (e.g. SIEGE,
+  // PHYS_MELEE) — mirrors what the regular tower menu shows. Uses
+  // the same damageTypeLabel helper.
+  const dmgLabel = damageTypeLabel(towerDef.damageType);
+  headInfo.innerHTML = `
+    <div style="font-size:18px;color:${tint};letter-spacing:3px;font-weight:bold;text-shadow:0 0 8px ${tint}88">${(heroDef.name ?? t.type).toUpperCase()}</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px">
+      <span style="font-size:10px;color:#1a1410;background:${tint};padding:3px 7px;font-weight:bold;letter-spacing:1px">${tierTitles[tier]}</span>
+      <span style="font-size:10px;color:#aa9a4a;letter-spacing:1px">${dmgLabel} · ${heroDef.specialty ?? 'HERO'}</span>
     </div>
-    <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px">
-      <div><div style="color:#aa9a4a;font-size:9px;letter-spacing:1px">KILLS</div><div style="color:#d4af37;font-size:14px;font-weight:bold">${t.killCount}</div></div>
-      <div><div style="color:#aa9a4a;font-size:9px;letter-spacing:1px">KILL BONUS</div><div style="color:#9be0ff;font-size:14px;font-weight:bold">+${t.killBonusFlat.toFixed(1)} DPS</div></div>
-      <div><div style="color:#aa9a4a;font-size:9px;letter-spacing:1px">SPECIALTY</div><div style="color:${tint};font-size:12px;font-weight:bold">${heroDef.specialty ?? ''}</div></div>
-    </div>
+    <div style="font-size:11px;color:#cdb98a;margin-top:6px;font-style:italic">${heroDef.title ?? ''}</div>
   `;
+  head.appendChild(headInfo);
   panel.appendChild(head);
 
-  // Built for
+  // ── XP bar (hero-specific). Lives right under the header like the
+  // tower menu's tier banner — visually positioned the same way so
+  // the panel reads as "tower with leveling on top" rather than
+  // "different UI."
+  const xpRow = document.createElement('div');
+  xpRow.style.cssText = 'padding:10px 14px;background:#12100d;border-bottom:1px solid #3a3025';
+  xpRow.innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#aa9a4a;letter-spacing:1px;margin-bottom:4px">
+      <span>XP → ${tierTitles[Math.min(4, tier + 1)] ?? 'MAX'}</span>
+      <span>${tier >= 4 ? 'MAXED' : `${xp} / ${nextTh}`}</span>
+    </div>
+    <div style="background:#0c0a08;border:1px solid #5a4a30;height:10px;overflow:hidden">
+      <div style="width:${pctXp}%;height:100%;background:linear-gradient(90deg,${tint},${tint}aa);transition:width 0.3s"></div>
+    </div>`;
+  panel.appendChild(xpRow);
+
+  // ── Stats grid (mirrors the tower menu's breakdown-aware grid).
+  // Same boxes, same format, same breakdown listing. Heroes get an
+  // extra row for KILLS + KILL BONUS that the tower menu doesn't
+  // surface (the regular menu shows kill count under the breakdown
+  // section, but heroes have a kill-bonus stack that's worth
+  // highlighting up front).
+  const statsGrid = document.createElement('div');
+  statsGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#3a3025;border-top:1px solid #3a3025;border-bottom:1px solid #3a3025';
+  const finalPerHit = breakdown.damageFinal / Math.max(0.05, breakdown.speedFinal);
+  const basePerHit = breakdown.damageBase / Math.max(0.05, breakdown.speedBase);
+  const fmtMods = (mods: StatModifier[]): string => {
+    if (mods.length === 0) return '';
+    const parts = mods.map(m => {
+      if (m.flat !== undefined) return `<span style="color:#88ff88">+${m.flat}</span> <span style="color:#aa9a4a;font-size:9px">${m.source}</span>`;
+      const pct = ((m.multiplier ?? 1) - 1) * 100;
+      const sign = pct >= 0 ? '+' : '';
+      const color = pct >= 0 ? '#88ff88' : '#ff7777';
+      return `<span style="color:${color}">${sign}${pct.toFixed(0)}%</span> <span style="color:#aa9a4a;font-size:9px">${m.source}</span>`;
+    });
+    return `<div style="margin-top:4px;font-size:10px;line-height:1.5">${parts.join(' · ')}</div>`;
+  };
+  const dmgBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px;grid-column:span 2"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Damage / hit</div>${
+    breakdown.damageMods.length === 0
+      ? `<div style="color:#ee9966;font-size:14px;font-weight:bold;margin-top:2px">${basePerHit.toFixed(1)}</div>`
+      : `<div style="display:flex;align-items:baseline;gap:6px;margin-top:2px;flex-wrap:wrap">
+          <span style="color:#aa9a4a;font-size:11px;text-decoration:line-through">${basePerHit.toFixed(1)}</span>
+          <span style="color:#88ff88;font-size:11px">→</span>
+          <span style="color:#ee9966;font-size:14px;font-weight:bold">${finalPerHit.toFixed(1)}</span>
+        </div>${fmtMods(breakdown.damageMods)}`
+  }</div>`;
+  const spdBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Atk Speed</div>${
+    breakdown.speedMods.length === 0
+      ? `<div style="color:#e8d6a8;font-size:14px;font-weight:bold;margin-top:2px">${breakdown.speedBase.toFixed(2)} /s</div>`
+      : `<div style="display:flex;align-items:baseline;gap:6px;margin-top:2px;flex-wrap:wrap">
+          <span style="color:#aa9a4a;font-size:11px;text-decoration:line-through">${breakdown.speedBase.toFixed(2)}/s</span>
+          <span style="color:#88ff88;font-size:11px">→</span>
+          <span style="color:#e8d6a8;font-size:14px;font-weight:bold">${breakdown.speedFinal.toFixed(2)} /s</span>
+        </div>${fmtMods(breakdown.speedMods)}`
+  }</div>`;
+  const rngBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Range</div>${
+    breakdown.rangeMods.length === 0
+      ? `<div style="color:#e8d6a8;font-size:14px;font-weight:bold;margin-top:2px">${breakdown.rangeBase} tiles</div>`
+      : `<div style="display:flex;align-items:baseline;gap:6px;margin-top:2px;flex-wrap:wrap">
+          <span style="color:#aa9a4a;font-size:11px;text-decoration:line-through">${breakdown.rangeBase}</span>
+          <span style="color:#88ff88;font-size:11px">→</span>
+          <span style="color:#e8d6a8;font-size:14px;font-weight:bold">${breakdown.rangeFinal} tiles</span>
+        </div>${fmtMods(breakdown.rangeMods)}`
+  }</div>`;
+  const dpsFinal = (finalPerHit * breakdown.speedFinal).toFixed(1);
+  const dpsBaseCalc = (basePerHit * breakdown.speedBase).toFixed(1);
+  const dpsHasBoost = breakdown.damageMods.length + breakdown.speedMods.length > 0;
+  const dpsBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Effective DPS</div>${
+    dpsHasBoost
+      ? `<div style="display:flex;align-items:baseline;gap:6px;margin-top:2px;flex-wrap:wrap">
+          <span style="color:#aa9a4a;font-size:11px;text-decoration:line-through">${dpsBaseCalc}</span>
+          <span style="color:#88ff88;font-size:11px">→</span>
+          <span style="color:#ffbe7a;font-size:14px;font-weight:bold">${dpsFinal}</span>
+        </div>`
+      : `<div style="color:#ffbe7a;font-size:14px;font-weight:bold;margin-top:2px">${dpsFinal}</div>`
+  }</div>`;
+  // Hero-specific row: kills + cumulative kill-bonus DPS stack. The
+  // regular tower menu surfaces these too (further down), but heroes
+  // earn kill-bonus DPS at custom rates set in herodefs.json so the
+  // breakdown is worth keeping front-and-center.
+  const killsBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Kills</div><div style="color:#d4af37;font-size:14px;font-weight:bold;margin-top:2px">${t.killCount}</div></div>`;
+  const kbBox    = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Kill Bonus</div><div style="color:#9be0ff;font-size:14px;font-weight:bold;margin-top:2px">+${t.killBonusFlat.toFixed(1)} DPS</div></div>`;
+  statsGrid.innerHTML = dmgBox + spdBox + rngBox + dpsBox + killsBox + kbBox;
+  panel.appendChild(statsGrid);
+
+  // ── Built For (kept — heroes have a stated player problem)
   if (heroDef.playerProblemSolved) {
     const bf = document.createElement('div');
     bf.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025;background:#12100d;font-size:11px;color:#cdb98a;line-height:1.5;font-style:italic;border-left:3px solid ' + tint + ';margin:0';
@@ -866,9 +986,8 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
     panel.appendChild(bf);
   }
 
-  // Passive — defensive lookup handles DUAL-kind heroes (Agricola)
-  // whose top-level passive.description is empty but nested
-  // global/local.description fields carry the real text.
+  // ── Passive (defensive lookup — handles DUAL-kind heroes like
+  // Agricola whose top-level description is empty)
   const p: any = heroDef.passive;
   let passiveText: string = p?.description ?? '';
   if (!passiveText && p) {
