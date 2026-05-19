@@ -137,12 +137,16 @@
       }
       #loading.warp { animation: loadingWarp 720ms cubic-bezier(0.55, 0, 0.85, 0.6) forwards, loadingCrtFlicker 5.4s infinite; }
 
-      /* Main content stack */
+      /* Main content stack — gap scales with viewport so the rhythm
+         of stacked elements (eagle / title / subtitle / copy / bar /
+         coin slot) reads naturally on small AND huge monitors. */
       #loading-stage {
         position: relative; z-index: 4;
         width: 100%; height: 100%;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: 32px 24px; box-sizing: border-box; gap: 22px;
+        padding: clamp(32px, 3vw, 64px) clamp(24px, 2vw, 48px);
+        box-sizing: border-box;
+        gap: clamp(22px, 2vw, 38px);
         text-align: center;
       }
 
@@ -150,8 +154,11 @@
          2026-05-17 — path fix: '/assets/...' was an absolute path that
          404'd on GitHub Pages (resolved to root domain). './assets/...'
          resolves correctly under any deploy path. */
+      /* 2026-05-19 — Scales with viewport so the eagle reads big on
+         large monitors instead of staying at a 64px postage stamp. */
       #loading-eagle {
-        width: 64px; height: 64px;
+        width: clamp(64px, 6vw, 128px);
+        height: clamp(64px, 6vw, 128px);
         background: url('./assets/sprites/i_aquila_standard.png') no-repeat center/contain;
         image-rendering: pixelated;
         filter: drop-shadow(0 0 12px rgba(255,170,51,0.5)) drop-shadow(2px 2px 0 #000);
@@ -166,8 +173,8 @@
          version plugin at build time so the bytes are baked into the
          HTML (no JS round-trip needed). */
       #loading-version {
-        font-size: 10px;
-        letter-spacing: 3px;
+        font-size: clamp(10px, 0.9vw, 16px);
+        letter-spacing: clamp(3px, 0.3vw, 5px);
         color: #aa9a4a;
         opacity: 0.7;
         margin-bottom: -8px;
@@ -191,9 +198,13 @@
         60%  { transform: scale(1.08) translateY(5px); }
         100% { opacity: 1; transform: scale(1) translateY(0); }
       }
+      /* 2026-05-19 — Caps bumped for big monitors. Was capping at 96px
+         title / 16px subtitle on 4K screens, leaving a tiny content
+         cluster in the middle of a huge dark frame. New caps scale up
+         to 1.8x so the loading screen reads BIG on any monitor. */
       #loading-title-main {
-        font-size: clamp(48px, 9vw, 96px);
-        letter-spacing: clamp(8px, 1.4vw, 14px);
+        font-size: clamp(48px, 9vw, 168px);
+        letter-spacing: clamp(8px, 1.4vw, 24px);
         font-weight: 900;
         color: #ffd34d;
         line-height: 1;
@@ -203,8 +214,8 @@
           loadingTitleFlicker 5.4s 0.7s infinite;
       }
       #loading-subtitle {
-        font-size: clamp(11px, 1.6vw, 16px);
-        letter-spacing: 6px;
+        font-size: clamp(11px, 1.6vw, 28px);
+        letter-spacing: clamp(6px, 0.6vw, 10px);
         color: #aa4a1a;
         text-shadow: 1px 1px 0 #000, 0 0 8px rgba(170,74,26,0.6);
         font-weight: 900;
@@ -213,12 +224,12 @@
       /* Rotating copy lines */
       #loading-copy {
         min-height: 28px;
-        font-size: clamp(13px, 1.7vw, 18px);
-        letter-spacing: 3px;
+        font-size: clamp(13px, 1.7vw, 28px);
+        letter-spacing: clamp(3px, 0.3vw, 5px);
         color: #ffd34d;
         text-shadow: 0 0 8px #ffd34d, 1px 1px 0 #000;
         font-weight: 900;
-        max-width: 720px;
+        max-width: min(1100px, 80vw);
       }
       #loading-copy.typing::after {
         content: '_';
@@ -227,10 +238,11 @@
       }
       @keyframes copyCursorBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 
-      /* Progress bar — barebones CRT segmented look */
+      /* Progress bar — barebones CRT segmented look. Width scales up
+         on big monitors so the bar reads at-a-glance across the room. */
       #loading-bar-wrap {
-        width: min(540px, 80%);
-        height: 16px;
+        width: min(820px, 60vw);
+        height: clamp(16px, 1.6vw, 26px);
         border: 2px solid #aa1a1a;
         background: #1a0404;
         box-shadow: inset 0 0 12px #000, 0 0 16px rgba(170,26,26,0.4);
@@ -254,9 +266,13 @@
         transition: opacity 0.5s;
       }
       #loading-coinslot-wrap.ready { opacity: 1; }
+      /* 2026-05-19 — Scales up on big monitors so the coin-slot mini-
+         game is readable. Stays 140x90 on phones / 1080p, grows to
+         ~220x140 on 4K. */
       #loading-coinslot {
         position: relative;
-        width: 140px; height: 90px;
+        width: clamp(140px, 12vw, 220px);
+        height: clamp(90px, 7.5vw, 140px);
         cursor: pointer;
         transition: transform 0.12s;
       }

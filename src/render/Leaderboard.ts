@@ -180,12 +180,19 @@ function ensureStyle() {
       0%, 100% { background: #2a0d04; box-shadow: 0 0 12px rgba(255,170,51,0.4) inset; }
       50%      { background: #4a1a06; box-shadow: 0 0 22px rgba(255,211,77,0.8) inset; }
     }
+    /* 2026-05-19 — RESPONSIVE PASS. Previously every dimension was
+       fixed-px (44px title, 880px content max, 13px row text…), which
+       left the leaderboard as a small cluster in the middle of a big
+       monitor. All sizes now use clamp() so the leaderboard reads
+       BIG on huge screens and still fits on small ones. */
     .hog-overlay {
-      position: absolute; inset: 0; z-index: 200;
+      /* Mounted on document.body — position:fixed fills the REAL
+         viewport on any monitor size, not the scaled #app box. */
+      position: fixed; inset: 0; z-index: 200;
       background: radial-gradient(ellipse at center, #1a0808 0%, #0a0202 70%, #000 100%);
       color: #ffd34d; font-family: 'Courier New', monospace;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-      padding: 18px 24px;
+      padding: clamp(18px, 2vw, 36px) clamp(24px, 3vw, 48px);
       overflow: hidden;
     }
     .hog-scanlines {
@@ -206,12 +213,16 @@ function ensureStyle() {
       z-index: 1;
     }
     .hog-content {
-      position: relative; z-index: 2; width: min(880px, 96%);
-      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      position: relative; z-index: 2;
+      width: min(1400px, 94vw);
+      display: flex; flex-direction: column; align-items: center;
+      gap: clamp(14px, 1.5vw, 26px);
       max-height: calc(100% - 36px);
     }
     .hog-title {
-      font-size: 44px; letter-spacing: 10px; font-weight: 900;
+      font-size: clamp(44px, 7vw, 96px);
+      letter-spacing: clamp(10px, 1.2vw, 18px);
+      font-weight: 900;
       color: #ffd34d;
       text-shadow: 0 0 12px #ffd34d, 0 0 22px #ffaa33, 2px 2px 0 #1a0808;
       animation: hogTitleFlicker 4.6s infinite;
@@ -219,7 +230,9 @@ function ensureStyle() {
       padding: 4px 0;
     }
     .hog-subtitle {
-      font-size: 12px; letter-spacing: 6px; color: #aa4a1a;
+      font-size: clamp(12px, 1.3vw, 22px);
+      letter-spacing: clamp(6px, 0.7vw, 12px);
+      color: #aa4a1a;
       text-shadow: 1px 1px 0 #000;
     }
     .hog-table {
@@ -229,8 +242,10 @@ function ensureStyle() {
       box-shadow: 0 0 24px rgba(170,26,26,0.4), inset 0 0 30px rgba(0,0,0,0.7);
     }
     .hog-table thead th {
-      font-size: 11px; letter-spacing: 2px;
-      color: #aa6a1a; padding: 8px 10px;
+      font-size: clamp(11px, 1.1vw, 18px);
+      letter-spacing: clamp(2px, 0.25vw, 4px);
+      color: #aa6a1a;
+      padding: clamp(8px, 0.9vw, 16px) clamp(10px, 1vw, 18px);
       border-bottom: 2px solid #aa1a1a;
       text-align: left; font-weight: 900;
       background: linear-gradient(180deg, #2a0808, #1a0404);
@@ -241,14 +256,18 @@ function ensureStyle() {
       border-bottom: 1px dashed rgba(170,26,26,0.3);
     }
     .hog-table tbody td {
-      padding: 9px 10px; font-size: 13px; font-weight: 900;
-      letter-spacing: 1px;
+      padding: clamp(9px, 1vw, 16px) clamp(10px, 1vw, 18px);
+      font-size: clamp(13px, 1.4vw, 22px);
+      font-weight: 900;
+      letter-spacing: clamp(1px, 0.2vw, 3px);
       text-shadow: 1px 1px 0 #000;
     }
     .hog-table tbody td.num { text-align: right; }
     .hog-table tbody tr.you { animation: hogRowIn 0.45s ease-out both, hogPulse 1.2s ease-in-out infinite; }
     .hog-prompt {
-      font-size: 16px; letter-spacing: 5px; font-weight: 900;
+      font-size: clamp(16px, 1.8vw, 28px);
+      letter-spacing: clamp(5px, 0.6vw, 10px);
+      font-weight: 900;
       color: #ffd34d; animation: hogPrompt 1.0s infinite;
       text-shadow: 0 0 8px #ffd34d, 2px 2px 0 #000;
       margin-top: 8px;
@@ -258,7 +277,7 @@ function ensureStyle() {
     .hog-rank-3 { color: #cd7f32; }
     .hog-rank-1 td:first-child::before { content: '🏛 '; }
     .hog-table-scroll {
-      width: 100%; max-height: 50vh; overflow-y: auto;
+      width: 100%; max-height: 60vh; overflow-y: auto;
       border: 2px solid #aa1a1a;
       scrollbar-width: thin; scrollbar-color: #aa1a1a #1a0404;
     }
@@ -438,7 +457,14 @@ export function showLeaderboard(parent: HTMLElement, currentEntry: LeaderboardEn
       </div>
       <div class="hog-prompt">▶ PRESS ENTER TO PLAY AGAIN ◀</div>
     </div>`;
-  parent.appendChild(wrap);
+  // 2026-05-19 — Mount the Hall of Glory directly on document.body
+  // instead of inside the scaled #app container. This lets the
+  // leaderboard fill the actual VIEWPORT instead of being constrained
+  // to #app's natural ~900px height + then scaled — on a big monitor
+  // the previous setup left the content as a small cluster in the
+  // middle of a huge dark frame. Now `position: fixed; inset: 0` in
+  // the .hog-overlay CSS works as expected: full viewport coverage.
+  document.body.appendChild(wrap);
 
   const tbody = wrap.querySelector('#hog-tbody') as HTMLElement;
   const subtitle = wrap.querySelector('#hog-subtitle') as HTMLElement;
