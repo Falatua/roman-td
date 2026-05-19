@@ -351,7 +351,16 @@ const MANIFEST: Record<string, string> = {
   DP_BUSH: 'dp_bush.png',
   DP_FLOWERS_RED: 'dp_flowers_red.png',
   DP_FLOWERS_WHITE: 'dp_flowers_white.png',
-  DP_MUSHROOMS: 'dp_mushrooms.png'
+  DP_MUSHROOMS: 'dp_mushrooms.png',
+  // 2026-05-19 — Hero sprites (Higgs Field generated, pixel-art with
+  // transparent backgrounds). Keys match the TowerType enum so the
+  // renderer's `tex(tw.type)` lookup picks them up automatically.
+  HERO_MARIUS:   '../heroes/hero_marius.png',
+  HERO_AGRIPPA:  '../heroes/hero_agrippa.png',
+  HERO_AGRICOLA: '../heroes/hero_agricola.png',
+  HERO_SCIPIO:   '../heroes/hero_scipio.png',
+  HERO_CAESAR:   '../heroes/hero_caesar.png',
+  HERO_SULLA:    '../heroes/hero_sulla.png'
 };
 
 // Sprite-quality fix: tower / enemy / item sprites are stored as
@@ -475,6 +484,14 @@ async function loadOneSprite(key: string, file: string): Promise<void> {
 // exclusive enemies should always be ready when the event fires.
 function isCriticalAsset(file: string): boolean {
   if (file === 'e3_hell_gate.png' || file === 'e3_fire_giant.png') return true;
+  // 2026-05-19 — Hero sprites are critical so they're cached before
+  // the player places their drafted hero on W1. The choose-hero modal
+  // fires right after name entry, and the player can drop the hero
+  // within seconds of the modal closing. Deferred-bucket parallel
+  // loads are usually fast enough but the monogram fallback would
+  // briefly flicker if the player is quick — and these sprites are
+  // small (~1MB each, six total).
+  if (/(\/|^)heroes\//.test(file)) return true;
   return /^(m_|w_|t1_|t2_|e1_|p_|s_|u_|ab_|eb_|t_new_)/.test(file);
 }
 

@@ -213,6 +213,14 @@ function ensureChooseHeroStyle(): void {
 function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: number): HTMLElement {
   const tint = def.visual?.tierUpColor ?? '#ffd34d';
   const particleColor = def.visual?.particleColor ?? tint;
+  // 2026-05-19 — Higgs Field portrait cards. Each hero has a custom
+  // pixel-art card image stored in /assets/heroes/hero_card_<id>.png
+  // (filename slug = hero id minus the HERO_ prefix, lowercase). The
+  // card image gets dropped in as the top banner. If the file is
+  // missing (e.g. early dev branches before assets land), the modal
+  // falls back to the tinted gradient header generated below.
+  const heroSlug = heroId.replace(/^HERO_/, '').toLowerCase();
+  const cardImageUrl = `assets/heroes/hero_card_${heroSlug}.png`;
 
   const card = document.createElement('div');
   card.dataset.heroId = heroId;
@@ -221,7 +229,7 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
     position: relative;
     background: linear-gradient(180deg, rgba(34,25,18,0.96), rgba(10,6,4,0.96));
     border: 3px solid #5a4a30;
-    padding: clamp(14px, 2vh, 22px) clamp(14px, 2vw, 20px);
+    padding: 0;
     cursor: pointer;
     text-align: left;
     overflow: hidden;
@@ -263,27 +271,24 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
     <div style="position: absolute; top: 10px; right: 10px; background: #1a0a1a; color: #ffd34d; border: 1px solid #ffd34d; padding: 3px 8px; font-size: 9px; letter-spacing: 2px; font-weight: 900; text-shadow: 1px 1px 0 #000;">★ LAST PICK</div>
   ` : '';
 
-  // Header: portrait silhouette + name + title + specialty
-  // Leaves clear space at the top corners for the slot digit chip
-  // (left) and the LAST PICK badge (right) by adding a 28px top pad.
+  // Header: the Higgs Field-generated pixel-art portrait card. The
+  // generated image already embeds the hero's name, title, and a
+  // thematic background — it IS the card visual identity, not just a
+  // portrait inside one. Onerror fallback paints the synthetic
+  // tinted-letter banner so the modal still renders if assets are
+  // missing.
   const portraitBg = `radial-gradient(circle at center, ${particleColor}55 0%, ${particleColor}11 50%, transparent 70%)`;
   const header = `
-    <div style="display: flex; gap: clamp(10px, 1.5vw, 16px); align-items: flex-start; margin: 28px 0 clamp(12px, 1.8vh, 18px);">
-      <div style="
-        flex: 0 0 auto;
-        width: clamp(64px, 8vw, 96px);
-        height: clamp(64px, 8vw, 96px);
-        background: ${portraitBg};
-        border: 2px solid ${tint};
-        display: flex; align-items: center; justify-content: center;
-        font-size: clamp(34px, 5vw, 52px); color: ${tint};
-        box-shadow: inset 0 0 24px ${particleColor}44, 0 0 16px ${particleColor}66;
-        text-shadow: 0 0 12px ${tint};
-      ">⚔</div>
-      <div style="flex: 1; min-width: 0;">
-        <div style="font-size: clamp(18px, 2.1vh, 22px); color: ${tint}; letter-spacing: 3px; font-weight: 900; text-shadow: 0 0 8px ${tint}88, 2px 2px 0 #000; line-height: 1.15;">${def.name?.toUpperCase()}</div>
+    <div style="position: relative; width: 100%; aspect-ratio: 3 / 4; background: ${portraitBg}; overflow: hidden;">
+      <img src="${cardImageUrl}"
+           alt="${(def.name ?? heroId).toUpperCase()}"
+           style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; image-rendering: crisp-edges;"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+      <div style="display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; padding: 28px 16px; text-align: center;">
+        <div style="font-size: clamp(48px, 7vw, 72px); color: ${tint}; text-shadow: 0 0 18px ${tint};">⚔</div>
+        <div style="font-size: clamp(16px, 2.0vh, 20px); color: ${tint}; letter-spacing: 3px; font-weight: 900; margin-top: 8px; text-shadow: 0 0 8px ${tint}88, 2px 2px 0 #000;">${def.name?.toUpperCase()}</div>
         <div style="font-size: clamp(10px, 1.2vh, 12px); color: #cdb98a; letter-spacing: 2px; margin-top: 4px;">${def.title ?? ''}</div>
-        <div style="margin-top: 8px;">
+        <div style="margin-top: 10px;">
           <span style="display: inline-block; padding: 3px 10px; background: ${tint}22; border: 1px solid ${tint}; color: ${tint}; font-size: 9.5px; letter-spacing: 2px; font-weight: 900;">${def.specialty ?? ''}</span>
         </div>
       </div>
@@ -322,14 +327,20 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
     `;
   }).join('');
 
+  // 2026-05-19 — Padded body wraps the description sections so the
+  // banner image bleeds edge-to-edge on top while the text content
+  // below sits inside comfortable internal padding. Slot chip and
+  // LAST PICK badge are absolutely positioned over the banner.
   card.innerHTML = `
+    ${header}
     ${slotChip}
     ${lastPickBadge}
-    ${header}
-    ${builtFor}
-    ${passive}
-    <div style="font-size: 9px; color: #aa9a4a; letter-spacing: 2px; margin-bottom: 6px; padding-top: 4px; border-top: 1px dashed #3a2a1a;">ABILITIES</div>
-    ${abilityRows}
+    <div style="padding: clamp(14px, 2vh, 22px) clamp(14px, 2vw, 20px);">
+      ${builtFor}
+      ${passive}
+      <div style="font-size: 9px; color: #aa9a4a; letter-spacing: 2px; margin-bottom: 6px; padding-top: 4px; border-top: 1px dashed #3a2a1a;">ABILITIES</div>
+      ${abilityRows}
+    </div>
   `;
 
   return card;

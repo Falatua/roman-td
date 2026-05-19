@@ -1564,9 +1564,17 @@ export class RenderEngine {
         const sz = isHeroSprite ? GRID.TILE * 2.0 : GRID.TILE * 1.5;
         sp.width = sz; sp.height = sz;
         if (isHeroSprite) {
-          const heroDef: any = (towersData as any)[tw.type] ?? {};
-          const tintHex = (heroDef.tint ?? '#ffd34d').replace('#', '');
-          sp.tint = parseInt(tintHex, 16);
+          // 2026-05-19 — Tint only when the dedicated hero sprite is
+          // missing (asset folder not deployed yet, or build mid-rollout).
+          // Higgs-Field generated sprites carry their own per-hero
+          // palette so tinting on top would muddy the bronze + cloak
+          // colors. Falls back to the tint placeholder only when the
+          // monogram fallback below is about to draw.
+          if (!t) {
+            const heroDef: any = (towersData as any)[tw.type] ?? {};
+            const tintHex = (heroDef.tint ?? '#ffd34d').replace('#', '');
+            sp.tint = parseInt(tintHex, 16);
+          }
         }
         // FALLBACK MONOGRAM: every combo tier now ships a real sprite, but
         // this guard stays as a safety net for any future tower added to
