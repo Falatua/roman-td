@@ -358,16 +358,25 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   // Anti-air variant is handled in the target-selection pass.
   let auraDmgMult = 1;
   let auraSpdMult = 1;
+  let auraRangeBonus = 0;
   const auraKind = towerAuraTileKind(t);
   if (auraKind) {
     const eff = AURA_TILE_EFFECTS[auraKind];
     if (eff.dmgMult) auraDmgMult *= eff.dmgMult;
     if (eff.spdMult) auraSpdMult *= eff.spdMult;
+    // 2026-05-19 — EMERALD WATCHTOWER tile. Adds a flat +N tile range
+    // to the tower's effective range. Stacks additively with the
+    // Watchtower Lens trophy (+1 range) and pool-level extra range —
+    // all three live in the additive `range + extra` band, not in
+    // the multiplicative aura band. Consistent with how the BLUE
+    // damage tile composes with item damage mults: kind-specific
+    // surface on the aura record, applied where the math fits best.
+    if (eff.rangeBonus) auraRangeBonus += eff.rangeBonus;
   }
   return {
     dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult,
     attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult,
-    range: t.range + extraRange + endlessRangeBoost
+    range: t.range + extraRange + endlessRangeBoost + auraRangeBonus
   };
 }
 

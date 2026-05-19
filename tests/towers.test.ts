@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { createTower, towerEffectiveStats, towerPerAttackDamageBase, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { TowerType, DamageType } from '../src/types';
-import { TIER_MULTS, ECONOMY } from '../src/constants';
+import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS } from '../src/constants';
 import { createGameState } from '../src/GameState';
 
 describe('Tower creation', () => {
@@ -88,6 +88,63 @@ describe('Tower effective stats', () => {
     // 2026-05-19 rarity rebalance: Cavalry Spur tuned 1.30 → 1.22 so it
     // fits the UNCOMMON tier next to Mercury Feather (+22%).
     expect(towerEffectiveStats(melee).attackSpeed).toBeCloseTo(meleeBefore * 1.22, 4);
+  });
+});
+
+describe('Aura tiles (EMERALD watchtower +2 range)', () => {
+  // 2026-05-19 — 6th aura tile. EMERALD WATCHTOWER at (2, 22) grants
+  // any tower placed on it +2 tiles of range. Stacks additively with
+  // Watchtower Lens (+1) and pool-level extras.
+  it('AURA_TILE_EFFECTS.EMERALD declares rangeBonus 2', () => {
+    // Local import inside the test so this file doesn't grow another
+    // top-level import for one assertion.
+    expect(AURA_TILE_EFFECTS.EMERALD?.rangeBonus).toBe(2);
+    expect(AURA_TILE_EFFECTS.EMERALD?.label).toBe('WATCHTOWER TILE');
+    // And there's exactly one EMERALD tile placed on the map.
+    const emeraldTiles = AURA_TILES.filter((t: any) => t.kind === 'EMERALD');
+    expect(emeraldTiles.length).toBe(1);
+  });
+
+  it('tower on the EMERALD tile gains +2 effective range', () => {
+    const emerald = AURA_TILES.find(t => t.kind === 'EMERALD')!;
+    // Off-tile baseline tower
+    const off  = createTower(TowerType.SCORPIO, 1, 0, 0, 0);
+    // Same tower placed on the EMERALD aura tile
+    const on   = createTower(TowerType.SCORPIO, 1, emerald.col, emerald.row, 0);
+    const offRange = towerEffectiveStats(off).range;
+    const onRange  = towerEffectiveStats(on).range;
+    expect(onRange - offRange).toBeCloseTo(2.0, 4);
+  });
+
+  it('EMERALD range stacks additively with Watchtower Lens', () => {
+    const emerald = AURA_TILES.find(t => t.kind === 'EMERALD')!;
+    const off = createTower(TowerType.SCORPIO, 1, 0, 0, 0);
+    off.equippedItems.push('WATCHTOWER_LENS');
+    const offRange = towerEffectiveStats(off).range;
+
+    const on = createTower(TowerType.SCORPIO, 1, emerald.col, emerald.row, 0);
+    on.equippedItems.push('WATCHTOWER_LENS');
+    const onRange = towerEffectiveStats(on).range;
+    // Tile +2 stacks on top of Lens +1 → net difference is still 2.
+    expect(onRange - offRange).toBeCloseTo(2.0, 4);
+  });
+
+  it('minimum 11 manhattan separation between every pair of aura tiles', () => {
+    for (let i = 0; i < AURA_TILES.length; i++) {
+      for (let j = i + 1; j < AURA_TILES.length; j++) {
+        const a = AURA_TILES[i];
+        const b = AURA_TILES[j];
+        const d = Math.abs(a.col - b.col) + Math.abs(a.row - b.row);
+        expect(d).toBeGreaterThanOrEqual(11);
+      }
+    }
+  });
+
+  it('exactly 6 aura tiles on the map (one of each kind)', () => {
+    expect(AURA_TILES.length).toBe(6);
+    const kinds = new Set(AURA_TILES.map(t => t.kind));
+    expect(kinds.size).toBe(6);  // all distinct
+    expect(kinds.has('EMERALD')).toBe(true);
   });
 });
 

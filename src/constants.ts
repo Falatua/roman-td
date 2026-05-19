@@ -289,14 +289,22 @@ export const COIN_FOOTPRINT_TILES = 1; // 1x1 waypoint coin footprint (smaller, 
 export interface AuraTile {
   col: number;
   row: number;
-  kind: 'PURPLE' | 'BLUE' | 'RED' | 'CYAN' | 'GOLD';
+  kind: 'PURPLE' | 'BLUE' | 'RED' | 'CYAN' | 'GOLD' | 'EMERALD';
 }
 export const AURA_TILES: AuraTile[] = [
-  { col: 6,  row: 9,  kind: 'PURPLE' },  // early-left  · +30% attack speed
-  { col: 15, row: 12, kind: 'BLUE'   },  // central     · +30% damage
-  { col: 28, row: 8,  kind: 'RED'    },  // right-mid   · +50% damage vs bosses
-  { col: 24, row: 19, kind: 'CYAN'   },  // bottom-mid  · melee can hit flyers
-  { col: 11, row: 19, kind: 'GOLD'   }   // bottom-left · +2 gold per kill
+  { col: 6,  row: 9,  kind: 'PURPLE'  },  // early-left      · +30% attack speed
+  { col: 15, row: 12, kind: 'BLUE'    },  // central         · +30% damage
+  { col: 28, row: 8,  kind: 'RED'     },  // right-mid       · +50% damage vs bosses
+  { col: 24, row: 19, kind: 'CYAN'    },  // bottom-mid      · melee can hit flyers
+  { col: 11, row: 19, kind: 'GOLD'    },  // bottom-left     · +2 gold per kill
+  // 2026-05-19 — 6th aura tile. The WATCHTOWER (emerald green) sits in
+  // the bottom-left corner well off the main path so any tower placed
+  // there has a long sight-line back toward the gate. Min separation
+  // verified ≥11 manhattan from every other aura: PURPLE 17 / BLUE 23
+  // / RED 40 / CYAN 25 / GOLD 12. +2 tile range is a meaningful
+  // upgrade — turns a Scorpio (range 5.0) into an effective 7.0 range,
+  // covering nearly half the map width.
+  { col: 2,  row: 22, kind: 'EMERALD' }   // bottom-left rear · +2 tile range
 ];
 // Effect lookup table — used by stat math, combat hooks, and tooltips
 // so the same numbers come out of one source. Multipliers are applied
@@ -311,10 +319,17 @@ export const AURA_TILE_EFFECTS: Record<AuraTile['kind'], {
   bossMult?: number;      // optional vs-boss damage multiplier
   goldPerKill?: number;   // optional gold-per-kill bonus
   meleeFlyer?: boolean;   // optional anti-air for melee towers
+  rangeBonus?: number;    // optional flat range bonus in tiles
 }> = {
-  PURPLE: { color: 0xa060ff, label: 'TEMPO TILE', description: 'Tower on this tile attacks +30% faster.', spdMult: 1.30 },
-  BLUE:   { color: 0x66aaff, label: 'WAR TILE', description: 'Tower on this tile deals +30% damage.', dmgMult: 1.30 },
-  RED:    { color: 0xff5050, label: 'TYRANT TILE', description: 'Tower on this tile deals +50% damage vs Bosses.', bossMult: 1.50 },
-  CYAN:   { color: 0x66ffdd, label: 'AETHER TILE', description: 'Any tower on this tile can target FLYERS, even melee.', meleeFlyer: true },
-  GOLD:   { color: 0xffd34d, label: 'TREASURY TILE', description: 'Tower on this tile earns +2 Gold per kill.', goldPerKill: 2 }
+  PURPLE:  { color: 0xa060ff, label: 'TEMPO TILE',      description: 'Tower on this tile attacks +30% faster.',                                     spdMult: 1.30 },
+  BLUE:    { color: 0x66aaff, label: 'WAR TILE',        description: 'Tower on this tile deals +30% damage.',                                       dmgMult: 1.30 },
+  RED:     { color: 0xff5050, label: 'TYRANT TILE',     description: 'Tower on this tile deals +50% damage vs Bosses.',                            bossMult: 1.50 },
+  CYAN:    { color: 0x66ffdd, label: 'AETHER TILE',     description: 'Any tower on this tile can target FLYERS, even melee.',                     meleeFlyer: true },
+  GOLD:    { color: 0xffd34d, label: 'TREASURY TILE',   description: 'Tower on this tile earns +2 Gold per kill.',                                 goldPerKill: 2 },
+  // 2026-05-19 — Watchtower tile. +2 tile range stacks with the
+  // Watchtower Lens trophy (+1 range) for a +3 range Scorpio reaching
+  // most of the map. Range stacks ADDITIVELY in towerEffectiveStats
+  // (line 370), so this lands inside `extraRange` alongside lens and
+  // pool-level bonuses.
+  EMERALD: { color: 0x66ff88, label: 'WATCHTOWER TILE', description: 'Tower on this tile gains +2 tiles of range — a commanding sight line.', rangeBonus: 2 }
 };
