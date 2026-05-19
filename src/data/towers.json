@@ -419,15 +419,15 @@
   "VULCAN_ENGINEER": {
     "name": "Vulcan Engineer",
     "damageType": "SIEGE",
-    "baseDps": 23.4,
+    "baseDps": 18,
     "attackSpeed": 0.20,
-    "range": 7.5,
+    "range": 7.0,
     "kind": "BASE",
     "melee": false,
     "tierBand": 5,
     "burnsGround": true,
-    "ability": "Tier V siege artisan. Extremely slow attack (0.45/s base) but lobs a fire-barrel with a 2.0-tile splash. Every hit stamps a BURNING GROUND patch (4s, 5\u20138% maxHP/sec scaling with tier) covering everyone in the splash zone.",
-    "critChance": 0.08,
+    "ability": "Tier V siege artisan. Extremely slow attack (0.45/s base) but lobs a fire-barrel with a 2.0-tile splash. Every hit stamps a BURNING GROUND patch (4s, 4\u20137% maxHP/sec scaling with tier) covering everyone in the splash zone.",
+    "critChance": 0.06,
     "critMult": 3
   },
   "IMPERATOR_GUARD": {

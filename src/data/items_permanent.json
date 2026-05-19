@@ -474,5 +474,12 @@
     "sell": 60,
     "eventExclusive": "GATES_OF_HELL",
     "effect": "GATES OF HELL REWARD ONLY: Aura 3 tiles: nearby allies gain +25% damage AND every attack applies BURN (5% maxHP/sec for 3s) on hit."
+  },
+  "DAMNATIO_MEMORIAE": {
+    "name": "Damnatio Memoriae",
+    "rarity": "LEGENDARY",
+    "buy": 150,
+    "sell": 50,
+    "effect": "EXECUTE: any non-Boss enemy below 25% HP is instantly killed by this tower's attacks. Bosses are immune. The Senate's verdict on the unworthy — no name, no record, no funeral."
   }
 }

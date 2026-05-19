@@ -237,6 +237,7 @@ const MANIFEST: Record<string, string> = {
   ITEM_VOLLEY_QUIVER: 'i_storm_javelin.png',
   ITEM_SIGIL_OF_SOL_INVICTUS: 'ab_solar_flare.png',
   ITEM_TYRANTS_LAUREL: 'l_warlords_war_paint.png',     // closest match: warlord-themed
+  ITEM_DAMNATIO_MEMORIAE: 'l_warlords_war_paint.png',  // execute item — reuses warlord-themed sprite until dedicated art lands
   ITEM_VESTAL_PYRE: 'i_fire_oil_flask.png',            // closest match: fire/burn
   // Consumables
   ITEM_RAGE_POTION: 'c_rage_potion.png',

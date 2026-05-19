@@ -398,9 +398,19 @@ function tickSingleSurpriseEvent(state: GameStateShape, ev: SurpriseEventState):
 }
 
 // Called from WaveManager.tickSpawns in WAVE-OVERRIDE mode to repoint a
-// freshly-spawned enemy onto an event spawn location. Picks the spawn
-// point via round-robin (queueIdx % 4) so all four fires/urns are active
-// throughout the wave. Returns true if the enemy was successfully redirected.
+// freshly-spawned enemy onto an event spawn location.
+//
+// 2026-05-19 — INVASION = TRUE PERIMETER SPAWN. Each enemy is positioned
+// at its OWN unique perimeter tile (point.vfxX / point.vfxY) at spawn
+// time. The enemy then enters APPROACH MODE: it walks straight from
+// its perimeter tile to the path-entry tile (WP3) where it joins the
+// normal ground path. EnemySystem reads `__approachActive` + the
+// target coords and overrides the path-follow loop until the enemy
+// reaches the join point. Result: 30+ enemies materialize across all
+// four edges of the map simultaneously, each on its own tile, then
+// converge on the maze. UPRISING and other kinds keep the original
+// snap-to-path behavior since their spawn is center-of-map (urns) and
+// the visual already reads correctly.
 export function spawnAtSurpriseEventPoint(
   state: GameStateShape, enemy: any, queueIdx: number
 ): boolean {
@@ -408,14 +418,31 @@ export function spawnAtSurpriseEventPoint(
   if (!ev || !ev.waveOverride || ev.spawnPoints.length === 0) return false;
   const point = ev.spawnPoints[queueIdx % ev.spawnPoints.length];
   if (!point) return false;
+  const isInvasion = ev.kind === SurpriseEventKind.INVASION;
   if (point.pathIndex >= 0 && point.pathIndex < state.groundPath.length) {
     enemy.pathIndex = point.pathIndex;
     enemy.pathProgress = 0;
     const pt = state.groundPath[point.pathIndex];
-    enemy.x = pt.col * GRID.TILE + GRID.TILE / 2;
-    enemy.y = pt.row * GRID.TILE + GRID.TILE / 2;
-    enemy.prevX = enemy.x;
-    enemy.prevY = enemy.y;
+    const pathTileX = pt.col * GRID.TILE + GRID.TILE / 2;
+    const pathTileY = pt.row * GRID.TILE + GRID.TILE / 2;
+    if (isInvasion) {
+      // Spawn at the perimeter tile, queue the straight-line walk to
+      // the path-entry tile. EnemySystem picks up __approachActive and
+      // overrides path-follow until the enemy reaches the target.
+      enemy.x = point.vfxX;
+      enemy.y = point.vfxY;
+      enemy.prevX = enemy.x;
+      enemy.prevY = enemy.y;
+      (enemy as any).__approachActive = true;
+      (enemy as any).__approachTargetX = pathTileX;
+      (enemy as any).__approachTargetY = pathTileY;
+    } else {
+      // Uprising / other: original snap-to-path behavior.
+      enemy.x = pathTileX;
+      enemy.y = pathTileY;
+      enemy.prevX = enemy.x;
+      enemy.prevY = enemy.y;
+    }
   }
   attachSurpriseSpawnTags(state, enemy, ev, point);
   point.fired = true;

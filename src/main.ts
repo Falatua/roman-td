@@ -4166,7 +4166,11 @@ async function boot() {
     for (const e of state.enemies.values()) {
       const r = e.isBoss ? GRID.TILE * 1.0 : GRID.TILE * 0.55;
       if (Math.hypot(e.x - x, e.y - y) <= r) {
-        showEnemyInspect(app, e);
+        // 2026-05-19 — pass the current wave so the inspect panel can
+        // contextualize conditional traits (e.g. necromancy DORMANT on
+        // W4 vs ACTIVE on W11). Without this the player saw the raw
+        // necromancy text on every Celtic Footman and got confused.
+        showEnemyInspect(app, e, state.wave);
         return;
       }
     }

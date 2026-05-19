@@ -110,7 +110,10 @@ const FALLBACK_LEGENDARIES: ItemId[] = [
   'AQUILA_TALONS','SPEAR_OF_MARS','JUPITERS_WRATH',
   // 2026-05-15: anti-demon sigil falls back here too so out-of-table
   // bosses can still seed it.
-  'SIGIL_OF_SOL_INVICTUS'
+  'SIGIL_OF_SOL_INVICTUS',
+  // 2026-05-19 — DAMNATIO MEMORIAE execute item. Joins the fallback so
+  // any boss with a low-roster table can still seed it.
+  'DAMNATIO_MEMORIAE'
 ];
 
 // LEGENDARY UNIQUENESS (2026-05): the player can only HOLD one of each

@@ -155,6 +155,11 @@ const FAMILY: Record<string, ItemFamily> = {
   HELLGATE_BRAND: 'SPECIAL',
   DEMONSWORN_CROWN: 'SPECIAL',
   INFERNO_STANDARD: 'SPECIAL',
+  // 2026-05-19 — DAMNATIO MEMORIAE. SPECIAL family so it stacks with
+  // damage/aura items. Triggers execute (instant kill) on non-Boss
+  // enemies below 25% HP when this tower's attack lands. Bosses are
+  // immune. Execution logic in CombatResolver post-damage step.
+  DAMNATIO_MEMORIAE: 'SPECIAL',
   // 2026-05-18 — EPIC TIER ITEMS. Three new at this rarity (Lictor's
   // Fasces, Auxiliary Sling, Optio's Whistle). DAMAGE for the two stat
   // sticks so they conflict with Sharpened Blade / Iron Tip (sensible —

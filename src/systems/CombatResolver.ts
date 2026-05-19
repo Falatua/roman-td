@@ -1055,6 +1055,15 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           target.hp -= damage;
           target.hpFlashTimer = 0.16;
           target.lastDamagedTick = state.tick;
+          // 2026-05-19 — DAMNATIO MEMORIAE execute: after damage lands,
+          // any non-boss enemy that's now below 25% maxHp is instantly
+          // killed by this tower's attacks. Bosses are immune so the
+          // item can't trivialize the W5/W10/W15/W20 boss fights.
+          if (target.hp > 0 && !target.isBoss && t.equippedItems.includes('DAMNATIO_MEMORIAE')) {
+            if (target.hp / target.maxHp < 0.25) {
+              target.hp = 0;
+            }
+          }
           // Apply the 1s STUN from a frenzy strike, after damage so kill
           // detection still fires on the same hit (a stunned-but-dead
           // enemy still counts as killed). Route through pushStatus so
@@ -1352,6 +1361,13 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   target.hp -= damage;
   target.hpFlashTimer = 0.16;
   target.lastDamagedTick = state.tick;
+  // 2026-05-19 — DAMNATIO MEMORIAE execute (see line ~1055 for the
+  // primary hit-site copy). Bosses immune.
+  if (target.hp > 0 && !target.isBoss && t.equippedItems.includes('DAMNATIO_MEMORIAE')) {
+    if (target.hp / target.maxHp < 0.25) {
+      target.hp = 0;
+    }
+  }
   // Stamp a burn patch at the impact location for fire-themed towers
   if (towerBurnsGround(t.type)) {
     spawnBurnPatch(state, target.x, target.y, t.qualityTier);

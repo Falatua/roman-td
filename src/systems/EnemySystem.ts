@@ -246,19 +246,17 @@ export function tickBurnPatches(state: GameStateShape, dt: number) {
       if (p.sourceTier > bestTier) bestTier = p.sourceTier;
     }
     if (bestTier === 0) continue;
-    // 2026-05 v11: BURNING GROUND is now the SOLE DoT from fire towers
-    // (the redundant BURN status was removed from the fire tower
-    // signatures). Patch base damage bumped 3% → 5% and tier scaling kept,
-    // so totals across a single application are comparable to the old
-    // status + patch combined but presented as ONE clean DoT effect.
+    // BURNING GROUND is the SOLE DoT from fire towers (the redundant BURN
+    // status was removed from the fire tower signatures). One clean DoT.
     //
-    // Per-tier tick rates: T1 5.0% · T2 5.75% · T3 6.5% · T4 7.25% · T5 8.0%
+    // 2026-05-19 — Per-tier base rate trimmed 5% → 4% (Vulcan Engineer
+    // nerf pass). Scaling kept identical so the curve still rewards tier
+    // progression, just at slightly lower absolute output.
+    //   Per-tier tick rates: T1 4.0% · T2 4.6% · T3 5.2% · T4 5.8% · T5 7.0%
     //
-    // Boss DoT reduction (×0.18) now applies to burning ground as well —
-    // previously bypassed, which would have let the boosted patch melt
-    // bosses too quickly.
+    // Boss DoT reduction (×0.18) applies to burning ground.
     const bossMod = e.isBoss ? 0.18 : 1.0;
-    const dps = e.maxHp * 0.05 * (1 + (bestTier - 1) * 0.15) * bossMod;
+    const dps = e.maxHp * 0.04 * (1 + (bestTier - 1) * 0.15) * bossMod;
     e.hp -= dps * dt;
     e.lastDamagedTick = state.tick;
     if (e.hpFlashTimer <= 0) e.hpFlashTimer = 0.06;
@@ -928,6 +926,45 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     if (e.risingUntil != null && state.tick >= e.risingUntil) {
       (e as any).__veiled = false;
       e.risingUntil = undefined;
+    }
+    // 2026-05-19 — INVASION APPROACH MODE. When an invasion enemy is
+    // spawned at a perimeter tile, it gets `__approachActive` + a
+    // target (the path-entry tile, e.g. WP3). We override the normal
+    // path-follow loop with a straight-line walk toward the target.
+    // Once the enemy is within ~0.5 tile of the target, we clear the
+    // approach flag and the next frame snaps onto the path. The enemy
+    // can be hit by towers during the approach (no invulnerability —
+    // forward-perimeter tower placements should pay off).
+    if ((e as any).__approachActive) {
+      const tx = (e as any).__approachTargetX as number;
+      const ty = (e as any).__approachTargetY as number;
+      const ddx = tx - e.x;
+      const ddy = ty - e.y;
+      const distToTarget = Math.hypot(ddx, ddy);
+      const arriveR = GRID.TILE * 0.5;
+      if (distToTarget <= arriveR) {
+        // Arrived. Snap to the path tile cleanly. Path-follow takes
+        // over on this frame's remaining motion.
+        e.x = tx;
+        e.y = ty;
+        e.prevX = e.x;
+        e.prevY = e.y;
+        (e as any).__approachActive = false;
+      } else {
+        // Walk straight toward target at currentSpeed. Direction is
+        // remembered for the renderer's facing logic.
+        const inv = 1 / distToTarget;
+        e.dirX = ddx * inv;
+        e.dirY = ddy * inv;
+        const step = e.currentSpeed * GRID.TILE * dt;
+        const moveDist = Math.min(step, distToTarget);
+        e.x += e.dirX * moveDist;
+        e.y += e.dirY * moveDist;
+        // Skip the path-follow loop this frame — we're still
+        // approaching the path-entry tile.
+        if (e.hpFlashTimer > 0) e.hpFlashTimer = Math.max(0, e.hpFlashTimer - dt);
+        continue;
+      }
     }
     let remainingDist = e.currentSpeed * GRID.TILE * dt;
     while (remainingDist > 0 && e.pathIndex < path.length - 1) {

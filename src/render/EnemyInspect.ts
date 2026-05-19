@@ -231,8 +231,21 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     const reanimDef: any = (enemiesData as any)[def.reanimateAs];
     const reanimName = reanimDef?.name ?? String(def.reanimateAs).replace(/_/g, ' ');
     const alwaysReanim = def.faction === 'UNDEAD_CELTS' || def.faction === 'UNDEAD_CARTHAGE';
-    const trigger = alwaysReanim ? 'on every death (undead factions reanim always)' : 'on necromancy waves (W11 / W13)';
-    traits.push({ label: `NECROMANCY — ${trigger}, every kill spawns 6-9 × ${reanimName} at 85-100% HP at the death tile (risen units can't chain)`, color: '#aa55ff' });
+    // 2026-05-19 — wave-conditional clarity. The previous label said
+    // "NECROMANCY — on necromancy waves (W11/W13)" but a player clicking
+    // a Celtic Footman on W4 saw the label and thought the trait was
+    // active. Now we explicitly mark it DORMANT vs ACTIVE if we know
+    // the current wave (hpWaveTag), and undead factions always show
+    // ACTIVE since they reanimate on every death.
+    const NECRO_WAVES = new Set([11, 13]);
+    const isActive = alwaysReanim || (hpWaveTag != null && NECRO_WAVES.has(hpWaveTag));
+    if (alwaysReanim) {
+      traits.push({ label: `NECROMANCY · ACTIVE — undead faction, every kill spawns 6-9 × ${reanimName} at 85-100% HP at the death tile (risen units can't chain).`, color: '#aa55ff' });
+    } else if (isActive) {
+      traits.push({ label: `NECROMANCY · ACTIVE THIS WAVE — every kill spawns 6-9 × ${reanimName} at 85-100% HP at the death tile (risen units can't chain).`, color: '#aa55ff' });
+    } else {
+      traits.push({ label: `💤 DORMANT TRAIT — this unit has a latent necromancy curse that ONLY activates on W11 + W13 (Death Uprising waves). Not active this wave. Would spawn 6-9 × ${reanimName} per kill when active.`, color: '#7a5a8a' });
+    }
   }
   // -- Gold theft (Ghost Rider) --
   if (e.type === 'GHOST_RIDER') traits.push({ label: 'GOLD THEFT — on leak, steals 5g + floor(wave/10)g from your treasury', color: '#ffd34d' });
