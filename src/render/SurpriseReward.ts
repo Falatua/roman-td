@@ -111,12 +111,23 @@ export function showSurpriseRewardModal(
 
   const panel = document.createElement('div');
   panel.style.cssText = `width:min(660px,94vw);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid ${accent};color:#e8d6a8;box-shadow:0 0 36px ${accent}80;padding:22px;`;
+  // 2026-05-19 — Survival-gold bonus surfaced in the reward modal so
+  // the player sees the payout prominently. Values mirror the
+  // SURVIVAL_GOLD map in main.ts where the gold is actually awarded.
+  const survivalGold = kind === 'INVASION' ? 30
+                     : kind === 'UPRISING' ? 40
+                     : 50;   // GATES_OF_HELL
   panel.innerHTML = `
     <div style="text-align:center;margin-bottom:14px">
       <div style="font-size:11px;font-weight:bold;letter-spacing:5px;color:${accent};text-shadow:1px 1px 0 #000">${eyebrow}</div>
       <div style="font-size:22px;font-weight:bold;letter-spacing:4px;color:${accent};text-shadow:2px 2px 0 #000;margin-top:6px">${headline}</div>
       <div style="font-size:12px;color:#e8d6a8;line-height:1.5;margin-top:8px;letter-spacing:1px">${subline}</div>
-      <div style="font-size:10px;color:#aa9a4a;margin-top:4px;letter-spacing:2px">CHOOSE ONE LEGENDARY</div>
+      <div style="margin-top:10px;padding:8px 12px;background:rgba(212,175,55,0.12);border:1px solid #d4af37;display:inline-block">
+        <span style="font-size:11px;color:#aa9a4a;letter-spacing:2px">SURVIVAL BONUS</span>
+        <span style="font-size:18px;color:#ffd34d;font-weight:bold;letter-spacing:3px;margin-left:8px;text-shadow:0 0 8px #ffaa33">+${survivalGold}g</span>
+        <span style="font-size:10px;color:#aa9a4a;letter-spacing:1.5px;margin-left:6px">banked</span>
+      </div>
+      <div style="font-size:10px;color:#aa9a4a;margin-top:10px;letter-spacing:2px">CHOOSE ONE LEGENDARY</div>
     </div>
     <div id="surprise-reward-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>
     <div style="margin-top:14px;text-align:center;font-size:10px;color:#aa9a4a;letter-spacing:1px;font-style:italic">

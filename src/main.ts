@@ -4568,6 +4568,23 @@ async function boot() {
       (state as any).__surpriseRewardModalShown = true;
       const kind = state.pendingSurpriseReward.kind;
       state.pendingSurpriseReward = null;
+      // 2026-05-19 — SURVIVAL GOLD BONUS. Per-event payouts on top of
+      // the Legendary reward. Invasions are tough (perimeter pressure
+      // + speed buff), Uprisings are tougher (kills reanimate as 6-9
+      // undead each), and Gates of Hell is the hardest (fire giants +
+      // structures to destroy). Bonus scales accordingly so each
+      // event survival feels like a real economic break.
+      const SURVIVAL_GOLD: Record<string, number> = {
+        INVASION: 30,
+        UPRISING: 40,
+        GATES_OF_HELL: 50,
+      };
+      const bonus = SURVIVAL_GOLD[kind] ?? 30;
+      earnGold(state, bonus);
+      const eventName = kind === 'INVASION' ? 'Invasion'
+                      : kind === 'UPRISING' ? 'Uprising'
+                      : 'Gates of Hell';
+      state.hint = `⚔ ${eventName} survived. +${bonus}g bonus banked. Pick your Legendary reward.`;
       showSurpriseRewardModal(app, kind, inventory, state, () => {
         (state as any).__surpriseRewardModalShown = false;
         // 2026-05-18 — Stacked-event handling. If the player resolved
