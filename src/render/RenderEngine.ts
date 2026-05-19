@@ -7,6 +7,8 @@ import { towerEffectiveStats } from '../systems/TowerSystem';
 import { tex } from './Assets';
 import waypointsData from '../data/waypoints.json';
 import enemiesData from '../data/enemies.json';
+// 2026-05-19 — Hero sprite tinting reads off towers.json `tint` field.
+import towersData from '../data/towers.json';
 import { surpriseEventTintRGBA, VFX_TIMING, getAllActiveSurpriseEvents } from '../systems/SurpriseEvents';
 import { SurpriseEventKind } from '../types';
 
@@ -1553,9 +1555,19 @@ export class RenderEngine {
         const t = tex(tw.type);
         const sp = new Sprite(t || undefined);
         sp.anchor.set(0.5);
-        // Slightly larger than tile so the figure fills the cell despite source padding.
-        const sz = GRID.TILE * 1.5;
+        // 2026-05-19 — Heroes render at 2× tile (vs. normal 1.5×) so
+        // they're visibly distinct from regular towers at a glance.
+        // Also apply the hero's per-def tint color (towers.json:
+        // tint field) so each hero reads as their identity color
+        // even with placeholder sprites.
+        const isHeroSprite = !!tw.isHero;
+        const sz = isHeroSprite ? GRID.TILE * 2.0 : GRID.TILE * 1.5;
         sp.width = sz; sp.height = sz;
+        if (isHeroSprite) {
+          const heroDef: any = (towersData as any)[tw.type] ?? {};
+          const tintHex = (heroDef.tint ?? '#ffd34d').replace('#', '');
+          sp.tint = parseInt(tintHex, 16);
+        }
         // FALLBACK MONOGRAM: every combo tier now ships a real sprite, but
         // this guard stays as a safety net for any future tower added to
         // towers.json before its sprite is wired into Assets.ts. Paints a
@@ -1616,7 +1628,10 @@ export class RenderEngine {
       let idleSway = 0;
       if (!tw.pending && !isAttacking) {
         const phase = state.tick * 1.2 + (tw.tileX * 0.7 + tw.tileY * 0.4);
-        idleBob = Math.sin(phase) * 2.6;
+        // 2026-05-19 — Heroes bob ~2× harder than regular towers so
+        // their "alive" presence reads from across the map.
+        const bobAmp = tw.isHero ? 4.4 : 2.6;
+        idleBob = Math.sin(phase) * bobAmp;
         idleSway = Math.cos(phase * 0.7) * 0.8;
       }
       // (The Hastati attack-animation texture cycle and per-frame body
