@@ -5041,6 +5041,30 @@ async function boot() {
           }
           // 2026-05-16 — surprise-event resolution check (death path).
           notifySurpriseEnemyResolved(state, e.id);
+          // 2026-05-19 (bugfix) — Catch-all hero XP + kill-count award.
+          // The primary onKill callback (inside the tickCombat block
+          // at line ~5384) knows the firing tower and routes through
+          // it. That path is bypassed for kills that DON'T go through
+          // a tower projectile:
+          //   • Hero ability instakills (Aquila Squadron, Cornu Charge,
+          //     Carthago Delenda Est, Pilum Volley, Sulla's March,
+          //     Ides of March execute, Naval Bombardment splash)
+          //   • Pure-DoT kills (burn / bleed / poison / hellfire chip)
+          //
+          // Without this branch, a Caesar player who triggers Ides of
+          // March and executes 20 enemies would earn ZERO hero XP for
+          // the wipe AND those kills wouldn't count toward `totalKills`
+          // (quest tracker) or `bossesKilled` (boss-related quests).
+          // We dedupe via `e.__heroXpAwarded` so tower-attributed kills
+          // that already credited everything via onKill don't double-pay.
+          if (!(e as any).__heroXpAwarded) {
+            state.totalKills = (state.totalKills ?? 0) + 1;
+            if (e.isBoss) state.bossesKilled = (state.bossesKilled ?? 0) + 1;
+            if (state.activeHeroId) {
+              heroAwardXp(state, !!e.isBoss, heroSystemHooks);
+            }
+            (e as any).__heroXpAwarded = true;
+          }
           // 2026-05-17 — GATES OF HELL. If a HELL_GATE just died, mark
           // its pointId destroyed so future fire-giant spawns from
           // that gate get skipped. If a FIRE_GIANT just died, drop a
@@ -5381,8 +5405,14 @@ async function boot() {
           // they personally landed. +1 non-boss, +20 boss. Hooks pass
           // tier-up banner + ring-burst back to the renderer; defined
           // once near the top of main.ts.
+          //
+          // 2026-05-19 (bugfix) — Stamp a dedupe flag so the secondary
+          // award path in the tickEnemies onDeath callback (which
+          // catches hero-ability + DoT kills that don't fire onKill)
+          // doesn't double-pay XP for tower-attributed kills.
           if (state.activeHeroId) {
             heroAwardXp(state, !!e.isBoss, heroSystemHooks);
+            (e as any).__heroXpAwarded = true;
           }
           // Sulla Fortune's Bolt heal: the heal credit is applied
           // inline inside executeFORTUNES_BOLT (HeroSystem.ts) when
