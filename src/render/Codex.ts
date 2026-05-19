@@ -1136,53 +1136,8 @@ function renderTab(tab: string): string {
         return a.def.baseHp - b.def.baseHp;
       })
       .map(({ id, def, ctx }) => {
-        const { hp, wave, explain, note } = ctx;
-        // 2026-05-17 — Show every wave the enemy is authored into, not
-        // just the first. For enemies that only appear once, this reads
-        // as a single "on W3". For recurring enemies (e.g. Feral Dog
-        // on W1+W2+W3, Carthage Spearman on W7+W8), the list reads as
-        // "on W1, W2, W3" / "on W7, W8". Reanim / split / orphan rows
-        // keep their existing note-style format since their wave
-        // context is non-direct.
-        let waveTag: string;
-        if (note) {
-          waveTag = `<span style="color:#aa55ff;font-size:9px">on W${wave} (${note})</span>`;
-        } else {
-          const allWaves = allWavesByEnemy.get(id) ?? (wave != null ? [wave] : []);
-          const waveListStr = allWaves.length > 0
-            ? allWaves.map(w => `W${w}`).join(', ')
-            : (wave != null ? `W${wave}` : '?');
-          waveTag = `<span style="color:#9be0ff;font-size:9px">on ${waveListStr}</span>`;
-        }
-        const hpLabel = `${hp.toLocaleString()} HP <br/>${waveTag} <span style="opacity:0.55;font-size:9px" title="${explain}">ⓘ</span>`;
-      return `
-      <tr><td>${spriteImg(id, 36)}</td>
-      <td><b style="color:${def.isBoss ? '#ee5555' : '#d4af37'}">${def.name}</b></td>
-      <td style="color:#9be0ff">${def.faction}</td>
-      <td>${hpLabel}</td>
-      <td>${def.speed.toFixed(1)}t/s</td>
-      <td>${def.isFlyer ? 'FLYER' : 'GROUND'}${def.isBoss ? ' BOSS' : ''}</td>
-      <td style="line-height:1.35">${renderArmorChips(id)}</td>
-      <td>${renderSpecificRes(id)}</td>
-      <td style="opacity:0.85">${[
-        def.immuneSlow && 'slow-immune',
-        def.immunePoison && 'poison-immune',
-        def.immuneFreeze && 'freeze-immune',
-        def.immuneStun && 'stun-immune',
-        def.regenPctPerSec && `${(def.regenPctPerSec*100).toFixed(1)}%/s regen`,
-        def.outOfCombatRegen && `${(def.outOfCombatRegen*100).toFixed(1)}%/s OOC regen`,
-        def.auraTowerSlow && `tower aura -${(def.auraTowerSlow*100)}% atk speed`,
-        def.auraNullifier && `nullifies all tower auras within 2 tiles`,
-        def.phaseHits && `phases ${def.phaseHits} hits`,
-        def.dodgeChance && `${Math.round(def.dodgeChance*100)}% dodge (ranged)`,
-        def.shieldBlockChance && `${Math.round(def.shieldBlockChance*100)}% shield block (ranged)`,
-        def.checkpointHealPct && `+${Math.round(def.checkpointHealPct*100)}% HP at each checkpoint`,
-        def.reanimateAs && (def.faction === 'UNDEAD_CELTS' || def.faction === 'UNDEAD_CARTHAGE'
-          ? `rises as ${def.reanimateAs.replace(/_/g,' ').toLowerCase()} on every death`
-          : `rises as ${def.reanimateAs.replace(/_/g,' ').toLowerCase()} on necromancy waves`),
-        def.rebirthAtPct && `phoenix: bursts into 3 minions at ${Math.round(def.rebirthAtPct*100)}% HP`
-      ].filter(Boolean).join(', ') || ''}</td></tr>`;
-    }).join('');
+        return renderEnemyCard(id, def, ctx, allWavesByEnemy.get(id) ?? []);
+      }).join('');
     // Simple, honest framing — no internal-multiplier math jargon.
     const scaleNote = `<div style="font-size:11px;color:#cdb98a;line-height:1.55;margin-bottom:10px;background:#0c0a08;border-left:3px solid #ff9933;padding:8px 12px">
       <b style="color:#ff9933">HP column:</b> the actual on-spawn HP an enemy will have when it appears on the wave listed beside it. What you see is what you fight.<br/>
@@ -1207,12 +1162,16 @@ function renderTab(tab: string): string {
         ${noteCard('🔥 GATES OF HELL · W16', 'Two destructible <b style="color:#ff4422">Hell Gate</b> structures (~500k HP each) rise at WP3 and WP4. Each pumps out a <b style="color:#ff4422">Fire Giant</b> (~500k HP, slow + bulky) every 2s for 15s, alternating gates. Destroy the gates early to stop the flood.')}
       </div>
     </div>`;
+    // 2026-05-19 — Card-based per-enemy layout (replaces the 9-column
+    // table). Source of truth: every property in enemies.json + every
+    // hardcoded behavior surfaced in EnemyInspect.ts is reflected here,
+    // so the Codex Enemies tab matches what the player sees when they
+    // click an enemy on the field. Sorted by first-wave appearance.
     return `${renderFactionResistances()}
       ${scaleNote}
       ${surpriseSummary}
-      <table style="width:100%;border-collapse:collapse;font-size:11px">
-      <thead><tr style="color:#aa9a4a"><th></th><th style="text-align:left">Name</th><th>Faction</th><th>Spawn HP</th><th>Speed</th><th>Type</th><th style="text-align:left">🛡 Armor</th><th style="text-align:left">Specific Resist</th><th style="text-align:left">Traits</th></tr></thead>
-      <tbody>${rows}</tbody></table>`;
+      <div style="font-size:11px;color:#aa9a4a;letter-spacing:1px;margin-bottom:6px">Every enemy in the campaign, in first-appearance order. Each card mirrors what you see when you click an enemy on the field.</div>
+      <div style="display:flex;flex-direction:column;gap:8px">${rows}</div>`;
   }
   if (tab === 'ITEMS') {
     // 2026-05-17 — Sort items by rarity color (White → Green → Blue →
@@ -1313,6 +1272,200 @@ function noteCard(title: string, body: string): string {
   return `<div data-codex-row style="background:#1a1410;border-left:3px solid #d4af37;padding:8px 10px">
     <div style="color:#ffd34d;font-weight:bold;font-size:12px">${title}</div>
     <div style="font-size:11px;color:#cdb98a;line-height:1.4;margin-top:3px">${body}</div>
+  </div>`;
+}
+
+// 2026-05-19 — Boss script table mirrored from EnemyInspect.ts. The
+// inspector reads this same table; keeping them in sync (or unified
+// into a shared module) is important for the Codex-as-source-of-truth
+// guarantee. If you edit the inspector's bossScripts table, mirror
+// the edits here.
+const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
+  ALPHA_DOG: [
+    'CHAMPION — boss-tier HP, drops a legendary on kill',
+    'FRENZY — at 30% HP, doubles speed and ignores SLOW for 5s',
+    'PACK HOWL — every 8s, gives nearby Feral Dogs +50% speed for 4s',
+    'DEATH SPAWNS 3 FERAL DOGS at the boss\'s tile'
+  ],
+  CELTIC_WARLORD: [
+    'WAR CRY — at 70% HP, gives all Celts +30% speed for 8s'
+  ],
+  WAR_ELEPHANT: [
+    'STAMPEDE — at 50% HP, status-immune + +75% speed for 4s; strips slow/freeze/stun',
+    'IMMUNE TO SLOW & FREEZE',
+    'TUSK QUAKE — every 6s, silences every tower within 2 tiles for 0.6s',
+    'DUST-SHIELD AURA — protects nearby ground allies from ranged attacks while alive',
+    'WEAKNESS: takes +45% damage from SIEGE'
+  ],
+  UNDEAD_WAR_ELEPHANT: [
+    'STAMPEDE at 50% HP (status-immune + 75% speed for 4s)',
+    'REBIRTH at 40% HP — heals to 55% HP and summons 2 Ghost Riders',
+    'IMMUNE TO SLOW & FREEZE',
+    'TUSK QUAKE every 6s — silences nearby towers for 0.6s (25% stronger tower-slow aura than the living elephant)',
+    'DUST-SHIELD AURA — protects nearby ground allies from ranged attacks while alive',
+    'WEAKNESS: takes +40% damage from SIEGE'
+  ],
+  HANNIBAL_BARCA: [
+    'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit recently, heals 0.4% maxHP/sec',
+    'OUT-OF-COMBAT REGEN — 1.7%/sec after 0.5s without damage (DoT counts as damage)',
+    'TELEGRAPHED REBIRTH at 50% HP — 1s red lock-on warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
+  ],
+  UNDEAD_WARLORD: [
+    'AMBUSH — 5s after spawn, 8 Undead Berserkers rise mid-path',
+    'NECROMANCY at 40% HP — raises 4 Undead Celts at his position',
+    'MID-FIGHT REGEN — 1.2% maxHP/sec while alive'
+  ],
+  DAEMON_IMPERATOR: [
+    'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~6 tiles',
+    'REBIRTH at 60% HP — Wrathful form: status-immune + +90% speed for 6s',
+    'W20 FINAL BOSS — any leak ends the run instantly (Rome falls)'
+  ]
+};
+
+const ARCH_FOR_CODEX: Record<string, string> = {
+  FERAL_DOG: 'SWARM', RABID_DOG: 'RUNNER', ALPHA_DOG: 'BOSS',
+  CELTIC_FOOTMAN: 'SWARM', CELTIC_BERSERKER: 'RUNNER', GALLIC_DRUID: 'ELITE',
+  CELTIC_SCOUT: 'RUNNER', CELTIC_WARLORD: 'BOSS',
+  CARTHAGE_SPEARMAN: 'ARMORED', NUMIDIAN_RIDER: 'RUNNER',
+  CARTHAGE_ELITE_GUARD: 'ARMORED', WAR_ELEPHANT: 'BULKY', HANNIBAL_BARCA: 'BOSS',
+  UNDEAD_CELT: 'SWARM', ZOMBIE_DRUID: 'ELITE', UNDEAD_BERSERKER: 'RESISTANT',
+  SPECTRAL_SCOUT: 'RUNNER', UNDEAD_WARLORD: 'BOSS',
+  UNDEAD_SPEARMAN: 'RESISTANT', GHOST_RIDER: 'RUNNER',
+  UNDEAD_WAR_ELEPHANT: 'BULKY',
+  DEMON_HELLHOUND: 'RUNNER', CELTIC_FIRE_DEMON: 'RESISTANT',
+  SHADOW_CAVALRY: 'RUNNER', DEMON_LEGATE: 'ELITE', DAEMON_IMPERATOR: 'BOSS',
+  IRON_PHALANX: 'RESISTANT', ARCHITECTUS: 'ARMORED',
+  REANIMATED_SKELETON: 'RUNNER', REANIMATED_ZOMBIE: 'SWARM', REANIMATED_LICH: 'ELITE',
+  HELL_GATE: 'ELITE', FIRE_GIANT: 'BULKY', MUMMY_WARRIOR: 'ARMORED',
+  MONGOL_HORSE_ARCHER: 'RUNNER', MONGOL_SPEAR_RIDER: 'ARMORED', SPHINX: 'BOSS'
+};
+
+const ARCH_COLOR_FOR_CODEX: Record<string, string> = {
+  SWARM: '#888', RUNNER: '#88dd88', ARMORED: '#b88a4a',
+  RESISTANT: '#a078d0', BULKY: '#cc6644', ELITE: '#ffd34d', BOSS: '#ee2a2a'
+};
+
+// 2026-05-19 — Renders one Codex Enemies card. Mirrors EnemyInspect's
+// content blocks (banner / head / armor / specific resist / traits /
+// boss mechanics) so a player can use the Codex as a reference
+// without having to scroll the field for a live enemy click.
+function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): string {
+  const arch = ARCH_FOR_CODEX[id] ?? 'SWARM';
+  const acColor = ARCH_COLOR_FOR_CODEX[arch] ?? '#cdb98a';
+  // Wave appearance tag
+  let waveTag: string;
+  if (ctx.note) {
+    waveTag = `<span style="color:#aa55ff;font-size:10px">on W${ctx.wave} (${ctx.note})</span>`;
+  } else {
+    const waveListStr = allWaves.length > 0
+      ? allWaves.map(w => `W${w}`).join(', ')
+      : (ctx.wave != null ? `W${ctx.wave}` : '?');
+    waveTag = `<span style="color:#9be0ff;font-size:10px">${waveListStr}</span>`;
+  }
+  const headStats = [
+    `<span><span style="color:#aa9a4a;font-size:9px;letter-spacing:1px">HP</span> <b>${ctx.hp.toLocaleString()}</b></span>`,
+    `<span><span style="color:#aa9a4a;font-size:9px;letter-spacing:1px">SPEED</span> <b>${def.speed.toFixed(1)}t/s</b></span>`,
+    `<span><span style="color:#aa9a4a;font-size:9px;letter-spacing:1px">LEAK</span> <b style="color:#ee5555">${def.livesCost ?? 1} ${(def.livesCost ?? 1) === 1 ? 'life' : 'lives'}</b></span>`,
+    def.isBoss ? `<span><span style="color:#aa9a4a;font-size:9px;letter-spacing:1px">BOUNTY</span> <b style="color:#ffd34d">scales with wave</b></span>` : '',
+    def.guaranteesLegendary ? `<span style="color:#ff9933;font-size:10px;font-weight:bold">★ CHAMPION (guaranteed legendary drop)</span>` : ''
+  ].filter(Boolean).join('<span style="color:#3a3025;margin:0 6px">|</span>');
+
+  // Trait list — exact mirror of EnemyInspect's traits[] construction.
+  const traits: string[] = [];
+  // Combat / damage
+  if (def.meleeImmune) traits.push('MELEE-IMMUNE — physical melee deals 0 damage');
+  if (def.requiresMeleeBreak) traits.push('SHIELD — ranged & siege ignored until a melee tower cracks the shield');
+  if (def.shieldBlockChance) traits.push(`SHIELD BLOCK — ${Math.round(def.shieldBlockChance*100)}% chance to fully block ranged/siege hits (until shield breaks)`);
+  if (def.phaseHits) traits.push(`PHASE — ignores the first ${def.phaseHits} hit${def.phaseHits === 1 ? '' : 's'} (MISS floater appears)`);
+  if (def.dodgeChance) traits.push(`DODGE — ${Math.round(def.dodgeChance*100)}% chance to evade ranged & siege attacks (melee always lands)`);
+  // Status immunities
+  if (def.immuneSlow) traits.push('IMMUNE TO SLOW');
+  if (def.immuneFreeze) traits.push('IMMUNE TO FREEZE');
+  if (def.immuneStun) traits.push('IMMUNE TO STUN');
+  if (def.immunePoison) traits.push('IMMUNE TO POISON');
+  if (def.immuneFire) traits.push('IMMUNE TO FIRE — direct fire and BURN DoT both 0 (HELLFIRE divine-fire still applies)');
+  // Healing / regen
+  if (def.regenPctPerSec) traits.push(`REGEN — ${(def.regenPctPerSec*100).toFixed(2)}% maxHP/sec always-on (paused by DoT)`);
+  if (def.outOfCombatRegen) traits.push(`OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 0.5s without damage`);
+  if (def.checkpointHealPct) traits.push(`CHECKPOINT HEAL — restores ${Math.round(def.checkpointHealPct*100)}% maxHP first time it crosses each of the 7 waypoint coins`);
+  if (def.healAllyPctPerSec) traits.push(`HEALER — pulses ${(def.healAllyPctPerSec*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles (does NOT heal bosses)`);
+  // Movement modifiers
+  if (def.lowHpSpeedBoost) traits.push(`LOW-HP SURGE — when below 30% HP, gains +${Math.round((def.lowHpSpeedBoost - 1) * 100)}% movement speed`);
+  if (def.stealthInterval) traits.push(`STEALTH CYCLE — fades to untargetable for ${def.stealthInterval.duration.toFixed(1)}s every ${def.stealthInterval.period}s`);
+  // Tower disruption
+  if (def.auraTowerSlow) traits.push(`TOWER-SLOW AURA — every tower within ~2 tiles fires ${Math.round(def.auraTowerSlow*100)}% slower while this enemy is in range`);
+  if (def.auraNullifier) traits.push('AURA NULLIFIER — silences every tower aura within 2 tiles (damage/atk-speed/debuff/item auras all drop out). Periodic abilities like Caesar stun pulse and freeze cycles are NOT auras and still fire.');
+  // Druid sleep curse (hardcoded by type)
+  if (id === 'GALLIC_DRUID' || id === 'ZOMBIE_DRUID') {
+    traits.push('SLEEP CURSE — channels a slow dart at the nearest awake tower within 3 tiles every ~5s. On hit, that tower is fully inert for 3 seconds. STUN or FREEZE on the druid cancels the channel.');
+  }
+  // Elephant dust-shield (hardcoded by type)
+  if (id === 'WAR_ELEPHANT' || id === 'UNDEAD_WAR_ELEPHANT') {
+    traits.push('DUST-SHIELD AURA — projects a 2-tile dust dome that makes every NEARBY GROUND enemy untargetable by ranged towers until the elephant dies. The elephant itself is still targetable. Melee towers ignore the dust.');
+  }
+  // Demon divine vulnerability (hardcoded by type set)
+  const DEMON_SET = new Set(['DEMON_HELLHOUND','CELTIC_FIRE_DEMON','SHADOW_CAVALRY','DEMON_LEGATE','DAEMON_IMPERATOR']);
+  if (DEMON_SET.has(id)) {
+    const mult = id === 'DAEMON_IMPERATOR' ? '1.30×' : '1.50×';
+    traits.push(`DIVINE WEAKNESS — takes ${mult} damage from DIVINE sources (per-enemy) on top of the SUPER_DEMONS faction's +100% divine row. Solar Priest, Flamen, Augur, Haruspex are the dedicated demon counters.`);
+  }
+  // Death / multiplication
+  if (def.splitOnDeath) {
+    const s = def.splitOnDeath;
+    const childDef: any = (enemies as any)[s.type];
+    const childName = childDef?.name ?? String(s.type).replace(/_/g, ' ');
+    traits.push(`SPLIT ON DEATH — spawns ${s.count} × ${childName} at ${Math.round((s.hpFraction ?? 0.4) * 100)}% HP at the death tile`);
+  }
+  if (def.rebirthAtPct) {
+    traits.push(`PHOENIX REBIRTH — on death, bursts into 3 minions of the same type at ${Math.round(def.rebirthAtPct*100)}% HP each (kill still counts; minions can't chain-phoenix)`);
+  }
+  if (def.reanimateAs) {
+    const reanimDef: any = (enemies as any)[def.reanimateAs];
+    const reanimName = reanimDef?.name ?? String(def.reanimateAs).replace(/_/g, ' ');
+    const alwaysReanim = def.faction === 'UNDEAD_CELTS' || def.faction === 'UNDEAD_CARTHAGE';
+    const isDruidClass = def.reanimateAs === 'REANIMATED_LICH';
+    const isSelfReanim = def.reanimateAs === id;
+    if (alwaysReanim) {
+      traits.push(`NECROMANCY · ACTIVE — undead faction, every kill spawns 6-9 × ${reanimName} at 85-100% HP at the death tile (risen units can't chain)`);
+    } else if (isDruidClass || isSelfReanim) {
+      traits.push(`NECROMANCY · dormant trait — fires on W11 + W14 (Death Uprising waves) → spawns 6-9 × ${reanimName} per kill when active`);
+    }
+  }
+  // Gold theft
+  if (id === 'GHOST_RIDER') traits.push('GOLD THEFT — on leak, steals 5g + floor(wave/10)g from your treasury');
+  // Boss mechanics
+  const bossLines = BOSS_SCRIPTS_FOR_CODEX[id] ?? [];
+  // Build the card.
+  const armorHtml = renderArmorChips(id);
+  const specificResHtml = renderSpecificRes(id);
+  const traitHtml = traits.length > 0
+    ? `<div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;margin:8px 0 4px">⚠ SPECIAL TRAITS</div>` +
+      traits.map(t => `<div style="color:#ff9966;font-size:11px;line-height:1.4;margin-bottom:2px">▸ ${t}</div>`).join('')
+    : '';
+  const bossHtml = bossLines.length > 0
+    ? `<div style="font-size:10px;color:#ee5555;letter-spacing:2px;margin:8px 0 4px">⚔ BOSS MECHANICS</div>` +
+      bossLines.map(t => `<div style="color:#ff8866;font-size:11px;line-height:1.4;margin-bottom:2px">▸ ${t}</div>`).join('')
+    : '';
+  return `<div style="border:2px solid ${acColor};background:linear-gradient(180deg,#1a1410,#0c0a08);overflow:hidden">
+    <div style="background:${acColor};color:#1a1410;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;font-weight:bold;letter-spacing:2px;font-size:11px">
+      <span>${arch}${def.isBoss ? ' · BOSS' : ''}${def.isFlyer ? ' · FLYER' : ''}</span>
+      <span style="font-size:10px;opacity:0.85">${def.faction.replace('_',' ')}</span>
+    </div>
+    <div style="padding:10px 12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        ${spriteImg(id, 40)}
+        <div style="flex:1">
+          <div style="font-size:14px;color:${acColor};font-weight:bold;letter-spacing:1px">${def.name}</div>
+          <div style="font-size:10px;margin-top:2px">${waveTag}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;font-size:11px;padding-bottom:8px;border-bottom:1px solid #3a3025">${headStats}</div>
+      <div style="margin-top:8px;font-size:10px;color:#aa9a4a;letter-spacing:1px;margin-bottom:3px">🛡 ARMOR (faction × per-enemy combined)</div>
+      <div style="line-height:1.5">${armorHtml}</div>
+      ${(specificResHtml && specificResHtml !== '<span style="opacity:0.45">none</span>') ? `<div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;margin-top:6px;margin-bottom:3px">SPECIFIC RESISTANCES (per-enemy overrides)</div><div>${specificResHtml}</div>` : ''}
+      ${traitHtml}
+      ${bossHtml}
+    </div>
   </div>`;
 }
 
