@@ -104,6 +104,28 @@ export function maybeTriggerSurpriseEventForWave(state: GameStateShape): void {
   // existing waveOverride=true path so back-compat holds.
   const waveOverride = kind !== SurpriseEventKind.GATES_OF_HELL;
   scheduleSurpriseEvent(state, kind, state.tick + 0.5, waveOverride);
+  // 2026-05-19 — INVASION = SIMULTANEOUS BURST. Once the event is
+  // scheduled, collapse every queued non-boss spawn's spawnAt to the
+  // same instant so all invaders emerge from the perimeter at once
+  // (after the brief fire rise-in). Bosses (rare on invasion waves
+  // but defensive) keep their original schedule.
+  if (kind === SurpriseEventKind.INVASION && state.activeSurpriseEvent?.waveOverride) {
+    flattenInvasionSpawnSchedule(state);
+  }
+}
+
+// Called right after an INVASION event is scheduled in waveOverride
+// mode. Pins every non-boss spawn's spawnAt to a single instant
+// (VFX_RISE_SECONDS into the wave) so the WaveManager.tickSpawns
+// loop drains the entire wave queue in one frame. Result: every
+// invader emerges from its assigned perimeter fire at the same time.
+function flattenInvasionSpawnSchedule(state: GameStateShape): void {
+  const burstAt = VFX_RISE_SECONDS;
+  for (const item of state.spawnQueue) {
+    const isBossSpawn = !!(enemiesData as any)[item.type]?.isBoss;
+    if (isBossSpawn) continue;
+    item.spawnAt = burstAt;
+  }
 }
 
 // Endless-mode trigger. ~25% base chance per endless wave with 3-wave
@@ -821,40 +843,64 @@ function buildPointsFromLocations(
 }
 
 function generateInvasionPoints(state: GameStateShape, startAtTick: number, waveOverride: boolean): SurpriseEventSpawnPoint[] {
-  // 2026-05-18 — INVASION OVER-THE-TOP PASS. Perimeter breach count
-  // expanded again: 10 → 18 fires across every edge so the player
-  // sees a TRUE perimeter assault, not just a few corner fires. Per-
-  // edge breakdown:
-  //   • TOP edge: 5 fires evenly spaced
-  //   • BOTTOM edge: 5 fires evenly spaced
-  //   • LEFT edge: 4 fires evenly spaced
-  //   • RIGHT edge: 4 fires evenly spaced (inset 7 cols for HUD safety)
-  // 18 visible fires + the wave's enemies pouring out of each in
-  // round-robin distribution = the "oh crap" moment the user asked for.
+  // 2026-05-19 — FULL-PERIMETER ASSAULT.
+  // The invasion now spawns EVERY enemy in the wave from a unique
+  // perimeter tile, all simultaneously. We generate one location per
+  // enemy in the spawn queue, distributed evenly around the four
+  // edges of the playable area (excluding the HUD column). For a
+  // 54-enemy wave (W7) that's 54 fires lighting up at once around
+  // the map; the wave-override path in WaveManager flattens every
+  // spawn's spawnAt to the same instant so they all emerge as a
+  // single burst rather than over time.
+  //
+  // We size the location array to max(wave-queue-length, 24) so even
+  // tiny endless-mode invasions look like a full siege. Non-override
+  // mode (legacy 8-spawn schedule for backwards-compat tests) keeps
+  // a fixed 18-fire setup.
   const wallSafeRight = GRID.COLS - 7;
   const topRow = 1;
   const botRow = GRID.ROWS - 2;
   const leftCol = 1;
-  // 5 columns for top/bottom edges (evenly spaced across the playable width).
-  const colTopBot = [
-    Math.floor(wallSafeRight * 0.10),
-    Math.floor(wallSafeRight * 0.30),
-    Math.floor(wallSafeRight * 0.50),
-    Math.floor(wallSafeRight * 0.70),
-    Math.floor(wallSafeRight * 0.90),
-  ];
-  // 4 rows for left/right edges.
-  const rowSides = [
-    Math.floor(GRID.ROWS * 0.18),
-    Math.floor(GRID.ROWS * 0.40),
-    Math.floor(GRID.ROWS * 0.60),
-    Math.floor(GRID.ROWS * 0.82),
-  ];
+  // Decide how many spawn points to generate. In waveOverride mode this
+  // is one per enemy in the wave (so every invader gets its own unique
+  // perimeter fire). In legacy mode we keep the old 18-fire setup.
+  const desiredCount = waveOverride
+    ? Math.max(24, state.spawnQueue.length)
+    : 18;
+  // Perimeter-edge length budget (in tiles). Reserve corners with -2.
+  const topLen = Math.max(1, wallSafeRight - 2);
+  const botLen = Math.max(1, wallSafeRight - 2);
+  const leftLen = Math.max(1, GRID.ROWS - 4);
+  const rightLen = Math.max(1, GRID.ROWS - 4);
+  const totalLen = topLen + botLen + leftLen + rightLen;
+  // Distribute spawns proportionally to each edge's length so the
+  // pattern is visually balanced (top + bottom get more tiles since
+  // they're longer than the side edges).
+  const topCount   = Math.max(1, Math.round(desiredCount * (topLen   / totalLen)));
+  const botCount   = Math.max(1, Math.round(desiredCount * (botLen   / totalLen)));
+  const leftCount  = Math.max(1, Math.round(desiredCount * (leftLen  / totalLen)));
+  const rightCount = Math.max(1, desiredCount - topCount - botCount - leftCount);
   const locations: { col: number; row: number }[] = [];
-  for (const c of colTopBot) locations.push({ col: c, row: topRow });
-  for (const c of colTopBot) locations.push({ col: c, row: botRow });
-  for (const r of rowSides) locations.push({ col: leftCol, row: r });
-  for (const r of rowSides) locations.push({ col: wallSafeRight, row: r });
+  // TOP edge — columns evenly spaced across the playable width.
+  for (let i = 0; i < topCount; i++) {
+    const t = (i + 0.5) / topCount;
+    locations.push({ col: Math.min(wallSafeRight - 1, Math.max(1, Math.round(1 + t * topLen))), row: topRow });
+  }
+  // BOTTOM edge — same column distribution.
+  for (let i = 0; i < botCount; i++) {
+    const t = (i + 0.5) / botCount;
+    locations.push({ col: Math.min(wallSafeRight - 1, Math.max(1, Math.round(1 + t * botLen))), row: botRow });
+  }
+  // LEFT edge — rows evenly spaced down the side.
+  for (let i = 0; i < leftCount; i++) {
+    const t = (i + 0.5) / leftCount;
+    locations.push({ col: leftCol, row: Math.min(GRID.ROWS - 2, Math.max(1, Math.round(2 + t * leftLen))) });
+  }
+  // RIGHT edge — same row distribution, inset for HUD safety.
+  for (let i = 0; i < rightCount; i++) {
+    const t = (i + 0.5) / rightCount;
+    locations.push({ col: wallSafeRight, row: Math.min(GRID.ROWS - 2, Math.max(1, Math.round(2 + t * rightLen))) });
+  }
   // In waveOverride mode the spawn-timing is driven by the wave queue
   // (not the per-point spawnAt), so we only need 1 entry per point
   // representing the VISUAL location. tickSpawns reads pointId on each
