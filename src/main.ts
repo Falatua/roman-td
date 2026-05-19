@@ -3782,7 +3782,11 @@ async function boot() {
       });
     },
     onOpenShop: () => {
-      if (!isPreWavePhase()) { state.hint = 'The shop is closed while there\'s a battle on. Survive first, browse later.'; return; }
+      // 2026-05-19 — Gate shop is now open at all times, including
+      // mid-wave. Players asked to be able to peek at the stock or
+      // buy something without waiting for the wave to end. Purchases
+      // still land in the inventory the same way; equipping happens
+      // through the tower menu which is already mid-wave accessible.
       if (!gateShop) gateShop = buildGateShop(state.wave, currentlyOwnedLegendarySet(state, inventory));
       // 2026-05 v11: clear the "NEW STOCK" badge — player has now seen the rotation.
       state.shopRefreshedUnopened = false;
@@ -4265,7 +4269,9 @@ async function boot() {
     }
 
     // Click on the Roman GATE tile (or its immediate footprint) opens the Gate Shop.
-    if (tile === TileType.GATE && isPreWavePhase()) {
+    // 2026-05-19 — Gate shop access is no longer phase-gated. Both this
+    // canvas click and the right-panel SHOP button work mid-wave.
+    if (tile === TileType.GATE) {
       if (!gateShop) gateShop = buildGateShop(state.wave, currentlyOwnedLegendarySet(state, inventory));
       renderShop(app, gateShop, state, inventory, {
         onClose: () => { document.getElementById('shop-modal')?.remove(); }
