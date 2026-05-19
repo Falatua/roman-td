@@ -466,7 +466,15 @@ async function loadOneSprite(key: string, file: string): Promise<void> {
 //   t_new_ → reskinned base + a few combos; treat as CRITICAL too
 //   everything else (tc_, tcc_, ts_, e2_, e3_, e_, i_, l_, c_, mb_,
 //   wx_, v_, endless/, etc.) → DEFERRED
+//
+// 2026-05-19 — Gates-of-Hell event assets (e3_hell_gate.png +
+// e3_fire_giant.png) promoted to CRITICAL by explicit allow-list.
+// Reason: SANDBOX mode jumps directly to W16 before the deferred
+// batch finishes, so the W16 Hell Gate event would render with
+// missing-texture fallback (a blank or default sprite). Event-
+// exclusive enemies should always be ready when the event fires.
 function isCriticalAsset(file: string): boolean {
+  if (file === 'e3_hell_gate.png' || file === 'e3_fire_giant.png') return true;
   return /^(m_|w_|t1_|t2_|e1_|p_|s_|u_|ab_|eb_|t_new_)/.test(file);
 }
 
