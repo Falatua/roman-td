@@ -1883,7 +1883,7 @@ function getWeatherStatusPenalty(): number {
   if (!w) return 0;
   return w.statusDurationPenalty * (gs.weatherIntensity ?? 1);
 }
-function pushStatus(e: Enemy, kind: StatusEffectKind, duration: number, magnitude: number, sourceTier: number) {
+export function pushStatus(e: Enemy, kind: StatusEffectKind, duration: number, magnitude: number, sourceTier: number) {
   if (statusEffectiveness(e, kind) <= 0) return;
   // BOSSES ARE IMMUNE TO STUN. Stuns paired with splash/cleave were locking
   // bosses in place — boss mechanics (rebirth, stampede, summons) need the
