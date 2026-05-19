@@ -14,6 +14,27 @@
 
 import { GameStateShape } from '../GameState';
 import { fetchTopScores, submitScore, toRemoteRow, hasRemoteLeaderboard, getLastFetchMeta } from '../services/SupabaseLeaderboard';
+import HERO_DEFS_FOR_LB from '../data/herodefs.json';
+
+// 2026-05-19 — Hero suffix helper. Reads the run's heroId off the
+// row, looks up the display name from herodefs.json, and renders a
+// muted-gold "⚔ HeroName" chip that sits after the player name in
+// the NAME column. Smaller and dimmer than the player name so it
+// never competes for the eye. Returns empty string for null/unknown
+// heroId so pre-hero entries render unchanged.
+function renderHeroSuffix(heroId: string | null | undefined): string {
+  if (!heroId) return '';
+  const def = (HERO_DEFS_FOR_LB as any)[heroId];
+  const heroName: string = def?.name ?? '';
+  if (!heroName) return '';
+  // Sanitize to avoid HTML injection on the off chance a future
+  // herodefs entry contains markup. Player names go through their
+  // own sanitizer (A-Z, 0-9 only) so they don't need this guard.
+  const safe = heroName.replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  } as Record<string, string>)[c] ?? c);
+  return ` <span class="hero-suffix" style="color:#aa9a4a;font-size:0.78em;letter-spacing:1.5px;font-weight:600;margin-left:6px;text-shadow:none">⚔ ${safe}</span>`;
+}
 
 export interface ScoreBreakdown {
   waveBonus: number;       // waves completed
@@ -36,6 +57,10 @@ export interface LeaderboardEntry {
   towersCombined: number;
   date: string;            // "September 13 2026"
   ts: number;              // ms epoch for tie-break ordering
+  // 2026-05-19 — Optional hero pick from the run. Pre-hero entries
+  // stored before this build land as undefined, which the Hall of
+  // Glory render treats as "no suffix" so legacy rows look the same.
+  heroId?: string | null;
 }
 
 const STORAGE_KEY = 'roman_td_leaderboard_v2';
@@ -513,7 +538,7 @@ export function showLeaderboard(
       tr.style.animationDelay = `${idx * 0.06}s`;
       tr.innerHTML = `
         <td class="${rankClass}">${rankNumeral}</td>
-        <td class="${rankClass}">${e.name}${isYou ? ' <span style="color:#ffd34d">◀ YOU</span>' : ''}</td>
+        <td class="${rankClass}">${e.name}${renderHeroSuffix(e.heroId)}${isYou ? ' <span style="color:#ffd34d">◀ YOU</span>' : ''}</td>
         <td class="num ${rankClass}">${e.score.toLocaleString()}</td>
         <td class="${rankClass}">Wave ${e.wave}</td>
         <td class="num ${rankClass}">${e.towersCombined}</td>
@@ -600,7 +625,7 @@ export function showLeaderboard(
       tr.style.animationDelay = `${idx * 0.06}s`;
       tr.innerHTML = `
         <td class="${rankClass}">${rankNumeral}</td>
-        <td class="${rankClass}">${e.name}</td>
+        <td class="${rankClass}">${e.name}${renderHeroSuffix(e.hero_id)}</td>
         <td class="num ${rankClass}">${e.score.toLocaleString()}</td>
         <td class="${rankClass}">Wave ${e.wave}</td>
         <td class="num ${rankClass}">${e.towers_combined}</td>
@@ -727,7 +752,12 @@ export function runEndOfGameFlow(
         questsCompleted: (state.completedQuests ?? []).length,
         towersCombined: state.combosBuilt ?? 0,
         date: formatDateLong(new Date()),
-        ts: Date.now()
+        ts: Date.now(),
+        // 2026-05-19 — Stamp the hero pick on the local entry so the
+        // LOCAL tab of the Hall of Glory renders the same "⚔ HeroName"
+        // suffix as the GLOBAL tab. Null on pre-hero runs (and on any
+        // run where the player somehow skipped the draft).
+        heroId: ((state as any).activeHeroId as string | null | undefined) ?? null
       };
       // SANDBOX: skip the local insertEntry too. Dev-mode runs never
       // pollute the local leaderboard so the player's real-mode
@@ -755,7 +785,12 @@ export function runEndOfGameFlow(
       const sandbox = !!(state as any).sandboxMode;
       if (!sandbox) {
         try {
-          await submitScore(toRemoteRow(entry, 'campaign'));
+          // 2026-05-19 — Thread the active hero pick through so the
+          // Hall of Glory can render the "⚔ HeroName" suffix on the
+          // NAME column. Pre-hero runs land as null and render the
+          // unchanged player-name only row.
+          const heroIdForRow: string | null = ((state as any).activeHeroId as string | null | undefined) ?? null;
+          await submitScore(toRemoteRow(entry, 'campaign', heroIdForRow));
         } catch (err) {
           console.error('[leaderboard] submit threw:', err);
         }

@@ -54,6 +54,10 @@ export interface RemoteScoreRow {
   date_str: string;
   mode: LeaderboardMode;
   created_at?: string;
+  // 2026-05-19 — Hero pick recorded with the run. Nullable for
+  // backward compat with pre-hero rows. Hall of Glory renders a
+  // "⚔ HeroName" suffix in the NAME column when non-null.
+  hero_id?: string | null;
 }
 
 // ─── PUBLIC API ─────────────────────────────────────────────────────
@@ -236,9 +240,15 @@ export async function submitScore(
 // LeaderboardEntry shape. Keeps the data flow simple — the caller
 // passes the same entry shape used for localStorage and we map it
 // once here.
+//
+// 2026-05-19 — Optional heroId param threads the active hero pick
+// through to the row. Pass `null` (or omit) for runs that pre-date
+// the hero system so the DB column stays null and the Hall of Glory
+// renders no hero suffix for legacy entries.
 export function toRemoteRow(
   entry: { name: string; score: number; wave: number; won: boolean; questsCompleted: number; towersCombined: number; date: string },
-  mode: LeaderboardMode = 'campaign'
+  mode: LeaderboardMode = 'campaign',
+  heroId: string | null = null
 ): Omit<RemoteScoreRow, 'id' | 'created_at'> {
   return {
     name: entry.name,
@@ -248,7 +258,8 @@ export function toRemoteRow(
     quests_completed: Math.max(0, entry.questsCompleted),
     towers_combined: Math.max(0, entry.towersCombined),
     date_str: entry.date,
-    mode
+    mode,
+    hero_id: heroId
   };
 }
 

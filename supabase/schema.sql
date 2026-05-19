@@ -55,6 +55,21 @@ create policy "Public insert"
     and towers_combined    >= 0
   );
 
+-- ─── MIGRATIONS ──────────────────────────────────────────────────────
+-- 2026-05-19 — Hero System v1. Adds an optional hero_id column so
+-- each score row records which hero the player drafted that run.
+-- Idempotent (uses `if not exists`) so re-running this whole file
+-- on an existing project is safe. Nullable: pre-hero rows stay
+-- null and the Hall of Glory renders them unchanged.
+--
+-- Allowed values are enforced client-side from herodefs.json so we
+-- don't add a CHECK constraint here — that would force a schema
+-- migration every time we add a hero. Worst case a malformed
+-- hero_id string lands in the DB and the Hall renders no suffix
+-- for that row (renderHeroSuffix returns empty when the lookup misses).
+alter table public.scores
+  add column if not exists hero_id text null;
+
 -- ─── HOUSEKEEPING (optional) ─────────────────────────────────────────
 -- Trim the table to the top 500 per mode periodically. Not strictly
 -- required (Supabase free tier handles tens of millions of rows) but
