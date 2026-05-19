@@ -23,8 +23,14 @@
 // Vite exposes import.meta.env at build time. Both vars MUST start
 // with VITE_ to make it into the bundle. The dev-mode default fall-
 // back is empty strings (= no remote leaderboard).
-const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL ?? '';
-const SUPABASE_ANON_KEY = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY ?? '';
+// 2026-05-19 — Hardened against env-var foot-guns:
+//   • trim() to strip stray whitespace / newlines that some CI/CD
+//     systems leave when injecting secrets
+//   • strip a single trailing slash so the URL builder doesn't
+//     accidentally produce a `//rest/v1/scores` double-slash that
+//     SOME PostgREST setups reject with PGRST125 "Invalid path".
+const SUPABASE_URL = ((import.meta as any).env?.VITE_SUPABASE_URL ?? '').trim().replace(/\/+$/, '');
+const SUPABASE_ANON_KEY = ((import.meta as any).env?.VITE_SUPABASE_ANON_KEY ?? '').trim();
 
 export type LeaderboardMode = 'campaign' | 'endless';
 
@@ -92,10 +98,25 @@ export async function fetchTopScores(
     return null;
   }
 
-  const url = `${SUPABASE_URL}/rest/v1/scores`
-    + `?mode=eq.${encodeURIComponent(mode)}`
-    + `&order=score.desc,created_at.desc`
-    + `&limit=${limit}`;
+  // 2026-05-19 — Switched to URLSearchParams to guarantee proper
+  // RFC-3986 encoding. The previous hand-concatenated URL worked in
+  // every test I ran, but a player reported PGRST125 "Invalid path
+  // specified in request URL" — Supabase rejecting the URL. Going
+  // through URLSearchParams normalizes commas, spaces, and any
+  // other special chars the same way every browser does.
+  // Also explicitly setting `select=*` so PostgREST returns rows
+  // even if a future project-level default policy gates SELECT.
+  const params = new URLSearchParams({
+    select: '*',
+    mode: `eq.${mode}`,
+    order: 'score.desc,created_at.desc',
+    limit: String(limit),
+  });
+  const url = `${SUPABASE_URL}/rest/v1/scores?${params.toString()}`;
+  // Verbose log so a player reporting "still doesn't work" can paste
+  // the exact URL their browser is calling — eliminates guesswork.
+  // eslint-disable-next-line no-console
+  console.log('[leaderboard] GET', url);
 
   // 3 attempts with exponential backoff (0ms, 400ms, 1200ms). Each
   // attempt has a 6-second timeout via AbortController so a network
