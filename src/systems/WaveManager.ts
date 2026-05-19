@@ -401,8 +401,21 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
       // frame. Cleared by the wave-end callback after the banner shows.
       (state as any).__modifierJustSurvived = state.waveModifier;
     }
+    // 2026-05-19 — FLYER WAVE PAYOUT BONUS. Flyer waves (W6, W12, W18)
+    // are the hardest wave type because they bypass maze chokepoints
+    // entirely. Players who invest in dedicated anti-air (Storm
+    // Javelin, Flyer Bane, ranged pool, Aquila Talons, Hadrian if the
+    // hero system is in) deserve a meaningful payout. +50% rounded
+    // bonus on top of the authored w.gold so each flyer wave pays
+    // ~1.5× a same-difficulty ground wave.
+    let flyerBonus = 0;
+    if (w.type === 'F') {
+      flyerBonus = Math.max(5, Math.round(w.gold * 0.5));
+    }
+    const totalWaveGold = w.gold + flyerBonus;
     const modSuffix = modBonus > 0 ? ` +${modBonus}g RNG bonus +${modScoreBonus} score.` : '';
-    state.hint = `Wave ${state.wave} survived. +${w.gold} Gold.${modSuffix} The empire pretends not to be impressed.`;
+    const flyerSuffix = flyerBonus > 0 ? ` +${flyerBonus}g Flyer-Survival bonus.` : '';
+    state.hint = `Wave ${state.wave} survived. +${totalWaveGold} Gold.${flyerSuffix}${modSuffix} The empire pretends not to be impressed.`;
     // Clear weather + modifier — sky clears between waves.
     state.weatherKey = null;
     state.weatherIntensity = 1;
@@ -416,7 +429,7 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
     // Otherwise we clear immediately like before.
     notifySurpriseEventWaveEnded(state);
     if (!state.pendingSurpriseReward) clearSurpriseEventsForWaveEnd(state);
-    onWaveEnd(w.gold);   // callback may override phase (e.g. VICTORY)
+    onWaveEnd(totalWaveGold);   // callback may override phase (e.g. VICTORY)
   }
 }
 
