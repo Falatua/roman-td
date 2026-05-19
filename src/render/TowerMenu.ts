@@ -135,10 +135,19 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
 
   const modal = document.createElement('div');
   modal.id = 'tower-menu';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);z-index:55;font-family:'Courier New',monospace;`;
+  // 2026-05-19 — RESPONSIVE CLAMPING (matches Codex pattern). The MODAL
+  // is the scroll container with `align-items:flex-start` so the title
+  // banner is always reachable at the top regardless of viewport
+  // height. When the panel is taller than the viewport (lots of
+  // recipes + items), the user scrolls the whole panel inside the
+  // modal — every button + recipe row stays reachable.
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:55;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
 
   const panel = document.createElement('div');
-  panel.style.cssText = `background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid ${tierColor};color:#e8d6a8;width:560px;max-height:88vh;overflow:auto;box-shadow:0 0 24px ${tierColor}44;`;
+  // No max-height on the panel itself — the modal's overflow:auto above
+  // handles the scrolling. Width is fixed at 560px but caps at 96vw on
+  // narrow viewports.
+  panel.style.cssText = `background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid ${tierColor};color:#e8d6a8;width:min(560px,96vw);box-shadow:0 0 24px ${tierColor}44;`;
 
   // Top banner: pending vs permanent
   const banner = document.createElement('div');
@@ -749,10 +758,11 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
 
   modal.appendChild(panel);
   parent.appendChild(modal);
-  // 2026-05 v11: gold scrollbar + "▼ SCROLL FOR MORE" hint on the tower
-  // menu panel — long menus (combo lists + recipes) previously gave no
-  // affordance that more content was below.
-  markScrollable(panel);
+  // Gold scrollbar + "▼ SCROLL FOR MORE" hint on the MODAL (the scroll
+  // container after the 2026-05-19 responsive-clamping refactor). Long
+  // tower menus with lots of recipes overflow the viewport and the
+  // user needs a clear cue that they can scroll.
+  markScrollable(modal);
 }
 
 function mkBtn(label: string, bg: string): HTMLButtonElement {

@@ -116,10 +116,13 @@ function renderMercatorShop(
   const modal = document.createElement('div');
   modal.id = 'shop-modal';
   // Leave right gutter clear for the prospect-building sidebar.
-  modal.style.cssText = `position:absolute;left:0;top:0;bottom:0;right:120px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(58,22,6,0.65),rgba(0,0,0,0.85));z-index:50;font-family:'Courier New',monospace;`;
+  // 2026-05-19 — Anchor to flex-start so the header banner is always
+  // reachable at the top regardless of viewport height. The panel keeps
+  // its flex-column structure (sticky header + scrollable body).
+  modal.style.cssText = `position:absolute;left:0;top:0;bottom:0;right:120px;display:flex;align-items:flex-start;justify-content:center;background:radial-gradient(ellipse at center,rgba(58,22,6,0.65),rgba(0,0,0,0.85));z-index:50;padding:12px 8px;box-sizing:border-box;font-family:'Courier New',monospace;`;
 
   const panel = document.createElement('div');
-  panel.style.cssText = `background:linear-gradient(180deg,#2a1a0e,#0c0a08);border:4px solid #d4af37;outline:1px solid #1a1410;color:#fff8e0;padding:0;width:min(680px,94vw);max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 36px rgba(212,175,55,0.45),inset 0 0 24px rgba(0,0,0,0.5);`;
+  panel.style.cssText = `background:linear-gradient(180deg,#2a1a0e,#0c0a08);border:4px solid #d4af37;outline:1px solid #1a1410;color:#fff8e0;padding:0;width:min(680px,94vw);max-height:96%;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 36px rgba(212,175,55,0.45),inset 0 0 24px rgba(0,0,0,0.5);`;
 
   // ── Header banner ──────────────────────────────────────────────────
   const cartSrc = imgSrcFromTex('MERCATOR_CART') || imgSrcFromTex('MERCATOR');
@@ -552,12 +555,12 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   // 2026-05 v6: shop modal now offsets to the LEFT and leaves the right
   // 110px clear so the prospect-building sidebar stays usable. The overlay
   // also stops short of the right edge so the sidebar isn't darkened.
-  modal.style.cssText = `position:absolute;left:0;top:0;bottom:0;right:120px;display:flex;align-items:center;justify-content:center;background:${isMerc ? 'radial-gradient(ellipse at center,rgba(58,22,6,0.65),rgba(0,0,0,0.85))' : 'rgba(0,0,0,0.55)'};z-index:50;font-family:'Courier New',monospace;`;
+  modal.style.cssText = `position:absolute;left:0;top:0;bottom:0;right:120px;display:flex;align-items:flex-start;justify-content:center;background:${isMerc ? 'radial-gradient(ellipse at center,rgba(58,22,6,0.65),rgba(0,0,0,0.85))' : 'rgba(0,0,0,0.55)'};z-index:50;padding:12px 8px;box-sizing:border-box;font-family:'Courier New',monospace;`;
   const panel = document.createElement('div');
   // Mercator panel: larger, double-bordered, ornate gold accents, decorative
   // top banner with a tent/cart sprite. Gate shop keeps its compact look.
   if (isMerc) {
-    panel.style.cssText = `background:linear-gradient(180deg,#2a1a0e,#0c0a08);border:4px solid #d4af37;outline:1px solid #1a1410;color:#fff8e0;padding:0;width:600px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 36px rgba(212,175,55,0.45),inset 0 0 24px rgba(0,0,0,0.5);`;
+    panel.style.cssText = `background:linear-gradient(180deg,#2a1a0e,#0c0a08);border:4px solid #d4af37;outline:1px solid #1a1410;color:#fff8e0;padding:0;width:min(600px,94vw);max-height:96%;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 36px rgba(212,175,55,0.45),inset 0 0 24px rgba(0,0,0,0.5);`;
     // Header strip with gold gradient + Mercator portrait/cart icon
     const cartSrc = imgSrcFromTex('MERCATOR_CART') || imgSrcFromTex('MERCATOR');
     const cartHtml = cartSrc ? `<img src="${cartSrc}" style="width:64px;height:64px;image-rendering:pixelated;flex-shrink:0;filter:drop-shadow(2px 2px 0 #000)"/>` : '';
@@ -572,7 +575,11 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
       </div>
       <div style="padding:14px 18px;overflow:auto;flex:1;background:linear-gradient(180deg,#1a1410,#0c0a08)"></div>`;
   } else {
-    panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:14px;width:520px;max-height:85vh;overflow:auto;font-family:'Courier New',monospace;`;
+    // Gate shop panel uses the simpler "let it grow, modal scrolls"
+    // pattern. The outer modal already has overflow scroll via padding +
+    // align-items:flex-start, so the panel just sets a max-height of 96%
+    // of parent (#app) and lets the inner content overflow:auto.
+    panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:14px;width:min(520px,94vw);max-height:96%;overflow:auto;font-family:'Courier New',monospace;`;
     panel.innerHTML = `<h2 style="margin:0 0 10px;color:#d4af37">GATE SHOP</h2>
       <div style="font-size:12px;margin-bottom:10px;opacity:0.8">Refreshes every 4 waves (W4 / W8 / W12 / W16 / W20).</div>`;
   }
@@ -788,9 +795,13 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   closeGameModals();
   const modal = document.createElement('div');
   modal.id = 'inventory-modal';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);z-index:58;font-family:'Courier New',monospace;`;
+  // 2026-05-19 — Responsive clamping (Codex pattern). Inventory modal
+  // can be tall (25-slot inventory + filter chips + headline + sort
+  // controls); flex-start + outer overflow:auto guarantees the close
+  // button at the top stays reachable on any viewport.
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:58;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
   const panel = document.createElement('div');
-  panel.style.cssText = `width:560px;background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:14px;`;
+  panel.style.cssText = `width:min(560px,94vw);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:14px;`;
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div><div style="font-size:18px;color:#d4af37;font-weight:bold;letter-spacing:3px">ARMARIUM</div><div style="font-size:11px;color:#aa9a4a;letter-spacing:1px">ITEM VAULT ${inv.slots.length}/${INVENTORY_SIZE}</div></div>
     <div style="font-size:11px;color:#cdb98a;text-align:right;max-width:240px;line-height:1.4">Click an item to inspect it.<br/>Use the SELL button to convert it to Gold.</div>

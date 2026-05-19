@@ -185,8 +185,9 @@ export function showGameOver(parent: HTMLElement, state: GameStateShape, onResta
   const speedLine = speedBonusLine(state);
   const modal = document.createElement('div');
   modal.id = 'end-screen';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(80,0,0,0.85),rgba(0,0,0,0.95));z-index:100;color:#e8d6a8;font-family:'Courier New',monospace;`;
-  modal.innerHTML = `<div style="text-align:center;padding:24px 28px;border:3px solid #aa1a1a;background:#1a0a08;width:580px;max-width:92vw;max-height:90vh;overflow-y:auto;box-shadow:0 0 36px rgba(170,26,26,0.55)">
+  // 2026-05-19 — Responsive clamping (Codex pattern).
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:radial-gradient(circle,rgba(80,0,0,0.85),rgba(0,0,0,0.95));z-index:100;padding:16px 8px;box-sizing:border-box;overflow:auto;color:#e8d6a8;font-family:'Courier New',monospace;`;
+  modal.innerHTML = `<div style="text-align:center;padding:24px 28px;border:3px solid #aa1a1a;background:#1a0a08;width:min(580px,94vw);box-shadow:0 0 36px rgba(170,26,26,0.55)">
     <h1 style="margin:0;font-size:32px;color:#ee2a2a;letter-spacing:6px;text-shadow:3px 3px 0 #000">ROME HAS FALLEN</h1>
     <div style="margin:6px 0 18px;font-size:14px;color:#aa6a6a;letter-spacing:2px">CASTRUM LUNUM, AVGVSTI MMXXVI</div>
     <div style="font-size:14px;line-height:1.7">
@@ -212,8 +213,9 @@ export function showVictory(parent: HTMLElement, state: GameStateShape, onRestar
   const hi = loadHighScore();
   const modal = document.createElement('div');
   modal.id = 'end-screen';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(120,90,0,0.85),rgba(0,0,0,0.95));z-index:100;color:#e8d6a8;font-family:'Courier New',monospace;`;
-  modal.innerHTML = `<div style="text-align:center;padding:30px;border:3px solid #d4af37;background:#1a1410;max-width:500px;">
+  // 2026-05-19 — Responsive clamping (Codex pattern).
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:radial-gradient(circle,rgba(120,90,0,0.85),rgba(0,0,0,0.95));z-index:100;padding:16px 8px;box-sizing:border-box;overflow:auto;color:#e8d6a8;font-family:'Courier New',monospace;`;
+  modal.innerHTML = `<div style="text-align:center;padding:30px;border:3px solid #d4af37;background:#1a1410;width:min(500px,94vw);">
     <h1 style="margin:0;font-size:32px;color:#ffd34d;letter-spacing:6px;text-shadow:3px 3px 0 #000">ROMA AETERNA</h1>
     <div style="margin:6px 0 18px;font-size:14px;color:#aa9a4a;letter-spacing:2px">CASTRUM LUNUM STANDS</div>
     <div style="font-size:14px;line-height:1.7">

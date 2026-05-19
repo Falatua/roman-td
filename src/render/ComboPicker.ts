@@ -17,9 +17,12 @@ export function showComboPicker(parent: HTMLElement, combos: AvailableCombo[], s
   closeGameModals();
   const modal = document.createElement('div');
   modal.id = 'combo-picker';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);z-index:50;`;
+  // 2026-05-19 — Responsive clamping (Codex pattern). Modal scrolls
+  // top-anchored; panel has no max-height so all combo rows stay
+  // reachable regardless of viewport height.
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:50;padding:16px 8px;box-sizing:border-box;overflow:auto;`;
   const panel = document.createElement('div');
-  panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:14px;width:560px;max-height:85vh;overflow:auto;font-family:'Courier New',monospace;`;
+  panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:14px;width:min(560px,96vw);font-family:'Courier New',monospace;`;
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <h2 style="margin:0;color:#d4af37;letter-spacing:2px">⚔ COMBINATIONS AVAILABLE</h2>
     <button id="combo-close" style="background:#3a1a1a;color:#e8d6a8;border:1px solid #5a3a30;padding:4px 10px;cursor:pointer;font-family:inherit">CLOSE</button>
@@ -107,7 +110,8 @@ export function showComboPicker(parent: HTMLElement, combos: AvailableCombo[], s
   panel.appendChild(list);
   modal.appendChild(panel);
   parent.appendChild(modal);
-  markScrollable(panel);
+  // Scroll cues on the modal (the actual scroll container).
+  markScrollable(modal);
 
   panel.querySelector<HTMLButtonElement>('#combo-close')!.onclick = () => { modal.remove(); hooks.onClose(); };
   modal.addEventListener('click', (e) => { if (e.target === modal) { modal.remove(); hooks.onClose(); } });

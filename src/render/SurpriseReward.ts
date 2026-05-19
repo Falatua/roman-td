@@ -106,10 +106,11 @@ export function showSurpriseRewardModal(
 
   const modal = document.createElement('div');
   modal.id = 'surprise-reward-modal';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);z-index:75;font-family:'Courier New',monospace;`;
+  // 2026-05-19 — Responsive clamping (Codex pattern).
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.7);z-index:75;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
 
   const panel = document.createElement('div');
-  panel.style.cssText = `width:min(660px,92%);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid ${accent};color:#e8d6a8;box-shadow:0 0 36px ${accent}80;padding:22px;`;
+  panel.style.cssText = `width:min(660px,94vw);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid ${accent};color:#e8d6a8;box-shadow:0 0 36px ${accent}80;padding:22px;`;
   panel.innerHTML = `
     <div style="text-align:center;margin-bottom:14px">
       <div style="font-size:11px;font-weight:bold;letter-spacing:5px;color:${accent};text-shadow:1px 1px 0 #000">${eyebrow}</div>

@@ -73,9 +73,12 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // elements like the wave-preview chip (z:40) and prospect sidebar (z:75).
   // closeGameModals() already strips other modals, so a player clicking
   // a sprite to inspect always sees an unobstructed inspect dialog.
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);z-index:80;font-family:'Courier New',monospace;`;
+  // 2026-05-19 — Responsive clamping (Codex pattern). Modal scrolls
+  // top-anchored; panel has no max-height so traits + abilities lists
+  // are always reachable regardless of viewport height.
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.5);z-index:80;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
   const panel = document.createElement('div');
-  panel.style.cssText = `background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid ${acColor};color:#e8d6a8;width:480px;max-height:88vh;overflow:auto`;
+  panel.style.cssText = `background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid ${acColor};color:#e8d6a8;width:min(480px,96vw);`;
 
   const banner = document.createElement('div');
   banner.style.cssText = `background:${acColor};color:#1a1410;padding:6px 12px;font-weight:bold;letter-spacing:3px;display:flex;justify-content:space-between;align-items:center`;
@@ -313,7 +316,9 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
 
   modal.appendChild(panel);
   parent.appendChild(modal);
-  markScrollable(panel);
+  // Scroll cues on the MODAL (the actual scroll container after the
+  // 2026-05-19 responsive-clamping refactor).
+  markScrollable(modal);
 }
 
 // 2026-05 v6: type-driven wrapper for the wave-preview clickable sprites.

@@ -283,9 +283,10 @@ export function showEndSummary(parent: HTMLElement, state: GameStateShape, won: 
 
   const wrap = document.createElement('div');
   wrap.id = 'end-summary';
-  wrap.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(20,8,4,0.92),rgba(0,0,0,0.97));z-index:190;color:#ffd34d;font-family:'Courier New',monospace;`;
+  // 2026-05-19 — Responsive clamping (Codex pattern).
+  wrap.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:radial-gradient(circle,rgba(20,8,4,0.92),rgba(0,0,0,0.97));z-index:190;padding:16px 8px;box-sizing:border-box;overflow:auto;color:#ffd34d;font-family:'Courier New',monospace;`;
   wrap.innerHTML = `
-    <div style="text-align:center;padding:28px 36px;background:#0a0202;border:3px solid ${accent};box-shadow:0 0 36px ${accent}88;width:min(520px,92%);position:relative">
+    <div style="text-align:center;padding:28px 36px;background:#0a0202;border:3px solid ${accent};box-shadow:0 0 36px ${accent}88;width:min(520px,94vw);position:relative">
       <div style="font-size:34px;letter-spacing:8px;color:${accent};text-shadow:0 0 14px ${accent},3px 3px 0 #000;font-weight:900">${heading}</div>
       <div style="font-size:12px;letter-spacing:4px;color:#aa6a1a;margin-top:4px">${sub}</div>
       <div style="margin:22px 0 6px;font-size:11px;letter-spacing:4px;color:#aa6a1a">FINAL SCORE</div>
@@ -343,9 +344,10 @@ export function promptForName(parent: HTMLElement, defaultName: string, onSubmit
   ensureStyle();
   const wrap = document.createElement('div');
   wrap.id = 'name-prompt';
-  wrap.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);z-index:195;color:#ffd34d;font-family:'Courier New',monospace;`;
+  // 2026-05-19 — Responsive clamping (Codex pattern).
+  wrap.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.85);z-index:195;padding:16px 8px;box-sizing:border-box;overflow:auto;color:#ffd34d;font-family:'Courier New',monospace;`;
   wrap.innerHTML = `
-    <div style="background:#0a0202;border:3px solid #ffd34d;box-shadow:0 0 30px rgba(255,211,77,0.5);padding:28px 36px;text-align:center;width:min(420px,92%);position:relative">
+    <div style="background:#0a0202;border:3px solid #ffd34d;box-shadow:0 0 30px rgba(255,211,77,0.5);padding:28px 36px;text-align:center;width:min(420px,94vw);position:relative">
       <div style="font-size:18px;letter-spacing:5px;color:#ffd34d;text-shadow:0 0 10px #ffd34d,2px 2px 0 #000;font-weight:900;margin-bottom:10px">ENTER YOUR NAME</div>
       <div style="font-size:11px;letter-spacing:2px;color:#aa6a1a;margin-bottom:18px">A-Z, 0-9 only · max 12 characters</div>
       <input id="name-input" maxlength="12" autocomplete="off" style="width:100%;background:#1a0404;border:2px solid #aa1a1a;color:#ffd34d;font-family:inherit;font-size:22px;letter-spacing:6px;text-align:center;padding:10px 12px;font-weight:900;text-transform:uppercase;text-shadow:0 0 6px #ffd34d,1px 1px 0 #000;outline:none">
@@ -652,9 +654,10 @@ export function showEndlessLeaderboard(parent: HTMLElement, currentEntry: Endles
   document.getElementById('endless-leaderboard')?.remove();
   const modal = document.createElement('div');
   modal.id = 'endless-leaderboard';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);z-index:200;font-family:'Courier New',monospace`;
+  // 2026-05-19 — Responsive clamping (Codex pattern).
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.85);z-index:200;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace`;
   const panel = document.createElement('div');
-  panel.style.cssText = `width:min(640px,92%);max-height:88vh;overflow:auto;background:linear-gradient(180deg,#1a0c14,#0c0608);border:3px solid #ff5050;padding:24px;color:#fff8e0;box-shadow:0 0 40px rgba(255,80,80,0.55)`;
+  panel.style.cssText = `width:min(640px,94vw);background:linear-gradient(180deg,#1a0c14,#0c0608);border:3px solid #ff5050;padding:24px;color:#fff8e0;box-shadow:0 0 40px rgba(255,80,80,0.55)`;
   let rows = '';
   for (let i = 0; i < top.length; i++) {
     const e = top[i];

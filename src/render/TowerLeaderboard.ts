@@ -41,11 +41,14 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
 
   const modal = document.createElement('div');
   modal.id = 'tower-leaderboard';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.65);z-index:58;font-family:'Courier New',monospace;`;
+  // 2026-05-19 — Responsive clamping. The panel keeps its flex-column
+  // structure (sticky header + scrollable body + footer); the modal
+  // anchors flex-start so the header is always reachable.
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.65);z-index:58;padding:12px 8px;box-sizing:border-box;font-family:'Courier New',monospace;`;
   modal.addEventListener('click', (e) => { if (e.target === modal) hooks.onClose(); });
 
   const panel = document.createElement('div');
-  panel.style.cssText = `width:min(920px,94%);max-height:88vh;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #d4af37;box-shadow:0 0 0 2px #120d0a,0 0 36px rgba(212,175,55,0.4),inset 0 0 60px rgba(0,0,0,0.6);display:flex;flex-direction:column;`;
+  panel.style.cssText = `width:min(920px,94vw);max-height:96%;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #d4af37;box-shadow:0 0 0 2px #120d0a,0 0 36px rgba(212,175,55,0.4),inset 0 0 60px rgba(0,0,0,0.6);display:flex;flex-direction:column;`;
   modal.appendChild(panel);
   parent.appendChild(modal);
 

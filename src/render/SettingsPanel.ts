@@ -20,10 +20,11 @@ export function showSettingsPanel(parent: HTMLElement) {
 
   const modal = document.createElement('div');
   modal.id = 'settings-modal';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);z-index:60;font-family:'Courier New',monospace;`;
+  // 2026-05-19 — Responsive clamping (Codex pattern).
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:60;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
 
   const panel = document.createElement('div');
-  panel.style.cssText = `width:460px;background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:0;display:flex;flex-direction:column;`;
+  panel.style.cssText = `width:min(460px,94vw);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:0;display:flex;flex-direction:column;`;
 
   // Header (no padding here so the tab strip can run flush against it)
   const header = document.createElement('div');

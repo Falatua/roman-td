@@ -11,10 +11,11 @@ export function showStoneMenu(parent: HTMLElement, col: number, row: number, sta
   closeGameModals();
   const modal = document.createElement('div');
   modal.id = 'stone-menu';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:54;font-family:'Courier New',monospace;`;
+  // 2026-05-19 — Responsive clamping (Codex pattern).
+  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.45);z-index:54;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
 
   const panel = document.createElement('div');
-  panel.style.cssText = 'width:360px;background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid #8a7a5a;color:#e8d6a8;box-shadow:0 0 24px #000';
+  panel.style.cssText = 'width:min(360px,94vw);background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid #8a7a5a;color:#e8d6a8;box-shadow:0 0 24px #000';
   panel.innerHTML = `
     <div style="background:#6b6048;color:#120d0a;padding:8px 10px;font-weight:bold;letter-spacing:2px;font-size:12px;display:flex;justify-content:space-between">
       <span>MAZE STONE</span><span>${col},${row}</span>
