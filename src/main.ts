@@ -3922,6 +3922,24 @@ async function boot() {
     onOpenSettings: () => {
       showSettingsPanel(app);
     },
+    // 2026-05-19 — Bulk-set every placed tower's targeting mode. The
+    // right-panel TARGET ALL button picks a mode; this fan-outs it
+    // across state.towers. Pending prospects are included (their
+    // targetingMode survives the keep flow). Heroes (not in v1) would
+    // be filtered here if/when they ship.
+    onSetAllTargeting: (mode) => {
+      let n = 0;
+      for (const t of state.towers.values()) {
+        t.targetingMode = mode;
+        n++;
+      }
+      if (n === 0) {
+        state.hint = 'No towers placed yet — nothing to retarget.';
+        return;
+      }
+      const label = (TargetingMode as any)[mode] ?? String(mode);
+      state.hint = `🎯 Retargeted ${n} tower${n === 1 ? '' : 's'} → ${label}.`;
+    },
     // DPS CHECK: spawn a training dummy for damage measurement, OR cancel
     // the active dummy if one is already on the path. Player-side cancel
     // lets them clear a stuck/no-longer-wanted measurement without

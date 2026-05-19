@@ -1,5 +1,5 @@
 import { GameStateShape } from '../GameState';
-import { GamePhase, TowerType } from '../types';
+import { GamePhase, TowerType, TargetingMode } from '../types';
 import { ECONOMY, GRID, POOL_PROBABILITIES } from '../constants';
 import { tex } from './Assets';
 import { canAfford, poolUpgradeCost } from '../systems/EconomySystem';
@@ -27,6 +27,12 @@ export interface UICallbacks {
   onSellAllStones?: () => void;
   onOpenSettings?: () => void;
   onDpsCheck?: () => void;
+  // 2026-05-19 — Bulk-set every placed tower's targetingMode at once
+  // (right-panel "TARGET ALL" button + 7-button mode picker). Saves
+  // the player from opening each tower one at a time when they want
+  // a global retarget (e.g. flip everything to WEAKEST during a
+  // grunt-clearing wave, then back to STRONG for the boss).
+  onSetAllTargeting?: (mode: TargetingMode) => void;
 }
 
 // Vanilla-DOM HUD overlay positioned above the canvas.
@@ -155,9 +161,56 @@ export class UIManager {
     dpsBtn.style.fontWeight = 'bold';
     dpsBtn.style.letterSpacing = '2px';
     dpsBtn.onclick = () => (cb as any).onDpsCheck?.();
-    // Order: START / SPEED / PAUSE / POOL / SHOP / QUESTS / CODEX / SELL-STONES / LEADERBOARD / DPS CHECK / SETTINGS.
+    // 2026-05-19 — TARGET ALL: opens an inline mode picker that bulk-
+    // applies the chosen targeting mode to every placed tower. Saves
+    // the player from opening each tower individually. The picker is
+    // a sibling DOM block toggled below the button — no modal, no
+    // overlay, dismisses on selection or on a re-click of the button.
+    const targetAllBtn = mkBtn('🎯 TARGET ALL', '#3a1a2a');
+    targetAllBtn.id = 'target-all-btn';
+    targetAllBtn.title = 'Set every placed tower\'s targeting mode at once';
+    targetAllBtn.style.color = '#ffb3d9';
+    targetAllBtn.style.border = '2px solid #ffb3d9';
+    targetAllBtn.style.fontWeight = 'bold';
+    targetAllBtn.style.letterSpacing = '2px';
+    targetAllBtn.style.boxShadow = '0 0 10px rgba(255,179,217,0.35)';
+    const targetAllPicker = document.createElement('div');
+    targetAllPicker.id = 'target-all-picker';
+    targetAllPicker.style.cssText = 'display:none;background:#1a0f18;border:1px solid #5a3a4a;border-top:none;padding:8px;flex-direction:column;gap:4px;';
+    // 7 mode buttons matching the per-tower row in TowerMenu, in the
+    // same order: FIRST · LAST · STRONG · WEAKEST · CLOSE · FLYERS · FAST.
+    const TARGET_ALL_MODES: { mode: TargetingMode; label: string; tip: string }[] = [
+      { mode: TargetingMode.FIRST,   label: 'FIRST',   tip: 'Furthest along the path (closest to leaking)' },
+      { mode: TargetingMode.LAST,    label: 'LAST',    tip: 'Earliest in the path (newest spawn)' },
+      { mode: TargetingMode.STRONG,  label: 'STRONG',  tip: 'Highest HP — bosses get priority' },
+      { mode: TargetingMode.WEAKEST, label: 'WEAKEST', tip: 'Lowest HP grunt — finisher mode' },
+      { mode: TargetingMode.CLOSE,   label: 'CLOSE',   tip: 'Physically closest enemy' },
+      { mode: TargetingMode.FLYERS,  label: 'FLYERS',  tip: 'Flyers first, then ground' },
+      { mode: TargetingMode.FAST,    label: 'FAST',    tip: 'Highest current speed — catch sprinters' },
+    ];
+    for (const m of TARGET_ALL_MODES) {
+      const b = document.createElement('button');
+      b.textContent = m.label;
+      b.title = m.tip;
+      b.style.cssText = 'background:#2a1a25;color:#ffb3d9;border:1px solid #5a3a4a;padding:6px 8px;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:1px;text-align:left';
+      b.onmouseenter = () => { b.style.background = '#3a2535'; };
+      b.onmouseleave = () => { b.style.background = '#2a1a25'; };
+      b.onclick = () => {
+        (cb as any).onSetAllTargeting?.(m.mode);
+        targetAllPicker.style.display = 'none';
+        targetAllBtn.style.background = '#3a1a2a';
+      };
+      targetAllPicker.appendChild(b);
+    }
+    targetAllBtn.onclick = () => {
+      const open = targetAllPicker.style.display !== 'none';
+      targetAllPicker.style.display = open ? 'none' : 'flex';
+      // Subtle highlight while the picker is open so the player can tell.
+      targetAllBtn.style.background = open ? '#3a1a2a' : '#5a2a3a';
+    };
+    // Order: START / SPEED / PAUSE / POOL / SHOP / QUESTS / CODEX / SELL-STONES / LEADERBOARD / DPS CHECK / TARGET ALL (+ picker) / SETTINGS.
     // (Sound mute lives inside SETTINGS panel now — 2026-05 v11.)
-    buttons.append(this.startBtn, speedBtn, pauseBtn, this.upgradeBtn, shopBtn, this.mercatorBtn, questsBtn, codexBtn, sellStonesBtn, leaderBtn, dpsBtn, settingsBtn);
+    buttons.append(this.startBtn, speedBtn, pauseBtn, this.upgradeBtn, shopBtn, this.mercatorBtn, questsBtn, codexBtn, sellStonesBtn, leaderBtn, dpsBtn, targetAllBtn, targetAllPicker, settingsBtn);
 
     this.hint = document.createElement('div');
     this.hint.style.cssText = `display:none`;
