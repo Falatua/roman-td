@@ -72,6 +72,13 @@ jobs:
         env:
           VITE_SUPABASE_URL:      ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # 2026-05-19 — Optional Cloudflare Worker proxy URL. When set,
+          # the bundle routes leaderboard requests through this domain
+          # instead of *.supabase.co. Used to bypass player-network
+          # mishandling of supabase.co URLs (real PGRST125 reports).
+          # Setup steps live in cloudflare-worker/. When unset the
+          # bundle hits Supabase directly (existing behavior).
+          VITE_LEADERBOARD_PROXY_URL: ${{ secrets.VITE_LEADERBOARD_PROXY_URL }}
         run: npm run build
 
       - name: Upload Pages artifact

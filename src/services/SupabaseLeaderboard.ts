@@ -31,6 +31,15 @@
 //     SOME PostgREST setups reject with PGRST125 "Invalid path".
 const SUPABASE_URL = ((import.meta as any).env?.VITE_SUPABASE_URL ?? '').trim().replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = ((import.meta as any).env?.VITE_SUPABASE_ANON_KEY ?? '').trim();
+// 2026-05-19 — Optional Cloudflare Worker proxy override. When the
+// player's network mishandles requests to *.supabase.co (real
+// PGRST125 reports + curl-from-cellular confirming server-side
+// rejection), route through a Worker on workers.dev which presents
+// as generic Cloudflare traffic. Setup steps + Worker code live
+// in cloudflare-worker/. If the env var is empty, we fall back to
+// the direct Supabase URL (existing behavior).
+const LEADERBOARD_PROXY_URL = ((import.meta as any).env?.VITE_LEADERBOARD_PROXY_URL ?? '').trim().replace(/\/+$/, '');
+const EFFECTIVE_API_BASE = LEADERBOARD_PROXY_URL || SUPABASE_URL;
 
 export type LeaderboardMode = 'campaign' | 'endless';
 
@@ -112,7 +121,7 @@ export async function fetchTopScores(
     order: 'score.desc,created_at.desc',
     limit: String(limit),
   });
-  const url = `${SUPABASE_URL}/rest/v1/scores?${params.toString()}`;
+  const url = `${EFFECTIVE_API_BASE}/rest/v1/scores?${params.toString()}`;
   // Verbose log so a player reporting "still doesn't work" can paste
   // the exact URL their browser is calling — eliminates guesswork.
   // eslint-disable-next-line no-console
@@ -203,7 +212,7 @@ export async function submitScore(
   row: Omit<RemoteScoreRow, 'id' | 'created_at'>
 ): Promise<boolean> {
   if (!hasRemoteLeaderboard()) return false;
-  const url = `${SUPABASE_URL}/rest/v1/scores`;
+  const url = `${EFFECTIVE_API_BASE}/rest/v1/scores`;
   const body = JSON.stringify(row);
   const MAX_ATTEMPTS = 3;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
