@@ -231,20 +231,36 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     const reanimDef: any = (enemiesData as any)[def.reanimateAs];
     const reanimName = reanimDef?.name ?? String(def.reanimateAs).replace(/_/g, ' ');
     const alwaysReanim = def.faction === 'UNDEAD_CELTS' || def.faction === 'UNDEAD_CARTHAGE';
-    // 2026-05-19 — wave-conditional clarity. The previous label said
-    // "NECROMANCY — on necromancy waves (W11/W13)" but a player clicking
-    // a Celtic Footman on W4 saw the label and thought the trait was
-    // active. Now we explicitly mark it DORMANT vs ACTIVE if we know
-    // the current wave (hpWaveTag), and undead factions always show
-    // ACTIVE since they reanimate on every death.
-    const NECRO_WAVES = new Set([11, 13]);
-    const isActive = alwaysReanim || (hpWaveTag != null && NECRO_WAVES.has(hpWaveTag));
-    if (alwaysReanim) {
-      traits.push({ label: `NECROMANCY · ACTIVE — undead faction, every kill spawns 6-9 × ${reanimName} at 85-100% HP at the death tile (risen units can't chain).`, color: '#aa55ff' });
-    } else if (isActive) {
-      traits.push({ label: `NECROMANCY · ACTIVE THIS WAVE — every kill spawns 6-9 × ${reanimName} at 85-100% HP at the death tile (risen units can't chain).`, color: '#aa55ff' });
+    // 2026-05-19 v2 — Necromancy is conceptually a caster ability, not
+    // a property every grunt happens to carry. A player clicking a
+    // Celtic Footman on W4 was confused to see "💤 DORMANT TRAIT" on
+    // it — they correctly expect that trait to live on Druids, not on
+    // foot soldiers who would merely be the VICTIMS of the necromancy
+    // if it fired. The trait is now scoped to:
+    //   • Druid-class units (reanimateAs === REANIMATED_LICH) — these
+    //     are the magic-using enemies the player thinks of as casters.
+    //   • Always-reanim undead-faction units (intrinsic to the faction).
+    //   • Self-cycling magical undead (reanim target === own type, e.g.
+    //     Mummy Warrior).
+    // Non-caster grunts (Footman, Berserker, Spearman, Architectus) no
+    // longer show the trait at all. The wave-brief explicitly tells the
+    // player on W11/W13 that "every Celtic, Carthaginian, or Undead
+    // grunt you kill" reanimates, so the global signal isn't lost.
+    const isDruidClass = def.reanimateAs === 'REANIMATED_LICH';
+    const isSelfReanim = def.reanimateAs === e.type;
+    const showTrait = alwaysReanim || isDruidClass || isSelfReanim;
+    if (!showTrait) {
+      // Skip — foot-soldier types don't carry the necromancy label.
     } else {
-      traits.push({ label: `💤 DORMANT TRAIT — this unit has a latent necromancy curse that ONLY activates on W11 + W13 (Death Uprising waves). Not active this wave. Would spawn 6-9 × ${reanimName} per kill when active.`, color: '#7a5a8a' });
+      const NECRO_WAVES = new Set([11, 13]);
+      const isActive = alwaysReanim || isSelfReanim || (hpWaveTag != null && NECRO_WAVES.has(hpWaveTag));
+      if (alwaysReanim) {
+        traits.push({ label: `NECROMANCY · ACTIVE — undead faction, every kill spawns 6-9 × ${reanimName} at 85-100% HP at the death tile (risen units can't chain).`, color: '#aa55ff' });
+      } else if (isActive) {
+        traits.push({ label: `NECROMANCY · ACTIVE THIS WAVE — every kill spawns 6-9 × ${reanimName} at 85-100% HP at the death tile (risen units can't chain).`, color: '#aa55ff' });
+      } else {
+        traits.push({ label: `💤 DORMANT TRAIT — Druid-class casters carry a latent necromancy curse that only fires on W11 + W13 (Death Uprising waves). Not active this wave. Would spawn 6-9 × ${reanimName} per kill when active.`, color: '#7a5a8a' });
+      }
     }
   }
   // -- Gold theft (Ghost Rider) --
