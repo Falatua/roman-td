@@ -1,6 +1,7 @@
-// Targeting-mode tests — locks the FIRST / LAST / STRONG / CLOSE / FLYERS
-// behavior to prevent regressions. The pickTarget function is exported
-// from CombatResolver specifically for this test file.
+// Targeting-mode tests — locks the FIRST / LAST / STRONG / WEAKEST /
+// FAST / CLOSE / FLYERS behavior to prevent regressions. The
+// pickTarget function is exported from CombatResolver specifically
+// for this test file.
 import { describe, it, expect } from 'vitest';
 import { pickTarget } from '../src/systems/CombatResolver';
 import { createTower } from '../src/systems/TowerSystem';
@@ -91,6 +92,68 @@ describe('Tower targeting modes', () => {
     const picked = pickTarget(state, tower, enemies, 10);
     // B has the highest HP (2000).
     expect(picked?.id).toBe('B');
+  });
+
+  it('WEAKEST picks the enemy with the lowest remaining HP', () => {
+    const { state, tower, enemies } = setup();
+    tower.targetingMode = TargetingMode.WEAKEST;
+    const picked = pickTarget(state, tower, enemies, 10);
+    // D has the lowest HP (100) and is not a boss → finisher pick.
+    expect(picked?.id).toBe('D');
+  });
+
+  it('WEAKEST skips bosses and picks the lowest-HP grunt', () => {
+    const { state, tower, enemies } = setup();
+    // Promote B to a boss with 50 HP — even though it has the lowest
+    // HP overall, the WEAKEST tower should pick D (the lowest-HP
+    // non-boss) so it doesn't get pulled off grunt-clearing duty.
+    const boss = enemies.find(e => e.id === 'B')!;
+    (boss as any).isBoss = true;
+    boss.hp = 50;
+    tower.targetingMode = TargetingMode.WEAKEST;
+    const picked = pickTarget(state, tower, enemies, 10);
+    expect(picked?.id).toBe('D');
+  });
+
+  it('WEAKEST falls back to a boss when nothing else is in range', () => {
+    const { state, tower } = setup();
+    // Only a boss is in range. WEAKEST must still return SOMETHING
+    // rather than null — falling back to the boss is correct.
+    const lonelyBoss = fakeEnemy({
+      id: 'BOSS', x: TX + 50, y: TY, pathIndex: 4, pathProgress: 0.5,
+      hp: 10, maxHp: 100000, isBoss: true,
+    });
+    tower.targetingMode = TargetingMode.WEAKEST;
+    const picked = pickTarget(state, tower, [lonelyBoss], 10);
+    expect(picked?.id).toBe('BOSS');
+  });
+
+  it('FAST picks the enemy with the highest current speed', () => {
+    const { state, tower, enemies } = setup();
+    // Override speeds: make E the clear sprinter.
+    (enemies.find(e => e.id === 'A') as any).currentSpeed = 1.0;
+    (enemies.find(e => e.id === 'B') as any).currentSpeed = 0.6;
+    (enemies.find(e => e.id === 'C') as any).currentSpeed = 1.2;
+    (enemies.find(e => e.id === 'D') as any).currentSpeed = 0.9;
+    (enemies.find(e => e.id === 'E') as any).currentSpeed = 2.4;
+    tower.targetingMode = TargetingMode.FAST;
+    const picked = pickTarget(state, tower, enemies, 10);
+    expect(picked?.id).toBe('E');
+  });
+
+  it('FAST respects active slows — a slowed-down enemy is skipped', () => {
+    const { state, tower, enemies } = setup();
+    // E has the highest BASE speed but is currently slowed to a crawl.
+    // C is the next fastest with no slow applied. FAST should pick C.
+    (enemies.find(e => e.id === 'A') as any).currentSpeed = 1.0;
+    (enemies.find(e => e.id === 'B') as any).currentSpeed = 0.6;
+    (enemies.find(e => e.id === 'C') as any).currentSpeed = 1.4;
+    (enemies.find(e => e.id === 'D') as any).currentSpeed = 0.9;
+    (enemies.find(e => e.id === 'E') as any).baseSpeed = 2.4;
+    (enemies.find(e => e.id === 'E') as any).currentSpeed = 0.3;
+    tower.targetingMode = TargetingMode.FAST;
+    const picked = pickTarget(state, tower, enemies, 10);
+    expect(picked?.id).toBe('C');
   });
 
   it('CLOSE picks the enemy physically closest to the tower', () => {

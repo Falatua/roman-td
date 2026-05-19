@@ -1318,6 +1318,40 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
       }
       return bestBoss ?? bestAny;
     }
+    case TargetingMode.WEAKEST: {
+      // 2026-05-19 — Mirror of STRONG. Picks the LOWEST-current-HP
+      // enemy in range — the finisher mode. Useful for high-fire-rate
+      // low-damage towers to maximize kill count (XP / gold), and
+      // pairs cleanly with the DAMNATIO_MEMORIAE legendary that
+      // executes non-Boss enemies under 25% HP. Bosses are
+      // deliberately EXCLUDED from WEAKEST consideration unless
+      // they're the only thing in range — a boss with chip damage
+      // shouldn't pull every "finisher" tower off its actual job
+      // of mopping up grunts.
+      let bestGrunt: Enemy | null = null; let bestGruntHp = Infinity;
+      let bestAny:   Enemy | null = null; let bestAnyHp   = Infinity;
+      for (const e of inRange) {
+        if (!e.isBoss && e.hp < bestGruntHp) { bestGruntHp = e.hp; bestGrunt = e; }
+        if (e.hp < bestAnyHp)                { bestAnyHp   = e.hp; bestAny   = e; }
+      }
+      return bestGrunt ?? bestAny;
+    }
+    case TargetingMode.FAST: {
+      // 2026-05-19 — Pick the enemy whose CURRENT speed is highest
+      // (currentSpeed reflects active slows — a slowed-down tank
+      // shouldn't pull the FAST-mode tower off a sprinter that's
+      // about to leak). Ties broken by path progress so we still
+      // prefer the one closer to the gate among equally-fast units.
+      let best: Enemy | null = null; let bestSpeed = -1; let bestProg = -1;
+      for (const e of inRange) {
+        const s = e.currentSpeed ?? e.baseSpeed ?? 0;
+        const p = e.pathIndex + e.pathProgress;
+        if (s > bestSpeed || (s === bestSpeed && p > bestProg)) {
+          bestSpeed = s; bestProg = p; best = e;
+        }
+      }
+      return best;
+    }
     case TargetingMode.CLOSE: {
       let best: Enemy | null = null; let bestD = Infinity;
       for (const e of inRange) { const d = Math.hypot(e.x - tx, e.y - ty); if (d < bestD) { bestD = d; best = e; } }
