@@ -5066,6 +5066,15 @@ async function boot() {
           // the HUD counter tick. Cheap — uses the existing floating
           // number system + impact-ring renderer (no new allocations).
           let goldEarnedHere = 0;
+          // 2026-05-19 — BASELINE GOLD PER KILL. Every kill always pays
+          // ECONOMY.BASE_GOLD_PER_KILL (+1g) instantaneously, regardless
+          // of which tower landed the blow or which enemy fell. Stacks
+          // on top of every other gold-on-kill source below (Aerarium,
+          // GOLD_PURSE, HANNIBALS_STRATEGY_SCROLL, PRAETORIAN_COIN,
+          // GOLD aura tile). Boss kills still get their separate scaled
+          // bounty below — this baseline is flat.
+          earnGold(state, ECONOMY.BASE_GOLD_PER_KILL);
+          goldEarnedHere += ECONOMY.BASE_GOLD_PER_KILL;
           if (t.isAerarium) { earnGold(state, ECONOMY.AERARIUM_BONUS); goldEarnedHere += ECONOMY.AERARIUM_BONUS; }
           // GOLD-PER-KILL TROPHIES — linear rarity ladder (2026-05-19
           // rebalance): Common +1 → Rare +2 → Legendary +3. Stack

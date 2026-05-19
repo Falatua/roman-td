@@ -49,6 +49,11 @@ export const ECONOMY = {
   POOL_MAX_LEVEL: 8,
   AERARIUM_BONUS: 4,
   AERARIUM_MAX_COUNT: 3,
+  // 2026-05-19 — Baseline gold awarded on every kill. Always paid out
+  // instantaneously by the kill hook, on top of Aerarium / item / aura
+  // bonuses. Bosses get this baseline AND their separate scaled boss
+  // bounty.
+  BASE_GOLD_PER_KILL: 1,
   TIER_PLACE_COST: { 1: 2, 2: 4, 3: 6, 4: 8, 5: 10 } as Record<number, number>,
   TIER_SELL_REFUND: { 1: 1, 2: 3, 3: 5, 4: 7, 5: 9 } as Record<number, number>,
   STONE_COST: 1,
