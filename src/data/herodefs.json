@@ -10,8 +10,8 @@
       "kind": "LOCAL_AURA",
       "radiusTiles": 3,
       "filter": "PHYS_MELEE",
-      "dmgBonusPercent": 25,
-      "description": "Every MELEE tower within 3 tiles gains +25% damage permanently."
+      "dmgBonusPercent": 20,
+      "description": "Every MELEE tower within 3 tiles gains +20% damage permanently."
     },
     "abilities": [
       {
@@ -48,7 +48,7 @@
         "vfxStyle": "GOLD_FLASH_MAP_WIDE"
       }
     ],
-    "xpThresholds": [0, 75, 280, 650, 1300],
+    "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
     "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
@@ -69,16 +69,16 @@
     "id": "HERO_AGRIPPA",
     "name": "Marcus Agrippa",
     "title": "Admiral of the Fleet",
-    "specialty": "RANGED VOLUME",
-    "playerProblemSolved": "My ranged towers spread too thin against high-HP single targets. I need bombardment power.",
-    "biography": "Agrippa's naval genius delivered Rome the Mediterranean. Under his command, ranged towers reach farther and hit harder while mortar shells scatter the enemy line.",
+    "specialty": "SIEGE BOMBARDMENT",
+    "playerProblemSolved": "My siege towers spread too thin against high-HP single targets. I need bombardment power.",
+    "biography": "Agrippa's naval genius delivered Rome the Mediterranean. Under his command, siege towers reach farther, hit harder, and rain mortar shells that scatter the enemy line.",
     "passive": {
       "kind": "LOCAL_AURA",
       "radiusTiles": 3,
-      "filter": "PHYS_RANGED",
+      "filter": "SIEGE",
       "dmgBonusPercent": 20,
       "rangeBonusTiles": 0.5,
-      "description": "Every RANGED tower within 3 tiles gains +20% damage and +0.5 tiles of range permanently."
+      "description": "Every SIEGE tower within 3 tiles gains +20% damage and +0.5 tiles of range permanently."
     },
     "abilities": [
       {
@@ -110,12 +110,12 @@
         "cooldownSec": 60,
         "durationSec": 8,
         "params": { "rangedShotMultiplier": 2, "ignoreAllResistances": true },
-        "description": "For 8s, every RANGED tower fires DOUBLE shots and all ranged projectiles ignore faction resistances.",
+        "description": "For 8s, every SIEGE tower fires DOUBLE shots and all siege projectiles ignore faction resistances.",
         "vfxColor": "#0077ff",
         "vfxStyle": "NAVAL_BANNER_SWEEP"
       }
     ],
-    "xpThresholds": [0, 75, 280, 650, 1300],
+    "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
     "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
@@ -173,7 +173,7 @@
         "cooldownSec": 12,
         "durationSec": 4,
         "params": { "flyerSpeedReductionPercent": 70, "dmgVsFlyersIncreasePercent": 30 },
-        "description": "For 4s, all flyers slow 70% AND every tower gains +30% damage vs. flyers. Stacks with Eagle Scout for +90% total during overlap.",
+        "description": "For 4s, all flyers slow 70% AND every tower gains +30% damage vs. flyers. Stacks multiplicatively with Eagle Scout's +60% (~2.08× combined during overlap).",
         "vfxColor": "#aaccff",
         "vfxStyle": "SILVER_WALL_SHIMMER"
       },
@@ -189,7 +189,7 @@
         "vfxStyle": "EAGLE_SUMMON_BURST"
       }
     ],
-    "xpThresholds": [0, 75, 280, 650, 1300],
+    "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
     "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
@@ -218,8 +218,8 @@
     "passive": {
       "kind": "GLOBAL_AURA",
       "filter": "VS_BOSS",
-      "dmgBonusPercent": 30,
-      "description": "Every tower on the map permanently deals +30% damage against Boss-type enemies. No radius limit."
+      "dmgBonusPercent": 25,
+      "description": "Every tower on the map permanently deals +25% damage against Boss-type enemies. No radius limit."
     },
     "abilities": [
       {
@@ -256,7 +256,7 @@
         "vfxStyle": "DUST_STORM_SWEEP"
       }
     ],
-    "xpThresholds": [0, 75, 280, 650, 1300],
+    "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
     "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
@@ -323,7 +323,7 @@
         "vfxStyle": "GOLD_WHITE_SCREEN_FLASH"
       }
     ],
-    "xpThresholds": [0, 75, 280, 650, 1300],
+    "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
     "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
@@ -346,15 +346,15 @@
     "id": "HERO_SULLA",
     "name": "Lucius Sulla",
     "title": "The Fortunate",
-    "specialty": "DIVINE / LIFESAVER",
+    "specialty": "FIRE / LIFESAVER",
     "playerProblemSolved": "I keep leaking lives and can't recover once I start losing.",
-    "biography": "Sulla was famously lucky — he said so himself, and Rome believed him. On this field, his luck translates into lives: every kill he lands could be the one that saves Rome.",
+    "biography": "Sulla was famously lucky — he said so himself, and Rome believed him. On this field, his luck translates into pyres and lives: every kill he lands could be the one that saves Rome.",
     "passive": {
       "kind": "LOCAL_AURA",
       "radiusTiles": 4,
-      "filter": "DIVINE",
+      "filter": "ELEMENTAL_FIRE",
       "dmgBonusPercent": 35,
-      "description": "Every DIVINE tower within 4 tiles gains +35% damage permanently."
+      "description": "Every FIRE tower within 4 tiles gains +35% damage permanently."
     },
     "abilities": [
       {
@@ -363,8 +363,8 @@
         "name": "Fortune's Bolt",
         "cooldownSec": 10,
         "durationSec": 0,
-        "params": { "healGateOnKill": 1, "lifetimeHealCap": 20 },
-        "description": "Fires a DIVINE bolt. If this bolt lands the killing blow, the gate is healed +1 LIFE. Capped at +20 lives healed total per run.",
+        "params": { "healGateOnKill": 1, "lifetimeHealCap": 30 },
+        "description": "Fires a divine bolt. If this bolt lands the killing blow, the gate is healed +1 LIFE. Capped at +30 lives healed total per run.",
         "vfxColor": "#fff5cc",
         "vfxStyle": "WHITE_GOLD_BOLT"
       },
@@ -385,13 +385,13 @@
         "name": "Sulla's March",
         "cooldownSec": 60,
         "durationSec": 0,
-        "params": { "executeThresholdPercent": 25, "healGateAmount": 5, "lifetimeHealCap": 20 },
-        "description": "Global divine pulse: instantly executes every enemy below 25% HP. Simultaneously restores 5 LIVES (subject to the +20 per-run cap).",
+        "params": { "executeThresholdPercent": 25, "healGateAmount": 7, "lifetimeHealCap": 30 },
+        "description": "Global divine pulse: instantly executes every enemy below 25% HP. Simultaneously restores 7 LIVES (subject to the +30 per-run cap).",
         "vfxColor": "#ffffff",
         "vfxStyle": "DIVINE_SCREEN_FLASH"
       }
     ],
-    "xpThresholds": [0, 75, 280, 650, 1300],
+    "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
     "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },

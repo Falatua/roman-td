@@ -144,7 +144,12 @@ describe('Hero XP curve', () => {
 // ─────────────────────────────────────────────────────────────────────
 // TIER THRESHOLDS
 // ─────────────────────────────────────────────────────────────────────
-describe('Hero tier thresholds (TIRO 0 / LEGATUS 75 / CONSUL 280 / IMPERATOR 650 / DIVUS 1300)', () => {
+describe('Hero tier thresholds (TIRO 0 / LEGATUS 75 / CONSUL 280 / IMPERATOR 580 / DIVUS 850)', () => {
+  // 2026-05-19 — Thresholds rebalanced from [0, 75, 280, 650, 1300] to
+  // [0, 75, 280, 580, 850]. Reason: the original 1300 cap was
+  // mathematically unreachable in a 20-wave campaign (max cum XP ≈ 956).
+  // New cap lands DIVUS around W17 — matching the spec's "~W16" target
+  // with a small buffer.
   let s: GameStateShape;
   beforeEach(() => { s = freshState(); pickHero(s, 'HERO_SULLA'); });
 
@@ -170,15 +175,15 @@ describe('Hero tier thresholds (TIRO 0 / LEGATUS 75 / CONSUL 280 / IMPERATOR 650
     expect(getHeroTier(s)).toBe(2);
   });
 
-  it('reaches tier 3 (IMPERATOR) exactly at 650 XP', () => {
-    s.heroXp = 630;
-    awardHeroXp(s, true);   // +20 → 650
+  it('reaches tier 3 (IMPERATOR) exactly at 580 XP', () => {
+    s.heroXp = 560;
+    awardHeroXp(s, true);   // +20 → 580
     expect(getHeroTier(s)).toBe(3);
   });
 
-  it('reaches tier 4 (DIVUS) exactly at 1300 XP and caps there', () => {
-    s.heroXp = 1280;
-    awardHeroXp(s, true);   // +20 → 1300
+  it('reaches tier 4 (DIVUS) exactly at 850 XP and caps there', () => {
+    s.heroXp = 830;
+    awardHeroXp(s, true);   // +20 → 850
     expect(getHeroTier(s)).toBe(4);
     // Far-overshoot stays at tier 4 (no tier 5).
     s.heroXp = 99_999;
@@ -290,7 +295,10 @@ describe('herodefs.json shape (single source of tuning)', () => {
   it('every hero has the locked 5-tier XP threshold ladder', () => {
     for (const id of HERO_POOL) {
       const def: any = (HERO_DEFS as any)[id];
-      expect(def.xpThresholds).toEqual([0, 75, 280, 650, 1300]);
+      // 2026-05-19 — Rebalanced from [0, 75, 280, 650, 1300]. Old cap
+      // was unreachable across a 20-wave campaign; new cap lands DIVUS
+      // around W17 (within "~W16" target).
+      expect(def.xpThresholds).toEqual([0, 75, 280, 580, 850]);
     }
   });
 
@@ -306,6 +314,27 @@ describe('herodefs.json shape (single source of tuning)', () => {
       const def: any = (HERO_DEFS as any)[id];
       expect(def.bannerCopy?.length).toBe(5);
     }
+  });
+
+  // 2026-05-19 — Damage-type distribution test. The roster ships with
+  // 5-type coverage: 1 melee / 2 ranged / 1 siege / 1 divine / 1 fire.
+  // Pins the spread so a future hero-aura tuning pass can't quietly
+  // reintroduce the original 3-ranged / 2-divine / 0-siege / 0-fire
+  // imbalance.
+  it('aura filters cover the 5 damage types', () => {
+    const filters = HERO_POOL.map(id => {
+      const def: any = (HERO_DEFS as any)[id];
+      // Marius/Agrippa/Sulla use top-level filter; Agricola has
+      // passive.local.filter; Scipio uses VS_BOSS (no damage-type
+      // filter); Caesar is unfiltered global.
+      return def.passive?.filter ?? def.passive?.local?.filter ?? null;
+    });
+    expect(filters).toContain('PHYS_MELEE');
+    expect(filters).toContain('PHYS_RANGED');
+    expect(filters).toContain('SIEGE');
+    expect(filters).toContain('ELEMENTAL_FIRE');
+    // VS_BOSS is the Scipio filter; Caesar carries no filter at all.
+    expect(filters).toContain('VS_BOSS');
   });
 });
 
@@ -327,7 +356,7 @@ describe('Hero state isolation', () => {
     awardHeroXp(s, true);
     awardHeroXp(s, true);
     awardHeroXp(s, true);
-    awardHeroXp(s, true); // 80 XP → tier 1
+    awardHeroXp(s, true); // 80 XP → tier 1 (LEGATUS at 75)
     expect(s.heroXp).toBe(80);
     expect(getHeroTier(s)).toBe(1);
 

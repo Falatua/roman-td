@@ -541,11 +541,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (state.activeHeroId === 'HERO_MARIUS'
           && t.damageType === DamageType.PHYS_MELEE
           && dh <= 3 * GRID.TILE) {
-        dm *= 1.25;
+        // 2026-05-19 — Marius local melee aura tuned 1.25 → 1.20 to
+        // pair with Agrippa/Agricola's +20% for cross-hero parity. Stack
+        // with Triumph's map-wide +100% still puts Marius at 2.40× during
+        // his ult window — plenty of identity preservation.
+        dm *= 1.20;
       }
       if (state.activeHeroId === 'HERO_AGRIPPA'
-          && t.damageType === DamageType.PHYS_RANGED
+          && t.damageType === DamageType.SIEGE
           && dh <= 3 * GRID.TILE) {
+        // 2026-05-19 — Agrippa converted PHYS_RANGED → SIEGE so the
+        // hero damage-type spread covers MELEE/RANGED/SIEGE/DIVINE/FIRE.
         dm *= 1.20;
       }
       if (state.activeHeroId === 'HERO_AGRICOLA'
@@ -554,8 +560,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         dm *= 1.20;
       }
       if (state.activeHeroId === 'HERO_SULLA'
-          && t.damageType === DamageType.DIVINE
+          && t.damageType === DamageType.ELEMENTAL_FIRE
           && dh <= 4 * GRID.TILE) {
+        // 2026-05-19 — Sulla converted DIVINE → ELEMENTAL_FIRE. His
+        // Proscription ult still overrides every tower's damage type
+        // to DIVINE for resistance-bypass — preserving the signature.
         dm *= 1.35;
       }
     }
@@ -572,11 +581,13 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     if (state.tick < idesUntil) {
       sm *= (state as any).__idesTowerSpeedMult ?? 2.0;
     }
-    // Battle of Actium window: ranged towers fire double shots
-    // (same effect via 2× attack speed; resMod=1 for ranged is set
+    // Battle of Actium window: siege towers fire double shots
+    // (same effect via 2× attack speed; resMod=1 for siege is set
     // in the per-shot damage path so resistances are bypassed too).
+    // 2026-05-19 — Filter swapped PHYS_RANGED → SIEGE alongside the
+    // Agrippa damage-type rebalance.
     const actiumLocalUntil = (state as any).__actiumUntilTick ?? 0;
-    if (state.tick < actiumLocalUntil && t.damageType === DamageType.PHYS_RANGED) {
+    if (state.tick < actiumLocalUntil && t.damageType === DamageType.SIEGE) {
       sm *= (state as any).__actiumRangedSpeedMult ?? 2.0;
     }
     // Cap the aggregate aura multipliers at 2.00× (max +100% bonus).
@@ -691,8 +702,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (state.tick < proscriptionUntil) effectiveDmgType = DamageType.DIVINE;
       let resMod = resistanceModifier(target.faction, effectiveDmgType, armorShred) * enemyDamageMultiplier(target, effectiveDmgType);
       const actiumUntil = (state as any).__actiumUntilTick ?? 0;
-      if (state.tick < actiumUntil && t.damageType === DamageType.PHYS_RANGED) {
-        resMod = 1;     // Actium: ranged ignores all resistance for the window
+      if (state.tick < actiumUntil && t.damageType === DamageType.SIEGE) {
+        // 2026-05-19 — Agrippa converted PHYS_RANGED → SIEGE, so the
+        // Actium resistance bypass moves with him.
+        resMod = 1;     // Actium: siege ignores all resistance for the window
       }
       // 2026-05 v9: post-W7 GROUND units get +25% ranged resistance — they
       // take 25% less damage from PHYS_RANGED + SIEGE. Forces the player
@@ -785,8 +798,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // deals +50% damage vs bosses. Stacks with the trophies above.
       if (target.isBoss && towerAuraTileKind(t) === 'RED') damage *= 1.50;
       // ── HERO PASSIVES + ABILITY WINDOWS (2026-05-19) ──────────────
-      // Scipio passive: every tower deals +30% damage vs Bosses.
-      if (scipioActive && target.isBoss) damage *= 1.30;
+      // Scipio passive: every tower deals +25% damage vs Bosses.
+      // Tuned 30% → 25% to avoid runaway compound stacking with
+      // Pontifex (3.0×), Tyrant's Laurel (1.75×), and the RED-tile
+      // aura — the curve was producing 8× boss kills late-game.
+      if (scipioActive && target.isBoss) damage *= 1.25;
       // Zama (Scipio Tier 3): tower vs-boss damage × 2.0 during the
       // active window. Stacks multiplicatively with the Scipio
       // passive above.

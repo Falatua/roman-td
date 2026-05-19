@@ -140,6 +140,13 @@ export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): voi
 
   // Drain timed events (Triarii Wall revert, eagle expiry, etc.)
   tickHeroTimedEvents(state, hooks);
+
+  // 2026-05-19 — Spectral eagle ticker. Agricola's tier-3 ult populates
+  // __spectralEagles in executeAQUILA_SQUADRON but without this consumer
+  // the eagles just sat on state and never killed anything. Each eagle
+  // homes toward the nearest live flyer, instakills on contact, retires
+  // after killsPerEagle hits or the expiry tick — whichever lands first.
+  tickSpectralEagles(state, hooks);
 }
 
 // ─── Ability dispatch ────────────────────────────────────────────────
@@ -339,8 +346,12 @@ function executeNAVAL_BOMBARDMENT(state: GameStateShape, hero: Tower, params: an
   hooks?.triggerShake?.(2.0, 0.35);
 }
 
-function executeBATTLE_OF_ACTIUM(state: GameStateShape, hero: Tower, _params: any, ability: any, hooks?: HeroHooks): void {
+function executeBATTLE_OF_ACTIUM(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
+  // 2026-05-19 — Wire the JSON-declared rangedShotMultiplier through so
+  // tuning passes can edit herodefs.json without code changes. Prior
+  // version hardcoded 2.0 and silently ignored the params value.
   (state as any).__actiumUntilTick = state.tick + (ability.durationSec ?? 8);
+  (state as any).__actiumRangedSpeedMult = params.rangedShotMultiplier ?? 2.0;
   fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#0077ff', 96);
   hooks?.triggerShake?.(3.0, 0.6);
 }
@@ -541,6 +552,70 @@ function tickHeroTimedEvents(state: GameStateShape, _hooks?: HeroHooks): void {
   for (const ev of ready) {
     try { ev.action(); } catch (err) { console.error('[hero] timed event failed:', err); }
   }
+}
+
+// Eagle shape stored on state.__spectralEagles. Kept as a private
+// interface here so the rest of the code can treat the array as opaque.
+interface SpectralEagle {
+  id: string;
+  killCount: number;
+  maxKills: number;
+  expiresAtTick: number;
+  x: number;
+  y: number;
+}
+
+function tickSpectralEagles(state: GameStateShape, hooks?: HeroHooks): void {
+  const eagles: SpectralEagle[] | undefined = (state as any).__spectralEagles;
+  if (!eagles || eagles.length === 0) return;
+
+  // Eagle homing speed in world-units per tick. Roughly 1 tile per 8
+  // ticks at the canonical 60 fps. Fast enough that flyers can't
+  // outrun them once locked, slow enough that the VFX reads as a
+  // chasing eagle rather than a teleport-strike.
+  const SPEED = (GRID.TILE / 8);
+  const CONTACT_R = GRID.TILE * 0.45;
+  const remaining: SpectralEagle[] = [];
+
+  for (const eagle of eagles) {
+    // Retire on expiry OR kills exhausted.
+    if (state.tick >= eagle.expiresAtTick) continue;
+    if (eagle.killCount >= eagle.maxKills) continue;
+
+    // Pick nearest live flyer. Fall back to drifting forward if no
+    // flyers are around — the eagle just floats until one spawns.
+    let nearest: Enemy | null = null;
+    let nearestD = Infinity;
+    for (const e of state.enemies.values()) {
+      if (!e.isFlyer || e.hp <= 0) continue;
+      const d = Math.hypot(e.x - eagle.x, e.y - eagle.y);
+      if (d < nearestD) { nearestD = d; nearest = e; }
+    }
+
+    if (nearest && nearestD <= CONTACT_R) {
+      // Instakill the flyer in-place. Damage zeroes HP so the existing
+      // kill handler in main.ts sees it on the next pass and emits XP /
+      // gold / banner / VFX as usual.
+      nearest.hp = 0;
+      eagle.killCount++;
+      if (hooks?.triggerImpactRing) {
+        hooks.triggerImpactRing(nearest.x, nearest.y, state.tick, 32, 0xffffff);
+      }
+    } else if (nearest) {
+      // Home toward it. Normalize the delta vector by remaining distance
+      // so we move SPEED per tick regardless of how far the flyer is.
+      const dx = nearest.x - eagle.x;
+      const dy = nearest.y - eagle.y;
+      const inv = 1 / (Math.hypot(dx, dy) || 1);
+      eagle.x += dx * inv * SPEED;
+      eagle.y += dy * inv * SPEED;
+    }
+    // (No flyers: eagle holds position — would be visually weird if it
+    //  drifted off-map. Hold pose is fine and matches "circling overhead".)
+
+    remaining.push(eagle);
+  }
+  (state as any).__spectralEagles = remaining;
 }
 
 // ─── Utilities ──────────────────────────────────────────────────────
