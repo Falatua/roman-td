@@ -897,7 +897,7 @@ async function boot() {
     // they cross a checkpoint coin on the path. Listed here per-wave
     // so the player knows to burst them BETWEEN checkpoints rather
     // than chipping continuously across the full path.
-    if (enemiesInWave.has('CELTIC_BERSERKER') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('UNDEAD_SPEARMAN')) enemyCallouts.push({ text: '🩸 CHECKPOINT HEAL · enemies regen 20% maxHP every checkpoint coin they cross — kill BEFORE the next coin or reset', cat: 'ENEMY' });
+    if (enemiesInWave.has('CELTIC_BERSERKER') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('UNDEAD_SPEARMAN')) enemyCallouts.push({ text: '🩸 CHECKPOINT HEAL · enemies regen 15% maxHP every checkpoint coin they cross — kill BEFORE the next coin or reset', cat: 'ENEMY' });
     if (enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '⚱ AURA NULLIFIER · Architectus silences every tower aura within 2 tiles while present. Move aura towers (Eagle Standard, Cohort Guard, Triumvirate, banner items) off the path so they keep buffing', cat: 'ENEMY' });
     const allLines = [...briefLines, ...enemyCallouts];
     // 2026-05-15 v9: the brief used to remove itself when there were no
@@ -1514,7 +1514,7 @@ async function boot() {
     });
     if (hasCheckpointHealers && !isBossWave) tips.push({
       headline: '⛨ THEY HEAL AT EACH CHECKPOINT',
-      body: `Wave <b>${nextWave}</b> brings stubborn grunts that regain <b style="color:#66ff88">25% maxHP</b> the first time they cross each waypoint coin (seven coins on the map). Each coin pays out once per enemy. <b style="color:#ff5050">Finish them BETWEEN coins or watch them walk back to full.</b> Pinch the path right before each waypoint with cleave melee or splash so the kill window stays narrow.`,
+      body: `Wave <b>${nextWave}</b> brings stubborn grunts that regain <b style="color:#66ff88">15% maxHP</b> the first time they cross each waypoint coin (seven coins on the map). Each coin pays out once per enemy. <b style="color:#ff5050">Finish them BETWEEN coins or watch them walk back to full.</b> Pinch the path right before each waypoint with cleave melee or splash so the kill window stays narrow.`,
       color: '#66ff88'
     });
     if (tips.length === 0) {

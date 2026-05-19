@@ -62,7 +62,7 @@
     "immuneSlow": true,
     "lowHpSpeedBoost": 1.6,
     "phaseHits": 1,
-    "checkpointHealPct": 0.2,
+    "checkpointHealPct": 0.15,
     "reanimateAs": "REANIMATED_SKELETON"
   },
   "GALLIC_DRUID": {
@@ -144,7 +144,7 @@
     "requiresMeleeBreak": true,
     "shieldBlockChance": 0.4,
     "outOfCombatRegen": 0.049,
-    "checkpointHealPct": 0.2
+    "checkpointHealPct": 0.15
   },
   "WAR_ELEPHANT": {
     "name": "War Elephant",
@@ -184,7 +184,7 @@
     "spriteCell": 4,
     "immunePoison": true,
     "rebirthAtPct": 0.25,
-    "checkpointHealPct": 0.2,
+    "checkpointHealPct": 0.15,
     "reanimateAs": "REANIMATED_ZOMBIE"
   },
   "ZOMBIE_DRUID": {
@@ -219,7 +219,7 @@
     "immuneStun": true,
     "phaseHits": 1,
     "lowHpSpeedBoost": 1.5,
-    "checkpointHealPct": 0.2,
+    "checkpointHealPct": 0.15,
     "reanimateAs": "REANIMATED_SKELETON"
   },
   "SPECTRAL_SCOUT": {
@@ -263,7 +263,7 @@
     "requiresMeleeBreak": true,
     "shieldBlockChance": 0.35,
     "phaseHits": 1,
-    "checkpointHealPct": 0.2
+    "checkpointHealPct": 0.15
   },
   "GHOST_RIDER": {
     "name": "Ghost Rider",
