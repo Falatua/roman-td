@@ -247,8 +247,13 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
           }
           state.hint = '💀 NECROMANCY! 4 Undead Celts raised at the Warlord!';
         }
-        // Mid-fight OOC regen is heavy (8%/s) on top of standard
-        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.012 * dt);
+        // Mid-fight HP regen. 2026-05-19 v3 — dropped 1.2%/sec → 0.7%/
+        // sec per user direction (−0.5 percentage points). The Warlord's
+        // toughness was over-reliant on healing through chip damage,
+        // which made melee-light builds feel powerless even when they
+        // were landing hits. The regen still bridges short pauses
+        // between volleys, but committed damage now sticks better.
+        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.007 * dt);
         break;
 
       // ─── DAEMON IMPERATOR (W50) ──────────────────────────────────────────
