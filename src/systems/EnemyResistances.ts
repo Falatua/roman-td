@@ -193,16 +193,18 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   },
 
   // Iron Phalanx — totally immune to melee. Ranged armor tightened too.
-  // 2026-05-19 v3 — IRON_PHALANX fire/burn flipped from RESIST → +35%
-  // VULNERABLE per user direction. The W17 anchor unit (15 phalanx +
-  // 21 spearman + 12 ghost rider) was punishing every damage type
-  // BUT fire still didn't crack them (burn 0.7 = 30% RESIST), making
-  // the wave feel like it had no clean answer for fire builds. With
-  // the new 1.35 multiplier the heavy-plate phalanx behaves like the
-  // armor heats up — fire becomes the dedicated counter. Iron Phalanx
-  // is faction CARTHAGE (1.0× fire baseline), so the per-enemy 1.35
-  // is the only multiplier — final fire/burn damage = 1.35×.
-  [EnemyType.IRON_PHALANX]: { melee: 0, ranged: 0.5, slow: 0.55, bleed: 0.45, poison: 0.55, fire: 1.35, burn: 1.35 },
+  // 2026-05-19 v4 — IRON_PHALANX fire/burn pushed to 2.00× per user
+  // direction. The "iron melts" lore beats the conservative +35%
+  // tuning: this is the heaviest-armored unit on the field and the
+  // armor is its ENTIRE defense. Fire heats iron, iron loses
+  // structural integrity, the unit becomes a kiln-trapped soldier.
+  // CARTHAGE faction baseline is 1.0× fire (no faction modifier), so
+  // the per-enemy 2.0 is the full multiplier — Iron Phalanx now takes
+  // DOUBLE damage from any fire/burn source, making it the most
+  // fire-vulnerable enemy in the game (Undead Spearman + Ghost Rider
+  // sit at 1.82× from the UNDEAD_CARTHAGE faction × 1.40 per-enemy
+  // stack). Fire/burn is decisively THE counter to the W17 phalanx.
+  [EnemyType.IRON_PHALANX]: { melee: 0, ranged: 0.5, slow: 0.55, bleed: 0.45, poison: 0.55, fire: 2.00, burn: 2.00 },
   // Architectus — heavy plate, shrugs off ranged hits until the shield is
   // broken. Bleed-immune as an undead minion.
   // 2026-05-18 v2 — Architectus is an UNDEAD_CARTHAGE engineer. By the
