@@ -38,8 +38,44 @@ const SUPABASE_ANON_KEY = ((import.meta as any).env?.VITE_SUPABASE_ANON_KEY ?? '
 // as generic Cloudflare traffic. Setup steps + Worker code live
 // in cloudflare-worker/. If the env var is empty, we fall back to
 // the direct Supabase URL (existing behavior).
-const LEADERBOARD_PROXY_URL = ((import.meta as any).env?.VITE_LEADERBOARD_PROXY_URL ?? '').trim().replace(/\/+$/, '');
-const EFFECTIVE_API_BASE = LEADERBOARD_PROXY_URL || SUPABASE_URL;
+const LEADERBOARD_PROXY_URL_ENV = ((import.meta as any).env?.VITE_LEADERBOARD_PROXY_URL ?? '').trim().replace(/\/+$/, '');
+
+// 2026-05-20 v4 — Runtime proxy override. Lets a player (or the host
+// admin) point the bundle at a Cloudflare Worker via localStorage WITHOUT
+// rebuilding. Usage:
+//   localStorage.setItem('roman_td_leaderboard_proxy_override',
+//     'https://your-worker.workers.dev');
+//   // reload the page
+// Set to '' or remove the key to fall back to env / direct mode.
+// Helpful when the GitHub-Actions secret hasn't been wired yet, or
+// when a player wants to try a different proxy for diagnostics.
+const PROXY_OVERRIDE_KEY = 'roman_td_leaderboard_proxy_override';
+function getProxyOverride(): string {
+  try {
+    const raw = localStorage.getItem(PROXY_OVERRIDE_KEY) ?? '';
+    return raw.trim().replace(/\/+$/, '');
+  } catch { return ''; }
+}
+export function setLeaderboardProxyOverride(url: string | null): void {
+  try {
+    if (!url) localStorage.removeItem(PROXY_OVERRIDE_KEY);
+    else localStorage.setItem(PROXY_OVERRIDE_KEY, url.trim());
+  } catch { /* private-mode: silently ignore */ }
+}
+function effectiveApiBase(): string {
+  const override = getProxyOverride();
+  return override || LEADERBOARD_PROXY_URL_ENV || SUPABASE_URL;
+}
+function endpointKind(): 'override' | 'env-proxy' | 'direct' | 'none' {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return 'none';
+  if (getProxyOverride()) return 'override';
+  if (LEADERBOARD_PROXY_URL_ENV) return 'env-proxy';
+  return 'direct';
+}
+/** Diagnostics for the UI: which endpoint is the bundle hitting? */
+export function getLeaderboardDiagnostics(): { base: string; kind: ReturnType<typeof endpointKind>; hasAuth: boolean } {
+  return { base: effectiveApiBase(), kind: endpointKind(), hasAuth: !!SUPABASE_ANON_KEY };
+}
 
 export type LeaderboardMode = 'campaign' | 'endless';
 
@@ -125,7 +161,7 @@ export async function fetchTopScores(
     order: 'score.desc,created_at.desc',
     limit: String(limit),
   });
-  const url = `${EFFECTIVE_API_BASE}/rest/v1/scores?${params.toString()}`;
+  const url = `${effectiveApiBase()}/rest/v1/scores?${params.toString()}`;
   // Verbose log so a player reporting "still doesn't work" can paste
   // the exact URL their browser is calling — eliminates guesswork.
   // eslint-disable-next-line no-console
@@ -208,32 +244,95 @@ export async function fetchTopScores(
   return null;
 }
 
-// Insert a single score row. Returns true on success. Retries up to
-// 3 times so a transient network hiccup doesn't lose a player's
-// score. Quietly fails (returns false) if remote isn't configured
-// or every retry fails; the caller treats false as "local only".
+/** Structured result of a submitScore call. The previous boolean return
+ *  meant the UI couldn't tell the player WHY a submission failed. With
+ *  this shape the failure banner surfaces the actual reason + endpoint
+ *  hit so the player (or the maintainer) can self-diagnose without
+ *  digging into DevTools. */
+export interface SubmitResult {
+  ok: boolean;
+  attempts: number;
+  url: string;
+  endpoint: 'override' | 'env-proxy' | 'direct' | 'none';
+  /** Last HTTP status if any attempt reached the server. */
+  status?: number;
+  /** Short human-readable reason for failure. */
+  errorReason?: string;
+  /** Raw error string from the last attempt (for diagnostics). */
+  errorDetail?: string;
+  /** Server-returned body on the last failed attempt (Supabase often
+   *  returns a JSON error message that helps pinpoint the cause). */
+  serverBody?: string;
+}
+
+// Insert a single score row. Returns a structured SubmitResult so the
+// caller can show the player a meaningful failure banner instead of a
+// generic "failed". Retries up to 5 times with exponential backoff so
+// a transient network hiccup doesn't lose a player's score. Each
+// attempt has a 10-second timeout (write reliability matters more
+// than first-paint speed).
+//
+// 2026-05-20 v4 — retries 3 → 5, per-attempt timeout 6s → 10s, return
+// changed from boolean → SubmitResult.
 export async function submitScore(
   row: Omit<RemoteScoreRow, 'id' | 'created_at'>
-): Promise<boolean> {
-  if (!hasRemoteLeaderboard()) return false;
-  const url = `${EFFECTIVE_API_BASE}/rest/v1/scores`;
+): Promise<SubmitResult> {
+  const kind = endpointKind();
+  const base = effectiveApiBase();
+  const url = `${base}/rest/v1/scores`;
+  if (kind === 'none') {
+    return { ok: false, attempts: 0, url, endpoint: kind, errorReason: 'Global leaderboard not configured for this build (missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY).' };
+  }
   const body = JSON.stringify(row);
-  const MAX_ATTEMPTS = 3;
+  const MAX_ATTEMPTS = 5;
+  const TIMEOUT_MS = 10_000;
+  let lastStatus: number | undefined;
+  let lastErrorDetail = '';
+  let lastServerBody = '';
+  // eslint-disable-next-line no-console
+  console.log(`[leaderboard] POST ${url} (endpoint=${kind})`);
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const r = await fetchWithTimeout(url, {
         method: 'POST',
         headers: writeHeaders({ 'Prefer': 'return=minimal' }),
         body
-      }, 6000);
-      if (r.ok) return true;
-      console.error(`[leaderboard] INSERT attempt ${attempt}/${MAX_ATTEMPTS} → HTTP ${r.status}`);
+      }, TIMEOUT_MS);
+      if (r.ok) {
+        return { ok: true, attempts: attempt, url, endpoint: kind, status: r.status };
+      }
+      lastStatus = r.status;
+      // Try to capture the server's response body — Supabase usually
+      // returns a JSON payload with `code` + `message` describing why
+      // the insert was rejected (RLS, check constraint, schema mismatch).
+      try {
+        lastServerBody = (await r.text()).slice(0, 600);
+      } catch { /* ignore */ }
+      lastErrorDetail = `HTTP ${r.status}${lastServerBody ? ` · ${lastServerBody.slice(0, 200)}` : ''}`;
+      console.error(`[leaderboard] INSERT attempt ${attempt}/${MAX_ATTEMPTS} → HTTP ${r.status}`, lastServerBody);
     } catch (err) {
+      lastErrorDetail = (err as any)?.message || String(err);
       console.error(`[leaderboard] INSERT attempt ${attempt}/${MAX_ATTEMPTS} failed:`, err);
     }
-    if (attempt < MAX_ATTEMPTS) await sleep(400 * Math.pow(3, attempt - 1));
+    if (attempt < MAX_ATTEMPTS) await sleep(400 * Math.pow(2, attempt - 1)); // 0.4, 0.8, 1.6, 3.2s
   }
-  return false;
+  // Classify the failure so the UI can give the player a useful hint.
+  let reason = 'Network request failed after 5 retries.';
+  const lo = lastErrorDetail.toLowerCase();
+  if (lastStatus === 401 || lastStatus === 403) {
+    reason = `Supabase rejected the write with HTTP ${lastStatus}. Common causes: the anon key is wrong/expired, or the RLS policy on the scores table no longer allows public INSERT. Run supabase/schema.sql to refresh policies.`;
+  } else if (lastStatus === 404) {
+    reason = `Endpoint returned HTTP 404 — the URL ${url} doesn't exist. Verify the Supabase project URL / Cloudflare Worker is deployed and pointed at the right project.`;
+  } else if (lastStatus && lastStatus >= 500) {
+    reason = `Supabase returned HTTP ${lastStatus}. The backend is having issues — try again in a minute.`;
+  } else if (lo.includes('failed to fetch') || lo.includes('networkerror')) {
+    reason = `Browser blocked the request. Most likely an ad-blocker or privacy extension is blocking ${new URL(url).host}. Try disabling it for this site or open in an incognito window.`;
+  } else if (lo.includes('abort') || lo.includes('timeout')) {
+    reason = 'Connection timed out 5 times in a row. Likely slow internet or a regional Supabase issue.';
+  } else if (lo) {
+    reason = `Fetch error: ${lastErrorDetail.slice(0, 240)}`;
+  }
+  return { ok: false, attempts: MAX_ATTEMPTS, url, endpoint: kind, status: lastStatus, errorReason: reason, errorDetail: lastErrorDetail, serverBody: lastServerBody };
 }
 
 // Convenience: build a remote-row from the existing local

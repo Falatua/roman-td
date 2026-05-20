@@ -13,7 +13,7 @@
 // Keeps top 20. New entry pulses; top 3 ranks render gold/silver/bronze.
 
 import { GameStateShape } from '../GameState';
-import { fetchTopScores, submitScore, toRemoteRow, hasRemoteLeaderboard, getLastFetchMeta } from '../services/SupabaseLeaderboard';
+import { fetchTopScores, submitScore, toRemoteRow, hasRemoteLeaderboard, getLastFetchMeta, getLeaderboardDiagnostics, setLeaderboardProxyOverride, type SubmitResult } from '../services/SupabaseLeaderboard';
 import HERO_DEFS_FOR_LB from '../data/herodefs.json';
 
 // 2026-05-19 — Hero suffix helper. Reads the run's heroId off the
@@ -209,7 +209,12 @@ function ensureStyle() {
        fixed-px (44px title, 880px content max, 13px row text…), which
        left the leaderboard as a small cluster in the middle of a big
        monitor. All sizes now use clamp() so the leaderboard reads
-       BIG on huge screens and still fits on small ones. */
+       BIG on huge screens and still fits on small ones.
+       2026-05-20 v4 — DENSITY PASS. The 60vh table cap + generous row
+       padding meant the player could only see 2-3 rows per scroll on
+       common laptop screens. Tightened row padding, trimmed the title
+       block, and bumped the table cap to 78vh so all 10 (in fact all
+       25) entries fit on one screen at 1080p+ without scrolling. */
     .hog-overlay {
       /* Mounted on document.body — position:fixed fills the REAL
          viewport on any monitor size, not the scaled #app box. */
@@ -217,7 +222,7 @@ function ensureStyle() {
       background: radial-gradient(ellipse at center, #1a0808 0%, #0a0202 70%, #000 100%);
       color: #ffd34d; font-family: 'Courier New', monospace;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-      padding: clamp(18px, 2vw, 36px) clamp(24px, 3vw, 48px);
+      padding: clamp(10px, 1.2vw, 20px) clamp(18px, 2.2vw, 36px);
       overflow: hidden;
     }
     .hog-scanlines {
@@ -239,24 +244,30 @@ function ensureStyle() {
     }
     .hog-content {
       position: relative; z-index: 2;
-      width: min(1400px, 94vw);
+      width: min(1500px, 96vw);
       display: flex; flex-direction: column; align-items: center;
-      gap: clamp(14px, 1.5vw, 26px);
-      max-height: calc(100% - 36px);
+      gap: clamp(4px, 0.6vw, 10px);
+      /* Let the content stretch the full viewport; the table itself
+         is the scrollable region. Removing the previous calc(100% -
+         36px) cap so a small banner up top doesn't steal table rows. */
+      max-height: 100%;
+      width: min(1500px, 96vw);
     }
     .hog-title {
-      font-size: clamp(44px, 7vw, 96px);
-      letter-spacing: clamp(10px, 1.2vw, 18px);
+      font-size: clamp(28px, 4vw, 56px);
+      letter-spacing: clamp(6px, 0.9vw, 14px);
       font-weight: 900;
       color: #ffd34d;
       text-shadow: 0 0 12px #ffd34d, 0 0 22px #ffaa33, 2px 2px 0 #1a0808;
       animation: hogTitleFlicker 4.6s infinite;
       text-align: center;
-      padding: 4px 0;
+      padding: 0;
+      margin: 0;
+      line-height: 1.15;
     }
     .hog-subtitle {
-      font-size: clamp(12px, 1.3vw, 22px);
-      letter-spacing: clamp(6px, 0.7vw, 12px);
+      font-size: clamp(10px, 1vw, 16px);
+      letter-spacing: clamp(4px, 0.55vw, 9px);
       color: #aa4a1a;
       text-shadow: 1px 1px 0 #000;
     }
@@ -267,13 +278,14 @@ function ensureStyle() {
       box-shadow: 0 0 24px rgba(170,26,26,0.4), inset 0 0 30px rgba(0,0,0,0.7);
     }
     .hog-table thead th {
-      font-size: clamp(11px, 1.1vw, 18px);
-      letter-spacing: clamp(2px, 0.25vw, 4px);
+      font-size: clamp(10px, 0.95vw, 14px);
+      letter-spacing: clamp(2px, 0.22vw, 3px);
       color: #aa6a1a;
-      padding: clamp(8px, 0.9vw, 16px) clamp(10px, 1vw, 18px);
+      padding: clamp(6px, 0.7vw, 11px) clamp(8px, 0.8vw, 14px);
       border-bottom: 2px solid #aa1a1a;
       text-align: left; font-weight: 900;
       background: linear-gradient(180deg, #2a0808, #1a0404);
+      position: sticky; top: 0; z-index: 3;
     }
     .hog-table thead th.num { text-align: right; }
     .hog-table tbody tr {
@@ -281,28 +293,38 @@ function ensureStyle() {
       border-bottom: 1px dashed rgba(170,26,26,0.3);
     }
     .hog-table tbody td {
-      padding: clamp(9px, 1vw, 16px) clamp(10px, 1vw, 18px);
-      font-size: clamp(13px, 1.4vw, 22px);
+      /* 2026-05-20 v4 — Tightened from clamp(9px, 1vw, 16px)
+         × clamp(13px, 1.4vw, 22px). At 1080p the previous values made
+         each row ~54px tall — only ~12 rows fit in 60vh ≈ 648px. New
+         values produce ~32px rows so all 25 fetched entries fit in
+         ~80vh without scrolling on standard monitors. */
+      padding: clamp(5px, 0.55vw, 9px) clamp(8px, 0.8vw, 14px);
+      font-size: clamp(12px, 1.1vw, 17px);
       font-weight: 900;
-      letter-spacing: clamp(1px, 0.2vw, 3px);
+      letter-spacing: clamp(1px, 0.18vw, 2.5px);
       text-shadow: 1px 1px 0 #000;
     }
     .hog-table tbody td.num { text-align: right; }
     .hog-table tbody tr.you { animation: hogRowIn 0.45s ease-out both, hogPulse 1.2s ease-in-out infinite; }
     .hog-prompt {
-      font-size: clamp(16px, 1.8vw, 28px);
-      letter-spacing: clamp(5px, 0.6vw, 10px);
+      font-size: clamp(13px, 1.4vw, 20px);
+      letter-spacing: clamp(4px, 0.5vw, 8px);
       font-weight: 900;
       color: #ffd34d; animation: hogPrompt 1.0s infinite;
       text-shadow: 0 0 8px #ffd34d, 2px 2px 0 #000;
-      margin-top: 8px;
+      margin-top: 4px;
     }
     .hog-rank-1 { color: #ffd34d; }
     .hog-rank-2 { color: #d8d8d8; }
     .hog-rank-3 { color: #cd7f32; }
     .hog-rank-1 td:first-child::before { content: '🏛 '; }
     .hog-table-scroll {
-      width: 100%; max-height: 60vh; overflow-y: auto;
+      /* 2026-05-20 v4 — Bumped 60vh → 78vh so all 25 entries fit on
+         a 1080p screen without scrolling. Sticky header (above)
+         keeps the column labels visible if the player does scroll
+         (e.g. when extra footer content trims the available room
+         on a smaller monitor). */
+      width: 100%; max-height: 78vh; overflow-y: auto;
       border: 2px solid #aa1a1a;
       scrollbar-width: thin; scrollbar-color: #aa1a1a #1a0404;
     }
@@ -479,20 +501,56 @@ export function showLeaderboard(
   // appeared and there was no way to tell if it had been saved).
   let submitBannerHtml = '';
   const submitStatus = currentEntry ? (currentEntry as any).__submitStatus : null;
+  const submitDetail: SubmitResult | null = currentEntry ? ((currentEntry as any).__submitDetail ?? null) : null;
   if (submitStatus === 'success') {
-    submitBannerHtml = `<div style="background:linear-gradient(180deg,#0a2a0a,#061806);border:2px solid #66ff88;padding:8px 14px;margin:6px 0;text-align:center;color:#88ff88;font-family:'Courier New',monospace;font-size:12px;letter-spacing:2px;font-weight:bold;box-shadow:0 0 12px rgba(102,255,136,0.35)">
+    submitBannerHtml = `<div style="background:linear-gradient(180deg,#0a2a0a,#061806);border:2px solid #66ff88;padding:6px 12px;margin:4px 0;text-align:center;color:#88ff88;font-family:'Courier New',monospace;font-size:12px;letter-spacing:2px;font-weight:bold;box-shadow:0 0 12px rgba(102,255,136,0.35)">
       ✓ SCORE SUBMITTED TO THE EMPIRE
     </div>`;
   } else if (submitStatus === 'failed') {
-    submitBannerHtml = `<div style="background:linear-gradient(180deg,#2a0a0a,#180606);border:2px solid #ee5050;padding:8px 14px;margin:6px 0;text-align:center;color:#ff8888;font-family:'Courier New',monospace;font-size:12px;letter-spacing:2px;font-weight:bold;box-shadow:0 0 12px rgba(238,80,80,0.35)">
-      ✗ SUBMISSION FAILED — your score is saved locally only.<br/>
-      <span style="font-size:10px;font-weight:normal;color:#cdb98a">Check the LOCAL tab to see your run. Common cause: ad-blocker is blocking supabase.co.</span>
+    // 2026-05-20 v4 — Real diagnostics in the failure banner. Surfaces
+    // the actual HTTP status, the endpoint kind, and the URL hit so
+    // the player (or maintainer) can self-diagnose without DevTools.
+    // Most common diagnostic outcomes:
+    //   • status 404 + endpoint "direct" → Supabase URL is wrong or
+    //     RLS dropped the table; check VITE_SUPABASE_URL / schema.sql
+    //   • status 401/403 → anon key wrong or RLS denied insert
+    //   • no status + "Failed to fetch" → ad-blocker / network block
+    //     → use localStorage override to point at a Cloudflare Worker
+    //   • status 0 / abort → 5 retries all timed out
+    const reason = submitDetail?.errorReason ?? 'See console for details.';
+    const status = submitDetail?.status;
+    const endpoint = submitDetail?.endpoint ?? 'direct';
+    const host = submitDetail?.url ? (() => { try { return new URL(submitDetail.url).host; } catch { return ''; } })() : '';
+    const endpointBadge = endpoint === 'override'  ? '🛠 localStorage override'
+                       : endpoint === 'env-proxy'  ? '🛡 Cloudflare Worker proxy'
+                       : endpoint === 'direct'     ? '🔗 direct to supabase.co'
+                       :                              '— not configured —';
+    submitBannerHtml = `<div id="hog-fail-banner" style="background:linear-gradient(180deg,#2a0a0a,#180606);border:2px solid #ee5050;padding:8px 12px;margin:4px 0;text-align:left;color:#ff8888;font-family:'Courier New',monospace;font-size:11px;letter-spacing:1px;box-shadow:0 0 12px rgba(238,80,80,0.35);max-width:1100px;margin-left:auto;margin-right:auto">
+      <div style="font-size:12px;font-weight:bold;letter-spacing:2px;text-align:center;margin-bottom:4px">✗ GLOBAL SUBMISSION FAILED — saved locally only</div>
+      <div style="font-size:10px;color:#cdb98a;line-height:1.45;margin-top:4px">
+        <b style="color:#ffd34d">Why:</b> ${reason}
+      </div>
+      <div style="font-size:10px;color:#aa9a4a;margin-top:4px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
+        <span><b>Endpoint:</b> ${endpointBadge}${host ? ` · <span style="color:#88ddff">${host}</span>` : ''}</span>
+        ${typeof status === 'number' ? `<span><b>HTTP:</b> ${status}</span>` : ''}
+        <span><b>Attempts:</b> ${submitDetail?.attempts ?? '?'}/5</span>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-top:6px;flex-wrap:wrap">
+        <button id="hog-fail-retry" type="button" style="background:#3a2a14;color:#ffd34d;border:1px solid #d4af37;padding:4px 10px;font-family:inherit;font-size:10px;letter-spacing:1.5px;font-weight:bold;cursor:pointer">↻ RETRY SUBMIT</button>
+        <button id="hog-fail-proxy" type="button" style="background:#1a2a2a;color:#88ddff;border:1px solid #2a5a5a;padding:4px 10px;font-family:inherit;font-size:10px;letter-spacing:1.5px;font-weight:bold;cursor:pointer" title="Route leaderboard requests through a Cloudflare Worker URL.">🛠 SET PROXY URL</button>
+      </div>
+      <div style="font-size:9px;color:#5a7a7a;text-align:center;margin-top:4px">Switch to LOCAL tab to see your run · open DevTools console for the full request trace.</div>
     </div>`;
   } else if (submitStatus === 'no-remote') {
-    submitBannerHtml = `<div style="background:#1a1410;border:1px dashed #5a4a30;padding:6px 14px;margin:6px 0;text-align:center;color:#aa9a4a;font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px">
+    submitBannerHtml = `<div style="background:#1a1410;border:1px dashed #5a4a30;padding:4px 12px;margin:4px 0;text-align:center;color:#aa9a4a;font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px">
       ⓘ GLOBAL LEADERBOARD NOT CONFIGURED · saved to LOCAL tab
     </div>`;
   }
+  // 2026-05-20 v4 — Even on success show a small "endpoint" footer
+  // when the diagnostics aren't on the screen, so the player can
+  // confirm which path their submission took on a successful run.
+  // Helpful for verifying the proxy is engaged after a setup change.
+  void getLeaderboardDiagnostics;
   wrap.innerHTML = `
     <div class="hog-scanlines"></div>
     <div class="hog-vignette"></div>
@@ -518,7 +576,7 @@ export function showLeaderboard(
           <tbody id="hog-tbody"></tbody>
         </table>
       </div>
-      <div id="hog-your-rank" style="margin:8px 0;text-align:center;color:#cdb98a;font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;min-height:18px"></div>
+      <div id="hog-your-rank" style="margin:4px 0;text-align:center;color:#cdb98a;font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;min-height:14px"></div>
       ${isLoadingMode
         ? `<div style="display:flex;flex-direction:column;align-items:center;gap:clamp(10px,1vw,18px);margin-top:clamp(8px,1vw,16px)">
              <div class="hog-prompt">▶ PRESS ENTER TO BEGIN YOUR RUN ▶</div>
@@ -750,6 +808,62 @@ export function showLeaderboard(
     paintLocalRows();
   }
 
+  // 2026-05-20 v4 — Wire the failure-banner diagnostic buttons.
+  // RETRY SUBMIT — re-fires submitScore() with the current entry and
+  // re-paints the global table when it succeeds. Lets the player
+  // retry without replaying the whole run after fixing whatever was
+  // wrong (e.g. disabling an ad-blocker, setting the proxy URL).
+  // SET PROXY URL — window.prompt for a Cloudflare Worker URL,
+  // writes it to localStorage, and reloads. Non-technical players
+  // get a fix path without DevTools.
+  const retryBtn = wrap.querySelector('#hog-fail-retry') as HTMLButtonElement | null;
+  if (retryBtn && currentEntry) {
+    retryBtn.onclick = async () => {
+      retryBtn.disabled = true;
+      retryBtn.textContent = '… RETRYING';
+      try {
+        const heroIdForRow: string | null = (currentEntry as any).heroId ?? null;
+        const result = await submitScore(toRemoteRow(currentEntry, 'campaign', heroIdForRow));
+        // Update the banner in place so the player can see what
+        // happened without re-opening the leaderboard.
+        const banner = wrap.querySelector('#hog-fail-banner') as HTMLElement | null;
+        if (banner && result.ok) {
+          banner.outerHTML = `<div style="background:linear-gradient(180deg,#0a2a0a,#061806);border:2px solid #66ff88;padding:6px 12px;margin:4px 0;text-align:center;color:#88ff88;font-family:'Courier New',monospace;font-size:12px;letter-spacing:2px;font-weight:bold">✓ SCORE SUBMITTED ON RETRY</div>`;
+          // Re-paint global so the row appears.
+          paintRemoteRows();
+        } else if (banner) {
+          // Re-render the failure banner with the latest detail.
+          (currentEntry as any).__submitDetail = result;
+          retryBtn.disabled = false;
+          retryBtn.textContent = `↻ RETRY (HTTP ${result.status ?? '—'})`;
+        }
+      } catch (err) {
+        console.error('[leaderboard] retry threw:', err);
+        retryBtn.disabled = false;
+        retryBtn.textContent = '↻ RETRY SUBMIT';
+      }
+    };
+  }
+  const proxyBtn = wrap.querySelector('#hog-fail-proxy') as HTMLButtonElement | null;
+  if (proxyBtn) {
+    proxyBtn.onclick = () => {
+      const diag = getLeaderboardDiagnostics();
+      const current = diag.kind === 'override' ? diag.base : '';
+      const next = window.prompt(
+        'Cloudflare Worker URL — routes leaderboard requests through your Worker\n' +
+        'instead of supabase.co. Leave blank to clear the override.\n\n' +
+        'Example: https://roman-td-leaderboard.your-name.workers.dev',
+        current
+      );
+      if (next === null) return;   // cancelled
+      const trimmed = next.trim();
+      setLeaderboardProxyOverride(trimmed || null);
+      // Reload so the bundle reads the new override on the next
+      // import-time pass. The CSS + localStorage survive the reload.
+      window.location.reload();
+    };
+  }
+
   // ENTER → restart (post-game) OR commit-to-game (loading-mode).
   // Click anywhere on the prompt area also triggers it.
   const restart = () => {
@@ -853,31 +967,39 @@ export function runEndOfGameFlow(
       // would pollute the Hall of Glory. The local insertEntry above
       // also gets reverted below so even the local board stays clean.
       const sandbox = !!(state as any).sandboxMode;
-      // 2026-05-20 v3 — Track submission status so the Hall of Glory
-      // can show the player a clear ✓/✗ banner. The previous flow did
-      // `await submitScore(...)` but ignored the return value — when
-      // submission failed (network, RLS, proxy block) the player saw
-      // the leaderboard without their name and couldn't tell if their
-      // score wasn't saved vs simply didn't rank top 25.
+      // 2026-05-20 v4 — Capture the full structured SubmitResult so
+      // the Hall of Glory banner can surface the actual failure
+      // reason + endpoint + HTTP status when something goes wrong.
+      // The previous boolean result couldn't tell the player whether
+      // the URL was wrong, the anon key was rejected, an ad-blocker
+      // intercepted, or RLS denied the insert — every failure looked
+      // identical and the maintainer had to dig into DevTools to
+      // figure it out.
       let submitStatus: 'success' | 'failed' | 'sandbox' | 'no-remote' = 'sandbox';
+      let submitDetail: SubmitResult | null = null;
       if (!sandbox) {
-        submitStatus = hasRemoteLeaderboard() ? 'failed' : 'no-remote';
-        try {
-          // 2026-05-19 — Thread the active hero pick through so the
-          // Hall of Glory can render the "⚔ HeroName" suffix on the
-          // NAME column. Pre-hero runs land as null and render the
-          // unchanged player-name only row.
-          const heroIdForRow: string | null = ((state as any).activeHeroId as string | null | undefined) ?? null;
-          const ok = await submitScore(toRemoteRow(entry, 'campaign', heroIdForRow));
-          if (ok) submitStatus = 'success';
-        } catch (err) {
-          console.error('[leaderboard] submit threw:', err);
+        if (!hasRemoteLeaderboard()) {
+          submitStatus = 'no-remote';
+        } else {
+          submitStatus = 'failed';
+          try {
+            // 2026-05-19 — Thread the active hero pick through so the
+            // Hall of Glory can render the "⚔ HeroName" suffix on the
+            // NAME column. Pre-hero runs land as null and render the
+            // unchanged player-name only row.
+            const heroIdForRow: string | null = ((state as any).activeHeroId as string | null | undefined) ?? null;
+            submitDetail = await submitScore(toRemoteRow(entry, 'campaign', heroIdForRow));
+            if (submitDetail.ok) submitStatus = 'success';
+          } catch (err) {
+            console.error('[leaderboard] submit threw:', err);
+          }
         }
       }
       overlay.remove();
-      // Stash the submit status on the entry so showLeaderboard can
-      // surface it to the player without changing every signature.
+      // Stash the submit status + detail on the entry so showLeaderboard
+      // can surface the failure reason without changing every signature.
       (entry as any).__submitStatus = submitStatus;
+      (entry as any).__submitDetail = submitDetail;
       // If a post-victory hook is wired (Endless transition), invoke it
       // INSTEAD of showing the static leaderboard. The leaderboard is
       // still reachable from the main menu after the run ends.
@@ -943,41 +1065,53 @@ export function showEndlessLeaderboard(parent: HTMLElement, currentEntry: Endles
   const modal = document.createElement('div');
   modal.id = 'endless-leaderboard';
   // 2026-05-19 — Responsive clamping (Codex pattern).
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.85);z-index:200;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace`;
+  // 2026-05-20 v4 — Mounted as fixed full-viewport overlay, not the
+  // scaled #app box, so the modal stretches the real screen. Panel
+  // now spans ~min(1200px, 92vw) with a tall table region so all 15
+  // endless entries are visible at once on common laptop monitors.
+  modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.88);z-index:200;padding:clamp(12px,1.4vw,24px);box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace`;
   const panel = document.createElement('div');
-  panel.style.cssText = `width:min(640px,94vw);background:linear-gradient(180deg,#1a0c14,#0c0608);border:3px solid #ff5050;padding:24px;color:#fff8e0;box-shadow:0 0 40px rgba(255,80,80,0.55)`;
+  panel.style.cssText = `width:min(1200px,94vw);max-height:96vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#1a0c14,#0c0608);border:3px solid #ff5050;padding:clamp(14px,1.4vw,22px);color:#fff8e0;box-shadow:0 0 40px rgba(255,80,80,0.55)`;
   let rows = '';
   for (let i = 0; i < top.length; i++) {
     const e = top[i];
     const isYou = currentEntry && e.ts === currentEntry.ts;
     rows += `<tr style="${isYou ? 'background:rgba(255,210,77,0.18);color:#ffd34d;font-weight:bold' : ''}">
-      <td style="padding:5px 8px;text-align:center">${i + 1}</td>
-      <td style="padding:5px 8px">${e.name}</td>
-      <td style="padding:5px 8px;text-align:right">${e.endlessScore.toLocaleString()}</td>
-      <td style="padding:5px 8px;text-align:center">E${e.endlessWave}</td>
-      <td style="padding:5px 8px;text-align:right;color:#aa9a4a;font-size:10px">${e.date}</td>
+      <td style="padding:clamp(5px,0.55vw,9px) clamp(8px,0.8vw,14px);text-align:center;font-size:clamp(12px,1.05vw,16px);font-weight:bold">${i + 1}</td>
+      <td style="padding:clamp(5px,0.55vw,9px) clamp(8px,0.8vw,14px);font-size:clamp(12px,1.05vw,16px);font-weight:bold;letter-spacing:1.5px">${e.name}</td>
+      <td style="padding:clamp(5px,0.55vw,9px) clamp(8px,0.8vw,14px);text-align:right;font-size:clamp(12px,1.05vw,16px);font-weight:bold">${e.endlessScore.toLocaleString()}</td>
+      <td style="padding:clamp(5px,0.55vw,9px) clamp(8px,0.8vw,14px);text-align:center;font-size:clamp(12px,1.05vw,16px)">E${e.endlessWave}</td>
+      <td style="padding:clamp(5px,0.55vw,9px) clamp(8px,0.8vw,14px);text-align:right;color:#aa9a4a;font-size:clamp(10px,0.85vw,13px)">${e.date}</td>
     </tr>`;
   }
   if (top.length === 0) rows = `<tr><td colspan="5" style="padding:20px;text-align:center;color:#aa9a4a">No Endless runs yet. Be the first.</td></tr>`;
   panel.innerHTML = `
-    <div style="font-size:18px;letter-spacing:4px;color:#ff5050;font-weight:bold;text-align:center;margin-bottom:6px">⚔ ENDLESS HALL OF MAYHEM ⚔</div>
-    <div style="font-size:11px;color:#cdb98a;text-align:center;margin-bottom:18px">Scored by cumulative endless wave clear value. Top 15 shown.</div>
-    <table style="width:100%;border-collapse:collapse;font-size:12px;background:#0c0608">
-      <thead><tr style="border-bottom:2px solid #ff5050">
-        <th style="padding:6px 8px;text-align:center;color:#ff5050">#</th>
-        <th style="padding:6px 8px;text-align:left;color:#ff5050">Name</th>
-        <th style="padding:6px 8px;text-align:right;color:#ff5050">Endless Score</th>
-        <th style="padding:6px 8px;text-align:center;color:#ff5050">Wave</th>
-        <th style="padding:6px 8px;text-align:right;color:#ff5050">Date</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div style="margin-top:22px;display:flex;justify-content:center">
-      <button id="endless-leaderboard-close" style="padding:10px 28px;background:linear-gradient(180deg,#ff5050,#aa1a1a);color:#fff;border:2px solid #ff7777;font-family:inherit;font-size:13px;letter-spacing:3px;font-weight:bold;cursor:pointer">PLAY AGAIN</button>
+    <div style="font-size:clamp(18px,2vw,30px);letter-spacing:clamp(3px,0.4vw,6px);color:#ff5050;font-weight:bold;text-align:center;margin-bottom:6px">⚔ ENDLESS HALL OF MAYHEM ⚔</div>
+    <div style="font-size:clamp(10px,0.95vw,14px);color:#cdb98a;text-align:center;margin-bottom:clamp(8px,1vw,14px)">Scored by cumulative endless wave clear value. Top 15 shown.</div>
+    <div style="flex:1;overflow-y:auto;border:1px solid rgba(255,80,80,0.3)">
+      <table style="width:100%;border-collapse:collapse;background:#0c0608">
+        <thead><tr style="border-bottom:2px solid #ff5050;position:sticky;top:0;background:#1a0c14">
+          <th style="padding:clamp(6px,0.7vw,10px) clamp(8px,0.8vw,14px);text-align:center;color:#ff5050;font-size:clamp(10px,0.95vw,14px);letter-spacing:2px">#</th>
+          <th style="padding:clamp(6px,0.7vw,10px) clamp(8px,0.8vw,14px);text-align:left;color:#ff5050;font-size:clamp(10px,0.95vw,14px);letter-spacing:2px">Name</th>
+          <th style="padding:clamp(6px,0.7vw,10px) clamp(8px,0.8vw,14px);text-align:right;color:#ff5050;font-size:clamp(10px,0.95vw,14px);letter-spacing:2px">Endless Score</th>
+          <th style="padding:clamp(6px,0.7vw,10px) clamp(8px,0.8vw,14px);text-align:center;color:#ff5050;font-size:clamp(10px,0.95vw,14px);letter-spacing:2px">Wave</th>
+          <th style="padding:clamp(6px,0.7vw,10px) clamp(8px,0.8vw,14px);text-align:right;color:#ff5050;font-size:clamp(10px,0.95vw,14px);letter-spacing:2px">Date</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:clamp(12px,1.4vw,22px);display:flex;justify-content:center">
+      <button id="endless-leaderboard-close" style="padding:clamp(8px,0.9vw,14px) clamp(20px,2.2vw,36px);background:linear-gradient(180deg,#ff5050,#aa1a1a);color:#fff;border:2px solid #ff7777;font-family:inherit;font-size:clamp(11px,1.1vw,15px);letter-spacing:3px;font-weight:bold;cursor:pointer">PLAY AGAIN</button>
     </div>
   `;
   modal.appendChild(panel);
-  parent.appendChild(modal);
+  // 2026-05-20 v4 — Mount on document.body, not the scaled #app box,
+  // so position:fixed actually fills the real viewport instead of
+  // being clipped to #app's pre-scale ~900px frame on big monitors.
+  // The `parent` arg is preserved on the signature for backward
+  // compat but no longer used for mounting.
+  void parent;
+  document.body.appendChild(modal);
   panel.querySelector<HTMLButtonElement>('#endless-leaderboard-close')!.onclick = () => {
     modal.remove();
     onRestart();

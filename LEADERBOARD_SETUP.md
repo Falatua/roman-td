@@ -110,3 +110,49 @@ The game works exactly the same — the player sees:
 The only difference is the leaderboard only shows scores from **this device's localStorage**, not from every player. The "🌐 GLOBAL / 📜 LOCAL" tab switch is hidden — there's only the LOCAL view. No error toasts, no failed network requests visible to the player.
 
 You can configure Supabase at any time later — existing localStorage entries stay on the player's device, and new runs start landing in the global table immediately.
+
+---
+
+## Diagnosing submission failures (2026-05-20 v4)
+
+When a global submission fails, the Hall of Glory now shows a red banner with:
+
+- **Why** — the actual reason (HTTP status decoded, network block detected, etc.)
+- **Endpoint** — which path the bundle is hitting:
+  - 🛠 `localStorage override` — a runtime override was set (see below)
+  - 🛡 `Cloudflare Worker proxy` — the `VITE_LEADERBOARD_PROXY_URL` secret is wired
+  - 🔗 `direct to supabase.co` — no proxy; bundle talks straight to Supabase
+- **HTTP** — last server status code (only shown if any attempt reached the server)
+- **Attempts** — how many retries were burned (max 5)
+- **↻ RETRY SUBMIT** button — re-fires the insert without replaying the run
+- **🛠 SET PROXY URL** button — opens a prompt; paste a Cloudflare Worker URL and the bundle uses it on the next reload
+
+### Common failure modes
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `HTTP 401 / 403` | Anon key wrong or RLS denies insert | Refresh `VITE_SUPABASE_ANON_KEY` in GitHub Actions; re-run `supabase/schema.sql` |
+| `HTTP 404` | Wrong project URL or table dropped | Verify `VITE_SUPABASE_URL`; re-run schema |
+| `Failed to fetch` / `NetworkError` | Ad-blocker / privacy extension is blocking `*.supabase.co` | Click **🛠 SET PROXY URL** in the banner and point at your Cloudflare Worker (see `cloudflare-worker/README.md`) |
+| Times out 5 times | Slow internet or regional Supabase issue | Retry later, or use the Worker proxy |
+
+### Runtime proxy override (no rebuild required)
+
+If the `VITE_LEADERBOARD_PROXY_URL` GitHub secret isn't wired yet (or you want to test a different proxy URL fast), open DevTools console and run:
+
+```js
+localStorage.setItem(
+  'roman_td_leaderboard_proxy_override',
+  'https://your-worker.your-name.workers.dev'
+);
+location.reload();
+```
+
+The override takes priority over the build-time env var. Clear it with:
+
+```js
+localStorage.removeItem('roman_td_leaderboard_proxy_override');
+location.reload();
+```
+
+The **🛠 SET PROXY URL** button on the failure banner does exactly this — for non-technical players who hit the issue.
