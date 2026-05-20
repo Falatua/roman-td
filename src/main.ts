@@ -8,7 +8,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, rollBossDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, rollBossDrop, rollEpicDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
@@ -5852,6 +5852,19 @@ async function boot() {
               spawnLootAt(state, e, drop);
               bossLegendaryDropped = true;
             }
+          } else if (e.type === 'FIRE_GIANT') {
+            // 2026-05-20 — Fire Giant kills drop a guaranteed EPIC item.
+            // The W16 GATES_OF_HELL event pumps out ~15 Fire Giants in
+            // total (alternating from the two destructible Hell Gates,
+            // every 2s for 15s), so killing all of them now pays a
+            // serious item haul on top of the surprise-event reward
+            // modal at event resolution. Fire Giant is `isBoss: false`
+            // in the data so the regular boss-drop branch above
+            // doesn't fire — this explicit type check is the kill-
+            // hook. Drops EPIC, not LEGENDARY, so the W16 haul doesn't
+            // overshadow the W15/W20 boss legendaries.
+            const drop = rollEpicDrop(state, inventory);
+            if (drop) spawnLootAt(state, e, drop);
           } else {
             // Non-boss enemies still roll the regular common/uncommon table
             // by GROUND/FLYER drop rate.

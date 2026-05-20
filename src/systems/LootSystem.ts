@@ -143,6 +143,28 @@ export function currentlyOwnedLegendarySet(
   return owned;
 }
 
+// 2026-05-20 — Fire Giant kills (W16 GATES_OF_HELL event) drop a
+// guaranteed EPIC item. Pool is "every item in items_permanent.json
+// whose rarity is EPIC and which isn't event-exclusive." EPIC items
+// don't carry the legendary one-per-run uniqueness gate, so duplicates
+// are allowed — the player can stack two of the same epic across
+// different towers/inventory slots. Computed once at module load.
+const EPIC_ITEM_POOL: ItemId[] = Object.keys(items).filter(id => {
+  const def: any = (items as any)[id];
+  return def?.rarity === 'EPIC' && !def?.eventExclusive;
+}) as ItemId[];
+
+/**
+ * Pick a random EPIC item for a guaranteed-drop kill (currently Fire
+ * Giant). Returns null only if the player somehow has zero EPIC items
+ * to draw from (shouldn't happen — the pool is non-empty by data).
+ * Always 100% drop rate — the caller decides whether to call this.
+ */
+export function rollEpicDrop(_state?: GameStateShape | null, _inv?: InventoryState | null): { itemId: ItemId; rarity: Rarity } | null {
+  if (EPIC_ITEM_POOL.length === 0) return null;
+  return { itemId: pick(EPIC_ITEM_POOL), rarity: 'EPIC' };
+}
+
 export function rollBossDrop(
   faction: string,
   state?: GameStateShape | null,

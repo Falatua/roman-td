@@ -1,8 +1,9 @@
 // Tests for item rules, inventory operations, and shop pool sampling.
 import { describe, it, expect } from 'vitest';
 import { itemFamily, canEquipItemFamily } from '../src/systems/ItemRules';
-import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, rollDrop } from '../src/systems/LootSystem';
+import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, rollDrop, rollEpicDrop } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
+import itemsData from '../src/data/items_permanent.json';
 
 describe('Item families', () => {
   it('classifies items into the correct family', () => {
@@ -183,5 +184,32 @@ describe('Merchant — wave timing predicates', () => {
     expect(gateShopRefreshDue(8)).toBe(true);
     expect(gateShopRefreshDue(12)).toBe(true);
     expect(gateShopRefreshDue(7)).toBe(false);
+  });
+});
+
+describe('Fire Giant EPIC drop — rollEpicDrop', () => {
+  // 2026-05-20 — Every Fire Giant kill (W16 GATES_OF_HELL) drops a
+  // guaranteed EPIC item. The kill hook in main.ts uses rollEpicDrop()
+  // which picks from the auto-built EPIC_ITEM_POOL.
+  it('always returns an EPIC-rarity drop', () => {
+    for (let i = 0; i < 50; i++) {
+      const drop = rollEpicDrop();
+      expect(drop).not.toBeNull();
+      expect(drop!.rarity).toBe('EPIC');
+    }
+  });
+
+  it('only draws from items.json entries flagged rarity=EPIC', () => {
+    // Compute the expected pool the same way the runtime does, then
+    // verify rollEpicDrop's outputs all sit inside it.
+    const expected = new Set(Object.keys(itemsData as any).filter(id => {
+      const def: any = (itemsData as any)[id];
+      return def?.rarity === 'EPIC' && !def?.eventExclusive;
+    }));
+    expect(expected.size).toBeGreaterThan(0);
+    for (let i = 0; i < 50; i++) {
+      const drop = rollEpicDrop();
+      expect(expected.has(drop!.itemId as string)).toBe(true);
+    }
   });
 });
