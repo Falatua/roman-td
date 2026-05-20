@@ -954,25 +954,43 @@ async function boot() {
       for (const m of (endlessCfg.combinedMechanics ?? [])) {
         briefLines.push({ text: `▸ ${m}`, cat: 'MECHANIC' });
       }
+      // 2026-05-19 v3 — Elite mutation roll surface. This is the
+      // ONLY mode where mutations actually fire (campaign is
+      // deterministic). Rate ramps 4% at endlessWave=1 to 20% cap.
+      // Moved out of the campaign brief where the line was phantom.
+      const ew = state.endlessWave ?? 1;
+      const elitePct = Math.min(20, 4 + ew * 0.5);
+      briefLines.push({ text: `⭐ Elites possible · ${elitePct.toFixed(0)}% mutation roll (VETERAN/SWIFT/BLOATED/WARDED/AURA-STAR)`, cat: 'RNG' });
       briefLines.push({ text: `🏆 Endless score so far: ${(state.endlessScore ?? 0).toLocaleString()}`, cat: 'RNG' });
     } else {
       // Mirror the original lines/callouts split, but categorize each.
+      // 2026-05-19 v3 — Campaign is 100% DETERMINISTIC. Per the
+      // 2026-05-17 RNG removal pass, the 20-wave campaign no longer
+      // rolls bonus bosses (was 25% twin / 15% ambush past W11), no
+      // longer rolls elite mutations (now ENDLESS-only, see
+      // EnemySystem.ts:147 `&& state.endlessMode`), and no longer
+      // rolls wave modifiers. The pre-wave brief previously surfaced
+      // "🎲 Bonus boss roll" + "⭐ Elites possible · X% mutation roll"
+      // every wave past W10-W11 — phantom warnings that the underlying
+      // roll never fired. Those briefs are removed here so the brief
+      // reads cleanly: every line the player sees is a real,
+      // deterministic event for this wave. RNG-style brief lines stay
+      // in the endless branch above where the rolls genuinely fire.
       if ([5, 10, 15, 20].includes(state.wave)) briefLines.push({ text: '☠ BOSS CRESCENDO · HP scales +50%', cat: 'BOSS' });
       if ((w as any).necromancy) briefLines.push({ text: '💀 NECROMANCY · slain grunts rise as 6-9 undead per kill', cat: 'MECHANIC' });
       if (state.wave === 17) briefLines.push({ text: '🛡 IRON PHALANX · melee-immune armored at end', cat: 'MECHANIC' });
       if (w.type === 'B') briefLines.push({ text: '⚔ BOSS WAVE · faction signature mechanics', cat: 'BOSS' });
-      // VEILED IN ASH mechanic has been removed; no callout needed.
-      if (state.wave >= 10) {
-        const elitePct = Math.min(20, 4 + (state.wave - 10) * 0.5);
-        briefLines.push({ text: `⭐ Elites possible · ${elitePct.toFixed(0)}% mutation roll`, cat: 'RNG' });
-      }
-      if (state.wave > 11) briefLines.push({ text: '🎲 Bonus boss roll · +2.5× gold +50g +2 lives +1 RARE on kill', cat: 'RNG' });
       // Late-stage resistance buff — surfaced once the W11+ cohort starts
       // spawning so the player isn't surprised by chip damage suddenly
       // doing less. Ground non-flyers absorb 15% more from every damage
       // type AND resist DoTs 15% harder; bosses absorb 25% more on both
       // axes. Flyers are unaffected.
       if (state.wave >= 11) briefLines.push({ text: '🛡 LATE-STAGE RESISTANCE · ground enemies take −15% damage + DoT, bosses take −25%. Flyers unaffected. Diversify damage types or stack tier-ups to punch through.', cat: 'MECHANIC' });
+      // Defensive: state.waveModifier should always be null in
+      // campaign (set explicitly in WaveManager.ts:234), but if any
+      // future code path stamps it, surface the modifier text. The
+      // guard means the line never appears under normal campaign
+      // play, only fires if a modifier is somehow set.
       if (state.waveModifier) {
         const m = WAVE_MODIFIERS.find(x => x.key === state.waveModifier);
         if (m) briefLines.push({ text: `🎲 RNG · ${m.name.toUpperCase()} · survive = +25g +1 item +1000 pts`, cat: 'RNG' });
