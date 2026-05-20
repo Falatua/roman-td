@@ -1048,6 +1048,487 @@ export class RenderEngine {
   triggerImpactRing(x: number, y: number, tick: number, maxR = 24, color = 0xffffff) {
     this.impactRings.push({ x, y, born: tick, life: 0.32, maxR, color });
   }
+
+  // ─── HERO ABILITY VFX (2026-05-19 v2) ──────────────────────────────
+  // Per-ability signature animations. Each of the 18 hero abilities
+  // queues a HeroAbilityFx record on cast; `drawHeroAbilityFx` ticks
+  // them every frame, expiring entries past `life` and rendering each
+  // ability's distinct shape on the dedicated `heroFxGfx` Graphics.
+  //
+  // The queue carries shared fields (origin, color, life) plus an
+  // ability id that drives which shape draws. Per-ability extras
+  // (target list, secondary origins, range tiles) ride on `extras` so
+  // we don't need a wide superclass — each renderer reads only what
+  // its ability cares about and ignores the rest.
+  private heroFxGfx?: Graphics;
+  private heroFxQueue: Array<{
+    ability: string;
+    x: number; y: number;
+    born: number; life: number;
+    color: number;
+    extras?: any;
+  }> = [];
+  triggerHeroAbilityFx(spec: {
+    ability: string;
+    x: number; y: number;
+    tick: number;
+    life?: number;
+    color?: number;
+    extras?: any;
+  }): void {
+    this.heroFxQueue.push({
+      ability: spec.ability,
+      x: spec.x, y: spec.y,
+      born: spec.tick,
+      life: spec.life ?? 0.9,
+      color: spec.color ?? 0xffffff,
+      extras: spec.extras
+    });
+  }
+  drawHeroAbilityFx(tick: number): void {
+    if (!this.heroFxGfx) {
+      this.heroFxGfx = new Graphics();
+      this.layers.fx.addChild(this.heroFxGfx);
+    }
+    const g = this.heroFxGfx;
+    g.clear();
+    for (let i = this.heroFxQueue.length - 1; i >= 0; i--) {
+      const fx = this.heroFxQueue[i];
+      const age = tick - fx.born;
+      if (age >= fx.life) { this.heroFxQueue.splice(i, 1); continue; }
+      const t = Math.max(0, Math.min(1, age / fx.life));
+      const fade = 1 - t;
+      switch (fx.ability) {
+        // ── MARIUS ───────────────────────────────────────────────────
+        case 'MARIAN_FORMATION': {
+          // Three purple ring-bursts + connecting lightning lines from
+          // Marius to each buffed melee tower. Targets is an array of
+          // {x,y} for the buffed towers (passed in from the executor).
+          const tgts: Array<{ x: number; y: number }> = fx.extras?.targets ?? [];
+          const r0 = 36 + t * 36;
+          g.lineStyle(3 * fade, fx.color, 0.85 * fade);
+          g.drawCircle(fx.x, fx.y, r0);
+          g.lineStyle(0);
+          for (const tg of tgts) {
+            // Pulsing line between Marius and each target
+            const pulse = 0.7 + 0.3 * Math.sin(age * 18);
+            g.lineStyle(2 + 2 * fade, fx.color, 0.7 * fade * pulse);
+            g.moveTo(fx.x, fx.y).lineTo(tg.x, tg.y);
+            g.lineStyle(0);
+            // Small ring at each target
+            const rt = 18 + t * 14;
+            g.lineStyle(2 * fade, fx.color, 0.85 * fade);
+            g.drawCircle(tg.x, tg.y, rt);
+            g.lineStyle(0);
+          }
+          break;
+        }
+        case 'TRIARII_WALL': {
+          // Vertical stone-slab silhouette rising from the wall tile +
+          // dust shockwave outward. extras.wall = {x,y} tile center.
+          const w = fx.extras?.wall ?? { x: fx.x, y: fx.y };
+          const slabH = GRID.TILE * (0.6 + 0.4 * (1 - t));
+          const slabW = GRID.TILE * 0.7;
+          // Stone slab — grey fill with dark border
+          g.beginFill(0x6b6258, 0.7 * fade).drawRect(w.x - slabW / 2, w.y - slabH, slabW, slabH).endFill();
+          g.lineStyle(2 * fade, 0x2a2622, 0.85 * fade);
+          g.drawRect(w.x - slabW / 2, w.y - slabH, slabW, slabH);
+          g.lineStyle(0);
+          // Purple shockwave from wall + dust ring
+          const sr = GRID.TILE * (0.6 + t * 1.4);
+          g.lineStyle(2.5 * fade, fx.color, 0.7 * fade);
+          g.drawCircle(w.x, w.y, sr);
+          g.beginFill(0xa0a098, 0.18 * fade).drawCircle(w.x, w.y, sr * 0.5).endFill();
+          g.lineStyle(0);
+          break;
+        }
+        case 'TRIUMPH': {
+          // Massive purple laurel-wreath ring with golden sparks rising
+          // up. Uses ring + 8 rotating leaf-notches around it.
+          const r = 60 + t * 80;
+          g.lineStyle(4 * fade, fx.color, 0.85 * fade);
+          g.drawCircle(fx.x, fx.y, r);
+          // Laurel notches — 12 small arcs around the ring
+          for (let k = 0; k < 12; k++) {
+            const a = (k / 12) * Math.PI * 2 + age * 1.5;
+            const px = fx.x + Math.cos(a) * r;
+            const py = fx.y + Math.sin(a) * r;
+            g.beginFill(0xffd34d, 0.85 * fade).drawCircle(px, py, 4 * fade).endFill();
+          }
+          // Golden upward sparks
+          for (let k = 0; k < 8; k++) {
+            const sx = fx.x + (Math.sin(k * 1.13 + age * 4) * 30);
+            const sy = fx.y - age * 80 - k * 6;
+            g.beginFill(0xffe066, 0.7 * fade).drawCircle(sx, sy, 3 * fade).endFill();
+          }
+          break;
+        }
+        // ── AGRIPPA ──────────────────────────────────────────────────
+        case 'PILUM_VOLLEY': {
+          // 5 javelin trails arcing from Agrippa to each target. extras.targets
+          // = [{x,y}]. Each line draws a parabolic arc using a 5-point poly.
+          const tgts: Array<{ x: number; y: number }> = fx.extras?.targets ?? [];
+          for (const tg of tgts) {
+            const segs = 6;
+            const arcLift = 38;
+            const prog = Math.min(1, t * 1.4);
+            const pts: Array<[number, number]> = [];
+            for (let s = 0; s <= segs; s++) {
+              const ss = (s / segs) * prog;
+              const px = fx.x + (tg.x - fx.x) * ss;
+              const py = fx.y + (tg.y - fx.y) * ss - Math.sin(ss * Math.PI) * arcLift;
+              pts.push([px, py]);
+            }
+            g.lineStyle(2.5 * fade, fx.color, 0.9 * fade);
+            g.moveTo(pts[0][0], pts[0][1]);
+            for (let s = 1; s < pts.length; s++) g.lineTo(pts[s][0], pts[s][1]);
+            g.lineStyle(0);
+            // Tip flare at the leading point
+            const tip = pts[pts.length - 1];
+            g.beginFill(fx.color, 0.85 * fade).drawCircle(tip[0], tip[1], 3 * fade).endFill();
+          }
+          break;
+        }
+        case 'NAVAL_BOMBARDMENT': {
+          // 3 falling shells from above-screen to extras.impactPoints.
+          const pts: Array<{ x: number; y: number }> = fx.extras?.impacts ?? [];
+          for (const pt of pts) {
+            const fall = Math.min(1, t * 1.6);
+            const shellY = pt.y - (1 - fall) * 220;
+            // Falling shell — black core with cyan smoke trail
+            g.beginFill(0x18324f, 0.85 * fade).drawCircle(pt.x, shellY, 6).endFill();
+            g.beginFill(fx.color, 0.75 * fade).drawCircle(pt.x, shellY, 3).endFill();
+            // Smoke trail
+            for (let s = 1; s <= 4; s++) {
+              const sy = shellY - s * 14;
+              g.beginFill(fx.color, (5 - s) * 0.06 * fade).drawCircle(pt.x, sy, 4 - s * 0.4).endFill();
+            }
+            // Impact splash once landed
+            if (fall >= 1) {
+              const sr = GRID.TILE * 2 * (t - 0.625) * 1.5;
+              g.lineStyle(3 * fade, fx.color, 0.9 * fade);
+              g.drawCircle(pt.x, pt.y, Math.max(10, sr));
+              g.lineStyle(0);
+            }
+          }
+          break;
+        }
+        case 'BATTLE_OF_ACTIUM': {
+          // Teal banner-ripple sweeping outward in concentric waves.
+          // 3 rings cascading at different lifetimes.
+          for (let k = 0; k < 3; k++) {
+            const phase = (t + k * 0.18) % 1;
+            const r = 30 + phase * 130;
+            const a = (1 - phase) * 0.7 * fade;
+            g.lineStyle(3, fx.color, a);
+            g.drawCircle(fx.x, fx.y, r);
+            // Banner accent: vertical stroke at top of each ring
+            g.beginFill(fx.color, a).drawRect(fx.x - 2, fx.y - r - 6, 4, 14).endFill();
+            g.lineStyle(0);
+          }
+          break;
+        }
+        // ── AGRICOLA ─────────────────────────────────────────────────
+        case 'EAGLE_SCOUT': {
+          // Small green eagle silhouettes darting to each flyer.
+          const tgts: Array<{ x: number; y: number }> = fx.extras?.targets ?? [];
+          for (const tg of tgts) {
+            const prog = Math.min(1, t * 1.5);
+            const ex = fx.x + (tg.x - fx.x) * prog;
+            const ey = fx.y + (tg.y - fx.y) * prog;
+            // Diamond-shaped eagle silhouette
+            g.beginFill(fx.color, 0.85 * fade);
+            g.moveTo(ex, ey - 5);
+            g.lineTo(ex + 7, ey);
+            g.lineTo(ex, ey + 5);
+            g.lineTo(ex - 7, ey);
+            g.lineTo(ex, ey - 5);
+            g.endFill();
+            // Crosshair lingers at target once landed
+            if (prog >= 1) {
+              g.lineStyle(2 * fade, fx.color, 0.85 * fade);
+              g.drawCircle(tg.x, tg.y, 12);
+              g.moveTo(tg.x - 14, tg.y).lineTo(tg.x - 8, tg.y);
+              g.moveTo(tg.x + 8, tg.y).lineTo(tg.x + 14, tg.y);
+              g.moveTo(tg.x, tg.y - 14).lineTo(tg.x, tg.y - 8);
+              g.moveTo(tg.x, tg.y + 8).lineTo(tg.x, tg.y + 14);
+              g.lineStyle(0);
+            }
+          }
+          break;
+        }
+        case 'FRONTIER_WALL': {
+          // Three vertical green pillars in a fence shape around Agricola.
+          const spread = GRID.TILE * 1.2;
+          const positions = [-spread, 0, spread];
+          const h = GRID.TILE * 1.6 * (0.4 + fade * 0.6);
+          for (const dx of positions) {
+            const px = fx.x + dx;
+            // Pillar body
+            g.beginFill(fx.color, 0.55 * fade).drawRect(px - 5, fx.y - h, 10, h).endFill();
+            g.lineStyle(2 * fade, 0x2a4a1a, 0.85 * fade);
+            g.drawRect(px - 5, fx.y - h, 10, h);
+            g.lineStyle(0);
+            // Top spike
+            g.beginFill(fx.color, 0.85 * fade);
+            g.moveTo(px, fx.y - h - 6);
+            g.lineTo(px - 5, fx.y - h);
+            g.lineTo(px + 5, fx.y - h);
+            g.endFill();
+          }
+          // Connecting beam between pillars
+          g.lineStyle(2 * fade, fx.color, 0.7 * fade);
+          g.moveTo(fx.x - spread, fx.y - h * 0.8).lineTo(fx.x + spread, fx.y - h * 0.8);
+          g.lineStyle(0);
+          break;
+        }
+        case 'AQUILA_SQUADRON': {
+          // Burst of golden eagle silhouettes flying outward in a fan.
+          const count = 6;
+          for (let k = 0; k < count; k++) {
+            const a = (k / count) * Math.PI * 2;
+            const dist = t * GRID.TILE * 3.5;
+            const ex = fx.x + Math.cos(a) * dist;
+            const ey = fx.y + Math.sin(a) * dist;
+            // Eagle shape — wing tips + body
+            g.beginFill(fx.color, 0.9 * fade);
+            g.moveTo(ex, ey - 4);
+            g.lineTo(ex + 8, ey - 2);
+            g.lineTo(ex + 6, ey + 1);
+            g.lineTo(ex, ey + 5);
+            g.lineTo(ex - 6, ey + 1);
+            g.lineTo(ex - 8, ey - 2);
+            g.lineTo(ex, ey - 4);
+            g.endFill();
+            // Trail dot
+            const tx = fx.x + Math.cos(a) * dist * 0.6;
+            const ty = fx.y + Math.sin(a) * dist * 0.6;
+            g.beginFill(fx.color, 0.5 * fade).drawCircle(tx, ty, 2.5).endFill();
+          }
+          // Center burst
+          g.lineStyle(3 * fade, fx.color, 0.9 * fade);
+          g.drawCircle(fx.x, fx.y, 18 + t * 20);
+          g.lineStyle(0);
+          break;
+        }
+        // ── SCIPIO ───────────────────────────────────────────────────
+        case 'CORNU_CHARGE': {
+          // Curved horn-blast wave + red arrow to targeted boss. extras.target = {x,y}.
+          const target = fx.extras?.target;
+          // Arc of expanding rings (horn blast)
+          for (let k = 0; k < 3; k++) {
+            const phase = Math.max(0, Math.min(1, t * 1.3 - k * 0.18));
+            if (phase <= 0) continue;
+            const r = 20 + phase * 90;
+            g.lineStyle(3 * (1 - phase), fx.color, 0.85 * (1 - phase));
+            g.drawCircle(fx.x, fx.y, r);
+            g.lineStyle(0);
+          }
+          if (target) {
+            // Arrow line from Scipio to target
+            const prog = Math.min(1, t * 1.2);
+            const ax = fx.x + (target.x - fx.x) * prog;
+            const ay = fx.y + (target.y - fx.y) * prog;
+            g.lineStyle(3.5 * fade, fx.color, 0.9 * fade);
+            g.moveTo(fx.x, fx.y).lineTo(ax, ay);
+            g.lineStyle(0);
+            // Arrow head at leading edge
+            const angle = Math.atan2(target.y - fx.y, target.x - fx.x);
+            g.beginFill(fx.color, 0.95 * fade);
+            g.moveTo(ax, ay);
+            g.lineTo(ax - Math.cos(angle - 0.4) * 12, ay - Math.sin(angle - 0.4) * 12);
+            g.lineTo(ax - Math.cos(angle + 0.4) * 12, ay - Math.sin(angle + 0.4) * 12);
+            g.endFill();
+          }
+          break;
+        }
+        case 'CARTHAGO_DELENDA_EST': {
+          // Red X-shaped destruction mark on the targeted boss + small SPQR seal.
+          // extras.target = {x,y}.
+          const target = fx.extras?.target ?? { x: fx.x, y: fx.y };
+          const sweep = Math.min(1, t * 1.4);
+          const len = 24 + sweep * 8;
+          g.lineStyle(5 * fade, fx.color, 0.95 * fade);
+          // \
+          g.moveTo(target.x - len, target.y - len).lineTo(target.x - len + 2 * len * sweep, target.y - len + 2 * len * sweep);
+          // /
+          g.moveTo(target.x + len, target.y - len).lineTo(target.x + len - 2 * len * sweep, target.y - len + 2 * len * sweep);
+          g.lineStyle(0);
+          // SPQR seal ring around target
+          const sealR = 18 + t * 18;
+          g.lineStyle(2.5 * fade, 0xc94040, 0.85 * fade);
+          g.drawCircle(target.x, target.y, sealR);
+          g.lineStyle(0);
+          // Inner crimson fill puff
+          g.beginFill(fx.color, 0.15 * fade).drawCircle(target.x, target.y, sealR * 0.8).endFill();
+          break;
+        }
+        case 'ZAMA': {
+          // Massive blood-red battlefield ring with crossed-gladii icons.
+          const r = 80 + t * 100;
+          g.lineStyle(5 * fade, fx.color, 0.85 * fade);
+          g.drawCircle(fx.x, fx.y, r);
+          g.lineStyle(0);
+          // Crossed gladii at 4 cardinal positions around the ring
+          for (let k = 0; k < 4; k++) {
+            const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
+            const cx = fx.x + Math.cos(a) * r;
+            const cy = fx.y + Math.sin(a) * r;
+            // Gladius 1
+            g.lineStyle(3 * fade, 0xeeeeee, 0.9 * fade);
+            g.moveTo(cx - 8, cy - 8).lineTo(cx + 8, cy + 8);
+            // Gladius 2
+            g.moveTo(cx + 8, cy - 8).lineTo(cx - 8, cy + 8);
+            g.lineStyle(0);
+            // Pommel dots
+            g.beginFill(0xffd34d, 0.95 * fade).drawCircle(cx - 8, cy - 8, 2.5).endFill();
+            g.beginFill(0xffd34d, 0.95 * fade).drawCircle(cx + 8, cy - 8, 2.5).endFill();
+          }
+          break;
+        }
+        // ── CAESAR ───────────────────────────────────────────────────
+        case 'SPQR_DECREE': {
+          // Gold ring + every tower lights up briefly. extras.towers = [{x,y}].
+          const tgts: Array<{ x: number; y: number }> = fx.extras?.towers ?? [];
+          const r = 60 + t * 220;
+          g.lineStyle(4 * fade, fx.color, 0.9 * fade);
+          g.drawCircle(fx.x, fx.y, r);
+          // Inner gold radiance
+          g.beginFill(fx.color, 0.12 * fade).drawCircle(fx.x, fx.y, r * 0.8).endFill();
+          g.lineStyle(0);
+          // Each tower gets a tiny gold flare
+          for (const tg of tgts) {
+            const ringR = 8 + t * 10;
+            g.lineStyle(2 * fade, fx.color, 0.85 * fade);
+            g.drawCircle(tg.x, tg.y, ringR);
+            g.lineStyle(0);
+            g.beginFill(fx.color, 0.4 * fade).drawCircle(tg.x, tg.y, ringR * 0.5).endFill();
+          }
+          break;
+        }
+        case 'PAX_ROMANA': {
+          // Pale gold cross-hatch grid overlay sweeping across the map.
+          const w = GRID.TILE * GRID.COLS;
+          const h = GRID.TILE * GRID.ROWS;
+          const spacing = GRID.TILE * 2;
+          const offset = (t * spacing) % spacing;
+          g.lineStyle(1.5 * fade, fx.color, 0.35 * fade);
+          for (let lx = -spacing + offset; lx < w; lx += spacing) {
+            g.moveTo(lx, 0).lineTo(lx, h);
+          }
+          for (let ly = -spacing + offset; ly < h; ly += spacing) {
+            g.moveTo(0, ly).lineTo(w, ly);
+          }
+          g.lineStyle(0);
+          // Big gold pulse at Caesar
+          g.lineStyle(3 * fade, fx.color, 0.7 * fade);
+          g.drawCircle(fx.x, fx.y, 40 + t * 100);
+          g.lineStyle(0);
+          break;
+        }
+        case 'IDES_OF_MARCH': {
+          // Massive gold-white screen flash + 7 dagger stab lines converging on Caesar.
+          // Full-screen flash overlay
+          if (t < 0.4) {
+            const flashA = (0.4 - t) / 0.4 * 0.6;
+            g.beginFill(0xffffff, flashA).drawRect(0, 0, GRID.TILE * GRID.COLS, GRID.TILE * GRID.ROWS).endFill();
+          }
+          // Dagger stab lines from outside converging on Caesar's position
+          const daggerCount = 7;
+          for (let k = 0; k < daggerCount; k++) {
+            const a = (k / daggerCount) * Math.PI * 2 + Math.PI / daggerCount;
+            const outerDist = GRID.TILE * 6;
+            const innerDist = GRID.TILE * 1 * t;
+            const ox = fx.x + Math.cos(a) * outerDist;
+            const oy = fx.y + Math.sin(a) * outerDist;
+            const ix = fx.x + Math.cos(a) * innerDist;
+            const iy = fx.y + Math.sin(a) * innerDist;
+            // Dagger blade
+            g.lineStyle(3 * fade, 0xc8c8c8, 0.95 * fade);
+            g.moveTo(ox, oy).lineTo(ix, iy);
+            g.lineStyle(0);
+            // Blade tip
+            g.beginFill(fx.color, 0.95 * fade).drawCircle(ix, iy, 3.5 * fade).endFill();
+          }
+          // Center burst
+          g.lineStyle(4 * fade, fx.color, 0.95 * fade);
+          g.drawCircle(fx.x, fx.y, 30 + t * 50);
+          g.lineStyle(0);
+          break;
+        }
+        // ── SULLA ────────────────────────────────────────────────────
+        case 'FORTUNES_BOLT': {
+          // Vertical white-gold divine bolt from above onto target. extras.target = {x,y}.
+          const target = fx.extras?.target ?? { x: fx.x, y: fx.y };
+          const prog = Math.min(1, t * 2);
+          const topY = target.y - GRID.TILE * 5;
+          const tipY = topY + (target.y - topY) * prog;
+          // Bolt line — thick white core + gold halo
+          g.lineStyle(8 * fade, fx.color, 0.55 * fade);
+          g.moveTo(target.x, topY).lineTo(target.x, tipY);
+          g.lineStyle(3 * fade, 0xffffff, 0.95 * fade);
+          g.moveTo(target.x, topY).lineTo(target.x, tipY);
+          g.lineStyle(0);
+          // Impact burst at the target
+          if (prog >= 1) {
+            g.lineStyle(3 * fade, fx.color, 0.9 * fade);
+            g.drawCircle(target.x, target.y, 20 + (t - 0.5) * 40);
+            g.beginFill(0xffffff, 0.3 * fade).drawCircle(target.x, target.y, 12).endFill();
+            g.lineStyle(0);
+          }
+          break;
+        }
+        case 'PROSCRIPTION': {
+          // Each tower stamped with an orange/red mark. extras.towers = [{x,y}].
+          const tgts: Array<{ x: number; y: number }> = fx.extras?.towers ?? [];
+          for (const tg of tgts) {
+            // Mark above tower head
+            const my = tg.y - GRID.TILE * 0.7;
+            const pulse = 0.6 + 0.4 * Math.sin(age * 14);
+            g.beginFill(fx.color, 0.8 * fade * pulse).drawCircle(tg.x, my, 5).endFill();
+            // X mark inside
+            g.lineStyle(1.5 * fade, 0xffffff, 0.9 * fade);
+            g.moveTo(tg.x - 3, my - 3).lineTo(tg.x + 3, my + 3);
+            g.moveTo(tg.x + 3, my - 3).lineTo(tg.x - 3, my + 3);
+            g.lineStyle(0);
+          }
+          // Sulla origin ring
+          g.lineStyle(3 * fade, fx.color, 0.85 * fade);
+          g.drawCircle(fx.x, fx.y, 30 + t * 60);
+          g.lineStyle(0);
+          break;
+        }
+        case 'SULLAS_MARCH': {
+          // White-gold column of light descending + heal cross at gate.
+          // extras.gate = {x,y}.
+          const gate = fx.extras?.gate;
+          // Big column over Sulla
+          const colH = GRID.TILE * 5 * fade;
+          const colW = 28 * fade;
+          g.beginFill(fx.color, 0.18 * fade).drawRect(fx.x - colW / 2, fx.y - colH, colW, colH).endFill();
+          g.beginFill(0xffffff, 0.30 * fade).drawRect(fx.x - colW / 4, fx.y - colH, colW / 2, colH).endFill();
+          // Glow at base
+          g.beginFill(fx.color, 0.55 * fade).drawCircle(fx.x, fx.y, 24).endFill();
+          // Crossed swords above column
+          g.lineStyle(3 * fade, 0xeeeeee, 0.95 * fade);
+          g.moveTo(fx.x - 12, fx.y - colH - 8).lineTo(fx.x + 12, fx.y - colH + 4);
+          g.moveTo(fx.x + 12, fx.y - colH - 8).lineTo(fx.x - 12, fx.y - colH + 4);
+          g.lineStyle(0);
+          // Heal cross at gate
+          if (gate) {
+            const ch = 14, cw = 4;
+            g.beginFill(0xffffff, 0.95 * fade).drawRect(gate.x - cw / 2, gate.y - ch, cw, ch * 2).endFill();
+            g.beginFill(0xffffff, 0.95 * fade).drawRect(gate.x - ch, gate.y - cw / 2, ch * 2, cw).endFill();
+            g.lineStyle(2 * fade, fx.color, 0.85 * fade);
+            g.drawCircle(gate.x, gate.y, 18 + t * 12);
+            g.lineStyle(0);
+          }
+          break;
+        }
+      }
+    }
+    g.lineStyle(0);
+  }
   // Telegraph rings — used to warn the player before a boss mechanic fires.
   // Unlike impact rings (which expand outward from impact), these SHRINK
   // toward the target over the duration so the player can read the

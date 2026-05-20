@@ -3505,7 +3505,14 @@ async function boot() {
       el.textContent = `⚔ ${text}`;
       pushBanner(el, 4500, { modal: false });
     },
-    resnapEnemiesToPath: (path) => resnapEnemiesToPath(state, path)
+    resnapEnemiesToPath: (path) => resnapEnemiesToPath(state, path),
+    // 2026-05-19 v2 — per-ability signature VFX dispatcher. Forwards
+    // to the renderer's triggerHeroAbilityFx, which routes by ability
+    // id to one of 18 unique shape renderers (laurel wreath for
+    // TRIUMPH, dagger stabs for IDES_OF_MARCH, eagle squadron fan,
+    // etc.). All shape data is consumed via the spec's `extras` field
+    // so we don't have to widen the hook shape per ability.
+    triggerHeroAbilityFx: (spec) => renderer.triggerHeroAbilityFx?.(spec)
   };
   // 2026-05-16 — give the renderer access to the gore particle pool so
   // surprise-event ember helpers can push particles into the same capped
@@ -6064,6 +6071,7 @@ async function boot() {
     renderer.drawDruidSleepDarts(state);
     renderer.drawElephantAura(state);
     renderer.drawMeleeSlashes(state.tick);
+    renderer.drawHeroAbilityFx(state.tick);
     renderer.drawBossBar(state);
     renderer.drawBossLowHpAura(state);
     renderer.drawBossVignette(state, dt);

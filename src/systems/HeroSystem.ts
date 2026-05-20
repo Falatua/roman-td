@@ -47,6 +47,18 @@ export interface HeroHooks {
   triggerShake?: (intensity: number, duration: number) => void;
   pushTierUpBanner?: (text: string) => void;
   resnapEnemiesToPath?: (path: { col: number; row: number }[]) => void;
+  // 2026-05-19 v2 — Hero ability VFX dispatcher. Each ability calls
+  // this with its `ability` id + origin + ability-specific `extras`
+  // (target list, affected towers, etc.) and the renderer's
+  // `triggerHeroAbilityFx` queues a signature animation.
+  triggerHeroAbilityFx?: (spec: {
+    ability: string;
+    x: number; y: number;
+    tick: number;
+    life?: number;
+    color?: number;
+    extras?: any;
+  }) => void;
 }
 
 // ─── Public API ──────────────────────────────────────────────────────
@@ -248,7 +260,11 @@ function executeMARIAN_FORMATION(state: GameStateShape, hero: Tower, params: any
     (t as any).__marianSpeedMult = speedMult;
     if (params.shareCrit) (t as any).__marianSharedCrit = maxCrit;
   }
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#cc44ff', 48);
+  // Signature VFX: purple connecting lines from Marius to each
+  // buffed melee tower + small ring-burst at every node.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#cc44ff', 0.7, {
+    targets: picked.map(t => ({ x: t.tileX * GRID.TILE + GRID.TILE / 2, y: t.tileY * GRID.TILE + GRID.TILE / 2 }))
+  });
 }
 
 function executeTRIARII_WALL(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
@@ -284,7 +300,11 @@ function executeTRIARII_WALL(state: GameStateShape, hero: Tower, params: any, ab
   }
   state.groundPath = newPath;
   hooks?.resnapEnemiesToPath?.(newPath);
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#cc44ff', 36);
+  // Signature VFX: stone slab rising from the wall tile + dust shock-
+  // wave outward. The wall is the SLAB tile (chosen above), not Marius.
+  const wallCx = chosen!.col * GRID.TILE + GRID.TILE / 2;
+  const wallCy = chosen!.row * GRID.TILE + GRID.TILE / 2;
+  fireAbilityFx(hero, hooks, state.tick, ability, '#cc44ff', 1.6, { wall: { x: wallCx, y: wallCy } });
   // Schedule the revert.
   scheduleHeroTimedEvent(state, state.tick + (params.wallDurationSec ?? 5), () => {
     if (state.tiles[chosen!.row]?.[chosen!.col] === TileType.STONE) {
@@ -303,7 +323,10 @@ function executeTRIUMPH(state: GameStateShape, _hero: Tower, params: any, abilit
   (state as any).__triumphUntilTick = state.tick + dur;
   // Stamp the damage multiplier so CombatResolver can read it.
   (state as any).__triumphMeleeDmgMult = 1 + (params.meleeDmgMultPercent ?? 100) / 100;
-  fireImpactRing(findHeroTower(state) ?? _hero, hooks, state.tick, ability.vfxColor ?? '#ffe066', 80);
+  // Signature VFX: massive purple laurel-wreath ring + golden sparks
+  // rising up. Reads as "Roman triumph parade."
+  const hero = findHeroTower(state) ?? _hero;
+  fireAbilityFx(hero, hooks, state.tick, ability, '#cc44ff', 1.2, null);
   hooks?.triggerShake?.(2.5, 0.5);
 }
 
@@ -320,7 +343,11 @@ function executePILUM_VOLLEY(state: GameStateShape, hero: Tower, params: any, ab
   for (const e of targets) {
     e.hp = Math.max(0, e.hp - dmg);
   }
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#5599ff', 40);
+  // Signature VFX: 5 blue arc-trails fly from Agrippa to each high-HP
+  // enemy. Visible "volley" of javelins.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#5599ff', 0.7, {
+    targets: targets.map(e => ({ x: e.x, y: e.y }))
+  });
 }
 
 function executeNAVAL_BOMBARDMENT(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
@@ -330,19 +357,23 @@ function executeNAVAL_BOMBARDMENT(state: GameStateShape, hero: Tower, params: an
   const path = state.groundPath;
   if (!path || path.length < 4) return;
   const dmg = heroBasicAttackDamage(state, hero) * 1.6;
+  const impacts: Array<{ x: number; y: number }> = [];
   for (let i = 0; i < shells; i++) {
     const idx = Math.floor(Math.random() * path.length);
     const tile = path[idx];
     const cx = tile.col * GRID.TILE + GRID.TILE / 2;
     const cy = tile.row * GRID.TILE + GRID.TILE / 2;
+    impacts.push({ x: cx, y: cy });
     for (const e of state.enemies.values()) {
       if (Math.hypot(e.x - cx, e.y - cy) <= splashRadius) {
         e.hp = Math.max(0, e.hp - dmg);
         pushStatus(e, StatusEffectKind.STUN, stunSec, 0, hero.qualityTier);
       }
     }
-    hooks?.triggerImpactRing?.(cx, cy, state.tick + i * 0.05, splashRadius, hexToInt(ability.vfxColor ?? '#4499ff'));
   }
+  // Signature VFX: shells falling from above-screen onto each impact
+  // point + splash burst. Lifetime longer so the falling animation reads.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#4499ff', 1.2, { impacts });
   hooks?.triggerShake?.(2.0, 0.35);
 }
 
@@ -352,7 +383,9 @@ function executeBATTLE_OF_ACTIUM(state: GameStateShape, hero: Tower, params: any
   // version hardcoded 2.0 and silently ignored the params value.
   (state as any).__actiumUntilTick = state.tick + (ability.durationSec ?? 8);
   (state as any).__actiumRangedSpeedMult = params.rangedShotMultiplier ?? 2.0;
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#0077ff', 96);
+  // Signature VFX: teal banner-ripple sweeping outward in concentric
+  // waves with a vertical banner accent above each wave.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#0077ff', 1.0, null);
   hooks?.triggerShake?.(3.0, 0.6);
 }
 
@@ -361,15 +394,17 @@ function executeBATTLE_OF_ACTIUM(state: GameStateShape, hero: Tower, params: any
 function executeEAGLE_SCOUT(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
   const dur = ability.durationSec ?? 3;
   const dmgMult = 1 + (params.dmgTakenIncreasePercent ?? 60) / 100;
-  let n = 0;
+  const tgts: Array<{ x: number; y: number }> = [];
   for (const e of state.enemies.values()) {
     if (!e.isFlyer) continue;
     (e as any).__eagleScoutUntilTick = state.tick + dur;
     (e as any).__eagleScoutDmgMult = dmgMult;
-    n++;
+    tgts.push({ x: e.x, y: e.y });
   }
-  if (n === 0) return;
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#aaccff', 60);
+  if (tgts.length === 0) return;
+  // Signature VFX: small green eagle silhouettes dart to each flyer +
+  // lingering crosshair on each marked target.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#aaccff', 1.0, { targets: tgts });
 }
 
 function executeFRONTIER_WALL(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
@@ -377,7 +412,9 @@ function executeFRONTIER_WALL(state: GameStateShape, hero: Tower, params: any, a
   (state as any).__frontierWallUntilTick = state.tick + dur;
   (state as any).__frontierWallFlyerSpeedMult = 1 - (params.flyerSpeedReductionPercent ?? 70) / 100;
   (state as any).__frontierWallVsFlyerDmgMult = 1 + (params.dmgVsFlyersIncreasePercent ?? 30) / 100;
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#aaccff', 80);
+  // Signature VFX: three green pillars rise into a frontier-fence
+  // shape around Agricola, connected by a horizontal beam.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#aaccff', 1.4, null);
 }
 
 function executeAQUILA_SQUADRON(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
@@ -396,7 +433,9 @@ function executeAQUILA_SQUADRON(state: GameStateShape, hero: Tower, params: any,
       y: hero.tileY * GRID.TILE + GRID.TILE / 2,
     });
   }
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#ffffff', 72);
+  // Signature VFX: 6 golden eagle silhouettes burst outward from
+  // Agricola in a fan. Central ring at origin.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#ffffff', 0.9, null);
   hooks?.triggerShake?.(3.0, 0.5);
 }
 
@@ -412,20 +451,29 @@ function executeCORNU_CHARGE(state: GameStateShape, hero: Tower, params: any, ab
   if (!boss) return;
   const dmg = heroBasicAttackDamage(state, hero) * (params.dmgMultiplier ?? 5.0);
   boss.hp = Math.max(0, boss.hp - dmg);   // ignoreResistances: write directly to HP
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#ff8800', 40);
+  // Signature VFX: curved horn-blast wave + red arrow flying to boss.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#ff8800', 0.8, {
+    target: { x: boss.x, y: boss.y }
+  });
 }
 
-function executeCARTHAGO_DELENDA_EST(state: GameStateShape, hero: Tower, params: any, _ability: any, hooks?: HeroHooks): void {
+function executeCARTHAGO_DELENDA_EST(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
   const pct = (params.maxHpTrueDmgPercent ?? 10) / 100;
-  let any = false;
+  // Stamp X marks on each boss as the visual + record their positions
+  // so the signature VFX can draw across each one.
+  const bossPositions: Array<{ x: number; y: number }> = [];
   for (const e of state.enemies.values()) {
     if (!e.isBoss) continue;
     const shave = Math.floor(e.maxHp * pct);
     e.hp = Math.max(0, e.hp - shave);
-    any = true;
+    bossPositions.push({ x: e.x, y: e.y });
   }
-  if (any) {
-    fireImpactRing(hero, hooks, state.tick, '#ff4400', 100);
+  if (bossPositions.length > 0) {
+    // Signature VFX: red X destruction mark slashes across each boss,
+    // plus a Scipio-origin SPQR seal ring.
+    for (const pos of bossPositions) {
+      fireAbilityFx(hero, hooks, state.tick, ability, '#ff4400', 0.8, { target: pos });
+    }
     hooks?.triggerShake?.(3.5, 0.6);
   }
 }
@@ -435,7 +483,9 @@ function executeZAMA(state: GameStateShape, hero: Tower, params: any, ability: a
   (state as any).__zamaUntilTick = state.tick + dur;
   (state as any).__zamaTowerVsBossDmgMult = params.towerDmgVsBossMultiplier ?? 2.0;
   (state as any).__zamaBossSpeedMult = params.bossSpeedMultiplier ?? 0.5;
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#c87822', 120);
+  // Signature VFX: massive blood-red battlefield ring with crossed-gladii
+  // icons at four cardinal positions, gold pommel dots — "famous battle"
+  fireAbilityFx(hero, hooks, state.tick, ability, '#c87822', 1.4, null);
   hooks?.triggerShake?.(4.0, 0.7);
 }
 
@@ -444,11 +494,15 @@ function executeZAMA(state: GameStateShape, hero: Tower, params: any, ability: a
 function executeSPQR_DECREE(state: GameStateShape, hero: Tower, _params: any, ability: any, hooks?: HeroHooks): void {
   // Force every tower to fire one bonus attack. Implementation: zero out
   // each tower's attackCooldown so the next combat tick fires immediately.
+  const towerPositions: Array<{ x: number; y: number }> = [];
   for (const t of state.towers.values()) {
     if (t.id === hero.id) continue;
     t.attackCooldown = 0;
+    towerPositions.push({ x: t.tileX * GRID.TILE + GRID.TILE / 2, y: t.tileY * GRID.TILE + GRID.TILE / 2 });
   }
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#ffe066', 200);
+  // Signature VFX: massive gold ring sweep from Caesar + a small gold
+  // flare on every tower as the decree reaches them.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#ffe066', 0.9, { towers: towerPositions });
 }
 
 function executePAX_ROMANA(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
@@ -457,7 +511,10 @@ function executePAX_ROMANA(state: GameStateShape, hero: Tower, params: any, abil
   for (const e of state.enemies.values()) {
     pushStatus(e, StatusEffectKind.SLOW, dur, mag, hero.qualityTier);
   }
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#ffe066', 160);
+  // Signature VFX: pale gold cross-hatch grid overlays the entire map
+  // with a slow drift + a pulsing ring at Caesar — "Roman roads quiet
+  // the field."
+  fireAbilityFx(hero, hooks, state.tick, ability, '#ffe066', 1.6, null);
 }
 
 function executeIDES_OF_MARCH(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
@@ -471,8 +528,23 @@ function executeIDES_OF_MARCH(state: GameStateShape, hero: Tower, params: any, a
       if (e.isBoss) continue;
       if (e.hp / Math.max(1, e.maxHp) < threshold) e.hp = 0;
     }
+    // Re-fire the dagger animation at the end of the window so the
+    // execute moment also gets a strong VFX beat.
+    const heroNow = findHeroTower(state);
+    if (heroNow) {
+      hooks?.triggerHeroAbilityFx?.({
+        ability: 'IDES_OF_MARCH',
+        x: heroNow.tileX * GRID.TILE + GRID.TILE / 2,
+        y: heroNow.tileY * GRID.TILE + GRID.TILE / 2,
+        tick: state.tick,
+        life: 0.9,
+        color: 0xffe066
+      });
+    }
   });
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#ffe066', 240);
+  // Signature VFX: gold-white screen flash + 7 dagger stab lines
+  // converging on Caesar's tile from the surrounding senators.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#ffe066', 1.1, null);
   hooks?.triggerShake?.(5.0, 0.8);
 }
 
@@ -503,13 +575,25 @@ function executeFORTUNES_BOLT(state: GameStateShape, hero: Tower, _params: any, 
       state.heroLifeHealedThisRun = healed + 1;
     }
   }
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#fff5cc', 32);
+  // Signature VFX: vertical white-gold divine bolt strikes from above
+  // onto the target, with impact burst on landing.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#fff5cc', 0.6, {
+    target: { x: nearest.x, y: nearest.y }
+  });
 }
 
 function executePROSCRIPTION(state: GameStateShape, hero: Tower, _params: any, ability: any, hooks?: HeroHooks): void {
   const dur = ability.durationSec ?? 5;
   (state as any).__proscriptionUntilTick = state.tick + dur;
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#ff9900', 80);
+  // Signature VFX: orange X-mark above every tower (the "proscription
+  // list") + Sulla-origin pulsing ring. Each tower carries a brand for
+  // the duration of the window.
+  const towerPositions: Array<{ x: number; y: number }> = [];
+  for (const t of state.towers.values()) {
+    if (t.id === hero.id || t.pending) continue;
+    towerPositions.push({ x: t.tileX * GRID.TILE + GRID.TILE / 2, y: t.tileY * GRID.TILE + GRID.TILE / 2 });
+  }
+  fireAbilityFx(hero, hooks, state.tick, ability, '#ff9900', 1.2, { towers: towerPositions });
 }
 
 function executeSULLAS_MARCH(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
@@ -526,7 +610,15 @@ function executeSULLAS_MARCH(state: GameStateShape, hero: Tower, params: any, ab
   const amount = Math.min(requested, Math.max(0, cap - healed));
   state.lives += amount;
   state.heroLifeHealedThisRun = healed + amount;
-  fireImpactRing(hero, hooks, state.tick, ability.vfxColor ?? '#ffffff', 200);
+  // Signature VFX: white-gold light column descending over Sulla with
+  // crossed-swords at the top + a heal cross above the gate tile.
+  const gateCol = (GRID as any).COLS - 1;
+  const gateRow = Math.floor((GRID as any).ROWS / 2);
+  const gateX = gateCol * GRID.TILE + GRID.TILE / 2;
+  const gateY = gateRow * GRID.TILE + GRID.TILE / 2;
+  fireAbilityFx(hero, hooks, state.tick, ability, '#ffffff', 1.4, {
+    gate: { x: gateX, y: gateY }
+  });
   hooks?.triggerShake?.(4.0, 0.7);
 }
 
@@ -631,4 +723,40 @@ function fireImpactRing(hero: Tower, hooks: HeroHooks | undefined, tick: number,
   const cx = hero.tileX * GRID.TILE + GRID.TILE / 2;
   const cy = hero.tileY * GRID.TILE + GRID.TILE / 2;
   hooks.triggerImpactRing(cx, cy, tick, maxR, hexToInt(color));
+}
+
+// 2026-05-19 v2 — fireAbilityFx: queues the per-ability signature
+// animation on the renderer. Falls back to a generic impact ring when
+// the hook isn't wired (test env / pre-renderer init). The `extras`
+// payload rides the ability-specific data — target lists for VOLLEY +
+// EAGLE_SCOUT, tower lists for SPQR_DECREE + PROSCRIPTION, the gate
+// position for SULLAS_MARCH, etc. Each renderer reads only what its
+// ability cares about, so passing undefined/null for unrelated fields
+// is fine.
+function fireAbilityFx(
+  hero: Tower,
+  hooks: HeroHooks | undefined,
+  tick: number,
+  ability: any,
+  fallbackColor: string,
+  life: number,
+  extras: any
+): void {
+  const cx = hero.tileX * GRID.TILE + GRID.TILE / 2;
+  const cy = hero.tileY * GRID.TILE + GRID.TILE / 2;
+  const color = hexToInt(ability?.vfxColor ?? fallbackColor);
+  if (hooks?.triggerHeroAbilityFx) {
+    hooks.triggerHeroAbilityFx({
+      ability: ability.id,
+      x: cx, y: cy,
+      tick,
+      life,
+      color,
+      extras
+    });
+  } else if (hooks?.triggerImpactRing) {
+    // Pre-renderer fallback so tests still see something queued and
+    // ability execution stays observable in non-render environments.
+    hooks.triggerImpactRing(cx, cy, tick, 48, color);
+  }
 }
