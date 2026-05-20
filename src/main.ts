@@ -5620,6 +5620,36 @@ async function boot() {
                 renderer.triggerImpactRing(e.x, e.y, state.tick, GRID.TILE * 0.9, ringColor);
               }
             }
+            // 2026-05-20 — APEX SUPER-COMBO MELEE SIGNATURES. Each
+            // super combo with a melee strike gets a unique multi-
+            // slash + impact pattern so they're visually distinct
+            // from regular melee combos.
+            //
+            // TRIPLEX ACIES (5-base T2): three staggered slash arcs
+            //   representing the Hastati / Principes / Triarii lines,
+            //   each at a different angle offset. Light silver,
+            //   reads as a coordinated three-line charge.
+            // CONSULAR FATEBINDER (5-base T5 apex): purple-gold
+            //   double slash + a big screen-wide divine impact ring.
+            //   Sells "the consul has decided the fate of this
+            //   enemy" — apex divine theatrics.
+            if (t.type === 'TRIPLEX_ACIES') {
+              const tripleTint = 0xe8d6a8;
+              renderer.triggerMeleeSlash(e.x, e.y, angle - 0.4, state.tick, size * 1.1, true, tripleTint);
+              renderer.triggerMeleeSlash(e.x, e.y, angle + 0.4, state.tick, size * 1.1, true, tripleTint);
+              renderer.triggerShake(2.5, 0.16);
+              if (renderer.triggerImpactRing) {
+                renderer.triggerImpactRing(e.x, e.y, state.tick, GRID.TILE * 0.8, 0xfff5cc);
+              }
+            } else if (t.type === 'CONSULAR_FATEBINDER') {
+              const apexTint = 0xc89cff;     // divine-purple apex
+              renderer.triggerMeleeSlash(e.x, e.y, angle + 0.6, state.tick, size * 1.0, true, apexTint);
+              renderer.triggerShake(5, 0.28);
+              if (renderer.triggerImpactRing) {
+                renderer.triggerImpactRing(e.x, e.y, state.tick, GRID.TILE * 1.3, 0xffd34d);
+                renderer.triggerImpactRing(e.x, e.y, state.tick, GRID.TILE * 0.7, apexTint);
+              }
+            }
             if (e.isBoss && HEAVY.has(t.type)) renderer.triggerShake(2, 0.12);
           }
         },
@@ -5708,6 +5738,41 @@ async function boot() {
               renderer.triggerMuzzleFlash(tipX, tipY, heroC, state.tick);
               renderer.triggerImpactRing(sx, sy, state.tick, 22, heroC);
               renderer.triggerShake(2, 0.10);
+            }
+            // 2026-05-20 — APEX SUPER-COMBO RANGED SIGNATURES. Each
+            // ranged super combo gets a unique multi-layer firing
+            // VFX so they're visually distinct.
+            //
+            // LEGION PRIME (5-base T4 siege barrel): dual gold
+            //   muzzle flash + dust ring at the firing position +
+            //   heavy shake. Reads as "siege artillery from the
+            //   gods" — appropriately heavy.
+            // IMPERIUM ETERNUM (T5 apex divine orb): triple muzzle
+            //   flash in gold / divine-purple / white + a ground
+            //   quake ring at firing position + medium shake. The
+            //   eternal-empire orb leaves a presence as it launches.
+            // CARTHAGE SCOURGE (T5 apex 6-bolt volley): crimson
+            //   muzzle flash + a small impact ring per bolt fired
+            //   so the 6-bolt salvo reads as a coordinated barrage,
+            //   not just one shot. Light shake per bolt.
+            if (t.type === 'LEGION_PRIME') {
+              renderer.triggerMuzzleFlash(tipX, tipY, 0xffd34d, state.tick);
+              renderer.triggerMuzzleFlash(tipX, tipY, 0xfff5cc, state.tick);
+              renderer.triggerImpactRing(sx, sy, state.tick, 28, 0xddaa55);
+              renderer.triggerImpactRing(sx, sy, state.tick, 18, 0xffd34d);
+              renderer.triggerShake(4, 0.20);
+            } else if (t.type === 'IMPERIUM_ETERNUM') {
+              renderer.triggerMuzzleFlash(tipX, tipY, 0xffd34d, state.tick);
+              renderer.triggerMuzzleFlash(tipX, tipY, 0xc89cff, state.tick);
+              renderer.triggerMuzzleFlash(tipX, tipY, 0xffffff, state.tick);
+              renderer.triggerImpactRing(sx, sy, state.tick, 32, 0xffd34d);
+              renderer.triggerImpactRing(sx, sy, state.tick, 20, 0xc89cff);
+              renderer.triggerShake(3.5, 0.22);
+            } else if (t.type === 'CARTHAGE_SCOURGE') {
+              renderer.triggerMuzzleFlash(tipX, tipY, 0xcc3322, state.tick);
+              renderer.triggerMuzzleFlash(tipX, tipY, 0xff7733, state.tick);
+              renderer.triggerImpactRing(sx, sy, state.tick, 18, 0xcc3322);
+              renderer.triggerShake(1.8, 0.08);
             }
           }
         },
@@ -6090,6 +6155,24 @@ async function boot() {
           }
         }
       });
+      // 2026-05-20 — TRIUMVIRATE periodic command pulse. The apex
+      // support tower never fires onProjectileFire (it's pure aura)
+      // so it has no native attack VFX. To match the other super
+      // combos' visual signatures we emit a gold concentric impact
+      // ring at each Triumvirate's location every 3 seconds. Pure
+      // cosmetic — no gameplay effect, just a "the consuls are
+      // commanding" pulse so the player sees the aura is alive.
+      for (const tw of state.towers.values()) {
+        if (tw.type !== 'TRIUMVIRATE' || tw.pending) continue;
+        const next = (tw as any).__triumviratePulseAt ?? 0;
+        if (state.tick >= next) {
+          (tw as any).__triumviratePulseAt = state.tick + 3.0;
+          const cx = tw.tileX * GRID.TILE + GRID.TILE / 2;
+          const cy = tw.tileY * GRID.TILE + GRID.TILE / 2;
+          renderer.triggerImpactRing(cx, cy, state.tick, 48, 0xffd34d);
+          renderer.triggerImpactRing(cx, cy, state.tick + 0.08, 30, 0xfff5cc);
+        }
+      }
       tickGore(gore, dt);
       checkWaveEnd(state, (gold) => {
         earnGold(state, gold);
