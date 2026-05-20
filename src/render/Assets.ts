@@ -392,7 +392,22 @@ const MANIFEST: Record<string, string> = {
   // don't need multi-frame sheets.
   UN_ANIM_CRYSTAL:    'un_anim_crystal.png',
   UN_ANIM_GRAVE:      'un_anim_grave.png',
-  UN_ANIM_THORN:      'un_anim_thorn.png'
+  UN_ANIM_THORN:      'un_anim_thorn.png',
+  // 2026-05-19 — Phase 2 hero-piece feature decorations. 8 large
+  // illustrated ruin/banner pieces (~250px native on the long side)
+  // anchored at hand-picked map positions in RenderEngine's
+  // undeadFeatureContainer. Rendered at ~1.6-2.0× tile so they read
+  // as "set pieces" framing the battlefield. Mix of SPQR Roman
+  // remnants + cursed ruins — both eligible everywhere on the map
+  // per user direction.
+  UN_FEAT_SPQR_STANDARD:    'un_feat_spqr_standard.png',
+  UN_FEAT_SPQR_EAGLE:       'un_feat_spqr_eagle.png',
+  UN_FEAT_SPQR_SKULL:       'un_feat_spqr_skull.png',
+  UN_FEAT_COLUMN_FIRE:      'un_feat_column_fire.png',
+  UN_FEAT_STATUE_RUIN:      'un_feat_statue_ruin.png',
+  UN_FEAT_COLUMN_BIG:       'un_feat_column_big.png',
+  UN_FEAT_BANNER_PEDESTAL:  'un_feat_banner_pedestal.png',
+  UN_FEAT_DOORWAY:          'un_feat_doorway.png'
 };
 
 // Sprite-quality fix: tower / enemy / item sprites are stored as

@@ -20,6 +20,12 @@ from PIL import Image
 
 # ── Path setup ─────────────────────────────────────────────────────
 SRC_ROOT = '/Users/redsky/Library/CloudStorage/Dropbox/06 Video Games/Gem TD/Assets/Free-Undead-Tileset-Top-Down-Pixel-Art/PNG'
+# 2026-05-19 — Phase 2 feature illustrations live in a separate folder
+# the user dropped on the desktop. Two sheets: sheet 1 = 6×2 grid of
+# Roman ruins / SPQR banners, sheet 2 = 5-wide strip with the laurel-
+# skull SPQR standard centerpiece.
+FEAT_SHEET_1 = '/Users/redsky/Desktop/Untitled Project (1)/Untitled Project - illustrationImage.png'
+FEAT_SHEET_2 = '/Users/redsky/Desktop/Untitled Project (1)/Untitled Project - illustrationImage (1).png'
 DST_ROOT = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     'public', 'assets', 'sprites'
@@ -94,6 +100,38 @@ PROP_COPIES = [
     ('Objects_separately/Thorn_plant_shadow1_3.png', 'un_anim_thorn.png',   32),
 ]
 
+# ── Phase 2: feature illustrations ──────────────────────────────────
+# Two large illustration sheets — sheet 1 is a 6×2 grid of Roman ruins
+# (columns, statues, SPQR banners), sheet 2 is a 5-wide strip with the
+# SPQR laurel-skull standard as the centerpiece. Each entry is
+# (sheet_path, (left, top, right, bottom), out_name, target_long_side).
+# Sheet 1 native cell ≈ 432×434, sheet 2 native cell ≈ 524×621.
+# All output capped at 256 on the long side so the bundle stays light;
+# the renderer scales by tile multiplier anyway.
+SHEET1_W = 432   # 2592 / 6
+SHEET1_H = 434   # 868 / 2
+SHEET2_W = 524   # round-up of 2619 / 5
+FEATURE_CROPS = [
+    # 1. SPQR LAUREL-SKULL STANDARD — sheet 2, col 2 (centerpiece)
+    (FEAT_SHEET_2, (2 * SHEET2_W, 0, 3 * SHEET2_W, 621), 'un_feat_spqr_standard.png', 256),
+    # 2. SPQR EAGLE BANNER — sheet 1, top-right (col 5, row 0)
+    (FEAT_SHEET_1, (5 * SHEET1_W, 0, 6 * SHEET1_W, SHEET1_H), 'un_feat_spqr_eagle.png', 256),
+    # 3. SPQR SKULL BANNER — sheet 1, top, col 4
+    (FEAT_SHEET_1, (4 * SHEET1_W, 0, 5 * SHEET1_W, SHEET1_H), 'un_feat_spqr_skull.png', 256),
+    # 4. BROKEN COLUMN + GHOST FIRE — sheet 1, top, col 0
+    (FEAT_SHEET_1, (0 * SHEET1_W, 0, 1 * SHEET1_W, SHEET1_H), 'un_feat_column_fire.png', 256),
+    # 5. STATUE RUIN — sheet 1, top, col 1
+    (FEAT_SHEET_1, (1 * SHEET1_W, 0, 2 * SHEET1_W, SHEET1_H), 'un_feat_statue_ruin.png', 256),
+    # 6. BIG COLUMN RUIN — sheet 1, top, col 2 (cleaner alternative
+    #    to the bottom-row pieces which had neighbor-cell bleed)
+    (FEAT_SHEET_1, (2 * SHEET1_W, 0, 3 * SHEET1_W, SHEET1_H), 'un_feat_column_big.png', 256),
+    # 7. BANNER-ON-PEDESTAL — sheet 2, col 1 (Roman banner with skull,
+    #    sits on a stone pedestal — pairs visually with the standard)
+    (FEAT_SHEET_2, (1 * SHEET2_W, 0, 2 * SHEET2_W, 621), 'un_feat_banner_pedestal.png', 256),
+    # 8. RUINED DOORWAY / PORTAL — sheet 2, col 4 (rightmost)
+    (FEAT_SHEET_2, (4 * SHEET2_W, 0, min(4 * SHEET2_W + SHEET2_W, 2619), 621), 'un_feat_doorway.png', 256),
+]
+
 
 def main():
     if not os.path.isdir(SRC_ROOT):
@@ -145,12 +183,49 @@ def main():
         print(f'  {out_name:25} ← {src_rel}  ({img.size[0]}x{img.size[1]})')
         ok_count += 1
 
+    # ── Phase 2: feature illustrations ─────────────────────────────
     print()
-    print(f'wrote {ok_count + len(GROUND_CROPS)} files to {DST_ROOT}')
+    print('Cropping Phase 2 feature illustrations …')
+    feat_count = 0
+    feat_missing = []
+    for sheet_path, (left, top, right, bottom), out_name, target in FEATURE_CROPS:
+        if not os.path.exists(sheet_path):
+            feat_missing.append((sheet_path, out_name))
+            continue
+        sheet = Image.open(sheet_path).convert('RGBA')
+        crop = sheet.crop((left, top, right, bottom))
+        bbox = crop.getbbox()
+        if bbox is None:
+            print(f'  SKIP empty crop → {out_name}')
+            continue
+        # Tight-crop to the visible content so the sprite anchor lands
+        # on the artwork, not the surrounding empty padding. This makes
+        # hand-placed anchors easier to position predictably.
+        crop = crop.crop(bbox)
+        # Downscale long side to target (256 px) to keep bundle light.
+        w, h = crop.size
+        m = max(w, h)
+        if m > target:
+            ratio = target / m
+            new_w = max(1, int(round(w * ratio)))
+            new_h = max(1, int(round(h * ratio)))
+            crop = crop.resize((new_w, new_h), Image.LANCZOS)
+        crop.save(dst(out_name), 'PNG')
+        sheet_label = os.path.basename(sheet_path).split(' - ')[-1][:30]
+        print(f'  {out_name:30} ← {sheet_label:30}  ({crop.size[0]}x{crop.size[1]})')
+        feat_count += 1
+
+    print()
+    print(f'wrote {ok_count + len(GROUND_CROPS) + feat_count} files to {DST_ROOT}')
     if missing:
         print()
-        print(f'WARNING: {len(missing)} source files missing:')
+        print(f'WARNING: {len(missing)} prop source files missing:')
         for s, d in missing:
+            print(f'  - {s}  (intended → {d})')
+    if feat_missing:
+        print()
+        print(f'WARNING: {len(feat_missing)} feature sheet(s) missing:')
+        for s, d in feat_missing:
             print(f'  - {s}  (intended → {d})')
 
 
