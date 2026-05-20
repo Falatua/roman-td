@@ -1053,7 +1053,19 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // heal is part of the wave-design contract — letting an enemy
     // reach a coin must always restore HP so the cost of leaks is
     // legible. Stacking three DoTs on the unit does NOT block it.
-    if (!e.isFlyer && !e.isBoss && e.checkpointHealPct && e.checkpointHealPct > 0) {
+    //
+    // 2026-05-20 — Per-wave OVERRIDE. A wave entry can carry
+    // `disableCheckpointHeal: true` in waves.json to suppress this
+    // mechanic for the wave. Currently used on W11 where the 42x
+    // Undead Celt + necromancy reanim stack was already a slog;
+    // the heal on top of reanim made the wave drag without
+    // serving any teaching purpose (the heal mechanic itself is
+    // still introduced cleanly on W7 Celtic Berserker + W8 Sacred
+    // Band, and reinforced on W14/W15 Undead Celts where the
+    // field stays on the enemy).
+    const currentWaveDef: any = (wavesData as any[])[state.wave - 1];
+    const checkpointHealSuppressed = !!currentWaveDef?.disableCheckpointHeal;
+    if (!e.isFlyer && !e.isBoss && e.checkpointHealPct && e.checkpointHealPct > 0 && !checkpointHealSuppressed) {
       for (let i = 0; i < WAYPOINT_CENTERS.length; i++) {
         const wp = WAYPOINT_CENTERS[i];
         const dxw = e.x - wp.x;

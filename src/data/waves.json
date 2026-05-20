@@ -177,6 +177,7 @@
     "hpMult": 3.0,
     "gold": 10,
     "necromancy": true,
+    "disableCheckpointHeal": true,
     "spawns": [
       {
         "type": "UNDEAD_CELT",

@@ -146,6 +146,25 @@ describe('Spawn queue ticking', () => {
   });
 });
 
+describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () => {
+  // 2026-05-20 — Wave 11 (42x Undead Celt, necromancy=true) suppresses
+  // the standard checkpoint-touch heal. The 15% heal at every waypoint
+  // stacked on top of the reanim slog made the wave drag without
+  // serving any teaching purpose; the mechanic itself is still active
+  // on W7/W8 (intro) and W14/W15 (reinforcement) where Undead Celt
+  // also appears.
+  it('wave 11 carries disableCheckpointHeal = true', () => {
+    const w11 = (wavesData as any[]).find(w => w.wave === 11);
+    expect(w11).toBeDefined();
+    expect(w11.disableCheckpointHeal).toBe(true);
+  });
+
+  it('no other wave currently carries disableCheckpointHeal (clean data)', () => {
+    const others = (wavesData as any[]).filter(w => w.wave !== 11 && w.disableCheckpointHeal === true);
+    expect(others.length).toBe(0);
+  });
+});
+
 describe('Per-wave resistance relief (resistReduction field)', () => {
   // 2026-05-20 — Wave 8 (CARTHAGE, 33x Sacred Band + 18x Spearman + 5x
   // Numidian Rider) carries a 0.15 resistReduction. The CombatResolver
