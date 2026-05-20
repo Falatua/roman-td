@@ -5359,9 +5359,15 @@ async function boot() {
             if (renderer?.triggerImpactRing) {
               renderer.triggerImpactRing(tcx, tcy, state.tick, 22, 0xffd34d);
             }
-            // Floating "+Xg" gold-tinted floater above the tower so the
-            // earn is visible mid-action. Reuses gore-system pool, capped.
-            emitFloatingNumber(gore, tcx, tcy - 8, 0, 0xffd34d);
+            // 2026-05-19 — Floating "+Xg" floater now spawns over the
+            // ENEMY at the moment of death, not over the firing tower.
+            // Reads more intuitively as a kill reward — the player's
+            // eye is already on the enemy when it falls, and a streak
+            // of kills produces a satisfying trail of +g floaters
+            // along the path instead of stacking on a single tower
+            // sprite. Same gore-pool floater, same styling, same
+            // 0.9s life + −28 px/s rise — only the origin moved.
+            emitFloatingNumber(gore, e.x, e.y - 8, 0, 0xffd34d);
             const last = gore.numbers[gore.numbers.length - 1];
             if (last) { last.text = `+${goldEarnedHere}g`; last.life = 0.9; last.vy = -28; }
             // Mark the tower for a one-frame portrait glow — RenderEngine
