@@ -12,6 +12,25 @@ import towersData from '../data/towers.json';
 import { surpriseEventTintRGBA, VFX_TIMING, getAllActiveSurpriseEvents } from '../systems/SurpriseEvents';
 import { SurpriseEventKind } from '../types';
 
+// 2026-05-20 v2 — Per-hero halo ring assignment. Each ring style was
+// hand-picked to match the hero's color tint + thematic identity:
+//   • Caesar  → SUN HALO         (imperial / divine kingship — gold)
+//   • Marius  → CROSSED SWORDS   (military reformer — blue + steel)
+//   • Agrippa → RUNIC BLUE       (admiral / divination — naval blue)
+//   • Agricola→ LAUREL WREATH    (frontier governor — peace + green)
+//   • Scipio  → GOLD ROPE        (conqueror of Carthage — gold triumph)
+//   • Sulla   → FLAME RED        (fire passive — pyre ward red)
+// The remaining 3 ring styles (CRIMSON_DRIP, SKULL_SILVER, PLAIN_WHITE)
+// are reserved for future additions / special states.
+const HERO_RING_FOR: Record<string, string> = {
+  HERO_CAESAR:   'HERO_RING_SUN_HALO',
+  HERO_MARIUS:   'HERO_RING_CROSSED_SWORDS',
+  HERO_AGRIPPA:  'HERO_RING_RUNIC_BLUE',
+  HERO_AGRICOLA: 'HERO_RING_LAUREL_WREATH',
+  HERO_SCIPIO:   'HERO_RING_GOLD_ROPE',
+  HERO_SULLA:    'HERO_RING_FLAME_RED'
+};
+
 export class RenderEngine {
   app: Application;
   layers: {
@@ -78,7 +97,11 @@ export class RenderEngine {
     shieldRing?: Graphics;
     shieldSprite?: Sprite;
   }>;
-  towerSprites: Map<string, { sp: Sprite; tier: Sprite | null }>;
+  // 2026-05-20 v2 — Hero towers carry an optional `ring` sprite drawn
+  // UNDER the hero so the player sees at a glance "this is the hero
+  // unit." Ring is created once at tower-sprite construction and
+  // position-synced + slowly rotated every frame.
+  towerSprites: Map<string, { sp: Sprite; tier: Sprite | null; ring?: Sprite }>;
   selectedTowerId: string | null = null;
   // 2026-05 v11 (B3 Hover range): a second tower id whose range circle
   // renders in a dimmer color underneath the selected one. Driven by
@@ -2096,8 +2119,29 @@ export class RenderEngine {
           tier.anchor.set(0.5, 1);
           tier.width = 14; tier.height = 14;
         }
-        entry = { sp, tier };
+        // 2026-05-20 v2 — HERO TOWER RING. Each hero gets a halo
+        // matching their tint/theme. Created once per hero placement
+        // and layered UNDER the hero sprite so the ring frames the
+        // sprite as a clear "I'm the hero" visual marker.
+        let ring: Sprite | undefined;
+        if (isHeroSprite) {
+          const ringKey = HERO_RING_FOR[tw.type] ?? 'HERO_RING_PLAIN_WHITE';
+          const ringTex = tex(ringKey);
+          if (ringTex) {
+            ring = new Sprite(ringTex);
+            ring.anchor.set(0.5);
+            // Sized slightly bigger than the hero sprite so the ring
+            // visually surrounds the character.
+            const ringSize = GRID.TILE * 2.0;
+            ring.width = ringSize;
+            ring.height = ringSize;
+            ring.alpha = 0.85;
+          }
+        }
+        entry = { sp, tier, ring };
         this.towerSprites.set(tw.id, entry);
+        // Ring goes in FIRST so it renders BENEATH the hero sprite.
+        if (ring) this.layers.towers.addChild(ring);
         this.layers.towers.addChild(sp);
         if (tier) this.layers.towers.addChild(tier);
       }
@@ -2175,6 +2219,17 @@ export class RenderEngine {
       // Keep the fallback monogram (if any) glued to the sprite position.
       const fb = (entry.sp as any).__fallback as Graphics | undefined;
       if (fb) { fb.x = entry.sp.x; fb.y = entry.sp.y; }
+      // 2026-05-20 v2 — Hero ring follows the tile center (NOT the bob)
+      // so it stays anchored to the ground while the hero bobs above it.
+      // Slow continuous rotation at ~0.25 rad/sec gives the ring an
+      // active "magic circle" feel. Pulsing alpha 0.75..1.0 at 0.6Hz
+      // adds subtle life without distracting.
+      if (entry.ring) {
+        entry.ring.x = baseX;
+        entry.ring.y = baseY;
+        entry.ring.rotation = state.tick * 0.25;
+        entry.ring.alpha = 0.75 + 0.20 * (0.5 + 0.5 * Math.sin(state.tick * 3.8));
+      }
       // 2026-05 v10 — PRESTIGE SCALE REMOVED. Used to grow the tower
       // sprite +5/+10/+15% on kill-milestones and +4-10% per MVP award,
       // but stacked scaling made apex / long-lived towers look comically
@@ -2243,6 +2298,7 @@ export class RenderEngine {
         if (fb) fb.destroy({ children: true });
         entry.sp.destroy();
         if (entry.tier) entry.tier.destroy();
+        if (entry.ring) entry.ring.destroy();
         this.towerSprites.delete(id);
       }
     }

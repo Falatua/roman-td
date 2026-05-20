@@ -171,74 +171,107 @@ const MANIFEST: Record<string, string> = {
   SKULL_URN: 'v_skull_urn.png',
   // Mercator vendor art
   MERCATOR: 'u_mercator.png', MERCATOR_CART: 'u_mercator_cart.png',
-  // Items — every shop item / inventory item / boss legendary maps to a real sprite
-  ITEM_SHARPENED_BLADE: 'i_sharpened_blade.png',
-  ITEM_IRON_TIP: 'i_iron_tip.png',
-  ITEM_TRAINING_SCROLL: 'i_training_scroll.png',
-  ITEM_QUICKDRAW_GLOVES: 'i_mercurys_sandal.png',     // closest match: speed/feet
-  ITEM_WATCHTOWER_LENS: 'i_watchtower_lens.png',
-  ITEM_BARBED_GLADIUS: 'i_sharpened_blade.png',       // closest match: barbed melee
-  ITEM_FLYER_BANE: 'i_flyer_bane.png',
-  ITEM_FIRE_OIL_FLASK: 'i_fire_oil_flask.png',
-  ITEM_POISONED_BLADE: 'i_poisoned_blade.png',
-  ITEM_CAVALRY_SPUR: 'i_cavalry_spur.png',
-  ITEM_MERCURY_FEATHER: 'i_mercurys_sandal.png',
-  ITEM_CENTURIONS_TRUMPET: 'i_centurions_trumpet.png',
-  ITEM_GOLD_PURSE: 'i_gold_purse.png',
-  ITEM_BATTLE_STANDARD: 'i_battle_standard.png',
-  ITEM_IRON_SHIELD: 'i_iron_shield.png',
-  ITEM_HOURGLASS_OF_SATURN: 'i_consuls_seal.png',     // ornate seal stand-in
-  ITEM_STORM_JAVELIN: 'i_storm_javelin.png',
-  // Universal-boss legendaries (sheet 12)
-  ITEM_EAGLE_EYE: 'i_eagle_eye.png',
-  ITEM_MIDAS_TOUCH: 'i_midas_touch.png',
-  ITEM_FORTRESS_SHIELD: 'i_fortress_shield.png',
-  ITEM_WHETSTONE_OF_MARS: 'i_whetstone_of_mars.png',
-  ITEM_TRIBUNES_HORN: 'i_tribunes_horn.png',
-  ITEM_AQUILA_STANDARD: 'i_aquila_standard.png',
-  ITEM_CONSULS_SEAL: 'i_consuls_seal.png',
-  ITEM_PRAETORIAN_SHIELD: 'i_praetorian_shield.png',
-  ITEM_MERCURYS_SANDAL: 'i_mercurys_sandal.png',
-  // Combination Rare items (sheet 11 right column)
-  ITEM_FLAMING_PILUM: 'i_flaming_pilum.png',
-  ITEM_PIERCING_SHOT: 'i_piercing_shot.png',
-  ITEM_COMMANDERS_CREST: 'i_commanders_crest.png',
-  ITEM_WARLORDS_KIT: 'i_warlords_kit.png',
-  ITEM_TOXIC_OIL: 'i_toxic_oil.png',
-  // Boss-faction legendaries (sheets 13-14)
-  ITEM_SIBYLLINE_SCROLL: 'l_sibylline_scroll.png',
-  ITEM_VESTALS_BLESSING: 'l_vestals_blessing.png',
-  ITEM_DENARII_PURSE: 'l_denarii_purse.png',
-  ITEM_ALPHA_PACK_FANG: 'l_alpha_pack_fang.png',
-  ITEM_WAR_HOUND_COLLAR: 'l_war_hound_collar.png',
-  ITEM_BERSERKERS_MUZZLE: 'l_berserkers_muzzle.png',
-  ITEM_DRUIDS_TORC: 'l_druids_torc.png',
-  ITEM_CELTIC_LONGSWORD: 'l_celtic_longsword.png',
-  ITEM_WARLORDS_WAR_PAINT: 'l_warlords_war_paint.png',
-  ITEM_GALLIC_SHIELD_BOSS: 'l_gallic_shield_boss.png',
-  ITEM_DRUID_STAFF_FRAGMENT: 'l_druid_staff_fragment.png',
-  ITEM_ELEPHANT_TUSK: 'l_elephant_tusk.png',
-  ITEM_HANNIBALS_STRATEGY_SCROLL: 'l_hannibals_strategy_scroll.png',
-  ITEM_NUMIDIAN_SADDLE: 'l_numidian_saddle.png',
-  ITEM_FALCATA_BLADE: 'l_falcata_blade.png',
-  ITEM_BARCA_WAR_HORN: 'l_barca_war_horn.png',
-  ITEM_GILDED_SCALE_ARMOR: 'l_gilded_scale_armor.png',
-  ITEM_CURSED_TORC: 'l_cursed_torc.png',
-  // Undead legendaries (sheet 15 row 1) — sliced under c_ prefix
-  ITEM_NECROTIC_LONGSWORD: 'c_necrotic_longsword.png',
-  ITEM_UNDEAD_ELEPHANT_BONE: 'c_undead_elephant_bone.png',
-  ITEM_LICH_GENERALS_SEAL: 'c_lich_generals_seal.png',
-  // 2026-05-15 — three new items. Reuse existing close-thematic sprites
-  // to keep the manifest tight; the FALX_BLADE shares the cleave-blade
-  // look of FALCATA, the VOLLEY_QUIVER reuses the storm-javelin (multi-
-  // bolt aesthetic), and the SIGIL_OF_SOL_INVICTUS reuses the sun-flare
-  // orb already used for SOL_PRIEST projectiles.
-  ITEM_FALX_BLADE: 'l_falcata_blade.png',
-  ITEM_VOLLEY_QUIVER: 'i_storm_javelin.png',
-  ITEM_SIGIL_OF_SOL_INVICTUS: 'ab_solar_flare.png',
-  ITEM_TYRANTS_LAUREL: 'l_warlords_war_paint.png',     // closest match: warlord-themed
-  ITEM_DAMNATIO_MEMORIAE: 'l_warlords_war_paint.png',  // execute item — reuses warlord-themed sprite until dedicated art lands
-  ITEM_VESTAL_PYRE: 'i_fire_oil_flask.png',            // closest match: fire/burn
+  // ─── ITEM SPRITES — 2026-05-20 v3 full regeneration ────────────────────
+  // Every shop/inventory/boss-drop item has a UNIQUE sprite. Five sheets
+  // generated via Higgs Field (nano_banana_pro at 1024×1024) and cropped
+  // into 67 individual 128×128 PNGs under the `inew_` prefix. Replaces
+  // the prior manifest which reused 27 base sprites across 67 items
+  // (e.g. QUICKDRAW_GLOVES + MERCURY_FEATHER both pointed at the same
+  // mercurys_sandal sprite — duplicate visuals fixed here).
+  //
+  // Sheet 1 — Weapons (16 items)
+  ITEM_SHARPENED_BLADE: 'inew_sharpened_blade.png',
+  ITEM_BARBED_GLADIUS: 'inew_barbed_gladius.png',
+  ITEM_POISONED_BLADE: 'inew_poisoned_blade.png',
+  ITEM_FALCATA_BLADE: 'inew_falcata_blade.png',
+  ITEM_CELTIC_LONGSWORD: 'inew_celtic_longsword.png',
+  ITEM_NECROTIC_LONGSWORD: 'inew_necrotic_longsword.png',
+  ITEM_FALX_BLADE: 'inew_falx_blade.png',
+  ITEM_SPEAR_OF_MARS: 'inew_spear_of_mars.png',
+  ITEM_RUSTED_HASTA: 'inew_rusted_hasta.png',
+  ITEM_VANGUARD_PILUM: 'inew_vanguard_pilum.png',
+  ITEM_STORM_JAVELIN: 'inew_storm_javelin.png',
+  ITEM_JUPITERS_WRATH: 'inew_jupiters_wrath.png',
+  ITEM_IRON_TIP: 'inew_iron_tip.png',
+  ITEM_AUXILIARY_SLING: 'inew_auxiliary_sling.png',
+  ITEM_VOLLEY_QUIVER: 'inew_volley_quiver.png',
+  ITEM_VENOM_TIPPED_ARROWS: 'inew_venom_tipped_arrows.png',
+  // Sheet 2 — Armor & Gear (16 items)
+  ITEM_GILDED_SCALE_ARMOR: 'inew_gilded_scale_armor.png',
+  ITEM_BRONZE_GREAVES: 'inew_bronze_greaves.png',
+  ITEM_GALLIC_SHIELD_BOSS: 'inew_gallic_shield_boss.png',
+  ITEM_AQUILA_RAMPART: 'inew_aquila_rampart.png',
+  ITEM_CAVALRY_SPUR: 'inew_cavalry_spur.png',
+  ITEM_NUMIDIAN_SADDLE: 'inew_numidian_saddle.png',
+  ITEM_QUICKDRAW_GLOVES: 'inew_quickdraw_gloves.png',
+  ITEM_MERCURY_FEATHER: 'inew_mercury_feather.png',
+  ITEM_BERSERKERS_MUZZLE: 'inew_berserkers_muzzle.png',
+  ITEM_WAR_HOUND_COLLAR: 'inew_war_hound_collar.png',
+  ITEM_ALPHA_PACK_FANG: 'inew_alpha_pack_fang.png',
+  ITEM_ELEPHANT_TUSK: 'inew_elephant_tusk.png',
+  ITEM_UNDEAD_ELEPHANT_BONE: 'inew_undead_elephant_bone.png',
+  ITEM_WARLORDS_WAR_PAINT: 'inew_warlords_war_paint.png',
+  ITEM_WATCHTOWER_LENS: 'inew_watchtower_lens.png',
+  ITEM_FLYER_BANE: 'inew_flyer_bane.png',
+  // Sheet 3 — Standards & Scrolls (16 items)
+  ITEM_BATTLE_STANDARD: 'inew_battle_standard.png',
+  ITEM_AQUILIFER_BANNER: 'inew_aquilifer_banner.png',
+  ITEM_INFERNO_STANDARD: 'inew_inferno_standard.png',
+  ITEM_CENTURIONS_TRUMPET: 'inew_centurions_trumpet.png',
+  ITEM_OPTIO_WHISTLE: 'inew_optio_whistle.png',
+  ITEM_BARCA_WAR_HORN: 'inew_barca_war_horn.png',
+  ITEM_AUGUR_SCROLL: 'inew_augur_scroll.png',
+  ITEM_SCIPIO_PLAYBOOK: 'inew_scipio_playbook.png',
+  ITEM_PUNIC_LEDGER: 'inew_punic_ledger.png',
+  ITEM_HANNIBALS_STRATEGY_SCROLL: 'inew_hannibals_strategy_scroll.png',
+  ITEM_TRAINING_SCROLL: 'inew_training_scroll.png',
+  ITEM_HOURGLASS_OF_SATURN: 'inew_hourglass_of_saturn.png',
+  ITEM_CONSULAR_TOKEN: 'inew_consular_token.png',
+  ITEM_LICTOR_FASCES: 'inew_lictor_fasces.png',
+  ITEM_TYRIAN_DYE: 'inew_tyrian_dye.png',
+  ITEM_DRUIDS_TORC: 'inew_druids_torc.png',
+  // Sheet 4 — Divine & Relics (16 items)
+  ITEM_SIGIL_OF_SOL_INVICTUS: 'inew_sigil_of_sol_invictus.png',
+  ITEM_TYRANTS_LAUREL: 'inew_tyrants_laurel.png',
+  ITEM_VESTAL_PYRE: 'inew_vestal_pyre.png',
+  ITEM_SERPENT_AMULET: 'inew_serpent_amulet.png',
+  ITEM_WITCHS_VENOM: 'inew_witchs_venom.png',
+  ITEM_AQUILA_TALONS: 'inew_aquila_talons.png',
+  ITEM_DEMONSWORN_CROWN: 'inew_demonsworn_crown.png',
+  ITEM_CURSED_TORC: 'inew_cursed_torc.png',
+  ITEM_LICH_GENERALS_SEAL: 'inew_lich_generals_seal.png',
+  ITEM_DRUID_STAFF_FRAGMENT: 'inew_druid_staff_fragment.png',
+  ITEM_FIRE_OIL_FLASK: 'inew_fire_oil_flask.png',
+  ITEM_PERIMETER_TORCH: 'inew_perimeter_torch.png',
+  ITEM_GRAVEKEEPERS_SCYTHE: 'inew_gravekeepers_scythe.png',
+  ITEM_SOULFIRE_BRAND: 'inew_soulfire_brand.png',
+  ITEM_NECROMANCERS_LANTERN: 'inew_necromancers_lantern.png',
+  ITEM_HELLGATE_BRAND: 'inew_hellgate_brand.png',
+  // Sheet 5 — Coins & Misc (3 items)
+  ITEM_GOLD_PURSE: 'inew_gold_purse.png',
+  ITEM_PRAETORIAN_COIN: 'inew_praetorian_coin.png',
+  ITEM_DAMNATIO_MEMORIAE: 'inew_damnatio_memoriae.png',
+  // Legacy keys preserved for backward compatibility — some are
+  // referenced by event-reward modals or older tower-info panels.
+  // These map to the closest-thematic new sprite so nothing breaks.
+  ITEM_IRON_SHIELD: 'inew_gallic_shield_boss.png',
+  ITEM_EAGLE_EYE: 'inew_watchtower_lens.png',
+  ITEM_MIDAS_TOUCH: 'inew_gold_purse.png',
+  ITEM_FORTRESS_SHIELD: 'inew_aquila_rampart.png',
+  ITEM_WHETSTONE_OF_MARS: 'inew_sharpened_blade.png',
+  ITEM_TRIBUNES_HORN: 'inew_centurions_trumpet.png',
+  ITEM_AQUILA_STANDARD: 'inew_aquilifer_banner.png',
+  ITEM_CONSULS_SEAL: 'inew_consular_token.png',
+  ITEM_PRAETORIAN_SHIELD: 'inew_gilded_scale_armor.png',
+  ITEM_MERCURYS_SANDAL: 'inew_mercury_feather.png',
+  ITEM_FLAMING_PILUM: 'inew_vanguard_pilum.png',
+  ITEM_PIERCING_SHOT: 'inew_iron_tip.png',
+  ITEM_COMMANDERS_CREST: 'inew_aquila_rampart.png',
+  ITEM_WARLORDS_KIT: 'inew_warlords_war_paint.png',
+  ITEM_TOXIC_OIL: 'inew_fire_oil_flask.png',
+  ITEM_SIBYLLINE_SCROLL: 'inew_augur_scroll.png',
+  ITEM_VESTALS_BLESSING: 'inew_vestal_pyre.png',
+  ITEM_DENARII_PURSE: 'inew_gold_purse.png',
   // Consumables
   ITEM_RAGE_POTION: 'c_rage_potion.png',
   ITEM_BERSERKERS_MEAD: 'c_berserkers_mead.png',
@@ -360,7 +393,23 @@ const MANIFEST: Record<string, string> = {
   HERO_AGRICOLA: '../heroes/hero_agricola.png',
   HERO_SCIPIO:   '../heroes/hero_scipio.png',
   HERO_CAESAR:   '../heroes/hero_caesar.png',
-  HERO_SULLA:    '../heroes/hero_sulla.png'
+  HERO_SULLA:    '../heroes/hero_sulla.png',
+  // 2026-05-20 v2 — Hero tower halo rings. Layered under each hero
+  // sprite at render time so the player can see at a glance "this is
+  // the hero, not a regular T1/T2 tower." 9 styles cropped from a
+  // user-provided ring sheet; one assigned per hero matching their
+  // tint + theme (see HERO_RING_FOR in RenderEngine). The remaining
+  // 3 rings (CRIMSON_DRIP, SKULL_SILVER, PLAIN_WHITE) are reserved
+  // for future hero additions or special states.
+  HERO_RING_SUN_HALO:       'hero_ring_sun_halo.png',       // Caesar
+  HERO_RING_LAUREL_WREATH:  'hero_ring_laurel_wreath.png',  // Agricola
+  HERO_RING_RUNIC_BLUE:     'hero_ring_runic_blue.png',     // Agrippa
+  HERO_RING_CROSSED_SWORDS: 'hero_ring_crossed_swords.png', // Marius
+  HERO_RING_CRIMSON_DRIP:   'hero_ring_crimson_drip.png',
+  HERO_RING_SKULL_SILVER:   'hero_ring_skull_silver.png',
+  HERO_RING_FLAME_RED:      'hero_ring_flame_red.png',      // Sulla
+  HERO_RING_PLAIN_WHITE:    'hero_ring_plain_white.png',
+  HERO_RING_GOLD_ROPE:      'hero_ring_gold_rope.png'       // Scipio
 };
 
 // Sprite-quality fix: tower / enemy / item sprites are stored as
