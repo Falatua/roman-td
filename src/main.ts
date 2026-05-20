@@ -25,6 +25,11 @@ import { awardHeroXp as heroAwardXp, tickHeroAbilities, type HeroHooks } from '.
 import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
 import itemsData from './data/items_permanent.json';
+// 2026-05-19 — Hero defs for the bottom-of-screen "place your hero"
+// banner. Used by updateHeroPlacementBanner() to fetch the hero's
+// name + title + tint when a HERO_* entry sits at the front of
+// pendingPurchasedTowers waiting to be placed.
+import HERO_DEFS_FOR_BANNER from './data/herodefs.json';
 import { loadAllAssets, tex as getTexture, texUrl } from './render/Assets';
 import { RenderEngine } from './render/RenderEngine';
 import { UIManager } from './render/UIManager';
@@ -1901,6 +1906,77 @@ async function boot() {
   // Bottom-left chip that surfaces purchased / quest-granted towers waiting
   // to be placed. Shows the next tower's type+tier + total queue size so
   // the player can never miss them, especially after a quest completion.
+  // 2026-05-19 — Bottom-center pulsing reminder that pops the
+  // moment the player has a hero queued (via pickHero from the
+  // choose-hero modal or a future re-draft flow) and clears the
+  // instant they place that hero. Mirrors the Mercator-style queued-
+  // tower indicator but specialized for the hero moment: bigger,
+  // hero-tint themed, with a pulse animation so the player doesn't
+  // miss the cue right after dismissing the draft modal. Sits at the
+  // bottom of #stage-wrap with pointer-events:none so it never blocks
+  // canvas clicks underneath.
+  function updateHeroPlacementBanner() {
+    const queue = state.pendingPurchasedTowers ?? [];
+    const heroEntry = queue.find(q => q.source === 'hero');
+    let bar = document.getElementById('hero-placement-banner') as HTMLElement | null;
+    if (!heroEntry) { bar?.remove(); return; }
+    // Look up hero def for the tint + nice display name (e.g.
+    // HERO_MARIUS → "GAIUS MARIUS"). Falls back to the raw type
+    // string + a neutral gold if the def lookup misses.
+    const heroDef: any = (HERO_DEFS_FOR_BANNER as any)[heroEntry.type] ?? null;
+    const tint = heroDef?.visual?.tierUpColor ?? '#ffd34d';
+    const heroName = (heroDef?.name ?? heroEntry.type.replace(/^HERO_/, '')).toUpperCase();
+    const heroTitle = heroDef?.title ?? '';
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'hero-placement-banner';
+      bar.style.cssText = `
+        position:absolute;
+        left:50%; bottom:18px;
+        transform:translateX(-50%);
+        padding:10px 22px;
+        background:linear-gradient(180deg,rgba(40,20,12,0.95),rgba(16,8,4,0.95));
+        border:2.5px solid ${tint};
+        color:#fff8e0;
+        font-family:'Courier New',monospace;
+        font-size:12px;
+        font-weight:bold;
+        letter-spacing:2px;
+        z-index:80;
+        pointer-events:none;
+        text-shadow:1px 1px 0 #000;
+        box-shadow:0 0 22px ${tint}88, inset 0 0 14px ${tint}33;
+        display:flex; flex-direction:column; align-items:center; gap:3px;
+        animation:heroPlacementPulse 1.4s ease-in-out infinite;
+      `;
+      // One-time keyframe injection so the pulse stays out of the
+      // inline style soup. Re-running update() never re-injects.
+      if (!document.getElementById('hero-placement-banner-style')) {
+        const css = document.createElement('style');
+        css.id = 'hero-placement-banner-style';
+        css.textContent = `
+          @keyframes heroPlacementPulse {
+            0%, 100% { transform:translateX(-50%) scale(1);   filter:brightness(1.0); }
+            50%      { transform:translateX(-50%) scale(1.04); filter:brightness(1.18); }
+          }
+        `;
+        document.head.appendChild(css);
+      }
+      document.getElementById('stage-wrap')?.appendChild(bar);
+    } else {
+      // Tint may have changed if the user somehow re-queues a
+      // different hero (sandbox testing, future draft tools). Refresh
+      // the border + glow on every update so it always matches.
+      bar.style.borderColor = tint;
+      bar.style.boxShadow = `0 0 22px ${tint}88, inset 0 0 14px ${tint}33`;
+    }
+    bar.innerHTML = `
+      <div style="color:${tint};font-size:11px;letter-spacing:3px">★ CLICK ANY EMPTY TILE TO PLACE</div>
+      <div style="color:${tint};font-size:15px;letter-spacing:3.5px;text-shadow:0 0 8px ${tint}88, 1px 1px 0 #000">${heroName}</div>
+      ${heroTitle ? `<div style="color:#cdb98a;font-size:10px;font-weight:normal;letter-spacing:1.5px;font-style:italic">${heroTitle}</div>` : ''}
+    `;
+  }
+
   function updateTowerQueueIndicator() {
     const queue = state.pendingPurchasedTowers ?? [];
     let chip = document.getElementById('tower-queue-chip') as HTMLElement | null;
@@ -1923,6 +1999,7 @@ async function boot() {
     }
     const head = queue[0];
     const headPrice = purchasedTowerPrice(head);
+    const headIsHero = head.source === 'hero';
     const moreLine = queue.length > 1 ? `<div style="font-size:9px;color:#cdb98a;margin-top:2px">+${queue.length - 1} more queued</div>` : '';
     const toggleBtn = `<button id="tower-queue-toggle" title="${collapsed ? 'Expand' : 'Collapse'}" style="position:absolute;top:2px;right:4px;background:transparent;border:none;color:#88ff88;font-size:13px;line-height:1;cursor:pointer;padding:2px 4px;font-weight:bold">${collapsed ? '▸' : '▾'}</button>`;
     if (collapsed) {
@@ -1937,13 +2014,21 @@ async function boot() {
     } else {
       chip.style.padding = '8px 22px 8px 12px';
       chip.style.maxWidth = '200px';
+      // 2026-05-19 — Hide the PUT BACK button when the head is a
+      // hero. Heroes are queued from the choose-hero modal (not the
+      // Mercator shop) and are free / non-refundable; showing
+      // "PUT BACK (refund 0g)" is misleading and tempts players to
+      // click a button that won't actually let them un-pick a hero.
+      const putBackBtn = headIsHero
+        ? ''
+        : `<button id="tower-queue-putback" style="margin-top:6px;width:100%;background:#3a1a1a;color:#e8d6a8;border:1px solid #a04040;padding:3px 6px;font-family:inherit;font-size:10px;letter-spacing:1px;cursor:pointer">PUT BACK (refund ${headPrice}g)</button>`;
       chip.innerHTML = `
         ${toggleBtn}
         <div style="font-size:9px;letter-spacing:2px;color:#88ff88;font-weight:bold">📥 PLACE NEXT</div>
         <div style="font-size:13px;font-weight:bold;color:#ffd34d;margin-top:2px">${head.type.replace(/_/g,' ')} <span style="color:#fff">T${head.tier}</span></div>
         <div style="font-size:9px;color:#cdb98a;margin-top:1px">click any empty tile</div>
         ${moreLine}
-        <button id="tower-queue-putback" style="margin-top:6px;width:100%;background:#3a1a1a;color:#e8d6a8;border:1px solid #a04040;padding:3px 6px;font-family:inherit;font-size:10px;letter-spacing:1px;cursor:pointer">PUT BACK (refund ${headPrice}g)</button>`;
+        ${putBackBtn}`;
     }
     const toggleEl = chip.querySelector<HTMLButtonElement>('#tower-queue-toggle');
     if (toggleEl) toggleEl.onclick = (ev) => {
@@ -5999,6 +6084,7 @@ async function boot() {
     updateProspectSidebar();
     updateProspectReminder();
     updateTowerQueueIndicator();
+    updateHeroPlacementBanner();
     updateWavePreviewChip();
     // Pulsing red glow on towers that are ingredients in an available combo.
     // 2026-05-19 — switched from scanCombos to realizableCombos so the
