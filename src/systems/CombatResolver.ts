@@ -203,7 +203,16 @@ export const ANTI_AIR_ONLY_TYPES = new Set<TowerType>([
   // 2026-05 v7: Sagittarius converted to anti-air specialist. Heavier
   // base damage to compensate for losing ground targets. Its +45%-vs-
   // flyer modifier (per-tower bonus below) stacks on top.
-  TowerType.SAGITTARIUS
+  TowerType.SAGITTARIUS,
+  // 2026-05-19 v3 — Numidian Cavalry (displayed as "Eques") converted
+  // from generalist anti-air-leaning to flyer-only apex combo per
+  // user direction. Recipe now pairs the two flyer-only base towers
+  // (Aquila Venator + Sagittarius) with the Decurion cavalry officer,
+  // so the ingredients telegraph the anti-air identity. baseDps
+  // bumped 34 → 85 in towers.json to compensate for losing every
+  // ground target; the +40% vs-flyer rider was bumped to +75% (see
+  // the damage-block per-tower bonuses below).
+  TowerType.NUMIDIAN_CAVALRY
 ]);
 
 // Cleave melee — these towers hit ALL enemies in their melee range per swing,
@@ -1032,15 +1041,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Eques crits = 3× per spec (2026-05 v11: rate 15% → 25%).
       // NUMIDIAN_CAVALRY signature crit (2026-05-15 v2 buff): 25%→30%.
       if (t.type === TowerType.NUMIDIAN_CAVALRY && Math.random() < 0.30) damage *= 3;
-      // NUMIDIAN_CAVALRY archetype riders (2026-05-15 v2): +40% Flyers
-      // (existing) AND +25% Bosses (NEW). Pairs with the bumped baseDps
-      // (23.8 → 34), expanded multi-shot 2→3, and bumped crit (0.25 →
-      // 0.30 above) so the tower competes with same-tier combos like
-      // Stormcaller (61 DPS) and Turma Lancers (53 DPS). Stacks
-      // multiplicatively — a flying boss takes 1.40 × 1.25 = 1.75× damage.
-      if (t.type === TowerType.NUMIDIAN_CAVALRY) {
-        if (target.isFlyer) damage *= 1.40;
-        if (target.isBoss)  damage *= 1.25;
+      // NUMIDIAN_CAVALRY ("Eques") rider — 2026-05-19 v3 converted to
+      // FLYER-ONLY (membership in ANTI_AIR_ONLY_TYPES gates ground
+      // targets out at the inRange filter). vs-Flyer bonus bumped
+      // 1.40 → 1.75 to match the new premier-anti-air identity.
+      // Anti-boss rider removed because the tower can't shoot ground
+      // bosses anymore — only the rare flying-boss case would have
+      // benefited, and the +75% vs flyers already amplifies those.
+      // baseDps was simultaneously bumped 34 → 85 in towers.json to
+      // pay for losing every ground target.
+      if (t.type === TowerType.NUMIDIAN_CAVALRY && target.isFlyer) {
+        damage *= 1.75;
       }
       // Evocatus tactical stacks: +5% per kill (cap 50%)
       if (t.type === TowerType.EVOCATUS) {

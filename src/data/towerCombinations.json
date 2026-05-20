@@ -102,11 +102,15 @@
     "tier": 3,
     "ingredients": [
       {
-        "type": "DECURION",
+        "type": "AQUILA_VENATOR",
         "minTier": 3
       },
       {
         "type": "SAGITTARIUS",
+        "minTier": 3
+      },
+      {
+        "type": "DECURION",
         "minTier": 3
       }
     ],
@@ -329,7 +333,7 @@
         "minTier": 3
       },
       {
-        "type": "LEGATE",
+        "type": "AUGUR",
         "minTier": 3
       }
     ],
@@ -363,7 +367,7 @@
         "minTier": 4
       },
       {
-        "type": "LEGATE",
+        "type": "EVOCATUS",
         "minTier": 4
       },
       {
@@ -630,7 +634,7 @@
         "minTier": 3
       },
       {
-        "type": "SAGITTARIUS",
+        "type": "LIBRITOR",
         "minTier": 3
       }
     ],
@@ -675,11 +679,11 @@
     "tier": 4,
     "ingredients": [
       {
-        "type": "BALLISTARIUS",
+        "type": "BEAST_HUNTER",
         "minTier": 3
       },
       {
-        "type": "LIBRITOR",
+        "type": "BALLISTARIUS",
         "minTier": 3
       },
       {

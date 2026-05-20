@@ -570,15 +570,16 @@
   "NUMIDIAN_CAVALRY": {
     "name": "Eques",
     "damageType": "PHYS_RANGED",
-    "baseDps": 34,
+    "baseDps": 85,
     "attackSpeed": 2.1,
     "range": 4.5,
     "kind": "COMBO",
     "melee": false,
     "tierBand": 3,
+    "antiAirOnly": true,
     "spriteSheet": 2,
     "spriteCell": 7,
-    "ability": "TRIPLE VOLLEY: fires at 3 distinct targets per attack (ground OR air, no restriction). 30% chance to land a triple-damage javelin (signature crit). +40% damage vs Flyers AND +25% damage vs Bosses — fast-fire generalist that punishes both swarms and elite spawns.",
+    "ability": "ANTI-AIR ONLY — fires only at flyers, cannot target ground. SKY VOLLEY: rains javelins at 3 distinct flyers per attack. 30% chance to land a triple-damage strike (signature crit). +75% damage vs Flyers on top of the base damage — the premier anti-air apex combo. Recipe pairs the AQUILA VENATOR sky-hunter, the SAGITTARIUS anti-air archer, and the DECURION cavalry officer into a saddle-mounted javelin specialist.",
     "critChance": 0,
     "critMult": 1
   },
@@ -988,7 +989,7 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 1,
-    "ability": "BEAST-BANE: +200% damage vs animal-faction enemies (Feral / Rabid / Alpha Dog · Demon Hellhound · War Elephant · Undead War Elephant). Lightning-fast dual-blade slashes (2.8/s). No combos — standalone tower designed to carry the early-game dog and elephant pressure. Pure melee, range 1.5.",
+    "ability": "BEAST-BANE: +200% damage vs animal-faction enemies (Feral / Rabid / Alpha Dog · Demon Hellhound · War Elephant · Undead War Elephant). Lightning-fast dual-blade slashes (2.8/s). Combo ingredient for MURMILLO — the heavy fish-helmet gladiator inherits the dimachaerus' speed training. Pure melee, range 1.5.",
     "critChance": 0.1,
     "critMult": 1.8
   },
@@ -1001,7 +1002,7 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 2,
-    "ability": "BEAST-BANE: +200% damage vs animal-faction enemies. Veteran Beast Hunter upgrade — heavier strike, still fast (2.6/s), better crit profile (15% / 2.0×). Standalone tower (no combo recipes), pure melee, range 1.5. Specialist answer to the W3 Alpha Dog, the W9-10 War Elephant pair, and the W14 Undead Elephant.",
+    "ability": "BEAST-BANE: +200% damage vs animal-faction enemies. Veteran Beast Hunter upgrade — heavier strike, still fast (2.6/s), better crit profile (15% / 2.0×). Combo ingredient for BESTIARIUS (gladiator beast-fury combo). Pure melee, range 1.5. Specialist answer to the W3 Alpha Dog, the W9-10 War Elephant pair, and the W14 Undead Elephant.",
     "critChance": 0.15,
     "critMult": 2.0
   },
@@ -1014,7 +1015,7 @@
     "kind": "COMBO",
     "melee": true,
     "tierBand": 4,
-    "ability": "MID-GAME COMBO MELEE — the Roman fish-helmet gladiator. PUNIC HUNTER: +75% damage vs CARTHAGE faction (W7-W10), +50% damage vs UNDEAD_CARTHAGE (W16-W18) — the heavy gladius hunts Hannibal's blood. SCUTUM BASH: every 4th swing is a heavy shield strike that STUNS for 1.2s AND knocks the target back 0.8 tiles in one hit (bosses take half — 0.6s stun, 0.4 tile push). Recipe pulls the three orphan base towers — Turris (Ballistarius) + Librator + Arcuballista — into a single anti-Carthage bulwark.",
+    "ability": "MID-GAME COMBO MELEE — the Roman fish-helmet gladiator. PUNIC HUNTER: +75% damage vs CARTHAGE faction (W7-W10), +50% damage vs UNDEAD_CARTHAGE (W16-W18) — the heavy gladius hunts Hannibal's blood. SCUTUM BASH: every 4th swing is a heavy shield strike that STUNS for 1.2s AND knocks the target back 0.8 tiles in one hit (bosses take half — 0.6s stun, 0.4 tile push). Recipe = BEAST HUNTER (gladiator dual-blade) + BALLISTARIUS (heavy artillery) + ARCUBALLISTA (precision crossbow) — the gladiator inherits the dimachaerus' arena speed and the artillery crews' shield discipline.",
     "critChance": 0.18,
     "critMult": 2.3
   },
