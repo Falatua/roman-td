@@ -352,18 +352,29 @@ describe('herodefs.json shape (single source of tuning)', () => {
   // Pins the spread so a future hero-aura tuning pass can't quietly
   // reintroduce the original 3-ranged / 2-divine / 0-siege / 0-fire
   // imbalance.
-  it('aura filters cover the 5 damage types', () => {
+  //
+  // 2026-05-20 v2 — Sulla's passive was reworked from a +35% damage
+  // aura on FIRE towers (which used the legacy `filter:
+  // "ELEMENTAL_FIRE"` shape) to a DAMAGE_TYPE_CONVERSION passive that
+  // overrides nearby towers' damage type to FIRE. The fire "coverage"
+  // moves from a `filter` to a `convertTo` field. Test reads both.
+  it('aura filters cover the 5 damage types (including Sulla\'s fire conversion target)', () => {
     const filters = HERO_POOL.map(id => {
       const def: any = (HERO_DEFS as any)[id];
-      // Marius/Agrippa/Sulla use top-level filter; Agricola has
+      // Marius/Agrippa use top-level filter; Agricola has
       // passive.local.filter; Scipio uses VS_BOSS (no damage-type
-      // filter); Caesar is unfiltered global.
-      return def.passive?.filter ?? def.passive?.local?.filter ?? null;
+      // filter); Caesar is unfiltered global; Sulla uses convertTo
+      // (DAMAGE_TYPE_CONVERSION passive — towers within 2 tiles
+      // get their damage type overridden to convertTo).
+      return def.passive?.filter
+        ?? def.passive?.local?.filter
+        ?? def.passive?.convertTo
+        ?? null;
     });
     expect(filters).toContain('PHYS_MELEE');
     expect(filters).toContain('PHYS_RANGED');
     expect(filters).toContain('SIEGE');
-    expect(filters).toContain('ELEMENTAL_FIRE');
+    expect(filters).toContain('ELEMENTAL_FIRE');     // Sulla's convertTo target
     // VS_BOSS is the Scipio filter; Caesar carries no filter at all.
     expect(filters).toContain('VS_BOSS');
   });

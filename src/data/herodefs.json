@@ -351,11 +351,10 @@
     "playerProblemSolved": "I keep leaking lives and can't recover once I start losing.",
     "biography": "Sulla was famously lucky — he said so himself, and Rome believed him. On this field, his luck translates into pyres and lives: every kill he lands could be the one that saves Rome.",
     "passive": {
-      "kind": "LOCAL_AURA",
-      "radiusTiles": 4,
-      "filter": "ELEMENTAL_FIRE",
-      "dmgBonusPercent": 35,
-      "description": "Every FIRE tower within 4 tiles gains +35% damage permanently."
+      "kind": "DAMAGE_TYPE_CONVERSION",
+      "radiusTiles": 2,
+      "convertTo": "ELEMENTAL_FIRE",
+      "description": "Every tower within 2 tiles of Sulla has its damage TYPE overridden to ELEMENTAL_FIRE — bronze gladii, javelins, ballista bolts, divine bolts, all become flaming attacks. Stacks under Proscription (Proscription's DIVINE override wins during its window, then falls back to the FIRE conversion)."
     },
     "abilities": [
       {

@@ -608,14 +608,14 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           && dh <= 3 * GRID.TILE) {
         dm *= 1.20;
       }
-      if (state.activeHeroId === 'HERO_SULLA'
-          && t.damageType === DamageType.ELEMENTAL_FIRE
-          && dh <= 4 * GRID.TILE) {
-        // 2026-05-19 — Sulla converted DIVINE → ELEMENTAL_FIRE. His
-        // Proscription ult still overrides every tower's damage type
-        // to DIVINE for resistance-bypass — preserving the signature.
-        dm *= 1.35;
-      }
+      // 2026-05-20 v2 — SULLA PASSIVE REWORKED. Was: +35% damage aura
+      // to existing fire towers within 4 tiles. Now: every tower
+      // within 2 tiles has its damage TYPE overridden to
+      // ELEMENTAL_FIRE for damage resolution. The override happens
+      // at the per-attack site (effectiveDmgType assignment below
+      // around line 749) — this block left intentionally empty for
+      // Sulla so the legacy +35% rider no longer applies. Proscription
+      // ult still wins over the passive (DIVINE > FIRE override).
     }
     // Marian Formation per-tower stamp: 3 nearest melee get +X% speed
     // + shared-crit access during the window. Crit comes from the
@@ -747,6 +747,18 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Tier 3) sets resMod = 1 on ranged shots to bypass faction
       // resistances entirely.
       let effectiveDmgType = t.damageType;
+      // 2026-05-20 v2 — SULLA PASSIVE: any tower within 2 tiles of the
+      // active Sulla hero converts its damage type to ELEMENTAL_FIRE
+      // for this attack. Applied BEFORE Proscription so the ult's
+      // DIVINE override still wins during its window. Skips the hero
+      // tower itself (Sulla is already FIRE; no-op). Skipped when
+      // Sulla isn't the active hero or his tower isn't placed yet.
+      if (state.activeHeroId === 'HERO_SULLA' && heroTowerForAura && t.id !== heroTowerForAura.id) {
+        const tcx2 = tilePxX(t), tcy2 = tilePxY(t);
+        if (Math.hypot(heroAuraCx - tcx2, heroAuraCy - tcy2) <= 2 * GRID.TILE) {
+          effectiveDmgType = DamageType.ELEMENTAL_FIRE;
+        }
+      }
       const proscriptionUntil = (state as any).__proscriptionUntilTick ?? 0;
       if (state.tick < proscriptionUntil) effectiveDmgType = DamageType.DIVINE;
       let resMod = resistanceModifier(target.faction, effectiveDmgType, armorShred) * enemyDamageMultiplier(target, effectiveDmgType);
