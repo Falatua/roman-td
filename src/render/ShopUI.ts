@@ -53,11 +53,82 @@ function imgSrcFromTex(key: string): string | null {
 // counter; the three paths don't share resources or interact. The
 // section frame tints to the active hero's color from towers.json so
 // the forge feels personalized.
-const FORGE_PATHS: Array<{ key: 'dmg' | 'cd' | 'aura'; label: string; icon: string; tint: string; tip: string }> = [
-  { key: 'dmg',  label: 'SHARPEN', icon: '⚔', tint: '#ff5a4a', tip: '+6% basic-attack damage per tap.' },
-  { key: 'cd',   label: 'HASTEN',  icon: '⏱', tint: '#5a9fff', tip: '−5% ability cooldown per tap (compounding).' },
-  { key: 'aura', label: 'EMPOWER', icon: '✨', tint: '#ffd34d', tip: '+5% to every numeric ability magnitude per tap.' }
+// 2026-05-20 v3 — Richer per-path metadata for the hover tooltip.
+// `headline` is the short subtitle under the path name. `effect` is
+// the per-tap effect. `maxedAt5` is the "what 5/5 gets you" line.
+// `bestFor` flavor helps the player pick a path based on hero role.
+// `notes` is optional extra clarification (e.g. EMPOWER count exclusion).
+const FORGE_PATHS: Array<{
+  key: 'dmg' | 'cd' | 'aura';
+  label: string;
+  icon: string;
+  tint: string;
+  headline: string;
+  effect: string;
+  maxedAt5: string;
+  bestFor: string;
+  notes?: string;
+}> = [
+  {
+    key: 'dmg', label: 'SHARPEN', icon: '⚔', tint: '#ff5a4a',
+    headline: 'BASIC ATTACK POWER',
+    effect: '+6% damage to your hero\'s basic attack per tap.',
+    maxedAt5: '5/5 stacks → +30% hero DPS.',
+    bestFor: 'Best for hitter heroes whose basic attack is the carry — Scipio, Caesar, Marius.'
+  },
+  {
+    key: 'cd', label: 'HASTEN', icon: '⏱', tint: '#5a9fff',
+    headline: 'ABILITY COOLDOWN',
+    effect: '−5% cooldown on every ability per tap (compounding).',
+    maxedAt5: '5/5 stacks → cooldowns at 0.77× (≈23% faster cycle).',
+    bestFor: 'Best for caster heroes — Marius (Triumph), Sulla (Sulla\'s March), Caesar (Ides of March).'
+  },
+  {
+    key: 'aura', label: 'EMPOWER', icon: '✨', tint: '#ffd34d',
+    headline: 'ABILITY STRENGTH',
+    effect: '+5% to every numeric magnitude inside every ability per tap (damage multipliers, slow %, stun durations, execute thresholds, heal amounts).',
+    maxedAt5: '5/5 stacks → +25% to all ability magnitudes.',
+    bestFor: 'Best for balanced heroes where the abilities themselves are the value — Agricola, Agrippa.',
+    notes: 'Skips integer COUNTS (javelin/eagle/shell numbers stay the same) and binary triggers. bossSpeedMultiplier scales INVERSE — higher EMPOWER slows bosses MORE.'
+  }
 ];
+
+// 2026-05-20 v3 — Per-button hover tooltip. Renders a styled chip near
+// the button (not the native title attribute, which delays + has no
+// styling). Cleared on mouseleave. Tooltip uses the path's tint color
+// for the border + accent so each path reads instantly.
+function showForgeTooltip(btn: HTMLElement, path: typeof FORGE_PATHS[number]): void {
+  document.getElementById('hero-forge-tooltip')?.remove();
+  const tip = document.createElement('div');
+  tip.id = 'hero-forge-tooltip';
+  tip.style.cssText = `position:fixed;pointer-events:none;z-index:200;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid ${path.tint};padding:10px 14px;font-family:'Courier New',monospace;color:#e8d6a8;font-size:11px;letter-spacing:0.5px;line-height:1.5;box-shadow:0 0 20px ${path.tint}66;width:min(320px,90vw);`;
+  tip.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;border-bottom:1px solid ${path.tint}44;padding-bottom:4px">
+      <div style="font-size:18px;color:${path.tint}">${path.icon}</div>
+      <div>
+        <div style="color:${path.tint};font-weight:bold;font-size:13px;letter-spacing:2px">${path.label}</div>
+        <div style="color:#aa9a4a;font-size:9px;letter-spacing:1.5px">${path.headline}</div>
+      </div>
+    </div>
+    <div style="margin-top:6px"><b style="color:#fff8e0">EFFECT:</b> ${path.effect}</div>
+    <div style="margin-top:4px"><b style="color:#88ff88">AT MAX:</b> ${path.maxedAt5}</div>
+    <div style="margin-top:4px;color:#cdb98a;font-style:italic">${path.bestFor}</div>
+    ${path.notes ? `<div style="margin-top:6px;padding-top:4px;border-top:1px dashed ${path.tint}44;font-size:10px;color:#aa9a4a">${path.notes}</div>` : ''}
+    <div style="margin-top:6px;padding-top:4px;border-top:1px solid #3a3025;color:#aa9a4a;font-size:10px;letter-spacing:1px">Cost ramp: 100g · 200g · 300g · 400g · 500g · MAXED</div>`;
+  document.body.appendChild(tip);
+  const rect = btn.getBoundingClientRect();
+  const tw = 320, th = 200;
+  // Prefer above the button; fall back to below if not enough room
+  let top = rect.top - th - 8;
+  if (top < 8) top = rect.bottom + 8;
+  let left = rect.left + rect.width / 2 - tw / 2;
+  left = Math.min(window.innerWidth - tw - 8, Math.max(8, left));
+  tip.style.left = left + 'px';
+  tip.style.top  = top + 'px';
+}
+function hideForgeTooltip(): void {
+  document.getElementById('hero-forge-tooltip')?.remove();
+}
 function renderHeroForgeSection(contentRoot: HTMLElement, state: GameStateShape, refresh: () => void): void {
   // Lookup active hero tint for the section frame.
   const heroDef: any = state.activeHeroId ? (towersData as any)[state.activeHeroId] : null;
@@ -67,6 +138,10 @@ function renderHeroForgeSection(contentRoot: HTMLElement, state: GameStateShape,
   wrap.id = 'hero-forge-section';
   wrap.style.cssText = `margin-bottom:12px;padding:10px 12px;background:linear-gradient(180deg,#0c0a08,#1a1410);border:2px solid ${heroTint};box-shadow:0 0 14px ${heroTint}44;`;
   const stacks = state.heroForgeStacks ?? { dmg: 0, cd: 0, aura: 0 };
+  // 2026-05-20 v3 — Native `title` attribute removed in favor of the
+  // styled mouseenter tooltip wired below. The native tooltip delays
+  // ~1s and isn't readable against the dark shop bg; the styled chip
+  // appears instantly with the path's tint border + structured layout.
   const buttonsHtml = FORGE_PATHS.map(p => {
     const cur = (stacks as any)[p.key] as number;
     const nextCost = heroForgeNextCost(cur);
@@ -76,7 +151,7 @@ function renderHeroForgeSection(contentRoot: HTMLElement, state: GameStateShape,
     const baseBorder = maxed ? '#5a4a30' : canAfford ? p.tint : '#5a4a30';
     const cursor = (maxed || !canAfford) ? 'not-allowed' : 'pointer';
     const opacity = (maxed || !canAfford) ? 0.55 : 1;
-    return `<button data-forge-path="${p.key}" title="${p.tip}" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px;background:${baseBg};border:2px solid ${baseBorder};color:#fff8e0;font-family:'Courier New',monospace;cursor:${cursor};opacity:${opacity};transition:transform 0.08s">
+    return `<button data-forge-path="${p.key}" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px;background:${baseBg};border:2px solid ${baseBorder};color:#fff8e0;font-family:'Courier New',monospace;cursor:${cursor};opacity:${opacity};transition:transform 0.08s">
       <div style="font-size:18px;color:${p.tint};line-height:1">${p.icon}</div>
       <div style="font-size:11px;letter-spacing:2px;font-weight:bold;color:${p.tint}">${p.label}</div>
       <div style="font-size:10px;color:#cdb98a">${cur}/${HERO_FORGE_CAP}</div>
@@ -93,12 +168,18 @@ function renderHeroForgeSection(contentRoot: HTMLElement, state: GameStateShape,
   // Wire each button. Click → check cap + gold → deduct + bump stack +
   // bump heroForgeGoldSpent + refresh the modal so the price ramps up
   // and the HUD chip badges below also re-render on next state read.
+  // Hover → show the styled per-path tooltip; mouseleave → hide it.
   setTimeout(() => {
     const btns = wrap.querySelectorAll<HTMLButtonElement>('button[data-forge-path]');
     btns.forEach(btn => {
+      const pathKey = btn.dataset.forgePath as 'dmg' | 'cd' | 'aura' | undefined;
+      const path = pathKey ? FORGE_PATHS.find(p => p.key === pathKey) : undefined;
+      if (path) {
+        btn.onmouseenter = () => showForgeTooltip(btn, path);
+        btn.onmouseleave = () => hideForgeTooltip();
+      }
       btn.onclick = (ev) => {
         ev.stopPropagation();
-        const pathKey = btn.dataset.forgePath as 'dmg' | 'cd' | 'aura' | undefined;
         if (!pathKey) return;
         const curStacks = state.heroForgeStacks ?? { dmg: 0, cd: 0, aura: 0 };
         const cur = curStacks[pathKey];
@@ -116,6 +197,8 @@ function renderHeroForgeSection(contentRoot: HTMLElement, state: GameStateShape,
         (state.heroForgeStacks as any)[pathKey] = cur + 1;
         state.heroForgeGoldSpent = (state.heroForgeGoldSpent ?? 0) + cost;
         try { (SFX as any).comboSuccess?.(); } catch { /* ignore */ }
+        // Hide any tooltip that was up before the refresh wipes the DOM.
+        hideForgeTooltip();
         refresh();
       };
     });
