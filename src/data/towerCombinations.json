@@ -484,10 +484,6 @@
     "tier": 5,
     "ingredients": [
       {
-        "type": "GOD_OF_WAR",
-        "minTier": 5
-      },
-      {
         "type": "JULIUS_CAESAR",
         "minTier": 5
       },
