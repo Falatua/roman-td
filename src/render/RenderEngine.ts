@@ -228,11 +228,6 @@ export class RenderEngine {
     kind: 'crystal' | 'grave' | 'thorn';
     phase: number;       // per-sprite phase offset so they don't pulse in lockstep
   }> = [];
-  // 2026-05-19 — Phase 2: hand-placed large feature decorations.
-  // Built once on first drawAmbient() call; the 8 anchored sprites
-  // are static (no per-frame updates). Sprite-only — no Graphics
-  // alpha/scale tween like the undeadAnimSprites above.
-  private undeadFeatureContainer?: Container;
   drawAmbient(tick: number, wave: number = 0, isBossWave: boolean = false) {
     if (!this.ambientGfx) {
       this.ambientGfx = new Graphics();
@@ -394,63 +389,6 @@ export class RenderEngine {
       } else {
         // Thorn — slow rotation tween, no alpha change.
         a.sp.rotation = Math.sin(t * 1.2) * 0.06;   // ±~3.4°
-      }
-    }
-
-    // 2026-05-19 — Phase 2: hand-placed feature decorations
-    // (large illustrated ruins + SPQR banners). Lazy-built ONCE on
-    // first call. Each entry specifies its anchor tile + scale.
-    // Sprite-only — no per-frame updates. Z-order: added to bg
-    // layer AFTER undeadAnimContainer, so feature pieces sit
-    // visually on top of the scatter decor + animated props but
-    // still below the tiles/towers/enemies layers.
-    if (!this.undeadFeatureContainer) {
-      this.undeadFeatureContainer = new Container();
-      this.layers.bg.addChild(this.undeadFeatureContainer);
-      // Anchored placements per the Phase 2 plan. Each entry sets:
-      //   • c, r            — anchor tile (sprite center lands here)
-      //   • key             — MANIFEST key
-      //   • scale           — multiplied against GRID.TILE for output sprite size
-      //   • anchorY         — vertical anchor (0=top, 0.5=center, 1=bottom).
-      //                       Tall pieces use 1.0 so they "stand" on
-      //                       their anchor tile and rise upward, more
-      //                       like in-world geometry than top-down decor.
-      const anchors: Array<{ c: number; r: number; key: string; scale: number; anchorY: number }> = [
-        // 1. SPQR LAUREL-SKULL STANDARD — hero piece, just inside the gate corner
-        { c: 33, r: 22, key: 'UN_FEAT_SPQR_STANDARD',   scale: 2.0, anchorY: 1.0 },
-        // 2. SPQR EAGLE BANNER — flanking the gate from above
-        { c: 36, r: 19, key: 'UN_FEAT_SPQR_EAGLE',      scale: 1.7, anchorY: 1.0 },
-        // 3. SPQR SKULL BANNER — lower-gate flank, mirror anchor
-        { c: 30, r: 24, key: 'UN_FEAT_SPQR_SKULL',      scale: 1.7, anchorY: 1.0 },
-        // 4. BROKEN COLUMN + GHOST FIRE — cave-corner ruin
-        { c: 1,  r: 6,  key: 'UN_FEAT_COLUMN_FIRE',     scale: 1.8, anchorY: 1.0 },
-        // 5. STATUE RUIN — left edge mid, fallen Roman effigy
-        { c: 2,  r: 11, key: 'UN_FEAT_STATUE_RUIN',     scale: 1.6, anchorY: 1.0 },
-        // 6. BIG COLUMN RUIN — top-middle background, replaces the
-        //    failed altar pick
-        { c: 18, r: 1,  key: 'UN_FEAT_COLUMN_BIG',      scale: 1.8, anchorY: 1.0 },
-        // 7. BANNER-ON-PEDESTAL — right edge upper, mirrors the
-        //    cave-corner column across the map
-        { c: 36, r: 8,  key: 'UN_FEAT_BANNER_PEDESTAL', scale: 1.7, anchorY: 1.0 },
-        // 8. RUINED DOORWAY — bottom-middle, sealed portal at the back
-        { c: 18, r: 25, key: 'UN_FEAT_DOORWAY',         scale: 1.7, anchorY: 1.0 },
-      ];
-      for (const f of anchors) {
-        const t0 = tex(f.key);
-        if (!t0) continue;
-        const sp = new Sprite(t0);
-        // anchorY=1.0 means the sprite's bottom edge lands on the
-        // anchor tile center. Horizontal centered (0.5).
-        sp.anchor.set(0.5, f.anchorY);
-        sp.x = f.c * GRID.TILE + GRID.TILE / 2;
-        sp.y = f.r * GRID.TILE + GRID.TILE / 2;
-        // Scale uniformly so the sprite's larger dimension equals
-        // scale × GRID.TILE. Native PNG aspect ratio is preserved.
-        const target = GRID.TILE * f.scale;
-        const longSide = Math.max(t0.width, t0.height);
-        const k = longSide > 0 ? (target / longSide) : 1;
-        sp.scale.set(k, k);
-        this.undeadFeatureContainer.addChild(sp);
       }
     }
   }
