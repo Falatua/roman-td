@@ -99,7 +99,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
       'THIS IS THE FINAL WAVE.',
       'Wave 20 admits ZERO leaks. One step over the gate and Rome falls.',
       'The Daemon Imperator hellscapes your towers every 12 seconds.',
-      'At 60% HP he rebirths Wrathful: +90% speed, status-immune, regenerating.',
+      'He regenerates 2.8% maxHP per second out of combat — keep the pressure on.',
       'No banner pitied you. The Senate stopped watching at wave 14.',
       'ARE YOU REALLY SURE?'
     ],

@@ -1031,7 +1031,12 @@ async function boot() {
     // UNDEAD CARTHAGE — fire-immune, but +25% melee vulnerable.
     if (enemiesInWave.has('UNDEAD_SPEARMAN') || enemiesInWave.has('GHOST_RIDER') || enemiesInWave.has('IRON_PHALANX') || enemiesInWave.has('ARCHITECTUS') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) enemyCallouts.push({ text: '🛡 UNDEAD CARTHAGE — FIRE IMMUNE / MELEE FAVORED · faction is fully fire-immune (Ignifer / Inferno Cart / fire items wasted). +25% melee damage taken. Poison and bleed land for 0 — DoTs that aren\'t fire still fail. Lean into melee + divine + siege.', cat: 'ENEMY' });
     if (enemiesInWave.has('SPECTRAL_SCOUT') || enemiesInWave.has('CELTIC_FIRE_DEMON')) enemyCallouts.push({ text: '🔥 PHOENIX · burst into 3 minions on death', cat: 'ENEMY' });
-    if (enemiesInWave.has('RABID_DOG') || enemiesInWave.has('CELTIC_BERSERKER') || enemiesInWave.has('DEMON_HELLHOUND')) enemyCallouts.push({ text: '💨 LOW-HP SURGE · finish them or they leak', cat: 'ENEMY' });
+    // 2026-05-20 — DEMON_HELLHOUND removed from the low-HP surge callout.
+    // The lowHpSpeedBoost flag was stripped from the Hellhound's
+    // enemies.json entry per user direction (W19 was punishing players
+    // who timed their burst against a sudden +60% sprint). The callout
+    // still fires for RABID_DOG (W2-3) + CELTIC_BERSERKER (W5-6).
+    if (enemiesInWave.has('RABID_DOG') || enemiesInWave.has('CELTIC_BERSERKER')) enemyCallouts.push({ text: '💨 LOW-HP SURGE · finish them or they leak', cat: 'ENEMY' });
     if (enemiesInWave.has('HANNIBAL_BARCA') || enemiesInWave.has('DAEMON_IMPERATOR') || enemiesInWave.has('GHOST_RIDER') || enemiesInWave.has('GALLIC_DRUID') || enemiesInWave.has('ZOMBIE_DRUID')) enemyCallouts.push({ text: '💚 OOC REGEN · pressure constantly to deny heal', cat: 'ENEMY' });
     // 2026-05-15: checkpoint regen — enemies that gain HP every time
     // they cross a checkpoint coin on the path. Listed here per-wave
@@ -2659,7 +2664,7 @@ async function boot() {
         <div style="font-size:11px;letter-spacing:3px;color:#ff5050;font-weight:bold;margin-bottom:6px">⚔ WHAT WALKS ONTO THE FIELD</div>
         <div style="font-size:12px;color:#fff8e0;line-height:1.55;text-shadow:1px 1px 0 #000">
           <b style="color:#ff5050">Daemon Imperator</b> · TRUE solo arrival — no mobs, no escort, just the boss. 6× HP, base speed 0.85, 10 lives per leak, and a single leak ends the run (W20 LOCKDOWN).<br/>
-          <b style="color:#ffaa55">HELLSCAPE</b> every 12s stuns your towers' cooldowns. <b style="color:#ffaa55">REBIRTH at 60% HP</b> into Wrathful: +90% speed, status-immune, 6s.<br/>
+          <b style="color:#ffaa55">HELLSCAPE</b> every 12s stuns towers within ~5 tiles for 1.5s. <b style="color:#88ff88">No rebirth — sustained burst sticks.</b> Out-of-combat regen 2.8%/sec — keep the pressure on.<br/>
           <span style="color:#ff7766">Hellscape weather is already shortening your status durations 20%. There is no wave 21.</span>
         </div>
       </div>

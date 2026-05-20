@@ -302,8 +302,8 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'MID-FIGHT REGEN — 1.2% maxHP/sec while alive'
     ],
     DAEMON_IMPERATOR: [
-      'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~6 tiles',
-      'REBIRTH at 60% HP — Wrathful form: status-immune + +90% speed for 6s',
+      'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~5 tiles for 1.5s',
+      'OUT-OF-COMBAT REGEN — 2.8% maxHP/sec while not taking damage',
       'W20 FINAL BOSS — any leak ends the run instantly (Rome falls)'
     ]
   };

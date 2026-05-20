@@ -150,7 +150,7 @@
     "name": "War Elephant",
     "faction": "CARTHAGE",
     "baseHp": 4046,
-    "speed": 1.0,
+    "speed": 1.6,
     "isFlyer": false,
     "isBoss": true,
     "livesCost": 10,
@@ -250,7 +250,7 @@
   "UNDEAD_SPEARMAN": {
     "name": "Undead Spearman",
     "faction": "UNDEAD_CARTHAGE",
-    "baseHp": 500,
+    "baseHp": 200000,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": false,
@@ -286,7 +286,7 @@
     "name": "Undead War Elephant",
     "faction": "UNDEAD_CARTHAGE",
     "baseHp": 2940,
-    "speed": 1.2,
+    "speed": 1.7,
     "isFlyer": false,
     "isBoss": true,
     "livesCost": 10,
@@ -308,7 +308,6 @@
     "livesCost": 1,
     "spriteSheet": 6,
     "spriteCell": 3,
-    "lowHpSpeedBoost": 1.6,
     "splitOnDeath": {
       "type": "FERAL_DOG",
       "count": 2,
@@ -372,12 +371,12 @@
     "livesCost": 10,
     "spriteSheet": 6,
     "spriteCell": 7,
-    "outOfCombatRegen": 0.035
+    "outOfCombatRegen": 0.028
   },
   "ARCHITECTUS": {
     "name": "Architectus",
     "faction": "UNDEAD_CARTHAGE",
-    "baseHp": 840,
+    "baseHp": 300000,
     "speed": 1.0,
     "isFlyer": false,
     "isBoss": false,
@@ -392,7 +391,7 @@
   "IRON_PHALANX": {
     "name": "Iron Phalanx",
     "faction": "CARTHAGE",
-    "baseHp": 1100,
+    "baseHp": 500000,
     "speed": 1.0,
     "isFlyer": false,
     "isBoss": false,

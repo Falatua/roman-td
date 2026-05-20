@@ -299,7 +299,7 @@ function renderTab(tab: string): string {
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           ${noteCard('⚔ INVASION (W7, W18)', '<b style="color:#ff7733">The empire is besieged on every side at once.</b> A perimeter fire lights up on the outer edge of the map for <b style="color:#ff7733">EVERY single enemy in the wave</b> — 54 fires on W7, 39 on W18 — and they ALL emerge simultaneously the moment the fires finish rising (~0.3s after the event triggers). Each invader runs at <b style="color:#ff7733">+25% base speed</b> straight toward the gate. No spawn cadence, no easing — one unified wall of incoming enemies materializing around the entire perimeter at once. <br/><br/><b style="color:#ff9933">Reward pool (Legendary, pick one of 3):</b><br/>• <b>Vanguard Pilum</b> — any tower +35% damage, +1 range<br/>• <b>Aquila Rampart</b> — +50% damage vs enemies above 70% HP (execute role)<br/>• <b>Perimeter Torch</b> — +25% damage AND +25% attack speed')}
           ${noteCard('☠ DEATH UPRISING (W11, W14)', '<b style="color:#a050ff">The dead rise.</b> 4 skull urns rise from the center of the map in a diamond. Each urn erupts a <b style="color:#a050ff">cluster of 6 skeletons together</b> in a tight ~0.4-second burst, then pauses ~1 second before the next cluster. Round-robin across the 4 urns, so on a 42-skeleton wave the player sees 7 distinct waves of collective risings across the four urn points. Overlay around each urn: ground cracks, pulsing dark aura, orbiting floating skulls, a vertical soul column rising from the mouth. <b style="color:#a050ff">Necromancy is in effect</b> on these waves — killed grunts reanimate as bone variants. <br/><br/><b style="color:#a050ff">Reward pool (Legendary, pick one of 3):</b><br/>• <b>Gravekeeper\'s Scythe</b> — +60% damage vs undead-faction enemies<br/>• <b>Soulfire Brand</b> — applies HELLFIRE on hit (true damage, bypasses every resist)<br/>• <b>Necromancer\'s Lantern</b> — aura 3 tiles: enemies take +25% damage from all sources AND can\'t regen')}
-          ${noteCard('🔥 GATES OF HELL (W16)', '<b style="color:#ff4422">The underworld breaks open.</b> Two destructible <b>Hell Gate</b> structures rise at waypoints WP3 and WP4. Each gate has <b>~500k HP</b> and pumps out a <b>Fire Giant</b> (~500k HP, slow but tanky) every 2 seconds, alternating gates so the player sees a new giant every second for 15 seconds. The gates AUTO-SEAL at the 15-second mark, but the player can <b style="color:#ff7733">destroy them early</b> to stop the giant flood. Fire giants are immune to fire and bleed, vulnerable to divine and siege.<br/><br/><b style="color:#ff4422">Reward pool (Legendary, pick one of 3):</b><br/>• <b>Hellgate Brand</b> — +50% damage, +25% attack speed, silence-immune<br/>• <b>Demonsworn Crown</b> — +100% damage vs demons AND +50% vs bosses<br/>• <b>Inferno Standard</b> — aura: +25% damage, applies BURN on hit')}
+          ${noteCard('🔥 GATES OF HELL (W16)', '<b style="color:#ff4422">The underworld breaks open.</b> Two destructible <b>Hell Gate</b> structures rise at waypoints WP3 and WP4. Each gate has <b>100,000 HP</b> and pumps out a <b>Fire Giant</b> (100,000 HP, slow but tanky) every 2 seconds, alternating gates so the player sees a new giant every second for 15 seconds. The gates AUTO-SEAL at the 15-second mark, but the player can <b style="color:#ff7733">destroy them early</b> to stop the giant flood. Fire giants are immune to fire and bleed, vulnerable to divine and siege.<br/><br/><b style="color:#ff4422">Reward pool (Legendary, pick one of 3):</b><br/>• <b>Hellgate Brand</b> — +50% damage, +25% attack speed, silence-immune<br/>• <b>Demonsworn Crown</b> — +100% damage vs demons AND +50% vs bosses<br/>• <b>Inferno Standard</b> — aura: +25% damage, applies BURN on hit')}
         </div>
         <div style="font-size:11px;color:#cdb98a;line-height:1.6;margin-top:10px;background:#0c0a08;padding:10px 14px;border-left:3px solid #ffd34d">
           <b style="color:#ffd34d">Endless mode chaos:</b> In Endless, events can STACK. Once the primary event fires there\'s a 40% chance to add a second event of a different kind 0.6s later, and (if a second fired) a 25% chance to add a third 1.2s after that. A triple-stack Endless wave can have invasion fires across every edge, uprising urns in the center, AND hell gates at WP3/WP4 — all firing at once. Each stacked event still drops its own reward modal queued back-to-back.
@@ -557,7 +557,7 @@ function renderTab(tab: string): string {
           ${noteCard('⚔ Hannibal Barca (W10)', 'Heals 0.4%/s while War Elephants live (only when not taking damage). Out-of-combat regen 1.7%/s. <b style="color:#ff7733">DoT (burn / poison / bleed) counts as damage and suppresses both heals.</b> REBIRTH at 50% HP: +60% speed, status-immune, summons 2 War Elephants. <b style="color:#ff5050">TELEGRAPH:</b> a shrinking red lock-on ring + crosshairs appear on him 1 second before rebirth fires — use that window to burst him into a different timeline.')}
           ${noteCard('🐘💀 Undead War Elephant (W14 champion)', 'Stampede at 50% HP. REBIRTH at 40% HP: summons 2 Ghost Riders. Heavy regen. <b style="color:#cdb98a">DUST-SHIELD AURA</b>: a 2-tile dome around the elephant blocks ranged shots on nearby ground allies until it dies. Tower-slow aura cranked to 25% (vs 20% on the living variant). <b style="color:#ff9933">WEAKNESS: +40% damage from SIEGE</b>.')}
           ${noteCard('💀 Undead Warlord (W15)', 'After 5s: AMBUSH 8 Undead Berserkers mid-path. NECROMANCY at 40% HP: raises 4 Undead Celts at his position.')}
-          ${noteCard('😈 Daemon Imperator (W20 — final boss)', 'Base speed 0.85 tiles/sec. HELLSCAPE every 12s stuns nearby tower cooldowns. REBIRTH at 60% HP into Wrathful: +90% speed (still slower than most bosses), status-immune for 6s. <b style="color:#88ddff">W20 is a TRUE solo encounter — no mobs, no helpers, just you vs the Daemon.</b> <b style="color:#ff5050">W20 LOCKDOWN: a single leak ends the run — Rome falls if you cannot hold the gate.</b>')}
+          ${noteCard('😈 Daemon Imperator (W20 — final boss)', 'Base speed 0.85 tiles/sec. HELLSCAPE every 12s stuns nearby tower cooldowns (towers within 5 tiles take a 1.5s cooldown stamp on each pulse). Out-of-combat regen 2.8%/sec. <b style="color:#88ff88">NO REBIRTH — 2026-05-20 patch removed the panic-Wrathful flip; sustained burst from 60% downward sticks now.</b> <b style="color:#88ddff">W20 is a TRUE solo encounter — no mobs, no helpers, just you vs the Daemon.</b> <b style="color:#ff5050">W20 LOCKDOWN: a single leak ends the run — Rome falls if you cannot hold the gate.</b>')}
         </div>
       `)}
       ${foldSection('ELITE MUTATIONS (4-20% chance, mid-late game)', `
@@ -1115,10 +1115,31 @@ function renderTab(tab: string): string {
           note: `listed on W${stripped.wave} but stripped at runtime (boss waves carry only the boss)`
         };
       }
+      // 4b. SURPRISE-EVENT SPAWNS (2026-05-20). Hell Gate + Fire Giant are
+      // both spawned procedurally by the W16 GATES OF HELL event — not
+      // authored into any wave's spawns list, so the earlier branches all
+      // miss them. Without this branch they'd land in step 5 ("not authored")
+      // and the filter at line ~1141 would hide them from the Codex Enemies
+      // tab entirely. Hard-coded W16 reference because that's where the
+      // event fires (see SURPRISE_EVENT_SCHEDULE).
+      const SURPRISE_W16 = new Set(['HELL_GATE', 'FIRE_GIANT']);
+      if (SURPRISE_W16.has(id)) {
+        // Use the stored baseHp directly — surprise-event spawns don't
+        // pass through the standard hpMult curve, they keep their
+        // declared HP. This matches what spawnEnemy does for HELL_GATE
+        // and FIRE_GIANT at the event trigger.
+        return {
+          hp: def.baseHp,
+          wave: 16,
+          explain: `Spawned by the W16 Gates of Hell surprise event.`,
+          note: 'spawned by the W16 Gates of Hell surprise event'
+        };
+      }
       // 5. True orphan (no wave, no reanim source, no split parent, not
-      // even stripped). These rows get filtered out of the table — the
-      // value here is just for consistency. Use the raw stored baseHp
-      // since there's no real wave context to scale against.
+      // even stripped, not a known surprise-event spawn). These rows get
+      // filtered out of the table — the value here is just for
+      // consistency. Use the raw stored baseHp since there's no real
+      // wave context to scale against.
       const floor = def.baseHp;
       return {
         hp: floor,
@@ -1174,7 +1195,7 @@ function renderTab(tab: string): string {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         ${noteCard('⚔ INVASION · W7 + W18', '18 perimeter fires light up along every edge. The wave\'s enemies spawn from the fires (not the cave) at <b style="color:#ff7733">+25% speed</b>. Tight 0.18s spawn cadence — the breach pours.')}
         ${noteCard('☠ DEATH UPRISING · W11 + W14', '4 skull urns rise at the center of the map. Enemies emerge from the urns. <b style="color:#a050ff">Necromancy active</b>: killed grunts reanimate as bone variants. Floating skulls + soul columns overlay the urns.')}
-        ${noteCard('🔥 GATES OF HELL · W16', 'Two destructible <b style="color:#ff4422">Hell Gate</b> structures (~500k HP each) rise at WP3 and WP4. Each pumps out a <b style="color:#ff4422">Fire Giant</b> (~500k HP, slow + bulky) every 2s for 15s, alternating gates. Destroy the gates early to stop the flood.')}
+        ${noteCard('🔥 GATES OF HELL · W16', 'Two destructible <b style="color:#ff4422">Hell Gate</b> structures (100,000 HP each) rise at WP3 and WP4. Each pumps out a <b style="color:#ff4422">Fire Giant</b> (100,000 HP, slow + bulky) every 2s for 15s, alternating gates. Destroy the gates early to stop the flood.')}
       </div>
     </div>`;
     // 2026-05-19 — Card-based per-enemy layout (replaces the 9-column
@@ -1391,8 +1412,8 @@ const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
     'MID-FIGHT REGEN — 1.2% maxHP/sec while alive'
   ],
   DAEMON_IMPERATOR: [
-    'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~6 tiles',
-    'REBIRTH at 60% HP — Wrathful form: status-immune + +90% speed for 6s',
+    'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~5 tiles for 1.5s',
+    'OUT-OF-COMBAT REGEN — 2.8% maxHP/sec while not taking damage',
     'W20 FINAL BOSS — any leak ends the run instantly (Rome falls)'
   ]
 };

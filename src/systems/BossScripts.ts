@@ -17,7 +17,9 @@ interface BossRuntime {
   hannibalEnragedEndsAt: number;
   hannibalRebirthTelegraphAt: number;   // 0 = not yet armed; >0 = fire rebirth at this tick
   warElephantStampedeFired: Set<string>;   // per-elephant stampede flag
-  daemonImperatorRebirthed: boolean;       // Daemon phase 2
+  // 2026-05-20 — daemonImperatorRebirthed removed. The Daemon's rebirth
+  // mechanic was retired per user direction; this flag had no remaining
+  // readers. daemonNextHellscape stays — Hellscape still fires every 12s.
   daemonNextHellscape: number;             // tower-stun cycle time
   undeadElephantRebirthed: boolean;
 }
@@ -36,7 +38,6 @@ export function createBossRuntime(): BossRuntime {
     hannibalEnragedEndsAt: 0,
     hannibalRebirthTelegraphAt: 0,
     warElephantStampedeFired: new Set<string>(),
-    daemonImperatorRebirthed: false,
     daemonNextHellscape: 0,
     undeadElephantRebirthed: false
   };
@@ -256,9 +257,15 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
         e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.007 * dt);
         break;
 
-      // ─── DAEMON IMPERATOR (W50) ──────────────────────────────────────────
-      // OOC regen (data) + HELLSCAPE every 12s stuns nearby tower cooldowns
-      // + REBIRTH at 60% HP into "Wrathful" form: +90% speed for 6s, status-immune.
+      // ─── DAEMON IMPERATOR (W20 boss) ─────────────────────────────────────
+      // 2026-05-20 — REBIRTH MECHANIC REMOVED per user direction. The
+      // boss no longer flips into a "Wrathful" +90% speed status-immune
+      // form at 60% HP. Players who timed their burst to chunk past 60%
+      // were being punished by an unstoppable surge that often leaked
+      // the gate. HELLSCAPE every 12s is kept — towers within 5 tiles
+      // of the Daemon take a 1.5s cooldown stamp on each pulse, so the
+      // boss still threatens dedicated lanes without an instant-rebirth
+      // panic moment.
       case EnemyType.DAEMON_IMPERATOR:
         if (state.tick >= rt.daemonNextHellscape) {
           rt.daemonNextHellscape = state.tick + 12;
@@ -270,17 +277,6 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
             }
           }
           state.hint = '🔥 HELLSCAPE — towers near the Daemon are stunned!';
-        }
-        if (!rt.daemonImperatorRebirthed && e.hp <= e.maxHp * 0.60 && !e.hasRebirthed) {
-          rt.daemonImperatorRebirthed = true;
-          e.hasRebirthed = true;
-          e.hp = e.maxHp * 0.80;
-          e.statusEffects = [];
-          e.baseSpeed *= 1.9;
-          e.currentSpeed *= 1.9;
-          rt.hannibalEnragedEndsAt = state.tick + 6;
-          (e as any).__daemonWrathful = true;
-          state.hint = '😈 THE DAEMON IS WRATHFUL! +90% speed, status-immune for 6s!';
         }
         break;
     }
