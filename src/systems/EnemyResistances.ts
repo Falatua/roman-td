@@ -153,12 +153,18 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.DEMON_LEGATE]: { ranged: 0.5, slow: 0.25, burn: 0, poison: 1.30, bleed: 1.25, melee: 0.85, divine: 1.50 },
   // DAEMON IMPERATOR (W20 final boss) — ranged 0.40 → 0.20 (much
   // tougher to chip down with arrows / javelins / ballistae). Still
-  // fire-immune. Poison + bleed slot upgraded to neutral 1.0 (no
-  // resist) since 100M HP at 13B effective makes DoT essential.
+  // fire-immune.
+  // 2026-05-20 — poison + bleed dialed back from 1.0 → 0.5 each.
+  // Previous tuning sat both at neutral 1.0 to make DoT viable on the
+  // huge HP pool, but DoT had become the default solve for the W20
+  // wall and overshadowed direct-damage builds. Half-effective DoT
+  // keeps it relevant as a chip layer while making direct damage
+  // (melee crit / siege bolts / divine bypass) the load-bearing
+  // approach again.
   // 2026-05 v10 — boss also takes 1.30× divine. Slightly less than the
   // 1.50 on minion demons (he's the apex, you still have to work for it)
   // but the angelic-judgment counter still applies.
-  [EnemyType.DAEMON_IMPERATOR]: { melee: 0.4, ranged: 0.20, slow: 0.15, burn: 0, poison: 1.0, bleed: 1.0, divine: 1.30 },
+  [EnemyType.DAEMON_IMPERATOR]: { melee: 0.4, ranged: 0.20, slow: 0.15, burn: 0, poison: 0.5, bleed: 0.5, divine: 1.30 },
   // 2026-05 v11 DPS CHECK: training dummy takes full damage from every
   // source. It's a measurement tool — no resistances should muddy the
   // reading.

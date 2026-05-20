@@ -1459,6 +1459,7 @@ const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
   DAEMON_IMPERATOR: [
     'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~5 tiles for 1.5s',
     'OUT-OF-COMBAT REGEN — 2.8% maxHP/sec while not taking damage',
+    'DOT-RESISTANT — takes only 50% poison and 50% bleed damage; fire-immune. Direct damage + DIVINE (1.30×) carry this fight.',
     'W20 FINAL BOSS — any leak ends the run instantly (Rome falls)'
   ]
 };
