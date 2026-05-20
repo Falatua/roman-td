@@ -21,6 +21,11 @@
 import { GameStateShape } from '../GameState';
 import { draftHeroChoices, pickHero, type HeroId } from '../systems/HeroSystem';
 import HERO_DEFS from '../data/herodefs.json';
+// 2026-05-19 — Three audio cues for the choose-hero moment:
+//   • playMusicTrack at modal open      → "Choose your character" theme (one-shot)
+//   • SFX.prospectKeep at card click    → commit-decision blip
+//   • SFX.waveStartBlast at MARCH       → war-horn kickoff
+import { playMusicTrack, stopMusicTrack, sfx, SFX } from './AudioManager';
 // 2026-05-19 — towers.json carries the hero's combat stats (baseDps,
 // attackSpeed, range, damageType, critChance). The draft modal pulls
 // these so the card surfaces the same numbers the in-game inspect
@@ -62,6 +67,20 @@ export function showChooseHeroModal(state: GameStateShape): void {
   // entrance fade, hover transitions, and the keyboard-hint pulse so
   // each card / button doesn't need its own inline keyframes string.
   ensureChooseHeroStyle();
+
+  // 2026-05-19 — Modal background music. The "Choose your character"
+  // sting from Smash Bros sets the picking-a-hero mood (already
+  // used as a one-shot when the player hits the 10-prospect cap;
+  // re-purposed here too — different game moment, same emotional
+  // beat). Single play (no loop) so the announcer line doesn't
+  // repeat on a loop if the player lingers; the modal can sit in
+  // silence afterward without losing impact. Stopped in cleanup()
+  // in case the player marches before the track finishes.
+  playMusicTrack(
+    'choose-hero-bgm',
+    sfx('assets/sfx/smash_bros_choose.mp3'),
+    { loop: false, gain: 0.55 }
+  );
 
   const overlay = document.createElement('div');
   overlay.id = 'choose-hero-modal';
@@ -138,6 +157,14 @@ export function showChooseHeroModal(state: GameStateShape): void {
   const selectByIndex = (idx: number) => {
     const heroId = choices[idx];
     const def: any = (HERO_DEFS as any)[heroId];
+    // 2026-05-19 — Hero pick audio cue. Re-using the prospect-keep
+    // sting because it already reads as "decision committed" in the
+    // game's audio vocabulary (same beat the player hears when
+    // saving a prospect). Only fires when the selection actually
+    // changes — re-clicking the same card doesn't spam the sound.
+    if (pickedHero !== heroId) {
+      SFX.prospectKeep();
+    }
     pickedHero = heroId;
     for (let i = 0; i < cards.length; i++) {
       const isSel = i === idx;
@@ -173,6 +200,13 @@ export function showChooseHeroModal(state: GameStateShape): void {
     marchBtn.onmouseleave = () => { marchBtn.style.transform = ''; marchBtn.style.boxShadow = '0 0 18px rgba(255,211,77,0.4)'; };
     marchBtn.onclick = () => {
       if (!pickedHero) return;
+      // 2026-05-19 — MARCH TO WAR audio kickoff. The wave-start
+      // blast is the game's "we're going to battle" signature
+      // horn — same cue the player hears at the moment a wave
+      // begins. Firing it on the march-button click delivers the
+      // dramatic transition from "choose your hero" into the
+      // first prospect-placement phase.
+      SFX.waveStartBlast();
       pickHero(state, pickedHero);
       cleanup();
     };
@@ -205,6 +239,9 @@ export function showChooseHeroModal(state: GameStateShape): void {
         e.preventDefault();
       }
     } else if (e.key === 'Enter' && pickedHero) {
+      // Enter key takes the same march-to-war audio path as the
+      // button click so the keyboard player gets the same kickoff.
+      SFX.waveStartBlast();
       pickHero(state, pickedHero);
       cleanup();
       e.preventDefault();
@@ -212,6 +249,11 @@ export function showChooseHeroModal(state: GameStateShape): void {
   };
   function cleanup() {
     window.removeEventListener('keydown', onKey);
+    // Stop the modal's choose-hero theme if it's still playing —
+    // the player marched (or otherwise dismissed) before the
+    // single-shot sting finished. Idempotent: no-op if the track
+    // already ended naturally.
+    stopMusicTrack('choose-hero-bgm');
     overlay.style.animation = 'chmFadeOut 0.22s ease-in forwards';
     setTimeout(() => overlay.remove(), 220);
   }
