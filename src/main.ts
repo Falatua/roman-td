@@ -118,7 +118,7 @@ async function boot() {
   let bossLegendaryDropped = false;
   // (stoneMode removed — stones merged into prospect placement)
   let lastComboCount = 0;    // for one-shot audio cue when combo becomes newly available
-  let speedMult = 1;          // 1x or 2x game speed
+  let speedMult = 1;          // 1× / 2× / 4× cycle (2026-05-20: 4× added)
   // 2026-05 v11 (B1 Pause). Manual pause toggled by HUD button or P key.
   // autoPaused fires on tab blur via visibilitychange; resumes only if
   // the user didn't also click PAUSE in between.
@@ -4231,9 +4231,20 @@ async function boot() {
     // Prospect placement (1g each) replaces both stone placement AND
     // stone toggling; unkept prospects auto-convert to walls.
     onToggleSpeed: (btn: HTMLButtonElement) => {
-      speedMult = speedMult === 1 ? 2 : 1;
-      btn.textContent = speedMult === 2 ? '▶▶ 2×' : '▶ 1×';
-      btn.style.background = speedMult === 2 ? '#5a3a1a' : '#222';
+      // 2026-05-20 — Added 4× tier. Cycle is now 1× → 2× → 4× → 1×.
+      // Same simulation, dt is multiplied uniformly; physics, projectile
+      // flight, animation timing, ability cooldowns all scale together.
+      // 4× is intended for routine clear-up waves and replay/grind runs;
+      // it's noticeably less readable in the heat of a boss wave but
+      // saves real time when the player knows the wave is handled.
+      const NEXT: Record<number, number> = { 1: 2, 2: 4, 4: 1 };
+      speedMult = NEXT[speedMult] ?? 1;
+      const label = speedMult === 4 ? '▶▶▶ 4×' : speedMult === 2 ? '▶▶ 2×' : '▶ 1×';
+      btn.textContent = label;
+      // Brighter tint at higher speeds so the player's eye catches that
+      // the sim is running hot. 4× is gold, 2× is the familiar copper.
+      const bg = speedMult === 4 ? '#7a5a14' : speedMult === 2 ? '#5a3a1a' : '#222';
+      btn.style.background = bg;
     },
     onTogglePause: (btn: HTMLButtonElement) => {
       paused = !paused;
@@ -5118,6 +5129,16 @@ async function boot() {
       dt = 0;
     } else {
       dt *= speedMult;     // fast-forward applied uniformly to game-time delta
+      // 2026-05-20 — Post-multiply dt cap. The natural-dt clamp above
+      // (0.1s) was sized for 1×/2×. At 4× a paused-tab catch-up
+      // frame could be ~0.4s of simulated time, large enough that
+      // fast projectiles can tunnel through small hitboxes and
+      // status-effect ticks (DoT, freeze) miss frames. Cap the
+      // post-multiply step at 0.2s — matches the 2×-at-0.1s proven
+      // ceiling. 4× still runs 4× as fast on a healthy frame
+      // (~0.016s × 4 = 0.064s of game time); the cap only bites on
+      // pathological slow frames.
+      if (dt > 0.2) dt = 0.2;
     }
     state.tick += dt;
     // 2026-05-17 — REWARD MODAL TRIGGER (relocated). Fires the instant

@@ -145,7 +145,7 @@ export class UIManager {
     // stays available so the Settings panel checkbox can call it.
     const speedBtn = mkBtn('▶ 1×', '#222');
     speedBtn.id = 'speed-btn';
-    speedBtn.title = 'Cycle game speed: 1× → 2× → 3× → 1×. Same simulation, just faster. Use during routine waves to save real time.';
+    speedBtn.title = 'Cycle game speed: 1× → 2× → 4× → 1×. Same simulation, just faster. 4× is noticeably less readable mid-boss but saves real time on routine clear-up waves and replays.';
     speedBtn.onclick = () => (cb as any).onToggleSpeed?.(speedBtn);
     // 2026-05 v11 (B1 Pause): pause button. Click or press P to toggle.
     // Auto-pause on tab blur is wired separately in main.ts.
