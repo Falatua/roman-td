@@ -978,13 +978,11 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   statsGrid.innerHTML = dmgBox + spdBox + rngBox + dpsBox + killsBox + kbBox;
   panel.appendChild(statsGrid);
 
-  // ── Built For (kept — heroes have a stated player problem)
-  if (heroDef.playerProblemSolved) {
-    const bf = document.createElement('div');
-    bf.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025;background:#12100d;font-size:11px;color:#cdb98a;line-height:1.5;font-style:italic;border-left:3px solid ' + tint + ';margin:0';
-    bf.innerHTML = `<span style="color:#aa9a4a;font-style:normal;letter-spacing:2px;font-size:9px">BUILT FOR </span>${heroDef.playerProblemSolved}`;
-    panel.appendChild(bf);
-  }
+  // 2026-05-20 — "BUILT FOR" flavor block removed per design ask.
+  // playerProblemSolved was a marketing/draft-pitch line — useful in
+  // the cold-start ChooseHeroModal but pure clutter on the in-field
+  // tower inspect. The hero's stats + passive + abilities below are
+  // the only things the player actually needs to act on mid-run.
 
   // ── Passive (defensive lookup — handles DUAL-kind heroes like
   // Agricola whose top-level description is empty)
@@ -1054,13 +1052,10 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   }
   panel.appendChild(abilityBlock);
 
-  // Biography (subtle)
-  if (heroDef.biography) {
-    const bio = document.createElement('div');
-    bio.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025;background:#0c0a08;font-size:10px;color:#aa9a4a;line-height:1.5;font-style:italic';
-    bio.textContent = '"' + heroDef.biography + '"';
-    panel.appendChild(bio);
-  }
+  // 2026-05-20 — Biography block also removed per design ask. The
+  // quote was atmospheric lore — fine for the Codex HEROES tab where
+  // players go specifically for lore, but clutter in the mid-run
+  // tower inspect. Codex HEROES tab still surfaces full biographies.
 
   // Close button only — no sell, no combine, no downgrade for heroes
   const closeRow = document.createElement('div');

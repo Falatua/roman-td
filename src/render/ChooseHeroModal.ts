@@ -10,7 +10,7 @@
 //   1. draftHeroChoices() returns 3 random hero ids from the 6-pool
 //   2. Render 3 hero cards side by side
 //   3. Hover: card border brightens to hero tint, scale 1.02
-//   4. Click: confirm strip appears (biography + "⚔ MARCH TO WAR")
+//   4. Click: confirm strip appears (name + title + "⚔ MARCH TO WAR")
 //   5. March → pickHero(state, heroId) + modal removes itself
 //
 // The pickHero call queues the hero placement token in
@@ -175,10 +175,12 @@ export function showChooseHeroModal(state: GameStateShape): void {
         : '0 0 8px rgba(0,0,0,0.6)';
       cards[i].style.borderColor = isSel ? (def.visual?.tierUpColor ?? '#ffd34d') : '#5a4a30';
     }
+    // 2026-05-20 — Biography quote dropped per design ask. The
+    // confirmation strip now shows just NAME + TITLE + the
+    // MARCH TO WAR button — cleaner read, less mid-draft flavor.
     confirmStrip.innerHTML = `
       <div style="font-size: clamp(20px, 2.4vh, 28px); color: ${def.visual?.tierUpColor ?? '#ffd34d'}; letter-spacing: 4px; font-weight: 900; margin-bottom: 4px; text-shadow: 0 0 12px ${def.visual?.tierUpColor ?? '#ffd34d'};">${def.name?.toUpperCase()}</div>
-      <div style="font-size: clamp(11px, 1.3vh, 13px); color: #cdb98a; letter-spacing: 2px; margin-bottom: 14px;">${def.title ?? ''}</div>
-      <div style="font-size: clamp(12px, 1.4vh, 14px); color: #e8d6a8; max-width: 720px; margin: 0 auto 18px; line-height: 1.6; font-style: italic; text-align: center;">"${(def.biography ?? '').replace(/"/g, '”')}"</div>
+      <div style="font-size: clamp(11px, 1.3vh, 13px); color: #cdb98a; letter-spacing: 2px; margin-bottom: clamp(14px, 2.2vh, 22px);">${def.title ?? ''}</div>
       <button id="choose-hero-march" type="button" style="
         padding: clamp(10px, 1.6vh, 16px) clamp(28px, 4vw, 56px);
         background: linear-gradient(180deg, #5a3a16, #2a1a08);
@@ -403,13 +405,12 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
     <div style="font-size:9px;color:#5a8a5a;letter-spacing:1px;margin-top:-10px;margin-bottom:clamp(10px,1.6vh,16px);font-style:italic">↑ Scales 1.0× → 2.4× across the 5 tiers as XP rises.</div>
   `;
 
-  // "Built for:" callout
-  const builtFor = def.playerProblemSolved
-    ? `
-      <div style="font-size: 9px; color: #aa9a4a; letter-spacing: 2px; margin-bottom: 4px;">BUILT FOR</div>
-      <div style="font-size: clamp(11px, 1.3vh, 13px); color: #e8d6a8; line-height: 1.5; margin-bottom: clamp(12px, 1.8vh, 18px); padding-left: 10px; border-left: 3px solid ${tint}; font-style: italic;">${def.playerProblemSolved}</div>
-    `
-    : '';
+  // 2026-05-20 — "BUILT FOR" block removed per design ask. The pitch
+  // line cluttered the draft card; players read stats / passive /
+  // abilities to decide, not a marketing tagline. Kept the variable
+  // as an empty string so the card layout below doesn't have to
+  // change shape.
+  const builtFor = '';
 
   // Passive aura — pulls through the defensive helper so DUAL-kind
   // heroes (Agricola) render a real description instead of an empty
