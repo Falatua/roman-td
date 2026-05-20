@@ -125,8 +125,14 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.UNDEAD_BERSERKER]: { melee: 0.5, ranged: 0.6, slow: 0.5, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
   [EnemyType.SPECTRAL_SCOUT]: { melee: 0.25, ranged: 0.55, slow: 0.2, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
   [EnemyType.UNDEAD_WARLORD]: { melee: 0.45, ranged: 0.55, slow: 0.25, fire: 1.25, burn: 1.25, poison: 0, bleed: 0 },
-  [EnemyType.UNDEAD_SPEARMAN]: { ranged: 0.45, melee: 0.85, fire: 1.15, burn: 1.15, poison: 0, bleed: 0 },
-  [EnemyType.GHOST_RIDER]: { melee: 0.2, ranged: 0.55, slow: 0.15, fire: 1.15, burn: 1.15, poison: 0, bleed: 0 },
+  // 2026-05-19 v3 — UNDEAD_SPEARMAN + GHOST_RIDER fire/burn bumped
+  // 1.15 → 1.40 per user direction. These two anchor the W16-W18
+  // undead-carthage trio (Spearman on W16+W17, Ghost Rider on
+  // W16+W17+W18). With the UNDEAD_CARTHAGE faction baseline of
+  // +30% fire, the final multiplier lands at 1.82× — fire/burn
+  // becomes a real payoff angle through the late mid-game.
+  [EnemyType.UNDEAD_SPEARMAN]: { ranged: 0.45, melee: 0.85, fire: 1.40, burn: 1.40, poison: 0, bleed: 0 },
+  [EnemyType.GHOST_RIDER]: { melee: 0.2, ranged: 0.55, slow: 0.15, fire: 1.40, burn: 1.40, poison: 0, bleed: 0 },
   // UNDEAD WAR ELEPHANT — bone hide still cracks; siege + fire are
   // both real angles. Boss-tier so burn vulnerability is slightly
   // lower than minions' (1.20 vs 1.25).
@@ -187,7 +193,16 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   },
 
   // Iron Phalanx — totally immune to melee. Ranged armor tightened too.
-  [EnemyType.IRON_PHALANX]: { melee: 0, ranged: 0.5, slow: 0.55, bleed: 0.45, poison: 0.55, burn: 0.7 },
+  // 2026-05-19 v3 — IRON_PHALANX fire/burn flipped from RESIST → +35%
+  // VULNERABLE per user direction. The W17 anchor unit (15 phalanx +
+  // 21 spearman + 12 ghost rider) was punishing every damage type
+  // BUT fire still didn't crack them (burn 0.7 = 30% RESIST), making
+  // the wave feel like it had no clean answer for fire builds. With
+  // the new 1.35 multiplier the heavy-plate phalanx behaves like the
+  // armor heats up — fire becomes the dedicated counter. Iron Phalanx
+  // is faction CARTHAGE (1.0× fire baseline), so the per-enemy 1.35
+  // is the only multiplier — final fire/burn damage = 1.35×.
+  [EnemyType.IRON_PHALANX]: { melee: 0, ranged: 0.5, slow: 0.55, bleed: 0.45, poison: 0.55, fire: 1.35, burn: 1.35 },
   // Architectus — heavy plate, shrugs off ranged hits until the shield is
   // broken. Bleed-immune as an undead minion.
   // 2026-05-18 v2 — Architectus is an UNDEAD_CARTHAGE engineer. By the
