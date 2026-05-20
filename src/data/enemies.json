@@ -89,11 +89,7 @@
     "isBoss": false,
     "livesCost": 1,
     "spriteSheet": 4,
-    "spriteCell": 6,
-    "stealthInterval": {
-      "period": 7,
-      "duration": 1.2
-    }
+    "spriteCell": 6
   },
   "CELTIC_WARLORD": {
     "name": "Brennus",
