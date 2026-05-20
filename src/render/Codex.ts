@@ -1324,7 +1324,36 @@ function renderTab(tab: string): string {
           <div style="padding:10px 14px;font-size:10px;color:#aa9a4a;font-style:italic;line-height:1.5;background:#0c0a08">"${def.biography ?? ''}"</div>
         </div>`;
     }).join('');
+    // 2026-05-20 v2 — HERO FORGE documentation. Pay-gold upgrade
+    // system that runs alongside the natural XP/tier ladder. Three
+    // independent paths the player can tap at the gate shop.
+    const forgeSection = section('⚒ HERO FORGE — paid upgrade paths', `
+      <div style="font-size:11px;color:#cdb98a;line-height:1.55;margin-bottom:10px">
+        A separate progression axis from XP/tier. Whenever your hero is on the field, the gate shop shows three upgrade buttons. Each path is independent — tapping one only ramps that path's price, the other two stay cheap. Stacks at 5 per path, no total cap.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="padding:10px 12px;background:#1a0e0a;border:2px solid #ff5a4a">
+          <div style="font-size:13px;color:#ff5a4a;font-weight:bold;letter-spacing:2px;margin-bottom:4px">⚔ SHARPEN</div>
+          <div style="font-size:10.5px;color:#cdb98a;line-height:1.5">+6% basic-attack damage per tap. 5 taps = +30% hero DPS. The path for hitter-style heroes (Caesar, Scipio, Marius) — turn the hero's basic strikes into the main carry.</div>
+        </div>
+        <div style="padding:10px 12px;background:#0a0e1a;border:2px solid #5a9fff">
+          <div style="font-size:13px;color:#5a9fff;font-weight:bold;letter-spacing:2px;margin-bottom:4px">⏱ HASTEN</div>
+          <div style="font-size:10.5px;color:#cdb98a;line-height:1.5">−5% ability cooldown per tap (compounding). 5 taps ≈ 0.77× cooldown ≈ 23% faster ability cycles. The path for caster heroes — Marius's Triumph cycles down to a regular event instead of a once-a-fight ult.</div>
+        </div>
+        <div style="padding:10px 12px;background:#1a1410;border:2px solid #ffd34d">
+          <div style="font-size:13px;color:#ffd34d;font-weight:bold;letter-spacing:2px;margin-bottom:4px">✨ EMPOWER</div>
+          <div style="font-size:10.5px;color:#cdb98a;line-height:1.5">+5% to every numeric magnitude inside every ability per tap. 5 taps = +25%. Damage multipliers, slow %, stun durations, execute thresholds, heal counts — all scale. Counts (javelin/eagle/shell numbers) and binary flags don't change.</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#cdb98a;line-height:1.55;background:#0c0a08;border-left:3px solid #d4af37;padding:8px 12px;margin-bottom:8px">
+        <b style="color:#d4af37">Cost ramp (per path):</b> 100g → 200g → 300g → 400g → 500g per tap. A single path maxed = 1500g. All three paths maxed = 4500g.
+      </div>
+      <div style="font-size:11px;color:#cdb98a;line-height:1.55;background:#0c0a08;border-left:3px solid #ff7733;padding:8px 12px">
+        <b style="color:#ff7733">Persistence + refund:</b> Forge stacks reset to 0/0/0 when you draft a fresh hero (after destruction). You get <b style="color:#88ff88">50% of the gold spent</b> refunded on the re-draft so the investment isn't a total loss. Forge progression does <b>not</b> affect XP, tier, or natural ability unlocks — it's a separate axis on top.
+      </div>
+    `);
     return `${section('THE ROSTER', '<div style="font-size:11px;color:#cdb98a;line-height:1.5">Six historical Roman generals stand in the hero pool. Every run shuffles the pool and offers a 3-card draft — only one champion serves you per campaign. Study all six even though you will not see them all in any single run; knowing the full roster lets you adapt to whichever three the draft shows. Heroes earn XP from every kill on the field (+1 non-boss / +20 boss) and tier up through five ranks. They occupy a single tile, carry exactly 2 item slots, and cannot be sold, combined, moved, or downgraded.</div>')}
+      ${forgeSection}
       ${cards}`;
   }
   if (tab === 'WAVES') {

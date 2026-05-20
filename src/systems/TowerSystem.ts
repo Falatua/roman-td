@@ -373,8 +373,19 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // surface on the aura record, applied where the math fits best.
     if (eff.rangeBonus) auraRangeBonus += eff.rangeBonus;
   }
+  // 2026-05-20 v2 — Hero Forge Path A (SHARPEN). +6% damage per stack
+  // applies to the hero tower only. Stacks live on game state (not on
+  // the tower instance) so this branch reads from globalThis.__game,
+  // same pattern used by the Agrippa range-aura block at line 314.
+  let forgeDmgMult = 1;
+  if (t.isHero) {
+    const g: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
+    const gs: any = g?.__game;
+    const n = gs?.heroForgeStacks?.dmg ?? 0;
+    if (n > 0) forgeDmgMult = 1 + 0.06 * n;
+  }
   return {
-    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult,
+    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult * forgeDmgMult,
     attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult,
     range: t.range + extraRange + endlessRangeBoost + auraRangeBonus
   };

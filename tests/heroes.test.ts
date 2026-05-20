@@ -18,7 +18,13 @@ import {
   awardHeroXp,
   getHeroTier,
   HERO_POOL,
-  HeroId
+  HeroId,
+  HERO_FORGE_CAP,
+  heroForgeNextCost,
+  heroForgeDmgMult,
+  heroForgeCooldownMult,
+  heroForgeMagnitudeMult,
+  scaleParams
 } from '../src/systems/HeroSystem';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState, GameStateShape } from '../src/GameState';
@@ -424,5 +430,107 @@ describe('Hero state isolation', () => {
     expect(s.activeHeroId).toBe('HERO_AGRICOLA');
     expect(s.heroXp).toBe(0);
     expect(s.heroTier).toBe(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// HERO FORGE (2026-05-20 v2)
+// ─────────────────────────────────────────────────────────────────────
+describe('Hero Forge — pay-gold upgrade system', () => {
+  it('cap constant is 5', () => {
+    expect(HERO_FORGE_CAP).toBe(5);
+  });
+
+  it('heroForgeNextCost ramps linearly steep: 100/200/300/400/500 then MAXED', () => {
+    expect(heroForgeNextCost(0)).toBe(100);
+    expect(heroForgeNextCost(1)).toBe(200);
+    expect(heroForgeNextCost(2)).toBe(300);
+    expect(heroForgeNextCost(3)).toBe(400);
+    expect(heroForgeNextCost(4)).toBe(500);
+    expect(heroForgeNextCost(5)).toBeNull();           // cap
+    expect(heroForgeNextCost(99)).toBeNull();          // defensive
+  });
+
+  it('heroForgeDmgMult: +6% per tap, +30% at 5/5', () => {
+    const s = freshState();
+    expect(heroForgeDmgMult(s)).toBeCloseTo(1.0, 6);
+    s.heroForgeStacks = { dmg: 3, cd: 0, aura: 0 };
+    expect(heroForgeDmgMult(s)).toBeCloseTo(1.18, 6);
+    s.heroForgeStacks = { dmg: 5, cd: 0, aura: 0 };
+    expect(heroForgeDmgMult(s)).toBeCloseTo(1.30, 6);
+  });
+
+  it('heroForgeCooldownMult: 0.95^N compounding', () => {
+    const s = freshState();
+    expect(heroForgeCooldownMult(s)).toBeCloseTo(1.0, 6);
+    s.heroForgeStacks = { dmg: 0, cd: 5, aura: 0 };
+    expect(heroForgeCooldownMult(s)).toBeCloseTo(0.7737809375, 6);
+  });
+
+  it('heroForgeMagnitudeMult: +5% per tap, +25% at 5/5', () => {
+    const s = freshState();
+    expect(heroForgeMagnitudeMult(s)).toBeCloseTo(1.0, 6);
+    s.heroForgeStacks = { dmg: 0, cd: 0, aura: 5 };
+    expect(heroForgeMagnitudeMult(s)).toBeCloseTo(1.25, 6);
+  });
+
+  it('scaleParams: scales numeric magnitudes but skips Count fields, booleans, lifetimeHealCap', () => {
+    const params = {
+      dmgMultiplier: 2.0,           // numeric → scale
+      enemySpeedReductionPercent: 60, // numeric → scale
+      wallDurationSec: 4,           // numeric → scale
+      javelinCount: 5,              // Count → KEEP
+      shellCount: 3,                // Count → KEEP
+      forceBonusAttack: true,       // boolean → KEEP
+      targets: 'ALL_TOWERS',        // string → KEEP
+      lifetimeHealCap: 20,          // static cap → KEEP
+      healGateAmount: 7             // numeric → scale
+    };
+    const scaled = scaleParams(params, 1.20);
+    expect(scaled.dmgMultiplier).toBeCloseTo(2.40, 6);
+    expect(scaled.enemySpeedReductionPercent).toBeCloseTo(72, 6);
+    expect(scaled.wallDurationSec).toBeCloseTo(4.8, 6);
+    expect(scaled.javelinCount).toBe(5);             // unchanged
+    expect(scaled.shellCount).toBe(3);
+    expect(scaled.forceBonusAttack).toBe(true);
+    expect(scaled.targets).toBe('ALL_TOWERS');
+    expect(scaled.lifetimeHealCap).toBe(20);
+    expect(scaled.healGateAmount).toBeCloseTo(8.4, 6);
+  });
+
+  it('scaleParams: bossSpeedMultiplier is INVERSE-scaled (higher EMPOWER = slower bosses)', () => {
+    const scaled = scaleParams({ bossSpeedMultiplier: 0.5 }, 1.25);
+    // 0.5 / 1.25 = 0.4 — bosses move at 40% instead of 50%
+    expect(scaled.bossSpeedMultiplier).toBeCloseTo(0.4, 6);
+  });
+
+  it('scaleParams: identity when magnitudeMult is 1', () => {
+    const params = { dmgMultiplier: 2.0, javelinCount: 5 };
+    expect(scaleParams(params, 1)).toBe(params);     // same ref — no allocation
+  });
+
+  it('pickHero refund: 50% of heroForgeGoldSpent returned on re-pick', () => {
+    const s = freshState();
+    s.gold = 100;
+    pickHero(s, 'HERO_CAESAR');
+    // simulate forge spending
+    s.heroForgeStacks = { dmg: 5, cd: 0, aura: 0 };
+    s.heroForgeGoldSpent = 1500;
+    const goldBeforeRePick = s.gold;
+    pickHero(s, 'HERO_MARIUS');
+    // 50% of 1500 = 750g refunded
+    expect(s.gold).toBe(goldBeforeRePick + 750);
+    expect(s.heroForgeStacks).toEqual({ dmg: 0, cd: 0, aura: 0 });
+    expect(s.heroForgeGoldSpent).toBe(0);
+    expect(s.activeHeroId).toBe('HERO_MARIUS');
+  });
+
+  it('pickHero refund: no refund on first hero pick (no prior heroForgeGoldSpent)', () => {
+    const s = freshState();
+    const goldBefore = s.gold ?? 0;
+    pickHero(s, 'HERO_CAESAR');
+    // First pick — no refund branch should have fired
+    expect(s.gold).toBe(goldBefore);
+    expect(s.heroForgeGoldSpent).toBe(0);
   });
 });

@@ -61,6 +61,66 @@ export interface HeroHooks {
   }) => void;
 }
 
+// ─── HERO FORGE (2026-05-20 v2) ──────────────────────────────────────
+// Pay-to-upgrade hero system. Three independent paths tapped at the
+// gate shop, each cap-5 with a linear-steep cost ramp. Runs entirely
+// independent of the XP/tier ladder — natural progression is
+// untouched. Stacks live on state.heroForgeStacks; 50% gold refund
+// on hero re-pick handled inside pickHero further down.
+export const HERO_FORGE_CAP = 5;
+
+/** Returns the cost of the NEXT tap on this path, or null when MAXED. */
+export function heroForgeNextCost(stacks: number): number | null {
+  if (stacks >= HERO_FORGE_CAP) return null;
+  return (stacks + 1) * 100;     // 100/200/300/400/500
+}
+
+/** Path A SHARPEN — +6% basic-attack damage per tap. */
+export function heroForgeDmgMult(state: GameStateShape): number {
+  const n = state.heroForgeStacks?.dmg ?? 0;
+  return 1 + 0.06 * n;            // 5 taps = 1.30×
+}
+/** Path B HASTEN — −5% ability cooldown per tap. Compounding decay. */
+export function heroForgeCooldownMult(state: GameStateShape): number {
+  const n = state.heroForgeStacks?.cd ?? 0;
+  return Math.pow(0.95, n);       // 5 taps ≈ 0.7738×
+}
+/** Path C EMPOWER — +5% to all numeric magnitudes in every ability. */
+export function heroForgeMagnitudeMult(state: GameStateShape): number {
+  const n = state.heroForgeStacks?.aura ?? 0;
+  return 1 + 0.05 * n;            // 5 taps = 1.25×
+}
+
+/**
+ * Scale all numeric MAGNITUDE-shape fields in an ability's params by the
+ * supplied multiplier. Skips integer COUNT fields (game-design integers
+ * like javelinCount/eagleCount), boolean flags, string overrides, and
+ * the `lifetimeHealCap` static cap. `bossSpeedMultiplier` is inverse-
+ * scaled (divided) so a higher EMPOWER stack slows bosses MORE during
+ * Scipio's Zama window. Pure function — returns a new object so caller
+ * can safely use it without mutating the JSON-loaded source.
+ */
+export function scaleParams(params: any, magnitudeMult: number): any {
+  if (!params || magnitudeMult === 1) return params;
+  const out: any = {};
+  for (const [key, val] of Object.entries(params)) {
+    // Game-design integers — counts of things, not magnitudes.
+    if (/Count$/i.test(key)) { out[key] = val; continue; }
+    // Static caps + booleans + strings stay untouched.
+    if (typeof val !== 'number' || key === 'lifetimeHealCap') {
+      out[key] = val;
+      continue;
+    }
+    // bossSpeedMultiplier is INVERSE — higher empower = slower bosses.
+    if (key === 'bossSpeedMultiplier') {
+      out[key] = val / magnitudeMult;
+      continue;
+    }
+    out[key] = val * magnitudeMult;
+  }
+  return out;
+}
+
 // ─── Public API ──────────────────────────────────────────────────────
 
 /** Fisher-Yates shuffle the 6-pool, return the first 3. Pure function. */
@@ -75,10 +135,23 @@ export function draftHeroChoices(_lastHeroId?: string | null): HeroId[] {
 
 /** Commit hero selection. Queues the hero as a placement token. */
 export function pickHero(state: GameStateShape, heroId: HeroId): void {
+  // 2026-05-20 v2 — HERO FORGE REFUND. If the player previously had a
+  // hero AND spent gold on forge upgrades, refund 50% of that gold
+  // before resetting the stacks. Pays out immediately so the player
+  // can re-invest into the new hero. Skipped when this is the very
+  // first hero pick of the run (no prior activeHeroId).
+  const prevSpend = state.heroForgeGoldSpent ?? 0;
+  if (state.activeHeroId && prevSpend > 0) {
+    const refund = Math.floor(prevSpend * 0.5);
+    state.gold = (state.gold ?? 0) + refund;
+    state.hint = `⚒ Forge refund: +${refund}g returned from the previous hero's investment.`;
+  }
   state.activeHeroId = heroId;
   state.heroXp = 0;
   state.heroTier = 0;
   state.heroLifeHealedThisRun = 0;
+  state.heroForgeStacks = { dmg: 0, cd: 0, aura: 0 };
+  state.heroForgeGoldSpent = 0;
   state.pendingPurchasedTowers = state.pendingPurchasedTowers ?? [];
   state.pendingPurchasedTowers.push({ type: heroId, tier: 1, source: 'hero' });
   // SANDBOX-safe: localStorage write skipped in sandbox so dev runs
@@ -141,12 +214,17 @@ export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): voi
   // Initialize cooldown scratchpad on first access.
   if (!hero.__heroCooldowns) hero.__heroCooldowns = {};
 
+  // 2026-05-20 v2 — Hero Forge Path B (HASTEN). Multiply this fire's
+  // cooldown stamp by the forge CD scalar so abilities come up faster
+  // as the player invests gold. Computed once per tick so all three
+  // ability slots see the same scalar this frame.
+  const cdMult = heroForgeCooldownMult(state);
   for (const ability of def.abilities) {
     if (tier < ability.level) continue;
     const nextFire = hero.__heroCooldowns[ability.id] ?? 0;
     if (state.tick < nextFire) continue;
     // Stamp BEFORE executing so a long-running executor can't double-fire.
-    hero.__heroCooldowns[ability.id] = state.tick + (ability.cooldownSec ?? 60);
+    hero.__heroCooldowns[ability.id] = state.tick + (ability.cooldownSec ?? 60) * cdMult;
     dispatchAbility(state, hero, ability, hooks);
   }
 
@@ -164,7 +242,12 @@ export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): voi
 // ─── Ability dispatch ────────────────────────────────────────────────
 
 function dispatchAbility(state: GameStateShape, hero: Tower, ability: any, hooks?: HeroHooks): void {
-  const params = ability.params ?? {};
+  // 2026-05-20 v2 — Hero Forge Path C (EMPOWER). Scale every numeric
+  // magnitude in the params block by the forge magnitude scalar. Counts,
+  // booleans, strings, and lifetimeHealCap are skipped (see scaleParams).
+  // Each executor reads from `params.X` so the scaled values land
+  // transparently without per-executor code changes.
+  const params = scaleParams(ability.params ?? {}, heroForgeMagnitudeMult(state));
   switch (ability.id) {
     // MARIUS
     case 'MARIAN_FORMATION':   return executeMARIAN_FORMATION(state, hero, params, ability, hooks);

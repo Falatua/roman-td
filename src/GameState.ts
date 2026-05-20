@@ -197,6 +197,13 @@ export interface GameStateShape {
   heroXp?: number;                     // cumulative XP this run
   heroTier?: 0 | 1 | 2 | 3 | 4;        // cached; recomputed on each XP award
   heroLifeHealedThisRun?: number;      // Sulla cap tracker — max +20 per run
+  // HERO FORGE (2026-05-20 v2) — gold-paid upgrades independent of the
+  // natural XP/tier ladder. Three independent paths, 5 taps each cap.
+  // Cost per tap = (stack + 1) × 100g (linear steep: 100/200/300/400/500).
+  // On hero re-pick (destruction → fresh draft), 50% of heroForgeGoldSpent
+  // is refunded before the stacks reset to zero.
+  heroForgeStacks?: { dmg: number; cd: number; aura: number };
+  heroForgeGoldSpent?: number;
 }
 
 export function createGameState(): GameStateShape {
@@ -250,7 +257,9 @@ export function createGameState(): GameStateShape {
     activeHeroTowerId: null,
     heroXp: 0,
     heroTier: 0,
-    heroLifeHealedThisRun: 0
+    heroLifeHealedThisRun: 0,
+    heroForgeStacks: { dmg: 0, cd: 0, aura: 0 },
+    heroForgeGoldSpent: 0
   };
 }
 

@@ -610,6 +610,18 @@ export class UIManager {
         `;
         chip.onmouseenter = () => { chip.style.boxShadow = `0 0 20px ${tint}88`; chip.style.transform = 'translateY(-1px)'; };
         chip.onmouseleave = () => { chip.style.boxShadow = `0 0 10px ${tint}33`; chip.style.transform = ''; };
+        // 2026-05-20 v2 — Hero Forge stack badges. Three small chips
+        // showing the player's investment per path (DMG/CD/AURA, 0..5).
+        // Always rendered (even at 0/0/0) so the player learns the
+        // feature exists; dimmed to 0.55 alpha when stack=0.
+        const forge = state.heroForgeStacks ?? { dmg: 0, cd: 0, aura: 0 };
+        const forgeRow = `<div style="display:flex;gap:4px;margin-top:4px">
+          ${[['dmg','⚔','#ff5a4a','SHARPEN'],['cd','⏱','#5a9fff','HASTEN'],['aura','✨','#ffd34d','EMPOWER']].map(([key,icon,col,name]) => {
+            const v = (forge as any)[key] as number;
+            const op = v === 0 ? 0.45 : 1;
+            return `<span title="${name} — ${v}/5" style="flex:1;display:flex;align-items:center;justify-content:center;gap:2px;background:#0c0a08;border:1px solid ${col};color:${col};font-size:9px;padding:2px 0;opacity:${op};letter-spacing:1px"><span style="font-size:10px">${icon}</span>${v}/5</span>`;
+          }).join('')}
+        </div>`;
         chip.innerHTML = `
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
             <div style="font-size:11px;font-weight:bold;letter-spacing:2px">⚔ ${(heroDef.name ?? '').toUpperCase()}</div>
@@ -626,6 +638,7 @@ export class UIManager {
               return `<span title="${(a.name ?? a.id)}" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dot};margin-left:3px;box-shadow:${unlocked ? `0 0 6px ${tint}` : 'none'}"></span>`;
             }).join('')}</span>
           </div>
+          ${forgeRow}
         `;
         chip.onclick = () => {
           // Click → re-route to the hero's tower-tile click flow.

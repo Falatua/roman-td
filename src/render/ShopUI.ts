@@ -13,6 +13,7 @@ import { tex } from './Assets';
 import { purchaseCompletesRecipe } from '../systems/CombinationEngine';
 import { itemFamily } from '../systems/ItemRules';
 import { markScrollable } from './ScrollCues';
+import { HERO_FORGE_CAP, heroForgeNextCost } from '../systems/HeroSystem';
 
 // Inject the recipe-ready pulse keyframes once. Mirrors the green glow used on
 // pending prospects whose `id` lands in scanCombos's ingredient set, so the
@@ -42,6 +43,86 @@ function imgSrcFromTex(key: string): string | null {
   const res: any = t.baseTexture?.resource;
   return res?.src ?? res?.url ?? (t as any).__srcPath ?? null;
 }
+
+// ─── HERO FORGE SECTION (2026-05-20 v2) ──────────────────────────────
+// Pay-to-upgrade hero system at the gate shop. Renders a 3-button row:
+//   ⚔ SHARPEN  — +6% basic-attack damage / tap (5 cap)
+//   ⏱ HASTEN   — −5% ability cooldown / tap  (5 cap)
+//   ✨ EMPOWER  — +5% to all numeric ability magnitudes / tap (5 cap)
+// Each path has its own cost ramp (100/200/300/400/500g) and own stack
+// counter; the three paths don't share resources or interact. The
+// section frame tints to the active hero's color from towers.json so
+// the forge feels personalized.
+const FORGE_PATHS: Array<{ key: 'dmg' | 'cd' | 'aura'; label: string; icon: string; tint: string; tip: string }> = [
+  { key: 'dmg',  label: 'SHARPEN', icon: '⚔', tint: '#ff5a4a', tip: '+6% basic-attack damage per tap.' },
+  { key: 'cd',   label: 'HASTEN',  icon: '⏱', tint: '#5a9fff', tip: '−5% ability cooldown per tap (compounding).' },
+  { key: 'aura', label: 'EMPOWER', icon: '✨', tint: '#ffd34d', tip: '+5% to every numeric ability magnitude per tap.' }
+];
+function renderHeroForgeSection(contentRoot: HTMLElement, state: GameStateShape, refresh: () => void): void {
+  // Lookup active hero tint for the section frame.
+  const heroDef: any = state.activeHeroId ? (towersData as any)[state.activeHeroId] : null;
+  const heroTint = String(heroDef?.tint ?? '#d4af37');
+  const heroName = String(heroDef?.name ?? 'Hero');
+  const wrap = document.createElement('div');
+  wrap.id = 'hero-forge-section';
+  wrap.style.cssText = `margin-bottom:12px;padding:10px 12px;background:linear-gradient(180deg,#0c0a08,#1a1410);border:2px solid ${heroTint};box-shadow:0 0 14px ${heroTint}44;`;
+  const stacks = state.heroForgeStacks ?? { dmg: 0, cd: 0, aura: 0 };
+  const buttonsHtml = FORGE_PATHS.map(p => {
+    const cur = (stacks as any)[p.key] as number;
+    const nextCost = heroForgeNextCost(cur);
+    const maxed = nextCost === null;
+    const canAfford = !maxed && (state.gold ?? 0) >= (nextCost ?? 0);
+    const baseBg = maxed ? '#2a1410' : canAfford ? '#1a2a1a' : '#1a1410';
+    const baseBorder = maxed ? '#5a4a30' : canAfford ? p.tint : '#5a4a30';
+    const cursor = (maxed || !canAfford) ? 'not-allowed' : 'pointer';
+    const opacity = (maxed || !canAfford) ? 0.55 : 1;
+    return `<button data-forge-path="${p.key}" title="${p.tip}" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px;background:${baseBg};border:2px solid ${baseBorder};color:#fff8e0;font-family:'Courier New',monospace;cursor:${cursor};opacity:${opacity};transition:transform 0.08s">
+      <div style="font-size:18px;color:${p.tint};line-height:1">${p.icon}</div>
+      <div style="font-size:11px;letter-spacing:2px;font-weight:bold;color:${p.tint}">${p.label}</div>
+      <div style="font-size:10px;color:#cdb98a">${cur}/${HERO_FORGE_CAP}</div>
+      <div style="font-size:11px;color:${maxed ? '#888' : canAfford ? '#f0c040' : '#aa6666'};font-weight:bold">${maxed ? 'MAXED' : `${nextCost}g`}</div>
+    </button>`;
+  }).join('');
+  wrap.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div style="font-size:10px;letter-spacing:4px;font-weight:bold;color:${heroTint}">⚒ HERO FORGE · ${heroName.toUpperCase()}</div>
+      <div style="font-size:9px;color:#aa9a4a;letter-spacing:1px">Independent of XP/tier</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">${buttonsHtml}</div>
+    <div style="margin-top:6px;font-size:10px;color:#aa9a4a;line-height:1.45">Pays gold to upgrade your hero. Each tap raises the next cost on THAT path only (the other two stay cheap). Lost on hero destruction — 50% gold refund when you draft a new hero.</div>`;
+  // Wire each button. Click → check cap + gold → deduct + bump stack +
+  // bump heroForgeGoldSpent + refresh the modal so the price ramps up
+  // and the HUD chip badges below also re-render on next state read.
+  setTimeout(() => {
+    const btns = wrap.querySelectorAll<HTMLButtonElement>('button[data-forge-path]');
+    btns.forEach(btn => {
+      btn.onclick = (ev) => {
+        ev.stopPropagation();
+        const pathKey = btn.dataset.forgePath as 'dmg' | 'cd' | 'aura' | undefined;
+        if (!pathKey) return;
+        const curStacks = state.heroForgeStacks ?? { dmg: 0, cd: 0, aura: 0 };
+        const cur = curStacks[pathKey];
+        const cost = heroForgeNextCost(cur);
+        if (cost === null) {
+          state.hint = `⚒ ${pathKey.toUpperCase()} path is MAXED at 5/5.`;
+          return;
+        }
+        if (!spendGold(state, cost)) {
+          state.hint = `⚒ Not enough gold for next ${pathKey.toUpperCase()} tap (need ${cost}g).`;
+          try { (SFX as any).uiCancel?.(); } catch { /* ignore */ }
+          return;
+        }
+        if (!state.heroForgeStacks) state.heroForgeStacks = { dmg: 0, cd: 0, aura: 0 };
+        (state.heroForgeStacks as any)[pathKey] = cur + 1;
+        state.heroForgeGoldSpent = (state.heroForgeGoldSpent ?? 0) + cost;
+        try { (SFX as any).comboSuccess?.(); } catch { /* ignore */ }
+        refresh();
+      };
+    });
+  }, 0);
+  contentRoot.appendChild(wrap);
+}
+
 
 // One-shot stylesheet for Fortuna's Wheel — pulsing border + button glow.
 // The CSS lives next to recipe-blink so all merc-shop visual languages
@@ -587,6 +668,15 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   // appends. For Mercator we use the inner content div; for Gate it's
   // the panel itself so existing layout is preserved.
   const contentRoot = isMerc ? panel.querySelector('div[style*="overflow:auto"]') as HTMLElement : panel;
+  // 2026-05-20 v2 — HERO FORGE section. Appears at the top of the gate
+  // shop modal whenever the player has a hero placed on the field. Three
+  // independent upgrade paths (SHARPEN / HASTEN / EMPOWER), each capped
+  // at 5 taps, each with a linear-steep 100/200/300/400/500g cost ramp.
+  // Visible only on the gate shop (not Mercator) — the Mercator vendor
+  // stays focused on legendaries + T5 armory.
+  if (!isMerc && state.activeHeroTowerId) {
+    renderHeroForgeSection(contentRoot, state, refresh);
+  }
   // Offers list
   const list = document.createElement('div');
   list.style.cssText = `display:grid;grid-template-columns:1fr 1fr;gap:6px;`;
