@@ -63,16 +63,24 @@ export interface HeroHooks {
 
 // ─── HERO FORGE (2026-05-20 v2) ──────────────────────────────────────
 // Pay-to-upgrade hero system. Three independent paths tapped at the
-// gate shop, each cap-5 with a linear-steep cost ramp. Runs entirely
-// independent of the XP/tier ladder — natural progression is
-// untouched. Stacks live on state.heroForgeStacks; 50% gold refund
-// on hero re-pick handled inside pickHero further down.
+// gate shop, each cap-5 with a doubling cost ramp starting at 20g.
+// Runs entirely independent of the XP/tier ladder — natural
+// progression is untouched. Stacks live on state.heroForgeStacks;
+// 50% gold refund on hero re-pick handled inside pickHero further
+// down.
+//
+// 2026-05-20 v3 — cost ramp lowered from linear-steep (100/200/300/
+// 400/500, 1500g per path maxed) to doubling-from-20g (20/40/80/160/
+// 320, 620g per path maxed). Per-tap cost is much cheaper at the
+// start so players can sample the system early, but ramps hard at
+// the top to keep maxing out a real commitment. Sum across all
+// three paths maxed = 1,860g (down from 4,500g).
 export const HERO_FORGE_CAP = 5;
 
 /** Returns the cost of the NEXT tap on this path, or null when MAXED. */
 export function heroForgeNextCost(stacks: number): number | null {
   if (stacks >= HERO_FORGE_CAP) return null;
-  return (stacks + 1) * 100;     // 100/200/300/400/500
+  return 20 * Math.pow(2, stacks); // 20/40/80/160/320
 }
 
 /** Path A SHARPEN — +6% basic-attack damage per tap. */

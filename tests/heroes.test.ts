@@ -452,14 +452,21 @@ describe('Hero Forge — pay-gold upgrade system', () => {
     expect(HERO_FORGE_CAP).toBe(5);
   });
 
-  it('heroForgeNextCost ramps linearly steep: 100/200/300/400/500 then MAXED', () => {
-    expect(heroForgeNextCost(0)).toBe(100);
-    expect(heroForgeNextCost(1)).toBe(200);
-    expect(heroForgeNextCost(2)).toBe(300);
-    expect(heroForgeNextCost(3)).toBe(400);
-    expect(heroForgeNextCost(4)).toBe(500);
+  it('heroForgeNextCost doubles from 20g: 20/40/80/160/320 then MAXED', () => {
+    // 2026-05-20 v3 — ramp lowered from linear-steep (100/200/300/
+    // 400/500) to doubling-from-20g. First tap on any path is always
+    // 20g so sampling a new path is never a big commitment; the
+    // doubling makes maxing out a real commitment.
+    expect(heroForgeNextCost(0)).toBe(20);
+    expect(heroForgeNextCost(1)).toBe(40);
+    expect(heroForgeNextCost(2)).toBe(80);
+    expect(heroForgeNextCost(3)).toBe(160);
+    expect(heroForgeNextCost(4)).toBe(320);
     expect(heroForgeNextCost(5)).toBeNull();           // cap
     expect(heroForgeNextCost(99)).toBeNull();          // defensive
+    // Sum per path maxed = 20 + 40 + 80 + 160 + 320 = 620g.
+    const total = [0, 1, 2, 3, 4].reduce((acc, n) => acc + (heroForgeNextCost(n) ?? 0), 0);
+    expect(total).toBe(620);
   });
 
   it('heroForgeDmgMult: +6% per tap, +30% at 5/5', () => {
@@ -524,13 +531,14 @@ describe('Hero Forge — pay-gold upgrade system', () => {
     const s = freshState();
     s.gold = 100;
     pickHero(s, 'HERO_CAESAR');
-    // simulate forge spending
+    // Simulate fully-maxed SHARPEN under the v3 doubling ramp
+    // (20 + 40 + 80 + 160 + 320 = 620g).
     s.heroForgeStacks = { dmg: 5, cd: 0, aura: 0 };
-    s.heroForgeGoldSpent = 1500;
+    s.heroForgeGoldSpent = 620;
     const goldBeforeRePick = s.gold;
     pickHero(s, 'HERO_MARIUS');
-    // 50% of 1500 = 750g refunded
-    expect(s.gold).toBe(goldBeforeRePick + 750);
+    // 50% of 620 = 310g refunded
+    expect(s.gold).toBe(goldBeforeRePick + 310);
     expect(s.heroForgeStacks).toEqual({ dmg: 0, cd: 0, aura: 0 });
     expect(s.heroForgeGoldSpent).toBe(0);
     expect(s.activeHeroId).toBe('HERO_MARIUS');
