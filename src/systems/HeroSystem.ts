@@ -684,7 +684,7 @@ function executePROSCRIPTION(state: GameStateShape, hero: Tower, _params: any, a
 }
 
 function executeSULLAS_MARCH(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
-  const threshold = (params.executeThresholdPercent ?? 25) / 100;
+  const threshold = (params.executeThresholdPercent ?? 20) / 100;
   // Execute any non-boss enemy below the threshold. The mass-execute
   // is the ability's load-bearing effect — wipes the wave's chaff
   // and resets the player's targeting picture. Below-threshold bosses

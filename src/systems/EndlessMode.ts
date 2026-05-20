@@ -104,14 +104,21 @@ function endlessResistMult(idx: number): number {
   return Math.max(0.45, 1 - 0.06 * idx);
 }
 
-// Spawn-count budget — each new-faction picker gets a base count,
-// returning W1-20 picks get less so the new sprites dominate per spec.
+// 2026-05-20 — Spawn-count budget reworked. The user wants every
+// Endless wave to ship AT LEAST 50 minions plus the boss honor-guard
+// when applicable. Old budget (~11+5+5 ≈ 21 baseline) felt too thin.
+// New baseline: 32+12+6 ≈ 50 minions at E1, climbing aggressively.
+// Boss-wave honor guard also bumped so even bosses bring a swarm.
 function newFactionCount(idx: number): number {
-  return Math.round(8 + idx * 0.85);
+  return Math.round(32 + idx * 1.6);
 }
 function returningCount(idx: number): number {
-  return Math.round(3 + idx * 0.45);
+  return Math.round(12 + idx * 0.8);
 }
+
+// Floor the total enemy count per wave at this number, padding the
+// dominant group if the picked groups + flyers ended up short.
+const ENDLESS_MINION_FLOOR = 50;
 
 export function generateEndlessWave(endlessIdx: number): EndlessWaveConfig {
   // Boss cadence: every 5 Endless waves a boss anchors the assault.
@@ -150,30 +157,60 @@ export function generateEndlessWave(endlessIdx: number): EndlessWaveConfig {
     const allFlyers = ['SPHINX', 'MONGOL_HORSE_ARCHER', 'MONGOL_SPEAR_RIDER', 'SPECTRAL_SCOUT', 'GHOST_RIDER', 'SHADOW_CAVALRY'];
     const fl = rand(allFlyers);
     if (!spawns.some(s => s.type === fl)) {
-      spawns.push({ type: fl, count: Math.max(3, Math.round(4 + endlessIdx * 0.4)) });
+      // 2026-05-20 — Bumped flyer group from 4+0.4×idx to 6+0.6×idx
+      // so flyer pressure scales with the broader minion-floor bump.
+      spawns.push({ type: fl, count: Math.max(5, Math.round(6 + endlessIdx * 0.6)) });
     }
   }
 
   // Boss anchor. ANUBIS_KING and KHAN_RIDER are the new endless bosses;
-  // returning bosses also rotate in for chaos. Boss waves replace the
-  // normal mob horde with the boss + a smaller swarm.
+  // returning bosses also rotate in for chaos. Boss waves now carry a
+  // SIZABLE honor-guard swarm (was small) so the boss arrives leading
+  // a real army instead of a token entourage.
   if (isBossWave) {
     const bossPool = endlessIdx <= 10
       ? [...ENDLESS_BOSSES, ...RETURNING_BOSSES.slice(0, 3)]
       : [...ENDLESS_BOSSES, ...RETURNING_BOSSES];
     const bossType = rand(bossPool);
-    // Cap the boss wave to JUST the boss + a small honor-guard so the
-    // boss isn't lost in the noise.
     spawns.length = 0;
     spawns.push({ type: bossType, count: 1 });
-    // Honor-guard mobs (new-faction only, smaller).
-    const guard = rand(ENDLESS_FACTION_ROSTER);
-    spawns.push({ type: rand(guard.types), count: Math.round(4 + endlessIdx * 0.3) });
+    // 2026-05-20 — Honor-guard bumped 4+0.3×idx → 20+1.2×idx so boss
+    // waves also clear the 50-minion floor. The boss + 20-30 guards
+    // reads like a proper end-of-act assault.
+    const guard1 = rand(ENDLESS_FACTION_ROSTER);
+    spawns.push({ type: rand(guard1.types), count: Math.round(20 + endlessIdx * 1.2) });
+    // Second guard group from a different faction for visual variety.
+    const guard2 = rand(ENDLESS_FACTION_ROSTER);
+    spawns.push({ type: rand(guard2.types), count: Math.round(12 + endlessIdx * 0.8) });
     // Late-Endless: TWIN bosses. Two-boss waves past E10.
     if (endlessIdx >= 10 && Math.random() < 0.4) {
       const second = rand(bossPool);
       if (second !== bossType) spawns.push({ type: second, count: 1 });
     }
+  }
+
+  // 2026-05-20 — Hard floor enforcement. If the picked groups +
+  // flyers + boss honor-guards still land below ENDLESS_MINION_FLOOR,
+  // pad the LARGEST non-boss group until total hits the floor. Boss
+  // entries (count=1) are protected so we never inflate the boss's
+  // own row. This guarantees the user's "50 minions plus other
+  // mechanics" ask is met on every single Endless wave.
+  const isProtectedBossRow = (s: { type: string }) => {
+    const def: any = (enemiesData as any)[s.type];
+    return !!def?.isBoss;
+  };
+  const totalNonBoss = spawns.filter(s => !isProtectedBossRow(s)).reduce((sum, s) => sum + s.count, 0);
+  if (totalNonBoss < ENDLESS_MINION_FLOOR) {
+    const padBy = ENDLESS_MINION_FLOOR - totalNonBoss;
+    // Find the largest non-boss group to pad.
+    let target = spawns.filter(s => !isProtectedBossRow(s)).sort((a, b) => b.count - a.count)[0];
+    if (!target) {
+      // Defensive: no non-boss group exists — add a fresh swarm group.
+      const f = rand(ENDLESS_FACTION_ROSTER);
+      target = { type: rand(f.types), count: 0 };
+      spawns.push(target);
+    }
+    target.count += padBy;
   }
 
   // Combined mechanics flags — used for pre-wave banner copy. Endless

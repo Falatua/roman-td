@@ -385,8 +385,8 @@
         "name": "Sulla's March",
         "cooldownSec": 60,
         "durationSec": 0,
-        "params": { "executeThresholdPercent": 25 },
-        "description": "Global divine pulse: instantly executes every non-boss enemy below 25% HP. Wipes the wave's chaff and resets your targeting picture.",
+        "params": { "executeThresholdPercent": 20 },
+        "description": "Global divine pulse: instantly executes every non-boss enemy below 20% HP. Wipes the wave's chaff and resets your targeting picture.",
         "vfxColor": "#ffffff",
         "vfxStyle": "DIVINE_SCREEN_FLASH"
       }

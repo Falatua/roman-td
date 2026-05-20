@@ -5545,7 +5545,13 @@ async function boot() {
             // restored base slash size (RenderEngine.triggerMeleeSlash:
             // 18 → 26 px). Heavy hits now visibly dominate over light
             // ones without being overwhelming on stacked combat frames.
-            const size = HEAVY.has(t.type) ? 1.5 : 1.0;
+            // 2026-05-20 — Hero melee swings are SIZE 2.2 (was 1.0/1.5)
+            // so Marius + Caesar visibly tower over regular melee
+            // swings. Reads as "this hero is hitting hard, not just
+            // another grunt." A second echo slash also fires at a
+            // 30° offset for extra theatrical weight.
+            const isHero = !!t.isHero;
+            const size = isHero ? 2.2 : (HEAVY.has(t.type) ? 1.5 : 1.0);
             // 2026-05 v10 — pass cleave flag so cleavers draw a wider
             // primary slash + a trailing echo arc on every swing.
             const cleaver = hasCleave(t);
@@ -5556,6 +5562,19 @@ async function boot() {
             // default white-silver slash.
             const slashTint = meleeSlashTintFor(t.type);
             renderer.triggerMeleeSlash(e.x, e.y, angle, state.tick, size, cleaver, slashTint);
+            // 2026-05-20 — Hero melee EXTRA: second echo slash at a
+            // wider angle offset + brief screen shake on every swing
+            // (not just boss hits). Caesar gets a gold impact ring on
+            // top; Marius gets a silver one. Reads as a hero strike,
+            // not a routine attack.
+            if (isHero) {
+              renderer.triggerMeleeSlash(e.x, e.y, angle + 0.5, state.tick, size * 0.75, false, slashTint);
+              renderer.triggerShake(3, 0.18);
+              if (renderer.triggerImpactRing) {
+                const ringColor = slashTint ?? 0xfff5cc;
+                renderer.triggerImpactRing(e.x, e.y, state.tick, GRID.TILE * 0.9, ringColor);
+              }
+            }
             if (e.isBoss && HEAVY.has(t.type)) renderer.triggerShake(2, 0.12);
           }
         },
@@ -5623,6 +5642,28 @@ async function boot() {
             // Heavy ranged engines (siege/onager) get an extra ground impact at firing position
             const HEAVY_RANGED = new Set(['SCORPIO','BALLISTARIUS','ARCUBALLISTA','CARROBALLISTA','SIEGE_ONAGER','VULCAN_ENGINEER','COLOSSUS_ONAGER']);
             if (HEAVY_RANGED.has(t.type)) renderer.triggerImpactRing(sx, sy, state.tick, 16, 0xddaa55);
+            // 2026-05-20 — Hero ranged EXTRA: bigger muzzle flash + a
+            // ground impact ring at the firing position + a brief
+            // screen shake. Sells "the hero is firing, not another
+            // ballistarius." Colors derived from the per-hero tint
+            // when possible (Agrippa's siege brown vs Sulla's
+            // hellfire orange) instead of the generic damage-type
+            // ramp, so each hero's shots feel distinct.
+            if (t.isHero) {
+              const HERO_TINT: Record<string, number> = {
+                HERO_AGRIPPA:  0xb88a4a,    // siege brown
+                HERO_AGRICOLA: 0x88dd66,    // green frontier
+                HERO_SCIPIO:   0xffe6a8,    // pale gold javelin
+                HERO_SULLA:    0xff7733     // hellfire orange
+              };
+              const heroC = HERO_TINT[t.type] ?? c;
+              // A SECOND muzzle flash with the hero color makes the
+              // tip pop twice in one frame — reads as a real
+              // burst of energy at the moment of release.
+              renderer.triggerMuzzleFlash(tipX, tipY, heroC, state.tick);
+              renderer.triggerImpactRing(sx, sy, state.tick, 22, heroC);
+              renderer.triggerShake(2, 0.10);
+            }
           }
         },
         onKill: (t: any, e: any) => {
@@ -6282,12 +6323,24 @@ async function boot() {
         return;
       }
       SFX.victory();
+      // 2026-05-20 — On W20 victory, replay the FF7 loading-screen
+      // fanfare. Caps off the run with the same triumphant track the
+      // player heard at the coin slot, closing the loop. Stops any
+      // boss/wave music underneath so the fanfare gets the stage.
+      stopAllMusicTracks();
+      playMusicTrack('loading', LOADING_MUSIC_URL, { loop: false, gain: 0.65 });
       document.getElementById('end-screen')?.remove();
       void showVictory;
-      // 2026-05 v10 — POST-VICTORY ENDLESS TRANSITION. After the player
-      // submits their name and the W20 entry saves, route them into
-      // Endless mode instead of dropping into the static leaderboard.
-      runEndOfGameFlow(app, state, true, () => location.reload(), (savedName) => {
+      // 2026-05-20 — POST-VICTORY FLOW REWRITE. Per design ask: after
+      // submitting the W20 score, the player should land on the
+      // Hall of Glory (local + global) FIRST, then be offered a
+      // separate "Join Endless" button to transition. The previous
+      // flow bypassed the leaderboard entirely and jumped straight
+      // into Endless, which meant the player never saw their own
+      // W20 entry rank against everyone else's. Now: leaderboard
+      // mounts, and onPostVictory is wired to a button inside the
+      // Hall of Glory rather than firing automatically.
+      runEndOfGameFlow(app, state, true, () => location.reload(), undefined, (savedName) => {
         beginEndlessMode(savedName);
       });
     }

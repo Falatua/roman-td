@@ -151,6 +151,17 @@ export function saveLeaderboard(entries: LeaderboardEntry[]) {
 
 export function insertEntry(entry: LeaderboardEntry): LeaderboardEntry[] {
   const list = loadLeaderboard();
+  // 2026-05-20 — Dedup by ts. Players reported seeing the same score
+  // twice on the LOCAL tab; root cause was finalize() firing twice
+  // (Enter pressed on the end-summary, then again on the leaderboard
+  // post-render, or a tab-blur autosave colliding with the manual
+  // submit). ts is Date.now() at insertion so two entries with the
+  // same ts ARE the same run; collapse them. Also defends against
+  // any future double-call from new code paths.
+  if (list.some(e => e.ts === entry.ts && e.score === entry.score && e.name === entry.name)) {
+    // Already inserted — return the existing list unchanged.
+    return list.slice(0, MAX_ENTRIES);
+  }
   list.push(entry);
   list.sort((a, b) => b.score - a.score || a.ts - b.ts);
   const top = list.slice(0, MAX_ENTRIES);
@@ -473,9 +484,10 @@ export function showLeaderboard(
   parent: HTMLElement,
   currentEntry: LeaderboardEntry | null,
   onRestart: () => void,
-  opts?: { loadingMode?: boolean; onBack?: () => void }
+  opts?: { loadingMode?: boolean; onBack?: () => void; onEndlessJoin?: () => void }
 ) {
   const isLoadingMode = !!opts?.loadingMode;
+  const onEndlessJoin = opts?.onEndlessJoin;
   document.getElementById('hall-of-glory')?.remove();
   ensureStyle();
   const entries = loadLeaderboard();
@@ -582,7 +594,18 @@ export function showLeaderboard(
              <div class="hog-prompt">▶ PRESS ENTER TO BEGIN YOUR RUN ▶</div>
              <button id="hog-back-to-loading" type="button" style="background:transparent;border:1px solid #5a4a30;color:#aa9a4a;font-family:'Courier New',monospace;font-size:clamp(10px,0.9vw,14px);letter-spacing:clamp(2px,0.3vw,4px);font-weight:bold;padding:clamp(7px,0.8vw,11px) clamp(14px,1.5vw,22px);cursor:pointer;text-shadow:1px 1px 0 #000">← BACK TO COIN SLOT</button>
            </div>`
-        : `<div class="hog-prompt">▶ PRESS ENTER TO PLAY AGAIN ◀</div>`}
+        : onEndlessJoin
+          // 2026-05-20 — W20 VICTORY VIEW. Two actions side-by-side:
+          // a big purple "JOIN ENDLESS" button for the brave, and a
+          // smaller "PLAY AGAIN" prompt for players who want to
+          // restart the campaign. Enter still binds to PLAY AGAIN
+          // so muscle-memory works; Endless requires an explicit
+          // click (it's a one-way ticket — no path back to W20).
+          ? `<div style="display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1vw,14px);margin-top:clamp(6px,0.8vw,12px)">
+               <button id="hog-join-endless" type="button" style="background:linear-gradient(180deg,#5a1a8a,#3a0a5a);color:#ff66ff;border:3px solid #aa55ff;font-family:'Courier New',monospace;font-size:clamp(14px,1.6vw,22px);letter-spacing:clamp(4px,0.6vw,10px);font-weight:900;padding:clamp(10px,1.2vw,18px) clamp(24px,3vw,48px);cursor:pointer;box-shadow:0 0 22px rgba(170,85,255,0.55);text-shadow:0 0 8px #aa55ff,2px 2px 0 #000">⚔ JOIN ENDLESS MODE ⚔</button>
+               <div class="hog-prompt" style="font-size:clamp(12px,1.2vw,18px)">▶ Press ENTER to play campaign again ◀</div>
+             </div>`
+          : `<div class="hog-prompt">▶ PRESS ENTER TO PLAY AGAIN ◀</div>`}
     </div>`;
   // 2026-05-19 — Mount the Hall of Glory directly on document.body
   // instead of inside the scaled #app container. This lets the
@@ -879,6 +902,18 @@ export function showLeaderboard(
     if (ev.key === 'Enter') restart();
   };
   document.addEventListener('keydown', onKey);
+  // 2026-05-20 — Wire the W20-victory JOIN ENDLESS button. Only
+  // rendered when onEndlessJoin is provided. Clears the Hall and
+  // fires the callback (which kicks off Endless in main.ts).
+  const endlessBtn = wrap.querySelector('#hog-join-endless') as HTMLButtonElement | null;
+  if (endlessBtn && onEndlessJoin) {
+    endlessBtn.onclick = () => {
+      stopAutoRefresh();
+      wrap.remove();
+      document.removeEventListener('keydown', onKey);
+      onEndlessJoin();
+    };
+  }
   // 2026-05-19 — In loading mode, the "← BACK TO COIN SLOT" button
   // closes the leaderboard without firing onRestart (which would
   // commit-to-game). Falls back to wrap.remove() so the loading
@@ -907,7 +942,15 @@ export function runEndOfGameFlow(
   state: GameStateShape,
   won: boolean,
   onRestart: () => void,
-  onPostVictory?: (name: string) => void
+  onPostVictory?: (name: string) => void,
+  // 2026-05-20 — New 6th parameter. When the player WINS W20 and
+  // onEndlessJoin is wired, the Hall of Glory still mounts (player
+  // sees their score on the local + global board) AND a "▶ JOIN
+  // ENDLESS" button appears underneath. Clicking that button fires
+  // onEndlessJoin(name) instead of restarting. If onEndlessJoin is
+  // undefined the Hall acts normally. Distinct from onPostVictory
+  // which (legacy) bypasses the Hall entirely.
+  onEndlessJoin?: (name: string) => void
 ) {
   showEndSummary(parent, state, won, (finalScore) => {
     // The player ALWAYS sets a name in the "etch your name in the history
@@ -1000,14 +1043,20 @@ export function runEndOfGameFlow(
       // can surface the failure reason without changing every signature.
       (entry as any).__submitStatus = submitStatus;
       (entry as any).__submitDetail = submitDetail;
-      // If a post-victory hook is wired (Endless transition), invoke it
-      // INSTEAD of showing the static leaderboard. The leaderboard is
-      // still reachable from the main menu after the run ends.
+      // 2026-05-20 — Post-victory routing rewritten. Old behavior:
+      // if onPostVictory was wired, the Hall of Glory was bypassed
+      // and Endless launched immediately. New behavior: ALWAYS show
+      // the Hall after submitting; if onEndlessJoin is wired, the
+      // Hall renders a "▶ JOIN ENDLESS MODE" button that fires the
+      // callback. onPostVictory remains the legacy bypass for
+      // anywhere that explicitly wants no-leaderboard flow.
       if (won && onPostVictory) {
         onPostVictory(entry.name);
         return;
       }
-      showLeaderboard(parent, entry, onRestart);
+      showLeaderboard(parent, entry, onRestart, {
+        onEndlessJoin: (won && onEndlessJoin) ? () => onEndlessJoin(entry.name) : undefined
+      });
     };
 
     // Safety fallback: if somehow the player has no saved name (cleared
