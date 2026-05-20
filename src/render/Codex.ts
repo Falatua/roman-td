@@ -1889,6 +1889,7 @@ function renderComboCard(c: any, cs?: { state: 'ready'|'prospect'|'partial'|'non
         <div style="color:#ffd34d;font-weight:bold;font-size:14px">${resultDef.name ?? c.result}</div>
         <div style="font-size:11px;color:#9be0ff">Result: Tier ${c.tier}</div>
         ${damageTypeChips(resultDef)}
+        <div style="font-size:10px;color:#88ff88;margin-top:3px;letter-spacing:1px">DPS: <b>${typeof resultDef.baseDps === 'number' ? Math.round(resultDef.baseDps) : '—'}</b> · Range: <b>${resultDef.range ?? '—'}</b> · Atk/s: <b>${resultDef.attackSpeed ?? '—'}</b></div>
         <div style="font-size:10px;color:#f0c040;margin-top:3px">Cost: ${c.cost}g</div>
         <div style="font-size:10px;color:#cdb98a;margin-top:5px;line-height:1.35">${resultDef.ability ?? ''}</div>
         ${pinBtnHtml}

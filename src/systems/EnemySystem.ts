@@ -265,8 +265,28 @@ export function tickBurnPatches(state: GameStateShape, dt: number) {
     //   Per-tier tick rates: T1 4.0% · T2 4.6% · T3 5.2% · T4 5.8% · T5 7.0%
     //
     // Boss DoT reduction (×0.18) applies to burning ground.
+    //
+    // 2026-05-20 — FIRE-DAMAGE CATEGORIZATION. The burning-ground tick
+    // is FIRE damage by nature (Ignifer / Inferno Cart / Colossus
+    // Onager / Vulcan Engineer all carry damageType=ELEMENTAL_FIRE
+    // and stamp these patches via burnsGround). Previously the tick
+    // ran flat true-damage and bypassed every fire interaction —
+    // Fire Giants and Daemon Imperator (both immuneFire=true) took
+    // the same DoT as a regular grunt. That broke the "fire-immune
+    // enemy" contract. Now we honor:
+    //   • def.immuneFire === true → 0 damage
+    //   • burn-resist multiplier (statusEffectiveness BURN) → scales
+    //     the tick (Demon Hellhound burn:0 → 0; Celtic Berserker
+    //     burn:0.85 → 85% effective)
+    // Direct BURN status ticks (Draconarius proximity, etc.) already
+    // ran through statusEffectiveness — burning ground is now
+    // consistent with that path.
+    const def: any = (enemiesData as any)[e.type];
+    if (def?.immuneFire) continue;
+    const burnMult = statusEffectiveness(e, StatusEffectKind.BURN);
+    if (burnMult <= 0) continue;
     const bossMod = e.isBoss ? 0.18 : 1.0;
-    const dps = e.maxHp * 0.04 * (1 + (bestTier - 1) * 0.15) * bossMod;
+    const dps = e.maxHp * 0.04 * (1 + (bestTier - 1) * 0.15) * bossMod * burnMult;
     e.hp -= dps * dt;
     e.lastDamagedTick = state.tick;
     if (e.hpFlashTimer <= 0) e.hpFlashTimer = 0.06;

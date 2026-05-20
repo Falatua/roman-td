@@ -318,8 +318,8 @@
         "name": "Ides of March",
         "cooldownSec": 60,
         "durationSec": 6,
-        "params": { "towerSpeedMultiplier": 2.0, "executeThresholdPercent": 30 },
-        "description": "For 6s, every tower fires at DOUBLE speed. Then every enemy currently below 30% HP is instantly executed.",
+        "params": { "towerSpeedMultiplier": 2.0, "executeThresholdPercent": 20 },
+        "description": "For 6s, every tower fires at DOUBLE speed. Then every enemy currently below 20% HP is instantly executed.",
         "vfxColor": "#ffe066",
         "vfxStyle": "GOLD_WHITE_SCREEN_FLASH"
       }

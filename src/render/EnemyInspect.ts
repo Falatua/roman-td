@@ -171,6 +171,55 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     panel.appendChild(specBox);
   }
 
+  // 2026-05-20 — FULL DAMAGE-OVER-TIME PROFILE. The SPECIFIC RESISTANCES
+  // block above only lists rows where the enemy is resistant or immune,
+  // so players had no way to tell whether a missing entry meant "full
+  // damage" or "not implemented." This panel shows every DoT slot
+  // (Slow / Stun / Freeze / Burn / Bleed / Poison) with explicit
+  // status — Full / Resistant X% / IMMUNE — so the player can build a
+  // complete picture at a glance. Also surfaces the boolean immune
+  // flags from enemies.json (immunePoison / immuneFire / immuneFreeze /
+  // immuneStun / immuneSlow) which the per-type multiplier can't carry.
+  const fullProfile = (() => {
+    const profile: Array<{ label: string; value: number; immune: boolean; note?: string }> = [];
+    const dots: Array<{ label: string; field: string; flag?: string }> = [
+      { label: 'Slow',   field: 'slow',   flag: 'immuneSlow' },
+      { label: 'Stun',   field: 'stun',   flag: 'immuneStun' },
+      { label: 'Freeze', field: 'freeze', flag: 'immuneFreeze' },
+      { label: 'Burn',   field: 'burn',   flag: 'immuneFire' },
+      { label: 'Bleed',  field: 'bleed' },
+      { label: 'Poison', field: 'poison', flag: 'immunePoison' }
+    ];
+    const summaryMap = new Map(specificRes.map(r => [r.label, r.value]));
+    for (const d of dots) {
+      const flagSet = d.flag ? !!def?.[d.flag] : false;
+      const v = summaryMap.get(d.label);
+      const immune = flagSet || (typeof v === 'number' && v <= 0);
+      const value = typeof v === 'number' ? v : 1;
+      profile.push({ label: d.label, value, immune, note: flagSet ? 'data flag' : undefined });
+    }
+    return profile;
+  })();
+  const dotBox = document.createElement('div');
+  dotBox.style.cssText = 'padding:10px 12px;border-bottom:1px solid #3a3025;background:#0e0c0a';
+  const dotCellsHtml = fullProfile.map(p => {
+    let status: string; let color: string;
+    if (p.immune) { status = 'IMMUNE'; color = '#aa3a3a'; }
+    else if (p.value < 1) { status = `${Math.round((1 - p.value) * 100)}% resist`; color = '#7896c8'; }
+    else if (p.value > 1) { status = `+${Math.round((p.value - 1) * 100)}% extra`; color = '#ffd34d'; }
+    else { status = 'full damage'; color = '#9c9'; }
+    return `<div style="background:#0c0a08;padding:6px 6px;text-align:center;font-size:11px;border:1px solid #1f1c18">
+      <div style="color:#aa9a4a;letter-spacing:1px;font-size:9px">${p.label.toUpperCase()}</div>
+      <div style="color:${color};font-size:11px;font-weight:bold;margin-top:3px">${status}</div>
+    </div>`;
+  }).join('');
+  dotBox.innerHTML = `
+    <div style="font-size:9px;color:#aa9a4a;letter-spacing:1px;margin-bottom:6px">DAMAGE-OVER-TIME PROFILE</div>
+    <div style="display:grid;grid-template-columns:repeat(6, 1fr);gap:3px">${dotCellsHtml}</div>
+    <div style="font-size:9px;color:#5a7a7a;margin-top:6px;line-height:1.4">Slow / Stun / Freeze are STATUS effects. Burn / Bleed / Poison are DAMAGE-OVER-TIME ticks. Full damage = no resist; +N% extra = vulnerable.</div>
+  `;
+  panel.appendChild(dotBox);
+
   // 2026-05 v6: greatly expanded trait/mechanic block. Every JSON flag
   // and boss-script behavior we run is documented here, with concrete
   // numbers (X%/sec, N tiles, M seconds) instead of raw field names.

@@ -614,7 +614,7 @@ function executeIDES_OF_MARCH(state: GameStateShape, hero: Tower, params: any, a
   (state as any).__idesTowerSpeedMult = params.towerSpeedMultiplier ?? 2.0;
   // Schedule the execute pulse at the END of the window.
   scheduleHeroTimedEvent(state, state.tick + dur, () => {
-    const threshold = (params.executeThresholdPercent ?? 30) / 100;
+    const threshold = (params.executeThresholdPercent ?? 20) / 100;
     for (const e of state.enemies.values()) {
       if (e.isBoss) continue;
       if (e.hp / Math.max(1, e.maxHp) < threshold) e.hp = 0;

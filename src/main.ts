@@ -4768,8 +4768,40 @@ async function boot() {
       }
     }
     if (isPreWavePhase() && tile === TileType.STONE) {
-      inspectStone(col, row);
-      return;
+      // 2026-05-20 — STONE REPLACE QoL. If the player has a pending
+      // placement (a prospect card to drop, or a purchased / quest-
+      // rewarded tower waiting in the queue), clicking a stone tile
+      // pops a quick confirm dialog asking "Replace this stone with
+      // your prospect / tower?" YES sells the stone (+1g refund),
+      // rebuilds the path, then falls through to the normal
+      // placement code below. NO bails entirely (stone stays, no
+      // sell). With no pending placement, behavior is unchanged —
+      // stone-inspect opens like before. The old SELL STONES bulk
+      // selection mode remains available for cleanup runs.
+      const hasPendingProspect = state.phase === GamePhase.PROSPECT_PLACEMENT;
+      const hasPendingTower = (state.pendingPurchasedTowers?.length ?? 0) > 0;
+      if (hasPendingProspect || hasPendingTower) {
+        const kindLabel = hasPendingTower ? 'tower' : 'prospect';
+        const ok = window.confirm(
+          `Replace this stone with your ${kindLabel}?\n\n` +
+          `Selling the stone refunds +${ECONOMY.STONE_COST}g, then your ${kindLabel} drops on this tile. ` +
+          `Click OK to swap, or Cancel to leave the stone alone.`
+        );
+        if (!ok) return;
+        // Sell the stone in place: empty the tile, refund, rebuild path.
+        setTile(state, col, row, TileType.EMPTY);
+        earnGold(state, ECONOMY.STONE_COST);
+        const np = buildGroundPath(state);
+        if (np) { state.groundPath = np; resnapEnemiesToPath(state, np); }
+        state.hint = `Sold stone (+${ECONOMY.STONE_COST}g). Dropping ${kindLabel}…`;
+        // Update the local tile so the placement code below sees an
+        // empty tile and proceeds. Falling through (no return) routes
+        // to the standard placement logic.
+        tile = TileType.EMPTY;
+      } else {
+        inspectStone(col, row);
+        return;
+      }
     }
 
     // SANDBOX: direct tower spawn. If the player picked a tower from

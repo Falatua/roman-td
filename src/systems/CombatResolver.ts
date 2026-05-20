@@ -1122,8 +1122,18 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // siege rarely but for huge multipliers; combo towers usually crit
       // higher than their base counterparts.
       const towerDef: any = (towersData as any)[t.type];
-      const critChance = towerDef?.critChance ?? 0;
+      let critChance = towerDef?.critChance ?? 0;
       const critMult   = towerDef?.critMult ?? 1.5;
+      // 2026-05-20 — LEGION PRIME signature: +60% crit chance vs bosses.
+      // Base critChance stays 20% on non-bosses; against any isBoss
+      // target it caps at 80% (0.20 base + 0.60 bonus) so boss kills
+      // feel like a real "heavy siege artillery breaks armor" moment.
+      // Crit mult is 2.5 — so a Legion Prime boss-crit deals 2.5× the
+      // already-AoE shell. Stacks with the slow/armor-shred on every
+      // hit so the combined boss pressure is significant.
+      if (t.type === TowerType.LEGION_PRIME && target.isBoss) {
+        critChance = Math.min(1, critChance + 0.60);
+      }
       if (critChance > 0 && Math.random() < critChance) {
         damage *= critMult;
         (t as any).__lastWasCrit = true;
