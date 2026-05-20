@@ -700,15 +700,13 @@ function executeSULLAS_MARCH(state: GameStateShape, hero: Tower, params: any, ab
   // this ability. healGateAmount + lifetimeHealCap remain in the
   // herodefs JSON (still scaled by EMPOWER) but the resolver no
   // longer reads them.
-  // Signature VFX: white-gold light column descending over Sulla with
-  // crossed-swords at the top + a heal cross above the gate tile.
-  const gateCol = (GRID as any).COLS - 1;
-  const gateRow = Math.floor((GRID as any).ROWS / 2);
-  const gateX = gateCol * GRID.TILE + GRID.TILE / 2;
-  const gateY = gateRow * GRID.TILE + GRID.TILE / 2;
-  fireAbilityFx(hero, hooks, state.tick, ability, '#ffffff', 1.4, {
-    gate: { x: gateX, y: gateY }
-  });
+  // 2026-05-20 — VFX trimmed. Was a white-gold light column over
+  // Sulla PLUS a heal-cross above the gate tile. Heal-cross removed
+  // when the gate-heal mechanic was retired — drawing a heal cross
+  // when nothing heals confuses the player about what the ability
+  // does. Now: column-over-Sulla + crossed-swords flourish only,
+  // matching the pure execute identity.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#ffffff', 1.4, null);
   hooks?.triggerShake?.(4.0, 0.7);
 }
 

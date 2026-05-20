@@ -1053,7 +1053,7 @@ async function boot() {
     // pick the right tower archetype before placing.
     //
     // DEMONS — ~3× divine (1.5×/1.3× per-enemy × +100% faction row).
-    if (enemiesInWave.has('DEMON_HELLHOUND') || enemiesInWave.has('CELTIC_FIRE_DEMON') || enemiesInWave.has('SHADOW_CAVALRY') || enemiesInWave.has('DEMON_LEGATE') || enemiesInWave.has('DAEMON_IMPERATOR')) enemyCallouts.push({ text: '✨ DEMONS — DIVINE WEAKNESS · demons take ~3× damage from divine sources (Flamen / Augur / Haruspex / Solar Priest / Pontifex). Fire deals 0 damage — leave the Igniferas at home. Bleed and poison also hit demons HARDER than normal (+25-30% per tick).', cat: 'ENEMY' });
+    if (enemiesInWave.has('DEMON_HELLHOUND') || enemiesInWave.has('CELTIC_FIRE_DEMON') || enemiesInWave.has('SHADOW_CAVALRY') || enemiesInWave.has('DEMON_LEGATE') || enemiesInWave.has('DAEMON_IMPERATOR')) enemyCallouts.push({ text: '✨ DEMONS — DIVINE WEAKNESS · demons take ~3× damage from divine sources (Flamen / Augur / Haruspex / Solar Priest / Pontifex). Fire deals 0 damage. Bleed and poison hit lesser demons harder, but the W20 Daemon Imperator boss resists both DoTs at 50%.', cat: 'ENEMY' });
     // ELEPHANTS — +45/+40% siege.
     if (enemiesInWave.has('WAR_ELEPHANT') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) enemyCallouts.push({ text: '🪨 ELEPHANTS — SIEGE WEAKNESS · elephants take +45% damage from SIEGE (Libritor, Ballistarius, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine). Stones crack hide that arrows can\'t. Bleed and poison resisted heavily — DoT-stacker builds skip elephants.', cat: 'ENEMY' });
     // GALLIC DRUIDS — sacred-ward shield + Celtic faction takes +15% ranged.
@@ -1307,10 +1307,22 @@ async function boot() {
       // Hover-detail tooltip on the "RNG WAVE" tag — shows mod.blurb (the
       // exact mechanic explanation pulled from constants.ts WAVE_MODIFIERS).
       const blurbEsc = mod.blurb.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      // 2026-05-20 — Endless stacks 1-3 modifiers per wave; show the
+      // primary big + a "+N MORE" badge so the player knows the chaos
+      // cocktail is bigger than the headline. Tooltip lists every
+      // active modifier's blurb.
+      const extras = state.endlessExtraModifiers ?? [];
+      const extraDefs = extras.map(k => WAVE_MODIFIERS.find(m => m.key === k)).filter(Boolean) as typeof WAVE_MODIFIERS;
+      const extraCount = extraDefs.length;
+      const extraBadge = extraCount > 0
+        ? `<span style="background:${colorHex}33;color:${colorHex};font-size:10px;padding:1px 6px;border-radius:8px;border:1px solid ${colorHex}88;letter-spacing:1px;font-weight:bold">+${extraCount} MORE</span>`
+        : '';
+      const extrasTooltip = extraDefs.map(m => `<div style="margin-top:6px;padding-top:5px;border-top:1px dashed ${colorHex}44"><span style="color:#${m.color.toString(16).padStart(6,'0')};font-weight:bold">${m.name.toUpperCase()}</span> — ${m.blurb.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`).join('');
       chip.innerHTML = `
         <div style="display:flex;align-items:center;gap:8px">
           ${imgHtml}
           <span style="flex:1;color:${colorHex};font-size:13px;letter-spacing:2px">${mod.name.toUpperCase()}</span>
+          ${extraBadge}
           <button id="modifier-chip-toggle" title="Collapse" style="background:transparent;border:none;color:#aa9a4a;font-size:13px;line-height:1;cursor:pointer;padding:0 2px;font-weight:bold">▾</button>
         </div>
         <div style="font-size:10px;letter-spacing:1.5px;color:#cdb98a;font-weight:bold;line-height:1.4;margin-top:2px">
@@ -1318,7 +1330,8 @@ async function boot() {
           <div class="mod-tooltip">
             <div style="font-size:10px;letter-spacing:2px;color:${colorHex};margin-bottom:5px;font-weight:bold">🎲 ${mod.name.toUpperCase()}</div>
             <div style="margin-bottom:6px">${blurbEsc}</div>
-            <div style="font-size:10px;color:#88ff88;letter-spacing:1px;border-top:1px solid #3a3025;padding-top:5px">SURVIVE → <b>+60g · +1 UNCOMMON ITEM · +4000 score</b></div>
+            ${extrasTooltip}
+            <div style="font-size:10px;color:#88ff88;letter-spacing:1px;border-top:1px solid #3a3025;padding-top:5px;margin-top:6px">SURVIVE → <b>+60g · +1 UNCOMMON ITEM · +4000 score</b></div>
           </div>
         </div>
       `;
@@ -1660,7 +1673,7 @@ async function boot() {
     // placing the first prospect.
     if (hasDemons) tips.push({
       headline: '✨ DEMONS — DIVINE IS YOUR ANSWER',
-      body: `Wave <b>${nextWave}</b> brings demons. They take <b style="color:#ffd34d">~3× damage from DIVINE sources</b> (per-enemy ×1.5 stacked with the SUPER_DEMONS faction +100% row). Park a <b style="color:#ffd34d">Solar Priest</b>, <b style="color:#ffd34d">Flamen</b>, <b style="color:#ffd34d">Augur</b>, <b style="color:#ffd34d">Haruspex</b>, <b style="color:#ffd34d">Pontifex</b>, or any divine combo on the path — every gold-haloed projectile hits for triple. <b style="color:#ff5050">FIRE deals ZERO damage</b> (demons are hellborn) — leave Igniferas, Inferno Carts, and fire-oil flasks at home. Poison and bleed still tick at +25-30% bonus on demons, so non-fire DoTs are also welcome.`,
+      body: `Wave <b>${nextWave}</b> brings demons. They take <b style="color:#ffd34d">~3× damage from DIVINE sources</b>. Park a <b style="color:#ffd34d">Solar Priest</b>, <b style="color:#ffd34d">Flamen</b>, <b style="color:#ffd34d">Augur</b>, <b style="color:#ffd34d">Haruspex</b>, <b style="color:#ffd34d">Pontifex</b>, or any divine combo on the path — every gold-haloed projectile hits for triple. <b style="color:#ff5050">FIRE deals ZERO damage</b> — leave Igniferas, Inferno Carts, and fire-oil flasks at home. Poison and bleed hit lesser demons hard, but the <b style="color:#ffaaaa">W20 Daemon Imperator boss resists both DoTs at 50%</b> — bring direct damage for the final fight.`,
       color: '#ffd34d'
     });
     // 2026-05 v10 — ELEPHANT WAVE TIPS. Combines the dust shield warning

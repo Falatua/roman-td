@@ -1109,7 +1109,7 @@
     "melee": false,
     "spriteSheet": 1,
     "spriteCell": 3,
-    "ability": "The Fortunate. PYRE WARD: every tower within 2 tiles of Sulla deals ELEMENTAL_FIRE damage (damage TYPE converted, not a bonus — bronze gladii, javelins, ballista bolts, and divine bolts all read as flame). Fortune's Bolt flings a 1.5× divine bolt at the nearest enemy in range. Sulla's March is a global divine pulse that executes every non-boss enemy below 25% HP. Proscription temporarily overrides every tower's damage to DIVINE, bypassing all faction resistances (wins over the passive FIRE conversion during its window).",
+    "ability": "The Fortunate. PYRE WARD: every tower within 2 tiles of Sulla deals ELEMENTAL_FIRE damage (damage TYPE converted, not a bonus — bronze gladii, javelins, ballista bolts, and divine bolts all read as flame). Fortune's Bolt flings a 1.5× divine bolt at the nearest enemy in range. Sulla's March is a global divine pulse that executes every non-boss enemy below 20% HP. Proscription temporarily overrides every tower's damage to DIVINE, bypassing all faction resistances (wins over the passive FIRE conversion during its window).",
     "critChance": 0.05,
     "critMult": 2.0,
     "isHero": true,

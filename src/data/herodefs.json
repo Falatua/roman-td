@@ -348,8 +348,8 @@
     "name": "Lucius Sulla",
     "title": "The Fortunate",
     "specialty": "FIRE / LIFESAVER",
-    "playerProblemSolved": "I keep leaking lives and can't recover once I start losing.",
-    "biography": "Sulla was famously lucky — he said so himself, and Rome believed him. On this field, his luck translates into pyres and lives: every kill he lands could be the one that saves Rome.",
+    "playerProblemSolved": "Enemies keep resisting my damage types and I need a way to punch through.",
+    "biography": "Sulla was famously lucky — he said so himself, and Rome believed him. On this field his luck translates into pyres and divine wrath: every nearby attack becomes flame, and on command every tower's strike becomes pure DIVINE.",
     "passive": {
       "kind": "DAMAGE_TYPE_CONVERSION",
       "radiusTiles": 2,
@@ -407,7 +407,7 @@
       "floorEffectColor": "#ff9922", "tierUpColor": "#fff5cc",
       "idleSfxId": "sfx_hero_sulla_hum",
       "companionType": "CANDLE_RING",
-      "companionDescription": "Six small candle flames orbit Sulla's tile slowly. They brighten briefly whenever a life is healed."
+      "companionDescription": "Six small candle flames orbit Sulla's tile slowly. They flare bright whenever Sulla lands a killing blow."
     }
   }
 }
