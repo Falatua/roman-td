@@ -523,11 +523,14 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     const dx = tx - e.x;
     const dy = ty - e.y;
     const dist = Math.max(1, Math.hypot(dx, dy));
-    // 2026-05-17 — dart speed lowered from 3.5 → 2.2 tiles/sec per player feedback.
-    // Slower telegraph = more reaction window for the player to kill the druid
-    // before the sleep lands, and the trailing cyan/purple orb reads as a real
-    // threat instead of a blur.
-    const speed = GRID.TILE * 2.2;
+    // 2026-05-20 — dart speed bumped 2.2 → 5.0 tiles/sec per player
+    // feedback that the slow projectile felt frustrating (the dart
+    // crawled across the screen even after the 0.5s channel ended).
+    // The 0.5s channel + the druid's currentSpeed=0 root during it
+    // remain the player's reaction window — the dart itself no
+    // longer adds dead time on top. 3-tile max cast range now
+    // resolves in ~0.6s of dart flight instead of ~1.4s.
+    const speed = GRID.TILE * 5.0;
     const darts = (state as any).__druidSleepDarts ?? ((state as any).__druidSleepDarts = []);
     darts.push({
       x: e.x,
