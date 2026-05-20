@@ -165,7 +165,20 @@ const MELEE_TYPES = new Set<TowerType>([
   // restores the slash-arc swing VFX + melee sword SFX + weather
   // range immunity + meleeHitsFlyers gating, same path every other
   // melee tower uses.
-  TowerType.HERO_MARIUS
+  TowerType.HERO_MARIUS,
+  // 2026-05-19 v2 — HERO_CAESAR converted from ranged DIVINE to MELEE
+  // DIVINE at range 1.6 to mirror the JULIUS_CAESAR combo tower's
+  // post-v9 melee identity. The previous ranged build shipped a
+  // PROJ_IMPERIAL_ORB projectile but enemies didn't visibly take
+  // damage from it under live play — the projectile path made
+  // damage feel disconnected. Converting to melee routes damage
+  // through the direct-hit branch (target.hp -= damage) with the
+  // gladius slash arc + sword swing SFX, plus a gold DIVINE impact
+  // ring on every swing for the imperial flair. Caesar must now be
+  // positioned next to the path like every other melee hero, but
+  // his hits land reliably and the swing rhythm reads from any
+  // distance.
+  TowerType.HERO_CAESAR
 ]);
 
 // Towers that ONLY hit flyers — useless on ground waves, devastating on air ones.

@@ -153,19 +153,18 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   // Bugfix: the ranged heroes had no PROJ_FOR_TOWER entry, so their
   // attacks shipped no projectile (CombatResolver still dealt damage
   // but the player saw nothing fly across the screen). HERO_MARIUS
-  // stays out of this map because he's melee — already in MELEE_TYPES
-  // (CombatResolver:97) and renders a slash arc on every swing.
+  // and HERO_CAESAR both stay out of this map because they're melee
+  // — already in MELEE_TYPES (CombatResolver:97) and render a slash
+  // arc on every swing.
   //
   // Projectile picks match each hero's identity:
   //   Agrippa  → PROJ_PILUM        (siege admiral lobs heavy javelins)
   //   Agricola → PROJ_ARROW        (frontier scout, arching arrows)
   //   Scipio   → PROJ_BALLISTA     (boss-hunter heavy bolt, slow + hard)
-  //   Caesar   → PROJ_IMPERIAL_ORB (same as the JULIUS_CAESAR tower)
   //   Sulla    → PROJ_HELLFIRE_BOLT (fire-themed bolt with splash)
   [TowerType.HERO_AGRIPPA]:   { key: 'PROJ_PILUM',         arc: true,  speed: 540, splash: 0.5, embed: true  },
   [TowerType.HERO_AGRICOLA]:  { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0,   embed: true  },
   [TowerType.HERO_SCIPIO]:    { key: 'PROJ_BALLISTA',      arc: false, speed: 820, splash: 0.8, embed: true  },
-  [TowerType.HERO_CAESAR]:    { key: 'PROJ_IMPERIAL_ORB',  arc: false, speed: 700, splash: 1.0, embed: false },
   [TowerType.HERO_SULLA]:     { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false }
   // ──────────────────────────────────────────────────────────────────
   // Pure-aura support towers — intentionally NOT in this map because
