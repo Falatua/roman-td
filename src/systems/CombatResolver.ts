@@ -154,7 +154,18 @@ const MELEE_TYPES = new Set<TowerType>([
   // melee. Keeps +45% global damage aura and the 3s magisterial stun
   // pulse (pulse radius pinned to 5.5 tiles in the aura block so the
   // command-presence reach isn't tied to the sword's reach).
-  TowerType.JULIUS_CAESAR
+  TowerType.JULIUS_CAESAR,
+  // 2026-05-19 — HERO_MARIUS is configured in towers.json as
+  // `damageType: PHYS_MELEE`, `melee: true`, range 1.5 — but the
+  // combat resolver gates the melee swing path on MELEE_TYPES set
+  // membership (not the def's `melee` flag). Without this entry his
+  // attacks fell through to the ranged else-branch — no projectile
+  // ever shipped because there's no PROJ_FOR_TOWER entry for
+  // HERO_MARIUS either, so he attacked invisibly. Adding him here
+  // restores the slash-arc swing VFX + melee sword SFX + weather
+  // range immunity + meleeHitsFlyers gating, same path every other
+  // melee tower uses.
+  TowerType.HERO_MARIUS
 ]);
 
 // Towers that ONLY hit flyers — useless on ground waves, devastating on air ones.
