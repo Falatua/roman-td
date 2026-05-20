@@ -653,19 +653,15 @@ function executeFORTUNES_BOLT(state: GameStateShape, hero: Tower, _params: any, 
     if (d <= rangePx && d < bestD) { bestD = d; nearest = e; }
   }
   if (!nearest) return;
-  // Apply DIVINE damage. Tag the enemy so EnemySystem's kill handler
-  // can credit the gate-heal if this hit lands the killing blow.
+  // Apply DIVINE damage. 2026-05-20 — the kill-bonus gate-heal was
+  // removed per design ask ("get rid of the part where Sulla can
+  // restore lives"). The hit still deals 1.5× hero basic-attack damage
+  // and lands as a divine bolt VFX; it just no longer pays out a
+  // life on the killing blow. heroLifeHealedThisRun is intentionally
+  // left on the state shape for save-load compatibility with older
+  // entries; no code path increments it any more.
   const dmg = heroBasicAttackDamage(state, hero) * 1.5;
-  const prevHp = nearest.hp;
   nearest.hp = Math.max(0, nearest.hp - dmg);
-  if (nearest.hp === 0 && prevHp > 0) {
-    // Heal cap enforced here too (belt + suspenders with EnemySystem).
-    const healed = state.heroLifeHealedThisRun ?? 0;
-    if (healed < 20) {
-      state.lives += 1;
-      state.heroLifeHealedThisRun = healed + 1;
-    }
-  }
   // Signature VFX: vertical white-gold divine bolt strikes from above
   // onto the target, with impact burst on landing.
   fireAbilityFx(hero, hooks, state.tick, ability, '#fff5cc', 0.6, {
@@ -689,27 +685,21 @@ function executePROSCRIPTION(state: GameStateShape, hero: Tower, _params: any, a
 
 function executeSULLAS_MARCH(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
   const threshold = (params.executeThresholdPercent ?? 25) / 100;
-  // Execute any non-boss enemy below the threshold.
+  // Execute any non-boss enemy below the threshold. The mass-execute
+  // is the ability's load-bearing effect — wipes the wave's chaff
+  // and resets the player's targeting picture. Below-threshold bosses
+  // are intentionally exempt so the ability doesn't trivialize the
+  // wave-5/10/15/20 boss kills.
   for (const e of state.enemies.values()) {
     if (e.isBoss) continue;
     if (e.hp / Math.max(1, e.maxHp) < threshold) e.hp = 0;
   }
-  // Heal the gate, capped at lifetime 20.
-  // 2026-05-20 — Floor to integer. Hero Forge Path C (EMPOWER) scales
-  // healGateAmount by 1.05^stacks, which produces floats (5 → 5.25 →
-  // 5.5125 …). Adding floats to state.lives was bleeding floating-
-  // point noise into the HUD ("LIVES 19.04999999…") and overflowing
-  // the HUD chip on W11 because the long string blew out the column
-  // width. Floor here keeps the heal integer, the cap math sane, and
-  // the HUD aligned. Round-down loses < 1 life vs. the float math —
-  // acceptable since the cap is already 20 and the base heal is 5.
-  const healed = state.heroLifeHealedThisRun ?? 0;
-  const requestedRaw = params.healGateAmount ?? 5;
-  const requested = Math.max(0, Math.floor(requestedRaw));
-  const cap = params.lifetimeHealCap ?? 20;
-  const amount = Math.min(requested, Math.max(0, cap - healed));
-  state.lives += amount;
-  state.heroLifeHealedThisRun = healed + amount;
+  // 2026-05-20 — Gate-heal removed per design ask ("get rid of the
+  // part where Sulla can restore lives"). The mass execute + Path C
+  // EMPOWER scaling on the threshold are now the entire payload of
+  // this ability. healGateAmount + lifetimeHealCap remain in the
+  // herodefs JSON (still scaled by EMPOWER) but the resolver no
+  // longer reads them.
   // Signature VFX: white-gold light column descending over Sulla with
   // crossed-swords at the top + a heal cross above the gate tile.
   const gateCol = (GRID as any).COLS - 1;

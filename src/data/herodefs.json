@@ -363,8 +363,8 @@
         "name": "Fortune's Bolt",
         "cooldownSec": 10,
         "durationSec": 0,
-        "params": { "healGateOnKill": 1, "lifetimeHealCap": 30 },
-        "description": "Fires a divine bolt. If this bolt lands the killing blow, the gate is healed +1 LIFE. Capped at +30 lives healed total per run.",
+        "params": { "dmgMultiplier": 1.5 },
+        "description": "Fires a divine bolt at the nearest enemy in range, dealing 1.5× Sulla's basic-attack damage as DIVINE (bypasses every faction resistance).",
         "vfxColor": "#fff5cc",
         "vfxStyle": "WHITE_GOLD_BOLT"
       },
@@ -385,8 +385,8 @@
         "name": "Sulla's March",
         "cooldownSec": 60,
         "durationSec": 0,
-        "params": { "executeThresholdPercent": 25, "healGateAmount": 7, "lifetimeHealCap": 30 },
-        "description": "Global divine pulse: instantly executes every enemy below 25% HP. Simultaneously restores 7 LIVES (subject to the +30 per-run cap).",
+        "params": { "executeThresholdPercent": 25 },
+        "description": "Global divine pulse: instantly executes every non-boss enemy below 25% HP. Wipes the wave's chaff and resets your targeting picture.",
         "vfxColor": "#ffffff",
         "vfxStyle": "DIVINE_SCREEN_FLASH"
       }

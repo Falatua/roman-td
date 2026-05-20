@@ -5707,12 +5707,12 @@ async function boot() {
             heroAwardXp(state, !!e.isBoss, heroSystemHooks);
             (e as any).__heroXpAwarded = true;
           }
-          // Sulla Fortune's Bolt heal: the heal credit is applied
-          // inline inside executeFORTUNES_BOLT (HeroSystem.ts) when
-          // the bolt's damage actually drops an enemy to 0. Splash /
-          // burn-patch chains where Sulla "tagged" the enemy but
-          // another mechanic finishes the kill are not credited — a
-          // simplification we accept for v1.
+          // 2026-05-20 — Sulla's Fortune's Bolt + Sulla's March gate-
+          // heal mechanic was retired per design ask ("get rid of the
+          // part where Sulla can restore lives"). Both abilities still
+          // fire — Fortune's Bolt deals 1.5× damage as DIVINE, Sulla's
+          // March mass-executes below-threshold non-bosses — but
+          // neither contributes lives to the player any more.
           // BOSS-KILL gold bonus — extra reward separate from wave-end gold.
           // Scales with wave so late-game bosses pay proper bounties.
           if (e.isBoss) {
