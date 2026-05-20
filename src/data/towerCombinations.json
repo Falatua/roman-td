@@ -509,10 +509,6 @@
       {
         "type": "NEMESIS_ENGINE",
         "minTier": 5
-      },
-      {
-        "type": "SCORPION_BOLT",
-        "minTier": 5
       }
     ],
     "cost": 120

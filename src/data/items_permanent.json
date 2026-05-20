@@ -148,9 +148,9 @@
   },
   "WAR_HOUND_COLLAR": {
     "name": "War Hound Collar",
-    "rarity": "LEGENDARY",
-    "buy": 120,
-    "sell": 35,
+    "rarity": "EPIC",
+    "buy": 60,
+    "sell": 30,
     "effect": "Aura 2.5 tiles: allies gain +18% attack speed"
   },
   "BERSERKERS_MUZZLE": {
@@ -162,9 +162,9 @@
   },
   "DRUIDS_TORC": {
     "name": "Druid's Torc",
-    "rarity": "LEGENDARY",
-    "buy": 120,
-    "sell": 35,
+    "rarity": "EPIC",
+    "buy": 60,
+    "sell": 30,
     "effect": "Aura 2.5 tiles: allies gain +18% damage"
   },
   "CELTIC_LONGSWORD": {
@@ -183,16 +183,16 @@
   },
   "GALLIC_SHIELD_BOSS": {
     "name": "Gallic Shield Boss",
-    "rarity": "LEGENDARY",
-    "buy": 130,
-    "sell": 40,
+    "rarity": "EPIC",
+    "buy": 60,
+    "sell": 30,
     "effect": "+18% damage, range +1 tile"
   },
   "DRUID_STAFF_FRAGMENT": {
     "name": "Druid Staff Fragment",
-    "rarity": "LEGENDARY",
-    "buy": 130,
-    "sell": 40,
+    "rarity": "EPIC",
+    "buy": 60,
+    "sell": 30,
     "effect": "Range +2 tiles"
   },
   "ELEPHANT_TUSK": {
