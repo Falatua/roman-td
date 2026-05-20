@@ -113,7 +113,15 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // (Undead Warlord, Undead War Elephant) NO LONGER have immuneFire
   // and follow the same burn-vulnerable rule as their minions.
   [EnemyType.UNDEAD_CELT]: { melee: 0.7, ranged: 0.55, poison: 0, bleed: 0, fire: 1.25, burn: 1.25 },
-  [EnemyType.ZOMBIE_DRUID]: { melee: 1.25, slow: 0.55, fire: 1.20, burn: 1.20, poison: 0, bleed: 0, ranged: 0.55 },
+  // 2026-05-19 v3 — `melee: 1.25` removed. ZOMBIE_DRUID carries
+  // `meleeImmune: true` in enemies.json, which short-circuits any
+  // PHYS_MELEE damage to zero regardless of the resistance row. The
+  // 1.25 was dead data that misled the codex / inspect tooltips.
+  // DIVINE melee + FIRE melee + SIEGE melee towers now bypass the
+  // immune flag (see meleeImmuneBlocksTower in CombatResolver) — and
+  // those route through their own resistance rows (divine / fire /
+  // siege), not melee.
+  [EnemyType.ZOMBIE_DRUID]: { slow: 0.55, fire: 1.20, burn: 1.20, poison: 0, bleed: 0, ranged: 0.55 },
   [EnemyType.UNDEAD_BERSERKER]: { melee: 0.5, ranged: 0.6, slow: 0.5, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
   [EnemyType.SPECTRAL_SCOUT]: { melee: 0.25, ranged: 0.55, slow: 0.2, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
   [EnemyType.UNDEAD_WARLORD]: { melee: 0.45, ranged: 0.55, slow: 0.25, fire: 1.25, burn: 1.25, poison: 0, bleed: 0 },

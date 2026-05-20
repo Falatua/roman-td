@@ -58,6 +58,22 @@ function towerBurnsGround(towerType: string): boolean {
 function isMeleeImmune(enemyType: string): boolean {
   return !!(enemiesData as any)[enemyType]?.meleeImmune;
 }
+// 2026-05-19 v3 — Zombie Druid (W13) + Undead Warlord (boss) carry
+// `meleeImmune` to block physical sword-strikes — bone bodies shrug
+// off blade impacts. But the previous gate blocked the ENTIRE melee
+// swing path regardless of damage type, which meant divine melee
+// towers (Pontifex Maximus, God of War, Hero Caesar) and any future
+// fire-melee or siege-melee unit couldn't damage them either. Per
+// design intent, only PHYS_MELEE damage should be blocked — DIVINE
+// retribution and FIRE/SIEGE smashes delivered at sword reach still
+// pierce. IRON_PHALANX keeps the broader immunity via its per-enemy
+// `melee: 0` resistance row (returns 0 on the resistance modifier
+// math, so it still takes ~zero damage from PHYS_MELEE while non-
+// physical melee comes through normally).
+function meleeImmuneBlocksTower(enemyType: string, towerDmgType: DamageType): boolean {
+  if (!isMeleeImmune(enemyType)) return false;
+  return towerDmgType === DamageType.PHYS_MELEE;
+}
 function requiresMeleeBreak(enemyType: string): boolean {
   return !!(enemiesData as any)[enemyType]?.requiresMeleeBreak;
 }
@@ -1113,7 +1129,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (Math.hypot(e.x - tcx, e.y - tcy) > rPx) return false;
         if (isMeleeRow && e.isFlyer && !meleeHitsFlyers) return false;
         if (ANTI_AIR_ONLY_TYPES.has(t.type)) return e.isFlyer;
-        if (isMeleeRow && (enemiesData as any)[e.type]?.meleeImmune) return false;
+        // 2026-05-19 v3 — meleeImmune now only blocks PHYS_MELEE
+        // damage. Divine / fire / siege melee towers still hit. See
+        // meleeImmuneBlocksTower comment for the design rationale.
+        if (isMeleeRow && meleeImmuneBlocksTower(e.type, t.damageType)) return false;
         return true;
       });
       // BURNING GROUND: fire-themed towers stamp a 3s burn patch at impact
@@ -1430,7 +1449,9 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
     if (Math.hypot(e.x - tx, e.y - ty) > rangePx) return false;
     if (antiAirOnly) return e.isFlyer && !(e as any).__veiled;
     if (!canHitFlyers && e.isFlyer) return false;
-    if (isMelee && isMeleeImmune(e.type)) return false;
+    // 2026-05-19 v3 — Only PHYS_MELEE damage is blocked by meleeImmune.
+    // Divine / fire / siege melee towers still acquire these targets.
+    if (isMelee && meleeImmuneBlocksTower(e.type, t.damageType)) return false;
     if ((e as any).__veiled) return false;       // VEIL modifier: untargetable
     // SHIELDED units: ranged towers cannot target until a melee tower has
     // broken the shield. Melee towers can always hit and will set the flag.
