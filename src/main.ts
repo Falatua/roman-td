@@ -398,6 +398,116 @@ async function boot() {
     setTimeout(() => toast.remove(), 1900);
   }
 
+  // ─── HERO PLACEMENT CONFIRMATION (2026-05-19 v2) ─────────────────────
+  // Binary Yes/No modal that fires the first time the player clicks an
+  // empty tile while a hero token sits at the front of the placement
+  // queue. Spells out the consequences (no move / no sell / no combine)
+  // and previews which hero is about to be planted on which tile, so a
+  // misclick during the pressure of W1 can't cost the player their
+  // whole-run hero identity. Clicking CONFIRM sets the per-state
+  // __heroPlacementConfirmed flag and re-fires the same click handler
+  // path with the flag set, which lets the existing placement code
+  // commit the drop. Clicking CANCEL clears the flag and leaves the
+  // queue intact so the player can pick a different tile.
+  function showHeroPlacementConfirm(col: number, row: number, heroType: TowerType): void {
+    const def: any = (towersData as any)[heroType] ?? {};
+    const heroName = String(def.name ?? heroType);
+    const tint = String(def.tint ?? '#ffd34d');
+    const b = document.createElement('div');
+    b.id = 'hero-place-confirm';
+    b.innerHTML = `
+      <div style="font-size:11px;letter-spacing:6px;color:${tint};font-weight:bold;text-shadow:0 0 8px ${tint}88">⚔ HERO PLACEMENT ⚔</div>
+      <div style="margin-top:8px;font-size:22px;font-weight:bold;letter-spacing:4px;color:#fff8e0;text-shadow:2px 2px 0 #000,0 0 14px ${tint}cc">PLACE ${heroName.toUpperCase()} HERE?</div>
+      <div style="margin-top:14px;font-size:13px;font-weight:bold;color:#fff8e0;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(0,0,0,0.45);border-left:3px solid ${tint};padding:10px 14px">
+        You're about to commit <b style="color:${tint}">${heroName}</b> to <b style="color:${tint}">column ${col + 1}, row ${row + 1}</b>.
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:#ffcc88;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(60,30,10,0.55);border:1px dashed #ff8844;padding:10px 14px">
+        <b style="color:#ff8844">⚠ THIS IS PERMANENT.</b><br/>
+        ★ Heroes <b>cannot be moved</b> once placed.<br/>
+        ★ Heroes <b>cannot be sold, combined, or downgraded</b>.<br/>
+        ★ If your hero is destroyed, XP and tier reset to zero.<br/>
+        Pick a tile that covers your path well — your hero stays here for the whole run.
+      </div>
+      <div style="margin-top:16px;display:flex;gap:12px;justify-content:center">
+        <button id="hpc-confirm" style="background:#3a5520;color:#fff8e0;border:2px solid #88ff88;padding:10px 22px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">⚔ CONFIRM PLACEMENT</button>
+        <button id="hpc-cancel" style="background:#3a2010;color:#cdb98a;border:2px solid #7a5a1a;padding:10px 22px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">✕ CHOOSE ANOTHER TILE</button>
+      </div>`;
+    b.style.cssText = `width:min(560px,90%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid ${tint};box-shadow:0 0 36px ${tint}88,inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;`;
+    pushBanner(b, 0, { modal: true, clickDismiss: false });
+    // Wire both action buttons. CONFIRM sets the per-state guard flag
+    // and re-runs the placement by simulating a click on the same tile
+    // — the click handler sees __heroPlacementConfirmed=true and skips
+    // the modal, committing the drop. CANCEL clears the flag and
+    // leaves the queue intact.
+    setTimeout(() => {
+      const confirmBtn = document.getElementById('hpc-confirm');
+      const cancelBtn = document.getElementById('hpc-cancel');
+      if (confirmBtn) confirmBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        (state as any).__heroPlacementConfirmed = true;
+        b.remove();
+        processBannerQueue();
+        // Re-invoke the placement path with the flag set. The click
+        // handler's main entry point is the canvas mousedown — but to
+        // avoid re-routing through the DOM, just call the placement
+        // committer inline. We have the col/row + the queue head is
+        // still the hero token (we never removed it).
+        const queue = state.pendingPurchasedTowers ?? [];
+        if (queue.length === 0 || queue[0].source !== 'hero') {
+          // Queue was modified between modal-open and confirm —
+          // bail cleanly rather than place the wrong token.
+          (state as any).__heroPlacementConfirmed = false;
+          return;
+        }
+        // Same path-validate + place logic as the canvas handler.
+        setTile(state, col, row, TileType.TOWER);
+        const np = buildGroundPath(state);
+        if (!np) {
+          setTile(state, col, row, TileType.EMPTY);
+          showBlockedAlert(col, row, 'That tile would seal the path — enemies couldn\'t reach Rome. Try one tile over.');
+          (state as any).__heroPlacementConfirmed = false;
+          return;
+        }
+        state.groundPath = np;
+        resnapEnemiesToPath(state, np);
+        const popped = queue.shift()!;
+        const tw = createTower(popped.type as TowerType, popped.tier as 1|2|3|4|5, col, row, state.wave);
+        state.towers.set(tw.id, tw);
+        state.pendingPurchasedTowers = queue;
+        state.pendingPurchasedTower = null;
+        state.activeHeroTowerId = tw.id;
+        (state as any).__heroPlacementConfirmed = false;
+        // First-time hero teaching tip (same as the inline path).
+        if (!state.sandboxMode && !localStorage.getItem('roman_td_seen_hero_tip')) {
+          const tipEl = document.createElement('div');
+          tipEl.style.cssText = 'background:linear-gradient(90deg,#3a1a4a,#ffd34d,#3a1a4a);color:#1a0820;padding:10px 18px;font-family:"Courier New",monospace;font-size:12px;letter-spacing:2px;font-weight:bold;text-align:center';
+          tipEl.textContent = '★ HERO TIP — Your hero gains XP from every kill. Abilities unlock as they grow stronger. Click their tile any time to inspect progress.';
+          pushBanner(tipEl, 12000, { modal: false });
+          try { localStorage.setItem('roman_td_seen_hero_tip', '1'); } catch { /* ignore */ }
+        }
+        const remaining = queue.length;
+        state.hint = remaining > 0
+          ? `Placed ${popped.type.replace(/_/g, ' ')} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
+          : `Placed ${popped.type.replace(/_/g, ' ')} T${popped.tier}.`;
+        // SFX cue + impact ring on confirm so the moment reads.
+        try { (SFX as any).waveStartBlast?.(); } catch { /* ignore */ }
+        if (renderer?.triggerImpactRing) {
+          const cx = col * 32 + 16;
+          const cy = row * 32 + 16;
+          const tintInt = parseInt(tint.replace('#', ''), 16);
+          renderer.triggerImpactRing(cx, cy, state.tick, 64, tintInt);
+        }
+      };
+      if (cancelBtn) cancelBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        (state as any).__heroPlacementConfirmed = false;
+        b.remove();
+        processBannerQueue();
+        state.hint = `Cancelled. Click another tile to try a different spot for ${heroName}.`;
+      };
+    }, 0);
+  }
+
   // ─── First-time INSPECT tip (one-time teaching banner) ─────────────────
   // 2026-05-19 — Shown ONCE per device (localStorage flag) the first time
   // the player places a prospect. Teaches the click-to-inspect interaction
@@ -4603,26 +4713,43 @@ async function boot() {
     // purchases and quest rewards append here so they never collide.
     const queue = state.pendingPurchasedTowers ?? [];
     if (queue.length > 0 && tile === TileType.EMPTY) {
+      const head = queue[0];
+      // 2026-05-19 v2 — HERO PLACEMENT CONFIRMATION. Hero placement is
+      // permanent: the hero can't be moved, sold, combined, or
+      // downgraded once placed. That's a much heavier commitment than
+      // a regular tower, so we gate the drop on an explicit binary
+      // confirmation modal. The modal previews the chosen tile + spells
+      // out the consequences so the player can't fat-finger their
+      // run by misclicking. Regular tower drops (Mercator + quest)
+      // skip this gate — only hero tokens trigger it.
+      if (head.source === 'hero' && !(state as any).__heroPlacementConfirmed) {
+        showHeroPlacementConfirm(col, row, head.type as TowerType);
+        return;
+      }
+      // Path-validate the drop. If the chosen tile would seal Rome,
+      // bounce with a clear message and keep the hero token in the
+      // queue so the player can try a different tile.
       setTile(state, col, row, TileType.TOWER);
       const np = buildGroundPath(state);
       if (!np) {
         setTile(state, col, row, TileType.EMPTY);
         showBlockedAlert(col, row, 'That tile would seal the path — enemies couldn\'t reach Rome. Try one tile over.');
+        // Clear the confirmation flag so a different tile re-prompts.
+        (state as any).__heroPlacementConfirmed = false;
         return;
       }
       state.groundPath = np;
       resnapEnemiesToPath(state, np);
-      const head = queue.shift()!;
-      const tw = createTower(head.type as TowerType, head.tier as 1|2|3|4|5, col, row, state.wave);
+      const popped = queue.shift()!;
+      const tw = createTower(popped.type as TowerType, popped.tier as 1|2|3|4|5, col, row, state.wave);
       state.towers.set(tw.id, tw);
       state.pendingPurchasedTowers = queue;
       state.pendingPurchasedTower = null;
-      // 2026-05-19 — Hero placement bookkeeping. When the queued
-      // token has source: 'hero', track the tower id on state so
-      // findHeroTower() can resolve it, and fire the first-time
-      // teaching tip via the localStorage flag.
-      if (head.source === 'hero') {
+      // Hero bookkeeping (existing). Also clears the confirmation
+      // flag now that the placement actually committed.
+      if (popped.source === 'hero') {
         state.activeHeroTowerId = tw.id;
+        (state as any).__heroPlacementConfirmed = false;
         if (!state.sandboxMode && !localStorage.getItem('roman_td_seen_hero_tip')) {
           const tipEl = document.createElement('div');
           tipEl.style.cssText = 'background:linear-gradient(90deg,#3a1a4a,#ffd34d,#3a1a4a);color:#1a0820;padding:10px 18px;font-family:"Courier New",monospace;font-size:12px;letter-spacing:2px;font-weight:bold;text-align:center';
@@ -4633,8 +4760,8 @@ async function boot() {
       }
       const remaining = queue.length;
       state.hint = remaining > 0
-        ? `Placed ${head.type.replace(/_/g,' ')} T${head.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
-        : `Placed ${head.type.replace(/_/g,' ')} T${head.tier}.`;
+        ? `Placed ${popped.type.replace(/_/g,' ')} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
+        : `Placed ${popped.type.replace(/_/g,' ')} T${popped.tier}.`;
       return;
     }
 
