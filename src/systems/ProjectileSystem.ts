@@ -149,22 +149,41 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   // fate-binding apex orb to the primary target — cosmetic anchor for the
   // map-wide strike. embed:false because true-damage hits don't stick.
   [TowerType.CONSULAR_FATEBINDER]: { key: 'PROJ_DIVINE_APEX_ORB', arc: false, speed: 820, splash: 0, embed: false },
-  // ── Heroes (2026-05-19) ──────────────────────────────────────────────
-  // Bugfix: the ranged heroes had no PROJ_FOR_TOWER entry, so their
-  // attacks shipped no projectile (CombatResolver still dealt damage
-  // but the player saw nothing fly across the screen). HERO_MARIUS
-  // and HERO_CAESAR both stay out of this map because they're melee
-  // — already in MELEE_TYPES (CombatResolver:97) and render a slash
-  // arc on every swing.
+  // ── Heroes ───────────────────────────────────────────────────────────
+  // Projectile silhouette matches each hero's damageType so the visual
+  // reads correctly with the rest of the roster. Regular towers follow
+  // a convention (SIEGE = ballista, PHYS_RANGED = arrow/javelin, FIRE =
+  // hellfire/barrel, DIVINE = staff/orb), and heroes plug into that
+  // same convention rather than carrying off-theme sprites.
   //
-  // Projectile picks match each hero's identity:
-  //   Agrippa  → PROJ_PILUM        (siege admiral lobs heavy javelins)
-  //   Agricola → PROJ_ARROW        (frontier scout, arching arrows)
-  //   Scipio   → PROJ_BALLISTA     (boss-hunter heavy bolt, slow + hard)
-  //   Sulla    → PROJ_HELLFIRE_BOLT (fire-themed bolt with splash)
-  [TowerType.HERO_AGRIPPA]:   { key: 'PROJ_PILUM',         arc: true,  speed: 540, splash: 0.5, embed: true  },
+  // HERO_MARIUS (PHYS_MELEE) and HERO_CAESAR (DIVINE melee) stay OUT
+  // of this map — they're in MELEE_TYPES (CombatResolver:113) and use
+  // the slash-arc VFX. Caesar's slash is tinted gold at the call site
+  // in main.ts to read as a DIVINE swing.
+  //
+  // Projectile picks:
+  //   Agrippa  (SIEGE)        → PROJ_BALLISTA — same heavy siege bolt
+  //                              every other siege tower fires (Scorpio,
+  //                              Ballistarius, Carroballista, Nemesis
+  //                              Engine, Carthage Scourge). Arc + modest
+  //                              splash for "siege admiral" feel.
+  //                              2026-05-20: was PROJ_PILUM (off-theme —
+  //                              pila are PHYS_RANGED throws).
+  //   Agricola (PHYS_RANGED)  → PROJ_ARROW — arching arrow, matches
+  //                              Sagittarius / Venator / Aquila Venator.
+  //   Scipio   (PHYS_RANGED)  → PROJ_JAVELIN — heavy thrown spear, the
+  //                              PHYS_RANGED convention for heavy
+  //                              throwers (Decurion, Numidian Cavalry,
+  //                              Hannibal's Nightmare). 2026-05-20: was
+  //                              PROJ_BALLISTA (that's the SIEGE sprite;
+  //                              Scipio is PHYS_RANGED, not SIEGE).
+  //                              Boss-hunter identity comes from his
+  //                              ability + bonus damage, not the sprite.
+  //   Sulla    (ELEMENTAL_FIRE)→ PROJ_HELLFIRE_BOLT — fire bolt with
+  //                              splash, matches GOD_OF_WAR's hellfire.
+  [TowerType.HERO_AGRIPPA]:   { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
   [TowerType.HERO_AGRICOLA]:  { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0,   embed: true  },
-  [TowerType.HERO_SCIPIO]:    { key: 'PROJ_BALLISTA',      arc: false, speed: 820, splash: 0.8, embed: true  },
+  [TowerType.HERO_SCIPIO]:    { key: 'PROJ_JAVELIN',       arc: false, speed: 820, splash: 0.5, embed: true  },
   [TowerType.HERO_SULLA]:     { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false }
   // ──────────────────────────────────────────────────────────────────
   // Pure-aura support towers — intentionally NOT in this map because

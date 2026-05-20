@@ -998,7 +998,7 @@ export class RenderEngine {
   // the ground for extra weight.
   private slashes: { sp: Sprite; born: number; life: number; size: number }[] = [];
   private impactRings: { x: number; y: number; born: number; life: number; maxR: number; color: number }[] = [];
-  triggerMeleeSlash(x: number, y: number, angle: number, tick: number, size = 1, cleaver = false) {
+  triggerMeleeSlash(x: number, y: number, angle: number, tick: number, size = 1, cleaver = false, tint?: number) {
     const t = tex('PROJ_SLASH');
     if (t) {
       const sp = new Sprite(t);
@@ -1028,6 +1028,11 @@ export class RenderEngine {
       const baseW = 26 * size * widthMult;
       sp.width = baseW; sp.height = baseW;
       sp.alpha = 0.92;
+      // 2026-05-20 — Optional damage-type tint. Caesar's DIVINE melee
+      // gets a gold slash (0xffd34d), matching the gate-shop hero card
+      // gold theme. Default (undefined) leaves the slash white/silver
+      // for plain PHYS_MELEE swings.
+      if (tint !== undefined) sp.tint = tint;
       this.layers.fx.addChild(sp);
       this.slashes.push({ sp, born: tick, life: 0.22, size: baseW });
       if (cleaver) {
@@ -1040,6 +1045,7 @@ export class RenderEngine {
         echo.width = baseW * 0.85;
         echo.height = baseW * 0.85;
         echo.alpha = 0.65;
+        if (tint !== undefined) echo.tint = tint;
         this.layers.fx.addChild(echo);
         this.slashes.push({ sp: echo, born: tick, life: 0.18, size: baseW * 0.85 });
       }
@@ -1049,12 +1055,13 @@ export class RenderEngine {
     // triggers the ring; radius pulled back to 0.4 × tile to match the
     // smaller slash footprint. Cleavers also drop a faint arc-trace ring
     // even at light size so the visual marker is consistent.
+    // 2026-05-20 — Impact ring color also honors the slash tint when
+    // supplied, so a Caesar heavy swing rings out in gold instead of
+    // white. Falls back to white (heavy) or tan (cleaver) defaults.
     if (size >= 1.25) {
-      this.impactRings.push({ x, y, born: tick, life: 0.26, maxR: GRID.TILE * 0.4 * size, color: 0xffffff });
+      this.impactRings.push({ x, y, born: tick, life: 0.26, maxR: GRID.TILE * 0.4 * size, color: tint ?? 0xffffff });
     } else if (cleaver) {
-      // Soft tan arc ring on every cleave swing (smaller than heavy-hit
-      // ring) so even a light cleaver leaves a visible AoE trace.
-      this.impactRings.push({ x, y, born: tick, life: 0.20, maxR: GRID.TILE * 0.35, color: 0xeed8a0 });
+      this.impactRings.push({ x, y, born: tick, life: 0.20, maxR: GRID.TILE * 0.35, color: tint ?? 0xeed8a0 });
     }
   }
   // Generic ranged "muzzle flash" at the tower's firing tip, plus a brief recoil.

@@ -54,6 +54,29 @@ import { SFX, setFactionBGM, setMuted, isMuted, playMusicTrack, stopMusicTrack, 
 import { tickSurpriseEvents, notifySurpriseEnemyResolved, clearSurpriseEventsForWaveEnd, notifyHellGateDestroyed } from './systems/SurpriseEvents';
 import { showSurpriseRewardModal } from './render/SurpriseReward';
 
+// 2026-05-20 — Damage-type tint for the melee slash VFX. The default
+// (undefined) leaves the slash white/silver — the standard look for
+// PHYS_MELEE swings. Heroes and apex divine melees get colored tints so
+// the swing reads matched-to-damage-type at a glance. Caesar (DIVINE
+// melee hero), Julius Caesar combo (DIVINE), Pontifex Maximus (DIVINE),
+// Consular Fatebinder (apex divine), God of War (HELLFIRE) all get
+// colored. Marius (PHYS_MELEE) intentionally returns undefined so his
+// swing stays the default silvered slash.
+function meleeSlashTintFor(towerType: TowerType | string): number | undefined {
+  switch (towerType) {
+    case TowerType.HERO_CAESAR:
+    case TowerType.JULIUS_CAESAR:
+    case TowerType.PONTIFEX_MAXIMUS:
+      return 0xffd34d;                          // divine gold
+    case TowerType.CONSULAR_FATEBINDER:
+      return 0xc89cff;                          // apex divine-purple
+    case TowerType.GOD_OF_WAR:
+      return 0xff7733;                          // hellfire orange-red
+    default:
+      return undefined;                         // PHYS_MELEE default
+  }
+}
+
 async function boot() {
   const wrap = document.getElementById('stage-wrap')!;
   const loadingEl = document.getElementById('loading')!;
@@ -5491,7 +5514,13 @@ async function boot() {
             // 2026-05 v10 — pass cleave flag so cleavers draw a wider
             // primary slash + a trailing echo arc on every swing.
             const cleaver = hasCleave(t);
-            renderer.triggerMeleeSlash(e.x, e.y, angle, state.tick, size, cleaver);
+            // 2026-05-20 — Damage-type tint on the slash. Caesar (DIVINE
+            // melee) swings in gold, matching the gold convention used
+            // for divine effects elsewhere. Plain PHYS_MELEE swingers
+            // (Marius + every other melee tower) pass undefined → the
+            // default white-silver slash.
+            const slashTint = meleeSlashTintFor(t.type);
+            renderer.triggerMeleeSlash(e.x, e.y, angle, state.tick, size, cleaver, slashTint);
             if (e.isBoss && HEAVY.has(t.type)) renderer.triggerShake(2, 0.12);
           }
         },
@@ -6104,7 +6133,9 @@ async function boot() {
           const HEAVY = new Set(['PRIMUS_PILUS','TRIARIUS','CENTURION','COHORT_GUARD','PRAETORIAN_WALL','IMPERATOR_GUARD','EVOCATUS','CATAPHRACT','HORSEMAN']);
           const size = HEAVY.has(t.type) ? 1.3 : 1.0;
           const cleaver = hasCleave(t);
-          renderer.triggerMeleeSlash(e.x, e.y, angle, state.tick, size, cleaver);
+          // 2026-05-20 — Same damage-type tint helper as the live combat
+          // hook so a Caesar dummy-DPS check also shows the gold swing.
+          renderer.triggerMeleeSlash(e.x, e.y, angle, state.tick, size, cleaver, meleeSlashTintFor(t.type));
         },
         onProjectileFire: () => {},       // projectile sprites spawn from tickCombat directly
       };
