@@ -225,18 +225,38 @@ export function purchaseCompletesRecipe(state: GameStateShape, type: TowerType |
 
 export function executeCombo(state: GameStateShape, combo: AvailableCombo, resultTileTowerId: string): boolean {
   // 2026-05-15 v7: combine is now ALLOWED during all pre-wave phases —
-  // PROSPECT_PLACEMENT, PICK_KEEPER, AND BUILD_PHASE. Previously gated
-  // to BUILD_PHASE to dodge "comboed a prospect I wouldn't have kept"
-  // regret, but players were finishing the prospect round only to
-  // immediately combo, adding an unwanted extra click. Now if you can
-  // see the recipe completed (kept or pending towers both count), you
-  // can execute it. Mid-wave is still blocked — no transactions while
-  // the legion is dying.
+  // PROSPECT_PLACEMENT, PICK_KEEPER, AND BUILD_PHASE. Mid-wave is
+  // still blocked — no transactions while the legion is dying.
   const inPreWavePhase = state.phase === GamePhase.PROSPECT_PLACEMENT
                       || state.phase === GamePhase.PICK_KEEPER
                       || state.phase === GamePhase.BUILD_PHASE;
   if (!inPreWavePhase) {
     state.hint = 'No combinations mid-battle. Survive first.';
+    return false;
+  }
+  // 2026-05-19 — PROSPECT-KEEP GATE. Pending prospects must be KEPT
+  // (committed via the keep mechanic, which flips pending=false in
+  // keepPending() at main.ts:2870) BEFORE they can participate in
+  // a combo. The prior v7 behavior silently consumed a fresh
+  // prospect mid-prospect-phase without the player explicitly
+  // committing to keep it — bug-reported by the user: "I placed
+  // down ten prospects and it let me combine before I kept them."
+  //
+  // New rule: any ingredient with pending=true blocks the combo.
+  // Kept towers (from prior rounds OR prospects the player has
+  // already saved this round) still combo freely. If a recipe
+  // needs 2 prospects, BOTH must be kept first.
+  //
+  // The educational "RECIPES IN PROGRESS" sidebar at main.ts:1840
+  // still surfaces pending-ingredient recipes with an orange
+  // READY-IF-KEPT tag so the player knows which prospects are
+  // worth keeping — that signal stays intact.
+  const pendingIngs = combo.ingredients.filter(t => t.pending);
+  if (pendingIngs.length > 0) {
+    const n = pendingIngs.length;
+    state.hint = n === 1
+      ? 'Keep that prospect first — pending prospects can’t merge until you save them.'
+      : `Keep those ${n} prospects first — pending prospects can’t merge until you save them.`;
     return false;
   }
   // AERARIUM CAP CHECK (bugfix 2026-05 v6): the old check blocked the

@@ -147,6 +147,56 @@ describe('Combo execution', () => {
       expect(ok).toBe(false);
     }
   });
+
+  // 2026-05-19 — Prospect-keep gate. User-reported: "I placed
+  // down ten prospects, and then it let me combine towers even
+  // when I was just in the prospecting phase. Before I decided
+  // to keep the tower, you shouldn't be allowed to combo towers
+  // until you keep them." Any pending ingredient blocks execution.
+  it('refuses to execute when ALL ingredients are pending prospects', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.PROSPECT_PLACEMENT;
+    const a = placeTower(s, TowerType.MILITES, 1, 1, 1); a.pending = true;
+    const b = placeTower(s, TowerType.MILITES, 1, 1, 2); b.pending = true;
+    const c = placeTower(s, TowerType.MILITES, 1, 1, 3); c.pending = true;
+    const merge = scanCombos(s).find(cb => cb.isSameTierMerge);
+    expect(merge).toBeTruthy();              // recipe is detectable
+    const ok = executeCombo(s, merge!, a.id);
+    expect(ok).toBe(false);                  // but execution refused
+    // All three should still exist on the field unchanged.
+    expect(s.towers.has(a.id)).toBe(true);
+    expect(s.towers.has(b.id)).toBe(true);
+    expect(s.towers.has(c.id)).toBe(true);
+  });
+
+  it('refuses to execute when ONE ingredient is pending and the rest are kept', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.PROSPECT_PLACEMENT;
+    const a = placeTower(s, TowerType.MILITES, 1, 1, 1); a.pending = false; // kept
+    const b = placeTower(s, TowerType.MILITES, 1, 1, 2); b.pending = false; // kept
+    const c = placeTower(s, TowerType.MILITES, 1, 1, 3); c.pending = true;  // still pending
+    const merge = scanCombos(s).find(cb => cb.isSameTierMerge);
+    expect(merge).toBeTruthy();
+    const ok = executeCombo(s, merge!, a.id);
+    expect(ok).toBe(false);
+    // Hint surfaces the rule so the player knows what to do.
+    expect((s as any).hint).toMatch(/[Kk]eep.*prospect/);
+  });
+
+  it('allows execution once every ingredient has been kept', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.PROSPECT_PLACEMENT;
+    const a = placeTower(s, TowerType.MILITES, 1, 1, 1); a.pending = false;
+    const b = placeTower(s, TowerType.MILITES, 1, 1, 2); b.pending = false;
+    const c = placeTower(s, TowerType.MILITES, 1, 1, 3); c.pending = false;
+    const merge = scanCombos(s).find(cb => cb.isSameTierMerge);
+    expect(merge).toBeTruthy();
+    const ok = executeCombo(s, merge!, a.id);
+    expect(ok).toBe(true);
+    // Same-tier merge consumed the 3 and produced a higher-tier.
+    const newTower = Array.from(s.towers.values()).find(t => t.qualityTier === 2);
+    expect(newTower).toBeTruthy();
+  });
 });
 
 describe('realizableCombos — keep-budget filter (2026-05-19)', () => {

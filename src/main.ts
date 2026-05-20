@@ -3918,12 +3918,16 @@ async function boot() {
       }
     },
     onComboList: () => {
-      // 2026-05-19 — Picker also respects the keep budget so the list
-      // doesn't include combos that need more pending keeps than the
-      // player has left this round. Outside PROSPECT_PLACEMENT /
-      // PICK_KEEPER this is a no-op (every combo in scanCombos is
-      // already realizable since prospects no longer exist).
-      const combos = realizableCombos(state);
+      // 2026-05-19 — Picker filters out pending-required combos.
+      // The picker is a "click-to-execute" surface; executeCombo
+      // now refuses any combo with a pending ingredient ("keep
+      // that prospect first"), so showing it as a clickable option
+      // would be misleading. Players still see what's POSSIBLE via
+      // the Codex recipe browser + the prospect-sidebar's
+      // READY-IF-KEPT educational tags.
+      const combos = realizableCombos(state).filter(cb =>
+        !cb.ingredients.some(t => t.pending)
+      );
       showComboPicker(app, combos, state, {
         onPick: (combo, resultTileTowerId) => {
           // Snapshot result tile coords + merge flag BEFORE executeCombo for
@@ -6100,7 +6104,16 @@ async function boot() {
                        || state.phase === GamePhase.PROSPECT_PLACEMENT
                        || state.phase === GamePhase.PICK_KEEPER;
     if (showComboGlow) {
-      const combos = realizableCombos(state);
+      // 2026-05-19 — Field glow shows ONLY combos that can execute
+      // RIGHT NOW. Pending prospects must be kept first (enforced in
+      // executeCombo); the glow filter mirrors that gate so we don't
+      // dangle a "looks executable" signal on a prospect that the
+      // engine will then refuse. The "RECIPES IN PROGRESS" sidebar
+      // still surfaces pending-ingredient recipes with the orange
+      // READY-IF-KEPT tag — that's the educational channel.
+      const combos = realizableCombos(state).filter(cb =>
+        !cb.ingredients.some(t => t.pending)
+      );
       comboCount = combos.length;
       const eligibleIds = new Set<string>();
       for (const cb of combos) for (const ing of cb.ingredients) eligibleIds.add(ing.id);
