@@ -196,7 +196,6 @@
     "meleeImmune": true,
     "immunePoison": true,
     "auraTowerSlow": 0.3,
-    "outOfCombatRegen": 0.032,
     "healAllyPctPerSec": 0.018,
     "reanimateAs": "REANIMATED_LICH"
   },
