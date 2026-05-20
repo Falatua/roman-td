@@ -289,7 +289,7 @@ function renderTab(tab: string): string {
           ${noteCard('🔴 TYRANT TILE (Red)', '<b style="color:#ff5050">+50% damage vs Bosses</b>. Specialized — a boss-killer tower (Pontifex, Scorpio, Triumphator) here becomes legitimately scary on W5/10/15/20.')}
           ${noteCard('🩵 AETHER TILE (Cyan)', '<b style="color:#66ffdd">Any tower on this tile can target FLYERS</b>, including melee towers without Aquila Talons. A cheaper alternative to the legendary item — but only one tower at a time benefits.')}
           ${noteCard('🟡 TREASURY TILE (Gold)', '<b style="color:#ffd34d">+2 Gold per kill</b> on top of any other gold sources. A high-traffic tower placed here pays for itself in 2-3 waves.')}
-          ${noteCard('🟢 WATCHTOWER TILE (Emerald)', '<b style="color:#66ff88">+2 tiles of range</b> for any tower placed on it. Turns a Scorpio (5.0) into a 7.0-range cannon that covers nearly half the map width. Stacks additively with the Watchtower Lens trophy (+1) — three-deep range stacks are real. Sits in the rear bottom-left so the +2 buys a commanding sight-line back toward the gate.')}
+          ${noteCard('🟢 WATCHTOWER TILE (Emerald)', '<b style="color:#66ff88">+2 tiles of range</b> for any tower placed on it. Turns a Scorpio (5.0) into a 7.0-range cannon that covers nearly half the map width. Stacks additively with the Watchtower Lens trophy (+1) — three-deep range stacks are real. Sits in the upper-middle of the map so a tower on it commands a wide central sight-line over the path.')}
         </div>
       `)}
       ${foldSection('🌀 SURPRISE EVENTS — INVASION, UPRISING, GATES OF HELL', `

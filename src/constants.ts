@@ -297,14 +297,17 @@ export const AURA_TILES: AuraTile[] = [
   { col: 28, row: 8,  kind: 'RED'     },  // right-mid       · +50% damage vs bosses
   { col: 24, row: 19, kind: 'CYAN'    },  // bottom-mid      · melee can hit flyers
   { col: 11, row: 19, kind: 'GOLD'    },  // bottom-left     · +2 gold per kill
-  // 2026-05-19 — 6th aura tile. The WATCHTOWER (emerald green) sits in
-  // the bottom-left corner well off the main path so any tower placed
-  // there has a long sight-line back toward the gate. Min separation
-  // verified ≥11 manhattan from every other aura: PURPLE 17 / BLUE 23
-  // / RED 40 / CYAN 25 / GOLD 12. +2 tile range is a meaningful
-  // upgrade — turns a Scorpio (range 5.0) into an effective 7.0 range,
-  // covering nearly half the map width.
-  { col: 2,  row: 22, kind: 'EMERALD' }   // bottom-left rear · +2 tile range
+  // 2026-05-19 — 6th aura tile. WATCHTOWER (emerald green). Moved
+  // from the bottom-left corner (2, 22) to upper-middle (20, 5) so
+  // the +2-range buff anchors a central highground rather than a
+  // rear corner. BLUE at (15, 12) occupies the literal map center,
+  // so the ≥11 manhattan rule forces EMERALD just outside that
+  // exclusion zone. (20, 5) is the closest-to-center position that
+  // satisfies all five existing constraints — verified ≥11 manhattan
+  // from every other aura: PURPLE 18 / BLUE 12 / RED 11 / CYAN 18
+  // / GOLD 23. Thematic fit: an upper-middle watchtower commands
+  // sight-lines down across most of the map.
+  { col: 20, row: 5,  kind: 'EMERALD' }   // upper-middle · +2 tile range
 ];
 // Effect lookup table — used by stat math, combat hooks, and tooltips
 // so the same numbers come out of one source. Multipliers are applied
