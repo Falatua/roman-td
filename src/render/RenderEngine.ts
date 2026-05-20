@@ -89,7 +89,10 @@ export class RenderEngine {
     this.app = new Application({
       width: GRID.CANVAS_W,
       height: GRID.CANVAS_H,
-      background: '#1f4422',
+      // 2026-05-19 — Undead Map Overhaul. Was '#1f4422' forest green;
+      // now deep cursed indigo so the off-canvas border around the
+      // play area reads as "void / cursed land beyond the field."
+      background: '#1a0e1a',
       antialias: false,
       resolution: 1,
       autoStart: false        // we drive render() manually so it works in hidden tabs
@@ -214,6 +217,17 @@ export class RenderEngine {
   // Cheap (just modulates Graphics each frame), keeps the world feeling alive (Visual §3.1, §8.1, §8.2, §8.5).
   private ambientGfx?: Graphics;
   private grassWindGfx?: Graphics;
+  // 2026-05-19 — Undead Map Overhaul. Persistent container of
+  // animated atmosphere sprites (crystals / graves / thorns) at
+  // fixed map positions. Built once on first drawAmbient(); each
+  // subsequent call just updates alpha + scale + rotation on the
+  // existing sprites via a tick-driven sine. Cheap — ≤12 sprites.
+  private undeadAnimContainer?: Container;
+  private undeadAnimSprites: Array<{
+    sp: Sprite;
+    kind: 'crystal' | 'grave' | 'thorn';
+    phase: number;       // per-sprite phase offset so they don't pulse in lockstep
+  }> = [];
   drawAmbient(tick: number, wave: number = 0, isBossWave: boolean = false) {
     if (!this.ambientGfx) {
       this.ambientGfx = new Graphics();
@@ -304,6 +318,77 @@ export class RenderEngine {
           a.lineStyle(1, 0xee2a2a, 0.4 * pulse).drawCircle(cx, cy, 22 + pulse * 4);
           a.lineStyle(0);
         }
+      }
+    }
+
+    // 2026-05-19 — Undead Map Overhaul. Animated atmosphere props
+    // (pulsing crystals near cave + gate, swaying thorns + flickering
+    // graves at the edges). Lazy-built on first call, then per-frame
+    // we just nudge alpha + scale + rotation on each sprite. No
+    // Pixi allocations per frame; 10 sprites total fits well under
+    // the ≤12 cap from the plan. Sprites are anchored at center.
+    if (!this.undeadAnimContainer) {
+      this.undeadAnimContainer = new Container();
+      this.layers.bg.addChild(this.undeadAnimContainer);
+      // Hand-picked positions — kept off the path corridor and
+      // away from the central play zone so the animations frame
+      // the map without competing with tower placement decisions.
+      // Cave corner crystals (top-left) — purple-tinged glow.
+      // Gate corner crystals (bottom-right) — gold-tinged glow.
+      // Thorns + graves scatter along the top + bottom + left edges.
+      const placements: Array<{ c: number; r: number; kind: 'crystal' | 'grave' | 'thorn'; phase: number }> = [
+        // Cave corner — glowing crystals frame the spawn pit
+        { c: 1,  r: 2,  kind: 'crystal', phase: 0.0  },
+        { c: 5,  r: 7,  kind: 'crystal', phase: 1.7  },
+        // Gate corner — pulsing crystals frame Rome's last bastion
+        { c: 36, r: 19, kind: 'crystal', phase: 3.1  },
+        { c: 32, r: 24, kind: 'crystal', phase: 4.4  },
+        // Top edge — thorny silhouettes sway in cursed wind
+        { c: 12, r: 1,  kind: 'thorn',   phase: 0.5  },
+        { c: 22, r: 2,  kind: 'thorn',   phase: 2.0  },
+        // Bottom-left — flickering graves
+        { c: 3,  r: 22, kind: 'grave',   phase: 0.9  },
+        { c: 8,  r: 24, kind: 'grave',   phase: 2.7  },
+        // Right edge mid — final two pieces
+        { c: 36, r: 12, kind: 'thorn',   phase: 1.2  },
+        { c: 1,  r: 14, kind: 'grave',   phase: 3.8  },
+      ];
+      for (const p of placements) {
+        const key = p.kind === 'crystal' ? 'UN_ANIM_CRYSTAL'
+                  : p.kind === 'grave'   ? 'UN_ANIM_GRAVE'
+                  :                        'UN_ANIM_THORN';
+        const t0 = tex(key);
+        if (!t0) continue;
+        const sp = new Sprite(t0);
+        sp.anchor.set(0.5);
+        sp.x = p.c * GRID.TILE + GRID.TILE / 2;
+        sp.y = p.r * GRID.TILE + GRID.TILE / 2;
+        // Slightly larger than a regular prop so the animation reads
+        // from across the map without dominating the tile.
+        const baseSz = p.kind === 'crystal' ? GRID.TILE * 0.85 : GRID.TILE * 0.75;
+        sp.width = baseSz; sp.height = baseSz;
+        this.undeadAnimContainer.addChild(sp);
+        this.undeadAnimSprites.push({ sp, kind: p.kind, phase: p.phase });
+      }
+    }
+    // Per-frame update — sin-driven alpha / scale / rotation tween.
+    // Different frequencies per kind so the map doesn't pulse in
+    // lockstep (would look mechanical).
+    for (const a of this.undeadAnimSprites) {
+      const t = tick + a.phase;
+      if (a.kind === 'crystal') {
+        // 0.5 Hz alpha pulse + light scale breathing
+        const s = Math.sin(t * Math.PI);            // -1..1, ~0.5Hz
+        a.sp.alpha = 0.65 + 0.30 * (0.5 + 0.5 * s); // 0.65..0.95
+        a.sp.scale.x = a.sp.scale.y = 1.0 + 0.08 * s;
+      } else if (a.kind === 'grave') {
+        // 0.8 Hz alpha flicker — fire-like instability with two
+        // overlapping sines so it doesn't read as a simple pulse.
+        const s = Math.sin(t * 1.6 * Math.PI) * 0.6 + Math.sin(t * 4.1) * 0.4;
+        a.sp.alpha = 0.75 + 0.20 * (0.5 + 0.5 * s); // 0.75..0.95
+      } else {
+        // Thorn — slow rotation tween, no alpha change.
+        a.sp.rotation = Math.sin(t * 1.2) * 0.06;   // ±~3.4°
       }
     }
   }
@@ -1310,17 +1395,68 @@ export class RenderEngine {
       if (tt === TileType.EMPTY || tt === TileType.SPAWN) pathSet.add(`${t.col},${t.row}`);
     }
     // ─── REAL TILED TERRAIN ───────────────────────────────────────────
-    // Grass and dirt-path sprites (tt_*) replace the flat colored rects.
-    // Each tile gets a deterministic hash so reload looks the same.
-    // Decorative props (dp_*) sprinkle on a small subset of grass tiles.
-    const grassTiles = ['TT_GRASS_A', 'TT_GRASS_B', 'TT_GRASS_FLOWERS', 'TT_GRASS_STONES', 'TT_GRASS_TWIGS'];
-    const dirtTiles = ['TT_DIRT_A', 'TT_DIRT_RUTS', 'TT_DIRT_FOOTPRINTS'];
-    const decorProps = ['DP_FLOWERS_RED','DP_FLOWERS_WHITE','DP_MUSHROOMS','DP_BUSH','DP_URN','DP_HELMET','DP_SCROLL','DP_WOODEN_POST','DP_MILESTONE'];
+    // 2026-05-19 — UNDEAD NECROPOLIS map overhaul. Roman dp_* props
+    // are RETAINED in the manifest because the gate-corner zone
+    // (col >= 30, row >= 18) re-uses them as Roman war-camp remnants
+    // — see the decoration block below. The base ground + path pools
+    // swap to un_* keys (cursed cracked stone, bone-cobble path).
+    // Each tile picks deterministically via the same hash so reload
+    // looks identical run-to-run.
+    const grassTiles = ['UN_GROUND_A', 'UN_GROUND_B', 'UN_GROUND_C', 'UN_GROUND_D'];
+    const dirtTiles  = ['UN_PATH_A',   'UN_PATH_B',   'UN_PATH_C'];
+    // Two prop pools — UNDEAD covers most of the map, ROMAN covers
+    // the gate-corner war-camp zone. The decoration block selects
+    // between them by (c, r) coordinates.
+    const undeadProps = [
+      'UN_PROP_BONES_S', 'UN_PROP_BONES_L', 'UN_PROP_THORN_A', 'UN_PROP_THORN_B',
+      'UN_PROP_ROCK_A',  'UN_PROP_ROCK_B',  'UN_PROP_GRAVE_A', 'UN_PROP_GRAVE_B',
+      'UN_PROP_SKULL_PILE', 'UN_PROP_RUIN',  'UN_PROP_DEAD_TREE',
+      'UN_PROP_DEAD_TREE_B', 'UN_PROP_BROKEN_TREE', 'UN_PROP_DEAD_ARM'
+    ];
+    const romanProps  = ['DP_WOODEN_POST', 'DP_MILESTONE', 'DP_HELMET', 'DP_SCROLL', 'DP_URN'];
+    // Weighted picks (cumulative % thresholds).
+    const undeadWeights = [
+      ['UN_PROP_BONES_S',      20],
+      ['UN_PROP_BONES_L',      32],
+      ['UN_PROP_THORN_A',      44],
+      ['UN_PROP_THORN_B',      54],
+      ['UN_PROP_ROCK_A',       64],
+      ['UN_PROP_ROCK_B',       72],
+      ['UN_PROP_GRAVE_A',      80],
+      ['UN_PROP_GRAVE_B',      86],
+      ['UN_PROP_SKULL_PILE',   91],
+      ['UN_PROP_RUIN',         95],
+      ['UN_PROP_DEAD_TREE',    97],   // big trees rare — feature placements
+      ['UN_PROP_DEAD_TREE_B',  98],
+      ['UN_PROP_BROKEN_TREE',  99],
+      ['UN_PROP_DEAD_ARM',    100]
+    ] as const;
+    const romanWeights = [
+      ['DP_WOODEN_POST',   22],
+      ['DP_MILESTONE',     40],
+      ['DP_HELMET',        58],
+      ['DP_SCROLL',        73],
+      ['DP_URN',           88],
+      ['UN_PROP_BONES_S',  94],   // a few bones bleed through — curse creeping in
+      ['UN_PROP_THORN_A', 100]
+    ] as const;
+    // Reference unused arrays so they're not flagged dead — they
+    // remain accessible if a future tuning pass wants the unweighted
+    // pool form.
+    void undeadProps; void romanProps;
     // Cheap deterministic hash for tile picking — same coords always yield the same sprite.
     const hash = (c: number, r: number, salt = 0) => Math.abs(((c * 73856093) ^ (r * 19349663) ^ (salt * 83492791)) >>> 0);
+    // Helper: roll a weighted pick from a cumulative-weight list.
+    const pickWeighted = (table: readonly (readonly [string, number])[], h: number): string => {
+      const roll = h % 100;
+      for (const [key, threshold] of table) {
+        if (roll < threshold) return key;
+      }
+      return table[table.length - 1][0];
+    };
 
-    // Fallback base wash for any tile that fails sprite lookup
-    g.beginFill(0x4a7a3a).drawRect(0, 0, GRID.CANVAS_W, GRID.CANVAS_H).endFill();
+    // Fallback base wash — cursed indigo instead of forest green.
+    g.beginFill(0x1a0e1a).drawRect(0, 0, GRID.CANVAS_W, GRID.CANVAS_H).endFill();
 
     // Clear old children but preserve bgGfx and stainGfx (first 2 children of bg layer)
     while (this.layers.bg.children.length > 2) {
@@ -1346,17 +1482,16 @@ export class RenderEngine {
         const h = hash(c, r);
         let key: string;
         if (isPath) {
-          // 70% basic dirt, 15% ruts, 15% footprints
+          // 60% main bone-cobble, 25% cracked-stone variant, 15% weathered
           const roll = h % 100;
-          key = roll < 70 ? 'TT_DIRT_A' : roll < 85 ? 'TT_DIRT_RUTS' : 'TT_DIRT_FOOTPRINTS';
+          key = roll < 60 ? 'UN_PATH_A' : roll < 85 ? 'UN_PATH_B' : 'UN_PATH_C';
         } else {
-          // 50% grass A, 30% grass B, 8% flowers, 6% stones, 6% twigs
+          // 45% main cursed-ground, 30% darker slab, 15% mossy, 10% bone-dusted
           const roll = h % 100;
-          key = roll < 50 ? 'TT_GRASS_A'
-              : roll < 80 ? 'TT_GRASS_B'
-              : roll < 88 ? 'TT_GRASS_FLOWERS'
-              : roll < 94 ? 'TT_GRASS_STONES'
-              :             'TT_GRASS_TWIGS';
+          key = roll < 45 ? 'UN_GROUND_A'
+              : roll < 75 ? 'UN_GROUND_B'
+              : roll < 90 ? 'UN_GROUND_C'
+              :             'UN_GROUND_D';
         }
         const tex0 = tex(key);
         if (tex0) {
@@ -1365,14 +1500,31 @@ export class RenderEngine {
           sp.width = GRID.TILE; sp.height = GRID.TILE;
           terrainLayer.addChild(sp);
         } else {
-          // Fallback to colored rect if texture missing (non-fatal)
-          const fill = isPath ? 0x886533 : 0x426f31;
+          // Fallback to colored rect if texture missing (non-fatal).
+          // Undead overhaul: cursed-stone gray for path, deep indigo for ground.
+          const fill = isPath ? 0x4a4548 : 0x1a0e1a;
           g.beginFill(fill).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
         }
-        // Sprinkle decorative props on a small subset of empty grass tiles only.
-        // Skip path, spawn, gate, waypoint tiles. Density ~6%.
-        if (!isPath && t === TileType.EMPTY && (h % 100) < 6) {
-          const propKey = decorProps[hash(c, r, 31337) % decorProps.length];
+        // 2026-05-19 — Edge-weighted decoration placement, zone-aware
+        // prop pool. Middle of the map stays sparse (~4%) so the
+        // tower-placement grid reads clearly. Density ramps up as
+        // tiles approach the perimeter / cave / gate corners — to
+        // ~16% at the very edges (map-wide average lands ≈10%, the
+        // "moderate bump" target). The gate corner (col >= 30,
+        // row >= 18) rolls the Roman war-camp pool instead of the
+        // undead pool so the area around Rome's gate reads as
+        // "Roman last stand on cursed ground."
+        const edgeDist = Math.min(c, GRID.COLS - 1 - c, r, GRID.ROWS - 1 - r);
+        const edgeBoost = Math.max(0, 8 - edgeDist) / 8;  // 0..1 (1 at edges)
+        const caveCorner = (c < 6 && r < 8);
+        const gateCorner = (c >= 30 && r >= 18);
+        const cornerBonus = (caveCorner || gateCorner) ? 4 : 0;
+        const densityPct = Math.round(4 + edgeBoost * 14 + cornerBonus);
+        if (!isPath && t === TileType.EMPTY && (h % 100) < densityPct) {
+          const pickHash = hash(c, r, 31337);
+          const propKey = gateCorner
+            ? pickWeighted(romanWeights, pickHash)
+            : pickWeighted(undeadWeights, pickHash);
           const propTex = tex(propKey);
           if (propTex) {
             const dp = new Sprite(propTex);
@@ -1398,7 +1550,10 @@ export class RenderEngine {
     if (ghostPath && ghostPath.length >= 2) {
       const ghostGfx = new Graphics();
       // Soft brown stripe under the path tiles
-      ghostGfx.lineStyle(GRID.TILE * 0.55, 0x6b4a2a, 0.32);
+      // 2026-05-19 — Undead overhaul. Was warm brown 0x6b4a2a (dirt road
+      // soft underline). Now cracked-stone gray so the bone-cobble path
+      // tiles sit on a coherent darker base.
+      ghostGfx.lineStyle(GRID.TILE * 0.55, 0x4a4548, 0.32);
       for (let i = 0; i < ghostPath.length; i++) {
         const t0 = ghostPath[i];
         const cx = t0.col * GRID.TILE + GRID.TILE / 2;
@@ -1407,7 +1562,10 @@ export class RenderEngine {
         else ghostGfx.lineTo(cx, cy);
       }
       // Dashed brighter inline so the route still reads when towers cover it
-      ghostGfx.lineStyle(2.5, 0x8a5a30, 0.62);
+      // 2026-05-19 — Undead overhaul. Was 0x8a5a30 warm brown highlight.
+      // Now bone-cream so the inline shines like cracked stone catching
+      // moonlight against the darker ground.
+      ghostGfx.lineStyle(2.5, 0xa89684, 0.62);
       for (let i = 0; i < ghostPath.length - 1; i += 2) {
         const t0 = ghostPath[i];
         const t1 = ghostPath[i + 1];

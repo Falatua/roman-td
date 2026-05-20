@@ -360,7 +360,39 @@ const MANIFEST: Record<string, string> = {
   HERO_AGRICOLA: '../heroes/hero_agricola.png',
   HERO_SCIPIO:   '../heroes/hero_scipio.png',
   HERO_CAESAR:   '../heroes/hero_caesar.png',
-  HERO_SULLA:    '../heroes/hero_sulla.png'
+  HERO_SULLA:    '../heroes/hero_sulla.png',
+  // 2026-05-19 — Undead Map Visual Overhaul. Cropped from the
+  // Free-Undead-Tileset (tools/crop_undead_tileset.py). 7 base
+  // ground/path tiles + 14 static props + 3 "feature" props that
+  // get a procedural pulse animation in drawAmbient(). Replaces
+  // the GRASS_POOL / PATH_POOL keys + augments the dp_* pool.
+  UN_GROUND_A:        'un_ground_a.png',
+  UN_GROUND_B:        'un_ground_b.png',
+  UN_GROUND_C:        'un_ground_c.png',
+  UN_GROUND_D:        'un_ground_d.png',
+  UN_PATH_A:          'un_path_a.png',
+  UN_PATH_B:          'un_path_b.png',
+  UN_PATH_C:          'un_path_c.png',
+  UN_PROP_BONES_S:    'un_prop_bones_s.png',
+  UN_PROP_BONES_L:    'un_prop_bones_l.png',
+  UN_PROP_GRAVE_A:    'un_prop_grave_a.png',
+  UN_PROP_GRAVE_B:    'un_prop_grave_b.png',
+  UN_PROP_SKULL_PILE: 'un_prop_skull_pile.png',
+  UN_PROP_DEAD_TREE:  'un_prop_dead_tree.png',
+  UN_PROP_DEAD_TREE_B:'un_prop_dead_tree_b.png',
+  UN_PROP_BROKEN_TREE:'un_prop_broken_tree.png',
+  UN_PROP_THORN_A:    'un_prop_thorn_a.png',
+  UN_PROP_THORN_B:    'un_prop_thorn_b.png',
+  UN_PROP_ROCK_A:     'un_prop_rock_a.png',
+  UN_PROP_ROCK_B:     'un_prop_rock_b.png',
+  UN_PROP_RUIN:       'un_prop_ruin.png',
+  UN_PROP_DEAD_ARM:   'un_prop_dead_arm.png',
+  // "Animated" feature props — single static PNG each; the
+  // drawAmbient() pass applies a sine alpha/scale pulse so we
+  // don't need multi-frame sheets.
+  UN_ANIM_CRYSTAL:    'un_anim_crystal.png',
+  UN_ANIM_GRAVE:      'un_anim_grave.png',
+  UN_ANIM_THORN:      'un_anim_thorn.png'
 };
 
 // Sprite-quality fix: tower / enemy / item sprites are stored as
@@ -492,7 +524,12 @@ function isCriticalAsset(file: string): boolean {
   // briefly flicker if the player is quick — and these sprites are
   // small (~1MB each, six total).
   if (/(\/|^)heroes\//.test(file)) return true;
-  return /^(m_|w_|t1_|t2_|e1_|p_|s_|u_|ab_|eb_|t_new_)/.test(file);
+  // 2026-05-19 — Undead Map Overhaul. un_* prefix added to the
+  // critical bucket so the cursed ground + props + path tiles are
+  // cached before the first frame paints. Without this the player
+  // would see a flash of un-styled fallback grass / dirt on cold
+  // load while the deferred bucket finishes — visually jarring.
+  return /^(m_|w_|t1_|t2_|e1_|p_|s_|u_|ab_|eb_|t_new_|un_)/.test(file);
 }
 
 export async function loadAllAssets(onProgress?: (loaded: number, total: number) => void) {
