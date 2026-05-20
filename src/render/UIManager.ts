@@ -296,8 +296,8 @@ export class UIManager {
       : `<span class="hud-icon"><span class="ic ic-wave"></span><b>WAVE</b> ${state.wave}/20</span>`;
     left.innerHTML = `
       ${waveDisplay}
-      <span class="hud-icon"><span class="ic ic-life"></span><b>LIVES</b> ${state.lives}</span>
-      <span class="hud-icon"><span class="ic ic-gold"></span><b>GOLD</b> ${state.gold}</span>
+      <span class="hud-icon"><span class="ic ic-life"></span><b>LIVES</b> ${Math.floor(state.lives)}</span>
+      <span class="hud-icon"><span class="ic ic-gold"></span><b>GOLD</b> ${Math.floor(state.gold)}</span>
       ${waveCounter}
     `;
     const right = document.createElement('div');

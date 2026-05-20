@@ -4,10 +4,11 @@
 //   • INVASION: 4 perimeter FIRE BREACHES (N/S/E/W edges). Each fire
 //     spits TWO enemies in quick succession that "teleport in" (cyan
 //     fade-in + ghost tint) and snap to the nearest path tile.
-//   • UPRISING: 4 SKULL URNS rise from a center-map diamond. Each urn
-//     opens its mouth twice to birth TWO undead each, which "rise from
-//     the ground" (y-offset fade-up + dust kick). Only fires on undead
-//     waves.
+//   • UPRISING: ONE skull urn rises from the EXACT center tile of the
+//     map (2026-05-20: was a 4-urn diamond). The undead pour from
+//     that single mass-grave point in bursts of four, "rising from
+//     the ground" (y-offset fade-up + dust kick). Only fires on
+//     undead waves.
 //
 // Both events are pure surprise (no banner; the audio sting + tint +
 // camera shake announce them in-frame). After the LAST enemy of either
@@ -1013,20 +1014,28 @@ function generateInvasionPoints(state: GameStateShape, startAtTick: number, wave
 }
 
 function generateUprisingPoints(state: GameStateShape, startAtTick: number, waveOverride: boolean): SurpriseEventSpawnPoint[] {
-  // Center-of-map diamond. Anchor at map center ± jitter. Urns at
-  // radius 2 (N/S/E/W of center).
+  // 2026-05-20 — REDESIGNED. Previously a 4-urn diamond (urns at the
+  // N/S/E/W tiles two steps off center, with ±1 jitter on the anchor).
+  // Per user request the uprising now rises from a SINGLE urn on the
+  // exact center tile — no jitter, no diamond, no scatter. The undead
+  // pour out of one mass grave at the heart of the map.
+  //
+  // We pad the locations array to UPRISING_CLUSTER_SIZE (4) entries
+  // all pointing at the SAME center tile so that:
+  //   • clusterUprisingSpawnSchedule (waveOverride mode) still groups
+  //     4 enemies per burst — preserves the "wave of undead" feel
+  //   • buildPointsFromLocations (legacy mode) still emits a total of
+  //     UPRISING_CLUSTER_SIZE × SPAWNS_PER_POINT enemies, matching the
+  //     prior count budget. Their stagger from INTER_POINT_OFFSET
+  //     produces a tight ripple-out rather than a single-frame burst.
+  // The renderer drawing 4 overlapping urn sprites at the same tile
+  // visually collapses to one urn (overdraw is idempotent for opaque
+  // sprites; alpha-blended ones get a slight bloom on the center tile
+  // which actually reads as "the urn is glowing brighter" — fine).
   const midCol = Math.floor(GRID.COLS / 2);
   const midRow = Math.floor(GRID.ROWS / 2);
-  const jitterC = Math.floor(Math.random() * 3) - 1;
-  const jitterR = Math.floor(Math.random() * 3) - 1;
-  const cx = midCol + jitterC;
-  const cy = midRow + jitterR;
-  const locations = [
-    { col: cx, row: cy - 2 },
-    { col: cx, row: cy + 2 },
-    { col: cx - 2, row: cy },
-    { col: cx + 2, row: cy },
-  ];
+  const center = { col: midCol, row: midRow };
+  const locations = [center, center, center, center];
   if (waveOverride) {
     return locations.map((pos, i) => {
       const vfxX = pos.col * GRID.TILE + GRID.TILE / 2;

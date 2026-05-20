@@ -695,8 +695,17 @@ function executeSULLAS_MARCH(state: GameStateShape, hero: Tower, params: any, ab
     if (e.hp / Math.max(1, e.maxHp) < threshold) e.hp = 0;
   }
   // Heal the gate, capped at lifetime 20.
+  // 2026-05-20 — Floor to integer. Hero Forge Path C (EMPOWER) scales
+  // healGateAmount by 1.05^stacks, which produces floats (5 → 5.25 →
+  // 5.5125 …). Adding floats to state.lives was bleeding floating-
+  // point noise into the HUD ("LIVES 19.04999999…") and overflowing
+  // the HUD chip on W11 because the long string blew out the column
+  // width. Floor here keeps the heal integer, the cap math sane, and
+  // the HUD aligned. Round-down loses < 1 life vs. the float math —
+  // acceptable since the cap is already 20 and the base heal is 5.
   const healed = state.heroLifeHealedThisRun ?? 0;
-  const requested = params.healGateAmount ?? 5;
+  const requestedRaw = params.healGateAmount ?? 5;
+  const requested = Math.max(0, Math.floor(requestedRaw));
   const cap = params.lifetimeHealCap ?? 20;
   const amount = Math.min(requested, Math.max(0, cap - healed));
   state.lives += amount;
