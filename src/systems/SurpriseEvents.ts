@@ -190,8 +190,14 @@ function clusterUprisingSpawnSchedule(state: GameStateShape): void {
 export function maybeTriggerEndlessSurpriseEvent(state: GameStateShape, factionKey: string): void {
   const lastWave = state.lastSurpriseEventWave ?? 0;
   const endlessWaveNum = (state.endlessWave ?? 1) + 20;
-  if (endlessWaveNum - lastWave < 3) return;
-  if (Math.random() > 0.25) return;
+  // 2026-05-20 — cooldown 3 → 2 waves, fire chance 25% → 75%. User
+  // direction: Endless should feel like a perpetual invasion from
+  // the outskirts, not a cave defense with the occasional surprise.
+  // Two-wave cooldown still guarantees one quiet recovery wave after
+  // each chaotic event so the player can rebuild without two stacked
+  // chaos waves in a row.
+  if (endlessWaveNum - lastWave < 2) return;
+  if (Math.random() > 0.75) return;
   const isUndeadFaction = factionKey === 'UNDEAD_CELTS' || factionKey === 'UNDEAD_CARTHAGE';
   // Pick the primary event kind (existing 50/50 invasion-vs-uprising
   // on undead waves, invasion-only on non-undead).

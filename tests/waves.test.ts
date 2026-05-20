@@ -146,6 +146,39 @@ describe('Spawn queue ticking', () => {
   });
 });
 
+describe('Endless modifier stacking (isWaveModifierActive helper)', () => {
+  // 2026-05-20 — Endless rolls 1-3 stacked modifiers per wave. The
+  // primary lands on state.waveModifier; extras live on
+  // state.endlessExtraModifiers. isWaveModifierActive returns true
+  // for either bucket so reactive code paths fire once a modifier
+  // is in the active set regardless of slot.
+  it('returns false when no modifier is active', async () => {
+    const { isWaveModifierActive } = await import('../src/GameState');
+    const s = bootstrapState();
+    expect(isWaveModifierActive(s, 'BLOOD_MOON')).toBe(false);
+  });
+
+  it('returns true when key matches the primary slot', async () => {
+    const { isWaveModifierActive } = await import('../src/GameState');
+    const s = bootstrapState();
+    s.waveModifier = 'BLOOD_MOON';
+    s.endlessExtraModifiers = [];
+    expect(isWaveModifierActive(s, 'BLOOD_MOON')).toBe(true);
+    expect(isWaveModifierActive(s, 'DEATH_PACT')).toBe(false);
+  });
+
+  it('returns true when key matches one of the endless extras', async () => {
+    const { isWaveModifierActive } = await import('../src/GameState');
+    const s = bootstrapState();
+    s.waveModifier = 'BLOOD_MOON';
+    s.endlessExtraModifiers = ['DEATH_PACT', 'GROUP_MARCH'];
+    expect(isWaveModifierActive(s, 'BLOOD_MOON')).toBe(true);
+    expect(isWaveModifierActive(s, 'DEATH_PACT')).toBe(true);
+    expect(isWaveModifierActive(s, 'GROUP_MARCH')).toBe(true);
+    expect(isWaveModifierActive(s, 'VEIL')).toBe(false);
+  });
+});
+
 describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () => {
   // 2026-05-20 — Wave 11 (42x Undead Celt, necromancy=true) suppresses
   // the standard checkpoint-touch heal. The 15% heal at every waypoint

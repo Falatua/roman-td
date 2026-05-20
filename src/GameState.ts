@@ -61,6 +61,12 @@ export interface GameStateShape {
   // mechanical wrinkle on top of the wave's faction composition.
   waveModifier?: string | null;
   waveModifierTick?: number;     // generic timer for modifier-specific cycles
+  // 2026-05-20 — Endless stacks MULTIPLE modifiers. Primary one stays
+  // on `waveModifier` for backward compat with existing reactive code;
+  // anything past the first lands here. Empty in campaign mode (the
+  // 20-wave run is deterministic and never carries modifiers). Both
+  // arrays cleared together at wave end.
+  endlessExtraModifiers?: string[];
   // ─── Game-state scratchpad ──────────────────────────────────────────
   // Previously stuffed via `(state as any).foo`. Moved here for type safety.
   bloodMoonHpMult?: number;          // BLOOD_MOON wave modifier HP multiplier
@@ -262,6 +268,21 @@ export function createGameState(): GameStateShape {
     heroForgeStacks: { dmg: 0, cd: 0, aura: 0 },
     heroForgeGoldSpent: 0
   };
+}
+
+// 2026-05-20 — Helper that returns true if a given modifier key is in
+// the active set. Honors both the primary (state.waveModifier) and the
+// Endless extras (state.endlessExtraModifiers). Use this in every
+// reactive code path (CombatResolver, EnemySystem, RenderEngine,
+// main.ts) so stacked Endless modifiers all fire their effects.
+export function isWaveModifierActive(state: GameStateShape, key: string): boolean {
+  if (state.waveModifier === key) return true;
+  const extras = state.endlessExtraModifiers;
+  if (!extras || extras.length === 0) return false;
+  for (const k of extras) {
+    if (k === key) return true;
+  }
+  return false;
 }
 
 function emptyGrid(): number[][] {

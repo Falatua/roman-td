@@ -17,7 +17,7 @@
 
 import { Enemy, EnemyType, EnemyFaction, StatusEffectKind } from '../types';
 import { GRID } from '../constants';
-import { GameStateShape } from '../GameState';
+import { GameStateShape, isWaveModifierActive } from '../GameState';
 import enemiesData from '../data/enemies.json';
 import waypointsData from '../data/waypoints.json';
 import wavesData from '../data/waves.json';
@@ -331,13 +331,16 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
   // GROUP_MARCH: any enemy within 2 tiles of 2+ others gets +20% speed.
   // DEATH_PACT: handled in onDeath callback (heals all surviving 4%).
   // REVENANT: handled in onDeath callback.
-  const mod = state.waveModifier;
-  if (mod === 'VEIL') {
+  // 2026-05-20 — Endless stacks modifiers; honor the full active set
+  // via isWaveModifierActive instead of reading only the primary slot.
+  // VEIL + STORM_SURGE can now both fire on the same wave if late
+  // Endless rolls them together.
+  if (isWaveModifierActive(state, 'VEIL')) {
     const cyclePos = (state.tick % 6.0);
     const veiled = cyclePos < 0.8;
     for (const e of state.enemies.values()) (e as any).__veiled = veiled;
   }
-  if (mod === 'STORM_SURGE') {
+  if (isWaveModifierActive(state, 'STORM_SURGE')) {
     const next = state.waveModifierTick ?? 0;
     if (state.tick >= next) {
       state.waveModifierTick = state.tick + 8;
@@ -875,7 +878,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       e.currentSpeed *= 1.5;
     }
     // GROUP_MARCH: bunched enemies move faster
-    if (state.waveModifier === 'GROUP_MARCH') {
+    if (isWaveModifierActive(state, 'GROUP_MARCH')) {
       let near = 0;
       for (const o of state.enemies.values()) {
         if (o.id === e.id) continue;

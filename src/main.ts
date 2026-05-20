@@ -1,6 +1,6 @@
 import { GamePhase, TileType, TowerType, TargetingMode, DrawCard, DamageType } from './types';
 import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS } from './constants';
-import { createGameState } from './GameState';
+import { createGameState, isWaveModifierActive } from './GameState';
 import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
 import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards } from './systems/EnemySystem';
@@ -976,6 +976,17 @@ async function boot() {
       if (endlessCfg.necromancy) briefLines.push({ text: '💀 NECROMANCY · slain grunts rise as 6-9 undead per kill.', cat: 'MECHANIC' });
       for (const m of (endlessCfg.combinedMechanics ?? [])) {
         briefLines.push({ text: `▸ ${m}`, cat: 'MECHANIC' });
+      }
+      // 2026-05-20 — Endless modifier stack. Whichever modifiers
+      // rolled this wave (1-3 of them depending on endlessIdx) get
+      // their own dedicated brief lines so the player can see the
+      // full chaos cocktail before launching.
+      const allActiveMods: string[] = [];
+      if (state.waveModifier) allActiveMods.push(state.waveModifier);
+      for (const k of (state.endlessExtraModifiers ?? [])) allActiveMods.push(k);
+      for (const key of allActiveMods) {
+        const m = WAVE_MODIFIERS.find(x => x.key === key);
+        if (m) briefLines.push({ text: `🎲 ${m.name.toUpperCase()} · ${m.blurb}`, cat: 'RNG' });
       }
       // 2026-05-19 v3 — Elite mutation roll surface. This is the
       // ONLY mode where mutations actually fire (campaign is
@@ -5423,8 +5434,11 @@ async function boot() {
             state.hint = `💥 Bloated burst: 3 minions spawned!`;
           }
           // ─── WAVE MODIFIER death triggers ─────────────────────────
+          // 2026-05-20 — Endless stacks multiple modifiers; route every
+          // check through isWaveModifierActive so DEATH_PACT + REVENANT
+          // can both fire on the same kill in late Endless.
           // DEATH_PACT — every kill heals every surviving enemy 4% maxHp.
-          if (state.waveModifier === 'DEATH_PACT') {
+          if (isWaveModifierActive(state, 'DEATH_PACT')) {
             for (const o of state.enemies.values()) {
               if (o.id === e.id) continue;
               o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.04);
@@ -5432,7 +5446,7 @@ async function boot() {
             }
           }
           // REVENANT — silence the nearest tower for 4s as the ghost passes.
-          if (state.waveModifier === 'REVENANT') {
+          if (isWaveModifierActive(state, 'REVENANT')) {
             let closest: any = null;
             let bestD = Infinity;
             for (const tw of state.towers.values()) {

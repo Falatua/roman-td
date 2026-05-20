@@ -232,8 +232,8 @@ export function startWave(state: GameStateShape) {
   // Stamping null here clears any stale value carried over from a
   // prior wave or game-reset path.
   state.waveModifier = null;
+  state.endlessExtraModifiers = [];
   state.waveModifierTick = 0;
-  void WAVE_MODIFIERS;     // import preserved for potential Endless wiring
   const carry = state.enemies.size > 0 ? ` ${state.enemies.size} enemies carried over.` : '';
   state.hint = `Wave ${state.wave} — ${w.faction}.${carry}`;
   // 2026-05-16 — SURPRISE EVENTS (Invasion + Skeletal Uprising). Fires
@@ -401,6 +401,7 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
       state.weatherKey = null;
       state.weatherIntensity = 1;
       state.waveModifier = null;
+    state.endlessExtraModifiers = [];
       (state as any).__surpriseSpawnRoundIdx = 0;
       // 2026-05-17 — Fire reward modal trigger BEFORE clearing the event,
       // so the modal can read activeSurpriseEvent.kind. clearSurpriseEventsForWaveEnd
@@ -451,6 +452,7 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
     state.weatherKey = null;
     state.weatherIntensity = 1;
     state.waveModifier = null;
+    state.endlessExtraModifiers = [];
     (state as any).bloodMoonHpMult = 1;
     (state as any).__surpriseSpawnRoundIdx = 0;
     // 2026-05-17 — Surprise event wave clear path. notifySurpriseEventWaveEnded
@@ -500,9 +502,35 @@ function runEndlessSpawnQueue(state: GameStateShape, cfg: EndlessWaveConfig) {
   // Stash the cfg so spawnEnemy / pre-wave brief / scoring can read it.
   (state as any).__endlessWaveCfg = cfg;
   state.phase = GamePhase.WAVE_PHASE;
-  // 2026-05-16 — Endless surprise events: ~25% chance per endless wave,
-  // 3-wave cooldown. Uprising prefers undead faction days; otherwise
-  // defaults to Invasion. Same VFX + reward pipeline as the campaign.
+  // 2026-05-20 — ENDLESS MODIFIER ROLL. The campaign's modifier RNG was
+  // dormant (intentionally — campaign is deterministic). Endless now
+  // activates it with stacking: 1 modifier at E1-3, 2 at E4-7, 3 at
+  // E8+. Picks are unique across the stack so no Blood Moon × Blood
+  // Moon. First pick lands on `state.waveModifier` for backward compat
+  // with existing reactive code (CombatResolver, EnemySystem, render);
+  // any extras live in `state.endlessExtraModifiers` and are honored
+  // by the same code paths via the iterateActiveModifiers helper.
+  const modCount = cfg.endlessIdx >= 8 ? 3 : cfg.endlessIdx >= 4 ? 2 : 1;
+  const pool = WAVE_MODIFIERS.map(m => m.key);
+  const picks: string[] = [];
+  for (let i = 0; i < modCount && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    picks.push(pool.splice(idx, 1)[0]);
+  }
+  state.waveModifier = picks[0] ?? null;
+  state.endlessExtraModifiers = picks.slice(1);
+  state.waveModifierTick = 0;
+  // BLOOD_MOON applies a +25% HP scalar at spawn time. The reactive
+  // code in EnemySystem.spawnEnemy reads `state.bloodMoonHpMult`, so
+  // we stamp 1.25 here when BLOOD_MOON is in the active set. Cleared
+  // back to 1.0 in checkWaveEnd.
+  (state as any).bloodMoonHpMult = picks.includes('BLOOD_MOON') ? 1.25 : 1;
+  // 2026-05-20 — Endless surprise event rate cranked. Was 25% with a
+  // 3-wave cooldown; now ~75% with a 2-wave cooldown so the outskirts-
+  // invasion lands almost every Endless wave (user direction: invade
+  // from the perimeter, not the cave). Cooldown still gates back-to-
+  // backs so the player gets one quiet wave to recover after each
+  // chaotic one.
   maybeTriggerEndlessSurpriseEvent(state, cfg.faction ?? 'CARTHAGE');
 }
 

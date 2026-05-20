@@ -1,7 +1,7 @@
 import { Application, Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import { GRID, TIER_COLORS, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS } from '../constants';
 import { TileType, GamePhase, TowerType, DamageType } from '../types';
-import { GameStateShape } from '../GameState';
+import { GameStateShape, isWaveModifierActive } from '../GameState';
 import { GoreState } from '../systems/GoreSystem';
 import { towerEffectiveStats } from '../systems/TowerSystem';
 import { tex } from './Assets';
@@ -2507,7 +2507,7 @@ export class RenderEngine {
       if (e.hpFlashTimer > 0) tint = 0xffffff;
       entry.sp.tint = tint;
       // BLOOD_MOON modifier: every enemy carries a faint crimson outline aura.
-      if (state.waveModifier === 'BLOOD_MOON') {
+      if (isWaveModifierActive(state, 'BLOOD_MOON')) {
         // approximate "outline" via an extra bigger sprite shadow tinted red;
         // simpler: just shift tint toward red and slightly increase scale.
         entry.sp.tint = blendWithWhite(0xcc1818, 0.55);
