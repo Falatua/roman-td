@@ -298,16 +298,14 @@ export const AURA_TILES: AuraTile[] = [
   { col: 24, row: 19, kind: 'CYAN'    },  // bottom-mid      · melee can hit flyers
   { col: 11, row: 19, kind: 'GOLD'    },  // bottom-left     · +2 gold per kill
   // 2026-05-19 — 6th aura tile. WATCHTOWER (emerald green). Moved
-  // from the bottom-left corner (2, 22) to upper-middle (20, 5) so
-  // the +2-range buff anchors a central highground rather than a
-  // rear corner. BLUE at (15, 12) occupies the literal map center,
-  // so the ≥11 manhattan rule forces EMERALD just outside that
-  // exclusion zone. (20, 5) is the closest-to-center position that
-  // satisfies all five existing constraints — verified ≥11 manhattan
-  // from every other aura: PURPLE 18 / BLUE 12 / RED 11 / CYAN 18
-  // / GOLD 23. Thematic fit: an upper-middle watchtower commands
-  // sight-lines down across most of the map.
-  { col: 20, row: 5,  kind: 'EMERALD' }   // upper-middle · +2 tile range
+  // from the bottom-left corner (2, 22) → upper-middle (20, 5) →
+  // (20, 4). The previous (20, 5) sat exactly on waypoint 5
+  // (JUPITER) per waypoints.json — the tile was overlapping the
+  // checkpoint instead of being placeable terrain. Shifted up one
+  // row so it sits directly ABOVE the checkpoint instead. Still
+  // satisfies the ≥11 manhattan rule vs every other aura:
+  // PURPLE 19 / BLUE 13 / RED 12 / CYAN 19 / GOLD 24.
+  { col: 20, row: 4,  kind: 'EMERALD' }   // upper-middle · above WP5 · +2 tile range
 ];
 // Effect lookup table — used by stat math, combat hooks, and tooltips
 // so the same numbers come out of one source. Multipliers are applied
