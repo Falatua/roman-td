@@ -469,12 +469,37 @@ export function showLeaderboard(
          <button id="hog-tab-local"  data-active="0" style="background:transparent;color:#ffd34d;border:2px solid #ffd34d;padding:8px 18px;letter-spacing:3px;font-weight:bold;cursor:pointer;font-family:inherit">📜 LOCAL (this device)</button>
        </div>`
     : `<div style="text-align:center;color:#aa6a1a;letter-spacing:2px;font-size:10px;margin:6px 0 10px">— local scores only · global leaderboard offline —</div>`;
+  // 2026-05-20 v3 — Submission-status banner. Shown right after a run
+  // ends and the player lands on the Hall of Glory. Reads the
+  // `__submitStatus` stash set by runEndOfGameFlow to tell the player
+  // CLEARLY whether their score made it into the global table or not.
+  // The previous flow ignored submitScore's return value — a silent
+  // failure looked identical to "didn't crack the top 10", which is
+  // exactly the bug a user reported (friend's wave-8 score never
+  // appeared and there was no way to tell if it had been saved).
+  let submitBannerHtml = '';
+  const submitStatus = currentEntry ? (currentEntry as any).__submitStatus : null;
+  if (submitStatus === 'success') {
+    submitBannerHtml = `<div style="background:linear-gradient(180deg,#0a2a0a,#061806);border:2px solid #66ff88;padding:8px 14px;margin:6px 0;text-align:center;color:#88ff88;font-family:'Courier New',monospace;font-size:12px;letter-spacing:2px;font-weight:bold;box-shadow:0 0 12px rgba(102,255,136,0.35)">
+      ✓ SCORE SUBMITTED TO THE EMPIRE
+    </div>`;
+  } else if (submitStatus === 'failed') {
+    submitBannerHtml = `<div style="background:linear-gradient(180deg,#2a0a0a,#180606);border:2px solid #ee5050;padding:8px 14px;margin:6px 0;text-align:center;color:#ff8888;font-family:'Courier New',monospace;font-size:12px;letter-spacing:2px;font-weight:bold;box-shadow:0 0 12px rgba(238,80,80,0.35)">
+      ✗ SUBMISSION FAILED — your score is saved locally only.<br/>
+      <span style="font-size:10px;font-weight:normal;color:#cdb98a">Check the LOCAL tab to see your run. Common cause: ad-blocker is blocking supabase.co.</span>
+    </div>`;
+  } else if (submitStatus === 'no-remote') {
+    submitBannerHtml = `<div style="background:#1a1410;border:1px dashed #5a4a30;padding:6px 14px;margin:6px 0;text-align:center;color:#aa9a4a;font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px">
+      ⓘ GLOBAL LEADERBOARD NOT CONFIGURED · saved to LOCAL tab
+    </div>`;
+  }
   wrap.innerHTML = `
     <div class="hog-scanlines"></div>
     <div class="hog-vignette"></div>
     <div class="hog-content">
       <div class="hog-title">HALL OF GLORY</div>
       <div class="hog-subtitle" id="hog-subtitle">TOP X LEGIONS OF ROMA</div>
+      ${submitBannerHtml}
       ${tabsHtml}
       <div class="hog-table-scroll">
         <table class="hog-table">
@@ -493,6 +518,7 @@ export function showLeaderboard(
           <tbody id="hog-tbody"></tbody>
         </table>
       </div>
+      <div id="hog-your-rank" style="margin:8px 0;text-align:center;color:#cdb98a;font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;min-height:18px"></div>
       ${isLoadingMode
         ? `<div style="display:flex;flex-direction:column;align-items:center;gap:clamp(10px,1vw,18px);margin-top:clamp(8px,1vw,16px)">
              <div class="hog-prompt">▶ PRESS ENTER TO BEGIN YOUR RUN ▶</div>
@@ -567,7 +593,14 @@ export function showLeaderboard(
     try {
       subtitle.textContent = '🌐 FETCHING GLOBAL LEADERBOARD…';
       tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— LOADING —</td></tr>`;
-      const rows = await fetchTopScores('campaign', 10);
+      // 2026-05-20 v3 — Bumped fetch limit 10 → 25. Player feedback:
+      // wave 8-10 runs felt like they "should" make the leaderboard
+      // but never appeared because the top 10 was saturated with
+      // wave-20 victory runs. Showing the top 25 gives mid-run scores
+      // (wave 8-15) a real chance to land while still keeping the
+      // table scannable. The table itself is scrollable so 25 rows
+      // fit fine in the modal.
+      const rows = await fetchTopScores('campaign', 25);
       const meta = getLastFetchMeta();
       // If the player has switched tabs while we were fetching, don't
       // overwrite their current view.
@@ -611,21 +644,37 @@ export function showLeaderboard(
       const ageMin = Math.max(1, Math.round(meta.cacheAgeMs / 60000));
       subtitle.textContent = `🌐 TOP ${rows.length} · CACHED (${ageMin}m ago) · auto-retry…`;
     } else {
+      // 2026-05-20 v3 — "TOP 25" max to match the bumped fetch limit.
+      // Players with wave 8-15 runs now have visible spots to compete
+      // for instead of being shut out by the wave-20 victory rows.
       subtitle.textContent = `🌐 TOP ${rows.length} LEGIONS OF ROMA · GLOBAL`;
     }
     tbody.innerHTML = '';
+    // 2026-05-20 v3 — Find the player's row in the global results so
+    // we can highlight it (◀ YOU) and compute their rank for the
+    // footer callout. Matches by score+wave since multiple players
+    // may share a name; the score+wave+won tuple is essentially
+    // unique per run. Won't match if the player's submission failed
+    // (banner above explains that case).
+    const youIdx = currentEntry ? rows.findIndex(e =>
+      e.name === currentEntry.name &&
+      e.score === currentEntry.score &&
+      e.wave === currentEntry.wave &&
+      e.won === currentEntry.won
+    ) : -1;
     rows.forEach((e, idx) => {
       const rankNumeral = roman(idx + 1);
       const rankClass = idx === 0 ? 'hog-rank-1' : idx === 1 ? 'hog-rank-2' : idx === 2 ? 'hog-rank-3' : '';
+      const isYou = idx === youIdx;
       const wlBadge = e.won
         ? '<span style="color:#88ff88;font-weight:900">W</span>'
         : '<span style="color:#ee5050;font-weight:900">L</span>';
       const tr = document.createElement('tr');
-      tr.className = rankClass;
+      tr.className = [rankClass, isYou ? 'you' : ''].filter(Boolean).join(' ');
       tr.style.animationDelay = `${idx * 0.06}s`;
       tr.innerHTML = `
         <td class="${rankClass}">${rankNumeral}</td>
-        <td class="${rankClass}">${e.name}${renderHeroSuffix(e.hero_id)}</td>
+        <td class="${rankClass}">${e.name}${renderHeroSuffix(e.hero_id)}${isYou ? ' <span style="color:#ffd34d">◀ YOU</span>' : ''}</td>
         <td class="num ${rankClass}">${e.score.toLocaleString()}</td>
         <td class="${rankClass}">Wave ${e.wave}</td>
         <td class="num ${rankClass}">${e.towers_combined}</td>
@@ -634,6 +683,27 @@ export function showLeaderboard(
         <td class="${rankClass}">${formatDateShort(e.date_str)}</td>`;
       tbody.appendChild(tr);
     });
+    // 2026-05-20 v3 — "Your rank" footer. Tells the player at a
+    // glance where they landed: in the top 25 highlighted, just
+    // below the cutoff (rank > 25, would need to crack X points),
+    // or "submission failed — see LOCAL tab." Eliminates the
+    // ambiguity the previous UI created where a missing player name
+    // could mean either "submit failed" or "didn't rank."
+    const yourRankEl = wrap.querySelector('#hog-your-rank') as HTMLElement | null;
+    if (yourRankEl && currentEntry) {
+      const status = (currentEntry as any).__submitStatus;
+      if (status === 'success' && youIdx >= 0) {
+        yourRankEl.innerHTML = `<span style="color:#88ff88;font-weight:bold">▶ YOU LANDED RANK ${roman(youIdx + 1)} (#${youIdx + 1}) ON THE GLOBAL BOARD ◀</span>`;
+      } else if (status === 'success' && youIdx < 0) {
+        const lastScore = rows.length > 0 ? rows[rows.length - 1].score : 0;
+        const gap = Math.max(0, lastScore - currentEntry.score + 1);
+        yourRankEl.innerHTML = `<span style="color:#cdb98a">Your score was saved (${currentEntry.score.toLocaleString()} pts) but didn't crack the top ${rows.length}. Need <span style="color:#ffd34d">+${gap.toLocaleString()}</span> more to land rank ${rows.length}.</span>`;
+      } else if (status === 'failed') {
+        yourRankEl.innerHTML = `<span style="color:#ee8888">Your score didn't submit to the global board — see the banner above and the LOCAL tab.</span>`;
+      } else {
+        yourRankEl.innerHTML = '';
+      }
+    }
     } finally {
       remotePaintInFlight = false;
     }
@@ -783,19 +853,31 @@ export function runEndOfGameFlow(
       // would pollute the Hall of Glory. The local insertEntry above
       // also gets reverted below so even the local board stays clean.
       const sandbox = !!(state as any).sandboxMode;
+      // 2026-05-20 v3 — Track submission status so the Hall of Glory
+      // can show the player a clear ✓/✗ banner. The previous flow did
+      // `await submitScore(...)` but ignored the return value — when
+      // submission failed (network, RLS, proxy block) the player saw
+      // the leaderboard without their name and couldn't tell if their
+      // score wasn't saved vs simply didn't rank top 25.
+      let submitStatus: 'success' | 'failed' | 'sandbox' | 'no-remote' = 'sandbox';
       if (!sandbox) {
+        submitStatus = hasRemoteLeaderboard() ? 'failed' : 'no-remote';
         try {
           // 2026-05-19 — Thread the active hero pick through so the
           // Hall of Glory can render the "⚔ HeroName" suffix on the
           // NAME column. Pre-hero runs land as null and render the
           // unchanged player-name only row.
           const heroIdForRow: string | null = ((state as any).activeHeroId as string | null | undefined) ?? null;
-          await submitScore(toRemoteRow(entry, 'campaign', heroIdForRow));
+          const ok = await submitScore(toRemoteRow(entry, 'campaign', heroIdForRow));
+          if (ok) submitStatus = 'success';
         } catch (err) {
           console.error('[leaderboard] submit threw:', err);
         }
       }
       overlay.remove();
+      // Stash the submit status on the entry so showLeaderboard can
+      // surface it to the player without changing every signature.
+      (entry as any).__submitStatus = submitStatus;
       // If a post-victory hook is wired (Endless transition), invoke it
       // INSTEAD of showing the static leaderboard. The leaderboard is
       // still reachable from the main menu after the run ends.
