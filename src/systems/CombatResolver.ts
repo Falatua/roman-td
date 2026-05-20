@@ -974,6 +974,16 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         (t as any).__clibanariusBossHits = hits;
         if (hits % 4 === 0) damage *= 3.0;
       }
+      // CLIBANARIUS — BEAST RIDER (2026-05-20 v2). The heavy lance also
+      // skewers four-legged beasts: +100% damage vs every enemy in the
+      // BEAST_ENEMY_TYPES set (dogs, hellhound, war elephants — same
+      // roster Beast Hunter / Beast Slayer use, so the beast definition
+      // stays consistent across the gladiator family). Stacks with the
+      // boss multiplier above on the rare flying-beast-boss case (none
+      // currently exist in campaign — flag for future cross-overlap).
+      if (t.type === TowerType.CLIBANARIUS && BEAST_ENEMY_TYPES.has(target.type)) {
+        damage *= 2.0;
+      }
       // HANNIBALS_NIGHTMARE — apex anti-siege T5. 2026-05-15 v3 (today):
       // the +200% anti-elephant hook now applies to BOTH living and undead
       // war elephants. Previously only WAR_ELEPHANT matched; the undead
