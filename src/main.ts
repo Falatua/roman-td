@@ -4426,7 +4426,14 @@ async function boot() {
     renderer.hoveredTowerId = hoverTowerId;
     // 2026-05-19 — Aura tile tooltip. Hovering one of the 5 fixed
     // buff tiles pops a small chip explaining the tile's effect.
-    updateAuraTileTooltip(t.col, t.row, e.clientX, e.clientY);
+    // 2026-05-19 v2: when a tower is sitting on the aura tile, the
+    // tower hover preview ALREADY surfaces "★ ON [AURA NAME]" inline
+    // (see updateTowerHoverPreview around line 4456) so the aura
+    // info isn't lost. Suppress the standalone aura tooltip in that
+    // case to avoid two floating chips overlapping at the same
+    // cursor position. Passing the hover-tower id lets the helper
+    // make that call.
+    updateAuraTileTooltip(t.col, t.row, e.clientX, e.clientY, hoverTowerId);
     // 2026-05-19 — TOWER HOVER PREVIEW. When the cursor is over a
     // placed tower, show a floating panel with its key stats so
     // the player can scan tower info without opening the full menu.
@@ -4491,10 +4498,15 @@ async function boot() {
   // popup element on first hover, positions it near the cursor, hides
   // when the cursor leaves an aura tile. Constant lookup since there
   // are only 5 fixed tiles.
-  function updateAuraTileTooltip(col: number, row: number, mouseX: number, mouseY: number) {
+  // 2026-05-19 v2 — `hoverTowerId` lets the caller signal that a tower
+  // is currently sitting on this tile. In that case the tower hover
+  // preview is the source of truth (it surfaces an "★ ON [AURA]"
+  // tag), so we suppress the standalone aura tooltip to prevent two
+  // overlapping floating chips at the cursor position.
+  function updateAuraTileTooltip(col: number, row: number, mouseX: number, mouseY: number, hoverTowerId?: string | null) {
     const aura = AURA_TILES.find(a => a.col === col && a.row === row);
     let tip = document.getElementById('aura-tile-tooltip');
-    if (!aura) {
+    if (!aura || hoverTowerId) {
       if (tip) tip.remove();
       return;
     }
