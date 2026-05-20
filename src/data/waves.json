@@ -116,6 +116,7 @@
     "faction": "CARTHAGE",
     "hpMult": 2.1,
     "gold": 11,
+    "resistReduction": 0.15,
     "spawns": [
       {
         "type": "CARTHAGE_ELITE_GUARD",

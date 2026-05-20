@@ -5,6 +5,7 @@ import { createGameState } from '../src/GameState';
 import { GamePhase } from '../src/types';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath, buildFlyerPath } from '../src/systems/PathFinder';
+import wavesData from '../src/data/waves.json';
 
 function bootstrapState() {
   const s = createGameState();
@@ -142,5 +143,39 @@ describe('Spawn queue ticking', () => {
     tickSpawns(s, 0.1);
     expect(s.spawnQueue.length).toBe(1);   // unchanged
     expect(s.enemies.size).toBe(0);
+  });
+});
+
+describe('Per-wave resistance relief (resistReduction field)', () => {
+  // 2026-05-20 — Wave 8 (CARTHAGE, 33x Sacred Band + 18x Spearman + 5x
+  // Numidian Rider) carries a 0.15 resistReduction. The CombatResolver
+  // brings the effective resistance multiplier 15% closer to 1.0 — but
+  // only when the enemy is RESISTANT (resMod < 1). Weaknesses untouched.
+  it('wave 8 carries resistReduction = 0.15', () => {
+    const w8 = (wavesData as any[]).find(w => w.wave === 8);
+    expect(w8).toBeDefined();
+    expect(w8.resistReduction).toBe(0.15);
+  });
+
+  it('no other wave currently carries resistReduction (clean data)', () => {
+    // Anyone else adding the field later would intentionally surface in
+    // the Codex 🛡 RESIST tag — this test catches accidental copy-paste.
+    const others = (wavesData as any[]).filter(w => w.wave !== 8 && typeof w.resistReduction === 'number' && w.resistReduction > 0);
+    expect(others.length).toBe(0);
+  });
+
+  it('relief formula brings resMod 15% closer to 1 when resistant', () => {
+    // The applied formula is: resMod = 1 - (1 - resMod) * (1 - 0.15)
+    // i.e. the resistance GAP shrinks to 85% of its original size.
+    const reduce = (m: number, r = 0.15) => (m < 1 ? 1 - (1 - m) * (1 - r) : m);
+
+    // CARTHAGE PHYS_MELEE: base -0.30 → resMod 0.70 → reduced to 0.745
+    expect(reduce(0.70)).toBeCloseTo(0.745, 4);
+    // CARTHAGE PHYS_RANGED: base -0.20 → resMod 0.80 → reduced to 0.83
+    expect(reduce(0.80)).toBeCloseTo(0.83, 4);
+    // Neutral (CARTHAGE SIEGE / ELEMENTAL_FIRE): no change
+    expect(reduce(1.0)).toBe(1.0);
+    // Weakness: untouched (we never *reduce* damage to the player)
+    expect(reduce(1.25)).toBe(1.25);
   });
 });

@@ -26,6 +26,21 @@ import { spawnProjectile, spawnCosmeticProjectile } from './ProjectileSystem';
 import { enemyDamageMultiplier, statusEffectiveness } from './EnemyResistances';
 import enemiesData from '../data/enemies.json';
 import towersData from '../data/towers.json';
+import wavesData from '../data/waves.json';
+
+// 2026-05-20 — Per-wave resistance relief lookup. A wave entry can carry
+// an optional `resistReduction` field (0-1) that brings the effective
+// resistance multiplier 15% closer to 1.0 (no extra damage taken from
+// values >1, so weakness is unaffected). Currently used only on W8,
+// which stacks faction resistance with shield block + meleeBreak +
+// regen and was reading as the hardest non-boss wave. Adding this as a
+// general field keeps the door open for future per-wave tuning.
+const RESIST_REDUCTION_BY_WAVE = new Map<number, number>();
+for (const w of (wavesData as any[])) {
+  if (typeof w?.resistReduction === 'number' && w.resistReduction > 0) {
+    RESIST_REDUCTION_BY_WAVE.set(w.wave, w.resistReduction);
+  }
+}
 
 // Module-local counter for burn-patch IDs (unique per session).
 let nextBurnPatchId = 1;
@@ -781,6 +796,18 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
       if (t.equippedItems.includes('IRON_TIP') && (t.damageType === DamageType.PHYS_MELEE || t.damageType === DamageType.PHYS_RANGED) && resMod < 1) {
         resMod += (1 - resMod) * 0.2;
+      }
+      // 2026-05-20 — Per-wave resistance relief. If the current wave
+      // carries a `resistReduction` value, bring the effective resMod
+      // 15% closer to 1.0 — but only when the enemy is RESISTANT
+      // (resMod < 1). Weaknesses (resMod > 1) are intentionally left
+      // alone so this never *reduces* damage. Applied after every
+      // other resistance layer so it captures the stack: faction
+      // table × per-enemy modifier × Actium bypass × post-W7 +25%
+      // ranged shield × IRON_TIP shred. Wave 8 currently uses 0.15.
+      const waveResistReduction = RESIST_REDUCTION_BY_WAVE.get(state.wave ?? 1);
+      if (waveResistReduction && resMod < 1) {
+        resMod = 1 - (1 - resMod) * (1 - waveResistReduction);
       }
       // Aquilifer Titan vulnerability: +20% taken if enemy is near the Titan
       let takenMult = 1;

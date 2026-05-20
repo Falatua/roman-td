@@ -1362,11 +1362,19 @@ function renderTab(tab: string): string {
       const flag = w.type === 'B' ? '<span style="color:#ee5555;font-weight:bold">BOSS</span>' : w.type === 'F' ? '<span style="color:#66ccff;font-weight:bold">FLYERS</span>' : w.type === 'M' ? '<span style="color:#ffd34d">MIXED</span>' : 'GROUND';
       // Append a necromancy tag so the wave table flags reanimation-active rounds at a glance.
       const necroTag = (w as any).necromancy ? ' <span style="color:#aa55ff;font-weight:bold;font-size:10px;letter-spacing:1px;background:#1a0a2a;border:1px solid #aa55ff;padding:1px 4px">💀 NECRO</span>' : '';
+      // 2026-05-20 — Resistance-relief tag. Surfaces the per-wave
+      // `resistReduction` so players can see at a glance which waves
+      // are tuned a notch easier than the faction's baseline. Wave 8
+      // currently sits at 0.15 (15% magnitude reduction on resists).
+      const relief = (w as any).resistReduction;
+      const reliefTag = (typeof relief === 'number' && relief > 0)
+        ? ` <span style="color:#88ff88;font-weight:bold;font-size:10px;letter-spacing:1px;background:#0a1a0a;border:1px solid #88ff88;padding:1px 4px" title="Effective resistance reduced ${Math.round(relief * 100)}% across the board on this wave.">🛡 −${Math.round(relief * 100)}% RESIST</span>`
+        : '';
       // No HP-multiplier column — the value was an internal scaling
       // factor (1.0×, 2.5×, etc.) that confused players. Final on-spawn
       // HP for each enemy lives in the ENEMIES tab where it's surfaced
       // as a concrete number per wave.
-      return `<tr><td style="color:#d4af37;font-weight:bold">${w.wave}</td><td>${flag}${necroTag}</td><td style="color:#9be0ff">${w.faction}</td><td>${w.gold}g</td><td style="opacity:0.85">${spawns}</td></tr>`;
+      return `<tr><td style="color:#d4af37;font-weight:bold">${w.wave}</td><td>${flag}${necroTag}${reliefTag}</td><td style="color:#9be0ff">${w.faction}</td><td>${w.gold}g</td><td style="opacity:0.85">${spawns}</td></tr>`;
     }).join('');
     return `${section('WAVE SCOUTING', '<div style="font-size:11px;color:#cdb98a">Use this table to plan flyer coverage, boss-killer investment, and item purchases before the warning banner appears. Rows tagged <span style="color:#aa55ff">💀 NECRO</span> reanimate slain grunts as undead — budget for roughly 2× the usual kills. <b style="color:#88ddff">For actual enemy HP at each wave, see the ENEMIES tab.</b></div>')}
       <table style="width:100%;border-collapse:collapse;font-size:11px">
