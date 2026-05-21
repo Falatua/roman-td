@@ -6,7 +6,8 @@ import enemiesData from '../data/enemies.json';
 
 interface BossRuntime {
   ambushFired: boolean;        // Undead Warlord ambush
-  necromancyFired: boolean;    // Undead Warlord raise dead
+  necromancyFired: boolean;    // Undead Warlord raise dead — first wave at 40% HP
+  necromancySecondFired: boolean;  // Undead Warlord raise dead — second wave at 15% HP (2026-05-21 difficulty pass)
   alphaDogFenzy: boolean;      // Alpha Dog speed double below 30% HP
   alphaDogHowlEndsAt: number;  // Alpha Dog pack howl buff
   alphaDogNextHowl: number;    // next howl time
@@ -28,6 +29,7 @@ export function createBossRuntime(): BossRuntime {
   return {
     ambushFired: false,
     necromancyFired: false,
+    necromancySecondFired: false,
     alphaDogFenzy: false,
     alphaDogHowlEndsAt: 0,
     alphaDogNextHowl: 0,
@@ -219,42 +221,63 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
         break;
       }
 
-      // ─── UNDEAD WARLORD (W30) ────────────────────────────────────────────
-      // Ambush 8 berserkers (existing) + NECROMANCY: at 40% HP raise 4 Undead Celts.
+      // ─── UNDEAD WARLORD (W15 boss) ───────────────────────────────────────
+      // Ambush 10 berserkers + NECROMANCY at 40% HP: raise 6 Undead Celts +
+      // a second NECROMANCY trigger at 15% HP for the final-push panic.
+      // 2026-05-21 — Difficulty pass per player feedback ("too easy to
+      // kill"). Bumps:
+      //   • ambush 8 → 10 berserkers
+      //   • necromancy 4 → 6 Undead Celts at 40% HP
+      //   • new 2nd necromancy: 5 more Undead Celts at 15% HP
+      //   • regen 0.7%/sec → 1.0%/sec (mid-fight pressure)
+      //   • baseHp 2020 → 2600 in enemies.json (separate file change)
+      // Resistances unchanged — fire/burn still chunk him at 1.25× so
+      // committed fire builds remain the clear counter.
       case EnemyType.UNDEAD_WARLORD:
         if (!rt.ambushFired && (state.tick - waveStartTick) > 5) {
           rt.ambushFired = true;
           const path = state.groundPath;
           const mid = path[Math.floor(path.length * 0.5)];
           const w = wavesData[state.wave - 1];
-          for (let i = 0; i < 8; i++) {
+          for (let i = 0; i < 10; i++) {
             const ambusher = spawnEnemy(state, EnemyType.UNDEAD_BERSERKER, w.hpMult);
             ambusher.x = mid.col * 32 + 16;
             ambusher.y = mid.row * 32 + 16;
             ambusher.pathIndex = Math.floor(path.length * 0.5);
             ambusher.pathProgress = 0;
           }
-          state.hint = '💀 AMBUSH! 8 Undead Berserkers rise mid-path!';
+          state.hint = '💀 AMBUSH! 10 Undead Berserkers rise mid-path!';
         }
         if (!rt.necromancyFired && e.hp <= e.maxHp * 0.40) {
           rt.necromancyFired = true;
           const w = wavesData[state.wave - 1];
-          for (let i = 0; i < 4; i++) {
+          for (let i = 0; i < 6; i++) {
             const risen = spawnEnemy(state, EnemyType.UNDEAD_CELT, w.hpMult * 0.6);
             risen.x = e.x + (Math.random() - 0.5) * 30;
             risen.y = e.y + (Math.random() - 0.5) * 30;
             risen.pathIndex = e.pathIndex;
             risen.pathProgress = e.pathProgress;
           }
-          state.hint = '💀 NECROMANCY! 4 Undead Celts raised at the Warlord!';
+          state.hint = '💀 NECROMANCY! 6 Undead Celts raised at the Warlord!';
         }
-        // Mid-fight HP regen. 2026-05-19 v3 — dropped 1.2%/sec → 0.7%/
-        // sec per user direction (−0.5 percentage points). The Warlord's
-        // toughness was over-reliant on healing through chip damage,
-        // which made melee-light builds feel powerless even when they
-        // were landing hits. The regen still bridges short pauses
-        // between volleys, but committed damage now sticks better.
-        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.007 * dt);
+        if (!rt.necromancySecondFired && e.hp <= e.maxHp * 0.15) {
+          rt.necromancySecondFired = true;
+          const w = wavesData[state.wave - 1];
+          for (let i = 0; i < 5; i++) {
+            const risen = spawnEnemy(state, EnemyType.UNDEAD_CELT, w.hpMult * 0.6);
+            risen.x = e.x + (Math.random() - 0.5) * 30;
+            risen.y = e.y + (Math.random() - 0.5) * 30;
+            risen.pathIndex = e.pathIndex;
+            risen.pathProgress = e.pathProgress;
+          }
+          state.hint = '💀 FINAL UPRISING! 5 more Undead Celts at the Warlord — finish him!';
+        }
+        // Mid-fight HP regen. Bumped 0.7%/sec → 1.0%/sec (2026-05-21).
+        // The Warlord shouldn't fall to chip damage alone; players
+        // need to land committed bursts to push him past each
+        // necromancy threshold. Fire/burn still chunks at 1.25× so
+        // sustained fire pressure overcomes the regen cleanly.
+        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.010 * dt);
         break;
 
       // ─── DAEMON IMPERATOR (W20 boss) ─────────────────────────────────────

@@ -1452,9 +1452,10 @@ const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
     'TELEGRAPHED REBIRTH at 50% HP — 1s red lock-on warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
   ],
   UNDEAD_WARLORD: [
-    'AMBUSH — 5s after spawn, 8 Undead Berserkers rise mid-path',
-    'NECROMANCY at 40% HP — raises 4 Undead Celts at his position',
-    'MID-FIGHT REGEN — 1.2% maxHP/sec while alive'
+    'AMBUSH — 5s after spawn, 10 Undead Berserkers rise mid-path',
+    'NECROMANCY at 40% HP — raises 6 Undead Celts at his position',
+    'FINAL UPRISING at 15% HP — 5 more Undead Celts erupt at the Warlord',
+    'MID-FIGHT REGEN — 1.0% maxHP/sec while alive (fire / burn the clear counter at 1.25× damage)'
   ],
   DAEMON_IMPERATOR: [
     'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~5 tiles for 1.5s',

@@ -233,7 +233,7 @@
   "UNDEAD_WARLORD": {
     "name": "Undead Warlord",
     "faction": "UNDEAD_CELTS",
-    "baseHp": 2020,
+    "baseHp": 2600,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": true,
