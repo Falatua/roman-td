@@ -2529,7 +2529,14 @@ export class RenderEngine {
       // animation tags are stripped so normal rendering resumes.
       const surpriseSpawnTick = (e as any).__surpriseSpawnTick;
       if (typeof surpriseSpawnTick === 'number') {
-        const emergeT = (state.tick - surpriseSpawnTick) / 0.4;
+        // 2026-05-21 — Emergence window lengthened 0.4 → 0.55s and
+        // the rise distance bumped 22 → 36px for Uprising so enemies
+        // visibly climb out of the urn instead of popping into place.
+        // Invasion still uses the original 0.4s for its sharper
+        // teleport-in feel.
+        const kindEarly = (e as any).__surpriseKind;
+        const emergeDur = kindEarly === 'UPRISING' ? 0.55 : 0.4;
+        const emergeT = (state.tick - surpriseSpawnTick) / emergeDur;
         if (emergeT >= 1) {
           // Done — clean up tags so the cost is zero on subsequent frames.
           delete (e as any).__surpriseSpawnTick;
@@ -2538,7 +2545,7 @@ export class RenderEngine {
           entry.sp.alpha = 1;
           entry.sp.tint = 0xffffff;
         } else {
-          const kind = (e as any).__surpriseKind;
+          const kind = kindEarly;
           if (kind === 'INVASION') {
             // Teleport-in: alpha 0 → 1 over the window + cyan→white tint blend.
             entry.sp.alpha = Math.max(0.05, emergeT);
@@ -2546,11 +2553,10 @@ export class RenderEngine {
             const teleColor = blendWithWhite(0x66ccff, emergeT);
             entry.sp.tint = teleColor;
           } else if (kind === 'UPRISING') {
-            // Ground-rise: enemy y starts +18px below ground, lerps up.
-            // Done via sprite y offset (entry.sp.y is set further down in
-            // this method; we stamp the offset into a per-entry field
-            // that the position assignment respects).
-            (entry as any).__surpriseRiseOffset = (1 - emergeT) * 22;
+            // Ground-rise: enemy y starts +36px below ground (was 22),
+            // lerps up. Larger rise reads as "climbing out of the
+            // urn" instead of "popping in slightly low".
+            (entry as any).__surpriseRiseOffset = (1 - emergeT) * 36;
             entry.sp.alpha = Math.max(0.2, emergeT);
           } else if (kind === 'GATES_OF_HELL') {
             // Gates rise dramatically (40px below → up) with a warm
@@ -3646,13 +3652,15 @@ export class RenderEngine {
         const cx = meta.vfxX;
         const cy = meta.vfxY + GRID.TILE * 0.45;          // urn base y (matches sprite anchor)
         const tilesPulse = 1 + 0.18 * Math.sin(tick * 1.8 + pointId * 0.9);
-        // 1. GROUND CRACKS — 8 jagged purple lines radiating from the urn
-        //    base. Drawn first so they sit under everything else.
-        const crackR = GRID.TILE * 1.4 * tilesPulse;
-        const crackAlpha = 0.55 * envAlpha;
+        // 1. GROUND CRACKS — 12 jagged purple lines radiating from the urn
+        //    base (was 8). Drawn first so they sit under everything else.
+        // 2026-05-21 — bumped 8 → 12 + larger radius for more visceral
+        // ritual-circle reading per the "more visuals" pass.
+        const crackR = GRID.TILE * 1.7 * tilesPulse;
+        const crackAlpha = 0.60 * envAlpha;
         ug.lineStyle(2, 0x5e1a8a, crackAlpha);
-        for (let a = 0; a < 8; a++) {
-          const baseAng = (a / 8) * Math.PI * 2 + pointId * 0.13;
+        for (let a = 0; a < 12; a++) {
+          const baseAng = (a / 12) * Math.PI * 2 + pointId * 0.13;
           const jitter = Math.sin(tick * 3 + pointId + a) * 0.12;
           const ang = baseAng + jitter;
           const x1 = cx + Math.cos(ang) * (GRID.TILE * 0.25);
@@ -3693,10 +3701,12 @@ export class RenderEngine {
         ug.beginFill(0x8833cc, 0.40 * envAlpha);
         ug.drawEllipse(cx, cy - GRID.TILE * 0.55, 14, 5);
         ug.endFill();
-        // 4. ORBITING FLOATING SKULLS — 4 skulls per urn drifting in an
-        //    elliptical orbit. Each skull is drawn with 3 ellipses (head
-        //    + jaw bevel + eye sockets) and 1 mouth line.
-        const SKULLS_PER_URN = 4;
+        // 4. ORBITING FLOATING SKULLS — 8 skulls per urn drifting in an
+        //    elliptical orbit (was 4). Each skull is drawn with 3
+        //    ellipses (head + jaw bevel + eye sockets) and 1 mouth line.
+        // 2026-05-21 — doubled (4 → 8) for the "more visuals" pass so
+        // the ritual ring feels properly haunted.
+        const SKULLS_PER_URN = 8;
         for (let s = 0; s < SKULLS_PER_URN; s++) {
           const orbitT = tick * 0.55 + (s / SKULLS_PER_URN) * Math.PI * 2 + pointId * 0.7;
           const orbitR = GRID.TILE * 1.25;
@@ -3730,12 +3740,14 @@ export class RenderEngine {
           ug.moveTo(sx - sz * 0.30, sy + sz * 0.45).lineTo(sx + sz * 0.30, sy + sz * 0.45);
           ug.lineStyle(0);
         }
-        // 5. EXTRA ROAMING SKULLS at larger orbits — 2 per urn that
+        // 5. EXTRA ROAMING SKULLS at larger orbits — 4 per urn that
         //    drift slower and wider, so the whole zone reads "haunted"
         //    rather than just "this urn has skulls around it".
-        for (let s = 0; s < 2; s++) {
-          const orbitT = tick * 0.32 + (s / 2) * Math.PI + pointId * 1.2;
-          const orbitR = GRID.TILE * 2.05;
+        // 2026-05-21 — doubled (2 → 4) and orbit radius widened to
+        // 2.5 tiles so they roam past the satellite urns.
+        for (let s = 0; s < 4; s++) {
+          const orbitT = tick * 0.32 + (s / 4) * Math.PI * 2 + pointId * 1.2;
+          const orbitR = GRID.TILE * 2.5;
           const sx = cx + Math.cos(orbitT) * orbitR;
           const sy = cy - GRID.TILE * 0.95 + Math.sin(orbitT) * orbitR * 0.36;
           const sa = 0.55 * envAlpha;

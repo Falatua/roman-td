@@ -652,13 +652,81 @@ function generateInvasionAtmosphere(state: GameStateShape, mainPoints: SurpriseE
 // smoke haze around the urn diamond. Reinforces the "burial ground /
 // ritual circle" reading. Reuses existing BLOOD / SMOKE textures so we
 // don't need new sprite assets. All purple-tinted for necrotic tone.
+//
+// 2026-05-21 — More visuals pass. Adds 4 satellite urn props at the
+// cardinal compass points around the (single, center-tile) spawn urn
+// so the wave reads as a graveyard ritual rather than one lonely urn.
+// The satellites are PURELY DECORATIVE — they don't carry spawn
+// points or path indices, just SKULL_URN sprites tinted darker than
+// the center so the player's eye still tracks the bright center as
+// the actual mass-grave point.
 function generateUprisingAtmosphere(state: GameStateShape, mainPoints: SurpriseEventSpawnPoint[]): SurpriseAtmosProp[] {
   const props: SurpriseAtmosProp[] = [];
-  // Diamond center: average of the 4 urn positions.
+  // Diamond center: average of the 4 urn positions (the 4 positions
+  // are now collapsed to the same center tile per the W11 polish, so
+  // the average is just that tile).
   let cx = 0, cy = 0;
   for (const p of mainPoints) { cx += p.vfxX; cy += p.vfxY; }
   cx /= mainPoints.length;
   cy /= mainPoints.length;
+
+  // ─── 4 satellite urns at NSEW cardinal points, ~2 tiles out ──────
+  // Visual-only props that establish a ritual ring around the spawn
+  // urn. Each is tinted darker (necrotic purple shadow) so the center
+  // urn (drawn full-bright by the renderer's surprise-event pass)
+  // stays the visual focus. Skip a satellite if the candidate tile is
+  // path/tower so we never overlap a gameplay tile.
+  const SAT_OFFSETS: Array<{ dx: number; dy: number; angle: number }> = [
+    { dx:  0, dy: -2, angle: 0 },              // north
+    { dx:  2, dy:  0, angle: 0 },              // east
+    { dx:  0, dy:  2, angle: 0 },              // south
+    { dx: -2, dy:  0, angle: 0 }               // west
+  ];
+  for (const off of SAT_OFFSETS) {
+    const sx = cx + off.dx * GRID.TILE;
+    const sy = cy + off.dy * GRID.TILE;
+    const tc = Math.floor(sx / GRID.TILE);
+    const tr = Math.floor(sy / GRID.TILE);
+    const t = state.tiles[tr]?.[tc];
+    if (t !== TileType.EMPTY) continue;
+    props.push({
+      spriteKey: 'SKULL_URN',
+      x: sx,
+      y: sy,
+      scale: 0.55 + Math.random() * 0.10,      // smaller than the spawn urn
+      rotation: (Math.random() - 0.5) * 0.30,
+      tint: 0x5a3a8a,                          // darker necrotic-purple
+      flickerSeed: Math.random() * Math.PI * 2,
+      kind: 'HAZE'                             // 'HAZE' kind so the renderer ticks them like the smoke layer; visual-only
+    });
+  }
+
+  // ─── 6 scattered bone shards as ground litter ────────────────────
+  // Re-uses BLOOD_LIGHT keyed sprite with bone-tan tint so we don't
+  // ship a new asset. Smaller scale + lower alpha so they read as
+  // bone fragments / ritual debris rather than blood pools.
+  const BONE_TILE_RADIUS_MIN = 1.4;
+  const BONE_TILE_RADIUS_MAX = 2.6;
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2 + Math.random() * 0.6;
+    const radius = GRID.TILE * (BONE_TILE_RADIUS_MIN + Math.random() * (BONE_TILE_RADIUS_MAX - BONE_TILE_RADIUS_MIN));
+    const bx = cx + Math.cos(angle) * radius;
+    const by = cy + Math.sin(angle) * radius;
+    const tc = Math.floor(bx / GRID.TILE);
+    const tr = Math.floor(by / GRID.TILE);
+    const t = state.tiles[tr]?.[tc];
+    if (t !== TileType.EMPTY) continue;
+    props.push({
+      spriteKey: 'BLOOD_LIGHT',
+      x: bx,
+      y: by,
+      scale: 0.35 + Math.random() * 0.25,
+      rotation: Math.random() * Math.PI * 2,
+      tint: 0xd8c89a,                          // bone-tan
+      flickerSeed: Math.random() * Math.PI * 2,
+      kind: 'STAIN'
+    });
+  }
   // 2026-05-17 — OVER-THE-TOP PASS. Double the stains (4 → 10) scattered
   // at varied radii, doubled smoke puffs (3 → 8), and a wider zone so
   // the death-uprising feels like a graveyard ritual is consuming the
