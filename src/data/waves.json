@@ -174,7 +174,7 @@
     "wave": 11,
     "type": "G",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 3.0,
+    "hpMult": 3.6,
     "gold": 10,
     "necromancy": true,
     "disableCheckpointHeal": true,
@@ -189,7 +189,7 @@
     "wave": 12,
     "type": "F",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 2.5,
+    "hpMult": 3.0,
     "gold": 9,
     "spawns": [
       {
@@ -202,7 +202,7 @@
     "wave": 13,
     "type": "M",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 3.0,
+    "hpMult": 3.6,
     "gold": 10,
     "necromancy": true,
     "spawns": [
@@ -224,7 +224,7 @@
     "wave": 14,
     "type": "M",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 4.5,
+    "hpMult": 5.2,
     "gold": 12,
     "spawns": [
       {
@@ -262,7 +262,7 @@
     "wave": 16,
     "type": "G",
     "faction": "UNDEAD_CARTHAGE",
-    "hpMult": 3.0,
+    "hpMult": 3.6,
     "gold": 14,
     "spawns": [
       {
@@ -279,7 +279,7 @@
     "wave": 17,
     "type": "M",
     "faction": "UNDEAD_CARTHAGE",
-    "hpMult": 3.75,
+    "hpMult": 4.4,
     "gold": 15,
     "spawns": [
       {
@@ -300,7 +300,7 @@
     "wave": 18,
     "type": "F",
     "faction": "UNDEAD_CARTHAGE",
-    "hpMult": 3.25,
+    "hpMult": 3.8,
     "gold": 15,
     "spawns": [
       {
