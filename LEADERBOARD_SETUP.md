@@ -132,9 +132,25 @@ When a global submission fails, the Hall of Glory now shows a red banner with:
 | Symptom | Cause | Fix |
 |---|---|---|
 | `HTTP 401 / 403` | Anon key wrong or RLS denies insert | Refresh `VITE_SUPABASE_ANON_KEY` in GitHub Actions; re-run `supabase/schema.sql` |
+| `HTTP 400` + `PGRST204` + "Could not find the 'hero_id' column" | Live `scores` table predates the hero migration — column wasn't added | Run the **HOT FIX SQL** below in Supabase SQL editor (one ALTER TABLE statement) |
 | `HTTP 404` | Wrong project URL or table dropped | Verify `VITE_SUPABASE_URL`; re-run schema |
 | `Failed to fetch` / `NetworkError` | Ad-blocker / privacy extension is blocking `*.supabase.co` | Click **🛠 SET PROXY URL** in the banner and point at your Cloudflare Worker (see `cloudflare-worker/README.md`) |
 | Times out 5 times | Slow internet or regional Supabase issue | Retry later, or use the Worker proxy |
+
+### HOT FIX: missing hero_id column
+
+If the failure banner reads `PGRST204 ... Could not find the 'hero_id' column of 'scores' in the schema cache`, the live Supabase project is one migration behind. The hero system added a `hero_id text null` column to the schema but the migration was never run against the deployed project. The client now auto-strips `hero_id` from the payload and retries (so submits still succeed — just without hero info recorded), but the proper fix is to run the migration in Supabase:
+
+1. Supabase dashboard → **SQL Editor** → **New query**
+2. Paste:
+   ```sql
+   alter table public.scores
+     add column if not exists hero_id text null;
+   ```
+3. Click **Run**. Idempotent (`if not exists`), safe to run multiple times.
+4. Wait ~10 seconds for the PostgREST schema cache to refresh, then submit a new score. The failure banner should now show ✓ SCORE SUBMITTED and the hero suffix should appear next to your name.
+
+After running this once, future hero-bearing submissions land cleanly with the `⚔ HeroName` suffix in the NAME column.
 
 ### Runtime proxy override (no rebuild required)
 

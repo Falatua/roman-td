@@ -283,7 +283,19 @@ export async function submitScore(
   if (kind === 'none') {
     return { ok: false, attempts: 0, url, endpoint: kind, errorReason: 'Global leaderboard not configured for this build (missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY).' };
   }
-  const body = JSON.stringify(row);
+  // 2026-05-20 — SCHEMA-MISSING COLUMN FALLBACK. PostgREST returns
+  // HTTP 400 with code PGRST204 when the payload references a column
+  // that doesn't exist on the table (e.g. hero_id when the
+  // hero-system migration hasn't been run against the live
+  // Supabase project). Stripping the offending column from the
+  // payload and retrying is strictly better than failing — the
+  // run still records under the player's name, just without the
+  // hero suffix. The migration SQL is in supabase/schema.sql plus
+  // a one-liner in LEADERBOARD_SETUP.md for the maintainer to run
+  // when convenient; this fallback bridges the gap until then.
+  let payload: any = { ...row };
+  let droppedColumns: string[] = [];
+  const body = () => JSON.stringify(payload);
   const MAX_ATTEMPTS = 5;
   const TIMEOUT_MS = 10_000;
   let lastStatus: number | undefined;
@@ -296,10 +308,15 @@ export async function submitScore(
       const r = await fetchWithTimeout(url, {
         method: 'POST',
         headers: writeHeaders({ 'Prefer': 'return=minimal' }),
-        body
+        body: body()
       }, TIMEOUT_MS);
       if (r.ok) {
-        return { ok: true, attempts: attempt, url, endpoint: kind, status: r.status };
+        return {
+          ok: true, attempts: attempt, url, endpoint: kind, status: r.status,
+          errorReason: droppedColumns.length > 0
+            ? `Saved — but the live Supabase 'scores' table is missing column(s) ${droppedColumns.join(', ')}, so hero info wasn't recorded. Run the ALTER TABLE in supabase/schema.sql to enable full hero tracking.`
+            : undefined
+        };
       }
       lastStatus = r.status;
       // Try to capture the server's response body — Supabase usually
@@ -310,6 +327,19 @@ export async function submitScore(
       } catch { /* ignore */ }
       lastErrorDetail = `HTTP ${r.status}${lastServerBody ? ` · ${lastServerBody.slice(0, 200)}` : ''}`;
       console.error(`[leaderboard] INSERT attempt ${attempt}/${MAX_ATTEMPTS} → HTTP ${r.status}`, lastServerBody);
+      // PGRST204 = "Could not find the 'X' column of 'Y' in the schema cache."
+      // Parse the message, strip the missing column from payload, retry
+      // immediately (without burning the retry-backoff budget).
+      if (r.status === 400 && lastServerBody.includes('PGRST204')) {
+        const m = /Could not find the '([^']+)' column/.exec(lastServerBody);
+        if (m && m[1] && Object.prototype.hasOwnProperty.call(payload, m[1])) {
+          const col = m[1];
+          delete payload[col];
+          droppedColumns.push(col);
+          console.warn(`[leaderboard] Schema cache missing column '${col}' — stripping from payload and retrying without backoff.`);
+          continue;     // skip the sleep below — retry immediately
+        }
+      }
     } catch (err) {
       lastErrorDetail = (err as any)?.message || String(err);
       console.error(`[leaderboard] INSERT attempt ${attempt}/${MAX_ATTEMPTS} failed:`, err);
@@ -321,6 +351,13 @@ export async function submitScore(
   const lo = lastErrorDetail.toLowerCase();
   if (lastStatus === 401 || lastStatus === 403) {
     reason = `Supabase rejected the write with HTTP ${lastStatus}. Common causes: the anon key is wrong/expired, or the RLS policy on the scores table no longer allows public INSERT. Run supabase/schema.sql to refresh policies.`;
+  } else if (lastStatus === 400 && lastServerBody.includes('PGRST204')) {
+    // Couldn't auto-strip — the column exists in our payload but
+    // we couldn't reduce further (every required column already
+    // tried). Tell the user to run the migration.
+    const colMatch = /Could not find the '([^']+)' column/.exec(lastServerBody);
+    const col = colMatch?.[1] ?? 'a required column';
+    reason = `Supabase schema is missing the '${col}' column. Run the latest supabase/schema.sql (specifically the ALTER TABLE adding ${col}) in your Supabase SQL editor to enable submissions.`;
   } else if (lastStatus === 404) {
     reason = `Endpoint returned HTTP 404 — the URL ${url} doesn't exist. Verify the Supabase project URL / Cloudflare Worker is deployed and pointed at the right project.`;
   } else if (lastStatus && lastStatus >= 500) {
