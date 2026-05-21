@@ -1024,7 +1024,7 @@
     "damageType": "PHYS_MELEE",
     "baseDps": 72,
     "attackSpeed": 1.3,
-    "range": 1.5,
+    "range": 2.5,
     "kind": "BASE",
     "melee": true,
     "spriteSheet": 1,
