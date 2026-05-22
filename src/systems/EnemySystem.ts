@@ -676,6 +676,20 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       }
     }
   }
+  // 2026-05-22 V38 — Performance: hoist the ground-path pixel
+  // conversion to ONCE per frame, not once per enemy. The previous
+  // code rebuilt this array inside the per-enemy movement loop at
+  // line ~1089, which at W15+ (100-200 enemies on screen during
+  // necromancy waves + Gates of Hell + Hellscape) was eating
+  // 6000-12000 array allocations per second, each holding 20-40
+  // tiny objects. The pixel conversion only depends on
+  // state.groundPath (which mutates only when a tower/stone is
+  // placed or removed — rare event), so caching it across enemies
+  // in the same tick is always correct.
+  const groundPathPx: { x: number; y: number }[] = [];
+  for (const t of state.groundPath) {
+    groundPathPx.push({ x: t.col * GRID.TILE + GRID.TILE / 2, y: t.row * GRID.TILE + GRID.TILE / 2 });
+  }
   for (const e of Array.from(state.enemies.values())) {
     if (e.hp <= 0) {
       // SPLIT-ON-DEATH (2026-05): some enemies (Demon Hellhound, Fire
@@ -1086,7 +1100,10 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // fast enemies glide through turns instead of pausing on tile centers.
     e.prevX = e.x;
     e.prevY = e.y;
-    const path = e.isFlyer ? state.flyerPath : state.groundPath.map(t => ({ x: t.col * GRID.TILE + GRID.TILE / 2, y: t.row * GRID.TILE + GRID.TILE / 2 }));
+    // V38 — Use the cached groundPathPx (built once at top of
+    // tickEnemies). state.flyerPath is already pixel-coords so no
+    // conversion needed.
+    const path = e.isFlyer ? state.flyerPath : groundPathPx;
     if (e.pathIndex >= path.length - 1) {
       // reached gate
       onLeak(e);
