@@ -2,7 +2,7 @@
   "FERAL_DOG": {
     "name": "Feral Dog",
     "faction": "DOGS",
-    "baseHp": 200,
+    "baseHp": 220,
     "speed": 2.4,
     "isFlyer": false,
     "isBoss": false,
@@ -14,8 +14,8 @@
   "RABID_DOG": {
     "name": "Rabid Dog",
     "faction": "DOGS",
-    "baseHp": 280,
-    "speed": 2.0,
+    "baseHp": 308,
+    "speed": 2,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
@@ -27,8 +27,8 @@
   "ALPHA_DOG": {
     "name": "Alpha Dog",
     "faction": "DOGS",
-    "baseHp": 2480,
-    "speed": 2.0,
+    "baseHp": 2728,
+    "speed": 2,
     "isFlyer": false,
     "isBoss": true,
     "livesCost": 10,
@@ -39,7 +39,7 @@
   "CELTIC_FOOTMAN": {
     "name": "Celtic Footman",
     "faction": "CELTS",
-    "baseHp": 330,
+    "baseHp": 363,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": false,
@@ -52,7 +52,7 @@
   "CELTIC_BERSERKER": {
     "name": "Celtic Berserker",
     "faction": "CELTS",
-    "baseHp": 350,
+    "baseHp": 385,
     "speed": 1.8,
     "isFlyer": false,
     "isBoss": false,
@@ -68,7 +68,7 @@
   "GALLIC_DRUID": {
     "name": "Gallic Druid",
     "faction": "CELTS",
-    "baseHp": 240,
+    "baseHp": 264,
     "speed": 1.2,
     "isFlyer": false,
     "isBoss": false,
@@ -83,7 +83,7 @@
   "CELTIC_SCOUT": {
     "name": "Celtic Scout",
     "faction": "CELTS",
-    "baseHp": 279,
+    "baseHp": 307,
     "speed": 1.8,
     "isFlyer": true,
     "isBoss": false,
@@ -94,7 +94,7 @@
   "CELTIC_WARLORD": {
     "name": "Brennus",
     "faction": "CELTS",
-    "baseHp": 2170,
+    "baseHp": 2387,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": true,
@@ -105,7 +105,7 @@
   "CARTHAGE_SPEARMAN": {
     "name": "Carthage Spearman",
     "faction": "CARTHAGE",
-    "baseHp": 410,
+    "baseHp": 451,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": false,
@@ -120,7 +120,7 @@
   "NUMIDIAN_RIDER": {
     "name": "Numidian Rider",
     "faction": "CARTHAGE",
-    "baseHp": 410,
+    "baseHp": 451,
     "speed": 1.8,
     "isFlyer": true,
     "isBoss": false,
@@ -132,7 +132,7 @@
   "CARTHAGE_ELITE_GUARD": {
     "name": "Sacred Band",
     "faction": "CARTHAGE",
-    "baseHp": 820,
+    "baseHp": 902,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": false,
@@ -147,7 +147,7 @@
   "WAR_ELEPHANT": {
     "name": "War Elephant",
     "faction": "CARTHAGE",
-    "baseHp": 4046,
+    "baseHp": 4451,
     "speed": 1.6,
     "isFlyer": false,
     "isBoss": true,
@@ -161,7 +161,7 @@
   "HANNIBAL_BARCA": {
     "name": "Hannibal Barca",
     "faction": "CARTHAGE",
-    "baseHp": 3420,
+    "baseHp": 3762,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": true,
@@ -173,7 +173,7 @@
   "UNDEAD_CELT": {
     "name": "Undead Celt",
     "faction": "UNDEAD_CELTS",
-    "baseHp": 290,
+    "baseHp": 319,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": false,
@@ -188,7 +188,7 @@
   "ZOMBIE_DRUID": {
     "name": "Zombie Druid",
     "faction": "UNDEAD_CELTS",
-    "baseHp": 200,
+    "baseHp": 220,
     "speed": 1.2,
     "isFlyer": false,
     "isBoss": false,
@@ -205,7 +205,7 @@
   "UNDEAD_BERSERKER": {
     "name": "Undead Berserker",
     "faction": "UNDEAD_CELTS",
-    "baseHp": 410,
+    "baseHp": 451,
     "speed": 1.8,
     "isFlyer": false,
     "isBoss": false,
@@ -225,7 +225,7 @@
   "SPECTRAL_SCOUT": {
     "name": "Spectral Scout",
     "faction": "UNDEAD_CELTS",
-    "baseHp": 333,
+    "baseHp": 366,
     "speed": 1.8,
     "isFlyer": true,
     "isBoss": false,
@@ -238,7 +238,7 @@
   "UNDEAD_WARLORD": {
     "name": "Undead Warlord",
     "faction": "UNDEAD_CELTS",
-    "baseHp": 2600,
+    "baseHp": 2860,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": true,
@@ -250,7 +250,7 @@
   "UNDEAD_SPEARMAN": {
     "name": "Undead Spearman",
     "faction": "UNDEAD_CARTHAGE",
-    "baseHp": 200000,
+    "baseHp": 220000,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": false,
@@ -268,7 +268,7 @@
   "GHOST_RIDER": {
     "name": "Ghost Rider",
     "faction": "UNDEAD_CARTHAGE",
-    "baseHp": 414,
+    "baseHp": 455,
     "speed": 2.6,
     "isFlyer": true,
     "isBoss": false,
@@ -285,7 +285,7 @@
   "UNDEAD_WAR_ELEPHANT": {
     "name": "Undead War Elephant",
     "faction": "UNDEAD_CARTHAGE",
-    "baseHp": 2940,
+    "baseHp": 3234,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": true,
@@ -301,7 +301,7 @@
   "DEMON_HELLHOUND": {
     "name": "Demon Hellhound",
     "faction": "SUPER_DEMONS",
-    "baseHp": 200,
+    "baseHp": 220,
     "speed": 4.8,
     "isFlyer": false,
     "isBoss": false,
@@ -317,7 +317,7 @@
   "CELTIC_FIRE_DEMON": {
     "name": "Celtic Fire Demon",
     "faction": "SUPER_DEMONS",
-    "baseHp": 240,
+    "baseHp": 264,
     "speed": 1.8,
     "isFlyer": false,
     "isBoss": false,
@@ -334,7 +334,7 @@
   "SHADOW_CAVALRY": {
     "name": "Shadow Cavalry",
     "faction": "SUPER_DEMONS",
-    "baseHp": 279,
+    "baseHp": 307,
     "speed": 3.2,
     "isFlyer": true,
     "isBoss": false,
@@ -344,13 +344,13 @@
     "dodgeChance": 0.25,
     "stealthInterval": {
       "period": 6,
-      "duration": 1.0
+      "duration": 1
     }
   },
   "DEMON_LEGATE": {
     "name": "Demon Legate",
     "faction": "SUPER_DEMONS",
-    "baseHp": 370,
+    "baseHp": 407,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": false,
@@ -376,8 +376,8 @@
   "ARCHITECTUS": {
     "name": "Architectus",
     "faction": "UNDEAD_CARTHAGE",
-    "baseHp": 300000,
-    "speed": 1.0,
+    "baseHp": 330000,
+    "speed": 1,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 2,
@@ -392,8 +392,8 @@
   "IRON_PHALANX": {
     "name": "Iron Phalanx",
     "faction": "CARTHAGE",
-    "baseHp": 500000,
-    "speed": 1.0,
+    "baseHp": 550000,
+    "speed": 1,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 2,
@@ -406,7 +406,7 @@
   "HELL_GATE": {
     "name": "Hell Gate",
     "faction": "SUPER_DEMONS",
-    "baseHp": 100000,
+    "baseHp": 110000,
     "speed": 0,
     "isFlyer": false,
     "isBoss": false,
@@ -424,7 +424,7 @@
   "FIRE_GIANT": {
     "name": "Fire Giant",
     "faction": "SUPER_DEMONS",
-    "baseHp": 100000,
+    "baseHp": 110000,
     "speed": 0.65,
     "isFlyer": false,
     "isBoss": false,
@@ -439,7 +439,7 @@
   "REANIMATED_SKELETON": {
     "name": "Reanimated Berserker",
     "faction": "UNDEAD_CELTS",
-    "baseHp": 360,
+    "baseHp": 396,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": false,
@@ -453,7 +453,7 @@
   "REANIMATED_ZOMBIE": {
     "name": "Reanimated Footman",
     "faction": "UNDEAD_CELTS",
-    "baseHp": 310,
+    "baseHp": 341,
     "speed": 1.3,
     "isFlyer": false,
     "isBoss": false,
@@ -466,8 +466,8 @@
   "REANIMATED_LICH": {
     "name": "Reanimated Druid",
     "faction": "UNDEAD_CELTS",
-    "baseHp": 250,
-    "speed": 1.0,
+    "baseHp": 275,
+    "speed": 1,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
@@ -481,7 +481,7 @@
     "name": "Training Dummy",
     "faction": "DOGS",
     "baseHp": 15000000,
-    "speed": 3.0,
+    "speed": 3,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 0,
@@ -491,7 +491,7 @@
   "EGYPTIAN_ARCHER": {
     "name": "Egyptian Archer",
     "faction": "EGYPTIANS",
-    "baseHp": 320,
+    "baseHp": 352,
     "speed": 1.2,
     "isFlyer": false,
     "isBoss": false,
@@ -500,8 +500,8 @@
   "EGYPTIAN_SPEARMAN": {
     "name": "Egyptian Spearman",
     "faction": "EGYPTIANS",
-    "baseHp": 480,
-    "speed": 1.0,
+    "baseHp": 528,
+    "speed": 1,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1
@@ -509,7 +509,7 @@
   "EGYPTIAN_CHARIOT": {
     "name": "Egyptian Chariot",
     "faction": "EGYPTIANS",
-    "baseHp": 720,
+    "baseHp": 792,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": false,
@@ -519,7 +519,7 @@
   "PHARAOH_GUARD": {
     "name": "Pharaoh Guard",
     "faction": "EGYPTIANS",
-    "baseHp": 1400,
+    "baseHp": 1540,
     "speed": 0.85,
     "isFlyer": false,
     "isBoss": false,
@@ -530,7 +530,7 @@
   "ANUBIS_PRIEST": {
     "name": "Anubis Priest",
     "faction": "EGYPTIANS",
-    "baseHp": 900,
+    "baseHp": 990,
     "speed": 0.9,
     "isFlyer": false,
     "isBoss": false,
@@ -542,7 +542,7 @@
   "SOBEK_WARRIOR": {
     "name": "Sobek Warrior",
     "faction": "EGYPTIANS",
-    "baseHp": 1800,
+    "baseHp": 1980,
     "speed": 0.95,
     "isFlyer": false,
     "isBoss": false,
@@ -552,7 +552,7 @@
   "MUMMY_WARRIOR": {
     "name": "Mummy Warrior",
     "faction": "EGYPTIANS",
-    "baseHp": 1100,
+    "baseHp": 1210,
     "speed": 0.85,
     "isFlyer": false,
     "isBoss": false,
@@ -564,7 +564,7 @@
   "SPHINX": {
     "name": "Sphinx",
     "faction": "EGYPTIANS",
-    "baseHp": 1600,
+    "baseHp": 1760,
     "speed": 1.3,
     "isFlyer": true,
     "isBoss": false,
@@ -574,7 +574,7 @@
   "ANUBIS_KING": {
     "name": "Anubis Death-Lord",
     "faction": "EGYPTIANS",
-    "baseHp": 18000,
+    "baseHp": 19800,
     "speed": 0.95,
     "isFlyer": false,
     "isBoss": true,
@@ -587,7 +587,7 @@
   "MONGOL_HORSE_ARCHER": {
     "name": "Hun Horse Archer",
     "faction": "MONGOLS",
-    "baseHp": 380,
+    "baseHp": 418,
     "speed": 1.6,
     "isFlyer": true,
     "isBoss": false,
@@ -597,7 +597,7 @@
   "MONGOL_SPEAR_RIDER": {
     "name": "Hun Spear Rider",
     "faction": "MONGOLS",
-    "baseHp": 620,
+    "baseHp": 682,
     "speed": 1.5,
     "isFlyer": true,
     "isBoss": false,
@@ -607,7 +607,7 @@
   "KHAN_RIDER": {
     "name": "Khan Rider",
     "faction": "MONGOLS",
-    "baseHp": 4200,
+    "baseHp": 4620,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": false,
@@ -619,7 +619,7 @@
   "MONGOL_FOOTMAN": {
     "name": "Hun Footman",
     "faction": "MONGOLS",
-    "baseHp": 360,
+    "baseHp": 396,
     "speed": 1.1,
     "isFlyer": false,
     "isBoss": false,
@@ -628,8 +628,8 @@
   "MONGOL_SPEARMAN": {
     "name": "Hun Spearman",
     "faction": "MONGOLS",
-    "baseHp": 540,
-    "speed": 1.0,
+    "baseHp": 594,
+    "speed": 1,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1
@@ -637,7 +637,7 @@
   "MONGOL_BERSERKER": {
     "name": "Hun Berserker",
     "faction": "MONGOLS",
-    "baseHp": 850,
+    "baseHp": 935,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": false,
@@ -647,20 +647,20 @@
   "MONGOL_SCOUT": {
     "name": "Hun Scout",
     "faction": "MONGOLS",
-    "baseHp": 280,
+    "baseHp": 308,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
     "stealthInterval": {
       "period": 6,
-      "duration": 1.0
+      "duration": 1
     }
   },
   "MONGOL_SHAMAN": {
     "name": "Hun Shaman",
     "faction": "MONGOLS",
-    "baseHp": 980,
+    "baseHp": 1078,
     "speed": 0.9,
     "isFlyer": false,
     "isBoss": false,
@@ -672,7 +672,7 @@
   "MONGOL_CAPTAIN": {
     "name": "Hun Captain",
     "faction": "MONGOLS",
-    "baseHp": 2200,
+    "baseHp": 2420,
     "speed": 1.1,
     "isFlyer": false,
     "isBoss": false,
