@@ -148,6 +148,18 @@ export function showChooseHeroModal(state: GameStateShape): void {
   // in view as the player swipes / scrolls. Card width stays at the
   // existing 320px so card content reads identically to the prior
   // 3-card layout.
+  //
+  // 2026-05-22 V15 — Wrapped the row in a positioned container so we
+  // can stack visible scroll affordances on top of it: pulsing left
+  // + right chevron buttons + edge gradient fades. Without these the
+  // 4th-6th hero cards live off-screen on most monitors and players
+  // never discover them. Chevrons auto-hide when scrolled to the
+  // matching end of the row.
+  const rowWrap = document.createElement('div');
+  rowWrap.style.cssText = `
+    position: relative;
+    margin-bottom: clamp(18px, 3vh, 32px);
+  `;
   const row = document.createElement('div');
   row.style.cssText = `
     display: flex;
@@ -155,10 +167,112 @@ export function showChooseHeroModal(state: GameStateShape): void {
     overflow-x: auto;
     overflow-y: hidden;
     padding: 4px 4px 12px 4px;
-    margin-bottom: clamp(18px, 3vh, 32px);
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   `;
+  // ── Edge gradient fades — visually hint that content continues off-edge.
+  const fadeBaseStyle = `
+    position: absolute;
+    top: 0;
+    bottom: 12px;
+    width: 64px;
+    pointer-events: none;
+    transition: opacity 0.25s ease-out;
+    z-index: 2;
+  `;
+  const leftFade = document.createElement('div');
+  leftFade.style.cssText = fadeBaseStyle + `
+    left: 0;
+    background: linear-gradient(to right, rgba(20, 10, 6, 0.92) 0%, rgba(20, 10, 6, 0) 100%);
+    opacity: 0;
+  `;
+  const rightFade = document.createElement('div');
+  rightFade.style.cssText = fadeBaseStyle + `
+    right: 0;
+    background: linear-gradient(to left, rgba(20, 10, 6, 0.92) 0%, rgba(20, 10, 6, 0) 100%);
+    opacity: 1;
+  `;
+  // ── Chevron buttons — pulse to advertise scrollability, click to
+  //    scroll one card-width. Keyboard 1-6 still works in parallel.
+  const chevBaseStyle = `
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid #ffd34d;
+    background: linear-gradient(180deg, #4a2a0a, #2a1408);
+    color: #ffd34d;
+    font-family: 'Courier New', monospace;
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 3;
+    box-shadow: 0 0 16px rgba(255, 211, 77, 0.55), 0 0 32px rgba(255, 211, 77, 0.25);
+    transition: opacity 0.25s ease-out, transform 0.18s cubic-bezier(.2,.8,.2,1), box-shadow 0.22s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0 3px 0;
+    user-select: none;
+    animation: chmChevPulse 1.8s ease-in-out infinite;
+  `;
+  const leftChev = document.createElement('button');
+  leftChev.type = 'button';
+  leftChev.setAttribute('aria-label', 'Scroll heroes left');
+  leftChev.textContent = '‹';
+  leftChev.style.cssText = chevBaseStyle + `
+    left: -22px;
+    opacity: 0;
+    pointer-events: none;
+  `;
+  const rightChev = document.createElement('button');
+  rightChev.type = 'button';
+  rightChev.setAttribute('aria-label', 'Scroll heroes right');
+  rightChev.textContent = '›';
+  rightChev.style.cssText = chevBaseStyle + `
+    right: -22px;
+    opacity: 1;
+    animation-delay: 0.9s;
+  `;
+  // Hover lift
+  const hoverIn = (el: HTMLElement) => {
+    el.style.transform = 'translateY(-50%) scale(1.08)';
+    el.style.boxShadow = '0 0 28px rgba(255, 211, 77, 0.95), 0 0 56px rgba(255, 211, 77, 0.45)';
+  };
+  const hoverOut = (el: HTMLElement) => {
+    el.style.transform = 'translateY(-50%)';
+    el.style.boxShadow = '0 0 16px rgba(255, 211, 77, 0.55), 0 0 32px rgba(255, 211, 77, 0.25)';
+  };
+  leftChev.onmouseenter = () => hoverIn(leftChev);
+  leftChev.onmouseleave = () => hoverOut(leftChev);
+  rightChev.onmouseenter = () => hoverIn(rightChev);
+  rightChev.onmouseleave = () => hoverOut(rightChev);
+  const scrollByCard = (dir: 1 | -1) => {
+    // Card width (320px) + gap (~16px) = one card stride. Browser
+    // honors scroll-behavior: smooth from the row's css.
+    row.scrollBy({ left: dir * 336, top: 0, behavior: 'smooth' });
+  };
+  leftChev.onclick = () => scrollByCard(-1);
+  rightChev.onclick = () => scrollByCard(1);
+
+  // Inject keyframes for the chevron pulse animation. CSS-only so it
+  // costs nothing at runtime. Idempotent — only adds the stylesheet
+  // block once even if the modal opens multiple times.
+  if (!document.getElementById('chm-chev-pulse-style')) {
+    const style = document.createElement('style');
+    style.id = 'chm-chev-pulse-style';
+    style.textContent = `
+      @keyframes chmChevPulse {
+        0%, 100% { box-shadow: 0 0 16px rgba(255, 211, 77, 0.55), 0 0 32px rgba(255, 211, 77, 0.25); }
+        50%      { box-shadow: 0 0 28px rgba(255, 211, 77, 0.95), 0 0 56px rgba(255, 211, 77, 0.55); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   const confirmStrip = document.createElement('div');
   confirmStrip.id = 'choose-hero-confirm-strip';
@@ -247,7 +361,42 @@ export function showChooseHeroModal(state: GameStateShape): void {
     row.appendChild(card);
   }
 
-  panel.appendChild(row);
+  // 2026-05-22 V15 — Mount the row inside the positioned wrapper, then
+  // stack the fades + chevrons on top. Scroll listener updates chevron
+  // visibility so the user knows whether more heroes live in either
+  // direction. Threshold of 8px on each end accounts for sub-pixel
+  // rounding from scroll-snap.
+  rowWrap.appendChild(row);
+  rowWrap.appendChild(leftFade);
+  rowWrap.appendChild(rightFade);
+  rowWrap.appendChild(leftChev);
+  rowWrap.appendChild(rightChev);
+  const updateChevs = () => {
+    const max = row.scrollWidth - row.clientWidth;
+    const atStart = row.scrollLeft <= 8;
+    const atEnd = row.scrollLeft >= max - 8;
+    leftChev.style.opacity = atStart ? '0' : '1';
+    leftChev.style.pointerEvents = atStart ? 'none' : 'auto';
+    rightChev.style.opacity = atEnd ? '0' : '1';
+    rightChev.style.pointerEvents = atEnd ? 'none' : 'auto';
+    leftFade.style.opacity = atStart ? '0' : '1';
+    rightFade.style.opacity = atEnd ? '0' : '1';
+    // If the row isn't even scrollable (rare — wide monitor, all 6
+    // heroes visible), hide everything entirely.
+    if (max <= 4) {
+      leftChev.style.opacity = '0';
+      rightChev.style.opacity = '0';
+      leftFade.style.opacity = '0';
+      rightFade.style.opacity = '0';
+    }
+  };
+  row.addEventListener('scroll', updateChevs, { passive: true });
+  // Initial sync — defer to next frame so the row has measured itself.
+  requestAnimationFrame(updateChevs);
+  // Re-evaluate on window resize (mobile rotation, monitor disconnect)
+  window.addEventListener('resize', updateChevs);
+
+  panel.appendChild(rowWrap);
   panel.appendChild(confirmStrip);
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
@@ -277,6 +426,11 @@ export function showChooseHeroModal(state: GameStateShape): void {
   };
   function cleanup() {
     window.removeEventListener('keydown', onKey);
+    // 2026-05-22 V15 — Also tear down the resize listener added for
+    // the chevron visibility update. Without this, every time the
+    // modal closes we leak a listener that fires on every resize for
+    // the remainder of the session.
+    window.removeEventListener('resize', updateChevs);
     // Stop the modal's choose-hero theme if it's still playing —
     // the player marched (or otherwise dismissed) before the
     // single-shot sting finished. Idempotent: no-op if the track

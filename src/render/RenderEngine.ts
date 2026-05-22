@@ -295,6 +295,57 @@ export class RenderEngine {
       a.beginFill(biomeTint.color, biomeTint.alpha).drawRect(0, 0, GRID.CANVAS_W, GRID.CANVAS_H).endFill();
     }
 
+    // 2026-05-22 V15 — STORM CLOUDS scaling with wave progression.
+    // Slow drifting dark blobs that pass over the playfield. Both the
+    // count and the per-cloud darkness scale with wave number, so the
+    // sky visibly thickens as the campaign turns from sunny grassland
+    // (W1-3) into stormy hellscape (W19-20). Each cloud is composed
+    // of 3 overlapping ellipses for a natural lumpy silhouette.
+    //
+    // Wave scaling:
+    //   count  = clamp(2 + floor(wave/3), 2, 12)   // 2 @ W1 → 12 @ W30+
+    //   alphaB = 0.06 + min(0.10, wave * 0.006)    // 0.066 → 0.18
+    //   tint   = warm gray (W<=6) → cool slate (W7-15) → ash crimson (W16+)
+    //
+    // Clouds sit in the same fx layer as the biome tint so they
+    // additively darken the playfield. Local (per-ellipse) rather
+    // than a flat overlay so towers + enemies still read clearly
+    // between cloud passes.
+    {
+      const cloudCount = Math.max(2, Math.min(12, 2 + Math.floor(wave / 3)));
+      const alphaBase = 0.06 + Math.min(0.10, wave * 0.006);
+      // Tint shifts colder/darker as the campaign progresses
+      let cloudColor: number;
+      if (wave <= 6)       cloudColor = 0x4a4438;     // warm overcast gray
+      else if (wave <= 15) cloudColor = 0x1e2438;     // cool slate / storm
+      else                 cloudColor = 0x180a0a;     // ash + ember crimson
+      // Boss waves get a darker, denser pass
+      const bossMult = isBossWave ? 1.4 : 1.0;
+      for (let i = 0; i < cloudCount; i++) {
+        // Per-cloud seeded phase so movement is varied
+        const phase = i * 1.31;
+        // Slow horizontal drift (one full traversal per ~50s)
+        const driftSpeed = 0.018 + (i % 3) * 0.004;
+        const driftX = ((tick * driftSpeed + i * 0.27) % 1.3 - 0.15) * (GRID.CANVAS_W + 280);
+        // Vertical drift = subtle sine bob
+        const baseY = 60 + ((i * 173) % (GRID.CANVAS_H - 120));
+        const cy = baseY + Math.sin(tick * 0.18 + phase) * 14;
+        const cx = -140 + driftX;
+        // Per-cloud size — bigger clouds appear later in the campaign
+        const sizeBoost = 1.0 + Math.min(0.7, wave * 0.025);
+        const w1 = 110 * sizeBoost, h1 = 40 * sizeBoost;
+        const w2 = 80  * sizeBoost, h2 = 32 * sizeBoost;
+        const w3 = 60  * sizeBoost, h3 = 28 * sizeBoost;
+        // Soft alpha pulse so clouds breathe instead of looking flat
+        const aPulse = 0.85 + 0.15 * Math.sin(tick * 0.4 + phase);
+        const aTotal = Math.min(0.30, alphaBase * bossMult * aPulse);
+        // 3 overlapping ellipses make a lumpy silhouette
+        a.beginFill(cloudColor, aTotal).drawEllipse(cx,         cy,         w1, h1).endFill();
+        a.beginFill(cloudColor, aTotal * 0.95).drawEllipse(cx - 70,    cy + 8,     w2, h2).endFill();
+        a.beginFill(cloudColor, aTotal * 0.90).drawEllipse(cx + 60,    cy - 6,     w3, h3).endFill();
+      }
+    }
+
     // EDGE FOG DRIFT — wisps along the map borders (§8.2)
     // Subtle, never covers gameplay center.
     for (let i = 0; i < 6; i++) {
