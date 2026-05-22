@@ -43,9 +43,26 @@ export function isPortraitMobile(): boolean {
 
 // Stash detection on globals so non-TS modules (Pixi callbacks, ad-hoc
 // inline checks) can read `window.__isMobile` without an import.
+// Also stamp `html.mobile-mode` so CSS media-queries that need to fire
+// without depending on `pointer: coarse` (some headless / DevTools
+// emulation reports `pointer: fine`) have a reliable hook.
 if (typeof window !== 'undefined') {
   (window as any).__isMobile = isMobile();
   (window as any).__isTouch = TOUCH_CAPABLE;
+  try {
+    const html = document.documentElement;
+    if (isMobile()) html.classList.add('mobile-mode');
+    if (TOUCH_CAPABLE) html.classList.add('touch-capable');
+    if (isPortraitMobile()) html.classList.add('portrait-mode');
+    // ?forceMobile=1 query-string override for testing the mobile
+    // layout from a desktop browser (Chrome MCP, devtools emulators
+    // that don't fully simulate coarse-pointer, etc.). Adds the same
+    // class the real detection adds; CSS treats them identically.
+    if (new URLSearchParams(window.location.search).get('forceMobile') === '1') {
+      html.classList.add('mobile-mode');
+      html.classList.add('touch-capable');
+    }
+  } catch { /* ignore — DOM not ready edge case */ }
 }
 
 // Listen to orientationchange + resize and fire a custom event so any
