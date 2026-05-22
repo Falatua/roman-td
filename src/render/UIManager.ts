@@ -224,7 +224,35 @@ export class UIManager {
     };
     // Order: START / SPEED / PAUSE / POOL / SHOP / QUESTS / CODEX / SELL-STONES / LEADERBOARD / DPS CHECK / TARGET ALL (+ picker) / SETTINGS.
     // (Sound mute lives inside SETTINGS panel now — 2026-05 v11.)
-    buttons.append(this.startBtn, speedBtn, pauseBtn, this.upgradeBtn, shopBtn, this.mercatorBtn, questsBtn, codexBtn, sellStonesBtn, leaderBtn, dpsBtn, targetAllBtn, targetAllPicker, settingsBtn);
+    //
+    // 2026-05-22 UX4 — Mobile overflow menu. Sidebar has 13 buttons; on
+    // a phone-landscape viewport that's overwhelming and pushes
+    // primary actions below the fold. We group the secondary /
+    // diagnostic actions (SELL STONES / LEADERBOARD / DPS CHECK /
+    // TARGET ALL / SETTINGS) inside a single #hud-overflow-group
+    // container that is hidden by default on mobile via CSS in
+    // index.html. A #hud-overflow-toggle button toggles the
+    // .hud-overflow-open class on #right-panel so the group reveals.
+    // On desktop the toggle is hidden via CSS, the group is always
+    // visible inline — no behavior change.
+    const overflowGroup = document.createElement('div');
+    overflowGroup.id = 'hud-overflow-group';
+    overflowGroup.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+    overflowGroup.append(sellStonesBtn, leaderBtn, dpsBtn, targetAllBtn, targetAllPicker, settingsBtn);
+    const overflowToggle = mkBtn('⋯ MORE', '#2a1a14');
+    overflowToggle.id = 'hud-overflow-toggle';
+    overflowToggle.title = 'More controls (Sell Stones, Leaderboard, DPS Check, Target All, Settings)';
+    overflowToggle.onclick = () => {
+      const rp = document.getElementById('right-panel');
+      if (!rp) return;
+      const open = rp.classList.toggle('hud-overflow-open');
+      overflowToggle.textContent = open ? '✕ HIDE' : '⋯ MORE';
+    };
+    buttons.append(
+      this.startBtn, speedBtn, pauseBtn, this.upgradeBtn,
+      shopBtn, this.mercatorBtn, questsBtn, codexBtn,
+      overflowToggle, overflowGroup
+    );
 
     this.hint = document.createElement('div');
     this.hint.style.cssText = `display:none`;
@@ -290,14 +318,17 @@ export class UIManager {
     }
     // 2026-05 v10 — Endless mode: display E1/E2/… and the running
     // endless score in place of the 20-wave campaign counter.
+    // 2026-05-22 UX6 — Each hud-icon gains data-stat="…" so the mobile
+    // tap-to-reveal popover (wired below) can match it to a friendly
+    // explanation. Desktop hover-title strings stay as the fallback.
     const waveDisplay = state.endlessMode
-      ? `<span class="hud-icon" style="color:#ff5050"><span class="ic ic-wave"></span><b>ENDLESS</b> E${state.endlessWave ?? 0}</span>
-         <span class="hud-icon" title="Cumulative endless score" style="color:#ff5050"><b>SCORE</b> ${(state.endlessScore ?? 0).toLocaleString()}</span>`
-      : `<span class="hud-icon"><span class="ic ic-wave"></span><b>WAVE</b> ${state.wave}/20</span>`;
+      ? `<span class="hud-icon" data-stat="endless" style="color:#ff5050"><span class="ic ic-wave"></span><b>ENDLESS</b> E${state.endlessWave ?? 0}</span>
+         <span class="hud-icon" data-stat="score" title="Cumulative endless score" style="color:#ff5050"><b>SCORE</b> ${(state.endlessScore ?? 0).toLocaleString()}</span>`
+      : `<span class="hud-icon" data-stat="wave"><span class="ic ic-wave"></span><b>WAVE</b> ${state.wave}/20</span>`;
     left.innerHTML = `
       ${waveDisplay}
-      <span class="hud-icon"><span class="ic ic-life"></span><b>LIVES</b> ${Math.floor(state.lives)}</span>
-      <span class="hud-icon"><span class="ic ic-gold"></span><b>GOLD</b> ${Math.floor(state.gold)}</span>
+      <span class="hud-icon" data-stat="lives"><span class="ic ic-life"></span><b>LIVES</b> ${Math.floor(state.lives)}</span>
+      <span class="hud-icon" data-stat="gold"><span class="ic ic-gold"></span><b>GOLD</b> ${Math.floor(state.gold)}</span>
       ${waveCounter}
     `;
     const right = document.createElement('div');
@@ -308,12 +339,69 @@ export class UIManager {
     const probs = POOL_PROBS[Math.min(POOL_PROBS.length - 1, eff)];
     const probStrip = probs.map((p, i) => `<span title="Tier ${i+1}: ${p}% chance per prospect" style="color:${TIER_COL[i]};font-size:13px;font-weight:900;letter-spacing:0.5px">${p}%</span>`).join('<span style="opacity:0.4;font-size:12px"> · </span>');
     right.innerHTML = `
-      <span class="hud-icon"><span class="ic ic-pool"></span><b>POOL</b> ${state.poolLevel}/${ECONOMY.POOL_MAX_LEVEL}</span>
-      <span class="hud-icon" title="Tier roll probabilities at the current effective pool. Click 📖 CODEX → POOL for full table.">${probStrip}</span>
-      <span class="hud-icon"><span class="ic ic-score"></span><b>SCORE</b> ${state.score}</span>
-      <span style="color:#9be0ff;font-weight:900;font-size:14px;letter-spacing:2px;text-shadow:1px 1px 0 #000">${phaseStr}</span>
+      <span class="hud-icon" data-stat="pool"><span class="ic ic-pool"></span><b>POOL</b> ${state.poolLevel}/${ECONOMY.POOL_MAX_LEVEL}</span>
+      <span class="hud-icon" data-stat="probs" title="Tier roll probabilities at the current effective pool. Click 📖 CODEX → POOL for full table.">${probStrip}</span>
+      <span class="hud-icon" data-stat="score"><span class="ic ic-score"></span><b>SCORE</b> ${state.score}</span>
+      <span class="hud-icon" data-stat="phase" style="color:#9be0ff;font-weight:900;font-size:14px;letter-spacing:2px;text-shadow:1px 1px 0 #000">${phaseStr}</span>
     `;
     this.hud.append(left, right);
+    // UX6 — Wire tap-to-reveal popover for each stat chip. Same handler
+    // for desktop click (low cost, helpful) and mobile tap. The popover
+    // is created on-demand and dismissed by tapping the document
+    // anywhere outside it.
+    const STAT_HELP: Record<string, { title: string; body: string }> = {
+      wave:    { title: 'WAVE',     body: 'Current wave out of 20. Survive all 20 to clear the campaign. Bosses arrive every 5 waves; the difficulty curve steepens hard after W10.' },
+      endless: { title: 'ENDLESS',  body: 'Endless mode in progress. HP scales +50% per endless wave; rewards stack with the campaign score on the leaderboard.' },
+      lives:   { title: 'LIVES',    body: 'How many enemies can reach your gate before Rome falls. Bosses cost 10 lives if they leak. Buy more lives in the SHOP — but each purchased life dings your score.' },
+      gold:    { title: 'GOLD',     body: 'Spent on placing prospects (1 g per roll), buying items in the SHOP, and upgrading your draw POOL. Earned from kills and quests.' },
+      pool:    { title: 'POOL',     body: 'Draw-pool level. Higher levels skew prospect rolls toward rarer, stronger towers. Upgrade with the UPGRADE POOL button between waves.' },
+      probs:   { title: 'TIER ODDS', body: 'Chance of rolling each tier when you spend 1 g on an empty tile. Reading left to right: T1 · T2 · T3 · T4 · T5. CODEX → POOL has the full curve.' },
+      score:   { title: 'SCORE',    body: 'Run score. Earned from kills, quest completion, and surviving waves intact. Buying extra lives reduces final score. Endless score stacks on top of campaign score.' },
+      phase:   { title: 'PHASE',    body: 'BUILD = place towers, you have time. PLACING PROSPECTS = roll any leftover prospects. WAVE = combat is live. Use ⏸ PAUSE any time.' }
+    };
+    const showHudPopover = (anchor: HTMLElement, key: string) => {
+      const info = STAT_HELP[key];
+      if (!info) return;
+      document.getElementById('hud-stat-popover')?.remove();
+      const pop = document.createElement('div');
+      pop.id = 'hud-stat-popover';
+      const ar = anchor.getBoundingClientRect();
+      pop.style.cssText = `
+        position: fixed; left: ${Math.max(8, ar.left)}px; top: ${ar.bottom + 6}px;
+        max-width: min(320px, 90vw); padding: 12px 14px;
+        background: linear-gradient(180deg, #1a1208, #0c0804);
+        border: 2px solid #ffd34d;
+        box-shadow: 0 0 18px rgba(255,211,77,0.45), 0 8px 22px rgba(0,0,0,0.55);
+        font-family: 'Courier New', monospace; color: #e8d6a8;
+        z-index: 130; line-height: 1.5; font-size: 13px;
+      `;
+      pop.innerHTML = `
+        <div style="color:#ffd34d;font-weight:900;font-size:12px;letter-spacing:3px;margin-bottom:6px">${info.title}</div>
+        <div>${info.body}</div>
+        <div style="text-align:right;margin-top:8px;font-size:10px;letter-spacing:2px;color:#aa9a4a;cursor:pointer" data-close>TAP TO CLOSE ✕</div>
+      `;
+      document.body.appendChild(pop);
+      const dismiss = (ev: Event) => {
+        if (pop.contains(ev.target as Node)) {
+          pop.remove();
+          document.removeEventListener('click', dismiss, true);
+          return;
+        }
+        pop.remove();
+        document.removeEventListener('click', dismiss, true);
+      };
+      // Defer one tick so the click that opened the popover doesn't
+      // immediately close it via the capture-phase listener.
+      setTimeout(() => document.addEventListener('click', dismiss, true), 0);
+    };
+    for (const el of Array.from(this.hud.querySelectorAll('[data-stat]'))) {
+      (el as HTMLElement).style.cursor = 'pointer';
+      el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const key = (el as HTMLElement).dataset.stat || '';
+        showHudPopover(el as HTMLElement, key);
+      });
+    }
 
     // Draw 5 cards
     this.cards.innerHTML = '';

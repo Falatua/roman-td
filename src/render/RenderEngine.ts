@@ -1981,16 +1981,24 @@ export class RenderEngine {
               if (pathSet.has(`${c + dc},${r + dr}`)) nearPath = true;
             }
           }
-          const corridorMult = nearPath ? 0.12 : 1.0;
-          // 2026-05-22 M5 — Mobile perf: halve decoration density.
-          // The decoration sprites are 32×32 PIXI sprites added to a
-          // long-lived Container; the cost is GPU draw calls + texture
-          // memory pressure during the static rebuild. Halving the
-          // density drops ~150 sprites on a typical map. Bordering /
-          // corner-bias is preserved so the field still reads dense at
-          // the edges.
-          const mobileDensityMult = (window as any).__isMobile ? 0.5 : 1.0;
-          const targetDensity = 0.28 * edgeBias * corridorMult * mobileDensityMult;
+          // 2026-05-22 UX8 — Even stricter corridor exclusion on mobile.
+          // On a phone the canvas is rendering at ~220×165 logical
+          // pixels — every prop within one tile of the path competes
+          // visually with tower silhouettes and enemy sprites at that
+          // resolution. Drop the corridor multiplier from 0.12 to 0.04
+          // on mobile so the path corridor reads cleanly while
+          // edges/corners still feel decorated.
+          const onMobile = !!(window as any).__isMobile;
+          const corridorMult = nearPath ? (onMobile ? 0.04 : 0.12) : 1.0;
+          // 2026-05-22 M5 / UX HM — Mobile perf + Reduce-Decoration
+          // opt-in (set from the SETTINGS panel) halve / quarter the
+          // density respectively. Combined: a phone with Reduce
+          // Decoration on renders ~25% of desktop density.
+          const reduceDecor = !!(window as any).__reduceDecor
+            || (typeof document !== 'undefined' && document.documentElement.classList.contains('reduce-decor'));
+          const mobileDensityMult = onMobile ? 0.5 : 1.0;
+          const reduceDecorMult = reduceDecor ? 0.5 : 1.0;
+          const targetDensity = 0.28 * edgeBias * corridorMult * mobileDensityMult * reduceDecorMult;
           // Roll: hash to 0..0.999, compare to target.
           const propRoll = (h % 1000) / 1000;
           if (propRoll < targetDensity) {

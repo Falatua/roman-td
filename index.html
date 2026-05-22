@@ -774,6 +774,218 @@
       html.mobile-mode #loading-copy { font-size: 12px !important; margin: 4px 0 !important; }
       html.mobile-mode #loading-bar-wrap { margin: 4px 0 !important; height: 14px !important; }
       html.mobile-mode #loading-coinslot { transform: scale(0.85); }
+
+      /* ─────────────────────────────────────────────────────────────
+         2026-05-22 — UX PASS 1–10 + HONORABLE MENTIONS
+         All scoped behind `html.mobile-mode` so desktop is untouched.
+         The class is set in src/Mobile.ts on real touch devices and
+         via ?forceMobile=1 for in-browser testing.
+         ───────────────────────────────────────────────────────────── */
+
+      /* UX1 — Sticky MARCH TO WAR. After a hero is selected the confirm
+         strip pins to the bottom of the scrollable panel so the button
+         is never offscreen, regardless of where the player is reading.
+         Backdrop blur keeps cards readable behind it. */
+      html.mobile-mode #choose-hero-confirm-strip {
+        position: sticky !important;
+        bottom: 0 !important;
+        z-index: 5 !important;
+        margin-top: 0 !important;
+        padding: 10px 14px !important;
+        background: linear-gradient(180deg, rgba(20,12,8,0.86), rgba(0,0,0,0.96)) !important;
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+        border-top: 2px solid #ffd34d !important;
+        border-bottom: none !important;
+      }
+
+      /* UX5 — Hide the keyboard hint row (1 2 3 4 5 6 keys / ENTER) on
+         mobile. Touch users can't trigger it. */
+      html.mobile-mode .chm-kbd-hint { display: none !important; }
+      html.mobile-mode .desktop-hotkey-hint { display: none !important; }
+
+      /* UX3 — Hero Inspect Panel and other tall #tower-menu modals can
+         exceed phone-landscape viewport height. Constrain the inner
+         panel to ~88dvh and let it scroll inside the modal frame. */
+      html.mobile-mode #tower-menu > div {
+        max-height: 88dvh !important;
+        overflow-y: auto !important;
+        scrollbar-width: thin;
+      }
+
+      /* UX1/UX3 — Collapse the ABILITIES ladder on each hero card on
+         mobile. The [data-card-expand] button replaces it; clicking
+         the button flips data-expanded="1" on the card which re-shows
+         the ladder. Desktop is unaffected because the button has
+         display:none in its inline style. */
+      html.mobile-mode #choose-hero-modal [data-hero-card] [data-card-abilities] {
+        display: none !important;
+      }
+      html.mobile-mode #choose-hero-modal [data-hero-card][data-expanded="1"] [data-card-abilities] {
+        display: block !important;
+      }
+      html.mobile-mode #choose-hero-modal [data-hero-card] [data-card-expand] {
+        display: block !important;
+      }
+
+      /* UX7 — Shrink the hero placement reminder banner on mobile so
+         it doesn't eat 15% of the playable canvas vertical. Top-anchored
+         toast, not bottom-centered. Hero name stays prominent. */
+      html.mobile-mode #hero-placement-banner {
+        bottom: auto !important;
+        top: 6px !important;
+        padding: 6px 12px !important;
+        font-size: 10px !important;
+        gap: 0 !important;
+        max-width: 70vw !important;
+      }
+      html.mobile-mode #hero-placement-banner > div:nth-child(2) {
+        font-size: 12px !important;
+      }
+      html.mobile-mode #hero-placement-banner > div:nth-child(3) {
+        display: none !important;   /* drop the title sub-line on phone */
+      }
+
+      /* HM — Bigger CLOSE buttons on mobile. The global button rule
+         already enforces min-height: 44px; this raises the tap target
+         even on close pills that override padding inline. */
+      html.mobile-mode button[id$="close-btn"],
+      html.mobile-mode button[id*="close"],
+      html.mobile-mode #shop-close,
+      html.mobile-mode #codex-close,
+      html.mobile-mode #quests-close,
+      html.mobile-mode #inventory-close,
+      html.mobile-mode #settings-close {
+        min-height: 48px !important;
+        min-width: 88px !important;
+        font-size: 14px !important;
+        padding: 12px 20px !important;
+      }
+
+      /* UX4 — Sidebar overflow menu on mobile. The .hud-overflow class
+         (added in UIManager.ts) groups DPS CHECK, TARGET ALL,
+         LEADERBOARD, SELL STONES, SETTINGS behind a single ⋯ MORE
+         button so the primary actions (START/SPEED/PAUSE/POOL/SHOP/
+         QUESTS/CODEX) dominate. The container is initially collapsed;
+         clicking ⋯ MORE toggles `.hud-overflow-open` on the root. */
+      html.mobile-mode #hud-overflow-toggle { display: block !important; }
+      html.mobile-mode #hud-overflow-group {
+        display: none !important;
+        flex-direction: column;
+        gap: 8px;
+      }
+      html.mobile-mode #right-panel.hud-overflow-open #hud-overflow-group {
+        display: flex !important;
+      }
+      /* Desktop: the toggle button is hidden, and the overflow group is
+         always visible inline. */
+      html:not(.mobile-mode) #hud-overflow-toggle { display: none !important; }
+
+      /* UX6 — HUD stat row gets cursor:pointer + a small underline on
+         tap-revealable items so the player learns they can be probed.
+         The actual popover renders via JS (main.ts). */
+      html.mobile-mode #hud-top .hud-icon[data-stat] {
+        cursor: pointer;
+        border-bottom: 1px dotted rgba(255,211,77,0.35);
+        padding-bottom: 1px;
+      }
+
+      /* UX10 — First-run onboarding overlay. The structural CSS is here;
+         JS injects + populates the actual cards. Three-step tutorial
+         shown the first time wave === 0 on mobile. */
+      #onboarding-overlay {
+        position: fixed; inset: 0;
+        display: none;
+        align-items: center; justify-content: center;
+        background: radial-gradient(ellipse at center, rgba(20,8,8,0.92) 0%, rgba(0,0,0,0.98) 80%);
+        z-index: 9998;
+        padding: 16px;
+        font-family: 'Courier New', monospace;
+        color: #e8d6a8;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+      #onboarding-overlay.active { display: flex; }
+      #onboarding-overlay .ob-card {
+        background: linear-gradient(180deg, rgba(34,25,18,0.96), rgba(10,6,4,0.96));
+        border: 3px solid #ffd34d;
+        box-shadow: 0 0 32px rgba(255,211,77,0.45), inset 0 0 24px rgba(255,211,77,0.10);
+        padding: 24px 28px;
+        max-width: 480px;
+        width: 100%;
+        text-align: center;
+      }
+      #onboarding-overlay .ob-step {
+        font-size: 11px; color: #aa6a1a; letter-spacing: 4px;
+        font-weight: 900; margin-bottom: 8px;
+      }
+      #onboarding-overlay .ob-title {
+        font-size: 22px; color: #ffd34d; letter-spacing: 3px;
+        font-weight: 900; line-height: 1.15;
+        text-shadow: 0 0 14px #ffd34d, 2px 2px 0 #1a0808;
+        margin-bottom: 12px;
+      }
+      #onboarding-overlay .ob-body {
+        font-size: 14px; color: #cdb98a; letter-spacing: 1px;
+        line-height: 1.55; margin-bottom: 20px;
+      }
+      #onboarding-overlay .ob-controls {
+        display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+      }
+      #onboarding-overlay .ob-controls button {
+        font-family: inherit;
+        font-size: 13px; letter-spacing: 2px; font-weight: 900;
+        padding: 12px 22px; min-height: 48px;
+        border: 2px solid #ffd34d;
+        background: linear-gradient(180deg, #5a3a16, #2a1a08);
+        color: #ffd34d; cursor: pointer;
+        text-shadow: 1px 1px 0 #000;
+      }
+      #onboarding-overlay .ob-controls button.ob-skip {
+        border-color: #5a4a30;
+        color: #cdb98a;
+        background: linear-gradient(180deg, #2a1f14, #1a1410);
+      }
+      #onboarding-overlay .ob-dots {
+        display: flex; gap: 6px; justify-content: center;
+        margin: 12px 0 18px;
+      }
+      #onboarding-overlay .ob-dot {
+        width: 10px; height: 10px; border-radius: 50%;
+        background: #3a2a1a; border: 1px solid #5a4a30;
+      }
+      #onboarding-overlay .ob-dot.active {
+        background: #ffd34d;
+        box-shadow: 0 0 8px rgba(255,211,77,0.7);
+      }
+
+      /* HM — Respect prefers-reduced-motion. Disables card hover/scale,
+         choose-hero pulse, chevron pulse, banner pulse, etc. */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+        }
+        .chm-kbd-hint,
+        #hero-placement-banner,
+        button {
+          animation: none !important;
+        }
+      }
+      /* Settings panel toggle for reduced motion — opt-in for players
+         who want it without using the OS-level preference. */
+      html.reduce-motion-opt-in *,
+      html.reduce-motion-opt-in *::before,
+      html.reduce-motion-opt-in *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+      html.reduce-motion-opt-in #hero-placement-banner,
+      html.reduce-motion-opt-in button { animation: none !important; }
     </style>
   </head>
   <body>
@@ -835,6 +1047,26 @@
         <div class="rotate-icon">📱</div>
         <div class="rotate-title">ROTATE YOUR DEVICE</div>
         <div class="rotate-sub">Roman TD plays in landscape — turn your phone sideways to defend Rome</div>
+      </div>
+    </div>
+    <!-- 2026-05-22 UX10 — FIRST-RUN MOBILE ONBOARDING. Inert DOM until
+         main.ts decides to fire it on the first mobile session. Three-
+         card walkthrough (place towers / 2-keep rule / 20-wave goal).
+         Persisted in localStorage so it never fires twice. -->
+    <div id="onboarding-overlay" aria-hidden="true">
+      <div class="ob-card" role="dialog" aria-modal="true" aria-labelledby="ob-title">
+        <div class="ob-step" id="ob-step">STEP 1 OF 3</div>
+        <div class="ob-title" id="ob-title">DEFEND ROME</div>
+        <div class="ob-body" id="ob-body">Tap an empty tile to spend 1 gold and roll a tower. Each round gives you 5 prospects — keep your best 2.</div>
+        <div class="ob-dots">
+          <span class="ob-dot active" id="ob-dot-0"></span>
+          <span class="ob-dot" id="ob-dot-1"></span>
+          <span class="ob-dot" id="ob-dot-2"></span>
+        </div>
+        <div class="ob-controls">
+          <button type="button" class="ob-skip" id="ob-skip">SKIP</button>
+          <button type="button" id="ob-next">NEXT ▶</button>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

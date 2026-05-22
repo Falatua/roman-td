@@ -2158,11 +2158,72 @@ async function boot() {
       bar.style.borderColor = tint;
       bar.style.boxShadow = `0 0 22px ${tint}88, inset 0 0 14px ${tint}33`;
     }
+    // 2026-05-22 UX7 — Mobile copy is shorter so the slim top-anchored
+    // toast doesn't wrap to 3 lines on a phone. Desktop keeps the full
+    // 3-line layout that fits the bottom-center pulse band.
+    const onMobile = (typeof window !== 'undefined' && (window as any).__isMobile);
+    const placeCue = onMobile ? '★ TAP A TILE' : '★ CLICK ANY EMPTY TILE TO PLACE';
     bar.innerHTML = `
-      <div style="color:${tint};font-size:11px;letter-spacing:3px">★ CLICK ANY EMPTY TILE TO PLACE</div>
+      <div style="color:${tint};font-size:11px;letter-spacing:3px">${placeCue}</div>
       <div style="color:${tint};font-size:15px;letter-spacing:3.5px;text-shadow:0 0 8px ${tint}88, 1px 1px 0 #000">${heroName}</div>
       ${heroTitle ? `<div style="color:#cdb98a;font-size:10px;font-weight:normal;letter-spacing:1.5px;font-style:italic">${heroTitle}</div>` : ''}
     `;
+    // UX10 — First-time mobile player onboarding. Fires once when a
+    // hero is queued for placement (= a fresh campaign in progress)
+    // and the user is on a touch device. Persists dismissal in
+    // localStorage; never fires twice. Desktop unaffected.
+    maybeShowOnboarding();
+  }
+
+  // 2026-05-22 UX10 — Three-step mobile onboarding overlay. The DOM
+  // lives in index.html (#onboarding-overlay) and is inert until this
+  // helper opens it. Steps:
+  //   1) Tap an empty tile to spend 1g and roll a tower.
+  //   2) Keep your two best — the rest become stone walls for free.
+  //   3) Survive 20 waves. Tap START WAVE when ready.
+  // Steps were chosen by the user-feedback audit to match the three
+  // most-confused first-run questions on mobile.
+  const ONBOARDING_KEY = 'roman_td_onboarding_seen_v1';
+  function maybeShowOnboarding(): void {
+    if (!isMobileDevice()) return;
+    try { if (localStorage.getItem(ONBOARDING_KEY)) return; } catch { /* ignore */ }
+    const overlay = document.getElementById('onboarding-overlay');
+    if (!overlay) return;
+    if (overlay.classList.contains('active')) return;     // already open
+    const STEPS = [
+      { step: 'STEP 1 OF 3', title: 'BUILD YOUR MAZE', body: 'Tap any empty tile to spend 1 gold and roll a random tower. The legion walks the path you build.' },
+      { step: 'STEP 2 OF 3', title: 'KEEP TWO PER ROUND', body: 'You roll up to 5 towers each round but only your best 2 stay. The rest become free stone walls — useful for stretching the path.' },
+      { step: 'STEP 3 OF 3', title: 'HOLD THE LINE', body: 'Survive 20 waves. Tap START WAVE when your maze is ready. Pinch the map to zoom, double-tap to recenter.' }
+    ];
+    let i = 0;
+    const stepEl = document.getElementById('ob-step');
+    const titleEl = document.getElementById('ob-title');
+    const bodyEl = document.getElementById('ob-body');
+    const dots = [0, 1, 2].map(n => document.getElementById(`ob-dot-${n}`));
+    const nextBtn = document.getElementById('ob-next') as HTMLButtonElement | null;
+    const skipBtn = document.getElementById('ob-skip') as HTMLButtonElement | null;
+    const render = () => {
+      if (stepEl) stepEl.textContent = STEPS[i].step;
+      if (titleEl) titleEl.textContent = STEPS[i].title;
+      if (bodyEl) bodyEl.textContent = STEPS[i].body;
+      dots.forEach((d, n) => { if (d) d.classList.toggle('active', n === i); });
+      if (nextBtn) nextBtn.textContent = (i === STEPS.length - 1) ? 'PLAY ▶' : 'NEXT ▶';
+    };
+    const close = () => {
+      overlay.classList.remove('active');
+      overlay.setAttribute('aria-hidden', 'true');
+      try { localStorage.setItem(ONBOARDING_KEY, '1'); } catch { /* ignore */ }
+    };
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        if (i < STEPS.length - 1) { i++; render(); }
+        else close();
+      };
+    }
+    if (skipBtn) skipBtn.onclick = close;
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.classList.add('active');
+    render();
   }
 
   function updateTowerQueueIndicator() {
@@ -3466,7 +3527,13 @@ async function boot() {
     'Smack it like you mean it, citizen.',
     'One last whack. The coin can smell glory. So can you.'
   ];
-  const COIN_SLOT_CLICKS_REQUIRED = 5;
+  // 2026-05-22 UX2 — Mobile / touch devices get a single-tap commit
+  // instead of the 5-tap "jammed slot" arcade mini-game. On a phone
+  // the rapid taps register as a glitch instead of a charming easter
+  // egg, and the 1-tap path matches every other mobile button on the
+  // loading screen (which IS the start-the-game button). Desktop
+  // still gets the cabinet whacking sequence intact.
+  const COIN_SLOT_CLICKS_REQUIRED = isMobileDevice() ? 1 : 5;
   await new Promise<void>(resolve => {
     if (!slotEl) { resolve(); return; }
     let clicks = 0;
@@ -4731,6 +4798,77 @@ async function boot() {
   const TOUCH_DRAG_TOLERANCE_PX = 8;        // tap vs drag threshold
   const TOUCH_TAP_MAX_DURATION_MS = 500;    // > 0.5s = long-press (M4 hook)
 
+  // 2026-05-22 UX9 — PINCH-TO-ZOOM + DOUBLE-TAP RECENTER.
+  //
+  // Applies a CSS transform to #stage-wrap so the wrapper element scales
+  // around its center. Click coordinates remain correct because the
+  // existing _handleCanvasClick uses canvas.getBoundingClientRect(),
+  // which already reflects the scaled-rect — Pixi internals are
+  // untouched. Clamped 0.6×–2.5×. Double-tap snaps back to 1.0×.
+  //
+  // The single-touch handlers below early-out on multi-touch, so the
+  // pinch handler doesn't fight them. The double-tap detector sets a
+  // brief `doubleTapJustReset` flag so the single-touchend handler
+  // skips the synthetic click that would otherwise commit a placement.
+  let pinchActive = false;
+  let pinchStartDist = 0;
+  let pinchStartZoom = 1;
+  let userZoom = 1;
+  let lastTapTime = 0;
+  let lastTapX = 0, lastTapY = 0;
+  let doubleTapJustReset = false;
+  const Z_MIN = 0.6, Z_MAX = 2.5;
+  function applyUserZoom() {
+    const stageWrap = document.getElementById('stage-wrap');
+    if (!stageWrap) return;
+    stageWrap.style.transform = `scale(${userZoom})`;
+    stageWrap.style.transformOrigin = 'center center';
+    stageWrap.style.transition = pinchActive ? 'none' : 'transform 0.18s ease-out';
+  }
+  // Pinch-zoom handler. Registered FIRST so it can flag pinchActive
+  // before the single-touch handlers see the event.
+  canvas.addEventListener('touchstart', (e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      pinchActive = true;
+      const t1 = e.touches[0], t2 = e.touches[1];
+      pinchStartDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      pinchStartZoom = userZoom;
+      return;
+    }
+    if (e.touches.length === 1) {
+      // Double-tap detection: two single-finger taps within 280 ms and
+      // 30 px → reset zoom. Consumes the second tap so the canvas
+      // click handler doesn't run.
+      const now = performance.now();
+      const t = e.touches[0];
+      if (now - lastTapTime < 280
+          && Math.hypot(t.clientX - lastTapX, t.clientY - lastTapY) < 30
+          && Math.abs(userZoom - 1) > 0.02) {
+        userZoom = 1;
+        applyUserZoom();
+        doubleTapJustReset = true;
+        setTimeout(() => { doubleTapJustReset = false; }, 320);
+        lastTapTime = 0;       // consume so a triple-tap doesn't re-fire
+      } else {
+        lastTapTime = now;
+        lastTapX = t.clientX;
+        lastTapY = t.clientY;
+      }
+    }
+  }, { passive: false });
+  canvas.addEventListener('touchmove', (e: TouchEvent) => {
+    if (!pinchActive || e.touches.length !== 2) return;
+    e.preventDefault();
+    const t1 = e.touches[0], t2 = e.touches[1];
+    const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    const next = pinchStartZoom * (dist / Math.max(1, pinchStartDist));
+    userZoom = Math.max(Z_MIN, Math.min(Z_MAX, next));
+    applyUserZoom();
+  }, { passive: false });
+  canvas.addEventListener('touchend', (e: TouchEvent) => {
+    if (e.touches.length < 2) pinchActive = false;
+  }, { passive: true });
+
   canvas.addEventListener('touchstart', (e: TouchEvent) => {
     if (e.touches.length !== 1) return;
     e.preventDefault();
@@ -4770,9 +4908,13 @@ async function boot() {
     e.preventDefault();
     const t = e.changedTouches[0];
     const dur = performance.now() - touchStartTime;
-    if (!touchMoved && dur < TOUCH_TAP_MAX_DURATION_MS) {
+    if (!touchMoved && dur < TOUCH_TAP_MAX_DURATION_MS && !doubleTapJustReset && !pinchActive) {
       // Tap → synthetic click. The existing canvas click handler picks
       // it up and routes through _handleCanvasClick like any mouse hit.
+      // 2026-05-22 UX9 — Suppressed when a double-tap-recenter just
+      // fired or when a pinch gesture was in progress; otherwise the
+      // user's "tap to reset zoom" would also place a tower / enemy
+      // inspect / etc., which would be infuriating.
       canvas.dispatchEvent(new MouseEvent('click', {
         clientX: t.clientX,
         clientY: t.clientY,

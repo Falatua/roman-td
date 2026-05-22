@@ -32,6 +32,9 @@ import HERO_DEFS from '../data/herodefs.json';
 //   • SFX.prospectKeep at card click    → commit-decision blip
 //   • SFX.waveStartBlast at MARCH       → war-horn kickoff
 import { playMusicTrack, stopMusicTrack, sfx, SFX } from './AudioManager';
+// 2026-05-22 UX HM — Haptic feedback. Mobile vibrates briefly on card
+// select + MARCH commit so the touch lands with a physical confirmation.
+import { vibrate } from '../Mobile';
 // 2026-05-19 — towers.json carries the hero's combat stats (baseDps,
 // attackSpeed, range, damageType, critChance). The draft modal pulls
 // these so the card surfaces the same numbers the in-game inspect
@@ -300,6 +303,7 @@ export function showChooseHeroModal(state: GameStateShape): void {
     // changes — re-clicking the same card doesn't spam the sound.
     if (pickedHero !== heroId) {
       SFX.prospectKeep();
+      vibrate('light');
     }
     pickedHero = heroId;
     for (let i = 0; i < cards.length; i++) {
@@ -345,6 +349,7 @@ export function showChooseHeroModal(state: GameStateShape): void {
       // dramatic transition from "choose your hero" into the
       // first prospect-placement phase.
       SFX.waveStartBlast();
+      vibrate('success');
       pickHero(state, pickedHero);
       cleanup();
     };
@@ -419,6 +424,7 @@ export function showChooseHeroModal(state: GameStateShape): void {
       // Enter key takes the same march-to-war audio path as the
       // button click so the keyboard player gets the same kickoff.
       SFX.waveStartBlast();
+      vibrate('success');
       pickHero(state, pickedHero);
       cleanup();
       e.preventDefault();
@@ -629,6 +635,16 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
   // banner image bleeds edge-to-edge on top while the text content
   // below sits inside comfortable internal padding. Slot chip and
   // LAST PICK badge are absolutely positioned over the banner.
+  //
+  // 2026-05-22 UX1/UX3 — Mobile collapse: abilities ladder is the
+  // longest section of the card and dominates the vertical real
+  // estate on a phone (1322px card vs. 393px viewport). Wrap it in
+  // a [data-card-abilities] container plus a [data-card-expand]
+  // toggle button. CSS in index.html (html.mobile-mode) hides the
+  // ladder by default and shows the toggle; the toggle's click
+  // handler is registered just below to flip a `expanded` class on
+  // the card root so the rule can re-reveal it. Desktop is unaffected
+  // because the toggle button has `display: none` outside mobile-mode.
   card.innerHTML = `
     ${header}
     ${slotChip}
@@ -637,10 +653,34 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
       ${stats}
       ${builtFor}
       ${passive}
-      <div style="font-size: 9px; color: #aa9a4a; letter-spacing: 2px; margin-bottom: 6px; padding-top: 4px; border-top: 1px dashed #3a2a1a;">ABILITIES</div>
-      ${abilityRows}
+      <button data-card-expand type="button" style="
+        display:none; width:100%; margin: 4px 0 10px; padding: 10px 12px;
+        background: rgba(0,0,0,0.4); border: 1px dashed ${tint}66; color: ${tint};
+        font-family:'Courier New',monospace; font-size:11px; letter-spacing:2px;
+        font-weight:900; cursor:pointer; text-shadow:1px 1px 0 #000;
+      ">▼ TAP FOR ${abilities.length || 0} ABILIT${abilities.length === 1 ? 'Y' : 'IES'}</button>
+      <div data-card-abilities>
+        <div style="font-size: 9px; color: #aa9a4a; letter-spacing: 2px; margin-bottom: 6px; padding-top: 4px; border-top: 1px dashed #3a2a1a;">ABILITIES</div>
+        ${abilityRows}
+      </div>
     </div>
   `;
+  // Toggle wires up after innerHTML lands — flips the card's `expanded`
+  // data flag so the mobile CSS can re-show the abilities block. The
+  // button label flips between "▼ TAP FOR …" / "▲ HIDE ABILITIES" so
+  // the affordance reads honestly in both states.
+  const expandBtn = card.querySelector('[data-card-expand]') as HTMLButtonElement | null;
+  const abilWrap  = card.querySelector('[data-card-abilities]') as HTMLElement | null;
+  if (expandBtn && abilWrap) {
+    expandBtn.addEventListener('click', (e) => {
+      e.stopPropagation();   // don't trigger card selection
+      const open = card.dataset.expanded === '1';
+      card.dataset.expanded = open ? '0' : '1';
+      expandBtn.textContent = open
+        ? `▼ TAP FOR ${abilities.length || 0} ABILIT${abilities.length === 1 ? 'Y' : 'IES'}`
+        : '▲ HIDE ABILITIES';
+    });
+  }
 
   return card;
 }

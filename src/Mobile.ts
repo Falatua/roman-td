@@ -95,3 +95,64 @@ if (typeof window !== 'undefined') {
     window.visualViewport.addEventListener('resize', scheduleOrientationDispatch);
   }
 }
+
+// 2026-05-22 UX HM — Haptic feedback. Single helper everywhere so we
+// can later add a Settings toggle to disable it without auditing every
+// vibrate call site. iOS Safari does not support navigator.vibrate, so
+// this no-ops there silently. Android Chrome + most other touch browsers
+// honor it. Patterns are deliberately short (10–30ms) per Apple HIG
+// guidance against haptic over-use.
+export type HapticIntensity = 'light' | 'medium' | 'success' | 'warning';
+const HAPTIC_PATTERNS: Record<HapticIntensity, number | number[]> = {
+  light:   10,
+  medium:  18,
+  success: [12, 40, 22],
+  warning: [22, 60, 22, 60, 22]
+};
+let _hapticEnabled = true;
+export function setHapticEnabled(on: boolean): void { _hapticEnabled = !!on; }
+export function isHapticEnabled(): boolean { return _hapticEnabled; }
+export function vibrate(intensity: HapticIntensity = 'light'): void {
+  if (!_hapticEnabled) return;
+  if (typeof navigator === 'undefined') return;
+  if (typeof (navigator as any).vibrate !== 'function') return;
+  if (!isMobile()) return;     // never vibrate on desktop accidentally
+  try { (navigator as any).vibrate(HAPTIC_PATTERNS[intensity]); } catch { /* ignore */ }
+}
+
+// 2026-05-22 UX HM — Reduced-motion preference. Reads BOTH the OS-level
+// `prefers-reduced-motion` AND a user-opt-in toggle stored in
+// localStorage so SettingsPanel can flip it without touching the OS.
+const REDUCED_MOTION_KEY = 'roman_td_reduce_motion';
+export function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return true;
+    if (localStorage.getItem(REDUCED_MOTION_KEY) === '1') return true;
+  } catch { /* ignore */ }
+  return false;
+}
+export function setReduceMotionOptIn(on: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (on) localStorage.setItem(REDUCED_MOTION_KEY, '1');
+    else    localStorage.removeItem(REDUCED_MOTION_KEY);
+    document.documentElement.classList.toggle('reduce-motion-opt-in', on);
+  } catch { /* ignore */ }
+}
+// Sync the class on page load so the CSS rule fires immediately.
+if (typeof window !== 'undefined') {
+  try {
+    if (localStorage.getItem(REDUCED_MOTION_KEY) === '1') {
+      document.documentElement.classList.add('reduce-motion-opt-in');
+    }
+    // Reduce-Decoration opt-in (separate key, no CSS effect — drives
+    // window.__reduceDecor that the RenderEngine reads when rebuilding
+    // the prop layer). Setting both the global flag and the class so
+    // future CSS-driven decor rules can also key off it.
+    if (localStorage.getItem('roman_td_reduce_decoration') === '1') {
+      (window as any).__reduceDecor = true;
+      document.documentElement.classList.add('reduce-decor');
+    }
+  } catch { /* ignore */ }
+}

@@ -12,8 +12,19 @@ import {
   SFX,
 } from './AudioManager';
 import { closeGameModals } from './ModalManager';
+// 2026-05-22 UX HM — Mobile + accessibility preference toggles. Stored
+// in localStorage via the helpers in Mobile.ts so they persist across
+// sessions and can be read from anywhere (RenderEngine, main.ts) via
+// the exported isHapticEnabled() / prefersReducedMotion() helpers.
+import {
+  setHapticEnabled, isHapticEnabled,
+  setReduceMotionOptIn,
+  isMobile as isMobileDevice
+} from '../Mobile';
 
-type SettingsTab = 'SOUND';
+type SettingsTab = 'SOUND' | 'DISPLAY';
+const REDUCE_DECOR_KEY = 'roman_td_reduce_decoration';
+const REDUCE_MOTION_KEY = 'roman_td_reduce_motion';
 
 export function showSettingsPanel(parent: HTMLElement) {
   closeGameModals();
@@ -34,12 +45,13 @@ export function showSettingsPanel(parent: HTMLElement) {
       <div style="font-size:18px;color:#d4af37;font-weight:bold;letter-spacing:3px">SETTINGS</div>
       <div style="font-size:11px;color:#aa9a4a;letter-spacing:1px">Preferences persist between sessions</div>
     </div>
-    <div style="font-size:10px;color:#cdb98a;text-align:right;line-height:1.4">Press ESC to close</div>
+    <div class="desktop-hotkey-hint" style="font-size:10px;color:#cdb98a;text-align:right;line-height:1.4">Press ESC to close</div>
   `;
   panel.appendChild(header);
 
-  // Tab strip — currently single tab (SOUND); easy to add more later.
-  const tabs: SettingsTab[] = ['SOUND'];
+  // Tab strip. SOUND has always existed; DISPLAY ships with the 2026-05-22
+  // mobile UX pass (Reduce motion / Reduce decoration / Haptics toggles).
+  const tabs: SettingsTab[] = ['SOUND', 'DISPLAY'];
   let activeTab: SettingsTab = 'SOUND';
   const tabStrip = document.createElement('div');
   tabStrip.style.cssText = `display:flex;border-bottom:2px solid #d4af37;background:#1a1208`;
@@ -164,8 +176,80 @@ export function showSettingsPanel(parent: HTMLElement) {
       tabStrip.appendChild(tab);
     }
   }
+  // 2026-05-22 — DISPLAY tab. Three toggles:
+  //   • Reduce motion (animations + pulse effects).
+  //   • Reduce decoration (lower edge-prop density for low-end devices).
+  //   • Haptic feedback (mobile only; row hidden on devices that don't
+  //     support navigator.vibrate).
+  function renderDisplayTab() {
+    body.innerHTML = '';
+    const sec = document.createElement('div');
+    sec.style.cssText = `background:#120c08;border:2px solid #3a3025;padding:14px 16px;`;
+    const secTitle = document.createElement('div');
+    secTitle.style.cssText = `font-size:13px;color:#d4af37;letter-spacing:3px;font-weight:bold;margin-bottom:10px`;
+    secTitle.textContent = 'DISPLAY & FEEDBACK';
+    sec.appendChild(secTitle);
+
+    // Helper to build a labeled checkbox row.
+    const buildToggle = (
+      id: string, label: string, initial: boolean, onChange: (on: boolean) => void
+    ): HTMLDivElement => {
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex;align-items:center;gap:12px;margin:8px 0;padding:10px 12px;background:#1a1208;border:1px solid #5a4a30`;
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.id = id;
+      box.checked = initial;
+      box.style.cssText = `transform:scale(1.4);accent-color:#d4af37;cursor:pointer`;
+      box.onchange = () => onChange(box.checked);
+      const lbl = document.createElement('label');
+      lbl.htmlFor = id;
+      lbl.style.cssText = `font-size:13px;color:#ffd34d;letter-spacing:2px;font-weight:bold;cursor:pointer`;
+      lbl.textContent = label;
+      row.appendChild(box);
+      row.appendChild(lbl);
+      return row;
+    };
+
+    // Reduce Motion
+    const motionInitial = (() => {
+      try { return localStorage.getItem(REDUCE_MOTION_KEY) === '1'; } catch { return false; }
+    })();
+    sec.appendChild(buildToggle('settings-reduce-motion-cb', '🎞  REDUCE MOTION', motionInitial, (on) => {
+      setReduceMotionOptIn(on);
+    }));
+
+    // Reduce Decoration — sets a flag the renderer reads each frame.
+    const decorInitial = (() => {
+      try { return localStorage.getItem(REDUCE_DECOR_KEY) === '1'; } catch { return false; }
+    })();
+    sec.appendChild(buildToggle('settings-reduce-decor-cb', '🌿  REDUCE DECORATION', decorInitial, (on) => {
+      try {
+        if (on) localStorage.setItem(REDUCE_DECOR_KEY, '1');
+        else    localStorage.removeItem(REDUCE_DECOR_KEY);
+      } catch { /* ignore */ }
+      document.documentElement.classList.toggle('reduce-decor', on);
+      (window as any).__reduceDecor = on;
+    }));
+
+    // Haptics — only render on mobile devices that actually support it.
+    if (isMobileDevice() && typeof navigator !== 'undefined' && typeof (navigator as any).vibrate === 'function') {
+      sec.appendChild(buildToggle('settings-haptic-cb', '📳  HAPTIC FEEDBACK', isHapticEnabled(), (on) => {
+        setHapticEnabled(on);
+      }));
+    }
+
+    body.appendChild(sec);
+
+    const note = document.createElement('div');
+    note.style.cssText = `font-size:10px;color:#aa9a4a;letter-spacing:1px;line-height:1.5;margin-top:10px;text-align:center;font-style:italic`;
+    note.innerHTML = `Reduce motion disables card hover scaling, banner pulses, and ambient animation.<br/>Reduce decoration thins the prop layer for older / low-end devices.`;
+    body.appendChild(note);
+  }
+
   function renderActive() {
-    if (activeTab === 'SOUND') renderSoundTab();
+    if (activeTab === 'SOUND')   renderSoundTab();
+    if (activeTab === 'DISPLAY') renderDisplayTab();
   }
   renderTabStrip();
   renderActive();
