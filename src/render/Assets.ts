@@ -198,12 +198,11 @@ const MANIFEST: Record<string, string> = {
   MAP_CAVE_UNDEAD_DOOR_A: 'map_overhaul/m_cave_undead_door_a.png',
   MAP_CAVE_UNDEAD_DOOR_B: 'map_overhaul/m_cave_undead_door_b.png',
   MAP_CAVE_UNDEAD_DOOR_C: 'map_overhaul/m_cave_undead_door_c.png',
-  // 2026-05-21 — User-supplied Cave + Rome reference renders. The cave
-  // shows a dramatic rock-formation with skull-mouth entry + purple
-  // portal glow; the gate is a classic Roman fortress with watchtowers
-  // and a red SPQR banner. These become the W1-W10 sunny-biome anchors.
-  MAP_CAVE_GRASSLAND: 'map_overhaul/m_cave_user_grassland.png',
-  MAP_GATE_USER_ROME: 'map_overhaul/m_gate_user_rome.png',
+  // 2026-05-22 — User-supplied Cave + Rome reference sprites reverted
+  // per design feedback. Caves for W1-W10 now fall back to the
+  // procedural cave frame + DARK_CAVE silhouette; the universal gate
+  // render falls back to ROMAN_GATE. The user-supplied sprite PNGs
+  // remain on disk under map_overhaul/ but are no longer manifested.
   // 2026-05-21 — V13 ornate aura tile medallions (Higgsfield nano_banana_pro
   // generated). Each tile gets a unique iconography sigil per effect:
   //   PURPLE/Tempo  → SPQR + winged emblem + lightning (speed)

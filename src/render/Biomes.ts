@@ -106,11 +106,11 @@ export const BIOMES: Record<BiomeId, BiomeProfile> = {
       'DP_UNDEAD_DEAD_TREE_A', 'DP_UNDEAD_PLANT'
     ],
     pathPrefix: 'PATH_SUNNY_',                  // same cobble, mossier tint
-    // 2026-05-21 — Reuses the user-supplied grassland cave sprite for
-    // the woodland biome (visually compatible — same rock formation,
-    // same skull entrance). Saves authoring a separate sprite while
-    // keeping the dramatic look for W4-6.
-    caveKey: 'MAP_CAVE_GRASSLAND'
+    // 2026-05-22 — Reverted off the user-supplied grassland cave per
+    // design feedback. MAP_CAVE_CELTIC has no sprite registered, so
+    // the renderer falls through to DARK_CAVE + procedural stone
+    // frame for the W4-6 cave look.
+    caveKey: 'MAP_CAVE_CELTIC'
   },
   BIOME_CARTHAGE_ARID: {
     id: 'BIOME_CARTHAGE_ARID',
@@ -134,10 +134,11 @@ export const BIOMES: Record<BiomeId, BiomeProfile> = {
       'DP_FLOWERS_WHITE'
     ],
     pathPrefix: 'PATH_SUNNY_',                  // same cobble, sand-edged
-    // Same dramatic rock-cave for W7-10 (the user-supplied sprite's
-    // rock formation reads as desert canyon when tinted with the
-    // arid biome's tan overlay).
-    caveKey: 'MAP_CAVE_GRASSLAND'
+    // 2026-05-22 — Reverted off the user-supplied grassland cave per
+    // design feedback. MAP_CAVE_CARTHAGE has no sprite registered, so
+    // the renderer falls through to DARK_CAVE + procedural stone
+    // frame for the W7-10 cave look.
+    caveKey: 'MAP_CAVE_CARTHAGE'
   },
   BIOME_UNDEAD_FOREST: {
     id: 'BIOME_UNDEAD_FOREST',

@@ -2280,10 +2280,11 @@ export class RenderEngine {
     if (cave) {
       const cs = new Sprite(cave);
       cs.anchor.set(0.5); cs.x = caveCx; cs.y = caveCy;
-      // 2026-05-21 — User-supplied cave sprite is detailed enough to
-      // sit at 160px (5 tile) without looking pixelated. Bumped from
-      // 112 to give it the same commanding presence as the reference.
-      cs.width = 160; cs.height = 196;     // slightly taller than wide to match source aspect
+      // 2026-05-21 — Bumped 86 → 112px (3.5 tile) for visual drama.
+      // 2026-05-22 — Reverted off the 160×196 user-supplied size when
+      // those reference sprites were rolled back. The 112×112 fits
+      // inside the procedural stone frame cleanly.
+      cs.width = 112; cs.height = 112;
       this.layers.bg.addChild(cs);
     }
 
@@ -2316,18 +2317,17 @@ export class RenderEngine {
     gateFrame.drawRect(gateCx + 53.5, gateCy - 56, 1.5, 112);
     gateFrame.endFill();
     this.layers.bg.addChild(gateFrame);
-    // 2026-05-21 — User-supplied Rome fortress reference. Prefer the
-    // new MAP_GATE_USER_ROME sprite (detailed castle with watchtowers
-    // + red banner) over the procedural ROMAN_GATE. Falls back to
-    // ROMAN_GATE if the new sprite hasn't loaded yet.
-    const gate = tex('MAP_GATE_USER_ROME') ?? tex('ROMAN_GATE');
+    // 2026-05-22 — Reverted off MAP_GATE_USER_ROME per design feedback.
+    // Universal gate render falls back to the procedural ROMAN_GATE
+    // sprite (the original Roman fortress art). The crenellated frame
+    // + pilasters above provide the architectural setting.
+    const gate = tex('ROMAN_GATE');
     if (gate) {
       const gs = new Sprite(gate);
       gs.anchor.set(0.5); gs.x = gateCx; gs.y = gateCy;
-      // 2026-05-21 — User Rome sprite renders at 160px (5 tiles) to
-      // match the cave's commanding presence. Source aspect is square
-      // so width = height.
-      gs.width = 160; gs.height = 160;
+      // 2026-05-21 — Bumped 76 → 100px so the gate sprite fills the
+      // ornate frame instead of floating in the middle.
+      gs.width = 100; gs.height = 100;
       this.layers.bg.addChild(gs);
     }
 
