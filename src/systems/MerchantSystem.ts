@@ -57,7 +57,14 @@ const MERCATOR_MID = [
   // only). Adding three mid-game pickups closes the gap so the DOT split
   // (one BURN + one POISON + one BLEED per tower) is actually playable on
   // ranged/aerial towers too.
-  'VENOM_TIPPED_ARROWS', 'SERPENT_AMULET', 'VESTAL_PYRE'
+  'VENOM_TIPPED_ARROWS', 'SERPENT_AMULET', 'VESTAL_PYRE',
+  // 2026-05-22 V23: Truesight Lens. Map-wide reveal of stealth + ambush
+  // enemies (Carthage Spearman W7-W10, Undead Berserker W13/W15, Ghost
+  // Rider/Shadow Cavalry stealth cycle, VEIL_OF_THE_PROSCRIPTI wave
+  // modifier). Counter pickup for the W7+ ambush window — players who
+  // hate waiting through the un-targetable opening can buy this to skip
+  // it entirely.
+  'TRUESIGHT_LENS'
 ];
 // 2026-05 v6: items the Mercator stocks that the gate shop never carries.
 // One guaranteed slot per visit picks from this pool so Mercator wares feel

@@ -48,6 +48,13 @@
     "sell": 6,
     "effect": "RANGED ONLY: +30% damage vs Flyers."
   },
+  "TRUESIGHT_LENS": {
+    "name": "Truesight Lens",
+    "rarity": "UNCOMMON",
+    "buy": 18,
+    "sell": 7,
+    "effect": "GLOBAL: every tower can target stealth and ambush enemies (Carthage Spearman, Undead Berserker, Ghost Rider, Shadow Cavalry, Veil-modifier waves). One copy anywhere on the map enables map-wide truesight."
+  },
   "FIRE_OIL_FLASK": {
     "name": "Fire Oil Flask",
     "rarity": "UNCOMMON",

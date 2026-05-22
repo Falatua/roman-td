@@ -307,6 +307,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // Pending towers (Gem TD pre-keep) don't fight.
   const towers = Array.from(state.towers.values()).filter(t => !t.pending).sort((a, b) => a.placedAtWave - b.placedAtWave);
 
+  // 2026-05-22 V23 — TRUESIGHT LENS (item). One copy equipped anywhere
+  // on the map enables every tower to see + acquire stealth/ambush
+  // enemies (Carthage Spearman, Undead Berserker, Ghost Rider, Shadow
+  // Cavalry, plus the VEIL_OF_THE_PROSCRIPTI wave modifier). Computed
+  // once per frame and consulted at all three `__veiled` filter sites
+  // below (pickTarget normal acquisition + anti-air filter + cone-tower
+  // cone sweep). Cached on state for any code that reads it after the
+  // combat tick.
+  const truesightActive = towers.some(t => t.equippedItems.includes('TRUESIGHT_LENS'));
+  (state as any).__truesightActive = truesightActive;
+
   // SUPPORT AURA scan (Vision §9 / build expression §12).
   // Eagle Standard:    global +18% damage, +10% atk speed within 4 tiles
   // Aquilifer Titan:   global +30% damage; enemies near it take +20% from all sources
@@ -1436,7 +1447,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         spawnCosmeticProjectile(state, t, target, 'PROJ_HELLFIRE_BOLT');
         for (const candidate of enemies) {
           if (candidate.hp <= 0) continue;
-          if ((candidate as any).__veiled) continue;
+          // 2026-05-22 V23 — Truesight Lens lets the cone sweep land on
+          // veiled targets too. Without the item, veil blocks acquisition.
+          if ((candidate as any).__veiled && !(state as any).__truesightActive) continue;
           const cdx = candidate.x - tcx;
           const cdy = candidate.y - tcy;
           const cdist = Math.hypot(cdx, cdy);
@@ -1513,12 +1526,15 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   const antiAirOnly = ANTI_AIR_ONLY_TYPES.has(t.type);
   let inRange = enemies.filter(e => {
     if (Math.hypot(e.x - tx, e.y - ty) > rangePx) return false;
-    if (antiAirOnly) return e.isFlyer && !(e as any).__veiled;
+    // 2026-05-22 V23 — Truesight Lens bypasses the veil filter on
+    // anti-air specialist towers AND on the general acquisition path.
+    const truesight = !!(state as any).__truesightActive;
+    if (antiAirOnly) return e.isFlyer && (truesight || !(e as any).__veiled);
     if (!canHitFlyers && e.isFlyer) return false;
     // 2026-05-19 v3 — Only PHYS_MELEE damage is blocked by meleeImmune.
     // Divine / fire / siege melee towers still acquire these targets.
     if (isMelee && meleeImmuneBlocksTower(e.type, t.damageType)) return false;
-    if ((e as any).__veiled) return false;       // VEIL modifier: untargetable
+    if ((e as any).__veiled && !truesight) return false;       // VEIL modifier: untargetable
     // SHIELDED units: ranged towers cannot target until a melee tower has
     // broken the shield. Melee towers can always hit and will set the flag.
     if (!isMelee && requiresMeleeBreak(e.type) && !e.shieldBroken) return false;

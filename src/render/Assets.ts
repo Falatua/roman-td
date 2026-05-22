@@ -314,6 +314,12 @@ const MANIFEST: Record<string, string> = {
   ITEM_WARLORDS_WAR_PAINT: 'inew_warlords_war_paint.png',
   ITEM_WATCHTOWER_LENS: 'inew_watchtower_lens.png',
   ITEM_FLYER_BANE: 'inew_flyer_bane.png',
+  // 2026-05-22 V23 — Truesight Lens (UNCOMMON, Mercator). Reuses the
+  // already-on-disk i_eagle_eye.png sprite — uses the original eagle-eye
+  // artwork (eye motif fits "see through stealth"). Effect lives in
+  // CombatResolver.tickCombat: one copy anywhere enables map-wide
+  // truesight on stealth + ambush enemies.
+  ITEM_TRUESIGHT_LENS: 'i_eagle_eye.png',
   // Sheet 3 — Standards & Scrolls (16 items)
   ITEM_BATTLE_STANDARD: 'inew_battle_standard.png',
   ITEM_AQUILIFER_BANNER: 'inew_aquilifer_banner.png',
