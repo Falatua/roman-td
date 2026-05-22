@@ -3334,7 +3334,16 @@ async function boot() {
   // entry, so we honor the fit-scale unconditionally and rely on
   // browser pinch-zoom (max-scale=5 in the viewport meta) for any
   // zoom-in the player wants.
-  const isTouchDevice = matchMedia('(pointer: coarse)').matches;
+  // Touch detection mirrors the inline script in index.html <head> that
+  // sets html.touch — keep the two in sync. Multiple signals because no
+  // single one covers every browser: pointer:coarse works on real iOS
+  // Safari but is unreliable in emulators; maxTouchPoints catches
+  // emulated phones; ontouchstart is the legacy fallback.
+  const isTouchDevice =
+    document.documentElement.classList.contains('touch') ||
+    matchMedia('(pointer: coarse)').matches ||
+    (navigator.maxTouchPoints || 0) > 0 ||
+    ('ontouchstart' in window);
   const MIN_SCALE = isTouchDevice ? 0.10 : 0.55;
   function fitStageToViewport() {
     const app = document.getElementById('app');
@@ -3360,29 +3369,19 @@ async function boot() {
     document.body.style.overflowX = overflowsX ? 'auto' : 'hidden';
     document.body.style.overflowY = overflowsY ? 'auto' : 'hidden';
   }
-  // Portrait-orientation gate (mobile only). The game's landscape-only
-  // 1216×832 canvas has no good portrait fit, so when a touch device is
-  // held in portrait we cover the page with the #rotate-gate overlay
-  // (declared in index.html) and let the player back in the moment they
-  // rotate to landscape. Desktop windows in portrait aspect ratio are
-  // not gated — the floor + scroll fallback handles those.
-  function updateRotateGate() {
-    const gate = document.getElementById('rotate-gate');
-    if (!gate) return;
-    const portrait = window.innerHeight > window.innerWidth;
-    const shouldShow = isTouchDevice && portrait;
-    gate.classList.toggle('show', shouldShow);
-    gate.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
-  }
+  // Portrait-orientation gate is owned by the inline script in index.html
+  // <head> so it activates at page load, before this main.ts file even
+  // finishes booting. We don't re-declare the listener here — but we DO
+  // want a fit-refresh on every resize/orientationchange so the canvas
+  // scaling tracks viewport changes (iOS URL bar showing/hiding, device
+  // rotation post-loading-screen, etc.).
   fitStageToViewport();
-  updateRotateGate();
-  const onViewportChange = () => { fitStageToViewport(); updateRotateGate(); };
-  window.addEventListener('resize', onViewportChange);
-  window.addEventListener('orientationchange', onViewportChange);
+  window.addEventListener('resize', fitStageToViewport);
+  window.addEventListener('orientationchange', fitStageToViewport);
   // Re-fit shortly after first paint in case fonts/sprites adjust layout,
   // and again after the iOS URL bar settles post-rotation.
-  setTimeout(onViewportChange, 100);
-  setTimeout(onViewportChange, 600);
+  setTimeout(fitStageToViewport, 100);
+  setTimeout(fitStageToViewport, 600);
 
   // 2026-05-18 — Page-exit guard. When the player tries to close the
   // tab, refresh the page, or navigate away mid-game, prompt them to

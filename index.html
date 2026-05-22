@@ -7,6 +7,42 @@
          so players CAN pinch-zoom in for tile-level precision. viewport-fit=
          cover lets the loading screen extend behind the notch. -->
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover" />
+    <!-- Touch-device class + portrait-orientation gate, set BEFORE first
+         paint so mobile CSS applies on the first frame AND so the rotate
+         gate covers the loading screen the moment a phone in portrait
+         hits the page (the previous version waited for main.ts to
+         finish booting, which meant the loading screen was visible in
+         portrait — a player could see the game without rotating).
+         Three touch signals are OR'd because no single one is universal:
+         matchMedia('pointer: coarse') works on real iOS Safari but is
+         unreliable in emulators; maxTouchPoints catches Chromium phone
+         emulation and Android; ontouchstart is the legacy fallback. -->
+    <script>
+      (function(){
+        try {
+          var isTouch = (window.matchMedia && matchMedia('(pointer: coarse)').matches)
+                     || (navigator.maxTouchPoints || 0) > 0
+                     || ('ontouchstart' in window);
+          if (isTouch) document.documentElement.classList.add('touch');
+          // Portrait gate: shows whenever a touch device is held vertically.
+          // The #rotate-gate element lives in the body markup further down.
+          // We bind listeners on DOMContentLoaded so the lookup succeeds even
+          // though this script runs in <head> before the element is parsed.
+          function updateRotateGate() {
+            var gate = document.getElementById('rotate-gate');
+            if (!gate) return;
+            var portrait = window.innerHeight > window.innerWidth;
+            var show = isTouch && portrait;
+            gate.classList.toggle('show', show);
+            gate.setAttribute('aria-hidden', show ? 'false' : 'true');
+          }
+          window.__updateRotateGate = updateRotateGate;
+          document.addEventListener('DOMContentLoaded', updateRotateGate);
+          window.addEventListener('resize', updateRotateGate);
+          window.addEventListener('orientationchange', updateRotateGate);
+        } catch (_) { /* old browser — skip; desktop layout still works */ }
+      })();
+    </script>
     <title>Roman TD — Castrum Lunum</title>
     <style>
       :root { color-scheme: dark; }
@@ -598,24 +634,61 @@
         max-width: 320px; line-height: 1.5;
       }
 
-      /* Touch-device tweaks for the loading screen. The hard-refresh
-         keyboard-shortcut tip is desktop-only — mobile users can't press
-         Cmd+Shift+R, and the tip eats valuable vertical space on a phone.
-         Hide it on coarse pointers (touch). */
-      @media (pointer: coarse) {
-        #loading-tip { display: none; }
-        /* Loading screen also needs to clear the iPhone notch / home
-           indicator. Padding adds the safe-area inset to the existing
-           clamp() rules so the title and coin slot stay reachable. */
-        #loading-stage {
-          padding-top: max(clamp(8px, 1.5vh, 20px), env(safe-area-inset-top));
-          padding-bottom: max(clamp(8px, 1.5vh, 20px), env(safe-area-inset-bottom));
-          padding-left: max(clamp(16px, 2vw, 48px), env(safe-area-inset-left));
-          padding-right: max(clamp(16px, 2vw, 48px), env(safe-area-inset-right));
-        }
-        /* The DEV SANDBOX entry should NOT appear on phones — it's a
-           desktop-only debug surface and just clutters the loading flow. */
-        #loading-sandbox-entry { display: none; }
+      /* Touch-device tweaks. The html.touch class (JS-set in <head>)
+         catches everything our matchMedia check sees PLUS Chromium-
+         emulated phones that don't translate hasTouch to pointer:coarse.
+         Belt-and-suspenders @media query stays for any browser that
+         loads CSS before the inline script runs. */
+      @media (pointer: coarse) { #loading-tip, #loading-sandbox-entry { display: none; } }
+      html.touch #loading-tip,
+      html.touch #loading-sandbox-entry { display: none; }
+      html.touch #loading-stage {
+        /* Clear iPhone notch / home indicator on the loading screen. */
+        padding-top: max(clamp(8px, 1.5vh, 20px), env(safe-area-inset-top));
+        padding-bottom: max(clamp(8px, 1.5vh, 20px), env(safe-area-inset-bottom));
+        padding-left: max(clamp(16px, 2vw, 48px), env(safe-area-inset-left));
+        padding-right: max(clamp(16px, 2vw, 48px), env(safe-area-inset-right));
+      }
+
+      /* Bigger HUD action buttons on touch. The whole #app gets a
+         scale(~0.45) transform on iPhone landscape, which crushes 32-px
+         buttons down to ~14 px — finger-untappable. We compensate by
+         making the natural button size ~3x larger so post-scale they
+         land near a 44-px touch target. The right panel scrolls
+         vertically when the bigger buttons overflow the canvas height. */
+      html.touch #left-panel button,
+      html.touch #right-panel button,
+      html.touch #buttons button {
+        min-height: 64px;
+        font-size: 22px;
+        padding: 14px 16px;
+        letter-spacing: 1.5px;
+      }
+      /* Wider panels on touch so the bigger buttons aren't squeezed.
+         The map gives up a little flex space; the buttons gain a lot
+         of tap reliability. */
+      html.touch #left-panel,
+      html.touch #right-panel {
+        min-width: 280px;
+        max-width: 320px;
+      }
+      /* Loading-screen Hall of Glory button needs the iOS 44-px tap
+         target — clamp's lower bound was 9-px font + 5-px padding = a
+         ~20-px tall button, fine on desktop, unusable on a phone. */
+      html.touch #loading-view-leaderboard {
+        min-height: 48px;
+        font-size: 14px;
+        padding: 12px 22px;
+      }
+      /* Etch-name (and other startup) modal must fit in landscape
+         iPhone's ~393-px viewport. Force a viewport-relative max-height
+         and internal scroll so the player can always reach the
+         "CARRY THE EAGLE" submit button without scrolling the page. */
+      html.touch #etch-name-modal > div {
+        max-height: 92vh;
+        max-height: 92dvh;
+        overflow-y: auto;
+        padding: 16px 20px !important;
       }
     </style>
   </head>
