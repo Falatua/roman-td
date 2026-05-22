@@ -36,8 +36,33 @@ export function tileAt(state: GameStateShape, col: number, row: number): TileTyp
   return state.tiles[row][col] as TileType;
 }
 
+// 2026-05-22 V20 — Cave + gate are rendered at 128×128 with their
+// procedural stone frame (RenderEngine.ts:2235-2330) which spans a
+// FULL 5×5 tile footprint centered on the spawn / gate anchors. The
+// raw tile state at the anchor is SPAWN / GATE (already non-EMPTY),
+// but the surrounding 24 tiles around each anchor are currently
+// EMPTY and would happily accept tower placement — visually creating
+// the bad outcome of a tower sitting under the cave entrance art.
+//
+// Reserve a 2-tile radius (5×5 square) around each anchor. This is
+// strictly a BUILD restriction, not a path restriction — enemies +
+// path-finding don't read isBuildable, so cave-to-WP1 routing is
+// unaffected.
+const CAVE_GATE_RESERVE_RADIUS = 2;
+export function isInsideStructureFootprint(col: number, row: number): boolean {
+  const dSpawnC = Math.abs(col - waypointsData.spawn.col);
+  const dSpawnR = Math.abs(row - waypointsData.spawn.row);
+  if (dSpawnC <= CAVE_GATE_RESERVE_RADIUS && dSpawnR <= CAVE_GATE_RESERVE_RADIUS) return true;
+  const dGateC = Math.abs(col - waypointsData.gate.col);
+  const dGateR = Math.abs(row - waypointsData.gate.row);
+  if (dGateC <= CAVE_GATE_RESERVE_RADIUS && dGateR <= CAVE_GATE_RESERVE_RADIUS) return true;
+  return false;
+}
+
 export function isBuildable(state: GameStateShape, col: number, row: number): boolean {
-  return tileAt(state, col, row) === TileType.EMPTY;
+  if (tileAt(state, col, row) !== TileType.EMPTY) return false;
+  if (isInsideStructureFootprint(col, row)) return false;
+  return true;
 }
 
 export function setTile(state: GameStateShape, col: number, row: number, t: TileType) {

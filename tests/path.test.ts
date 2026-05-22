@@ -30,8 +30,36 @@ describe('Grid initialization', () => {
     const s = createGameState();
     initializeGrid(s);
     expect(isBuildable(s, 0, 0)).toBe(false);    // border
-    // find an interior empty tile
-    expect(isBuildable(s, 5, 5)).toBe(true);
+    // 2026-05-22 V20 — (5,5) was inside the new 5×5 cave footprint
+    // reserve (cave anchor (3,4), radius 2). Use (15, 15) instead —
+    // a deep-interior tile that's well clear of both cave + gate.
+    expect(isBuildable(s, 15, 15)).toBe(true);
+  });
+
+  it('isBuildable false inside the cave footprint (V20 reserve)', () => {
+    const s = createGameState();
+    initializeGrid(s);
+    // Cave anchor (3, 4) — entire 5×5 footprint around it must reject placement
+    for (let dc = -2; dc <= 2; dc++) {
+      for (let dr = -2; dr <= 2; dr++) {
+        const c = 3 + dc, r = 4 + dr;
+        if (c < 1 || c >= 37 || r < 1 || r >= 25) continue;     // skip border
+        expect(isBuildable(s, c, r), `cave footprint (${c},${r}) should not be buildable`).toBe(false);
+      }
+    }
+  });
+
+  it('isBuildable false inside the gate footprint (V20 reserve)', () => {
+    const s = createGameState();
+    initializeGrid(s);
+    // Gate anchor (35, 23) — entire 5×5 footprint around it must reject placement
+    for (let dc = -2; dc <= 2; dc++) {
+      for (let dr = -2; dr <= 2; dr++) {
+        const c = 35 + dc, r = 23 + dr;
+        if (c < 1 || c >= 37 || r < 1 || r >= 25) continue;     // skip border
+        expect(isBuildable(s, c, r), `gate footprint (${c},${r}) should not be buildable`).toBe(false);
+      }
+    }
   });
 });
 

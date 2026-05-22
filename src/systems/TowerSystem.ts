@@ -3,6 +3,7 @@ import { GameStateShape } from '../GameState';
 import { TIER_MULTS, ECONOMY, POOL_PROBABILITIES, GRID, AURA_TILES, AURA_TILE_EFFECTS } from '../constants';
 import towersData from '../data/towers.json';
 import { damageTypeFromString } from './DamageTypeSystem';
+import { isInsideStructureFootprint } from './GridManager';
 
 // 2026-05-19 — AURA TILE LOOKUP. Returns the kind of aura tile the
 // tower sits on, or null. Used by stat math + combat hooks so every
@@ -244,6 +245,10 @@ export function findRandomBuildTiles(
     const key = `${col},${row}`;
     if (used.has(key)) continue;
     if (state.tiles[row]?.[col] !== 0) continue;        // not EMPTY
+    // 2026-05-22 V20 — Gem-TD random-roll must also respect the 5×5
+    // cave + gate reserved footprint, otherwise prospects could spawn
+    // sitting under the cave entrance art.
+    if (isInsideStructureFootprint(col, row)) continue;
     if (!pathValidator(col, row)) continue;
     out.push({ col, row });
     used.add(key);
