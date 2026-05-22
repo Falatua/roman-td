@@ -85,10 +85,10 @@
         "level": 2,
         "id": "NAVAL_BOMBARDMENT",
         "name": "Naval Bombardment",
-        "cooldownSec": 12,
+        "cooldownSec": 14,
         "durationSec": 0,
         "params": { "shellCount": 3, "targetType": "RANDOM_PATH_TILE", "splashRadiusTiles": 2, "stunSec": 1.5 },
-        "description": "3 mortar shells drop on random path tiles. Each explodes with 2-tile splash and 1.5s stun.",
+        "description": "Every 14s, 3 mortar shells drop on random path tiles. Each explodes with 2-tile splash and 1.5s stun.",
         "vfxColor": "#4499ff",
         "vfxStyle": "MORTAR_SHELL_BURST"
       }
@@ -151,8 +151,8 @@
         "name": "Frontier Wall",
         "cooldownSec": 12,
         "durationSec": 4,
-        "params": { "flyerSpeedReductionPercent": 70, "dmgVsFlyersIncreasePercent": 30 },
-        "description": "For 4s, all flyers slow 70% AND every tower gains +30% damage vs. flyers. Stacks multiplicatively with Eagle Scout's +60% (~2.08× combined during overlap).",
+        "params": { "flyerSpeedReductionPercent": 70, "dmgVsFlyersIncreasePercent": 25 },
+        "description": "For 4s, all flyers slow 70% AND every tower gains +25% damage vs. flyers. Stacks multiplicatively with Eagle Scout's +60% (~2.00× combined during overlap).",
         "vfxColor": "#aaccff",
         "vfxStyle": "SILVER_WALL_SHIMMER"
       }
@@ -194,10 +194,10 @@
         "level": 1,
         "id": "CORNU_CHARGE",
         "name": "Cornu Charge",
-        "cooldownSec": 8,
+        "cooldownSec": 6,
         "durationSec": 0,
         "params": { "target": "HIGHEST_HP_BOSS", "dmgMultiplier": 5.0, "ignoreResistances": true },
-        "description": "Pierces the highest-HP boss for 5x Scipio's normal attack damage. Ignores all resistances.",
+        "description": "Every 6s, pierces the highest-HP boss for 5x Scipio's normal attack damage. Ignores all resistances.",
         "vfxColor": "#ff8800",
         "vfxStyle": "RED_LANCE_ARC"
       },
@@ -241,9 +241,9 @@
     "biography": "Caesar did not wait for opportunity — he manufactured it. Under his command, Rome's defenders act faster, hit harder, and leave nothing alive that's already dying.",
     "passive": {
       "kind": "GLOBAL_AURA",
-      "dmgBonusPercent": 10,
-      "speedMultPercent": 10,
-      "description": "Every tower on the map permanently gains +10% damage and +10% attack speed. Stacks with all other aura towers."
+      "dmgBonusPercent": 8,
+      "speedMultPercent": 8,
+      "description": "Every tower on the map permanently gains +8% damage and +8% attack speed. Stacks with all other aura towers."
     },
     "abilities": [
       {
@@ -297,19 +297,20 @@
     "biography": "Sulla was famously lucky — he said so himself, and Rome believed him. On this field his luck translates into pyres and divine wrath: every nearby attack becomes flame, and on command every tower's strike becomes pure DIVINE.",
     "passive": {
       "kind": "DAMAGE_TYPE_CONVERSION",
-      "radiusTiles": 2,
+      "radiusTiles": 3,
       "convertTo": "ELEMENTAL_FIRE",
-      "description": "Every tower within 2 tiles of Sulla has its damage TYPE overridden to ELEMENTAL_FIRE — bronze gladii, javelins, ballista bolts, divine bolts, all become flaming attacks. Stacks under Proscription (Proscription's DIVINE override wins during its window, then falls back to the FIRE conversion)."
+      "dmgBonusPercent": 15,
+      "description": "Every tower within 3 tiles of Sulla has its damage TYPE overridden to ELEMENTAL_FIRE AND gains +15% damage — bronze gladii, javelins, ballista bolts, divine bolts all become flaming attacks that hit harder. Stacks under Proscription (Proscription's DIVINE override wins on type during its window, the +15% damage bonus remains active)."
     },
     "abilities": [
       {
         "level": 1,
         "id": "FORTUNES_BOLT",
         "name": "Fortune's Bolt",
-        "cooldownSec": 10,
+        "cooldownSec": 7,
         "durationSec": 0,
         "params": { "dmgMultiplier": 1.5 },
-        "description": "Fires a divine bolt at the nearest enemy in range, dealing 1.5× Sulla's basic-attack damage as DIVINE (bypasses every faction resistance).",
+        "description": "Fires a divine bolt at the nearest enemy in range every 7s, dealing 1.5× Sulla's basic-attack damage as DIVINE (bypasses every faction resistance).",
         "vfxColor": "#fff5cc",
         "vfxStyle": "WHITE_GOLD_BOLT"
       },

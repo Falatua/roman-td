@@ -328,15 +328,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // L10 caps at +27%. L1 only gives the probability shift, no damage.
   let globalDmgBonus = 0.03 * Math.max(0, (state.poolLevel ?? 0) - 1);
   let globalSpeedMult = 1;
-  // ── HERO PASSIVE AURAS (2026-05-19) ────────────────────────────────
-  // Caesar: +10% damage and +10% attack speed for every tower while
-  // he's active. Stacks with other aura sources (capped at the
-  // existing 2.00× AURA_CAP downstream).
-  // Scipio: +30% damage vs Bosses globally — applied later in the
-  // damage resolution loop where target.isBoss is known.
+  // ── HERO PASSIVE AURAS (2026-05-19, balance-tuned 2026-05-22 V19) ──
+  // Caesar: +8% damage and +8% attack speed for every tower while he's
+  // active (tuned 10→8 in V19 — the cohort balance audit had Caesar at
+  // 2.4× median DPS, this trim drops his global multiplier from 1.21×
+  // → 1.166× without erasing his role identity).
+  // Scipio: +25% damage vs Bosses globally — applied later in the
+  // damage resolution loop where target.isBoss is known. (Was +30% in
+  // earlier builds, tuned to +25% in commit ~f959055.)
   if (state.activeHeroId === 'HERO_CAESAR') {
-    globalDmgBonus += 0.10;
-    globalSpeedMult *= 1.10;
+    globalDmgBonus += 0.08;
+    globalSpeedMult *= 1.08;
   }
   const scipioActive = state.activeHeroId === 'HERO_SCIPIO';
   // Resolve hero tower position ONCE for per-tower local-aura checks
@@ -623,14 +625,18 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           && dh <= 3 * GRID.TILE) {
         dm *= 1.20;
       }
-      // 2026-05-20 v2 — SULLA PASSIVE REWORKED. Was: +35% damage aura
-      // to existing fire towers within 4 tiles. Now: every tower
-      // within 2 tiles has its damage TYPE overridden to
-      // ELEMENTAL_FIRE for damage resolution. The override happens
-      // at the per-attack site (effectiveDmgType assignment below
-      // around line 749) — this block left intentionally empty for
-      // Sulla so the legacy +35% rider no longer applies. Proscription
-      // ult still wins over the passive (DIVINE > FIRE override).
+      // 2026-05-22 V19 — SULLA PASSIVE BALANCE ADJUSTMENT. Original
+      // V92 rework dropped the damage rider entirely (TYPE-only), which
+      // left Sulla as the only hero whose passive contributed zero
+      // damage value to its aura targets. The balance audit (V19) put
+      // him as the weakest of the 6 by a wide margin. Restored as a
+      // smaller +15% rider on top of the FIRE conversion (not the old
+      // +35%) and bumped the radius from 2 → 3 tiles to match the
+      // other 3 local-aura heroes (Marius/Agrippa/Agricola all use 3).
+      // Type conversion still happens at the per-attack site below.
+      if (state.activeHeroId === 'HERO_SULLA' && dh <= 3 * GRID.TILE) {
+        dm *= 1.15;
+      }
     }
     // Marian Formation per-tower stamp: 3 nearest melee get +X% speed
     // + shared-crit access during the window. Crit comes from the
@@ -749,15 +755,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // 2026-05-19 — Proscription (Sulla Tier 2) overrides this attack's
       // damage type to DIVINE for the duration.
       let effectiveDmgType = t.damageType;
-      // 2026-05-20 v2 — SULLA PASSIVE: any tower within 2 tiles of the
+      // 2026-05-22 V19 — SULLA PASSIVE: any tower within 3 tiles of the
       // active Sulla hero converts its damage type to ELEMENTAL_FIRE
-      // for this attack. Applied BEFORE Proscription so the ult's
-      // DIVINE override still wins during its window. Skips the hero
-      // tower itself (Sulla is already FIRE; no-op). Skipped when
-      // Sulla isn't the active hero or his tower isn't placed yet.
+      // for this attack (bumped from 2 → 3 for cohort parity). The +15%
+      // damage rider is applied earlier in the aura loop, so this block
+      // only handles the type override. Applied BEFORE Proscription so
+      // the ult's DIVINE override still wins during its window. Skips
+      // the hero tower itself (Sulla is already FIRE; no-op). Skipped
+      // when Sulla isn't the active hero or his tower isn't placed yet.
       if (state.activeHeroId === 'HERO_SULLA' && heroTowerForAura && t.id !== heroTowerForAura.id) {
         const tcx2 = tilePxX(t), tcy2 = tilePxY(t);
-        if (Math.hypot(heroAuraCx - tcx2, heroAuraCy - tcy2) <= 2 * GRID.TILE) {
+        if (Math.hypot(heroAuraCx - tcx2, heroAuraCy - tcy2) <= 3 * GRID.TILE) {
           effectiveDmgType = DamageType.ELEMENTAL_FIRE;
         }
       }
