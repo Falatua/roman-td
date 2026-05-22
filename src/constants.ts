@@ -92,6 +92,13 @@ export const TIER_MULTS = {
   itemSlots: { 1: 1,   2: 2,    3: 3,    4: 4,    5: 5    } as Record<number, number>
 } as const;
 
+// 2026-05-21 — Hero towers override the per-tier slot count above and
+// always carry HERO_ITEM_SLOTS slots regardless of tier. Heroes lost
+// their tier-3 ability in the same pass — the slot bump is the
+// compensating power lever (build expression flows through gear
+// rather than waiting on the deleted ultimate cooldown).
+export const HERO_ITEM_SLOTS = 6;
+
 // Probability draw pool table (rows = pool level 0..8; cols T1..T5).
 // 20-WAVE CAMPAIGN (2026-05): trimmed from 11 rows to 9. Each step is
 // steeper than before so 8 levels still cover T1-dominant → T4/T5-apex.

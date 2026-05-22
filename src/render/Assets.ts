@@ -116,6 +116,71 @@ const MANIFEST: Record<string, string> = {
   GRASS_A: 'm_grass_a.png', GRASS_B: 'm_grass_b.png', BLOOD_GRASS: 'm_blood_grass.png',
   STONE_BLOCK: 'm_stone_block.png', BORDER_TREE: 'm_border_tree.png', BORDER_BOULDER: 'm_border_boulder.png',
   DARK_CAVE: 'm_dark_cave.png', ROMAN_GATE: 'm_roman_gate.png', ROMAN_GATE_DESTROYED: 'm_roman_gate_destroyed.png',
+  // 2026-05-21 — VISUAL OVERHAUL: late-biome decoration pack.
+  // 17 Roman shrine variants cropped from the user's reference sheets
+  // (12 from first sheet 2×6, 5 from second sheet 1×5). These read as
+  // ornate ruined Roman altars / banners / skull-wreathed standards
+  // — perfect anchors for BIOME_UNDEAD_RUINS + BIOME_HELLSCAPE.
+  MAP_SHRINE_0:  'map_overhaul/m_shrine_0.png',  MAP_SHRINE_1:  'map_overhaul/m_shrine_1.png',
+  MAP_SHRINE_2:  'map_overhaul/m_shrine_2.png',  MAP_SHRINE_3:  'map_overhaul/m_shrine_3.png',
+  MAP_SHRINE_4:  'map_overhaul/m_shrine_4.png',  MAP_SHRINE_5:  'map_overhaul/m_shrine_5.png',
+  MAP_SHRINE_6:  'map_overhaul/m_shrine_6.png',  MAP_SHRINE_7:  'map_overhaul/m_shrine_7.png',
+  MAP_SHRINE_8:  'map_overhaul/m_shrine_8.png',  MAP_SHRINE_9:  'map_overhaul/m_shrine_9.png',
+  MAP_SHRINE_10: 'map_overhaul/m_shrine_10.png', MAP_SHRINE_11: 'map_overhaul/m_shrine_11.png',
+  MAP_SHRINE_ALT_0: 'map_overhaul/m_shrine_alt_0.png',
+  MAP_SHRINE_ALT_1: 'map_overhaul/m_shrine_alt_1.png',
+  MAP_SHRINE_ALT_2: 'map_overhaul/m_shrine_alt_2.png',
+  MAP_SHRINE_ALT_3: 'map_overhaul/m_shrine_alt_3.png',
+  MAP_SHRINE_ALT_4: 'map_overhaul/m_shrine_alt_4.png',
+  // 2026-05-21 — Craftpix Free Undead Tileset (license: craftpix.net
+  // free file licenses). 16 curated decoration sprites for the undead
+  // biomes. Pure pixel-art top-down silhouettes with built-in shadows.
+  // Already on disk under public/assets/sprites/map_overhaul/.
+  DP_UNDEAD_BONES_A: 'map_overhaul/m_undead_bones_a.png',
+  DP_UNDEAD_BONES_B: 'map_overhaul/m_undead_bones_b.png',
+  DP_UNDEAD_BONES_C: 'map_overhaul/m_undead_bones_c.png',
+  DP_UNDEAD_GRAVE_A: 'map_overhaul/m_undead_grave_a.png',
+  DP_UNDEAD_GRAVE_B: 'map_overhaul/m_undead_grave_b.png',
+  DP_UNDEAD_GRAVE_C: 'map_overhaul/m_undead_grave_c.png',
+  DP_UNDEAD_DEAD_TREE_A: 'map_overhaul/m_undead_dead_tree_a.png',
+  DP_UNDEAD_DEAD_TREE_B: 'map_overhaul/m_undead_dead_tree_b.png',
+  DP_UNDEAD_BROKEN_TREE: 'map_overhaul/m_undead_broken_tree.png',
+  DP_UNDEAD_RUIN_A: 'map_overhaul/m_undead_ruin_a.png',
+  DP_UNDEAD_RUIN_B: 'map_overhaul/m_undead_ruin_b.png',
+  DP_UNDEAD_RUIN_C: 'map_overhaul/m_undead_ruin_c.png',
+  DP_UNDEAD_SKULL_PILE_A: 'map_overhaul/m_undead_skull_pile_a.png',
+  DP_UNDEAD_SKULL_PILE_B: 'map_overhaul/m_undead_skull_pile_b.png',
+  DP_UNDEAD_ROCK: 'map_overhaul/m_undead_rock.png',
+  DP_UNDEAD_THORN: 'map_overhaul/m_undead_thorn.png',
+  DP_UNDEAD_PLANT: 'map_overhaul/m_undead_plant.png',
+  // 2026-05-21 V9 — Additional craftpix variants for more decoration
+  // diversity across the 3 undead biomes (W11-15, W16-18, W19-20).
+  DP_UNDEAD_BONES_D: 'map_overhaul/m_undead_bones_d.png',
+  DP_UNDEAD_BONES_E: 'map_overhaul/m_undead_bones_e.png',
+  DP_UNDEAD_BONES_F: 'map_overhaul/m_undead_bones_f.png',
+  DP_UNDEAD_CRYSTAL_A: 'map_overhaul/m_undead_crystal_a.png',
+  DP_UNDEAD_CRYSTAL_B: 'map_overhaul/m_undead_crystal_b.png',
+  DP_UNDEAD_CRYSTAL_C: 'map_overhaul/m_undead_crystal_c.png',
+  DP_UNDEAD_DEAD_ARM_A: 'map_overhaul/m_undead_dead_arm_a.png',
+  DP_UNDEAD_DEAD_ARM_B: 'map_overhaul/m_undead_dead_arm_b.png',
+  DP_UNDEAD_DEAD_ARM_C: 'map_overhaul/m_undead_dead_arm_c.png',
+  DP_UNDEAD_GRAVE_D: 'map_overhaul/m_undead_grave_d.png',
+  DP_UNDEAD_GRAVE_E: 'map_overhaul/m_undead_grave_e.png',
+  DP_UNDEAD_GRAVE_F: 'map_overhaul/m_undead_grave_f.png',
+  DP_UNDEAD_DEAD_TREE_C: 'map_overhaul/m_undead_dead_tree_c.png',
+  DP_UNDEAD_DEAD_TREE_D: 'map_overhaul/m_undead_dead_tree_d.png',
+  DP_UNDEAD_BROKEN_TREE_B: 'map_overhaul/m_undead_broken_tree_b.png',
+  DP_UNDEAD_ROCK_B: 'map_overhaul/m_undead_rock_b.png',
+  DP_UNDEAD_ROCK_C: 'map_overhaul/m_undead_rock_c.png',
+  DP_UNDEAD_RUIN_D: 'map_overhaul/m_undead_ruin_d.png',
+  DP_UNDEAD_RUIN_E: 'map_overhaul/m_undead_ruin_e.png',
+  DP_UNDEAD_SKULL_PILE_C: 'map_overhaul/m_undead_skull_pile_c.png',
+  DP_UNDEAD_PLANT_B: 'map_overhaul/m_undead_plant_b.png',
+  DP_UNDEAD_THORN_B: 'map_overhaul/m_undead_thorn_b.png',
+  // Skull-doors — candidate undead-cave entrance sprites.
+  MAP_CAVE_UNDEAD_DOOR_A: 'map_overhaul/m_cave_undead_door_a.png',
+  MAP_CAVE_UNDEAD_DOOR_B: 'map_overhaul/m_cave_undead_door_b.png',
+  MAP_CAVE_UNDEAD_DOOR_C: 'map_overhaul/m_cave_undead_door_c.png',
   // Waypoints
   WP1: 'w_wp1_aquila.png', WP2: 'w_wp2_laurel.png', WP3: 'w_wp3_spqr.png',
   WP4: 'w_wp4_shewolf.png', WP5: 'w_wp5_fasces.png', WP6: 'w_wp6_jupiter.png',
@@ -541,6 +606,13 @@ function isCriticalAsset(file: string): boolean {
   // briefly flicker if the player is quick — and these sprites are
   // small (~1MB each, six total).
   if (/(\/|^)heroes\//.test(file)) return true;
+  // 2026-05-21 — Visual overhaul map sprites must be critical so the
+  // biome decoration, shrines, and skull-door caves all appear on the
+  // first frame after wave start. Otherwise the player would see the
+  // old DARK_CAVE / sparse decor briefly before deferred load kicks
+  // in. The map_overhaul/ subdirectory holds the new shrine, undead
+  // prop, and skull-door sprites.
+  if (/(\/|^)map_overhaul\//.test(file)) return true;
   return /^(m_|w_|t1_|t2_|e1_|p_|s_|u_|ab_|eb_|t_new_)/.test(file);
 }
 

@@ -564,10 +564,6 @@
     "tier": 4,
     "ingredients": [
       {
-        "type": "VENATOR",
-        "minTier": 3
-      },
-      {
         "type": "IGNIFER",
         "minTier": 3
       },
@@ -596,10 +592,6 @@
       },
       {
         "type": "VULCAN_ENGINEER",
-        "minTier": 5
-      },
-      {
-        "type": "IMPERATOR_GUARD",
         "minTier": 5
       },
       {

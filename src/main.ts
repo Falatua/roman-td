@@ -1078,6 +1078,9 @@ async function boot() {
     // than chipping continuously across the full path.
     if (enemiesInWave.has('CELTIC_BERSERKER') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('UNDEAD_SPEARMAN')) enemyCallouts.push({ text: '🩸 CHECKPOINT HEAL · enemies regen 15% maxHP every checkpoint coin they cross — kill BEFORE the next coin or reset', cat: 'ENEMY' });
     if (enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '⚱ AURA NULLIFIER · Architectus silences every tower aura within 2 tiles while present. Move aura towers (Eagle Standard, Cohort Guard, Triumvirate, banner items) off the path so they keep buffing', cat: 'ENEMY' });
+    // 2026-05-21 — Ambush stealth + presence-silence aura callouts.
+    if (enemiesInWave.has('CARTHAGE_SPEARMAN') || enemiesInWave.has('UNDEAD_BERSERKER')) enemyCallouts.push({ text: '🥷 AMBUSH STEALTH · Carthage Spearman / Undead Berserker spawning in the first 15s of this wave are UNTARGETABLE (40% alpha). At the 15s mark every alive instance becomes visible at once — be ready for the emergence wave. Spawns past 15s are normally visible.', cat: 'ENEMY' });
+    if (enemiesInWave.has('ZOMBIE_DRUID') || enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '🤫 SILENCE AURA · Zombie Druid / Architectus silence every tower within 1.5 tiles while in range (pink X-mark). The silence ends ~0.6s after they walk past. Plant your power towers OFF the path so the aura misses.', cat: 'ENEMY' });
     const allLines = [...briefLines, ...enemyCallouts];
     // 2026-05-15 v9: the brief used to remove itself when there were no
     // mechanic callouts. Now that we also show the per-wave ARMOR strip
@@ -1654,7 +1657,7 @@ async function boot() {
     });
     if (hasRegen) tips.push({
       headline: '💚 THEY HEAL WHEN YOU BLINK',
-      body: `Wave <b>${nextWave}</b> has enemies that <b style="color:#ff5050">regenerate the moment you stop hitting them</b>. Apply constant pressure. DoTs (<b style="color:#ffd34d">Burn</b>, <b style="color:#ffd34d">Poison</b>, <b style="color:#ffd34d">Bleed</b>) count as damage and shut regen off — keep at least one DoT on every priority target.`,
+      body: `Wave <b>${nextWave}</b> has enemies that <b style="color:#ff5050">regenerate the moment you stop hitting them</b>. Apply constant pressure. DoTs (<b style="color:#ffd34d">Burn</b>, <b style="color:#ffd34d">Poison</b>, <b style="color:#ffd34d">Bleed</b>, <b style="color:#ffd34d">Hellfire</b>) count as damage and <b style="color:#88ff88">halve regen rate</b> — a DoT alone no longer fully blocks healing, so pair DoT with direct damage to actually break a regen boss.`,
       color: '#88dd88'
     });
     if (isDecade && !isBossWave) tips.push({
@@ -3688,10 +3691,11 @@ async function boot() {
     resnapEnemiesToPath: (path) => resnapEnemiesToPath(state, path),
     // 2026-05-19 v2 — per-ability signature VFX dispatcher. Forwards
     // to the renderer's triggerHeroAbilityFx, which routes by ability
-    // id to one of 18 unique shape renderers (laurel wreath for
-    // TRIUMPH, dagger stabs for IDES_OF_MARCH, eagle squadron fan,
-    // etc.). All shape data is consumed via the spec's `extras` field
-    // so we don't have to widen the hook shape per ability.
+    // id to one of 12 unique shape renderers (purple rank line for
+    // MARIAN_FORMATION, javelin fan for PILUM_VOLLEY, silver mark
+    // burst for EAGLE_SCOUT, etc.). All shape data is consumed via
+    // the spec's `extras` field so we don't have to widen the hook
+    // shape per ability.
     triggerHeroAbilityFx: (spec) => renderer.triggerHeroAbilityFx?.(spec)
   };
   // 2026-05-16 — give the renderer access to the gore particle pool so
@@ -3966,6 +3970,11 @@ async function boot() {
         bossRuntime = createBossRuntime();
         bossLegendaryDropped = false;
         waveStartTick = state.tick;
+        // 2026-05-21 — Mirror on state so EnemySystem.tickEnemies can
+        // read wave-elapsed-time without adding a parameter. Used by
+        // the ambushStealth check (untargetable for first N seconds
+        // of each wave).
+        (state as any).__waveStartTick = state.tick;
         if (mercatorActive) {
           dismissMercatorVisit();
           mercatorActive = false;
@@ -5312,7 +5321,7 @@ async function boot() {
       // cooldown stamps off (heroTower as any).__heroCooldowns and
       // fires each ability when its tier is unlocked and its
       // cooldown has elapsed. Drains state.__heroTimedEvents
-      // (Triarii Wall revert, Ides of March execute pulse).
+      // (Triarii Wall revert).
       tickHeroAbilities(state, heroSystemHooks);
       tickBurnPatches(state, dt);
       tickBossHazards(state, dt);
@@ -5404,14 +5413,14 @@ async function boot() {
           // at line ~5384) knows the firing tower and routes through
           // it. That path is bypassed for kills that DON'T go through
           // a tower projectile:
-          //   • Hero ability instakills (Aquila Squadron, Cornu Charge,
-          //     Carthago Delenda Est, Pilum Volley, Sulla's March,
-          //     Ides of March execute, Naval Bombardment splash)
+          //   • Hero ability instakills (Cornu Charge, Carthago Delenda
+          //     Est, Pilum Volley splash, Naval Bombardment splash)
           //   • Pure-DoT kills (burn / bleed / poison / hellfire chip)
           //
-          // Without this branch, a Caesar player who triggers Ides of
-          // March and executes 20 enemies would earn ZERO hero XP for
-          // the wipe AND those kills wouldn't count toward `totalKills`
+          // Without this branch, a Scipio player who triggers Carthago
+          // Delenda Est and shaves bosses below zero would earn ZERO
+          // hero XP for the wipe AND those kills wouldn't count toward
+          // `totalKills`
           // (quest tracker) or `bossesKilled` (boss-related quests).
           // We dedupe via `e.__heroXpAwarded` so tower-attributed kills
           // that already credited everything via onKill don't double-pay.
@@ -5893,12 +5902,12 @@ async function boot() {
             heroAwardXp(state, !!e.isBoss, heroSystemHooks);
             (e as any).__heroXpAwarded = true;
           }
-          // 2026-05-20 — Sulla's Fortune's Bolt + Sulla's March gate-
-          // heal mechanic was retired per design ask ("get rid of the
-          // part where Sulla can restore lives"). Both abilities still
-          // fire — Fortune's Bolt deals 1.5× damage as DIVINE, Sulla's
-          // March mass-executes below-threshold non-bosses — but
-          // neither contributes lives to the player any more.
+          // 2026-05-20 — Sulla's Fortune's Bolt gate-heal mechanic was
+          // retired per design ask ("get rid of the part where Sulla
+          // can restore lives"). Fortune's Bolt still fires — deals
+          // 1.5× damage as DIVINE — but it no longer pays a life on
+          // the killing blow. Sulla's March (tier-3) was also deleted
+          // in the 2026-05-21 hero pass.
           // BOSS-KILL gold bonus — extra reward separate from wave-end gold.
           // Scales with wave so late-game bosses pay proper bounties.
           if (e.isBoss) {

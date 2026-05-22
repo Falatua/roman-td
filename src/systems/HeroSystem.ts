@@ -1,5 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────
-// HERO SYSTEM — 6 heroes, 3-card draft, kill-based XP, auto-pulse abilities.
+// HERO SYSTEM — 6 heroes, all-6 horizontal-scroll draft, kill-based XP,
+// auto-pulse abilities.
 //
 // Architecture: every numeric value (XP threshold, ability cooldown, aura
 // radius, banner copy) lives in src/data/herodefs.json. This module reads
@@ -7,7 +8,7 @@
 // edit the JSON file only; this file is mechanical wiring.
 //
 // Public API consumed by main.ts:
-//   - draftHeroChoices(lastHeroId)     : pick 3 of 6 via Fisher-Yates
+//   - draftHeroChoices(lastHeroId)     : returns all 6 (shuffled order)
 //   - pickHero(state, heroId)          : commit selection + queue placement
 //   - awardHeroXp(state, isBoss)       : called from kill handler
 //   - getHeroTier(state)               : current tier 0..4
@@ -28,7 +29,9 @@ import { pushStatus } from './CombatResolver';
 import { setTile } from './GridManager';
 import { buildGroundPath } from './PathFinder';
 
-// 6-hero pool (locked design). The draft picks 3 of these per run.
+// 6-hero pool (locked design). The draft surfaces ALL 6 every run
+// (shuffled for a fresh layout) — players choose freely from the full
+// roster instead of being handed a random subset.
 export const HERO_POOL = [
   'HERO_MARIUS',
   'HERO_AGRIPPA',
@@ -102,11 +105,12 @@ export function heroForgeMagnitudeMult(state: GameStateShape): number {
 /**
  * Scale all numeric MAGNITUDE-shape fields in an ability's params by the
  * supplied multiplier. Skips integer COUNT fields (game-design integers
- * like javelinCount/eagleCount), boolean flags, string overrides, and
+ * like javelinCount/shellCount), boolean flags, string overrides, and
  * the `lifetimeHealCap` static cap. `bossSpeedMultiplier` is inverse-
- * scaled (divided) so a higher EMPOWER stack slows bosses MORE during
- * Scipio's Zama window. Pure function — returns a new object so caller
- * can safely use it without mutating the JSON-loaded source.
+ * scaled (divided) — kept as a generic inverse-key handler in case
+ * future abilities use a slow-bosses-more shape. Pure function —
+ * returns a new object so caller can safely use it without mutating
+ * the JSON-loaded source.
  */
 export function scaleParams(params: any, magnitudeMult: number): any {
   if (!params || magnitudeMult === 1) return params;
@@ -131,14 +135,24 @@ export function scaleParams(params: any, magnitudeMult: number): any {
 
 // ─── Public API ──────────────────────────────────────────────────────
 
-/** Fisher-Yates shuffle the 6-pool, return the first 3. Pure function. */
+/**
+ * Fisher-Yates shuffle the 6-pool and return all 6. Pure function.
+ *
+ * 2026-05-21 — Used to slice to 3 random heroes; now returns the full
+ * roster every time. The horizontal-scroll picker in ChooseHeroModal
+ * lets the player browse the entire lineup and pick whichever hero
+ * fits their planned build, removing the "the RNG didn't give me my
+ * hero" frustration. Shuffle preserved so the display order still
+ * varies run-to-run — a fresh layout reads differently even when the
+ * cast is fixed.
+ */
 export function draftHeroChoices(_lastHeroId?: string | null): HeroId[] {
   const pool = [...HERO_POOL] as HeroId[];
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  return pool.slice(0, 3);
+  return pool;
 }
 
 /** Commit hero selection. Queues the hero as a placement token. */
@@ -236,15 +250,8 @@ export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): voi
     dispatchAbility(state, hero, ability, hooks);
   }
 
-  // Drain timed events (Triarii Wall revert, eagle expiry, etc.)
+  // Drain timed events (Triarii Wall revert).
   tickHeroTimedEvents(state, hooks);
-
-  // 2026-05-19 — Spectral eagle ticker. Agricola's tier-3 ult populates
-  // __spectralEagles in executeAQUILA_SQUADRON but without this consumer
-  // the eagles just sat on state and never killed anything. Each eagle
-  // homes toward the nearest live flyer, instakills on contact, retires
-  // after killsPerEagle hits or the expiry tick — whichever lands first.
-  tickSpectralEagles(state, hooks);
 }
 
 // ─── Ability dispatch ────────────────────────────────────────────────
@@ -260,27 +267,21 @@ function dispatchAbility(state: GameStateShape, hero: Tower, ability: any, hooks
     // MARIUS
     case 'MARIAN_FORMATION':   return executeMARIAN_FORMATION(state, hero, params, ability, hooks);
     case 'TRIARII_WALL':       return executeTRIARII_WALL(state, hero, params, ability, hooks);
-    case 'TRIUMPH':            return executeTRIUMPH(state, hero, params, ability, hooks);
     // AGRIPPA
     case 'PILUM_VOLLEY':       return executePILUM_VOLLEY(state, hero, params, ability, hooks);
     case 'NAVAL_BOMBARDMENT':  return executeNAVAL_BOMBARDMENT(state, hero, params, ability, hooks);
-    case 'BATTLE_OF_ACTIUM':   return executeBATTLE_OF_ACTIUM(state, hero, params, ability, hooks);
     // AGRICOLA
     case 'EAGLE_SCOUT':        return executeEAGLE_SCOUT(state, hero, params, ability, hooks);
     case 'FRONTIER_WALL':      return executeFRONTIER_WALL(state, hero, params, ability, hooks);
-    case 'AQUILA_SQUADRON':    return executeAQUILA_SQUADRON(state, hero, params, ability, hooks);
     // SCIPIO
     case 'CORNU_CHARGE':       return executeCORNU_CHARGE(state, hero, params, ability, hooks);
-    case 'CARTHAGO_DELENDA_EST': return executeCARTHAGO_DELENDA_EST(state, hero, params, ability, hooks);
-    case 'ZAMA':               return executeZAMA(state, hero, params, ability, hooks);
+    case 'SCIPIO_BRAND':       return executeSCIPIO_BRAND(state, hero, params, ability, hooks);
     // CAESAR
     case 'SPQR_DECREE':        return executeSPQR_DECREE(state, hero, params, ability, hooks);
     case 'PAX_ROMANA':         return executePAX_ROMANA(state, hero, params, ability, hooks);
-    case 'IDES_OF_MARCH':      return executeIDES_OF_MARCH(state, hero, params, ability, hooks);
     // SULLA
     case 'FORTUNES_BOLT':      return executeFORTUNES_BOLT(state, hero, params, ability, hooks);
     case 'PROSCRIPTION':       return executePROSCRIPTION(state, hero, params, ability, hooks);
-    case 'SULLAS_MARCH':       return executeSULLAS_MARCH(state, hero, params, ability, hooks);
   }
 }
 
@@ -313,8 +314,9 @@ function heroBasicAttackDamage(state: GameStateShape, hero: Tower): number {
 // ─── Ability executors ──────────────────────────────────────────────
 //
 // Each executor implements the ability's mechanic. State-flag windows
-// (e.g. __triumphUntilTick) are read by CombatResolver and EnemySystem
-// to modulate damage / speed / status during the active window.
+// (e.g. __frontierWallUntilTick) are read by CombatResolver and
+// EnemySystem to modulate damage / speed / status during the active
+// window.
 //
 // Visual flair: each ability fires a triggerImpactRing on the hero's
 // tile at minimum. Richer per-style VFX (sweeps, screen flashes,
@@ -409,18 +411,6 @@ function executeTRIARII_WALL(state: GameStateShape, hero: Tower, params: any, ab
   });
 }
 
-function executeTRIUMPH(state: GameStateShape, _hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
-  const dur = ability.durationSec ?? 8;
-  (state as any).__triumphUntilTick = state.tick + dur;
-  // Stamp the damage multiplier so CombatResolver can read it.
-  (state as any).__triumphMeleeDmgMult = 1 + (params.meleeDmgMultPercent ?? 100) / 100;
-  // Signature VFX: massive purple laurel-wreath ring + golden sparks
-  // rising up. Reads as "Roman triumph parade."
-  const hero = findHeroTower(state) ?? _hero;
-  fireAbilityFx(hero, hooks, state.tick, ability, '#cc44ff', 1.2, null);
-  hooks?.triggerShake?.(2.5, 0.5);
-}
-
 // ── AGRIPPA ──
 
 function executePILUM_VOLLEY(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
@@ -468,18 +458,6 @@ function executeNAVAL_BOMBARDMENT(state: GameStateShape, hero: Tower, params: an
   hooks?.triggerShake?.(2.0, 0.35);
 }
 
-function executeBATTLE_OF_ACTIUM(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
-  // 2026-05-19 — Wire the JSON-declared rangedShotMultiplier through so
-  // tuning passes can edit herodefs.json without code changes. Prior
-  // version hardcoded 2.0 and silently ignored the params value.
-  (state as any).__actiumUntilTick = state.tick + (ability.durationSec ?? 8);
-  (state as any).__actiumRangedSpeedMult = params.rangedShotMultiplier ?? 2.0;
-  // Signature VFX: teal banner-ripple sweeping outward in concentric
-  // waves with a vertical banner accent above each wave.
-  fireAbilityFx(hero, hooks, state.tick, ability, '#0077ff', 1.0, null);
-  hooks?.triggerShake?.(3.0, 0.6);
-}
-
 // ── AGRICOLA ──
 
 function executeEAGLE_SCOUT(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
@@ -508,28 +486,6 @@ function executeFRONTIER_WALL(state: GameStateShape, hero: Tower, params: any, a
   fireAbilityFx(hero, hooks, state.tick, ability, '#aaccff', 1.4, null);
 }
 
-function executeAQUILA_SQUADRON(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
-  const count = params.eagleCount ?? 4;
-  const maxKills = params.killsPerEagle ?? 6;
-  const dur = params.eagleDurationSec ?? 12;
-  (state as any).__spectralEagles = (state as any).__spectralEagles ?? [];
-  for (let i = 0; i < count; i++) {
-    (state as any).__spectralEagles.push({
-      id: `eagle-${state.tick}-${i}`,
-      killCount: 0,
-      maxKills,
-      expiresAtTick: state.tick + dur,
-      // Eagles spawn at hero position, move toward nearest flyer each frame
-      x: hero.tileX * GRID.TILE + GRID.TILE / 2,
-      y: hero.tileY * GRID.TILE + GRID.TILE / 2,
-    });
-  }
-  // Signature VFX: 6 golden eagle silhouettes burst outward from
-  // Agricola in a fan. Central ring at origin.
-  fireAbilityFx(hero, hooks, state.tick, ability, '#ffffff', 0.9, null);
-  hooks?.triggerShake?.(3.0, 0.5);
-}
-
 // ── SCIPIO ──
 
 function executeCORNU_CHARGE(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
@@ -548,36 +504,34 @@ function executeCORNU_CHARGE(state: GameStateShape, hero: Tower, params: any, ab
   });
 }
 
-function executeCARTHAGO_DELENDA_EST(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
-  const pct = (params.maxHpTrueDmgPercent ?? 10) / 100;
-  // Stamp X marks on each boss as the visual + record their positions
-  // so the signature VFX can draw across each one.
+function executeSCIPIO_BRAND(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
+  // 2026-05-21 — Replaced CARTHAGO_DELENDA_EST. The previous ability
+  // dealt 10% maxHP TRUE damage to every boss — an instant percent-of-
+  // health chunk that read as an execute-flavored mechanic ("instantly
+  // loses 10% maxHP, bypasses all resistances"). The replacement is a
+  // pure debuff: every boss on the field receives a MARK status for
+  // the ability's `durationSec` with magnitude `dmgTakenIncreasePercent`.
+  // No direct damage, no resistance bypass, no execute energy. The mark
+  // is read by CombatResolver.ts:809 on every direct hit and multiplies
+  // damage by (1 + magnitude). Stacks WITH Scipio's +25% boss passive
+  // (separate damage line) and with FREEZE/STUN amp (also separate).
+  const dur = ability.durationSec ?? 6;
+  const mag = (params.dmgTakenIncreasePercent ?? 30) / 100;
   const bossPositions: Array<{ x: number; y: number }> = [];
   for (const e of state.enemies.values()) {
     if (!e.isBoss) continue;
-    const shave = Math.floor(e.maxHp * pct);
-    e.hp = Math.max(0, e.hp - shave);
+    pushStatus(e, StatusEffectKind.MARK, dur, mag, hero.qualityTier);
     bossPositions.push({ x: e.x, y: e.y });
   }
   if (bossPositions.length > 0) {
-    // Signature VFX: red X destruction mark slashes across each boss,
-    // plus a Scipio-origin SPQR seal ring.
+    // Signature VFX: red banner brand on each boss + Scipio-origin
+    // ring sweep. Re-uses the per-target `extras.target` payload the
+    // CARTHAGO_DELENDA_EST renderer already drew across each boss.
     for (const pos of bossPositions) {
       fireAbilityFx(hero, hooks, state.tick, ability, '#ff4400', 0.8, { target: pos });
     }
-    hooks?.triggerShake?.(3.5, 0.6);
+    hooks?.triggerShake?.(2.5, 0.4);
   }
-}
-
-function executeZAMA(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
-  const dur = ability.durationSec ?? 6;
-  (state as any).__zamaUntilTick = state.tick + dur;
-  (state as any).__zamaTowerVsBossDmgMult = params.towerDmgVsBossMultiplier ?? 2.0;
-  (state as any).__zamaBossSpeedMult = params.bossSpeedMultiplier ?? 0.5;
-  // Signature VFX: massive blood-red battlefield ring with crossed-gladii
-  // icons at four cardinal positions, gold pommel dots — "famous battle"
-  fireAbilityFx(hero, hooks, state.tick, ability, '#c87822', 1.4, null);
-  hooks?.triggerShake?.(4.0, 0.7);
 }
 
 // ── CAESAR ──
@@ -606,37 +560,6 @@ function executePAX_ROMANA(state: GameStateShape, hero: Tower, params: any, abil
   // with a slow drift + a pulsing ring at Caesar — "Roman roads quiet
   // the field."
   fireAbilityFx(hero, hooks, state.tick, ability, '#ffe066', 1.6, null);
-}
-
-function executeIDES_OF_MARCH(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
-  const dur = ability.durationSec ?? 6;
-  (state as any).__idesUntilTick = state.tick + dur;
-  (state as any).__idesTowerSpeedMult = params.towerSpeedMultiplier ?? 2.0;
-  // Schedule the execute pulse at the END of the window.
-  scheduleHeroTimedEvent(state, state.tick + dur, () => {
-    const threshold = (params.executeThresholdPercent ?? 20) / 100;
-    for (const e of state.enemies.values()) {
-      if (e.isBoss) continue;
-      if (e.hp / Math.max(1, e.maxHp) < threshold) e.hp = 0;
-    }
-    // Re-fire the dagger animation at the end of the window so the
-    // execute moment also gets a strong VFX beat.
-    const heroNow = findHeroTower(state);
-    if (heroNow) {
-      hooks?.triggerHeroAbilityFx?.({
-        ability: 'IDES_OF_MARCH',
-        x: heroNow.tileX * GRID.TILE + GRID.TILE / 2,
-        y: heroNow.tileY * GRID.TILE + GRID.TILE / 2,
-        tick: state.tick,
-        life: 0.9,
-        color: 0xffe066
-      });
-    }
-  });
-  // Signature VFX: gold-white screen flash + 7 dagger stab lines
-  // converging on Caesar's tile from the surrounding senators.
-  fireAbilityFx(hero, hooks, state.tick, ability, '#ffe066', 1.1, null);
-  hooks?.triggerShake?.(5.0, 0.8);
 }
 
 // ── SULLA ──
@@ -683,34 +606,7 @@ function executePROSCRIPTION(state: GameStateShape, hero: Tower, _params: any, a
   fireAbilityFx(hero, hooks, state.tick, ability, '#ff9900', 1.2, { towers: towerPositions });
 }
 
-function executeSULLAS_MARCH(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
-  const threshold = (params.executeThresholdPercent ?? 20) / 100;
-  // Execute any non-boss enemy below the threshold. The mass-execute
-  // is the ability's load-bearing effect — wipes the wave's chaff
-  // and resets the player's targeting picture. Below-threshold bosses
-  // are intentionally exempt so the ability doesn't trivialize the
-  // wave-5/10/15/20 boss kills.
-  for (const e of state.enemies.values()) {
-    if (e.isBoss) continue;
-    if (e.hp / Math.max(1, e.maxHp) < threshold) e.hp = 0;
-  }
-  // 2026-05-20 — Gate-heal removed per design ask ("get rid of the
-  // part where Sulla can restore lives"). The mass execute + Path C
-  // EMPOWER scaling on the threshold are now the entire payload of
-  // this ability. healGateAmount + lifetimeHealCap remain in the
-  // herodefs JSON (still scaled by EMPOWER) but the resolver no
-  // longer reads them.
-  // 2026-05-20 — VFX trimmed. Was a white-gold light column over
-  // Sulla PLUS a heal-cross above the gate tile. Heal-cross removed
-  // when the gate-heal mechanic was retired — drawing a heal cross
-  // when nothing heals confuses the player about what the ability
-  // does. Now: column-over-Sulla + crossed-swords flourish only,
-  // matching the pure execute identity.
-  fireAbilityFx(hero, hooks, state.tick, ability, '#ffffff', 1.4, null);
-  hooks?.triggerShake?.(4.0, 0.7);
-}
-
-// ─── Timed events (Triarii Wall revert, Ides delayed execute) ────────
+// ─── Timed events (Triarii Wall revert) ────────
 
 interface HeroTimedEvent { atTick: number; action: () => void; }
 
@@ -734,70 +630,6 @@ function tickHeroTimedEvents(state: GameStateShape, _hooks?: HeroHooks): void {
   }
 }
 
-// Eagle shape stored on state.__spectralEagles. Kept as a private
-// interface here so the rest of the code can treat the array as opaque.
-interface SpectralEagle {
-  id: string;
-  killCount: number;
-  maxKills: number;
-  expiresAtTick: number;
-  x: number;
-  y: number;
-}
-
-function tickSpectralEagles(state: GameStateShape, hooks?: HeroHooks): void {
-  const eagles: SpectralEagle[] | undefined = (state as any).__spectralEagles;
-  if (!eagles || eagles.length === 0) return;
-
-  // Eagle homing speed in world-units per tick. Roughly 1 tile per 8
-  // ticks at the canonical 60 fps. Fast enough that flyers can't
-  // outrun them once locked, slow enough that the VFX reads as a
-  // chasing eagle rather than a teleport-strike.
-  const SPEED = (GRID.TILE / 8);
-  const CONTACT_R = GRID.TILE * 0.45;
-  const remaining: SpectralEagle[] = [];
-
-  for (const eagle of eagles) {
-    // Retire on expiry OR kills exhausted.
-    if (state.tick >= eagle.expiresAtTick) continue;
-    if (eagle.killCount >= eagle.maxKills) continue;
-
-    // Pick nearest live flyer. Fall back to drifting forward if no
-    // flyers are around — the eagle just floats until one spawns.
-    let nearest: Enemy | null = null;
-    let nearestD = Infinity;
-    for (const e of state.enemies.values()) {
-      if (!e.isFlyer || e.hp <= 0) continue;
-      const d = Math.hypot(e.x - eagle.x, e.y - eagle.y);
-      if (d < nearestD) { nearestD = d; nearest = e; }
-    }
-
-    if (nearest && nearestD <= CONTACT_R) {
-      // Instakill the flyer in-place. Damage zeroes HP so the existing
-      // kill handler in main.ts sees it on the next pass and emits XP /
-      // gold / banner / VFX as usual.
-      nearest.hp = 0;
-      eagle.killCount++;
-      if (hooks?.triggerImpactRing) {
-        hooks.triggerImpactRing(nearest.x, nearest.y, state.tick, 32, 0xffffff);
-      }
-    } else if (nearest) {
-      // Home toward it. Normalize the delta vector by remaining distance
-      // so we move SPEED per tick regardless of how far the flyer is.
-      const dx = nearest.x - eagle.x;
-      const dy = nearest.y - eagle.y;
-      const inv = 1 / (Math.hypot(dx, dy) || 1);
-      eagle.x += dx * inv * SPEED;
-      eagle.y += dy * inv * SPEED;
-    }
-    // (No flyers: eagle holds position — would be visually weird if it
-    //  drifted off-map. Hold pose is fine and matches "circling overhead".)
-
-    remaining.push(eagle);
-  }
-  (state as any).__spectralEagles = remaining;
-}
-
 // ─── Utilities ──────────────────────────────────────────────────────
 
 function pickHighestHpEnemies(state: GameStateShape, n: number): Enemy[] {
@@ -817,8 +649,7 @@ function fireImpactRing(hero: Tower, hooks: HeroHooks | undefined, tick: number,
 // animation on the renderer. Falls back to a generic impact ring when
 // the hook isn't wired (test env / pre-renderer init). The `extras`
 // payload rides the ability-specific data — target lists for VOLLEY +
-// EAGLE_SCOUT, tower lists for SPQR_DECREE + PROSCRIPTION, the gate
-// position for SULLAS_MARCH, etc. Each renderer reads only what its
+// EAGLE_SCOUT, tower lists for SPQR_DECREE + PROSCRIPTION, etc. Each renderer reads only what its
 // ability cares about, so passing undefined/null for unrelated fields
 // is fine.
 function fireAbilityFx(

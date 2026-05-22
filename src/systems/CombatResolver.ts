@@ -640,21 +640,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const sMult = (t as any).__marianSpeedMult ?? 1.0;
       sm *= sMult;
     }
-    // Ides of March window: every tower fires at double speed.
-    const idesUntil = (state as any).__idesUntilTick ?? 0;
-    if (state.tick < idesUntil) {
-      sm *= (state as any).__idesTowerSpeedMult ?? 2.0;
-    }
-    // Battle of Actium window: siege towers fire double shots
-    // (same effect via 2× attack speed; resMod=1 for siege is set
-    // in the per-shot damage path so resistances are bypassed too).
-    // 2026-05-19 — Filter swapped PHYS_RANGED → SIEGE alongside the
-    // Agrippa damage-type rebalance.
-    const actiumLocalUntil = (state as any).__actiumUntilTick ?? 0;
-    if (state.tick < actiumLocalUntil && t.damageType === DamageType.SIEGE) {
-      sm *= (state as any).__actiumRangedSpeedMult ?? 2.0;
-    }
-    // Cap the aggregate aura multipliers at 2.00× (max +100% bonus).
+    // 2026-05-21 — Tier-3 ability windows removed (Ides of March,
+    // Battle of Actium). Their speed-multiplier readers used to live
+    // here; deleted with the abilities. Cap the aggregate aura
+    // multipliers at 2.00× (max +100% bonus).
     if (dm > AURA_CAP) dm = AURA_CAP;
     if (sm > AURA_CAP) sm = AURA_CAP;
     towerDmgMult.set(t.id, dm);
@@ -758,9 +747,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const perAttackBase = towerPerAttackDamageBase(t);
       const armorShred = target.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED);
       // 2026-05-19 — Proscription (Sulla Tier 2) overrides this attack's
-      // damage type to DIVINE for the duration. Battle of Actium (Agrippa
-      // Tier 3) sets resMod = 1 on ranged shots to bypass faction
-      // resistances entirely.
+      // damage type to DIVINE for the duration.
       let effectiveDmgType = t.damageType;
       // 2026-05-20 v2 — SULLA PASSIVE: any tower within 2 tiles of the
       // active Sulla hero converts its damage type to ELEMENTAL_FIRE
@@ -777,12 +764,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const proscriptionUntil = (state as any).__proscriptionUntilTick ?? 0;
       if (state.tick < proscriptionUntil) effectiveDmgType = DamageType.DIVINE;
       let resMod = resistanceModifier(target.faction, effectiveDmgType, armorShred) * enemyDamageMultiplier(target, effectiveDmgType);
-      const actiumUntil = (state as any).__actiumUntilTick ?? 0;
-      if (state.tick < actiumUntil && t.damageType === DamageType.SIEGE) {
-        // 2026-05-19 — Agrippa converted PHYS_RANGED → SIEGE, so the
-        // Actium resistance bypass moves with him.
-        resMod = 1;     // Actium: siege ignores all resistance for the window
-      }
+      // 2026-05-21 — Battle of Actium resistance-bypass window
+      // removed alongside the tier-3 ability deletion.
       // 2026-05 v9: post-W7 GROUND units get +25% ranged resistance — they
       // take 25% less damage from PHYS_RANGED + SIEGE. Forces the player
       // to diversify into melee or magic damage types from W8 onward.
@@ -825,6 +808,21 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // MARK debuff: marked targets take +mag% damage from ANY tower.
       const markS = target.statusEffects.find(s => s.kind === StatusEffectKind.MARK);
       if (markS) damage *= 1 + markS.magnitude;
+      // 2026-05-21 — HARD-CC DAMAGE AMP. Frozen + stunned enemies take
+      // +10% damage per status (additive: frozen+stunned = +20%). Only
+      // applies to direct hits resolved in this CombatResolver path —
+      // DoT ticks (BURN / POISON / BLEED / HELLFIRE) fire via
+      // EnemySystem.ts (`e.hp -= dotDps * dt`) and bypass this chain
+      // entirely, so DoTs do NOT benefit from the amp. Purpose: give
+      // status-control builds (Augur, Frozen Legion, Stormcaller,
+      // Imperator Guard, Librator, Naval Bombardment, etc.) a viable
+      // late-game carry alternative to the DoT meta. Stacks
+      // multiplicatively with MARK, ARMOR_SHRED resist relief, and
+      // per-tower archetype bonuses below.
+      let ccAmp = 0;
+      if (target.statusEffects.some(s => s.kind === StatusEffectKind.FREEZE && s.remaining > 0)) ccAmp += 0.10;
+      if (target.statusEffects.some(s => s.kind === StatusEffectKind.STUN   && s.remaining > 0)) ccAmp += 0.10;
+      if (ccAmp > 0) damage *= (1 + ccAmp);
       // Per-tower archetype/role bonuses + signatures
       if (t.type === TowerType.RORARIUS && target.archetype === 'RUNNER') damage *= 1.35;
       if ((t.type === TowerType.SAGITTARIUS || t.type === TowerType.VENATOR) && target.isFlyer) damage *= 1.45;
@@ -891,20 +889,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Pontifex (3.0×), Tyrant's Laurel (1.75×), and the RED-tile
       // aura — the curve was producing 8× boss kills late-game.
       if (scipioActive && target.isBoss) damage *= 1.25;
-      // Zama (Scipio Tier 3): tower vs-boss damage × 2.0 during the
-      // active window. Stacks multiplicatively with the Scipio
-      // passive above.
-      const zamaUntil = (state as any).__zamaUntilTick ?? 0;
-      if (state.tick < zamaUntil && target.isBoss) {
-        damage *= (state as any).__zamaTowerVsBossDmgMult ?? 2.0;
-      }
-      // Triumph (Marius Tier 3): every melee tower deals +100% damage
-      // during the active window. State-flag-driven so we don't need
-      // a per-tower stamp.
-      const triumphUntil = (state as any).__triumphUntilTick ?? 0;
-      if (state.tick < triumphUntil && t.damageType === DamageType.PHYS_MELEE) {
-        damage *= (state as any).__triumphMeleeDmgMult ?? 2.0;
-      }
+      // 2026-05-21 — Zama (Scipio tier-3) + Triumph (Marius tier-3)
+      // damage windows removed alongside the tier-3 ability deletion.
+      // The Scipio passive boss bonus above still fires; the per-
+      // ability burst window is gone.
       // Frontier Wall (Agricola Tier 2): tower damage vs flyers
       // increases during window. Stacks with Eagle Scout's per-enemy
       // mark.

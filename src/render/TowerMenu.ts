@@ -1,6 +1,6 @@
 import { Tower, TargetingMode } from '../types';
 import { GameStateShape } from '../GameState';
-import { ECONOMY, INVENTORY_SIZE, TIER_MULTS, TIER_COLORS } from '../constants';
+import { ECONOMY, INVENTORY_SIZE, TIER_MULTS, TIER_COLORS, HERO_ITEM_SLOTS } from '../constants';
 import { damageTypeLabel, pretty } from '../format';
 import { canDowngrade, downgradeTower } from '../systems/DowngradeSystem';
 import { earnGold } from '../systems/EconomySystem';
@@ -118,9 +118,10 @@ function spriteSrc(towerType: string): string | null {
 export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateShape, inv: InventoryState, hooks: TowerMenuHooks) {
   closeGameModals();
   // 2026-05-19 — Hero inspect panel short-circuit. Heroes have their
-  // own layout: no SELL/COMBINE/DOWNGRADE actions, fixed 2 item
-  // slots, biography + 3 ability cards. Delegated to a dedicated
-  // renderer so the regular tower-menu code below stays clean.
+  // own layout: no SELL/COMBINE/DOWNGRADE actions, HERO_ITEM_SLOTS (6)
+  // item slots, plus ability cards. Delegated to a dedicated renderer
+  // so the regular tower-menu code below stays clean. 2026-05-21 —
+  // Slot count bumped 2 → 6 alongside the tier-3 ability deletion.
   if (t.isHero) {
     showHeroInspectPanel(parent, t, state, inv, hooks);
     return;
@@ -138,7 +139,12 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     speed: effective.attackSpeed,
     range: effective.range,
     damagePerHit: towerPerAttackDamageBase(t),
-    slots: TIER_MULTS.itemSlots[t.qualityTier],
+    // 2026-05-21 — Hero towers always carry HERO_ITEM_SLOTS (=6)
+    // regardless of tier; non-hero towers use the per-tier table.
+    // The slot bump compensates for the tier-3 ability that was
+    // dropped in the same pass — players invest in heroes through
+    // gear instead of waiting on a deleted ultimate cooldown.
+    slots: (t as any).isHero ? HERO_ITEM_SLOTS : TIER_MULTS.itemSlots[t.qualityTier],
     refund: Math.max(1, Math.floor((t.costPaid ?? ECONOMY.TIER_PLACE_COST[t.qualityTier] ?? 0) / 2))
   };
   const killBonusPct = ((t.killBonusFlat / Math.max(1, t.baseDps)) * 100).toFixed(1);
@@ -802,13 +808,13 @@ function itemInitials(name: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// HERO INSPECT PANEL (2026-05-19)
+// HERO INSPECT PANEL (2026-05-19, updated 2026-05-21)
 // Dedicated layout shown when the player clicks the hero tile or the
 // HUD hero chip. Mirrors the tower-menu CSS pattern (responsive
 // clamping, fixed-width panel) but with hero-specific content blocks:
-// portrait + tier + XP bar + kill bonus, 2 item slots, 3 ability
-// cards (locked badge if heroTier < ability.level), biography, no
-// sell/combine/downgrade.
+// portrait + tier + XP bar + kill bonus, HERO_ITEM_SLOTS (6) item
+// slots, 2 ability cards (locked badge if heroTier < ability.level),
+// equip-from-inventory grid, no sell/combine/downgrade.
 // ─────────────────────────────────────────────────────────────────────
 function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateShape, inv: InventoryState, hooks: TowerMenuHooks): void {
   // 2026-05-19 (rebuild) — Hero panel now mirrors the regular tower
@@ -999,19 +1005,23 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   passive.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:4px">⚜ PASSIVE</div><div style="font-size:11px;color:#cdb98a;line-height:1.5">${passiveText}</div>`;
   panel.appendChild(passive);
 
-  // Item slots — heroes have exactly 2 regardless of tier
+  // 2026-05-21 — Hero item grid bumped 2 → 6 slots to compensate for
+  // the removed tier-3 ability. Tile width drops 64px → 52px so all
+  // six tiles still fit in the same row width without scroll. Loop
+  // bound, grid template, and the EQUIPPED counter all read from
+  // HERO_ITEM_SLOTS so the slot count lives in one place.
   const eqRow = document.createElement('div');
   eqRow.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025';
-  eqRow.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:6px">⚒ EQUIPPED (${t.equippedItems.length}/2)</div>`;
+  eqRow.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:6px">⚒ EQUIPPED (${t.equippedItems.length}/${HERO_ITEM_SLOTS})</div>`;
   const eqGrid = document.createElement('div');
-  eqGrid.style.cssText = 'display:grid;grid-template-columns:repeat(2,64px);gap:6px;padding:6px;background:#0c0a08;border:2px solid ' + tint + ';';
-  for (let i = 0; i < 2; i++) {
+  eqGrid.style.cssText = `display:grid;grid-template-columns:repeat(${HERO_ITEM_SLOTS},52px);gap:6px;padding:6px;background:#0c0a08;border:2px solid ${tint};`;
+  for (let i = 0; i < HERO_ITEM_SLOTS; i++) {
     const itemId = t.equippedItems[i];
     const idef: any = itemId ? ((permItems as any)[itemId] ?? (consumables as any)[itemId]) : null;
     const rarity = idef?.rarity ?? 'COMMON';
     const color = itemId ? RAR[rarity] : '#3a3025';
     const slot = document.createElement('div');
-    slot.style.cssText = `width:64px;height:64px;border:2px solid ${color};background:linear-gradient(180deg,#1a1410,#100c09);display:flex;align-items:center;justify-content:center;color:${color};cursor:${itemId ? 'pointer' : 'default'};font-size:9px;text-align:center;line-height:1.1`;
+    slot.style.cssText = `width:52px;height:52px;border:2px solid ${color};background:linear-gradient(180deg,#1a1410,#100c09);display:flex;align-items:center;justify-content:center;color:${color};cursor:${itemId ? 'pointer' : 'default'};font-size:8.5px;text-align:center;line-height:1.1`;
     if (itemId) {
       slot.innerHTML = `<div>${idef?.name ?? itemId}</div>`;
       attachItemTooltip(slot, itemId, rarity, idef, true);
@@ -1029,6 +1039,75 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   }
   eqRow.appendChild(eqGrid);
   panel.appendChild(eqRow);
+
+  // 2026-05-21 — Hero equip-from-inventory section. Heroes used to
+  // have only 2 slots and the player could equip them via the regular
+  // tower menu, but now that heroes get a dedicated 6-slot grid, the
+  // hero panel needs its own equip flow. Mirrors the regular tower
+  // menu's grid (family/mode gates, blocker chips, click-to-equip)
+  // with HERO_ITEM_SLOTS as the slot cap.
+  if (t.equippedItems.length < HERO_ITEM_SLOTS && inv.slots.length > 0) {
+    const equipRow = document.createElement('div');
+    equipRow.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025';
+    equipRow.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <div style="font-size:9px;color:#aa9a4a;letter-spacing:2px">⚒ EQUIP FROM INVENTORY</div>
+        <div style="font-size:9px;color:#cc6666;letter-spacing:0.5px">⚠ ONE PER FAMILY · NO DUPLICATES</div>
+      </div>
+      <div style="font-size:10px;color:#cdb98a;margin-bottom:6px;line-height:1.4">
+        Heroes carry up to <b style="color:#fff8e0">${HERO_ITEM_SLOTS} items</b>. Same family + mode rules apply — one DAMAGE, one SPEED, etc., and MELEE / RANGED items respect the hero's attack class. Click an equipped item to send it back to your inventory.
+      </div>`;
+    const invGrid = document.createElement('div');
+    invGrid.style.cssText = `display:grid;grid-template-columns:repeat(5,54px);gap:5px;padding:8px;background:#0c0a08;border:2px solid ${tint};box-shadow:inset 0 0 14px #000;`;
+    for (const slot of inv.slots) {
+      const idef: any = (permItems as any)[slot.itemId] ?? (consumables as any)[slot.itemId];
+      const cell = document.createElement('div');
+      let blocker: string | null = null;
+      let blockerShort = '';
+      if (t.equippedItems.includes(slot.itemId)) {
+        blocker = 'Already equipped on this hero'; blockerShort = 'OWNED';
+      } else {
+        const modeCheck = canEquipItemOnDamageType(slot.itemId, t.damageType);
+        if (!modeCheck.ok) {
+          blocker = modeCheck.reason ?? 'Wrong attack class for this item.';
+          blockerShort = modeCheck.mode === 'MELEE' ? 'MELEE ONLY' : 'RANGED ONLY';
+        } else {
+          const familyCheck = canEquipItemFamily(t.equippedItems, slot.itemId);
+          if (!familyCheck.ok) {
+            blocker = `Only one ${familyCheck.family.toLowerCase()} item per hero — unequip the existing one first`;
+            blockerShort = familyCheck.family;
+          } else if (t.equippedItems.length >= HERO_ITEM_SLOTS) {
+            blocker = `Hero has only ${HERO_ITEM_SLOTS} item slots — unequip one first`;
+            blockerShort = 'FULL';
+          }
+        }
+      }
+      const dim = blocker ? 'opacity:0.4;' : '';
+      const cursor = blocker ? 'not-allowed' : 'pointer';
+      cell.style.cssText = `position:relative;width:54px;height:54px;border:2px solid ${RAR[slot.rarity]};background:linear-gradient(180deg,#1a1410,#100c09);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;color:${RAR[slot.rarity]};box-shadow:inset 0 0 10px #000;cursor:${cursor};${dim}`;
+      const blockerTag = blocker ? `<div style="position:absolute;top:-5px;right:-5px;background:#7a1a1a;color:#fff;font-size:7px;font-weight:bold;letter-spacing:1px;padding:1px 4px;border:1px solid #000">${blockerShort}</div>` : '';
+      cell.innerHTML = `${blockerTag}<div style="display:flex;flex-direction:column;align-items:center;gap:1px">${itemIconSvg(slot.itemId, slot.rarity, 32)}<div style="font-size:6px;color:#aa9a4a;letter-spacing:1px">${itemFamily(slot.itemId)}</div></div>`;
+      attachItemTooltip(cell, slot.itemId, slot.rarity, idef, false);
+      cell.onclick = (ev) => {
+        if (blocker) {
+          const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+          const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
+          const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
+          const ay = stageRect ? r.top - stageRect.top : undefined;
+          (window as any).__showEquipBlockedToast?.(blocker, ax, ay);
+          state.hint = blocker + '.';
+          return;
+        }
+        t.equippedItems.push(slot.itemId);
+        inventoryRemove(inv, slot.id);
+        state.hint = `Equipped ${idef?.name ?? slot.itemId}.`;
+        refresh();
+      };
+      invGrid.appendChild(cell);
+    }
+    equipRow.appendChild(invGrid);
+    panel.appendChild(equipRow);
+  }
 
   // Ability cards
   const abilityBlock = document.createElement('div');

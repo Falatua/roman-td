@@ -35,17 +35,6 @@
         "description": "Spawns a temporary stone wall on the farthest path tile from the gate for 5s, forcing a U-turn. Path rebuilds on spawn and removal.",
         "vfxColor": "#cc44ff",
         "vfxStyle": "WALL_RISE_PARTICLES"
-      },
-      {
-        "level": 3,
-        "id": "TRIUMPH",
-        "name": "Triumph of Aquae Sextiae",
-        "cooldownSec": 60,
-        "durationSec": 8,
-        "params": { "meleeDmgMultPercent": 100, "immunities": ["SILENCE", "SLOW"] },
-        "description": "For 8s, every melee tower on the map deals +100% damage and is immune to SILENCE and SLOW.",
-        "vfxColor": "#ffe066",
-        "vfxStyle": "GOLD_FLASH_MAP_WIDE"
       }
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
@@ -56,7 +45,7 @@
       "Marius takes the field. The legions reform.",
       "MARIUS reached LEGATUS — Marian Formation locks the line.",
       "MARIUS reached CONSUL — Triarii Wall rises.",
-      "MARIUS reached IMPERATOR — Triumph unlocked.",
+      "MARIUS reached IMPERATOR — the father of the legion nears apex form.",
       "MARIUS reached DIVUS — the father of the legion at full strength."
     ],
     "visual": {
@@ -102,17 +91,6 @@
         "description": "3 mortar shells drop on random path tiles. Each explodes with 2-tile splash and 1.5s stun.",
         "vfxColor": "#4499ff",
         "vfxStyle": "MORTAR_SHELL_BURST"
-      },
-      {
-        "level": 3,
-        "id": "BATTLE_OF_ACTIUM",
-        "name": "Battle of Actium",
-        "cooldownSec": 60,
-        "durationSec": 8,
-        "params": { "rangedShotMultiplier": 2, "ignoreAllResistances": true },
-        "description": "For 8s, every SIEGE tower fires DOUBLE shots and all siege projectiles ignore faction resistances.",
-        "vfxColor": "#0077ff",
-        "vfxStyle": "NAVAL_BANNER_SWEEP"
       }
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
@@ -123,7 +101,7 @@
       "Agrippa commands the line. The volleys begin.",
       "AGRIPPA reached LEGATUS — Pilum Volley cleared for launch.",
       "AGRIPPA reached CONSUL — Naval Bombardment unlocked.",
-      "AGRIPPA reached IMPERATOR — Battle of Actium prepared.",
+      "AGRIPPA reached IMPERATOR — the admiral nears apex form.",
       "AGRIPPA reached DIVUS — the admiral at full command."
     ],
     "visual": {
@@ -177,17 +155,6 @@
         "description": "For 4s, all flyers slow 70% AND every tower gains +30% damage vs. flyers. Stacks multiplicatively with Eagle Scout's +60% (~2.08× combined during overlap).",
         "vfxColor": "#aaccff",
         "vfxStyle": "SILVER_WALL_SHIMMER"
-      },
-      {
-        "level": 3,
-        "id": "AQUILA_SQUADRON",
-        "name": "Aquila Squadron",
-        "cooldownSec": 55,
-        "durationSec": 12,
-        "params": { "eagleCount": 4, "killsPerEagle": 6, "eagleDurationSec": 12, "instakillFlyers": true },
-        "description": "Summons 4 spectral eagle spirits that instakill any flyer they touch. Each eagle persists 12s or until it hits 6 flyers.",
-        "vfxColor": "#ffffff",
-        "vfxStyle": "EAGLE_SUMMON_BURST"
       }
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
@@ -198,7 +165,7 @@
       "Agricola takes the field. The skies are no longer safe.",
       "AGRICOLA reached LEGATUS — Eagle Scout marks every wing.",
       "AGRICOLA reached CONSUL — Frontier Wall slows the air assault.",
-      "AGRICOLA reached IMPERATOR — Aquila Squadron ready.",
+      "AGRICOLA reached IMPERATOR — the governor nears apex form.",
       "AGRICOLA reached DIVUS — total air dominance."
     ],
     "visual": {
@@ -236,25 +203,14 @@
       },
       {
         "level": 2,
-        "id": "CARTHAGO_DELENDA_EST",
-        "name": "Carthago Delenda Est",
+        "id": "SCIPIO_BRAND",
+        "name": "Scipio's Brand",
         "cooldownSec": 15,
-        "durationSec": 0,
-        "params": { "targets": "ALL_BOSSES", "maxHpTrueDmgPercent": 10 },
-        "description": "Every boss on the field instantly loses 10% max HP as true damage. Bypasses all resistances, shields, and damage reduction.",
-        "vfxColor": "#ff4400",
-        "vfxStyle": "FIRE_DUST_WAVE"
-      },
-      {
-        "level": 3,
-        "id": "ZAMA",
-        "name": "Zama",
-        "cooldownSec": 60,
         "durationSec": 6,
-        "params": { "towerDmgVsBossMultiplier": 2.0, "bossSpeedMultiplier": 0.5 },
-        "description": "For 6s, all towers deal double damage to bosses AND all bosses move at 50% speed.",
-        "vfxColor": "#c87822",
-        "vfxStyle": "DUST_STORM_SWEEP"
+        "params": { "targets": "ALL_BOSSES", "dmgTakenIncreasePercent": 30 },
+        "description": "Brands every boss on the field for 6s. Marked bosses take +30% damage from ALL sources, stacking with Scipio's +25% boss passive and any other MARK debuffs (multiplicatively on the damage line, additively with FREEZE/STUN amp).",
+        "vfxColor": "#ff4400",
+        "vfxStyle": "RED_BANNER_BRAND"
       }
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
@@ -264,8 +220,8 @@
     "bannerCopy": [
       "Scipio takes the field. Carthage must fall.",
       "SCIPIO reached LEGATUS — Cornu Charge is ready.",
-      "SCIPIO reached CONSUL — Carthago Delenda Est unlocked.",
-      "SCIPIO reached IMPERATOR — Zama awaits.",
+      "SCIPIO reached CONSUL — Scipio's Brand marks every boss.",
+      "SCIPIO reached IMPERATOR — the conqueror nears apex form.",
       "SCIPIO reached DIVUS — the conqueror at full power."
     ],
     "visual": {
@@ -311,17 +267,6 @@
         "description": "Every enemy on the field is slowed 60% for 2 seconds. Uses existing SLOW status effect pipeline.",
         "vfxColor": "#ffe066",
         "vfxStyle": "PALE_GOLD_PATH_SHIMMER"
-      },
-      {
-        "level": 3,
-        "id": "IDES_OF_MARCH",
-        "name": "Ides of March",
-        "cooldownSec": 60,
-        "durationSec": 6,
-        "params": { "towerSpeedMultiplier": 2.0, "executeThresholdPercent": 20 },
-        "description": "For 6s, every tower fires at DOUBLE speed. Then every enemy currently below 20% HP is instantly executed.",
-        "vfxColor": "#ffe066",
-        "vfxStyle": "GOLD_WHITE_SCREEN_FLASH"
       }
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
@@ -332,7 +277,7 @@
       "Caesar takes the field. The Rubicon is crossed.",
       "CAESAR reached LEGATUS — SPQR Decree goes out.",
       "CAESAR reached CONSUL — Pax Romana imposed.",
-      "CAESAR reached IMPERATOR — Ides of March approaches.",
+      "CAESAR reached IMPERATOR — the dictator nears apex form.",
       "CAESAR reached DIVUS — the dictator at full power."
     ],
     "visual": {
@@ -378,17 +323,6 @@
         "description": "For 5s, every tower's damage type is overridden to DIVINE, bypassing all faction resistances. Uses existing CombatResolver damage-type override logic.",
         "vfxColor": "#ff9900",
         "vfxStyle": "WHITE_FLAME_PULSE"
-      },
-      {
-        "level": 3,
-        "id": "SULLAS_MARCH",
-        "name": "Sulla's March",
-        "cooldownSec": 60,
-        "durationSec": 0,
-        "params": { "executeThresholdPercent": 20 },
-        "description": "Global divine pulse: instantly executes every non-boss enemy below 20% HP. Wipes the wave's chaff and resets your targeting picture.",
-        "vfxColor": "#ffffff",
-        "vfxStyle": "DIVINE_SCREEN_FLASH"
       }
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
@@ -399,7 +333,7 @@
       "Sulla lights the flame. Rome does not fall tonight.",
       "SULLA reached LEGATUS — Fortune's Bolt guards the gate.",
       "SULLA reached CONSUL — Proscription overrides all resistance.",
-      "SULLA reached IMPERATOR — Sulla's March stands ready.",
+      "SULLA reached IMPERATOR — fortune nears full bloom.",
       "SULLA reached DIVUS — fortune fully awakened."
     ],
     "visual": {

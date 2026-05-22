@@ -242,13 +242,15 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // tick. HELLFIRE divine-fire is separate and still applies.
   if (def?.immuneFire) traits.push({ label: 'IMMUNE TO FIRE — direct fire damage and BURN DoT both deal 0 (HELLFIRE divine-fire still applies)', color: '#ee5555' });
   // -- Healing / regen --
-  if (def?.regenPctPerSec) traits.push({ label: `REGEN — ${(def.regenPctPerSec*100).toFixed(2)}% maxHP/sec always-on (paused by DoT)`, color: '#88ff88' });
-  if (def?.outOfCombatRegen) traits.push({ label: `OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 0.5s without damage (DoT counts as damage)`, color: '#88ff88' });
+  if (def?.regenPctPerSec) traits.push({ label: `REGEN — ${(def.regenPctPerSec*100).toFixed(2)}% maxHP/sec always-on (reduced 50% by any active DoT, was 100% block pre-2026-05-21)`, color: '#88ff88' });
+  if (def?.outOfCombatRegen) traits.push({ label: `OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 0.5s without DIRECT damage (DoT ticks no longer refresh the quiet-window; active DoT halves the regen rate to ~${(def.outOfCombatRegen*50).toFixed(2)}%/sec)`, color: '#88ff88' });
   if (def?.checkpointHealPct) traits.push({ label: `CHECKPOINT HEAL — restores ${Math.round(def.checkpointHealPct*100)}% maxHP the first time it crosses each of the 7 waypoint coins`, color: '#88ff88' });
   if (def?.healAllyPctPerSec) traits.push({ label: `HEALER — pulses ${(def.healAllyPctPerSec*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles (does NOT heal bosses)`, color: '#88ff88' });
   // -- Movement modifiers --
   if (def?.lowHpSpeedBoost) traits.push({ label: `LOW-HP SURGE — when below 30% HP, gains +${Math.round((def.lowHpSpeedBoost - 1) * 100)}% movement speed`, color: '#ff8866' });
   if (def?.stealthInterval) traits.push({ label: `STEALTH CYCLE — fades to untargetable for ${def.stealthInterval.duration.toFixed(1)}s every ${def.stealthInterval.period}s (visual: alpha drops, towers can't target)`, color: '#a078d0' });
+  if (def?.ambushStealth) traits.push({ label: `AMBUSH STEALTH — untargetable for the first ${def.ambushStealthSec ?? 15}s of the wave (visual: alpha drops to 40%). After the window expires, every alive instance becomes targetable simultaneously. Spawns AFTER the window are visible from the start.`, color: '#a078d0' });
+  if (def?.silenceAuraRadiusTiles) traits.push({ label: `SILENCE AURA — every tower within ${def.silenceAuraRadiusTiles} tiles is SILENCED while this enemy is in range. Refreshes each frame in range; expires ~0.6s after the enemy walks out. Pink X-mark icon over silenced towers. Plant power towers OFF the path to avoid the aura.`, color: '#a078d0' });
   // -- Tower disruption --
   if (def?.auraTowerSlow) traits.push({ label: `TOWER-SLOW AURA — every tower within ~2 tiles fires ${Math.round(def.auraTowerSlow*100)}% slower while this enemy is in range`, color: '#a078d0' });
   if (def?.auraNullifier) traits.push({ label: `AURA NULLIFIER — every tower within 2 tiles loses its aura contributions while this enemy is in range. Global damage / atk-speed / enemy-debuff / item auras (Centurion\'s Trumpet, Battle Standard, etc.) all silently drop out. Walks past → auras return. Periodic abilities (Caesar stun pulse, freeze cycles) are NOT auras and still fire.`, color: '#a078d0' });
@@ -341,18 +343,19 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'WEAKNESS: takes +40% damage from SIEGE'
     ],
     HANNIBAL_BARCA: [
-      'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit recently, heals 0.4% maxHP/sec',
-      'OUT-OF-COMBAT REGEN — 1.7%/sec after 0.5s without damage (DoT counts as damage)',
+      'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit by DIRECT damage in 0.5s, heals 0.4% maxHP/sec (active DoT softens to 0.2%/sec, was 0%)',
+      'OUT-OF-COMBAT REGEN — 1.7%/sec after 0.5s without DIRECT damage (active DoT softens to 0.85%/sec, was full block)',
       'TELEGRAPHED REBIRTH at 50% HP — 1-second red lock-on ring warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
     ],
     UNDEAD_WARLORD: [
       'AMBUSH — 5s after spawn, 8 Undead Berserkers rise mid-path',
       'NECROMANCY at 40% HP — raises 4 Undead Celts at his position',
-      'MID-FIGHT REGEN — 1.2% maxHP/sec while alive'
+      'MID-FIGHT REGEN — 1.2% maxHP/sec while alive (active DoT halves to 0.6%/sec)'
     ],
     DAEMON_IMPERATOR: [
       'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~5 tiles for 1.5s',
-      'OUT-OF-COMBAT REGEN — 2.8% maxHP/sec while not taking damage',
+      'OUT-OF-COMBAT REGEN — 2.8% maxHP/sec while not taking DIRECT damage (active DoT halves to 1.4%/sec)',
+      'DOT-RESISTANT — poison/bleed tick at 50% effectiveness, fire fully immune. Direct damage + DIVINE (1.30×) carry the fight, not chip ticks.',
       'W20 FINAL BOSS — any leak ends the run instantly (Rome falls)'
     ]
   };

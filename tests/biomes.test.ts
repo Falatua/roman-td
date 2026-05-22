@@ -1,0 +1,213 @@
+// Biome system smoke tests.
+// 2026-05-21 — Visual overhaul guardrails. The user reported "I can't
+// even see anything" — these tests catch the silent-failure modes
+// that could leave the map render blank:
+//   1. Stub keys in propPool that aren't registered in Assets.MANIFEST
+//      (silent skips → invisible decoration).
+//   2. Cave key fallback chain breaks (no DARK_CAVE backup).
+//   3. Biome lookup off-by-one at wave-band boundaries.
+//   4. Endless faction mapping returns undefined.
+// These don't render the canvas — they verify the contracts the
+// renderer depends on, which is what visibility actually requires.
+
+import { describe, it, expect } from 'vitest';
+import { BIOMES, biomeForWave, pickGrassTile, STATIC_BATTLE_DEBRIS, PATH_PIECE_SUFFIXES } from '../src/render/Biomes';
+
+// Inline import — vitest config resolves JSON imports automatically.
+// We need this to verify every key referenced in BIOMES exists in the
+// runtime asset manifest. A drift between the two = silent invisible
+// decoration = "I can't see anything" symptom.
+const fs = require('fs');
+const path = require('path');
+const ASSETS_TS = fs.readFileSync(
+  path.join(__dirname, '../src/render/Assets.ts'),
+  'utf8'
+);
+// Extract MANIFEST keys via regex. The MANIFEST object has multiple
+// entries per line in some sections (e.g. shrines packed 2 per line),
+// so we use a global pattern that matches `KEY: 'filename.png'`
+// anywhere in the line, not just the first token.
+const MANIFEST_KEYS = new Set<string>(
+  Array.from(ASSETS_TS.matchAll(/\b([A-Z][A-Z0-9_]+):\s*'[^']+\.(png|jpg|jpeg|webp)'/g)).map(m => m[1])
+);
+
+describe('biomeForWave — campaign wave bands', () => {
+  it('W1 returns BIOME_GRASSLAND', () => {
+    expect(biomeForWave(1)).toBe('BIOME_GRASSLAND');
+  });
+  it('W3 still returns BIOME_GRASSLAND (band upper bound)', () => {
+    expect(biomeForWave(3)).toBe('BIOME_GRASSLAND');
+  });
+  it('W4 crosses into BIOME_CELTIC_WOOD', () => {
+    expect(biomeForWave(4)).toBe('BIOME_CELTIC_WOOD');
+  });
+  it('W6 stays in BIOME_CELTIC_WOOD', () => {
+    expect(biomeForWave(6)).toBe('BIOME_CELTIC_WOOD');
+  });
+  it('W7 crosses into BIOME_CARTHAGE_ARID', () => {
+    expect(biomeForWave(7)).toBe('BIOME_CARTHAGE_ARID');
+  });
+  it('W10 stays in BIOME_CARTHAGE_ARID', () => {
+    expect(biomeForWave(10)).toBe('BIOME_CARTHAGE_ARID');
+  });
+  it('W11 crosses into BIOME_UNDEAD_FOREST', () => {
+    expect(biomeForWave(11)).toBe('BIOME_UNDEAD_FOREST');
+  });
+  it('W15 stays in BIOME_UNDEAD_FOREST', () => {
+    expect(biomeForWave(15)).toBe('BIOME_UNDEAD_FOREST');
+  });
+  it('W16 crosses into BIOME_UNDEAD_RUINS', () => {
+    expect(biomeForWave(16)).toBe('BIOME_UNDEAD_RUINS');
+  });
+  it('W18 stays in BIOME_UNDEAD_RUINS', () => {
+    expect(biomeForWave(18)).toBe('BIOME_UNDEAD_RUINS');
+  });
+  it('W19 crosses into BIOME_HELLSCAPE', () => {
+    expect(biomeForWave(19)).toBe('BIOME_HELLSCAPE');
+  });
+  it('W20 stays in BIOME_HELLSCAPE', () => {
+    expect(biomeForWave(20)).toBe('BIOME_HELLSCAPE');
+  });
+  it('endless overflow (W21+) without faction falls to hellscape', () => {
+    expect(biomeForWave(50)).toBe('BIOME_HELLSCAPE');
+  });
+  it('endless overflow with faction maps to correct biome', () => {
+    expect(biomeForWave(30, 'DOGS')).toBe('BIOME_GRASSLAND');
+    expect(biomeForWave(30, 'UNDEAD_CELTS')).toBe('BIOME_UNDEAD_FOREST');
+    expect(biomeForWave(30, 'SUPER_DEMONS')).toBe('BIOME_HELLSCAPE');
+  });
+  it('pre-game wave (0) defaults to grassland', () => {
+    expect(biomeForWave(0)).toBe('BIOME_GRASSLAND');
+  });
+});
+
+describe('Biome propPool — every key resolves to a real sprite manifest entry', () => {
+  // This is THE test that prevents "silent invisible decoration".
+  // If a biome references a key that isn't registered, tex() returns
+  // null at render time and the prop draws nothing. The user
+  // perceives this as "the map doesn't have decoration."
+  for (const id of Object.keys(BIOMES) as Array<keyof typeof BIOMES>) {
+    const biome = BIOMES[id];
+    it(`${id} — all propPool keys are registered`, () => {
+      const missing: string[] = [];
+      for (const key of biome.propPool) {
+        if (!MANIFEST_KEYS.has(key)) missing.push(key);
+      }
+      expect(missing, `Missing manifest entries for keys: ${missing.join(', ')}`).toEqual([]);
+    });
+    it(`${id} — propPool is non-empty (at least 3 keys for decoration variety)`, () => {
+      expect(biome.propPool.length).toBeGreaterThanOrEqual(3);
+    });
+    it(`${id} — grassWeights sum to 100`, () => {
+      const sum = biome.grassWeights.reduce((s, w) => s + w.weight, 0);
+      expect(sum).toBe(100);
+    });
+    it(`${id} — caveKey either exists in manifest or has DARK_CAVE fallback`, () => {
+      // Either the biome-specific cave sprite is registered, OR the
+      // renderer's `?? tex('DARK_CAVE')` fallback chain catches it.
+      // DARK_CAVE is always registered.
+      const registered = MANIFEST_KEYS.has(biome.caveKey);
+      const fallbackOk = MANIFEST_KEYS.has('DARK_CAVE');
+      expect(registered || fallbackOk).toBe(true);
+    });
+    it(`${id} — tint alpha is in valid 0..1 range`, () => {
+      expect(biome.tint.alpha).toBeGreaterThanOrEqual(0);
+      expect(biome.tint.alpha).toBeLessThanOrEqual(1);
+    });
+  }
+});
+
+describe('pickGrassTile — biome-weighted grass picker', () => {
+  it('returns one of the biome\'s registered grass keys', () => {
+    for (const id of Object.keys(BIOMES) as Array<keyof typeof BIOMES>) {
+      const biome = BIOMES[id];
+      const validKeys = new Set(biome.grassWeights.map(w => w.key));
+      // Try many hash values to exercise the entire weight distribution.
+      for (let h = 0; h < 200; h++) {
+        const picked = pickGrassTile(biome, h);
+        expect(validKeys.has(picked)).toBe(true);
+      }
+    }
+  });
+  it('every grass key referenced is registered in the manifest', () => {
+    const missing: string[] = [];
+    for (const id of Object.keys(BIOMES) as Array<keyof typeof BIOMES>) {
+      for (const w of BIOMES[id as keyof typeof BIOMES].grassWeights) {
+        if (!MANIFEST_KEYS.has(w.key)) missing.push(`${id}:${w.key}`);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+});
+
+describe('STATIC_BATTLE_DEBRIS — anchor sanity', () => {
+  it('all anchors have valid (col, row) inside the grid', () => {
+    // GRID.COLS = 38, GRID.ROWS = 26 per src/constants.ts
+    for (const a of STATIC_BATTLE_DEBRIS) {
+      expect(a.col).toBeGreaterThanOrEqual(0);
+      expect(a.col).toBeLessThan(38);
+      expect(a.row).toBeGreaterThanOrEqual(0);
+      expect(a.row).toBeLessThan(26);
+    }
+  });
+  it('debris layer has at least 10 anchors to feel "lived-in"', () => {
+    expect(STATIC_BATTLE_DEBRIS.length).toBeGreaterThanOrEqual(10);
+  });
+  it('every debris key has either sprite registration OR procedural fallback', () => {
+    // Renderer V12 added procedural fallback for all DBR_* keys, so
+    // even if the manifest is missing the sprite, the Pixi Graphics
+    // path draws something. Document the fallback patterns here so
+    // future debris additions don't drift.
+    const procPatterns = [
+      /^DBR_BLOOD_/,
+      /^DBR_BROKEN_PILUM$/,
+      /^DBR_GLADIUS$/,
+      /^DBR_BROKEN_SHIELD_/,
+      /^DBR_SKELETAL_REMAINS$/,
+      /^DBR_SCATTERED_SCROLLS$/,
+      /^DBR_(ROMAN|CELTIC|CARTHAGE)_FALLEN/
+    ];
+    for (const a of STATIC_BATTLE_DEBRIS) {
+      const matchedPattern = procPatterns.some(p => p.test(a.key));
+      const registered = MANIFEST_KEYS.has(a.key);
+      expect(matchedPattern || registered, `Anchor ${a.key} has neither sprite registration nor a procedural fallback pattern`).toBe(true);
+    }
+  });
+});
+
+describe('PATH_PIECE_SUFFIXES — auto-tile coverage', () => {
+  it('includes both H + V straights, all 4 corners, all 4 T-junctions, cross, 4 end caps', () => {
+    expect(PATH_PIECE_SUFFIXES).toContain('H');
+    expect(PATH_PIECE_SUFFIXES).toContain('V');
+    expect(PATH_PIECE_SUFFIXES).toContain('CORNER_NE');
+    expect(PATH_PIECE_SUFFIXES).toContain('CORNER_NW');
+    expect(PATH_PIECE_SUFFIXES).toContain('CORNER_SE');
+    expect(PATH_PIECE_SUFFIXES).toContain('CORNER_SW');
+    expect(PATH_PIECE_SUFFIXES).toContain('T_UP');
+    expect(PATH_PIECE_SUFFIXES).toContain('T_DOWN');
+    expect(PATH_PIECE_SUFFIXES).toContain('T_LEFT');
+    expect(PATH_PIECE_SUFFIXES).toContain('T_RIGHT');
+    expect(PATH_PIECE_SUFFIXES).toContain('CROSS');
+    expect(PATH_PIECE_SUFFIXES).toContain('END_UP');
+    expect(PATH_PIECE_SUFFIXES).toContain('END_DOWN');
+    expect(PATH_PIECE_SUFFIXES).toContain('END_LEFT');
+    expect(PATH_PIECE_SUFFIXES).toContain('END_RIGHT');
+  });
+  it('has 15 distinct path piece suffixes', () => {
+    const unique = new Set(PATH_PIECE_SUFFIXES);
+    expect(unique.size).toBe(15);
+  });
+});
+
+describe('Map overhaul sprite manifest — registered keys exist on disk', () => {
+  it('all map_overhaul/ keys point to files that actually exist', () => {
+    const matches = Array.from(ASSETS_TS.matchAll(/^\s+([A-Z][A-Z0-9_]+):\s*'(map_overhaul\/[^']+)'/gm));
+    expect(matches.length).toBeGreaterThan(30);   // we added 50+ sprites in V6+V9
+    const missing: string[] = [];
+    for (const [, , file] of matches) {
+      const full = path.join(__dirname, '../public/assets/sprites', file);
+      if (!fs.existsSync(full)) missing.push(file);
+    }
+    expect(missing, `Missing files: ${missing.join(', ')}`).toEqual([]);
+  });
+});

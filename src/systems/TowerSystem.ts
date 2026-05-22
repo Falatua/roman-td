@@ -180,12 +180,29 @@ export const TIER_BONUS_TOWER_TYPES: Record<number, TowerType[]> = {
   // standalone early-game beast-bane towers. Players see them in the
   // standard prospect roll. No combo dependencies, so they can sit on
   // the field permanently without being "stuck" ingredients.
-  1: [TowerType.BEAST_HUNTER],
-  2: [TowerType.RETIARIUS, TowerType.BALLISTARIUS, TowerType.OPTIO, TowerType.PUGIO_ASSASSIN, TowerType.ARCUBALLISTA, TowerType.BEAST_SLAYER],
+  // 2026-05-21 — Beast Slayer widened to T1-T3 bonus pool presence so
+  // it can roll at any of the early-game tiers. T2 stays its "primary"
+  // band (existing tierBand: 2 in towers.json + Codex anchor) but the
+  // pool draw now surfaces it across T1, T2, T3 — players who hit a
+  // T1 prospect roll on a dog-heavy wave can grab one without waiting
+  // for a T2 roll. Combo-tower recipes (BESTIARIUS) and the BEAST-BANE
+  // bonus math are unchanged; this is purely an availability change.
+  1: [TowerType.BEAST_HUNTER, TowerType.BEAST_SLAYER],
+  // 2026-05-21 — T2-only base towers (Retiarius, Ballistarius/Turris,
+  // Optio, Pugio Assassin, Arcuballista) promoted up to T3 per user
+  // direction. T2 bonus pool keeps only BEAST_SLAYER (which is multi-
+  // tier T1-T3 per the prior pass), and T3 absorbs the five
+  // ex-T2-only towers. Net effect: those five are now scarcer in the
+  // early pool but spawn at higher quality when they do roll, which
+  // satisfies all existing minTier:2 recipes naturally (T3 > T2).
+  2: [TowerType.BEAST_SLAYER],
   3: [
     TowerType.VENATOR, TowerType.IGNIFER, TowerType.SPECULATOR, TowerType.FLAMEN, TowerType.CARROBALLISTA, TowerType.AQUILA_VENATOR,
     // ── 2026-05-15 v9 promotions ───────────────────────────────────────
-    TowerType.AUXILIA, TowerType.FUNDIBULUS, TowerType.RORARIUS, TowerType.LIBRITOR, TowerType.ACCENSUS
+    TowerType.AUXILIA, TowerType.FUNDIBULUS, TowerType.RORARIUS, TowerType.LIBRITOR, TowerType.ACCENSUS,
+    TowerType.BEAST_SLAYER,
+    // ── 2026-05-21 promotions (ex-T2-only towers) ─────────────────────
+    TowerType.RETIARIUS, TowerType.BALLISTARIUS, TowerType.OPTIO, TowerType.PUGIO_ASSASSIN, TowerType.ARCUBALLISTA
   ],
   // 2026-05-15 v13: CLIBANARIUS removed — it's now a COMBO (Pugio Assassin
   // + Cataphract → Clibanarius @ 50g). T4 base pool drops from 5 → 4 entries.

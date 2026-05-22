@@ -41,37 +41,43 @@ function freshState(): GameStateShape {
 // ─────────────────────────────────────────────────────────────────────
 // DRAFT
 // ─────────────────────────────────────────────────────────────────────
-describe('Hero draft (3-card pull from 6-pool)', () => {
-  it('returns exactly 3 hero ids', () => {
+describe('Hero draft (all-6 horizontal-scroll picker)', () => {
+  // 2026-05-21 — Draft no longer slices the pool to 3. The
+  // ChooseHeroModal now shows ALL 6 heroes in a horizontal-scroll
+  // row so the player picks freely from the full roster instead of
+  // being handed an RNG triple. Fisher-Yates is kept so the display
+  // order still varies between runs.
+  it('returns all 6 hero ids', () => {
     const picks = draftHeroChoices();
-    expect(picks.length).toBe(3);
+    expect(picks.length).toBe(6);
   });
 
-  it('all 3 ids are members of HERO_POOL', () => {
+  it('all 6 ids are members of HERO_POOL', () => {
     const picks = draftHeroChoices();
     for (const id of picks) {
       expect(HERO_POOL).toContain(id);
     }
   });
 
-  it('all 3 picks are distinct (no duplicates from Fisher-Yates)', () => {
+  it('all 6 picks are distinct (no duplicates from Fisher-Yates)', () => {
     for (let trial = 0; trial < 50; trial++) {
       const picks = draftHeroChoices();
-      expect(new Set(picks).size).toBe(3);
+      expect(new Set(picks).size).toBe(6);
     }
   });
 
-  it('produces varied draws across 60 attempts — does not lock to one combo', () => {
-    // Fisher-Yates with C(6,3)=20 combos should produce many distinct
-    // ordered triples across 60 trials. We just require at least 5
-    // distinct sets — a much looser bound that still proves the
-    // shuffle isn't degenerate.
+  it('produces varied display orders across 60 attempts — shuffle is non-degenerate', () => {
+    // The set of picks is always the same 6 heroes; what varies is
+    // the display ORDER. Fisher-Yates over 6 elements has 6!=720
+    // permutations, so across 60 trials we should see plenty of
+    // distinct orderings. Loose lower bound of 10 distinct orders
+    // proves the shuffle is working without being flaky.
     const seen = new Set<string>();
     for (let i = 0; i < 60; i++) {
-      const picks = [...draftHeroChoices()].sort();
+      const picks = draftHeroChoices();
       seen.add(picks.join(','));
     }
-    expect(seen.size).toBeGreaterThanOrEqual(5);
+    expect(seen.size).toBeGreaterThanOrEqual(10);
   });
 
   it('HERO_POOL contains exactly the 6 historical generals', () => {
@@ -291,11 +297,15 @@ describe('herodefs.json shape (single source of tuning)', () => {
     }
   });
 
-  it('every hero has 3 abilities at levels 1, 2, 3', () => {
+  it('every hero has 2 abilities at levels 1, 2', () => {
+    // 2026-05-21 — Tier-3 abilities dropped for every hero. The
+    // tier-3 milestone (IMPERATOR) becomes a stat-only upgrade; the
+    // basic-attack scale still climbs 1.0× → 2.4× across the 5 tiers
+    // but no new ability unlocks at tier 3.
     for (const id of HERO_POOL) {
       const def: any = (HERO_DEFS as any)[id];
-      expect(def.abilities?.length).toBe(3);
-      expect(def.abilities.map((a: any) => a.level)).toEqual([1, 2, 3]);
+      expect(def.abilities?.length).toBe(2);
+      expect(def.abilities.map((a: any) => a.level)).toEqual([1, 2]);
     }
   });
 

@@ -1,14 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────
-// CHOOSE HERO MODAL (2026-05-19)
+// CHOOSE HERO MODAL (2026-05-19, full roster redesign 2026-05-21)
 //
-// The 3-card draft. Fires after name entry at run start. Mounts on
-// document.body (NOT #app — full-screen modals inside #app get
-// clipped on big monitors). Responsive clamping matches the Hall of
-// Glory pattern at Leaderboard.ts:188-221.
+// All-6 horizontal-scroll picker. Fires after name entry at run
+// start. Mounts on document.body (NOT #app — full-screen modals
+// inside #app get clipped on big monitors). Responsive clamping
+// matches the Hall of Glory pattern at Leaderboard.ts:188-221.
 //
 // Flow:
-//   1. draftHeroChoices() returns 3 random hero ids from the 6-pool
-//   2. Render 3 hero cards side by side
+//   1. draftHeroChoices() returns the FULL 6-hero roster (shuffled
+//      for visual freshness; no random subset).
+//   2. Render 6 hero cards in a horizontal-scrolling row with
+//      scroll-snap so each card snaps cleanly into view.
 //   3. Hover: card border brightens to hero tint, scale 1.02
 //   4. Click: confirm strip appears (name + title + "⚔ MARCH TO WAR")
 //   5. March → pickHero(state, heroId) + modal removes itself
@@ -16,6 +18,10 @@
 // The pickHero call queues the hero placement token in
 // state.pendingPurchasedTowers with source: 'hero'. The next empty-
 // tile click on the canvas drops the hero — see main.ts:4486.
+//
+// Keyboard: 1-6 focuses the corresponding card (left-to-right in the
+// scroll), Enter confirms. The ★ LAST PICK badge highlights the
+// player's previous hero so re-runs feel continuous.
 // ─────────────────────────────────────────────────────────────────────
 
 import { GameStateShape } from '../GameState';
@@ -102,7 +108,9 @@ export function showChooseHeroModal(state: GameStateShape): void {
   let lastHeroId: string | null = null;
   try { lastHeroId = localStorage.getItem('roman_td_last_hero_id'); } catch { /* ignore */ }
 
-  // Draft 3 distinct heroes via Fisher-Yates.
+  // Draft all 6 heroes (shuffled display order via Fisher-Yates).
+  // 2026-05-21 — Was a 3-of-6 random draft; now the picker surfaces
+  // every hero so the player chooses freely from the full roster.
   const choices = draftHeroChoices(lastHeroId);
 
   // Title header + tagline
@@ -118,24 +126,38 @@ export function showChooseHeroModal(state: GameStateShape): void {
   panel.innerHTML = `
     <div style="font-size: clamp(11px, 1.4vh, 14px); color: #aa6a1a; letter-spacing: 6px; font-weight: 900; margin-bottom: 6px; text-shadow: 1px 1px 0 #000;">ROME CALLS A CHAMPION</div>
     <div style="font-size: clamp(28px, 5vh, 52px); color: #ffd34d; letter-spacing: clamp(4px, 0.8vw, 12px); font-weight: 900; line-height: 1.05; margin-bottom: 6px; text-shadow: 0 0 18px #ffd34d, 4px 4px 0 #1a0808;">CHOOSE YOUR HERO</div>
-    <div style="font-size: clamp(11px, 1.4vh, 14px); color: #cdb98a; letter-spacing: 2px; margin-bottom: 4px; font-style: italic;">Three champions stand ready. Only one may answer the legion's call.</div>
+    <div style="font-size: clamp(11px, 1.4vh, 14px); color: #cdb98a; letter-spacing: 2px; margin-bottom: 4px; font-style: italic;">Six champions stand ready. Scroll the line and answer the legion's call.</div>
     <div class="chm-kbd-hint" style="font-size: 10px; color: #88735a; letter-spacing: 3px; margin-bottom: clamp(18px, 3vh, 32px);">
       <span style="display:inline-block; padding:1px 6px; border:1px solid #5a4a30; margin:0 2px; background:#1a0e08;">1</span>
       <span style="display:inline-block; padding:1px 6px; border:1px solid #5a4a30; margin:0 2px; background:#1a0e08;">2</span>
       <span style="display:inline-block; padding:1px 6px; border:1px solid #5a4a30; margin:0 2px; background:#1a0e08;">3</span>
+      <span style="display:inline-block; padding:1px 6px; border:1px solid #5a4a30; margin:0 2px; background:#1a0e08;">4</span>
+      <span style="display:inline-block; padding:1px 6px; border:1px solid #5a4a30; margin:0 2px; background:#1a0e08;">5</span>
+      <span style="display:inline-block; padding:1px 6px; border:1px solid #5a4a30; margin:0 2px; background:#1a0e08;">6</span>
       keys to focus
       <span style="display:inline-block; padding:1px 6px; border:1px solid #5a4a30; margin:0 0 0 8px; background:#1a0e08;">ENTER</span>
-      to march · or click
+      to march · or click · scroll →
     </div>
   `;
 
-  // Card row — 3 columns on desktop, stacked on phones
+  // 2026-05-21 — Card row redesigned as a horizontal-scroll flex
+  // strip. With 6 heroes the old responsive grid would stack into
+  // multiple rows on common screen widths, breaking the "browse the
+  // roster" reading order. The scroll row preserves a single line of
+  // cards left-to-right with scroll-snap so each card lands cleanly
+  // in view as the player swipes / scrolls. Card width stays at the
+  // existing 320px so card content reads identically to the prior
+  // 3-card layout.
   const row = document.createElement('div');
   row.style.cssText = `
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
-    gap: clamp(12px, 2vw, 24px);
+    display: flex;
+    gap: clamp(12px, 2vw, 18px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 4px 12px 4px;
     margin-bottom: clamp(18px, 3vh, 32px);
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
   `;
 
   const confirmStrip = document.createElement('div');
@@ -230,14 +252,18 @@ export function showChooseHeroModal(state: GameStateShape): void {
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
 
-  // Keyboard support: 1/2/3 focus a hero, Enter confirms the focused
+  // Keyboard support: 1-6 focus a hero, Enter confirms the focused
   // pick. Useful for keyboard players and accessibility — the click
   // path stays the canonical interaction so this is purely additive.
+  // The selected card scrolls into view so an off-screen hero (e.g.
+  // pressing "6" on a narrow monitor) doesn't get lost behind the
+  // viewport edge.
   const onKey = (e: KeyboardEvent) => {
-    if (e.key === '1' || e.key === '2' || e.key === '3') {
+    if (e.key >= '1' && e.key <= '6') {
       const idx = parseInt(e.key, 10) - 1;
       if (idx >= 0 && idx < choices.length) {
         selectByIndex(idx);
+        cards[idx]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         e.preventDefault();
       }
     } else if (e.key === 'Enter' && pickedHero) {
@@ -302,8 +328,15 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
   const card = document.createElement('div');
   card.dataset.heroId = heroId;
   card.dataset.heroCard = '1';
+  // 2026-05-21 — Locked card width + scroll-snap so the horizontal
+  // flex row reads as a clean filmstrip. flex-shrink: 0 prevents the
+  // browser from squishing cards to fit; scroll-snap-align: start
+  // makes each card click into place as the player scrolls.
   card.style.cssText = `
     position: relative;
+    flex: 0 0 320px;
+    width: 320px;
+    scroll-snap-align: start;
     background: linear-gradient(180deg, rgba(34,25,18,0.96), rgba(10,6,4,0.96));
     border: 3px solid #5a4a30;
     padding: 0;

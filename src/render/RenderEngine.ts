@@ -5,6 +5,7 @@ import { GameStateShape, isWaveModifierActive } from '../GameState';
 import { GoreState } from '../systems/GoreSystem';
 import { towerEffectiveStats } from '../systems/TowerSystem';
 import { tex } from './Assets';
+import { biomeForWave, BIOMES, pickGrassTile, STATIC_BATTLE_DEBRIS } from './Biomes';
 import waypointsData from '../data/waypoints.json';
 import enemiesData from '../data/enemies.json';
 // 2026-05-19 — Hero sprite tinting reads off towers.json `tint` field.
@@ -267,16 +268,18 @@ export class RenderEngine {
       }
     }
 
-    // WAVE PROGRESSION TINT (§13) — subtle darkening + warm tone as waves progress.
-    // 0 → wave 0 (lush green). 0.5 → mid (trampled). 1 → late (war-torn).
-    const progress = Math.min(1, wave / 40);
-    if (progress > 0.05) {
-      // Darken with brown overlay
-      a.beginFill(0x4a2a14, 0.04 + progress * 0.10).drawRect(0, 0, GRID.CANVAS_W, GRID.CANVAS_H).endFill();
-      if (progress > 0.5) {
-        // Late waves get a faint crimson cast
-        a.beginFill(0x6a1010, 0.05 + (progress - 0.5) * 0.10).drawRect(0, 0, GRID.CANVAS_W, GRID.CANVAS_H).endFill();
-      }
+    // 2026-05-21 — BIOME TINT OVERLAY (visual overhaul phase V3).
+    // Replaces the smooth wave-progression brown overlay with a
+    // discrete per-biome tint that snaps at wave-band boundaries
+    // (W1-3 / W4-6 / W7-10 / W11-15 / W16-18 / W19-20). Each biome
+    // contributes its own color + alpha so the map's mood shifts
+    // visibly as the campaign progresses, even before the new
+    // Higgsfield sprites land. Tint is intentionally subtle
+    // (alpha 0.04-0.18) so the underlying terrain still reads
+    // clearly — stronger tints would make the map look gel-filtered.
+    const biomeTint = BIOMES[biomeForWave(wave)].tint;
+    if (biomeTint.alpha > 0.005) {
+      a.beginFill(biomeTint.color, biomeTint.alpha).drawRect(0, 0, GRID.CANVAS_W, GRID.CANVAS_H).endFill();
     }
 
     // EDGE FOG DRIFT — wisps along the map borders (§8.2)
@@ -327,6 +330,130 @@ export class RenderEngine {
           a.lineStyle(1, 0xee2a2a, 0.4 * pulse).drawCircle(cx, cy, 22 + pulse * 4);
           a.lineStyle(0);
         }
+      }
+    }
+
+    // 2026-05-21 — AMBIENT SPRITE LIFE (visual overhaul phase V10).
+    // Procedural Graphics-based animated elements that add motion +
+    // narrative without sprite assets: flickering torches at the
+    // cave + gate flanks, swaying banners on the gate, a Roman
+    // standard near the gate, distant bird shadow drifting across
+    // the map, smoke columns from the far corners. All driven by
+    // sin-waves; zero per-frame allocation.
+
+    // ── 4 FLICKERING TORCHES ─────────────────────────────────────
+    // 2 flank the cave (top-left), 2 flank the gate (bottom-right).
+    // Each torch = (1) brass pole rect, (2) flame triangle, (3) glow
+    // halo. Flicker via per-torch sin offset so they're not in sync.
+    const drawTorch = (px: number, py: number, phase: number) => {
+      const fl = 0.55 + 0.25 * Math.sin(tick * 12 + phase) + 0.20 * Math.sin(tick * 23.4 + phase * 1.7);
+      // Pole (brass)
+      a.beginFill(0x6a4a18, 0.95).drawRect(px - 1.2, py, 2.4, 9).endFill();
+      // Flame core (orange)
+      a.beginFill(0xff7a18, 0.85 * fl);
+      a.moveTo(px - 3.5, py).lineTo(px, py - 9 - fl * 2).lineTo(px + 3.5, py).lineTo(px - 3.5, py);
+      a.endFill();
+      // Flame highlight (yellow)
+      a.beginFill(0xffe066, 0.75 * fl);
+      a.moveTo(px - 1.8, py - 1).lineTo(px, py - 6 - fl).lineTo(px + 1.8, py - 1).lineTo(px - 1.8, py - 1);
+      a.endFill();
+      // Soft glow halo
+      a.beginFill(0xff9a30, 0.18 * fl).drawCircle(px, py - 4, 12 + fl * 3).endFill();
+    };
+    drawTorch(caveCx - 38, caveCy + 10, 0);
+    drawTorch(caveCx + 38, caveCy + 10, 1.7);
+    drawTorch(gateCx - 36, gateCy - 14, 0.9);
+    drawTorch(gateCx + 36, gateCy - 14, 2.4);
+
+    // ── 2 SWAYING BANNERS ON THE GATE ─────────────────────────────
+    // Red Roman war banners with gold trim, hung from invisible poles
+    // above the gate watchtowers. Sway via x-skew offset.
+    const drawBanner = (px: number, py: number, phase: number) => {
+      const sway = Math.sin(tick * 1.4 + phase) * 2.2;
+      // Pole
+      a.beginFill(0x3a2a18, 0.95).drawRect(px - 0.8, py - 16, 1.6, 22).endFill();
+      // Pole finial (gold ball)
+      a.beginFill(0xffd34d, 0.95).drawCircle(px, py - 17, 1.6).endFill();
+      // Banner (red trapezoid w/ sway)
+      a.beginFill(0xa01818, 0.92);
+      a.moveTo(px + 0.8, py - 14);
+      a.lineTo(px + 9 + sway, py - 14 + sway * 0.5);
+      a.lineTo(px + 9 + sway, py + 4 + sway * 0.5);
+      a.lineTo(px + 0.8, py + 2);
+      a.lineTo(px + 0.8, py - 14);
+      a.endFill();
+      // Gold trim border
+      a.lineStyle(0.7, 0xffd34d, 0.95);
+      a.moveTo(px + 0.8, py - 14).lineTo(px + 9 + sway, py - 14 + sway * 0.5);
+      a.moveTo(px + 9 + sway, py - 14 + sway * 0.5).lineTo(px + 9 + sway, py + 4 + sway * 0.5);
+      a.moveTo(px + 9 + sway, py + 4 + sway * 0.5).lineTo(px + 0.8, py + 2);
+      a.lineStyle(0);
+      // Gold SPQR mark (single dot — too small for real letters)
+      a.beginFill(0xffd34d, 0.85).drawCircle(px + 5 + sway * 0.5, py - 5 + sway * 0.3, 1.1).endFill();
+    };
+    drawBanner(gateCx - 22, gateCy - 24, 0);
+    drawBanner(gateCx + 22, gateCy - 24, 0.9);
+
+    // ── 1 ROMAN STANDARD (Aquila eagle on a pole) ────────────────
+    const standardX = gateCx;
+    const standardY = gateCy - 4;
+    {
+      const sw = Math.sin(tick * 0.8) * 1.4;
+      // Pole
+      a.beginFill(0x4a3018, 0.95).drawRect(standardX - 0.7 + sw * 0.2, standardY - 28, 1.4, 26).endFill();
+      // Eagle body — diamond
+      a.beginFill(0xffd34d, 0.95);
+      a.moveTo(standardX + sw, standardY - 30);
+      a.lineTo(standardX + 3 + sw, standardY - 26);
+      a.lineTo(standardX + sw, standardY - 22);
+      a.lineTo(standardX - 3 + sw, standardY - 26);
+      a.endFill();
+      // Eagle wings (spread V)
+      a.lineStyle(1.4, 0xc88a18, 0.95);
+      a.moveTo(standardX - 6 + sw, standardY - 27).lineTo(standardX + sw, standardY - 25);
+      a.moveTo(standardX + 6 + sw, standardY - 27).lineTo(standardX + sw, standardY - 25);
+      a.lineStyle(0);
+      // Red tassels
+      a.beginFill(0xa01818, 0.85).drawRect(standardX - 2 + sw, standardY - 21, 1, 5).endFill();
+      a.beginFill(0xa01818, 0.85).drawRect(standardX + 1 + sw, standardY - 21, 1, 5).endFill();
+    }
+
+    // ── BIRD SHADOW DRIFT (crosses map every ~30s) ───────────────
+    // Distance from spawn is the time-of-flight phase.
+    const birdT = (tick * 0.06) % 1.0;
+    const birdX = -20 + birdT * (GRID.CANVAS_W + 40);
+    const birdY = 90 + Math.sin(birdT * Math.PI * 2.5) * 30;
+    // Bird as 2 swept V-strokes (wings) — black silhouette
+    a.lineStyle(1.6, 0x000000, 0.38);
+    const wingPhase = Math.sin(tick * 6 + birdX * 0.04);
+    a.moveTo(birdX - 5, birdY + wingPhase * 1.5).lineTo(birdX, birdY - 2);
+    a.moveTo(birdX, birdY - 2).lineTo(birdX + 5, birdY + wingPhase * 1.5);
+    a.lineStyle(0);
+
+    // ── 2 SMOKE COLUMNS (drift from distant corners) ─────────────
+    // Far top-right and bottom-left corners. Rising smoke from
+    // unseen ruins beyond the map edge.
+    const drawSmokeColumn = (px: number, py: number, phase: number) => {
+      for (let i = 0; i < 4; i++) {
+        const t = tick * 0.4 + i * 0.9 + phase;
+        const drift = Math.sin(t * 1.3) * 6;
+        const cy = py - (t % 4) * 14;
+        const alpha = 0.10 - (i / 4) * 0.06;
+        a.beginFill(0x8a8a90, Math.max(0, alpha)).drawCircle(px + drift, cy, 8 + i * 1.2).endFill();
+      }
+    };
+    drawSmokeColumn(GRID.CANVAS_W - 60, 60, 0);
+    drawSmokeColumn(60, GRID.CANVAS_H - 80, 1.3);
+
+    // ── DISTANT LIGHTNING (boss waves only — random 8-12s) ───────
+    if (isBossWave) {
+      // Deterministic flash phase keyed off floor(tick / 10) so the
+      // flash sticks for ~0.2s every 10s, no actual RNG.
+      const flashWindow = Math.floor(tick / 10) * 10;
+      const sinceFlash = tick - flashWindow;
+      if (sinceFlash < 0.2) {
+        const flashA = (0.2 - sinceFlash) / 0.2 * 0.18;
+        a.beginFill(0xeef0ff, flashA).drawRect(0, 0, GRID.CANVAS_W, GRID.CANVAS_H).endFill();
       }
     }
   }
@@ -472,12 +599,77 @@ export class RenderEngine {
       gfx.drawCircle(x0 + GRID.TILE - 3, y0 + GRID.TILE - 3, 0.9);
       gfx.endFill();
 
+      // ── 7.5. SIGIL OVERLAY (2026-05-21 visual overhaul phase V8) ──
+      // Each aura color gets a unique Roman sigil shape so players can
+      // tell tiles apart even at a glance / color-blind. Drawn just
+      // outside the center pip area as small white-tinted glyphs.
+      const sigilA = 0.55 + 0.20 * pulse;
+      const sigilHl = 0xfff8e0;     // warm cream highlight
+      switch (a.kind) {
+        case 'PURPLE': {           // SPQR — 4 vertical column lines
+          gfx.beginFill(sigilHl, sigilA);
+          gfx.drawRect(cx - 5, cy - 4, 1.4, 8);
+          gfx.drawRect(cx - 2, cy - 4, 1.4, 8);
+          gfx.drawRect(cx + 1, cy - 4, 1.4, 8);
+          gfx.drawRect(cx + 4, cy - 4, 1.4, 8);
+          gfx.endFill();
+          break;
+        }
+        case 'BLUE': {             // Aquila — V-shape eagle wings + body dot
+          gfx.lineStyle(1.5, sigilHl, sigilA);
+          gfx.moveTo(cx - 5, cy - 3).lineTo(cx, cy + 2);
+          gfx.moveTo(cx + 5, cy - 3).lineTo(cx, cy + 2);
+          gfx.lineStyle(0);
+          gfx.beginFill(sigilHl, sigilA).drawCircle(cx, cy + 1, 1.2).endFill();
+          break;
+        }
+        case 'RED': {              // Crossed swords — diagonal X with cross-guards
+          gfx.lineStyle(1.5, sigilHl, sigilA);
+          gfx.moveTo(cx - 5, cy - 5).lineTo(cx + 5, cy + 5);
+          gfx.moveTo(cx + 5, cy - 5).lineTo(cx - 5, cy + 5);
+          gfx.lineStyle(0);
+          // Cross-guards as tiny squares
+          gfx.beginFill(sigilHl, sigilA);
+          gfx.drawRect(cx - 6, cy - 3, 2, 2);
+          gfx.drawRect(cx + 4, cy - 3, 2, 2);
+          gfx.endFill();
+          break;
+        }
+        case 'CYAN': {             // Wave crest — 3 ripple arcs
+          gfx.lineStyle(1.2, sigilHl, sigilA);
+          gfx.moveTo(cx - 5, cy + 1).lineTo(cx - 2, cy - 1).lineTo(cx + 1, cy + 1).lineTo(cx + 4, cy - 1);
+          gfx.moveTo(cx - 5, cy + 4).lineTo(cx - 2, cy + 2).lineTo(cx + 1, cy + 4).lineTo(cx + 4, cy + 2);
+          gfx.lineStyle(0);
+          break;
+        }
+        case 'GOLD': {             // Laurel wreath — semicircle of dots
+          gfx.beginFill(sigilHl, sigilA);
+          for (let i = 0; i < 7; i++) {
+            const ang = Math.PI * (0.15 + i * (0.7 / 6));
+            gfx.drawCircle(cx + Math.cos(ang) * 5, cy + Math.sin(ang) * 5 - 1, 0.9);
+          }
+          gfx.endFill();
+          // Center coin
+          gfx.beginFill(sigilHl, sigilA);
+          gfx.drawCircle(cx, cy + 2, 1.5);
+          gfx.endFill();
+          break;
+        }
+        case 'EMERALD': {          // Watchtower eye — oval with center pupil
+          gfx.lineStyle(1, sigilHl, sigilA);
+          gfx.drawEllipse(cx, cy, 5, 2.5);
+          gfx.lineStyle(0);
+          gfx.beginFill(sigilHl, sigilA);
+          gfx.drawCircle(cx, cy, 1.2);
+          gfx.endFill();
+          break;
+        }
+      }
+
       // ── 8. CENTER PIP (pulsing anchor dot) ──
+      // 2026-05-21 — Pip now smaller since the sigil takes center stage.
       gfx.beginFill(eff.color, 0.70 + 0.20 * pulse);
-      gfx.drawCircle(cx, cy, 2 + pulse * 0.6);
-      gfx.endFill();
-      gfx.beginFill(0xffffff, 0.35 + 0.20 * pulse);
-      gfx.drawCircle(cx, cy, 1);
+      gfx.drawCircle(cx, cy + 8, 1.4 + pulse * 0.4);
       gfx.endFill();
     }
   }
@@ -1172,27 +1364,6 @@ export class RenderEngine {
           g.lineStyle(0);
           break;
         }
-        case 'TRIUMPH': {
-          // Massive purple laurel-wreath ring with golden sparks rising
-          // up. Uses ring + 8 rotating leaf-notches around it.
-          const r = 60 + t * 80;
-          g.lineStyle(4 * fade, fx.color, 0.85 * fade);
-          g.drawCircle(fx.x, fx.y, r);
-          // Laurel notches — 12 small arcs around the ring
-          for (let k = 0; k < 12; k++) {
-            const a = (k / 12) * Math.PI * 2 + age * 1.5;
-            const px = fx.x + Math.cos(a) * r;
-            const py = fx.y + Math.sin(a) * r;
-            g.beginFill(0xffd34d, 0.85 * fade).drawCircle(px, py, 4 * fade).endFill();
-          }
-          // Golden upward sparks
-          for (let k = 0; k < 8; k++) {
-            const sx = fx.x + (Math.sin(k * 1.13 + age * 4) * 30);
-            const sy = fx.y - age * 80 - k * 6;
-            g.beginFill(0xffe066, 0.7 * fade).drawCircle(sx, sy, 3 * fade).endFill();
-          }
-          break;
-        }
         // ── AGRIPPA ──────────────────────────────────────────────────
         case 'PILUM_VOLLEY': {
           // 5 javelin trails arcing from Agrippa to each target. extras.targets
@@ -1240,21 +1411,6 @@ export class RenderEngine {
               g.drawCircle(pt.x, pt.y, Math.max(10, sr));
               g.lineStyle(0);
             }
-          }
-          break;
-        }
-        case 'BATTLE_OF_ACTIUM': {
-          // Teal banner-ripple sweeping outward in concentric waves.
-          // 3 rings cascading at different lifetimes.
-          for (let k = 0; k < 3; k++) {
-            const phase = (t + k * 0.18) % 1;
-            const r = 30 + phase * 130;
-            const a = (1 - phase) * 0.7 * fade;
-            g.lineStyle(3, fx.color, a);
-            g.drawCircle(fx.x, fx.y, r);
-            // Banner accent: vertical stroke at top of each ring
-            g.beginFill(fx.color, a).drawRect(fx.x - 2, fx.y - r - 6, 4, 14).endFill();
-            g.lineStyle(0);
           }
           break;
         }
@@ -1312,35 +1468,6 @@ export class RenderEngine {
           g.lineStyle(0);
           break;
         }
-        case 'AQUILA_SQUADRON': {
-          // Burst of golden eagle silhouettes flying outward in a fan.
-          const count = 6;
-          for (let k = 0; k < count; k++) {
-            const a = (k / count) * Math.PI * 2;
-            const dist = t * GRID.TILE * 3.5;
-            const ex = fx.x + Math.cos(a) * dist;
-            const ey = fx.y + Math.sin(a) * dist;
-            // Eagle shape — wing tips + body
-            g.beginFill(fx.color, 0.9 * fade);
-            g.moveTo(ex, ey - 4);
-            g.lineTo(ex + 8, ey - 2);
-            g.lineTo(ex + 6, ey + 1);
-            g.lineTo(ex, ey + 5);
-            g.lineTo(ex - 6, ey + 1);
-            g.lineTo(ex - 8, ey - 2);
-            g.lineTo(ex, ey - 4);
-            g.endFill();
-            // Trail dot
-            const tx = fx.x + Math.cos(a) * dist * 0.6;
-            const ty = fx.y + Math.sin(a) * dist * 0.6;
-            g.beginFill(fx.color, 0.5 * fade).drawCircle(tx, ty, 2.5).endFill();
-          }
-          // Center burst
-          g.lineStyle(3 * fade, fx.color, 0.9 * fade);
-          g.drawCircle(fx.x, fx.y, 18 + t * 20);
-          g.lineStyle(0);
-          break;
-        }
         // ── SCIPIO ───────────────────────────────────────────────────
         case 'CORNU_CHARGE': {
           // Curved horn-blast wave + red arrow to targeted boss. extras.target = {x,y}.
@@ -1372,48 +1499,36 @@ export class RenderEngine {
           }
           break;
         }
-        case 'CARTHAGO_DELENDA_EST': {
-          // Red X-shaped destruction mark on the targeted boss + small SPQR seal.
-          // extras.target = {x,y}.
+        case 'SCIPIO_BRAND': {
+          // 2026-05-21 — Visual updated to match the new debuff
+          // identity (replaced CARTHAGO_DELENDA_EST, which drew a
+          // destructive X-slash). Now: a red branding-iron stamp on
+          // each boss's chest + a slowly pulsing crimson aura ring
+          // (the "marked for the fall of Carthage" debuff visual).
+          // The branding stays readable for the 6s mark duration via
+          // CombatResolver's mark-status check, separate from this
+          // one-shot impact VFX. extras.target = {x,y}.
           const target = fx.extras?.target ?? { x: fx.x, y: fx.y };
-          const sweep = Math.min(1, t * 1.4);
-          const len = 24 + sweep * 8;
-          g.lineStyle(5 * fade, fx.color, 0.95 * fade);
-          // \
-          g.moveTo(target.x - len, target.y - len).lineTo(target.x - len + 2 * len * sweep, target.y - len + 2 * len * sweep);
-          // /
-          g.moveTo(target.x + len, target.y - len).lineTo(target.x + len - 2 * len * sweep, target.y - len + 2 * len * sweep);
+          const stamp = Math.min(1, t * 1.5);
+          // Branding iron — vertical crimson bar with horizontal crossbeam
+          // (like a Roman legion standard hammered onto the boss).
+          const barH = 22 + stamp * 6;
+          const barW = 5;
+          g.beginFill(fx.color, 0.85 * fade);
+          g.drawRect(target.x - barW / 2, target.y - barH, barW, barH);
+          g.endFill();
+          // Crossbeam — gets longer as the brand sears in.
+          const crossW = 18 + stamp * 8;
+          g.beginFill(fx.color, 0.85 * fade);
+          g.drawRect(target.x - crossW / 2, target.y - barH + 4, crossW, 4);
+          g.endFill();
+          // Crimson aura ring — telegraphs the +30% damage-taken mark.
+          const auraR = 16 + t * 14;
+          g.lineStyle(2.5 * fade, 0xc94040, 0.75 * fade);
+          g.drawCircle(target.x, target.y, auraR);
           g.lineStyle(0);
-          // SPQR seal ring around target
-          const sealR = 18 + t * 18;
-          g.lineStyle(2.5 * fade, 0xc94040, 0.85 * fade);
-          g.drawCircle(target.x, target.y, sealR);
-          g.lineStyle(0);
-          // Inner crimson fill puff
-          g.beginFill(fx.color, 0.15 * fade).drawCircle(target.x, target.y, sealR * 0.8).endFill();
-          break;
-        }
-        case 'ZAMA': {
-          // Massive blood-red battlefield ring with crossed-gladii icons.
-          const r = 80 + t * 100;
-          g.lineStyle(5 * fade, fx.color, 0.85 * fade);
-          g.drawCircle(fx.x, fx.y, r);
-          g.lineStyle(0);
-          // Crossed gladii at 4 cardinal positions around the ring
-          for (let k = 0; k < 4; k++) {
-            const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
-            const cx = fx.x + Math.cos(a) * r;
-            const cy = fx.y + Math.sin(a) * r;
-            // Gladius 1
-            g.lineStyle(3 * fade, 0xeeeeee, 0.9 * fade);
-            g.moveTo(cx - 8, cy - 8).lineTo(cx + 8, cy + 8);
-            // Gladius 2
-            g.moveTo(cx + 8, cy - 8).lineTo(cx - 8, cy + 8);
-            g.lineStyle(0);
-            // Pommel dots
-            g.beginFill(0xffd34d, 0.95 * fade).drawCircle(cx - 8, cy - 8, 2.5).endFill();
-            g.beginFill(0xffd34d, 0.95 * fade).drawCircle(cx + 8, cy - 8, 2.5).endFill();
-          }
+          // Soft inner glow pulse
+          g.beginFill(fx.color, 0.10 * fade).drawCircle(target.x, target.y, auraR * 0.85).endFill();
           break;
         }
         // ── CAESAR ───────────────────────────────────────────────────
@@ -1453,36 +1568,6 @@ export class RenderEngine {
           // Big gold pulse at Caesar
           g.lineStyle(3 * fade, fx.color, 0.7 * fade);
           g.drawCircle(fx.x, fx.y, 40 + t * 100);
-          g.lineStyle(0);
-          break;
-        }
-        case 'IDES_OF_MARCH': {
-          // Massive gold-white screen flash + 7 dagger stab lines converging on Caesar.
-          // Full-screen flash overlay
-          if (t < 0.4) {
-            const flashA = (0.4 - t) / 0.4 * 0.6;
-            g.beginFill(0xffffff, flashA).drawRect(0, 0, GRID.TILE * GRID.COLS, GRID.TILE * GRID.ROWS).endFill();
-          }
-          // Dagger stab lines from outside converging on Caesar's position
-          const daggerCount = 7;
-          for (let k = 0; k < daggerCount; k++) {
-            const a = (k / daggerCount) * Math.PI * 2 + Math.PI / daggerCount;
-            const outerDist = GRID.TILE * 6;
-            const innerDist = GRID.TILE * 1 * t;
-            const ox = fx.x + Math.cos(a) * outerDist;
-            const oy = fx.y + Math.sin(a) * outerDist;
-            const ix = fx.x + Math.cos(a) * innerDist;
-            const iy = fx.y + Math.sin(a) * innerDist;
-            // Dagger blade
-            g.lineStyle(3 * fade, 0xc8c8c8, 0.95 * fade);
-            g.moveTo(ox, oy).lineTo(ix, iy);
-            g.lineStyle(0);
-            // Blade tip
-            g.beginFill(fx.color, 0.95 * fade).drawCircle(ix, iy, 3.5 * fade).endFill();
-          }
-          // Center burst
-          g.lineStyle(4 * fade, fx.color, 0.95 * fade);
-          g.drawCircle(fx.x, fx.y, 30 + t * 50);
           g.lineStyle(0);
           break;
         }
@@ -1526,33 +1611,6 @@ export class RenderEngine {
           g.lineStyle(3 * fade, fx.color, 0.85 * fade);
           g.drawCircle(fx.x, fx.y, 30 + t * 60);
           g.lineStyle(0);
-          break;
-        }
-        case 'SULLAS_MARCH': {
-          // White-gold column of light descending + heal cross at gate.
-          // extras.gate = {x,y}.
-          const gate = fx.extras?.gate;
-          // Big column over Sulla
-          const colH = GRID.TILE * 5 * fade;
-          const colW = 28 * fade;
-          g.beginFill(fx.color, 0.18 * fade).drawRect(fx.x - colW / 2, fx.y - colH, colW, colH).endFill();
-          g.beginFill(0xffffff, 0.30 * fade).drawRect(fx.x - colW / 4, fx.y - colH, colW / 2, colH).endFill();
-          // Glow at base
-          g.beginFill(fx.color, 0.55 * fade).drawCircle(fx.x, fx.y, 24).endFill();
-          // Crossed swords above column
-          g.lineStyle(3 * fade, 0xeeeeee, 0.95 * fade);
-          g.moveTo(fx.x - 12, fx.y - colH - 8).lineTo(fx.x + 12, fx.y - colH + 4);
-          g.moveTo(fx.x + 12, fx.y - colH - 8).lineTo(fx.x - 12, fx.y - colH + 4);
-          g.lineStyle(0);
-          // Heal cross at gate
-          if (gate) {
-            const ch = 14, cw = 4;
-            g.beginFill(0xffffff, 0.95 * fade).drawRect(gate.x - cw / 2, gate.y - ch, cw, ch * 2).endFill();
-            g.beginFill(0xffffff, 0.95 * fade).drawRect(gate.x - ch, gate.y - cw / 2, ch * 2, cw).endFill();
-            g.lineStyle(2 * fade, fx.color, 0.85 * fade);
-            g.drawCircle(gate.x, gate.y, 18 + t * 12);
-            g.lineStyle(0);
-          }
           break;
         }
       }
@@ -1823,10 +1881,23 @@ export class RenderEngine {
     // ─── REAL TILED TERRAIN ───────────────────────────────────────────
     // Grass and dirt-path sprites (tt_*) replace the flat colored rects.
     // Each tile gets a deterministic hash so reload looks the same.
-    // Decorative props (dp_*) sprinkle on a small subset of grass tiles.
-    const grassTiles = ['TT_GRASS_A', 'TT_GRASS_B', 'TT_GRASS_FLOWERS', 'TT_GRASS_STONES', 'TT_GRASS_TWIGS'];
+    // Decorative props (dp_*) sprinkle on a subset of grass tiles.
+    //
+    // 2026-05-21 — BIOME-AWARE TERRAIN + HEAVY DECOR (visual overhaul).
+    // Grass tile picks now read the biome profile's weight table so the
+    // map's color identity shifts as the campaign progresses (W1-3
+    // sunny, W4-6 woodland, W7-10 arid, W11-15 dark, W16-18 ruins,
+    // W19-20 hellscape). Decor density bumped 0.06 → 0.40 with
+    // edge-weighting and path-corridor exclusion so the field reads
+    // dense at the borders but stays readable near combat lanes. The
+    // prop pool comes from the active biome profile, so each era
+    // pulls themed flora (Celtic druid stones, Carthage cypresses,
+    // undead tombstones, demon charred logs). Until the Phase 4 prop
+    // sheets crop, biome-specific keys silently fall back to the
+    // existing 9 universal props via the tex(key) ?? null check.
+    const biome = BIOMES[biomeForWave(state.wave ?? 1, (state as any).endlessWaveCfg?.faction)];
     const dirtTiles = ['TT_DIRT_A', 'TT_DIRT_RUTS', 'TT_DIRT_FOOTPRINTS'];
-    const decorProps = ['DP_FLOWERS_RED','DP_FLOWERS_WHITE','DP_MUSHROOMS','DP_BUSH','DP_URN','DP_HELMET','DP_SCROLL','DP_WOODEN_POST','DP_MILESTONE'];
+    const decorProps = biome.propPool;
     // Cheap deterministic hash for tile picking — same coords always yield the same sprite.
     const hash = (c: number, r: number, salt = 0) => Math.abs(((c * 73856093) ^ (r * 19349663) ^ (salt * 83492791)) >>> 0);
 
@@ -1851,23 +1922,23 @@ export class RenderEngine {
         // logic continues to treat them as unbuildable / unreachable),
         // they just look like grass underneath the cropped edge.
         const isPath = pathSet.has(`${c},${r}`);
-        // Choose a tile sprite from the appropriate set
-        const pool = isPath ? dirtTiles : grassTiles;
-        // Path tiles slightly bias toward the basic dirt; grass slightly biases toward plain.
+        // Path tiles slightly bias toward the basic dirt; grass picks
+        // from the biome's weight table via pickGrassTile() below.
         const h = hash(c, r);
         let key: string;
         if (isPath) {
-          // 70% basic dirt, 15% ruts, 15% footprints
+          // 70% basic dirt, 15% ruts, 15% footprints. Path-tileset
+          // replacement lands in a later phase — until then we keep
+          // the dirt textures so the route stays readable. Biome
+          // tint overlay (drawAmbient) handles the visual era shift
+          // on path tiles for now.
           const roll = h % 100;
           key = roll < 70 ? 'TT_DIRT_A' : roll < 85 ? 'TT_DIRT_RUTS' : 'TT_DIRT_FOOTPRINTS';
         } else {
-          // 50% grass A, 30% grass B, 8% flowers, 6% stones, 6% twigs
-          const roll = h % 100;
-          key = roll < 50 ? 'TT_GRASS_A'
-              : roll < 80 ? 'TT_GRASS_B'
-              : roll < 88 ? 'TT_GRASS_FLOWERS'
-              : roll < 94 ? 'TT_GRASS_STONES'
-              :             'TT_GRASS_TWIGS';
+          // Grass tile pick is biome-weighted. pickGrassTile() reads
+          // the active biome's weight table so undead waves bias
+          // toward dark grass, arid waves toward dry/stones, etc.
+          key = pickGrassTile(biome, h);
         }
         const tex0 = tex(key);
         if (tex0) {
@@ -1880,25 +1951,236 @@ export class RenderEngine {
           const fill = isPath ? 0x886533 : 0x426f31;
           g.beginFill(fill).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
         }
-        // Sprinkle decorative props on a small subset of empty grass tiles only.
-        // Skip path, spawn, gate, waypoint tiles. Density ~6%.
-        if (!isPath && t === TileType.EMPTY && (h % 100) < 6) {
-          const propKey = decorProps[hash(c, r, 31337) % decorProps.length];
-          const propTex = tex(propKey);
-          if (propTex) {
-            const dp = new Sprite(propTex);
-            dp.anchor.set(0.5);
-            dp.x = x + GRID.TILE / 2;
-            dp.y = y + GRID.TILE / 2;
-            const sz = GRID.TILE * 0.65;
-            dp.width = sz; dp.height = sz;
-            dp.alpha = 0.95;
-            decorLayer.addChild(dp);
+        // 2026-05-21 — HEAVY DECOR (visual overhaul phase V2). Density
+        // bumped 0.06 → 0.40 with edge-weighting + path-corridor
+        // exclusion so the field reads dense at the borders but stays
+        // visually clean near combat lanes. Prop pool is biome-aware.
+        //
+        // Edge weight: distance-from-edge / map-radius gives a 0..1
+        //   center-bias; we invert so corners get the full density,
+        //   center gets 0.7×. Quadratic falloff to keep the gradient
+        //   smooth without a hard ring.
+        // Path corridor: any tile within manhattan 1 of a path tile
+        //   rolls at 0.3× the base density to keep tower placement
+        //   tiles readable.
+        // Sprite size variance: 0.55-0.80 tile width per-prop so the
+        //   field doesn't read as a uniform stamping grid.
+        if (!isPath && t === TileType.EMPTY) {
+          // Center-vs-edge weight (1.0 at corners, ~0.7 at dead center).
+          const cxNorm = (c - GRID.COLS / 2) / (GRID.COLS / 2);
+          const cyNorm = (r - GRID.ROWS / 2) / (GRID.ROWS / 2);
+          const edgeBias = 0.7 + 0.5 * Math.min(1, cxNorm * cxNorm + cyNorm * cyNorm);
+          // Path corridor exclusion — if any 4-neighbor is path, dim.
+          const nearPath =
+            pathSet.has(`${c - 1},${r}`) ||
+            pathSet.has(`${c + 1},${r}`) ||
+            pathSet.has(`${c},${r - 1}`) ||
+            pathSet.has(`${c},${r + 1}`);
+          const corridorMult = nearPath ? 0.3 : 1.0;
+          const targetDensity = 0.40 * edgeBias * corridorMult;
+          // Roll: hash to 0..0.999, compare to target.
+          const propRoll = (h % 1000) / 1000;
+          if (propRoll < targetDensity) {
+            const propKey = decorProps[hash(c, r, 31337) % decorProps.length];
+            const propTex = tex(propKey);
+            // tex() returns null for unregistered keys (biome-specific
+            // sprites that haven't been Higgsfield-generated yet).
+            // Silently skip — the universal prop fallbacks in the
+            // pool still satisfy most rolls.
+            if (propTex) {
+              const dp = new Sprite(propTex);
+              dp.anchor.set(0.5);
+              dp.x = x + GRID.TILE / 2;
+              dp.y = y + GRID.TILE / 2;
+              // Per-prop size jitter so the field doesn't grid-stamp.
+              const sizeJitter = 0.55 + 0.25 * ((hash(c, r, 91171) % 100) / 100);
+              const sz = GRID.TILE * sizeJitter;
+              dp.width = sz; dp.height = sz;
+              dp.alpha = 0.95;
+              decorLayer.addChild(dp);
+            }
           }
         }
       }
     }
     this.layers.bg.addChild(terrainLayer);
+
+    // 2026-05-21 — PROCEDURAL COBBLESTONE OVERLAY (visual overhaul
+    // phase V7). The biggest "high-fidelity map" lever — draws
+    // individual cobblestones with visible mortar lines, soft
+    // highlights, and biome-specific stone palettes directly on top
+    // of the dirt path tiles. Pure Pixi Graphics, no new sprites.
+    //
+    // Each path tile is rendered as a 4×4 mini-grid of stones (~7px
+    // wide each with 1px mortar). Stone color jitter per-stone +
+    // top-left highlight + bottom-right shadow gives each cobble a
+    // hand-laid feel. Biome palette swaps automatically — sunny
+    // sandstone (W1-10), mossy gray-green (W11-15), scorched
+    // black-red (W19-20). The dirt tile underneath provides a base
+    // wash so any gaps between stones blend cleanly.
+    const cobbleGfx = new Graphics();
+    // Biome-specific cobblestone palette.
+    const cobblePalette = (() => {
+      const id = biome.id;
+      if (id === 'BIOME_UNDEAD_FOREST' || id === 'BIOME_UNDEAD_RUINS') {
+        return { base: 0x6a6a5a, jitter: [0x5a5a4a, 0x7a7a6a, 0x4a4a3a], mortar: 0x1a1a14, hl: 0x8a8a78, sh: 0x2a2a20 };
+      }
+      if (id === 'BIOME_HELLSCAPE') {
+        return { base: 0x3a2418, jitter: [0x4a1808, 0x2a1408, 0x6a2a18], mortar: 0x0a0400, hl: 0xff5a20, sh: 0x100400 };
+      }
+      // Sunny Roman default (W1-10)
+      return { base: 0xa68a5e, jitter: [0xb89a6e, 0x9c7a4e, 0xa68a5e, 0xc0a880], mortar: 0x3a2a14, hl: 0xd8c098, sh: 0x4a3018 };
+    })();
+    const COBBLES_PER_SIDE = 4;
+    const COBBLE_W = GRID.TILE / COBBLES_PER_SIDE;     // 8px
+    for (let r = 0; r < GRID.ROWS; r++) {
+      for (let c = 0; c < GRID.COLS; c++) {
+        if (!pathSet.has(`${c},${r}`)) continue;
+        const tx = c * GRID.TILE;
+        const ty = r * GRID.TILE;
+        // Mortar base — fills the whole tile with mortar color so
+        // any gap between cobbles reads as dark stone joint.
+        cobbleGfx.beginFill(cobblePalette.mortar, 0.85).drawRect(tx, ty, GRID.TILE, GRID.TILE).endFill();
+        for (let sy = 0; sy < COBBLES_PER_SIDE; sy++) {
+          for (let sx = 0; sx < COBBLES_PER_SIDE; sx++) {
+            // Per-cobble offset and size jitter for "hand-laid" feel.
+            const cobbleHash = hash(c * 16 + sx, r * 16 + sy, 717);
+            const sizeJitter = (cobbleHash % 3) - 1;          // -1..+1 px
+            const offsetX = ((cobbleHash >>> 4) % 3) - 1;
+            const offsetY = ((cobbleHash >>> 8) % 3) - 1;
+            const x0 = tx + sx * COBBLE_W + 0.7 + offsetX * 0.4;
+            const y0 = ty + sy * COBBLE_W + 0.7 + offsetY * 0.4;
+            const w = COBBLE_W - 1.4 + sizeJitter * 0.3;
+            const h0 = COBBLE_W - 1.4 + sizeJitter * 0.3;
+            // Pick a base shade from the palette jitter list.
+            const shade = cobblePalette.jitter[(cobbleHash >>> 12) % cobblePalette.jitter.length];
+            // Stone body
+            cobbleGfx.beginFill(shade, 1).drawRect(x0, y0, w, h0).endFill();
+            // Top-left highlight (1px line)
+            cobbleGfx.beginFill(cobblePalette.hl, 0.55).drawRect(x0, y0, w, 0.9).endFill();
+            cobbleGfx.beginFill(cobblePalette.hl, 0.45).drawRect(x0, y0, 0.9, h0).endFill();
+            // Bottom-right shadow (1px line)
+            cobbleGfx.beginFill(cobblePalette.sh, 0.55).drawRect(x0, y0 + h0 - 0.9, w, 0.9).endFill();
+            cobbleGfx.beginFill(cobblePalette.sh, 0.45).drawRect(x0 + w - 0.9, y0, 0.9, h0).endFill();
+          }
+        }
+      }
+    }
+    this.layers.bg.addChild(cobbleGfx);
+
+    // 2026-05-21 — STATIC BATTLE DEBRIS (visual overhaul phase V2).
+    // Curated corpse / blood / weapon sprites pre-placed at hand-
+    // anchored coordinates near the path. Adds "this gate has been
+    // defended for a hundred years" narrative even on Wave 1.
+    // Debris layer sits BELOW the regular decor layer so a bush can
+    // partially cover a fallen soldier for added depth. Sprite keys
+    // (`DBR_*`) crop in Phase 5 — until then tex() returns null and
+    // anchors silently skip. The anchor table itself is committed
+    // now so the placement positions don't churn later.
+    const debrisLayer = new Container();
+    // 2026-05-21 — PROCEDURAL BATTLE DEBRIS (visual overhaul phase V7+).
+    // Each anchor key falls through to a procedural Graphics draw if
+    // the sprite isn't registered yet. This guarantees all 12 anchor
+    // positions show SOMETHING — no silent slots — telling the
+    // "legions died defending this gate" story from Wave 1.
+    const debrisGfx = new Graphics();
+    for (const anchor of STATIC_BATTLE_DEBRIS) {
+      const cx = anchor.col * GRID.TILE + GRID.TILE / 2;
+      const cy = anchor.row * GRID.TILE + GRID.TILE / 2;
+      const debrisTex = tex(anchor.key);
+      if (debrisTex) {
+        const dp = new Sprite(debrisTex);
+        dp.anchor.set(0.5);
+        dp.x = cx;
+        dp.y = cy;
+        const sz = GRID.TILE * 0.75;
+        dp.width = sz; dp.height = sz;
+        dp.alpha = 0.92;
+        debrisLayer.addChild(dp);
+      } else {
+        // Procedural fallback by key family. Each one is a 5-10 op
+        // Pixi Graphics draw — cheap and visually distinct from the
+        // grass/cobble underneath.
+        if (anchor.key.startsWith('DBR_BLOOD')) {
+          // Dried blood splotch — irregular dark red circles
+          const big = anchor.key === 'DBR_BLOOD_LARGE';
+          const r = big ? 9 : 6;
+          debrisGfx.beginFill(0x4a0808, 0.8).drawCircle(cx, cy, r).endFill();
+          debrisGfx.beginFill(0x6a1010, 0.7).drawCircle(cx - 2, cy + 1, r * 0.6).endFill();
+          debrisGfx.beginFill(0x4a0808, 0.75).drawCircle(cx + 3, cy - 2, r * 0.45).endFill();
+          if (big) {
+            // Drag smear extending to the side
+            debrisGfx.beginFill(0x3a0606, 0.6).drawRect(cx + 4, cy - 1, 10, 2.5).endFill();
+          }
+        } else if (anchor.key === 'DBR_BROKEN_PILUM') {
+          // 3 broken javelin shafts at angles
+          debrisGfx.lineStyle(1.4, 0x6a4a18, 0.92);
+          debrisGfx.moveTo(cx - 7, cy + 4).lineTo(cx + 5, cy - 5);
+          debrisGfx.moveTo(cx - 5, cy - 4).lineTo(cx + 7, cy + 5);
+          debrisGfx.moveTo(cx - 8, cy).lineTo(cx + 8, cy);
+          debrisGfx.lineStyle(0);
+          // Iron tips
+          debrisGfx.beginFill(0xc8c8c8, 0.95);
+          debrisGfx.drawCircle(cx + 5, cy - 5, 1.2);
+          debrisGfx.drawCircle(cx + 7, cy + 5, 1.2);
+          debrisGfx.drawCircle(cx + 8, cy, 1.2);
+          debrisGfx.endFill();
+        } else if (anchor.key === 'DBR_GLADIUS') {
+          // Lying Roman sword — blade + crossguard + hilt
+          debrisGfx.beginFill(0xc8c8c8, 0.95).drawRect(cx - 6, cy - 1, 10, 2).endFill();
+          debrisGfx.beginFill(0x6a4a18, 0.95).drawRect(cx + 4, cy - 2, 1.5, 4).endFill();
+          debrisGfx.beginFill(0x8a5a2a, 0.95).drawRect(cx + 5.5, cy - 1.5, 3, 3).endFill();
+        } else if (anchor.key === 'DBR_BROKEN_SHIELD_CELT') {
+          // Round wooden shield broken in half — semicircle with crack
+          debrisGfx.beginFill(0x4a3a1a, 0.95).drawCircle(cx, cy, 7).endFill();
+          debrisGfx.beginFill(0x2a1a08, 0.95).drawRect(cx - 1, cy - 7, 2, 14).endFill();
+          // Center boss
+          debrisGfx.beginFill(0x8a6a3a, 0.95).drawCircle(cx, cy, 2).endFill();
+        } else if (anchor.key === 'DBR_SKELETAL_REMAINS') {
+          // Skull + 2 ribs — pure white-ish
+          debrisGfx.beginFill(0xe0d8c8, 0.95).drawCircle(cx - 3, cy, 3).endFill();
+          debrisGfx.beginFill(0x1a1410, 1).drawCircle(cx - 3.5, cy - 0.5, 0.6).endFill();
+          debrisGfx.beginFill(0x1a1410, 1).drawCircle(cx - 2.5, cy - 0.5, 0.6).endFill();
+          debrisGfx.beginFill(0xe0d8c8, 0.85).drawRect(cx + 1, cy - 2, 7, 1.2).endFill();
+          debrisGfx.beginFill(0xe0d8c8, 0.85).drawRect(cx + 1, cy + 1, 7, 1.2).endFill();
+        } else if (anchor.key === 'DBR_SCATTERED_SCROLLS') {
+          // 3 unfurled parchment rectangles + tiny helmet dot
+          debrisGfx.beginFill(0xe0c890, 0.92);
+          debrisGfx.drawRoundedRect(cx - 7, cy - 4, 6, 4, 1);
+          debrisGfx.drawRoundedRect(cx - 1, cy + 1, 6, 4, 1);
+          debrisGfx.drawRoundedRect(cx + 2, cy - 3, 5, 4, 1);
+          debrisGfx.endFill();
+          // Helmet
+          debrisGfx.beginFill(0x8a6a3a, 0.95).drawCircle(cx - 5, cy + 5, 2).endFill();
+        } else {
+          // Fallen-soldier silhouettes (ROMAN_FALLEN_A/B/C, CELTIC_FALLEN, CARTHAGE_FALLEN)
+          // Top-down body shape: torso + head + arms outline. Tint
+          // varies by faction.
+          const tint = anchor.key.includes('CELTIC') ? 0x4a3a2a
+                     : anchor.key.includes('CARTHAGE') ? 0x6a5a3a
+                     : 0x6a1818;   // Roman red tunic
+          // Body
+          debrisGfx.beginFill(tint, 0.92).drawRoundedRect(cx - 4, cy - 6, 8, 12, 2).endFill();
+          // Head
+          debrisGfx.beginFill(0xc8a878, 0.95).drawCircle(cx, cy - 6, 2.4).endFill();
+          // Helmet (Roman only)
+          if (anchor.key.startsWith('DBR_ROMAN_FALLEN')) {
+            debrisGfx.beginFill(0xffd34d, 0.95).drawCircle(cx, cy - 7, 2.6).endFill();
+            // Red crest
+            debrisGfx.beginFill(0xc02020, 0.92).drawRect(cx - 0.5, cy - 9.5, 1, 3).endFill();
+          }
+          // Arms outstretched
+          debrisGfx.beginFill(tint, 0.85);
+          debrisGfx.drawRect(cx - 7, cy - 3, 3, 1.5);
+          debrisGfx.drawRect(cx + 4, cy - 3, 3, 1.5);
+          debrisGfx.endFill();
+          // Tiny blood pool below
+          debrisGfx.beginFill(0x4a0808, 0.45).drawCircle(cx, cy + 7, 3).endFill();
+        }
+      }
+    }
+    debrisLayer.addChild(debrisGfx);
+    this.layers.bg.addChild(debrisLayer);
     this.layers.bg.addChild(decorLayer);
 
     // GHOST PATH — the immutable brown stripe showing the unblocked enemy
@@ -1954,75 +2236,182 @@ export class RenderEngine {
     // Container allocation each drawStatic call (~once per game start +
     // per combo placement).
 
-    // CAVE: dramatic 3x3 entry with rocky frame, dark glow, mist halo.
+    // CAVE: dramatic 4×4 entry with biome-aware glow + carved-stone frame.
+    // 2026-05-21 — Phase V11 upgrade. Sprite render size bumped 86 →
+    // 112px (3.5 tiles). Ornate procedural frame layered underneath:
+    // rocky cliff cutout, biome-colored portal glow, carved column
+    // pilasters flanking the entrance.
     const caveCx = waypointsData.spawn.col * GRID.TILE + GRID.TILE / 2;
     const caveCy = waypointsData.spawn.row * GRID.TILE + GRID.TILE / 2;
     const caveFrame = new Graphics();
-    // Outer rocky cliff (dark gray, organic shape)
-    caveFrame.beginFill(0x2a2622, 1).drawRoundedRect(caveCx - 56, caveCy - 56, 112, 112, 16).endFill();
-    caveFrame.beginFill(0x3b342c, 1).drawRoundedRect(caveCx - 50, caveCy - 50, 100, 100, 14).endFill();
-    // Inner shadow halo
-    caveFrame.beginFill(0x000000, 0.8).drawCircle(caveCx, caveCy, 44).endFill();
-    caveFrame.beginFill(0x1a0d2a, 0.85).drawCircle(caveCx, caveCy, 36).endFill();
-    // Purple-mist outer aura (signals "danger comes from here")
-    caveFrame.beginFill(0x6b3aa0, 0.18).drawCircle(caveCx, caveCy, 80).endFill();
-    caveFrame.beginFill(0x6b3aa0, 0.10).drawCircle(caveCx, caveCy, 105).endFill();
+    // Biome-aware portal glow color
+    const caveGlowColor = (() => {
+      switch (biome.id) {
+        case 'BIOME_GRASSLAND':       return 0xffaa44;       // warm torch
+        case 'BIOME_CELTIC_WOOD':     return 0xddee88;       // pale yellow torch
+        case 'BIOME_CARTHAGE_ARID':   return 0xffd078;       // dry desert torch
+        case 'BIOME_UNDEAD_FOREST':   return 0x9050ff;       // purple portal
+        case 'BIOME_UNDEAD_RUINS':    return 0x60dd80;       // sickly green miasma
+        case 'BIOME_HELLSCAPE':       return 0xff3018;       // demon red
+      }
+    })();
+    // Outer rocky cliff (large, organic). Drawn 4×4 = 128px footprint.
+    caveFrame.beginFill(0x2a2622, 1).drawRoundedRect(caveCx - 64, caveCy - 64, 128, 128, 18).endFill();
+    caveFrame.beginFill(0x3b342c, 1).drawRoundedRect(caveCx - 56, caveCy - 56, 112, 112, 16).endFill();
+    // Carved column pilasters (left + right of entrance)
+    caveFrame.beginFill(0x5a4a32, 1);
+    caveFrame.drawRect(caveCx - 58, caveCy - 50, 7, 96);     // left column
+    caveFrame.drawRect(caveCx + 51, caveCy - 50, 7, 96);     // right column
+    caveFrame.endFill();
+    // Column highlights (subtle vertical line)
+    caveFrame.beginFill(0x7a6a48, 0.9);
+    caveFrame.drawRect(caveCx - 57, caveCy - 50, 1.4, 96);
+    caveFrame.drawRect(caveCx + 56.6, caveCy - 50, 1.4, 96);
+    caveFrame.endFill();
+    // Column capitals (decorated top + bottom)
+    caveFrame.beginFill(0x6a5a3a, 1);
+    caveFrame.drawRect(caveCx - 60, caveCy - 52, 11, 4);
+    caveFrame.drawRect(caveCx - 60, caveCy + 42, 11, 4);
+    caveFrame.drawRect(caveCx + 49, caveCy - 52, 11, 4);
+    caveFrame.drawRect(caveCx + 49, caveCy + 42, 11, 4);
+    caveFrame.endFill();
+    // Inner shadow well — pitch-dark interior
+    caveFrame.beginFill(0x000000, 0.85).drawCircle(caveCx, caveCy, 48).endFill();
+    caveFrame.beginFill(0x1a0d2a, 0.90).drawCircle(caveCx, caveCy, 38).endFill();
+    // Biome-colored portal glow (replaces hardcoded purple)
+    caveFrame.beginFill(caveGlowColor, 0.22).drawCircle(caveCx, caveCy, 88).endFill();
+    caveFrame.beginFill(caveGlowColor, 0.12).drawCircle(caveCx, caveCy, 118).endFill();
     this.layers.bg.addChild(caveFrame);
-    const cave = tex('DARK_CAVE');
+    // Biome-aware cave entrance sprite (skull-door for undead biomes,
+    // DARK_CAVE for early biomes where the new sprite hasn't generated).
+    const caveKey = biome.caveKey;
+    const cave = tex(caveKey) ?? tex('DARK_CAVE');
     if (cave) {
       const cs = new Sprite(cave);
       cs.anchor.set(0.5); cs.x = caveCx; cs.y = caveCy;
-      cs.width = 86; cs.height = 86;
+      // 2026-05-21 — Bumped 86 → 112px (3.5 tile) for visual drama.
+      cs.width = 112; cs.height = 112;
       this.layers.bg.addChild(cs);
     }
 
-    // GATE: 2026-05-17 — stone bastion frame REMOVED. The world-zoom was
-    // cropping the bastion towers + crenellations off-screen; the player
-    // saw a clipped-looking castle. Now we just draw the ROMAN_GATE sprite
-    // itself with the soft gold glow underneath. Cleaner read at any zoom.
+    // GATE: 4×4 fortress with biome-aware glow + crenellated frame.
+    // 2026-05-21 — Phase V11 upgrade. Sprite size 76 → 112px. Added
+    // crenellation frame + flanking pilasters + brighter gold halo.
     const gateCx = waypointsData.gate.col * GRID.TILE + GRID.TILE / 2;
     const gateCy = waypointsData.gate.row * GRID.TILE + GRID.TILE / 2;
     const gateFrame = new Graphics();
-    // Gold glow underneath (warmth — civilization to defend). Tightened
-    // radius so the glow doesn't bleed into the cropped perimeter.
-    gateFrame.beginFill(0xd4af37, 0.20).drawCircle(gateCx, gateCy, 56).endFill();
-    gateFrame.beginFill(0xd4af37, 0.12).drawCircle(gateCx, gateCy, 78).endFill();
+    // Bigger gold glow underneath (warmth — civilization to defend)
+    gateFrame.beginFill(0xd4af37, 0.24).drawCircle(gateCx, gateCy, 72).endFill();
+    gateFrame.beginFill(0xd4af37, 0.14).drawCircle(gateCx, gateCy, 100).endFill();
+    // Crenellated outer frame (stone color with battlements)
+    gateFrame.beginFill(0x3a3025, 1).drawRoundedRect(gateCx - 60, gateCy - 60, 120, 120, 6).endFill();
+    gateFrame.beginFill(0x6a5a3a, 1).drawRoundedRect(gateCx - 56, gateCy - 56, 112, 112, 4).endFill();
+    // Battlements along the top edge
+    for (let bx = -54; bx <= 54; bx += 12) {
+      gateFrame.beginFill(0x3a3025, 1).drawRect(gateCx + bx, gateCy - 64, 6, 8).endFill();
+    }
+    // Inner sandstone wall
+    gateFrame.beginFill(0xa68a5e, 1).drawRoundedRect(gateCx - 48, gateCy - 48, 96, 96, 2).endFill();
+    // Watchtower pilasters (left + right)
+    gateFrame.beginFill(0x3a3025, 1);
+    gateFrame.drawRect(gateCx - 56, gateCy - 56, 10, 112);
+    gateFrame.drawRect(gateCx + 46, gateCy - 56, 10, 112);
+    gateFrame.endFill();
+    // Tower pilaster highlights
+    gateFrame.beginFill(0x7a6a48, 0.7);
+    gateFrame.drawRect(gateCx - 55, gateCy - 56, 1.5, 112);
+    gateFrame.drawRect(gateCx + 53.5, gateCy - 56, 1.5, 112);
+    gateFrame.endFill();
     this.layers.bg.addChild(gateFrame);
     const gate = tex('ROMAN_GATE');
     if (gate) {
       const gs = new Sprite(gate);
       gs.anchor.set(0.5); gs.x = gateCx; gs.y = gateCy;
-      gs.width = 76; gs.height = 76;
+      // 2026-05-21 — Bumped 76 → 100px so the gate sprite fills the
+      // ornate frame instead of floating in the middle.
+      gs.width = 100; gs.height = 100;
       this.layers.bg.addChild(gs);
     }
 
-    // Waypoint coins — now 1-tile checkpoints (smaller, less invasive)
+    // Waypoint coins — 1-tile checkpoints.
+    // 2026-05-21 — ORNATE MEDALLION UPGRADE (visual overhaul phase V8).
+    // Wraps the existing WP1-WP7 sprite with multi-layer procedural
+    // ornament: outer halo, drop-shadow ring, bronze rim with notches,
+    // laurel wreath dots, inner darker ring, sprite coin, Roman
+    // numeral label. Reads as a proper raised Roman medallion at any
+    // zoom level. Pure Pixi Graphics — no new sprite assets needed.
     this.layers.waypoints.removeChildren();
     waypointsData.waypoints.forEach((wp, i) => {
       const cx = wp.topLeft.col * GRID.TILE + GRID.TILE / 2;
       const cy = wp.topLeft.row * GRID.TILE + GRID.TILE / 2;
+      const R_OUTER = GRID.TILE / 2 + 3;     // 19px
+      const R_RIM   = GRID.TILE / 2 + 1;     // 17px
+      const R_INNER = GRID.TILE / 2 - 2;     // 14px
+      // ── 1. Soft outer halo (warm gold bleed beyond the medallion) ──
       const halo = new Graphics();
-      halo.beginFill(0xffd34d, 0.12).drawCircle(cx, cy, 22).endFill();
-      halo.beginFill(0xffd34d, 0.20).drawCircle(cx, cy, 16).endFill();
+      halo.beginFill(0xffd34d, 0.10).drawCircle(cx, cy, R_OUTER + 6).endFill();
+      halo.beginFill(0xffd34d, 0.16).drawCircle(cx, cy, R_OUTER + 2).endFill();
+      // ── 2. Drop shadow (gives the medallion physical depth) ──
+      halo.beginFill(0x000000, 0.45).drawCircle(cx + 1.5, cy + 2.5, R_OUTER).endFill();
+      // ── 3. Bronze rim disk (the medallion edge) ──
+      halo.beginFill(0x8a5a2a, 1.0).drawCircle(cx, cy, R_OUTER).endFill();
+      // Highlight on the upper-left of the rim — sells the bronze
+      // material — by overlaying a slightly-offset lighter circle.
+      halo.beginFill(0xd0a868, 0.55).drawCircle(cx - 1.2, cy - 1.2, R_OUTER - 0.5).endFill();
+      // ── 4. Inner step — slightly recessed marble inlay color ──
+      halo.beginFill(0xc09a4a, 1.0).drawCircle(cx, cy, R_RIM).endFill();
+      // ── 5. Bronze notches at 8 cardinal points (engraved rim) ──
+      const notchA = 0.85;
+      halo.beginFill(0x4a2a14, notchA);
+      for (let k = 0; k < 8; k++) {
+        const ang = (k / 8) * Math.PI * 2;
+        const nx = cx + Math.cos(ang) * (R_OUTER - 1.2);
+        const ny = cy + Math.sin(ang) * (R_OUTER - 1.2);
+        halo.drawRect(nx - 0.6, ny - 0.6, 1.4, 1.4);
+      }
+      halo.endFill();
+      // ── 6. Laurel wreath dots (tiny green leaf cluster around rim) ──
+      halo.beginFill(0x5a7a3a, 0.85);
+      for (let k = 0; k < 16; k++) {
+        if (k % 2 === 0) continue;        // skip alternates for spacing
+        const ang = (k / 16) * Math.PI * 2 + 0.1;
+        const lx = cx + Math.cos(ang) * (R_OUTER - 2);
+        const ly = cy + Math.sin(ang) * (R_OUTER - 2);
+        halo.drawCircle(lx, ly, 0.9);
+      }
+      halo.endFill();
+      // ── 7. Inner contrast ring ──
+      halo.lineStyle(1.2, 0x4a2a14, 0.85).drawCircle(cx, cy, R_INNER + 0.5);
       this.layers.waypoints.addChild(halo);
+      // ── 8. WP sprite coin (existing sprite reused as the medallion face) ──
       const t = tex(`WP${i + 1}`);
-      if (!t) return;
-      const sp = new Sprite(t);
-      sp.anchor.set(0.5);
-      sp.x = cx;
-      sp.y = cy;
-      sp.width = GRID.TILE - 2;
-      sp.height = GRID.TILE - 2;
-      this.layers.waypoints.addChild(sp);
+      if (t) {
+        const sp = new Sprite(t);
+        sp.anchor.set(0.5);
+        sp.x = cx;
+        sp.y = cy - 0.5;          // slight upward bias so the engraving reads
+        sp.width = R_INNER * 1.85;
+        sp.height = R_INNER * 1.85;
+        this.layers.waypoints.addChild(sp);
+      }
+      // ── 9. Bright outer ring (defines silhouette) ──
       const ring = new Graphics();
-      ring.lineStyle(1.5, 0xffd34d, 0.9).drawCircle(cx, cy, (GRID.TILE - 2) / 2 + 1);
+      ring.lineStyle(1.5, 0xffd34d, 0.92).drawCircle(cx, cy, R_OUTER);
       this.layers.waypoints.addChild(ring);
-      // Small numeric label so checkpoints read as a sequence
-      const labelStyle = new TextStyle({ fontFamily: 'Courier New', fontSize: 9, fill: 0xffd34d, fontWeight: 'bold' });
-      const label = new Text(`${i + 1}`, labelStyle);
+      // ── 10. Roman numeral label under the medallion ──
+      const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+      const labelStyle = new TextStyle({
+        fontFamily: 'Courier New',
+        fontSize: 10,
+        fill: 0xffd34d,
+        stroke: 0x1a0e08,
+        strokeThickness: 2,
+        fontWeight: 'bold'
+      });
+      const label = new Text(ROMAN[i] ?? `${i + 1}`, labelStyle);
       label.anchor.set(0.5);
       label.x = cx;
-      label.y = cy + GRID.TILE / 2 + 6;
+      label.y = cy + R_OUTER + 7;
       this.layers.waypoints.addChild(label);
     });
     // 2026-05-19 fix — re-attach the aura-tile graphics on top of the bg

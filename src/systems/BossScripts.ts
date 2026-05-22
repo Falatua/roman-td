@@ -1,4 +1,4 @@
-import { Enemy, EnemyType, EnemyFaction } from '../types';
+import { Enemy, EnemyType, EnemyFaction, StatusEffectKind } from '../types';
 import { GameStateShape } from '../GameState';
 import { spawnEnemy } from './EnemySystem';
 import wavesData from '../data/waves.json';
@@ -172,11 +172,27 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
       // OOC regen (data) + heal-while-elephants-live (existing) + REBIRTH at 50% HP
       // — phase 2: status-immune, +60% speed, summons 2 War Elephants on rebirth.
       case EnemyType.HANNIBAL_BARCA: {
-        // 2026-05: elephant-heal nerf 1.2%/s → 0.4%/s (and only fires if
-        // Hannibal hasn't been touched recently — DoT keeps it suppressed).
+        // 2026-05: elephant-heal nerf 1.2%/s → 0.4%/s. Only fires if
+        // Hannibal hasn't been touched by DIRECT damage recently.
+        // 2026-05-21 — DoTs no longer count toward "recently hit"
+        // (lastDamagedTick is now direct-damage-only), so DoT ticking
+        // alone won't suppress this heal. Instead it gets the same
+        // 50% softening as the EnemySystem regen block: hasActiveDot
+        // pulls the heal rate to 50% rather than blocking it. Net
+        // effect during pure DoT attack: 0.4% * 0.5 = 0.2%/s heal,
+        // consistent with the global regen-suppression rule.
         const hasElephants = Array.from(state.enemies.values()).some(en => en.type === EnemyType.WAR_ELEPHANT);
         const recentlyHit  = (state.tick - (e.lastDamagedTick ?? -999)) < 0.5;
-        if (hasElephants && !recentlyHit) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.004 * dt);
+        const hasActiveDot = e.statusEffects.some(s =>
+          s.remaining > 0 && (
+            s.kind === StatusEffectKind.BURN ||
+            s.kind === StatusEffectKind.POISON ||
+            s.kind === StatusEffectKind.BLEED ||
+            s.kind === StatusEffectKind.HELLFIRE
+          )
+        );
+        const elephantHealMult = hasActiveDot ? 0.5 : 1.0;
+        if (hasElephants && !recentlyHit) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.004 * elephantHealMult * dt);
         // 2026-05 v6: TELEGRAPHED REBIRTH. When Hannibal first crosses
         // ~55% HP we arm a 1-second telegraph window — the renderer
         // paints a shrinking red ring on him so the player sees the

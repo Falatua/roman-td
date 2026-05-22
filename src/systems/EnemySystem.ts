@@ -389,6 +389,26 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     const cyclePos = (state.tick + offset) % period;
     (e as any).__veiled = cyclePos < duration;
   }
+  // ─── AMBUSH STEALTH (2026-05-21): selected ground enemies (Carthage
+  //   Spearman, Undead Berserker) emerge from cover during the opening
+  //   seconds of their wave — untargetable until wave-elapsed-time
+  //   crosses `ambushStealthSec` (default 15s). After that window all
+  //   instances become targetable simultaneously. Reuses the __veiled
+  //   flag (CombatResolver.pickTarget already filters on it) and OR's
+  //   with other stealth sources so VEIL modifier or stealth cycles
+  //   layer cleanly. `state.__waveStartTick` is stamped by main.ts at
+  //   each wave start; falls back to current tick (no stealth) if a
+  //   shared-state load reset it.
+  const waveStart = (state as any).__waveStartTick ?? state.tick;
+  const waveElapsed = state.tick - waveStart;
+  for (const e of state.enemies.values()) {
+    const def = (enemiesData as any)[e.type];
+    if (!def?.ambushStealth) continue;
+    const ambushSec = def.ambushStealthSec ?? 15;
+    if (waveElapsed < ambushSec) {
+      (e as any).__veiled = true;
+    }
+  }
   // ─── HEALER ENEMIES (2026-05): enemies with healAllyPctPerSec emit a
   //   gentle 1.5-tile heal ring that restores HP to nearby living allies
   //   (NOT themselves). Doesn't heal bosses to avoid trivializing them.
@@ -460,6 +480,42 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     r: ELEPHANT_AURA_RADIUS,
     isUndead: el.type === 'UNDEAD_WAR_ELEPHANT'
   }));
+  // ─── PRESENCE-SILENCE AURA (2026-05-21): selected enemies with
+  //   silenceAuraRadiusTiles set on their data continuously silence
+  //   towers inside that radius. Mid-game: Zombie Druid (1.5 tiles,
+  //   extends its existing debuff identity). End-game: Architectus
+  //   (1.5 tiles, gives the Carthage engineer real "sabotage"
+  //   threat). Refreshes `t.silencedUntil` every frame the enemy is
+  //   in range; the 0.6s stamp naturally expires one frame after the
+  //   enemy walks out, so towers wake up as soon as the threat
+  //   moves on. Distinct from the SILENCERS set below (Spectral Scout
+  //   / Ghost Rider pass-by silence): that's a one-shot pulse on
+  //   passing within 1.0 tile, this is sustained while in range.
+  for (const e of state.enemies.values()) {
+    const radiusTiles = (enemiesData as any)[e.type]?.silenceAuraRadiusTiles;
+    if (!radiusTiles) continue;
+    const radiusPx = GRID.TILE * radiusTiles;
+    const radiusPxSq = radiusPx * radiusPx;
+    for (const t of state.towers.values()) {
+      if (t.pending) continue;
+      const cx = t.tileX * GRID.TILE + GRID.TILE / 2;
+      const cy = t.tileY * GRID.TILE + GRID.TILE / 2;
+      const dx = cx - e.x, dy = cy - e.y;
+      if (dx * dx + dy * dy <= radiusPxSq) {
+        // 0.6s stamp matches the Spectral Scout / Ghost Rider pass-
+        // silence cadence, so existing render code (pink X-mark)
+        // works without changes. Each frame in range refreshes the
+        // stamp so the silence persists while the enemy hovers. One
+        // frame after the enemy leaves the radius, the stamp expires
+        // naturally and the tower fires again.
+        const until = t.silencedUntil ?? 0;
+        if (state.tick > until - 0.4) {
+          t.silencedUntil = state.tick + 0.6;
+          if (t.attackCooldown < 0.6) t.attackCooldown = 0.6;
+        }
+      }
+    }
+  }
   // ─── TOWER SILENCE: Spectral Scout / Ghost Rider passing within 1.0 tile
   // of a tower forces the tower into a 0.6s cooldown spike. They literally
   // walk past and disrupt the legion's rhythm.
@@ -783,13 +839,53 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       // MARK has no per-tick effect; the +damage multiplier is read in CombatResolver.
     }
     e.statusEffects = e.statusEffects.filter(s => s.remaining > 0);
+    // 2026-05-21 — DoT AGGREGATE CAP. Sum of all DoT ticks on one enemy
+    // is clamped to 8% maxHP/sec, with HELLFIRE carving out a tighter
+    // 2%/sec sub-cap inside that total (it's permanent + bypasses
+    // resistances, so it earns the extra leash). Caps the
+    // "stack 4 DoT sources and melt anything" pattern without
+    // nerfing any single source. Boss `dotBossMod = 0.18` is already
+    // folded into dotByKind values above — this caps the FINAL tick.
+    // dotByKind is rescaled proportionally so the per-kind floating
+    // numbers reflect what actually hit, not the uncapped raw values.
+    if (dotDps > 0) {
+      const HELLFIRE_CAP = 0.02 * e.maxHp;     // 2%/sec ceiling
+      const AGGREGATE_CAP = 0.08 * e.maxHp;    // 8%/sec ceiling
+      const hellfireCapped = Math.min(dotByKind.HELLFIRE, HELLFIRE_CAP);
+      const nonHellfireRaw = dotByKind.BURN + dotByKind.POISON + dotByKind.BLEED;
+      const aggregateRaw = hellfireCapped + nonHellfireRaw;
+      const aggregateCapped = Math.min(aggregateRaw, AGGREGATE_CAP);
+      if (aggregateCapped < dotDps) {
+        // Two-stage rescale: first apply the Hellfire sub-cap, then
+        // scale the entire bucket down to the aggregate ceiling.
+        if (dotByKind.HELLFIRE > hellfireCapped) {
+          dotByKind.HELLFIRE = hellfireCapped;
+        }
+        const postSubCap = dotByKind.BURN + dotByKind.POISON + dotByKind.BLEED + dotByKind.HELLFIRE;
+        if (postSubCap > AGGREGATE_CAP && postSubCap > 0) {
+          const scale = AGGREGATE_CAP / postSubCap;
+          dotByKind.BURN     *= scale;
+          dotByKind.POISON   *= scale;
+          dotByKind.BLEED    *= scale;
+          dotByKind.HELLFIRE *= scale;
+        }
+        dotDps = aggregateCapped;
+      }
+    }
     if (dotDps > 0) {
       e.hp -= dotDps * dt;
-      // DOT COUNTERS REGEN (2026-05): any active burn/poison/bleed/hellfire
-      // tick refreshes the "took damage" timestamp, so out-of-combat regen
-      // never gets to ramp up while a status is burning the target. This
-      // is how DoT builds counter Hannibal / Daemon / druid regen.
-      e.lastDamagedTick = state.tick;
+      // 2026-05-21 — DoT ticks NO LONGER refresh lastDamagedTick.
+      // Background: the previous behaviour used lastDamagedTick as a
+      // proxy for "DoTs suppress regen" — refreshing it every DoT tick
+      // kept the OOC quiet-window pinned open forever, fully blocking
+      // OOC regen. Now suppression is handled explicitly via the
+      // `regenMult` multiplier in the regen block below (0.5× during
+      // DoT, 1.0× otherwise), so a DoT no longer needs to gate the
+      // OOC quiet-window. lastDamagedTick now means strictly
+      // "last DIRECT damage tick" — used by BossScripts.recentlyHit
+      // and the OOC quiet-window gate. This is the change that lets
+      // Hannibal + Daemon Imperator OOC regen actually flow at 50%
+      // during DoT instead of being silently locked at 0%.
     }
     // ─── DOT FLOATING NUMBERS ───────────────────────────────────────────
     // Pop a colored floating number every ~0.45s per active DOT kind so the
@@ -817,24 +913,26 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     e.currentSpeed = (frozen || stunned) ? 0 : e.baseSpeed * speedMult;
     // 2026-05-19 — HERO ABILITY WINDOWS that mutate enemy speed:
     //   • Frontier Wall (Agricola Tier 2): flyers slowed during window
-    //   • Zama (Scipio Tier 3): bosses move at 50% speed during window
+    // 2026-05-21 — Zama (Scipio Tier 3) removed alongside the tier-3
+    // ability deletion; its boss-speed reader is gone.
     const frontierUntil = (state as any).__frontierWallUntilTick ?? 0;
     if (state.tick < frontierUntil && e.isFlyer) {
       e.currentSpeed *= (state as any).__frontierWallFlyerSpeedMult ?? 0.3;
     }
-    const zamaUntil = (state as any).__zamaUntilTick ?? 0;
-    if (state.tick < zamaUntil && e.isBoss) {
-      e.currentSpeed *= (state as any).__zamaBossSpeedMult ?? 0.5;
-    }
 
     // Regen for special enemies — both constant and out-of-combat
     // varieties. DoT suppression rule: if the enemy has ANY active
-    // damage-over-time status (burn / poison / bleed / hellfire), both
-    // forms of regen are nullified this frame. This makes any DoT
-    // source a hard counter to regen-heavy enemies (Hannibal, druids,
-    // hellhounds, Daemon Imperator) — applying poison or bleed is no
-    // longer just chip damage, it actively holds the enemy's healing
-    // shut while it ticks down.
+    // damage-over-time status (burn / poison / bleed / hellfire),
+    // regen ticks at a softened rate.
+    //
+    // 2026-05-21 — Suppression softened from 100% (full block) to
+    // 50% (half rate). Background: a single applied DoT used to fully
+    // shut down Hannibal + Daemon Imperator healing, making them
+    // trivial for any DoT build. Now DoTs reduce regen by half, so
+    // the player needs both DoT AND direct damage to outpace regen
+    // bosses. Hannibal + Daemon Imperator keep their full base regen
+    // rates (1.68% and 2.8% OOC respectively); only the
+    // DoT-active multiplier changes.
     //
     // EXEMPTION (2026-05 v9 confirm): the CHECKPOINT touch heal
     // (`checkpointHealPct`) is intentionally NOT suppressed by DoT.
@@ -843,7 +941,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // coin so the player feels the design pressure regardless of
     // whether they happened to have a DoT ticking on the unit. The
     // checkpoint block lives further down (search `WAYPOINT_CENTERS`)
-    // and is deliberately outside this `if (!hasActiveDot)` guard.
+    // and is deliberately outside this regen logic.
     const def: any = (enemiesData as any)[e.type];
     const hasActiveDot = e.statusEffects.some(s =>
       s.remaining > 0 && (
@@ -853,18 +951,26 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
         s.kind === StatusEffectKind.HELLFIRE
       )
     );
-    if (!hasActiveDot) {
-      // Constant regen (always-on, e.g. Iron Phalanx / Architectus).
-      if (def.regenPctPerSec) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * def.regenPctPerSec * dt);
-      // OUT-OF-COMBAT REGEN: ramps up after 0.5s of not taking damage.
-      // Per-enemy override (set by spawnEnemy for W11+ creative buff)
-      // wins when present and is HIGHER than the JSON value.
-      const oocRegen = Math.max(def.outOfCombatRegen ?? 0, (e as any).outOfCombatRegen ?? 0);
-      if (oocRegen > 0) {
-        const sinceHit = state.tick - (e.lastDamagedTick ?? -999);
-        if (sinceHit > 0.5) {
-          e.hp = Math.min(e.maxHp, e.hp + e.maxHp * oocRegen * dt);
-        }
+    const regenMult = hasActiveDot ? 0.5 : 1.0;
+    // Constant regen (always-on, e.g. Iron Phalanx / Architectus).
+    if (def.regenPctPerSec) {
+      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * def.regenPctPerSec * regenMult * dt);
+    }
+    // OUT-OF-COMBAT REGEN: ramps up after 0.5s of not taking DIRECT
+    // damage. Per-enemy override (set by spawnEnemy for W11+ creative
+    // buff) wins when present and is HIGHER than the JSON value.
+    // 2026-05-21 — DoT ticks no longer refresh lastDamagedTick, so
+    // the 0.5s gate now reads pure "no direct damage in the last
+    // half-second." A DoT-only attack DOES satisfy the gate after
+    // 0.5s, and OOC regen then ticks at the softened 50% rate via
+    // regenMult below. This is how Hannibal + Daemon Imperator
+    // actually heal at half rate during DoT instead of being fully
+    // locked down by a single Poisoned Blade.
+    const oocRegen = Math.max(def.outOfCombatRegen ?? 0, (e as any).outOfCombatRegen ?? 0);
+    if (oocRegen > 0) {
+      const sinceHit = state.tick - (e.lastDamagedTick ?? -999);
+      if (sinceHit > 0.5) {
+        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * oocRegen * regenMult * dt);
       }
     }
     // LOW-HP SPEED BOOST: berserker / hellhound / rabid surge to the gate when wounded.

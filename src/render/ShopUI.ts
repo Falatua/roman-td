@@ -81,7 +81,7 @@ const FORGE_PATHS: Array<{
     headline: 'ABILITY COOLDOWN',
     effect: '−5% cooldown on every ability per tap (compounding).',
     maxedAt5: '5/5 stacks → cooldowns at 0.77× (≈23% faster cycle).',
-    bestFor: 'Best for caster heroes — Marius (Triumph), Sulla (Sulla\'s March), Caesar (Ides of March).'
+    bestFor: 'Best for caster heroes — Marius (Triarii Wall), Sulla (Proscription), Caesar (Pax Romana). Drops the time between ability windows so the wave never gets a quiet moment.'
   },
   {
     key: 'aura', label: 'EMPOWER', icon: '✨', tint: '#ffd34d',

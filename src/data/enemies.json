@@ -113,7 +113,9 @@
     "spriteSheet": 4,
     "spriteCell": 8,
     "phaseHits": 1,
-    "reanimateAs": "REANIMATED_ZOMBIE"
+    "reanimateAs": "REANIMATED_ZOMBIE",
+    "ambushStealth": true,
+    "ambushStealthSec": 15
   },
   "NUMIDIAN_RIDER": {
     "name": "Numidian Rider",
@@ -197,6 +199,7 @@
     "immunePoison": true,
     "auraTowerSlow": 0.3,
     "healAllyPctPerSec": 0.018,
+    "silenceAuraRadiusTiles": 1.5,
     "reanimateAs": "REANIMATED_LICH"
   },
   "UNDEAD_BERSERKER": {
@@ -215,7 +218,9 @@
     "phaseHits": 1,
     "lowHpSpeedBoost": 1.5,
     "checkpointHealPct": 0.15,
-    "reanimateAs": "REANIMATED_SKELETON"
+    "reanimateAs": "REANIMATED_SKELETON",
+    "ambushStealth": true,
+    "ambushStealthSec": 15
   },
   "SPECTRAL_SCOUT": {
     "name": "Spectral Scout",
@@ -381,6 +386,7 @@
     "regenPctPerSec": 0.0042,
     "requiresMeleeBreak": true,
     "auraNullifier": true,
+    "silenceAuraRadiusTiles": 1.5,
     "reanimateAs": "REANIMATED_ZOMBIE"
   },
   "IRON_PHALANX": {
