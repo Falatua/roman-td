@@ -267,7 +267,12 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // the answer key for demon waves is divine, not generic damage stacking.
   const DEMON_TYPES = new Set(['DEMON_HELLHOUND','CELTIC_FIRE_DEMON','SHADOW_CAVALRY','DEMON_LEGATE','DAEMON_IMPERATOR']);
   if (DEMON_TYPES.has(e.type)) {
-    const mult = e.type === 'DAEMON_IMPERATOR' ? '1.30×' : '1.50×';
+    // 2026-05-22 V36 — Daemon Imperator's per-enemy DIVINE mult dropped
+    // 1.30 → 0.70 to halve the DIVINE answer-key. Other minion demons
+    // still carry the 1.20 vulnerability from V25. Combined with the
+    // faction's +100% divine row, the boss now takes 1.40× divine
+    // (was 2.60×) — vulnerable but no auto-win.
+    const mult = e.type === 'DAEMON_IMPERATOR' ? '0.70×' : '1.20×';
     traits.push({ label: `DIVINE WEAKNESS — takes ${mult} damage from DIVINE sources (per-enemy) on top of the SUPER_DEMONS faction's +100% divine row. Solar Priest, Flamen, Augur, Haruspex are the dedicated demon counters.`, color: '#ffd34d' });
   }
   // -- Death / multiplication mechanics --

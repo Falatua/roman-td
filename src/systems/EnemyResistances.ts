@@ -181,7 +181,25 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // 2026-05 v10 — boss also takes 1.30× divine. Slightly less than the
   // 1.50 on minion demons (he's the apex, you still have to work for it)
   // but the angelic-judgment counter still applies.
-  [EnemyType.DAEMON_IMPERATOR]: { melee: 0.4, ranged: 0.20, slow: 0.15, burn: 0, poison: 0.5, bleed: 0.5, divine: 1.30 },
+  //
+  // 2026-05-22 V36 — Per user feedback ("the W20 boss was way too
+  // easy to kill") — every resist line tightened so the effective
+  // TTK roughly doubles WITHOUT touching the 100M HP pool (user
+  // preserved the HP exemption from V20). Per-line tighten:
+  //   melee   0.40 → 0.30  (25% less melee damage)
+  //   ranged  0.20 → 0.10  (50% less ranged — was already a soft spot)
+  //   siege   (none) → 0.50  (new per-enemy 50% on top of faction 0.85
+  //                            = final 0.43, was 0.85 — siege spam halved)
+  //   poison  0.50 → 0.30  (40% less)
+  //   bleed   0.50 → 0.30  (40% less)
+  //   divine  1.30 → 0.70  (was 260% with faction, now 140% — still
+  //                          vulnerable but no Proscription-instakill)
+  // burn stays at 0 (faction fire-IMMUNE locks this regardless),
+  // slow stays at 0.15. Net: weighted across a typical mixed-damage
+  // player loadout, effective damage taken drops to ~53% of before,
+  // ≈ 1.9× TTK. The fight retains all five damage-type angles and
+  // keeps DIVINE as the prefer-it lever, just not the auto-answer.
+  [EnemyType.DAEMON_IMPERATOR]: { melee: 0.30, ranged: 0.10, siege: 0.50, slow: 0.15, burn: 0, poison: 0.30, bleed: 0.30, divine: 0.70 },
   // 2026-05 v11 DPS CHECK: training dummy takes full damage from every
   // source. It's a measurement tool — no resistances should muddy the
   // reading.
