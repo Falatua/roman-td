@@ -10,9 +10,38 @@
     <title>Roman TD — Castrum Lunum</title>
     <style>
       :root { color-scheme: dark; }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: radial-gradient(ellipse at center, #2a221a 0%, #0c0a08 80%); color: #e8d6a8; font-family: 'Courier New', monospace; }
-      body { display: flex; align-items: center; justify-content: center; user-select: none; padding: 0; }
+      * {
+        box-sizing: border-box;
+        /* Mobile responsiveness: kill the 300ms tap delay AND the gray
+           tap-highlight flash iOS draws over every tapped element.
+           touch-action: manipulation keeps pinch-zoom (so players can
+           zoom in for tile-level precision) while disabling the
+           double-tap-to-zoom gesture that delays single taps. */
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      html, body {
+        margin: 0; padding: 0;
+        height: 100%;
+        overflow: hidden;
+        /* Block iOS pull-to-refresh and rubber-band scrolling on the
+           game body — accidental drags during placement would otherwise
+           reload the page or bounce the canvas. */
+        overscroll-behavior: none;
+        background: radial-gradient(ellipse at center, #2a221a 0%, #0c0a08 80%);
+        color: #e8d6a8;
+        font-family: 'Courier New', monospace;
+      }
+      body {
+        display: flex; align-items: center; justify-content: center;
+        user-select: none;
+        /* iOS suppresses the long-press callout menu (Copy / Look Up /
+           Share) on game surfaces — fingers held on a tower while
+           queuing combos shouldn't trigger system UI. */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        padding: 0;
+      }
       /* #app auto-scales to fit the viewport height — its intrinsic size is
          the layout natural size (~1024×900) and the JS sets `--app-scale`
          on resize. The pixel-art canvas stays sharp because of
@@ -530,7 +559,12 @@
         position: fixed; inset: 0; z-index: 300;
         display: none;
         flex-direction: column; align-items: center; justify-content: center;
-        gap: 24px; padding: 32px;
+        gap: 24px;
+        /* Safe-area padding so the prompt clears the notch / home indicator
+           on iPhone X+ regardless of orientation. The viewport-fit=cover
+           meta tag lets the gate's gradient bleed under the notch while
+           keeping the icon + copy inside the safe area. */
+        padding: max(32px, env(safe-area-inset-top)) max(32px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(32px, env(safe-area-inset-left));
         background: radial-gradient(ellipse at center, #1a0808 0%, #0a0202 70%, #000 100%);
         color: #ffd34d;
         font-family: 'Courier New', monospace;
@@ -562,6 +596,26 @@
       #rotate-gate-sub {
         font-size: 13px; letter-spacing: 3px; color: #aa8a4a;
         max-width: 320px; line-height: 1.5;
+      }
+
+      /* Touch-device tweaks for the loading screen. The hard-refresh
+         keyboard-shortcut tip is desktop-only — mobile users can't press
+         Cmd+Shift+R, and the tip eats valuable vertical space on a phone.
+         Hide it on coarse pointers (touch). */
+      @media (pointer: coarse) {
+        #loading-tip { display: none; }
+        /* Loading screen also needs to clear the iPhone notch / home
+           indicator. Padding adds the safe-area inset to the existing
+           clamp() rules so the title and coin slot stay reachable. */
+        #loading-stage {
+          padding-top: max(clamp(8px, 1.5vh, 20px), env(safe-area-inset-top));
+          padding-bottom: max(clamp(8px, 1.5vh, 20px), env(safe-area-inset-bottom));
+          padding-left: max(clamp(16px, 2vw, 48px), env(safe-area-inset-left));
+          padding-right: max(clamp(16px, 2vw, 48px), env(safe-area-inset-right));
+        }
+        /* The DEV SANDBOX entry should NOT appear on phones — it's a
+           desktop-only debug surface and just clutters the loading flow. */
+        #loading-sandbox-entry { display: none; }
       }
     </style>
   </head>
