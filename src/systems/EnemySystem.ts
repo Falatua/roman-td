@@ -697,38 +697,50 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
           child.pathProgress = e.pathProgress;
         }
       }
-      // 2026-05-22 V30 — POST-W6 FLYER → GROUND CONVERSION.
-      // When a flyer dies on wave 7 or later, the corpse falls and
-      // spawns a SINGLE thematic ground unit at the same position,
-      // continuing along the ground path from the nearest projected
-      // point. Mapping (per enemies.json `groundConvertAs`):
-      //   NUMIDIAN_RIDER      → CARTHAGE_SPEARMAN  (W7-10)
-      //   SPECTRAL_SCOUT      → UNDEAD_CELT        (W11-15)
-      //   GHOST_RIDER         → UNDEAD_SPEARMAN    (W11-15)
-      //   SHADOW_CAVALRY      → DEMON_HELLHOUND    (W19-20)
+      // 2026-05-22 V30 — POST-W6 FLYER → GROUND CONVERSION (V30b refined).
+      // When a flyer dies on a PURE-FLYER WAVE (W12 Spectral Scout, W18
+      // Ghost Rider in campaign; any type:'F' wave in endless), the
+      // corpse drops and spawns a SINGLE thematic ground unit that now
+      // walks the ACTUAL MAZE the player has built — same A*-routed
+      // ground path everyone else uses, including the player's stones.
+      //
+      // V30b — pure-flyer-only gate: the previous V30 also fired on
+      // hybrid waves (W7, W8, W13, W14, W17, W19), which doubled up the
+      // ground threat on waves that already had ground units. User
+      // feedback: "only flyer-specific waves, not hybrid waves."
+      // Now gated on currentWave.type === 'F'.
+      //
+      // Mapping (per enemies.json `groundConvertAs`):
+      //   CELTIC_SCOUT        → CELTIC_FOOTMAN   (W6 pre-gate, endless)
+      //   NUMIDIAN_RIDER      → CARTHAGE_SPEARMAN  (endless only — hybrid in campaign)
+      //   SPECTRAL_SCOUT      → UNDEAD_CELT      (W12 ✓ pure flyer)
+      //   GHOST_RIDER         → UNDEAD_SPEARMAN  (W18 ✓ pure flyer)
+      //   SHADOW_CAVALRY      → DEMON_HELLHOUND  (endless only — hybrid in campaign)
       //   SPHINX              → EGYPTIAN_SPEARMAN  (endless)
-      //   MONGOL_HORSE_ARCHER → MONGOL_FOOTMAN     (endless)
-      //   MONGOL_SPEAR_RIDER  → MONGOL_SPEARMAN    (endless)
-      // CELTIC_SCOUT also has the field set (→ CELTIC_FOOTMAN) for
-      // endless-mode wrap-around, but it only spawns on W6 in campaign
-      // so the gate (state.wave > 6) keeps it from triggering there.
+      //   MONGOL_HORSE_ARCHER → MONGOL_FOOTMAN   (endless)
+      //   MONGOL_SPEAR_RIDER  → MONGOL_SPEARMAN  (endless)
+      //
       // Uses the SAME __reanimated guard as the necromancy block so a
-      // converted ground unit can't chain-convert / reanimate.
+      // converted ground unit can't chain-convert / chain-reanimate.
+      const _waveForFlyerConvert: any = wavesData[(state.wave ?? 1) - 1];
+      const isPureFlyerWave = !!(_waveForFlyerConvert && _waveForFlyerConvert.type === 'F');
       const groundConvertAs = (enemiesData as any)[e.type]?.groundConvertAs;
-      if (e.isFlyer && (state.wave ?? 0) > 6 && groundConvertAs && !e.__reanimated) {
+      if (e.isFlyer && (state.wave ?? 0) > 6 && isPureFlyerWave && groundConvertAs && !e.__reanimated) {
         const ground = spawnEnemy(state, groundConvertAs as EnemyType, 1.0, /*derived=*/true);
-        ground.x = e.x;
-        ground.y = e.y;
-        ground.prevX = e.x;
-        ground.prevY = e.y;
-        ground.__reanimated = true;        // block further conversion/chain reanim
-        // Project the death position onto the ground path so the new
-        // unit picks up from the nearest waypoint segment. Mirrors the
-        // PathFinder.resnapEnemiesToPath projection math, inlined here
-        // so we don't drag the import into the hot death-loop module.
+        // Project the flyer's death (x, y) onto the current ground
+        // path so the convert lands ON the maze, not in mid-air over
+        // it. This is the same projection math PathFinder.resnapEnemies
+        // uses, inlined to avoid the import. Result: pick the nearest
+        // ground-path segment to where the flyer fell, snap position
+        // AND path-index there, then let standard ground movement
+        // carry the unit along the player's maze toward the gate.
+        let snapX = e.x;
+        let snapY = e.y;
+        let snapI = 0;
+        let snapProg = 0;
         const gp = state.groundPath;
         if (gp && gp.length >= 2) {
-          let bestI = 0, bestProg = 0, bestD2 = Infinity;
+          let bestD2 = Infinity;
           for (let i = 0; i < gp.length - 1; i++) {
             const ax = gp[i].col * GRID.TILE + GRID.TILE / 2;
             const ay = gp[i].row * GRID.TILE + GRID.TILE / 2;
@@ -741,11 +753,20 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
             if (t < 0) t = 0; else if (t > 1) t = 1;
             const cx = ax + dx * t, cy = ay + dy * t;
             const d2 = (e.x - cx) * (e.x - cx) + (e.y - cy) * (e.y - cy);
-            if (d2 < bestD2) { bestD2 = d2; bestI = i; bestProg = t; }
+            if (d2 < bestD2) { bestD2 = d2; snapI = i; snapProg = t; snapX = cx; snapY = cy; }
           }
-          ground.pathIndex = bestI;
-          ground.pathProgress = bestProg;
         }
+        // Snap position AND path-state to the same point so there's no
+        // single-frame teleport when the movement loop kicks in next
+        // tick. The visual jump from (flyer death) → (maze) is at most
+        // a few tiles and reads as "the corpse falls onto the road."
+        ground.x = snapX;
+        ground.y = snapY;
+        ground.prevX = snapX;
+        ground.prevY = snapY;
+        ground.pathIndex = snapI;
+        ground.pathProgress = snapProg;
+        ground.__reanimated = true;        // block further conversion/chain reanim
       }
       // NECROMANCY REANIMATION (2026-05): on waves tagged `necromancy: true`
       // in waves.json, every ground non-boss enemy with a `reanimateAs`
