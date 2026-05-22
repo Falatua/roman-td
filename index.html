@@ -959,6 +959,134 @@
         box-shadow: 0 0 8px rgba(255,211,77,0.7);
       }
 
+      /* ─────────────────────────────────────────────────────────────
+         2026-05-22 — MOBILE LAYOUT REBUILD.
+         Replaces the transform-scale shrink-everything approach with
+         a layout where:
+           • #app does NOT scale (--app-scale is forced to 1 by JS).
+           • Side panels keep natural pixel width (88px), so buttons
+             stay finger-sized.
+           • The canvas is the ONLY element that scales (JS sets its
+             CSS width/height each frame to fit the middle column).
+           • The three-column flex is preserved so the existing DOM
+             structure works; only the CSS dimensions change.
+         Tap targets are now in true CSS pixels, not divided by
+         a 0.46x app-level transform.
+         ───────────────────────────────────────────────────────────── */
+      html.mobile-mode body {
+        padding: 0 !important;
+        align-items: stretch !important;
+        justify-content: stretch !important;
+        overflow: hidden;
+      }
+      html.mobile-mode #app {
+        width: 100vw !important;
+        height: 100dvh !important;
+        height: 100vh;
+        gap: 2px !important;
+        padding: 0 !important;
+        align-items: stretch !important;
+        transform-origin: top left !important;
+      }
+      html.mobile-mode #left-panel,
+      html.mobile-mode #right-panel {
+        min-width: 88px !important;
+        max-width: 88px !important;
+        max-height: 100dvh !important;
+        height: 100dvh !important;
+        height: 100vh;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        font-size: 10px !important;
+        letter-spacing: 0.5px !important;
+        padding: 2px !important;
+        gap: 4px !important;
+      }
+      html.mobile-mode #stage-wrap {
+        flex: 1 1 auto !important;
+        align-self: center !important;
+        height: 100dvh !important;
+        height: 100vh;
+        max-height: 100dvh;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden;
+      }
+      html.mobile-mode #stage-wrap canvas {
+        display: block;
+        /* Width/height set explicitly by JS fitStageToViewport.
+           These max-rules are a safety net so an unflushed style
+           never lets the canvas overflow its column. */
+        max-width: 100% !important;
+        max-height: 100% !important;
+      }
+      /* HUD top-strip: condensed font, tighter padding, single line. */
+      html.mobile-mode #hud-top {
+        padding: 4px 6px !important;
+        gap: 4px !important;
+        font-size: 9.5px !important;
+        letter-spacing: 0.3px !important;
+        flex-wrap: wrap !important;
+      }
+      html.mobile-mode #hud-top .ic {
+        width: 12px !important;
+        height: 12px !important;
+        border-width: 1px !important;
+      }
+      html.mobile-mode #hud-top .hud-icon {
+        gap: 3px !important;
+        font-size: 9.5px !important;
+      }
+      html.mobile-mode #hud-top .hud-l,
+      html.mobile-mode #hud-top .hud-r {
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+      }
+      /* Buttons: real tap target (40px) without the transform shrink. */
+      html.mobile-mode #buttons {
+        gap: 4px !important;
+      }
+      html.mobile-mode #buttons button,
+      html.mobile-mode #right-panel button {
+        min-height: 40px !important;
+        padding: 6px 4px !important;
+        font-size: 10px !important;
+        letter-spacing: 0.5px !important;
+        line-height: 1.1 !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+      }
+      /* The wave brief + placing prospects + pinned-recipe panels are
+         left-panel children that we shrink to fit the 88px column. */
+      html.mobile-mode #left-panel > div,
+      html.mobile-mode #right-panel > div {
+        font-size: 9.5px !important;
+        max-width: 84px !important;
+      }
+      /* Prospect cards inside the panel — shrink the 120×130 card to
+         fit the 84px column. */
+      html.mobile-mode #left-panel [style*="width:120px"],
+      html.mobile-mode #right-panel [style*="width:120px"] {
+        width: 78px !important;
+        height: auto !important;
+      }
+      html.mobile-mode #left-panel img,
+      html.mobile-mode #right-panel img {
+        max-width: 50px !important;
+        max-height: 50px !important;
+      }
+      /* Hide the rotate-prompt and prompt-style elements that don't
+         belong in the slim panels. */
+      html.mobile-mode #left-panel h1,
+      html.mobile-mode #right-panel h1 { display: none !important; }
+      /* The placement banner that V7 pinned to bottom-center can
+         conflict with the bottom of the canvas; the prior pass already
+         moved it to top; ensure it doesn't compete with the HUD. */
+      html.mobile-mode #hero-placement-banner {
+        z-index: 50 !important;
+      }
+
       /* HM — Respect prefers-reduced-motion. Disables card hover/scale,
          choose-hero pulse, chevron pulse, banner pulse, etc. */
       @media (prefers-reduced-motion: reduce) {

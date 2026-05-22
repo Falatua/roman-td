@@ -3685,27 +3685,63 @@ async function boot() {
   // pass will introduce a true mobile layout; until then this baseline
   // lets the canvas at least fit on a phone in landscape.
   const MIN_SCALE_DESKTOP = 0.55;
-  const MIN_SCALE_MOBILE = 0.25;
   function fitStageToViewport() {
     const app = document.getElementById('app');
     if (!app) return;
+    // 2026-05-22 — MOBILE RE-ARCHITECTURE.
+    //
+    // Before: a single `transform: scale(var(--app-scale))` shrank the
+    // ENTIRE 3-column layout (canvas + both side panels) to fit a
+    // phone. On a 852×393 iPhone the math resolves to ~0.46×, which
+    // turned the "44 px Apple HIG" buttons into 20 px tap targets and
+    // shrank the canvas to ~563×385 — both unusable for a real touch.
+    //
+    // After: on mobile we skip the app-level transform entirely. The
+    // side panels stay at their natural CSS size (88 px wide) so the
+    // buttons remain finger-sized. The canvas is sized explicitly to
+    // fit the remaining middle column via CSS width/height. Pixi's
+    // internal resolution (1216×832) is unchanged — only the visual
+    // size of the canvas element shrinks. Click handlers continue to
+    // work because they use canvas.getBoundingClientRect() which
+    // reflects the CSS size, and the existing math
+    //   rawX = (clientX - rect.left) * (CANVAS_W / rect.width)
+    // converts back to internal world coordinates correctly.
+    if (isMobileDevice()) {
+      // No app-level scaling on mobile.
+      app.style.setProperty('--app-scale', '1');
+      // Defer canvas measurement to next frame so the flex layout
+      // settles AFTER --app-scale change.
+      requestAnimationFrame(() => {
+        const wrap = document.getElementById('stage-wrap');
+        const canvas = document.querySelector('canvas') as HTMLCanvasElement | null;
+        if (!wrap || !canvas) return;
+        // Available area inside stage-wrap (after panels claim theirs).
+        const wrapR = wrap.getBoundingClientRect();
+        const availW = Math.max(0, wrapR.width - 4);
+        const availH = Math.max(0, wrapR.height - 4);
+        if (availW <= 0 || availH <= 0) return;
+        // Aspect-preserved fit to the available area.
+        const scale = Math.min(availW / 1216, availH / 832);
+        const finalW = Math.floor(1216 * scale);
+        const finalH = Math.floor(832 * scale);
+        canvas.style.width = `${finalW}px`;
+        canvas.style.height = `${finalH}px`;
+      });
+      document.body.style.overflowX = 'hidden';
+      document.body.style.overflowY = 'hidden';
+      return;
+    }
+    // ── DESKTOP PATH (unchanged from prior implementation) ───────────
     // Reset transform first to measure natural size, then re-apply scale.
     app.style.setProperty('--app-scale', '1');
     const w = app.scrollWidth;
     const h = app.scrollHeight;
-    // M1 — Use visualViewport on mobile when present (iOS Safari shrinks
-    // the visual viewport when the URL bar slides in/out, and
-    // window.innerHeight lags it). Falls back to innerWidth/Height.
     const vv = window.visualViewport;
-    const vw = (vv ? vv.width : window.innerWidth) - (isMobileDevice() ? 4 : 16);
-    const vh = (vv ? vv.height : window.innerHeight) - (isMobileDevice() ? 4 : 16);
-    // Largest scale that fits both axes inside the viewport.
+    const vw = (vv ? vv.width : window.innerWidth) - 16;
+    const vh = (vv ? vv.height : window.innerHeight) - 16;
     const fitScale = Math.min(vw / w, vh / h);
-    const minScale = isMobileDevice() ? MIN_SCALE_MOBILE : MIN_SCALE_DESKTOP;
-    const scale = Math.max(minScale, fitScale);
+    const scale = Math.max(MIN_SCALE_DESKTOP, fitScale);
     app.style.setProperty('--app-scale', String(scale));
-    // Allow body scroll iff the scaled-down content STILL exceeds the
-    // viewport (which only happens when we hit the min-scale floor).
     const overflowsX = w * scale > vw;
     const overflowsY = h * scale > vh;
     document.body.style.overflowX = overflowsX ? 'auto' : 'hidden';
