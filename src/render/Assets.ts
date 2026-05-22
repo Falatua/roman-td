@@ -655,7 +655,20 @@ function isCriticalAsset(file: string): boolean {
   // in. The map_overhaul/ subdirectory holds the new shrine, undead
   // prop, and skull-door sprites.
   if (/(\/|^)map_overhaul\//.test(file)) return true;
-  return /^(m_|w_|t1_|t2_|e1_|p_|s_|u_|ab_|eb_|t_new_)/.test(file);
+  // 2026-05-22 — Player report: "After I pick a hero the map sometimes
+  // looks like a cheap 2D game." Root cause: terrain (tt_*) + decor
+  // prop (dp_*) sprites are deferred. If the player marches in before
+  // the background batch finishes, drawStatic's `tex()` lookups return
+  // null and the renderer falls back to flat-color rectangles (path =
+  // brown, grass = green) plus zero decorations. Result: the map looks
+  // like procedural placeholder art. Promoting these prefixes to
+  // critical adds ~150 KB to the blocking load (~30 sprites at 2-5 KB
+  // each) — negligible on broadband, ~1.5 s on 3G. Worth it: the
+  // first-frame visual quality is now deterministic regardless of how
+  // fast the player taps through hero pick. See also the
+  // `rtd:assets-deferred-done` retry event below for a defense-in-
+  // depth re-draw once the rest of the deferred batch arrives.
+  return /^(m_|w_|t1_|t2_|tt_|dp_|e1_|p_|s_|u_|ab_|eb_|t_new_)/.test(file);
 }
 
 export async function loadAllAssets(onProgress?: (loaded: number, total: number) => void) {
@@ -683,6 +696,13 @@ export async function loadAllAssets(onProgress?: (loaded: number, total: number)
   // (a blank texture) is handled gracefully by Pixi if we ever miss.
   // Concurrency-limited to 12 parallel loads so we don't choke the
   // browser's connection pool on networks with a low per-origin cap.
+  //
+  // 2026-05-22 — When the deferred batch finishes, dispatch a
+  // `rtd:assets-deferred-done` event on the window. main.ts listens
+  // for it and re-runs renderer.drawStatic() so any biome decoration
+  // that landed late gets baked into the static layer. Defense in
+  // depth: even if a prefix slips out of the critical set, the
+  // post-load redraw rescues the visuals on the next frame.
   (async () => {
     const CONCURRENCY = 12;
     let next = 0;
@@ -694,6 +714,13 @@ export async function loadAllAssets(onProgress?: (loaded: number, total: number)
       }
     });
     await Promise.all(workers);
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('rtd:assets-deferred-done', {
+          detail: { totalDeferred: deferred.length }
+        }));
+      }
+    } catch { /* ignore — non-fatal */ }
   })();
 }
 

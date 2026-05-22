@@ -3791,6 +3791,27 @@ async function boot() {
   (renderer.app as any).__attachedGore = gore;
   renderer.drawStatic(state);
 
+  // 2026-05-22 — Defense-in-depth re-draw. If the player marched fast
+  // enough that some deferred decoration / terrain sprites hadn't
+  // finished loading by the time the first drawStatic ran, those
+  // tiles painted as flat-color rectangles (the empty fallback path
+  // in drawStatic). Once Assets.loadAllAssets finishes the deferred
+  // batch, it dispatches `rtd:assets-deferred-done`. We listen once,
+  // re-run drawStatic, and the now-cached sprites paint in. The
+  // first drawStatic above already handles 99 % of cases (most
+  // sprites are now critical post-2026-05-22 prefix bump); this is
+  // the safety net for slow networks + fast players.
+  if (typeof window !== 'undefined') {
+    window.addEventListener('rtd:assets-deferred-done', () => {
+      try {
+        renderer.drawStatic(state);
+        Logger.info('Assets', 'Deferred batch landed — drawStatic re-ran.');
+      } catch (err) {
+        Logger.error('Assets', 'drawStatic redraw after deferred done failed', err);
+      }
+    }, { once: true });
+  }
+
   // 2026-05-19 — "Etch your name in the history of Rome" prompt.
   // Fires once per page load before the player can interact with
   // prospects. The chosen name persists in localStorage so reload
