@@ -72,6 +72,14 @@ export class RenderEngine {
   // drawStatic's child-clearing pass.
   auraTileSprites!: Container;
   auraTileSpritesBuilt = false;
+  // V27 — stone-tile rendering cache. Stone tile positions only change
+  // on tower-sell / stone-sell events (a few times per wave), but
+  // drawDynamic was rebuilding the entire tile layer + Aquila-stamp
+  // Graphics every frame at 60 FPS. We hash the current stone set
+  // each frame; if the hash matches the previous frame, we skip the
+  // rebuild entirely. The hash uses 53-bit doubles so collisions are
+  // effectively impossible at this grid size (988 cells).
+  private __lastStoneHash = -1;
   bossVignetteBaked = false;        // draw-once flag
   bossVignetteTargetAlpha = 0;      // 0 outside boss waves, ~0.18 during
   // Boss-death blood rain: each drop is a falling Sprite that lands and
@@ -2434,63 +2442,77 @@ export class RenderEngine {
 
   // Render dynamic state each frame.
   drawDynamic(state: GameStateShape) {
-    // Tile overlays (stones, towers placed)
-    this.layers.tiles.removeChildren();
-    // 2026-05-22 V26 — Every STONE tile gets an etched bronze Aquila
-    // (Roman eagle medallion) overlay so players can read a stone at
-    // a glance versus a grass tile or a built tower. Drawn procedurally
-    // on a single shared Graphics object after the stone sprite so it
-    // sits cleanly on top. Compound shape:
-    //   - Bronze base disc (recessed seal background)
-    //   - Inner dark ring (gives the seal physical depth)
-    //   - Eagle body diamond + spread V wings
-    //   - Tiny red SPQR drip below as the Roman accent
-    // No new sprite assets — pure Graphics so it always renders crisp.
-    const stoneStamp = new Graphics();
+    // 2026-05-22 V27 — Stone-tile rendering is now dirty-checked. The
+    // V26 stamp work was being repeated 60×/sec even when the stone
+    // set hadn't changed (which is most of every wave). Hash the
+    // current stone set; only rebuild on change.
+    let stoneHash = 0;
     for (let r = 0; r < GRID.ROWS; r++) {
       for (let c = 0; c < GRID.COLS; c++) {
-        const t = state.tiles[r][c];
-        if (t === TileType.STONE) {
-          const cx = c * GRID.TILE + GRID.TILE / 2;
-          const cy = r * GRID.TILE + GRID.TILE / 2;
-          const stone = tex('STONE_BLOCK');
-          if (stone) {
-            const sp = new Sprite(stone);
-            sp.anchor.set(0.5);
-            sp.x = cx;
-            sp.y = cy;
-            sp.width = GRID.TILE; sp.height = GRID.TILE;
-            this.layers.tiles.addChild(sp);
-          }
-          // ── Aquila stamp ─────────────────────────────────────────
-          // Bronze base disc (7px radius — about a quarter of the tile)
-          stoneStamp.beginFill(0x3a2614, 0.85).drawCircle(cx, cy, 8).endFill();
-          stoneStamp.beginFill(0x8a5a2a, 0.95).drawCircle(cx, cy, 7).endFill();
-          // Highlight crescent (upper-left bronze sheen)
-          stoneStamp.beginFill(0xd0a868, 0.55).drawCircle(cx - 1.2, cy - 1.2, 6.2).endFill();
-          // Eagle body diamond
-          stoneStamp.beginFill(0xffd34d, 0.95);
-          stoneStamp.moveTo(cx,         cy - 4);
-          stoneStamp.lineTo(cx + 2,     cy - 1);
-          stoneStamp.lineTo(cx,         cy + 2);
-          stoneStamp.lineTo(cx - 2,     cy - 1);
-          stoneStamp.endFill();
-          // Eagle wings (spread V) — dark bronze outline strokes
-          stoneStamp.lineStyle(1.3, 0x4a2a14, 0.95);
-          stoneStamp.moveTo(cx - 5, cy - 2).lineTo(cx,     cy - 1);
-          stoneStamp.moveTo(cx + 5, cy - 2).lineTo(cx,     cy - 1);
-          stoneStamp.lineStyle(0);
-          // SPQR red drip — single 1px dot below the eagle as the
-          // "Senatus Populusque Romanus" mark, no text needed at
-          // this scale.
-          stoneStamp.beginFill(0xa01818, 0.85).drawCircle(cx, cy + 4, 0.9).endFill();
-          // Outer dark ring (sells the engraving depth)
-          stoneStamp.lineStyle(1, 0x2a1a0c, 0.9).drawCircle(cx, cy, 7.5);
-          stoneStamp.lineStyle(0);
+        if (state.tiles[r][c] === TileType.STONE) {
+          // Cantor-pair the (r, c) into a unique integer then xor.
+          stoneHash ^= (r * 41 + c) * 2654435761;
         }
       }
     }
-    this.layers.tiles.addChild(stoneStamp);
+    if (stoneHash !== this.__lastStoneHash) {
+      this.__lastStoneHash = stoneHash;
+      // Tile overlays (stones, towers placed) — full rebuild on change.
+      this.layers.tiles.removeChildren();
+      // 2026-05-22 V26 — Every STONE tile gets an etched bronze Aquila
+      // (Roman eagle medallion) overlay so players can read a stone at
+      // a glance versus a grass tile or a built tower. Compound shape:
+      //   - Bronze base disc (recessed seal background)
+      //   - Inner dark ring (gives the seal physical depth)
+      //   - Eagle body diamond + spread V wings
+      //   - Tiny red SPQR drip below as the Roman accent
+      // No new sprite assets — pure Graphics so it always renders crisp.
+      const stoneStamp = new Graphics();
+      for (let r = 0; r < GRID.ROWS; r++) {
+        for (let c = 0; c < GRID.COLS; c++) {
+          const t = state.tiles[r][c];
+          if (t === TileType.STONE) {
+            const cx = c * GRID.TILE + GRID.TILE / 2;
+            const cy = r * GRID.TILE + GRID.TILE / 2;
+            const stone = tex('STONE_BLOCK');
+            if (stone) {
+              const sp = new Sprite(stone);
+              sp.anchor.set(0.5);
+              sp.x = cx;
+              sp.y = cy;
+              sp.width = GRID.TILE; sp.height = GRID.TILE;
+              this.layers.tiles.addChild(sp);
+            }
+            // ── Aquila stamp ─────────────────────────────────────────
+            // Bronze base disc (7px radius — about a quarter of the tile)
+            stoneStamp.beginFill(0x3a2614, 0.85).drawCircle(cx, cy, 8).endFill();
+            stoneStamp.beginFill(0x8a5a2a, 0.95).drawCircle(cx, cy, 7).endFill();
+            // Highlight crescent (upper-left bronze sheen)
+            stoneStamp.beginFill(0xd0a868, 0.55).drawCircle(cx - 1.2, cy - 1.2, 6.2).endFill();
+            // Eagle body diamond
+            stoneStamp.beginFill(0xffd34d, 0.95);
+            stoneStamp.moveTo(cx,         cy - 4);
+            stoneStamp.lineTo(cx + 2,     cy - 1);
+            stoneStamp.lineTo(cx,         cy + 2);
+            stoneStamp.lineTo(cx - 2,     cy - 1);
+            stoneStamp.endFill();
+            // Eagle wings (spread V) — dark bronze outline strokes
+            stoneStamp.lineStyle(1.3, 0x4a2a14, 0.95);
+            stoneStamp.moveTo(cx - 5, cy - 2).lineTo(cx,     cy - 1);
+            stoneStamp.moveTo(cx + 5, cy - 2).lineTo(cx,     cy - 1);
+            stoneStamp.lineStyle(0);
+            // SPQR red drip — single 1px dot below the eagle as the
+            // "Senatus Populusque Romanus" mark, no text needed at
+            // this scale.
+            stoneStamp.beginFill(0xa01818, 0.85).drawCircle(cx, cy + 4, 0.9).endFill();
+            // Outer dark ring (sells the engraving depth)
+            stoneStamp.lineStyle(1, 0x2a1a0c, 0.9).drawCircle(cx, cy, 7.5);
+            stoneStamp.lineStyle(0);
+          }
+        }
+      }
+      this.layers.tiles.addChild(stoneStamp);
+    }
 
     // Towers
     const seenTowerIds = new Set<string>();
