@@ -4672,7 +4672,7 @@ async function boot() {
         <span style="color:#aa9a4a">Kills</span><b style="color:#88ff88">${t.killCount ?? 0}</b>
       </div>
       ${auraTag ? `<div style="margin-top:5px;padding-top:4px;border-top:1px dashed #3a3025">${auraTag}</div>` : ''}
-      <div style="margin-top:6px;font-size:9px;color:#aa9a4a;letter-spacing:1px;font-style:italic">click for full menu</div>`;
+      <div style="margin-top:6px;font-size:9px;color:#aa9a4a;letter-spacing:1px;font-style:italic">${isMobileDevice() ? 'tap for full menu' : 'click for full menu'}</div>`;
     const tipW = 280, tipH = 160;
     const left = Math.min(window.innerWidth - tipW - 8, Math.max(8, mouseX + 16));
     const top  = Math.min(window.innerHeight - tipH - 8, Math.max(8, mouseY + 16));

@@ -10,6 +10,11 @@ import waypointsData from '../data/waypoints.json';
 import enemiesData from '../data/enemies.json';
 // 2026-05-19 — Hero sprite tinting reads off towers.json `tint` field.
 import towersData from '../data/towers.json';
+// 2026-05-22 — Hero passive aura range rings read from herodefs. Each
+// hero with a LOCAL_AURA / DUAL.local / DAMAGE_TYPE_CONVERSION passive
+// gets a radius-sized ring on the map. GLOBAL_AURA heroes (Caesar /
+// Scipio) get no ring because the effect has no spatial extent.
+import HERO_DEFS_FOR_AURA from '../data/herodefs.json';
 import { surpriseEventTintRGBA, VFX_TIMING, getAllActiveSurpriseEvents } from '../systems/SurpriseEvents';
 import { SurpriseEventKind } from '../types';
 
@@ -3488,6 +3493,39 @@ export class RenderEngine {
       if (tw.pending) continue;
       const cx = tw.tileX * GRID.TILE + GRID.TILE / 2;
       const cy = tw.tileY * GRID.TILE + GRID.TILE / 2;
+
+      // ── HERO PASSIVE AURA RINGS (2026-05-22) ──────────────────────
+      // Heroes with a spatial passive (LOCAL_AURA, DUAL.local,
+      // DAMAGE_TYPE_CONVERSION) need their range surfaced so the player
+      // can see which towers fall inside the buff radius. The ring is
+      // tinted with the hero's own particle color (matches the hero's
+      // halo ring + tier-up flash) so each hero reads as a distinct
+      // colored ring at a glance.
+      //
+      // Caesar + Scipio use GLOBAL_AURA — the effect has no radius, so
+      // no ring is drawn (a ring on a global aura would lie about
+      // where the buff applies).
+      if (tw.isHero) {
+        const hd: any = (HERO_DEFS_FOR_AURA as any)[tw.type];
+        const passive = hd?.passive;
+        if (passive) {
+          // Pull radiusTiles from either top-level (LOCAL_AURA /
+          // DAMAGE_TYPE_CONVERSION) or the DUAL.local sub-object.
+          const radius: number | undefined =
+            (typeof passive.radiusTiles === 'number') ? passive.radiusTiles :
+            (typeof passive.local?.radiusTiles === 'number') ? passive.local.radiusTiles :
+            undefined;
+          if (radius && radius > 0) {
+            // Parse the hero's tier-up color into a 0xRRGGBB int. Tier-up
+            // color is the brightest of the hero's tint set so the ring
+            // pops against the dark biome background. Fallback to ALLY
+            // violet if the JSON ever ships without the field.
+            const tintHex: string = hd?.visual?.tierUpColor ?? '#c070ff';
+            const colorInt = parseInt(tintHex.replace('#', ''), 16);
+            this.drawAuraRing(cx, cy, radius * GRID.TILE, colorInt, pulse * 0.92);
+          }
+        }
+      }
 
       // ── TOWER-NATIVE LOCAL AURAS ─────────────────────────────────
       // Eagle Standard — local +18% atk speed within 5 tiles (v6 buff).
