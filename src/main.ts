@@ -1,4 +1,9 @@
 import { GamePhase, TileType, TowerType, TargetingMode, DrawCard, DamageType } from './types';
+// 2026-05-22 M1 — Mobile detection + orientation hooks. Importing for
+// side effects: the module sets window.__isMobile / window.__isTouch
+// on load and wires the rtd:viewport-change custom event used by
+// fitStageToViewport and (in later phases) touch handlers + modals.
+import { isMobile as isMobileDevice } from './Mobile';
 import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS } from './constants';
 import { createGameState, isWaveModifierActive } from './GameState';
 import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './systems/GridManager';
@@ -3605,7 +3610,15 @@ async function boot() {
   // reasonable minimum, we let the body scroll so the HUD remains
   // reachable instead of crushing the map. Scale floor of 0.55 keeps
   // text legible on small laptops.
-  const MIN_SCALE = 0.55;
+  // 2026-05-22 M1 — MIN_SCALE differs on mobile. On desktop the 0.55
+  // floor protects readability when the user squashes a window very
+  // small (we expect them to resize back up). On mobile, the user
+  // CAN'T resize — the viewport is whatever it is — so we MUST scale
+  // all the way down to fit, even if that means tiny text. The M4
+  // pass will introduce a true mobile layout; until then this baseline
+  // lets the canvas at least fit on a phone in landscape.
+  const MIN_SCALE_DESKTOP = 0.55;
+  const MIN_SCALE_MOBILE = 0.25;
   function fitStageToViewport() {
     const app = document.getElementById('app');
     if (!app) return;
@@ -3613,17 +3626,19 @@ async function boot() {
     app.style.setProperty('--app-scale', '1');
     const w = app.scrollWidth;
     const h = app.scrollHeight;
-    const vw = window.innerWidth - 16;
-    const vh = window.innerHeight - 16;
+    // M1 — Use visualViewport on mobile when present (iOS Safari shrinks
+    // the visual viewport when the URL bar slides in/out, and
+    // window.innerHeight lags it). Falls back to innerWidth/Height.
+    const vv = window.visualViewport;
+    const vw = (vv ? vv.width : window.innerWidth) - (isMobileDevice() ? 4 : 16);
+    const vh = (vv ? vv.height : window.innerHeight) - (isMobileDevice() ? 4 : 16);
     // Largest scale that fits both axes inside the viewport.
     const fitScale = Math.min(vw / w, vh / h);
-    // Clamp to a sensible minimum so very small viewports don't crush
-    // the map into illegibility — instead we trust the body's scroll
-    // overflow to let the player reach the HUD.
-    const scale = Math.max(MIN_SCALE, fitScale);
+    const minScale = isMobileDevice() ? MIN_SCALE_MOBILE : MIN_SCALE_DESKTOP;
+    const scale = Math.max(minScale, fitScale);
     app.style.setProperty('--app-scale', String(scale));
     // Allow body scroll iff the scaled-down content STILL exceeds the
-    // viewport (which only happens when we hit the MIN_SCALE floor).
+    // viewport (which only happens when we hit the min-scale floor).
     const overflowsX = w * scale > vw;
     const overflowsY = h * scale > vh;
     document.body.style.overflowX = overflowsX ? 'auto' : 'hidden';
@@ -3631,6 +3646,11 @@ async function boot() {
   }
   fitStageToViewport();
   window.addEventListener('resize', fitStageToViewport);
+  // 2026-05-22 M1 — Listen to the centralized viewport-change event
+  // dispatched by src/Mobile.ts (handles orientationchange +
+  // visualViewport resize). Single hook instead of duplicating
+  // listeners everywhere.
+  window.addEventListener('rtd:viewport-change', fitStageToViewport);
   // Re-fit shortly after first paint in case fonts/sprites adjust layout.
   setTimeout(fitStageToViewport, 100);
   setTimeout(fitStageToViewport, 600);
@@ -4685,6 +4705,100 @@ async function boot() {
   }
 
   canvas.addEventListener('click', (e: MouseEvent) => { try { return _handleCanvasClick(e); } catch (err) { Logger.error('CanvasClick', err); return; } });
+
+  // 2026-05-22 M3 — TOUCH INPUT LAYER. Maps touch gestures onto the
+  // existing mouse pipeline so every UI path (hover preview, tile
+  // click, tower menu, etc.) Just Works on a phone/tablet.
+  //
+  // Mapping:
+  //   touchstart  → no-op (don't pre-trigger a click; we wait for end)
+  //   touchmove   → synthetic mousemove (drives the hover/tile preview
+  //                 while finger is down — important for tower-placement
+  //                 feedback before committing)
+  //   touchend    → synthetic click IF the finger didn't drag > 8px
+  //                 (drag = treat as cancel)
+  //
+  // Notes:
+  //   - We do NOT use Pixi's eventMode='dynamic' because the existing
+  //     canvas listener path is the source of truth; rerouting through
+  //     Pixi would change the click semantics.
+  //   - preventDefault on touchstart/touchmove suppresses iOS Safari's
+  //     scroll + double-tap-zoom + magnification on the canvas.
+  //   - Multi-touch is ignored (only the first finger). M3+ can add
+  //     pinch-zoom later if needed; for V1 we keep gameplay one-finger.
+  let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+  let touchMoved = false;
+  const TOUCH_DRAG_TOLERANCE_PX = 8;        // tap vs drag threshold
+  const TOUCH_TAP_MAX_DURATION_MS = 500;    // > 0.5s = long-press (M4 hook)
+
+  canvas.addEventListener('touchstart', (e: TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchStartTime = performance.now();
+    touchMoved = false;
+    // Fire a mousemove so the hover preview shows the tile under the
+    // touch immediately (without this, the preview wouldn't appear
+    // until the finger started moving).
+    canvas.dispatchEvent(new MouseEvent('mousemove', {
+      clientX: t.clientX,
+      clientY: t.clientY,
+      bubbles: true
+    }));
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e: TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    if (Math.hypot(t.clientX - touchStartX, t.clientY - touchStartY) > TOUCH_DRAG_TOLERANCE_PX) {
+      touchMoved = true;
+    }
+    canvas.dispatchEvent(new MouseEvent('mousemove', {
+      clientX: t.clientX,
+      clientY: t.clientY,
+      bubbles: true
+    }));
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e: TouchEvent) => {
+    // touches.length is now the REMAINING fingers (0 after a single-
+    // finger lift). changedTouches has the lifted touch.
+    if (e.changedTouches.length !== 1) return;
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    const dur = performance.now() - touchStartTime;
+    if (!touchMoved && dur < TOUCH_TAP_MAX_DURATION_MS) {
+      // Tap → synthetic click. The existing canvas click handler picks
+      // it up and routes through _handleCanvasClick like any mouse hit.
+      canvas.dispatchEvent(new MouseEvent('click', {
+        clientX: t.clientX,
+        clientY: t.clientY,
+        bubbles: true,
+        cancelable: true
+      }));
+    }
+    // Tear down the hover overlays — on touch there's no "still
+    // hovering" state after lift, so the floating tooltips would
+    // otherwise persist.
+    document.getElementById('aura-tile-tooltip')?.remove();
+    document.getElementById('tower-hover-preview')?.remove();
+    document.getElementById('waypoint-tooltip')?.remove();
+    renderer.drawHover(-1, -1, false);
+    renderer.hoveredTowerId = null;
+  }, { passive: false });
+
+  canvas.addEventListener('touchcancel', (e: TouchEvent) => {
+    // iOS sometimes cancels a touch (system gesture, incoming call).
+    // Reset state so the next touch starts clean.
+    touchMoved = false;
+    touchStartTime = 0;
+    document.getElementById('aura-tile-tooltip')?.remove();
+    document.getElementById('tower-hover-preview')?.remove();
+    document.getElementById('waypoint-tooltip')?.remove();
+  }, { passive: true });
 
   // 2026-05-19 — DEFENSIVE: remove any orphaned transient modal DOM
   // nodes that should have been cleaned up but weren't. Players

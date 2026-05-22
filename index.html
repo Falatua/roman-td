@@ -2,13 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1100, initial-scale=1" />
+    <!--
+      2026-05-22 M1 — Mobile viewport. Was width=1100 (desktop-locked,
+      mobile rendered a tiny pinch-to-zoom version). Now:
+      - device-width   → respect the actual phone screen
+      - initial/max=1  → no auto-zoom on input focus (iOS habit)
+      - user-scalable=no → game owns the pinch gesture, not the browser
+      - viewport-fit=cover → safe-area-inset env() works on iOS notch
+      Desktop is unaffected (it ignored width=1100 unless < 1100 anyway).
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <!-- iOS Safari: tells the OS this is a web app, hides the URL bar
+         when launched from Home Screen + uses our background color
+         for status-bar tint. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Roman TD" />
+    <meta name="theme-color" content="#0c0a08" />
     <title>Roman TD — Castrum Lunum</title>
     <style>
-      :root { color-scheme: dark; }
+      :root {
+        color-scheme: dark;
+        /* iOS notch / home indicator safe-area pad (0 on non-iOS). */
+        --safe-top:    env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-left:   env(safe-area-inset-left, 0px);
+        --safe-right:  env(safe-area-inset-right, 0px);
+      }
       * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: radial-gradient(ellipse at center, #2a221a 0%, #0c0a08 80%); color: #e8d6a8; font-family: 'Courier New', monospace; }
-      body { display: flex; align-items: center; justify-content: center; user-select: none; padding: 0; }
+      html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: radial-gradient(ellipse at center, #2a221a 0%, #0c0a08 80%); color: #e8d6a8; font-family: 'Courier New', monospace; touch-action: none; -webkit-tap-highlight-color: transparent; }
+      body { display: flex; align-items: center; justify-content: center; user-select: none; -webkit-user-select: none; padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); }
       /* #app auto-scales to fit the viewport height — its intrinsic size is
          the layout natural size (~1024×900) and the JS sets `--app-scale`
          on resize. The pixel-art canvas stays sharp because of
@@ -514,6 +537,174 @@
       #inv-strip { padding: 6px 8px !important; border: 1px solid #3a3025 !important; background: linear-gradient(180deg, #0c0a08, #1a1410) !important; }
 
       .footer { font-size: 10px; opacity: 0.5; letter-spacing: 1px; }
+
+      /* ─────────────────────────────────────────────────────────────
+         2026-05-22 M1 — MOBILE LAYER
+         Everything below is mobile-specific. Desktop is unaffected
+         (queries gate on max-width / coarse pointer / portrait).
+         ───────────────────────────────────────────────────────────── */
+
+      /* ROTATE PROMPT — hidden by default on desktop + landscape. */
+      #mobile-rotate-prompt {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at center, #2a1f12 0%, #0a0606 80%);
+        padding: 24px;
+      }
+      #mobile-rotate-prompt .rotate-card {
+        text-align: center;
+        max-width: 320px;
+        padding: 28px 24px;
+        background: linear-gradient(180deg, #1a1410, #0c0a08);
+        border: 3px solid #d4af37;
+        box-shadow: 0 0 40px rgba(212, 175, 55, 0.35);
+        color: #ffd34d;
+      }
+      #mobile-rotate-prompt .rotate-icon {
+        font-size: 64px;
+        line-height: 1;
+        margin-bottom: 16px;
+        animation: rotateNudge 2.4s ease-in-out infinite;
+        transform-origin: center;
+      }
+      #mobile-rotate-prompt .rotate-title {
+        font-size: 22px;
+        letter-spacing: 4px;
+        font-weight: 900;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 0 #000;
+      }
+      #mobile-rotate-prompt .rotate-sub {
+        font-size: 13px;
+        letter-spacing: 1px;
+        line-height: 1.6;
+        color: #cdb98a;
+      }
+      @keyframes rotateNudge {
+        0%, 60%, 100% { transform: rotate(0deg); }
+        70%           { transform: rotate(-15deg); }
+        80%           { transform: rotate(80deg); }
+        90%           { transform: rotate(90deg); }
+      }
+
+      /* Show rotate prompt when:
+         (a) viewport is portrait
+         (b) device has a coarse pointer (touch primary)
+         (c) viewport is small enough that we're definitely on a phone-class
+             device (tablets in portrait would otherwise see this; we treat
+             tablets <= 900px as phone-class too — they don't fit the HUD
+             columns side-by-side anyway). */
+      @media (orientation: portrait) and (pointer: coarse) and (max-width: 900px) {
+        #mobile-rotate-prompt { display: flex; }
+        /* Hide the loading screen + game itself while rotate prompt is up
+           so the user isn't distracted by a half-broken layout behind. */
+        #loading, #app { display: none !important; }
+      }
+
+      /* Mobile landscape — phones in landscape (≤ 950px wide, coarse pointer).
+         The desktop 3-column layout (left HUD + canvas + right buttons)
+         is too cramped at phone width; collapse the side panels and let
+         the canvas dominate. Full mobile-HUD repositioning lands in M4;
+         this is just the "don't crash visually" baseline so M1's commit
+         is shippable. */
+      @media (orientation: landscape) and (pointer: coarse) and (max-height: 500px) {
+        #app { gap: 4px !important; }
+        #left-panel, #right-panel {
+          min-width: 140px !important;
+          max-width: 160px !important;
+          max-height: 100dvh !important;
+          font-size: 11px !important;
+        }
+      }
+
+      /* Loading-screen safe-area pad so the COIN INSERT button isn't
+         under the iOS home-indicator. */
+      #loading {
+        padding-top: var(--safe-top);
+        padding-bottom: var(--safe-bottom);
+        padding-left: var(--safe-left);
+        padding-right: var(--safe-right);
+      }
+
+      /* ─────────────────────────────────────────────────────────────
+         2026-05-22 M4 — MOBILE TAP TARGETS + MODAL LAYOUT
+         Apple HIG: min 44×44pt tap target. Google Material: 48×48dp.
+         We use 44px floor across all primary interactive controls.
+         Scoped to mobile via the coarse-pointer media query so the
+         desktop layout is untouched.
+         ───────────────────────────────────────────────────────────── */
+      @media (pointer: coarse) and (max-width: 1100px) {
+        /* Every button gets the tap-target floor. min-height + larger
+           padding. Buttons that already exceed are unaffected. */
+        button {
+          min-height: 44px !important;
+          padding: 10px 14px !important;
+          font-size: 14px !important;
+          letter-spacing: 1.5px !important;
+        }
+        /* Hero modal cards — keep card width but make the row scroll
+           friendlier on touch + the cards bigger to tap. */
+        #choose-hero-modal-overlay [style*="width: 320px"] {
+          width: 280px !important;
+        }
+        /* Shop / Codex / generic modal panels — wider on mobile so the
+           player isn't squinting at 12px text in a 320px box. */
+        [id$="-modal"] [style*="width: min(1180px"],
+        [id$="-modal"] [style*="width:min(1180px"],
+        #shop-modal [style*="width: min"],
+        #codex-modal [style*="width: min"] {
+          width: 96vw !important;
+          max-width: none !important;
+        }
+        /* Floating tooltip chips were sized for hover (12px text); a
+           touch user reads them from arm's length on a phone. Bump
+           font-size + max-width. */
+        #aura-tile-tooltip,
+        #tower-hover-preview,
+        #waypoint-tooltip {
+          font-size: 13px !important;
+          max-width: 80vw !important;
+          padding: 12px 16px !important;
+          line-height: 1.6 !important;
+        }
+        /* The HUD strips that anchor left/right column — these are the
+           buttons the player taps every wave (Start / Speed / Shop /
+           Mute / etc.). Bigger by default on mobile. */
+        #left-panel button, #right-panel button {
+          width: 100% !important;
+        }
+        /* Suppress the chrome 300ms tap-delay on the canvas + buttons
+           by making them touch-friendly elements. */
+        canvas, button { touch-action: manipulation; }
+
+        /* Banner buttons + confirmation strips (March to War, sandbox,
+           hero pick) — beef them up so they're thumb-sized. */
+        button[id*="march"], button[id*="confirm"], button[id*="continue"],
+        button[id*="okay"], button[id*="dismiss"] {
+          min-height: 52px !important;
+          font-size: 15px !important;
+        }
+      }
+
+      /* Mobile-LANDSCAPE-specific: the canvas is the boss. Side panels
+         collapse a little harder so the play area dominates. The full
+         3-column collapse to floating panels is a bigger refactor;
+         this is a clean transitional pass that ships without breaking. */
+      @media (orientation: landscape) and (pointer: coarse) and (max-height: 500px) {
+        /* Headers + section dividers shrink so vertical real estate
+           goes to gameplay info. */
+        #left-panel h2, #right-panel h2 { font-size: 13px !important; padding: 4px 8px !important; }
+        #left-panel h3, #right-panel h3 { font-size: 11px !important; }
+        /* Loading-screen rotate prompt should NEVER show in landscape,
+           but if the user has the URL bar dropping in/out and the
+           portrait media-query trips momentarily, suppress the
+           prompt during landscape sessions explicitly. */
+        #mobile-rotate-prompt { display: none !important; }
+      }
     </style>
   </head>
   <body>
@@ -563,6 +754,19 @@
       <!-- RIGHT side panel: action buttons (Start / Speed / Pool / Shop
            / Quests / Codex / Mute) + prospect cards. Populated at runtime -->
       <div id="right-panel"></div>
+    </div>
+    <!-- 2026-05-22 M1 — MOBILE ROTATE PROMPT. Full-screen overlay shown
+         when a mobile device is in portrait orientation. The game is
+         landscape-only on small screens because the playfield is
+         1216×832 (38:26 ≈ 1.46:1) and the HUD adds two side columns.
+         Hidden on desktop via the media query in <style>. Pure CSS;
+         no JS needed for visibility. -->
+    <div id="mobile-rotate-prompt">
+      <div class="rotate-card">
+        <div class="rotate-icon">📱</div>
+        <div class="rotate-title">ROTATE YOUR DEVICE</div>
+        <div class="rotate-sub">Roman TD plays in landscape — turn your phone sideways to defend Rome</div>
+      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
