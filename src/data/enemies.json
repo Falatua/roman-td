@@ -411,7 +411,7 @@
   "HELL_GATE": {
     "name": "Hell Gate",
     "faction": "SUPER_DEMONS",
-    "baseHp": 110000,
+    "baseHp": 300000,
     "speed": 0,
     "isFlyer": false,
     "isBoss": false,
@@ -429,7 +429,7 @@
   "FIRE_GIANT": {
     "name": "Fire Giant",
     "faction": "SUPER_DEMONS",
-    "baseHp": 110000,
+    "baseHp": 300000,
     "speed": 0.65,
     "isFlyer": false,
     "isBoss": false,
@@ -668,14 +668,13 @@
   "MONGOL_SHAMAN": {
     "name": "Hun Shaman",
     "faction": "MONGOLS",
-    "baseHp": 1078,
+    "baseHp": 800,
     "speed": 0.9,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 2,
     "auraTowerSlow": 0.22,
-    "healAllyPctPerSec": 0.018,
-    "immunePoison": true
+    "healAllyPctPerSec": 0.018
   },
   "MONGOL_CAPTAIN": {
     "name": "Hun Captain",
