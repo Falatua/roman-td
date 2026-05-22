@@ -2282,15 +2282,19 @@ export class RenderEngine {
     caveFrame.beginFill(caveGlowColor, 0.22).drawCircle(caveCx, caveCy, 88).endFill();
     caveFrame.beginFill(caveGlowColor, 0.12).drawCircle(caveCx, caveCy, 118).endFill();
     this.layers.bg.addChild(caveFrame);
-    // Biome-aware cave entrance sprite (skull-door for undead biomes,
-    // DARK_CAVE for early biomes where the new sprite hasn't generated).
+    // Biome-aware cave entrance sprite. Sunny biomes (grassland/celtic/
+    // carthage) use the user-supplied dramatic skull-cave reference;
+    // undead biomes use the craftpix skull-door variants. DARK_CAVE
+    // is the universal fallback.
     const caveKey = biome.caveKey;
     const cave = tex(caveKey) ?? tex('DARK_CAVE');
     if (cave) {
       const cs = new Sprite(cave);
       cs.anchor.set(0.5); cs.x = caveCx; cs.y = caveCy;
-      // 2026-05-21 — Bumped 86 → 112px (3.5 tile) for visual drama.
-      cs.width = 112; cs.height = 112;
+      // 2026-05-21 — User-supplied cave sprite is detailed enough to
+      // sit at 160px (5 tile) without looking pixelated. Bumped from
+      // 112 to give it the same commanding presence as the reference.
+      cs.width = 160; cs.height = 196;     // slightly taller than wide to match source aspect
       this.layers.bg.addChild(cs);
     }
 
@@ -2323,13 +2327,18 @@ export class RenderEngine {
     gateFrame.drawRect(gateCx + 53.5, gateCy - 56, 1.5, 112);
     gateFrame.endFill();
     this.layers.bg.addChild(gateFrame);
-    const gate = tex('ROMAN_GATE');
+    // 2026-05-21 — User-supplied Rome fortress reference. Prefer the
+    // new MAP_GATE_USER_ROME sprite (detailed castle with watchtowers
+    // + red banner) over the procedural ROMAN_GATE. Falls back to
+    // ROMAN_GATE if the new sprite hasn't loaded yet.
+    const gate = tex('MAP_GATE_USER_ROME') ?? tex('ROMAN_GATE');
     if (gate) {
       const gs = new Sprite(gate);
       gs.anchor.set(0.5); gs.x = gateCx; gs.y = gateCy;
-      // 2026-05-21 — Bumped 76 → 100px so the gate sprite fills the
-      // ornate frame instead of floating in the middle.
-      gs.width = 100; gs.height = 100;
+      // 2026-05-21 — User Rome sprite renders at 160px (5 tiles) to
+      // match the cave's commanding presence. Source aspect is square
+      // so width = height.
+      gs.width = 160; gs.height = 160;
       this.layers.bg.addChild(gs);
     }
 

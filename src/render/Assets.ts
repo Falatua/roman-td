@@ -181,6 +181,12 @@ const MANIFEST: Record<string, string> = {
   MAP_CAVE_UNDEAD_DOOR_A: 'map_overhaul/m_cave_undead_door_a.png',
   MAP_CAVE_UNDEAD_DOOR_B: 'map_overhaul/m_cave_undead_door_b.png',
   MAP_CAVE_UNDEAD_DOOR_C: 'map_overhaul/m_cave_undead_door_c.png',
+  // 2026-05-21 — User-supplied Cave + Rome reference renders. The cave
+  // shows a dramatic rock-formation with skull-mouth entry + purple
+  // portal glow; the gate is a classic Roman fortress with watchtowers
+  // and a red SPQR banner. These become the W1-W10 sunny-biome anchors.
+  MAP_CAVE_GRASSLAND: 'map_overhaul/m_cave_user_grassland.png',
+  MAP_GATE_USER_ROME: 'map_overhaul/m_gate_user_rome.png',
   // Waypoints
   WP1: 'w_wp1_aquila.png', WP2: 'w_wp2_laurel.png', WP3: 'w_wp3_spqr.png',
   WP4: 'w_wp4_shewolf.png', WP5: 'w_wp5_fasces.png', WP6: 'w_wp6_jupiter.png',
