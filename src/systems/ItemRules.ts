@@ -1,4 +1,5 @@
 import { ItemId, DamageType } from '../types';
+import towersData from '../data/towers.json';
 
 // 2026-05 v9: DOT split into per-kind sub-families (DOT_BURN, DOT_POISON,
 // DOT_BLEED) so a tower can carry one of each — variety of DoTs is
@@ -202,16 +203,31 @@ export function itemEquipMode(itemId: ItemId): EquipMode {
 
 // EQUIP MODE CHECK — verifies a candidate item's attack-class restriction
 // matches the target tower's damageType. Returns ok=true for any item
-// without a restriction. Melee-only items reject every non-PHYS_MELEE
-// tower; ranged-only items reject PHYS_MELEE towers.
-export function canEquipItemOnDamageType(itemId: ItemId, towerDamageType: DamageType): {
+// without a restriction. Melee-only items reject every non-melee tower;
+// ranged-only items reject melee towers.
+//
+// 2026-05-22 V29 — "melee" is now read from BOTH the damageType AND
+// the `melee` flag in towers.json. Previously the check was strictly
+// `damageType === PHYS_MELEE`, which rejected melee items on towers
+// like Pontifex (DIVINE damage, melee:true) and Caesar (DIVINE damage,
+// melee:true). Now any tower with `melee:true` in towers.json — even
+// if it deals DIVINE or FIRE — passes the MELEE-only restriction.
+// `towerType` is optional so existing callers without the type still
+// get the old PHYS_MELEE-only behavior (backwards compatible).
+export function canEquipItemOnDamageType(
+  itemId: ItemId,
+  towerDamageType: DamageType,
+  towerType?: string
+): {
   ok: boolean;
   mode: EquipMode;
   reason?: string;
 } {
   const mode = itemEquipMode(itemId);
   if (mode === 'ANY') return { ok: true, mode };
-  const isMeleeTower = towerDamageType === DamageType.PHYS_MELEE;
+  const damageTypeIsMelee = towerDamageType === DamageType.PHYS_MELEE;
+  const flagSaysMelee = towerType ? !!(towersData as any)[towerType]?.melee : false;
+  const isMeleeTower = damageTypeIsMelee || flagSaysMelee;
   if (mode === 'MELEE' && !isMeleeTower) {
     return { ok: false, mode, reason: 'Melee-only item — this tower attacks at range. Equip on a melee tower instead.' };
   }

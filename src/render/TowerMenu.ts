@@ -486,7 +486,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
         // EQUIP MODE GATE — runs before the family check so a Sagittarius
         // looking at a Barbed Gladius sees "MELEE ONLY" first, not the
         // less-helpful "family conflict" if both happened to apply.
-        const modeCheck = canEquipItemOnDamageType(slot.itemId, t.damageType);
+        const modeCheck = canEquipItemOnDamageType(slot.itemId, t.damageType, t.type);
         if (!modeCheck.ok) {
           blocker = modeCheck.reason ?? 'Wrong attack class for this item.';
           blockerShort = modeCheck.mode === 'MELEE' ? 'MELEE ONLY' : 'RANGED ONLY';
@@ -1067,7 +1067,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
       if (t.equippedItems.includes(slot.itemId)) {
         blocker = 'Already equipped on this hero'; blockerShort = 'OWNED';
       } else {
-        const modeCheck = canEquipItemOnDamageType(slot.itemId, t.damageType);
+        const modeCheck = canEquipItemOnDamageType(slot.itemId, t.damageType, t.type);
         if (!modeCheck.ok) {
           blocker = modeCheck.reason ?? 'Wrong attack class for this item.';
           blockerShort = modeCheck.mode === 'MELEE' ? 'MELEE ONLY' : 'RANGED ONLY';

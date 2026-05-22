@@ -347,7 +347,7 @@ export function executeCombo(state: GameStateShape, combo: AvailableCombo, resul
   const fits: any[] = [];
   const misfits: any[] = [];
   for (const item of carriedItems) {
-    const check = canEquipItemOnDamageType(item as any, resultDamageType);
+    const check = canEquipItemOnDamageType(item as any, resultDamageType, newTower.type);
     if (check.ok) fits.push(item);
     else misfits.push(item);
   }
