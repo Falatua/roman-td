@@ -389,25 +389,32 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     const cyclePos = (state.tick + offset) % period;
     (e as any).__veiled = cyclePos < duration;
   }
-  // ─── AMBUSH STEALTH (2026-05-21): selected ground enemies (Carthage
-  //   Spearman, Undead Berserker) emerge from cover during the opening
-  //   seconds of their wave — untargetable until wave-elapsed-time
-  //   crosses `ambushStealthSec` (default 15s). After that window all
-  //   instances become targetable simultaneously. Reuses the __veiled
-  //   flag (CombatResolver.pickTarget already filters on it) and OR's
-  //   with other stealth sources so VEIL modifier or stealth cycles
-  //   layer cleanly. `state.__waveStartTick` is stamped by main.ts at
-  //   each wave start; falls back to current tick (no stealth) if a
-  //   shared-state load reset it.
+  // ─── AMBUSH STEALTH (2026-05-21, bug-fixed 2026-05-22 V22): selected
+  //   ground enemies (Carthage Spearman, Undead Berserker) emerge from
+  //   cover during the opening seconds of their wave — untargetable
+  //   until wave-elapsed-time crosses `ambushStealthSec` (default 10s).
+  //   After that window all instances become targetable simultaneously.
+  //
+  //   V22 BUG FIX: previous code only set `__veiled = true` during the
+  //   window and never cleared it after. For ambush enemies without a
+  //   stealthInterval cycle (Carthage Spearman) the flag was stuck on
+  //   forever — players reported they could not hit these enemies even
+  //   after the timer expired. Fix: explicitly assign true/false based
+  //   on the window so the veil clears the instant the timer ends.
+  //
+  //   Order: AMBUSH runs AFTER the VEIL-of-Proscripti modifier and the
+  //   per-enemy stealthInterval cycle. By writing last, ambush is the
+  //   authoritative source for these specific enemies — modifier/cycle
+  //   stealth doesn't currently coincide with W7/W13/W15 ambush waves.
+  //
+  //   `state.__waveStartTick` is stamped by main.ts at each wave start.
   const waveStart = (state as any).__waveStartTick ?? state.tick;
   const waveElapsed = state.tick - waveStart;
   for (const e of state.enemies.values()) {
     const def = (enemiesData as any)[e.type];
     if (!def?.ambushStealth) continue;
-    const ambushSec = def.ambushStealthSec ?? 15;
-    if (waveElapsed < ambushSec) {
-      (e as any).__veiled = true;
-    }
+    const ambushSec = def.ambushStealthSec ?? 10;
+    (e as any).__veiled = waveElapsed < ambushSec;
   }
   // ─── HEALER ENEMIES (2026-05): enemies with healAllyPctPerSec emit a
   //   gentle 1.5-tile heal ring that restores HP to nearby living allies

@@ -115,7 +115,7 @@
     "phaseHits": 1,
     "reanimateAs": "REANIMATED_ZOMBIE",
     "ambushStealth": true,
-    "ambushStealthSec": 15
+    "ambushStealthSec": 10
   },
   "NUMIDIAN_RIDER": {
     "name": "Numidian Rider",
@@ -220,7 +220,7 @@
     "checkpointHealPct": 0.15,
     "reanimateAs": "REANIMATED_SKELETON",
     "ambushStealth": true,
-    "ambushStealthSec": 15
+    "ambushStealthSec": 10
   },
   "SPECTRAL_SCOUT": {
     "name": "Spectral Scout",

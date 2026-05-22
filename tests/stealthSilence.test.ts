@@ -63,17 +63,20 @@ function makeTower(id: string, tileX: number, tileY: number): Tower {
 }
 
 describe('S1 — Ambush stealth on selected ground enemies', () => {
-  it('Carthage Spearman is __veiled during the first 15s of the wave', () => {
+  // 2026-05-22 V22 — Ambush window dropped 15s → 10s per design tuning,
+  // AND the clear-after-window bug was fixed (previously __veiled stayed
+  // true forever once set; now it's explicitly assigned per-frame).
+  it('Carthage Spearman is __veiled during the first 10s of the wave', () => {
     const s = createGameState();
     (s as any).__waveStartTick = 0;
-    s.tick = 5;                   // 5 seconds into the wave (< 15)
+    s.tick = 5;                   // 5 seconds into the wave (< 10)
     const e = makeEnemy(EnemyType.CARTHAGE_SPEARMAN, EnemyFaction.CARTHAGE, 320, 320);
     s.enemies.set(e.id, e);
     tickEnemies(s, 0.016, () => {}, () => {});
     expect((e as any).__veiled).toBe(true);
   });
 
-  it('Undead Berserker is __veiled during the first 15s of the wave', () => {
+  it('Undead Berserker is __veiled during the first 10s of the wave', () => {
     const s = createGameState();
     (s as any).__waveStartTick = 0;
     s.tick = 1;
@@ -83,16 +86,16 @@ describe('S1 — Ambush stealth on selected ground enemies', () => {
     expect((e as any).__veiled).toBe(true);
   });
 
-  it('ambush stealth lifts at exactly 15s — enemy becomes targetable', () => {
+  it('ambush stealth lifts at exactly 10s — enemy becomes targetable', () => {
     const s = createGameState();
     (s as any).__waveStartTick = 0;
-    s.tick = 15.5;                // past the 15s window
+    s.tick = 10.5;                // past the 10s window
     const e = makeEnemy(EnemyType.CARTHAGE_SPEARMAN, EnemyFaction.CARTHAGE, 320, 320);
     s.enemies.set(e.id, e);
     tickEnemies(s, 0.016, () => {}, () => {});
-    // After the window, __veiled is NOT set true by ambush. The flag
-    // remains whatever the prior stealth code (or default) left it.
-    expect((e as any).__veiled).toBeFalsy();
+    // 2026-05-22 V22 — After the window, the ambush block now
+    // EXPLICITLY assigns __veiled = false (was: never cleared).
+    expect((e as any).__veiled).toBe(false);
   });
 
   it('enemy WITHOUT ambushStealth flag is not affected', () => {
@@ -105,12 +108,12 @@ describe('S1 — Ambush stealth on selected ground enemies', () => {
     expect((e as any).__veiled).toBeFalsy();
   });
 
-  it('ambush stealth uses the per-enemy ambushStealthSec override (default 15)', () => {
-    // Carthage Spearman in enemies.json explicitly sets ambushStealthSec: 15.
-    // Confirm the duration matches by sampling at the boundary.
+  it('ambush stealth uses the per-enemy ambushStealthSec override (current 10)', () => {
+    // Carthage Spearman in enemies.json explicitly sets ambushStealthSec: 10
+    // post-V22. Confirm the duration matches by sampling at the boundary.
     const s = createGameState();
     (s as any).__waveStartTick = 0;
-    s.tick = 14.9;                // just inside the window
+    s.tick = 9.9;                 // just inside the window
     const e = makeEnemy(EnemyType.CARTHAGE_SPEARMAN, EnemyFaction.CARTHAGE, 320, 320);
     s.enemies.set(e.id, e);
     tickEnemies(s, 0.016, () => {}, () => {});
@@ -266,13 +269,13 @@ describe('S3 — Sanity: data flags in enemies.json wire to the runtime', () => 
   it('Carthage Spearman has ambushStealth in JSON', () => {
     const enemies = require('../src/data/enemies.json');
     expect(enemies.CARTHAGE_SPEARMAN.ambushStealth).toBe(true);
-    expect(enemies.CARTHAGE_SPEARMAN.ambushStealthSec).toBe(15);
+    expect(enemies.CARTHAGE_SPEARMAN.ambushStealthSec).toBe(10);
   });
 
   it('Undead Berserker has ambushStealth in JSON', () => {
     const enemies = require('../src/data/enemies.json');
     expect(enemies.UNDEAD_BERSERKER.ambushStealth).toBe(true);
-    expect(enemies.UNDEAD_BERSERKER.ambushStealthSec).toBe(15);
+    expect(enemies.UNDEAD_BERSERKER.ambushStealthSec).toBe(10);
   });
 
   it('Zombie Druid has silenceAuraRadiusTiles in JSON', () => {
