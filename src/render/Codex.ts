@@ -1351,7 +1351,7 @@ function renderTab(tab: string): string {
         </div>
       </div>
       <div style="font-size:11px;color:#cdb98a;line-height:1.55;background:#0c0a08;border-left:3px solid #d4af37;padding:8px 12px;margin-bottom:8px">
-        <b style="color:#d4af37">Cost ramp (per path):</b> 20g → 40g → 80g → 160g → 320g per tap (doubles each step). A single path maxed = <b style="color:#88ff88">620g</b>. All three paths maxed = <b style="color:#88ff88">1,860g</b>. Cheap to sample, steep to max — the first tap on any path is always 20g so trying out a new path is never a big commitment.
+        <b style="color:#d4af37">Cost ramp (per path):</b> 30g → 60g → 120g → 240g → 480g per tap (doubles each step). A single path maxed = <b style="color:#88ff88">930g</b>. All three paths maxed = <b style="color:#88ff88">2,790g</b>. Cheap to sample, steep to max — the first tap on any path is still under one wave's gold, so trying out a new path is never a big commitment.
       </div>
       <div style="font-size:11px;color:#cdb98a;line-height:1.55;background:#0c0a08;border-left:3px solid #ff7733;padding:8px 12px">
         <b style="color:#ff7733">Persistence + refund:</b> Forge stacks reset to 0/0/0 when you draft a fresh hero (after destruction). You get <b style="color:#88ff88">50% of the gold spent</b> refunded on the re-draft so the investment isn't a total loss. Forge progression does <b>not</b> affect XP, tier, or natural ability unlocks — it's a separate axis on top.

@@ -27,7 +27,7 @@
   "ALPHA_DOG": {
     "name": "Alpha Dog",
     "faction": "DOGS",
-    "baseHp": 2728,
+    "baseHp": 3274,
     "speed": 2,
     "isFlyer": false,
     "isBoss": true,
@@ -94,7 +94,7 @@
   "CELTIC_WARLORD": {
     "name": "Brennus",
     "faction": "CELTS",
-    "baseHp": 2387,
+    "baseHp": 2864,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": true,
@@ -147,7 +147,7 @@
   "WAR_ELEPHANT": {
     "name": "War Elephant",
     "faction": "CARTHAGE",
-    "baseHp": 4451,
+    "baseHp": 5341,
     "speed": 1.6,
     "isFlyer": false,
     "isBoss": true,
@@ -161,7 +161,7 @@
   "HANNIBAL_BARCA": {
     "name": "Hannibal Barca",
     "faction": "CARTHAGE",
-    "baseHp": 3762,
+    "baseHp": 4514,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": true,
@@ -238,7 +238,7 @@
   "UNDEAD_WARLORD": {
     "name": "Undead Warlord",
     "faction": "UNDEAD_CELTS",
-    "baseHp": 2860,
+    "baseHp": 3432,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": true,
@@ -285,7 +285,7 @@
   "UNDEAD_WAR_ELEPHANT": {
     "name": "Undead War Elephant",
     "faction": "UNDEAD_CARTHAGE",
-    "baseHp": 3234,
+    "baseHp": 3881,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": true,
@@ -574,7 +574,7 @@
   "ANUBIS_KING": {
     "name": "Anubis Death-Lord",
     "faction": "EGYPTIANS",
-    "baseHp": 19800,
+    "baseHp": 23760,
     "speed": 0.95,
     "isFlyer": false,
     "isBoss": true,

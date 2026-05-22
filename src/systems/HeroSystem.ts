@@ -74,16 +74,22 @@ export interface HeroHooks {
 //
 // 2026-05-20 v3 — cost ramp lowered from linear-steep (100/200/300/
 // 400/500, 1500g per path maxed) to doubling-from-20g (20/40/80/160/
-// 320, 620g per path maxed). Per-tap cost is much cheaper at the
-// start so players can sample the system early, but ramps hard at
-// the top to keep maxing out a real commitment. Sum across all
-// three paths maxed = 1,860g (down from 4,500g).
+// 320, 620g per path maxed).
+// 2026-05-22 V25 — cost ramp bumped 1.5× (30/60/120/240/480 per tap,
+// 930g per path maxed, 2,790g for all three) after the difficulty
+// audit. The previous 620g/path ceiling was reachable by W10-W12 on
+// most successful runs, which let the hero's Path A + C compound
+// damage stack hit ~1.625× by mid-game — a big swing the enemy HP
+// scaling didn't track. Steepening the curve slows late-game power
+// growth without erasing the "sample cheaply" feel: the first tap
+// is still 30g (under one wave's gold), but the L4 → L5 tap costs
+// 480g, a meaningful commitment late in the run.
 export const HERO_FORGE_CAP = 5;
 
 /** Returns the cost of the NEXT tap on this path, or null when MAXED. */
 export function heroForgeNextCost(stacks: number): number | null {
   if (stacks >= HERO_FORGE_CAP) return null;
-  return 20 * Math.pow(2, stacks); // 20/40/80/160/320
+  return 30 * Math.pow(2, stacks); // 30/60/120/240/480 (V25 — was 20/40/80/160/320)
 }
 
 /** Path A SHARPEN — +6% basic-attack damage per tap. */

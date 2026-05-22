@@ -462,21 +462,21 @@ describe('Hero Forge — pay-gold upgrade system', () => {
     expect(HERO_FORGE_CAP).toBe(5);
   });
 
-  it('heroForgeNextCost doubles from 20g: 20/40/80/160/320 then MAXED', () => {
-    // 2026-05-20 v3 — ramp lowered from linear-steep (100/200/300/
-    // 400/500) to doubling-from-20g. First tap on any path is always
-    // 20g so sampling a new path is never a big commitment; the
-    // doubling makes maxing out a real commitment.
-    expect(heroForgeNextCost(0)).toBe(20);
-    expect(heroForgeNextCost(1)).toBe(40);
-    expect(heroForgeNextCost(2)).toBe(80);
-    expect(heroForgeNextCost(3)).toBe(160);
-    expect(heroForgeNextCost(4)).toBe(320);
+  it('heroForgeNextCost doubles from 30g: 30/60/120/240/480 then MAXED', () => {
+    // 2026-05-22 V25 — ramp bumped 1.5× to slow late-game hero power.
+    // Was 20/40/80/160/320 (V3, 2026-05-20). The post-V25 first tap is
+    // 30g (still cheap enough to sample any new path in 1-2 waves)
+    // but the L4 → L5 tap costs 480g, a real commitment.
+    expect(heroForgeNextCost(0)).toBe(30);
+    expect(heroForgeNextCost(1)).toBe(60);
+    expect(heroForgeNextCost(2)).toBe(120);
+    expect(heroForgeNextCost(3)).toBe(240);
+    expect(heroForgeNextCost(4)).toBe(480);
     expect(heroForgeNextCost(5)).toBeNull();           // cap
     expect(heroForgeNextCost(99)).toBeNull();          // defensive
-    // Sum per path maxed = 20 + 40 + 80 + 160 + 320 = 620g.
+    // Sum per path maxed = 30 + 60 + 120 + 240 + 480 = 930g.
     const total = [0, 1, 2, 3, 4].reduce((acc, n) => acc + (heroForgeNextCost(n) ?? 0), 0);
-    expect(total).toBe(620);
+    expect(total).toBe(930);
   });
 
   it('heroForgeDmgMult: +6% per tap, +30% at 5/5', () => {

@@ -142,15 +142,21 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // hellfire). Poison and bleed land HARDER on demons (×1.30 / ×1.25)
   // to compensate — the player is forced into non-fire DoT to wear
   // them down. Slow effectiveness stays low since they're hot-blooded.
-  // 2026-05 v10 — DIVINE VULNERABILITY: demons take 1.50× damage from
-  // divine sources (was neutral 1.0). Faction row already gives them
-  // +100% (DIVINE: 1.0 in factionResistances.json), so the per-enemy
-  // 1.50 stacks multiplicatively on top — final divine takes is 3.0×.
-  // Divine becomes the dedicated demon counter, on top of poison/bleed.
-  [EnemyType.DEMON_HELLHOUND]: { ranged: 0.65, slow: 0.4, burn: 0, poison: 1.30, bleed: 1.25, divine: 1.50 },
-  [EnemyType.CELTIC_FIRE_DEMON]: { melee: 0.65, ranged: 0.55, burn: 0, poison: 1.30, bleed: 1.25, slow: 0.5, divine: 1.50 },
-  [EnemyType.SHADOW_CAVALRY]: { melee: 0.35, ranged: 0.55, slow: 0.15, burn: 0, poison: 1.30, bleed: 1.25, divine: 1.50 },
-  [EnemyType.DEMON_LEGATE]: { ranged: 0.5, slow: 0.25, burn: 0, poison: 1.30, bleed: 1.25, melee: 0.85, divine: 1.50 },
+  // 2026-05 v10 — DIVINE VULNERABILITY: demons take extra damage from
+  // divine sources. Faction row gives them +100% (DIVINE: 1.0 in
+  // factionResistances.json), and the per-enemy mult below stacks.
+  //
+  // 2026-05-22 V25 — Tightened per-enemy divine mult 1.50 → 1.20.
+  // Was: faction 2.0× × per-enemy 1.5× = 3.0× DIVINE damage taken —
+  // Sulla's Proscription + Caesar's DIVINE basic attack became an
+  // auto-win on every W17-W19 demon. The post-V25 stack is 2.0× × 1.2×
+  // = 2.4×, still a faction-defining vulnerability (you should
+  // ABSOLUTELY bring DIVINE damage to demon waves) but no longer a
+  // one-button "I bought Sulla, the game is over" answer.
+  [EnemyType.DEMON_HELLHOUND]: { ranged: 0.65, slow: 0.4, burn: 0, poison: 1.30, bleed: 1.25, divine: 1.20 },
+  [EnemyType.CELTIC_FIRE_DEMON]: { melee: 0.65, ranged: 0.55, burn: 0, poison: 1.30, bleed: 1.25, slow: 0.5, divine: 1.20 },
+  [EnemyType.SHADOW_CAVALRY]: { melee: 0.35, ranged: 0.55, slow: 0.15, burn: 0, poison: 1.30, bleed: 1.25, divine: 1.20 },
+  [EnemyType.DEMON_LEGATE]: { ranged: 0.5, slow: 0.25, burn: 0, poison: 1.30, bleed: 1.25, melee: 0.85, divine: 1.20 },
   // DAEMON IMPERATOR (W20 final boss) — ranged 0.40 → 0.20 (much
   // tougher to chip down with arrows / javelins / ballistae). Still
   // fire-immune.

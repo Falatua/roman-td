@@ -49,8 +49,8 @@ function imgSrcFromTex(key: string): string | null {
 //   ⚔ SHARPEN  — +6% basic-attack damage / tap (5 cap)
 //   ⏱ HASTEN   — −5% ability cooldown / tap  (5 cap)
 //   ✨ EMPOWER  — +5% to all numeric ability magnitudes / tap (5 cap)
-// Each path has its own cost ramp (20/40/80/160/320g — doubling
-// from 20g) and own stack counter; the three paths don't share
+// Each path has its own cost ramp (V25: 30/60/120/240/480g —
+// doubling from 30g) and own stack counter; the three paths don't share
 // resources or interact. The section frame tints to the active
 // hero's color from towers.json so the forge feels personalized.
 // 2026-05-20 v3 — Richer per-path metadata for the hover tooltip.
@@ -114,7 +114,7 @@ function showForgeTooltip(btn: HTMLElement, path: typeof FORGE_PATHS[number]): v
     <div style="margin-top:4px"><b style="color:#88ff88">AT MAX:</b> ${path.maxedAt5}</div>
     <div style="margin-top:4px;color:#cdb98a;font-style:italic">${path.bestFor}</div>
     ${path.notes ? `<div style="margin-top:6px;padding-top:4px;border-top:1px dashed ${path.tint}44;font-size:10px;color:#aa9a4a">${path.notes}</div>` : ''}
-    <div style="margin-top:6px;padding-top:4px;border-top:1px solid #3a3025;color:#aa9a4a;font-size:10px;letter-spacing:1px">Cost ramp: 20g · 40g · 80g · 160g · 320g · MAXED</div>`;
+    <div style="margin-top:6px;padding-top:4px;border-top:1px solid #3a3025;color:#aa9a4a;font-size:10px;letter-spacing:1px">Cost ramp: 30g · 60g · 120g · 240g · 480g · MAXED</div>`;
   document.body.appendChild(tip);
   const rect = btn.getBoundingClientRect();
   const tw = 320, th = 200;
