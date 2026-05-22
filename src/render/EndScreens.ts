@@ -56,7 +56,12 @@ export function computeFinalScore(state: GameStateShape, won: boolean): number {
   // 2026-05 v10: speed bonus — clearing waves quickly is rewarded.
   s += computeSpeedBonus(state).total;
   if (won) s += 10000;
-  return s;
+  // 2026-05-22 V33 — Lives bought at gate / Mercator cost 300 score each.
+  // Mirrors the breakdown formula in computeFinalScoreBreakdown so the
+  // legacy end-screen path and the modern showEndSummary path apply the
+  // same penalty. Clamped to 0 so the run never goes negative.
+  s -= (state.livesBoughtThisRun ?? 0) * 300;
+  return Math.max(0, s);
 }
 
 export function computeRank(state: GameStateShape, won: boolean): string {

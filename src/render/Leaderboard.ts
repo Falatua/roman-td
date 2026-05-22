@@ -44,6 +44,7 @@ export interface ScoreBreakdown {
   comboBonus: number;      // towers combined
   questBonus: number;      // quests completed
   rngBonus: number;        // bonus bosses killed + wave modifiers survived
+  livesPenalty: number;    // V33 — 300 points subtracted per life bought at shops
   difficultyMult: number;  // 1.0 for Standard
   final: number;
 }
@@ -103,6 +104,8 @@ export function computeFinalScoreBreakdown(state: GameStateShape, won: boolean):
   //   ── RNG-event bonuses (2026-05) ──
   //   bonus bosses killed × 2,500  (twin/ambush boss spawns — high reward)
   //   modifier waves      × 1,000  (Blood Moon / Storm Surge / etc. cleared)
+  //   ── PENALTY (2026-05-22 V33) ──
+  //   lives bought        × −300   (every life purchased at gate/Mercator)
   //   ──
   //   win bonus           + 8,000  (only if won)
   //   difficulty mult     × 1.0    (Standard) — multiplied at the end
@@ -115,6 +118,7 @@ export function computeFinalScoreBreakdown(state: GameStateShape, won: boolean):
   const quests      = (state.completedQuests ?? []).length;
   const bonusBosses = state.bonusBossesKilled ?? 0;
   const modWaves    = state.modifierWavesSurvived ?? 0;
+  const livesBought = state.livesBoughtThisRun ?? 0;
 
   const waveBonus       = waves * 500;
   const killBonus       = kills * 5;
@@ -123,15 +127,20 @@ export function computeFinalScoreBreakdown(state: GameStateShape, won: boolean):
   const comboBonus      = combosBuilt * 150;
   const questBonus      = quests * 250;
   const rngBonus        = bonusBosses * 2500 + modWaves * 1000;
+  const livesPenalty    = livesBought * 300;
   const winBonus        = won ? 8000 : 0;
 
   // Difficulty placeholder — game ships at Standard. Single source of truth
   // so a future setting can plug in without rewiring the formula.
   const difficultyMult = 1.0;
 
-  const base = waveBonus + killBonus + timeBonus + efficiencyBonus + comboBonus + questBonus + rngBonus + winBonus;
-  const final = Math.round(base * difficultyMult);
-  return { waveBonus, killBonus, timeBonus, efficiencyBonus, comboBonus, questBonus, rngBonus, difficultyMult, final };
+  // 2026-05-22 V33 — Lives penalty subtracted from the base before
+  // the difficulty multiplier so buying lives reduces the total
+  // proportionally to whatever multiplier is active. Final clamped
+  // at 0 — a run can't go negative.
+  const base = waveBonus + killBonus + timeBonus + efficiencyBonus + comboBonus + questBonus + rngBonus + winBonus - livesPenalty;
+  const final = Math.max(0, Math.round(base * difficultyMult));
+  return { waveBonus, killBonus, timeBonus, efficiencyBonus, comboBonus, questBonus, rngBonus, livesPenalty, difficultyMult, final };
 }
 
 export function loadLeaderboard(): LeaderboardEntry[] {
@@ -383,6 +392,15 @@ export function showEndSummary(parent: HTMLElement, state: GameStateShape, won: 
           <div>Bonus bosses killed: <span style="color:#ffaa33">${state.bonusBossesKilled ?? 0}</span></div>
           <div>Modifier waves cleared: <span style="color:#ffaa33">${state.modifierWavesSurvived ?? 0}</span></div>
           <div style="grid-column:1 / -1;color:#88ff88;text-align:right">+${breakdown.rngBonus.toLocaleString()} score</div>
+        </div>
+      </div>` : ''}
+      ${(breakdown.livesPenalty > 0) ? `
+      <div style="margin-top:10px;padding:10px 14px;background:linear-gradient(180deg,rgba(170,40,40,0.18),rgba(0,0,0,0.4));border:2px solid #ee5555;text-align:left">
+        <div style="font-size:10px;letter-spacing:3px;color:#ee5555;font-weight:900;margin-bottom:6px">⚠ LIVES PURCHASED PENALTY</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:12px;color:#fff8e0;font-weight:900;text-shadow:1px 1px 0 #000">
+          <div>Lives bought this run: <span style="color:#ee5555">${state.livesBoughtThisRun ?? 0}</span></div>
+          <div style="color:#aa9a4a;font-size:10px;align-self:end">−300 score per life</div>
+          <div style="grid-column:1 / -1;color:#ee8888;text-align:right">−${breakdown.livesPenalty.toLocaleString()} score</div>
         </div>
       </div>` : ''}
       <button id="end-continue" style="margin-top:26px;background:linear-gradient(180deg,${accent},#4a2a08);color:#1a0808;border:3px solid #fff8e0;padding:12px 32px;font-family:inherit;font-size:15px;letter-spacing:4px;cursor:pointer;font-weight:900;box-shadow:0 0 20px ${accent}aa">CONTINUE ▸</button>

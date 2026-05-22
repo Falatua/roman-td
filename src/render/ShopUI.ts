@@ -663,6 +663,11 @@ function renderMercatorShop(
     spendGold(state, shop.livesPrice);
     state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + 1);
     shop.livesBoughtThisVisit += 1;
+    // 2026-05-22 V33 — Track total lives purchased this run for the
+    // end-of-game score penalty. Buying lives is a survival lever but
+    // costs ~300 score per life on the leaderboard so the "I bought
+    // my way through" run can't outscore the "I held the line" run.
+    state.livesBoughtThisRun = (state.livesBoughtThisRun ?? 0) + 1;
     state.hint = '+1 Life.';
     SFX.buy();
     refresh();
@@ -826,6 +831,9 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
     spendGold(state, shop.livesPrice);
     state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + 1);
     shop.livesBoughtThisVisit += 1;
+    // 2026-05-22 V33 — Same run-total tracking on the Mercator path.
+    // -300 score per life applies regardless of which shop sold it.
+    state.livesBoughtThisRun = (state.livesBoughtThisRun ?? 0) + 1;
     state.hint = '+1 Life.';
     SFX.buy();
     refresh();
