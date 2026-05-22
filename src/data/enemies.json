@@ -89,7 +89,8 @@
     "isBoss": false,
     "livesCost": 1,
     "spriteSheet": 4,
-    "spriteCell": 6
+    "spriteCell": 6,
+    "groundConvertAs": "CELTIC_FOOTMAN"
   },
   "CELTIC_WARLORD": {
     "name": "Brennus",
@@ -127,7 +128,8 @@
     "livesCost": 1,
     "spriteSheet": 5,
     "spriteCell": 0,
-    "dodgeChance": 0.2
+    "dodgeChance": 0.2,
+    "groundConvertAs": "CARTHAGE_SPEARMAN"
   },
   "CARTHAGE_ELITE_GUARD": {
     "name": "Sacred Band",
@@ -147,7 +149,7 @@
   "WAR_ELEPHANT": {
     "name": "War Elephant",
     "faction": "CARTHAGE",
-    "baseHp": 5341,
+    "baseHp": 16023,
     "speed": 1.6,
     "isFlyer": false,
     "isBoss": true,
@@ -233,7 +235,8 @@
     "spriteSheet": 5,
     "spriteCell": 7,
     "phaseHits": 2,
-    "rebirthAtPct": 0.4
+    "rebirthAtPct": 0.4,
+    "groundConvertAs": "UNDEAD_CELT"
   },
   "UNDEAD_WARLORD": {
     "name": "Undead Warlord",
@@ -280,7 +283,8 @@
       "period": 5,
       "duration": 0.8
     },
-    "dodgeChance": 0.15
+    "dodgeChance": 0.15,
+    "groundConvertAs": "UNDEAD_SPEARMAN"
   },
   "UNDEAD_WAR_ELEPHANT": {
     "name": "Undead War Elephant",
@@ -345,7 +349,8 @@
     "stealthInterval": {
       "period": 6,
       "duration": 1
-    }
+    },
+    "groundConvertAs": "DEMON_HELLHOUND"
   },
   "DEMON_LEGATE": {
     "name": "Demon Legate",
@@ -569,7 +574,8 @@
     "isFlyer": true,
     "isBoss": false,
     "livesCost": 3,
-    "phaseHits": 2
+    "phaseHits": 2,
+    "groundConvertAs": "EGYPTIAN_SPEARMAN"
   },
   "ANUBIS_KING": {
     "name": "Anubis Death-Lord",
@@ -592,7 +598,8 @@
     "isFlyer": true,
     "isBoss": false,
     "livesCost": 1,
-    "dodgeChance": 0.25
+    "dodgeChance": 0.25,
+    "groundConvertAs": "MONGOL_FOOTMAN"
   },
   "MONGOL_SPEAR_RIDER": {
     "name": "Hun Spear Rider",
@@ -602,7 +609,8 @@
     "isFlyer": true,
     "isBoss": false,
     "livesCost": 2,
-    "dodgeChance": 0.18
+    "dodgeChance": 0.18,
+    "groundConvertAs": "MONGOL_SPEARMAN"
   },
   "KHAN_RIDER": {
     "name": "Khan Rider",

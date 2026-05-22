@@ -697,6 +697,56 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
           child.pathProgress = e.pathProgress;
         }
       }
+      // 2026-05-22 V30 — POST-W6 FLYER → GROUND CONVERSION.
+      // When a flyer dies on wave 7 or later, the corpse falls and
+      // spawns a SINGLE thematic ground unit at the same position,
+      // continuing along the ground path from the nearest projected
+      // point. Mapping (per enemies.json `groundConvertAs`):
+      //   NUMIDIAN_RIDER      → CARTHAGE_SPEARMAN  (W7-10)
+      //   SPECTRAL_SCOUT      → UNDEAD_CELT        (W11-15)
+      //   GHOST_RIDER         → UNDEAD_SPEARMAN    (W11-15)
+      //   SHADOW_CAVALRY      → DEMON_HELLHOUND    (W19-20)
+      //   SPHINX              → EGYPTIAN_SPEARMAN  (endless)
+      //   MONGOL_HORSE_ARCHER → MONGOL_FOOTMAN     (endless)
+      //   MONGOL_SPEAR_RIDER  → MONGOL_SPEARMAN    (endless)
+      // CELTIC_SCOUT also has the field set (→ CELTIC_FOOTMAN) for
+      // endless-mode wrap-around, but it only spawns on W6 in campaign
+      // so the gate (state.wave > 6) keeps it from triggering there.
+      // Uses the SAME __reanimated guard as the necromancy block so a
+      // converted ground unit can't chain-convert / reanimate.
+      const groundConvertAs = (enemiesData as any)[e.type]?.groundConvertAs;
+      if (e.isFlyer && (state.wave ?? 0) > 6 && groundConvertAs && !e.__reanimated) {
+        const ground = spawnEnemy(state, groundConvertAs as EnemyType, 1.0, /*derived=*/true);
+        ground.x = e.x;
+        ground.y = e.y;
+        ground.prevX = e.x;
+        ground.prevY = e.y;
+        ground.__reanimated = true;        // block further conversion/chain reanim
+        // Project the death position onto the ground path so the new
+        // unit picks up from the nearest waypoint segment. Mirrors the
+        // PathFinder.resnapEnemiesToPath projection math, inlined here
+        // so we don't drag the import into the hot death-loop module.
+        const gp = state.groundPath;
+        if (gp && gp.length >= 2) {
+          let bestI = 0, bestProg = 0, bestD2 = Infinity;
+          for (let i = 0; i < gp.length - 1; i++) {
+            const ax = gp[i].col * GRID.TILE + GRID.TILE / 2;
+            const ay = gp[i].row * GRID.TILE + GRID.TILE / 2;
+            const bx = gp[i + 1].col * GRID.TILE + GRID.TILE / 2;
+            const by = gp[i + 1].row * GRID.TILE + GRID.TILE / 2;
+            const dx = bx - ax, dy = by - ay;
+            const segLen2 = dx * dx + dy * dy;
+            if (segLen2 < 1) continue;
+            let t = ((e.x - ax) * dx + (e.y - ay) * dy) / segLen2;
+            if (t < 0) t = 0; else if (t > 1) t = 1;
+            const cx = ax + dx * t, cy = ay + dy * t;
+            const d2 = (e.x - cx) * (e.x - cx) + (e.y - cy) * (e.y - cy);
+            if (d2 < bestD2) { bestD2 = d2; bestI = i; bestProg = t; }
+          }
+          ground.pathIndex = bestI;
+          ground.pathProgress = bestProg;
+        }
+      }
       // NECROMANCY REANIMATION (2026-05): on waves tagged `necromancy: true`
       // in waves.json, every ground non-boss enemy with a `reanimateAs`
       // target spits out MULTIPLE reanimated undead at its death tile.
