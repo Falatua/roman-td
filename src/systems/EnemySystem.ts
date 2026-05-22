@@ -965,29 +965,15 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       // Hannibal + Daemon Imperator OOC regen actually flow at 50%
       // during DoT instead of being silently locked at 0%.
     }
-    // ─── DOT FLOATING NUMBERS ───────────────────────────────────────────
-    // Pop a colored floating number every ~0.45s per active DOT kind so the
-    // player sees damage being inflicted by status effects in real-time.
-    // Colors: POISON green, BLEED red, BURN orange, HELLFIRE dark red.
-    // Numbers stop appearing as soon as the status duration runs out (the
-    // dotByKind accumulator is empty next tick once the effect filters out).
-    const gore = (window as any).__gore;
-    const emit = (window as any).__emitFloatingNumber;
-    if (gore && emit) {
-      const lastDot = ((e as any).__lastDotTick ??= { BURN: 0, POISON: 0, BLEED: 0, HELLFIRE: 0 });
-      const tick = state.tick;
-      const CADENCE = 0.45;
-      const COLORS: Record<string, number> = { POISON: 0x88ff88, BLEED: 0xff5555, BURN: 0xff8833, HELLFIRE: 0xaa1010 };
-      for (const kind of ['POISON','BLEED','BURN','HELLFIRE'] as const) {
-        const dps = dotByKind[kind];
-        if (dps <= 0) continue;
-        if (tick - lastDot[kind] < CADENCE) continue;
-        lastDot[kind] = tick;
-        const perTick = dps * CADENCE;       // damage that landed since last popup
-        if (perTick < 0.5) continue;          // skip noise
-        emit(gore, e.x, e.y - 14, perTick, COLORS[kind]);
-      }
-    }
+    // 2026-05-22 V34 — DOT floating-number emit removed per user
+    // feedback. The POISON green numbers read as healing rather than
+    // damage, and BURN/BLEED/HELLFIRE all together cluttered the
+    // screen during W11+ undead waves. Status effects still tick and
+    // apply damage normally — the HP bar drain + status-effect icons
+    // over the enemy already communicate "this enemy is taking DoT."
+    // (Direct-hit damage numbers, crits, +gold floaters, item-drop
+    // labels, kill-streak milestones all kept — those mark active
+    // player actions, not ambient tick damage.)
     e.currentSpeed = (frozen || stunned) ? 0 : e.baseSpeed * speedMult;
     // 2026-05-19 — HERO ABILITY WINDOWS that mutate enemy speed:
     //   • Frontier Wall (Agricola Tier 2): flyers slowed during window
