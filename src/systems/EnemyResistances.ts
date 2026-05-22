@@ -121,7 +121,12 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // immune flag (see meleeImmuneBlocksTower in CombatResolver) — and
   // those route through their own resistance rows (divine / fire /
   // siege), not melee.
-  [EnemyType.ZOMBIE_DRUID]: { slow: 0.55, fire: 1.20, burn: 1.20, poison: 0, bleed: 0, ranged: 0.55 },
+  // 2026-05-22 V31 — `ranged: 0.55` removed per user direction. Zombie
+  // Druid was taking 55% of ranged damage which made W13 archer/ballista
+  // builds feel toothless against the lich-aspirant casters. Now takes
+  // full ranged damage (1.0× × faction 1.0 = 100%). Other resists kept:
+  // slow nerf, fire/burn vulnerability, DoT poison/bleed immunity.
+  [EnemyType.ZOMBIE_DRUID]: { slow: 0.55, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
   [EnemyType.UNDEAD_BERSERKER]: { melee: 0.5, ranged: 0.6, slow: 0.5, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
   [EnemyType.SPECTRAL_SCOUT]: { melee: 0.25, ranged: 0.55, slow: 0.2, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
   [EnemyType.UNDEAD_WARLORD]: { melee: 0.45, ranged: 0.55, slow: 0.25, fire: 1.25, burn: 1.25, poison: 0, bleed: 0 },
@@ -136,7 +141,13 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // UNDEAD WAR ELEPHANT — bone hide still cracks; siege + fire are
   // both real angles. Boss-tier so burn vulnerability is slightly
   // lower than minions' (1.20 vs 1.25).
-  [EnemyType.UNDEAD_WAR_ELEPHANT]: { melee: 0.20, ranged: 0.45, slow: 0.2, fire: 1.20, burn: 1.20, poison: 0, bleed: 0, siege: 1.40 },
+  // 2026-05-22 V31 — siege vulnerability tightened 1.40 → 1.20 per user
+  // feedback ("UWE was way too easy to kill on W14"). The HP bump in
+  // the JSON does most of the work; this trim takes the siege auto-
+  // answer down from 140% → 120% damage taken so the spike doesn't
+  // melt as fast. Fire stays at 1.20 — still vulnerable, two clean
+  // damage-type counters preserved.
+  [EnemyType.UNDEAD_WAR_ELEPHANT]: { melee: 0.20, ranged: 0.45, slow: 0.2, fire: 1.20, burn: 1.20, poison: 0, bleed: 0, siege: 1.20 },
 
   // SUPER DEMONS — fire-immune across the board (lore: born from
   // hellfire). Poison and bleed land HARDER on demons (×1.30 / ×1.25)

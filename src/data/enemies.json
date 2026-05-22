@@ -289,7 +289,7 @@
   "UNDEAD_WAR_ELEPHANT": {
     "name": "Undead War Elephant",
     "faction": "UNDEAD_CARTHAGE",
-    "baseHp": 3881,
+    "baseHp": 6792,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": true,
