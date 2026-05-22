@@ -321,7 +321,7 @@
   "CELTIC_FIRE_DEMON": {
     "name": "Celtic Fire Demon",
     "faction": "SUPER_DEMONS",
-    "baseHp": 264,
+    "baseHp": 528,
     "speed": 1.8,
     "isFlyer": false,
     "isBoss": false,
