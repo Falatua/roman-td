@@ -3326,7 +3326,16 @@ async function boot() {
   // reasonable minimum, we let the body scroll so the HUD remains
   // reachable instead of crushing the map. Scale floor of 0.55 keeps
   // text legible on small laptops.
-  const MIN_SCALE = 0.55;
+  // Desktop keeps a legibility floor so a tiny window doesn't crush
+  // the HUD into unreadability — we'd rather the user scroll. Touch
+  // devices DROP the floor: an iPhone in landscape is ~844×390, the
+  // natural #app is ~1676×832, so the fit-scale is ~0.47 — below the
+  // desktop floor. On mobile the player must see the whole board on
+  // entry, so we honor the fit-scale unconditionally and rely on
+  // browser pinch-zoom (max-scale=5 in the viewport meta) for any
+  // zoom-in the player wants.
+  const isTouchDevice = matchMedia('(pointer: coarse)').matches;
+  const MIN_SCALE = isTouchDevice ? 0.10 : 0.55;
   function fitStageToViewport() {
     const app = document.getElementById('app');
     if (!app) return;
@@ -3334,27 +3343,46 @@ async function boot() {
     app.style.setProperty('--app-scale', '1');
     const w = app.scrollWidth;
     const h = app.scrollHeight;
-    const vw = window.innerWidth - 16;
-    const vh = window.innerHeight - 16;
+    // Mobile uses the full viewport (no 16px breathing room) so the
+    // game actually fills the screen edge-to-edge. Desktop keeps the
+    // padding so the canvas doesn't kiss the window frame.
+    const pad = isTouchDevice ? 0 : 16;
+    const vw = window.innerWidth - pad;
+    const vh = window.innerHeight - pad;
     // Largest scale that fits both axes inside the viewport.
     const fitScale = Math.min(vw / w, vh / h);
-    // Clamp to a sensible minimum so very small viewports don't crush
-    // the map into illegibility — instead we trust the body's scroll
-    // overflow to let the player reach the HUD.
     const scale = Math.max(MIN_SCALE, fitScale);
     app.style.setProperty('--app-scale', String(scale));
     // Allow body scroll iff the scaled-down content STILL exceeds the
-    // viewport (which only happens when we hit the MIN_SCALE floor).
+    // viewport (only when we hit the MIN_SCALE floor — desktop only).
     const overflowsX = w * scale > vw;
     const overflowsY = h * scale > vh;
     document.body.style.overflowX = overflowsX ? 'auto' : 'hidden';
     document.body.style.overflowY = overflowsY ? 'auto' : 'hidden';
   }
+  // Portrait-orientation gate (mobile only). The game's landscape-only
+  // 1216×832 canvas has no good portrait fit, so when a touch device is
+  // held in portrait we cover the page with the #rotate-gate overlay
+  // (declared in index.html) and let the player back in the moment they
+  // rotate to landscape. Desktop windows in portrait aspect ratio are
+  // not gated — the floor + scroll fallback handles those.
+  function updateRotateGate() {
+    const gate = document.getElementById('rotate-gate');
+    if (!gate) return;
+    const portrait = window.innerHeight > window.innerWidth;
+    const shouldShow = isTouchDevice && portrait;
+    gate.classList.toggle('show', shouldShow);
+    gate.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+  }
   fitStageToViewport();
-  window.addEventListener('resize', fitStageToViewport);
-  // Re-fit shortly after first paint in case fonts/sprites adjust layout.
-  setTimeout(fitStageToViewport, 100);
-  setTimeout(fitStageToViewport, 600);
+  updateRotateGate();
+  const onViewportChange = () => { fitStageToViewport(); updateRotateGate(); };
+  window.addEventListener('resize', onViewportChange);
+  window.addEventListener('orientationchange', onViewportChange);
+  // Re-fit shortly after first paint in case fonts/sprites adjust layout,
+  // and again after the iOS URL bar settles post-rotation.
+  setTimeout(onViewportChange, 100);
+  setTimeout(onViewportChange, 600);
 
   // 2026-05-18 — Page-exit guard. When the player tries to close the
   // tab, refresh the page, or navigate away mid-game, prompt them to

@@ -2,7 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1100, initial-scale=1" />
+    <!-- Mobile-first viewport: device-width so iPhone renders at native CSS
+         pixels (not zoomed-out 1100px), initial-scale=1 to fit, max-scale=5
+         so players CAN pinch-zoom in for tile-level precision. viewport-fit=
+         cover lets the loading screen extend behind the notch. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover" />
     <title>Roman TD — Castrum Lunum</title>
     <style>
       :root { color-scheme: dark; }
@@ -514,9 +518,63 @@
       #inv-strip { padding: 6px 8px !important; border: 1px solid #3a3025 !important; background: linear-gradient(180deg, #0c0a08, #1a1410) !important; }
 
       .footer { font-size: 10px; opacity: 0.5; letter-spacing: 1px; }
+
+      /* ─── PORTRAIT ORIENTATION GATE (mobile only) ──────────────────────
+         The game is built for a landscape 1216×832 canvas. On mobile in
+         portrait there's no way to fit everything legibly, so we cover
+         the page with a single instruction screen until the player
+         rotates to landscape. JS toggles #rotate-gate.show based on
+         (orientation: portrait) AND a coarse pointer (touch device) so
+         desktop windows in portrait aspect ratio don't trigger it. */
+      #rotate-gate {
+        position: fixed; inset: 0; z-index: 300;
+        display: none;
+        flex-direction: column; align-items: center; justify-content: center;
+        gap: 24px; padding: 32px;
+        background: radial-gradient(ellipse at center, #1a0808 0%, #0a0202 70%, #000 100%);
+        color: #ffd34d;
+        font-family: 'Courier New', monospace;
+        text-align: center;
+        text-shadow: 2px 2px 0 #000;
+      }
+      #rotate-gate.show { display: flex; }
+      #rotate-gate-icon {
+        width: 96px; height: 96px;
+        border: 4px solid #ffd34d;
+        border-radius: 14px;
+        box-shadow: 0 0 24px rgba(255,211,77,0.5), inset 0 0 16px rgba(255,211,77,0.2);
+        animation: rotateHint 2.2s ease-in-out infinite;
+        position: relative;
+      }
+      #rotate-gate-icon::before {
+        content: ''; position: absolute;
+        left: 50%; top: 10px; transform: translateX(-50%);
+        width: 28px; height: 4px; background: #ffd34d; border-radius: 2px;
+      }
+      @keyframes rotateHint {
+        0%, 20%, 100% { transform: rotate(0deg); }
+        50%, 70%      { transform: rotate(-90deg); }
+      }
+      #rotate-gate-title {
+        font-size: 26px; letter-spacing: 6px; font-weight: 900;
+        color: #ffd34d;
+      }
+      #rotate-gate-sub {
+        font-size: 13px; letter-spacing: 3px; color: #aa8a4a;
+        max-width: 320px; line-height: 1.5;
+      }
     </style>
   </head>
   <body>
+    <!-- Mobile portrait gate: covers the page on touch devices held in
+         portrait. Auto-hides when the player rotates to landscape. Lives
+         ABOVE every other layer (z-index 300) so it can never be reached
+         past until the player turns the phone. -->
+    <div id="rotate-gate" aria-hidden="true">
+      <div id="rotate-gate-icon" aria-hidden="true"></div>
+      <div id="rotate-gate-title">ROTATE TO PLAY</div>
+      <div id="rotate-gate-sub">ROMAN TD requires a landscape view. Turn your device sideways to enter the gate.</div>
+    </div>
     <!-- Loading screen lives at body level — pulled OUT of #app so the
          scale-to-fit transform on #app doesn't shrink it. Stays
          position:fixed inset:0 covering the full viewport. -->
