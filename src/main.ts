@@ -4529,6 +4529,13 @@ async function boot() {
     // the player can scan tower info without opening the full menu.
     // Click still opens the interactive menu for sell/combine/equip.
     updateTowerHoverPreview(hoverTowerId, e.clientX, e.clientY);
+    // 2026-05-22 V17 — Waypoint hover tooltip. Hovering one of the 7
+    // numbered Roman medallions (the checkpoints) explains what they
+    // are: path markers, plus the elite-enemy checkpoint-heal
+    // mechanic + the W11+ disable rule. Suppressed if a tower or
+    // aura tooltip is already showing at this cursor position.
+    const auraActive = !!document.getElementById('aura-tile-tooltip');
+    updateWaypointTooltip(t.col, t.row, e.clientX, e.clientY, hoverTowerId || auraActive);
   });
   canvas.addEventListener('mouseleave', () => {
     hoverCol = -1; hoverRow = -1;
@@ -4536,6 +4543,7 @@ async function boot() {
     renderer.hoveredTowerId = null;
     document.getElementById('aura-tile-tooltip')?.remove();
     document.getElementById('tower-hover-preview')?.remove();
+    document.getElementById('waypoint-tooltip')?.remove();
   });
   // 2026-05-19 — Tower hover preview helper. Shows a floating chip with
   // name / tier / DPS / range / attack speed / item count / kill count.
@@ -4619,6 +4627,63 @@ async function boot() {
     tip.style.left = left + 'px';
     tip.style.top  = top + 'px';
   }
+  // 2026-05-22 V17 — Waypoint tooltip helper. Hovering one of the 7
+  // numbered Roman medallions pops a floating chip explaining what
+  // checkpoints are, how the elite-enemy heal works, and the W11+
+  // disable rule. Mirrors the aura-tile tooltip pattern so the look,
+  // positioning, and lifecycle stay consistent.
+  //
+  // Emblem labels come from the waypoints.json `emblem` field — each
+  // checkpoint's Roman symbol is also surfaced so the engraved coin
+  // art is named for the player. WP6 / WP7 stay numeric because the
+  // data file uses generic placeholder labels for those two.
+  const WAYPOINT_EMBLEM_LABELS: Record<string, string> = {
+    AQUILA:   'Aquila — Eagle of Rome',
+    LAUREL:   'Laurea — Victory Wreath',
+    SHE_WOLF: 'Lupa — She-Wolf of the Founding',
+    SPQR:     'SPQR — Senate and People',
+    JUPITER:  'Jupiter — Sky-Father, King of Gods',
+    WP6:      'Checkpoint VI',
+    WP7:      'Checkpoint VII'
+  };
+  const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
+  function updateWaypointTooltip(col: number, row: number, mouseX: number, mouseY: number, suppressed?: any) {
+    let tip = document.getElementById('waypoint-tooltip');
+    // Pull waypoint data from the same cache the renderer's ambient
+    // glow uses (set at boot in main.ts ~line 1760).
+    const wpData = (window as any).__wpData ?? null;
+    const wp = wpData?.waypoints?.find((w: any) => w.topLeft.col === col && w.topLeft.row === row);
+    if (!wp || suppressed) {
+      if (tip) tip.remove();
+      return;
+    }
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'waypoint-tooltip';
+      tip.style.cssText = `position:fixed;pointer-events:none;z-index:120;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid #ffd34d;padding:10px 14px;font-family:'Courier New',monospace;color:#e8d6a8;font-size:11px;letter-spacing:0.5px;line-height:1.5;box-shadow:0 0 16px rgba(255,211,77,0.35);max-width:280px;`;
+      document.body.appendChild(tip);
+    }
+    const numeral = ROMAN_NUMERALS[wp.index - 1] ?? String(wp.index);
+    const emblemLabel = WAYPOINT_EMBLEM_LABELS[wp.emblem] ?? `Checkpoint ${numeral}`;
+    // Per the waves.json data, only wave 11 disables checkpoint heal
+    // — surface that to players hovering the medallion mid-campaign.
+    const w11Note = state.wave >= 11
+      ? '<div style="margin-top:6px;font-size:9px;color:#8aff8a;letter-spacing:1px;font-style:italic">✓ W11+ disables checkpoint healing — push hard here.</div>'
+      : '<div style="margin-top:6px;font-size:9px;color:#aa9a4a;letter-spacing:1px;font-style:italic">Tip: stuns and knockback interrupt the heal.</div>';
+    tip.innerHTML = `
+      <div style="font-size:10px;letter-spacing:3px;color:#ffd34d;font-weight:bold;margin-bottom:2px">CHECKPOINT ${numeral}</div>
+      <div style="font-size:13px;color:#fff8e0;font-weight:bold;margin-bottom:6px;letter-spacing:1px">${emblemLabel}</div>
+      <div style="font-size:11px;color:#cdb98a;line-height:1.45">Enemies travel from cave to gate through all 7 checkpoints in order. Elite enemies <b style="color:#ff8888">heal 15–18% HP</b> when they cross a medallion — kill them <b>before</b> they reach the tile to deny it.</div>
+      ${w11Note}`;
+    // Position: slightly below-right of cursor, clamped to viewport.
+    const w = 300, h = 130;
+    const left = Math.min(window.innerWidth - w - 8, Math.max(8, mouseX + 14));
+    const top  = Math.min(window.innerHeight - h - 8, Math.max(8, mouseY + 14));
+    tip.style.left = left + 'px';
+    tip.style.top  = top + 'px';
+  }
+
   canvas.addEventListener('click', (e: MouseEvent) => { try { return _handleCanvasClick(e); } catch (err) { Logger.error('CanvasClick', err); return; } });
 
   // 2026-05-19 — DEFENSIVE: remove any orphaned transient modal DOM
