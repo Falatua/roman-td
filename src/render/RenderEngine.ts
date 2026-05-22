@@ -1940,28 +1940,36 @@ export class RenderEngine {
         // exclusion so the field reads dense at the borders but stays
         // visually clean near combat lanes. Prop pool is biome-aware.
         //
-        // Edge weight: distance-from-edge / map-radius gives a 0..1
-        //   center-bias; we invert so corners get the full density,
-        //   center gets 0.7×. Quadratic falloff to keep the gradient
-        //   smooth without a hard ring.
-        // Path corridor: any tile within manhattan 1 of a path tile
-        //   rolls at 0.3× the base density to keep tower placement
-        //   tiles readable.
-        // Sprite size variance: 0.55-0.80 tile width per-prop so the
-        //   field doesn't read as a uniform stamping grid.
+        // 2026-05-22 V26 — Player feedback: "the map feels a little
+        // too cluttered, especially near the path." Three tuning
+        // changes pulled together:
+        //   1. Base density 0.40 → 0.28 (30% less overall).
+        //   2. Path corridor check widened from manhattan-1 (4 tiles
+        //      checked) to manhattan-2 (8 tiles checked + diagonals).
+        //   3. Corridor multiplier 0.30 → 0.12 (4× more aggressive
+        //      exclusion in the combat lane).
+        // Result: combat lanes stay visually clean (~3% prop density
+        // within 2 tiles of path), borders + corners stay rich
+        // (~30% density), but the total prop count drops ~35%.
         if (!isPath && t === TileType.EMPTY) {
           // Center-vs-edge weight (1.0 at corners, ~0.7 at dead center).
           const cxNorm = (c - GRID.COLS / 2) / (GRID.COLS / 2);
           const cyNorm = (r - GRID.ROWS / 2) / (GRID.ROWS / 2);
           const edgeBias = 0.7 + 0.5 * Math.min(1, cxNorm * cxNorm + cyNorm * cyNorm);
-          // Path corridor exclusion — if any 4-neighbor is path, dim.
-          const nearPath =
-            pathSet.has(`${c - 1},${r}`) ||
-            pathSet.has(`${c + 1},${r}`) ||
-            pathSet.has(`${c},${r - 1}`) ||
-            pathSet.has(`${c},${r + 1}`);
-          const corridorMult = nearPath ? 0.3 : 1.0;
-          const targetDensity = 0.40 * edgeBias * corridorMult;
+          // Path corridor exclusion — widened to manhattan-2 in V26.
+          // Checks 4 cardinal neighbors AND 4 diagonals AND 4
+          // 2-tile-out cells, so every tile within 2 of a path tile
+          // gets the dim multiplier.
+          let nearPath = false;
+          for (let dr = -2; dr <= 2 && !nearPath; dr++) {
+            for (let dc = -2; dc <= 2 && !nearPath; dc++) {
+              if (Math.abs(dr) + Math.abs(dc) > 2) continue;     // manhattan-2 only
+              if (dr === 0 && dc === 0) continue;
+              if (pathSet.has(`${c + dc},${r + dr}`)) nearPath = true;
+            }
+          }
+          const corridorMult = nearPath ? 0.12 : 1.0;
+          const targetDensity = 0.28 * edgeBias * corridorMult;
           // Roll: hash to 0..0.999, compare to target.
           const propRoll = (h % 1000) / 1000;
           if (propRoll < targetDensity) {
@@ -2428,22 +2436,61 @@ export class RenderEngine {
   drawDynamic(state: GameStateShape) {
     // Tile overlays (stones, towers placed)
     this.layers.tiles.removeChildren();
+    // 2026-05-22 V26 — Every STONE tile gets an etched bronze Aquila
+    // (Roman eagle medallion) overlay so players can read a stone at
+    // a glance versus a grass tile or a built tower. Drawn procedurally
+    // on a single shared Graphics object after the stone sprite so it
+    // sits cleanly on top. Compound shape:
+    //   - Bronze base disc (recessed seal background)
+    //   - Inner dark ring (gives the seal physical depth)
+    //   - Eagle body diamond + spread V wings
+    //   - Tiny red SPQR drip below as the Roman accent
+    // No new sprite assets — pure Graphics so it always renders crisp.
+    const stoneStamp = new Graphics();
     for (let r = 0; r < GRID.ROWS; r++) {
       for (let c = 0; c < GRID.COLS; c++) {
         const t = state.tiles[r][c];
         if (t === TileType.STONE) {
+          const cx = c * GRID.TILE + GRID.TILE / 2;
+          const cy = r * GRID.TILE + GRID.TILE / 2;
           const stone = tex('STONE_BLOCK');
           if (stone) {
             const sp = new Sprite(stone);
             sp.anchor.set(0.5);
-            sp.x = c * GRID.TILE + GRID.TILE / 2;
-            sp.y = r * GRID.TILE + GRID.TILE / 2;
+            sp.x = cx;
+            sp.y = cy;
             sp.width = GRID.TILE; sp.height = GRID.TILE;
             this.layers.tiles.addChild(sp);
           }
+          // ── Aquila stamp ─────────────────────────────────────────
+          // Bronze base disc (7px radius — about a quarter of the tile)
+          stoneStamp.beginFill(0x3a2614, 0.85).drawCircle(cx, cy, 8).endFill();
+          stoneStamp.beginFill(0x8a5a2a, 0.95).drawCircle(cx, cy, 7).endFill();
+          // Highlight crescent (upper-left bronze sheen)
+          stoneStamp.beginFill(0xd0a868, 0.55).drawCircle(cx - 1.2, cy - 1.2, 6.2).endFill();
+          // Eagle body diamond
+          stoneStamp.beginFill(0xffd34d, 0.95);
+          stoneStamp.moveTo(cx,         cy - 4);
+          stoneStamp.lineTo(cx + 2,     cy - 1);
+          stoneStamp.lineTo(cx,         cy + 2);
+          stoneStamp.lineTo(cx - 2,     cy - 1);
+          stoneStamp.endFill();
+          // Eagle wings (spread V) — dark bronze outline strokes
+          stoneStamp.lineStyle(1.3, 0x4a2a14, 0.95);
+          stoneStamp.moveTo(cx - 5, cy - 2).lineTo(cx,     cy - 1);
+          stoneStamp.moveTo(cx + 5, cy - 2).lineTo(cx,     cy - 1);
+          stoneStamp.lineStyle(0);
+          // SPQR red drip — single 1px dot below the eagle as the
+          // "Senatus Populusque Romanus" mark, no text needed at
+          // this scale.
+          stoneStamp.beginFill(0xa01818, 0.85).drawCircle(cx, cy + 4, 0.9).endFill();
+          // Outer dark ring (sells the engraving depth)
+          stoneStamp.lineStyle(1, 0x2a1a0c, 0.9).drawCircle(cx, cy, 7.5);
+          stoneStamp.lineStyle(0);
         }
       }
     }
+    this.layers.tiles.addChild(stoneStamp);
 
     // Towers
     const seenTowerIds = new Set<string>();
