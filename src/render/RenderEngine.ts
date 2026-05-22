@@ -509,17 +509,12 @@ export class RenderEngine {
     drawSmokeColumn(GRID.CANVAS_W - 60, 60, 0);
     drawSmokeColumn(60, GRID.CANVAS_H - 80, 1.3);
 
-    // ── DISTANT LIGHTNING (boss waves only — random 8-12s) ───────
-    if (isBossWave) {
-      // Deterministic flash phase keyed off floor(tick / 10) so the
-      // flash sticks for ~0.2s every 10s, no actual RNG.
-      const flashWindow = Math.floor(tick / 10) * 10;
-      const sinceFlash = tick - flashWindow;
-      if (sinceFlash < 0.2) {
-        const flashA = (0.2 - sinceFlash) / 0.2 * 0.18;
-        a.beginFill(0xeef0ff, flashA).drawRect(0, 0, GRID.CANVAS_W, GRID.CANVAS_H).endFill();
-      }
-    }
+    // 2026-05-22 V21 — Distant lightning flash removed per design
+    // feedback. The full-canvas white flash on boss waves was reading
+    // as distracting / disorienting rather than atmospheric. Other
+    // ambient cues (storm clouds darkening, biome tint, banner pulse)
+    // already carry the boss-wave mood.
+    void isBossWave;
   }
 
   // Cache reference to current tiles array so grass wind can skip non-grass cells.
