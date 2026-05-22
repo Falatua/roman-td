@@ -530,7 +530,7 @@ function renderTab(tab: string): string {
       `)}
       ${foldSection('ENEMY SIGNATURES', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('Out-of-Combat Regen', 'Ghost Rider, Hannibal, and Daemon Imperator regen X% HP/s after 0.5s without taking <b>direct</b> damage. <b style="color:#ff7733">Active DoTs (burn / poison / bleed / hellfire) now reduce regen by 50%</b> (was 100% — they used to shut it off completely). Hannibal still heals at ~0.84%/s and Daemon Imperator at ~1.4%/s while burning, so you need <b style="color:#88ff88">DoT AND direct damage</b> to actually break a regen boss; a single Poisoned Blade alone is no longer enough. (<b style="color:#88ddff">Note:</b> Both druids — Gallic Druid AND Zombie Druid — no longer regenerate. Druid pressure is now strictly the shield/sleep curse/heal-aura layer, not a per-druid HP timer.)')}
+          ${noteCard('Out-of-Combat Regen', 'Ghost Rider, Hannibal, and Daemon Imperator regen X% HP/s after 1.0s without taking <b>direct</b> damage. <b style="color:#ff7733">Active DoTs (burn / poison / bleed / hellfire) now reduce regen by 50%</b> (was 100% — they used to shut it off completely). Hannibal still heals at ~0.84%/s and Daemon Imperator at ~1.4%/s while burning, so you need <b style="color:#88ff88">DoT AND direct damage</b> to actually break a regen boss; a single Poisoned Blade alone is no longer enough. (<b style="color:#88ddff">Note:</b> Both druids — Gallic Druid AND Zombie Druid — no longer regenerate. Druid pressure is now strictly the shield/sleep curse/heal-aura layer, not a per-druid HP timer.)')}
           ${noteCard('Phoenix Rebirth', 'Spectral Scout, Celtic Fire Demon, and Undead Celt burst into <b style="color:#ffaa66">3 reduced-HP minions</b> on death — each at 40% / 35% / 25% HP respectively. The original kill still counts; the minions cannot chain-phoenix when killed. Orange impact ring marks the burst. Plan on roughly 3× the kill budget for these enemies and stack DoTs that tick through respawns.')}
           ${noteCard('Phase-Through Hits', 'Spectral Scout (2), Iron Phalanx (2), Celtic Berserker (1), Undead Berserker (1), Undead Spearman (1), Carthage Spearman (1) ignore the first N hits taken — a "MISS" floater pops on each phased shot.')}
           ${noteCard('Dodge (ranged)', 'Gallic Druid (30%), Numidian Rider (20%), Ghost Rider (15%), Shadow Cavalry (25%) have a chance to dodge incoming ranged / siege attacks. Melee always lands.')}
@@ -1452,8 +1452,8 @@ const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
     'WEAKNESS: takes +40% damage from SIEGE'
   ],
   HANNIBAL_BARCA: [
-    'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit by DIRECT damage in 0.5s, heals 0.4% maxHP/sec (active DoT softens to 0.2%/sec)',
-    'OUT-OF-COMBAT REGEN — 1.7%/sec after 0.5s without DIRECT damage (active DoT softens to 0.85%/sec, was full block)',
+    'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit by DIRECT damage in 1.0s, heals 0.4% maxHP/sec (active DoT softens to 0.2%/sec)',
+    'OUT-OF-COMBAT REGEN — 1.7%/sec after 1.0s without DIRECT damage (active DoT softens to 0.85%/sec, was full block)',
     'TELEGRAPHED REBIRTH at 50% HP — 1s red lock-on warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
   ],
   UNDEAD_WARLORD: [
@@ -1534,7 +1534,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.immuneFire) traits.push('IMMUNE TO FIRE — direct fire and BURN DoT both 0 (HELLFIRE divine-fire still applies)');
   // Healing / regen
   if (def.regenPctPerSec) traits.push(`REGEN — ${(def.regenPctPerSec*100).toFixed(2)}% maxHP/sec always-on (reduced 50% by any active DoT, was 100% block pre-2026-05-21)`);
-  if (def.outOfCombatRegen) traits.push(`OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 0.5s without DIRECT damage (active DoT softens to ${(def.outOfCombatRegen*50).toFixed(2)}%/sec, was full block pre-2026-05-21)`);
+  if (def.outOfCombatRegen) traits.push(`OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 1.0s without DIRECT damage (active DoT softens to ${(def.outOfCombatRegen*50).toFixed(2)}%/sec, was full block pre-2026-05-21)`);
   if (def.checkpointHealPct) traits.push(`CHECKPOINT HEAL — restores ${Math.round(def.checkpointHealPct*100)}% maxHP first time it crosses each of the 7 waypoint coins`);
   if (def.healAllyPctPerSec) traits.push(`HEALER — pulses ${(def.healAllyPctPerSec*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles (does NOT heal bosses)`);
   // Movement modifiers

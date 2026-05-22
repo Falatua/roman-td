@@ -243,7 +243,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   if (def?.immuneFire) traits.push({ label: 'IMMUNE TO FIRE — direct fire damage and BURN DoT both deal 0 (HELLFIRE divine-fire still applies)', color: '#ee5555' });
   // -- Healing / regen --
   if (def?.regenPctPerSec) traits.push({ label: `REGEN — ${(def.regenPctPerSec*100).toFixed(2)}% maxHP/sec always-on (reduced 50% by any active DoT, was 100% block pre-2026-05-21)`, color: '#88ff88' });
-  if (def?.outOfCombatRegen) traits.push({ label: `OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 0.5s without DIRECT damage (DoT ticks no longer refresh the quiet-window; active DoT halves the regen rate to ~${(def.outOfCombatRegen*50).toFixed(2)}%/sec)`, color: '#88ff88' });
+  if (def?.outOfCombatRegen) traits.push({ label: `OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 1.0s without DIRECT damage (DoT ticks no longer refresh the quiet-window; active DoT halves the regen rate to ~${(def.outOfCombatRegen*50).toFixed(2)}%/sec)`, color: '#88ff88' });
   if (def?.checkpointHealPct) traits.push({ label: `CHECKPOINT HEAL — restores ${Math.round(def.checkpointHealPct*100)}% maxHP the first time it crosses each of the 7 waypoint coins`, color: '#88ff88' });
   if (def?.healAllyPctPerSec) traits.push({ label: `HEALER — pulses ${(def.healAllyPctPerSec*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles (does NOT heal bosses)`, color: '#88ff88' });
   // -- Movement modifiers --
@@ -343,8 +343,8 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'WEAKNESS: takes +40% damage from SIEGE'
     ],
     HANNIBAL_BARCA: [
-      'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit by DIRECT damage in 0.5s, heals 0.4% maxHP/sec (active DoT softens to 0.2%/sec, was 0%)',
-      'OUT-OF-COMBAT REGEN — 1.7%/sec after 0.5s without DIRECT damage (active DoT softens to 0.85%/sec, was full block)',
+      'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit by DIRECT damage in 1.0s, heals 0.4% maxHP/sec (active DoT softens to 0.2%/sec, was 0%)',
+      'OUT-OF-COMBAT REGEN — 1.7%/sec after 1.0s without DIRECT damage (active DoT softens to 0.85%/sec, was full block)',
       'TELEGRAPHED REBIRTH at 50% HP — 1-second red lock-on ring warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
     ],
     UNDEAD_WARLORD: [

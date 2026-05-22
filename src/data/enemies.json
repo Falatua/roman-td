@@ -94,7 +94,7 @@
   "CELTIC_WARLORD": {
     "name": "Brennus",
     "faction": "CELTS",
-    "baseHp": 2864,
+    "baseHp": 3580,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": true,

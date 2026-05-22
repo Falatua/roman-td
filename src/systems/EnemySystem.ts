@@ -963,20 +963,25 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     if (def.regenPctPerSec) {
       e.hp = Math.min(e.maxHp, e.hp + e.maxHp * def.regenPctPerSec * regenMult * dt);
     }
-    // OUT-OF-COMBAT REGEN: ramps up after 0.5s of not taking DIRECT
+    // OUT-OF-COMBAT REGEN: ramps up after 1.0s of not taking DIRECT
     // damage. Per-enemy override (set by spawnEnemy for W11+ creative
     // buff) wins when present and is HIGHER than the JSON value.
     // 2026-05-21 — DoT ticks no longer refresh lastDamagedTick, so
-    // the 0.5s gate now reads pure "no direct damage in the last
-    // half-second." A DoT-only attack DOES satisfy the gate after
-    // 0.5s, and OOC regen then ticks at the softened 50% rate via
-    // regenMult below. This is how Hannibal + Daemon Imperator
-    // actually heal at half rate during DoT instead of being fully
-    // locked down by a single Poisoned Blade.
+    // the gate reads pure "no direct damage in the last quiet window."
+    // A DoT-only attack DOES satisfy the gate, and OOC regen then
+    // ticks at the softened 50% rate via regenMult below. This is how
+    // Hannibal + Daemon Imperator actually heal at half rate during
+    // DoT instead of being fully locked down by a single Poisoned Blade.
+    // 2026-05-22 V28 — Quiet-window doubled 0.5s → 1.0s per user
+    // tuning. Half a second wasn't enough breathing room for the
+    // player to commit to a target before the enemy started healing;
+    // a full second gives a clearer "if I stop hitting it, NOW it
+    // heals" beat. Affects every enemy with regenPctPerSec or
+    // outOfCombatRegen, including bosses.
     const oocRegen = Math.max(def.outOfCombatRegen ?? 0, (e as any).outOfCombatRegen ?? 0);
     if (oocRegen > 0) {
       const sinceHit = state.tick - (e.lastDamagedTick ?? -999);
-      if (sinceHit > 0.5) {
+      if (sinceHit > 1.0) {
         e.hp = Math.min(e.maxHp, e.hp + e.maxHp * oocRegen * regenMult * dt);
       }
     }

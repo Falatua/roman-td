@@ -181,8 +181,12 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
         // pulls the heal rate to 50% rather than blocking it. Net
         // effect during pure DoT attack: 0.4% * 0.5 = 0.2%/s heal,
         // consistent with the global regen-suppression rule.
+        // 2026-05-22 V28 — Quiet-window doubled 0.5s → 1.0s to match
+        // the global regen change. Gives the player a clearer window
+        // to commit to chip-shotting Hannibal before the elephant
+        // heal kicks back in.
         const hasElephants = Array.from(state.enemies.values()).some(en => en.type === EnemyType.WAR_ELEPHANT);
-        const recentlyHit  = (state.tick - (e.lastDamagedTick ?? -999)) < 0.5;
+        const recentlyHit  = (state.tick - (e.lastDamagedTick ?? -999)) < 1.0;
         const hasActiveDot = e.statusEffects.some(s =>
           s.remaining > 0 && (
             s.kind === StatusEffectKind.BURN ||
