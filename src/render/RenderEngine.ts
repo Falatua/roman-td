@@ -320,7 +320,12 @@ export class RenderEngine {
     // than a flat overlay so towers + enemies still read clearly
     // between cloud passes.
     {
-      const cloudCount = Math.max(2, Math.min(12, 2 + Math.floor(wave / 3)));
+      // 2026-05-22 M5 — On mobile, halve cloud count (W20 goes from
+       // 8 clouds → 4). Each cloud is 3 overlapping ellipses re-drawn
+       // every frame, so this is a real CPU + fill-rate saving on
+       // phones without losing the atmospheric layered look.
+      const mobilePerf = !!(window as any).__isMobile;
+      const cloudCount = Math.max(2, Math.min(mobilePerf ? 6 : 12, 2 + Math.floor(wave / (mobilePerf ? 5 : 3))));
       const alphaBase = 0.06 + Math.min(0.10, wave * 0.006);
       // Tint shifts colder/darker as the campaign progresses
       let cloudColor: number;
@@ -1977,7 +1982,15 @@ export class RenderEngine {
             }
           }
           const corridorMult = nearPath ? 0.12 : 1.0;
-          const targetDensity = 0.28 * edgeBias * corridorMult;
+          // 2026-05-22 M5 — Mobile perf: halve decoration density.
+          // The decoration sprites are 32×32 PIXI sprites added to a
+          // long-lived Container; the cost is GPU draw calls + texture
+          // memory pressure during the static rebuild. Halving the
+          // density drops ~150 sprites on a typical map. Bordering /
+          // corner-bias is preserved so the field still reads dense at
+          // the edges.
+          const mobileDensityMult = (window as any).__isMobile ? 0.5 : 1.0;
+          const targetDensity = 0.28 * edgeBias * corridorMult * mobileDensityMult;
           // Roll: hash to 0..0.999, compare to target.
           const propRoll = (h % 1000) / 1000;
           if (propRoll < targetDensity) {
