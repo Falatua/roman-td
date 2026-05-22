@@ -38,11 +38,11 @@
     "spawns": [
       {
         "type": "ALPHA_DOG",
-        "count": 2
+        "count": 1
       },
       {
         "type": "FERAL_DOG",
-        "count": 22
+        "count": 26
       }
     ]
   },
