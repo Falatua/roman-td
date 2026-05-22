@@ -13,6 +13,10 @@
 // Keeps top 20. New entry pulses; top 3 ranks render gold/silver/bronze.
 
 import { GameStateShape } from '../GameState';
+// 2026-05-22 — Mobile detection for swapping "Press ENTER" prompts to
+// touch-friendly "Tap" equivalents on phones / tablets. Desktop string
+// is unchanged.
+import { isMobile as isMobileDevice } from '../Mobile';
 import { fetchTopScores, submitScore, toRemoteRow, hasRemoteLeaderboard, getLastFetchMeta, getLeaderboardDiagnostics, setLeaderboardProxyOverride, type SubmitResult } from '../services/SupabaseLeaderboard';
 import HERO_DEFS_FOR_LB from '../data/herodefs.json';
 
@@ -404,7 +408,7 @@ export function showEndSummary(parent: HTMLElement, state: GameStateShape, won: 
         </div>
       </div>` : ''}
       <button id="end-continue" style="margin-top:26px;background:linear-gradient(180deg,${accent},#4a2a08);color:#1a0808;border:3px solid #fff8e0;padding:12px 32px;font-family:inherit;font-size:15px;letter-spacing:4px;cursor:pointer;font-weight:900;box-shadow:0 0 20px ${accent}aa">CONTINUE ▸</button>
-      <div style="margin-top:10px;font-size:10px;letter-spacing:3px;color:#aa6a1a">PRESS ENTER</div>
+      <div class="desktop-hotkey-hint" style="margin-top:10px;font-size:10px;letter-spacing:3px;color:#aa6a1a">PRESS ENTER</div>
     </div>`;
   parent.appendChild(wrap);
 
@@ -619,7 +623,7 @@ export function showLeaderboard(
       <div id="hog-your-rank" style="margin:4px 0;text-align:center;color:#cdb98a;font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;min-height:14px"></div>
       ${isLoadingMode
         ? `<div style="display:flex;flex-direction:column;align-items:center;gap:clamp(10px,1vw,18px);margin-top:clamp(8px,1vw,16px)">
-             <div class="hog-prompt">▶ PRESS ENTER TO BEGIN YOUR RUN ▶</div>
+             <div class="hog-prompt">▶ ${isMobileDevice() ? 'TAP TO BEGIN YOUR RUN' : 'PRESS ENTER TO BEGIN YOUR RUN'} ▶</div>
              <button id="hog-back-to-loading" type="button" style="background:transparent;border:1px solid #5a4a30;color:#aa9a4a;font-family:'Courier New',monospace;font-size:clamp(10px,0.9vw,14px);letter-spacing:clamp(2px,0.3vw,4px);font-weight:bold;padding:clamp(7px,0.8vw,11px) clamp(14px,1.5vw,22px);cursor:pointer;text-shadow:1px 1px 0 #000">← BACK TO COIN SLOT</button>
            </div>`
         : onEndlessJoin
@@ -629,11 +633,12 @@ export function showLeaderboard(
           // restart the campaign. Enter still binds to PLAY AGAIN
           // so muscle-memory works; Endless requires an explicit
           // click (it's a one-way ticket — no path back to W20).
+          // 2026-05-22 — Mobile swap: prompts say "Tap" instead of "Press ENTER".
           ? `<div style="display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1vw,14px);margin-top:clamp(6px,0.8vw,12px)">
                <button id="hog-join-endless" type="button" style="background:linear-gradient(180deg,#5a1a8a,#3a0a5a);color:#ff66ff;border:3px solid #aa55ff;font-family:'Courier New',monospace;font-size:clamp(14px,1.6vw,22px);letter-spacing:clamp(4px,0.6vw,10px);font-weight:900;padding:clamp(10px,1.2vw,18px) clamp(24px,3vw,48px);cursor:pointer;box-shadow:0 0 22px rgba(170,85,255,0.55);text-shadow:0 0 8px #aa55ff,2px 2px 0 #000">⚔ JOIN ENDLESS MODE ⚔</button>
-               <div class="hog-prompt" style="font-size:clamp(12px,1.2vw,18px)">▶ Press ENTER to play campaign again ◀</div>
+               <div class="hog-prompt" style="font-size:clamp(12px,1.2vw,18px)">▶ ${isMobileDevice() ? 'Tap to play campaign again' : 'Press ENTER to play campaign again'} ◀</div>
              </div>`
-          : `<div class="hog-prompt">▶ PRESS ENTER TO PLAY AGAIN ◀</div>`}
+          : `<div class="hog-prompt">▶ ${isMobileDevice() ? 'TAP TO PLAY AGAIN' : 'PRESS ENTER TO PLAY AGAIN'} ◀</div>`}
     </div>`;
   // 2026-05-19 — Mount the Hall of Glory directly on document.body
   // instead of inside the scaled #app container. This lets the

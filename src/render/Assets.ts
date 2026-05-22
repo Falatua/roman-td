@@ -132,6 +132,28 @@ const MANIFEST: Record<string, string> = {
   MAP_SHRINE_ALT_2: 'map_overhaul/m_shrine_alt_2.png',
   MAP_SHRINE_ALT_3: 'map_overhaul/m_shrine_alt_3.png',
   MAP_SHRINE_ALT_4: 'map_overhaul/m_shrine_alt_4.png',
+  // 2026-05-22 — Corner shrine pieces (user-supplied art, 2 sheets
+  // cropped to 17 individual sprites). Placed in the top-right and
+  // bottom-left corners of the map for visual flair. Sheet A: 12
+  // ornate Roman ruin pieces with green soul-flames + SPQR banners.
+  // Sheet B: 5 sturdier shrine + SPQR + skull-on-laurel pieces.
+  MAP_CORNER_SHRINE_A1:  'map_overhaul/m_corner_shrine_a1.png',
+  MAP_CORNER_SHRINE_A2:  'map_overhaul/m_corner_shrine_a2.png',
+  MAP_CORNER_SHRINE_A3:  'map_overhaul/m_corner_shrine_a3.png',
+  MAP_CORNER_SHRINE_A4:  'map_overhaul/m_corner_shrine_a4.png',
+  MAP_CORNER_SHRINE_A5:  'map_overhaul/m_corner_shrine_a5.png',
+  MAP_CORNER_SHRINE_A6:  'map_overhaul/m_corner_shrine_a6.png',
+  MAP_CORNER_SHRINE_A7:  'map_overhaul/m_corner_shrine_a7.png',
+  MAP_CORNER_SHRINE_A8:  'map_overhaul/m_corner_shrine_a8.png',
+  MAP_CORNER_SHRINE_A9:  'map_overhaul/m_corner_shrine_a9.png',
+  MAP_CORNER_SHRINE_A10: 'map_overhaul/m_corner_shrine_a10.png',
+  MAP_CORNER_SHRINE_A11: 'map_overhaul/m_corner_shrine_a11.png',
+  MAP_CORNER_SHRINE_A12: 'map_overhaul/m_corner_shrine_a12.png',
+  MAP_CORNER_SHRINE_B1:  'map_overhaul/m_corner_shrine_b1.png',
+  MAP_CORNER_SHRINE_B2:  'map_overhaul/m_corner_shrine_b2.png',
+  MAP_CORNER_SHRINE_B3:  'map_overhaul/m_corner_shrine_b3.png',
+  MAP_CORNER_SHRINE_B4:  'map_overhaul/m_corner_shrine_b4.png',
+  MAP_CORNER_SHRINE_B5:  'map_overhaul/m_corner_shrine_b5.png',
   // 2026-05-22 V14 — Necromantic Roman ruin set (user-supplied art).
   // Two sheets cropped to 11 feature pieces — ornate columns with
   // green soul-flames, SPQR banners with skull standards, stone

@@ -490,15 +490,20 @@ export function spawnAtSurpriseEventPoint(
   const point = ev.spawnPoints[pointIdx];
   if (!point) return false;
   const isInvasion = ev.kind === SurpriseEventKind.INVASION;
+  const isUprising = ev.kind === SurpriseEventKind.UPRISING;
   if (point.pathIndex >= 0 && point.pathIndex < state.groundPath.length) {
     enemy.pathIndex = point.pathIndex;
     enemy.pathProgress = 0;
     const pt = state.groundPath[point.pathIndex];
     const pathTileX = pt.col * GRID.TILE + GRID.TILE / 2;
     const pathTileY = pt.row * GRID.TILE + GRID.TILE / 2;
-    if (isInvasion) {
-      // Spawn at the perimeter tile, queue the straight-line walk to
-      // the path-entry tile. EnemySystem picks up __approachActive and
+    if (isInvasion || isUprising) {
+      // 2026-05-22 — Uprising joins Invasion in using approach mode.
+      // Enemy spawns at the urn / fire-breach (point.vfxX/vfxY) — for
+      // Uprising that's the center-tile skull urn — and walks straight
+      // to the path-entry tile so the player visibly sees them
+      // "pour out of the urn" before joining the maze.
+      // EnemySystem reads __approachActive + the target coords and
       // overrides path-follow until the enemy reaches the target.
       enemy.x = point.vfxX;
       enemy.y = point.vfxY;
@@ -508,7 +513,7 @@ export function spawnAtSurpriseEventPoint(
       (enemy as any).__approachTargetX = pathTileX;
       (enemy as any).__approachTargetY = pathTileY;
     } else {
-      // Uprising / other: original snap-to-path behavior.
+      // Future event kinds: original snap-to-path behavior.
       enemy.x = pathTileX;
       enemy.y = pathTileY;
       enemy.prevX = enemy.x;

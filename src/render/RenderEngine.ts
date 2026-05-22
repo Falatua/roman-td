@@ -2207,6 +2207,52 @@ export class RenderEngine {
     }
     debrisLayer.addChild(debrisGfx);
     this.layers.bg.addChild(debrisLayer);
+
+    // 2026-05-22 — CORNER SHRINES. Player-supplied art sheets cropped
+    // into 17 ornate Roman-shrine/SPQR/skull-banner pieces, scattered
+    // a handful in the top-right and bottom-left corners of the map
+    // for visual flair. These sit in the unbuildable BORDER ring (the
+    // 2-tile rim around the play area), so they never overlap with
+    // gameplay tiles. Placement is hand-anchored so each corner reads
+    // as a deliberate composition rather than random scatter.
+    //
+    // Top-right cluster — 5 pieces, sized larger than regular decor
+    // (1.5 tiles instead of 1). Bottom-left cluster — 4 pieces with
+    // the bigger SPQR-banner shrines as the focal anchors.
+    const cornerLayer = new Container();
+    type CornerAnchor = { col: number; row: number; key: string; scale: number };
+    const CORNERS: CornerAnchor[] = [
+      // Top-right corner (rows 0-3, cols 33-37)
+      { col: 35, row: 1,  key: 'MAP_CORNER_SHRINE_B3', scale: 1.7 },     // skull-on-laurel SPQR banner
+      { col: 33, row: 2,  key: 'MAP_CORNER_SHRINE_A4', scale: 1.4 },     // ornate column
+      { col: 36, row: 3,  key: 'MAP_CORNER_SHRINE_A6', scale: 1.3 },     // SPQR banner column
+      { col: 34, row: 4,  key: 'MAP_CORNER_SHRINE_B1', scale: 1.3 },     // ruined arch
+      { col: 36, row: 0,  key: 'MAP_CORNER_SHRINE_A2', scale: 1.2 },     // small column
+      // Bottom-left corner (rows 22-25, cols 0-4)
+      { col: 1,  row: 23, key: 'MAP_CORNER_SHRINE_B2', scale: 1.7 },     // SPQR banner skull pole
+      { col: 3,  row: 24, key: 'MAP_CORNER_SHRINE_A9', scale: 1.3 },     // ornate column variant
+      { col: 4,  row: 22, key: 'MAP_CORNER_SHRINE_B5', scale: 1.4 },     // ruin doorway
+      { col: 0,  row: 21, key: 'MAP_CORNER_SHRINE_A11', scale: 1.2 }     // small ruin
+    ];
+    for (const anchor of CORNERS) {
+      const cTex = tex(anchor.key);
+      if (!cTex) continue;     // silently skip if texture not loaded
+      // Skip if the anchor tile is actually buildable (defensive — these
+      // should land in the border ring but the check protects against
+      // any future GRID resize misalignment).
+      const tile = state.tiles[anchor.row]?.[anchor.col];
+      if (tile === TileType.EMPTY) continue;
+      const sp = new Sprite(cTex);
+      sp.anchor.set(0.5);
+      sp.x = anchor.col * GRID.TILE + GRID.TILE / 2;
+      sp.y = anchor.row * GRID.TILE + GRID.TILE / 2;
+      const sz = GRID.TILE * anchor.scale;
+      sp.width = sz; sp.height = sz;
+      sp.alpha = 0.96;
+      cornerLayer.addChild(sp);
+    }
+    this.layers.bg.addChild(cornerLayer);
+
     this.layers.bg.addChild(decorLayer);
 
     // GHOST PATH — the immutable brown stripe showing the unblocked enemy
