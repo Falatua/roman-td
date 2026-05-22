@@ -187,6 +187,20 @@ const MANIFEST: Record<string, string> = {
   // and a red SPQR banner. These become the W1-W10 sunny-biome anchors.
   MAP_CAVE_GRASSLAND: 'map_overhaul/m_cave_user_grassland.png',
   MAP_GATE_USER_ROME: 'map_overhaul/m_gate_user_rome.png',
+  // 2026-05-21 — V13 ornate aura tile medallions (Higgsfield nano_banana_pro
+  // generated). Each tile gets a unique iconography sigil per effect:
+  //   PURPLE/Tempo  → SPQR + winged emblem + lightning (speed)
+  //   BLUE/War      → roaring lion + crossed gladii (damage)
+  //   RED/Tyrant    → eagle clutching crown + chains (boss-slayer)
+  //   CYAN/Aether   → winged feather + wave crests (anti-flyer)
+  //   GOLD/Treasury → Roman emperor profile + laurel wreath + coins
+  //   EMERALD/Tower → all-seeing eye + watchtower silhouettes (range)
+  MAP_AURA_PURPLE:  'map_overhaul/m_aura_purple.png',
+  MAP_AURA_BLUE:    'map_overhaul/m_aura_blue.png',
+  MAP_AURA_RED:     'map_overhaul/m_aura_red.png',
+  MAP_AURA_CYAN:    'map_overhaul/m_aura_cyan.png',
+  MAP_AURA_GOLD:    'map_overhaul/m_aura_gold.png',
+  MAP_AURA_EMERALD: 'map_overhaul/m_aura_emerald.png',
   // Waypoints
   WP1: 'w_wp1_aquila.png', WP2: 'w_wp2_laurel.png', WP3: 'w_wp3_spqr.png',
   WP4: 'w_wp4_shewolf.png', WP5: 'w_wp5_fasces.png', WP6: 'w_wp6_jupiter.png',

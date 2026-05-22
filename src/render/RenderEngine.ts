@@ -65,6 +65,13 @@ export class RenderEngine {
   bossVignetteGfx: Graphics;
   // 2026-05-19 — Aura tile glow layer.
   auraTileGfx: Graphics;
+  // 2026-05-21 V13 — Sprite container for the ornate Higgsfield-generated
+  // aura medallions. Drawn ABOVE auraTileGfx (so the procedural halo
+  // glow + occupied ring sits underneath, and the medallion artwork
+  // sits on top). Populated once at construction; re-attached after
+  // drawStatic's child-clearing pass.
+  auraTileSprites!: Container;
+  auraTileSpritesBuilt = false;
   bossVignetteBaked = false;        // draw-once flag
   bossVignetteTargetAlpha = 0;      // 0 outside boss waves, ~0.18 during
   // Boss-death blood rain: each drop is a falling Sprite that lands and
@@ -161,6 +168,12 @@ export class RenderEngine {
     // below corpses/towers so the glow reads as ground-level magic.
     this.auraTileGfx = new Graphics();
     this.layers.bg.addChild(this.auraTileGfx);
+    // 2026-05-21 V13 — Sprite container for ornate aura medallions.
+    // Populated lazily in drawAuraTiles (so the tex() lookup happens
+    // after asset loading completes). Lives above auraTileGfx so the
+    // animated halo glow sits underneath each medallion.
+    this.auraTileSprites = new Container();
+    this.layers.bg.addChild(this.auraTileSprites);
     this.layers.fx.addChild(this.bloodGfx);
     this.layers.fx.addChild(this.projGfx);
     this.layers.overlay.addChild(this.auraGfx, this.comboGfx, this.overlayGfx, this.rangeGfx);
@@ -522,6 +535,39 @@ export class RenderEngine {
   drawAuraTiles(_state: GameStateShape, tick: number): void {
     const gfx = this.auraTileGfx;
     gfx.clear();
+
+    // 2026-05-21 V13 — Build the medallion sprite layer once. Each tile
+    // gets a Sprite anchored at its center, sized to fill the tile.
+    // We rebuild on first call after textures are available, then
+    // never touch the sprite positions again (aura tiles are static).
+    if (!this.auraTileSpritesBuilt) {
+      const auraSpriteKey: Record<string, string> = {
+        PURPLE: 'MAP_AURA_PURPLE', BLUE: 'MAP_AURA_BLUE',
+        RED: 'MAP_AURA_RED', CYAN: 'MAP_AURA_CYAN',
+        GOLD: 'MAP_AURA_GOLD', EMERALD: 'MAP_AURA_EMERALD',
+      };
+      let allLoaded = true;
+      for (const a of AURA_TILES) {
+        const sprKey = auraSpriteKey[a.kind];
+        const texx = sprKey ? tex(sprKey) : null;
+        if (!texx) { allLoaded = false; break; }
+      }
+      if (allLoaded) {
+        for (const a of AURA_TILES) {
+          const sp = new Sprite(tex(auraSpriteKey[a.kind])!);
+          sp.anchor.set(0.5);
+          sp.x = a.col * GRID.TILE + GRID.TILE / 2;
+          sp.y = a.row * GRID.TILE + GRID.TILE / 2;
+          // Slightly larger than the tile (1.25× = 40px) so the
+          // ornate medallion reads as a raised feature, not flat.
+          sp.width = GRID.TILE * 1.25;
+          sp.height = GRID.TILE * 1.25;
+          this.auraTileSprites.addChild(sp);
+        }
+        this.auraTileSpritesBuilt = true;
+      }
+    }
+
     const towerTilesOccupied = new Set<string>();
     for (const t of _state.towers.values()) {
       if (t.pending) continue;
@@ -538,139 +584,31 @@ export class RenderEngine {
       // becoming visually noisy.
       const pulse = 0.5 + 0.5 * Math.sin(tick * 1.8 + a.col * 0.3 + a.row * 0.27);
 
-      // ── 1. OUTER HALO (large soft glow, bleeds past tile edge) ──
-      gfx.beginFill(eff.color, 0.08 + 0.05 * pulse);
-      gfx.drawCircle(cx, cy, GRID.TILE * 0.85 + pulse * 6);
+      // 2026-05-21 V13 — The ornate sprite medallion now draws the
+      // tile face (with its own engraved iconography + gem + bronze
+      // rim). The procedural layers below provide ANIMATION only —
+      // pulsing color halo around the medallion + occupied-ring +
+      // rotating spokes when a tower sits on the tile.
+      //
+      // ── 1. OUTER HALO (large soft color bloom) ──
+      gfx.beginFill(eff.color, 0.16 + 0.10 * pulse);
+      gfx.drawCircle(cx, cy, GRID.TILE * 0.95 + pulse * 8);
+      gfx.endFill();
+      // ── 2. INNER HALO (denser, behind the medallion) ──
+      gfx.beginFill(eff.color, 0.22 + 0.10 * pulse);
+      gfx.drawCircle(cx, cy, GRID.TILE * 0.70 + pulse * 4);
       gfx.endFill();
 
-      // ── 2. INNER HALO (denser, smaller) ──
-      gfx.beginFill(eff.color, 0.14 + 0.06 * pulse);
-      gfx.drawCircle(cx, cy, GRID.TILE * 0.62 + pulse * 4);
-      gfx.endFill();
-
-      // ── 3. TILE FILL (saturated color wash — 2.3× stronger than before) ──
-      gfx.beginFill(eff.color, 0.28 + 0.10 * pulse);
-      gfx.drawRect(x0, y0, GRID.TILE, GRID.TILE);
-      gfx.endFill();
-
-      // ── 4. SOLID BORDER (always visible — won't fade with pulse) ──
-      gfx.lineStyle(1.5, eff.color, 0.95);
-      gfx.drawRect(x0 + 0.75, y0 + 0.75, GRID.TILE - 1.5, GRID.TILE - 1.5);
-
-      // ── 5. INNER RING (main pulsing accent — 1.5× stronger alpha) ──
-      const ringR = GRID.TILE * 0.40 + pulse * 2.5;
-      gfx.lineStyle(2.5, eff.color, 0.75 + 0.20 * pulse);
-      gfx.drawCircle(cx, cy, ringR);
-      // White contrast ring just inside so the colored ring "pops"
-      gfx.lineStyle(1.5, 0xffffff, 0.18 + 0.12 * pulse);
-      gfx.drawCircle(cx, cy, ringR - 2);
-
-      // ── 6. OCCUPIED EXTRAS (buff-is-live indicator) ──
-      if (occupied) {
-        // Secondary brighter ring outside the main one
-        gfx.lineStyle(2, eff.color, 0.70 + 0.20 * pulse);
-        gfx.drawCircle(cx, cy, GRID.TILE * 0.55 + pulse * 3);
-        // 4 rotating spokes (slow clockwise drift — signals "active power")
-        gfx.lineStyle(2, eff.color, 0.65);
-        const spokeR0 = GRID.TILE * 0.58 + pulse * 2;
-        const spokeR1 = spokeR0 + 4;
-        const ang0 = (tick * 0.025) % (Math.PI * 2);
-        for (let i = 0; i < 4; i++) {
-          const a1 = ang0 + i * (Math.PI / 2);
-          const cosA = Math.cos(a1); const sinA = Math.sin(a1);
-          gfx.moveTo(cx + cosA * spokeR0, cy + sinA * spokeR0);
-          gfx.lineTo(cx + cosA * spokeR1, cy + sinA * spokeR1);
-        }
-      }
-
-      // ── 7. CORNER ACCENTS (bigger dots, white hotspots) ──
-      const dotR = 2.5;
-      gfx.beginFill(eff.color, 0.90);
-      gfx.drawCircle(x0 + 3, y0 + 3, dotR);
-      gfx.drawCircle(x0 + GRID.TILE - 3, y0 + 3, dotR);
-      gfx.drawCircle(x0 + 3, y0 + GRID.TILE - 3, dotR);
-      gfx.drawCircle(x0 + GRID.TILE - 3, y0 + GRID.TILE - 3, dotR);
-      gfx.endFill();
-      // White hot-spot in each corner dot — sells the "glowing" look
-      gfx.beginFill(0xffffff, 0.60);
-      gfx.drawCircle(x0 + 3, y0 + 3, 0.9);
-      gfx.drawCircle(x0 + GRID.TILE - 3, y0 + 3, 0.9);
-      gfx.drawCircle(x0 + 3, y0 + GRID.TILE - 3, 0.9);
-      gfx.drawCircle(x0 + GRID.TILE - 3, y0 + GRID.TILE - 3, 0.9);
-      gfx.endFill();
-
-      // ── 7.5. SIGIL OVERLAY (2026-05-21 visual overhaul phase V8) ──
-      // Each aura color gets a unique Roman sigil shape so players can
-      // tell tiles apart even at a glance / color-blind. Drawn just
-      // outside the center pip area as small white-tinted glyphs.
-      const sigilA = 0.55 + 0.20 * pulse;
-      const sigilHl = 0xfff8e0;     // warm cream highlight
-      switch (a.kind) {
-        case 'PURPLE': {           // SPQR — 4 vertical column lines
-          gfx.beginFill(sigilHl, sigilA);
-          gfx.drawRect(cx - 5, cy - 4, 1.4, 8);
-          gfx.drawRect(cx - 2, cy - 4, 1.4, 8);
-          gfx.drawRect(cx + 1, cy - 4, 1.4, 8);
-          gfx.drawRect(cx + 4, cy - 4, 1.4, 8);
-          gfx.endFill();
-          break;
-        }
-        case 'BLUE': {             // Aquila — V-shape eagle wings + body dot
-          gfx.lineStyle(1.5, sigilHl, sigilA);
-          gfx.moveTo(cx - 5, cy - 3).lineTo(cx, cy + 2);
-          gfx.moveTo(cx + 5, cy - 3).lineTo(cx, cy + 2);
-          gfx.lineStyle(0);
-          gfx.beginFill(sigilHl, sigilA).drawCircle(cx, cy + 1, 1.2).endFill();
-          break;
-        }
-        case 'RED': {              // Crossed swords — diagonal X with cross-guards
-          gfx.lineStyle(1.5, sigilHl, sigilA);
-          gfx.moveTo(cx - 5, cy - 5).lineTo(cx + 5, cy + 5);
-          gfx.moveTo(cx + 5, cy - 5).lineTo(cx - 5, cy + 5);
-          gfx.lineStyle(0);
-          // Cross-guards as tiny squares
-          gfx.beginFill(sigilHl, sigilA);
-          gfx.drawRect(cx - 6, cy - 3, 2, 2);
-          gfx.drawRect(cx + 4, cy - 3, 2, 2);
-          gfx.endFill();
-          break;
-        }
-        case 'CYAN': {             // Wave crest — 3 ripple arcs
-          gfx.lineStyle(1.2, sigilHl, sigilA);
-          gfx.moveTo(cx - 5, cy + 1).lineTo(cx - 2, cy - 1).lineTo(cx + 1, cy + 1).lineTo(cx + 4, cy - 1);
-          gfx.moveTo(cx - 5, cy + 4).lineTo(cx - 2, cy + 2).lineTo(cx + 1, cy + 4).lineTo(cx + 4, cy + 2);
-          gfx.lineStyle(0);
-          break;
-        }
-        case 'GOLD': {             // Laurel wreath — semicircle of dots
-          gfx.beginFill(sigilHl, sigilA);
-          for (let i = 0; i < 7; i++) {
-            const ang = Math.PI * (0.15 + i * (0.7 / 6));
-            gfx.drawCircle(cx + Math.cos(ang) * 5, cy + Math.sin(ang) * 5 - 1, 0.9);
-          }
-          gfx.endFill();
-          // Center coin
-          gfx.beginFill(sigilHl, sigilA);
-          gfx.drawCircle(cx, cy + 2, 1.5);
-          gfx.endFill();
-          break;
-        }
-        case 'EMERALD': {          // Watchtower eye — oval with center pupil
-          gfx.lineStyle(1, sigilHl, sigilA);
-          gfx.drawEllipse(cx, cy, 5, 2.5);
-          gfx.lineStyle(0);
-          gfx.beginFill(sigilHl, sigilA);
-          gfx.drawCircle(cx, cy, 1.2);
-          gfx.endFill();
-          break;
-        }
-      }
-
-      // ── 8. CENTER PIP (pulsing anchor dot) ──
-      // 2026-05-21 — Pip now smaller since the sigil takes center stage.
-      gfx.beginFill(eff.color, 0.70 + 0.20 * pulse);
-      gfx.drawCircle(cx, cy + 8, 1.4 + pulse * 0.4);
-      gfx.endFill();
+      // 2026-05-21 V13 — Sigil overlay + center pip removed. The
+      // Higgsfield-generated medallion sprites carry the engraved
+      // Roman iconography (SPQR columns, Aquila eagle, crossed swords,
+      // wave crests, laurel wreath, watchtower eye) and the central gem
+      // already. Procedural overlays at this scale would clash with the
+      // raised relief of the sprite. The two pulsing halos above
+      // provide all the animation the tiles need.
+      // Touching `a`/`eff`/`cx`/`cy`/`occupied`/`pulse` only as inputs;
+      // no additional draws on the procedural Graphics layer.
+      void a; void eff; void cx; void cy; void occupied; void pulse;
     }
   }
 
@@ -2432,6 +2370,12 @@ export class RenderEngine {
     // them. addChild on an already-parented object moves it, so this is
     // safe to call repeatedly across drawStatic invocations.
     this.layers.bg.addChild(this.auraTileGfx);
+    // 2026-05-21 V13 — Same fix for the ornate medallion sprite layer
+    // added in this phase. The bg-child clear in drawStatic would
+    // detach the medallion sprites after every static rebuild,
+    // re-blanking the aura tiles. Re-add at the end so the medallions
+    // paint OVER the procedural halos drawn into auraTileGfx.
+    this.layers.bg.addChild(this.auraTileSprites);
   }
 
   // Render dynamic state each frame.
