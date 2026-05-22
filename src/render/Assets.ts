@@ -714,8 +714,10 @@ export async function loadAllAssets(onProgress?: (loaded: number, total: number)
       }
     });
     await Promise.all(workers);
+    _deferredDone = true;     // flag for main.ts race-window guard
     try {
       if (typeof window !== 'undefined') {
+        (window as any).__rtdAssetsDeferredDone = true;
         window.dispatchEvent(new CustomEvent('rtd:assets-deferred-done', {
           detail: { totalDeferred: deferred.length }
         }));
@@ -727,6 +729,18 @@ export async function loadAllAssets(onProgress?: (loaded: number, total: number)
 export function tex(key: string): Texture | null {
   return cache.get(key) ?? null;
 }
+
+// 2026-05-22 — Deferred-batch completion flag. Set to true when the
+// deferred Promise.all in loadAllAssets resolves. main.ts checks this
+// AFTER drawStatic to handle the race where deferred completes BEFORE
+// the listener is registered. Without the flag, fast players who
+// marched in well after the deferred batch finished would never
+// trigger the redraw because the once-event had already fired into
+// empty space. With the flag, main.ts can detect "already done" and
+// schedule the redraw immediately.
+let _deferredDone = false;
+export function isDeferredLoadComplete(): boolean { return _deferredDone; }
+export function markDeferredDoneForTesting(v: boolean) { _deferredDone = v; }
 
 // Robust asset-URL lookup for DOM-side `<img src>` usage. Different Pixi v7
 // resource types expose the source URL on different fields (.src on

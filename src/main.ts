@@ -3791,25 +3791,47 @@ async function boot() {
   (renderer.app as any).__attachedGore = gore;
   renderer.drawStatic(state);
 
-  // 2026-05-22 — Defense-in-depth re-draw. If the player marched fast
-  // enough that some deferred decoration / terrain sprites hadn't
-  // finished loading by the time the first drawStatic ran, those
-  // tiles painted as flat-color rectangles (the empty fallback path
-  // in drawStatic). Once Assets.loadAllAssets finishes the deferred
-  // batch, it dispatches `rtd:assets-deferred-done`. We listen once,
-  // re-run drawStatic, and the now-cached sprites paint in. The
-  // first drawStatic above already handles 99 % of cases (most
-  // sprites are now critical post-2026-05-22 prefix bump); this is
-  // the safety net for slow networks + fast players.
+  // 2026-05-22 — Defense-in-depth re-draw for the asset-load race.
+  // Three independent triggers ensure the map always reaches its
+  // intended fidelity, regardless of how the timing falls:
+  //
+  //   1. EVENT — Assets.loadAllAssets emits `rtd:assets-deferred-done`
+  //      when the background batch completes. We listen once.
+  //   2. FLAG  — If the deferred batch ALREADY completed before this
+  //      listener registered (player took a long time on hero pick),
+  //      we check window.__rtdAssetsDeferredDone and schedule the
+  //      redraw immediately on the next frame.
+  //   3. POLL  — A 2 s and 5 s setTimeout safety net redraw, just in
+  //      case both event + flag somehow miss the window. Cheap (one
+  //      drawStatic each — ~5 ms) and bulletproof against any future
+  //      regression.
+  //
+  // Player report symptom was "some texture tiles / visual assets
+  // didn't load in." Root cause was sprites in the deferred bucket;
+  // fix was the prefix bump in Assets.ts plus this redraw scaffolding.
   if (typeof window !== 'undefined') {
-    window.addEventListener('rtd:assets-deferred-done', () => {
+    const redraw = (reason: string) => {
       try {
         renderer.drawStatic(state);
-        Logger.info('Assets', 'Deferred batch landed — drawStatic re-ran.');
+        Logger.info('Assets', `drawStatic re-ran — ${reason}`);
       } catch (err) {
-        Logger.error('Assets', 'drawStatic redraw after deferred done failed', err);
+        Logger.error('Assets', `drawStatic redraw (${reason}) failed`, err);
       }
-    }, { once: true });
+    };
+    // Trigger 1: live event listener (most common path).
+    window.addEventListener('rtd:assets-deferred-done', () => redraw('deferred-done event'), { once: true });
+    // Trigger 2: handle the race where deferred finished BEFORE we
+    // could register the listener. Check on the next animation frame
+    // so layout settles first.
+    requestAnimationFrame(() => {
+      if ((window as any).__rtdAssetsDeferredDone) redraw('flag check (race-safe)');
+    });
+    // Trigger 3: belt-and-suspenders polled redraws at 2 s + 5 s. On
+    // a slow connection the deferred batch can take longer than 5 s,
+    // but by then most textures have streamed in and a redraw will
+    // pick them up. The cost is negligible (~5 ms per call, one-off).
+    setTimeout(() => redraw('+2s safety net'), 2000);
+    setTimeout(() => redraw('+5s safety net'), 5000);
   }
 
   // 2026-05-19 — "Etch your name in the history of Rome" prompt.
