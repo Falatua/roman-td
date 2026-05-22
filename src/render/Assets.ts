@@ -132,6 +132,23 @@ const MANIFEST: Record<string, string> = {
   MAP_SHRINE_ALT_2: 'map_overhaul/m_shrine_alt_2.png',
   MAP_SHRINE_ALT_3: 'map_overhaul/m_shrine_alt_3.png',
   MAP_SHRINE_ALT_4: 'map_overhaul/m_shrine_alt_4.png',
+  // 2026-05-22 V14 — Necromantic Roman ruin set (user-supplied art).
+  // Two sheets cropped to 11 feature pieces — ornate columns with
+  // green soul-flames, SPQR banners with skull standards, stone
+  // gateways, and a skull-on-laurel shrine. These are the highest-
+  // fidelity feature pieces in the build; they anchor the W16-18
+  // BIOME_UNDEAD_RUINS and W19-20 BIOME_HELLSCAPE prop pools.
+  MAP_NECRO_RUIN_0: 'map_overhaul/m_necro_ruin_0.png',
+  MAP_NECRO_RUIN_1: 'map_overhaul/m_necro_ruin_1.png',
+  MAP_NECRO_RUIN_2: 'map_overhaul/m_necro_ruin_2.png',
+  MAP_NECRO_RUIN_3: 'map_overhaul/m_necro_ruin_3.png',
+  MAP_NECRO_BANNER_A: 'map_overhaul/m_necro_banner_a.png',
+  MAP_NECRO_BANNER_B: 'map_overhaul/m_necro_banner_b.png',
+  MAP_NECRO_GATE_A:  'map_overhaul/m_necro_gate_a.png',
+  MAP_NECRO_GATE_B:  'map_overhaul/m_necro_gate_b.png',
+  MAP_NECRO_GATE_C:  'map_overhaul/m_necro_gate_c.png',
+  MAP_NECRO_STANDARD:    'map_overhaul/m_necro_standard.png',
+  MAP_NECRO_SKULL_SHRINE:'map_overhaul/m_necro_skull_shrine.png',
   // 2026-05-21 — Craftpix Free Undead Tileset (license: craftpix.net
   // free file licenses). 16 curated decoration sprites for the undead
   // biomes. Pure pixel-art top-down silhouettes with built-in shadows.

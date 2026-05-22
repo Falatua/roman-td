@@ -199,7 +199,15 @@ export const BIOMES: Record<BiomeId, BiomeProfile> = {
       // Ruin variants live here (broken altars, fallen columns).
       'MAP_SHRINE_6', 'MAP_SHRINE_7', 'MAP_SHRINE_8',
       'MAP_SHRINE_9', 'MAP_SHRINE_10', 'MAP_SHRINE_11',
-      'MAP_SHRINE_ALT_0', 'MAP_SHRINE_ALT_3', 'MAP_SHRINE_ALT_4'
+      'MAP_SHRINE_ALT_0', 'MAP_SHRINE_ALT_3', 'MAP_SHRINE_ALT_4',
+      // 2026-05-22 V14 — Necromantic Roman ruin set. The "ruin"
+      // pieces (columns + arches with green soul-flames) anchor
+      // BIOME_UNDEAD_RUINS as the "fallen empire among the bones"
+      // hero pieces. Gates A/B/C land here too — they look like
+      // entrances to a forgotten necropolis.
+      'MAP_NECRO_RUIN_0', 'MAP_NECRO_RUIN_1',
+      'MAP_NECRO_RUIN_2', 'MAP_NECRO_RUIN_3',
+      'MAP_NECRO_GATE_A', 'MAP_NECRO_GATE_B', 'MAP_NECRO_GATE_C'
     ],
     pathPrefix: 'PATH_MOSSY_',                  // heavier moss tint
     // Skull-door variant B for the ruins-tier cave — slightly more
@@ -227,6 +235,13 @@ export const BIOMES: Record<BiomeId, BiomeProfile> = {
       'MAP_SHRINE_0', 'MAP_SHRINE_1', 'MAP_SHRINE_2',
       'MAP_SHRINE_3', 'MAP_SHRINE_4', 'MAP_SHRINE_5',
       'MAP_SHRINE_ALT_1', 'MAP_SHRINE_ALT_2',
+      // 2026-05-22 V14 — Necromantic Roman ruin set apex pieces.
+      // The SPQR BANNERS + SKULL-WREATH SHRINE + SKULL STANDARD are
+      // the strongest "demonic Rome" energy in the build — red banners
+      // with eagles, skulls on poles, ruined columns with green soul-
+      // flames. These anchor BIOME_HELLSCAPE as the final-form biome.
+      'MAP_NECRO_BANNER_A', 'MAP_NECRO_BANNER_B',
+      'MAP_NECRO_STANDARD', 'MAP_NECRO_SKULL_SHRINE',
       // Craftpix skulls + bones round out the field debris.
       'DP_UNDEAD_BONES_C', 'DP_UNDEAD_BONES_E', 'DP_UNDEAD_BONES_F',
       'DP_UNDEAD_SKULL_PILE_A', 'DP_UNDEAD_SKULL_PILE_B', 'DP_UNDEAD_SKULL_PILE_C',
