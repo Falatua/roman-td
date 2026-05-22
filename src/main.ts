@@ -3706,7 +3706,14 @@ async function boot() {
     // reflects the CSS size, and the existing math
     //   rawX = (clientX - rect.left) * (CANVAS_W / rect.width)
     // converts back to internal world coordinates correctly.
-    if (isMobileDevice()) {
+    // Mobile path triggers when isMobile() detects a real touch device
+    // OR when the testing class (html.mobile-mode set by Mobile.ts on
+    // ?forceMobile=1 or pointer:coarse) is present. Either signal puts
+    // the layout into the mobile flex shape (panels at fixed 88px, no
+    // app-level transform, canvas explicitly sized to the middle
+    // column).
+    const onMobile = isMobileDevice() || document.documentElement.classList.contains('mobile-mode');
+    if (onMobile) {
       // No app-level scaling on mobile.
       app.style.setProperty('--app-scale', '1');
       // Defer canvas measurement to next frame so the flex layout
