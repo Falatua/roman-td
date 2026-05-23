@@ -416,6 +416,22 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     const ambushSec = def.ambushStealthSec ?? 10;
     (e as any).__veiled = waveElapsed < ambushSec;
   }
+  // ─── WAVE-LEVEL FLYER INITIAL STEALTH (2026-05-22): some waves
+  //   stamp `flyerInitialStealthSec` in waves.json. While
+  //   waveElapsed < that value, every FLYER on the field is
+  //   untargetable (reuses the __veiled flag). After the window
+  //   the veil clears wave-wide. Currently used by W18 (Ghost Rider
+  //   flyer-only wave — first 15 s give the player a tense "they
+  //   are HERE but invisible" beat before the cloud reveals).
+  const _waveDefForFlyerStealth: any = (wavesData as any[])[(state.wave ?? 1) - 1];
+  const flyerStealthSec = _waveDefForFlyerStealth?.flyerInitialStealthSec ?? 0;
+  if (flyerStealthSec > 0) {
+    const veil = waveElapsed < flyerStealthSec;
+    for (const e of state.enemies.values()) {
+      if (!e.isFlyer) continue;
+      (e as any).__veiled = veil;
+    }
+  }
   // ─── HEALER ENEMIES (2026-05): enemies with healAllyPctPerSec emit a
   //   gentle 1.5-tile heal ring that restores HP to nearby living allies
   //   (NOT themselves). Doesn't heal bosses to avoid trivializing them.

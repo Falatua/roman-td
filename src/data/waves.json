@@ -292,7 +292,7 @@
       },
       {
         "type": "GHOST_RIDER",
-        "count": 12
+        "count": 24
       }
     ]
   },
@@ -302,6 +302,7 @@
     "faction": "UNDEAD_CARTHAGE",
     "hpMult": 3.8,
     "gold": 15,
+    "flyerInitialStealthSec": 15,
     "spawns": [
       {
         "type": "GHOST_RIDER",

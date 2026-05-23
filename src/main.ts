@@ -1635,6 +1635,16 @@ async function boot() {
       body: `Flyers inbound on wave <b>${nextWave}</b>. <b style="color:#ff5050">Melee swings at empty air.</b> You need <b style="color:#ffd34d">ranged or siege</b> on the path. <b style="color:#ffd34d">Anti-air specialists</b> and <b style="color:#ffd34d">multi-shot</b> abilities turn this wave into a quick clear. The <b style="color:#ffd34d">CODEX</b> lists every anti-air option — read fast.`,
       color: '#66ccff'
     });
+    // 2026-05-22 — W18 stealth opener. The wave-level
+    // flyerInitialStealthSec field hides every flyer on the field
+    // for the first N seconds. Surface that in the brief so the
+    // player isn't surprised when their ranged towers hold fire.
+    const flyerStealthSec = (w as any).flyerInitialStealthSec ?? 0;
+    if (flyerStealthSec > 0 && hasFlyers) tips.push({
+      headline: '🌫 SHROUDED OPENER',
+      body: `Wave <b>${nextWave}</b>: every flyer is <b style="color:#ff5050">stealthed (untargetable) for the first ${flyerStealthSec} seconds.</b> Towers can't lock on until the veil drops — you'll see the riders glide forward but no shots will fire. Stack DPS for the moment they reveal. <b style="color:#ffd34d">Truesight items</b> (Augur's Eye, etc.) bypass the stealth.`,
+      color: '#aabbff'
+    });
     if (isPhalanx) tips.push({
       headline: '🛡 IRON PHALANX SAYS HELLO',
       body: `Wave <b>${nextWave}</b> ends with melee-immune <b>Iron Phalanx</b> AND they phase the first 2 ranged hits. <b style="color:#ff5050">Your sword arm is irrelevant.</b> Park <b style="color:#ffd34d">heavy ranged or siege</b> on the last leg, and stack <b style="color:#ffd34d">DoT (burn / poison / bleed)</b> so their out-of-combat regen never gets a moment to breathe.`,
