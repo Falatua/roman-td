@@ -918,6 +918,55 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
           if (rfq.length > 24) rfq.shift();        // perf cap (2026-05)
         }
       }
+      // ─── UNDEAD WARLORD DEATH RATTLE (2026-05-23) ─────────────────────
+      // Per user request: "When an undead warlord dies, have them spawn
+      // 20 more undead enemies at a fraction of the undead warlord's
+      // health." Mix of UNDEAD_BERSERKER (heavier hitters) + UNDEAD_CELT
+      // (chaff) so the final burst feels like a real necromantic last
+      // gasp — not just 20 of the same grunt. Each spawn carries
+      // `__reanimated = true` so the standard necromancy chain on death
+      // (line 877 below) can't compound — otherwise a single warlord
+      // death could cascade into 120+ risen units. Risen units inherit
+      // the warlord's path position + cluster around the death point.
+      //
+      // HP fraction is intentionally low (0.30) so the swarm is a
+      // pressure moment, not a wave-extending grind. Each minion is
+      // ~30% of a normal UNDEAD_CELT/BERSERKER's max HP at the current
+      // wave's hpMult.
+      if (e.type === 'UNDEAD_WARLORD' && !e.__reanimated) {
+        const rattleCount = 20;
+        const hpFrac = 0.30;
+        const currentWaveCfg: any = wavesData[state.wave - 1];
+        const _hpMult: number = (currentWaveCfg?.hpMult ?? 1) * hpFrac;
+        const rfq = (state as any).reanimationFxQueue = (state as any).reanimationFxQueue ?? [];
+        for (let i = 0; i < rattleCount; i++) {
+          // ~30% berserkers (6 of 20), ~70% celts (14 of 20). Berserker
+          // is the threat-anchor type; celts swarm and fill the screen.
+          const spawnType = (i < 6) ? EnemyType.UNDEAD_BERSERKER : EnemyType.UNDEAD_CELT;
+          const risen = spawnEnemy(state, spawnType, _hpMult, /*derived=*/true);
+          const ang = (i / rattleCount) * Math.PI * 2 + Math.random() * 0.4;
+          const dist = i === 0 ? 0 : (5 + Math.random() * 9);
+          risen.x = e.x + Math.cos(ang) * dist;
+          risen.y = e.y + Math.sin(ang) * dist;
+          risen.prevX = risen.x;
+          risen.prevY = risen.y;
+          risen.pathIndex = e.pathIndex;
+          risen.pathProgress = e.pathProgress;
+          risen.__reanimated = true;
+          // 1.2s rising window — same VFX cue as the necromancy reanim
+          // path below. Stagger by 60ms so the swarm emerges in a wave
+          // rather than all at once.
+          risen.risingUntil = state.tick + 1.2 + i * 0.06;
+          rfq.push({
+            x: risen.x, y: risen.y,
+            bornTick: state.tick + i * 0.06,
+            riseDuration: 1.2,
+            spawnType
+          });
+          if (rfq.length > 32) rfq.shift();
+        }
+        state.hint = '💀 THE WARLORD\'S CURSE — 20 undead rise from the corpse!';
+      }
       onDeath(e);
       state.enemies.delete(e.id);
       continue;
