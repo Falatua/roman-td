@@ -112,7 +112,7 @@ function buildDeathAnalysis(state: GameStateShape): string {
   const PRIMARY_TIP: Record<string, string> = {
     SWARM: 'Build AoE — Hastati cleave, Plague Cart, Inferno Cart, Siege Onager, War Chariot, Triumphator nova.',
     RUNNER: 'Add slows + burst — Velites (slow), Plague Cart (slow+poison), Frozen Legion (freeze), Pugio Assassin (anti-runner +50%).',
-    ARMORED: 'Apply Armor Shred (Centurion, Retiarius, Speculator) then hammer with SIEGE (Ballistarius, Carroballista) or DIVINE (Flamen, Solar Priest).',
+    ARMORED: 'Apply Armor Shred (Centurion, Retiarius, Speculator) then hammer with SIEGE (Turris, Carroballista) or DIVINE (Flamen, Solar Priest).',
     RESISTANT: 'Diversify damage types — physical alone gets absorbed. Add DIVINE (Solar Priest ignores resists) or SIEGE.',
     BULKY: "Stack burst — Scorpio (every 5th hit ×3), Primus Pilus, Hannibal's Nightmare. Apply MARK for +damage from all sources.",
     ELITE: 'Kill druid/legate units FIRST — they aura-slow your towers. Speculator marks them for +damage.',

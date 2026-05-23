@@ -1060,7 +1060,7 @@ async function boot() {
     // DEMONS — ~3× divine (1.5×/1.3× per-enemy × +100% faction row).
     if (enemiesInWave.has('DEMON_HELLHOUND') || enemiesInWave.has('CELTIC_FIRE_DEMON') || enemiesInWave.has('SHADOW_CAVALRY') || enemiesInWave.has('DEMON_LEGATE') || enemiesInWave.has('DAEMON_IMPERATOR')) enemyCallouts.push({ text: '✨ DEMONS — DIVINE WEAKNESS · demons take ~3× damage from divine sources (Flamen / Augur / Haruspex / Solar Priest / Pontifex). Fire deals 0 damage. Bleed and poison hit lesser demons harder, but the W20 Daemon Imperator boss resists both DoTs at 50%.', cat: 'ENEMY' });
     // ELEPHANTS — +45/+40% siege.
-    if (enemiesInWave.has('WAR_ELEPHANT') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) enemyCallouts.push({ text: '🪨 ELEPHANTS — SIEGE WEAKNESS · elephants take +45% damage from SIEGE (Libritor, Ballistarius, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine). Stones crack hide that arrows can\'t. Bleed and poison resisted heavily — DoT-stacker builds skip elephants.', cat: 'ENEMY' });
+    if (enemiesInWave.has('WAR_ELEPHANT') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) enemyCallouts.push({ text: '🪨 ELEPHANTS — SIEGE WEAKNESS · elephants take +45% damage from SIEGE (Libritor, Turris, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine). Stones crack hide that arrows can\'t. Bleed and poison resisted heavily — DoT-stacker builds skip elephants.', cat: 'ENEMY' });
     // GALLIC DRUIDS — sacred-ward shield + Celtic faction takes +15% ranged.
     if (state.wave === 4 && enemiesInWave.has('GALLIC_DRUID')) enemyCallouts.push({ text: '🛡 CELTS — RANGED VULNERABILITY · the Celtic faction takes +15% ranged damage. After a melee tower cracks the druid\'s sacred ward, your archers shred them. Pair Sagittarius/Velites/Decurion behind a Milites or Hastati for the W4 break.', cat: 'ENEMY' });
     // UNDEAD CELTS — +25% fire / +50% divine (faction-side).
@@ -1718,7 +1718,7 @@ async function boot() {
     // Living Carthage — melee + SIEGE favored.
     if (hasLivingCarthage && !isBossWave) tips.push({
       headline: '⚔ CARTHAGE — MELEE + SIEGE WIN',
-      body: `Wave <b>${nextWave}</b> brings living Carthage troops. Faction takes <b style="color:#ffd34d">+30% MELEE</b> and resists ranged by 20%. <b style="color:#ff9933">SIEGE is now a hard answer too</b> — every Carthage unit is siege-vulnerable: Spearman <b>+30%</b>, Numidian Rider <b>+15%</b>, Sacred Band Elite Guard <b>+40%</b>, Hannibal himself <b>+25%</b>. Park Onagers + Ballistarius on the path alongside your <b>Centurion / Primus Pilus / Cohort Guard / Imperator Guard</b>. Spearmen drilled in pitch-treated linen still resist fire — bleed is the safer DoT.`,
+      body: `Wave <b>${nextWave}</b> brings living Carthage troops. Faction takes <b style="color:#ffd34d">+30% MELEE</b> and resists ranged by 20%. <b style="color:#ff9933">SIEGE is now a hard answer too</b> — every Carthage unit is siege-vulnerable: Spearman <b>+30%</b>, Numidian Rider <b>+15%</b>, Sacred Band Elite Guard <b>+40%</b>, Hannibal himself <b>+25%</b>. Park Onagers + Turris on the path alongside your <b>Centurion / Primus Pilus / Cohort Guard / Imperator Guard</b>. Spearmen drilled in pitch-treated linen still resist fire — bleed is the safer DoT.`,
       color: '#ff7733'
     });
     // Undead Carthage — fire-immune.
