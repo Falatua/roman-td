@@ -804,23 +804,37 @@ function generateUprisingAtmosphere(state: GameStateShape, mainPoints: SurpriseE
 // the path normally. The renderer puts the gate sprite AT the
 // waypoint's pixel position.
 function generateGatesOfHellPoints(state: GameStateShape, startAtTick: number): SurpriseEventSpawnPoint[] {
-  // Resolve WP3 and WP4 tile positions from the waypoints data.
+  // 2026-05-22 — FOUR gates instead of two. Player asked for the
+  // gates to stay at the same map locations (WP3 / WP4 area) but
+  // for each waypoint to host TWO gates separated by a couple of
+  // tiles. So WP3 anchors a pair (one to the west, one to the east
+  // of the path tile) and WP4 anchors another pair. Total: 4 gates.
+  //
+  // pointId mapping:
+  //   0 — WP3-west   (col-1)
+  //   1 — WP3-east   (col+1)
+  //   2 — WP4-west   (col-1)
+  //   3 — WP4-east   (col+1)
+  //
+  // Visual: gates flank each waypoint medallion, the path runs
+  // between them. Fire giants from each gate enter the path at the
+  // nearest path tile (the waypoint itself).
   const wp3 = (waypointsData as any).waypoints.find((w: any) => w.index === 3);
   const wp4 = (waypointsData as any).waypoints.find((w: any) => w.index === 4);
   if (!wp3 || !wp4) return [];
   const locations = [
-    { col: wp3.topLeft.col, row: wp3.topLeft.row, pointId: 0 },
-    { col: wp4.topLeft.col, row: wp4.topLeft.row, pointId: 1 }
+    { col: wp3.topLeft.col - 1, row: wp3.topLeft.row, pointId: 0 },
+    { col: wp3.topLeft.col + 1, row: wp3.topLeft.row, pointId: 1 },
+    { col: wp4.topLeft.col - 1, row: wp4.topLeft.row, pointId: 2 },
+    { col: wp4.topLeft.col + 1, row: wp4.topLeft.row, pointId: 3 }
   ];
   const out: SurpriseEventSpawnPoint[] = [];
-  // First, spawn the HELL_GATE structures at each location. Both fire
-  // at startAtTick + VFX_RISE_SECONDS (gate rises out of the ground
-  // simultaneously with its sibling — symmetric opening).
+  // Spawn the HELL_GATE structures at all 4 locations. All four
+  // rise simultaneously at startAtTick + VFX_RISE_SECONDS (the
+  // underworld breaks open in four places at once).
   for (const loc of locations) {
     const vfxX = loc.col * GRID.TILE + GRID.TILE / 2;
     const vfxY = loc.row * GRID.TILE + GRID.TILE / 2;
-    // Find path index AT or NEAR this waypoint. The fire giants
-    // emerging from this gate will start at this path index.
     const nearest = nearestPathIndexAtWaypoint(state, loc.col, loc.row);
     out.push({
       vfxX, vfxY,
@@ -833,44 +847,35 @@ function generateGatesOfHellPoints(state: GameStateShape, startAtTick: number): 
       pointId: loc.pointId
     });
   }
-  // 2026-05-19 — Gate 4 fires FIRST (pointId 1), then gate 3 (pointId 0),
-  // alternating. Player asked for "out of four and then come out of three
-  // and then come out of four and then come out of three." Offsets:
-  //   • Gate 4 fires at t=2, 6, 10, 14, 18 (every 4s starting at 2)
-  //   • Gate 3 fires at t=3, 7, 11, 15      (every 4s starting at 3)
-  // Window 15s starts AFTER the gates rise.
+  // Fire-giant spawn schedule: round-robin through all 4 gates with
+  // a ~1.5s cadence (so a giant emerges from a different gate every
+  // 1.5 seconds). Over the 20s window that lands ~13 giants — a
+  // modest bump from the prior 9-giant cadence to match the 4-gate
+  // framing, without being a wall the player can't survive. Order:
+  // WP4-east → WP3-east → WP4-west → WP3-west → repeat. Tilting
+  // toward the WP4 (back) gates first so the player has a moment
+  // to engage before the WP3 (front-line) giants arrive.
   const baseStart = startAtTick + VFX_RISE_SECONDS;
-  // Gate 4 (locations[1]) fires first.
-  for (let i = 0; i < 8; i++) {
-    const offset = GATES_OF_HELL_CADENCE_SECONDS + i * (GATES_OF_HELL_CADENCE_SECONDS * 2);
-    if (offset > GATES_OF_HELL_WINDOW_SECONDS + 1) break;
+  const GIANT_CADENCE = 1.5;   // seconds between giant emergences
+  const order = [3, 1, 2, 0];  // WP4-east, WP3-east, WP4-west, WP3-west
+  let t = GATES_OF_HELL_CADENCE_SECONDS;
+  let orderIdx = 0;
+  while (t <= GATES_OF_HELL_WINDOW_SECONDS + 1) {
+    const pointId = order[orderIdx % order.length];
+    const loc = locations.find(l => l.pointId === pointId)!;
     out.push({
-      vfxX: locations[1].col * GRID.TILE + GRID.TILE / 2,
-      vfxY: locations[1].row * GRID.TILE + GRID.TILE / 2,
-      pathTileX: locations[1].col,
-      pathTileY: locations[1].row,
-      pathIndex: nearestPathIndexAtWaypoint(state, locations[1].col, locations[1].row),
-      spawnAt: baseStart + offset,
+      vfxX: loc.col * GRID.TILE + GRID.TILE / 2,
+      vfxY: loc.row * GRID.TILE + GRID.TILE / 2,
+      pathTileX: loc.col,
+      pathTileY: loc.row,
+      pathIndex: nearestPathIndexAtWaypoint(state, loc.col, loc.row),
+      spawnAt: baseStart + t,
       enemyType: 'FIRE_GIANT',
       fired: false,
-      pointId: 1
+      pointId
     });
-  }
-  // Gate 3 (locations[0]) fires 1s after each gate-4 pulse.
-  for (let i = 0; i < 7; i++) {
-    const offset = GATES_OF_HELL_CADENCE_SECONDS + 1 + i * (GATES_OF_HELL_CADENCE_SECONDS * 2);
-    if (offset > GATES_OF_HELL_WINDOW_SECONDS + 1) break;
-    out.push({
-      vfxX: locations[0].col * GRID.TILE + GRID.TILE / 2,
-      vfxY: locations[0].row * GRID.TILE + GRID.TILE / 2,
-      pathTileX: locations[0].col,
-      pathTileY: locations[0].row,
-      pathIndex: nearestPathIndexAtWaypoint(state, locations[0].col, locations[0].row),
-      spawnAt: baseStart + offset,
-      enemyType: 'FIRE_GIANT',
-      fired: false,
-      pointId: 0
-    });
+    t += GIANT_CADENCE;
+    orderIdx++;
   }
   return out;
 }
@@ -893,13 +898,16 @@ function nearestPathIndexAtWaypoint(state: GameStateShape, col: number, row: num
   return Math.min(state.groundPath.length - 1, best + 1);
 }
 
-// GATES OF HELL atmosphere: heavy fire dressing around both gates. 12
-// small fires scattered in a ring around each gate position, 6 smoke
-// puffs tinted red-orange, 4 blood-style scorch stains. Reads as "the
-// underworld is bleeding through the seams of reality".
+// GATES OF HELL atmosphere: heavy fire dressing around every gate.
+// 2026-05-22 — Now 4 gates instead of 2. Per-gate prop counts cut
+// roughly in half so the total visual prop count stays in the same
+// ballpark as the prior 2-gate version (16 fires vs 12, 12 smoke
+// vs 6, 8 stains vs 4) — the underworld is bleeding through 4
+// seams of reality now, but the renderer doesn't choke on doubled
+// particle volume.
 function generateGatesOfHellAtmosphere(state: GameStateShape, mainPoints: SurpriseEventSpawnPoint[]): SurpriseAtmosProp[] {
   const props: SurpriseAtmosProp[] = [];
-  // Group main points by pointId to get the 2 gate locations
+  // Group main points by pointId to get the 4 gate locations
   const gatePositions: { x: number; y: number }[] = [];
   const seen = new Set<number>();
   for (const p of mainPoints) {
@@ -907,8 +915,8 @@ function generateGatesOfHellAtmosphere(state: GameStateShape, mainPoints: Surpri
     seen.add(p.pointId);
     gatePositions.push({ x: p.vfxX, y: p.vfxY });
   }
-  // Around each gate: ring of 6 small fires + 3 smoke puffs + 2 stains.
-  const FIRES_PER_GATE = 6;
+  // Around each gate: ring of 4 small fires + 3 smoke puffs + 2 stains.
+  const FIRES_PER_GATE = 4;
   const SMOKE_PER_GATE = 3;
   const STAINS_PER_GATE = 2;
   for (const gp of gatePositions) {

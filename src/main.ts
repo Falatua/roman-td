@@ -1514,7 +1514,7 @@ async function boot() {
       ? 'Barbarians breach the perimeter! Enemies are coming from all four sides of the map this wave — not from the cave. They skip the first 2 checkpoints and join the path at WP3. Survive to claim a reward.'
       : kind === 'UPRISING'
         ? 'The dead are rising! A skeletal urn opens at the center of the map this wave — enemies pour from it, not from the cave. They skip the first 2 checkpoints and join the path at WP3. Survive to claim a reward.'
-        : 'The Underworld breaks open at checkpoints 3 and 4! Two gates pump out fire giants — 300,000 HP each, fire-immune, slow but lethal. Giants skip the first 2 checkpoints (they spawn AT WP3/WP4). Crack the gates with siege or divine to shut them down.';
+        : 'The Underworld breaks open at checkpoints 3 and 4! FOUR gates pump out fire giants — two flanking each waypoint, 300,000 HP each, fire-immune, slow but lethal. Giants skip the first 2 checkpoints (they spawn AT WP3/WP4). Crack the gates with siege or divine to shut them down.';
     const chip = document.createElement('div');
     chip.id = 'surprise-info-chip';
     chip.style.cssText = `
