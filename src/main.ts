@@ -6473,15 +6473,24 @@ async function boot() {
           // period. No probability roll, no per-wave cap, no wave-type
           // gate. The user explicitly asked for "any boss you kill
           // should always drop a legendary." That covers:
-          //   • Scheduled bosses (W5/W10/W15/W20 + bonus boss)
-          //   • Twin / ambush / surprise bosses sharing those waves
-          //   • Champion adds (Alpha Dog W3, Undead War Elephant W14,
-          //     Architectus W17, Hannibal's escort elephants W9-10, etc.)
+          //   • Scheduled bosses: Alpha Dog (W3), Brennus / Celtic
+          //     Warlord (W5), Hannibal Barca (W10), Undead Warlord ×5
+          //     (W15), Daemon Imperator (W20).
+          //   • Twin / ambush / surprise bosses sharing those waves.
+          //   • Champion adds (Undead War Elephant W14, Architectus W17,
+          //     Hannibal's escort elephants W9-10, etc).
           // The only path that can still produce "no drop" is if the
           // player already owns every legendary in the game — in which
           // case rollBossDrop returns null cleanly. The
           // `bossLegendaryDropped` flag is retained for analytics but
           // no longer gates anything.
+          //
+          // 2026-05-23 — Re-verified: Brennus (CELTIC_WARLORD on W5)
+          // is `isBoss: true` in enemies.json + `faction: "CELTS"`,
+          // so this branch fires with a 7-item CELTS legendary pool
+          // (Druid's Torc, Celtic Longsword, Warlord's War Paint,
+          // Gallic Shield Boss, Druid Staff Fragment, Spear of Mars,
+          // Jupiter's Wrath). User confirmed expected behavior.
           const w = wavesData[state.wave - 1];
           const orbsBefore = state.lootOrbs.length;
           if (e.isBoss) {
