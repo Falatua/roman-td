@@ -197,7 +197,6 @@
     "livesCost": 1,
     "spriteSheet": 5,
     "spriteCell": 5,
-    "meleeImmune": true,
     "immunePoison": true,
     "auraTowerSlow": 0.3,
     "healAllyPctPerSec": 0.018,

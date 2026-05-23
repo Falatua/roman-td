@@ -1076,7 +1076,12 @@ async function boot() {
     // who timed their burst against a sudden +60% sprint). The callout
     // still fires for RABID_DOG (W2-3) + CELTIC_BERSERKER (W5-6).
     if (enemiesInWave.has('RABID_DOG') || enemiesInWave.has('CELTIC_BERSERKER')) enemyCallouts.push({ text: '💨 LOW-HP SURGE · finish them or they leak', cat: 'ENEMY' });
-    if (enemiesInWave.has('HANNIBAL_BARCA') || enemiesInWave.has('DAEMON_IMPERATOR') || enemiesInWave.has('GHOST_RIDER') || enemiesInWave.has('GALLIC_DRUID') || enemiesInWave.has('ZOMBIE_DRUID')) enemyCallouts.push({ text: '💚 OOC REGEN · pressure constantly to deny heal', cat: 'ENEMY' });
+    // 2026-05-22 — Removed GALLIC_DRUID and ZOMBIE_DRUID from this
+    // callout. Both druids had their out-of-combat regen stripped
+    // long ago (data has no regenPctPerSecOutOfCombat field) but
+    // this brief still listed them, which confused the player into
+    // thinking the Zombie Druid was self-healing on W13.
+    if (enemiesInWave.has('HANNIBAL_BARCA') || enemiesInWave.has('DAEMON_IMPERATOR') || enemiesInWave.has('GHOST_RIDER')) enemyCallouts.push({ text: '💚 OOC REGEN · pressure constantly to deny heal', cat: 'ENEMY' });
     // 2026-05-15: checkpoint regen — enemies that gain HP every time
     // they cross a checkpoint coin on the path. Listed here per-wave
     // so the player knows to burst them BETWEEN checkpoints rather
