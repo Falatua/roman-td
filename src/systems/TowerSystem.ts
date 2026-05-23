@@ -10,6 +10,17 @@ import { isInsideStructureFootprint } from './GridManager';
 // tile-bonus path reads the same source-of-truth lookup. O(5) per
 // call (5 fixed tiles), no need to cache.
 export function towerAuraTileKind(t: Tower): typeof AURA_TILES[number]['kind'] | null {
+  // 2026-05-22 — Confirmed aura-tile coverage applies UNIFORMLY to
+  // heroes and regular towers. This lookup only checks the tile
+  // coordinates against the 6 fixed AURA_TILES; the `isHero` flag
+  // is intentionally ignored so a hero placed on a PURPLE tile gets
+  // the same +25% damage that a Hastati would get. Same for BLUE
+  // (+atk speed), RED (+vs-boss), CYAN (+wave-clear gold), GOLD
+  // (+treasury), and EMERALD (+range). The damage + speed bonuses
+  // compose into the hero's effective stats via towerEffectiveStats
+  // (called on every tower including heroes in CombatResolver per
+  // frame), the +range bonus flows through the additive range band
+  // alongside hero items and pool-level extras.
   for (const a of AURA_TILES) {
     if (a.col === t.tileX && a.row === t.tileY) return a.kind;
   }
