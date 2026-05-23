@@ -1023,7 +1023,7 @@
   "HERO_MARIUS": {
     "name": "Gaius Marius",
     "damageType": "PHYS_MELEE",
-    "baseDps": 101,
+    "baseDps": 146,
     "attackSpeed": 1.3,
     "range": 2.5,
     "kind": "BASE",
@@ -1039,7 +1039,7 @@
   "HERO_AGRIPPA": {
     "name": "Marcus Agrippa",
     "damageType": "SIEGE",
-    "baseDps": 109,
+    "baseDps": 136,
     "attackSpeed": 1.0,
     "range": 4.5,
     "kind": "BASE",
