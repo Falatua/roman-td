@@ -416,9 +416,9 @@ describe('Enemy HP compensation when a hero is active', () => {
     expect(hero / base).toBeCloseTo(1.15, 2);
   });
 
-  it('previewSpawnHp keeps W1 pin behaviour: 100 base, 115 with hero', () => {
-    expect(previewSpawnHp(dogDef, 1, 'G', 1.0, false)).toBe(100);
-    expect(previewSpawnHp(dogDef, 1, 'G', 1.0, true)).toBe(115);
+  it('previewSpawnHp keeps W1 pin behaviour: 300 base, 350 with hero (raised from 100/115 on 2026-05-23)', () => {
+    expect(previewSpawnHp(dogDef, 1, 'G', 1.0, false)).toBe(300);
+    expect(previewSpawnHp(dogDef, 1, 'G', 1.0, true)).toBe(350);
   });
 
   it('previewSpawnHp defaults to no hero comp when the arg is omitted (back-compat)', () => {

@@ -105,9 +105,12 @@ describe('previewSpawnHp parity with actual tickSpawns spawn HP', () => {
 });
 
 describe('previewSpawnHp formula spot-checks', () => {
-  it('W1 pins every enemy to 100 HP regardless of baseHp', () => {
+  // 2026-05-23 — W1 pin bumped from 100 HP (no hero) / 115 HP (hero) to
+  // 300 HP / 350 HP per user feedback that the calibration wave felt
+  // trivially easy.
+  it('W1 pins every enemy to 300 HP regardless of baseHp (no hero drafted)', () => {
     const dog: any = (enemiesData as any).FERAL_DOG;
-    expect(previewSpawnHp(dog, 1, 'G', 1.0)).toBe(100);
+    expect(previewSpawnHp(dog, 1, 'G', 1.0)).toBe(300);
   });
 
   it('W15 Undead Warlord = baseHp × hpMult × aggressive linear × 2.0 solo × W10+1.25 × W11+1.40 boss layers', () => {

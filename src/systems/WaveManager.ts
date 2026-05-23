@@ -115,11 +115,12 @@ export function lateGameLayerMult(waveNumber: number, isBoss: boolean, isFlyer: 
 // non-game-loop math, future tests).
 export function previewSpawnHp(def: any, waveNumber: number, wType: 'B' | 'M' | 'G' | 'F', hpMult: number, heroActive: boolean = false): number {
   if (waveNumber === 1) {
-    // W1 is pinned to 100 HP for every spawn. The +15% hero comp still
-    // applies in real spawnEnemy because the pin is mathematical (the
-    // base * waveMult math collapses), so reflect that here too —
-    // otherwise W1 previews lie by 15.
-    return heroActive ? 115 : 100;
+    // W1 is pinned to ~350 HP for every spawn (was 100 HP pre-2026-05-23).
+    // User bumped the calibration target several times — 150 → 300 → 350 —
+    // because the original 100 HP felt trivially easy. Hero-comp +15% still
+    // applies so the W1 preview chip doesn't lie. Without a hero drafted
+    // (sandbox / pre-hero saves) the floor stays at 300.
+    return heroActive ? 350 : 300;
   }
   const isBoss  = !!def.isBoss;
   const isFlyer = !!def.isFlyer;
@@ -297,20 +298,18 @@ export function tickSpawns(state: GameStateShape, dt: number) {
       spawnAtSurpriseEventPoint(state, e, surpriseSpawnIdx);
       surpriseSpawnIdx++;
     }
-    // WAVE 1 EXCEPTION (2026-05): every enemy that spawns on wave 1 is
-    // pinned to a flat 100 HP regardless of baseHp / hpMult / per-wave /
-    // boss-cleared scaling. W1 is the player's onboarding moment — they
-    // need a clean introductory wave, not a Feral-Dog × 2× × 1.10 ×
-    // basicHpBuff math problem. Bosses don't spawn on W1 in the
-    // schedule, so this only ever affects the 30 Feral Dogs intended for
-    // the calibration wave.
+    // WAVE 1 EXCEPTION: every enemy that spawns on wave 1 is pinned to
+    // a flat ~350 HP regardless of baseHp / hpMult / per-wave /
+    // boss-cleared scaling. The pin makes W1 deterministic so the
+    // calibration wave doesn't accidentally jump every time we tune
+    // FERAL_DOG's baseHp.
     //
-    // 2026-05-19 — Hero-comp +15% applies to the W1 pin too so the
-    // preview helper (which already factors hero comp on W1) doesn't
-    // drift from real spawn HP. Without this, the wave-preview chip
-    // says "115 HP" while real spawns are 100.
+    // 2026-05-23 — Pin raised 100 → 350 (hero) / 300 (no hero) per user
+    // feedback that the original 100 HP felt trivially easy. The user
+    // walked it up across a few sessions: 150 → 300 → 350. Hero-comp
+    // +15% still factors so the wave-preview chip stays in sync.
     if (state.wave === 1) {
-      const w1Hp = state.activeHeroId ? 115 : 100;
+      const w1Hp = state.activeHeroId ? 350 : 300;
       e.maxHp = w1Hp;
       e.hp = w1Hp;
     }

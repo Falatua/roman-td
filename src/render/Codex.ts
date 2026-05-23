@@ -198,7 +198,7 @@ function renderTab(tab: string): string {
             <li><b style="color:#66ff88">Checkpoint heal:</b> Celtic Berserkers, Sacred Band, Undead Celts, Undead Berserkers, and Undead Spearmen regain 15% HP the first time they cross each of the 7 waypoint coins. Pinch the path right BEFORE coins so the kill window stays narrow. W11 has the heal suppressed (Undead Celt intro is already a slog).</li>
             <li>Recipe wants T3 but your tower is T4? <b style="color:#ffd34d">DOWNGRADE</b> (2g, in the tower menu) drops it one tier. Pride loses runs.</li>
             <li>This is a 20-wave run. Every leaked enemy hurts. Every BOSS leak costs <b style="color:#ff5050">10 lives</b> AND the boss is REBORN ON THE NEXT WAVE at the HP he had when he reached Rome (chip damage carries over — small consolation). The math is still not on your side.</li>
-            <li><b style="color:#ff5050">ENDLESS MODE (post-game):</b> clearing W20 with the gate intact unlocks Endless. After you submit your name to the Hall of Glory, the game transitions to a procedural chaos mode — <b>Huns and Egyptians attack with returning W1-W20 enemies mixed in</b>, mechanics stack freely (necromancy + dust shield + sleep curse all at once is legal), and each wave clear adds to a separate <b style="color:#ff5050">Endless leaderboard</b>. Difficulty scales aggressively (HP × 1.5 + 0.45 per Endless wave, compounding past E5; +6% tower damage / +4% atk speed / +1 tile range per Endless wave to fight back; tower class-balance nerfs lifted). The run ends when your last life drops.</li>
+            <li><b style="color:#ff5050">ENDLESS MODE (post-game):</b> clearing W20 with the gate intact unlocks Endless. After you submit your name to the Hall of Glory, the game transitions to a procedural chaos mode — <b>Huns and Egyptians attack with returning W1-W20 enemies mixed in</b>, mechanics stack freely (necromancy + dust shield + sleep curse all at once is legal), and each wave clear adds to a separate <b style="color:#ff5050">Endless leaderboard</b>. Difficulty scales aggressively — basic enemies start at <b>~900,000 HP at E1</b> and climb linearly (~500× per Endless wave on baseHp), so by E5 basics are ~4.4M HP and bosses are ~40M+. Tower side gets <b>+6% damage / +4% atk speed / +1 tile range per Endless wave</b> to fight back, and tower class-balance nerfs are lifted. The run ends when your last life drops.</li>
           </ul>
         </div>
       `, true)}
@@ -268,7 +268,7 @@ function renderTab(tab: string): string {
       `)}
       ${foldSection('DIFFICULTY CURVE — WHEN THE PAIN ARRIVES', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('Wave 1 (calibration)', 'Every spawn on W1 is hard-pinned to exactly <b>100 HP</b>. The introductory wave should feel like an introduction, not a Feral-Dog math problem.')}
+          ${noteCard('Wave 1 (calibration)', 'Every spawn on W1 is hard-pinned to <b>350 HP</b> (300 if no hero drafted). The fixed pin keeps the opening wave deterministic so we can tune FERAL_DOG baseHp without W1 jumping around. Bumped from 100 HP on 2026-05-23 — the original was too soft.')}
           ${noteCard('Wave 2-4', 'Enemy HP climbs steadily over the early waves. Most prospects roll T1; this stretch teaches mazing. <b style="color:#ffe066">W4 introduces the Shield mechanic early</b>: 3 Gallic Druids carry sacred wards (ranged towers cannot target them until melee bashes the shield). Pair a melee tower with the <b>Barbed Gladius</b> (gate-shop staple, 10g) + starting Cavalry Spur and the Shield Bash (+50% melee damage on first hit) shreds them.')}
           ${noteCard('Linear Per-Wave (+10% HP)', 'Baseline climb: HP grows roughly <b>+10% per wave</b>. <b style="color:#ff7766">From W11</b> an extra +10% per wave stacks on top; <b style="color:#ff5050">from W12</b> another +15% per wave joins in. The late game ramps faster than the early game on purpose. Linear means smooth — no off-feeling spike except the boss-clear bump (next card).')}
           ${noteCard('Per Cleared Boss (×2.00, basics only)', 'Each cleared 5-wave boss <b>DOUBLES</b> the HP of every BASIC enemy for the rest of the run. After 3 cleared bosses (entering W16), basic enemies take ×2³ = ×8.0 on top of the linear step. <b style="color:#ffd34d">Bosses themselves are exempt</b> — they scale linearly only so each boss feels like a clean step heavier than the last, not an exponential wall.')}
@@ -554,10 +554,10 @@ function renderTab(tab: string): string {
       ${foldSection('BOSS SIGNATURES', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           ${noteCard('🐺 Alpha Dog (W3 champion)', 'Frenzy at 30% HP doubles speed. Pack Howl every 8s grants +50% speed to nearby Feral Dogs. Death spawns 3 Feral Dogs. <b style="color:#ff9933">Always drops a LEGENDARY on kill</b> — the first guaranteed marquee reward of the run.')}
-          ${noteCard('⚔ Brennus (W5)', 'The Celtic chieftain who sacked Rome in 387 BC, named for the Senonian war-king. War Cry at 70% HP grants +30% speed to all Celts for 8s. Otherwise a clean straight-up fight to the death — no rebirth, no surge, no necromancy on his wave.')}
-          ${noteCard('🐘 War Elephant (W9 + W10 boss adds)', 'STAMPEDE at 50% HP: status-immune + 75% speed for 4s; strips slow/freeze/stun. Permanently <b style="color:#88ddff">SLOW + FREEZE IMMUNE</b>. <b style="color:#ff7733">Tower-Slow Aura</b>: every tower within 2 tiles fires 20% slower. <b style="color:#ff5050">TUSK QUAKE</b>: every 6s silences every tower within 2 tiles for 0.6s (a dust-brown ring marks the pulse). The Undead variant cranks the aura to 25%. <b style="color:#cdb98a">DUST-SHIELD AURA</b>: a 4-tile dome around the elephant makes nearby GROUND allies untargetable by ranged towers until the elephant dies. Melee + the elephant itself stay targetable. <b style="color:#ff9933">WEAKNESS: +45% damage from SIEGE</b> — heavy stones crush elephant hide.')}
+          ${noteCard('⚔ Brennus (W5)', 'The Celtic chieftain who sacked Rome in 387 BC, named for the Senonian war-king. War Cry at 70% HP grants +30% speed to all Celts for 8s. Otherwise a clean straight-up fight to the death — no rebirth, no surge, no necromancy on his wave. <b style="color:#ff9933">Always drops a LEGENDARY on kill</b> — the first scheduled marquee boss reward of the run.')}
+          ${noteCard('🐘 War Elephant (W9 + W10 boss adds)', 'STAMPEDE at 50% HP: status-immune + 75% speed for 4s; strips slow/freeze/stun. Permanently <b style="color:#88ddff">SLOW + FREEZE IMMUNE</b>. <b style="color:#ff7733">Tower-Slow Aura</b>: every tower within 2 tiles fires 20% slower. <b style="color:#ff5050">TUSK QUAKE</b>: every 6s silences every tower within 2 tiles for 0.6s (a dust-brown ring marks the pulse). The Undead variant cranks the aura to 25%. <b style="color:#cdb98a">DUST-SHIELD AURA</b>: a 4-tile dome around the elephant makes nearby GROUND allies untargetable by ranged towers until the elephant dies. Melee + the elephant itself stay targetable. <b style="color:#ff9933">WEAKNESS: +45% damage from SIEGE</b> — heavy stones crush elephant hide. <b style="color:#a060ff">Kill drops a guaranteed EPIC item.</b>')}
           ${noteCard('⚔ Hannibal Barca (W10)', 'Heals 0.4%/s while War Elephants live (only when not taking DIRECT damage). Out-of-combat regen 1.7%/s. <b style="color:#ff7733">DoT (burn / poison / bleed / hellfire) reduces both heals to 50% (was 100% block).</b> A single Poisoned Blade alone is no longer enough — you need DoT + direct damage to actually break him. REBIRTH at 50% HP: +60% speed, status-immune, summons 2 War Elephants. <b style="color:#ff5050">TELEGRAPH:</b> a shrinking red lock-on ring + crosshairs appear on him 1 second before rebirth fires — use that window to burst him into a different timeline.')}
-          ${noteCard('🐘💀 Undead War Elephant (W14 champion)', 'Stampede at 50% HP. REBIRTH at 40% HP: summons 2 Ghost Riders. Heavy regen. <b style="color:#cdb98a">DUST-SHIELD AURA</b>: a 2-tile dome around the elephant blocks ranged shots on nearby ground allies until it dies. Tower-slow aura cranked to 25% (vs 20% on the living variant). <b style="color:#ff9933">WEAKNESS: +20% damage from SIEGE</b>.')}
+          ${noteCard('🐘💀 Undead War Elephant (W14 champion)', 'Stampede at 50% HP. REBIRTH at 40% HP: summons 2 Ghost Riders. Heavy regen. <b style="color:#cdb98a">DUST-SHIELD AURA</b>: a 4-tile dome around the elephant blocks ranged shots on nearby ground allies until it dies. Tower-slow aura cranked to 25% (vs 20% on the living variant). <b style="color:#ff9933">WEAKNESS: +20% damage from SIEGE</b>. <b style="color:#a060ff">Kill drops a guaranteed EPIC item.</b>')}
           ${noteCard('💀 Undead Warlords ×5 (W15)', '<b style="color:#ff5050">W15 now spawns FIVE Undead Warlords.</b> After 5s: AMBUSH 8 Undead Berserkers mid-path. Each warlord triggers its own NECROMANCY at 40% HP, raising 4 Undead Celts at his position — so you can see up to 20 risen celts if all five bosses crater near the threshold simultaneously. Plan a path-segregating maze and stagger the warlord kills — letting them all crater at once will flood the field. Heavy AoE / siege builds with Scipio active eat them; otherwise focus-fire one warlord clean before the next dips low.')}
           ${noteCard('😈 Daemon Imperator (W20 — final boss)', 'Base speed 0.85 tiles/sec. HELLSCAPE every 12s stuns nearby tower cooldowns (towers within 5 tiles take a 1.5s cooldown stamp on each pulse). Out-of-combat regen 2.8%/sec. <b style="color:#aaffaa">DOT-RESISTANT:</b> poison and bleed both tick at 50% effectiveness (fire is fully immune). Direct damage + DIVINE (1.30×) carry the fight, not chip ticks. <b style="color:#88ddff">W20 is a TRUE solo encounter — no mobs, no helpers, just you vs the Daemon.</b> <b style="color:#ff5050">W20 LOCKDOWN: a single leak ends the run — Rome falls if you cannot hold the gate.</b>')}
         </div>
@@ -1072,10 +1072,15 @@ function renderTab(tab: string): string {
       const w = firstWaveByEnemy.get(id);
       if (w) {
         if (w.wave === 1) {
-          // 2026-05-19 — Hero-comp +15% applies even to the W1 pin so the
-          // Codex stays consistent with the wave-preview chip.
-          const w1 = codexHeroActive ? 115 : 100;
-          const w1Note = codexHeroActive ? ' Hero comp adds +15%.' : '';
+          // 2026-05-23 — W1 pin bumped from 100/115 HP to 350/300 HP per
+          // user request: "Increase the health of the wave one enemies to
+          // 300" then "give Feral Dog enemies 350 health." The pin is set
+          // in WaveManager.previewSpawnHp + the spawn loop so it overrides
+          // baseHp × hpMult × moonBoost × basicHpBuff × heroComp entirely.
+          // Hero-active spawns get the extra 50 to keep the hero-vs-no-hero
+          // chip in lockstep with the runtime.
+          const w1 = codexHeroActive ? 350 : 300;
+          const w1Note = codexHeroActive ? ' Hero-active runs add +50.' : '';
           return { hp: w1, wave: 1, explain: `Wave 1 (introductory wave — pinned to ${w1} HP).${w1Note}` };
         }
         const hp = computeHp(def, w);
@@ -1182,7 +1187,7 @@ function renderTab(tab: string): string {
     // Simple, honest framing — no internal-multiplier math jargon.
     const scaleNote = `<div style="font-size:11px;color:#cdb98a;line-height:1.55;margin-bottom:10px;background:#0c0a08;border-left:3px solid #ff9933;padding:8px 12px">
       <b style="color:#ff9933">HP column:</b> the actual on-spawn HP an enemy will have when it appears on the wave listed beside it. What you see is what you fight.<br/>
-      ★ Wave 1 is the introductory wave — every spawn is pinned to <b>100 HP</b>.<br/>
+      ★ Wave 1 is the introductory wave — every spawn is pinned to <b>350 HP</b> (300 without a hero).<br/>
       ★ Enemies that only appear via splits or necromancy waves show their HP on the earliest wave that summons them.<br/>
       ★ The random <b>BLOOD MOON</b> wave modifier adds +25% HP on top when it rolls (rare).
     </div>`;
@@ -1551,7 +1556,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   }
   // Elephant dust-shield (hardcoded by type)
   if (id === 'WAR_ELEPHANT' || id === 'UNDEAD_WAR_ELEPHANT') {
-    traits.push('DUST-SHIELD AURA — projects a 2-tile dust dome that makes every NEARBY GROUND enemy untargetable by ranged towers until the elephant dies. The elephant itself is still targetable. Melee towers ignore the dust.');
+    traits.push('DUST-SHIELD AURA — projects a 4-tile dust dome that makes every NEARBY GROUND enemy untargetable by ranged towers until the elephant dies. The elephant itself is still targetable. Melee towers ignore the dust.');
   }
   // Demon divine vulnerability (hardcoded by type set)
   const DEMON_SET = new Set(['DEMON_HELLHOUND','CELTIC_FIRE_DEMON','SHADOW_CAVALRY','DEMON_LEGATE','DAEMON_IMPERATOR']);
