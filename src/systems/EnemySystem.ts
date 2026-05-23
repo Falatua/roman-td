@@ -419,6 +419,16 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
   // ─── HEALER ENEMIES (2026-05): enemies with healAllyPctPerSec emit a
   //   gentle 1.5-tile heal ring that restores HP to nearby living allies
   //   (NOT themselves). Doesn't heal bosses to avoid trivializing them.
+  //
+  //   2026-05-22 NON-STACKING. Previously the heal was applied additively
+  //   per nearby healer per target. With Zombie Druid clusters of 10-20
+  //   on W11/W13/W14, each druid was healing each of the OTHER druids,
+  //   so cumulative regen scaled at N × 1.8 % HP/sec — at N=10 that's
+  //   16 % HP/sec, at N=20 it's 34 % HP/sec, faster than most tower
+  //   builds can damage. Now we take the MAX pct among in-range
+  //   healers instead of the sum, so a cluster of 20 druids still
+  //   restores at the same 1.8 % HP/sec a single druid would. The
+  //   pressure shifts back to focus-fire instead of damage-soak.
   const HEAL_RADIUS = GRID.TILE * 1.8;
   const healers: { src: Enemy; pct: number }[] = [];
   for (const e of state.enemies.values()) {
@@ -428,11 +438,15 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
   if (healers.length > 0) {
     for (const target of state.enemies.values()) {
       if (target.isBoss) continue;       // never heal bosses
+      let bestPct = 0;
       for (const h of healers) {
         if (h.src.id === target.id) continue;
         if (Math.hypot(h.src.x - target.x, h.src.y - target.y) <= HEAL_RADIUS) {
-          target.hp = Math.min(target.maxHp, target.hp + target.maxHp * h.pct * dt);
+          if (h.pct > bestPct) bestPct = h.pct;
         }
+      }
+      if (bestPct > 0) {
+        target.hp = Math.min(target.maxHp, target.hp + target.maxHp * bestPct * dt);
       }
     }
   }
