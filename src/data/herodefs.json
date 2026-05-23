@@ -10,8 +10,8 @@
       "kind": "LOCAL_AURA",
       "radiusTiles": 3,
       "filter": "PHYS_MELEE",
-      "dmgBonusPercent": 20,
-      "description": "Every MELEE tower within 3 tiles gains +20% damage permanently."
+      "dmgBonusPercent": 30,
+      "description": "Every MELEE tower within 3 tiles gains +30% damage permanently."
     },
     "abilities": [
       {
@@ -65,9 +65,9 @@
       "kind": "LOCAL_AURA",
       "radiusTiles": 3,
       "filter": "SIEGE",
-      "dmgBonusPercent": 20,
-      "rangeBonusTiles": 0.5,
-      "description": "Every SIEGE tower within 3 tiles gains +20% damage and +0.5 tiles of range permanently."
+      "dmgBonusPercent": 30,
+      "rangeBonusTiles": 1.0,
+      "description": "Every SIEGE tower within 3 tiles gains +30% damage and +1.0 tile of range permanently."
     },
     "abilities": [
       {

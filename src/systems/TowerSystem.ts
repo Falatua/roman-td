@@ -328,21 +328,29 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // 2026-05-19 — Gate-exclusive range items.
     (t.equippedItems.includes('BRONZE_GREAVES') ? 0.5 : 0) +
     (t.equippedItems.includes('CONSULAR_TOKEN') ? 0.5 : 0) +
-    // 2026-05-19 — Agrippa hero passive: +0.5 tile range to every
-    // PHYS_RANGED tower within 3 tiles of Agrippa's tile. Read off
-    // the global state ref (set by main.ts in renderer mode); test
-    // env has no global state, so the guard returns 0 and the test
-    // suite's tower stat math stays unaffected by the hero feature.
+    // 2026-05-22 — Agrippa hero passive: +1.0 tile range to every
+    // SIEGE tower within 3 tiles of Agrippa's tile. Read off the
+    // global state ref (set by main.ts in renderer mode); test env
+    // has no global state, so the guard returns 0 and the test suite's
+    // tower stat math stays unaffected by the hero feature.
+    //
+    // Bug history: this check used to filter on PHYS_RANGED, but the
+    // V19 hero rework moved Agrippa's passive filter to SIEGE in
+    // CombatResolver.ts without updating this range hook. Net effect:
+    // the range portion of Agrippa's passive was silently broken for
+    // 3 days. Bonus now correctly targets SIEGE towers, and the
+    // magnitude is +1.0 tile (was +0.5) to match the felt-undertuned
+    // user feedback that prompted the hero buff pass.
     ((() => {
       const g: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
       const gs: any = g?.__game;
       if (!gs || gs.activeHeroId !== 'HERO_AGRIPPA' || !gs.activeHeroTowerId) return 0;
-      if (t.damageType !== DamageType.PHYS_RANGED) return 0;
+      if (t.damageType !== DamageType.SIEGE) return 0;
       const hero = gs.towers?.get?.(gs.activeHeroTowerId);
       if (!hero) return 0;
       const dx = (hero.tileX - t.tileX);
       const dy = (hero.tileY - t.tileY);
-      return Math.hypot(dx, dy) <= 3 ? 0.5 : 0;
+      return Math.hypot(dx, dy) <= 3 ? 1.0 : 0;
     })()) +
     // SPEAR OF MARS — converts a melee tower into a thrown-spear unit by
     // adding five tiles of reach. CombatResolver spawns a visible PROJ_HASTA

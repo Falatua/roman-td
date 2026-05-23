@@ -620,18 +620,23 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (state.activeHeroId === 'HERO_MARIUS'
           && t.damageType === DamageType.PHYS_MELEE
           && dh <= 3 * GRID.TILE) {
-        // 2026-05-19 — Marius local melee aura tuned 1.25 → 1.20 to
-        // pair with Agrippa/Agricola's +20% for cross-hero parity. Stack
-        // with Triumph's map-wide +100% still puts Marius at 2.40× during
-        // his ult window — plenty of identity preservation.
-        dm *= 1.20;
+        // 2026-05-22 — Marius local melee aura bumped 1.20 → 1.30 per
+        // user feedback (felt undertuned vs the global heroes Caesar
+        // +10% global, Scipio +25% vs bosses). Marius gives up Caesar/
+        // Scipio's global reach, so the local payoff is proportionally
+        // bigger now. Was 1.25 → 1.20 in V19 audit; restored above
+        // that to give the kit real teeth without the global scope.
+        dm *= 1.30;
       }
       if (state.activeHeroId === 'HERO_AGRIPPA'
           && t.damageType === DamageType.SIEGE
           && dh <= 3 * GRID.TILE) {
-        // 2026-05-19 — Agrippa converted PHYS_RANGED → SIEGE so the
-        // hero damage-type spread covers MELEE/RANGED/SIEGE/DIVINE/FIRE.
-        dm *= 1.20;
+        // 2026-05-22 — Agrippa local siege aura bumped 1.20 → 1.30 per
+        // user feedback that the hero felt undertuned. Range bonus
+        // also bumped 0.5 → 1.0 tile in TowerSystem.ts (and fixed: was
+        // checking PHYS_RANGED instead of SIEGE after the V19 type swap,
+        // so the range portion of the passive was silently broken).
+        dm *= 1.30;
       }
       if (state.activeHeroId === 'HERO_AGRICOLA'
           && t.damageType === DamageType.PHYS_RANGED
