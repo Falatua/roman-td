@@ -6623,8 +6623,15 @@ async function boot() {
         // 2026-05 v10 — stop any boss music + low-HP cue that was
         // playing during this wave. One-Winged Angel for W20, plus the
         // generic 'bossLowHp' track if it spun up.
+        // 2026-05-22 — Also stop 'boss-fate' (the One-Winged Angel
+        // triggered by clicking "I ACCEPT MY FATE" on the boss-warning
+        // modal). Was previously looping past wave-clear because the
+        // BossWarning hook started it under a different track id than
+        // the W20 auto-start above. User-reported: boss music played
+        // through the post-wave shop phase.
         stopMusicTrack('boss20');
         stopMusicTrack('bossLowHp');
+        stopMusicTrack('boss-fate');
         // 2026-05 v10: stamp wave-clear duration for the speed bonus that
         // feeds into the final-score formula. 2026-05-15 fix: state.tick is
         // already in seconds (advances by dt), so the old `/60` divisor
