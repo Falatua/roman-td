@@ -517,8 +517,11 @@ async function boot() {
         state.hint = remaining > 0
           ? `Placed ${popped.type.replace(/_/g, ' ')} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
           : `Placed ${popped.type.replace(/_/g, ' ')} T${popped.tier}.`;
-        // SFX cue + impact ring on confirm so the moment reads.
-        try { (SFX as any).waveStartBlast?.(); } catch { /* ignore */ }
+        // Impact ring on confirm so the moment still reads visually.
+        // 2026-05-23 — Audio (waveStartBlast war-horn) removed per user
+        // feedback. The hero-placement modal already gives a clear
+        // commit moment; the war-horn cue was conflating with the
+        // actual wave-start audio and felt redundant.
         if (renderer?.triggerImpactRing) {
           const cx = col * 32 + 16;
           const cy = row * 32 + 16;
