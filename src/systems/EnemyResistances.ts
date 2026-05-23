@@ -101,7 +101,12 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // 0.40 → 0.15 (85% reduction). Same elephant-hide reasoning as
   // WAR_ELEPHANT — Hannibal's poison vulnerability shouldn't be a
   // soft underbelly for elephant counterplay.
-  [EnemyType.HANNIBAL_BARCA]: { melee: 0.65, ranged: 0.5, slow: 0.2, poison: 0.15, bleed: 0.55, burn: 0.85, siege: 1.25 },
+  // 2026-05-23 — siege vulnerability REMOVED (1.25 → 1.0) per user
+  // feedback that the W10 boss was too easy to kill. Paired with a
+  // baseHp jump 4514 → 7500 in enemies.json, his effective HP against
+  // siege builds roughly doubles (the previous +25% siege rider was
+  // the obvious easy-counter). Other damage types see +66% effective HP.
+  [EnemyType.HANNIBAL_BARCA]: { melee: 0.65, ranged: 0.5, slow: 0.2, poison: 0.15, bleed: 0.55, burn: 0.85, siege: 1.0 },
 
   // LATE-WAVE RANGED RESISTANCE PASS (2026-05): every non-boss enemy
   // that shows up after W10 had its `ranged` multiplier tightened so

@@ -1721,7 +1721,7 @@ async function boot() {
     // Living Carthage — melee + SIEGE favored.
     if (hasLivingCarthage && !isBossWave) tips.push({
       headline: '⚔ CARTHAGE — MELEE + SIEGE WIN',
-      body: `Wave <b>${nextWave}</b> brings living Carthage troops. Faction takes <b style="color:#ffd34d">+30% MELEE</b> and resists ranged by 20%. <b style="color:#ff9933">SIEGE is now a hard answer too</b> — every Carthage unit is siege-vulnerable: Spearman <b>+30%</b>, Numidian Rider <b>+15%</b>, Sacred Band Elite Guard <b>+40%</b>, Hannibal himself <b>+25%</b>. Park Onagers + Turris on the path alongside your <b>Centurion / Primus Pilus / Cohort Guard / Imperator Guard</b>. Spearmen drilled in pitch-treated linen still resist fire — bleed is the safer DoT.`,
+      body: `Wave <b>${nextWave}</b> brings living Carthage troops. Faction takes <b style="color:#ffd34d">+30% MELEE</b> and resists ranged by 20%. <b style="color:#ff9933">SIEGE is the hard answer to the rank-and-file</b> — Spearman <b>+30%</b>, Numidian Rider <b>+15%</b>, Sacred Band Elite Guard <b>+40%</b>. <b style="color:#ff5050">Hannibal himself takes neutral siege damage</b> — bring melee burst + DoT for the W10 boss, not just onagers. Park Onagers + Turris on the path alongside your <b>Centurion / Primus Pilus / Cohort Guard / Imperator Guard</b>. Spearmen drilled in pitch-treated linen still resist fire — bleed is the safer DoT.`,
       color: '#ff7733'
     });
     // Undead Carthage — fire-immune.

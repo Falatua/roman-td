@@ -162,7 +162,7 @@
   "HANNIBAL_BARCA": {
     "name": "Hannibal Barca",
     "faction": "CARTHAGE",
-    "baseHp": 4514,
+    "baseHp": 7500,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": true,
