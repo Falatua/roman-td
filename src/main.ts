@@ -6503,6 +6503,17 @@ async function boot() {
             // overshadow the W15/W20 boss legendaries.
             const drop = rollEpicDrop(state, inventory);
             if (drop) spawnLootAt(state, e, drop);
+          } else if (e.type === 'WAR_ELEPHANT' || e.type === 'UNDEAD_WAR_ELEPHANT') {
+            // 2026-05-23 — War Elephant kills now drop a guaranteed
+            // EPIC item. Both the living variant (W9 + W10) and the
+            // undead variant (W14) qualify. Same rationale as Fire
+            // Giant: these are "semi-boss" threats — bulky, slow,
+            // tanky, with a meaningful aura — that reward the focused
+            // damage commitment it takes to bring them down. Dropped
+            // tier is EPIC (not LEGENDARY) so the elephant haul
+            // doesn't overshadow the W5/W10/W15/W20 boss legendaries.
+            const drop = rollEpicDrop(state, inventory);
+            if (drop) spawnLootAt(state, e, drop);
           } else {
             // Non-boss enemies still roll the regular common/uncommon table
             // by GROUND/FLYER drop rate.
