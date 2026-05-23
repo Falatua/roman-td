@@ -638,11 +638,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         // so the range portion of the passive was silently broken).
         dm *= 1.30;
       }
-      if (state.activeHeroId === 'HERO_AGRICOLA'
-          && t.damageType === DamageType.PHYS_RANGED
-          && dh <= 3 * GRID.TILE) {
-        dm *= 1.20;
-      }
+      // 2026-05-22 — Agricola local +20% ranged-tower damage aura
+      // removed per user feedback that it stacked too strongly with
+      // the global anti-air passive. He now contributes ONLY the
+      // "melee can hit flyers" global effect, no per-tower damage
+      // multiplier. Kept the surrounding `if heroTowerForAura` scaffold
+      // intact for Marius/Agrippa/Sulla which still use local auras.
       // 2026-05-22 V19 — SULLA PASSIVE BALANCE ADJUSTMENT. Original
       // V92 rework dropped the damage rider entirely (TYPE-only), which
       // left Sulla as the only hero whose passive contributed zero
@@ -656,13 +657,18 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         dm *= 1.15;
       }
     }
-    // Marian Formation per-tower stamp: 3 nearest melee get +X% speed
-    // + shared-crit access during the window. Crit comes from the
-    // Tower's own crit application later; here we just compound speed.
+    // Marian Formation per-tower stamp: N nearest melee get +X% speed,
+    // +Y% damage, and shared-crit access during the window. Crit comes
+    // from the Tower's own crit application later; here we compound
+    // speed + damage.
+    // 2026-05-22 — Damage rider added (was speed-only). Drives the
+    // new dmgBonusPercent param on the ability.
     const marianUntil = (t as any).__marianFormationUntilTick ?? 0;
     if (state.tick < marianUntil) {
       const sMult = (t as any).__marianSpeedMult ?? 1.0;
+      const dMult = (t as any).__marianDmgMult ?? 1.0;
       sm *= sMult;
+      dm *= dMult;
     }
     // 2026-05-21 — Tier-3 ability windows removed (Ides of March,
     // Battle of Actium). Their speed-multiplier readers used to live

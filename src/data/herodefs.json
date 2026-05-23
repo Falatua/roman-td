@@ -19,9 +19,9 @@
         "id": "MARIAN_FORMATION",
         "name": "Marian Formation",
         "cooldownSec": 8,
-        "durationSec": 3,
-        "params": { "nearestMeleeTowers": 3, "atkSpeedMultPercent": 40, "shareCrit": true },
-        "description": "The 3 nearest melee towers form ranks for 3s — shared crit chance and +40% attack speed.",
+        "durationSec": 5,
+        "params": { "nearestMeleeTowers": 5, "atkSpeedMultPercent": 75, "dmgBonusPercent": 30, "shareCrit": true },
+        "description": "The 5 nearest melee towers form ranks for 5s — shared crit chance, +75% attack speed, and +30% damage.",
         "vfxColor": "#cc44ff",
         "vfxStyle": "VIOLET_RANK_LINE"
       },
@@ -120,18 +120,9 @@
     "playerProblemSolved": "I keep forgetting about flyer waves and losing lives to them.",
     "biography": "Agricola pacified Rome's British frontier through relentless surveillance and aggressive response. On this field, no flyer goes unnoticed and none goes unpunished.",
     "passive": {
-      "kind": "DUAL",
-      "global": {
-        "enableMeleeVsFlyers": true,
-        "description": "Every tower on the map — including MELEE — can target and attack flyers for the duration of the run."
-      },
-      "local": {
-        "radiusTiles": 3,
-        "filter": "PHYS_RANGED",
-        "dmgBonusPercent": 20,
-        "description": "Every RANGED tower within 3 tiles gains +20% damage."
-      },
-      "description": "Global: every tower on the map — including melee — can target flyers. Local: every RANGED tower within 3 tiles gains +20% damage."
+      "kind": "GLOBAL",
+      "enableMeleeVsFlyers": true,
+      "description": "Every tower on the map — including MELEE — can target and attack flyers."
     },
     "abilities": [
       {
@@ -300,7 +291,7 @@
       "radiusTiles": 3,
       "convertTo": "ELEMENTAL_FIRE",
       "dmgBonusPercent": 15,
-      "description": "Every tower within 3 tiles of Sulla has its damage TYPE overridden to ELEMENTAL_FIRE AND gains +15% damage — bronze gladii, javelins, ballista bolts, divine bolts all become flaming attacks that hit harder. Stacks under Proscription (Proscription's DIVINE override wins on type during its window, the +15% damage bonus remains active)."
+      "description": "Every tower within 3 tiles converts to FIRE damage and gains +15% damage."
     },
     "abilities": [
       {

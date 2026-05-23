@@ -368,24 +368,27 @@ describe('herodefs.json shape (single source of tuning)', () => {
   // "ELEMENTAL_FIRE"` shape) to a DAMAGE_TYPE_CONVERSION passive that
   // overrides nearby towers' damage type to FIRE. The fire "coverage"
   // moves from a `filter` to a `convertTo` field. Test reads both.
-  it('aura filters cover the 5 damage types (including Sulla\'s fire conversion target)', () => {
+  it('aura filters cover the expected damage-type slots', () => {
     const filters = HERO_POOL.map(id => {
       const def: any = (HERO_DEFS as any)[id];
-      // Marius/Agrippa use top-level filter; Agricola has
-      // passive.local.filter; Scipio uses VS_BOSS (no damage-type
-      // filter); Caesar is unfiltered global; Sulla uses convertTo
-      // (DAMAGE_TYPE_CONVERSION passive — towers within 2 tiles
-      // get their damage type overridden to convertTo).
+      // Marius/Agrippa use top-level filter; Scipio uses VS_BOSS
+      // (no damage-type filter); Caesar is unfiltered global; Sulla
+      // uses convertTo (DAMAGE_TYPE_CONVERSION passive — towers
+      // within 3 tiles get their damage type overridden to convertTo).
+      // 2026-05-22 — Agricola's passive simplified to a single
+      // GLOBAL effect (melee-can-hit-flyers) with NO damage filter
+      // and NO local aura. He no longer contributes a PHYS_RANGED
+      // entry to this set; coverage is intentional (his basic-attack
+      // damage type is still PHYS_RANGED, just not the passive).
       return def.passive?.filter
-        ?? def.passive?.local?.filter
         ?? def.passive?.convertTo
         ?? null;
     });
-    expect(filters).toContain('PHYS_MELEE');
-    expect(filters).toContain('PHYS_RANGED');
-    expect(filters).toContain('SIEGE');
+    expect(filters).toContain('PHYS_MELEE');         // Marius local aura
+    expect(filters).toContain('SIEGE');              // Agrippa local aura
     expect(filters).toContain('ELEMENTAL_FIRE');     // Sulla's convertTo target
-    // VS_BOSS is the Scipio filter; Caesar carries no filter at all.
+    // VS_BOSS is the Scipio filter; Caesar carries no filter at all;
+    // Agricola carries no filter at all (global anti-air effect only).
     expect(filters).toContain('VS_BOSS');
   });
 });

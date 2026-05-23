@@ -354,9 +354,14 @@ function executeMARIAN_FORMATION(state: GameStateShape, hero: Tower, params: any
     const def: any = (towersData as any)[t.type];
     maxCrit = Math.max(maxCrit, def?.critChance ?? 0);
   }
+  // 2026-05-22 — Damage rider added. Per-tower __marianDmgMult flag
+  // read by CombatResolver during damage resolution alongside the
+  // existing speed mult.
+  const dmgMult = 1 + (params.dmgBonusPercent ?? 0) / 100;
   for (const t of picked) {
     (t as any).__marianFormationUntilTick = until;
     (t as any).__marianSpeedMult = speedMult;
+    (t as any).__marianDmgMult = dmgMult;
     if (params.shareCrit) (t as any).__marianSharedCrit = maxCrit;
   }
   // Signature VFX: purple connecting lines from Marius to each

@@ -1,53 +1,84 @@
-// One-off script: rebuild the bottom passive banner on the Marius + Agrippa
-// hero cards so the baked-in text matches the new buffed passive values.
+// One-off script: rebuild the passive-text banner on the four hero
+// portrait cards whose baked-in text is now stale or whose previous
+// overlay spanned outside the colored ribbon area.
 //
-// Strategy: composite a clean banner strip over the old passive text region.
-// The rest of the card art (portrait, frame, name plate, gold trim) is
-// preserved untouched.
+// Strategy: composite a tightly-INSET banner strip over each card's
+// existing passive ribbon. The rest of the card art (portrait,
+// frame, name plate, gold trim, sidebar ornaments) is preserved.
 //
-// Per-hero banner geometry — the two cards have their passive ribbons at
-// different vertical positions (Marius bottom ~y=702-719, Agrippa upper ~
-// y=651-667). Confirmed by scanning each card row for white-text density.
+// 2026-05-22 v2 — INSET fix. The previous pass drew the banner
+// full-width (x=0 to x=573), which spilled past the gold/dark
+// corner ornaments on each card. This version uses a per-hero
+// bannerInsetX so the new ribbon stays inside the original purple/
+// blue/cream/brown center band that the AI drew. Also smaller font
+// so the text fits comfortably within the inset width.
 //
 // Run with: node tools/rebuild_hero_card_banner.cjs
 
 const sharp = require('sharp');
 const path = require('path');
 
-// Sampled from the existing cards by isolating the dark ribbon background
-// away from the centered white text.
+// Each hero's banner geometry was sampled by scanning the card row-by-
+// row for white-text pixels (locates the text band) and column-by-row
+// for the ribbon background color (locates the inset edges where the
+// gold frame ornaments end and the colored ribbon begins).
 const HEROES = {
   marius: {
     file: 'public/assets/heroes/hero_card_marius.png',
-    bannerColor: '#2D1937',
+    bannerColor: '#2D1937',           // dark imperial purple
     accentColor: '#a060c0',
-    text: 'PASSIVE: +30% melee dmg within 3 tiles',
-    // Text at y=702-719. Overlay covers y=695-735 (40px tall) so the entire
-    // old "PASSIVE: +20%..." text band is replaced.
+    textColor: '#ffffff',
+    text: 'PASSIVE: +30% MELEE DMG · 3 TILES',
     bannerTop: 695,
     bannerHeight: 40,
+    bannerInsetX: 80,                 // x=80 → x=493 is the purple ribbon
   },
   agrippa: {
     file: 'public/assets/heroes/hero_card_agrippa.png',
-    bannerColor: '#101F45',
+    bannerColor: '#101F45',           // dark navy
     accentColor: '#5599ff',
-    text: 'PASSIVE: +30% siege dmg, +1.0 range, 3 tiles',
-    // Text at y=651-667. Overlay covers y=644-682 to fully replace it.
+    textColor: '#ffffff',
+    text: 'PASSIVE: +30% SIEGE DMG · +1 RANGE · 3 TILES',
     bannerTop: 644,
     bannerHeight: 40,
+    bannerInsetX: 80,
+  },
+  sulla: {
+    file: 'public/assets/heroes/hero_card_sulla.png',
+    bannerColor: '#E1C498',           // cream/parchment ribbon
+    accentColor: '#a04020',           // muted red border
+    textColor: '#5a1e0a',             // dark blood-red text
+    text: 'PASSIVE: FIRE CONVERT · +15% DMG · 3 TILES',
+    // Original text spans y=643-693 (two lines). Cover the full
+    // 50px-tall band so neither line bleeds past the new banner.
+    bannerTop: 640,
+    bannerHeight: 58,
+    bannerInsetX: 80,
+  },
+  agricola: {
+    file: 'public/assets/heroes/hero_card_agricola.png',
+    bannerColor: '#311A12',           // dark gold/brown ribbon
+    accentColor: '#ddc060',           // muted gold border
+    textColor: '#ffe2a0',             // warm cream text
+    text: 'PASSIVE: ALL TOWERS CAN HIT FLYERS',
+    // Original text spans y=645-692 (two lines). Cover the full
+    // ~48px-tall band so the second line ("20% ranged dmg aura")
+    // doesn't bleed through.
+    bannerTop: 642,
+    bannerHeight: 55,
+    bannerInsetX: 80,
   },
 };
 
-function makeBannerSvg(width, height, text, bg, accent) {
-  return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-    <rect x="0" y="0" width="${width}" height="${height}" fill="${bg}"/>
-    <!-- inner accent border keeps the ribbon from looking like a flat slab -->
-    <rect x="10" y="4" width="${width - 20}" height="${height - 8}"
-          fill="none" stroke="${accent}" stroke-opacity="0.45" stroke-width="1.2"/>
-    <text x="${width / 2}" y="${height / 2 + 7}" text-anchor="middle"
+function makeBannerSvg(insetWidth, height, text, bg, accent, textColor) {
+  return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${insetWidth}" height="${height}">
+    <rect x="0" y="0" width="${insetWidth}" height="${height}" fill="${bg}"/>
+    <rect x="6" y="3" width="${insetWidth - 12}" height="${height - 6}"
+          fill="none" stroke="${accent}" stroke-opacity="0.55" stroke-width="1.2"/>
+    <text x="${insetWidth / 2}" y="${height / 2 + 5}" text-anchor="middle"
           font-family="'Courier New', 'Menlo', monospace"
-          font-size="18" font-weight="800" fill="#ffffff"
-          stroke="#000000" stroke-width="0.5" letter-spacing="0.5">
+          font-size="13" font-weight="800" fill="${textColor}"
+          letter-spacing="0.4">
       ${text}
     </text>
   </svg>`);
@@ -57,9 +88,11 @@ function makeBannerSvg(width, height, text, bg, accent) {
   for (const [key, cfg] of Object.entries(HEROES)) {
     const fullPath = path.resolve(cfg.file);
     const meta = await sharp(fullPath).metadata();
-    const overlay = makeBannerSvg(meta.width, cfg.bannerHeight, cfg.text, cfg.bannerColor, cfg.accentColor);
+    // Width of the inset ribbon = card width − 2 × side inset.
+    const insetWidth = meta.width - 2 * cfg.bannerInsetX;
+    const overlay = makeBannerSvg(insetWidth, cfg.bannerHeight, cfg.text, cfg.bannerColor, cfg.accentColor, cfg.textColor);
     const outBuf = await sharp(fullPath)
-      .composite([{ input: overlay, top: cfg.bannerTop, left: 0 }])
+      .composite([{ input: overlay, top: cfg.bannerTop, left: cfg.bannerInsetX }])
       .png()
       .toBuffer();
     await sharp(outBuf).toFile(fullPath);
