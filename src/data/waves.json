@@ -16,16 +16,16 @@
     "wave": 2,
     "type": "M",
     "faction": "DOGS",
-    "hpMult": 1.15,
+    "hpMult": 1.5,
     "gold": 9,
     "spawns": [
       {
         "type": "RABID_DOG",
-        "count": 20
+        "count": 24
       },
       {
         "type": "FERAL_DOG",
-        "count": 12
+        "count": 14
       }
     ]
   },
@@ -33,7 +33,7 @@
     "wave": 3,
     "type": "M",
     "faction": "DOGS",
-    "hpMult": 1.35,
+    "hpMult": 1.7,
     "gold": 10,
     "spawns": [
       {
@@ -42,7 +42,7 @@
       },
       {
         "type": "FERAL_DOG",
-        "count": 26
+        "count": 30
       }
     ]
   },
@@ -50,16 +50,17 @@
     "wave": 4,
     "type": "G",
     "faction": "CELTS",
-    "hpMult": 1.4,
+    "hpMult": 1.8,
     "gold": 9,
+    "enemySpeedBoostPct": 0.10,
     "spawns": [
       {
         "type": "CELTIC_FOOTMAN",
-        "count": 32
+        "count": 36
       },
       {
         "type": "GALLIC_DRUID",
-        "count": 3
+        "count": 4
       }
     ]
   },
