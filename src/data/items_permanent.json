@@ -53,7 +53,7 @@
     "rarity": "UNCOMMON",
     "buy": 18,
     "sell": 7,
-    "effect": "GLOBAL: every tower can target stealth and ambush enemies (Carthage Spearman, Undead Berserker, Ghost Rider, Shadow Cavalry, Veil-modifier waves). One copy anywhere on the map enables map-wide truesight."
+    "effect": "REVEAL ON SIGHT: any stealth/ambush enemy that enters the carrier's range is permanently revealed for the rest of the wave — every tower on the map can target it from that moment on. Enemies cross the range threshold one by one and reveal in order."
   },
   "FIRE_OIL_FLASK": {
     "name": "Fire Oil Flask",

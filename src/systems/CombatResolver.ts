@@ -307,16 +307,45 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // Pending towers (Gem TD pre-keep) don't fight.
   const towers = Array.from(state.towers.values()).filter(t => !t.pending).sort((a, b) => a.placedAtWave - b.placedAtWave);
 
-  // 2026-05-22 V23 — TRUESIGHT LENS (item). One copy equipped anywhere
-  // on the map enables every tower to see + acquire stealth/ambush
-  // enemies (Carthage Spearman, Undead Berserker, Ghost Rider, Shadow
-  // Cavalry, plus the VEIL_OF_THE_PROSCRIPTI wave modifier). Computed
-  // once per frame and consulted at all three `__veiled` filter sites
-  // below (pickTarget normal acquisition + anti-air filter + cone-tower
-  // cone sweep). Cached on state for any code that reads it after the
-  // combat tick.
-  const truesightActive = towers.some(t => t.equippedItems.includes('TRUESIGHT_LENS'));
-  (state as any).__truesightActive = truesightActive;
+  // ─── TRUESIGHT REVEAL (2026-05-22 V23, reworked 2026-05-23) ───────────
+  // TRUESIGHT_LENS (item) used to be a global "everyone sees every stealth
+  // enemy" toggle as long as one copy existed on the map. Per user
+  // direction: "If a tower has the ability to see stealth enemies due to
+  // the item that allows them to see stealth enemies, once they are seen,
+  // they are now able to be seen by all towers for the rest of the wave."
+  //
+  // New model:
+  //   1. Each frame, every truesight tower scans its own range. Any enemy
+  //      inside (regardless of veil state) gets tagged `__truesightRevealed
+  //      = true`. The tag persists for the rest of the wave — the
+  //      EnemySystem spawn path doesn't reset it, and the per-frame stealth
+  //      update only flips `__veiled`, not the reveal tag.
+  //   2. The targeting filter checks `e.__truesightRevealed` (per-enemy)
+  //      instead of `__truesightActive` (global), so non-truesight towers
+  //      gain the ability to acquire ONLY the enemies that have crossed
+  //      the truesight tower's threshold.
+  //   3. Enemies that enter range one by one get revealed in order.
+  //
+  // Implication: a single truesight tower no longer auto-reveals every
+  // stealth enemy on the map. You need actual range coverage. The pay-off
+  // is that everyone behind the truesight tower benefits too.
+  const truesightTowers = towers.filter(tw => tw.equippedItems.includes('TRUESIGHT_LENS'));
+  (state as any).__truesightActive = truesightTowers.length > 0;     // legacy flag kept for rendering hooks
+  if (truesightTowers.length > 0) {
+    const allEnemies = Array.from(state.enemies.values());
+    for (const tw of truesightTowers) {
+      const stats = towerEffectiveStats(tw);
+      const tx = tw.tileX * GRID.TILE + GRID.TILE / 2;
+      const ty = tw.tileY * GRID.TILE + GRID.TILE / 2;
+      const rPx = stats.range * GRID.TILE;
+      for (const e of allEnemies) {
+        if ((e as any).__truesightRevealed) continue;     // already tagged, skip distance test
+        if (Math.hypot(e.x - tx, e.y - ty) <= rPx) {
+          (e as any).__truesightRevealed = true;
+        }
+      }
+    }
+  }
 
   // SUPPORT AURA scan (Vision §9 / build expression §12).
   // Eagle Standard:    global +18% damage, +10% atk speed within 4 tiles
@@ -1497,7 +1526,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           if (candidate.hp <= 0) continue;
           // 2026-05-22 V23 — Truesight Lens lets the cone sweep land on
           // veiled targets too. Without the item, veil blocks acquisition.
-          if ((candidate as any).__veiled && !(state as any).__truesightActive) continue;
+          if ((candidate as any).__veiled && !(candidate as any).__truesightRevealed) continue;
           const cdx = candidate.x - tcx;
           const cdy = candidate.y - tcy;
           const cdist = Math.hypot(cdx, cdy);
@@ -1574,15 +1603,18 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   const antiAirOnly = ANTI_AIR_ONLY_TYPES.has(t.type);
   let inRange = enemies.filter(e => {
     if (Math.hypot(e.x - tx, e.y - ty) > rangePx) return false;
-    // 2026-05-22 V23 — Truesight Lens bypasses the veil filter on
-    // anti-air specialist towers AND on the general acquisition path.
-    const truesight = !!(state as any).__truesightActive;
-    if (antiAirOnly) return e.isFlyer && (truesight || !(e as any).__veiled);
+    // 2026-05-22 V23 (reworked 2026-05-23) — Truesight Lens reveals
+    // enemies on a per-enemy basis. An enemy gets `__truesightRevealed`
+    // when it walks into range of any truesight tower (see the tickCombat
+    // reveal scan). Once tagged, every tower — not just the truesight
+    // one — can acquire it through the veil.
+    const revealed = !!(e as any).__truesightRevealed;
+    if (antiAirOnly) return e.isFlyer && (revealed || !(e as any).__veiled);
     if (!canHitFlyers && e.isFlyer) return false;
     // 2026-05-19 v3 — Only PHYS_MELEE damage is blocked by meleeImmune.
     // Divine / fire / siege melee towers still acquire these targets.
     if (isMelee && meleeImmuneBlocksTower(e.type, t.damageType)) return false;
-    if ((e as any).__veiled && !truesight) return false;       // VEIL modifier: untargetable
+    if ((e as any).__veiled && !revealed) return false;       // VEIL modifier: untargetable
     // SHIELDED units: ranged towers cannot target until a melee tower has
     // broken the shield. Melee towers can always hit and will set the flag.
     if (!isMelee && requiresMeleeBreak(e.type) && !e.shieldBroken) return false;
