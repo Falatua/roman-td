@@ -2,7 +2,7 @@
   "FERAL_DOG": {
     "name": "Feral Dog",
     "faction": "DOGS",
-    "baseHp": 70,
+    "baseHp": 140,
     "speed": 2.4,
     "isFlyer": false,
     "isBoss": false,
