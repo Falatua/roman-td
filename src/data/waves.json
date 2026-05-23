@@ -250,7 +250,7 @@
     "spawns": [
       {
         "type": "UNDEAD_WARLORD",
-        "count": 2
+        "count": 5
       },
       {
         "type": "UNDEAD_CELT",
