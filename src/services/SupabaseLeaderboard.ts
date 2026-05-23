@@ -327,6 +327,26 @@ export async function submitScore(
       } catch { /* ignore */ }
       lastErrorDetail = `HTTP ${r.status}${lastServerBody ? ` · ${lastServerBody.slice(0, 200)}` : ''}`;
       console.error(`[leaderboard] INSERT attempt ${attempt}/${MAX_ATTEMPTS} → HTTP ${r.status}`, lastServerBody);
+      // 2026-05-22 — IDEMPOTENT DEDUPE. When the caller supplies an `id`
+      // (UUID) on the row, a duplicate insert returns HTTP 409 (PK
+      // conflict) — that's the signal that an earlier attempt already
+      // committed the row server-side and we're seeing a retry collide
+      // with itself. Treat as success: the row IS in the table under
+      // the requested id, the player's score IS recorded, the only
+      // thing we "lost" was the response from the original attempt.
+      //   ALSO: PostgREST surfaces the same condition as 400 with code
+      // PGRST109 ("duplicate key value violates unique constraint") on
+      // some setups. Match both so the fix is robust across PostgREST
+      // versions / project configs.
+      if (r.status === 409 || (r.status === 400 && /duplicate key|unique constraint|PGRST109/i.test(lastServerBody))) {
+        console.warn(`[leaderboard] INSERT attempt ${attempt}/${MAX_ATTEMPTS} → ${r.status} duplicate-key — treating as success (row already in table).`);
+        return {
+          ok: true, attempts: attempt, url, endpoint: kind, status: r.status,
+          errorReason: droppedColumns.length > 0
+            ? `Saved — but the live Supabase 'scores' table is missing column(s) ${droppedColumns.join(', ')}, so hero info wasn't recorded. Run the ALTER TABLE in supabase/schema.sql to enable full hero tracking.`
+            : 'Row already recorded — duplicate-submit detected and absorbed by the server.'
+        };
+      }
       // PGRST204 = "Could not find the 'X' column of 'Y' in the schema cache."
       // Parse the message, strip the missing column from payload, retry
       // immediately (without burning the retry-backoff budget).
@@ -381,12 +401,23 @@ export async function submitScore(
 // through to the row. Pass `null` (or omit) for runs that pre-date
 // the hero system so the DB column stays null and the Hall of Glory
 // renders no hero suffix for legacy entries.
+//
+// 2026-05-22 — Optional `id` (UUID) param. When supplied, the row is
+// inserted with that primary key instead of letting the DB generate
+// one via `default gen_random_uuid()`. This is the linchpin of the
+// duplicate-submit fix: every retry attempt (and the user's RETRY
+// button) targets the same UUID, so a duplicate row is rejected by
+// the PK uniqueness constraint and submitScore treats the 409 as
+// success. The caller (Leaderboard.ts finalize) generates this UUID
+// once per entry and stashes it on the entry object so subsequent
+// re-submits reuse it.
 export function toRemoteRow(
   entry: { name: string; score: number; wave: number; won: boolean; questsCompleted: number; towersCombined: number; date: string },
   mode: LeaderboardMode = 'campaign',
-  heroId: string | null = null
-): Omit<RemoteScoreRow, 'id' | 'created_at'> {
-  return {
+  heroId: string | null = null,
+  id?: string | null
+): Omit<RemoteScoreRow, 'created_at'> {
+  const row: Omit<RemoteScoreRow, 'created_at'> = {
     name: entry.name,
     score: Math.max(0, Math.min(9999999, Math.round(entry.score))),
     wave: Math.max(0, Math.min(9999, entry.wave)),
@@ -397,6 +428,60 @@ export function toRemoteRow(
     mode,
     hero_id: heroId
   };
+  if (id) row.id = id;
+  return row;
+}
+
+// 2026-05-22 — Browser UUID v4 generator. Used by callers that want
+// to pre-compute a stable row id so retries are idempotent. Prefers
+// crypto.randomUUID() (every modern browser); falls back to a
+// Math.random-based generator on ancient browsers that lack it. The
+// fallback is NOT cryptographically secure but UUID v4 for a
+// leaderboard row doesn't need to be — uniqueness is enough.
+export function generateRowId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function') {
+      return (crypto as any).randomUUID();
+    }
+  } catch { /* fall through */ }
+  // RFC4122 v4 fallback.
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+// 2026-05-22 — localStorage flag tracking which entries have already
+// been submitted to Supabase. Belt-and-suspenders against the
+// duplicate-submit problem: even if the user reloads + the retry
+// button somehow fires again, this flag prevents a second POST.
+// Signature combines name+score+wave+ts so two legitimately-different
+// runs by the same player never collide. Auto-expires after 7 days
+// to keep localStorage from growing unbounded.
+const SUBMITTED_PREFIX = 'roman_td_lb_submitted_v1_';
+const SUBMITTED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export function submissionSignature(entry: { name: string; score: number; wave: number; ts: number }, mode: LeaderboardMode): string {
+  return `${mode}|${entry.name}|${entry.score}|${entry.wave}|${entry.ts}`;
+}
+export function hasBeenSubmitted(sig: string): boolean {
+  try {
+    const raw = localStorage.getItem(SUBMITTED_PREFIX + sig);
+    if (!raw) return false;
+    const ts = Number(raw);
+    if (!Number.isFinite(ts)) return false;
+    if (Date.now() - ts > SUBMITTED_TTL_MS) {
+      // Stale entry — clean it up.
+      try { localStorage.removeItem(SUBMITTED_PREFIX + sig); } catch { /* ignore */ }
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+export function markSubmitted(sig: string): void {
+  try { localStorage.setItem(SUBMITTED_PREFIX + sig, String(Date.now())); } catch { /* private mode — skip */ }
 }
 
 // ─── INTERNAL ───────────────────────────────────────────────────────
