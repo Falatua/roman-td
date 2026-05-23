@@ -86,23 +86,33 @@ function rand<T>(arr: T[]): T {
 // the speed and resist scalars stays low enough that even outrageous
 // HP still leaves SOME counterplay window for the player's tower DPS.
 //
-// 2026-05-22 — Endless overhaul per user request: "way more difficult,
-// triple the health, crazy resistances, crazy RNG, crazy regen."
-// Linear base bumped 1.50 → 2.50, slope 0.45 → 0.65, compound
-// threshold lowered E5 → E3 with a steeper 1.25 base. The
-// `__dotImmune` flag (set in EnemySystem.spawnEnemy) handles the
-// "immune to dots" demand orthogonally. Late-Endless this snowballs:
-//   E1: 3.15× (was 1.95×)
-//   E3: 4.45×            (was 2.85×)
-//   E5: 5.75× × 1.25 = 7.19× (was 3.75× × 1.18 = 4.43×)
-//   E10: 9.00× × 1.25^7 = 41.96× (was 5.00× × 1.18^6 = 13.5×)
-// Combined with the EnemySystem 2.0× multiplier baked in, a basic at
-// E10 sits at ~84× authored HP — survivable for a god-tier build, an
-// instant wipe for anything less.
+// 2026-05-23 — Endless HP overhaul (round 2) per user request:
+// "make sure in Endless mode the enemies start at 900,000 health and
+// scale in a linear fashion aggressively."
+//
+// New formula: pure linear, 500 × idx. No compound term. Steep slope.
+// Math check for a typical Endless enemy (Carthage Spearman, baseHp
+// 451) at E1:
+//   451 × 500 (this mult) × 1.70 (basicHpBuff) × 1.15 (heroComp)
+//       × 2.0 (ENDLESS_HP_BONUS in EnemySystem) = ~881,000 ≈ 900K ✓
+//
+// Linear progression:
+//   E1: 500×  → ~900K basic, ~8.6M boss (Hannibal-sized)
+//   E2: 1000× → ~1.8M basic
+//   E5: 2500× → ~4.4M basic
+//   E10: 5000× → ~8.8M basic
+//
+// vs the old compound formula (E1=3.15×, E10=41.96×), this is ~159×
+// steeper at E1 and ~119× steeper at E10. Endless is now a true
+// "wall" mode that demands god-tier builds from move 1, not a
+// gentle ramp from W20.
+//
+// History (kept for reference):
+//   2026-05-22 — first overhaul: linear base 2.5, slope 0.65,
+//                compound 1.25 above E3. Felt too slow at E1.
+//   pre-V19 — linear 1.5, slope 0.45, compound 1.18 above E5.
 function endlessHpMult(idx: number): number {
-  const linear = 2.5 + 0.65 * idx;
-  const compound = idx >= 3 ? Math.pow(1.25, idx - 2) : 1;
-  return linear * compound;
+  return 500 * idx;
 }
 
 function endlessSpeedMult(idx: number): number {
