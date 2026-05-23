@@ -4209,8 +4209,18 @@ async function boot() {
         // One-Winged Angel on loop for the duration of the wave.
         // Stops on wave end OR game over (handled in checkWaveEnd
         // callback + GAME_OVER hook below).
+        //
+        // 2026-05-22 — Unified with the 'boss-fate' id used by
+        // BossWarning.ts (I ACCEPT MY FATE button). Previously this
+        // started the SAME mp3 under a different track id, so on W20
+        // the file was playing twice in parallel — slightly out of
+        // phase, which is the audio duplication a player reported.
+        // Using replace:false means: if BossWarning already started
+        // the track (normal flow), this call is a no-op. If somehow
+        // the wave started without the modal (sandbox jump etc.),
+        // this still serves as a fallback music kick.
         if (state.wave === 20 && justStarted?.type === 'B') {
-          playMusicTrack('boss20', sfx('assets/sfx/ff7_one_winged_angel.mp3'), { loop: true, gain: 0.7 });
+          playMusicTrack('boss-fate', sfx('assets/sfx/ff7_one_winged_angel.mp3'), { loop: true, gain: 0.7, replace: false });
         }
         // BOSS VIGNETTE (2026-05 v6 polish): fade in the subtle red-shifted
         // corner darken on boss waves; the per-frame tween in
@@ -6621,17 +6631,18 @@ async function boot() {
         // and runs SFX.victory() — both can play, the layering is intentional.
         SFX.waveSurvived();
         // 2026-05 v10 — stop any boss music + low-HP cue that was
-        // playing during this wave. One-Winged Angel for W20, plus the
-        // generic 'bossLowHp' track if it spun up.
-        // 2026-05-22 — Also stop 'boss-fate' (the One-Winged Angel
-        // triggered by clicking "I ACCEPT MY FATE" on the boss-warning
-        // modal). Was previously looping past wave-clear because the
-        // BossWarning hook started it under a different track id than
-        // the W20 auto-start above. User-reported: boss music played
-        // through the post-wave shop phase.
-        stopMusicTrack('boss20');
-        stopMusicTrack('bossLowHp');
+        // playing during this wave. One-Winged Angel under id
+        // 'boss-fate' (started by BossWarning's I ACCEPT MY FATE
+        // confirm, and re-used as the W20 wave-start track since
+        // 2026-05-22), plus the generic 'bossLowHp' track if it
+        // spun up.
         stopMusicTrack('boss-fate');
+        stopMusicTrack('bossLowHp');
+        // 2026-05-22 — Legacy 'boss20' id is retired (unified with
+        // 'boss-fate' above), but keep a defensive stop for any
+        // still-running track from an older build still buffered in
+        // the player's cache.
+        stopMusicTrack('boss20');
         // 2026-05 v10: stamp wave-clear duration for the speed bonus that
         // feeds into the final-score formula. 2026-05-15 fix: state.tick is
         // already in seconds (advances by dt), so the old `/60` divisor
