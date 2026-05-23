@@ -1041,7 +1041,7 @@
     "damageType": "SIEGE",
     "baseDps": 136,
     "attackSpeed": 1.0,
-    "range": 4.5,
+    "range": 8.0,
     "kind": "BASE",
     "melee": false,
     "spriteSheet": 1,
