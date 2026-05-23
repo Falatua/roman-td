@@ -1094,7 +1094,7 @@
     "melee": true,
     "spriteSheet": 3,
     "spriteCell": 5,
-    "ability": "Dictator of Rome. Global +8% damage and +8% attack speed for every tower, plus battlefield-control abilities SPQR Decree and Pax Romana. Heroic crit profile (50% × 2.0).",
+    "ability": "Dictator of Rome. Global +10% damage and +10% attack speed for every tower, plus battlefield-control abilities SPQR Decree and Pax Romana. Heroic crit profile (50% × 2.0).",
     "critChance": 0.5,
     "critMult": 2.0,
     "isHero": true,

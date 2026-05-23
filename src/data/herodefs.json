@@ -241,9 +241,9 @@
     "biography": "Caesar did not wait for opportunity — he manufactured it. Under his command, Rome's defenders act faster, hit harder, and leave nothing alive that's already dying.",
     "passive": {
       "kind": "GLOBAL_AURA",
-      "dmgBonusPercent": 8,
-      "speedMultPercent": 8,
-      "description": "Every tower on the map permanently gains +8% damage and +8% attack speed. Stacks with all other aura towers."
+      "dmgBonusPercent": 10,
+      "speedMultPercent": 10,
+      "description": "Every tower on the map permanently gains +10% damage and +10% attack speed. Stacks with all other aura towers."
     },
     "abilities": [
       {

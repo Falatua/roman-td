@@ -339,17 +339,19 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // L10 caps at +27%. L1 only gives the probability shift, no damage.
   let globalDmgBonus = 0.03 * Math.max(0, (state.poolLevel ?? 0) - 1);
   let globalSpeedMult = 1;
-  // ── HERO PASSIVE AURAS (2026-05-19, balance-tuned 2026-05-22 V19) ──
-  // Caesar: +8% damage and +8% attack speed for every tower while he's
-  // active (tuned 10→8 in V19 — the cohort balance audit had Caesar at
-  // 2.4× median DPS, this trim drops his global multiplier from 1.21×
-  // → 1.166× without erasing his role identity).
+  // ── HERO PASSIVE AURAS (2026-05-19, balance-tuned 2026-05-22 V19,
+  // restored to +10% 2026-05-22 to match the hero card art) ──
+  // Caesar: +10% damage and +10% attack speed for every tower while
+  // he's active. (Earlier V19 trim took this 10→8 over a DPS audit,
+  // but the baked-in card art reads "+10% dmg and +10% atk speed" so
+  // the description card mismatched what the engine applied. Restored
+  // to 10 to keep the card / passive description / engine math aligned.)
   // Scipio: +25% damage vs Bosses globally — applied later in the
   // damage resolution loop where target.isBoss is known. (Was +30% in
   // earlier builds, tuned to +25% in commit ~f959055.)
   if (state.activeHeroId === 'HERO_CAESAR') {
-    globalDmgBonus += 0.08;
-    globalSpeedMult *= 1.08;
+    globalDmgBonus += 0.10;
+    globalSpeedMult *= 1.10;
   }
   const scipioActive = state.activeHeroId === 'HERO_SCIPIO';
   // Resolve hero tower position ONCE for per-tower local-aura checks
