@@ -1186,6 +1186,20 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         damage = 0;
         (target as any).__weatherMissTick = state.tick;
       }
+      // W8 RANGED-BLOCK (2026-05-23): every enemy spawned on W8 carries
+      // a 20% per-hit chance to block any PHYS_RANGED + SIEGE strike.
+      // The flag is stamped at spawn time in EnemySystem.spawnEnemy. The
+      // chance is independent of per-enemy `dodgeChance` and the
+      // `shieldBlockChance` rolls below, so a Numidian Rider on W8
+      // effectively whiffs ~32% of incoming ranged.
+      const w8Block: number = (target as any).__w8RangedBlock ?? 0;
+      const w8Blocked = !missed && !dodged && w8Block > 0 &&
+                        (t.damageType === DamageType.PHYS_RANGED || t.damageType === DamageType.SIEGE) &&
+                        Math.random() < w8Block;
+      if (w8Blocked) {
+        damage = 0;
+        (target as any).__weatherMissTick = state.tick;
+      }
       // SHIELD BLOCK (2026-05): shielded enemies (Carthage Elite Guard,
       // Undead Spearman) have a per-hit chance to deflect ranged / siege
       // attacks WHILE their shield is unbroken. Once a melee tower cracks
@@ -1194,7 +1208,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // with melee, then volley". Different from dodge: shield block is
       // conditional on the shield, dodge is a permanent trait.
       const shieldBlockChance: number = (enemiesData as any)[target.type]?.shieldBlockChance ?? 0;
-      const shieldBlocked = !missed && !dodged && shieldBlockChance > 0 && !target.shieldBroken &&
+      const shieldBlocked = !missed && !dodged && !w8Blocked && shieldBlockChance > 0 && !target.shieldBroken &&
                             (t.damageType === DamageType.PHYS_RANGED || t.damageType === DamageType.SIEGE) &&
                             Math.random() < shieldBlockChance;
       if (shieldBlocked) {

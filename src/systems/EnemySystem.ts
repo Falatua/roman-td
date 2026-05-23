@@ -208,6 +208,16 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
       e.currentSpeed = e.baseSpeed;
     }
   }
+  // 2026-05-23 — W8 RANGED-BLOCK STAMP. Per user request: "Give enemies
+  // on wave eight a 20% chance to block all ranged attacks." Every enemy
+  // spawned during W8 (including derived/reanimated children) carries a
+  // 20% per-hit block roll against PHYS_RANGED + SIEGE damage. Stacks
+  // multiplicatively with the existing per-enemy `dodgeChance` and
+  // `shieldBlockChance` paths in CombatResolver. Numidian Rider with
+  // 0.15 dodge + 0.20 W8 block → ~32% effective ranged whiff rate.
+  if ((state.wave ?? 1) === 8) {
+    (e as any).__w8RangedBlock = 0.20;
+  }
   // 2026-05-22 — ENDLESS MODE BUFFS. Per user request: triple HP,
   // crazy resistances, crazy regen, full DoT immunity.
   //

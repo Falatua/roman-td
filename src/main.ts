@@ -5650,7 +5650,18 @@ async function boot() {
     // Moving the check out here means the modal opens within ~16ms of
     // the last enemy dying (or leaking), exactly when the player
     // expects the "you survived the invasion" payoff.
-    if (state.pendingSurpriseReward && !(state as any).__surpriseRewardModalShown) {
+    //
+    // 2026-05-23 — DEFERRED TO WAVE END. Per user request: "For the
+    // invasion, the uprising, and the hell gates, do not give players
+    // their reward until after the wave is done." So the modal now waits
+    // until the wave has fully ended (state.phase !== WAVE_PHASE). The
+    // event still resolves mid-wave (sets pendingSurpriseReward in
+    // notifySurpriseEnemyResolved), but the reward modal — and its
+    // survival gold bonus — is held until the wave wraps. Stacked events
+    // still queue normally via queuedSurpriseRewards and all fire
+    // back-to-back during the post-wave BUILD_PHASE.
+    if (state.pendingSurpriseReward && !(state as any).__surpriseRewardModalShown
+        && state.phase !== GamePhase.WAVE_PHASE) {
       (state as any).__surpriseRewardModalShown = true;
       const kind = state.pendingSurpriseReward.kind;
       state.pendingSurpriseReward = null;
