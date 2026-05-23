@@ -8,10 +8,10 @@
     "biography": "Marius rebuilt Rome's army from scratch, opening the legions to every citizen regardless of birth. On this field, his presence makes every melee tower fight like a veteran.",
     "passive": {
       "kind": "LOCAL_AURA",
-      "radiusTiles": 3,
+      "radiusTiles": 5,
       "filter": "PHYS_MELEE",
       "dmgBonusPercent": 30,
-      "description": "Every MELEE tower within 3 tiles gains +30% damage permanently."
+      "description": "Every MELEE tower within 5 tiles gains +30% damage permanently."
     },
     "abilities": [
       {
@@ -63,11 +63,11 @@
     "biography": "Agrippa's naval genius delivered Rome the Mediterranean. Under his command, siege towers reach farther, hit harder, and rain mortar shells that scatter the enemy line.",
     "passive": {
       "kind": "LOCAL_AURA",
-      "radiusTiles": 3,
+      "radiusTiles": 5,
       "filter": "SIEGE",
       "dmgBonusPercent": 30,
       "rangeBonusTiles": 1.0,
-      "description": "Every SIEGE tower within 3 tiles gains +30% damage and +1.0 tile of range permanently."
+      "description": "Every SIEGE tower within 5 tiles gains +30% damage and +1.0 tile of range permanently."
     },
     "abilities": [
       {

@@ -340,7 +340,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     (t.equippedItems.includes('BRONZE_GREAVES') ? 0.5 : 0) +
     (t.equippedItems.includes('CONSULAR_TOKEN') ? 0.5 : 0) +
     // 2026-05-22 — Agrippa hero passive: +1.0 tile range to every
-    // SIEGE tower within 3 tiles of Agrippa's tile. Read off the
+    // SIEGE tower within 5 tiles of Agrippa's tile. Read off the
     // global state ref (set by main.ts in renderer mode); test env
     // has no global state, so the guard returns 0 and the test suite's
     // tower stat math stays unaffected by the hero feature.
@@ -352,6 +352,9 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // 3 days. Bonus now correctly targets SIEGE towers, and the
     // magnitude is +1.0 tile (was +0.5) to match the felt-undertuned
     // user feedback that prompted the hero buff pass.
+    // 2026-05-22 (later) — Aura radius bumped 3 → 5 tiles to match the
+    // damage-aura radius change in CombatResolver.ts. A single Agrippa
+    // can now buff a whole siege lane instead of just neighbors.
     ((() => {
       const g: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
       const gs: any = g?.__game;
@@ -361,7 +364,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
       if (!hero) return 0;
       const dx = (hero.tileX - t.tileX);
       const dy = (hero.tileY - t.tileY);
-      return Math.hypot(dx, dy) <= 3 ? 1.0 : 0;
+      return Math.hypot(dx, dy) <= 5 ? 1.0 : 0;
     })()) +
     // SPEAR OF MARS — converts a melee tower into a thrown-spear unit by
     // adding five tiles of reach. CombatResolver spawns a visible PROJ_HASTA
