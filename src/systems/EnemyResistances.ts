@@ -29,11 +29,13 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.RABID_DOG]: { slow: 0.25, poison: 0.7, bleed: 0.7 },
   [EnemyType.ALPHA_DOG]: { melee: 0.6, slow: 0.35, bleed: 0.5, poison: 0.7 },
 
-  // W4 footman — armored linen kit. Range tightened from 0.7 → 0.55 and
-  // melee added so the wave is a real test of damage diversity, not a
-  // walkover for spammed Sagittarius. HP bumped to 165 in enemies.json
-  // alongside this resist pass.
-  [EnemyType.CELTIC_FOOTMAN]: { melee: 0.85, ranged: 0.55, poison: 0.85, bleed: 0.85 },
+  // W4 footman — armored linen kit. 2026-05-22: resistances softened
+  // (ranged 0.55 → 0.80, melee 0.85 → 0.95, poison/bleed 0.85 → 0.95)
+  // and Celtic Footman out-of-combat regen removed in enemies.json per
+  // user feedback that the wave felt too tanky / unkillable. Still
+  // resists ranged enough that you can't skip melee entirely, but
+  // chip-damage builds aren't punished anymore.
+  [EnemyType.CELTIC_FOOTMAN]: { melee: 0.95, ranged: 0.80, poison: 0.95, bleed: 0.95 },
   [EnemyType.CELTIC_BERSERKER]: { melee: 0.55, slow: 0.4, bleed: 0.35, burn: 0.85 },
   // 2026-05-15 GALLIC_DRUID buff pass: harder for ranged to chip down
   // (ranged resist 0.85 → 0.55, 45% reduction) on top of the new 30%
@@ -42,10 +44,12 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // remaining ranged is mostly chip-resistance vs dodge.
   // 2026-05-17 — melee vulnerability bump (+25%). Druids are robed casters
   // with no real armor; pure melee burst should punch through their shield
-  // and finish them noticeably faster. The 0.55 ranged resist + 30% dodge
-  // chance still make ranged spam ineffective — the answer is to bring a
-  // melee bruiser into the front line.
-  [EnemyType.GALLIC_DRUID]: { melee: 1.25, poison: 0.3, burn: 0.6, slow: 0.5, ranged: 0.55 },
+  // and finish them noticeably faster.
+  // 2026-05-22 — Wave 4 felt too tanky. Ranged resist softened
+  // 0.55 → 0.75 so ranged-leaning openers can chip druids down after
+  // the melee shield-break without feeling stonewalled. 30% ranged
+  // dodge stays — that's the dodge identity, not the resist identity.
+  [EnemyType.GALLIC_DRUID]: { melee: 1.25, poison: 0.3, burn: 0.6, slow: 0.5, ranged: 0.75 },
   // W6 — Celtic Scout: woad-painted runner, dodges divine smites and
   // weaves through siege bombardment. Takes full fire (no insulation).
   [EnemyType.CELTIC_SCOUT]: { ranged: 0.65, slow: 0.3, bleed: 0.7, siege: 0.7, divine: 0.65 },

@@ -46,7 +46,6 @@
     "livesCost": 1,
     "spriteSheet": 4,
     "spriteCell": 3,
-    "outOfCombatRegen": 0.028,
     "reanimateAs": "REANIMATED_ZOMBIE"
   },
   "CELTIC_BERSERKER": {
