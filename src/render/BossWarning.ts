@@ -17,6 +17,13 @@
 // Sprites: uses existing boss enemy sprites for the menacing portrait.
 
 import { tex } from './Assets';
+// 2026-05-22 — Audio kick on the I ACCEPT MY FATE button: fire a
+// short "FINISH HIM" Mortal-Kombat-style punch + start FF7's
+// One-Winged Angel as the dramatic music bed. Same track used on
+// W20 boss arrival; the click-to-start path here owns the lifecycle
+// so any boss wave (W5 / W10 / W15 / W20) gets the iconic Sephiroth
+// swell on confirmation, not just the final boss.
+import { SFX, playMusicTrack, sfx } from './AudioManager';
 
 function spriteSrcFor(key: string): string | null {
   const t = tex(key);
@@ -429,6 +436,23 @@ export function showBossWarning(parent: HTMLElement, wave: number, onConfirm: ()
         cancelLabel: 'ACTUALLY... NO',
         isFinal: true,
         onConfirm: () => {
+          // 2026-05-22 — Audio kick on I ACCEPT MY FATE.
+          //   1) FINISH HIM punch — Mortal-Kombat-style sting that
+          //      lands hard the instant the player commits.
+          //   2) FF7 One-Winged Angel music bed — looped, starts
+          //      with the flash, carries through the buildup and
+          //      into the wave so the boss arrives mid-Sephiroth.
+          //      Tagged 'boss-fate' so the existing W20 wave-start
+          //      hook (which also plays this track under id 'boss20')
+          //      doesn't conflict — both id slots can coexist.
+          try { SFX.finishHim(); } catch { /* ignore */ }
+          try {
+            playMusicTrack(
+              'boss-fate',
+              sfx('assets/sfx/ff7_one_winged_angel.mp3'),
+              { loop: true, gain: 0.65 }
+            );
+          } catch { /* ignore */ }
           // Dramatic flash + shake on the second confirmation.
           const flash = document.createElement('div');
           flash.className = 'bw-flash';
