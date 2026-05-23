@@ -1530,6 +1530,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.meleeImmune) traits.push('MELEE-IMMUNE — physical melee deals 0 damage');
   if (def.requiresMeleeBreak) traits.push('SHIELD — ranged & siege ignored until a melee tower cracks the shield');
   if (def.shieldBlockChance) traits.push(`SHIELD BLOCK — ${Math.round(def.shieldBlockChance*100)}% chance to fully block ranged/siege hits (until shield breaks)`);
+  if (def.allAttackBlockChance) traits.push(`ALL-ATTACK BLOCK — ${Math.round(def.allAttackBlockChance*100)}% chance per hit to deflect ANY incoming damage (melee, ranged, siege, fire, divine). Never expires, independent of shield state.`);
   if (def.phaseHits) traits.push(`PHASE — ignores the first ${def.phaseHits} hit${def.phaseHits === 1 ? '' : 's'} (MISS floater appears)`);
   if (def.dodgeChance) traits.push(`DODGE — ${Math.round(def.dodgeChance*100)}% chance to evade ranged & siege attacks (melee always lands)`);
   // Status immunities

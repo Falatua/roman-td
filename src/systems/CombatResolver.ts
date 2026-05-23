@@ -1215,6 +1215,21 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         damage = 0;
         (target as any).__weatherMissTick = state.tick;
       }
+      // ALL-ATTACK BLOCK (2026-05-23): some elite enemies (UNDEAD_SPEARMAN,
+      // IRON_PHALANX) carry a per-hit chance to deflect ANY incoming
+      // attack — ranged, melee, siege, fire, divine. Unlike
+      // shieldBlockChance which only catches PHYS_RANGED + SIEGE while
+      // the shield is intact, this fires across every damage type and
+      // never expires. Stacks multiplicatively with the dodge / W8
+      // block / shield-block rolls above. Per user: "Undead Spearmen and
+      // Iron Flanks have a 20% chance to block all attacks."
+      const allBlockChance: number = (enemiesData as any)[target.type]?.allAttackBlockChance ?? 0;
+      const allBlocked = !missed && !dodged && !w8Blocked && !shieldBlocked && allBlockChance > 0 &&
+                         Math.random() < allBlockChance;
+      if (allBlocked) {
+        damage = 0;
+        (target as any).__weatherMissTick = state.tick;
+      }
       t.attackFlash = 0.18;     // game-feel flash on every attack
       // Compute "in melee/range" enemies once for cleave + multi-shot lookups.
       const tcx = tilePxX(t);

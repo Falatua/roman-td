@@ -263,6 +263,7 @@
     "immunePoison": true,
     "requiresMeleeBreak": true,
     "shieldBlockChance": 0.35,
+    "allAttackBlockChance": 0.20,
     "phaseHits": 1,
     "checkpointHealPct": 0.15
   },
@@ -404,6 +405,7 @@
     "spriteCell": 1,
     "meleeImmune": true,
     "phaseHits": 2,
+    "allAttackBlockChance": 0.20,
     "outOfCombatRegen": 0.042
   },
   "HELL_GATE": {
