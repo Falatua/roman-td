@@ -1325,23 +1325,23 @@ export class RenderEngine {
       switch (fx.ability) {
         // ── MARIUS ───────────────────────────────────────────────────
         case 'MARIAN_FORMATION': {
-          // Three purple ring-bursts + connecting lightning lines from
-          // Marius to each buffed melee tower. Targets is an array of
-          // {x,y} for the buffed towers (passed in from the executor).
+          // Purple ring-burst at Marius + small ring on each buffed melee
+          // tower. The previous look ALSO drew connecting lightning lines
+          // from Marius to each target, but the user reported the lines
+          // were visually noisy ("get rid of them"), so we now lean on the
+          // ring-pulse at each buffed tower alone to communicate the buff.
+          // Targets is an array of {x,y} for the buffed towers (passed in
+          // from the executor).
           const tgts: Array<{ x: number; y: number }> = fx.extras?.targets ?? [];
           const r0 = 36 + t * 36;
           g.lineStyle(3 * fade, fx.color, 0.85 * fade);
           g.drawCircle(fx.x, fx.y, r0);
           g.lineStyle(0);
           for (const tg of tgts) {
-            // Pulsing line between Marius and each target
-            const pulse = 0.7 + 0.3 * Math.sin(age * 18);
-            g.lineStyle(2 + 2 * fade, fx.color, 0.7 * fade * pulse);
-            g.moveTo(fx.x, fx.y).lineTo(tg.x, tg.y);
-            g.lineStyle(0);
-            // Small ring at each target
+            // Small ring at each target — louder ring pulse since we no
+            // longer have the connecting line carrying half the signal.
             const rt = 18 + t * 14;
-            g.lineStyle(2 * fade, fx.color, 0.85 * fade);
+            g.lineStyle(2.5 * fade, fx.color, 0.95 * fade);
             g.drawCircle(tg.x, tg.y, rt);
             g.lineStyle(0);
           }
