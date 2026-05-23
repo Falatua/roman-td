@@ -260,7 +260,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   }
   // 2026-05 v10 — WAR ELEPHANT RANGED-PROTECT AURA (also hardcoded).
   if (e.type === 'WAR_ELEPHANT' || e.type === 'UNDEAD_WAR_ELEPHANT') {
-    traits.push({ label: 'DUST-SHIELD AURA — projects a 2-tile dust dome that makes every NEARBY GROUND enemy untargetable by ranged towers until the elephant dies. The elephant itself is still targetable (you have to be able to kill it). Melee towers ignore the dust and hit allies inside. Visual: dust-brown rotating dome around the elephant + small gold sparkle over each protected ally.', color: '#a078d0' });
+    traits.push({ label: 'DUST-SHIELD AURA — projects a 4-tile dust dome that makes every NEARBY GROUND enemy untargetable by ranged towers until the elephant dies. The elephant itself is still targetable (you have to be able to kill it). Melee towers ignore the dust and hit allies inside. Visual: dust-brown rotating dome around the elephant + small gold sparkle over each protected ally.', color: '#a078d0' });
   }
   // 2026-05 v10 — DEMON DIVINE VULNERABILITY. Final divine takes is ~3.0×
   // (1.50 per-enemy × 2.0 faction). Flag it explicitly so players know

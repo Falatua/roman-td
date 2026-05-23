@@ -1052,7 +1052,7 @@ async function boot() {
     // siege weakness so the player has a clear answer (siege + melee).
     // The gold sparkle that pops over each protected ally is the same
     // visual cue surfaced here so players can read the field at a glance.
-    if (enemiesInWave.has('WAR_ELEPHANT') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) enemyCallouts.push({ text: '🐘 ELEPHANT DUST SHIELD · the 2-tile dust dome around every elephant blocks ranged attacks on nearby GROUND allies until the elephant dies. Allies inside the dome are marked with a small <b>gold sparkle</b> overhead — those are the ones currently shielded. Ranged towers will silently skip them; melee and the elephant itself stay targetable. Counter: SIEGE (elephants take +45%) or melee inside the dome.', cat: 'ENEMY' });
+    if (enemiesInWave.has('WAR_ELEPHANT') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) enemyCallouts.push({ text: '🐘 ELEPHANT DUST SHIELD · the 4-tile dust dome around every elephant blocks ranged attacks on nearby GROUND allies until the elephant dies. Allies inside the dome are marked with a small <b>gold sparkle</b> overhead — those are the ones currently shielded. Ranged towers will silently skip them; melee and the elephant itself stay targetable. Counter: SIEGE (elephants take +45%) or melee inside the dome.', cat: 'ENEMY' });
     // 2026-05 v10 — GENERALIZED DAMAGE-CLASS EFFECTIVENESS CALLOUTS.
     // Tell the player which damage type EXPLOITS the enemies they're
     // about to fight, scoped to the actual wave roster. The existing
@@ -1708,7 +1708,7 @@ async function boot() {
     // what they're seeing on the field.
     if (hasElephants) tips.push({
       headline: '🐘 ELEPHANTS — DUST SHIELD + SIEGE WEAKNESS',
-      body: `Wave <b>${nextWave}</b> has war elephants. Each one projects a <b style="color:#cdb98a">2-tile dust dome</b> around itself that <b style="color:#ff5050">blocks ranged attacks on every nearby GROUND ally</b> until the elephant dies. Protected allies get a small <b style="color:#ffe066">gold sparkle</b> overhead — that's your visual cue. Counter: <b style="color:#ffd34d">SIEGE</b> towers (Librator, Turris, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine) — elephants take <b style="color:#88ff88">+45% damage</b> from siege. Melee also pierces the dome and hits the allies inside.`,
+      body: `Wave <b>${nextWave}</b> has war elephants. Each one projects a <b style="color:#cdb98a">4-tile dust dome</b> around itself that <b style="color:#ff5050">blocks ranged attacks on every nearby GROUND ally</b> until the elephant dies. Protected allies get a small <b style="color:#ffe066">gold sparkle</b> overhead — that's your visual cue. Counter: <b style="color:#ffd34d">SIEGE</b> towers (Librator, Turris, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine) — elephants take <b style="color:#88ff88">+45% damage</b> from siege. Melee also pierces the dome and hits the allies inside.`,
       color: '#cdb98a'
     });
     // Late-game divine smite tip — fires only when undead celts are

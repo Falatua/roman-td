@@ -497,17 +497,22 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
   const auraStars: Enemy[] = [];
   for (const e of state.enemies.values()) if (e.mutation === 'AURA_STAR') auraStars.push(e);
   // ─── ELEPHANT RANGED-PROTECTION AURA (2026-05 v10) ────────────────────
-  // Living + Undead war elephants project a 2-tile dust shield that
+  // Living + Undead war elephants project a 4-tile dust shield that
   // makes nearby GROUND enemies untargetable by ranged towers until the
   // elephant dies. The elephant itself stays targetable (you have to be
   // able to kill it somehow). Flyers are never sheltered — they fly
   // above the dust.
   //
+  // 2026-05-23 — Radius bumped 2 → 4 tiles per user feedback that the
+  // shield felt too small to protect a real ground-army segment.
+  // Doubled the radius so a single elephant can shelter the whole
+  // marching column behind it instead of just adjacent neighbors.
+  //
   // Clear all stamps at the top of frame, then re-stamp only the
   // protected enemies. Cheap O(elephants × nearby) — typically ≤ 5
   // elephants on screen and the loop bails fast on distance.
   const ELEPHANTS = new Set(['WAR_ELEPHANT','UNDEAD_WAR_ELEPHANT']);
-  const ELEPHANT_AURA_RADIUS = GRID.TILE * 2.0;
+  const ELEPHANT_AURA_RADIUS = GRID.TILE * 4.0;
   for (const e of state.enemies.values()) {
     (e as any).__rangedProtected = false;
   }
