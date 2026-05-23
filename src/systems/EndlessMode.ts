@@ -85,17 +85,30 @@ function rand<T>(arr: T[]): T {
 // boss-tier; by Endless 10 they're nearly unkillable. The exponent on
 // the speed and resist scalars stays low enough that even outrageous
 // HP still leaves SOME counterplay window for the player's tower DPS.
+//
+// 2026-05-22 — Endless overhaul per user request: "way more difficult,
+// triple the health, crazy resistances, crazy RNG, crazy regen."
+// Linear base bumped 1.50 → 2.50, slope 0.45 → 0.65, compound
+// threshold lowered E5 → E3 with a steeper 1.25 base. The
+// `__dotImmune` flag (set in EnemySystem.spawnEnemy) handles the
+// "immune to dots" demand orthogonally. Late-Endless this snowballs:
+//   E1: 3.15× (was 1.95×)
+//   E3: 4.45×            (was 2.85×)
+//   E5: 5.75× × 1.25 = 7.19× (was 3.75× × 1.18 = 4.43×)
+//   E10: 9.00× × 1.25^7 = 41.96× (was 5.00× × 1.18^6 = 13.5×)
+// Combined with the EnemySystem 2.0× multiplier baked in, a basic at
+// E10 sits at ~84× authored HP — survivable for a god-tier build, an
+// instant wipe for anything less.
 function endlessHpMult(idx: number): number {
-  // Linear ramp 1.50 + 0.45×idx, then compounding 1.18^(idx-1) after
-  // E5 to bend the curve into "impossible" territory by E10.
-  const linear = 1.5 + 0.45 * idx;
-  const compound = idx >= 5 ? Math.pow(1.18, idx - 4) : 1;
+  const linear = 2.5 + 0.65 * idx;
+  const compound = idx >= 3 ? Math.pow(1.25, idx - 2) : 1;
   return linear * compound;
 }
 
 function endlessSpeedMult(idx: number): number {
-  // Mild — too much speed makes the game unplayable. Cap at +60%.
-  return Math.min(1.6, 1 + 0.04 * idx);
+  // Mild — too much speed makes the game unplayable. Cap at +80% now
+  // (was +60%). Pushes early endless to feel snappier.
+  return Math.min(1.8, 1 + 0.05 * idx);
 }
 
 function endlessResistMult(idx: number): number {
@@ -121,10 +134,18 @@ function returningCount(idx: number): number {
 const ENDLESS_MINION_FLOOR = 50;
 
 export function generateEndlessWave(endlessIdx: number): EndlessWaveConfig {
-  // Boss cadence: every 5 Endless waves a boss anchors the assault.
-  const isBossWave = endlessIdx % 5 === 0;
-  const hasFlyers = Math.random() < 0.55;            // most waves include air
-  const isNecromancy = Math.random() < (0.20 + endlessIdx * 0.02);
+  // Boss cadence + RNG: every 3rd Endless wave is a boss wave (was 5),
+  // plus a 25 % chance for ANY non-boss wave to roll a surprise boss
+  // anyway. The deeper you go the more RNG — flyer chance climbs and
+  // necromancy ramps. Per user spec: "more RNG the deeper you go, then
+  // it just gets outrageous, where there's 20 bosses, 20 boss flyers."
+  const isMainBossWave = endlessIdx % 3 === 0;
+  const surpriseBossRoll = Math.random() < (0.18 + endlessIdx * 0.03);   // 21 % at E1, climbs forever
+  const isBossWave = isMainBossWave || surpriseBossRoll;
+  // Flyer chance grows past E3 — by E10 nearly every wave has air.
+  const hasFlyers = Math.random() < Math.min(0.95, 0.55 + endlessIdx * 0.04);
+  // Necromancy: same ramp.
+  const isNecromancy = Math.random() < Math.min(0.85, 0.20 + endlessIdx * 0.03);
 
   // ─── Spawns ─────────────────────────────────────────────────────────
   const spawns: { type: string; count: number }[] = [];
@@ -182,10 +203,39 @@ export function generateEndlessWave(endlessIdx: number): EndlessWaveConfig {
     // Second guard group from a different faction for visual variety.
     const guard2 = rand(ENDLESS_FACTION_ROSTER);
     spawns.push({ type: rand(guard2.types), count: Math.round(12 + endlessIdx * 0.8) });
-    // Late-Endless: TWIN bosses. Two-boss waves past E10.
-    if (endlessIdx >= 10 && Math.random() < 0.4) {
-      const second = rand(bossPool);
-      if (second !== bossType) spawns.push({ type: second, count: 1 });
+    // Late-Endless: MULTI bosses. Per user request "the deeper you go,
+    // the more outrageous — 20 bosses, 20 boss flyers". Scale extra
+    // boss count linearly with endlessIdx.
+    //   E10  : 1-2 extra bosses (2-3 total)
+    //   E20  : 4-6 extra bosses (5-7 total)
+    //   E30+ : 8-12 extra bosses (9-13 total)
+    if (endlessIdx >= 10) {
+      const baseExtras = Math.max(0, Math.floor((endlessIdx - 8) / 2));
+      const rngExtras = Math.floor(Math.random() * Math.max(2, Math.floor(endlessIdx / 5)));
+      const extras = baseExtras + rngExtras;
+      // Extra bosses spawn 1 at a time; mix in flyer bosses past E15.
+      const flyerBossPool = ['GHOST_RIDER', 'SPECTRAL_SCOUT'].filter(b => (enemiesData as any)[b]?.isFlyer);
+      for (let i = 0; i < extras; i++) {
+        const useFlyerBoss = endlessIdx >= 15 && Math.random() < 0.4;
+        const pick = useFlyerBoss && flyerBossPool.length > 0
+          ? rand(flyerBossPool)
+          : rand(bossPool);
+        spawns.push({ type: pick, count: 1 });
+      }
+    }
+  }
+  // 2026-05-22 — Surprise boss on non-boss waves. If surpriseBossRoll
+  // fired we already set isBossWave=true above. But we ALSO want a
+  // chance for non-boss waves to drop 1-3 boss skirmishers into the
+  // ground swarm without zeroing the rest of the spawn list. Layer
+  // this on top of any non-isMainBossWave path.
+  if (!isMainBossWave && endlessIdx >= 5 && Math.random() < Math.min(0.50, 0.10 + endlessIdx * 0.025)) {
+    const bossPool = endlessIdx <= 10
+      ? [...ENDLESS_BOSSES, ...RETURNING_BOSSES.slice(0, 3)]
+      : [...ENDLESS_BOSSES, ...RETURNING_BOSSES];
+    const surpriseBossCount = 1 + Math.floor(Math.random() * Math.min(3, Math.floor(endlessIdx / 8)));
+    for (let i = 0; i < surpriseBossCount; i++) {
+      spawns.push({ type: rand(bossPool), count: 1 });
     }
   }
 

@@ -5773,7 +5773,15 @@ async function boot() {
           // W20 LOCKDOWN (2026-05): the final wave does not allow ANY leaks.
           // A single enemy reaching Rome on W20 zeros lives and ends the run
           // immediately — Rome falls if you can't hold the gate.
-          if (state.wave === 20) {
+          //
+          // 2026-05-22 BUGFIX: previously this fired on `state.wave === 20`
+          // alone. In Endless mode the campaign counter STAYS at 20 (the
+          // endlessWave counter is what increments), so any leak in E2,
+          // E3, … instantly zeroed lives and ended the run. The user
+          // reported a phantom W2-Endless death with no obvious cause;
+          // this was it. Gate the W20 lockdown to non-endless only so
+          // Endless mode obeys the normal per-leak life-cost rules.
+          if (state.wave === 20 && !state.endlessMode) {
             state.lives = 0;
             state.enemiesLeakedThisWave++;
             state.leaksByArchetype[e.archetype] = (state.leaksByArchetype[e.archetype] ?? 0) + 1;

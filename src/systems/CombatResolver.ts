@@ -1662,6 +1662,18 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
       damage *= (1 + 0.25 * dm.stacks);
     }
   }
+  // 2026-05-22 — WAVE-LEVEL DAMAGE REDUCTION. Wave defs with
+  // `enemyDamageReductPct` reduce direct damage taken by every spawn
+  // on that wave by that fraction. Used by W12/W16/W17 to add a
+  // "resistance" layer on top of the HP bump so the late game
+  // doesn't just feel like a numbers-up grind. Applies AFTER all
+  // other amps (DRAGON_MARK, FREEZE/STUN amp, etc.) so the resist
+  // is the final word.
+  const _curWaveDef: any = (wavesData as any[])[(state.wave ?? 1) - 1];
+  const waveDmgReduct = _curWaveDef?.enemyDamageReductPct ?? 0;
+  if (waveDmgReduct > 0 && damage > 0) {
+    damage *= (1 - waveDmgReduct);
+  }
   target.hp -= damage;
   target.hpFlashTimer = 0.16;
   target.lastDamagedTick = state.tick;

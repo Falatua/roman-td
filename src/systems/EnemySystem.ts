@@ -208,6 +208,31 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
       e.currentSpeed = e.baseSpeed;
     }
   }
+  // 2026-05-22 — ENDLESS MODE BUFFS. Per user request: triple HP,
+  // crazy resistances, crazy regen, full DoT immunity.
+  //
+  //   • HP × 2.0 on top of the EndlessMode hpMult formula (which
+  //     already triples by E5). Stamp the multiplier on maxHp + hp
+  //     directly here so it applies uniformly to every endless spawn
+  //     including boss honor-guards.
+  //   • __dotImmune flag — tickEnemies zeroes the DoT contribution
+  //     before the aggregate cap, so DoT becomes COSMETIC. Direct
+  //     damage is unaffected.
+  //   • OOC regen bumped to 4%/sec (was 3% on W11+, was per-enemy
+  //     def on others). Multiplied with the existing oocRegen so
+  //     bosses still scale higher.
+  //   • __lateResistMult set lower (= more reduction) — endless
+  //     enemies take 35 % LESS direct damage on top of the existing
+  //     resist scale. Stacks with wave-level enemyDamageReductPct.
+  if (!derived && state.endlessMode) {
+    const ENDLESS_HP_BONUS = 2.0;     // doubles maxHp on top of EndlessMode formula (≈ 3× total at low E)
+    e.maxHp *= ENDLESS_HP_BONUS;
+    e.hp *= ENDLESS_HP_BONUS;
+    (e as any).__dotImmune = true;
+    (e as any).outOfCombatRegen = Math.max((e as any).outOfCombatRegen ?? 0, 0.04);
+    const existingResist: number = (e as any).__lateResistMult ?? 1.0;
+    (e as any).__lateResistMult = existingResist * 0.65;     // multiplies again — 35 % more reduction
+  }
   state.enemies.set(e.id, e);
   // Trigger spawn-emergence puff at spawn pixel (Animation Doc §22.1)
   const renderer = (window as any).__renderer;
@@ -962,17 +987,48 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     }
     e.statusEffects = e.statusEffects.filter(s => s.remaining > 0);
     // 2026-05-21 — DoT AGGREGATE CAP. Sum of all DoT ticks on one enemy
-    // is clamped to 8% maxHP/sec, with HELLFIRE carving out a tighter
-    // 2%/sec sub-cap inside that total (it's permanent + bypasses
-    // resistances, so it earns the extra leash). Caps the
-    // "stack 4 DoT sources and melt anything" pattern without
-    // nerfing any single source. Boss `dotBossMod = 0.18` is already
-    // folded into dotByKind values above — this caps the FINAL tick.
-    // dotByKind is rescaled proportionally so the per-kind floating
-    // numbers reflect what actually hit, not the uncapped raw values.
+    // is clamped to a fraction of maxHP/sec, with HELLFIRE carving out
+    // a tighter sub-cap. Caps the "stack 4 DoT sources and melt
+    // anything" pattern. Boss `dotBossMod = 0.18` is already folded
+    // into dotByKind above — this caps the FINAL tick.
+    //
+    // 2026-05-22 — Caps halved. Player reported killing the W20 boss
+    // in ~5 s on DoT alone, even after the prior 8% cap. New caps:
+    //   AGGREGATE  8 % → 4 %  maxHP/sec
+    //   HELLFIRE   2 % → 1 %  maxHP/sec
+    // A 1 M HP boss now takes at MOST 40 000/sec from DoT (was
+    // 80 000), so DoT alone takes ~25 s to chip through (was ~12 s).
+    // Direct damage stays untouched.
+    // 2026-05-22 — WAVE-LEVEL DOT RESIST. Wave defs with
+    // `enemyDotResistPct` further reduce the post-aggregate DoT tick
+    // by that fraction. Stacks multiplicatively with the 4 % aggregate
+    // cap. Used by W13/W18/W19 to make DoT-stack builds less dominant
+    // on specific late-game beats. Endless mode replaces this with
+    // full DoT immunity (see __endlessDotImmune below).
+    const _dotResistWave: any = (wavesData as any[])[(state.wave ?? 1) - 1];
+    const dotResistPct = _dotResistWave?.enemyDotResistPct ?? 0;
+    if (dotResistPct > 0 && dotDps > 0) {
+      const mult = 1 - dotResistPct;
+      dotDps *= mult;
+      dotByKind.BURN *= mult;
+      dotByKind.POISON *= mult;
+      dotByKind.BLEED *= mult;
+      dotByKind.HELLFIRE *= mult;
+    }
+    // 2026-05-22 — ENDLESS DOT IMMUNITY. Every enemy spawned in
+    // Endless mode is fully DoT-immune (per user spec: "make them
+    // immune to dots"). Set on spawn via state.endlessMode check;
+    // here we zero the tick contribution. Direct damage is unaffected.
+    if ((e as any).__dotImmune && dotDps > 0) {
+      dotDps = 0;
+      dotByKind.BURN = 0;
+      dotByKind.POISON = 0;
+      dotByKind.BLEED = 0;
+      dotByKind.HELLFIRE = 0;
+    }
     if (dotDps > 0) {
-      const HELLFIRE_CAP = 0.02 * e.maxHp;     // 2%/sec ceiling
-      const AGGREGATE_CAP = 0.08 * e.maxHp;    // 8%/sec ceiling
+      const HELLFIRE_CAP = 0.01 * e.maxHp;     // 1%/sec ceiling
+      const AGGREGATE_CAP = 0.04 * e.maxHp;    // 4%/sec ceiling
       const hellfireCapped = Math.min(dotByKind.HELLFIRE, HELLFIRE_CAP);
       const nonHellfireRaw = dotByKind.BURN + dotByKind.POISON + dotByKind.BLEED;
       const aggregateRaw = hellfireCapped + nonHellfireRaw;
@@ -1063,6 +1119,24 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // Constant regen (always-on, e.g. Iron Phalanx / Architectus).
     if (def.regenPctPerSec) {
       e.hp = Math.min(e.maxHp, e.hp + e.maxHp * def.regenPctPerSec * regenMult * dt);
+    }
+    // 2026-05-22 — WAVE-LEVEL REGEN. Some W11+ waves stamp
+    // `enemyRegenPctPerSec` on the wave def to give every spawn on
+    // that wave a passive regen tick (independent of per-enemy
+    // outOfCombatRegen). Same DoT-suppression rule (50% under DoT).
+    const _curWave: any = (wavesData as any[])[(state.wave ?? 1) - 1];
+    const waveRegen = _curWave?.enemyRegenPctPerSec ?? 0;
+    if (waveRegen > 0) {
+      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * waveRegen * regenMult * dt);
+    }
+    // 2026-05-22 — WAVE-LEVEL SPEED BOOST. Wave defs with
+    // `enemySpeedBoostPct` apply a flat speed multiplier to every
+    // enemy on the wave AFTER per-status modifiers (freeze/slow
+    // win because they multiply to 0). Used by W14/W18 to add
+    // urgency on top of the HP bump.
+    const waveSpeedBoost = _curWave?.enemySpeedBoostPct ?? 0;
+    if (waveSpeedBoost > 0 && e.currentSpeed > 0) {
+      e.currentSpeed *= (1 + waveSpeedBoost);
     }
     // OUT-OF-COMBAT REGEN: ramps up after 1.0s of not taking DIRECT
     // damage. Per-enemy override (set by spawnEnemy for W11+ creative

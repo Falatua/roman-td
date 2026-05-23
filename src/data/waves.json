@@ -174,10 +174,11 @@
     "wave": 11,
     "type": "G",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 3.6,
+    "hpMult": 6.5,
     "gold": 10,
     "necromancy": true,
     "disableCheckpointHeal": true,
+    "enemyRegenPctPerSec": 0.005,
     "spawns": [
       {
         "type": "UNDEAD_CELT",
@@ -189,8 +190,9 @@
     "wave": 12,
     "type": "F",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 3.0,
+    "hpMult": 5.4,
     "gold": 9,
+    "enemyDamageReductPct": 0.15,
     "spawns": [
       {
         "type": "SPECTRAL_SCOUT",
@@ -202,9 +204,10 @@
     "wave": 13,
     "type": "M",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 3.6,
+    "hpMult": 6.5,
     "gold": 10,
     "necromancy": true,
+    "enemyDotResistPct": 0.30,
     "spawns": [
       {
         "type": "UNDEAD_BERSERKER",
@@ -224,8 +227,9 @@
     "wave": 14,
     "type": "M",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 5.2,
+    "hpMult": 9.0,
     "gold": 12,
+    "enemySpeedBoostPct": 0.15,
     "spawns": [
       {
         "type": "UNDEAD_WAR_ELEPHANT",
@@ -262,8 +266,9 @@
     "wave": 16,
     "type": "G",
     "faction": "UNDEAD_CARTHAGE",
-    "hpMult": 3.6,
+    "hpMult": 6.5,
     "gold": 14,
+    "enemyDamageReductPct": 0.15,
     "spawns": [
       {
         "type": "UNDEAD_SPEARMAN",
@@ -279,8 +284,9 @@
     "wave": 17,
     "type": "M",
     "faction": "UNDEAD_CARTHAGE",
-    "hpMult": 4.4,
+    "hpMult": 7.8,
     "gold": 15,
+    "enemyDamageReductPct": 0.20,
     "spawns": [
       {
         "type": "IRON_PHALANX",
@@ -300,9 +306,11 @@
     "wave": 18,
     "type": "F",
     "faction": "UNDEAD_CARTHAGE",
-    "hpMult": 3.8,
+    "hpMult": 6.8,
     "gold": 15,
     "flyerInitialStealthSec": 15,
+    "enemySpeedBoostPct": 0.10,
+    "enemyDotResistPct": 0.25,
     "spawns": [
       {
         "type": "GHOST_RIDER",
@@ -318,8 +326,10 @@
     "wave": 19,
     "type": "M",
     "faction": "SUPER_DEMONS",
-    "hpMult": 4.0,
+    "hpMult": 7.2,
     "gold": 17,
+    "enemyRegenPctPerSec": 0.008,
+    "enemyDotResistPct": 0.20,
     "spawns": [
       {
         "type": "DEMON_HELLHOUND",
