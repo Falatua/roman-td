@@ -1918,12 +1918,24 @@ async function boot() {
   // the tower on the field. Vanishes outside of PROSPECT_PLACEMENT and
   // PICK_KEEPER phases. First-round flow naturally shows all 5 here so the
   // player can compare before picking 2 to keep.
+  //
+  // 2026-05-23 — These Sets persist the open/closed state of the
+  // QUICK INFO + RECIPE drop-downs across panel re-renders. The
+  // panel.innerHTML is wiped every frame in the render loop, so without
+  // an external store the user couldn't keep a drop-down open while
+  // playing. Cleared automatically when the prospect flow exits.
+  const expandedProspectTowers = new Set<string>();
+  const expandedProspectRecipes = new Set<string>();
   function updateProspectSidebar() {
     let panel = document.getElementById('prospect-sidebar') as HTMLElement | null;
     const inProspectFlow = state.phase === GamePhase.PROSPECT_PLACEMENT
                         || state.phase === GamePhase.PICK_KEEPER;
     if (!inProspectFlow) {
       if (panel) panel.remove();
+      // Reset drop-down state when leaving the prospect flow so
+      // returning later starts clean.
+      expandedProspectTowers.clear();
+      expandedProspectRecipes.clear();
       return;
     }
     // Gather only ALREADY-PLACED pending towers. We deliberately do NOT show
@@ -1935,6 +1947,8 @@ async function boot() {
       .sort((a, b) => a.placedAtWave === b.placedAtWave ? a.tileY - b.tileY : a.placedAtWave - b.placedAtWave);
     if (placedPending.length === 0) {
       if (panel) panel.remove();
+      expandedProspectTowers.clear();
+      expandedProspectRecipes.clear();
       return;
     }
     if (!panel) {
@@ -2114,15 +2128,29 @@ async function boot() {
       // 2026-05-23 — QUICK INFO chevron toggles an inline drop-down
       // with the tower's combo preview (damage type, DPS, range,
       // ability). stopPropagation so the toggle click doesn't ALSO
-      // open the full tower-menu modal underneath it.
+      // open the full tower-menu modal underneath it. The open state
+      // is persisted in `expandedProspectTowers` so it survives the
+      // panel re-render that fires every frame.
       const quickBtn = el.querySelector('.ps-quick') as HTMLElement | null;
       const quickBody = el.querySelector('.ps-quick-body') as HTMLElement | null;
       if (quickBtn && quickBody) {
+        // Re-apply the persisted open/closed state on every re-render so
+        // the panel-wipe each frame doesn't snap drop-downs shut.
+        const wasOpen = expandedProspectTowers.has(id);
+        quickBody.style.display = wasOpen ? 'block' : 'none';
+        quickBtn.textContent = wasOpen ? '▲ HIDE INFO' : '▼ QUICK INFO';
         quickBtn.onclick = (ev: MouseEvent) => {
           ev.stopPropagation();
           const isOpen = quickBody.style.display === 'block';
-          quickBody.style.display = isOpen ? 'none' : 'block';
-          quickBtn.textContent = isOpen ? '▼ QUICK INFO' : '▲ HIDE INFO';
+          if (isOpen) {
+            quickBody.style.display = 'none';
+            quickBtn.textContent = '▼ QUICK INFO';
+            expandedProspectTowers.delete(id);
+          } else {
+            quickBody.style.display = 'block';
+            quickBtn.textContent = '▲ HIDE INFO';
+            expandedProspectTowers.add(id);
+          }
         };
       }
       (el as HTMLElement).onmouseenter = (ev: MouseEvent) => {
@@ -2152,15 +2180,29 @@ async function boot() {
     // Mirrors the placed-tower cell click pattern above. Each row is
     // independent — opening one does NOT close the others, so the player
     // can have several combos open simultaneously while planning a keep.
+    // Open state lives in `expandedProspectRecipes` so it survives the
+    // per-frame panel.innerHTML re-render.
     panel.querySelectorAll('.recipe-row').forEach(row => {
       const summary = row.querySelector('.recipe-summary') as HTMLElement | null;
       const details = row.querySelector('.recipe-details') as HTMLElement | null;
       const chev = row.querySelector('.recipe-chev') as HTMLElement | null;
+      const comboKey = (row as HTMLElement).dataset.comboType ?? '';
       if (!summary || !details) return;
+      // Re-apply persisted open/closed state after the re-render wipe.
+      const wasOpen = !!comboKey && expandedProspectRecipes.has(comboKey);
+      details.style.display = wasOpen ? 'block' : 'none';
+      if (chev) chev.textContent = wasOpen ? '▼' : '▶';
       summary.onclick = () => {
         const isOpen = details.style.display === 'block';
-        details.style.display = isOpen ? 'none' : 'block';
-        if (chev) chev.textContent = isOpen ? '▶' : '▼';
+        if (isOpen) {
+          details.style.display = 'none';
+          if (chev) chev.textContent = '▶';
+          if (comboKey) expandedProspectRecipes.delete(comboKey);
+        } else {
+          details.style.display = 'block';
+          if (chev) chev.textContent = '▼';
+          if (comboKey) expandedProspectRecipes.add(comboKey);
+        }
       };
     });
   }
