@@ -73,18 +73,22 @@ function towerBurnsGround(towerType: string): boolean {
 function isMeleeImmune(enemyType: string): boolean {
   return !!(enemiesData as any)[enemyType]?.meleeImmune;
 }
-// 2026-05-19 v3 — Zombie Druid (W13) + Undead Warlord (boss) carry
-// `meleeImmune` to block physical sword-strikes — bone bodies shrug
-// off blade impacts. But the previous gate blocked the ENTIRE melee
-// swing path regardless of damage type, which meant divine melee
-// towers (Pontifex Maximus, God of War, Hero Caesar) and any future
-// fire-melee or siege-melee unit couldn't damage them either. Per
-// design intent, only PHYS_MELEE damage should be blocked — DIVINE
-// retribution and FIRE/SIEGE smashes delivered at sword reach still
-// pierce. IRON_PHALANX keeps the broader immunity via its per-enemy
-// `melee: 0` resistance row (returns 0 on the resistance modifier
-// math, so it still takes ~zero damage from PHYS_MELEE while non-
-// physical melee comes through normally).
+// 2026-05-19 v3 — UNDEAD_WARLORD (W15 boss) + IRON_PHALANX (W17 elite)
+// carry `meleeImmune: true` in enemies.json to block physical
+// sword-strikes — bone bodies and shield walls shrug off blade impacts.
+// But the previous gate blocked the ENTIRE melee swing path regardless
+// of damage type, which meant divine melee towers (Pontifex Maximus,
+// God of War, Hero Caesar) and any future fire-melee or siege-melee
+// unit couldn't damage them either. Per design intent, only PHYS_MELEE
+// damage should be blocked — DIVINE retribution and FIRE/SIEGE smashes
+// delivered at sword reach still pierce.
+//
+// 2026-05-23 — Corrected the stale Zombie Druid mention in this
+// comment: ZOMBIE_DRUID does NOT carry `meleeImmune` (verified in
+// enemies.json). Its toughness comes from the broader undead-faction
+// damage profile + its 30% ranged-dodge plus the sleep-curse mechanic,
+// not melee immunity. UNDEAD_WARLORD is the actual `meleeImmune: true`
+// undead unit on its wave.
 function meleeImmuneBlocksTower(enemyType: string, towerDmgType: DamageType): boolean {
   if (!isMeleeImmune(enemyType)) return false;
   return towerDmgType === DamageType.PHYS_MELEE;
@@ -284,6 +288,36 @@ const DEMON_TYPES = new Set([
 function sigilOfSolMult(t: Tower, target: Enemy): number {
   if (!t.equippedItems.includes('SIGIL_OF_SOL_INVICTUS')) return 1;
   return DEMON_TYPES.has(target.type as string) ? 1.85 : 1;
+}
+
+// 2026-05-23 — SECONDARY HIT BLOCK ROLL. Re-runs the dodge / W8-block /
+// shield-block / all-attack-block rolls for damage paths that bypass
+// tickCombat's primary block-roll: cleave secondaries, splash, cone
+// sweeps, multi-shot non-primary targets. Without this, UNDEAD_SPEARMAN
+// + IRON_PHALANX's allAttackBlockChance and W8's __w8RangedBlock would
+// only fire on the very first target of every attack; the splash / cone
+// / cleave sprays would land for full no matter how many block flags
+// the enemy had stamped on it.
+//
+// Returns true if the hit is blocked. Caller is expected to set
+// `target.__weatherMissTick` and skip damage application.
+function secondaryHitBlocked(t: Tower, target: Enemy, state: GameStateShape): boolean {
+  if (target.hp <= 0) return false;
+  const isRangedClass = t.damageType === DamageType.PHYS_RANGED || t.damageType === DamageType.SIEGE;
+  // Per-enemy permanent dodge (Numidian Rider, Shadow Cavalry) — ranged only.
+  const dodgeChance: number = (enemiesData as any)[target.type]?.dodgeChance ?? 0;
+  if (dodgeChance > 0 && isRangedClass && Math.random() < dodgeChance) return true;
+  // W8-only ranged block — every W8 spawn gets a 20% per-hit ranged whiff.
+  const w8Block: number = (target as any).__w8RangedBlock ?? 0;
+  if (w8Block > 0 && isRangedClass && Math.random() < w8Block) return true;
+  // Shield block — Carthage Elite Guard, Undead Spearman — until shield broken.
+  const shieldBlockChance: number = (enemiesData as any)[target.type]?.shieldBlockChance ?? 0;
+  if (shieldBlockChance > 0 && !target.shieldBroken && isRangedClass &&
+      Math.random() < shieldBlockChance) return true;
+  // All-attack block — UNDEAD_SPEARMAN, IRON_PHALANX — fires on ANY type.
+  const allBlockChance: number = (enemiesData as any)[target.type]?.allAttackBlockChance ?? 0;
+  if (allBlockChance > 0 && Math.random() < allBlockChance) return true;
+  return false;
 }
 
 // Multi-shot ranged — fires N projectiles at N distinct targets per attack.
@@ -1189,6 +1223,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.LEGION_PRIME && target.isBoss) {
         critChance = Math.min(1, critChance + 0.60);
       }
+      // 2026-05-23 — MARIAN FORMATION shared crit. Marius's passive
+      // ability stamps `__marianSharedCrit` (the highest crit chance
+      // among the 5 nearest melee towers) on every buffed tower so a
+      // low-crit T1 inherits Caesar's 50% during the 5-second window.
+      // Without reading the flag here the ability docs lied — the
+      // shared-crit promise was inert until 2026-05-23.
+      const marianUntil = (t as any).__marianFormationUntilTick ?? 0;
+      if (state.tick < marianUntil) {
+        const shared = (t as any).__marianSharedCrit;
+        if (typeof shared === 'number' && shared > critChance) critChance = shared;
+      }
       if (critChance > 0 && Math.random() < critChance) {
         damage *= critMult;
         (t as any).__lastWasCrit = true;
@@ -1476,6 +1521,14 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             if (other.id === target.id || other.hp <= 0) continue;
             if (hitsThisSwing >= hitCap) break;
             hitsThisSwing++;
+            // 2026-05-23 — Cleave secondaries skip block rolls
+            // historically. Add the roll so UNDEAD_SPEARMAN +
+            // IRON_PHALANX 20% all-block (and any other relevant
+            // block flag) actually fires on cleave hits.
+            if (secondaryHitBlocked(t, other, state)) {
+              (other as any).__weatherMissTick = state.tick;
+              continue;
+            }
             let cleaveDmg = damage * secondaryMult;
             const otherShielded = requiresMeleeBreak(other.type) && !other.shieldBroken;
             if (otherShielded) cleaveDmg *= 1.50;
@@ -1713,6 +1766,19 @@ function pickByFurthest(arr: Enemy[]): Enemy | null {
 
 // Public — used by projectile-impact resolver
 export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: Enemy, damage: number, hooks: CombatHooks) {
+  // 2026-05-23 — SECONDARY BLOCK ROLL. Re-rolls dodge / W8-block /
+  // shield-block / all-attack-block here so splash / cone / multi-shot
+  // secondary impacts that bypass the primary tickCombat roll still
+  // honor the block flags. Primary hits that already passed the
+  // tickCombat block path get a fresh roll too — UNDEAD_SPEARMAN +
+  // IRON_PHALANX's all-attack 20% block ends up at ~36% effective on
+  // ranged primaries, which matches the user-asked "20% chance to
+  // block all attacks" plus the existing per-type rolls. Skipped when
+  // damage is already 0 (the primary path zeroed it out).
+  if (damage > 0 && secondaryHitBlocked(t, target, state)) {
+    (target as any).__weatherMissTick = state.tick;
+    return;
+  }
   // PHASE-HITS (2026-05): some enemies (Spectral Scout, Iron Phalanx,
   // Undead Spearman, Undead Berserker, etc.) phase through the first N
   // hits, taking no damage. Counter lazy-initializes from enemies.json.

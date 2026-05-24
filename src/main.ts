@@ -1042,7 +1042,7 @@ async function boot() {
     // Enemy-type callouts (replaces the older `callouts` array).
     const enemyCallouts: BriefLine[] = [];
     if (enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('UNDEAD_SPEARMAN')) enemyCallouts.push({ text: '🛡 SHIELDED · needs melee first to break', cat: 'ENEMY' });
-    if (enemiesInWave.has('SPECTRAL_SCOUT') || enemiesInWave.has('GHOST_RIDER')) enemyCallouts.push({ text: '👻 GHOSTS · silence towers passing within 1.2 tiles', cat: 'ENEMY' });
+    if (enemiesInWave.has('SPECTRAL_SCOUT') || enemiesInWave.has('GHOST_RIDER')) enemyCallouts.push({ text: '👻 GHOSTS · silence towers passing within 1.0 tile', cat: 'ENEMY' });
     if (enemiesInWave.has('GHOST_RIDER')) enemyCallouts.push({ text: '💰 GHOST RIDERS · steal gold on leak', cat: 'ENEMY' });
     if (enemiesInWave.has('GALLIC_DRUID') || enemiesInWave.has('ZOMBIE_DRUID') || enemiesInWave.has('DEMON_LEGATE')) enemyCallouts.push({ text: '🌫 DRUID/LEGATE · aura slows nearby towers', cat: 'ENEMY' });
     // 2026-05 v10 — DRUIDS ALSO CAST SLEEP DARTS (3s tower inert on hit).
@@ -1093,7 +1093,7 @@ async function boot() {
     if (enemiesInWave.has('CELTIC_BERSERKER') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('UNDEAD_SPEARMAN')) enemyCallouts.push({ text: '🩸 CHECKPOINT HEAL · enemies regen 15% maxHP every checkpoint coin they cross — kill BEFORE the next coin or reset', cat: 'ENEMY' });
     if (enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '⚱ AURA NULLIFIER · Architectus silences every tower aura within 2 tiles while present. Move aura towers (Eagle Standard, Cohort Guard, Triumvirate, banner items) off the path so they keep buffing', cat: 'ENEMY' });
     // 2026-05-21 — Ambush stealth + presence-silence aura callouts.
-    if (enemiesInWave.has('CARTHAGE_SPEARMAN') || enemiesInWave.has('UNDEAD_BERSERKER')) enemyCallouts.push({ text: '🥷 AMBUSH STEALTH · Carthage Spearman / Undead Berserker spawning in the first 15s of this wave are UNTARGETABLE (40% alpha). At the 15s mark every alive instance becomes visible at once — be ready for the emergence wave. Spawns past 15s are normally visible.', cat: 'ENEMY' });
+    if (enemiesInWave.has('CARTHAGE_SPEARMAN') || enemiesInWave.has('UNDEAD_BERSERKER')) enemyCallouts.push({ text: '🥷 AMBUSH STEALTH · Carthage Spearman / Undead Berserker spawning in the first 10s of this wave are UNTARGETABLE (40% alpha). At the 10s mark every alive instance becomes visible at once — be ready for the emergence wave. Spawns past 10s are normally visible.', cat: 'ENEMY' });
     if (enemiesInWave.has('ZOMBIE_DRUID') || enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '🤫 SILENCE AURA · Zombie Druid / Architectus silence every tower within 1.5 tiles while in range (pink X-mark). The silence ends ~0.6s after they walk past. Plant your power towers OFF the path so the aura misses.', cat: 'ENEMY' });
     const allLines = [...briefLines, ...enemyCallouts];
     // 2026-05-15 v9: the brief used to remove itself when there were no
@@ -1661,7 +1661,7 @@ async function boot() {
     });
     if (hasGhosts) tips.push({
       headline: '👻 THE DEAD ARE FUNNY THAT WAY',
-      body: `Spectral enemies on wave <b>${nextWave}</b>. They <b style="color:#ff5050">silence every tower they pass within 1.2 tiles</b> — and the Ghost Rider variant <b>pickpockets your treasury on leak</b>. Spread your firepower; a single-file maze just turns into a graveyard for your DPS.`,
+      body: `Spectral enemies on wave <b>${nextWave}</b>. They <b style="color:#ff5050">silence every tower they pass within 1.0 tile</b> — and the Ghost Rider variant <b>pickpockets your treasury on leak</b>. Spread your firepower; a single-file maze just turns into a graveyard for your DPS.`,
       color: '#cc88cc'
     });
     if (hasDruid) tips.push({
@@ -6211,7 +6211,11 @@ async function boot() {
             if (t.isHero) {
               const HERO_TINT: Record<string, number> = {
                 HERO_AGRIPPA:  0xb88a4a,    // siege brown
-                HERO_AGRICOLA: 0x88dd66,    // green frontier
+                // 2026-05-23 — Agricola was 0x88dd66 (green) but his actual
+                // tint everywhere else (towers.json tint #aaccff, ring,
+                // ability VFX, Codex) is silver-blue. Sync muzzle flash so
+                // his shots match the rest of his visual identity.
+                HERO_AGRICOLA: 0xaaccff,    // silver-blue frontier
                 HERO_SCIPIO:   0xffe6a8,    // pale gold javelin
                 HERO_SULLA:    0xff7733     // hellfire orange
               };

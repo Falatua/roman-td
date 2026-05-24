@@ -709,7 +709,7 @@
     "spriteSheet": 3,
     "spriteCell": 7,
     "burnsGround": true,
-    "ability": "MELEE: stamps HELLFIRE (1% maxHP/sec, permanent) on every strike. True damage. Leaves BURNING GROUND for 3s on every hit. DIVINE EXECUTE: any enemy left at 10% HP or below after a hit is instantly killed — bosses included. Position him on the lane.",
+    "ability": "MELEE: stamps HELLFIRE on every strike (1% maxHP/sec, permanent — the DoT itself is TRUE damage that bypasses faction resistance; the primary melee swing still takes normal resistance). Leaves BURNING GROUND for 3s on every hit. DIVINE EXECUTE: any enemy left at 10% HP or below after a hit is instantly killed — bosses included. Position him on the lane.",
     "critChance": 0.2,
     "critMult": 2.8
   },

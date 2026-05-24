@@ -549,8 +549,11 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       const oTier = other.qualityTier;
       // Global auras (apply regardless of distance)
       if (other.type === TowerType.EAGLE_STANDARD) {
-        dmgMods.push({ source: `Eagle Standard T${oTier}`, multiplier: 1 + 0.18 * (1 + 0.05 * (oTier - 1)) });
-        if (d <= 4 * GRID.TILE) spdMods.push({ source: 'Eagle Standard local', multiplier: 1.10 });
+        // 2026-05-23 — Was 0.18 global + 4-tile 1.10 spd; both stale.
+        // Sync to CombatResolver:464-465 which uses 0.15 global +
+        // 5-tile 1.18 spd. Numbers now match the actual aura output.
+        dmgMods.push({ source: `Eagle Standard T${oTier}`, multiplier: 1 + 0.15 * (1 + 0.05 * (oTier - 1)) });
+        if (d <= 5 * GRID.TILE) spdMods.push({ source: 'Eagle Standard local', multiplier: 1.18 });
       }
       if (other.type === TowerType.AQUILIFER_TITAN) {
         dmgMods.push({ source: `Aquilifer Titan T${oTier}`, multiplier: 1 + 0.30 * (1 + 0.05 * (oTier - 1)) });

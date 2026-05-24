@@ -151,6 +151,16 @@ export function startWave(state: GameStateShape) {
   state.wave += 1;
   if (state.wave > WAVE.TOTAL) return;
   const w = wavesData[state.wave - 1];
+  // 2026-05-23 — TRUESIGHT REVEAL RESET. The Truesight Lens marks
+  // stealth/ambush enemies with `__truesightRevealed = true` once they
+  // enter range of a truesight tower, persisting for the rest of the
+  // wave. Carried-over enemies (boss rebirth, leak-and-respawn) would
+  // otherwise keep the reveal forever, leaking visibility into waves
+  // where the player no longer has truesight coverage. Clear at the
+  // start of every wave so each round starts dark.
+  for (const e of state.enemies.values()) {
+    (e as any).__truesightRevealed = false;
+  }
   // build spawn schedule
   state.spawnQueue = [];
   state.spawnElapsed = 0;
