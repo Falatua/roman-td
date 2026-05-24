@@ -1019,7 +1019,7 @@ async function boot() {
       // reads cleanly: every line the player sees is a real,
       // deterministic event for this wave. RNG-style brief lines stay
       // in the endless branch above where the rolls genuinely fire.
-      if ([5, 10, 15, 20].includes(state.wave)) briefLines.push({ text: '☠ BOSS CRESCENDO · HP scales +50%', cat: 'BOSS' });
+      if ([5, 10, 15, 20].includes(state.wave)) briefLines.push({ text: '☠ BOSS CRESCENDO · basic enemy HP doubles every 5 waves (bosses scale linearly)', cat: 'BOSS' });
       if ((w as any).necromancy) briefLines.push({ text: '💀 NECROMANCY · slain grunts rise as 6-9 undead per kill', cat: 'MECHANIC' });
       if (state.wave === 17) briefLines.push({ text: '🛡 IRON PHALANX · melee-immune armored at end', cat: 'MECHANIC' });
       if (w.type === 'B') briefLines.push({ text: '⚔ BOSS WAVE · faction signature mechanics', cat: 'BOSS' });
@@ -1061,8 +1061,10 @@ async function boot() {
     // callouts surface the WEAKNESSES with the same loudness so players
     // pick the right tower archetype before placing.
     //
-    // DEMONS — ~3× divine (1.5×/1.3× per-enemy × +100% faction row).
-    if (enemiesInWave.has('DEMON_HELLHOUND') || enemiesInWave.has('CELTIC_FIRE_DEMON') || enemiesInWave.has('SHADOW_CAVALRY') || enemiesInWave.has('DEMON_LEGATE') || enemiesInWave.has('DAEMON_IMPERATOR')) enemyCallouts.push({ text: '✨ DEMONS — DIVINE WEAKNESS · demons take ~3× damage from divine sources (Flamen / Augur / Haruspex / Solar Priest / Pontifex). Fire deals 0 damage. Bleed and poison hit lesser demons harder, but the W20 Daemon Imperator boss resists both DoTs at 50%.', cat: 'ENEMY' });
+    // DEMONS — lesser take ~2.4× divine (1.20× per-enemy × +100% faction);
+    // Daemon Imperator's per-enemy 0.70 damper drops the boss to ~1.40×
+    // final. DoT resists: Daemon takes only 30% poison/bleed.
+    if (enemiesInWave.has('DEMON_HELLHOUND') || enemiesInWave.has('CELTIC_FIRE_DEMON') || enemiesInWave.has('SHADOW_CAVALRY') || enemiesInWave.has('DEMON_LEGATE') || enemiesInWave.has('DAEMON_IMPERATOR')) enemyCallouts.push({ text: '✨ DEMONS — DIVINE WEAKNESS · lesser demons take ~2.4× damage from divine sources (Flamen / Augur / Haruspex / Solar Priest / Pontifex). Fire deals 0 damage. Bleed and poison hit lesser demons hard, but the W20 Daemon Imperator boss takes only ~1.40× divine (per-enemy damper) and resists poison + bleed to 30%.', cat: 'ENEMY' });
     // ELEPHANTS — siege weakness. 2026-05-24 copy fix: split living
     // (+45%) vs undead (+20%) per EnemyResistances.ts:159 — the V31
     // pass cut the undead elephant's siege weakness from 1.45 → 1.20
@@ -1113,7 +1115,7 @@ async function boot() {
     // suppressing the heal, lying to W11 players about a mechanic that
     // wasn't actually firing.
     if (!w.disableCheckpointHeal && (enemiesInWave.has('CELTIC_BERSERKER') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('UNDEAD_SPEARMAN'))) enemyCallouts.push({ text: '🩸 CHECKPOINT HEAL · enemies regen 15% maxHP every checkpoint coin they cross — kill BEFORE the next coin or reset', cat: 'ENEMY' });
-    if (enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '⚱ AURA NULLIFIER · Architectus silences every tower aura within 2 tiles while present. Move aura towers (Eagle Standard, Cohort Guard, Triumvirate, banner items) off the path so they keep buffing', cat: 'ENEMY' });
+    if (enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '⚱ AURA NULLIFIER · Architectus silences every tower aura within 1.5 tiles while present (separate 2-tile aura nullifier disables item auras at 2 tiles). Move aura towers (Eagle Standard, Cohort Guard, Triumvirate, banner items) off the path so they keep buffing', cat: 'ENEMY' });
     // 2026-05-24 — New copy for mechanics the previous brief missed:
     //  • W8 universal ranged-block (set on every spawn in EnemySystem)
     //  • UNDEAD_SPEARMAN / IRON_PHALANX 0.20 all-attack-block (every type)
@@ -1729,7 +1731,7 @@ async function boot() {
     // placing the first prospect.
     if (hasDemons) tips.push({
       headline: '✨ DEMONS — DIVINE IS YOUR ANSWER',
-      body: `Wave <b>${nextWave}</b> brings demons. They take <b style="color:#ffd34d">~3× damage from DIVINE sources</b>. Park a <b style="color:#ffd34d">Solar Priest</b>, <b style="color:#ffd34d">Flamen</b>, <b style="color:#ffd34d">Augur</b>, <b style="color:#ffd34d">Haruspex</b>, <b style="color:#ffd34d">Pontifex</b>, or any divine combo on the path — every gold-haloed projectile hits for triple. <b style="color:#ff5050">FIRE deals ZERO damage</b> — leave Igniferas, Inferno Carts, and fire-oil flasks at home. Poison and bleed hit lesser demons hard, but the <b style="color:#ffaaaa">W20 Daemon Imperator boss resists both DoTs at 50%</b> — bring direct damage for the final fight.`,
+      body: `Wave <b>${nextWave}</b> brings demons. Lesser demons take <b style="color:#ffd34d">~2.4× damage from DIVINE sources</b> (1.20× per-enemy × +100% faction). Park a <b style="color:#ffd34d">Solar Priest</b>, <b style="color:#ffd34d">Flamen</b>, <b style="color:#ffd34d">Augur</b>, <b style="color:#ffd34d">Haruspex</b>, <b style="color:#ffd34d">Pontifex</b>, or any divine combo on the path. <b style="color:#ff5050">FIRE deals ZERO damage</b> — leave Igniferas, Inferno Carts, and fire-oil flasks at home. Poison and bleed hit lesser demons hard. The <b style="color:#ffaaaa">W20 Daemon Imperator boss is the exception</b> — per-enemy 0.70 damper drops him to ~1.40× divine; he resists poison + bleed to 30%. Bring sustained direct damage for the final fight.`,
       color: '#ffd34d'
     });
     // 2026-05 v10 — ELEPHANT WAVE TIPS. Combines the dust shield warning

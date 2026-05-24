@@ -272,8 +272,15 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     // still carry the 1.20 vulnerability from V25. Combined with the
     // faction's +100% divine row, the boss now takes 1.40× divine
     // (was 2.60×) — vulnerable but no auto-win.
-    const mult = e.type === 'DAEMON_IMPERATOR' ? '0.70×' : '1.20×';
-    traits.push({ label: `DIVINE WEAKNESS — takes ${mult} damage from DIVINE sources (per-enemy) on top of the SUPER_DEMONS faction's +100% divine row. Solar Priest, Flamen, Augur, Haruspex are the dedicated demon counters.`, color: '#ffd34d' });
+    // 2026-05-24 — Split the label so Daemon Imperator reads as a
+    // DAMPER (not a weakness) — its 0.70× per-enemy mult is the boss's
+    // defensive trait, not a vulnerability. Lesser demons keep the
+    // weakness framing.
+    if (e.type === 'DAEMON_IMPERATOR') {
+      traits.push({ label: "DIVINE PROFILE — per-enemy DIVINE 0.70 (damper) stacks with the SUPER_DEMONS faction +100% divine row → ~1.40× final divine taken. Less divine-vulnerable than lesser demons; lean on DoT-resistant builds + direct DPS.", color: '#ffd34d' });
+    } else {
+      traits.push({ label: "DIVINE WEAKNESS — per-enemy DIVINE 1.20 stacks with the SUPER_DEMONS faction +100% divine row → ~2.40× final divine taken. Solar Priest, Flamen, Augur, Haruspex are the dedicated demon counters.", color: '#ffd34d' });
+    }
   }
   // -- Death / multiplication mechanics --
   if (def?.splitOnDeath) {
@@ -325,42 +332,48 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   const bossScripts: Record<string, string[]> = {
     ALPHA_DOG: [
       'CHAMPION — boss-tier HP, drops a legendary on kill',
-      'FRENZY — at 30% HP, doubles speed and ignores SLOW for 5s',
-      'PACK HOWL — every 8s, gives nearby Feral Dogs +50% speed for 4s',
+      'FRENZY — at 30% HP, permanently doubles speed for the rest of the fight (no slow immunity, no timer)',
+      'PACK HOWL — every 8s, gives nearby Feral Dogs +50% speed for 3s',
       'DEATH SPAWNS 3 FERAL DOGS at the boss\'s tile'
     ],
     CELTIC_WARLORD: [
-      'WAR CRY — at 70% HP, gives all Celts +30% speed for 8s'
+      'WAR CRY — at 70% HP, gives all Celts +30% speed for 8s',
+      'GUARANTEED LEGENDARY drop on kill — the first scheduled marquee boss reward of the run'
     ],
     WAR_ELEPHANT: [
       'STAMPEDE — at 50% HP, status-immune + +75% speed for 4s; strips slow/freeze/stun',
       'IMMUNE TO SLOW & FREEZE (data flags)',
       'TUSK QUAKE — every 6s, silences every tower within 2 tiles for 0.6s (dust-brown ring + screen shake)',
-      'DUST-SHIELD AURA — protects nearby ground allies from ranged attacks while alive (see SPECIAL TRAITS above)',
-      'WEAKNESS: takes +45% damage from SIEGE — heavy stones crush elephant hide'
+      'DUST-SHIELD AURA — 4-tile dome protects nearby ground allies from ranged attacks while alive (see SPECIAL TRAITS above)',
+      'WEAKNESS: takes +45% damage from SIEGE — heavy stones crush elephant hide',
+      'GUARANTEED EPIC drop on kill'
     ],
     UNDEAD_WAR_ELEPHANT: [
       'STAMPEDE at 50% HP (status-immune + 75% speed for 4s)',
       'REBIRTH at 40% HP — heals to 55% HP and summons 2 Ghost Riders',
       'IMMUNE TO SLOW & FREEZE',
       'TUSK QUAKE every 6s — silences nearby towers for 0.6s (25% stronger tower-slow aura than the living elephant)',
-      'DUST-SHIELD AURA — protects nearby ground allies from ranged attacks while alive',
-      'WEAKNESS: takes +40% damage from SIEGE'
+      'DUST-SHIELD AURA — 4-tile dome protects nearby ground allies from ranged attacks while alive',
+      'WEAKNESS: takes +20% damage from SIEGE (V31 trim — undead hide is denser; living variant still +45%)',
+      'GUARANTEED EPIC drop on kill'
     ],
     HANNIBAL_BARCA: [
       'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit by DIRECT damage in 1.0s, heals 0.4% maxHP/sec (active DoT softens to 0.2%/sec, was 0%)',
       'OUT-OF-COMBAT REGEN — 1.7%/sec after 1.0s without DIRECT damage (active DoT softens to 0.85%/sec, was full block)',
-      'TELEGRAPHED REBIRTH at 50% HP — 1-second red lock-on ring warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
+      'TELEGRAPHED REBIRTH at 55% HP — 1-second red lock-on ring warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
     ],
     UNDEAD_WARLORD: [
-      'AMBUSH — 5s after spawn, 8 Undead Berserkers rise mid-path',
-      'NECROMANCY at 40% HP — raises 4 Undead Celts at his position',
-      'MID-FIGHT REGEN — 1.2% maxHP/sec while alive (active DoT halves to 0.6%/sec)'
+      'AMBUSH — 5s after spawn, 10 Undead Berserkers rise mid-path',
+      'NECROMANCY at 40% HP — raises 6 Undead Celts at his position',
+      'FINAL UPRISING at 15% HP — 5 more Undead Celts erupt at the Warlord',
+      'DEATH RATTLE — on kill, 20 more undead rise (6 Berserkers + 14 Celts at 30% HP). Cannot chain-reanimate.',
+      'MID-FIGHT REGEN — 1.0% maxHP/sec while alive (active DoT halves to 0.5%/sec; fire / burn the clean counter at 1.25× damage)',
+      'W15 spawns FIVE Undead Warlords — every per-warlord effect multiplies'
     ],
     DAEMON_IMPERATOR: [
       'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~5 tiles for 1.5s',
       'OUT-OF-COMBAT REGEN — 2.8% maxHP/sec while not taking DIRECT damage (active DoT halves to 1.4%/sec)',
-      'DOT-RESISTANT — poison/bleed tick at 50% effectiveness, fire fully immune. Direct damage + DIVINE (1.30×) carry the fight, not chip ticks.',
+      'DOT-RESISTANT — poison/bleed tick at 30% effectiveness, fire fully immune. Direct damage + DIVINE (~1.40× final after faction × per-enemy 0.70 damper) carry the fight, not chip ticks.',
       'W20 FINAL BOSS — any leak ends the run instantly (Rome falls)'
     ]
   };
