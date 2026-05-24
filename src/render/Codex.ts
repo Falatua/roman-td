@@ -255,7 +255,7 @@ function renderTab(tab: string): string {
           ${noteCard('Hero Kill XP', 'Cumulative kills raise hero level. Effective pool = max(gold-purchased pool, hero level). Caps at 5 from kills alone — pool L6+ requires gold purchases.')}
           ${noteCard('Per-Tower Crit Chance', 'Every tower has its own crit profile. Fast attackers (Pugio Assassin 28%, Eques signature 30%) crit often for modest bonuses. Heavy siege (Colossus Onager 6%, Vulcan Engineer 6%) crits rarely for huge multipliers (×3.0–×3.5).')}
           ${noteCard('Same-Tier Merging', '3 identical towers of the same tier merge into the next tier — automatic recipe, no special button. <b style="color:#88ff88">Works for combo towers too</b>: stack 3× Horseman T2 to merge into Horseman T3, all the way up. The survivor gets <b style="color:#88ff88">+15% damage</b> (stacking on each merge). Cheapest path to T5 for any unit.')}
-          ${noteCard('Combination Recipes (40 total)', 'Cross-unit recipes turn ingredient towers into a named combo tower. Three classes: <b>single combos</b> (2-3 ingredients), <b>cross-combos</b> (combos as ingredients), and <b>super combos</b> (5 base towers — hardest in the game). <b style="color:#88ff88">Combine in ANY pre-wave phase</b> — execute recipes the moment they\'re completed, even while prospects are still pending placement. Full sortable list in the COMBINATIONS tab.')}
+          ${noteCard('Combination Recipes (38 total)', 'Cross-unit recipes turn ingredient towers into a named combo tower. Three classes: <b>single combos</b> (2-3 ingredients), <b>cross-combos</b> (combos as ingredients), and <b>super combos</b> (4-5 base towers — hardest in the game). <b style="color:#88ff88">Combine in ANY pre-wave phase</b> — execute recipes the moment they\'re completed, even while prospects are still pending placement. Full sortable list in the COMBINATIONS tab.')}
           ${noteCard('🔥 Standout Towers (full stats in LEGIONS tab)', '<b style="color:#ffd34d">🐲 Draconarius (T4):</b> 60° fire-breath cone + DRAGON MARK stacking debuff. <b style="color:#ffd34d">🦁 Bestiarius (T4):</b> rage gauge — every 8th hit on the same target is a 6× FRENZY + stun (8× on bosses). <b style="color:#ffd34d">🛡 Murmillo (T4):</b> anti-Carthage specialist (+75%/+50% vs Carthage/Undead Carthage) + 1.2s stun + 0.8-tile knockback every 4th swing. <b style="color:#ffd34d">🐺 Beast Hunter (T1) + Beast Slayer (T1-T3 multi-tier):</b> +200% vs animal enemies (dogs, hellhound, war elephants). Open the LEGIONS tab for full DPS / attack speed / range numbers and the COMBINATIONS tab for the recipe ingredients.')}
           ${noteCard('Kill Bonus', 'Veteran towers earn a slow flat-DPS bonus per kill, capped at +10% of base T1 DPS. Bronze (50 kills), Silver (200), Gold (500) badges mark milestones.')}
           ${noteCard('Aura Rings — color = role', 'Every local aura on the field draws a visible ring:<br/>• <b style="color:#c070ff">VIOLET</b> — ally buff (damage / speed / range)<br/>• <b style="color:#ff5566">DASHED CRIMSON</b> — enemy debuff (+taken% / slow / mark)<br/>• <b style="color:#ffd34d">GOLD</b> — tower attack range (kept distinct so the three layers never confuse)<br/><br/><b>Native aura towers:</b> Eagle Standard, Praetorian Wall, Cohort Guard, Triplex Acies, Legion Prime, Aquilifer, Vestalis. <b>Aura items:</b> Centurion\'s Trumpet, Battle Standard, War Hound Collar, Druid\'s Torc, Barca War Horn, Lich General\'s Seal, Aquilifer\'s Banner, Cursed Torc. <b>Global auras</b> (Triarius +12%, Caesar +45%, Triumvirate, Imperium, Consular) cover the whole map and don\'t draw rings.<br/><br/><b style="color:#ff9933">STACKING CAP:</b> auras compound multiplicatively but combined damage AND speed per tower cap at <b>2.00× each (max +100%)</b>. Past 5 sources you\'re at the ceiling — diversify into items, pool damage, marks, or enemy-vulnerability auras.<br/><br/><b style="color:#aaccff">Sleep / Nullification:</b> a tower asleep (druid dart) or inside an Architectus 2-tile bubble silently drops its aura contributions and its periodic abilities (Caesar stun pulse, Hannibal\'s Nightmare freeze). The aura ring dims to mark the suspension.<br/><br/><b style="color:#cdb98a">Enemy auras:</b> druids + Demon Legate emit a tower-slow aura (2-3 tile, 20-30%); war elephants emit a dust shield (4 tiles, ranged-immunity to nearby ground allies). Kill the source, the aura drops.')}
@@ -569,7 +569,7 @@ function renderTab(tab: string): string {
           ${noteCard('⚔ Hannibal Barca (W10)', 'Heals 0.4%/s while War Elephants live (only when not taking DIRECT damage). Out-of-combat regen 1.7%/s. <b style="color:#ff7733">DoT (burn / poison / bleed / hellfire) reduces both heals to 50% (was 100% block).</b> A single Poisoned Blade alone is no longer enough — you need DoT + direct damage to actually break him. REBIRTH at 55% HP: heals to 65% HP, +60% speed, status-immune, summons 2 War Elephants. <b style="color:#ff5050">TELEGRAPH:</b> a shrinking red lock-on ring + crosshairs appear on him 1 second before rebirth fires — use that window to burst him into a different timeline.')}
           ${noteCard('🐘💀 Undead War Elephant (W14 champion)', 'Stampede at 50% HP. REBIRTH at 40% HP: summons 2 Ghost Riders. Heavy regen. <b style="color:#cdb98a">DUST-SHIELD AURA</b>: a 4-tile dome around the elephant blocks ranged shots on nearby ground allies until it dies. Tower-slow aura cranked to 25% (vs 20% on the living variant). <b style="color:#ff9933">WEAKNESS: +20% damage from SIEGE</b>. <b style="color:#a060ff">Kill drops a guaranteed EPIC item.</b>')}
           ${noteCard('💀 Undead Warlords ×5 (W15)', '<b style="color:#ff5050">W15 now spawns FIVE Undead Warlords.</b> 5s after spawn each warlord triggers its own AMBUSH — <b>10 Undead Berserkers</b> rise at mid-path (50 berserkers total if all five fire). Each warlord also triggers NECROMANCY at 40% HP (6 Undead Celts at his position) and FINAL UPRISING at 15% HP (5 more Undead Celts). <b style="color:#ff5050">DEATH RATTLE:</b> the killing blow spits out <b>20 more undead</b> at the warlord\'s death tile (6 Undead Berserkers + 14 Undead Celts, each at 30% HP) — so a clean kill chain can summon <b>75+ risen units</b> per warlord. Plan a path-segregating maze and stagger the warlord kills — letting them all crater at once will flood the field. Heavy AoE / siege builds with Scipio active eat them; otherwise focus-fire one warlord clean before the next dips low.')}
-          ${noteCard('😈 Daemon Imperator (W20 — final boss)', 'Base speed 0.85 tiles/sec. HELLSCAPE every 12s stuns nearby tower cooldowns (towers within 5 tiles take a 1.5s cooldown stamp on each pulse). Out-of-combat regen 2.8%/sec. <b style="color:#aaffaa">DOT-RESISTANT:</b> poison and bleed both tick at 50% effectiveness (fire is fully immune). Direct damage + DIVINE (1.30×) carry the fight, not chip ticks. <b style="color:#88ddff">W20 is a TRUE solo encounter — no mobs, no helpers, just you vs the Daemon.</b> <b style="color:#ff5050">W20 LOCKDOWN: a single leak ends the run — Rome falls if you cannot hold the gate.</b>')}
+          ${noteCard('😈 Daemon Imperator (W20 — final boss)', 'Base speed 0.85 tiles/sec. HELLSCAPE every 12s stuns nearby tower cooldowns (towers within 5 tiles take a 1.5s cooldown stamp on each pulse). Out-of-combat regen 2.8%/sec. <b style="color:#aaffaa">DOT-RESISTANT:</b> poison and bleed both tick at 30% effectiveness (fire is fully immune). Direct damage + DIVINE (~1.40× final after faction × per-enemy damper) carry the fight, not chip ticks. <b style="color:#88ddff">W20 is a TRUE solo encounter — no mobs, no helpers, just you vs the Daemon.</b> <b style="color:#ff5050">W20 LOCKDOWN: a single leak ends the run — Rome falls if you cannot hold the gate.</b>')}
         </div>
       `)}
       ${foldSection('ELITE MUTATIONS (4-20% chance, mid-late game)', `
@@ -638,10 +638,10 @@ function renderTab(tab: string): string {
       `)}
       ${foldSection('SUPER COMBOS (5-base recipes)', `
         <div style="font-size:11px;color:#cdb98a;line-height:1.55;margin-bottom:6px">
-          Three of the strongest towers in the game. Each requires <b>5 base towers</b> as ingredients. Hard to assemble; extremely rewarding.
+          Three of the strongest towers in the game. <b>Triplex Acies</b> takes 5 ingredients; <b>Legion Prime + Consular Fatebinder</b> were trimmed to 4 ingredients in 2026-05-21. Hard to assemble; extremely rewarding.
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-          ${noteCard('TRIPLEX ACIES (early, 30g)', 'Cleaves 2-tile radius melee. +20% atk-speed aura to towers within 3 tiles. Recipe: Milites + Hastati + Triarius + Centurion + Skizzer (all T2+).')}
+          ${noteCard('TRIPLEX ACIES (early, 30g)', 'Cleaves 2-tile radius melee. +20% atk-speed aura to towers within 3 tiles. Recipe: Milites + Hastati + Triarius + Centurion + Auxilia (all T2+).')}
           ${noteCard('LEGION PRIME (mid, 100g)', 'Heavy AoE divine. Slow + Armor Shred on every hit. +25% damage aura within 3 tiles. Recipe: Ignifer + Speculator + Flamen + Carroballista (all T3+) — 4-ingredient since 2026-05-21 (Venator dropped).')}
           ${noteCard('CONSULAR FATEBINDER (apex, 250g)', 'Every shot strikes EVERY enemy on the map at 60% splash. TRUE damage. +30% global damage + atk speed aura. Recipe: 4× T5 base towers (Praefectus, Vulcan, Solar Priest, Colossus) — 4-ingredient since 2026-05-21 (Imperator Guard dropped).')}
         </div>
@@ -654,8 +654,8 @@ function renderTab(tab: string): string {
           ${noteCard('Turma Lancers (T3, 25g)', '2× Horseman T3 → twin cavalry, double-strike, +30% vs ground.')}
           ${noteCard('Aurora Legion (T4, 60g)', 'Eagle Standard T4 + Praetorian Wall T4. baseDps 70, pierces 4 in line, +50% vs elites. PROVIDENCE BLAST: every 4th attack fires a divine nova in 1.8 tiles around the primary for 2.5× damage to all inside.')}
           ${noteCard('Storm Vexilla (T4, 60g)', 'Stormcaller T4 + Eagle Standard T4. Wide 6-jump chain lightning.')}
-          ${noteCard('Imperium Eternum (T5 APEX, 150g)', '4× T5+ ingredients including Pontifex. 3-tile TRUE-damage quake on every hit. +20% global atk speed.')}
-          ${noteCard('Carthage Scourge (T5, 120g)', 'Hannibals Nightmare + Nemesis Engine + Scorpion Bolt. 6-bolt volley, +250% vs bosses.')}
+          ${noteCard('Imperium Eternum (T5 APEX, 150g)', '3 ingredients: Julius Caesar T5 + Aquilifer Titan T5 + Pontifex Maximus T4+. 3-tile TRUE-damage quake on every hit. +20% global atk speed.')}
+          ${noteCard('Carthage Scourge (T5, 120g)', `Hannibal's Nightmare T5 + Nemesis Engine T5. 6-bolt volley, +250% vs bosses, AoE freeze every 8s.`)}
           ${noteCard('Triumvirate (T5 SUPPORT, 100g)', 'Julius Caesar + Aquilifer + Eagle Standard. No direct damage. +35% global dmg, +25% global atk speed, +25% enemy taken globally.')}
         </div>
       `)}
@@ -726,7 +726,7 @@ function renderTab(tab: string): string {
     }).join('');
     const footer = `
       <div style="margin-top:10px;padding:8px 12px;background:#0c0a08;border:1px dashed #5a4a30;font-size:11px;color:#cdb98a;line-height:1.55">
-        <b style="color:#9be0ff">Strategy (20-wave campaign):</b> 95% T1 at start. 8-level curve costs <b>6 / 14 / 28 / 48 / 75 / 115 / 175 / 270g</b> per step. T4+T5 chance climbs to <b>76% at L8</b>. <b>L1 grants no damage bonus</b> (only the probability shift). Starting at L2, every level adds a permanent <b style="color:#88ff88">+3% global tower damage</b> (max +21% at L8). No rebate — you pay full price each step.<br/><br/>
+        <b style="color:#9be0ff">Strategy (20-wave campaign):</b> 95% T1 at start. 8-level curve costs <b>7 / 15 / 31 / 53 / 83 / 127 / 193 / 297g</b> per step (806g apex total). T4+T5 chance climbs to <b>76% at L8</b>. <b>L1 grants no damage bonus</b> (only the probability shift). Starting at L2, every level adds a permanent <b style="color:#88ff88">+3% global tower damage</b> (max +21% at L8). No rebate — you pay full price each step.<br/><br/>
         <b style="color:#9be0ff">What tier actually buys:</b> higher tiers stack three things — <b>raw damage</b> (T1=×1.0, T2=×1.25, T3=×1.55, T4=×1.95, T5=×2.50), <b>attack speed</b> (T1=×1.00 up to T5=×1.42), and <b>item slots</b> (1 at T1, 5 at T5). A T5 same-type tower fires ~3.55× the raw output of its T1 cousin before any items or pool bonuses. Roll T5 for the full stack — damage, speed, and slot count all climb.<br/><br/>
         <b style="color:#9be0ff">Hero substitute:</b> kills passively raise hero level (caps at 5). Effective pool = max(gold-purchased pool, hero level). Pool L6-L8 only comes from gold investment.
       </div>`;
@@ -807,7 +807,13 @@ function renderTab(tab: string): string {
       LATE:  '👑 LATE GAME (APEX) — 5-ingredient super-combos, win-condition towers'
     };
 
-    const entries = Object.entries(towers).map(([id, def]: any) => ({ id, def }));
+    // 2026-05-24 — Filter out hero entries. The 6 HERO_* towers have
+    // their own HEROES tab and shouldn't double-list in LEGIONS. Pre-fix
+    // they all sank into "LATE GAME APEX" because TOWER_STAGE didn't
+    // map them. Heroes still appear in the HEROES tab as expected.
+    const entries = Object.entries(towers)
+      .filter(([_, def]: any) => !def?.isHero)
+      .map(([id, def]: any) => ({ id, def }));
     entries.sort((a, b) => {
       const sa = STAGE_ORDER[TOWER_STAGE[a.id] ?? 'LATE'] ?? 99;
       const sb = STAGE_ORDER[TOWER_STAGE[b.id] ?? 'LATE'] ?? 99;
@@ -960,7 +966,7 @@ function renderTab(tab: string): string {
       if (score < 160)  return { idx: 1, label: '★★ TIER 3 · MID-EARLY — still BASE ingredients, slightly larger pieces' };
       if (score < 220)  return { idx: 2, label: '★★★ TIER 4 · MID-LATE — endgame-grade pieces, 50g per craft' };
       if (score < 260)  return { idx: 3, label: '★★★★ CROSS-COMBOS — ingredients are themselves combo towers, chain craft required' };
-      return { idx: 4, label: '★★★★★ SUPER COMBOS · APEX — 5+ ingredients or stacked cross-combos, hardest in the game' };
+      return { idx: 4, label: '★★★★★ SUPER COMBOS · APEX — 4-5 ingredients or stacked cross-combos, hardest in the game' };
     };
     let lastBandIdx = -1;
     const cards = sorted.map(c => {
@@ -1444,8 +1450,8 @@ function noteCard(title: string, body: string): string {
 const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
   ALPHA_DOG: [
     'CHAMPION — boss-tier HP, drops a legendary on kill',
-    'FRENZY — at 30% HP, doubles speed and ignores SLOW for 5s',
-    'PACK HOWL — every 8s, gives nearby Feral Dogs +50% speed for 4s',
+    'FRENZY — at 30% HP, permanently doubles speed for the rest of the fight (no slow immunity, no timer)',
+    'PACK HOWL — every 8s, gives nearby Feral Dogs +50% speed for 3s',
     'DEATH SPAWNS 3 FERAL DOGS at the boss\'s tile'
   ],
   CELTIC_WARLORD: [
@@ -1481,7 +1487,7 @@ const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
   DAEMON_IMPERATOR: [
     'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~5 tiles for 1.5s',
     'OUT-OF-COMBAT REGEN — 2.8% maxHP/sec while not taking DIRECT damage (active DoT halves to 1.4%/sec)',
-    'DOT-RESISTANT — takes only 50% poison and 50% bleed damage; fire-immune. Direct damage + DIVINE (1.30×) carry this fight.',
+    'DOT-RESISTANT — takes only 30% poison and 30% bleed damage; fire-immune. Direct damage + DIVINE (~1.40× final after faction × per-enemy damper) carry this fight.',
     'W20 FINAL BOSS — any leak ends the run instantly (Rome falls)'
   ]
 };
@@ -1570,11 +1576,19 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (id === 'WAR_ELEPHANT' || id === 'UNDEAD_WAR_ELEPHANT') {
     traits.push('DUST-SHIELD AURA — projects a 4-tile dust dome that makes every NEARBY GROUND enemy untargetable by ranged towers until the elephant dies. The elephant itself is still targetable. Melee towers ignore the dust.');
   }
-  // Demon divine vulnerability (hardcoded by type set)
+  // Demon divine resist profile (hardcoded by type set). 2026-05-24
+  // corrected per EnemyResistances.ts: regular demons carry per-enemy
+  // divine 1.20 (faction +100% × per-enemy 1.20 = ~2.40× combined);
+  // Daemon Imperator has a per-enemy divine 0.70 DAMPER (faction
+  // +100% × 0.70 = 1.40× final). The card was over-promising the
+  // multipliers in both directions.
   const DEMON_SET = new Set(['DEMON_HELLHOUND','CELTIC_FIRE_DEMON','SHADOW_CAVALRY','DEMON_LEGATE','DAEMON_IMPERATOR']);
   if (DEMON_SET.has(id)) {
-    const mult = id === 'DAEMON_IMPERATOR' ? '1.30×' : '1.50×';
-    traits.push(`DIVINE WEAKNESS — takes ${mult} damage from DIVINE sources (per-enemy) on top of the SUPER_DEMONS faction's +100% divine row. Solar Priest, Flamen, Augur, Haruspex are the dedicated demon counters.`);
+    if (id === 'DAEMON_IMPERATOR') {
+      traits.push("DIVINE PROFILE — per-enemy DIVINE 0.70 (damper) stacks with the SUPER_DEMONS faction +100% divine row → ~1.40× final divine taken. Less divine-vulnerable than lesser demons; lean on DoT-resistant builds + direct DPS.");
+    } else {
+      traits.push("DIVINE WEAKNESS — per-enemy DIVINE 1.20 stacks with the SUPER_DEMONS faction +100% divine row → ~2.40× final divine taken. Solar Priest, Flamen, Augur, Haruspex are the dedicated demon counters.");
+    }
   }
   // Death / multiplication
   if (def.splitOnDeath) {

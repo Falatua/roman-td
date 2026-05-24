@@ -426,7 +426,7 @@
     "melee": false,
     "tierBand": 5,
     "burnsGround": true,
-    "ability": "Tier V siege artisan. Extremely slow attack (0.45/s base) but lobs a fire-barrel with a 2.0-tile splash. Every hit stamps a BURNING GROUND patch (4s, 4–7% maxHP/sec scaling with tier) covering everyone in the splash zone.",
+    "ability": "Tier V siege artisan. Extremely slow attack (0.20/s base) but lobs a fire-barrel with a 2.0-tile splash. Every hit stamps a BURNING GROUND patch (4s, 4–7% maxHP/sec scaling with tier) covering everyone in the splash zone.",
     "critChance": 0.06,
     "critMult": 3
   },
@@ -452,7 +452,7 @@
     "kind": "BASE",
     "melee": false,
     "tierBand": 5,
-    "ability": "SOLAR FLARE: ignores faction resistance whenever the target is RESISTING this damage type (neutral and weak targets get normal damage; cap-of-cheese vs phys-resist races). Divine splash 0.85 tiles.",
+    "ability": "SOLAR FLARE: ignores faction resistance whenever the target is RESISTING this damage type (neutral and weak targets get normal damage; cap-of-cheese vs phys-resist races). Divine splash 1.15 tiles.",
     "critChance": 0.14,
     "critMult": 2.5
   },
@@ -623,7 +623,7 @@
     "spriteSheet": 3,
     "spriteCell": 1,
     "burnsGround": true,
-    "ability": "Massive 2.0-tile splash AoE. Every hit applies a 0.7s STUN to the primary target and stamps a BURNING GROUND patch (4s, 5–8% maxHP/sec scaled by tier) at the impact point.",
+    "ability": "Massive 3.0-tile splash AoE. Every hit applies a 0.7s STUN to the primary target and stamps a BURNING GROUND patch (4s, 5–8% maxHP/sec scaled by tier) at the impact point.",
     "critChance": 0.1,
     "critMult": 3
   },
