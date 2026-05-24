@@ -1919,12 +1919,11 @@ async function boot() {
   // PICK_KEEPER phases. First-round flow naturally shows all 5 here so the
   // player can compare before picking 2 to keep.
   //
-  // 2026-05-23 — These Sets persist the open/closed state of the
-  // QUICK INFO + RECIPE drop-downs across panel re-renders. The
-  // panel.innerHTML is wiped every frame in the render loop, so without
-  // an external store the user couldn't keep a drop-down open while
-  // playing. Cleared automatically when the prospect flow exits.
-  const expandedProspectTowers = new Set<string>();
+  // 2026-05-23 — Persists the open/closed state of the RECIPE row
+  // drop-downs across panel re-renders. The panel.innerHTML is wiped
+  // every frame in the render loop, so without an external store the
+  // user couldn't keep a drop-down open while playing. Cleared
+  // automatically when the prospect flow exits.
   const expandedProspectRecipes = new Set<string>();
   function updateProspectSidebar() {
     let panel = document.getElementById('prospect-sidebar') as HTMLElement | null;
@@ -1934,7 +1933,6 @@ async function boot() {
       if (panel) panel.remove();
       // Reset drop-down state when leaving the prospect flow so
       // returning later starts clean.
-      expandedProspectTowers.clear();
       expandedProspectRecipes.clear();
       return;
     }
@@ -1947,7 +1945,6 @@ async function boot() {
       .sort((a, b) => a.placedAtWave === b.placedAtWave ? a.tileY - b.tileY : a.placedAtWave - b.placedAtWave);
     if (placedPending.length === 0) {
       if (panel) panel.remove();
-      expandedProspectTowers.clear();
       expandedProspectRecipes.clear();
       return;
     }
@@ -1996,15 +1993,11 @@ async function boot() {
       : `${placedPending.length} PLACED`;
     // 2026-05-15 v4: header bumped from 9 px to 12 px now that the
     // panel sits in the wider left HUD column — it can breathe.
-    // 2026-05-19 — Added a two-line click-affordance tip below the
-    // headline so players actually realize the thumbnails are clickable
-    // and that clicking shows the same tower UI they get from clicking
-    // a tower on the map (stats, items, RECIPES list, upgrade buttons).
-    // The CRIT/T-tier row above is a quick read; the click opens the
-    // full detail panel.
+    // 2026-05-23 — Removed the "🖱 CLICK ANY TOWER FOR FULL INFO +
+    // RECIPES" subline per user request — recipes now have their own
+    // chevron drop-down so the callout is no longer needed.
     const headerHtml = `<div style="text-align:center;padding-bottom:6px;border-bottom:1px solid #5a4a30;margin-bottom:4px">
       <div style="font-size:12px;letter-spacing:3px;color:#ffd34d;font-weight:bold;text-shadow:1px 1px 0 #000">${headline}</div>
-      <div style="font-size:9px;letter-spacing:0.8px;color:#88ddff;font-weight:bold;margin-top:3px">🖱 CLICK ANY TOWER FOR FULL INFO + RECIPES</div>
     </div>`;
     const cellHtml = (sprKey: string, type: string, tier: number, opts: { towerId?: string; queued?: boolean; bumped?: number } = {}) => {
       const src = texUrl(sprKey) ?? '';
@@ -2024,24 +2017,11 @@ async function boot() {
       // bumped to 11 px so it's actually readable, CRIT row keeps
       // its yellow accent. Names wrap to 2 lines if they're long
       // (no more "AQUILIFER…" truncation in a 96 px column).
-      // 2026-05-19 — Added a small "▶ INSPECT" pill at the bottom of
-      // every clickable cell so the click affordance is explicit. The
-      // CSS :hover rule (injected once below) also brightens the cell
-      // border on hover to confirm clickability before commit.
-      // 2026-05-23 — Added an inline ▼ QUICK INFO chevron underneath
-      // every prospect cell that toggles a collapsible drop-down body
-      // containing the tower's full stats + ability text. Same combo-
-      // preview HTML the recipe rows use, so the player can peek
-      // damage/range/melee/ranged without opening the full tower-menu
-      // modal. The cell itself still opens the modal on click; the
-      // chevron uses stopPropagation so peeking doesn't trigger the
-      // modal at the same time.
-      const inspectPill = opts.towerId
-        ? `<div class="ps-quick" style="font-size:9px;color:#88ddff;letter-spacing:1px;font-weight:bold;margin-top:2px;padding:3px 8px;background:rgba(136,221,255,0.08);border:1px solid rgba(136,221,255,0.45);border-radius:2px;cursor:pointer;user-select:none">▼ QUICK INFO</div>`
-        : '';
-      const quickBody = opts.towerId
-        ? `<div class="ps-quick-body" style="display:none;width:100%;margin-top:4px;background:#080604;border:1px solid #3a3025">${comboPreviewBlockHtml(type)}</div>`
-        : '';
+      // 2026-05-23 — Removed the QUICK INFO chevron + drop-down body per
+      // user request — the cell click still opens the full tower-menu
+      // modal, and the recipe rows below have their own drop-down for
+      // combo previews. Cell layout simplifies to image + tier + name +
+      // crit.
       return `<div class="ps-cell" ${dataAttr} style="position:relative;border:2px solid ${TIER_HEX[tier]};background:#0c0a08;padding:6px;cursor:${cursor};display:flex;flex-direction:column;align-items:center;gap:3px;transition:border-color 120ms ease, box-shadow 120ms ease">
         ${bumpTag}
         <div style="position:relative;width:92px;height:92px">
@@ -2051,8 +2031,6 @@ async function boot() {
         <div style="font-size:11px;color:${TIER_HEX[tier]};font-weight:bold;letter-spacing:1px">T${tier}</div>
         <div style="font-size:10px;color:#cdb98a;text-align:center;line-height:1.2;letter-spacing:0.5px;word-break:break-word;font-weight:bold">${type.replace(/_/g,' ')}</div>
         <div style="font-size:9px;color:${critCol};letter-spacing:0.7px;font-weight:bold">CRIT ${critTxt}</div>
-        ${inspectPill}
-        ${quickBody}
       </div>`;
     };
     const placedHtml = placedPending.map(t =>
@@ -2098,13 +2076,13 @@ async function boot() {
           return `<span style="color:${c}">${String(ing.type).replace(/_/g, ' ')}</span>`;
         }).join('<span style="color:#cdb98a"> + </span>');
         return `<div class="recipe-row" data-combo-type="${String(cb.result)}" style="margin-bottom:6px;border-left:2px solid ${headerColor};background:#100c08">
-          <div class="recipe-summary" style="font-size:11px;line-height:1.35;padding:4px 6px;cursor:pointer;display:flex;align-items:flex-start;gap:6px">
+          <div class="recipe-summary" style="font-size:11px;line-height:1.35;padding:4px 6px;cursor:pointer;display:flex;align-items:stretch;gap:6px">
             <div style="flex:1;min-width:0">
-              <div style="color:${headerColor};font-weight:bold;letter-spacing:1px">▶ ${resultName}</div>
+              <div style="color:${headerColor};font-weight:bold;letter-spacing:1px">${resultName}</div>
               <div style="font-size:10px;letter-spacing:0.5px;word-break:break-word;margin-top:2px">${ingTxt}</div>
               <div style="font-size:9px;color:${headerColor};letter-spacing:1.2px;margin-top:2px;font-weight:bold">${statusTag} · ${cb.cost}g</div>
             </div>
-            <div class="recipe-chev" title="Show / hide combo details" style="font-size:14px;color:${headerColor};padding:2px 6px;border:1px solid ${headerColor};line-height:1;align-self:center;user-select:none">▶</div>
+            <button class="recipe-chev" title="Show / hide combo details" style="font-size:18px;color:${headerColor};padding:4px 10px;border:1.5px solid ${headerColor};background:rgba(255,170,80,0.08);line-height:1;align-self:stretch;cursor:pointer;user-select:none;font-family:inherit;font-weight:bold;min-width:36px;display:flex;align-items:center;justify-content:center">▶</button>
           </div>
           <div class="recipe-details" style="display:none">${comboPreviewBlockHtml(String(cb.result))}</div>
         </div>`;
@@ -2125,34 +2103,11 @@ async function boot() {
         const tw = state.towers.get(id);
         if (tw) inspectTower(tw);
       };
-      // 2026-05-23 — QUICK INFO chevron toggles an inline drop-down
-      // with the tower's combo preview (damage type, DPS, range,
-      // ability). stopPropagation so the toggle click doesn't ALSO
-      // open the full tower-menu modal underneath it. The open state
-      // is persisted in `expandedProspectTowers` so it survives the
-      // panel re-render that fires every frame.
-      const quickBtn = el.querySelector('.ps-quick') as HTMLElement | null;
-      const quickBody = el.querySelector('.ps-quick-body') as HTMLElement | null;
-      if (quickBtn && quickBody) {
-        // Re-apply the persisted open/closed state on every re-render so
-        // the panel-wipe each frame doesn't snap drop-downs shut.
-        const wasOpen = expandedProspectTowers.has(id);
-        quickBody.style.display = wasOpen ? 'block' : 'none';
-        quickBtn.textContent = wasOpen ? '▲ HIDE INFO' : '▼ QUICK INFO';
-        quickBtn.onclick = (ev: MouseEvent) => {
-          ev.stopPropagation();
-          const isOpen = quickBody.style.display === 'block';
-          if (isOpen) {
-            quickBody.style.display = 'none';
-            quickBtn.textContent = '▼ QUICK INFO';
-            expandedProspectTowers.delete(id);
-          } else {
-            quickBody.style.display = 'block';
-            quickBtn.textContent = '▲ HIDE INFO';
-            expandedProspectTowers.add(id);
-          }
-        };
-      }
+      // 2026-05-23 — Removed the QUICK INFO chevron handler (the
+      // button + body were removed from the cell HTML per user
+      // request). The cell click below still opens the full
+      // tower-menu modal; the recipe rows have their own dedicated
+      // drop-down for combo previews.
       (el as HTMLElement).onmouseenter = (ev: MouseEvent) => {
         // Save the current selection so we can restore on leave.
         if (renderer.selectedTowerId !== id) {
@@ -2175,13 +2130,13 @@ async function boot() {
         document.getElementById('tower-hover-preview')?.remove();
       };
     });
-    // 2026-05-23 — Wire recipe drop-down toggles. Click the summary
-    // (or the chevron) to expand the combo preview body underneath.
-    // Mirrors the placed-tower cell click pattern above. Each row is
-    // independent — opening one does NOT close the others, so the player
-    // can have several combos open simultaneously while planning a keep.
-    // Open state lives in `expandedProspectRecipes` so it survives the
-    // per-frame panel.innerHTML re-render.
+    // 2026-05-23 — Wire recipe drop-down toggles. The chevron button on
+    // the right is the primary affordance — click it to expand a combo
+    // preview body underneath. The whole summary row is also clickable
+    // as a forgiving fallback. Each row is independent (opening one
+    // doesn't close the others). Open state lives in
+    // `expandedProspectRecipes` so it survives the per-frame
+    // panel.innerHTML re-render in the render loop.
     panel.querySelectorAll('.recipe-row').forEach(row => {
       const summary = row.querySelector('.recipe-summary') as HTMLElement | null;
       const details = row.querySelector('.recipe-details') as HTMLElement | null;
@@ -2192,7 +2147,7 @@ async function boot() {
       const wasOpen = !!comboKey && expandedProspectRecipes.has(comboKey);
       details.style.display = wasOpen ? 'block' : 'none';
       if (chev) chev.textContent = wasOpen ? '▼' : '▶';
-      summary.onclick = () => {
+      const toggle = () => {
         const isOpen = details.style.display === 'block';
         if (isOpen) {
           details.style.display = 'none';
@@ -2204,6 +2159,17 @@ async function boot() {
           if (comboKey) expandedProspectRecipes.add(comboKey);
         }
       };
+      summary.onclick = toggle;
+      // Chevron gets its own bound handler with stopPropagation so the
+      // click registers even if browser quirks ate the parent bubble.
+      // Defense-in-depth: the row click is the fallback, the chevron
+      // click is the explicit affordance.
+      if (chev) {
+        chev.onclick = (ev: MouseEvent) => {
+          ev.stopPropagation();
+          toggle();
+        };
+      }
     });
   }
   // ─── Tower-queue indicator ─────────────────────────────────────────────
