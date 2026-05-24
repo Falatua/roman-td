@@ -1024,7 +1024,7 @@
     "name": "Gaius Marius",
     "damageType": "PHYS_MELEE",
     "baseDps": 146,
-    "attackSpeed": 1.3,
+    "attackSpeed": 1.5,
     "range": 2.5,
     "kind": "BASE",
     "melee": true,
