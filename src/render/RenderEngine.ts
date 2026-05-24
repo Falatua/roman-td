@@ -4104,7 +4104,7 @@ export class RenderEngine {
           // (1.3 → 1.95 tile-widths), wobble harder, and the overlay
           // pass below draws orbiting skulls + soul column + aura ring
           // + ground cracks per urn. Spawn impact rings are doubled in
-          // radius and ember bursts tripled — Death Uprising should
+          // radius and ember bursts tripled — Skeletal Uprising should
           // feel like a portal to the underworld is opening, not a
           // polite ceramic pot popping out of the ground.
           const tx = tex('SKULL_URN');

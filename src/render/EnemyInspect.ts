@@ -327,7 +327,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       } else if (isActive) {
         traits.push({ label: `NECROMANCY · ACTIVE THIS WAVE — every kill spawns 6-9 × ${reanimName} at 85-100% HP at the death tile (risen units can't chain).`, color: '#aa55ff' });
       } else {
-        traits.push({ label: `💤 DORMANT TRAIT — Druid-class casters carry a latent necromancy curse that only fires on W11 + W13 (Death Uprising waves). Not active this wave. Would spawn 6-9 × ${reanimName} per kill when active.`, color: '#7a5a8a' });
+        traits.push({ label: `💤 DORMANT TRAIT — Druid-class casters carry a latent necromancy curse that only fires on W11 + W13 (necromancy-flagged waves). Not active this wave. Would spawn 6-9 × ${reanimName} per kill when active. (Distinct from the Skeletal Uprising surprise event on W11 + W14.)`, color: '#7a5a8a' });
       }
     }
   }

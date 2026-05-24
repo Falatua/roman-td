@@ -1609,7 +1609,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
     if (alwaysReanim) {
       traits.push(`NECROMANCY · ACTIVE — undead faction, every kill spawns 6-9 × ${reanimName} at 85-100% HP at the death tile (risen units can't chain)`);
     } else if (isDruidClass || isSelfReanim) {
-      traits.push(`NECROMANCY · dormant trait — fires on W11 + W14 (Death Uprising waves) → spawns 6-9 × ${reanimName} per kill when active`);
+      traits.push(`NECROMANCY · dormant trait — fires on W11 + W13 (necromancy-flagged waves per waves.json) → spawns 6-9 × ${reanimName} per kill when active. Distinct from the Skeletal Uprising surprise event on W11 + W14.`);
     }
   }
   // Gold theft

@@ -572,12 +572,25 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
         dmgMods.push({ source: 'Consular Fatebinder', multiplier: 1.30 });
         spdMods.push({ source: 'Consular Fatebinder', multiplier: 1.30 });
       }
+      // 2026-05-24 audit fix — TRIARIUS +12% global damage aura.
+      // Mirrors CombatResolver.ts:521-524. Previously applied in
+      // combat but missing from the tower-info breakdown panel, so
+      // the player couldn't see WHY a tower hit harder than its base
+      // stats.
+      if (other.type === TowerType.TRIARIUS) {
+        dmgMods.push({ source: 'Triarius global', multiplier: 1.12 });
+      }
       // Local auras (range-gated)
       if (other.type === TowerType.TRIPLEX_ACIES && d <= 3 * GRID.TILE) {
         spdMods.push({ source: 'Triplex Acies', multiplier: 1.20 });
       }
       if (other.type === TowerType.LEGION_PRIME && d <= 3 * GRID.TILE) {
         dmgMods.push({ source: 'Legion Prime', multiplier: 1.25 });
+      }
+      // 2026-05-24 audit fix — COHORT_GUARD +15% local 3-tile damage
+      // aura. Mirrors CombatResolver.ts:525-528.
+      if (other.type === TowerType.COHORT_GUARD && d <= 3 * GRID.TILE) {
+        dmgMods.push({ source: 'Cohort Guard local', multiplier: 1.15 });
       }
       if (other.equippedItems.includes('CENTURIONS_TRUMPET') && d <= 2 * GRID.TILE) {
         spdMods.push({ source: "Centurion's Trumpet aura", multiplier: 1.12 });
@@ -601,9 +614,23 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
         dmgMods.push({ source: "Lich General's Seal aura", multiplier: 1.12 });
         spdMods.push({ source: "Lich General's Seal aura", multiplier: 1.15 });
       }
-      // CURSED_TORC is an enemy-debuff aura (not shown here — the
-      // wearer's own breakdown doesn't list it because it doesn't buff
-      // the tower; CombatResolver applies it via enemyTakenAuras).
+      // 2026-05-24 audit fix — three more item auras missing from the
+      // breakdown panel. All apply in combat at CombatResolver.ts:612-636.
+      if (other.equippedItems.includes('AQUILIFER_BANNER') && d <= 2.5 * GRID.TILE) {
+        dmgMods.push({ source: "Aquilifer's Banner aura", multiplier: 1.14 });
+        spdMods.push({ source: "Aquilifer's Banner aura", multiplier: 1.10 });
+      }
+      if (other.equippedItems.includes('OPTIO_WHISTLE') && d <= 2 * GRID.TILE) {
+        spdMods.push({ source: "Optio's Whistle aura", multiplier: 1.12 });
+      }
+      if (other.equippedItems.includes('INFERNO_STANDARD') && d <= 3 * GRID.TILE) {
+        dmgMods.push({ source: 'Inferno Standard aura', multiplier: 1.25 });
+      }
+      // CURSED_TORC and NECROMANCERS_LANTERN are ENEMY-DEBUFF auras
+      // (enemy-taken multipliers), not ally buffs. CombatResolver applies
+      // them via the enemyTakenAuras array per-hit, so they don't show
+      // up here in the wearer's-neighbor breakdown — they affect damage
+      // OUTPUT through a different code path.
     }
   }
 
