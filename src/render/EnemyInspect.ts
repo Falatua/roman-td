@@ -230,6 +230,11 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   if (def?.meleeImmune) traits.push({ label: 'MELEE-IMMUNE — physical melee deals 0 damage', color: '#ee5555' });
   if (def?.requiresMeleeBreak) traits.push({ label: 'SHIELD — ranged & siege ignored until a melee tower cracks the shield', color: '#ee5555' });
   if (def?.shieldBlockChance) traits.push({ label: `SHIELD BLOCK — ${Math.round(def.shieldBlockChance*100)}% chance to fully block ranged/siege hits (until shield breaks)`, color: '#ee5555' });
+  // 2026-05-24 audit fix — surface allAttackBlockChance on the inspect
+  // panel so the player sees Undead Spearman / Iron Phalanx's all-type
+  // deflect from the unit card, not just from the wave brief callout.
+  // Mirrors Codex.ts trait line.
+  if (def?.allAttackBlockChance) traits.push({ label: `ALL-ATTACK BLOCK — ${Math.round(def.allAttackBlockChance*100)}% chance per hit to deflect ANY incoming damage (melee, ranged, siege, fire, divine). Never expires, independent of shield state.`, color: '#ee5555' });
   if (def?.phaseHits) traits.push({ label: `PHASE — ignores the first ${def.phaseHits} hit${def.phaseHits === 1 ? '' : 's'} (MISS floater appears)`, color: '#ee5555' });
   if (def?.dodgeChance) traits.push({ label: `DODGE — ${Math.round(def.dodgeChance*100)}% chance to evade ranged & siege attacks (melee always lands)`, color: '#ff8866' });
   // -- Status immunities --

@@ -1079,12 +1079,26 @@ async function boot() {
         : '🪨 ELEPHANTS — SIEGE WEAKNESS · living take +45% SIEGE, undead take +20% SIEGE. Bleed and poison resisted heavily — DoT-stacker builds skip elephants.';
       enemyCallouts.push({ text: txt, cat: 'ENEMY' });
     }
-    // GALLIC DRUIDS — sacred-ward shield + Celtic faction takes +15% ranged.
-    if (state.wave === 4 && enemiesInWave.has('GALLIC_DRUID')) enemyCallouts.push({ text: '🛡 CELTS — RANGED VULNERABILITY · the Celtic faction takes +15% ranged damage. After a melee tower cracks the druid\'s sacred ward, your archers shred them. Pair Sagittarius/Velites/Decurion behind a Milites or Hastati for the W4 break.', cat: 'ENEMY' });
+    // 2026-05-24 audit fix — CELTS callout. Faction is PHYS_MELEE -0.20
+    // (resist 20%) and PHYS_RANGED +0.05 (vuln 5%) per factionResistances
+    // .json. Per-enemy resists swing most Celts ranged-RESISTANT (Druid
+    // 0.75 → 21% ranged resist; Footman 0.80 → 16% resist; Scout 0.65 →
+    // 32% resist). Druid is the only melee-neutral target (+25% per-enemy
+    // cancels faction -20%). The old "+15% ranged + sacred ward" copy was
+    // fabricated — no ward mechanic exists, and archers don't shred Celts.
+    if (state.wave === 4 && enemiesInWave.has('GALLIC_DRUID')) enemyCallouts.push({ text: '☘ CELTS — TANK WAVE · faction RESISTS melee 20%, takes only +5% ranged. Druid is the lone melee-neutral target (+25% per-enemy cancels faction resist) and resists poison 70% / burn 40%. DIVINE bypasses Celtic resists — Solar Priest / Augur / Pontifex are the cleanest answer. Mix in melee for the W4 break.', cat: 'ENEMY' });
     // UNDEAD CELTS — +25% fire / +50% divine (faction-side).
     if (enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('ZOMBIE_DRUID') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('SPECTRAL_SCOUT') || enemiesInWave.has('UNDEAD_WARLORD')) enemyCallouts.push({ text: '🔥 UNDEAD CELTS — FIRE & DIVINE WEAKNESS · faction takes +25% fire damage and +50% divine damage. Burn the bones, smite the spirits. Poison and bleed deal 0 — no flesh to corrupt.', cat: 'ENEMY' });
-    // CARTHAGE living — ranged-resistant (-20%) + melee-vulnerable (+30%).
-    if (enemiesInWave.has('CARTHAGE_SPEARMAN') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('NUMIDIAN_RIDER') || enemiesInWave.has('HANNIBAL_BARCA')) enemyCallouts.push({ text: '⚔ CARTHAGE — MELEE FAVORED · faction takes +30% melee damage and resists ranged by 20%. Push close-range builds (Centurion / Primus Pilus / Cohort Guard / Imperator Guard) for the W7-W10 stretch.', cat: 'ENEMY' });
+    // 2026-05-24 audit fix — CARTHAGE callout. Faction is PHYS_MELEE
+    // -0.30 (RESIST 30%) and PHYS_RANGED -0.20 (RESIST 20%) per
+    // factionResistances.json. Per-enemy resists stack: Spearman melee
+    // 0.75 × faction 0.70 = 0.525 (47% resist); Elite Guard 0.60 × 0.70
+    // = 0.42 (58% resist); Hannibal 0.65 × 0.70 = 0.455 (54% resist).
+    // SIEGE is the lone opening: per-enemy siege Spearman 1.30 × faction
+    // 0.85 = 1.105 (+11% taken); Elite Guard 1.40 × 0.85 = 1.19 (+19%);
+    // Numidian + Hannibal stay siege-neutral / resistant. Old "MELEE
+    // FAVORED · takes +30% melee" copy was sign-flipped.
+    if (enemiesInWave.has('CARTHAGE_SPEARMAN') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('NUMIDIAN_RIDER') || enemiesInWave.has('HANNIBAL_BARCA')) enemyCallouts.push({ text: '⚔ CARTHAGE — TANK FACTION · resists melee 30% AND ranged 20% (per-enemy stacks push Spearman/Elite Guard/Hannibal to 47-58% melee resist). SIEGE is the opening: Spearman takes +11%, Elite Guard +19% — Onager / Carroballista / Architectus / Carthage Scourge for the W7-W10 stretch. Hannibal himself stays siege-resistant (-15% faction × neutral per-enemy) — burst him with divine + melee instead.', cat: 'ENEMY' });
     // UNDEAD CARTHAGE — FIRE/MELEE favored. 2026-05-24 copy fix per
     // factionResistances.json: UNDEAD_CARTHAGE takes +30% FIRE (not
     // immune as the previous text wrongly claimed). UNDEAD_SPEARMAN +
@@ -1120,7 +1134,7 @@ async function boot() {
     //  • W8 universal ranged-block (set on every spawn in EnemySystem)
     //  • UNDEAD_SPEARMAN / IRON_PHALANX 0.20 all-attack-block (every type)
     //  • W19 wave-level in-combat regen
-    if (state.wave === 8) enemyCallouts.push({ text: '🛡 W8 SHIELD WALL · every enemy this wave has a 20% chance to BLOCK any ranged or siege hit (NUMIDIAN_RIDER stacks its own 15% dodge on top → ~32% effective whiff vs ranged). Bring melee or divine for the W8 stretch.', cat: 'ENEMY' });
+    if (state.wave === 8) enemyCallouts.push({ text: '🛡 W8 SHIELD WALL · every enemy this wave has a 20% chance to BLOCK any ranged or siege hit (NUMIDIAN_RIDER stacks its own 20% dodge on top → ~36% effective whiff vs ranged). Bring melee or divine for the W8 stretch.', cat: 'ENEMY' });
     if (enemiesInWave.has('UNDEAD_SPEARMAN') || enemiesInWave.has('IRON_PHALANX')) enemyCallouts.push({ text: '🛡 ALL-ATTACK BLOCK · Undead Spearman / Iron Phalanx have a 20% chance per hit to deflect ANY damage type — melee, ranged, siege, fire, divine. Never expires. Stacks multiplicatively with shield-block (35% on Spearman). Spread the alpha across multiple towers.', cat: 'ENEMY' });
     if ((w as any).enemyRegenPctPerSec) enemyCallouts.push({ text: `🩹 WAVE REGEN · every enemy on this wave regenerates ${Math.round(((w as any).enemyRegenPctPerSec) * 1000) / 10}% maxHP/sec continuously (not blocked by DoT). Sustained DPS only — chip damage gets undone every second.`, cat: 'ENEMY' });
     // 2026-05-21 — Ambush stealth + presence-silence aura callouts.
@@ -1677,7 +1691,7 @@ async function boot() {
     const flyerStealthSec = (w as any).flyerInitialStealthSec ?? 0;
     if (flyerStealthSec > 0 && hasFlyers) tips.push({
       headline: '🌫 SHROUDED OPENER',
-      body: `Wave <b>${nextWave}</b>: every flyer is <b style="color:#ff5050">stealthed (untargetable) for the first ${flyerStealthSec} seconds.</b> Towers can't lock on until the veil drops — you'll see the riders glide forward but no shots will fire. Stack DPS for the moment they reveal. <b style="color:#ffd34d">Truesight items</b> (Augur's Eye, etc.) bypass the stealth.`,
+      body: `Wave <b>${nextWave}</b>: every flyer is <b style="color:#ff5050">stealthed (untargetable) for the first ${flyerStealthSec} seconds.</b> Towers can't lock on until the veil drops — you'll see the riders glide forward but no shots will fire. Stack DPS for the moment they reveal. <b style="color:#ffd34d">Truesight Lens</b> (item) reveals stealthed enemies for any equipped tower — once seen, every tower can shoot them for the rest of the wave.`,
       color: '#aabbff'
     });
     if (isPhalanx) tips.push({
@@ -1750,10 +1764,16 @@ async function boot() {
       body: `Wave <b>${nextWave}</b> has Undead Celts. Faction takes <b style="color:#ffd34d">+25% FIRE damage</b> and <b style="color:#ffd34d">+50% DIVINE damage</b> — burn the bones, smite the spirits. <b style="color:#ff5050">Poison and bleed deal 0</b> (no flesh to corrupt), so DoT-stacker builds will whiff this wave.`,
       color: '#ff8a22'
     });
-    // Living Carthage — melee + SIEGE favored.
+    // 2026-05-24 audit fix — Living Carthage pre-wave tip. Faction
+    // PHYS_MELEE -0.30 (RESIST 30%) and PHYS_RANGED -0.20 (RESIST 20%);
+    // per-enemy resists stack (Spearman/Elite Guard/Hannibal 47-58%
+    // melee resist after stacking). SIEGE per-enemy multipliers flip
+    // siege to net vulnerable on Spearman (+11%) and Elite Guard (+19%).
+    // Numidian + Hannibal stay siege-neutral / resistant. Old "MELEE +
+    // SIEGE WIN · faction takes +30% melee" copy was sign-flipped.
     if (hasLivingCarthage && !isBossWave) tips.push({
-      headline: '⚔ CARTHAGE — MELEE + SIEGE WIN',
-      body: `Wave <b>${nextWave}</b> brings living Carthage troops. Faction takes <b style="color:#ffd34d">+30% MELEE</b> and resists ranged by 20%. <b style="color:#ff9933">SIEGE is the hard answer to the rank-and-file</b> — Spearman <b>+30%</b>, Numidian Rider <b>+15%</b>, Sacred Band Elite Guard <b>+40%</b>. <b style="color:#ff5050">Hannibal himself takes ~15% reduced siege damage</b> (per-enemy neutral 1.0 × faction −15%) — bring melee burst + DoT for the W10 boss, not just onagers. Park Onagers + Turris on the path alongside your <b>Centurion / Primus Pilus / Cohort Guard / Imperator Guard</b>. Spearmen drilled in pitch-treated linen still resist fire — bleed is the safer DoT.`,
+      headline: '⚔ CARTHAGE — SIEGE FINDS THE GAP',
+      body: `Wave <b>${nextWave}</b> brings living Carthage. Faction <b style="color:#ff5050">RESISTS melee 30%</b> AND <b style="color:#ff5050">ranged 20%</b> — per-enemy multipliers stack on top (Spearman/Elite Guard/Hannibal are 47-58% melee-resistant). <b style="color:#ff9933">SIEGE is the lone opening</b> on the rank-and-file: Spearman takes <b>+11%</b>, Elite Guard <b>+19%</b>. Park Carroballista / Turris / Architectus / Onagers on the path. <b style="color:#ff5050">Hannibal himself stays siege-resistant 15%</b> (per-enemy 1.0 × faction −0.15) — burst him with <b>divine + melee</b> instead. Spearmen drilled in pitch-treated linen also resist fire — bleed is the safer DoT.`,
       color: '#ff7733'
     });
     // Undead Carthage — fire-favored (not immune, as old copy claimed).
@@ -1766,7 +1786,10 @@ async function boot() {
       body: `Wave <b>${nextWave}</b> has Undead Carthage troops. Faction takes <b style="color:#ffd34d">+30% FIRE damage</b> and <b style="color:#ffd34d">+25% MELEE damage</b>. Per-enemy stacking: <b style="color:#ff7733">Undead Spearman / Ghost Rider take ~1.82× FIRE</b> (faction × +40% per-enemy fire weakness); <b style="color:#ff7733">Iron Phalanx burns at 2.0× FIRE</b>. Bleed and poison deal 0 — fire is the lone DoT that works. Lean into <b style="color:#ffd34d">Ignifer / Inferno Cart / Vestal Pyre + melee + divine</b>.`,
       color: '#ff7733'
     });
-    if (hasCheckpointHealers && !isBossWave) tips.push({
+    // 2026-05-24 audit fix — gate pre-wave checkpoint-heal tip on
+    // `disableCheckpointHeal` so W11 (with the flag set) stops popping
+    // the warning. Mirrors the wave-brief callout gating at line 1117.
+    if (hasCheckpointHealers && !isBossWave && !w.disableCheckpointHeal) tips.push({
       headline: '⛨ THEY HEAL AT EACH CHECKPOINT',
       body: `Wave <b>${nextWave}</b> brings stubborn grunts that regain <b style="color:#66ff88">15% maxHP</b> the first time they cross each waypoint coin (seven coins on the map). Each coin pays out once per enemy. <b style="color:#ff5050">Finish them BETWEEN coins or watch them walk back to full.</b> Pinch the path right before each waypoint with cleave melee or splash so the kill window stays narrow.`,
       color: '#66ff88'
