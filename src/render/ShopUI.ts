@@ -695,6 +695,11 @@ function renderMercatorShop(
   panel.appendChild(footer);
 
   modal.appendChild(panel);
+  // 2026-05-24 — Backdrop click closes the shop. Per UI audit.
+  modal.addEventListener('click', (ev) => {
+    if (ev.target === modal) hooks.onClose();
+  });
+  panel.addEventListener('click', (ev) => ev.stopPropagation());
   parent.appendChild(modal);
 }
 
@@ -918,6 +923,11 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   closeRow.appendChild(closeBtn);
   contentRoot.appendChild(closeRow);
   modal.appendChild(panel);
+  // 2026-05-24 — Backdrop click closes the Mercator modal.
+  modal.addEventListener('click', (ev) => {
+    if (ev.target === modal) hooks.onClose();
+  });
+  panel.addEventListener('click', (ev) => ev.stopPropagation());
   parent.appendChild(modal);
 }
 
@@ -1195,6 +1205,11 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   closeRow.appendChild(close);
   panel.appendChild(closeRow);
   modal.appendChild(panel);
+  // 2026-05-24 — Backdrop click closes the inventory modal.
+  modal.addEventListener('click', (ev) => {
+    if (ev.target === modal) hooks.onClose();
+  });
+  panel.addEventListener('click', (ev) => ev.stopPropagation());
   parent.appendChild(modal);
 }
 

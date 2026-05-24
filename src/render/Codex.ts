@@ -58,6 +58,12 @@ interface CodexCtx {
 }
 let lastCtx: CodexCtx = { poolLevel: 0, heroLevel: 0, totalKills: 0 };
 
+// 2026-05-24 — Module-scoped active-tab memory so reopening the Codex
+// drops the player back onto the tab they were last reading instead of
+// resetting to SYSTEMS every time.
+type CodexTab = 'SYSTEMS' | 'MECHANICS' | 'QUESTS' | 'POOL' | 'LEGIONS' | 'COMBINATIONS' | 'ENEMIES' | 'ITEMS' | 'HEROES';
+let lastActiveCodexTab: CodexTab = 'SYSTEMS';
+
 export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   if (ctx) lastCtx = ctx;
   closeGameModals();
@@ -105,14 +111,18 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   const tabs = ['SYSTEMS', 'MECHANICS', 'QUESTS', 'POOL', 'LEGIONS', 'COMBINATIONS', 'ENEMIES', 'ITEMS', 'HEROES'] as const;
   const tabsEl = panel.querySelector('#codex-tabs')!;
   const bodyEl = panel.querySelector('#codex-body')! as HTMLElement;
-  let active: typeof tabs[number] = 'SYSTEMS';
+  // 2026-05-24 — Codex active tab persists across reopens via
+  // module-scoped state. Previously reset to SYSTEMS every showCodex()
+  // call, dumping a player who'd just read ENEMIES back to the
+  // beginning the next time they opened the codex.
+  let active: typeof tabs[number] = lastActiveCodexTab;
   function render() {
     tabsEl.innerHTML = '';
     for (const t of tabs) {
       const b = document.createElement('button');
       b.textContent = t;
       b.style.cssText = `background:${active === t ? '#d4af37' : '#3a3025'};color:${active === t ? '#1a1410' : '#e8d6a8'};border:1px solid #5a4a30;padding:6px 10px;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:1px;`;
-      b.onclick = () => { active = t; (searchEl as HTMLInputElement).value = ''; render(); };
+      b.onclick = () => { active = t; lastActiveCodexTab = t; (searchEl as HTMLInputElement).value = ''; render(); };
       tabsEl.appendChild(b);
     }
     bodyEl.innerHTML = renderTab(active);

@@ -363,23 +363,29 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // Implication: a single truesight tower no longer auto-reveals every
   // stealth enemy on the map. You need actual range coverage. The pay-off
   // is that everyone behind the truesight tower benefits too.
-  const truesightTowers = towers.filter(tw => tw.equippedItems.includes('TRUESIGHT_LENS'));
-  (state as any).__truesightActive = truesightTowers.length > 0;     // legacy flag kept for rendering hooks
-  if (truesightTowers.length > 0) {
-    const allEnemies = Array.from(state.enemies.values());
-    for (const tw of truesightTowers) {
+  // 2026-05-24 perf: scan truesight towers with squared-distance compare
+  // (skip sqrt) and iterate `state.enemies.values()` directly without
+  // materialising an Array.from snapshot. Per-frame alloc → zero. With
+  // ~200 enemies × 1-2 truesight towers, this trims ~200 hypots/frame
+  // = 12K/sec plus a per-frame array alloc.
+  let truesightCount = 0;
+  for (const tw of towers) {
+    if (tw.equippedItems.includes('TRUESIGHT_LENS')) {
+      truesightCount++;
       const stats = towerEffectiveStats(tw);
       const tx = tw.tileX * GRID.TILE + GRID.TILE / 2;
       const ty = tw.tileY * GRID.TILE + GRID.TILE / 2;
       const rPx = stats.range * GRID.TILE;
-      for (const e of allEnemies) {
-        if ((e as any).__truesightRevealed) continue;     // already tagged, skip distance test
-        if (Math.hypot(e.x - tx, e.y - ty) <= rPx) {
-          (e as any).__truesightRevealed = true;
-        }
+      const rPx2 = rPx * rPx;
+      for (const e of state.enemies.values()) {
+        if ((e as any).__truesightRevealed) continue;
+        const dx = e.x - tx;
+        const dy = e.y - ty;
+        if (dx * dx + dy * dy <= rPx2) (e as any).__truesightRevealed = true;
       }
     }
   }
+  (state as any).__truesightActive = truesightCount > 0;     // legacy flag for render hooks
 
   // SUPPORT AURA scan (Vision §9 / build expression §12).
   // Eagle Standard:    global +18% damage, +10% atk speed within 4 tiles

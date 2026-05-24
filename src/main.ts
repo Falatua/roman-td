@@ -5568,13 +5568,21 @@ async function boot() {
       //   • mercator-shop / gate-shop both render through shop-modal
       //   • dps-check-summary
       //   • settings-panel
+      // 2026-05-24 — expanded list per UI audit: was missing
+      // quests-modal, combo-info-modal, combo-picker, hero-place-confirm,
+      // endless-leaderboard, name-prompt, sandbox sub-pickers, and
+      // stone-menu. Each was bookmark-trapping ESC because the universal
+      // handler skipped the ID.
       const modalsToClose = [
         'tower-menu', 'shop-modal', 'codex-modal', 'tower-leaderboard',
         'enemy-inspect', 'surprise-reward-modal', 'inventory-modal',
         'dps-check-summary', 'settings-panel', 'hall-of-glory',
         'end-summary', 'endless-failure', 'pick-keeper-guide',
         'final-hour-hype', 'boss-warning-1', 'boss-warning-2',
-        'final-boss-hp'
+        'final-boss-hp', 'quests-modal', 'combo-info-modal',
+        'combo-picker', 'hero-place-confirm', 'endless-leaderboard',
+        'name-prompt', 'sandbox-wave-picker', 'sandbox-tower-picker',
+        'stone-menu', 'block-alert'
       ];
       for (const id of modalsToClose) document.getElementById(id)?.remove();
       // Also clear any in-flight "click a row" modes triggered by the

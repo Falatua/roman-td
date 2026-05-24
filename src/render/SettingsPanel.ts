@@ -23,6 +23,11 @@ import {
 } from '../Mobile';
 
 type SettingsTab = 'SOUND' | 'DISPLAY';
+
+// 2026-05-24 — Module-scoped active-tab memory so reopening Settings
+// drops the player back onto the tab they last opened (was always
+// resetting to SOUND).
+let lastActiveSettingsTab: SettingsTab = 'SOUND';
 const REDUCE_DECOR_KEY = 'roman_td_reduce_decoration';
 const REDUCE_MOTION_KEY = 'roman_td_reduce_motion';
 
@@ -52,7 +57,7 @@ export function showSettingsPanel(parent: HTMLElement) {
   // Tab strip. SOUND has always existed; DISPLAY ships with the 2026-05-22
   // mobile UX pass (Reduce motion / Reduce decoration / Haptics toggles).
   const tabs: SettingsTab[] = ['SOUND', 'DISPLAY'];
-  let activeTab: SettingsTab = 'SOUND';
+  let activeTab: SettingsTab = lastActiveSettingsTab;
   const tabStrip = document.createElement('div');
   tabStrip.style.cssText = `display:flex;border-bottom:2px solid #d4af37;background:#1a1208`;
   panel.appendChild(tabStrip);
@@ -172,7 +177,7 @@ export function showSettingsPanel(parent: HTMLElement) {
       const tab = document.createElement('button');
       tab.textContent = t;
       tab.style.cssText = `background:${t === activeTab ? '#d4af37' : '#3a2a14'};color:${t === activeTab ? '#1a1410' : '#e8d6a8'};border:none;border-right:1px solid #5a4a30;padding:10px 22px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:3px;font-weight:bold`;
-      tab.onclick = () => { activeTab = t; renderTabStrip(); renderActive(); };
+      tab.onclick = () => { activeTab = t; lastActiveSettingsTab = t; renderTabStrip(); renderActive(); };
       tabStrip.appendChild(tab);
     }
   }

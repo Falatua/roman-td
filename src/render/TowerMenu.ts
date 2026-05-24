@@ -762,6 +762,11 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     keepRow.appendChild(cancel);
     panel.appendChild(keepRow);
     modal.appendChild(panel);
+    // 2026-05-24 — Backdrop click dismiss (pending-prospect path too).
+    modal.addEventListener('click', (ev) => {
+      if (ev.target === modal) hooks.onClose();
+    });
+    panel.addEventListener('click', (ev) => ev.stopPropagation());
     parent.appendChild(modal);
     return;
   }
@@ -809,6 +814,15 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   panel.appendChild(actions);
 
   modal.appendChild(panel);
+  // 2026-05-24 — Backdrop click closes the menu. Per UI audit the tower
+  // menu was the most-opened modal in the game and was missing the
+  // standard backdrop-dismiss affordance every other modal has. Click
+  // outside the panel → close; clicks INSIDE the panel stop here so
+  // they don't bubble up to the backdrop.
+  modal.addEventListener('click', (ev) => {
+    if (ev.target === modal) hooks.onClose();
+  });
+  panel.addEventListener('click', (ev) => ev.stopPropagation());
   parent.appendChild(modal);
   // Gold scrollbar + "▼ SCROLL FOR MORE" hint on the MODAL (the scroll
   // container after the 2026-05-19 responsive-clamping refactor). Long

@@ -397,6 +397,29 @@ function renderScreen(args: RenderArgs): HTMLElement {
   args.parent.appendChild(wrap);
   (wrap.querySelector('#bw-confirm') as HTMLButtonElement).onclick = args.onConfirm;
   (wrap.querySelector('#bw-cancel') as HTMLButtonElement).onclick = args.onCancel;
+  // 2026-05-24 — Per UI audit: pressing Escape on the boss warning used
+  // to be intercepted by main.ts's universal ESC handler, which just
+  // .remove()d the DOM node WITHOUT firing onCancel. That left the
+  // audio sting playing, the scheduled wave-start armed, and a
+  // half-confirmed UI state. Now Escape routes through onCancel so the
+  // dismissal is clean.
+  const escHandler = (ev: KeyboardEvent) => {
+    if (ev.key === 'Escape') {
+      document.removeEventListener('keydown', escHandler);
+      args.onCancel();
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+  // Auto-cleanup the listener whenever the wrap is removed from the DOM
+  // (e.g. the universal ESC handler still kicks in on Escape, or
+  // onConfirm/onCancel does the .remove()).
+  const observer = new MutationObserver(() => {
+    if (!wrap.isConnected) {
+      document.removeEventListener('keydown', escHandler);
+      observer.disconnect();
+    }
+  });
+  observer.observe(args.parent, { childList: true });
   return wrap;
 }
 
