@@ -23,6 +23,7 @@ import { scanCombos } from '../systems/CombinationEngine';
 import { tex } from './Assets';
 import { closeGameModals } from './ModalManager';
 import { itemIconSvg } from './ItemIcon';
+import { comboPreviewBlockHtml } from './ComboPreview';
 
 const RAR: Record<string, string> = { COMMON:'#cccccc', UNCOMMON:'#5cd05c', RARE:'#5ca0ff', LEGENDARY:'#ff9933', UNIQUE:'#ffd34d' };
 
@@ -701,10 +702,16 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
                        : conditionallyReady ? '#ffc080'
                        : '#aaa';
       const card = document.createElement('div');
-      card.style.cssText = `padding:6px 8px;background:#0c0a08;margin-bottom:3px;border-left:3px solid ${borderColor};opacity:${haveAll ? 1 : 0.85}`;
+      card.style.cssText = `background:#0c0a08;margin-bottom:3px;border-left:3px solid ${borderColor};opacity:${haveAll ? 1 : 0.85}`;
+      // 2026-05-23 — Each recipe row now has a collapsible drop-down with
+      // the combo tower's stats + ability text. User flagged that the
+      // bare recipe lines didn't tell them WHAT the combo did, forcing a
+      // Codex jump. Click the chevron (▶ / ▼) to expand the preview body
+      // underneath. Each row is independent — opening one doesn't close
+      // the others.
       card.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="flex:1">
+        <div class="rcp-summary" style="padding:6px 8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <div style="flex:1;min-width:0">
             <div style="color:${headerColor};font-weight:bold;font-size:12px">→ ${(towersData as any)[rcp.result]?.name ?? String(rcp.result).replace(/_/g,' ')} <span style="opacity:0.7">T${rcp.tier}</span></div>
             <div style="font-size:10px;margin-top:2px">${progressLines}</div>
           </div>
@@ -715,7 +722,21 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
                 ? `<span style="color:#ff9933;font-weight:bold;font-size:10px;letter-spacing:1px">READY IF KEPT</span><div style="font-size:10px;color:#aa9a4a">${rcp.cost}g</div>`
               : `<span style="font-size:10px;color:#666">Cost ${rcp.cost}g</span>`}
           </div>
-        </div>`;
+          <div class="rcp-chev" title="Show / hide combo details" style="font-size:14px;color:${headerColor};padding:2px 6px;border:1px solid ${headerColor};line-height:1;align-self:center;user-select:none">▶</div>
+        </div>
+        <div class="rcp-details" style="display:none;border-top:1px dashed #3a3025">${comboPreviewBlockHtml(String(rcp.result))}</div>`;
+      // Wire the toggle. Clicking the summary row (or the chevron) flips
+      // the details body open/closed and updates the chevron glyph.
+      const summary = card.querySelector('.rcp-summary') as HTMLElement | null;
+      const details = card.querySelector('.rcp-details') as HTMLElement | null;
+      const chev = card.querySelector('.rcp-chev') as HTMLElement | null;
+      if (summary && details) {
+        summary.onclick = () => {
+          const isOpen = details.style.display === 'block';
+          details.style.display = isOpen ? 'none' : 'block';
+          if (chev) chev.textContent = isOpen ? '▶' : '▼';
+        };
+      }
       rcpRow.appendChild(card);
     }
     panel.appendChild(rcpRow);
