@@ -1129,7 +1129,15 @@ async function boot() {
     // suppressing the heal, lying to W11 players about a mechanic that
     // wasn't actually firing.
     if (!w.disableCheckpointHeal && (enemiesInWave.has('CELTIC_BERSERKER') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('UNDEAD_SPEARMAN'))) enemyCallouts.push({ text: '🩸 CHECKPOINT HEAL · enemies regen 15% maxHP every checkpoint coin they cross — kill BEFORE the next coin or reset', cat: 'ENEMY' });
-    if (enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '⚱ AURA NULLIFIER · Architectus silences every tower aura within 1.5 tiles while present (separate 2-tile aura nullifier disables item auras at 2 tiles). Move aura towers (Eagle Standard, Cohort Guard, Triumvirate, banner items) off the path so they keep buffing', cat: 'ENEMY' });
+    // 2026-05-24 audit fix — old copy conflated Architectus's two distinct
+    // mechanics. Reality (verified vs CombatResolver.ts:435-453 +
+    // enemies.json:392-393): `auraNullifier` is a SINGLE 2-tile gate that
+    // nullifies BOTH tower auras AND item auras (one `auraOff` flag in
+    // CombatResolver loop). The 1.5-tile silence is a SEPARATE mechanic
+    // (`silenceAuraRadiusTiles` in EnemySystem) that silences tower
+    // FIRING, not auras. Players were mis-placing aura towers thinking
+    // 1.6-1.9 tile was safe — actually still nullified out to 2.0.
+    if (enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '⚱ AURA NULLIFIER · Architectus nullifies every tower aura AND item aura within 2 tiles (Eagle Standard / Cohort Guard / Triumvirate / banner items all silently drop their buff). Separately, the 1.5-tile SILENCE AURA below stops nearby towers from firing entirely. Move aura towers ≥2 tiles off the path so their buffs survive the walk-by.', cat: 'ENEMY' });
     // 2026-05-24 — New copy for mechanics the previous brief missed:
     //  • W8 universal ranged-block (set on every spawn in EnemySystem)
     //  • UNDEAD_SPEARMAN / IRON_PHALANX 0.20 all-attack-block (every type)

@@ -725,8 +725,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // damage value to its aura targets. The balance audit (V19) put
       // him as the weakest of the 6 by a wide margin. Restored as a
       // smaller +15% rider on top of the FIRE conversion (not the old
-      // +35%) and bumped the radius from 2 → 3 tiles to match the
-      // other 3 local-aura heroes (Marius/Agrippa/Agricola all use 3).
+      // +35%) and bumped the radius 2 → 3 tiles for parity with the
+      // other local-aura heroes at that time. 2026-05-24 audit note —
+      // Marius + Agrippa were since rebumped to 5 tiles (task #222) and
+      // Agricola is GLOBAL (no local aura at all); Sulla still sits at
+      // 3 tiles by design (his FIRE-conversion is more impactful than
+      // a flat damage rider, so the smaller radius is the balance lever).
       // Type conversion still happens at the per-attack site below.
       if (state.activeHeroId === 'HERO_SULLA' && dh <= 3 * GRID.TILE) {
         dm *= 1.15;

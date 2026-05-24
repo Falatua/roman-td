@@ -14,13 +14,17 @@ export function towerAuraTileKind(t: Tower): typeof AURA_TILES[number]['kind'] |
   // heroes and regular towers. This lookup only checks the tile
   // coordinates against the 6 fixed AURA_TILES; the `isHero` flag
   // is intentionally ignored so a hero placed on a PURPLE tile gets
-  // the same +25% damage that a Hastati would get. Same for BLUE
-  // (+atk speed), RED (+vs-boss), CYAN (+wave-clear gold), GOLD
-  // (+treasury), and EMERALD (+range). The damage + speed bonuses
-  // compose into the hero's effective stats via towerEffectiveStats
-  // (called on every tower including heroes in CombatResolver per
-  // frame), the +range bonus flows through the additive range band
-  // alongside hero items and pool-level extras.
+  // the same +30% attack speed that a Hastati would get. Same for
+  // BLUE (+30% damage), RED (+50% vs-boss damage), CYAN (melee can
+  // hit flyers), GOLD (+2 gold per kill), and EMERALD (+2 tile
+  // range). The damage + speed bonuses compose into the hero's
+  // effective stats via towerEffectiveStats (called on every tower
+  // including heroes in CombatResolver per frame), the +range bonus
+  // flows through the additive range band alongside hero items and
+  // pool-level extras. 2026-05-24 audit fix — corrected the per-color
+  // labels in this comment (they had PURPLE/BLUE/CYAN swapped vs the
+  // source-of-truth table at constants.ts:332-342). Code paths were
+  // always correct, only the documentation was wrong.
   for (const a of AURA_TILES) {
     if (a.col === t.tileX && a.row === t.tileY) return a.kind;
   }
