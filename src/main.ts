@@ -1063,16 +1063,33 @@ async function boot() {
     //
     // DEMONS — ~3× divine (1.5×/1.3× per-enemy × +100% faction row).
     if (enemiesInWave.has('DEMON_HELLHOUND') || enemiesInWave.has('CELTIC_FIRE_DEMON') || enemiesInWave.has('SHADOW_CAVALRY') || enemiesInWave.has('DEMON_LEGATE') || enemiesInWave.has('DAEMON_IMPERATOR')) enemyCallouts.push({ text: '✨ DEMONS — DIVINE WEAKNESS · demons take ~3× damage from divine sources (Flamen / Augur / Haruspex / Solar Priest / Pontifex). Fire deals 0 damage. Bleed and poison hit lesser demons harder, but the W20 Daemon Imperator boss resists both DoTs at 50%.', cat: 'ENEMY' });
-    // ELEPHANTS — +45/+40% siege.
-    if (enemiesInWave.has('WAR_ELEPHANT') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) enemyCallouts.push({ text: '🪨 ELEPHANTS — SIEGE WEAKNESS · elephants take +45% damage from SIEGE (Libritor, Turris, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine). Stones crack hide that arrows can\'t. Bleed and poison resisted heavily — DoT-stacker builds skip elephants.', cat: 'ENEMY' });
+    // ELEPHANTS — siege weakness. 2026-05-24 copy fix: split living
+    // (+45%) vs undead (+20%) per EnemyResistances.ts:159 — the V31
+    // pass cut the undead elephant's siege weakness from 1.45 → 1.20
+    // to make it tankier vs siege-spam builds.
+    if (enemiesInWave.has('WAR_ELEPHANT') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) {
+      const livingOnly = enemiesInWave.has('WAR_ELEPHANT') && !enemiesInWave.has('UNDEAD_WAR_ELEPHANT');
+      const undeadOnly = !enemiesInWave.has('WAR_ELEPHANT') && enemiesInWave.has('UNDEAD_WAR_ELEPHANT');
+      const txt = livingOnly
+        ? '🪨 WAR ELEPHANTS — SIEGE WEAKNESS · take +45% damage from SIEGE (Libritor, Turris, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine). Bleed and poison resisted heavily.'
+        : undeadOnly
+        ? '🪨 UNDEAD WAR ELEPHANTS — SIEGE WEAKNESS · take +20% damage from SIEGE (was +45% on the living variant — undead hide is denser). Fire (+30% faction taken) is the real answer; bleed and poison deal 0.'
+        : '🪨 ELEPHANTS — SIEGE WEAKNESS · living take +45% SIEGE, undead take +20% SIEGE. Bleed and poison resisted heavily — DoT-stacker builds skip elephants.';
+      enemyCallouts.push({ text: txt, cat: 'ENEMY' });
+    }
     // GALLIC DRUIDS — sacred-ward shield + Celtic faction takes +15% ranged.
     if (state.wave === 4 && enemiesInWave.has('GALLIC_DRUID')) enemyCallouts.push({ text: '🛡 CELTS — RANGED VULNERABILITY · the Celtic faction takes +15% ranged damage. After a melee tower cracks the druid\'s sacred ward, your archers shred them. Pair Sagittarius/Velites/Decurion behind a Milites or Hastati for the W4 break.', cat: 'ENEMY' });
     // UNDEAD CELTS — +25% fire / +50% divine (faction-side).
     if (enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('ZOMBIE_DRUID') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('SPECTRAL_SCOUT') || enemiesInWave.has('UNDEAD_WARLORD')) enemyCallouts.push({ text: '🔥 UNDEAD CELTS — FIRE & DIVINE WEAKNESS · faction takes +25% fire damage and +50% divine damage. Burn the bones, smite the spirits. Poison and bleed deal 0 — no flesh to corrupt.', cat: 'ENEMY' });
     // CARTHAGE living — ranged-resistant (-20%) + melee-vulnerable (+30%).
     if (enemiesInWave.has('CARTHAGE_SPEARMAN') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('NUMIDIAN_RIDER') || enemiesInWave.has('HANNIBAL_BARCA')) enemyCallouts.push({ text: '⚔ CARTHAGE — MELEE FAVORED · faction takes +30% melee damage and resists ranged by 20%. Push close-range builds (Centurion / Primus Pilus / Cohort Guard / Imperator Guard) for the W7-W10 stretch.', cat: 'ENEMY' });
-    // UNDEAD CARTHAGE — fire-immune, but +25% melee vulnerable.
-    if (enemiesInWave.has('UNDEAD_SPEARMAN') || enemiesInWave.has('GHOST_RIDER') || enemiesInWave.has('IRON_PHALANX') || enemiesInWave.has('ARCHITECTUS') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) enemyCallouts.push({ text: '🛡 UNDEAD CARTHAGE — FIRE IMMUNE / MELEE FAVORED · faction is fully fire-immune (Ignifer / Inferno Cart / fire items wasted). +25% melee damage taken. Poison and bleed land for 0 — DoTs that aren\'t fire still fail. Lean into melee + divine + siege.', cat: 'ENEMY' });
+    // UNDEAD CARTHAGE — FIRE/MELEE favored. 2026-05-24 copy fix per
+    // factionResistances.json: UNDEAD_CARTHAGE takes +30% FIRE (not
+    // immune as the previous text wrongly claimed). UNDEAD_SPEARMAN +
+    // GHOST_RIDER stack per-enemy fire 1.40 → ~1.82× final; IRON_PHALANX
+    // takes 2.0× fire. Fire is actually the strongest answer to this
+    // faction, not the wasted one.
+    if (enemiesInWave.has('UNDEAD_SPEARMAN') || enemiesInWave.has('GHOST_RIDER') || enemiesInWave.has('IRON_PHALANX') || enemiesInWave.has('ARCHITECTUS') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) enemyCallouts.push({ text: '🔥 UNDEAD CARTHAGE — FIRE BURNS BRIGHT · faction takes +30% FIRE damage and +25% MELEE damage. Per-enemy: Undead Spearman / Ghost Rider take ~1.82× fire (faction × +40% per-enemy); Iron Phalanx burns at 2.0×. Bleed and poison deal 0 — fire is the lone DoT that works. Lean into Ignifer / Inferno Cart / Vestal Pyre + melee + divine.', cat: 'ENEMY' });
     if (enemiesInWave.has('SPECTRAL_SCOUT') || enemiesInWave.has('CELTIC_FIRE_DEMON')) enemyCallouts.push({ text: '🔥 PHOENIX · burst into 3 minions on death', cat: 'ENEMY' });
     // 2026-05-20 — DEMON_HELLHOUND removed from the low-HP surge callout.
     // The lowHpSpeedBoost flag was stripped from the Hellhound's
@@ -1090,8 +1107,20 @@ async function boot() {
     // they cross a checkpoint coin on the path. Listed here per-wave
     // so the player knows to burst them BETWEEN checkpoints rather
     // than chipping continuously across the full path.
-    if (enemiesInWave.has('CELTIC_BERSERKER') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('UNDEAD_SPEARMAN')) enemyCallouts.push({ text: '🩸 CHECKPOINT HEAL · enemies regen 15% maxHP every checkpoint coin they cross — kill BEFORE the next coin or reset', cat: 'ENEMY' });
+    // 2026-05-24 — Gate on `disableCheckpointHeal` (set in waves.json on
+    // W11). Previously this callout fired on every wave that contained
+    // a checkpoint-healing enemy even when the wave-level flag was
+    // suppressing the heal, lying to W11 players about a mechanic that
+    // wasn't actually firing.
+    if (!w.disableCheckpointHeal && (enemiesInWave.has('CELTIC_BERSERKER') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('UNDEAD_SPEARMAN'))) enemyCallouts.push({ text: '🩸 CHECKPOINT HEAL · enemies regen 15% maxHP every checkpoint coin they cross — kill BEFORE the next coin or reset', cat: 'ENEMY' });
     if (enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '⚱ AURA NULLIFIER · Architectus silences every tower aura within 2 tiles while present. Move aura towers (Eagle Standard, Cohort Guard, Triumvirate, banner items) off the path so they keep buffing', cat: 'ENEMY' });
+    // 2026-05-24 — New copy for mechanics the previous brief missed:
+    //  • W8 universal ranged-block (set on every spawn in EnemySystem)
+    //  • UNDEAD_SPEARMAN / IRON_PHALANX 0.20 all-attack-block (every type)
+    //  • W19 wave-level in-combat regen
+    if (state.wave === 8) enemyCallouts.push({ text: '🛡 W8 SHIELD WALL · every enemy this wave has a 20% chance to BLOCK any ranged or siege hit (NUMIDIAN_RIDER stacks its own 15% dodge on top → ~32% effective whiff vs ranged). Bring melee or divine for the W8 stretch.', cat: 'ENEMY' });
+    if (enemiesInWave.has('UNDEAD_SPEARMAN') || enemiesInWave.has('IRON_PHALANX')) enemyCallouts.push({ text: '🛡 ALL-ATTACK BLOCK · Undead Spearman / Iron Phalanx have a 20% chance per hit to deflect ANY damage type — melee, ranged, siege, fire, divine. Never expires. Stacks multiplicatively with shield-block (35% on Spearman). Spread the alpha across multiple towers.', cat: 'ENEMY' });
+    if ((w as any).enemyRegenPctPerSec) enemyCallouts.push({ text: `🩹 WAVE REGEN · every enemy on this wave regenerates ${Math.round(((w as any).enemyRegenPctPerSec) * 1000) / 10}% maxHP/sec continuously (not blocked by DoT). Sustained DPS only — chip damage gets undone every second.`, cat: 'ENEMY' });
     // 2026-05-21 — Ambush stealth + presence-silence aura callouts.
     if (enemiesInWave.has('CARTHAGE_SPEARMAN') || enemiesInWave.has('UNDEAD_BERSERKER')) enemyCallouts.push({ text: '🥷 AMBUSH STEALTH · Carthage Spearman / Undead Berserker spawning in the first 10s of this wave are UNTARGETABLE (40% alpha). At the 10s mark every alive instance becomes visible at once — be ready for the emergence wave. Spawns past 10s are normally visible.', cat: 'ENEMY' });
     if (enemiesInWave.has('ZOMBIE_DRUID') || enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '🤫 SILENCE AURA · Zombie Druid / Architectus silence every tower within 1.5 tiles while in range (pink X-mark). The silence ends ~0.6s after they walk past. Plant your power towers OFF the path so the aura misses.', cat: 'ENEMY' });
@@ -1722,14 +1751,18 @@ async function boot() {
     // Living Carthage — melee + SIEGE favored.
     if (hasLivingCarthage && !isBossWave) tips.push({
       headline: '⚔ CARTHAGE — MELEE + SIEGE WIN',
-      body: `Wave <b>${nextWave}</b> brings living Carthage troops. Faction takes <b style="color:#ffd34d">+30% MELEE</b> and resists ranged by 20%. <b style="color:#ff9933">SIEGE is the hard answer to the rank-and-file</b> — Spearman <b>+30%</b>, Numidian Rider <b>+15%</b>, Sacred Band Elite Guard <b>+40%</b>. <b style="color:#ff5050">Hannibal himself takes neutral siege damage</b> — bring melee burst + DoT for the W10 boss, not just onagers. Park Onagers + Turris on the path alongside your <b>Centurion / Primus Pilus / Cohort Guard / Imperator Guard</b>. Spearmen drilled in pitch-treated linen still resist fire — bleed is the safer DoT.`,
+      body: `Wave <b>${nextWave}</b> brings living Carthage troops. Faction takes <b style="color:#ffd34d">+30% MELEE</b> and resists ranged by 20%. <b style="color:#ff9933">SIEGE is the hard answer to the rank-and-file</b> — Spearman <b>+30%</b>, Numidian Rider <b>+15%</b>, Sacred Band Elite Guard <b>+40%</b>. <b style="color:#ff5050">Hannibal himself takes ~15% reduced siege damage</b> (per-enemy neutral 1.0 × faction −15%) — bring melee burst + DoT for the W10 boss, not just onagers. Park Onagers + Turris on the path alongside your <b>Centurion / Primus Pilus / Cohort Guard / Imperator Guard</b>. Spearmen drilled in pitch-treated linen still resist fire — bleed is the safer DoT.`,
       color: '#ff7733'
     });
-    // Undead Carthage — fire-immune.
+    // Undead Carthage — fire-favored (not immune, as old copy claimed).
+    // 2026-05-24: factionResistances UNDEAD_CARTHAGE ELEMENTAL_FIRE 0.30
+    // (+30% taken). UNDEAD_SPEARMAN/GHOST_RIDER per-enemy fire 1.40 →
+    // ~1.82× total; IRON_PHALANX 2.0×. Fire is the BEST counter, not
+    // the wasted one. Inverse of the old wording.
     if (hasUndeadCarthage) tips.push({
-      headline: '🛡 UNDEAD CARTHAGE — FIRE BURNS NOTHING',
-      body: `Wave <b>${nextWave}</b> has Undead Carthage troops. The faction is <b style="color:#ff5050">fully fire-immune</b> (Ignifer, Inferno Cart, Fire Oil Flask, Vestal Pyre wasted). Poison and bleed deal 0 too — undead don't bleed. <b style="color:#ffd34d">+25% melee damage</b> taken, though. Lean into <b style="color:#ffd34d">melee + divine + siege</b> for this stretch.`,
-      color: '#aabbdd'
+      headline: '🔥 UNDEAD CARTHAGE — FIRE BURNS BRIGHT',
+      body: `Wave <b>${nextWave}</b> has Undead Carthage troops. Faction takes <b style="color:#ffd34d">+30% FIRE damage</b> and <b style="color:#ffd34d">+25% MELEE damage</b>. Per-enemy stacking: <b style="color:#ff7733">Undead Spearman / Ghost Rider take ~1.82× FIRE</b> (faction × +40% per-enemy fire weakness); <b style="color:#ff7733">Iron Phalanx burns at 2.0× FIRE</b>. Bleed and poison deal 0 — fire is the lone DoT that works. Lean into <b style="color:#ffd34d">Ignifer / Inferno Cart / Vestal Pyre + melee + divine</b>.`,
+      color: '#ff7733'
     });
     if (hasCheckpointHealers && !isBossWave) tips.push({
       headline: '⛨ THEY HEAL AT EACH CHECKPOINT',
@@ -6537,7 +6570,20 @@ async function boot() {
           // Jupiter's Wrath). User confirmed expected behavior.
           const w = wavesData[state.wave - 1];
           const orbsBefore = state.lootOrbs.length;
-          if (e.isBoss) {
+          // 2026-05-24 — War Elephants (living + undead) are tagged
+          // `isBoss: true` in enemies.json so they get full boss HP and
+          // count as boss-add encounters, but per user direction they
+          // should drop EPIC (not LEGENDARY). The previous branch fell
+          // through to the boss-drop path before reaching the elephant
+          // case. Now we check elephants first and short-circuit to
+          // rollEpicDrop. Scheduled bosses (Brennus, Hannibal, Undead
+          // Warlord, Daemon Imperator, Alpha Dog) still drop LEGENDARY
+          // via rollBossDrop.
+          const ELEPHANT_TYPES = new Set(['WAR_ELEPHANT', 'UNDEAD_WAR_ELEPHANT']);
+          if (ELEPHANT_TYPES.has(e.type as string)) {
+            const drop = rollEpicDrop(state, inventory);
+            if (drop) spawnLootAt(state, e, drop);
+          } else if (e.isBoss) {
             const drop = rollBossDrop(w.faction, state, inventory);
             if (drop) {
               spawnLootAt(state, e, drop);
@@ -6556,18 +6602,11 @@ async function boot() {
             // overshadow the W15/W20 boss legendaries.
             const drop = rollEpicDrop(state, inventory);
             if (drop) spawnLootAt(state, e, drop);
-          } else if (e.type === 'WAR_ELEPHANT' || e.type === 'UNDEAD_WAR_ELEPHANT') {
-            // 2026-05-23 — War Elephant kills now drop a guaranteed
-            // EPIC item. Both the living variant (W9 + W10) and the
-            // undead variant (W14) qualify. Same rationale as Fire
-            // Giant: these are "semi-boss" threats — bulky, slow,
-            // tanky, with a meaningful aura — that reward the focused
-            // damage commitment it takes to bring them down. Dropped
-            // tier is EPIC (not LEGENDARY) so the elephant haul
-            // doesn't overshadow the W5/W10/W15/W20 boss legendaries.
-            const drop = rollEpicDrop(state, inventory);
-            if (drop) spawnLootAt(state, e, drop);
           } else {
+            // 2026-05-24 — Elephant EPIC drop hook was moved above the
+            // boss-drop branch so it actually fires (elephants are
+            // `isBoss: true`, so the previous else-if path was
+            // unreachable). See the elephant short-circuit above.
             // Non-boss enemies still roll the regular common/uncommon table
             // by GROUND/FLYER drop rate.
             maybeRollLootOnKill(state, e);

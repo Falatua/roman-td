@@ -229,7 +229,7 @@
     "kind": "BASE",
     "melee": false,
     "tierBand": 3,
-    "ability": "SIEGE KICKBACK (heavy-hitter): 75 base DPS at a slow 0.34/sec means each bolt lands roughly 220 damage on a clean target — the largest single-shot in the early-game siege roster. 1.1-tile splash on every shot. Every 3rd bolt also KNOCKS the primary target back along the path (~0.7 tiles), buying your maze extra ticks. Reward for the slow reload: every shot is a real event.",
+    "ability": "SIEGE KICKBACK (heavy-hitter): 68 base DPS at a slow 0.34/sec means each bolt lands roughly 200 damage on a clean target — the largest single-shot in the early-game siege roster. 1.1-tile splash on every shot. Every 3rd bolt also KNOCKS the primary target back along the path (~0.45 tiles), buying your maze extra ticks. Reward for the slow reload: every shot is a real event.",
     "critChance": 0.07,
     "critMult": 2.6
   },
@@ -549,7 +549,7 @@
     "melee": false,
     "spriteSheet": 2,
     "spriteCell": 5,
-    "ability": "Global +15% damage aura (scales to ~+19.5% at T5). Nearby towers (5 tiles) gain +18% attack speed. Pure support — does no direct damage.",
+    "ability": "Global +15% damage aura (scales to ~+18% at T5). Nearby towers (5 tiles) gain +18% attack speed. Pure support — does no direct damage.",
     "critChance": 0,
     "critMult": 1
   },
@@ -1016,7 +1016,7 @@
     "kind": "COMBO",
     "melee": true,
     "tierBand": 4,
-    "ability": "MID-GAME COMBO MELEE — the Roman fish-helmet gladiator. PUNIC HUNTER: +75% damage vs CARTHAGE faction (W7-W10), +50% damage vs UNDEAD_CARTHAGE (W16-W18) — the heavy gladius hunts Hannibal's blood. SCUTUM BASH: every 4th swing is a heavy shield strike that STUNS for 1.2s AND knocks the target back 0.8 tiles in one hit (bosses take half — 0.6s stun, 0.4 tile push). Recipe = BEAST HUNTER (gladiator dual-blade) + BALLISTARIUS (heavy artillery) + ARCUBALLISTA (precision crossbow) — the gladiator inherits the dimachaerus' arena speed and the artillery crews' shield discipline.",
+    "ability": "MID-GAME COMBO MELEE — the Roman fish-helmet gladiator. PUNIC HUNTER: +75% damage vs CARTHAGE faction (W7-W10), +50% damage vs UNDEAD_CARTHAGE (W16-W18) — the heavy gladius hunts Hannibal's blood. SCUTUM BASH: every 4th swing is a heavy shield strike that STUNS non-bosses for 1.2s AND knocks the target back 0.8 tiles in one hit. Bosses are stun-immune, so they take the full 0.8-tile knockback only — no stun lock. Recipe = BEAST HUNTER (gladiator dual-blade) + BALLISTARIUS (heavy artillery) + ARCUBALLISTA (precision crossbow).",
     "critChance": 0.18,
     "critMult": 2.3
   },

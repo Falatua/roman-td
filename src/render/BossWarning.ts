@@ -67,7 +67,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     warning: [
       'You barely survived Brennus. Hannibal already knows.',
       'He brings three war elephants. They are all bosses. They all leak 10 lives.',
-      'At 50% HP he rebirths, summons two more elephants, and adds +60% speed.',
+      'At 55% HP he rebirths, summons two more elephants, and adds +60% speed.',
       'Your treasury cannot afford this. Your strategy is, frankly, optimistic.',
       'ARE YOU REALLY SURE?'
     ],
@@ -85,8 +85,8 @@ const BOSS_DATA: Record<number, BossDossier> = {
     sprite: 'UNDEAD_WARLORD',
     warning: [
       'Hannibal pitied you. The dead will not.',
-      'The Undead Warlord ambushes 8 berserkers mid-path. Five seconds in.',
-      'At 40% HP he raises 4 more Undead Celts at his current tile.',
+      'W15 spawns FIVE Undead Warlords. Each ambushes 10 berserkers mid-path. Five seconds in.',
+      'At 40% HP he raises 6 Undead Celts. At 15% HP, 5 more. On death, 20 more (6 berserkers + 14 celts).',
       'Necrotic Miasma cuts your attack speed 15%. You will feel it.',
       'ARE YOU REALLY SURE?'
     ],
