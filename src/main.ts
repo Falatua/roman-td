@@ -2076,13 +2076,10 @@ async function boot() {
           return `<span style="color:${c}">${String(ing.type).replace(/_/g, ' ')}</span>`;
         }).join('<span style="color:#cdb98a"> + </span>');
         return `<div class="recipe-row" data-combo-type="${String(cb.result)}" style="margin-bottom:6px;border-left:2px solid ${headerColor};background:#100c08">
-          <div class="recipe-summary" style="font-size:11px;line-height:1.35;padding:4px 6px;cursor:pointer;display:flex;align-items:stretch;gap:6px">
-            <div style="flex:1;min-width:0">
-              <div style="color:${headerColor};font-weight:bold;letter-spacing:1px">${resultName}</div>
-              <div style="font-size:10px;letter-spacing:0.5px;word-break:break-word;margin-top:2px">${ingTxt}</div>
-              <div style="font-size:9px;color:${headerColor};letter-spacing:1.2px;margin-top:2px;font-weight:bold">${statusTag} · ${cb.cost}g</div>
-            </div>
-            <button class="recipe-chev" title="Show / hide combo details" style="font-size:18px;color:${headerColor};padding:4px 10px;border:1.5px solid ${headerColor};background:rgba(255,170,80,0.08);line-height:1;align-self:stretch;cursor:pointer;user-select:none;font-family:inherit;font-weight:bold;min-width:36px;display:flex;align-items:center;justify-content:center">▶</button>
+          <div class="recipe-summary" style="font-size:11px;line-height:1.35;padding:4px 6px;cursor:pointer">
+            <div style="color:${headerColor};font-weight:bold;letter-spacing:1px">${resultName}</div>
+            <div style="font-size:10px;letter-spacing:0.5px;word-break:break-word;margin-top:2px">${ingTxt}</div>
+            <div style="font-size:9px;color:${headerColor};letter-spacing:1.2px;margin-top:2px;font-weight:bold">${statusTag} · ${cb.cost}g</div>
           </div>
           <div class="recipe-details" style="display:none">${comboPreviewBlockHtml(String(cb.result))}</div>
         </div>`;
@@ -2130,46 +2127,30 @@ async function boot() {
         document.getElementById('tower-hover-preview')?.remove();
       };
     });
-    // 2026-05-23 — Wire recipe drop-down toggles. The chevron button on
-    // the right is the primary affordance — click it to expand a combo
-    // preview body underneath. The whole summary row is also clickable
-    // as a forgiving fallback. Each row is independent (opening one
+    // 2026-05-23 — Wire recipe drop-down toggles. The whole summary row
+    // is the click target — no chevron icon, the cursor:pointer on the
+    // row signals it's clickable. Each row is independent (opening one
     // doesn't close the others). Open state lives in
     // `expandedProspectRecipes` so it survives the per-frame
     // panel.innerHTML re-render in the render loop.
     panel.querySelectorAll('.recipe-row').forEach(row => {
       const summary = row.querySelector('.recipe-summary') as HTMLElement | null;
       const details = row.querySelector('.recipe-details') as HTMLElement | null;
-      const chev = row.querySelector('.recipe-chev') as HTMLElement | null;
       const comboKey = (row as HTMLElement).dataset.comboType ?? '';
       if (!summary || !details) return;
       // Re-apply persisted open/closed state after the re-render wipe.
       const wasOpen = !!comboKey && expandedProspectRecipes.has(comboKey);
       details.style.display = wasOpen ? 'block' : 'none';
-      if (chev) chev.textContent = wasOpen ? '▼' : '▶';
-      const toggle = () => {
+      summary.onclick = () => {
         const isOpen = details.style.display === 'block';
         if (isOpen) {
           details.style.display = 'none';
-          if (chev) chev.textContent = '▶';
           if (comboKey) expandedProspectRecipes.delete(comboKey);
         } else {
           details.style.display = 'block';
-          if (chev) chev.textContent = '▼';
           if (comboKey) expandedProspectRecipes.add(comboKey);
         }
       };
-      summary.onclick = toggle;
-      // Chevron gets its own bound handler with stopPropagation so the
-      // click registers even if browser quirks ate the parent bubble.
-      // Defense-in-depth: the row click is the fallback, the chevron
-      // click is the explicit affordance.
-      if (chev) {
-        chev.onclick = (ev: MouseEvent) => {
-          ev.stopPropagation();
-          toggle();
-        };
-      }
     });
   }
   // ─── Tower-queue indicator ─────────────────────────────────────────────
