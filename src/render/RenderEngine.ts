@@ -1410,8 +1410,12 @@ export class RenderEngine {
               if (ptex) {
                 const sp = new Sprite(ptex);
                 sp.anchor.set(0.5, 0.5);
-                // PROJ_PILUM ships at ~24x24; scale to a punchy size.
-                sp.scale.set(0.85, 0.85);
+                // 2026-05-24 v2 — absolute size in tile units (was
+                // `sp.scale.set(0.85)` ratio, which inflated huge on
+                // larger native-size textures).
+                const pilumSize = GRID.TILE * 0.7;
+                sp.width = pilumSize;
+                sp.height = pilumSize;
                 sp.tint = 0xffd99a; // warmer amber than fx.color
                 this.layers.fx.addChild(sp);
                 fx.extras.__pilumSprite = sp;
@@ -1454,15 +1458,25 @@ export class RenderEngine {
             if (!fx.extras.__auxSprites && auxiliaries.length > 0) {
               const auxTex = tex('AUXILIA');
               const sprites: Sprite[] = [];
+              // 2026-05-24 v2 — CRITICAL FIX. Previous code used
+              // `sp.scale.set(0.78, 0.78)` which is a RATIO multiplier
+              // on the texture's NATIVE size. The AUXILIA sprite is a
+              // Higgsfield-generated tower portrait at ~512×512 native,
+              // so 0.78× scale rendered each phantom at ~400px = ~12
+              // tiles wide. Three of them = covering the entire screen.
+              // Use absolute width/height in tile units instead, same
+              // pattern as the regular tower-sprite renderer at line
+              // 3019. Each ghost auxiliary now renders at ~1.1 tiles
+              // (~35px on screen) regardless of texture native size.
+              const auxSize = GRID.TILE * 1.1;
               for (const aux of auxiliaries) {
                 if (!auxTex) continue;
                 const sp = new Sprite(auxTex);
                 // Anchor near feet so the rise animation reads correctly
                 // and the body sits on the tile.
                 sp.anchor.set(0.5, 0.85);
-                // AUXILIA tower sprite is ~64x64; scale slightly smaller
-                // than a full tower so the phantom reads as ethereal.
-                sp.scale.set(0.78, 0.78);
+                sp.width = auxSize;
+                sp.height = auxSize;
                 // Amber ghost tint
                 sp.tint = 0xe8b878;
                 sp.position.set(aux.x, aux.y);
@@ -1539,11 +1553,15 @@ export class RenderEngine {
           if (!fx.extras.__pilumSprites && tgts.length > 0) {
             const ptex = tex('PROJ_PILUM');
             const sprites: Sprite[] = [];
+            // 2026-05-24 v2 — absolute pixel sizing (was scale ratio
+            // that blew up on Higgsfield's high-res native textures).
+            const pilumSize = GRID.TILE * 0.8;
             for (let i = 0; i < tgts.length; i++) {
               if (!ptex) continue;
               const sp = new Sprite(ptex);
               sp.anchor.set(0.5, 0.5);
-              sp.scale.set(0.95, 0.95);
+              sp.width = pilumSize;
+              sp.height = pilumSize;
               sp.tint = 0xa8c8ff; // Agrippa naval blue
               this.layers.fx.addChild(sp);
               sprites.push(sp);
@@ -1590,11 +1608,14 @@ export class RenderEngine {
           if (!fx.extras.__shellSprites && pts.length > 0) {
             const btex = tex('PROJ_BALLISTA');
             const sprites: Sprite[] = [];
+            // 2026-05-24 v2 — absolute pixel sizing (was 1.4 scale ratio).
+            const shellSize = GRID.TILE * 1.0;
             for (let i = 0; i < pts.length; i++) {
               if (!btex) continue;
               const sp = new Sprite(btex);
               sp.anchor.set(0.5, 0.5);
-              sp.scale.set(1.4, 1.4);
+              sp.width = shellSize;
+              sp.height = shellSize;
               sp.tint = 0x88bbff;
               sp.rotation = Math.PI / 2; // point downward
               this.layers.fx.addChild(sp);
@@ -1643,11 +1664,17 @@ export class RenderEngine {
           if (!fx.extras.__eagleSprites && tgts.length > 0) {
             const etex = tex('AQUILA_VENATOR');
             const sprites: Sprite[] = [];
+            // 2026-05-24 v2 — absolute pixel sizing. AQUILA_VENATOR is
+            // a tower portrait (~512×512 native); the old 0.45× scale
+            // rendered each eagle at ~230px = ~7 tiles wide, hence the
+            // "screen covering" complaint.
+            const eagleSize = GRID.TILE * 0.8;
             for (let i = 0; i < tgts.length; i++) {
               if (!etex) continue;
               const sp = new Sprite(etex);
               sp.anchor.set(0.5, 0.5);
-              sp.scale.set(0.45, 0.45); // small darting eagle silhouette
+              sp.width = eagleSize;
+              sp.height = eagleSize;
               sp.tint = 0x99dd99; // Agricola scout green
               this.layers.fx.addChild(sp);
               sprites.push(sp);
@@ -1745,7 +1772,10 @@ export class RenderEngine {
             if (htex) {
               const sp = new Sprite(htex);
               sp.anchor.set(0.5, 0.5);
-              sp.scale.set(0.55, 0.55);
+              // 2026-05-24 v2 — absolute size (was 0.55 scale ratio).
+              const hornSize = GRID.TILE * 0.9;
+              sp.width = hornSize;
+              sp.height = hornSize;
               sp.tint = 0xffd34d; // brassy horn
               this.layers.fx.addChild(sp);
               fx.extras.__hornSprite = sp;
@@ -1801,7 +1831,10 @@ export class RenderEngine {
             if (btex) {
               const sp = new Sprite(btex);
               sp.anchor.set(0.5, 0.85); // anchor near brand tip
-              sp.scale.set(0.7, 0.7);
+              // 2026-05-24 v2 — absolute size (was 0.7 scale ratio).
+              const brandSize = GRID.TILE * 1.0;
+              sp.width = brandSize;
+              sp.height = brandSize;
               sp.tint = 0xff6644; // searing red
               this.layers.fx.addChild(sp);
               fx.extras.__brandSprite = sp;
@@ -1848,7 +1881,10 @@ export class RenderEngine {
             if (atex) {
               const sp = new Sprite(atex);
               sp.anchor.set(0.5, 0.85);
-              sp.scale.set(0.6, 0.6);
+              // 2026-05-24 v2 — absolute size (was 0.6 scale ratio).
+              const aquilaSize = GRID.TILE * 1.2;
+              sp.width = aquilaSize;
+              sp.height = aquilaSize;
               sp.tint = 0xffe066; // imperial gold
               this.layers.fx.addChild(sp);
               fx.extras.__aquilaSprite = sp;
@@ -1891,7 +1927,12 @@ export class RenderEngine {
             if (ltex) {
               const sp = new Sprite(ltex);
               sp.anchor.set(0.5, 0.5);
-              sp.scale.set(0.9, 0.9);
+              // 2026-05-24 v2 — absolute size (was 0.9 scale ratio).
+              // Laurel wreathes around Caesar — slightly larger than
+              // a tile so it visibly frames him.
+              const laurelSize = GRID.TILE * 1.6;
+              sp.width = laurelSize;
+              sp.height = laurelSize;
               sp.tint = 0xfff4a8; // pale imperial gold
               this.layers.fx.addChild(sp);
               fx.extras.__laurelSprite = sp;
@@ -1903,9 +1944,15 @@ export class RenderEngine {
             // Slow rotation — laurel wreathes around Caesar
             sp.rotation = t * Math.PI * 0.5;
             sp.alpha = 0.85 * fade;
-            // Subtle scale pulse on the wreath
+            // 2026-05-24 v2 — pulse via sp.width/height instead of
+            // sp.scale.set(). The original code overwrote the absolute-
+            // size scale set at creation, which on a Higgsfield-native-
+            // size MU_LAUREL texture inflated the wreath to cover the
+            // whole map. Now pulse multiplies the absolute size.
             const pulse = 0.9 + Math.sin(t * Math.PI * 2) * 0.08;
-            sp.scale.set(pulse, pulse);
+            const sz = GRID.TILE * 1.6 * pulse;
+            sp.width = sz;
+            sp.height = sz;
           }
           // Pale gold cross-hatch grid overlay sweeping across the map
           const w = GRID.TILE * GRID.COLS;
@@ -1942,7 +1989,11 @@ export class RenderEngine {
             if (btex) {
               const sp = new Sprite(btex);
               sp.anchor.set(0.5, 0.5);
-              sp.scale.set(1.2, 1.4); // stretched vertically — falling bolt
+              // 2026-05-24 v2 — absolute size (was 1.2/1.4 scale ratio).
+              // Stretched slightly vertically so the falling bolt reads
+              // as elongated rather than a circle.
+              sp.width = GRID.TILE * 0.7;
+              sp.height = GRID.TILE * 1.1;
               sp.tint = 0xfff5cc;
               sp.rotation = Math.PI / 2; // point downward
               this.layers.fx.addChild(sp);
