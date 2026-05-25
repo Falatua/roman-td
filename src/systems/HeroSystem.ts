@@ -392,7 +392,15 @@ function executeCAPITE_CENSI(state: GameStateShape, hero: Tower, params: any, ab
   const throws = params.throwsPerAuxiliary ?? 6;
   const intervalSec = params.throwIntervalSec ?? 1.0;
   const dmgPct = (params.damagePctOfBasic ?? 75) / 100;
-  const radiusTiles = params.spawnRadiusTiles ?? 5;
+  const radiusTiles = params.spawnRadiusTiles ?? 1.5;
+  // 2026-05-24 — Per player feedback the VFX was sprawling across the
+  // whole map. Pila are now range-capped to `targetRangeTiles` from
+  // their auxiliary so distant enemies don't drag the projectile arcs
+  // across the field. Combined with the spawnRadius drop from 5 → 1.5,
+  // the entire ability now stays within ~2.5 tiles of Marius.
+  const targetRangeTiles = params.targetRangeTiles ?? 2.5;
+  const targetRangePx = targetRangeTiles * GRID.TILE;
+  const targetRangeSq = targetRangePx * targetRangePx;
   const dmgPerThrow = heroBasicAttackDamage(state, hero) * dmgPct;
   // Build candidate spawn tiles — empty grass within radius, not on path,
   // not occupied by a tower (including pending placements).
@@ -401,8 +409,15 @@ function executeCAPITE_CENSI(state: GameStateShape, hero: Tower, params: any, ab
     occupied.add(`${o.tileX},${o.tileY}`);
   }
   const cands: Array<{ x: number; y: number; col: number; row: number }> = [];
-  for (let dr = -radiusTiles; dr <= radiusTiles; dr++) {
-    for (let dc = -radiusTiles; dc <= radiusTiles; dc++) {
+  // 2026-05-24 — Use Math.ceil(radiusTiles) as the integer loop bound
+  // so a FLOAT radius (e.g. 1.5) still iterates the right integer
+  // tile offsets. Previously `for (let dr = -1.5; dr <= 1.5; dr++)`
+  // would step -1.5 → -0.5 → 0.5 → 1.5, producing non-integer tile
+  // coords that always failed the `state.tiles[r]?.[c]` lookup. The
+  // hypot check below still uses the float radius for distance.
+  const intR = Math.ceil(radiusTiles);
+  for (let dr = -intR; dr <= intR; dr++) {
+    for (let dc = -intR; dc <= intR; dc++) {
       if (dc === 0 && dr === 0) continue;
       const c = hero.tileX + dc;
       const r = hero.tileY + dr;
@@ -450,6 +465,11 @@ function executeCAPITE_CENSI(state: GameStateShape, hero: Tower, params: any, ab
           const dx = e.x - aux.x;
           const dy = e.y - aux.y;
           const dsq = dx * dx + dy * dy;
+          // 2026-05-24 — Range cap. If the closest enemy is outside
+          // targetRangeTiles, the auxiliary holds fire instead of
+          // hurling a pilum across the map. Keeps the VFX localized
+          // to the area around Marius.
+          if (dsq > targetRangeSq) continue;
           if (dsq < bestDsq) { bestDsq = dsq; closest = e; }
         }
         if (!closest) return;

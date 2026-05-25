@@ -31,8 +31,8 @@
         "name": "Capite Censi",
         "cooldownSec": 14,
         "durationSec": 6,
-        "params": { "auxiliaryCount": 3, "throwsPerAuxiliary": 6, "throwIntervalSec": 1.0, "damagePctOfBasic": 75, "spawnRadiusTiles": 5 },
-        "description": "Calls up the head-count reserve — 3 phantom auxilia rise from nearby tiles and rain pila on the closest enemy for 6s (6 throws each at ~75% of Marius's basic damage). Marius's signature reform: opening the legion to the property-less poor.",
+        "params": { "auxiliaryCount": 3, "throwsPerAuxiliary": 6, "throwIntervalSec": 1.0, "damagePctOfBasic": 75, "spawnRadiusTiles": 1.5, "targetRangeTiles": 2.5 },
+        "description": "Calls up the head-count reserve — 3 phantom auxilia rise from tiles adjacent to Marius (within 1.5 tiles) and hurl pila at the closest enemy within 2.5 tiles for 6s (6 throws each at ~75% of Marius's basic damage). Marius's signature reform: opening the legion to the property-less poor.",
         "vfxColor": "#d4a76a",
         "vfxStyle": "AMBER_LEVY_RISE"
       }
