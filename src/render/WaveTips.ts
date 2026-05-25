@@ -75,7 +75,7 @@ const TIPS: WaveTip[] = [
     wave: 7,
     icon: '🎯',
     title: 'USE DPS CHECK',
-    body: 'Top toolbar. Spawns a training dummy that walks the full path and tallies your maze\'s total damage output — risk-free, no cost. Spot weak spots BEFORE the real wave costs you lives.',
+    body: 'Right-side controls (under ⋯ MORE on mobile). Spawns a training dummy that walks the full path and tallies your maze\'s total damage output — risk-free, no cost. Spot weak spots BEFORE the real wave costs you lives.',
   },
   {
     wave: 10,
@@ -87,7 +87,7 @@ const TIPS: WaveTip[] = [
     wave: 11,
     icon: '🪨',
     title: 'STONES ARE BUILD TILES',
-    body: 'Drop a prospect or new tower DIRECTLY on a stone to replace it — no clearing needed. Or click a stone during pre-wave to sell it back for gold via the SELL STONES button. Stones aren\'t dead space.',
+    body: 'Drop a prospect or new tower DIRECTLY on a stone to replace it — no clearing needed. Or hit SELL STONES in the right-side controls (⋯ MORE on mobile) and click each stone you want to refund. Stones aren\'t dead space.',
   },
 ];
 
