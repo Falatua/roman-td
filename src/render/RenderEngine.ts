@@ -1320,22 +1320,38 @@ export class RenderEngine {
       const fx = this.heroFxQueue[i];
       const age = tick - fx.born;
       if (age >= fx.life) {
-        // 2026-05-24 — Sprite-backed VFX cleanup. Capite Censi spawns
-        // real Pixi Sprites (AUXILIA + PROJ_PILUM textures) and caches
-        // them on the fx entry's extras so per-frame re-creation isn't
-        // needed. On expiry, destroy and detach so the fx layer doesn't
-        // accumulate orphan sprites.
-        const ax: Sprite[] | undefined = fx.extras?.__auxSprites;
-        if (ax) {
-          for (const sp of ax) {
+        // 2026-05-24 — Sprite-backed VFX cleanup. Each hero ability
+        // that allocates Pixi Sprites caches them on the fx entry's
+        // extras so per-frame re-creation isn't needed. On expiry,
+        // destroy + detach so the fx layer doesn't accumulate orphan
+        // sprites. Sprite-cache keys covered here:
+        //   __auxSprites      Capite Censi (Marius) — 3 ghost auxilia
+        //   __pilumSprite     Capite Censi (Marius) — single pilum arc
+        //   __pilumSprites    Pilum Volley (Agrippa) — 5 javelin arcs
+        //   __shellSprites    Naval Bombardment (Agrippa) — 3 shells
+        //   __eagleSprites    Eagle Scout (Agricola) — N darting eagles
+        //   __hornSprite      Cornu Charge (Scipio) — war horn above hero
+        //   __brandSprite     Scipio's Brand (Scipio) — branding iron
+        //   __aquilaSprite    SPQR Decree (Caesar) — Roman eagle standard
+        //   __laurelSprite    Pax Romana (Caesar) — laurel wreath
+        //   __boltSprite      Fortune's Bolt (Sulla) — storm javelin
+        const arrayKeys = ['__auxSprites', '__pilumSprites', '__shellSprites', '__eagleSprites'];
+        const singleKeys = ['__pilumSprite', '__hornSprite', '__brandSprite', '__aquilaSprite', '__laurelSprite', '__boltSprite'];
+        for (const k of arrayKeys) {
+          const arr: Sprite[] | undefined = fx.extras?.[k];
+          if (arr) {
+            for (const sp of arr) {
+              this.layers.fx.removeChild(sp);
+              sp.destroy();
+            }
+          }
+        }
+        for (const k of singleKeys) {
+          const sp: Sprite | undefined = fx.extras?.[k];
+          if (sp) {
             this.layers.fx.removeChild(sp);
             sp.destroy();
           }
-        }
-        const ps: Sprite | undefined = fx.extras?.__pilumSprite;
-        if (ps) {
-          this.layers.fx.removeChild(ps);
-          ps.destroy();
         }
         this.heroFxQueue.splice(i, 1);
         continue;
@@ -1513,71 +1529,153 @@ export class RenderEngine {
         }
         // ── AGRIPPA ──────────────────────────────────────────────────
         case 'PILUM_VOLLEY': {
-          // 5 javelin trails arcing from Agrippa to each target. extras.targets
-          // = [{x,y}]. Each line draws a parabolic arc using a 5-point poly.
+          // 2026-05-24 — Sprite-upgraded. 5 rotated PROJ_PILUM sprites
+          // arc from Agrippa to each high-HP target, with a procedural
+          // amber-glow trail behind the tip. Same lazy-sprite cache
+          // pattern as Capite Censi: allocate once on first frame,
+          // destroyed in the expiry path. Up to 5 sprites per cast.
           const tgts: Array<{ x: number; y: number }> = fx.extras?.targets ?? [];
-          for (const tg of tgts) {
-            const segs = 6;
-            const arcLift = 38;
-            const prog = Math.min(1, t * 1.4);
-            const pts: Array<[number, number]> = [];
-            for (let s = 0; s <= segs; s++) {
-              const ss = (s / segs) * prog;
-              const px = fx.x + (tg.x - fx.x) * ss;
-              const py = fx.y + (tg.y - fx.y) * ss - Math.sin(ss * Math.PI) * arcLift;
-              pts.push([px, py]);
+          const arcLift = 38;
+          if (!fx.extras.__pilumSprites && tgts.length > 0) {
+            const ptex = tex('PROJ_PILUM');
+            const sprites: Sprite[] = [];
+            for (let i = 0; i < tgts.length; i++) {
+              if (!ptex) continue;
+              const sp = new Sprite(ptex);
+              sp.anchor.set(0.5, 0.5);
+              sp.scale.set(0.95, 0.95);
+              sp.tint = 0xa8c8ff; // Agrippa naval blue
+              this.layers.fx.addChild(sp);
+              sprites.push(sp);
             }
-            g.lineStyle(2.5 * fade, fx.color, 0.9 * fade);
-            g.moveTo(pts[0][0], pts[0][1]);
-            for (let s = 1; s < pts.length; s++) g.lineTo(pts[s][0], pts[s][1]);
-            g.lineStyle(0);
-            // Tip flare at the leading point
-            const tip = pts[pts.length - 1];
-            g.beginFill(fx.color, 0.85 * fade).drawCircle(tip[0], tip[1], 3 * fade).endFill();
+            fx.extras.__pilumSprites = sprites;
+          }
+          const sprites: Sprite[] = fx.extras.__pilumSprites ?? [];
+          for (let i = 0; i < tgts.length; i++) {
+            const tg = tgts[i];
+            const prog = Math.min(1, t * 1.4);
+            const px = fx.x + (tg.x - fx.x) * prog;
+            const py = fx.y + (tg.y - fx.y) * prog - Math.sin(prog * Math.PI) * arcLift;
+            const tdx = (tg.x - fx.x);
+            const tdy = (tg.y - fx.y) - Math.cos(prog * Math.PI) * arcLift * Math.PI;
+            const angle = Math.atan2(tdy, tdx);
+            const sp = sprites[i];
+            if (sp) {
+              sp.position.set(px, py);
+              sp.rotation = angle;
+              sp.alpha = 0.95 * fade;
+            }
+            // Procedural blue motion-blur trail behind tip
+            for (let s = 1; s <= 4; s++) {
+              const back = Math.max(0, prog - s * 0.06);
+              const bx = fx.x + (tg.x - fx.x) * back;
+              const by = fx.y + (tg.y - fx.y) * back - Math.sin(back * Math.PI) * arcLift;
+              g.beginFill(fx.color, (4 - s) / 4 * 0.32 * fade).drawCircle(bx, by, 3 - s * 0.4).endFill();
+            }
+            // Impact spark on landing
+            if (prog >= 1) {
+              g.lineStyle(2 * fade, fx.color, 0.85 * fade);
+              g.drawCircle(tg.x, tg.y, 6 + (t - 0.7) * 16);
+              g.lineStyle(0);
+            }
           }
           break;
         }
         case 'NAVAL_BOMBARDMENT': {
-          // 3 falling shells from above-screen to extras.impactPoints.
+          // 2026-05-24 — Sprite-upgraded. 3 PROJ_BALLISTA sprites fall
+          // from above-screen onto the path with smoke trails and
+          // crashing impact rings. The ballista bolt sprite is heavier
+          // than a pilum and reads as a true naval-bombardment shell.
           const pts: Array<{ x: number; y: number }> = fx.extras?.impacts ?? [];
-          for (const pt of pts) {
+          if (!fx.extras.__shellSprites && pts.length > 0) {
+            const btex = tex('PROJ_BALLISTA');
+            const sprites: Sprite[] = [];
+            for (let i = 0; i < pts.length; i++) {
+              if (!btex) continue;
+              const sp = new Sprite(btex);
+              sp.anchor.set(0.5, 0.5);
+              sp.scale.set(1.4, 1.4);
+              sp.tint = 0x88bbff;
+              sp.rotation = Math.PI / 2; // point downward
+              this.layers.fx.addChild(sp);
+              sprites.push(sp);
+            }
+            fx.extras.__shellSprites = sprites;
+          }
+          const sprites: Sprite[] = fx.extras.__shellSprites ?? [];
+          for (let i = 0; i < pts.length; i++) {
+            const pt = pts[i];
             const fall = Math.min(1, t * 1.6);
             const shellY = pt.y - (1 - fall) * 220;
-            // Falling shell — black core with cyan smoke trail
-            g.beginFill(0x18324f, 0.85 * fade).drawCircle(pt.x, shellY, 6).endFill();
-            g.beginFill(fx.color, 0.75 * fade).drawCircle(pt.x, shellY, 3).endFill();
-            // Smoke trail
-            for (let s = 1; s <= 4; s++) {
-              const sy = shellY - s * 14;
-              g.beginFill(fx.color, (5 - s) * 0.06 * fade).drawCircle(pt.x, sy, 4 - s * 0.4).endFill();
+            // Position the sprite if available
+            const sp = sprites[i];
+            if (sp) {
+              sp.position.set(pt.x, shellY);
+              sp.alpha = (fall < 1 ? 0.95 : 0.0) * fade;
+              // Slight tumble during fall
+              sp.rotation = Math.PI / 2 + Math.sin(fall * Math.PI) * 0.25;
             }
-            // Impact splash once landed
+            // Smoke trail (procedural)
+            for (let s = 1; s <= 5; s++) {
+              const sy = shellY - s * 14;
+              g.beginFill(fx.color, (5 - s) * 0.08 * fade).drawCircle(pt.x, sy, 5 - s * 0.5).endFill();
+            }
+            // Impact splash once landed — double ring + filled core
             if (fall >= 1) {
               const sr = GRID.TILE * 2 * (t - 0.625) * 1.5;
-              g.lineStyle(3 * fade, fx.color, 0.9 * fade);
+              g.lineStyle(3.5 * fade, fx.color, 0.9 * fade);
               g.drawCircle(pt.x, pt.y, Math.max(10, sr));
+              g.lineStyle(2 * fade, 0xffffff, 0.7 * fade);
+              g.drawCircle(pt.x, pt.y, Math.max(6, sr * 0.6));
               g.lineStyle(0);
+              g.beginFill(0xffffff, 0.35 * fade).drawCircle(pt.x, pt.y, 5).endFill();
             }
           }
           break;
         }
         // ── AGRICOLA ─────────────────────────────────────────────────
         case 'EAGLE_SCOUT': {
-          // Small green eagle silhouettes darting to each flyer.
+          // 2026-05-24 — Sprite-upgraded. Real Aquila Venator eagle
+          // sprites dart from Agrippa to each flyer target with a
+          // green scout-glow trail. After landing, a crosshair lingers
+          // briefly so the player reads which flyer is marked.
           const tgts: Array<{ x: number; y: number }> = fx.extras?.targets ?? [];
-          for (const tg of tgts) {
+          if (!fx.extras.__eagleSprites && tgts.length > 0) {
+            const etex = tex('AQUILA_VENATOR');
+            const sprites: Sprite[] = [];
+            for (let i = 0; i < tgts.length; i++) {
+              if (!etex) continue;
+              const sp = new Sprite(etex);
+              sp.anchor.set(0.5, 0.5);
+              sp.scale.set(0.45, 0.45); // small darting eagle silhouette
+              sp.tint = 0x99dd99; // Agricola scout green
+              this.layers.fx.addChild(sp);
+              sprites.push(sp);
+            }
+            fx.extras.__eagleSprites = sprites;
+          }
+          const sprites: Sprite[] = fx.extras.__eagleSprites ?? [];
+          for (let i = 0; i < tgts.length; i++) {
+            const tg = tgts[i];
             const prog = Math.min(1, t * 1.5);
             const ex = fx.x + (tg.x - fx.x) * prog;
-            const ey = fx.y + (tg.y - fx.y) * prog;
-            // Diamond-shaped eagle silhouette
-            g.beginFill(fx.color, 0.85 * fade);
-            g.moveTo(ex, ey - 5);
-            g.lineTo(ex + 7, ey);
-            g.lineTo(ex, ey + 5);
-            g.lineTo(ex - 7, ey);
-            g.lineTo(ex, ey - 5);
-            g.endFill();
-            // Crosshair lingers at target once landed
+            const ey = fx.y + (tg.y - fx.y) * prog - Math.sin(prog * Math.PI) * 20;
+            const sp = sprites[i];
+            if (sp) {
+              sp.position.set(ex, ey);
+              sp.alpha = 0.92 * fade;
+              // Eagle rotates to match flight angle so it reads as
+              // "swooping" rather than sliding sideways
+              sp.rotation = Math.atan2(tg.y - fx.y, tg.x - fx.x) * 0.3;
+            }
+            // Faint green trail behind the eagle
+            for (let s = 1; s <= 3; s++) {
+              const back = Math.max(0, prog - s * 0.08);
+              const bx = fx.x + (tg.x - fx.x) * back;
+              const by = fx.y + (tg.y - fx.y) * back - Math.sin(back * Math.PI) * 20;
+              g.beginFill(fx.color, (3 - s) / 3 * 0.25 * fade).drawCircle(bx, by, 3 - s * 0.5).endFill();
+            }
+            // Crosshair lingers at target once spotted
             if (prog >= 1) {
               g.lineStyle(2 * fade, fx.color, 0.85 * fade);
               g.drawCircle(tg.x, tg.y, 12);
@@ -1591,45 +1689,88 @@ export class RenderEngine {
           break;
         }
         case 'FRONTIER_WALL': {
-          // Three vertical green pillars in a fence shape around Agricola.
+          // 2026-05-24 — Procedural-but-upgraded. Three timber palisade
+          // pillars rise from the ground at Agricola's position, with
+          // a connecting crossbeam and inset wood grain so it reads as
+          // a frontier-era wood fortification (matches Agricola's
+          // historical role at Hadrian's Wall / Caledonia). Stayed
+          // procedural since no specific palisade sprite exists.
           const spread = GRID.TILE * 1.2;
           const positions = [-spread, 0, spread];
-          const h = GRID.TILE * 1.6 * (0.4 + fade * 0.6);
+          const fullH = GRID.TILE * 1.6;
+          const h = fullH * Math.min(1, t * 2.5); // rise animation
           for (const dx of positions) {
             const px = fx.x + dx;
-            // Pillar body
-            g.beginFill(fx.color, 0.55 * fade).drawRect(px - 5, fx.y - h, 10, h).endFill();
-            g.lineStyle(2 * fade, 0x2a4a1a, 0.85 * fade);
-            g.drawRect(px - 5, fx.y - h, 10, h);
+            // Pillar body — dark wood + lighter highlight strip
+            g.beginFill(0x2a4a1a, 0.92 * fade).drawRect(px - 6, fx.y - h, 12, h).endFill();
+            g.beginFill(fx.color, 0.55 * fade).drawRect(px - 4, fx.y - h, 3, h).endFill();
+            g.lineStyle(1.5 * fade, 0x1a2a0a, 0.95 * fade);
+            g.drawRect(px - 6, fx.y - h, 12, h);
             g.lineStyle(0);
-            // Top spike
-            g.beginFill(fx.color, 0.85 * fade);
-            g.moveTo(px, fx.y - h - 6);
-            g.lineTo(px - 5, fx.y - h);
-            g.lineTo(px + 5, fx.y - h);
+            // Sharpened top spike
+            g.beginFill(0x3a5a2a, 0.95 * fade);
+            g.moveTo(px, fx.y - h - 7);
+            g.lineTo(px - 6, fx.y - h);
+            g.lineTo(px + 6, fx.y - h);
             g.endFill();
+            g.lineStyle(1 * fade, 0x1a2a0a, 0.9 * fade);
+            g.moveTo(px, fx.y - h - 7).lineTo(px - 6, fx.y - h);
+            g.moveTo(px, fx.y - h - 7).lineTo(px + 6, fx.y - h);
+            g.lineStyle(0);
           }
-          // Connecting beam between pillars
-          g.lineStyle(2 * fade, fx.color, 0.7 * fade);
-          g.moveTo(fx.x - spread, fx.y - h * 0.8).lineTo(fx.x + spread, fx.y - h * 0.8);
+          // Crossbeam between pillars
+          g.beginFill(0x2a4a1a, 0.9 * fade).drawRect(fx.x - spread - 6, fx.y - h * 0.75, spread * 2 + 12, 5).endFill();
+          g.lineStyle(1 * fade, 0x1a2a0a, 0.95 * fade);
+          g.drawRect(fx.x - spread - 6, fx.y - h * 0.75, spread * 2 + 12, 5);
           g.lineStyle(0);
+          // Ground-impact dust at base — the wall slams in
+          if (t < 0.3) {
+            const dustR = 24 + t * 60;
+            g.lineStyle(2 * (1 - t / 0.3), 0x6a5a3a, 0.65 * (1 - t / 0.3));
+            g.drawCircle(fx.x, fx.y + 4, dustR);
+            g.lineStyle(0);
+          }
           break;
         }
         // ── SCIPIO ───────────────────────────────────────────────────
         case 'CORNU_CHARGE': {
-          // Curved horn-blast wave + red arrow to targeted boss. extras.target = {x,y}.
+          // 2026-05-24 — Sprite-upgraded. Barca War Horn sprite floats
+          // above Scipio (the cornu being blown), three expanding
+          // horn-blast rings ripple outward, and a Roman-red arrow
+          // streaks to the targeted boss. Combines real sprite plus
+          // procedural waves for the audio-shockwave feeling.
           const target = fx.extras?.target;
-          // Arc of expanding rings (horn blast)
+          if (!fx.extras.__hornSprite) {
+            const htex = tex('ITEM_BARCA_WAR_HORN');
+            if (htex) {
+              const sp = new Sprite(htex);
+              sp.anchor.set(0.5, 0.5);
+              sp.scale.set(0.55, 0.55);
+              sp.tint = 0xffd34d; // brassy horn
+              this.layers.fx.addChild(sp);
+              fx.extras.__hornSprite = sp;
+            }
+          }
+          // Horn sprite — bobs above Scipio's head, slight rotation
+          // (the "being blown" gesture).
+          const sp = fx.extras.__hornSprite as Sprite | undefined;
+          if (sp) {
+            const hornY = fx.y - 28 - Math.sin(t * Math.PI * 2) * 3;
+            sp.position.set(fx.x, hornY);
+            sp.rotation = -0.3 + Math.sin(t * Math.PI * 4) * 0.08;
+            sp.alpha = 0.95 * fade;
+          }
+          // Three expanding horn-blast rings (shockwave)
           for (let k = 0; k < 3; k++) {
             const phase = Math.max(0, Math.min(1, t * 1.3 - k * 0.18));
             if (phase <= 0) continue;
-            const r = 20 + phase * 90;
+            const r = 20 + phase * 95;
             g.lineStyle(3 * (1 - phase), fx.color, 0.85 * (1 - phase));
             g.drawCircle(fx.x, fx.y, r);
             g.lineStyle(0);
           }
           if (target) {
-            // Arrow line from Scipio to target
+            // Crimson arrow line from Scipio to target — boss focus
             const prog = Math.min(1, t * 1.2);
             const ax = fx.x + (target.x - fx.x) * prog;
             const ay = fx.y + (target.y - fx.y) * prog;
@@ -1647,64 +1788,131 @@ export class RenderEngine {
           break;
         }
         case 'SCIPIO_BRAND': {
-          // 2026-05-21 — Visual updated to match the new debuff
-          // identity (replaced CARTHAGO_DELENDA_EST, which drew a
-          // destructive X-slash). Now: a red branding-iron stamp on
-          // each boss's chest + a slowly pulsing crimson aura ring
-          // (the "marked for the fall of Carthage" debuff visual).
-          // The branding stays readable for the 6s mark duration via
-          // CombatResolver's mark-status check, separate from this
-          // one-shot impact VFX. extras.target = {x,y}.
+          // 2026-05-24 — Sprite-upgraded. The Soulfire Brand sprite is
+          // hammered onto the boss with a flare-of-impact ring + a
+          // pulsing crimson aura (telegraphs the +30% damage-taken
+          // mark applied via CombatResolver). The brand sprite is the
+          // literal branding iron that Scipio uses to mark targets for
+          // "the fall of Carthage."
           const target = fx.extras?.target ?? { x: fx.x, y: fx.y };
           const stamp = Math.min(1, t * 1.5);
-          // Branding iron — vertical crimson bar with horizontal crossbeam
-          // (like a Roman legion standard hammered onto the boss).
-          const barH = 22 + stamp * 6;
-          const barW = 5;
-          g.beginFill(fx.color, 0.85 * fade);
-          g.drawRect(target.x - barW / 2, target.y - barH, barW, barH);
-          g.endFill();
-          // Crossbeam — gets longer as the brand sears in.
-          const crossW = 18 + stamp * 8;
-          g.beginFill(fx.color, 0.85 * fade);
-          g.drawRect(target.x - crossW / 2, target.y - barH + 4, crossW, 4);
-          g.endFill();
-          // Crimson aura ring — telegraphs the +30% damage-taken mark.
-          const auraR = 16 + t * 14;
+          if (!fx.extras.__brandSprite) {
+            const btex = tex('ITEM_SOULFIRE_BRAND');
+            if (btex) {
+              const sp = new Sprite(btex);
+              sp.anchor.set(0.5, 0.85); // anchor near brand tip
+              sp.scale.set(0.7, 0.7);
+              sp.tint = 0xff6644; // searing red
+              this.layers.fx.addChild(sp);
+              fx.extras.__brandSprite = sp;
+            }
+          }
+          const sp = fx.extras.__brandSprite as Sprite | undefined;
+          if (sp) {
+            // Brand strikes downward — slight overshoot on impact
+            const strikeY = target.y - 18 - (1 - stamp) * 22;
+            sp.position.set(target.x, strikeY);
+            sp.rotation = -0.15 + Math.sin(stamp * Math.PI) * 0.1;
+            sp.alpha = 0.95 * fade;
+          }
+          // Crimson searing ring — telegraphs the +30% damage-taken mark
+          const auraR = 16 + t * 18;
           g.lineStyle(2.5 * fade, 0xc94040, 0.75 * fade);
           g.drawCircle(target.x, target.y, auraR);
           g.lineStyle(0);
-          // Soft inner glow pulse
-          g.beginFill(fx.color, 0.10 * fade).drawCircle(target.x, target.y, auraR * 0.85).endFill();
+          // Soft inner ember glow pulse
+          g.beginFill(fx.color, 0.14 * fade).drawCircle(target.x, target.y, auraR * 0.85).endFill();
+          // Spark burst at impact moment (first 0.2s)
+          if (stamp >= 0.95 && t < 0.5) {
+            const sparks = 6;
+            for (let s = 0; s < sparks; s++) {
+              const ang = (s / sparks) * Math.PI * 2;
+              const sr = 8 + (t - 0.55) * 24;
+              g.beginFill(0xffaa44, 0.7 * fade).drawCircle(
+                target.x + Math.cos(ang) * sr,
+                target.y + Math.sin(ang) * sr,
+                2
+              ).endFill();
+            }
+          }
           break;
         }
         // ── CAESAR ───────────────────────────────────────────────────
         case 'SPQR_DECREE': {
-          // Gold ring + every tower lights up briefly. extras.towers = [{x,y}].
+          // 2026-05-24 — Sprite-upgraded. The Aquila (eagle standard)
+          // rises above Caesar — the literal SPQR sigil being decreed
+          // — and golden seal flares pop at every tower he's buffing.
           const tgts: Array<{ x: number; y: number }> = fx.extras?.towers ?? [];
+          if (!fx.extras.__aquilaSprite) {
+            const atex = tex('AR_EAGLE_STANDARD') ?? tex('ITEM_AQUILA_STANDARD');
+            if (atex) {
+              const sp = new Sprite(atex);
+              sp.anchor.set(0.5, 0.85);
+              sp.scale.set(0.6, 0.6);
+              sp.tint = 0xffe066; // imperial gold
+              this.layers.fx.addChild(sp);
+              fx.extras.__aquilaSprite = sp;
+            }
+          }
+          const sp = fx.extras.__aquilaSprite as Sprite | undefined;
+          if (sp) {
+            // Standard rises out of Caesar's grip
+            const liftY = fx.y - 18 - t * 14;
+            sp.position.set(fx.x, liftY);
+            sp.alpha = 0.95 * fade;
+          }
+          // Expanding gold ring (the decree spreading)
           const r = 60 + t * 220;
           g.lineStyle(4 * fade, fx.color, 0.9 * fade);
           g.drawCircle(fx.x, fx.y, r);
-          // Inner gold radiance
           g.beginFill(fx.color, 0.12 * fade).drawCircle(fx.x, fx.y, r * 0.8).endFill();
           g.lineStyle(0);
-          // Each tower gets a tiny gold flare
+          // Each tower gets a gold seal flare
           for (const tg of tgts) {
-            const ringR = 8 + t * 10;
-            g.lineStyle(2 * fade, fx.color, 0.85 * fade);
+            const ringR = 8 + t * 12;
+            g.lineStyle(2.5 * fade, fx.color, 0.9 * fade);
             g.drawCircle(tg.x, tg.y, ringR);
+            // Cross-line "SPQR seal" crosshair flourish
+            g.moveTo(tg.x - ringR * 0.85, tg.y).lineTo(tg.x + ringR * 0.85, tg.y);
+            g.moveTo(tg.x, tg.y - ringR * 0.85).lineTo(tg.x, tg.y + ringR * 0.85);
             g.lineStyle(0);
-            g.beginFill(fx.color, 0.4 * fade).drawCircle(tg.x, tg.y, ringR * 0.5).endFill();
+            g.beginFill(fx.color, 0.45 * fade).drawCircle(tg.x, tg.y, ringR * 0.45).endFill();
           }
           break;
         }
         case 'PAX_ROMANA': {
-          // Pale gold cross-hatch grid overlay sweeping across the map.
+          // 2026-05-24 — Sprite-upgraded. Tyrant's Laurel sprite
+          // wreaths Caesar (the literal Pax Romana symbol — peace
+          // crowned by force), the pale-gold cross-hatch grid sweeps
+          // across the map as the imperial order spreads, and a big
+          // gold pulse marks Caesar's center.
+          if (!fx.extras.__laurelSprite) {
+            const ltex = tex('MU_LAUREL') ?? tex('ITEM_TYRANTS_LAUREL');
+            if (ltex) {
+              const sp = new Sprite(ltex);
+              sp.anchor.set(0.5, 0.5);
+              sp.scale.set(0.9, 0.9);
+              sp.tint = 0xfff4a8; // pale imperial gold
+              this.layers.fx.addChild(sp);
+              fx.extras.__laurelSprite = sp;
+            }
+          }
+          const sp = fx.extras.__laurelSprite as Sprite | undefined;
+          if (sp) {
+            sp.position.set(fx.x, fx.y);
+            // Slow rotation — laurel wreathes around Caesar
+            sp.rotation = t * Math.PI * 0.5;
+            sp.alpha = 0.85 * fade;
+            // Subtle scale pulse on the wreath
+            const pulse = 0.9 + Math.sin(t * Math.PI * 2) * 0.08;
+            sp.scale.set(pulse, pulse);
+          }
+          // Pale gold cross-hatch grid overlay sweeping across the map
           const w = GRID.TILE * GRID.COLS;
           const h = GRID.TILE * GRID.ROWS;
           const spacing = GRID.TILE * 2;
           const offset = (t * spacing) % spacing;
-          g.lineStyle(1.5 * fade, fx.color, 0.35 * fade);
+          g.lineStyle(1.5 * fade, fx.color, 0.32 * fade);
           for (let lx = -spacing + offset; lx < w; lx += spacing) {
             g.moveTo(lx, 0).lineTo(lx, h);
           }
@@ -1720,43 +1928,95 @@ export class RenderEngine {
         }
         // ── SULLA ────────────────────────────────────────────────────
         case 'FORTUNES_BOLT': {
-          // Vertical white-gold divine bolt from above onto target. extras.target = {x,y}.
+          // 2026-05-24 — Sprite-upgraded. The Storm Javelin (existing
+          // PROJ_STORM_BOLT sprite) is hurled down from the heavens
+          // onto the targeted enemy — Sulla's signature divine bolt
+          // ("Fortune's chosen one" lore). Bright white core + gold
+          // halo trail + impact shockwave on landing.
           const target = fx.extras?.target ?? { x: fx.x, y: fx.y };
           const prog = Math.min(1, t * 2);
-          const topY = target.y - GRID.TILE * 5;
+          const topY = target.y - GRID.TILE * 6;
           const tipY = topY + (target.y - topY) * prog;
-          // Bolt line — thick white core + gold halo
-          g.lineStyle(8 * fade, fx.color, 0.55 * fade);
+          if (!fx.extras.__boltSprite) {
+            const btex = tex('PROJ_STORM_BOLT');
+            if (btex) {
+              const sp = new Sprite(btex);
+              sp.anchor.set(0.5, 0.5);
+              sp.scale.set(1.2, 1.4); // stretched vertically — falling bolt
+              sp.tint = 0xfff5cc;
+              sp.rotation = Math.PI / 2; // point downward
+              this.layers.fx.addChild(sp);
+              fx.extras.__boltSprite = sp;
+            }
+          }
+          const sp = fx.extras.__boltSprite as Sprite | undefined;
+          if (sp) {
+            sp.position.set(target.x, tipY);
+            sp.alpha = (prog < 1 ? 0.95 : 0.0) * fade;
+          }
+          // Gold halo behind bolt
+          g.lineStyle(8 * fade, fx.color, 0.45 * fade);
           g.moveTo(target.x, topY).lineTo(target.x, tipY);
+          // White hot core
           g.lineStyle(3 * fade, 0xffffff, 0.95 * fade);
           g.moveTo(target.x, topY).lineTo(target.x, tipY);
           g.lineStyle(0);
           // Impact burst at the target
           if (prog >= 1) {
             g.lineStyle(3 * fade, fx.color, 0.9 * fade);
-            g.drawCircle(target.x, target.y, 20 + (t - 0.5) * 40);
-            g.beginFill(0xffffff, 0.3 * fade).drawCircle(target.x, target.y, 12).endFill();
+            g.drawCircle(target.x, target.y, 20 + (t - 0.5) * 50);
+            g.lineStyle(2 * fade, 0xffffff, 0.85 * fade);
+            g.drawCircle(target.x, target.y, 12 + (t - 0.5) * 28);
+            g.beginFill(0xffffff, 0.4 * fade).drawCircle(target.x, target.y, 12).endFill();
             g.lineStyle(0);
           }
           break;
         }
         case 'PROSCRIPTION': {
-          // Each tower stamped with an orange/red mark. extras.towers = [{x,y}].
+          // 2026-05-24 — Procedural-but-upgraded. Each buffed tower
+          // gets a glowing proscription mark (a red wax-seal with X)
+          // above its head — historically, Sulla's proscription was
+          // literally a list of names sealed and posted in the forum.
+          // A floating scroll silhouette unfurls from Sulla's position
+          // and the seal slams onto each marked tower.
           const tgts: Array<{ x: number; y: number }> = fx.extras?.towers ?? [];
+          // Scroll silhouette above Sulla — procedural unfurling shape
+          const scrollW = 26 + t * 8;
+          const scrollH = 14;
+          const sy = fx.y - 32 - Math.sin(t * Math.PI) * 4;
+          g.beginFill(0xf0e0c0, 0.85 * fade).drawRect(fx.x - scrollW / 2, sy - scrollH / 2, scrollW, scrollH).endFill();
+          g.lineStyle(1.5 * fade, 0x6a3a1a, 0.95 * fade);
+          g.drawRect(fx.x - scrollW / 2, sy - scrollH / 2, scrollW, scrollH);
+          g.lineStyle(0);
+          // Scroll rollers
+          g.beginFill(0x6a3a1a, 0.95 * fade).drawCircle(fx.x - scrollW / 2, sy, 3).endFill();
+          g.beginFill(0x6a3a1a, 0.95 * fade).drawCircle(fx.x + scrollW / 2, sy, 3).endFill();
+          // Tiny "names" lines on scroll
+          g.lineStyle(0.8 * fade, 0x3a1a0a, 0.7 * fade);
+          for (let r = 0; r < 3; r++) {
+            const ry = sy - 4 + r * 4;
+            g.moveTo(fx.x - 7, ry).lineTo(fx.x + 7, ry);
+          }
+          g.lineStyle(0);
+          // Seal stamp at each marked tower
           for (const tg of tgts) {
-            // Mark above tower head
             const my = tg.y - GRID.TILE * 0.7;
-            const pulse = 0.6 + 0.4 * Math.sin(age * 14);
-            g.beginFill(fx.color, 0.8 * fade * pulse).drawCircle(tg.x, my, 5).endFill();
-            // X mark inside
-            g.lineStyle(1.5 * fade, 0xffffff, 0.9 * fade);
+            const pulse = 0.7 + 0.3 * Math.sin(age * 14);
+            // Wax-seal disc — deeper red center, dark rim
+            g.beginFill(0x3a0808, 0.9 * fade).drawCircle(tg.x, my, 7).endFill();
+            g.beginFill(fx.color, 0.85 * fade * pulse).drawCircle(tg.x, my, 5.5).endFill();
+            g.lineStyle(1 * fade, 0x6a0a0a, 0.95 * fade);
+            g.drawCircle(tg.x, my, 7);
+            g.lineStyle(0);
+            // X mark inside (the proscription mark)
+            g.lineStyle(1.8 * fade, 0xfff0d0, 0.95 * fade);
             g.moveTo(tg.x - 3, my - 3).lineTo(tg.x + 3, my + 3);
             g.moveTo(tg.x + 3, my - 3).lineTo(tg.x - 3, my + 3);
             g.lineStyle(0);
           }
-          // Sulla origin ring
+          // Sulla origin ring (the decree going out)
           g.lineStyle(3 * fade, fx.color, 0.85 * fade);
-          g.drawCircle(fx.x, fx.y, 30 + t * 60);
+          g.drawCircle(fx.x, fx.y, 30 + t * 70);
           g.lineStyle(0);
           break;
         }
