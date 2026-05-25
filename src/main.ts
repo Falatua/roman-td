@@ -626,6 +626,80 @@ async function boot() {
   // the same toast without having to import a helper from main.ts.
   (window as any).__showInsufficientGoldToast = showInsufficientGoldToast;
 
+  // ─── Action-blocked toast (general "you can't do that" notification) ─
+  // 2026-05-24 — Player feedback: lots of game actions silently no-op
+  // when the player tries them at the wrong time (sell stones during
+  // combat, pool upgrade mid-wave, Mercator not in town, etc). The
+  // existing state.hint surfaces these in a small HUD text line that
+  // players often miss, so it feels like the button is broken. This
+  // helper pops a real top-center toast with X-to-dismiss so the
+  // player gets clear "you tried X but can't because Y" feedback.
+  //
+  // Position: top-center, just below the HUD. Doesn't overlap with
+  // bottom-left wave brief, bottom-center hero placement banner, or
+  // the top-right Mercator tab. z-index 75 sits above the wave tip
+  // (z=55) so transient blocked-action messages take visual priority
+  // over the persistent teaching tip.
+  let actionToastTimer: number | null = null;
+  function showActionBlockedToast(message: string, severity: 'blocked' | 'info' = 'blocked'): void {
+    try { (SFX as any).uiCancel?.(); } catch { /* SFX not loaded, ignore */ }
+    const stage = document.getElementById('stage-wrap');
+    if (!stage) return;
+    // Single-slot toast — replace any previous toast so spammy clicks
+    // don't stack. The player only needs the most recent feedback.
+    document.getElementById('action-blocked-toast')?.remove();
+    if (actionToastTimer !== null) {
+      window.clearTimeout(actionToastTimer);
+      actionToastTimer = null;
+    }
+    const borderColor = severity === 'blocked' ? '#ff5555' : '#88ccff';
+    const iconColor   = severity === 'blocked' ? '#ffd34d' : '#88ccff';
+    const icon        = severity === 'blocked' ? '⛔ BLOCKED' : 'ℹ INFO';
+    const toast = document.createElement('div');
+    toast.id = 'action-blocked-toast';
+    toast.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:10px;letter-spacing:2.5px;color:${iconColor};margin-bottom:3px">${icon}</div>
+          <div style="font-size:12px;color:#fff8e0;line-height:1.4;font-weight:500">${message}</div>
+        </div>
+        <button id="action-blocked-x" title="Dismiss" style="background:transparent;border:1px solid rgba(255,255,255,0.18);color:#cdb98a;font-family:'Courier New',monospace;font-size:11px;line-height:1;padding:3px 6px;cursor:pointer;flex-shrink:0">✕</button>
+      </div>
+    `;
+    toast.style.cssText = `position:absolute;left:50%;top:42px;transform:translateX(-50%);width:min(340px,72%);padding:9px 11px;background:linear-gradient(180deg,rgba(40,12,12,0.96),rgba(20,6,6,0.96));border:2px solid ${borderColor};color:#fff8e0;font-family:'Courier New',monospace;z-index:75;box-shadow:0 4px 18px rgba(0,0,0,0.55), 0 0 14px ${borderColor}55;animation:actionBlockedEnter 0.22s ease-out both;`;
+    if (!document.getElementById('action-blocked-style')) {
+      const st = document.createElement('style');
+      st.id = 'action-blocked-style';
+      st.textContent = `
+        @keyframes actionBlockedEnter {
+          0%   { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+          100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        @keyframes actionBlockedExit {
+          0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+        }
+        #action-blocked-x:hover { color: #ffd34d; border-color: rgba(255,211,77,0.55); }
+      `;
+      document.head.appendChild(st);
+    }
+    stage.appendChild(toast);
+    const dismiss = () => {
+      toast.style.animation = 'actionBlockedExit 0.20s ease-in both';
+      window.setTimeout(() => toast.remove(), 200);
+      if (actionToastTimer !== null) {
+        window.clearTimeout(actionToastTimer);
+        actionToastTimer = null;
+      }
+    };
+    (toast.querySelector('#action-blocked-x') as HTMLButtonElement | null)?.addEventListener('click', dismiss);
+    // Auto-dismiss after 3.2s — long enough to read, short enough to
+    // not linger past relevance.
+    actionToastTimer = window.setTimeout(dismiss, 3200);
+  }
+  // Globally exposed so sub-modules can reach it without imports.
+  (window as any).__showActionBlockedToast = showActionBlockedToast;
+
   // ─── Equip-blocked floating tooltip ──────────────────────────────────
   // 2026-05 v10: when the player clicks an inventory cell that's
   // currently blocked from equipping on the open tower (family conflict,
@@ -3482,7 +3556,12 @@ async function boot() {
     document.getElementById('tower-menu')?.remove();
   }
   function inspectStone(col: number, row: number) {
-    if (!isPreWavePhase()) { state.hint = 'No demolishing walls mid-battle. The empire pays for cohesion.'; return; }
+    if (!isPreWavePhase()) {
+      const msg = 'No demolishing walls mid-battle. The empire pays for cohesion.';
+      state.hint = msg;
+      showActionBlockedToast('Stones can only be sold between waves. Wait for the wave to clear.');
+      return;
+    }
     showStoneMenu(app, col, row, state, {
       onClose: () => document.getElementById('stone-menu')?.remove(),
       onSell: () => {
@@ -4364,7 +4443,11 @@ async function boot() {
       launchWave();
     },
     onPoolUpgrade: () => {
-      if (!isPreWavePhase()) { state.hint = 'Pool upgrades are bought between waves, not during. The barbarians won\'t pause.'; return; }
+      if (!isPreWavePhase()) {
+        state.hint = 'Pool upgrades are bought between waves, not during. The barbarians won\'t pause.';
+        showActionBlockedToast('Pool upgrades can only be purchased between waves. Wait for the wave to clear.');
+        return;
+      }
       const cost = poolUpgradeCost(state);
       if (cost > 0 && !canAfford(state, cost)) {
         showInsufficientGoldToast(cost);
@@ -4504,8 +4587,16 @@ async function boot() {
     // the floating MercatorBanner both call this; the gate shop is opened
     // separately via onOpenShop, so the two vendors never lock each other out.
     onOpenMercator: () => {
-      if (!mercatorActive) { state.hint = 'The Mercator is not in town. He visits W4 / 9 / 14 / 19 only.'; return; }
-      if (!isPreWavePhase()) { state.hint = 'The Mercator does not haggle mid-battle. Survive first.'; return; }
+      if (!mercatorActive) {
+        state.hint = 'The Mercator is not in town. He visits W4 / 9 / 14 / 19 only.';
+        showActionBlockedToast('The Mercator only visits on W4 / W9 / W14 / W19. Catch him next visit.');
+        return;
+      }
+      if (!isPreWavePhase()) {
+        state.hint = 'The Mercator does not haggle mid-battle. Survive first.';
+        showActionBlockedToast('The Mercator only trades between waves. Survive the current wave first.');
+        return;
+      }
       if (!mercatorShop) {
         mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
         mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5);
@@ -4524,6 +4615,7 @@ async function boot() {
         // button enable check + the wider "no transactions mid-battle" rule.
         if (!isPreWavePhase()) {
           state.hint = 'The market is closed mid-battle. Survive first, profit later.';
+          showActionBlockedToast('Items can\'t be sold mid-battle. Survive the current wave first.');
           return;
         }
         const slot = inventory.slots[idx];
@@ -4602,6 +4694,7 @@ async function boot() {
     onSellAllStones: () => {
       if (!isPreWavePhase()) {
         state.hint = 'No demolition during battle. The empire pays for cohesion.';
+        showActionBlockedToast('Stones can only be sold between waves. Wait for the wave to clear.');
         return;
       }
       const mode: any = state as any;
@@ -4696,7 +4789,9 @@ async function boot() {
     },
     onUndo: () => {
       if (state.phase !== GamePhase.BUILD_PHASE && state.phase !== GamePhase.PROSPECT_PLACEMENT && state.phase !== GamePhase.PICK_KEEPER) {
-        state.hint = 'Undo is a peacetime privilege. Battle is final.'; return;
+        state.hint = 'Undo is a peacetime privilege. Battle is final.';
+        showActionBlockedToast('Undo only works between waves. Battle decisions are final.');
+        return;
       }
       const last = undoStack.pop();
       if (!last) { state.hint = 'Nothing to undo. Your record is unblemished. So far.'; return; }
@@ -4705,7 +4800,11 @@ async function boot() {
       state.hint = `Undone: ${String(last.type).replace(/_/g,' ')}.`;
     },
     onReset: () => {
-      if (state.phase === GamePhase.WAVE_PHASE) { state.hint = 'You cannot reset the campaign while it is killing you.'; return; }
+      if (state.phase === GamePhase.WAVE_PHASE) {
+        state.hint = 'You cannot reset the campaign while it is killing you.';
+        showActionBlockedToast('Campaign can\'t be reset mid-battle. Finish or fail the current wave first.');
+        return;
+      }
       if (!confirm('Reset all actions taken this build phase? Towers placed, stones, items bought / equipped, and pool upgrades this round will all be undone.')) return;
       restoreBuildPhase();
     }
@@ -5573,7 +5672,14 @@ async function boot() {
       state.hint = `The treasury wants ${cost}g you don't have. Kill more enemies.`;
       return;
     }
-    if (!isBuildable(state, col, row)) { state.hint = 'That tile won\'t hold a tower. Try one that the engineers approve of.'; return; }
+    if (!isBuildable(state, col, row)) {
+      // 2026-05-24 — Player feedback: this was silently setting state.hint
+      // so players who tried to drop on cave / path / waypoint tiles got
+      // no visible feedback and thought the game was bugged. Pop the
+      // existing red BLOCKED toast anchored to the tile they clicked.
+      showBlockedAlert(col, row, 'That tile won\'t hold a tower — cave / path / checkpoint / border tiles are off-limits. Click an empty grass tile.');
+      return;
+    }
     // path validation
     setTile(state, col, row, TileType.TOWER);
     const newPath = buildGroundPath(state);
