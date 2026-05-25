@@ -18,9 +18,13 @@
 // brief and Mercator tab so the player reads it as part of the same UI
 // family, not a popup intrusion.
 
-// 2026-05-24 — Initial cut covers W1-W6. Six tips, six topics, one tip
-// per wave. Copy is short (≤2 short sentences), references in-game
-// surfaces by their actual position so the player can find them.
+// 2026-05-24 — Tips for waves 1-6, 7, 10, 11. Each tip covers one
+// teaching concept and appears in the pre-wave breather AFTER the
+// previous wave clears (with a 2s delay so reward popups land first).
+// Copy is short (≤2 short sentences), references in-game surfaces by
+// their actual position so the player can find them. Per-wave dismiss
+// + global collapse preference both persist in localStorage so the
+// player can opt out of any tip permanently.
 interface WaveTip {
   wave: number;
   title: string;
@@ -64,6 +68,26 @@ const TIPS: WaveTip[] = [
     icon: '⚱',
     title: 'STOCK THE SHOP',
     body: 'Top-right SHOP button. Buy items between waves to fill tower slots — even commons add real damage. The MERCATOR (W4/9/14/19) sells T5 towers and trophies you can\'t get anywhere else.',
+  },
+  // 2026-05-24 — Added W7 (DPS Check), W10 (don't rush merges), W11
+  // (stones are buildable) per player request.
+  {
+    wave: 7,
+    icon: '🎯',
+    title: 'USE DPS CHECK',
+    body: 'Top toolbar. Spawns a training dummy that walks the full path and tallies your maze\'s total damage output — risk-free, no cost. Spot weak spots BEFORE the real wave costs you lives.',
+  },
+  {
+    wave: 10,
+    icon: '⚖',
+    title: 'DON\'T RUSH THE MERGE',
+    body: 'Your 3 Hastati could be feeding a Super Combo (4-5 towers) or a stronger cross-recipe later. Burning them on the first available merge locks out the bigger one. Read the COMBINATIONS tab and plan multi-step builds.',
+  },
+  {
+    wave: 11,
+    icon: '🪨',
+    title: 'STONES ARE BUILD TILES',
+    body: 'Drop a prospect or new tower DIRECTLY on a stone to replace it — no clearing needed. Or click a stone during pre-wave to sell it back for gold via the SELL STONES button. Stones aren\'t dead space.',
   },
 ];
 
@@ -170,17 +194,43 @@ function ensureStyle(): void {
   document.head.appendChild(s);
 }
 
+// 2026-05-24 — Post-clear delay. Player asked that tips feel like
+// post-wave debriefs, not pre-prep nudges that compete with the
+// prospecting flow. The tip now waits POST_CLEAR_DELAY_MS after the
+// pre-wave phase begins before mounting, so it fades in AFTER reward
+// popups have settled and the player has had a beat to breathe. The
+// delay applies to W1 too — on a fresh game start the player gets a
+// moment to see the map before the first tip appears.
+const POST_CLEAR_DELAY_MS = 2000;
+let lastWaveSeen = -1;
+let preWaveStartTime = 0;
+
 /**
- * Per-frame call. Mounts the wave tip when the wave is in 1..6, the
- * player is in the pre-wave phase, and the tip for THIS wave hasn't
- * been permanently dismissed.
+ * Per-frame call. Mounts the wave tip ~2s after the pre-wave phase
+ * begins for a tip-eligible wave. The delay ensures the tip feels
+ * like a post-clear debrief rather than competing with prospecting.
  *
- * No-op (and removes any existing tip) when the wave is past W6, the
- * combat phase has started, or the wave was previously X'd out.
+ * No-op (and removes any existing tip) when the wave has no tip, the
+ * combat phase is active, the wave was previously X'd out, or the
+ * post-clear delay hasn't elapsed yet.
  */
 export function updateWaveTip(parent: HTMLElement, wave: number, isPreWave: boolean): void {
+  // Track pre-wave-start timestamp per wave so the delay only fires
+  // once per wave (not on every frame). Reset trackers when combat
+  // starts so the next pre-wave gets a fresh delay window.
+  if (isPreWave) {
+    if (wave !== lastWaveSeen) {
+      lastWaveSeen = wave;
+      preWaveStartTime = Date.now();
+    }
+  } else {
+    lastWaveSeen = -1;
+    preWaveStartTime = 0;
+  }
+
   const tip = TIPS.find(t => t.wave === wave);
-  const shouldShow = isPreWave && !!tip && !isWaveDismissed(wave);
+  const delayPassed = preWaveStartTime > 0 && (Date.now() - preWaveStartTime) >= POST_CLEAR_DELAY_MS;
+  const shouldShow = isPreWave && delayPassed && !!tip && !isWaveDismissed(wave);
   const existing = document.getElementById(TIP_ID) as HTMLElement | null;
   if (!shouldShow) {
     if (existing) existing.remove();
