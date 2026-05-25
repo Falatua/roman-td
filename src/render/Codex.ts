@@ -1364,7 +1364,7 @@ function renderTab(tab: string): string {
         </div>
         <div style="padding:10px 12px;background:#0a0e1a;border:2px solid #5a9fff">
           <div style="font-size:13px;color:#5a9fff;font-weight:bold;letter-spacing:2px;margin-bottom:4px">⏱ HASTEN</div>
-          <div style="font-size:10.5px;color:#cdb98a;line-height:1.5">−5% ability cooldown per tap (compounding). 5 taps ≈ 0.77× cooldown ≈ 23% faster ability cycles. The path for caster heroes — Marius's Triarii Wall or Caesar's Pax Romana cycle down to a regular event instead of a once-a-fight beat.</div>
+          <div style="font-size:10.5px;color:#cdb98a;line-height:1.5">−5% ability cooldown per tap (compounding). 5 taps ≈ 0.77× cooldown ≈ 23% faster ability cycles. The path for caster heroes — Marius's Capite Censi or Caesar's Pax Romana cycle down to a regular event instead of a once-a-fight beat.</div>
         </div>
         <div style="padding:10px 12px;background:#1a1410;border:2px solid #ffd34d">
           <div style="font-size:13px;color:#ffd34d;font-weight:bold;letter-spacing:2px;margin-bottom:4px">✨ EMPOWER</div>

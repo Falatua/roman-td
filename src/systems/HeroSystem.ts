@@ -256,7 +256,7 @@ export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): voi
     dispatchAbility(state, hero, ability, hooks);
   }
 
-  // Drain timed events (Triarii Wall revert).
+  // Drain timed events (Capite Censi per-throw damage events, etc.).
   tickHeroTimedEvents(state, hooks);
 }
 
@@ -272,7 +272,7 @@ function dispatchAbility(state: GameStateShape, hero: Tower, ability: any, hooks
   switch (ability.id) {
     // MARIUS
     case 'MARIAN_FORMATION':   return executeMARIAN_FORMATION(state, hero, params, ability, hooks);
-    case 'TRIARII_WALL':       return executeTRIARII_WALL(state, hero, params, ability, hooks);
+    case 'CAPITE_CENSI':       return executeCAPITE_CENSI(state, hero, params, ability, hooks);
     // AGRIPPA
     case 'PILUM_VOLLEY':       return executePILUM_VOLLEY(state, hero, params, ability, hooks);
     case 'NAVAL_BOMBARDMENT':  return executeNAVAL_BOMBARDMENT(state, hero, params, ability, hooks);
@@ -371,55 +371,99 @@ function executeMARIAN_FORMATION(state: GameStateShape, hero: Tower, params: any
   });
 }
 
-function executeTRIARII_WALL(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
-  // Pick the farthest path tile from the gate. state.groundPath is
-  // ordered start → gate, so index 0 is the cave entry; we want the
-  // tile that maximizes pre-gate distance while still being walkable.
-  // To force a U-turn, drop a wall on a mid-path tile that has a
-  // detour available — fallback to a tile near the middle of the path.
-  const path = state.groundPath;
-  if (!path || path.length < 6) return;
-  const mid = Math.floor(path.length / 2);
-  let chosen: { col: number; row: number } | null = null;
-  // Try mid first, then expand outward — only pick a tile we can revert.
-  const candidates = [mid, mid - 1, mid + 1, mid - 2, mid + 2].filter(i => i >= 1 && i < path.length - 1);
-  for (const i of candidates) {
-    const p = path[i];
-    if (state.tiles[p.row]?.[p.col] !== TileType.EMPTY && state.tiles[p.row]?.[p.col] !== TileType.SPAWN) continue;
-    chosen = p;
-    break;
+// 2026-05-24 — Replaced Triarii Wall with CAPITE_CENSI (Head-Count Levy).
+// Historical note: Triarii were the third-line veterans of the pre-Marian
+// MANIPLE army, and Marius is famously the general who ABOLISHED that
+// distinction when he replaced maniples with uniform cohorts. Naming a
+// Marius ability "Triarii Wall" was the historical opposite of his
+// signature. Capite Censi (the head-count poor) is the reform he is
+// actually most famous for — opening the legions to property-less
+// citizens, which created the professional standing army and set up
+// every subsequent civil war.
+//
+// Mechanic: 14s CD, ~6s active. Picks N (default 3) empty grass tiles
+// within ~5 tiles of Marius, spawns a phantom auxiliary at each that
+// throws a pilum at the closest enemy every `throwIntervalSec` for
+// `throwsPerAuxiliary` shots. Each pilum deals `damagePctOfBasic` of
+// Marius's basic attack damage. Damage routes as instant PHYS_RANGED
+// (no AoE) so it stacks cleanly with existing combat math.
+function executeCAPITE_CENSI(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
+  const count = params.auxiliaryCount ?? 3;
+  const throws = params.throwsPerAuxiliary ?? 6;
+  const intervalSec = params.throwIntervalSec ?? 1.0;
+  const dmgPct = (params.damagePctOfBasic ?? 75) / 100;
+  const radiusTiles = params.spawnRadiusTiles ?? 5;
+  const dmgPerThrow = heroBasicAttackDamage(state, hero) * dmgPct;
+  // Build candidate spawn tiles — empty grass within radius, not on path,
+  // not occupied by a tower (including pending placements).
+  const occupied = new Set<string>();
+  for (const o of state.towers.values()) {
+    occupied.add(`${o.tileX},${o.tileY}`);
   }
-  if (!chosen) return;
-  // Save the tile's prior value so we can restore it on revert.
-  const priorTile = state.tiles[chosen.row][chosen.col];
-  // Place a TOWER tile (acts as path blocker via the standard path
-  // refresh). STONE works too but TOWER makes the tile visibly the
-  // hero's intervention.
-  setTile(state, chosen.col, chosen.row, TileType.STONE);
-  const newPath = buildGroundPath(state);
-  if (!newPath) {
-    // The chosen tile would seal Rome's gate. Roll back.
-    setTile(state, chosen.col, chosen.row, priorTile);
-    return;
-  }
-  state.groundPath = newPath;
-  hooks?.resnapEnemiesToPath?.(newPath);
-  // Signature VFX: stone slab rising from the wall tile + dust shock-
-  // wave outward. The wall is the SLAB tile (chosen above), not Marius.
-  const wallCx = chosen!.col * GRID.TILE + GRID.TILE / 2;
-  const wallCy = chosen!.row * GRID.TILE + GRID.TILE / 2;
-  fireAbilityFx(hero, hooks, state.tick, ability, '#cc44ff', 1.6, { wall: { x: wallCx, y: wallCy } });
-  // Schedule the revert.
-  scheduleHeroTimedEvent(state, state.tick + (params.wallDurationSec ?? 5), () => {
-    if (state.tiles[chosen!.row]?.[chosen!.col] === TileType.STONE) {
-      setTile(state, chosen!.col, chosen!.row, priorTile);
-      const restored = buildGroundPath(state);
-      if (restored) {
-        state.groundPath = restored;
-        hooks?.resnapEnemiesToPath?.(restored);
-      }
+  const cands: Array<{ x: number; y: number; col: number; row: number }> = [];
+  for (let dr = -radiusTiles; dr <= radiusTiles; dr++) {
+    for (let dc = -radiusTiles; dc <= radiusTiles; dc++) {
+      if (dc === 0 && dr === 0) continue;
+      const c = hero.tileX + dc;
+      const r = hero.tileY + dr;
+      if (r < 0 || r >= state.tiles.length) continue;
+      const row = state.tiles[r];
+      if (!row || c < 0 || c >= row.length) continue;
+      if (Math.hypot(dc, dr) > radiusTiles) continue;
+      if (row[c] !== TileType.EMPTY) continue;
+      if (occupied.has(`${c},${r}`)) continue;
+      cands.push({
+        x: c * GRID.TILE + GRID.TILE / 2,
+        y: r * GRID.TILE + GRID.TILE / 2,
+        col: c,
+        row: r,
+      });
     }
+  }
+  if (cands.length === 0) return;
+  // Fisher-Yates shuffle, take the first `count` positions.
+  for (let i = cands.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = cands[i]; cands[i] = cands[j]; cands[j] = tmp;
+  }
+  const picked = cands.slice(0, Math.min(count, cands.length));
+  const lifetimeSec = throws * intervalSec;
+  // Long-form ghost-rise VFX — one shot, 6s lifetime, payload carries
+  // every auxiliary position so the renderer draws all 3 silhouettes.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#d4a76a', lifetimeSec, {
+    auxiliaries: picked.map(p => ({ x: p.x, y: p.y })),
+    lifetimeSec,
   });
+  // Schedule per-aux throw events. Each fires a closest-enemy hit and
+  // a short pilum-arc VFX from the aux to the target.
+  for (const aux of picked) {
+    for (let i = 0; i < throws; i++) {
+      // 0.5s offset on first throw so the aux is visibly "up" before
+      // the first projectile flies. Subsequent throws stagger by
+      // intervalSec.
+      const throwTick = state.tick + 0.5 + i * intervalSec;
+      scheduleHeroTimedEvent(state, throwTick, () => {
+        let closest: Enemy | null = null;
+        let bestDsq = Infinity;
+        for (const e of state.enemies.values()) {
+          if (e.hp <= 0) continue;
+          const dx = e.x - aux.x;
+          const dy = e.y - aux.y;
+          const dsq = dx * dx + dy * dy;
+          if (dsq < bestDsq) { bestDsq = dsq; closest = e; }
+        }
+        if (!closest) return;
+        // Instant damage (matches PILUM_VOLLEY pattern — no resistance
+        // routing). Floor at 0 so we never go negative.
+        closest.hp = Math.max(0, closest.hp - dmgPerThrow);
+        // Per-throw pilum-arc VFX. Short lifetime so each arc draws
+        // cleanly without overlapping the next throw.
+        fireAbilityFx(hero, hooks, throwTick, ability, '#d4a76a', 0.45, {
+          pilumArc: { from: { x: aux.x, y: aux.y }, to: { x: closest.x, y: closest.y } },
+        });
+      });
+    }
+  }
 }
 
 // ── AGRIPPA ──
@@ -617,7 +661,7 @@ function executePROSCRIPTION(state: GameStateShape, hero: Tower, _params: any, a
   fireAbilityFx(hero, hooks, state.tick, ability, '#ff9900', 1.2, { towers: towerPositions });
 }
 
-// ─── Timed events (Triarii Wall revert) ────────
+// ─── Timed events (Capite Censi per-throw pilum events, etc.) ────────
 
 interface HeroTimedEvent { atTick: number; action: () => void; }
 

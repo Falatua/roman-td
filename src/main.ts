@@ -5862,7 +5862,7 @@ async function boot() {
       // cooldown stamps off (heroTower as any).__heroCooldowns and
       // fires each ability when its tier is unlocked and its
       // cooldown has elapsed. Drains state.__heroTimedEvents
-      // (Triarii Wall revert).
+      // (Capite Censi per-throw pilum events, etc.).
       tickHeroAbilities(state, heroSystemHooks);
       tickBurnPatches(state, dt);
       tickBossHazards(state, dt);

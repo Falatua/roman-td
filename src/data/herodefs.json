@@ -27,14 +27,14 @@
       },
       {
         "level": 2,
-        "id": "TRIARII_WALL",
-        "name": "Triarii Wall",
+        "id": "CAPITE_CENSI",
+        "name": "Capite Censi",
         "cooldownSec": 14,
-        "durationSec": 5,
-        "params": { "wallDurationSec": 5, "targetTile": "FARTHEST_PATH_TILE_FROM_GATE" },
-        "description": "Spawns a temporary stone wall on the farthest path tile from the gate for 5s, forcing a U-turn. Path rebuilds on spawn and removal.",
-        "vfxColor": "#cc44ff",
-        "vfxStyle": "WALL_RISE_PARTICLES"
+        "durationSec": 6,
+        "params": { "auxiliaryCount": 3, "throwsPerAuxiliary": 6, "throwIntervalSec": 1.0, "damagePctOfBasic": 75, "spawnRadiusTiles": 5 },
+        "description": "Calls up the head-count reserve — 3 phantom auxilia rise from nearby tiles and rain pila on the closest enemy for 6s (6 throws each at ~75% of Marius's basic damage). Marius's signature reform: opening the legion to the property-less poor.",
+        "vfxColor": "#d4a76a",
+        "vfxStyle": "AMBER_LEVY_RISE"
       }
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
@@ -44,7 +44,7 @@
     "bannerCopy": [
       "Marius takes the field. The legions reform.",
       "MARIUS reached LEGATUS — Marian Formation locks the line.",
-      "MARIUS reached CONSUL — Triarii Wall rises.",
+      "MARIUS reached CONSUL — Capite Censi answers the call.",
       "MARIUS reached IMPERATOR — the father of the legion nears apex form.",
       "MARIUS reached DIVUS — the father of the legion at full strength."
     ],

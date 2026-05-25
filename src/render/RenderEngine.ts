@@ -1347,23 +1347,57 @@ export class RenderEngine {
           }
           break;
         }
-        case 'TRIARII_WALL': {
-          // Vertical stone-slab silhouette rising from the wall tile +
-          // dust shockwave outward. extras.wall = {x,y} tile center.
-          const w = fx.extras?.wall ?? { x: fx.x, y: fx.y };
-          const slabH = GRID.TILE * (0.6 + 0.4 * (1 - t));
-          const slabW = GRID.TILE * 0.7;
-          // Stone slab — grey fill with dark border
-          g.beginFill(0x6b6258, 0.7 * fade).drawRect(w.x - slabW / 2, w.y - slabH, slabW, slabH).endFill();
-          g.lineStyle(2 * fade, 0x2a2622, 0.85 * fade);
-          g.drawRect(w.x - slabW / 2, w.y - slabH, slabW, slabH);
-          g.lineStyle(0);
-          // Purple shockwave from wall + dust ring
-          const sr = GRID.TILE * (0.6 + t * 1.4);
-          g.lineStyle(2.5 * fade, fx.color, 0.7 * fade);
-          g.drawCircle(w.x, w.y, sr);
-          g.beginFill(0xa0a098, 0.18 * fade).drawCircle(w.x, w.y, sr * 0.5).endFill();
-          g.lineStyle(0);
+        case 'CAPITE_CENSI': {
+          // 2026-05-24 — Replaced TRIARII_WALL VFX. Two render modes:
+          //   1) `extras.pilumArc` — short single golden pilum-arc from
+          //      an auxiliary's position to the enemy it's hitting this
+          //      throw. Fired per damage event (~6 throws × 3 aux = 18
+          //      over 6s).
+          //   2) `extras.auxiliaries` — long-lived 6s ghost-auxilia
+          //      silhouettes standing at each spawned tile, pulsing
+          //      with amber dust at their feet.
+          if (fx.extras?.pilumArc) {
+            const { from, to } = fx.extras.pilumArc;
+            const segs = 6;
+            const arcLift = 30;
+            const prog = Math.min(1, t * 1.5);
+            const pts: Array<[number, number]> = [];
+            for (let s = 0; s <= segs; s++) {
+              const ss = (s / segs) * prog;
+              const px = from.x + (to.x - from.x) * ss;
+              const py = from.y + (to.y - from.y) * ss - Math.sin(ss * Math.PI) * arcLift;
+              pts.push([px, py]);
+            }
+            g.lineStyle(2 * fade, fx.color, 0.95 * fade);
+            g.moveTo(pts[0][0], pts[0][1]);
+            for (let s = 1; s < pts.length; s++) g.lineTo(pts[s][0], pts[s][1]);
+            g.lineStyle(0);
+            // Tip flare at leading point
+            const tip = pts[pts.length - 1];
+            g.beginFill(fx.color, 0.85 * fade).drawCircle(tip[0], tip[1], 3 * fade).endFill();
+          } else {
+            const auxiliaries: Array<{ x: number; y: number }> = fx.extras?.auxiliaries ?? [];
+            for (const aux of auxiliaries) {
+              // Translucent amber auxilia silhouette: body + head + spear.
+              const bodyA = 0.55 * fade;
+              g.beginFill(fx.color, bodyA).drawRect(aux.x - 4, aux.y - 14, 8, 18).endFill();
+              g.beginFill(fx.color, bodyA).drawCircle(aux.x, aux.y - 18, 5).endFill();
+              // Spear held vertical on the right side
+              g.lineStyle(1.5 * fade, fx.color, 0.85 * fade);
+              g.moveTo(aux.x + 7, aux.y - 26);
+              g.lineTo(aux.x + 7, aux.y - 4);
+              g.lineStyle(0);
+              // Spearhead diamond
+              g.beginFill(fx.color, 0.9 * fade).drawCircle(aux.x + 7, aux.y - 26, 2 * fade).endFill();
+              // Dust ring at feet — pulses on a 3 Hz cycle
+              const ringR = 14 + Math.sin(t * Math.PI * 3) * 2;
+              g.lineStyle(1.5 * fade, fx.color, 0.5 * fade);
+              g.drawCircle(aux.x, aux.y, ringR);
+              g.lineStyle(0);
+              // Faint inner dust glow under feet
+              g.beginFill(fx.color, 0.18 * fade).drawCircle(aux.x, aux.y, 8).endFill();
+            }
+          }
           break;
         }
         // ── AGRIPPA ──────────────────────────────────────────────────
