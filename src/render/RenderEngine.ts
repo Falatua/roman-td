@@ -1407,20 +1407,26 @@ export class RenderEngine {
             // Lazy sprite alloc
             if (!fx.extras.__pilumSprite) {
               const ptex = tex('PROJ_PILUM');
-              if (ptex) {
+              if (ptex && ptex.width > 0 && ptex.height > 0) {
                 const sp = new Sprite(ptex);
                 sp.anchor.set(0.5, 0.5);
-                // 2026-05-24 v2 — absolute size in tile units (was
-                // `sp.scale.set(0.85)` ratio, which inflated huge on
-                // larger native-size textures).
-                const pilumSize = GRID.TILE * 0.7;
-                sp.width = pilumSize;
-                sp.height = pilumSize;
+                // 2026-05-24 v3 — Explicit scale calculation from
+                // texture native size. The PROJ_PILUM PNG is 1333×1115
+                // pixels native; any scale > ~0.05 renders bigger than
+                // a tile. Compute the exact scale we want and set it
+                // explicitly so Pixi has no opportunity to misinterpret.
+                const pilumSize = GRID.TILE * 0.55;
+                sp.scale.set(pilumSize / ptex.width, pilumSize / ptex.height);
                 sp.tint = 0xffd99a; // warmer amber than fx.color
                 this.layers.fx.addChild(sp);
                 fx.extras.__pilumSprite = sp;
               }
             }
+            // 2026-05-24 v3 — Defensive per-frame re-size assertion.
+            // If anything (Pixi internal, texture late-load, etc) ever
+            // resets sp.scale, the next frame snaps it back to the
+            // intended small size. Belt-and-suspenders.
+            const pilumSizePx = GRID.TILE * 0.55;
             // Current arc position
             const px = from.x + (to.x - from.x) * prog;
             const py = from.y + (to.y - from.y) * prog - Math.sin(prog * Math.PI) * arcLift;
@@ -1429,7 +1435,11 @@ export class RenderEngine {
             const tdy = (to.y - from.y) - Math.cos(prog * Math.PI) * arcLift * Math.PI;
             const angle = Math.atan2(tdy, tdx);
             const sp = fx.extras.__pilumSprite as Sprite | undefined;
-            if (sp) {
+            if (sp && sp.texture && sp.texture.width > 0) {
+              // Re-assert scale every frame — defensive against any
+              // Pixi internal that might reset it (e.g. late texture
+              // load, plugin interaction). The recomputation is cheap.
+              sp.scale.set(pilumSizePx / sp.texture.width, pilumSizePx / sp.texture.height);
               sp.position.set(px, py);
               sp.rotation = angle;
               sp.alpha = 0.95 * fade;
@@ -1458,25 +1468,18 @@ export class RenderEngine {
             if (!fx.extras.__auxSprites && auxiliaries.length > 0) {
               const auxTex = tex('AUXILIA');
               const sprites: Sprite[] = [];
-              // 2026-05-24 v2 — CRITICAL FIX. Previous code used
-              // `sp.scale.set(0.78, 0.78)` which is a RATIO multiplier
-              // on the texture's NATIVE size. The AUXILIA sprite is a
-              // Higgsfield-generated tower portrait at ~512×512 native,
-              // so 0.78× scale rendered each phantom at ~400px = ~12
-              // tiles wide. Three of them = covering the entire screen.
-              // Use absolute width/height in tile units instead, same
-              // pattern as the regular tower-sprite renderer at line
-              // 3019. Each ghost auxiliary now renders at ~1.1 tiles
-              // (~35px on screen) regardless of texture native size.
-              const auxSize = GRID.TILE * 1.1;
+              // 2026-05-24 v3 — AUXILIA is 256×256 native. Use explicit
+              // scale-from-texture-width math instead of sp.width so
+              // we have full control over the rendered size regardless
+              // of texture load timing. Target: 1.0 tile per phantom.
+              const auxSize = GRID.TILE * 1.0;
               for (const aux of auxiliaries) {
-                if (!auxTex) continue;
+                if (!auxTex || auxTex.width <= 0) continue;
                 const sp = new Sprite(auxTex);
                 // Anchor near feet so the rise animation reads correctly
                 // and the body sits on the tile.
                 sp.anchor.set(0.5, 0.85);
-                sp.width = auxSize;
-                sp.height = auxSize;
+                sp.scale.set(auxSize / auxTex.width, auxSize / auxTex.height);
                 // Amber ghost tint
                 sp.tint = 0xe8b878;
                 sp.position.set(aux.x, aux.y);
