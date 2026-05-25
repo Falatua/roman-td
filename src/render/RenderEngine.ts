@@ -1319,7 +1319,27 @@ export class RenderEngine {
     for (let i = this.heroFxQueue.length - 1; i >= 0; i--) {
       const fx = this.heroFxQueue[i];
       const age = tick - fx.born;
-      if (age >= fx.life) { this.heroFxQueue.splice(i, 1); continue; }
+      if (age >= fx.life) {
+        // 2026-05-24 — Sprite-backed VFX cleanup. Capite Censi spawns
+        // real Pixi Sprites (AUXILIA + PROJ_PILUM textures) and caches
+        // them on the fx entry's extras so per-frame re-creation isn't
+        // needed. On expiry, destroy and detach so the fx layer doesn't
+        // accumulate orphan sprites.
+        const ax: Sprite[] | undefined = fx.extras?.__auxSprites;
+        if (ax) {
+          for (const sp of ax) {
+            this.layers.fx.removeChild(sp);
+            sp.destroy();
+          }
+        }
+        const ps: Sprite | undefined = fx.extras?.__pilumSprite;
+        if (ps) {
+          this.layers.fx.removeChild(ps);
+          ps.destroy();
+        }
+        this.heroFxQueue.splice(i, 1);
+        continue;
+      }
       const t = Math.max(0, Math.min(1, age / fx.life));
       const fade = 1 - t;
       switch (fx.ability) {
@@ -1348,54 +1368,145 @@ export class RenderEngine {
           break;
         }
         case 'CAPITE_CENSI': {
-          // 2026-05-24 — Replaced TRIARII_WALL VFX. Two render modes:
-          //   1) `extras.pilumArc` — short single golden pilum-arc from
-          //      an auxiliary's position to the enemy it's hitting this
-          //      throw. Fired per damage event (~6 throws × 3 aux = 18
-          //      over 6s).
-          //   2) `extras.auxiliaries` — long-lived 6s ghost-auxilia
-          //      silhouettes standing at each spawned tile, pulsing
-          //      with amber dust at their feet.
+          // 2026-05-24 — SPRITE-BACKED VFX. Two render modes:
+          //   1) `extras.pilumArc` — single PROJ_PILUM sprite flying an
+          //      arc from the firing aux to its target. Sprite is
+          //      rotated to match the flight tangent so the pilum looks
+          //      like it's actually being thrown, not sliding sideways.
+          //      Procedural amber-glow trail underneath for impact read.
+          //   2) `extras.auxiliaries` — three AUXILIA sprites (reused
+          //      from the tower roster) tinted amber as phantom-summon
+          //      figures. Rises from below the tile in first ~0.5s,
+          //      bobs gently mid-life, dissolves upward in last ~0.6s.
+          //      Procedural dust ring + glow pulse at each aux's feet.
+          //
+          //  Sprite lifecycle: created lazily on the FIRST frame this
+          //  fx entry renders (cached on `fx.extras.__auxSprites` /
+          //  `__pilumSprite`), updated each frame, destroyed in the
+          //  expiry path at the top of the loop. No per-frame churn.
           if (fx.extras?.pilumArc) {
             const { from, to } = fx.extras.pilumArc;
-            const segs = 6;
-            const arcLift = 30;
-            const prog = Math.min(1, t * 1.5);
-            const pts: Array<[number, number]> = [];
-            for (let s = 0; s <= segs; s++) {
-              const ss = (s / segs) * prog;
-              const px = from.x + (to.x - from.x) * ss;
-              const py = from.y + (to.y - from.y) * ss - Math.sin(ss * Math.PI) * arcLift;
-              pts.push([px, py]);
+            const arcLift = 32;
+            const prog = Math.min(1, t * 1.4);
+            // Lazy sprite alloc
+            if (!fx.extras.__pilumSprite) {
+              const ptex = tex('PROJ_PILUM');
+              if (ptex) {
+                const sp = new Sprite(ptex);
+                sp.anchor.set(0.5, 0.5);
+                // PROJ_PILUM ships at ~24x24; scale to a punchy size.
+                sp.scale.set(0.85, 0.85);
+                sp.tint = 0xffd99a; // warmer amber than fx.color
+                this.layers.fx.addChild(sp);
+                fx.extras.__pilumSprite = sp;
+              }
             }
-            g.lineStyle(2 * fade, fx.color, 0.95 * fade);
-            g.moveTo(pts[0][0], pts[0][1]);
-            for (let s = 1; s < pts.length; s++) g.lineTo(pts[s][0], pts[s][1]);
-            g.lineStyle(0);
-            // Tip flare at leading point
-            const tip = pts[pts.length - 1];
-            g.beginFill(fx.color, 0.85 * fade).drawCircle(tip[0], tip[1], 3 * fade).endFill();
+            // Current arc position
+            const px = from.x + (to.x - from.x) * prog;
+            const py = from.y + (to.y - from.y) * prog - Math.sin(prog * Math.PI) * arcLift;
+            // Tangent angle for rotation — derivative of the arc curve
+            const tdx = (to.x - from.x);
+            const tdy = (to.y - from.y) - Math.cos(prog * Math.PI) * arcLift * Math.PI;
+            const angle = Math.atan2(tdy, tdx);
+            const sp = fx.extras.__pilumSprite as Sprite | undefined;
+            if (sp) {
+              sp.position.set(px, py);
+              sp.rotation = angle;
+              sp.alpha = 0.95 * fade;
+            }
+            // Procedural glow trail behind the pilum tip — soft amber
+            // motion blur so the eye reads the throw arc.
+            const trailSegs = 5;
+            for (let s = 1; s <= trailSegs; s++) {
+              const back = Math.max(0, prog - s * 0.05);
+              const bx = from.x + (to.x - from.x) * back;
+              const by = from.y + (to.y - from.y) * back - Math.sin(back * Math.PI) * arcLift;
+              const a = (trailSegs - s) / trailSegs * 0.35 * fade;
+              g.beginFill(fx.color, a).drawCircle(bx, by, 3 - s * 0.3).endFill();
+            }
+            // Impact spark when pilum lands
+            if (prog >= 1) {
+              const sparkR = 6 + (t - 0.7) * 18;
+              g.lineStyle(2 * fade, fx.color, 0.85 * fade);
+              g.drawCircle(to.x, to.y, Math.max(4, sparkR));
+              g.lineStyle(0);
+              g.beginFill(fx.color, 0.4 * fade).drawCircle(to.x, to.y, 4).endFill();
+            }
           } else {
             const auxiliaries: Array<{ x: number; y: number }> = fx.extras?.auxiliaries ?? [];
-            for (const aux of auxiliaries) {
-              // Translucent amber auxilia silhouette: body + head + spear.
-              const bodyA = 0.55 * fade;
-              g.beginFill(fx.color, bodyA).drawRect(aux.x - 4, aux.y - 14, 8, 18).endFill();
-              g.beginFill(fx.color, bodyA).drawCircle(aux.x, aux.y - 18, 5).endFill();
-              // Spear held vertical on the right side
-              g.lineStyle(1.5 * fade, fx.color, 0.85 * fade);
-              g.moveTo(aux.x + 7, aux.y - 26);
-              g.lineTo(aux.x + 7, aux.y - 4);
+            // Lazy sprite alloc for the 3 ghost auxiliaries
+            if (!fx.extras.__auxSprites && auxiliaries.length > 0) {
+              const auxTex = tex('AUXILIA');
+              const sprites: Sprite[] = [];
+              for (const aux of auxiliaries) {
+                if (!auxTex) continue;
+                const sp = new Sprite(auxTex);
+                // Anchor near feet so the rise animation reads correctly
+                // and the body sits on the tile.
+                sp.anchor.set(0.5, 0.85);
+                // AUXILIA tower sprite is ~64x64; scale slightly smaller
+                // than a full tower so the phantom reads as ethereal.
+                sp.scale.set(0.78, 0.78);
+                // Amber ghost tint
+                sp.tint = 0xe8b878;
+                sp.position.set(aux.x, aux.y);
+                sp.alpha = 0;
+                this.layers.fx.addChild(sp);
+                sprites.push(sp);
+              }
+              fx.extras.__auxSprites = sprites;
+            }
+            const sprites: Sprite[] = fx.extras.__auxSprites ?? [];
+            // Lifetime-phase shape: 0.5s rise → hold → 0.6s dissolve.
+            // Mapped to fractions of the total fx.life so it scales
+            // cleanly with ability tuning.
+            const lifetime = fx.life;
+            const ageFrac = lifetime > 0 ? age / lifetime : 1;
+            const riseFrac = Math.min(0.18, 0.5 / lifetime);  // first ~0.5s
+            const dissolveStart = 1 - Math.min(0.22, 0.6 / lifetime);  // last ~0.6s
+            for (let s = 0; s < sprites.length; s++) {
+              const sp = sprites[s];
+              const aux = auxiliaries[s];
+              if (!sp || !aux) continue;
+              let alpha = 0.78;
+              let yOff = 0;
+              if (ageFrac < riseFrac) {
+                // Rising up from below the tile — alpha + position
+                const r = ageFrac / riseFrac;
+                alpha = 0.78 * r;
+                yOff = (1 - r) * 22;
+              } else if (ageFrac > dissolveStart) {
+                // Dissolving upward as wisps
+                const r = (ageFrac - dissolveStart) / (1 - dissolveStart);
+                alpha = 0.78 * (1 - r);
+                yOff = -r * 18;
+              }
+              // Subtle hover bob — keeps the ghost looking alive
+              const bob = Math.sin(age * Math.PI * 1.6 + s * 0.7) * 1.4;
+              sp.position.set(aux.x, aux.y + yOff + bob);
+              sp.alpha = alpha;
+              // Procedural amber dust ring at feet + inner glow.
+              // Pulses on a 3 Hz cycle so the eye picks up the figure
+              // even when the sprite alpha dips during rise/dissolve.
+              const ringR = 16 + Math.sin(age * Math.PI * 3 + s * 1.1) * 2.5;
+              const groundA = ageFrac < riseFrac ? (ageFrac / riseFrac) * 0.55
+                            : ageFrac > dissolveStart ? (1 - (ageFrac - dissolveStart) / (1 - dissolveStart)) * 0.55
+                            : 0.55;
+              g.lineStyle(1.5, fx.color, groundA);
+              g.drawCircle(aux.x, aux.y + 2, ringR);
               g.lineStyle(0);
-              // Spearhead diamond
-              g.beginFill(fx.color, 0.9 * fade).drawCircle(aux.x + 7, aux.y - 26, 2 * fade).endFill();
-              // Dust ring at feet — pulses on a 3 Hz cycle
-              const ringR = 14 + Math.sin(t * Math.PI * 3) * 2;
-              g.lineStyle(1.5 * fade, fx.color, 0.5 * fade);
-              g.drawCircle(aux.x, aux.y, ringR);
-              g.lineStyle(0);
-              // Faint inner dust glow under feet
-              g.beginFill(fx.color, 0.18 * fade).drawCircle(aux.x, aux.y, 8).endFill();
+              g.beginFill(fx.color, groundA * 0.35).drawCircle(aux.x, aux.y + 2, 11).endFill();
+              // Tiny rising-ember motes during the rise phase — sells
+              // the "called up from the dust" theme.
+              if (ageFrac < riseFrac * 1.6) {
+                const motes = 4;
+                for (let m = 0; m < motes; m++) {
+                  const ma = (Math.sin(age * Math.PI * 2 + m * 1.7 + s) + 1) * 0.5;
+                  const mx = aux.x + Math.cos(m * 1.5 + s * 0.3) * (8 + ma * 6);
+                  const my = aux.y + 4 - ma * 18;
+                  g.beginFill(fx.color, 0.45 * (1 - ma)).drawCircle(mx, my, 1.5).endFill();
+                }
+              }
             }
           }
           break;
