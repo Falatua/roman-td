@@ -143,7 +143,27 @@ export function computeFinalScoreBreakdown(state: GameStateShape, won: boolean):
   // proportionally to whatever multiplier is active. Final clamped
   // at 0 — a run can't go negative.
   const base = waveBonus + killBonus + timeBonus + efficiencyBonus + comboBonus + questBonus + rngBonus + winBonus - livesPenalty;
-  const final = Math.max(0, Math.round(base * difficultyMult));
+  let final = Math.max(0, Math.round(base * difficultyMult));
+  // 2026-05-25 — WAVE-BASED SANITY CAP. Player reported a W6 LOSS run
+  // scoring 133,023 — outranking W20 WIN runs (~121K). That score
+  // can't be produced by the current formula (max W6 LOSS ≈ 20K), so
+  // it was either from an older deployed build with a buggy formula
+  // or a stale code path that bypassed this function. Defense in
+  // depth: cap the final score at a realistic ceiling based on the
+  // furthest wave reached. The cap is generous enough that any
+  // legitimate high-skill run will fit comfortably under it.
+  //
+  //   LOSS: wave × 6,000  (e.g. W6 LOSS ≤ 36K, W15 LOSS ≤ 90K)
+  //   WIN:  wave × 10,000 (e.g. W20 WIN ≤ 200K — plenty of headroom)
+  //
+  // If a run exceeds the cap, it's either a bug or a stale code path.
+  // Cap silently — the player still sees their breakdown but the
+  // submitted leaderboard score is bounded.
+  const wavesReached = won ? state.wave : Math.max(1, state.wave - 1);
+  const sanityCap = wavesReached * (won ? 10000 : 6000);
+  if (final > sanityCap) {
+    final = sanityCap;
+  }
   return { waveBonus, killBonus, timeBonus, efficiencyBonus, comboBonus, questBonus, rngBonus, livesPenalty, difficultyMult, final };
 }
 
