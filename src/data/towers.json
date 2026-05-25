@@ -680,7 +680,7 @@
     "melee": true,
     "spriteSheet": 3,
     "spriteCell": 5,
-    "ability": "MELEE: gladius strike at 1.5 tiles. Global +45% damage aura. Pulses a 5.5-tile AoE stun every 3s — the magisterial command extends well past sword reach. Bosses in the pulse take Armor Shred.",
+    "ability": "MELEE: gladius strike at 1.5 tiles. Global +45% damage aura. Pulses a 5.5-tile AoE stun every 3s — the magisterial command extends well past sword reach. Bosses in the pulse take Armor Shred. IMPERIAL EXECUTE: any enemy left at 10% HP or below after Caesar's swing is killed instantly — bosses included. Flyers also qualify, but Caesar can only reach them if equipped with AQUILA TALONS (or placed on the CYAN aura tile / under Agricola's anti-air passive).",
     "critChance": 0.18,
     "critMult": 2.5
   },

@@ -2026,6 +2026,26 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       pushStatus(target, StatusEffectKind.FREEZE, dur(2.5), 0, tier);
       break;
     case TowerType.JULIUS_CAESAR:
+      // 0.5s stun on every primary strike — matches the divine-priest
+      // cluster below.
+      pushStatus(target, StatusEffectKind.STUN, dur(0.5), 0, tier);
+      // 2026-05-25 — IMPERIAL EXECUTE. Caesar instantly kills any
+      // target left at ≤10% maxHp after his hit. Same pattern as
+      // GOD_OF_WAR's DIVINE EXECUTE (~line 2049): bosses, ground, AND
+      // flyers all eligible. The "only flyers with the item" constraint
+      // the player asked for is enforced AUTOMATICALLY by the existing
+      // melee-vs-flyer targeting gate — Caesar is range 1.5 melee, so
+      // he can ONLY land a hit on a flyer when AQUILA_TALONS is
+      // equipped, the tower sits on the CYAN aura tile, or the Agricola
+      // hero is active and extending CYAN map-wide. No flyer hit =
+      // no execute, naturally. hp>0 guard skips already-dead targets
+      // so we never double-credit a kill that the swing itself just
+      // resolved. Downstream onKill hook fires normally so gold +
+      // quests + score all credit Caesar correctly.
+      if (target.hp > 0 && target.hp <= 0.10 * target.maxHp) {
+        target.hp = 0;
+      }
+      break;
     case TowerType.AUGUR:
     case TowerType.FLAMEN:
     case TowerType.HARUSPEX:
