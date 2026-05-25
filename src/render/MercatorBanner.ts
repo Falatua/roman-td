@@ -154,12 +154,16 @@ function ensureStyle() {
       background: linear-gradient(180deg, #ffd34d, #b58820);
     }
 
-    /* Mercator floating tab — horizontal pill in the bottom-right
-       corner with portrait + MERCATOR label + price hint. Click to
-       open the shop. */
+    /* Mercator floating tab — horizontal pill anchored to the
+       TOP-RIGHT corner of the canvas (decorative-shrine area, not the
+       prime build zone). 2026-05-24 — moved from bottom-right per
+       player feedback that the tab was blocking tower placement in
+       the bottom-right gate corner. Top-right sits over the corner
+       shrine art (purely decorative) so the buildable bottom-right
+       stays clear. Click portrait to open the shop. */
     #${TAB_ID} {
       position: absolute;
-      right: 12px; bottom: 12px;
+      right: 12px; top: 14px;
       /* Slim profile so the tab doesn't dominate the bottom-right
          corner. The collapse caret shrinks this further to ~50px
          when the player wants the tower beneath fully visible. */
@@ -201,7 +205,7 @@ function ensureStyle() {
     #${TAB_ID} .tab-collapse,
     #${TAB_ID} .tab-expand {
       position: absolute;
-      top: 2px; right: 4px;
+      top: 2px; right: 18px;  /* shifted left to make room for ✕ */
       background: transparent;
       border: none;
       color: #ffd34d;
@@ -215,6 +219,24 @@ function ensureStyle() {
     }
     #${TAB_ID} .tab-collapse:hover,
     #${TAB_ID} .tab-expand:hover { opacity: 1; }
+    /* 2026-05-24 — ✕ dismiss button. Hides the tab for the rest of
+       THIS Mercator visit (until the wave starts and the visit ends).
+       Sits in the corner, separate from the collapse caret. */
+    #${TAB_ID} .tab-dismiss {
+      position: absolute;
+      top: 2px; right: 4px;
+      background: transparent;
+      border: none;
+      color: #d4af37;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 4px;
+      letter-spacing: 0;
+      opacity: 0.65;
+      z-index: 2;
+    }
+    #${TAB_ID} .tab-dismiss:hover { opacity: 1; color: #ff8866; }
     #${TAB_ID}.is-collapsed .tab-expand {
       position: static;
       align-self: stretch;
@@ -311,7 +333,7 @@ export function showMercatorBanner(parent: HTMLElement, visitWave: number, hooks
   if (document.getElementById(BANNER_ID)) return; // already up
   if (dismissedForVisitWave === visitWave) {
     // Player previously dismissed — show the side tab instead.
-    showMercatorTab(parent, hooks);
+    showMercatorTab(parent, hooks, visitWave);
     return;
   }
   document.getElementById(TAB_ID)?.remove();
@@ -355,31 +377,49 @@ export function showMercatorBanner(parent: HTMLElement, visitWave: number, hooks
   banner.querySelector<HTMLButtonElement>('#merc-view')!.onclick = () => {
     hideMercatorBanner();
     hooks.onView();
-    showMercatorTab(parent, hooks);
+    showMercatorTab(parent, hooks, visitWave);
   };
   banner.querySelector<HTMLButtonElement>('#merc-dismiss')!.onclick = () => {
     dismissedForVisitWave = visitWave;
     hideMercatorBanner();
-    showMercatorTab(parent, hooks);
+    showMercatorTab(parent, hooks, visitWave);
   };
 }
 
-// 2026-05-17 — Mercator tab redesigned: now collapsible. Default state
-// is FULL (portrait + label + chips + BROWSE button). A ▼ caret in the
-// top-right collapses it to a compact 42×42 portrait-only chip that
+// 2026-05-17 — Mercator tab redesigned: now collapsible. A ▼ caret in
+// the top-right collapses it to a compact 42×42 portrait-only chip that
 // stays clickable to view wares. Click the chip in collapsed state to
 // re-open. Collapse state persists in localStorage so the player's
 // preference survives across waves.
+// 2026-05-24 — Default state is now COLLAPSED (per player feedback that
+// the expanded tab was visually noisy at top-right). Player must opt
+// in to the expanded label/chips/BROWSE view by clicking ▸.
 const COLLAPSE_KEY = 'roman_td_mercator_tab_collapsed';
 function isMercatorTabCollapsed(): boolean {
-  try { return localStorage.getItem(COLLAPSE_KEY) === '1'; } catch { return false; }
+  try {
+    const v = localStorage.getItem(COLLAPSE_KEY);
+    // Default true (collapsed) on first appearance; only expanded when
+    // the player has explicitly toggled to '0'.
+    return v !== '0';
+  } catch { return true; }
 }
 function setMercatorTabCollapsed(v: boolean): void {
   try { localStorage.setItem(COLLAPSE_KEY, v ? '1' : '0'); } catch { /* ignore */ }
 }
 
-export function showMercatorTab(parent: HTMLElement, hooks: MercatorBannerHooks) {
+// 2026-05-24 — Per-visit hide. Independent of the collapsed pref.
+// Clicking the ✕ on the tab hides Mercator entirely for THIS wave —
+// the tab won't reappear until the next Mercator visit (W4/9/14/19).
+// Resets at dismissMercatorVisit() so the next visit gets a fresh
+// chance to render the tab.
+let hiddenForVisitWave = -1;
+
+export function showMercatorTab(parent: HTMLElement, hooks: MercatorBannerHooks, visitWave?: number) {
   ensureStyle();
+  // 2026-05-24 — Per-visit hide: if the player X'd the tab during this
+  // Mercator visit, don't re-mount it on subsequent calls until the
+  // visit ends (handled by dismissMercatorVisit clearing the stamp).
+  if (visitWave != null && hiddenForVisitWave === visitWave) return;
   if (document.getElementById(TAB_ID)) return;
   const tab = document.createElement('div');
   tab.id = TAB_ID;
@@ -391,9 +431,18 @@ export function showMercatorTab(parent: HTMLElement, hooks: MercatorBannerHooks)
   const collapsed = isMercatorTabCollapsed();
   if (collapsed) tab.classList.add('is-collapsed');
 
+  // Stamp the visit wave on the dismiss handler so a future X click
+  // suppresses re-mounts until dismissMercatorVisit() resets it.
+  const dismissForThisVisit = (e: Event) => {
+    e.stopPropagation();
+    if (visitWave != null) hiddenForVisitWave = visitWave;
+    hideMercatorTab();
+  };
+
   const renderFull = () => {
     tab.innerHTML = `
-      <button class="tab-collapse" title="Collapse — hide details">▾</button>
+      <button class="tab-dismiss" title="Hide Mercator for this wave">✕</button>
+      <button class="tab-collapse" title="Collapse — portrait only">▾</button>
       <div class="tab-portrait">${portraitInner}</div>
       <div class="tab-text">
         <div class="tab-title">MERCATOR</div>
@@ -413,25 +462,29 @@ export function showMercatorTab(parent: HTMLElement, hooks: MercatorBannerHooks)
       tab.classList.add('is-collapsed');
       renderCollapsed();
     });
+    (tab.querySelector('.tab-dismiss') as HTMLElement)?.addEventListener('click', dismissForThisVisit);
   };
   const renderCollapsed = () => {
     tab.innerHTML = `
+      <button class="tab-dismiss" title="Hide Mercator for this wave">✕</button>
       <button class="tab-expand" title="Expand — Mercator wares">▸</button>
       <div class="tab-portrait">${portraitInner}</div>
     `;
-    tab.title = 'Mercator (collapsed). Click ▸ to expand, or click the portrait to browse.';
+    tab.title = 'Mercator (collapsed). Click ▸ to expand, the portrait to browse, or ✕ to hide for this wave.';
     (tab.querySelector('.tab-expand') as HTMLElement)?.addEventListener('click', (e) => {
       e.stopPropagation();
       setMercatorTabCollapsed(false);
       tab.classList.remove('is-collapsed');
       renderFull();
     });
+    (tab.querySelector('.tab-dismiss') as HTMLElement)?.addEventListener('click', dismissForThisVisit);
   };
 
   if (collapsed) renderCollapsed(); else renderFull();
   tab.addEventListener('click', (e) => {
-    // Don't fire view-wares when the player clicked a control button (caret).
-    if ((e.target as HTMLElement)?.closest('.tab-collapse, .tab-expand')) return;
+    // Don't fire view-wares when the player clicked a control button
+    // (caret or dismiss X).
+    if ((e.target as HTMLElement)?.closest('.tab-collapse, .tab-expand, .tab-dismiss')) return;
     hooks.onView();
   });
   parent.appendChild(tab);
@@ -445,4 +498,8 @@ export function dismissMercatorVisit() {
   hideMercatorBanner();
   hideMercatorTab();
   dismissedForVisitWave = -1;
+  // 2026-05-24 — Reset the per-visit hide so the NEXT Mercator visit
+  // gets a fresh chance to render the tab even if the player X'd it
+  // last visit. Per-visit dismiss should not be sticky across visits.
+  hiddenForVisitWave = -1;
 }

@@ -48,6 +48,12 @@ import { showTowerLeaderboard } from './render/TowerLeaderboard';
 import { showStoneMenu } from './render/StoneMenu';
 import { showComboPicker } from './render/ComboPicker';
 import { showMercatorBanner, dismissMercatorVisit } from './render/MercatorBanner';
+// 2026-05-24 — Onboarding wave tips (W1-W6). Non-intrusive teaching
+// banner that appears at top-center during the pre-wave phase. Each
+// wave covers one core concept (mazing / checkpoints / combos / codex
+// / wave brief / shop). Collapsible + dismissible per-wave via
+// localStorage.
+import { updateWaveTip, hideWaveTip } from './render/WaveTips';
 import { showSettingsPanel } from './render/SettingsPanel';
 import { renderPinnedRecipeWidget, ensurePinnedRecipeDefault } from './render/PinnedRecipe';
 import { comboPreviewBlockHtml, showComboInfoModal } from './render/ComboPreview';
@@ -7111,6 +7117,12 @@ async function boot() {
     updateWeatherChip();
     updateModifierChip();
     updateWaveBrief();
+    // 2026-05-24 — Onboarding tips for W1-W6 mount/refresh here. The
+    // helper is a no-op outside that range and removes its DOM when the
+    // wave-tip target is dismissed or the player marches to war.
+    const stageWrap = document.getElementById('stage-wrap');
+    if (stageWrap) updateWaveTip(stageWrap, state.wave ?? 1, isPreWavePhase());
+    else hideWaveTip();
     updateProspectSidebar();
     updateProspectReminder();
     updateTowerQueueIndicator();
