@@ -3013,8 +3013,13 @@ export class RenderEngine {
           BEAST_HUNTER: 1.25,
           BEAST_SLAYER: 1.25
         };
+        // 2026-05-24 — Hero scale bumped 1.6 → 1.85 per player feedback
+        // that heroes should be visibly larger than regular towers. The
+        // old 1.6 vs 1.5 gap was only +7% which barely read on screen;
+        // 1.85 is +23% over the tower baseline so heroes pop clearly as
+        // "this is the named commander" without becoming cartoonish.
         const scale = isHeroSprite
-          ? 1.6
+          ? 1.85
           : (PER_TYPE_SCALE[tw.type] ?? 1.5);
         const sz = GRID.TILE * scale;
         sp.width = sz; sp.height = sz;
@@ -3072,8 +3077,11 @@ export class RenderEngine {
             ring = new Sprite(ringTex);
             ring.anchor.set(0.5);
             // Sized slightly bigger than the hero sprite so the ring
-            // visually surrounds the character.
-            const ringSize = GRID.TILE * 2.0;
+            // visually surrounds the character. 2026-05-24 — bumped
+            // 2.0 → 2.25 to keep the ~1.25× ratio over the now-1.85×
+            // hero sprite (was 1.6×). The ring should always frame the
+            // hero, never tightly hug them.
+            const ringSize = GRID.TILE * 2.25;
             ring.width = ringSize;
             ring.height = ringSize;
             ring.alpha = 0.85;
@@ -3214,8 +3222,12 @@ export class RenderEngine {
         BEAST_HUNTER: 1.25,
         BEAST_SLAYER: 1.25
       };
+      // 2026-05-24 — Mirror of the creation-time hero scale bump above.
+      // Both paths MUST match — the per-frame path runs every tick for
+      // re-positioning, and a mismatch would cause heroes to "jump"
+      // size between creation and the first redraw.
       const baseScale = tw.isHero
-        ? 1.6
+        ? 1.85
         : (PER_TYPE_SCALE_FRAME[tw.type] ?? 1.5);
       const tileScale = GRID.TILE * baseScale;
       entry.sp.scale.set((tileScale / (entry.sp.texture?.width  || 1)) * totalScale,
