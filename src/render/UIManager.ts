@@ -55,6 +55,13 @@ export class UIManager {
   // when the player presses START WAVE.
   mercatorBtn: HTMLButtonElement;
   cb: UICallbacks;
+  // 2026-05-25 — track the last bulk-set targeting mode so the TARGET
+  // ALL picker can highlight the "currently on" option. Without this
+  // the player clicked into the submenu and couldn't tell which mode
+  // they'd last applied — the buttons all looked identical.
+  private lastBulkTargetMode: TargetingMode | null = null;
+  private targetAllPickerButtons: { mode: TargetingMode; btn: HTMLButtonElement }[] = [];
+  private targetAllBtn: HTMLButtonElement | null = null;
 
   constructor(parent: HTMLElement, cb: UICallbacks) {
     this.cb = cb;
@@ -202,26 +209,71 @@ export class UIManager {
       { mode: TargetingMode.FLYERS,  label: 'FLYERS',  tip: 'Flyers first, then ground' },
       { mode: TargetingMode.FAST,    label: 'FAST',    tip: 'Highest current speed — catch sprinters' },
     ];
+    // 2026-05-25 — restyle each picker button to support an "ACTIVE"
+    // visual state. The currently selected bulk-set mode renders with
+    // a gold-on-green background (matches the per-tower TARGETING row
+    // in TowerMenu) and a "✓ " prefix; inactive modes stay the dim
+    // pink-on-maroon default. Hover styles respect the active state so
+    // hovering the active button doesn't lose the highlight.
+    const renderPickerState = () => {
+      for (const { mode, btn } of this.targetAllPickerButtons) {
+        const isActive = this.lastBulkTargetMode === mode;
+        btn.style.background = isActive ? '#3a5520' : '#2a1a25';
+        btn.style.color      = isActive ? '#d4af37' : '#ffb3d9';
+        btn.style.borderColor = isActive ? '#d4af37' : '#5a3a4a';
+        btn.style.fontWeight  = isActive ? 'bold'   : 'normal';
+        // Label updates so the player can see at a glance which mode is on.
+        const label = TARGET_ALL_MODES.find(m => m.mode === mode)?.label ?? '';
+        btn.textContent = isActive ? `✓ ${label}` : label;
+      }
+      // Also reflect on the closed button so the player can see the
+      // current bulk mode without opening the picker.
+      const closedLabel = this.lastBulkTargetMode != null
+        ? `🎯 TARGET ALL · ${TargetingMode[this.lastBulkTargetMode]}`
+        : '🎯 TARGET ALL';
+      targetAllBtn.textContent = closedLabel;
+    };
     for (const m of TARGET_ALL_MODES) {
       const b = document.createElement('button');
       b.textContent = m.label;
       b.title = m.tip;
       b.style.cssText = 'background:#2a1a25;color:#ffb3d9;border:1px solid #5a3a4a;padding:6px 8px;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:1px;text-align:left';
-      b.onmouseenter = () => { b.style.background = '#3a2535'; };
-      b.onmouseleave = () => { b.style.background = '#2a1a25'; };
+      b.onmouseenter = () => {
+        // Hover only brightens the inactive buttons. The active button
+        // keeps its gold-on-green highlight so the player never loses
+        // sight of "what's currently on."
+        if (this.lastBulkTargetMode !== m.mode) b.style.background = '#3a2535';
+      };
+      b.onmouseleave = () => {
+        if (this.lastBulkTargetMode !== m.mode) b.style.background = '#2a1a25';
+      };
       b.onclick = () => {
+        this.lastBulkTargetMode = m.mode;
         (cb as any).onSetAllTargeting?.(m.mode);
-        targetAllPicker.style.display = 'none';
-        targetAllBtn.style.background = '#3a1a2a';
+        // Don't auto-close — the player asked for the selection to
+        // persist visually, and keeping the picker open lets them see
+        // the new highlight land BEFORE they look away. Closes on a
+        // second click of the TARGET ALL button (toggle), same as it
+        // did before.
+        renderPickerState();
       };
       targetAllPicker.appendChild(b);
+      this.targetAllPickerButtons.push({ mode: m.mode, btn: b });
     }
+    this.targetAllBtn = targetAllBtn;
     targetAllBtn.onclick = () => {
       const open = targetAllPicker.style.display !== 'none';
       targetAllPicker.style.display = open ? 'none' : 'flex';
       // Subtle highlight while the picker is open so the player can tell.
       targetAllBtn.style.background = open ? '#3a1a2a' : '#5a2a3a';
+      // Re-stamp the picker state each time it opens so the active
+      // highlight reflects the most recent bulk choice.
+      if (!open) renderPickerState();
     };
+    // Initial paint so the closed button label reflects state on boot
+    // (currently "🎯 TARGET ALL" with no suffix — once the player picks
+    // a mode it'll show "🎯 TARGET ALL · STRONG", etc.).
+    renderPickerState();
     // Order: START / SPEED / PAUSE / POOL / SHOP / QUESTS / CODEX / SELL-STONES / LEADERBOARD / DPS CHECK / TARGET ALL (+ picker) / SETTINGS.
     // (Sound mute lives inside SETTINGS panel now — 2026-05 v11.)
     //
