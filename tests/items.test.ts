@@ -144,7 +144,7 @@ describe('Merchant — gate shop', () => {
 });
 
 describe('Merchant — Mercator stock', () => {
-  it('always includes 4 Legendaries + 2 Rare + 3 mid + 2 Epic (2026-05-18 — EPIC tier added)', () => {
+  it('always includes 4 Legendaries + 2 Rare + 3 mid + 2 Epic + guaranteed Truesight (2026-05-25 — Truesight always available)', () => {
     const shop = buildMercatorStock();
     expect(shop.type).toBe('MERCATOR');
     const legendaries = shop.offers.filter(o => o.rarity === 'LEGENDARY');
@@ -157,8 +157,13 @@ describe('Merchant — Mercator stock', () => {
     // 2026-05-18 — 2 guaranteed EPIC slots per visit.
     expect(epic.length).toBe(2);
     expect(cons.length).toBe(0);
-    // 4 legendary + 2 rare + 3 mid + 2 epic = 11 offers.
-    expect(shop.offers.length).toBe(11);
+    // 2026-05-25 — TRUESIGHT_LENS now ships as a GUARANTEED slot every
+    // Mercator visit (was a 3-in-13 random MID roll). Player must
+    // always have reliable access to the stealth-reveal counter.
+    const truesight = shop.offers.filter(o => o.itemId === 'TRUESIGHT_LENS');
+    expect(truesight.length).toBe(1);
+    // 4 legendary + 2 rare + 3 mid + 2 epic + 1 truesight = 12 offers.
+    expect(shop.offers.length).toBe(12);
   });
 
   it('Mercator legendaries are priced significantly higher than gate shop rares', () => {

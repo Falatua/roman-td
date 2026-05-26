@@ -57,14 +57,15 @@ const MERCATOR_MID = [
   // only). Adding three mid-game pickups closes the gap so the DOT split
   // (one BURN + one POISON + one BLEED per tower) is actually playable on
   // ranged/aerial towers too.
-  'VENOM_TIPPED_ARROWS', 'SERPENT_AMULET', 'VESTAL_PYRE',
-  // 2026-05-22 V23: Truesight Lens. Map-wide reveal of stealth + ambush
-  // enemies (Carthage Spearman W7-W10, Undead Berserker W13/W15, Ghost
-  // Rider/Shadow Cavalry stealth cycle, VEIL_OF_THE_PROSCRIPTI wave
-  // modifier). Counter pickup for the W7+ ambush window — players who
-  // hate waiting through the un-targetable opening can buy this to skip
-  // it entirely.
-  'TRUESIGHT_LENS'
+  'VENOM_TIPPED_ARROWS', 'SERPENT_AMULET', 'VESTAL_PYRE'
+  // 2026-05-25 — TRUESIGHT_LENS moved out of the random MID pool. It
+  // now ships as a GUARANTEED slot (see buildMercatorStock below) so
+  // the player never has to gamble on whether the stealth-counter
+  // appears between waves. Per user direction: "the item to see fliers
+  // and reveal them to other towers should always be available at
+  // Mercator." Stealthed flyers (Ghost Rider, Shadow Cavalry) are the
+  // primary use case, and the player needs reliable access to the
+  // counter — not a 3-in-13 random roll.
 ];
 // 2026-05 v6: items the Mercator stocks that the gate shop never carries.
 // One guaranteed slot per visit picks from this pool so Mercator wares feel
@@ -282,6 +283,22 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   for (const [id, def] of epics) {
     if (!def) continue;
     offers.push({ itemId: id, rarity: 'EPIC' as Rarity, price: def.buy ?? 60, isConsumable: false });
+  }
+
+  // 2026-05-25 — GUARANTEED TRUESIGHT_LENS slot. The stealth-reveal
+  // counter must be reliably purchasable; per user direction it's
+  // always available at Mercator instead of a random roll out of the
+  // MID pool. Same markup convention as other MID items (+4g over
+  // codex baseline). Defensive lookup so a missing item def doesn't
+  // crash the build.
+  const tsDef: any = (ITEMS as any)['TRUESIGHT_LENS'];
+  if (tsDef) {
+    offers.push({
+      itemId: 'TRUESIGHT_LENS',
+      rarity: asRarity(tsDef.rarity ?? 'UNCOMMON'),
+      price: (tsDef.buy ?? 18) + 4,
+      isConsumable: false
+    });
   }
 
   return { type: 'MERCATOR', offers, livesPrice: 7, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };
