@@ -111,6 +111,7 @@ export function createTower(type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: numbe
     hasBeenDowngraded: false,
     builtFrom: [],
     equippedItems: [],
+    equippedItemRarities: [],
     placedAtWave: wave,
     attackCooldown: 0,
     rotation: 0,

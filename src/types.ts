@@ -353,6 +353,17 @@ export interface Tower {
   hasBeenDowngraded: boolean;
   builtFrom: TowerType[];
   equippedItems: ItemId[];
+  // 2026-05-25 — Per-instance rarity for each equipped item. Parallel
+  // array to equippedItems (same length, same indexes). Tracks the
+  // rarity that was rolled when the item was picked up — boss-drop
+  // upgrades, mercator special stock, etc. — so that on UNEQUIP the
+  // item returns to inventory at the rarity it actually was, not the
+  // base def rarity from items_permanent.json. Without this, a
+  // LEGENDARY-rolled item came back as EPIC base and the UI swapped
+  // orange→purple. Optional for backward-compat with any in-memory
+  // state created before this field existed; UI sites fall back to the
+  // def rarity when an entry is missing.
+  equippedItemRarities: string[];
   placedAtWave: number;
   attackCooldown: number;   // seconds until next attack
   rotation: number;         // radians

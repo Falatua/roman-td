@@ -8,7 +8,7 @@ import { setTile } from '../systems/GridManager';
 import { towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, StatModifier } from '../systems/TowerSystem';
 import { getTowerProjectileProfile } from '../systems/ProjectileSystem';
 import { TileType } from '../types';
-import { InventoryState, inventoryAdd, inventoryRemove } from '../systems/LootSystem';
+import { InventoryState, inventoryAdd, inventoryRemove, Rarity } from '../systems/LootSystem';
 import permItems from '../data/items_permanent.json';
 import consumables from '../data/items_consumable.json';
 import towersData from '../data/towers.json';
@@ -354,9 +354,13 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     // Per-item effect lines. Pulls the human-readable `effect` field from
     // items_permanent.json so the player sees EXACTLY what each piece does,
     // including conditional ones the static DPS bar can't show.
-    const lines = t.equippedItems.map((id) => {
+    const lines = t.equippedItems.map((id, idx) => {
       const def: any = (permItems as any)[id] ?? {};
-      const rarity = def.rarity ?? 'COMMON';
+      // 2026-05-25 — prefer the per-instance rarity (set at equip time)
+      // over the def's base rarity. A LEGENDARY-rolled item stays
+      // orange in the items-info breakdown instead of falling back to
+      // the def's base EPIC purple.
+      const rarity = t.equippedItemRarities?.[idx] ?? def.rarity ?? 'COMMON';
       const col = RAR[rarity] ?? '#cdb98a';
       const name = def.name ?? id.replace(/_/g, ' ');
       const eff = def.effect ?? '';
@@ -433,7 +437,11 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   for (let i = 0; i < stats.slots; i++) {
     const itemId = t.equippedItems[i];
     const idef: any = itemId ? ((permItems as any)[itemId] ?? (consumables as any)[itemId]) : null;
-    const rarity = idef?.rarity ?? 'COMMON';
+    // 2026-05-25 — use the per-instance rarity (parallel array set at
+    // equip time) so the equipped tile keeps its actual rarity color.
+    // Falls back to def rarity for any older in-memory state created
+    // before equippedItemRarities existed.
+    const rarity = (itemId ? (t.equippedItemRarities?.[i] ?? idef?.rarity ?? 'COMMON') : 'COMMON');
     const color = itemId ? RAR[rarity] : '#3a3025';
     const slot = document.createElement('div');
     slot.style.cssText = `width:64px;height:64px;border:2px solid ${color};background:linear-gradient(180deg,#1a1410,#100c09);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;color:${color};box-shadow:inset 0 0 10px #000;cursor:${itemId ? 'pointer' : 'default'};`;
@@ -443,8 +451,15 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
       slot.onclick = () => {
         if (inv.slots.length >= INVENTORY_SIZE) { state.hint = 'Inventory full. Sell something first to unequip.'; return; }
         const idx = t.equippedItems.indexOf(itemId);
-        if (idx >= 0) t.equippedItems.splice(idx, 1);
-        inventoryAdd(inv, itemId, rarity, false);
+        if (idx >= 0) {
+          t.equippedItems.splice(idx, 1);
+          // Keep the parallel rarity array in lockstep with equippedItems.
+          if (t.equippedItemRarities) t.equippedItemRarities.splice(idx, 1);
+        }
+        // Return to inventory at the rarity it was actually equipped at
+        // — not the def's base rarity. Fixes orange-LEGENDARY → purple-
+        // EPIC demotion on the equip/unequip cycle.
+        inventoryAdd(inv, itemId, rarity as Rarity, false);
         state.hint = `Unequipped ${idef?.name ?? itemId} → inventory.`;
         refresh();        // stay in the menu so the player can keep swapping
       };
@@ -524,6 +539,11 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
           return;
         }
         t.equippedItems.push(slot.itemId);
+        // Stash the per-instance rarity alongside so unequip can put it
+        // back at the SAME rarity it dropped/was-bought at — instead of
+        // demoting it to the def's base rarity.
+        if (!t.equippedItemRarities) t.equippedItemRarities = [];
+        t.equippedItemRarities.push(slot.rarity);
         inventoryRemove(inv, slot.id);
         state.hint = `Equipped ${idef?.name ?? slot.itemId}.`;
         refresh();
@@ -796,9 +816,15 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     const warn = t.killCount >= 50 ? `\nThis tower has ${t.killCount} kills (+${t.killBonusFlat.toFixed(1)} flat dmg). Selling permanently destroys all battle experience.\n` : '';
     if (!confirm(`Sell ${def.name ?? t.type} T${t.qualityTier} for ${stats.refund}g?${warn}`)) return;
     if (t.isAerarium) state.goldTowerCount = Math.max(0, state.goldTowerCount - 1);
-    for (const itemId of t.equippedItems) {
+    // 2026-05-25 — restore equipped items to inventory at their actual
+    // per-instance rarity (not the def's base rarity), so a LEGENDARY
+    // drop that was equipped to a sold tower returns to inventory as
+    // LEGENDARY, not the def's base EPIC.
+    for (let i = 0; i < t.equippedItems.length; i++) {
+      const itemId = t.equippedItems[i];
       const idef: any = (permItems as any)[itemId] ?? (consumables as any)[itemId];
-      inventoryAdd(inv, itemId, idef?.rarity ?? 'COMMON', false);
+      const rarity = (t.equippedItemRarities?.[i] ?? idef?.rarity ?? 'COMMON') as Rarity;
+      inventoryAdd(inv, itemId, rarity, false);
     }
     earnGold(state, stats.refund);
     state.towers.delete(t.id);
@@ -1053,18 +1079,32 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   for (let i = 0; i < HERO_ITEM_SLOTS; i++) {
     const itemId = t.equippedItems[i];
     const idef: any = itemId ? ((permItems as any)[itemId] ?? (consumables as any)[itemId]) : null;
-    const rarity = idef?.rarity ?? 'COMMON';
+    // 2026-05-25 — use the per-instance rarity (parallel array set at
+    // equip time). Without this, a LEGENDARY-rolled item equipped to
+    // a hero showed up purple (def's base EPIC) instead of orange.
+    const rarity = (itemId ? (t.equippedItemRarities?.[i] ?? idef?.rarity ?? 'COMMON') : 'COMMON');
     const color = itemId ? RAR[rarity] : '#3a3025';
     const slot = document.createElement('div');
     slot.style.cssText = `width:52px;height:52px;border:2px solid ${color};background:linear-gradient(180deg,#1a1410,#100c09);display:flex;align-items:center;justify-content:center;color:${color};cursor:${itemId ? 'pointer' : 'default'};font-size:8.5px;text-align:center;line-height:1.1`;
     if (itemId) {
-      slot.innerHTML = `<div>${idef?.name ?? itemId}</div>`;
+      // 2026-05-25 — render the same sprite-with-rarity-frame the
+      // inventory and the regular tower menu use, so an equipped item
+      // stays visually consistent across all three places it appears.
+      // Previously the hero panel showed name-only text and dropped
+      // the artwork on equip, making the player feel they'd lost the
+      // sprite — they hadn't, the panel was just rendering text-only.
+      slot.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:1px">${itemIconSvg(itemId, rarity, 30)}<div style="font-size:6px;color:#aa9a4a;letter-spacing:1px">${itemFamily(itemId)}</div></div>`;
       attachItemTooltip(slot, itemId, rarity, idef, true);
       slot.onclick = () => {
         if (inv.slots.length >= INVENTORY_SIZE) { state.hint = 'Inventory full. Sell something first to unequip.'; return; }
         const idx = t.equippedItems.indexOf(itemId);
-        if (idx >= 0) t.equippedItems.splice(idx, 1);
-        inventoryAdd(inv, itemId, rarity, false);
+        if (idx >= 0) {
+          t.equippedItems.splice(idx, 1);
+          // Keep the parallel rarity array in lockstep with equippedItems.
+          if (t.equippedItemRarities) t.equippedItemRarities.splice(idx, 1);
+        }
+        // Return to inventory at the actual rarity, not the def default.
+        inventoryAdd(inv, itemId, rarity as Rarity, false);
         refresh();
       };
     } else {
@@ -1134,6 +1174,11 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
           return;
         }
         t.equippedItems.push(slot.itemId);
+        // Stash the per-instance rarity in the parallel array so the
+        // hero panel renders the actual rarity color (orange-LEGENDARY
+        // stays orange, not the def's purple-EPIC default).
+        if (!t.equippedItemRarities) t.equippedItemRarities = [];
+        t.equippedItemRarities.push(slot.rarity);
         inventoryRemove(inv, slot.id);
         state.hint = `Equipped ${idef?.name ?? slot.itemId}.`;
         refresh();
