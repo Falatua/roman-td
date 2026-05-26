@@ -1192,14 +1192,16 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // NUMIDIAN_CAVALRY ("Eques") rider — 2026-05-19 v3 converted to
       // FLYER-ONLY (membership in ANTI_AIR_ONLY_TYPES gates ground
       // targets out at the inRange filter). vs-Flyer bonus bumped
-      // 1.40 → 1.75 to match the new premier-anti-air identity.
+      // 1.40 → 1.75 (2026-05-19), then 1.75 → 2.10 (2026-05-25 per
+      // user direction "make Eques 20% stronger against flyers" —
+      // multiplicative on the existing rider, so +75% → +110% flat).
       // Anti-boss rider removed because the tower can't shoot ground
       // bosses anymore — only the rare flying-boss case would have
-      // benefited, and the +75% vs flyers already amplifies those.
+      // benefited, and the +110% vs flyers already amplifies those.
       // baseDps was simultaneously bumped 34 → 85 in towers.json to
       // pay for losing every ground target.
       if (t.type === TowerType.NUMIDIAN_CAVALRY && target.isFlyer) {
-        damage *= 1.75;
+        damage *= 2.10;
       }
       // Evocatus tactical stacks: +5% per kill (cap 50%)
       if (t.type === TowerType.EVOCATUS) {

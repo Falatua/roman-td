@@ -579,7 +579,7 @@
     "antiAirOnly": true,
     "spriteSheet": 2,
     "spriteCell": 7,
-    "ability": "ANTI-AIR ONLY — fires only at flyers, cannot target ground. SKY VOLLEY: rains javelins at 3 distinct flyers per attack. 30% chance to land a triple-damage strike (signature crit). +75% damage vs Flyers on top of the base damage — the premier anti-air apex combo. Recipe pairs the AQUILA VENATOR sky-hunter, the SAGITTARIUS anti-air archer, and the DECURION cavalry officer into a saddle-mounted javelin specialist.",
+    "ability": "ANTI-AIR ONLY — fires only at flyers, cannot target ground. SKY VOLLEY: rains javelins at 3 distinct flyers per attack. 30% chance to land a triple-damage strike (signature crit). +110% damage vs Flyers on top of the base damage — the premier anti-air apex combo. Recipe pairs the AQUILA VENATOR sky-hunter, the SAGITTARIUS anti-air archer, and the DECURION cavalry officer into a saddle-mounted javelin specialist.",
     "critChance": 0,
     "critMult": 1
   },
