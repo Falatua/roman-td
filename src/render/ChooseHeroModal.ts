@@ -586,7 +586,7 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
        <div style="color:${color};font-size:13px;font-weight:bold;margin-top:2px">${value}</div>
      </div>`;
   const stats = `
-    <div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:6px">STATS (TIRO BASE)</div>
+    <div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:6px">STATS</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:clamp(12px,1.8vh,18px)">
       ${statBox('DAMAGE / HIT', perHit.toFixed(1), '#ee9966')}
       ${statBox('ATK SPEED',    atkSpd.toFixed(2) + ' /s')}
