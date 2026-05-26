@@ -21,7 +21,7 @@
         "cooldownSec": 8,
         "durationSec": 5,
         "params": { "nearestMeleeTowers": 5, "atkSpeedMultPercent": 75, "dmgBonusPercent": 30, "shareCrit": true },
-        "description": "The 5 nearest melee towers form ranks for 5s — shared crit chance, +75% attack speed, and +30% damage.",
+        "description": "The 5 nearest melee towers form ranks for 5s — shared crit chance (every tower in the formation inherits the highest crit% on the team), +75% attack speed, and +30% damage. Net effect: each buffed tower deals roughly 2.28× its normal DPS during the window (1.75 speed × 1.30 damage), so a typical 5-tower formation outputs ~11× a single tower's DPS for 5s.",
         "vfxColor": "#cc44ff",
         "vfxStyle": "VIOLET_RANK_LINE"
       },
@@ -32,7 +32,7 @@
         "cooldownSec": 14,
         "durationSec": 6,
         "params": { "auxiliaryCount": 3, "throwsPerAuxiliary": 6, "throwIntervalSec": 1.0, "damagePctOfBasic": 75, "spawnRadiusTiles": 1.5, "targetRangeTiles": 2.5 },
-        "description": "Calls up the head-count reserve — 3 phantom auxilia rise from tiles adjacent to Marius (within 1.5 tiles) and hurl pila at the closest enemy within 2.5 tiles for 6s (6 throws each at ~75% of Marius's basic damage). Marius's signature reform: opening the legion to the property-less poor.",
+        "description": "Calls up the head-count reserve — 3 phantom auxilia rise from tiles adjacent to Marius (within 1.5 tiles) and hurl pila at the closest enemy within 2.5 tiles for 6s. Each aux throws 6 pila (one per second) at 75% of Marius's basic-attack damage = 18 pila total, ~13.5× Marius's basic-attack damage spread across the window. Marius's signature reform: opening the legion to the property-less poor.",
         "vfxColor": "#d4a76a",
         "vfxStyle": "AMBER_LEVY_RISE"
       }
@@ -77,7 +77,7 @@
         "cooldownSec": 6,
         "durationSec": 0,
         "params": { "javelinCount": 5, "targetType": "HIGHEST_HP", "pierceCount": 2 },
-        "description": "Fires 5 javelins simultaneously at the 5 highest-HP enemies in range. Each pierces 2 targets.",
+        "description": "Fires 5 javelins simultaneously at the 5 highest-HP enemies in range. Each javelin deals 90% of Agrippa's basic-attack damage. Total burst: ~4.5× Agrippa's basic damage, focused on the toughest 5 targets on screen — exactly when boss + elite stacks are clogging the lane.",
         "vfxColor": "#5599ff",
         "vfxStyle": "JAVELIN_FAN_ARC"
       },
@@ -88,7 +88,7 @@
         "cooldownSec": 14,
         "durationSec": 0,
         "params": { "shellCount": 3, "targetType": "RANDOM_PATH_TILE", "splashRadiusTiles": 2, "stunSec": 1.5 },
-        "description": "Every 14s, 3 mortar shells drop on random path tiles. Each explodes with 2-tile splash and 1.5s stun.",
+        "description": "3 mortar shells drop on random path tiles. Each shell deals 160% of Agrippa's basic-attack damage in a 2-tile splash and stuns survivors for 1.5s. Total burst: 4.8× Agrippa's basic damage across 3 splash zones, plus a 1.5s stun on every enemy caught — pairs well with direct-damage towers ready to capitalize on the stunned window.",
         "vfxColor": "#4499ff",
         "vfxStyle": "MORTAR_SHELL_BURST"
       }
@@ -132,7 +132,7 @@
         "cooldownSec": 5,
         "durationSec": 3,
         "params": { "targets": "ALL_FLYERS", "dmgTakenIncreasePercent": 60 },
-        "description": "Every flyer on the map is marked for 3s. Marked flyers take +60% damage from all sources.",
+        "description": "Every flyer on the map is marked for 3s. Marked flyers take +60% damage from all sources — every tower hitting a marked flyer deals 1.60× damage. On a 5-flyer wave that's a +60% DPS boost across the entire flyer corridor for the 3s window.",
         "vfxColor": "#aaccff",
         "vfxStyle": "SILVER_MARK_BURST"
       },
@@ -143,7 +143,7 @@
         "cooldownSec": 12,
         "durationSec": 4,
         "params": { "flyerSpeedReductionPercent": 70, "dmgVsFlyersIncreasePercent": 25 },
-        "description": "For 4s, all flyers slow 70% AND every tower gains +25% damage vs. flyers. Stacks multiplicatively with Eagle Scout's +60% (~2.00× combined during overlap).",
+        "description": "For 4s, all flyers slow 70% (move at 30% speed) AND every tower gains +25% damage vs. flyers (1.25×). Stacks multiplicatively with Eagle Scout's +60% mark — overlapping both abilities = 2.00× total damage on every flyer for the ~3s overlap window, while they crawl across your kill zone at a third of normal speed.",
         "vfxColor": "#aaccff",
         "vfxStyle": "SILVER_WALL_SHIMMER"
       }
@@ -188,7 +188,7 @@
         "cooldownSec": 6,
         "durationSec": 0,
         "params": { "target": "HIGHEST_HP_BOSS", "dmgMultiplier": 5.0, "ignoreResistances": true },
-        "description": "Every 6s, pierces the highest-HP boss for 5x Scipio's normal attack damage. Ignores all resistances.",
+        "description": "Pierces the highest-HP boss for 500% of Scipio's basic-attack damage as TRUE damage — ignores every faction resistance, every shield, every boss damping. At Scipio T5 (basic-atk scale 2.4×) this single shot lands as ~12× his base hit damage. The reliable boss-burst Scipio brings to every fight.",
         "vfxColor": "#ff8800",
         "vfxStyle": "RED_LANCE_ARC"
       },
@@ -199,7 +199,7 @@
         "cooldownSec": 15,
         "durationSec": 6,
         "params": { "targets": "ALL_BOSSES", "dmgTakenIncreasePercent": 30 },
-        "description": "Brands every boss on the field for 6s. Marked bosses take +30% damage from ALL sources, stacking with Scipio's +25% boss passive and any other MARK debuffs (multiplicatively on the damage line, additively with FREEZE/STUN amp).",
+        "description": "Brands every boss on the field for 6s. Marked bosses take +30% damage from ALL sources (1.30×), stacking multiplicatively with Scipio's +25% boss passive (1.25×) and any other MARK debuffs. Combined with the passive: 1.25 × 1.30 = 1.625× damage on every boss for the full 6s — before any item, freeze amp, or other modifier piles on top.",
         "vfxColor": "#ff4400",
         "vfxStyle": "RED_BANNER_BRAND"
       }
@@ -244,7 +244,7 @@
         "cooldownSec": 8,
         "durationSec": 0,
         "params": { "forceBonusAttack": true, "targets": "ALL_TOWERS" },
-        "description": "Forces every tower on the map to immediately fire one bonus attack at its current target.",
+        "description": "Forces every placed tower on the map to fire one bonus attack at its current target. With a typical 15-tower board that's 15 instant hits at full damage — an entire combat round delivered in a single frame. The bigger your maze, the bigger the burst (a 25-tower late-game board = 25 instant hits).",
         "vfxColor": "#ffe066",
         "vfxStyle": "GOLD_RING_SWEEP"
       },
@@ -255,7 +255,7 @@
         "cooldownSec": 12,
         "durationSec": 2,
         "params": { "enemySpeedReductionPercent": 60, "targets": "ALL_ENEMIES" },
-        "description": "Every enemy on the field is slowed 60% for 2 seconds. Uses existing SLOW status effect pipeline.",
+        "description": "Every enemy on the field is slowed 60% for 2 seconds — they crawl at 40% speed during the window. Hits bosses, flyers, and runners alike, so every enemy on screen spends ~2.5× longer in your kill zone for the duration. Buys time for high-damage towers to land more shots before the wave reaches your gate.",
         "vfxColor": "#ffe066",
         "vfxStyle": "PALE_GOLD_PATH_SHIMMER"
       }
@@ -301,7 +301,7 @@
         "cooldownSec": 7,
         "durationSec": 0,
         "params": { "dmgMultiplier": 1.5 },
-        "description": "Fires a divine bolt at the nearest enemy in range every 7s, dealing 1.5× Sulla's basic-attack damage as DIVINE (bypasses every faction resistance).",
+        "description": "Fires a divine bolt at the nearest enemy in range, dealing 150% of Sulla's basic-attack damage as DIVINE — bypasses every faction resistance. A reliable single-target finisher when you need to punch through a high-resist target that your other towers are struggling to scratch.",
         "vfxColor": "#fff5cc",
         "vfxStyle": "WHITE_GOLD_BOLT"
       },
@@ -312,7 +312,7 @@
         "cooldownSec": 14,
         "durationSec": 5,
         "params": { "overrideDmgTypeTo": "DIVINE", "appliesToAll": true },
-        "description": "For 5s, every tower's damage type is overridden to DIVINE, bypassing all faction resistances. Uses existing CombatResolver damage-type override logic.",
+        "description": "For 5s, every tower's damage type is overridden to DIVINE — bypassing every faction resistance. A tower normally hitting at 50% effectiveness (e.g. Physical vs Iron Phalanx, W17) suddenly does full 1.00× damage. Against waves with heavy resists this is effectively a 1.5× to 2× global damage boost for the entire 5s window.",
         "vfxColor": "#ff9900",
         "vfxStyle": "WHITE_FLAME_PULSE"
       }
