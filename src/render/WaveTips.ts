@@ -43,7 +43,7 @@ const TIPS: WaveTip[] = [
     wave: 2,
     icon: '🎯',
     title: 'MAZE THE CHECKPOINTS',
-    body: 'Your highest-leverage move: stretch the path BETWEEN waypoint coins. Long runs between checkpoints means each enemy eats more shots while crossing your kill zone.',
+    body: 'Your highest-leverage move: stretch the path BETWEEN waypoint coins. Long runs between checkpoints mean each enemy eats more shots while crossing your kill zone.',
   },
   {
     wave: 3,

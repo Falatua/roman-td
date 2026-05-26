@@ -357,11 +357,11 @@ export function showMercatorBanner(parent: HTMLElement, visitWave: number, hooks
     <div class="merc-body">
       <div class="merc-row is-tower">
         <span class="merc-row-label">★ ARMORY</span>
-        <span class="merc-row-body">3 random <b style="color:#ff5050">T5</b> towers · <b style="color:#f0c040">50g</b> each</span>
+        <span class="merc-row-body">5 random <b style="color:#ff5050">T5</b> towers · <b style="color:#f0c040">50g</b> each</span>
       </div>
       <div class="merc-row is-item">
         <span class="merc-row-label">★ TROPHIES</span>
-        <span class="merc-row-body">2 build-defining Legendaries · 1 Rare · 3 Mids</span>
+        <span class="merc-row-body">4 Legendaries · 2 Rares · 2 Epics · 3 Mids · 1 Truesight</span>
       </div>
       <div class="merc-row is-life">
         <span class="merc-row-label">+ LIVES</span>

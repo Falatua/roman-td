@@ -373,7 +373,7 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 4,
-    "ability": "TACTICAL STACKS: +5% damage per kill, capped at +50%. Veteran called back to service — at cap (10 kills) deals 1.50× damage from the next swing on. Plant him at the kill funnel and watch him snowball.",
+    "ability": "TACTICAL STACKS: +5% damage per kill, capped at +50%. Veteran called back to service — at cap (10 kills) he deals 1.50× damage from the next swing on. Plant him at the kill funnel and watch him snowball.",
     "critChance": 0.18,
     "critMult": 2.2
   },
@@ -452,7 +452,7 @@
     "kind": "BASE",
     "melee": false,
     "tierBand": 5,
-    "ability": "SOLAR FLARE: ignores faction resistance whenever the target is RESISTING this damage type (neutral and weak targets get normal damage; cap-of-cheese vs phys-resist races). Divine splash 1.15 tiles.",
+    "ability": "SOLAR FLARE: ignores faction resistance whenever the target is RESISTING this damage type (neutral and weak targets get normal damage; a hard counter to phys-resistant factions). Divine splash 1.15 tiles.",
     "critChance": 0.14,
     "critMult": 2.5
   },
