@@ -3969,11 +3969,32 @@ async function boot() {
   // unsaved progress. Don't prompt on the loading screen, fresh
   // game-start, or after victory/game-over (no progress to lose).
   window.addEventListener('beforeunload', (event) => {
-    // No run in progress yet? Skip — the player hasn't started.
-    // Wave 0 + lives at starting value means they haven't engaged.
-    if (state.wave <= 0) return;
     // Already won or lost? No progress to lose.
     if (state.phase === GamePhase.GAME_OVER || state.phase === GamePhase.VICTORY) return;
+    // 2026-05-25 — Tightened the "has progress" check. The previous
+    // gate (state.wave <= 0) skipped the entire early-game window
+    // where the player had already invested real time: hero picked,
+    // prospects placed, gate items bought, pool upgraded — all
+    // BEFORE wave 1 actually starts (state.wave only flips to 1 once
+    // START WAVE is pressed). Refreshing in that window quietly
+    // killed the run with no prompt.
+    //
+    // New rule: prompt whenever ANY of these signals are true —
+    //   • A hero has been picked (activeHeroId set) — the hero-pick
+    //     modal is the first real interaction every run, so this
+    //     captures the moment progress starts.
+    //   • Any tower has been placed (towers Map non-empty).
+    //   • A wave has actually started (wave >= 1).
+    //   • Pool has been upgraded (gold spent on pool).
+    //
+    // Fresh page on the hero-pick screen → all four are false → no
+    // prompt. The instant the player picks a hero, the prompt arms.
+    const hasProgress =
+      state.wave >= 1 ||
+      !!state.activeHeroId ||
+      state.towers.size > 0 ||
+      state.poolLevel > 0;
+    if (!hasProgress) return;
     // Player IS mid-run. Fire the confirm dialog. The browser shows
     // its generic localized message; we can't customize the text.
     event.preventDefault();
