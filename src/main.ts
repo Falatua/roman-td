@@ -4,7 +4,7 @@ import { GamePhase, TileType, TowerType, TargetingMode, DrawCard, DamageType } f
 // on load and wires the rtd:viewport-change custom event used by
 // fitStageToViewport and (in later phases) touch handlers + modals.
 import { isMobile as isMobileDevice } from './Mobile';
-import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS } from './constants';
+import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, TIER_COLORS } from './constants';
 import { createGameState, isWaveModifierActive } from './GameState';
 import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
@@ -542,6 +542,112 @@ async function boot() {
         b.remove();
         processBannerQueue();
         state.hint = `Cancelled. Click another tile to try a different spot for ${heroName}.`;
+      };
+    }, 0);
+  }
+
+  // ─── PURCHASED-TOWER PLACEMENT CONFIRMATION (2026-05-25) ─────────────
+  // Mirrors the hero-placement confirm above, but for Mercator-bought
+  // and quest-reward towers. Player feedback: it's easy to misclick an
+  // empty tile while shopping cards are open and accidentally commit a
+  // 50g T5 to the wrong square. Towers can't be moved once placed
+  // (only sold for ~50% refund or combined into recipes), so a
+  // misclick costs real gold and disrupts the planned maze.
+  //
+  // Same flag-flip pattern: CONFIRM sets __purchasedPlacementConfirmed
+  // and re-runs the canvas placement path; CANCEL clears the flag and
+  // leaves the tower at the head of the queue so the player can click a
+  // different tile. The flag is one-shot per placement — once a tile
+  // commits or cancels, the next purchased-tower click re-prompts.
+  function showPurchasedTowerPlacementConfirm(col: number, row: number, towerType: TowerType, tier: number, source: 'mercator' | 'quest'): void {
+    const def: any = (towersData as any)[towerType] ?? {};
+    const towerName = String(def.name ?? String(towerType).replace(/_/g, ' '));
+    // TIER_COLORS stores numeric values (e.g. 0xffd34d) for Pixi tint use.
+    // Convert to a CSS-safe '#rrggbb' hex string. Fallback to a neutral
+    // gold-ish when the tier isn't in the table (shouldn't happen for
+    // tier 1-5 but defensive).
+    const tintNum = (TIER_COLORS as Record<number, number>)[tier];
+    const tint = typeof tintNum === 'number'
+      ? '#' + tintNum.toString(16).padStart(6, '0')
+      : '#cdb98a';
+    const sourceLabel = source === 'mercator' ? 'MERCATOR PURCHASE' : 'QUEST REWARD';
+    const b = document.createElement('div');
+    b.id = 'purchased-place-confirm';
+    b.innerHTML = `
+      <div style="font-size:11px;letter-spacing:6px;color:${tint};font-weight:bold;text-shadow:0 0 8px ${tint}88">⚒ ${sourceLabel} ⚒</div>
+      <div style="margin-top:8px;font-size:22px;font-weight:bold;letter-spacing:4px;color:#fff8e0;text-shadow:2px 2px 0 #000,0 0 14px ${tint}cc">PLACE ${towerName.toUpperCase()} T${tier} HERE?</div>
+      <div style="margin-top:14px;font-size:13px;font-weight:bold;color:#fff8e0;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(0,0,0,0.45);border-left:3px solid ${tint};padding:10px 14px">
+        You're about to drop <b style="color:${tint}">${towerName} T${tier}</b> on <b style="color:${tint}">column ${col + 1}, row ${row + 1}</b>.
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:#ffcc88;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(60,30,10,0.55);border:1px dashed #ff8844;padding:10px 14px">
+        <b style="color:#ff8844">⚠ TOWERS CAN'T BE MOVED.</b><br/>
+        ★ Once placed, the tower is locked to this tile.<br/>
+        ★ You can <b>sell</b> it later for ~50% refund or <b>combine</b> it into a recipe.<br/>
+        ★ Make sure this tile fits your maze before confirming.
+      </div>
+      <div style="margin-top:16px;display:flex;gap:12px;justify-content:center">
+        <button id="ppc-confirm" style="background:#3a5520;color:#fff8e0;border:2px solid #88ff88;padding:10px 22px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">⚒ CONFIRM PLACEMENT</button>
+        <button id="ppc-cancel" style="background:#3a2010;color:#cdb98a;border:2px solid #7a5a1a;padding:10px 22px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">✕ CHOOSE ANOTHER TILE</button>
+      </div>`;
+    b.style.cssText = `width:min(560px,90%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid ${tint};box-shadow:0 0 36px ${tint}88,inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;`;
+    pushBanner(b, 0, { modal: true, clickDismiss: false });
+    setTimeout(() => {
+      const confirmBtn = document.getElementById('ppc-confirm');
+      const cancelBtn = document.getElementById('ppc-cancel');
+      if (confirmBtn) confirmBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        (state as any).__purchasedPlacementConfirmed = true;
+        b.remove();
+        processBannerQueue();
+        // Re-run the placement inline. Same path-validate + create flow as
+        // the canvas click handler so behavior stays consistent. We pre-
+        // confirm the queue still has the same head — if the player
+        // somehow modified the queue between modal-open and confirm
+        // (sandbox jump, etc.), bail rather than place the wrong tower.
+        const queue = state.pendingPurchasedTowers ?? [];
+        if (queue.length === 0 || queue[0].source === 'hero') {
+          (state as any).__purchasedPlacementConfirmed = false;
+          return;
+        }
+        const head = queue[0];
+        if (head.type !== towerType || head.tier !== tier) {
+          (state as any).__purchasedPlacementConfirmed = false;
+          return;
+        }
+        setTile(state, col, row, TileType.TOWER);
+        const np = buildGroundPath(state);
+        if (!np) {
+          setTile(state, col, row, TileType.EMPTY);
+          showBlockedAlert(col, row, 'That tile would seal the path — enemies couldn\'t reach Rome. Try one tile over.');
+          (state as any).__purchasedPlacementConfirmed = false;
+          return;
+        }
+        state.groundPath = np;
+        resnapEnemiesToPath(state, np);
+        const popped = queue.shift()!;
+        const tw = createTower(popped.type as TowerType, popped.tier as 1|2|3|4|5, col, row, state.wave);
+        state.towers.set(tw.id, tw);
+        state.pendingPurchasedTowers = queue;
+        state.pendingPurchasedTower = null;
+        (state as any).__purchasedPlacementConfirmed = false;
+        const remaining = queue.length;
+        state.hint = remaining > 0
+          ? `Placed ${popped.type.replace(/_/g, ' ')} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
+          : `Placed ${popped.type.replace(/_/g, ' ')} T${popped.tier}.`;
+        // Small impact ring so the commit moment reads visually.
+        if (renderer?.triggerImpactRing) {
+          const cx = col * 32 + 16;
+          const cy = row * 32 + 16;
+          const tintInt = parseInt(tint.replace('#', ''), 16);
+          renderer.triggerImpactRing(cx, cy, state.tick, 48, tintInt);
+        }
+      };
+      if (cancelBtn) cancelBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        (state as any).__purchasedPlacementConfirmed = false;
+        b.remove();
+        processBannerQueue();
+        state.hint = `Cancelled. Click another tile to drop ${towerName} T${tier}.`;
       };
     }, 0);
   }
@@ -5506,6 +5612,17 @@ async function boot() {
       // skip this gate — only hero tokens trigger it.
       if (head.source === 'hero' && !(state as any).__heroPlacementConfirmed) {
         showHeroPlacementConfirm(col, row, head.type as TowerType);
+        return;
+      }
+      // 2026-05-25 — Same confirmation gate for Mercator-bought and
+      // quest-reward towers. Player feedback: misclicks on the map
+      // while the shop is open accidentally place expensive T5s on
+      // unwanted tiles. Towers can't be moved once placed, so the
+      // confirm step is the only way to recover. Sandbox mode bypasses
+      // (free placement = no real cost of a misclick + sandbox players
+      // are usually iterating on layouts fast).
+      if (head.source !== 'hero' && !state.sandboxMode && !(state as any).__purchasedPlacementConfirmed) {
+        showPurchasedTowerPlacementConfirm(col, row, head.type as TowerType, head.tier, head.source);
         return;
       }
       // Path-validate the drop. If the chosen tile would seal Rome,
