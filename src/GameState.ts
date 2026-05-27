@@ -99,7 +99,12 @@ export interface GameStateShape {
   // QUEUE of towers waiting to be placed. Each empty-tile click pops the
   // front of the queue. Both Mercator purchases and quest rewards append
   // here, so neither can overwrite the other.
-  pendingPurchasedTowers?: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' }[];
+  // 2026-05-25 — `source` widened to also tag Fortuna gamble wins +
+  // generic bonus/gift drops separately from 'mercator' (which now means
+  // "T5 purchased at the Mercator vendor" specifically). The placement-
+  // confirm modal reads this to label what's being placed accurately
+  // (MERCATOR PURCHASE vs FORTUNA WIN vs QUEST REWARD vs TOWER GIFT).
+  pendingPurchasedTowers?: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' }[];
   // Legacy single-slot — kept for back-compat reads but new code uses the
   // queue. Set to null on every place; queue is the source of truth.
   pendingPurchasedTower?: { type: string; tier: number } | null;

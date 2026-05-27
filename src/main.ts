@@ -559,7 +559,7 @@ async function boot() {
   // leaves the tower at the head of the queue so the player can click a
   // different tile. The flag is one-shot per placement — once a tile
   // commits or cancels, the next purchased-tower click re-prompts.
-  function showPurchasedTowerPlacementConfirm(col: number, row: number, towerType: TowerType, tier: number, source: 'mercator' | 'quest'): void {
+  function showPurchasedTowerPlacementConfirm(col: number, row: number, towerType: TowerType, tier: number, source: string): void {
     const def: any = (towersData as any)[towerType] ?? {};
     const towerName = String(def.name ?? String(towerType).replace(/_/g, ' '));
     // TIER_COLORS stores numeric values (e.g. 0xffd34d) for Pixi tint use.
@@ -570,7 +570,16 @@ async function boot() {
     const tint = typeof tintNum === 'number'
       ? '#' + tintNum.toString(16).padStart(6, '0')
       : '#cdb98a';
-    const sourceLabel = source === 'mercator' ? 'MERCATOR PURCHASE' : 'QUEST REWARD';
+    // 2026-05-25 — Per-source label. Falls back to a generic TOWER
+    // PLACEMENT for any future source value so the modal never reads
+    // "undefined" if a new tower-gift path is added.
+    const sourceLabel =
+      source === 'mercator' ? 'MERCATOR PURCHASE' :
+      source === 'fortuna'  ? 'FORTUNA WIN' :
+      source === 'quest'    ? 'QUEST REWARD' :
+      source === 'bonus'    ? 'BONUS TOWER' :
+      source === 'gift'     ? 'TOWER GIFT' :
+      'TOWER PLACEMENT';
     const b = document.createElement('div');
     b.id = 'purchased-place-confirm';
     b.innerHTML = `
@@ -2591,8 +2600,14 @@ async function boot() {
   // Refund price for queued purchased towers. Mercator T5 flat 50g; quest
   // grants refund the wave's place cost as a fair stand-in (no purchase price
   // to recover). Tower types from `pendingPurchasedTowers` carry .source.
-  function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' }): number {
-    if (entry.source === 'mercator') return 50;
+  function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' }): number {
+    // Mercator buys = flat 50g refund (matches purchase price). Everything
+    // else (quest reward, Fortuna gamble win, bonus/gift) wasn't bought
+    // with gold, so the refund falls back to the wave's place cost as a
+    // fair stand-in. Fortuna spins cost 500g but the player took a
+    // gamble — they don't get the full 500g back, just the 50g
+    // mercator-equivalent so refunds remain bounded.
+    if (entry.source === 'mercator' || entry.source === 'fortuna') return 50;
     // 2026-05-19 — Hero placement is free and yields no refund.
     if (entry.source === 'hero') return 0;
     return (ECONOMY.TIER_PLACE_COST as Record<number, number>)[entry.tier] ?? 5;
@@ -5614,11 +5629,14 @@ async function boot() {
         showHeroPlacementConfirm(col, row, head.type as TowerType);
         return;
       }
-      // 2026-05-25 — Same confirmation gate for Mercator-bought and
-      // quest-reward towers. Player feedback: misclicks on the map
-      // while the shop is open accidentally place expensive T5s on
-      // unwanted tiles. Towers can't be moved once placed, so the
-      // confirm step is the only way to recover. Sandbox mode bypasses
+      // 2026-05-25 — Same confirmation gate for every non-hero tower
+      // drop: Mercator purchases, Fortuna's Wheel gamble wins, quest
+      // rewards, and any future bonus/gift sources. Player feedback:
+      // misclicks on the map accidentally place expensive T5s on
+      // unwanted tiles, and towers can't be moved once placed. The
+      // `head.source !== 'hero'` check catches everything that isn't a
+      // hero token (heroes get their OWN stricter confirm above with
+      // no-move + no-sell + no-combine warning). Sandbox mode bypasses
       // (free placement = no real cost of a misclick + sandbox players
       // are usually iterating on layouts fast).
       if (head.source !== 'hero' && !state.sandboxMode && !(state as any).__purchasedPlacementConfirmed) {

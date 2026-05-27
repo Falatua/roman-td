@@ -598,8 +598,12 @@ function renderMercatorShop(
         SFX.itemPickup(rarity);
         SFX.comboExecuted();
         // Queue the tower for placement (same path as a Mercator T5 buy).
+        // 2026-05-25 — Tagged as 'fortuna' (a gamble/bonus win) rather
+        // than 'mercator' (a purchase) so the placement-confirm modal
+        // labels it accurately as "FORTUNA WIN" instead of "MERCATOR
+        // PURCHASE". The downstream placement flow is unchanged.
         if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
-        state.pendingPurchasedTowers.push({ type: result.type, tier: result.tier, source: 'mercator' });
+        state.pendingPurchasedTowers.push({ type: result.type, tier: result.tier, source: 'fortuna' });
         shop.gambleWinsThisVisit = [...(shop.gambleWinsThisVisit ?? []), result.type];
         const towerName = (towersData as any)[result.type]?.name ?? result.type.replace(/_/g, ' ');
         state.hint = `🎰 FORTUNA: ${towerName} T${result.tier}! Click an empty tile to place it.`;
