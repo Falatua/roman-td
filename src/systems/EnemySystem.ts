@@ -898,11 +898,18 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
         // ledger, now it actually swarms.
         const r = Math.random();
         const count = r < 0.45 ? 6 : r < 0.80 ? 7 : r < 0.95 ? 8 : 9;
+        // 2026-05-25 — W11 REANIMATION HP BUMP. Per user request:
+        // enemies reanimated on wave 11 get +25% health. Wave-scoped to
+        // W11 only — necromancy also fires on W13 and on every undead-
+        // faction kill across the late game, but this bump is W11-
+        // specific. Multiplies the risen HP fraction by 1.25 before it
+        // flows into spawnEnemy's finalHp (def.baseHp × hpMult × …).
+        const reanimHpBump = (state.wave ?? 0) === 11 ? 1.25 : 1.0;
         const rfq = (state as any).reanimationFxQueue = (state as any).reanimationFxQueue ?? [];
         for (let i = 0; i < count; i++) {
           // 2026-05 v6: risen HP fraction 70-90% → 85-100% so a reanim
           // is nearly the full unit, not a chip-damage filler.
-          const hpFrac = 0.85 + Math.random() * 0.15;
+          const hpFrac = (0.85 + Math.random() * 0.15) * reanimHpBump;
           const risen = spawnEnemy(state, reanimateAs as EnemyType, hpFrac, /*derived=*/true);
           // Cluster near death point with a small random offset so the
           // sprites don't all overlap to one pixel.
