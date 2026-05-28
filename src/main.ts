@@ -266,6 +266,20 @@ async function boot() {
     bannerQueue.push({ node: b, durationMs: dur, opts });
     processBannerQueue();
   }
+  // ─── dismissActiveBanner ─────────────────────────────────────────────────
+  // Called by placement-confirm modal buttons (hero + purchased) that use
+  // ev.stopPropagation() to prevent the click from reaching the banner's
+  // finishAllOnClick listener. Without this helper, bannerActive is never
+  // cleared, processBannerQueue() always returns early, and subsequent
+  // placement modals are queued but never shown — causing the "can't place
+  // towers" freeze reported after the confirmed-placement refactor.
+  function dismissActiveBanner() {
+    if (!bannerActive) return;
+    if (bannerActive.timer != null) clearTimeout(bannerActive.timer);
+    bannerActive.node.remove();
+    bannerActive = null;
+    processBannerQueue();
+  }
   // ─── 2026-05 v11 DPS CHECK ────────────────────────────────────────────
   // Track the active training dummy + the tick it spawned, so the summary
   // popup can compute time-on-field, total damage taken, and DPS.
@@ -481,8 +495,7 @@ async function boot() {
       if (confirmBtn) confirmBtn.onclick = (ev) => {
         ev.stopPropagation();
         (state as any).__heroPlacementConfirmed = true;
-        b.remove();
-        processBannerQueue();
+        dismissActiveBanner();
         // Re-invoke the placement path with the flag set. The click
         // handler's main entry point is the canvas mousedown — but to
         // avoid re-routing through the DOM, just call the placement
@@ -540,8 +553,7 @@ async function boot() {
       if (cancelBtn) cancelBtn.onclick = (ev) => {
         ev.stopPropagation();
         (state as any).__heroPlacementConfirmed = false;
-        b.remove();
-        processBannerQueue();
+        dismissActiveBanner();
         state.hint = `Cancelled. Click another tile to try a different spot for ${heroName}.`;
       };
     }, 0);
@@ -607,8 +619,7 @@ async function boot() {
       if (confirmBtn) confirmBtn.onclick = (ev) => {
         ev.stopPropagation();
         (state as any).__purchasedPlacementConfirmed = true;
-        b.remove();
-        processBannerQueue();
+        dismissActiveBanner();
         // Re-run the placement inline. Same path-validate + create flow as
         // the canvas click handler so behavior stays consistent. We pre-
         // confirm the queue still has the same head — if the player
@@ -655,8 +666,7 @@ async function boot() {
       if (cancelBtn) cancelBtn.onclick = (ev) => {
         ev.stopPropagation();
         (state as any).__purchasedPlacementConfirmed = false;
-        b.remove();
-        processBannerQueue();
+        dismissActiveBanner();
         state.hint = `Cancelled. Click another tile to drop ${towerName} T${tier}.`;
       };
     }, 0);
