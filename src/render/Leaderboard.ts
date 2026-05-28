@@ -41,16 +41,57 @@ function renderHeroSuffix(heroId: string | null | undefined): string {
 }
 
 export interface ScoreBreakdown {
-  waveBonus: number;       // waves completed
-  killBonus: number;       // enemies defeated
-  timeBonus: number;       // seconds survived
-  efficiencyBonus: number; // fewer towers built = higher
-  comboBonus: number;      // towers combined
-  questBonus: number;      // quests completed
-  rngBonus: number;        // bonus bosses killed + wave modifiers survived
-  livesPenalty: number;    // V33 — 300 points subtracted per life bought at shops
-  difficultyMult: number;  // 1.0 for Standard
+  waveBonus: number;       // waves completed × SCORE_PER_WAVE
+  comboBonus: number;      // towers combined × SCORE_PER_COMBO
+  questBonus: number;      // quests completed × SCORE_PER_QUEST
+  winBonus: number;        // SCORE_WIN_BONUS if the run beat W20
   final: number;
+  // 2026-05-25 — Legacy breakdown fields. The simplified formula no
+  // longer uses kills / time-survived / tower-efficiency / RNG-event /
+  // lives-penalty, but the fields are kept on the interface (always 0)
+  // so any external reader or saved end-screen markup doesn't break.
+  killBonus: number;
+  timeBonus: number;
+  efficiencyBonus: number;
+  rngBonus: number;
+  livesPenalty: number;
+  difficultyMult: number;
+}
+
+// ── SIMPLIFIED SCORING (2026-05-25) ─────────────────────────────────
+// Player feedback: the old formula let a slow early-death run out-score
+// a deep run (a W10 LOSS hit the 54K sanity cap and ranked #1 above a
+// legit W19 run at 43.7K). Root cause: unbounded kills/time/efficiency
+// components rewarded farming + idling instead of progression.
+//
+// New model — three additive parts plus a win bump, nothing else:
+//   • flat points for each wave you COMPLETE
+//   • points per combo tower you build
+//   • points per quest you finish
+//   • a big flat bonus for beating the game (clearing W20)
+//
+// Progression dominates: 1 extra wave (2,000) outweighs 4 combos or
+// 5 quests, so reaching a deeper wave always beats a shallow run with
+// more side-objectives. Beating the game (40,000 + 20×2,000 = 80,000
+// floor) clears any loss (max realistic W19 loss ≈ 51K), so a victory
+// always tops a non-victory.
+export const SCORE_PER_WAVE = 2000;
+export const SCORE_PER_COMBO = 500;
+export const SCORE_PER_QUEST = 400;
+export const SCORE_WIN_BONUS = 40000;
+
+// Single source of truth for the score formula. Takes raw run
+// components so it can score BOTH a live run (end screen) AND a stored
+// leaderboard entry (recompute-on-render, healing old-formula scores).
+export function computeScore(opts: { wave: number; won: boolean; combos: number; quests: number }): number {
+  // A loss at wave N means N-1 waves were cleared (died during wave N).
+  // A win means all `wave` waves cleared.
+  const wavesCompleted = opts.won ? opts.wave : Math.max(0, opts.wave - 1);
+  const waveBonus = wavesCompleted * SCORE_PER_WAVE;
+  const comboBonus = Math.max(0, opts.combos) * SCORE_PER_COMBO;
+  const questBonus = Math.max(0, opts.quests) * SCORE_PER_QUEST;
+  const winBonus = opts.won ? SCORE_WIN_BONUS : 0;
+  return waveBonus + comboBonus + questBonus + winBonus;
 }
 
 export interface LeaderboardEntry {
@@ -98,73 +139,27 @@ export function sanitizeName(input: string): string {
 }
 
 export function computeFinalScoreBreakdown(state: GameStateShape, won: boolean): ScoreBreakdown {
-  // ── Score formula ──────────────────────────────────────────────────────
-  //   waves completed     × 500    (W20 win = 10,000)
-  //   total kills         × 5
-  //   seconds survived    × 4      (5 min run ≈ 1,200)
-  //   tower efficiency    = max(0, 5000 - towersBuilt * 80)  → fewer towers, bigger bonus
-  //   combos built        × 150
-  //   quests completed    × 250
-  //   ── RNG-event bonuses (2026-05) ──
-  //   bonus bosses killed × 2,500  (twin/ambush boss spawns — high reward)
-  //   modifier waves      × 1,000  (Blood Moon / Storm Surge / etc. cleared)
-  //   ── PENALTY (2026-05-22 V33) ──
-  //   lives bought        × −300   (every life purchased at gate/Mercator)
-  //   ──
-  //   win bonus           + 8,000  (only if won)
-  //   difficulty mult     × 1.0    (Standard) — multiplied at the end
-  const waves       = Math.max(0, won ? state.wave : Math.max(0, state.wave - 1));
-  const kills       = state.totalKills ?? 0;
-  const startedAt   = state.runStartedAt ?? Date.now();
-  const seconds     = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
-  const towersBuilt = state.towersBuilt ?? 0;
-  const combosBuilt = state.combosBuilt ?? 0;
-  const quests      = (state.completedQuests ?? []).length;
-  const bonusBosses = state.bonusBossesKilled ?? 0;
-  const modWaves    = state.modifierWavesSurvived ?? 0;
-  const livesBought = state.livesBoughtThisRun ?? 0;
+  // 2026-05-25 — SIMPLIFIED. See computeScore() above for the model.
+  // Just waves + combos + quests + win bump. No kills, no time-survived,
+  // no tower-efficiency, no RNG-event bonus, no lives penalty, no sanity
+  // cap — the formula is bounded by design so it can't be gamed by slow
+  // play, and a deeper run always out-scores a shallow one.
+  const wavesCompleted = won ? state.wave : Math.max(0, state.wave - 1);
+  const combos = state.combosBuilt ?? 0;
+  const quests = (state.completedQuests ?? []).length;
 
-  const waveBonus       = waves * 500;
-  const killBonus       = kills * 5;
-  const timeBonus       = seconds * 4;
-  const efficiencyBonus = Math.max(0, 5000 - towersBuilt * 80);
-  const comboBonus      = combosBuilt * 150;
-  const questBonus      = quests * 250;
-  const rngBonus        = bonusBosses * 2500 + modWaves * 1000;
-  const livesPenalty    = livesBought * 300;
-  const winBonus        = won ? 8000 : 0;
+  const waveBonus  = wavesCompleted * SCORE_PER_WAVE;
+  const comboBonus = Math.max(0, combos) * SCORE_PER_COMBO;
+  const questBonus = Math.max(0, quests) * SCORE_PER_QUEST;
+  const winBonus   = won ? SCORE_WIN_BONUS : 0;
+  const final      = waveBonus + comboBonus + questBonus + winBonus;
 
-  // Difficulty placeholder — game ships at Standard. Single source of truth
-  // so a future setting can plug in without rewiring the formula.
-  const difficultyMult = 1.0;
-
-  // 2026-05-22 V33 — Lives penalty subtracted from the base before
-  // the difficulty multiplier so buying lives reduces the total
-  // proportionally to whatever multiplier is active. Final clamped
-  // at 0 — a run can't go negative.
-  const base = waveBonus + killBonus + timeBonus + efficiencyBonus + comboBonus + questBonus + rngBonus + winBonus - livesPenalty;
-  let final = Math.max(0, Math.round(base * difficultyMult));
-  // 2026-05-25 — WAVE-BASED SANITY CAP. Player reported a W6 LOSS run
-  // scoring 133,023 — outranking W20 WIN runs (~121K). That score
-  // can't be produced by the current formula (max W6 LOSS ≈ 20K), so
-  // it was either from an older deployed build with a buggy formula
-  // or a stale code path that bypassed this function. Defense in
-  // depth: cap the final score at a realistic ceiling based on the
-  // furthest wave reached. The cap is generous enough that any
-  // legitimate high-skill run will fit comfortably under it.
-  //
-  //   LOSS: wave × 6,000  (e.g. W6 LOSS ≤ 36K, W15 LOSS ≤ 90K)
-  //   WIN:  wave × 10,000 (e.g. W20 WIN ≤ 200K — plenty of headroom)
-  //
-  // If a run exceeds the cap, it's either a bug or a stale code path.
-  // Cap silently — the player still sees their breakdown but the
-  // submitted leaderboard score is bounded.
-  const wavesReached = won ? state.wave : Math.max(1, state.wave - 1);
-  const sanityCap = wavesReached * (won ? 10000 : 6000);
-  if (final > sanityCap) {
-    final = sanityCap;
-  }
-  return { waveBonus, killBonus, timeBonus, efficiencyBonus, comboBonus, questBonus, rngBonus, livesPenalty, difficultyMult, final };
+  return {
+    waveBonus, comboBonus, questBonus, winBonus, final,
+    // Legacy fields — always 0 under the simplified formula.
+    killBonus: 0, timeBonus: 0, efficiencyBonus: 0, rngBonus: 0,
+    livesPenalty: 0, difficultyMult: 1.0,
+  };
 }
 
 export function loadLeaderboard(): LeaderboardEntry[] {
@@ -401,32 +396,25 @@ export function showEndSummary(parent: HTMLElement, state: GameStateShape, won: 
       <div style="font-size:12px;letter-spacing:4px;color:#aa6a1a;margin-top:4px">${sub}</div>
       <div style="margin:22px 0 6px;font-size:11px;letter-spacing:4px;color:#aa6a1a">FINAL SCORE</div>
       <div id="end-score-num" style="font-size:54px;letter-spacing:6px;color:#ffd34d;font-weight:900;text-shadow:0 0 18px #ffd34d,3px 3px 0 #000">0</div>
-      <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;font-size:13px;color:#fff8e0;text-align:left;font-weight:900;text-shadow:1px 1px 0 #000">
+      <!-- 2026-05-25 — Score breakdown rewritten to mirror the
+           simplified formula EXACTLY so the player can see how their
+           score was built: waves + combos + quests + win bump. The
+           old grid mixed in stats that no longer affect score (kills,
+           time, towers), which was misleading. -->
+      <div style="margin-top:16px;padding:12px 16px;background:rgba(0,0,0,0.35);border:1px solid #5a4a30;text-align:left;font-size:13px;color:#fff8e0;font-weight:900;text-shadow:1px 1px 0 #000">
+        <div style="font-size:10px;letter-spacing:3px;color:#aa6a1a;margin-bottom:8px;font-weight:bold">⚖ SCORE BREAKDOWN</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Waves cleared (${won ? state.wave : Math.max(0, state.wave - 1)} × ${SCORE_PER_WAVE.toLocaleString()})</span><span style="color:${accent}">+${breakdown.waveBonus.toLocaleString()}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Combos forged (${state.combosBuilt ?? 0} × ${SCORE_PER_COMBO})</span><span style="color:${accent}">+${breakdown.comboBonus.toLocaleString()}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Quests cleared (${(state.completedQuests ?? []).length} × ${SCORE_PER_QUEST})</span><span style="color:${accent}">+${breakdown.questBonus.toLocaleString()}</span></div>
+        ${won ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#88ff88"><span>★ ROMA AETERNA — game beaten!</span><span>+${breakdown.winBonus.toLocaleString()}</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;border-top:1px solid #5a4a30;margin-top:6px;padding-top:6px;font-size:14px"><span>TOTAL</span><span style="color:#ffd34d">${breakdown.final.toLocaleString()}</span></div>
+      </div>
+      <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:11px;color:#cdb98a;text-align:left;font-weight:700">
         <div>Wave reached: <span style="color:${accent}">${state.wave}/20</span></div>
         <div>Enemies defeated: <span style="color:${accent}">${kills}</span></div>
         <div>Time survived: <span style="color:${accent}">${timeStr}</span></div>
         <div>Towers built: <span style="color:${accent}">${state.towersBuilt ?? 0}</span></div>
-        <div>Combos forged: <span style="color:${accent}">${state.combosBuilt ?? 0}</span></div>
-        <div>Quests cleared: <span style="color:${accent}">${(state.completedQuests ?? []).length}</span></div>
       </div>
-      ${(breakdown.rngBonus > 0) ? `
-      <div style="margin-top:14px;padding:10px 14px;background:linear-gradient(180deg,rgba(170,74,26,0.18),rgba(0,0,0,0.4));border:2px solid #ffaa33;text-align:left">
-        <div style="font-size:10px;letter-spacing:3px;color:#ffaa33;font-weight:900;margin-bottom:6px">★ RNG MASTERY BONUS ★</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:12px;color:#fff8e0;font-weight:900;text-shadow:1px 1px 0 #000">
-          <div>Bonus bosses killed: <span style="color:#ffaa33">${state.bonusBossesKilled ?? 0}</span></div>
-          <div>Modifier waves cleared: <span style="color:#ffaa33">${state.modifierWavesSurvived ?? 0}</span></div>
-          <div style="grid-column:1 / -1;color:#88ff88;text-align:right">+${breakdown.rngBonus.toLocaleString()} score</div>
-        </div>
-      </div>` : ''}
-      ${(breakdown.livesPenalty > 0) ? `
-      <div style="margin-top:10px;padding:10px 14px;background:linear-gradient(180deg,rgba(170,40,40,0.18),rgba(0,0,0,0.4));border:2px solid #ee5555;text-align:left">
-        <div style="font-size:10px;letter-spacing:3px;color:#ee5555;font-weight:900;margin-bottom:6px">⚠ LIVES PURCHASED PENALTY</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:12px;color:#fff8e0;font-weight:900;text-shadow:1px 1px 0 #000">
-          <div>Lives bought this run: <span style="color:#ee5555">${state.livesBoughtThisRun ?? 0}</span></div>
-          <div style="color:#aa9a4a;font-size:10px;align-self:end">−300 score per life</div>
-          <div style="grid-column:1 / -1;color:#ee8888;text-align:right">−${breakdown.livesPenalty.toLocaleString()} score</div>
-        </div>
-      </div>` : ''}
       <button id="end-continue" style="margin-top:26px;background:linear-gradient(180deg,${accent},#4a2a08);color:#1a0808;border:3px solid #fff8e0;padding:12px 32px;font-family:inherit;font-size:15px;letter-spacing:4px;cursor:pointer;font-weight:900;box-shadow:0 0 20px ${accent}aa">CONTINUE ▸</button>
       <div class="desktop-hotkey-hint" style="margin-top:10px;font-size:10px;letter-spacing:3px;color:#aa6a1a">PRESS ENTER</div>
     </div>`;
@@ -682,7 +670,17 @@ export function showLeaderboard(
       return;
     }
     tbody.innerHTML = '';
-    entries.forEach((e, idx) => {
+    // 2026-05-25 — RECOMPUTE-ON-RENDER. Entries stored under the old
+    // (broken) formula carry stale inflated scores. Rather than trust
+    // the saved `score`, recompute every entry from its raw components
+    // (wave / won / combos / quests) with the new simplified formula,
+    // then re-sort. This heals the whole board in one shot — a W10 LOSS
+    // that was stored at 54K drops to its true ~22K and sorts below a
+    // legit W19 run. The stored score becomes display-irrelevant.
+    const sortedEntries = entries
+      .map(e => ({ ...e, score: computeScore({ wave: e.wave, won: e.won, combos: e.towersCombined, quests: e.questsCompleted }) }))
+      .sort((a, b) => b.score - a.score || a.ts - b.ts);
+    sortedEntries.forEach((e, idx) => {
       const rankNumeral = roman(idx + 1);
       const isYou = !!currentEntry &&
         e.name === currentEntry.name &&
@@ -734,8 +732,22 @@ export function showLeaderboard(
       // (wave 8-15) a real chance to land while still keeping the
       // table scannable. The table itself is scrollable so 25 rows
       // fit fine in the modal.
-      const rows = await fetchTopScores('campaign', 25);
+      // 2026-05-25 — Fetch 100 (was 25) so recompute-on-render below
+      // has enough rows to surface the TRUE top 25 by the new formula.
+      // Stale entries stored under the old broken formula carry
+      // inflated scores; if we only fetched the stored-score top 25,
+      // an inflated W10 LOSS could occupy a slot a legit run deserves.
+      // Pulling 100 then re-sorting by recomputed score fixes that.
+      const rawRows = await fetchTopScores('campaign', 100);
       const meta = getLastFetchMeta();
+      // RECOMPUTE-ON-RENDER: re-score every fetched row from its raw
+      // components with the simplified formula, re-sort, and cut to the
+      // top 25 for display. Heals every old-formula entry (e.g. a W10
+      // LOSS stored at 54K drops to ~22K and sorts below a W19 run).
+      const rows = rawRows === null ? null : rawRows
+        .map(r => ({ ...r, score: computeScore({ wave: r.wave, won: r.won, combos: r.towers_combined, quests: r.quests_completed }) }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 25);
       // If the player has switched tabs while we were fetching, don't
       // overwrite their current view.
       if (activeTab !== 'global') return;
