@@ -3978,6 +3978,19 @@ async function boot() {
         });
       });
     }
+    // CO-OP LEGION: password-protected multiplayer entry. The entire mode
+    // lives in the isolated /coop module and is lazy-loaded on click so the
+    // base bundle is unaffected (spec Section 14 isolation mandate). The
+    // password gate (1027) lives inside openLegionEntry().
+    const coopBtn = document.getElementById('loading-coop-legion');
+    if (coopBtn) {
+      coopBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        import('./coop/LegionLobby').then((m) => m.openLegionEntry()).catch((err) => {
+          console.error('[coop] failed to load Legion lobby module:', err);
+        });
+      });
+    }
   });
   // ─── Auto-scale stage to viewport ─────────────────────────────────────
   // 2026-05-15 v8: now scales UP as well as DOWN. Previously the scale was
