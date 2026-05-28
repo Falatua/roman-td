@@ -316,7 +316,15 @@ export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): num
   if (def?.immuneFire && damageType === DamageType.ELEMENTAL_FIRE) return 0;
   const r = enemyResistanceProfile(enemy.type);
   let base = 1;
-  if (damageType === DamageType.PHYS_MELEE) base = r.melee ?? 1;
+  if (damageType === DamageType.PHYS_MELEE) {
+    base = r.melee ?? 1;
+    // 2026-05-25 — W7 melee-resist stamp (set in EnemySystem.spawnEnemy
+    // only for enemies spawned during wave 7). 10% less melee damage
+    // taken. Multiplies on top of the per-enemy melee resist so it's
+    // wave-scoped and doesn't touch the same enemy types on W8/W9.
+    const w7Melee = (enemy as any).__w7MeleeResist;
+    if (typeof w7Melee === 'number') base *= w7Melee;
+  }
   else if (damageType === DamageType.PHYS_RANGED) base = r.ranged ?? 1;
   // 2026-05 v9 — per-enemy SIEGE / FIRE / DIVINE multipliers. Used by
   // the W6-W9 resist pass to break the "siege+fire+divine is a universal

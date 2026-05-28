@@ -218,6 +218,18 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   if ((state.wave ?? 1) === 8) {
     (e as any).__w8RangedBlock = 0.20;
   }
+  // 2026-05-25 — W7 MELEE-RESIST STAMP. Per user request: "give enemies
+  // on wave 7 slightly more melee resistance - 10%." Every enemy spawned
+  // during W7 takes 10% less PHYS_MELEE damage (effectiveness × 0.90).
+  // Wave-scoped on purpose: the W7 roster (Carthage Spearman, Numidian
+  // Rider) also shows up on W8-W9, so editing their per-enemy RESIST
+  // profile would bleed the buff into later waves. Stamping at spawn
+  // keeps it strictly W7. Read in EnemyResistances.enemyDamageMultiplier,
+  // multiplies on top of the per-enemy melee resist (Spearman 0.75 →
+  // 0.675) AND the __lateResistMult stamp, so all three stack cleanly.
+  if ((state.wave ?? 1) === 7) {
+    (e as any).__w7MeleeResist = 0.90;
+  }
   // 2026-05-22 — ENDLESS MODE BUFFS. Per user request: triple HP,
   // crazy resistances, crazy regen, full DoT immunity.
   //
