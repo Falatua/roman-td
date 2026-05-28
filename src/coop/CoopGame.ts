@@ -53,6 +53,11 @@ import {
   buildRoundSummary, type RebuildPool, type RoundSummaryRow,
 } from './LegionEconomy';
 import { ghostLeakHp } from './LegionGhost';
+import {
+  createAquila, isZeroLeakRound, grantAquilaReward, canPlaceAquila,
+  canPlaceAquilaAt, placeAquila, isAquilaActive, destroyAquila,
+  legionCommander, AQUILA_DPS, AQUILA_HP, AQUILA_RANGE_TILES, type AquilaState,
+} from './LegionAquila';
 
 // ─── HANDOFF CONTRACT ──────────────────────────────────────────────────
 export interface CoopMatchArgs {
@@ -142,6 +147,9 @@ class LegionMatch {
   private enemies: Enemy[] = [];
   private circuit: CircuitUnit[] = [];
   private spawnQueue: { type: string; at: number }[] = [];
+  private aquila: AquilaState = createAquila();
+  private aquilaMode = false;     // PREP: placing the Aquila on the seam
+  private romeCritShown = false;  // one-shot critical-HP flavor
   private ring: { x: number; y: number }[] = [];
   private primaryPath: { col: number; row: number }[] = [];
   private secondaryPath: { col: number; row: number }[] = [];
@@ -242,6 +250,13 @@ class LegionMatch {
       const p = m.payload as { dmg: number } | null;
       if (p && m.from !== this.transport.selfId) this.applyRomeHit(p.dmg, false);
     });
+    this.transport.on('aquila', (m: LegionNetMessage) => {
+      const p = m.payload as { col: number; row: number } | null;
+      if (!p || m.from === this.transport.selfId) return;
+      // A teammate raised the shared Aquila — mirror it locally.
+      this.aquila = placeAquila(grantAquilaReward(this.aquila), p.col, p.row, this.cfg.players);
+      this.toast('⚜ The Aquila is raised over the circuit');
+    });
   }
 
   private broadcastStats(): void {
@@ -288,6 +303,16 @@ class LegionMatch {
     const { pool, hpRestored } = resolveRebuild(this.rebuild);
     this.rebuild = pool;
     if (hpRestored > 0) { this.rome = restoreRome(this.rome, hpRestored); this.toast(`Rome rebuilt +${hpRestored} HP`); }
+
+    // Team Combo reward (Section 7.2): a zero-leak round across all active
+    // quadrants unlocks the single Aquila Standard for the next prep.
+    if (!this.aquila.earned && !this.aquila.placed) {
+      const teamLeaks = [this.myStats.leaks, ...Object.values(this.peerStats).map((s) => s.leaks)];
+      if (isZeroLeakRound(teamLeaks)) {
+        this.aquila = grantAquilaReward(this.aquila);
+        this.toast('⚜ Zero leaks — the AQUILA STANDARD is unlocked');
+      }
+    }
 
     if (this.wave >= TOTAL_WAVES) { this.phase = 'VICTORY'; this.showEndScreen(true); return; }
     this.phase = 'ROUND_END';
@@ -381,6 +406,8 @@ class LegionMatch {
         this.resolveCircuitArrival(cu);
       }
     }
+    // Aquila Standard fires on everything in the seam (Section 7.2)
+    this.updateAquila(dt);
     // Round end: queue drained, no enemies, no circuit transit
     if (this.spawnQueue.length === 0 && this.enemies.length === 0 && this.circuit.length === 0 && this.pendingRomeFlush.length === 0) {
       this.endRound();
@@ -404,6 +431,32 @@ class LegionMatch {
     while (cu.t >= 1 && cu.idx < cu.ring.length - 1) { cu.t -= 1; cu.idx += 1; }
     const a2 = cu.ring[cu.idx]; const b2 = cu.ring[Math.min(cu.idx + 1, cu.ring.length - 1)];
     cu.x = a2.x + (b2.x - a2.x) * cu.t; cu.y = a2.y + (b2.y - a2.y) * cu.t;
+  }
+
+  /** The Aquila Standard: AoE damage to all seam units in range; a boss that
+   *  reaches it destroys it (Section 7.2 — powerful but fragile). */
+  private updateAquila(dt: number): void {
+    if (!isAquilaActive(this.aquila)) return;
+    const c = tileCenter(this.aquila.col, this.aquila.row);
+    const rangePx = AQUILA_RANGE_TILES * TILE;
+    for (let i = this.circuit.length - 1; i >= 0; i--) {
+      const cu = this.circuit[i];
+      const d = Math.hypot(cu.x - c.x, cu.y - c.y);
+      if (d > rangePx) continue;
+      if (cu.unit.isBoss && d < TILE * 1.3) { // boss impact crushes the standard
+        this.aquila = destroyAquila(this.aquila);
+        this.toast('☠ A boss leak shatters the Aquila');
+        this.renderHud();
+        return;
+      }
+      cu.unit = { ...cu.unit, hp: cu.unit.hp - AQUILA_DPS * dt };
+      if (cu.unit.hp <= 0) {
+        this.circuit.splice(i, 1);
+        this.gold += circuitKillGold(ENEMY_DEFS[cu.unit.enemyType]?.gold ?? 8);
+        this.myStats = recordCircuitKill(this.myStats);
+        this.broadcastStats();
+      }
+    }
   }
 
   // ── KILLS / GOLD (Section 6) ──────────────────────────────────────────
@@ -494,6 +547,8 @@ class LegionMatch {
         this.renderHud();
       }
     }
+    // One-shot critical-HP flavor (Section 12.3).
+    if (!this.romeCritShown && isRomeCritical(this.rome)) { this.romeCritShown = true; this.toast(FLAVOR.romeCritical); }
   }
 
   // ── INPUT ─────────────────────────────────────────────────────────────
@@ -505,7 +560,19 @@ class LegionMatch {
   private onClick = (e: MouseEvent): void => {
     if (this.phase !== 'PREP') return;
     const t = this.screenToTile(e);
-    if (!t || !this.selectedTower) return;
+    if (!t) return;
+    // Aquila placement mode: the one seam-placement exception (Section 7.2).
+    if (this.aquilaMode) {
+      if (canPlaceAquila(this.aquila) && canPlaceAquilaAt(t.col, t.row, this.cfg.players)) {
+        this.aquila = placeAquila(this.aquila, t.col, t.row, this.cfg.players);
+        this.aquilaMode = false;
+        this.toast('⚜ The Aquila is raised over the circuit');
+        this.transport.send('aquila', { col: t.col, row: t.row });
+        this.renderHud();
+      } else { this.toast('Aquila must stand on the circuit seam'); }
+      return;
+    }
+    if (!this.selectedTower) return;
     if (!canBuildAt(t.col, t.row, this.myQ, this.cfg.players)) { this.flashInvalid(); return; }
     if (this.towers.some((tw) => tw.col === t.col && tw.row === t.row)) return;
     if (this.onPath(t.col, t.row)) { this.flashInvalid(); return; }
@@ -567,10 +634,39 @@ class LegionMatch {
     this.drawPaths(ctx);
     this.drawRome(ctx);
     this.drawRangePreview(ctx);
+    this.drawAquilaPreview(ctx);
     this.drawTowers(ctx);
+    this.drawAquila(ctx);
     this.drawCircuit(ctx);
     this.drawEnemies(ctx);
     this.drawToasts(ctx);
+  }
+
+  private drawAquila(ctx: CanvasRenderingContext2D): void {
+    if (!this.aquila.placed || this.aquila.destroyed) return;
+    const c = tileCenter(this.aquila.col, this.aquila.row);
+    // faint range ring
+    ctx.strokeStyle = '#ffd34d33'; ctx.beginPath(); ctx.arc(c.x, c.y, AQUILA_RANGE_TILES * TILE, 0, Math.PI * 2); ctx.stroke();
+    // standard pole + golden eagle
+    ctx.strokeStyle = '#caa46a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(c.x, c.y + 12); ctx.lineTo(c.x, c.y - 16); ctx.stroke();
+    ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(c.x, c.y - 16, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff6c0'; ctx.font = 'bold 11px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SPQR', c.x, c.y + 2);
+    // HP bar
+    const frac = this.aquila.hp / AQUILA_HP;
+    ctx.fillStyle = '#000a'; ctx.fillRect(c.x - 14, c.y - 28, 28, 3);
+    ctx.fillStyle = frac > 0.4 ? '#ffd34d' : '#dd5533'; ctx.fillRect(c.x - 14, c.y - 28, 28 * frac, 3);
+    ctx.lineWidth = 1;
+  }
+
+  private drawAquilaPreview(ctx: CanvasRenderingContext2D): void {
+    if (this.phase !== 'PREP' || !this.aquilaMode || !this.hover) return;
+    const ok = canPlaceAquilaAt(this.hover.col, this.hover.row, this.cfg.players);
+    ctx.fillStyle = ok ? '#ffd34d44' : '#ff404033';
+    ctx.fillRect(this.hover.col * TILE, this.hover.row * TILE, TILE, TILE);
+    if (ok) {
+      const c = tileCenter(this.hover.col, this.hover.row);
+      ctx.strokeStyle = '#ffd34d88'; ctx.beginPath(); ctx.arc(c.x, c.y, AQUILA_RANGE_TILES * TILE, 0, Math.PI * 2); ctx.stroke();
+    }
   }
 
   private drawTiles(ctx: CanvasRenderingContext2D): void {
@@ -759,14 +855,22 @@ class LegionMatch {
           `padding:5px 9px;cursor:pointer;font-family:inherit;font-size:10px;text-align:center">` +
           `${d.name}<br><span style="font-size:9px;color:#ffe66b">${d.cost}g</span>${d.income ? `<br><span style="font-size:8px;color:#9c8">+${d.income}g/rd</span>` : ''}</button>`;
       }).join('');
+      const soloObservable = Object.keys(this.peerStats).length === 0;
+      const commander = legionCommander(this.scoreboardRows());
+      const canRaise = canPlaceAquila(this.aquila) && (soloObservable || commander === this.transport.selfId);
+      const aquilaBtn = canRaise
+        ? `<button id="lg-aquila" style="pointer-events:auto;background:${this.aquilaMode ? '#5a431c' : '#2a2410'};color:#ffd34d;border:2px solid #ffd34d;border-radius:5px;padding:5px 9px;cursor:pointer;font-family:inherit;font-size:10px">⚜ AQUILA<br><span style="font-size:8px;color:#9c8">${this.aquilaMode ? 'pick a seam tile' : 'team reward'}</span></button>`
+        : '';
       this.hudBottom.innerHTML =
         `<div style="font-size:10px;color:#8a7a5a;margin-right:6px">BUILD →</div>${shop}` +
         `<button id="lg-rebuild" style="pointer-events:auto;background:#1a2a3a;color:#7ac0ff;border:1px solid #3a6a9a;border-radius:5px;padding:5px 9px;cursor:pointer;font-family:inherit;font-size:10px">⛏ Aid Rome<br><span style="font-size:9px">${ROME_REBUILD_GOLD_PER_STEP}g</span></button>` +
+        aquilaBtn +
         `<button id="lg-march" style="pointer-events:auto;background:#3a2a0a;color:#ffd34d;border:2px solid #ffd34d;border-radius:6px;padding:8px 22px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:bold;letter-spacing:2px;margin-left:8px">⚔ MARCH TO WAR</button>`;
       this.hudBottom.querySelectorAll('[data-tw]').forEach((b) => {
-        (b as HTMLElement).onclick = () => { this.selectedTower = TOWER_DEFS.find((d) => d.key === (b as HTMLElement).dataset.tw) ?? null; this.renderBottom(); };
+        (b as HTMLElement).onclick = () => { this.selectedTower = TOWER_DEFS.find((d) => d.key === (b as HTMLElement).dataset.tw) ?? null; this.aquilaMode = false; this.renderBottom(); };
       });
       const rb = this.hudBottom.querySelector('#lg-rebuild') as HTMLElement | null; if (rb) rb.onclick = () => this.contributeRebuild();
+      const ab = this.hudBottom.querySelector('#lg-aquila') as HTMLElement | null; if (ab) ab.onclick = () => { this.aquilaMode = !this.aquilaMode; this.renderBottom(); };
       const mb = this.hudBottom.querySelector('#lg-march') as HTMLElement | null; if (mb) mb.onclick = () => this.march();
     } else if (this.phase === 'WAVE') {
       const left = this.spawnQueue.length + this.enemies.length;
