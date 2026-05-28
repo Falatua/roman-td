@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
     "pixi.js": "^7.4.0"
   },
   "devDependencies": {
