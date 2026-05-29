@@ -59,7 +59,12 @@ export class UIManager {
   // ALL picker can highlight the "currently on" option. Without this
   // the player clicked into the submenu and couldn't tell which mode
   // they'd last applied — the buttons all looked identical.
-  private lastBulkTargetMode: TargetingMode | null = null;
+  // 2026-05-29 — defaults to FIRST (not null) so the TARGET ALL button reads
+  // "🎯 TARGET ALL · FIRST" and the FIRST picker row shows the active ✓ from
+  // game start, matching the FIRST default every freshly-placed tower now
+  // lands on (TowerSystem.createTower). A new game is a full page reload, so
+  // this re-initializes to FIRST every game — the player adjusts from there.
+  private lastBulkTargetMode: TargetingMode | null = TargetingMode.FIRST;
   private targetAllPickerButtons: { mode: TargetingMode; btn: HTMLButtonElement }[] = [];
   private targetAllBtn: HTMLButtonElement | null = null;
 
@@ -271,8 +276,8 @@ export class UIManager {
       if (!open) renderPickerState();
     };
     // Initial paint so the closed button label reflects state on boot
-    // (currently "🎯 TARGET ALL" with no suffix — once the player picks
-    // a mode it'll show "🎯 TARGET ALL · STRONG", etc.).
+    // (defaults to "🎯 TARGET ALL · FIRST" — every game starts on FIRST;
+    // picking another mode swaps the suffix to "· STRONG", etc.).
     renderPickerState();
     // Order: START / SPEED / PAUSE / POOL / SHOP / QUESTS / CODEX / SELL-STONES / LEADERBOARD / DPS CHECK / TARGET ALL (+ picker) / SETTINGS.
     // (Sound mute lives inside SETTINGS panel now — 2026-05 v11.)

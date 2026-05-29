@@ -102,10 +102,11 @@ export function createTower(type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: numbe
     baseDps: def.baseDps * 1.10,
     attackSpeed: def.attackSpeed,
     range: def.range,
-    // Default targeting: STRONG. Player can still cycle to FIRST / LAST /
-    // CLOSE / FLYERS via the tower menu; this is just the default a fresh
-    // build (or a combo result) lands on.
-    targetingMode: TargetingMode.STRONG,
+    // Default targeting: FIRST (2026-05-29, per user request). Every fresh
+    // build (or combo result) lands on FIRST — furthest-along enemy, closest
+    // to leaking — so a new game always starts on FIRST and the player
+    // adjusts from there via the tower menu or the TARGET ALL bulk picker.
+    targetingMode: TargetingMode.FIRST,
     killCount: 0,
     killBonusFlat: 0,
     hasBeenDowngraded: false,
