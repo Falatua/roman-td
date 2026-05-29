@@ -1,90 +1,85 @@
 // ─────────────────────────────────────────────────────────────────────
-// CO-OP LEGION — RomanBoard (LR1): a REAL base-engine board for one player.
+// CO-OP LEGION — RomanBoard (LR1 + LR2): a REAL base-engine board for one
+// player, with the REAL build-phase interaction.
 //
-// The whole point of the Legion visual-reuse pass: each player plays an
-// actual Roman TD board that looks EXACTLY like single-player, because it
-// IS the single-player engine — same Pixi RenderEngine, same GameState,
-// same systems (spawns, enemies, combat, projectiles, waves), same biomes,
-// terrain, cave, gate, towers, and (wired in later phases) the same combos,
-// Codex, and tower menu.
+// Each player plays an actual Roman TD board that looks AND plays exactly
+// like single-player, because it IS the single-player engine: same Pixi
+// RenderEngine, same GameState, same systems (spawns/enemies/combat/
+// projectiles/waves), same biomes/terrain/cave/gate, same prospecting
+// (rollDraw), same combinations (scanCombos/executeCombo), same tower menu
+// + targeting (showTowerMenu), same Codex (showCodex), same enemies/bosses/
+// fliers/wave-briefs/health — all driven by the real data + systems.
 //
 // ISOLATION CONTRACT: this module COMPOSES the base game's already-exported,
 // state-parameterized pieces. It does NOT modify or fork main.ts's
-// single-player closure, so single-player cannot regress because of Legion.
-// Everything Legion-specific (circuit routing, Rome, scoreboard, netcode)
-// layers on top via the pluggable hooks below in LR3/LR4.
-//
-// LR1 scope: stand the board up, render it with the real engine, and run a
-// real wave loop. Build-phase UX reuse (draw/keep/combine/menu/Codex) is
-// LR2; leak→circuit is LR3; teamwork HUD + netcode is LR4.
+// single-player closure, so single-player cannot regress. Legion-specific
+// behavior (circuit routing, Rome, scoreboard, netcode) layers on via the
+// pluggable hooks; LR3 swaps onLeak to route into the circuit.
 // ─────────────────────────────────────────────────────────────────────
 
-import { ECONOMY, GRID } from '../constants';
+import { ECONOMY, GRID, WORLD } from '../constants';
 import { createGameState, type GameStateShape } from '../GameState';
-import { GamePhase, TileType, type Enemy, type Tower, type TowerType } from '../types';
+import { GamePhase, TileType, type Enemy, type Tower, type TowerType, type DrawCard } from '../types';
 import { RenderEngine } from '../render/RenderEngine';
-import { initializeGrid, setTile } from '../systems/GridManager';
+import { initializeGrid, setTile, pixelToTile, isBuildable } from '../systems/GridManager';
 import { buildGroundPath, buildFlyerPath, resnapEnemiesToPath } from '../systems/PathFinder';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo } from '../systems/WaveManager';
 import { tickEnemies } from '../systems/EnemySystem';
 import { tickCombat, type CombatHooks } from '../systems/CombatResolver';
 import { tickProjectiles } from '../systems/ProjectileSystem';
-import { createTower } from '../systems/TowerSystem';
+import { createTower, rollDraw, BASE_TOWER_TYPES } from '../systems/TowerSystem';
+import { realizableCombos, executeCombo } from '../systems/CombinationEngine';
+import { spendGold, earnGold } from '../systems/EconomySystem';
+import { createInventory, type InventoryState } from '../systems/LootSystem';
+import { showTowerMenu } from '../render/TowerMenu';
+import { showCodex } from '../render/Codex';
 
-// Pluggable seams the later phases fill in. Defaults make the board behave
-// like a normal solo board (leaks cost lives) so LR1 is self-contained and
-// testable; LR3 swaps onLeak to route into the circuit, LR4 wires the rest.
+// Pluggable seams later phases fill in. Defaults make the board behave like
+// a normal solo board (leaks cost lives) so it is self-contained + testable;
+// LR3 swaps onLeak to route into the circuit, LR4 wires the rest.
 export interface RomanBoardHooks {
-  /** An enemy crossed the gate without dying. Return true to SUPPRESS the
-   *  default life loss (LR3 returns true and routes the unit to the circuit). */
-  onLeak?: (enemy: Enemy) => boolean | void;
-  /** A tower killed an enemy (after base gold is awarded). */
+  onLeak?: (enemy: Enemy) => boolean | void;  // return true to SUPPRESS the life loss (LR3 routes to circuit)
   onKill?: (tower: Tower, enemy: Enemy) => void;
-  /** The wave finished (queue drained, board clear). `gold` is the wave bonus. */
   onWaveCleared?: (wave: number, gold: number) => void;
-  /** Rome/lives hit zero. */
   onDefeat?: () => void;
-  /** Called every frame after the systems tick, before render — for HUD sync. */
-  onFrame?: (dt: number) => void;
+  onFrame?: (dt: number) => void;              // per-frame HUD sync hook
 }
 
 export interface RomanBoardOpts {
   hooks?: RomanBoardHooks;
   startingGold?: number;
-  /** Legion is harder; the runtime can pass a per-wave HP/speed scaler later. */
   sandbox?: boolean;
 }
 
 const FRAME_MS = 16;
+const PROSPECT_PLACE_COST = 1;   // 1g per prospect roll (base parity, main.ts)
+const MAX_PROSPECTS_PER_ROUND = 10;
+const KEEPS_PER_ROUND = 2;
 
 export class RomanBoard {
   readonly state: GameStateShape;
   readonly renderer: RenderEngine;
+  readonly inventory: InventoryState;
   private readonly hooks: RomanBoardHooks;
+  private host: HTMLElement | null = null;
   private loop: number | null = null;
   private lastTime = 0;
   private mounted = false;
   private destroyed = false;
-  private staticDirty = true;     // redraw the terrain/decoration layer next frame
+  private staticDirty = true;
   speedMult = 1;
   paused = false;
 
   constructor(opts: RomanBoardOpts = {}) {
     this.hooks = opts.hooks ?? {};
     this.state = createGameState();
+    this.inventory = createInventory();
     if (opts.sandbox) this.state.sandboxMode = true;
     if (typeof opts.startingGold === 'number') this.state.gold = opts.startingGold;
     this.renderer = new RenderEngine();
   }
 
   // ── SETUP ──────────────────────────────────────────────────────────────
-  /**
-   * Lay down the real map (cave/gate/waypoint tiles + path), exactly as the
-   * base game does after createGameState. Ensures the shared data globals the
-   * engine reads (waypoints/enemies/waves) are present — they normally are,
-   * since the player reached Legion after main.ts boot ran, but we load them
-   * defensively so RomanBoard is self-contained.
-   */
   async init(): Promise<void> {
     await ensureEngineGlobals();
     initializeGrid(this.state);
@@ -94,15 +89,16 @@ export class RomanBoard {
     (this.state as any).ghostPath = path.slice();
     this.state.flyerPath = buildFlyerPath();
     this.state.gold = this.state.gold || ECONOMY.STARTING_GOLD;
-    this.state.phase = GamePhase.BUILD_PHASE;
+    this.rollProspects(); // open in PROSPECT_PLACEMENT, exactly like base
   }
 
-  /** Attach the real Pixi canvas into the DOM and start the frame loop. */
   mount(parent: HTMLElement): void {
     if (this.mounted) return;
     this.mounted = true;
+    this.host = parent;
     this.renderer.attachTo(parent);
     this.renderer.drawStatic(this.state);
+    this.wirePointer();
     this.lastTime = performance.now();
     this.loop = window.setInterval(() => this.tick(), FRAME_MS);
   }
@@ -111,46 +107,163 @@ export class RomanBoard {
     if (this.destroyed) return;
     this.destroyed = true;
     if (this.loop != null) { clearInterval(this.loop); this.loop = null; }
+    document.getElementById('tower-menu')?.remove();
+    document.getElementById('combo-picker')?.remove();
     try { (this.renderer.app.view as HTMLCanvasElement)?.remove(); } catch { /* ignore */ }
     try { this.renderer.app.destroy(true); } catch { /* ignore */ }
   }
 
-  /** The canvas element, for sizing/positioning by the host overlay. */
-  get canvas(): HTMLCanvasElement {
-    return this.renderer.app.view as HTMLCanvasElement;
+  get canvas(): HTMLCanvasElement { return this.renderer.app.view as HTMLCanvasElement; }
+  get hasPending(): boolean { for (const t of this.state.towers.values()) if (t.pending) return true; return false; }
+
+  // ── PROSPECTING (base parity, see CombinationEngine + main.ts recipe) ──
+  /** Roll a fresh 5-card draw and enter PROSPECT_PLACEMENT (mirrors rollProspects). */
+  rollProspects(): void {
+    this.state.prospectQueue = rollDraw(this.state, BASE_TOWER_TYPES);
+    this.state.prospectsPlaced = 0;
+    this.state.keepsRemainingThisRound = KEEPS_PER_ROUND;
+    this.state.phase = GamePhase.PROSPECT_PLACEMENT;
+    this.state.hint = 'Click empty tiles to reveal prospects (1g each). Click a tower to KEEP / COMBINE. MARCH when ready.';
+  }
+
+  /** Place a prospect on an empty tile: 1g, path-validated, pending=true. */
+  placeProspectAt(col: number, row: number): void {
+    if (this.state.phase !== GamePhase.PROSPECT_PLACEMENT) return;
+    if (this.state.tiles[row]?.[col] !== TileType.EMPTY) return;
+    if (this.state.prospectsPlaced >= MAX_PROSPECTS_PER_ROUND) { this.state.hint = 'Prospect cap reached this round. KEEP or MARCH.'; return; }
+    if (this.state.gold < PROSPECT_PLACE_COST) { this.state.hint = 'Not enough gold to roll a prospect.'; return; }
+    if (this.state.prospectQueue.length === 0) this.state.prospectQueue = rollDraw(this.state, BASE_TOWER_TYPES);
+    // Path-validate (base pattern): tentatively stamp, rebuild, revert if sealed.
+    setTile(this.state, col, row, TileType.TOWER);
+    const np = buildGroundPath(this.state);
+    if (!np) { setTile(this.state, col, row, TileType.EMPTY); this.state.hint = 'That tile would seal the route. Try another.'; return; }
+    this.state.groundPath = np;
+    resnapEnemiesToPath(this.state, np);
+    spendGold(this.state, PROSPECT_PLACE_COST);
+    const card = this.state.prospectQueue.shift() as DrawCard;
+    const t = createTower(card.type as TowerType, card.tier as 1 | 2 | 3 | 4 | 5, col, row, this.state.wave, true);
+    this.state.towers.set(t.id, t);
+    this.state.prospectsPlaced += 1;
+    this.markStaticDirty();
+  }
+
+  /** Keep a pending prospect (pending=false). Spends a keep; crystallizes the
+   *  rest + returns to BUILD when keeps run out (mirrors keepPending). */
+  keepProspect(id: string): void {
+    const keeper = this.state.towers.get(id);
+    if (!keeper || !keeper.pending) return;
+    keeper.pending = false;
+    keeper.placedAtWave = this.state.wave;
+    if (keeper.isAerarium) this.state.goldTowerCount += 1;
+    this.state.hasKeptAnyTowerEver = true;
+    this.state.keepsRemainingThisRound = Math.max(0, this.state.keepsRemainingThisRound - 1);
+    if (this.state.keepsRemainingThisRound > 0 && this.hasPending) {
+      this.state.phase = this.state.prospectQueue.length > 0 ? GamePhase.PROSPECT_PLACEMENT : GamePhase.PICK_KEEPER;
+      this.state.hint = `Kept ${towerLabel(keeper)}. ${this.state.keepsRemainingThisRound} keep(s) left.`;
+    } else {
+      // Keeps exhausted → crystallize remaining pending into stone walls.
+      this.crystallizeRemaining(id);
+      this.state.phase = GamePhase.BUILD_PHASE;
+      this.state.hint = `Kept ${towerLabel(keeper)}. Remaining prospects cemented to walls. MARCH when ready.`;
+    }
+    this.rebuildPath();
+    this.markStaticDirty();
+  }
+
+  /** Convert every pending prospect to a stone wall (mirrors crystallizeAll). */
+  crystallizeAll(): void {
+    for (const t of Array.from(this.state.towers.values())) {
+      if (t.pending) { this.state.towers.delete(t.id); setTile(this.state, t.tileX, t.tileY, TileType.STONE); }
+    }
+    this.state.prospectQueue = [];
+    this.state.phase = GamePhase.BUILD_PHASE;
+    this.rebuildPath();
+    this.markStaticDirty();
+  }
+
+  private crystallizeRemaining(exceptId: string): void {
+    for (const t of Array.from(this.state.towers.values())) {
+      if (t.pending && t.id !== exceptId) { this.state.towers.delete(t.id); setTile(this.state, t.tileX, t.tileY, TileType.STONE); }
+    }
   }
 
   // ── WAVE CONTROL ─────────────────────────────────────────────────────────
-  /** Begin the next wave (BUILD_PHASE → WAVE_PHASE), mirroring base flow. */
-  beginWave(): void {
-    if (this.state.phase !== GamePhase.BUILD_PHASE) return;
+  /** MARCH: crystallize any unkept prospects, then start the wave (base gate). */
+  march(): void {
+    if (this.state.phase === GamePhase.WAVE_PHASE) return;
+    if (this.hasPending) this.crystallizeAll();
     startWave(this.state);
     this.state.phase = GamePhase.WAVE_PHASE;
     this.markStaticDirty();
   }
 
-  /** Place a tower programmatically (used by LR2's real placement flow + tests).
-   *  Path-validated: rejects a drop that would seal the route. */
-  placeTower(col: number, row: number, type: TowerType, tier: 1 | 2 | 3 | 4 | 5): Tower | null {
-    if (this.state.tiles[row]?.[col] !== TileType.EMPTY) return null;
-    setTile(this.state, col, row, TileType.TOWER);
-    const np = buildGroundPath(this.state);
-    if (!np) { setTile(this.state, col, row, TileType.EMPTY); return null; }
-    this.state.groundPath = np;
-    resnapEnemiesToPath(this.state, np);
-    const tw = createTower(type, tier, col, row, this.state.wave);
-    this.state.towers.set(tw.id, tw);
-    this.markStaticDirty();
-    return tw;
+  // ── OVERLAYS (reuse the REAL base UI) ──────────────────────────────────
+  /** Inspect a placed/pending tower — the REAL tower menu (stats, items,
+   *  targeting, combine, keep). Identical UI to single-player. */
+  inspectAt(col: number, row: number): void {
+    const tw = Array.from(this.state.towers.values()).find((t) => t.tileX === col && t.tileY === row);
+    if (!tw || !this.host) return;
+    this.renderer.selectedTowerId = tw.id;
+    const prewave = this.state.phase !== GamePhase.WAVE_PHASE;
+    showTowerMenu(this.host, tw, this.state, this.inventory, {
+      onClose: () => { document.getElementById('tower-menu')?.remove(); this.renderer.selectedTowerId = null; },
+      onPathRefresh: () => this.rebuildPath(),
+      onKeep: (id: string) => { this.keepProspect(id); document.getElementById('tower-menu')?.remove(); },
+      // The tower menu surfaces available combos itself and calls back with
+      // the chosen recipe; we resolve it to the AvailableCombo and execute —
+      // the REAL combination engine, identical to single-player.
+      onCombine: prewave ? (recipeIndex: number, isSameTierMerge: boolean, resultTileTowerId: string) => {
+        const combo = realizableCombos(this.state).find(
+          (c) => c.recipeIndex === recipeIndex && !!c.isSameTierMerge === isSameTierMerge);
+        if (combo && executeCombo(this.state, combo, resultTileTowerId)) {
+          this.rebuildPath(); this.markStaticDirty();
+        }
+        document.getElementById('tower-menu')?.remove();
+      } : undefined,
+    });
   }
 
-  /** Force a terrain-layer redraw next frame (after any tile/path change). */
-  markStaticDirty(): void { this.staticDirty = true; }
+  /** The REAL Codex overlay (enemies, towers, combos, wave briefs, etc.). */
+  openCodex(): void {
+    const parent = this.host ?? document.body;
+    showCodex(parent, {
+      poolLevel: this.state.poolLevel,
+      heroLevel: this.state.heroLevel,
+      totalKills: this.state.totalKills,
+      towers: Array.from(this.state.towers.values()),
+      completedQuests: this.state.completedQuests ?? [],
+    } as any);
+  }
 
-  // ── FRAME LOOP ───────────────────────────────────────────────────────────
-  // Mirrors main.ts's frame(): real-time dt (clamped) × speed, zeroed when
-  // paused; tick the real systems only in WAVE_PHASE; always render the
-  // dynamic + ambient layers; redraw the static layer only when dirty.
+  // ── INPUT ────────────────────────────────────────────────────────────────
+  private wirePointer(): void {
+    const cv = this.canvas;
+    cv.style.cursor = 'crosshair';
+    cv.addEventListener('mousemove', (e) => {
+      const t = this.screenToTile(e);
+      const valid = this.state.phase === GamePhase.PROSPECT_PLACEMENT && isBuildable(this.state, t.col, t.row);
+      this.renderer.drawHover(t.col, t.row, valid, 0);
+    });
+    cv.addEventListener('mouseleave', () => this.renderer.drawHover(-1, -1, false));
+    cv.addEventListener('click', (e) => {
+      const { col, row } = this.screenToTile(e);
+      if (col < 0 || row < 0 || col >= GRID.COLS || row >= GRID.ROWS) return;
+      const tile = this.state.tiles[row]?.[col];
+      if (tile === TileType.TOWER) { this.inspectAt(col, row); return; }
+      if (this.state.phase === GamePhase.PROSPECT_PLACEMENT && tile === TileType.EMPTY) { this.placeProspectAt(col, row); return; }
+    });
+  }
+
+  private screenToTile(e: MouseEvent): { col: number; row: number } {
+    const rect = this.canvas.getBoundingClientRect();
+    const rawX = (e.clientX - rect.left) * (GRID.CANVAS_W / rect.width);
+    const rawY = (e.clientY - rect.top) * (GRID.CANVAS_H / rect.height);
+    const x = (rawX - WORLD.OFFSET_X) / WORLD.ZOOM;
+    const y = (rawY - WORLD.OFFSET_Y) / WORLD.ZOOM;
+    return pixelToTile(x, y);
+  }
+
+  // ── FRAME LOOP (mirrors main.ts frame()) ───────────────────────────────
   private tick(): void {
     if (this.destroyed) return;
     const now = performance.now();
@@ -168,64 +281,56 @@ export class RomanBoard {
       tickCombat(this.state, dt, this.combatHooks);
       tickProjectiles(this.state, dt, { onImpact: () => { /* impact VFX handled by renderer */ } });
       checkWaveEnd(this.state, (gold) => {
-        this.state.gold += Math.max(0, gold);
-        this.state.phase = GamePhase.BUILD_PHASE;
+        earnGold(this.state, Math.max(0, gold));
         this.hooks.onWaveCleared?.(this.state.wave, gold);
+        this.rollProspects(); // next build phase, base flow
       });
     }
 
     this.hooks.onFrame?.(dt);
 
-    // Render — the real engine, real sprites.
     if (this.staticDirty) { this.renderer.drawStatic(this.state); this.staticDirty = false; }
     this.renderer.drawDynamic(this.state);
     const wInfo = getNextWaveInfo(this.state);
     this.renderer.drawAmbient(this.state.tick, this.state.wave, wInfo?.type === 'B');
-    // Pixi Application is autoStart:false (constructor), so the scene graph
-    // only flushes to the canvas when we explicitly render — exactly as
-    // main.ts's frame loop does (main.ts:7490). Without this the board is
-    // simulated but never painted.
+    // autoStart:false → flush the scene graph to the canvas each frame (main.ts:7490).
     this.renderer.app.render();
   }
 
-  // ── KILL / LEAK HANDLERS ───────────────────────────────────────────────
+  // ── KILL / LEAK ───────────────────────────────────────────────────────
   private readonly combatHooks: CombatHooks = {
     onKill: (tower, enemy) => {
-      // Base kill gold. (Full kill-bonus / Aerarium economy is layered in a
-      // later phase; LR1 keeps a faithful baseline so the loop is testable.)
       this.state.gold += (enemy.reward ?? 0) + ECONOMY.BASE_GOLD_PER_KILL;
       this.state.totalKills += 1;
       this.state.enemiesKilledThisWave += 1;
       this.hooks.onKill?.(tower, enemy);
     },
-    onHit: () => { /* hit VFX handled inside the renderer */ },
-    onMeleeSwing: () => { /* swing VFX handled inside the renderer */ },
+    onHit: () => { /* renderer handles hit VFX */ },
+    onMeleeSwing: () => { /* renderer handles swing VFX */ },
     onProjectileFire: () => { /* projectile sprites spawn from tickCombat */ },
   };
 
-  private handleDeath(_e: Enemy): void {
-    // Reserved for DEATH_PACT / REVENANT modifier hooks (parity with base).
-  }
+  private handleDeath(_e: Enemy): void { /* reserved for DEATH_PACT / REVENANT parity */ }
 
   private handleLeak(e: Enemy): void {
     this.state.enemiesLeakedThisWave += 1;
-    // LR3 swaps this: onLeak returns true to suppress the life loss and route
-    // the unit into the circuit toward the next player / Rome.
-    const suppressed = this.hooks.onLeak?.(e) === true;
+    const suppressed = this.hooks.onLeak?.(e) === true; // LR3 routes to circuit
     if (suppressed) return;
     this.state.lives -= e.livesCost ?? 1;
-    if (this.state.lives <= 0 && this.state.gameOverAt < 0) {
-      this.state.gameOverAt = this.state.tick;
-      this.hooks.onDefeat?.();
-    }
+    if (this.state.lives <= 0 && this.state.gameOverAt < 0) { this.state.gameOverAt = this.state.tick; this.hooks.onDefeat?.(); }
+  }
+
+  // ── HELPERS ──────────────────────────────────────────────────────────────
+  markStaticDirty(): void { this.staticDirty = true; }
+  private rebuildPath(): void {
+    const np = buildGroundPath(this.state);
+    if (np) { this.state.groundPath = np; resnapEnemiesToPath(this.state, np); }
   }
 }
 
+function towerLabel(t: Tower): string { return `${String(t.type).replace(/_/g, ' ')} T${t.qualityTier ?? 1}`; }
+
 // ─── SHARED ENGINE GLOBALS ─────────────────────────────────────────────
-// The base RenderEngine + PathFinder read a few `window.__*` data blobs that
-// main.ts sets during boot. They're present by the time Legion is entered,
-// but we load them defensively so a RomanBoard works even if instantiated
-// before/without the campaign boot (e.g. in isolation).
 let _globalsReady = false;
 async function ensureEngineGlobals(): Promise<void> {
   if (_globalsReady) return;
@@ -233,6 +338,6 @@ async function ensureEngineGlobals(): Promise<void> {
   if (!w.__wpData) w.__wpData = await import('../data/waypoints.json').then((m) => m.default ?? m);
   if (!w.__enemiesData) w.__enemiesData = await import('../data/enemies.json').then((m) => m.default ?? m);
   if (!w.__waves__) w.__waves__ = await import('../data/waves.json').then((m) => m.default ?? m);
-  void GRID; // keep the constants import meaningful + future-proof for sizing
+  void GRID;
   _globalsReady = true;
 }
