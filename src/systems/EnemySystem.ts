@@ -217,6 +217,17 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   // 0.15 dodge + 0.20 W8 block → ~32% effective ranged whiff rate.
   if ((state.wave ?? 1) === 8) {
     (e as any).__w8RangedBlock = 0.20;
+    // 2026-05-29 — W8 OUT-OF-COMBAT REGEN CUT. Per user request: "decrease
+    // the out-of-combat health regen on Wave 8 by 1.5%." Subtractive 1.5
+    // percentage points off whatever OOC regen the enemy already has,
+    // floored at 0 (read in tickEnemies). Only the Carthage Elite Guard
+    // carries OOC regen on W8 (4.9%/s → 3.4%/s); the Spearman + Numidian
+    // Rider have none, so the floor leaves them untouched (no regen is
+    // granted to enemies that never had it). Wave-scoped on purpose: the
+    // Elite Guard also spawns on W9 and in Endless, where it keeps the
+    // full 4.9%/s — editing the per-enemy def would bleed the cut into
+    // both, so we stamp at spawn exactly like __w8RangedBlock above.
+    (e as any).__w8OocRegenCut = 0.015;
   }
   // 2026-05-25 — W7 MELEE-RESIST STAMP. Per user request: "give enemies
   // on wave 7 slightly more melee resistance - 10%." Every enemy spawned
@@ -1236,7 +1247,12 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // a full second gives a clearer "if I stop hitting it, NOW it
     // heals" beat. Affects every enemy with regenPctPerSec or
     // outOfCombatRegen, including bosses.
-    const oocRegen = Math.max(def.outOfCombatRegen ?? 0, (e as any).outOfCombatRegen ?? 0);
+    let oocRegen = Math.max(def.outOfCombatRegen ?? 0, (e as any).outOfCombatRegen ?? 0);
+    // W8 OOC-regen cut (wave-scoped, stamped at spawn). Subtractive and
+    // floored at 0 so enemies with no OOC regen stay at 0 — never granted
+    // regen by the reduction.
+    const w8OocCut = (e as any).__w8OocRegenCut ?? 0;
+    if (w8OocCut > 0 && oocRegen > 0) oocRegen = Math.max(0, oocRegen - w8OocCut);
     if (oocRegen > 0) {
       const sinceHit = state.tick - (e.lastDamagedTick ?? -999);
       if (sinceHit > 1.0) {
