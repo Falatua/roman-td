@@ -218,6 +218,17 @@ async function boot() {
   const bannerQueue: BannerJob[] = [];
   let bannerActive: { node: HTMLElement; timer: number | null } | null = null;
   function processBannerQueue() {
+    // Self-heal: if a prior handler removed the active banner's node from the
+    // DOM without nulling bannerActive (the old `b.remove(); processBannerQueue()`
+    // pattern), the guard below would early-return forever and silently swallow
+    // every future banner — including the purchased-tower placement-confirm
+    // modal, which made it impossible to place a Mercator/quest tower for the
+    // rest of the run. Treat a detached active node as already finished so the
+    // queue can never get permanently stuck again.
+    if (bannerActive && !bannerActive.node.isConnected) {
+      if (bannerActive.timer != null) clearTimeout(bannerActive.timer);
+      bannerActive = null;
+    }
     if (bannerActive) return;
     const next = bannerQueue.shift();
     if (!next) return;
@@ -3370,15 +3381,16 @@ async function boot() {
       const cementBtn = document.getElementById('pkg-cement');
       if (pickBtn) pickBtn.onclick = (ev) => {
         ev.stopPropagation();
-        b.remove();
-        // Force-process the queue so the next banner (if any) shows.
-        processBannerQueue();
+        // Must clear bannerActive (not just remove the node) or the queue
+        // jams and later modals — like the purchased-tower placement confirm
+        // — never appear. dismissActiveBanner() removes the node, nulls
+        // bannerActive, and drains the next banner.
+        dismissActiveBanner();
       };
       if (cementBtn) cementBtn.onclick = (ev) => {
         ev.stopPropagation();
         crystallizeAll();
-        b.remove();
-        processBannerQueue();
+        dismissActiveBanner();
         // Re-fire the start-wave action so the wave actually launches now
         // that no prospects are pending. Mimics a second SPACE press.
         const startBtn = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent?.includes('START WAVE')) as HTMLButtonElement | undefined;
