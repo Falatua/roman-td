@@ -27,7 +27,7 @@ import {
 } from './LegionRome';
 import { serializeLeak, resolveLeakHop } from './LegionCircuit';
 import { ghostLeakHp } from './LegionGhost';
-import { recordLeak, recordWaveKill } from './LegionEconomy';
+import { recordLeak, recordWaveKill, recordCircuitKill, recordDamage } from './LegionEconomy';
 import { emptyStats, type PlayerStats, type RomeState, type LegionNetMessage, type LegionNetTransport, type LeakUnit } from './LegionTypes';
 import { POSITION_TITLES, FLAVOR, type QuadrantId } from './LegionConfig';
 import { romeStartingHp } from './LegionScaling';
@@ -61,6 +61,7 @@ class CoopMatch {
   private romePulse = 0;
   private defeated = false;
   private statsTimer = 0;
+  private boardTimer: number | null = null;
 
   constructor(a: CoopMatchArgs) {
     this.t = a.transport; this.cfg = a.cfg; this.myQ = a.myQuadrant; this.assignments = a.assignments;
@@ -103,6 +104,7 @@ class CoopMatch {
     bottom.innerHTML =
       `<button id="lg-march" style="background:#3a2a0a;color:#ffd34d;border:2px solid #ffd34d;border-radius:6px;padding:9px 26px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:bold;letter-spacing:2px">⚔ MARCH TO WAR</button>` +
       `<button id="lg-codex" style="background:#1a2535;color:#9fd0ff;border:2px solid #3a6a9a;border-radius:6px;padding:9px 18px;cursor:pointer;font-family:inherit;font-size:12px">📖 CODEX</button>` +
+      `<button id="lg-board" style="background:#2a2540;color:#c8a0ff;border:2px solid #6a4a9a;border-radius:6px;padding:9px 18px;cursor:pointer;font-family:inherit;font-size:12px">⚜ LEGION BOARD</button>` +
       `<button id="lg-leave" style="background:#3a1810;color:#ff8080;border:2px solid #7a2a2a;border-radius:6px;padding:9px 18px;cursor:pointer;font-family:inherit;font-size:12px">◀ LEAVE</button>`;
     overlay.append(top, hintRow, host, bottom);
     document.body.appendChild(overlay);
@@ -111,7 +113,8 @@ class CoopMatch {
       startingGold: 100,
       hooks: {
         onFrame: (dt) => { if (this.romePulse > 0) this.romePulse = Math.max(0, this.romePulse - dt); this.statsTimer += dt; if (this.statsTimer > 0.5) { this.statsTimer = 0; this.t.send('stats', this.myStats); } this.syncHud(); },
-        onKill: () => { this.myStats = recordWaveKill(this.myStats); },
+        onKill: (_t, e) => { this.myStats = (e as any).__circuit ? recordCircuitKill(this.myStats) : recordWaveKill(this.myStats); },
+        onHit: (_t, _e, dmg) => { this.myStats = recordDamage(this.myStats, dmg); },
         onLeak: (e: Enemy) => this.routeLeak(e),
       },
     });
@@ -124,7 +127,12 @@ class CoopMatch {
 
     (bottom.querySelector('#lg-march') as HTMLElement).onclick = () => { if (!this.defeated) this.board.march(); };
     (bottom.querySelector('#lg-codex') as HTMLElement).onclick = () => this.board.openCodex();
-    (bottom.querySelector('#lg-leave') as HTMLElement).onclick = () => { this.board.destroy(); overlay.remove(); this.t.leave(); };
+    (bottom.querySelector('#lg-board') as HTMLElement).onclick = () => this.openLeaderboard();
+    (bottom.querySelector('#lg-leave') as HTMLElement).onclick = () => { if (this.boardTimer != null) clearInterval(this.boardTimer); this.board.destroy(); overlay.remove(); this.t.leave(); };
+    // The always-on corner panel is also a shortcut into the full board.
+    score.style.cursor = 'pointer';
+    score.title = 'Open the full Legion leaderboard';
+    score.onclick = () => this.openLeaderboard();
     this.syncHud();
   }
 
@@ -196,20 +204,89 @@ class CoopMatch {
     this.renderScore();
   }
 
-  private renderScore(): void {
-    const rows = [{ id: this.t.selfId, st: this.myStats }, ...Object.entries(this.peerStats).map(([id, st]) => ({ id, st }))]
+  /** One row per player (self + connected peers), with the full teammate
+   *  stats, sorted by total kills. Shared by the corner panel + full board. */
+  private teamRows() {
+    const present = this.t.presence();
+    return [{ id: this.t.selfId, st: this.myStats }, ...Object.entries(this.peerStats).map(([id, st]) => ({ id, st }))]
       .map((r) => {
-        const name = this.t.presence().find((p) => p.id === r.id)?.name ?? r.id.slice(0, 6);
-        const me = r.id === this.t.selfId;
-        return { name, kills: r.st.waveKills + r.st.circuitKills, leaks: r.st.leaksTotal, me };
+        const p = present.find((x) => x.id === r.id);
+        const q = (this.assignments[r.id] ?? this.myQ);
+        return {
+          id: r.id,
+          name: p?.name ?? r.id.slice(0, 6),
+          position: POSITION_TITLES[q]?.title ?? '—',
+          connected: r.id === this.t.selfId ? true : !!p?.connected,
+          me: r.id === this.t.selfId,
+          waveKills: r.st.waveKills,
+          circuitKills: r.st.circuitKills,
+          kills: r.st.waveKills + r.st.circuitKills,
+          leaks: r.st.leaksTotal,
+          damage: r.st.damageDealt,
+          rome: r.st.romeContributed,
+        };
       })
       .sort((a, b) => b.kills - a.kills);
+  }
+
+  // Compact always-on corner panel: rank, cohort, kills, leaks, damage.
+  private renderScore(): void {
+    const rows = this.teamRows();
     const body = rows.map((r, i) =>
-      `<tr style="${r.me ? 'color:#ffd34d;font-weight:bold' : 'color:#cdb98a'}"><td>${i + 1}</td><td style="padding:0 4px">${esc(r.name)}</td><td style="text-align:right">${r.kills}</td><td style="text-align:right;color:#ffae6b">${r.leaks}</td></tr>`).join('');
+      `<tr style="${r.me ? 'color:#ffd34d;font-weight:bold' : r.connected ? 'color:#cdb98a' : 'color:#6a5a4a'}">` +
+      `<td>${i + 1}</td><td style="padding:0 4px">${esc(r.name)}${r.connected ? '' : ' ⌁'}</td>` +
+      `<td style="text-align:right">${r.kills}</td>` +
+      `<td style="text-align:right;color:#ffae6b">${r.leaks}</td>` +
+      `<td style="text-align:right;color:#9fd0ff">${fmt(r.damage)}</td></tr>`).join('');
     const sc = document.getElementById('lg-score');
     if (sc) sc.innerHTML =
-      `<div style="font-size:10px;color:#ffd34d;letter-spacing:1px;font-weight:bold;margin-bottom:4px">⚜ LEGION</div>` +
-      `<table style="width:100%;border-collapse:collapse;font-size:10px"><tr style="color:#8a7a5a"><td>#</td><td style="padding:0 4px">Cohort</td><td style="text-align:right">Kill</td><td style="text-align:right">Lk</td></tr>${body}</table>`;
+      `<div style="font-size:10px;color:#ffd34d;letter-spacing:1px;font-weight:bold;margin-bottom:4px">⚜ LEGION ▸</div>` +
+      `<table style="width:100%;border-collapse:collapse;font-size:10px"><tr style="color:#8a7a5a"><td>#</td><td style="padding:0 4px">Cohort</td><td style="text-align:right">Kill</td><td style="text-align:right">Lk</td><td style="text-align:right">Dmg</td></tr>${body}</table>` +
+      `<div style="margin-top:4px;font-size:8px;color:#6a5a3a">click for full board</div>`;
+  }
+
+  // Full, accessible leaderboard modal: every teammate's kills (wave +
+  // circuit), leaks, damage dealt, and Rome contribution. The table body
+  // refreshes in place every second so numbers tick up live; a single
+  // stored timer is cleared on close (no leak / no rebuild churn).
+  private openLeaderboard(): void {
+    if (document.getElementById('lg-board-modal')) return; // already open
+    const m = el('div', 'position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:#000b');
+    m.id = 'lg-board-modal';
+    const card = el('div', 'background:linear-gradient(#1c140c,#0d0805);border:2px solid #6a4a9a;border-radius:10px;padding:20px 26px;max-width:680px;box-shadow:0 0 40px #000');
+    card.innerHTML =
+      `<div style="text-align:center;font-size:18px;font-weight:900;letter-spacing:3px;color:#c8a0ff">⚜ LEGION LEADERBOARD</div>` +
+      `<div style="text-align:center;font-size:10px;color:#aa9a4a;margin:4px 0 12px">How the cohort is holding the line · updates live</div>` +
+      `<table style="border-collapse:collapse;font-size:12px;margin:0 auto"><thead><tr style="color:#8a7a5a;border-bottom:1px solid #5a431c">` +
+        `<td>#</td><td style="padding:4px 10px">Cohort</td><td style="padding:4px 8px">Position</td>` +
+        `<td style="text-align:right;padding:4px 8px">Wave K</td><td style="text-align:right;padding:4px 8px">Circ K</td>` +
+        `<td style="text-align:right;padding:4px 8px;color:#ffae6b">Leaked</td>` +
+        `<td style="text-align:right;padding:4px 8px;color:#9fd0ff">Damage</td>` +
+        `<td style="text-align:right;padding:4px 8px;color:#7ac0ff">Rome</td></tr></thead><tbody id="lg-board-body"></tbody></table>` +
+      `<div style="text-align:center;margin-top:14px"><button id="lg-board-close" style="background:#241a10;color:#e7d6a8;border:1px solid #7a5a1a;border-radius:6px;padding:8px 22px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:2px">CLOSE</button></div>`;
+    m.appendChild(card);
+    this.overlay.appendChild(m);
+
+    const paint = () => {
+      const tbody = document.getElementById('lg-board-body');
+      if (!tbody) return;
+      tbody.innerHTML = this.teamRows().map((r, i) =>
+        `<tr style="${r.me ? 'color:#ffd34d;font-weight:bold' : r.connected ? 'color:#e7d6a8' : 'color:#7a6a55'}">` +
+          `<td>${i + 1}</td>` +
+          `<td style="padding:4px 10px">${esc(r.name)}${r.me ? ' (you)' : ''}${r.connected ? '' : ' <span style="color:#ff8080">⌁ ghost</span>'}</td>` +
+          `<td style="padding:4px 8px;color:#9c8">${r.position}</td>` +
+          `<td style="text-align:right;padding:4px 8px">${r.waveKills}</td>` +
+          `<td style="text-align:right;padding:4px 8px">${r.circuitKills}</td>` +
+          `<td style="text-align:right;padding:4px 8px;color:#ffae6b">${r.leaks}</td>` +
+          `<td style="text-align:right;padding:4px 8px;color:#9fd0ff">${fmt(r.damage)}</td>` +
+          `<td style="text-align:right;padding:4px 8px;color:#7ac0ff">${r.rome}g</td></tr>`).join('');
+    };
+    paint();
+    if (this.boardTimer != null) clearInterval(this.boardTimer);
+    this.boardTimer = window.setInterval(paint, 1000);
+    const close = () => { if (this.boardTimer != null) { clearInterval(this.boardTimer); this.boardTimer = null; } m.remove(); };
+    (card.querySelector('#lg-board-close') as HTMLElement).onclick = close;
+    m.onclick = (ev) => { if (ev.target === m) close(); };
   }
 
   private fit(top: HTMLElement, bottom: HTMLElement, hintRow: HTMLElement): void {
@@ -227,4 +304,5 @@ function toLeakable(e: Enemy) {
 }
 function el(tag: string, css: string): HTMLDivElement { const d = document.createElement(tag) as HTMLDivElement; d.style.cssText = css; return d; }
 function set(id: string, text: string): void { const e = document.getElementById(id); if (e) e.textContent = text; }
+function fmt(n: number): string { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(Math.round(n)); }
 function esc(s: string): string { return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] ?? c)); }

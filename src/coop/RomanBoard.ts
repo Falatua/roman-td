@@ -41,6 +41,7 @@ import { showCodex } from '../render/Codex';
 export interface RomanBoardHooks {
   onLeak?: (enemy: Enemy) => boolean | void;  // return true to SUPPRESS the life loss (LR3 routes to circuit)
   onKill?: (tower: Tower, enemy: Enemy) => void;
+  onHit?: (tower: Tower, enemy: Enemy, damage: number) => void;  // every tower hit/swing (for damage totals)
   onWaveCleared?: (wave: number, gold: number) => void;
   onDefeat?: () => void;
   onFrame?: (dt: number) => void;              // per-frame HUD sync hook
@@ -319,8 +320,8 @@ export class RomanBoard {
       this.state.enemiesKilledThisWave += 1;
       this.hooks.onKill?.(tower, enemy);
     },
-    onHit: () => { /* renderer handles hit VFX */ },
-    onMeleeSwing: () => { /* renderer handles swing VFX */ },
+    onHit: (tower, enemy, damage) => { this.hooks.onHit?.(tower, enemy, damage); },
+    onMeleeSwing: (tower, enemy, damage) => { this.hooks.onHit?.(tower, enemy, damage); },
     onProjectileFire: () => { /* projectile sprites spawn from tickCombat */ },
   };
 

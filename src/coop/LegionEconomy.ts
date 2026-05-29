@@ -56,6 +56,10 @@ export function setTowerCount(s: PlayerStats, count: number): PlayerStats {
 export function recordRomeContribution(s: PlayerStats, gold: number): PlayerStats {
   return { ...s, romeContributed: s.romeContributed + Math.max(0, gold) };
 }
+/** Accumulate tower damage dealt (for the team leaderboard's damage column). */
+export function recordDamage(s: PlayerStats, dmg: number): PlayerStats {
+  return { ...s, damageDealt: s.damageDealt + Math.max(0, dmg) };
+}
 
 // ─── ROME REBUILD SHARED POOL (Section 6.4) ────────────────────────────
 export interface RebuildPool {

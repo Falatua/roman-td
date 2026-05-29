@@ -65,12 +65,14 @@ export interface PlayerStats {
   combosBuilt: number;      // combination towers forged this run
   questsDone: number;       // quests completed this run
   romeContributed: number;  // gold contributed to the shared Rome-rebuild pool
+  damageDealt: number;      // cumulative damage this player's towers have dealt
 }
 
 export function emptyStats(): PlayerStats {
   return {
     waveKills: 0, circuitKills: 0, leaks: 0, leaksTotal: 0,
     towersBuilt: 0, combosBuilt: 0, questsDone: 0, romeContributed: 0,
+    damageDealt: 0,
   };
 }
 
