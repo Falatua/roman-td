@@ -22,6 +22,7 @@
 
 import { GamePhase, type Enemy } from '../types';
 import { RomanBoard } from './RomanBoard';
+import { mountBuildControls, type BuildControls } from './LegionControls';
 import {
   createRome, romeDamageFor, applyRomeDamage, romeHpFraction, romeBarColor, isRomeFallen,
 } from './LegionRome';
@@ -62,6 +63,7 @@ class CoopMatch {
   private defeated = false;
   private statsTimer = 0;
   private boardTimer: number | null = null;
+  private ctrls: BuildControls | null = null;
 
   constructor(a: CoopMatchArgs) {
     this.t = a.transport; this.cfg = a.cfg; this.myQ = a.myQuadrant; this.assignments = a.assignments;
@@ -120,6 +122,7 @@ class CoopMatch {
     });
     await this.board.init();
     this.board.mount(host);
+    this.ctrls = mountBuildControls(bottom, this.board);
     this.fit(top, bottom, hintRow);
     window.addEventListener('resize', () => this.fit(top, bottom, hintRow));
 
@@ -201,6 +204,7 @@ class CoopMatch {
     set('lg-rome-num', `${Math.ceil(this.rome.hp)} / ${this.rome.maxHp}`);
     const march = document.getElementById('lg-march'); if (march) march.style.display = s.phase !== GamePhase.WAVE_PHASE && !this.defeated ? '' : 'none';
     this.overlay.style.outline = this.romePulse > 0 ? '6px solid #ff2a2acc' : 'none';
+    this.ctrls?.refresh();
     this.renderScore();
   }
 

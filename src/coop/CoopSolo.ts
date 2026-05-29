@@ -19,6 +19,7 @@
 
 import { GamePhase, type Enemy } from '../types';
 import { RomanBoard } from './RomanBoard';
+import { mountBuildControls, type BuildControls } from './LegionControls';
 import { getNextWaveInfo } from '../systems/WaveManager';
 import {
   createRome, romeDamageFor, applyRomeDamage, romeHpFraction, romeBarColor, isRomeFallen,
@@ -99,6 +100,7 @@ export async function startSoloLegionTest(): Promise<void> {
   let stats: PlayerStats = emptyStats();
   let romePulse = 0;
   let defeated = false;
+  let ctrls: BuildControls | null = null;
 
   const board = new RomanBoard({
     startingGold: 100,
@@ -122,6 +124,7 @@ export async function startSoloLegionTest(): Promise<void> {
   });
   await board.init();
   board.mount(host);
+  ctrls = mountBuildControls(bottom, board);
   fitCanvas();
 
   function syncHud(): void {
@@ -137,6 +140,7 @@ export async function startSoloLegionTest(): Promise<void> {
     hintRow.textContent = defeated ? hintRow.textContent : (s.hint ?? '');
     marchBtn.style.display = s.phase !== GamePhase.WAVE_PHASE && !defeated ? '' : 'none';
     overlay.style.outline = romePulse > 0 ? '6px solid #ff2a2acc' : 'none';
+    ctrls?.refresh();
   }
 
   function fitCanvas(): void {

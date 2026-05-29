@@ -19,7 +19,7 @@
 
 import { ECONOMY, GRID, WORLD } from '../constants';
 import { createGameState, type GameStateShape } from '../GameState';
-import { GamePhase, TileType, EnemyType, type Enemy, type Tower, type TowerType, type DrawCard } from '../types';
+import { GamePhase, TileType, EnemyType, TargetingMode, type Enemy, type Tower, type TowerType, type DrawCard } from '../types';
 import { RenderEngine } from '../render/RenderEngine';
 import { initializeGrid, setTile, pixelToTile, isBuildable } from '../systems/GridManager';
 import { buildGroundPath, buildFlyerPath, resnapEnemiesToPath } from '../systems/PathFinder';
@@ -355,6 +355,25 @@ export class RomanBoard {
   }
 
   markStaticDirty(): void { this.staticDirty = true; }
+
+  // ── BASE-PARITY BUILD CONTROLS (same mechanics as single-player) ───────
+  /** Gold cost of the next pool upgrade, or null if maxed (ECONOMY curve). */
+  poolUpgradeCost(): number | null {
+    const lvl = this.state.poolLevel;
+    return lvl >= ECONOMY.POOL_MAX_LEVEL ? null : ECONOMY.POOL_UPGRADE_COSTS[lvl];
+  }
+  /** Upgrade the draw pool (raises rarer-tower odds in rollDraw) — base economy. */
+  upgradePool(): boolean {
+    const cost = this.poolUpgradeCost();
+    if (cost == null || this.state.gold < cost) return false;
+    spendGold(this.state, cost);
+    this.state.poolLevel += 1;
+    return true;
+  }
+  /** Bulk-retarget every placed (non-pending) tower — the base TARGET ALL. */
+  setAllTargeting(mode: TargetingMode): void {
+    for (const t of this.state.towers.values()) if (!t.pending) t.targetingMode = mode;
+  }
   private rebuildPath(): void {
     const np = buildGroundPath(this.state);
     if (np) { this.state.groundPath = np; resnapEnemiesToPath(this.state, np); }
