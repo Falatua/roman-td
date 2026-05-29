@@ -24,11 +24,11 @@ import { RenderEngine } from '../render/RenderEngine';
 import { initializeGrid, setTile, pixelToTile, isBuildable } from '../systems/GridManager';
 import { buildGroundPath, buildFlyerPath, resnapEnemiesToPath } from '../systems/PathFinder';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo } from '../systems/WaveManager';
-import { tickEnemies } from '../systems/EnemySystem';
+import { tickEnemies, tickBurnPatches, tickBossHazards, spawnEnemy } from '../systems/EnemySystem';
 import { tickCombat, type CombatHooks } from '../systems/CombatResolver';
 import { tickProjectiles } from '../systems/ProjectileSystem';
 import { createTower, rollDraw, BASE_TOWER_TYPES } from '../systems/TowerSystem';
-import { spawnEnemy } from '../systems/EnemySystem';
+import { createBossRuntime, tickBossScripts, handleBossDeath } from '../systems/BossScripts';
 import { realizableCombos, executeCombo } from '../systems/CombinationEngine';
 import { spendGold, earnGold } from '../systems/EconomySystem';
 import { createInventory, type InventoryState } from '../systems/LootSystem';
@@ -68,6 +68,10 @@ export class RomanBoard {
   private mounted = false;
   private destroyed = false;
   private staticDirty = true;
+  // Boss behavior parity with base: rebirth/telegraph scripts need a per-wave
+  // runtime + the wave-start tick (BossScripts.tickBossScripts / handleBossDeath).
+  private bossRuntime = createBossRuntime();
+  private waveStartTick = 0;
   speedMult = 1;
   paused = false;
 
@@ -195,6 +199,10 @@ export class RomanBoard {
     if (this.hasPending) this.crystallizeAll();
     startWave(this.state);
     this.state.phase = GamePhase.WAVE_PHASE;
+    // Reset boss runtime + stamp wave-start tick (base parity for boss scripts).
+    this.bossRuntime = createBossRuntime();
+    this.waveStartTick = this.state.tick;
+    (this.state as any).__waveStartTick = this.state.tick;
     this.markStaticDirty();
   }
 
@@ -278,6 +286,11 @@ export class RomanBoard {
 
     if (dt > 0 && this.state.phase === GamePhase.WAVE_PHASE) {
       tickSpawns(this.state, dt);
+      // Boss scripts + fire-ground + boss hazards — same per-frame systems
+      // base runs (main.ts frame), so bosses/fliers/DoT behave identically.
+      tickBossScripts(this.state, dt, this.bossRuntime, this.waveStartTick);
+      tickBurnPatches(this.state, dt);
+      tickBossHazards(this.state, dt);
       tickEnemies(this.state, dt, (e) => this.handleLeak(e), (e) => this.handleDeath(e));
       tickCombat(this.state, dt, this.combatHooks);
       tickProjectiles(this.state, dt, { onImpact: () => { /* impact VFX handled by renderer */ } });
@@ -311,7 +324,10 @@ export class RomanBoard {
     onProjectileFire: () => { /* projectile sprites spawn from tickCombat */ },
   };
 
-  private handleDeath(_e: Enemy): void { /* reserved for DEATH_PACT / REVENANT parity */ }
+  private handleDeath(e: Enemy): void {
+    // Boss-death bookkeeping (rebirth queue, drops) — base parity.
+    if (e.isBoss) handleBossDeath(this.state, e, this.bossRuntime);
+  }
 
   private handleLeak(e: Enemy): void {
     this.state.enemiesLeakedThisWave += 1;
