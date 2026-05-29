@@ -1,28 +1,36 @@
 // ─────────────────────────────────────────────────────────────────────
-// CO-OP LEGION — Solo test harness (LR2 + LR3 + LR4).
+// CO-OP LEGION — Solo test harness (LR2 + LR3 + LR4 + LV3 + LV4).
 //
 // A one-player entry into a REAL Roman TD board for testing, per owner
 // request. Mounts a RomanBoard (the real engine: same terrain, towers,
 // enemies, bosses, fliers, combos, Codex, tower menu, targeting,
-// prospecting, wave briefs, enemy health) and wraps it in the Legion
-// teamwork layer:
-//   - LR3: a leaked enemy strikes ROME instead of costing a base "life"
-//          (LegionRome.romeDamageFor / applyRomeDamage; ×3 boss, ×1.5 immune).
-//   - LR4: Rome HP bar (gradient), Dishonor counter, kills scoreboard, and
-//          a pre-wave brief modal built from the real wave data.
+// prospecting, wave briefs, enemy health, AND — since LV1/LV2 — the full
+// VFX/SFX presentation: projectiles, slashes, blood, floaters, impact
+// rings, boss bar, faction music, per-tower fire/melee/death sounds).
 //
-// SOLO is a TEST harness, not real multiplayer: there is no neighbor to
-// route leaks to, so a leak hits Rome directly, and Rome HP is tuned
-// generous for unobstructed testing. True N-player circuit routing +
-// shared Rome + netcode is LR5. Isolated in /coop — single-player untouched.
+// LV3 wraps the board in the REAL base left/right sidebar (UIManager,
+// container-injected) so it looks + reads exactly like single-player:
+// left = HUD (wave/gold/pool odds/phase/tip/next-wave preview), right =
+// the action buttons. A Legion strip (Rome bar + kills + dishonor) sits
+// atop the left panel; the campaign LIVES chip is hidden because Rome is
+// the Legion objective.
+//
+//   - LR3: a leaked enemy strikes ROME instead of costing a base "life".
+//   - LV4: defeat (Rome falls) plays the base defeat stingers + end card;
+//          full-clear plays the victory fanfare.
+//
+// SOLO is a TEST harness: no neighbor to route leaks to, so a leak hits
+// Rome directly, and Rome HP is tuned generous. True N-player circuit +
+// shared Rome + netcode is CoopMatch. Isolated in /coop.
 // ─────────────────────────────────────────────────────────────────────
 
 import { GamePhase, type Enemy } from '../types';
 import { RomanBoard } from './RomanBoard';
-import { mountBuildControls, type BuildControls } from './LegionControls';
+import { mountLegionSidebar, type LegionSidebar } from './LegionSidebar';
 import { getNextWaveInfo } from '../systems/WaveManager';
+import { SFX, stopAllMusicTracks } from '../render/AudioManager';
 import {
-  createRome, romeDamageFor, applyRomeDamage, romeHpFraction, romeBarColor, isRomeFallen,
+  createRome, romeDamageFor, applyRomeDamage, isRomeFallen,
 } from './LegionRome';
 import { serializeLeak } from './LegionCircuit';
 import { recordLeak, recordWaveKill } from './LegionEconomy';
@@ -32,10 +40,11 @@ import enemiesData from '../data/enemies.json';
 const OVERLAY_ID = 'legion-overlay';
 const CANVAS_W = 1216;
 const CANVAS_H = 832;
+const PANEL_W = 212;
 // Solo test: Rome tuned generous so the owner can play many waves while
-// still seeing the Rome-damage mechanic. Real games use ROME_HP_BY_PLAYERS
-// (500/750/1000) — wired in LR5.
+// still seeing the Rome-damage mechanic. Real games use ROME_HP_BY_PLAYERS.
 const SOLO_ROME_HP = 4000;
+const FINAL_WAVE = 20;
 
 export async function startSoloLegionTest(): Promise<void> {
   document.getElementById(OVERLAY_ID)?.remove();
@@ -46,53 +55,14 @@ export async function startSoloLegionTest(): Promise<void> {
     'position:fixed;inset:0;z-index:300;background:radial-gradient(circle at 50% 35%,#1a1206,#070503 82%);' +
     "font-family:'Courier New',monospace;color:#e7d6a8;overflow:hidden;display:flex;flex-direction:column";
 
-  const top = document.createElement('div');
-  top.style.cssText =
-    'flex:0 0 auto;display:flex;align-items:center;gap:16px;padding:8px 16px;flex-wrap:wrap;' +
-    'background:linear-gradient(#000c,#0000);z-index:5';
-  top.innerHTML =
-    '<div style="font-size:15px;font-weight:900;letter-spacing:2px;color:#ffd34d;text-shadow:0 0 8px #000">⚔ LEGION</div>' +
-    '<div style="font-size:9px;letter-spacing:2px;color:#88cc88;border:1px solid #3a6a3a;border-radius:4px;padding:2px 6px">SOLO TEST</div>' +
-    '<div id="lg-gold" style="font-size:13px;color:#ffe66b">⛁ —</div>' +
-    '<div id="lg-wave" style="font-size:12px;color:#e7d6a8">Wave —</div>' +
-    '<div id="lg-kills" style="font-size:12px;color:#9fd0ff">⚔ 0</div>' +
-    '<div id="lg-dishonor" style="font-size:12px;color:#ffae6b">⚑ 0</div>' +
-    '<div style="flex:1;min-width:160px;display:flex;align-items:center;gap:8px;justify-content:flex-end">' +
-    '  <span style="font-size:10px;color:#cdb98a">ROMA</span>' +
-    '  <div style="width:160px;height:13px;background:#000a;border:1px solid #5a431c;border-radius:7px;overflow:hidden">' +
-    '    <div id="lg-rome-bar" style="height:100%;width:100%;background:#66ff88;transition:width .25s"></div></div>' +
-    '  <span id="lg-rome-num" style="font-size:10px;color:#e7d6a8;min-width:78px">—</span>' +
-    '</div>';
-  const hintRow = document.createElement('div');
-  hintRow.style.cssText = 'flex:0 0 auto;padding:0 16px 6px;font-size:11px;color:#cdb98a;background:#0008;z-index:5';
-  hintRow.id = 'lg-hint';
-
+  // 3-COLUMN LAYOUT (base parity): [ left panel | board | right panel ].
+  const mainRow = document.createElement('div');
+  mainRow.style.cssText = 'flex:1 1 auto;display:flex;flex-direction:row;align-items:stretch;min-height:0';
   const host = document.createElement('div');
-  host.style.cssText = 'flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;position:relative';
-
-  const bottom = document.createElement('div');
-  bottom.style.cssText =
-    'flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;' +
-    'background:linear-gradient(#0000,#000c);z-index:5';
-  bottom.innerHTML =
-    '<button id="lg-march" style="background:#3a2a0a;color:#ffd34d;border:2px solid #ffd34d;border-radius:6px;padding:9px 26px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:bold;letter-spacing:2px">⚔ MARCH TO WAR</button>' +
-    '<button id="lg-codex" style="background:#1a2535;color:#9fd0ff;border:2px solid #3a6a9a;border-radius:6px;padding:9px 18px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:1px">📖 CODEX</button>' +
-    '<button id="lg-speed" style="background:#241a10;color:#e7d6a8;border:2px solid #7a5a1a;border-radius:6px;padding:9px 14px;cursor:pointer;font-family:inherit;font-size:12px">▶▶ 1x</button>' +
-    '<button id="lg-leave" style="background:#3a1810;color:#ff8080;border:2px solid #7a2a2a;border-radius:6px;padding:9px 18px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:1px">◀ LEAVE</button>';
-
-  overlay.append(top, hintRow, host, bottom);
+  host.style.cssText =
+    'flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;position:relative;overflow:hidden';
+  overlay.append(mainRow);
   document.body.appendChild(overlay);
-
-  const goldEl = top.querySelector('#lg-gold') as HTMLElement;
-  const waveEl = top.querySelector('#lg-wave') as HTMLElement;
-  const killsEl = top.querySelector('#lg-kills') as HTMLElement;
-  const dishonorEl = top.querySelector('#lg-dishonor') as HTMLElement;
-  const romeBar = top.querySelector('#lg-rome-bar') as HTMLElement;
-  const romeNum = top.querySelector('#lg-rome-num') as HTMLElement;
-  const marchBtn = bottom.querySelector('#lg-march') as HTMLButtonElement;
-  const codexBtn = bottom.querySelector('#lg-codex') as HTMLButtonElement;
-  const speedBtn = bottom.querySelector('#lg-speed') as HTMLButtonElement;
-  const leaveBtn = bottom.querySelector('#lg-leave') as HTMLButtonElement;
 
   // ── Legion teamwork state (LR3/LR4) ──────────────────────────────────
   let rome: RomeState = createRome(2);
@@ -100,13 +70,14 @@ export async function startSoloLegionTest(): Promise<void> {
   let stats: PlayerStats = emptyStats();
   let romePulse = 0;
   let defeated = false;
-  let ctrls: BuildControls | null = null;
+  let victorious = false;
 
   const board = new RomanBoard({
     startingGold: 100,
     hooks: {
       onFrame: (dt) => { if (romePulse > 0) romePulse = Math.max(0, romePulse - dt); syncHud(); },
       onKill: () => { stats = recordWaveKill(stats); },
+      onWaveCleared: (wave) => { if (wave >= FINAL_WAVE && !victorious && !defeated) onVictory(); },
       // LR3: a leak strikes Rome instead of costing a life.
       onLeak: (e: Enemy) => {
         const unit = serializeLeak(toLeakable(e), 'NW', false);
@@ -114,57 +85,93 @@ export async function startSoloLegionTest(): Promise<void> {
         rome = applyRomeDamage(rome, dmg);
         stats = recordLeak(stats);
         romePulse = 0.3;
-        if (isRomeFallen(rome) && !defeated) {
-          defeated = true; board.paused = true;
-          (hintRow as HTMLElement).textContent = 'Sic transit gloria — Rome has fallen. (Solo test: press LEAVE.)';
-        }
+        if (isRomeFallen(rome) && !defeated) onDefeat();
         return true; // suppress the base life-loss; Rome is the objective
       },
     },
   });
   await board.init();
+
+  let sidebar: LegionSidebar;
+  const onResize = () => fitCanvas();
+  sidebar = mountLegionSidebar({
+    board,
+    modeLabel: 'SOLO TEST',
+    onStartWave: () => { if (!defeated && !victorious) showWaveBrief(); },
+    onLeaderboard: () => toast('Solo test — no teammates. Real Legion matches show the full team board here.'),
+    onLeave: () => {
+      window.removeEventListener('resize', onResize);
+      stopAllMusicTracks();
+      board.destroy();
+      sidebar.destroy();
+      overlay.remove();
+    },
+    getRome: () => rome,
+    getStats: () => stats,
+  });
+  mainRow.append(sidebar.leftPanel, host, sidebar.rightPanel);
   board.mount(host);
-  ctrls = mountBuildControls(bottom, board);
   fitCanvas();
+  window.addEventListener('resize', onResize);
+  // Dev handle (harmless): lets tooling drive/inspect the solo board.
+  (window as any).__legionSolo = { board, getRome: () => rome, getStats: () => stats };
 
   function syncHud(): void {
-    const s = board.state;
-    goldEl.textContent = '⛁ ' + Math.floor(s.gold) + 'g';
-    waveEl.textContent = s.wave > 0 ? `Wave ${s.wave}/20` : 'Build phase';
-    killsEl.textContent = '⚔ ' + (stats.waveKills + stats.circuitKills);
-    dishonorEl.textContent = '⚑ ' + stats.leaksTotal;
-    const f = romeHpFraction(rome);
-    romeBar.style.width = (f * 100).toFixed(1) + '%';
-    romeBar.style.background = romeBarColor(rome);
-    romeNum.textContent = `${Math.ceil(rome.hp)} / ${rome.maxHp}`;
-    hintRow.textContent = defeated ? hintRow.textContent : (s.hint ?? '');
-    marchBtn.style.display = s.phase !== GamePhase.WAVE_PHASE && !defeated ? '' : 'none';
+    sidebar.refresh();
     overlay.style.outline = romePulse > 0 ? '6px solid #ff2a2acc' : 'none';
-    ctrls?.refresh();
   }
 
   function fitCanvas(): void {
     const cv = board.canvas;
-    const availW = window.innerWidth - 32;
-    const availH = window.innerHeight - top.offsetHeight - bottom.offsetHeight - hintRow.offsetHeight - 24;
+    const availW = window.innerWidth - PANEL_W * 2 - 28;
+    const availH = window.innerHeight - 24;
     const scale = Math.max(0.4, Math.min(availW / CANVAS_W, availH / CANVAS_H, 1.25));
     cv.style.width = Math.round(CANVAS_W * scale) + 'px';
     cv.style.height = Math.round(CANVAS_H * scale) + 'px';
   }
-  const onResize = () => fitCanvas();
-  window.addEventListener('resize', onResize);
 
-  marchBtn.onclick = () => { if (!defeated) showWaveBrief(); };
-  codexBtn.onclick = () => board.openCodex();
-  speedBtn.onclick = () => {
-    board.speedMult = board.speedMult >= 3 ? 1 : board.speedMult >= 2 ? 3 : 2;
-    speedBtn.textContent = `▶▶ ${board.speedMult}x`;
-  };
-  leaveBtn.onclick = () => { window.removeEventListener('resize', onResize); board.destroy(); overlay.remove(); };
+  // ── Endings (LV4) ─────────────────────────────────────────────────────
+  function onDefeat(): void {
+    defeated = true;
+    board.paused = true;
+    board.state.hint = 'Sic transit gloria — Rome has fallen.';
+    SFX.defeat();
+    SFX.fatality();
+    stopAllMusicTracks();
+    showEndCard(false);
+  }
+  function onVictory(): void {
+    victorious = true;
+    board.paused = true;
+    board.state.hint = 'IMPERATOR — the legion holds. Rome stands.';
+    SFX.victory();
+    stopAllMusicTracks();
+    showEndCard(true);
+  }
+  function showEndCard(win: boolean): void {
+    const m = document.createElement('div');
+    m.style.cssText =
+      'position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:#000c';
+    m.innerHTML =
+      `<div style="width:min(460px,90%);background:linear-gradient(#1c140c,#0d0805);border:3px solid ${win ? '#ffd34d' : '#ff5050'};border-radius:12px;padding:26px 28px;text-align:center;box-shadow:0 0 40px #000">` +
+        `<div style="font-size:13px;letter-spacing:6px;color:${win ? '#ffd34d' : '#ff5050'};font-weight:bold">${win ? '★ VICTORY ★' : '☠ ROME HAS FALLEN ☠'}</div>` +
+        `<div style="font-size:24px;font-weight:900;letter-spacing:3px;color:#fff8e0;margin-top:10px">${win ? 'THE LEGION HOLDS' : 'SIC TRANSIT GLORIA'}</div>` +
+        `<div style="font-size:12px;color:#cdb98a;margin-top:12px;line-height:1.6">Kills <b style="color:#9fd0ff">${stats.waveKills + stats.circuitKills}</b> · Dishonor <b style="color:#ffae6b">${stats.leaksTotal}</b> · Reached <b style="color:#ffd34d">Wave ${board.state.wave}</b></div>` +
+        `<button id="lg-end-leave" style="margin-top:20px;background:#3a2a0a;color:#ffd34d;border:2px solid #ffd34d;border-radius:6px;padding:10px 26px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:bold;letter-spacing:2px">◀ LEAVE</button>` +
+      `</div>`;
+    host.appendChild(m);
+    (m.querySelector('#lg-end-leave') as HTMLElement).onclick = () => {
+      window.removeEventListener('resize', onResize);
+      stopAllMusicTracks();
+      board.destroy();
+      sidebar.destroy();
+      overlay.remove();
+    };
+  }
 
   // ── Pre-wave brief (LR4 — same wave-brief intent as base) ──────────────
   function showWaveBrief(): void {
-    if (board.hasPending) { board.march(); return; } // keeper flow handled in board; brief shows on next clean MARCH
+    if (board.hasPending) { board.march(); return; } // keeper flow handled in board
     const info: any = getNextWaveInfo(board.state) ?? {};
     const spawns: any[] = Array.isArray(info.spawns) ? info.spawns : [];
     const emap: any = enemiesData as any;
@@ -209,4 +216,14 @@ function toLeakable(e: Enemy): { type: string; hp: number; maxHp: number; factio
 
 function esc(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] ?? c));
+}
+
+function toast(msg: string): void {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText =
+    'position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:600;background:#1a1206;border:2px solid #d4af37;' +
+    "color:#ffd34d;padding:10px 18px;border-radius:8px;font-family:'Courier New',monospace;font-size:12px;letter-spacing:1px;box-shadow:0 0 20px #000a";
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
 }

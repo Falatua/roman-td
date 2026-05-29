@@ -68,15 +68,21 @@ export class UIManager {
   private targetAllPickerButtons: { mode: TargetingMode; btn: HTMLButtonElement }[] = [];
   private targetAllBtn: HTMLButtonElement | null = null;
 
-  constructor(parent: HTMLElement, cb: UICallbacks) {
+  constructor(parent: HTMLElement, cb: UICallbacks, opts?: { leftPanel?: HTMLElement; rightPanel?: HTMLElement }) {
     this.cb = cb;
     // SPLIT-PANEL LAYOUT: HUD (waves/gold/lives) lives in the LEFT panel.
     // Action buttons (start, speed, pool, shop, quests, codex) live in
     // the RIGHT panel. Stage-wrap is the middle column — already wired in
     // index.html as a flex sibling, so we DON'T move it into a wrapper
     // (doing so re-ordered the columns and pushed the map to the far right).
-    const leftPanel = document.getElementById('left-panel') ?? parent;
-    const rightPanel = document.getElementById('right-panel') ?? parent;
+    //
+    // 2026-05-29 — Co-op Legion reuses this exact sidebar. It passes its own
+    // panel containers via `opts` so the HUD + buttons render INSIDE the
+    // Legion overlay rather than the campaign's static #left/#right panels.
+    // Single-player passes no opts → identical behavior (the ?? chain falls
+    // straight through to getElementById exactly as before).
+    const leftPanel = opts?.leftPanel ?? document.getElementById('left-panel') ?? parent;
+    const rightPanel = opts?.rightPanel ?? document.getElementById('right-panel') ?? parent;
     this.root = parent; // legacy ref — no #frame wrapper anymore
     this.hud = document.createElement('div');
     this.hud.id = 'hud-top';

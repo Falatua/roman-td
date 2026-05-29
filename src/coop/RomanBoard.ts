@@ -32,8 +32,14 @@ import { createBossRuntime, tickBossScripts, handleBossDeath } from '../systems/
 import { realizableCombos, executeCombo } from '../systems/CombinationEngine';
 import { spendGold, earnGold } from '../systems/EconomySystem';
 import { createInventory, type InventoryState } from '../systems/LootSystem';
+import { createGoreState, tickGore, fadeCorpsesAtWaveEnd, pruneCorpses, type GoreState } from '../systems/GoreSystem';
+import { SFX } from '../render/AudioManager';
 import { showTowerMenu } from '../render/TowerMenu';
 import { showCodex } from '../render/Codex';
+import {
+  buildCombatHooks, buildProjectileHooks, emitBoardDeathFx,
+  drawBoardFrame, realizableComboCount, boardWaveAudio,
+} from './BoardPresentation';
 
 // Pluggable seams later phases fill in. Defaults make the board behave like
 // a normal solo board (leaks cost lives) so it is self-contained + testable;
@@ -75,6 +81,13 @@ export class RomanBoard {
   private waveStartTick = 0;
   speedMult = 1;
   paused = false;
+  // Per-board presentation state: gore pool + the real base combat/projectile
+  // hooks (VFX + SFX + impact damage). Built in the constructor once state +
+  // renderer exist.
+  private readonly gore: GoreState;
+  private readonly combatHooks: CombatHooks;
+  private readonly projectileHooks: { onImpact: (p: any, target: Enemy | null, hx: number, hy: number) => void };
+  private lastComboCount = 0;
 
   constructor(opts: RomanBoardOpts = {}) {
     this.hooks = opts.hooks ?? {};
@@ -83,6 +96,11 @@ export class RomanBoard {
     if (opts.sandbox) this.state.sandboxMode = true;
     if (typeof opts.startingGold === 'number') this.state.gold = opts.startingGold;
     this.renderer = new RenderEngine();
+    this.gore = createGoreState();
+    // Compose the REAL base VFX/SFX hooks — every tower hit, melee swing,
+    // projectile fire and kill now looks + sounds exactly like single-player.
+    this.combatHooks = buildCombatHooks(this.renderer, this.state, this.gore, this.hooks);
+    this.projectileHooks = buildProjectileHooks(this.renderer, this.state, this.gore, this.combatHooks);
   }
 
   // ── SETUP ──────────────────────────────────────────────────────────────
@@ -198,12 +216,17 @@ export class RomanBoard {
   march(): void {
     if (this.state.phase === GamePhase.WAVE_PHASE) return;
     if (this.hasPending) this.crystallizeAll();
+    const info = getNextWaveInfo(this.state); // the wave we are about to fight
     startWave(this.state);
     this.state.phase = GamePhase.WAVE_PHASE;
     // Reset boss runtime + stamp wave-start tick (base parity for boss scripts).
     this.bossRuntime = createBossRuntime();
     this.waveStartTick = this.state.tick;
     (this.state as any).__waveStartTick = this.state.tick;
+    this.lastComboCount = 0;
+    // Wave-start bumper + faction BGM loop + boss-wave sting/vignette + W20
+    // One-Winged Angel (base parity). state.wave is the 1-based wave now live.
+    boardWaveAudio(this.renderer, (info as any)?.faction, (info as any)?.type === 'B', this.state.wave);
     this.markStaticDirty();
   }
 
@@ -294,39 +317,44 @@ export class RomanBoard {
       tickBossHazards(this.state, dt);
       tickEnemies(this.state, dt, (e) => this.handleLeak(e), (e) => this.handleDeath(e));
       tickCombat(this.state, dt, this.combatHooks);
-      tickProjectiles(this.state, dt, { onImpact: () => { /* impact VFX handled by renderer */ } });
+      // Projectile impact is where ranged/caster/siege damage is APPLIED
+      // (applyDamageAndStatus) — same as base. The previous empty onImpact
+      // meant every projectile tower fired blanks. This restores it.
+      tickProjectiles(this.state, dt, this.projectileHooks);
+      tickGore(this.gore, dt);
       checkWaveEnd(this.state, (gold) => {
         earnGold(this.state, Math.max(0, gold));
+        SFX.waveSurvived();
+        fadeCorpsesAtWaveEnd(this.gore, this.state.tick);
         this.hooks.onWaveCleared?.(this.state.wave, gold);
         this.rollProspects(); // next build phase, base flow
       });
     }
 
+    pruneCorpses(this.gore, this.state.tick);
     this.hooks.onFrame?.(dt);
 
+    // Combo-unlock chime (0 → ≥1) during the build phases — base parity.
+    const cc = realizableComboCount(this.state);
+    if (this.lastComboCount === 0 && cc > 0) SFX.comboAvailable();
+    this.lastComboCount = cc;
+
     if (this.staticDirty) { this.renderer.drawStatic(this.state); this.staticDirty = false; }
-    this.renderer.drawDynamic(this.state);
-    const wInfo = getNextWaveInfo(this.state);
-    this.renderer.drawAmbient(this.state.tick, this.state.wave, wInfo?.type === 'B');
+    // The FULL base render sequence: projectiles, melee slashes, gore, floating
+    // damage numbers, impact rings, boss bar, combo glow, weather, auras — every
+    // visual single-player draws each frame.
+    drawBoardFrame(this.renderer, this.state, this.gore, dt);
     // autoStart:false → flush the scene graph to the canvas each frame (main.ts:7490).
     this.renderer.app.render();
   }
 
   // ── KILL / LEAK ───────────────────────────────────────────────────────
-  private readonly combatHooks: CombatHooks = {
-    onKill: (tower, enemy) => {
-      this.state.gold += (enemy.reward ?? 0) + ECONOMY.BASE_GOLD_PER_KILL;
-      this.state.totalKills += 1;
-      this.state.enemiesKilledThisWave += 1;
-      this.hooks.onKill?.(tower, enemy);
-    },
-    onHit: (tower, enemy, damage) => { this.hooks.onHit?.(tower, enemy, damage); },
-    onMeleeSwing: (tower, enemy, damage) => { this.hooks.onHit?.(tower, enemy, damage); },
-    onProjectileFire: () => { /* projectile sprites spawn from tickCombat */ },
-  };
-
   private handleDeath(e: Enemy): void {
-    // Boss-death bookkeeping (rebirth queue, drops) — base parity.
+    // Death FX/SFX (blood splatter, kill-pop ring, per-archetype death sound)
+    // fire once here at the universal removal point — covers tower AND DoT
+    // kills, so it's cleaner than base (which only splattered on tower kills).
+    emitBoardDeathFx(this.renderer, this.state, this.gore, e);
+    // Boss-death bookkeeping (rebirth queue, minion spawns, drops) — base parity.
     if (e.isBoss) handleBossDeath(this.state, e, this.bossRuntime);
   }
 

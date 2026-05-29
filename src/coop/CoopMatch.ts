@@ -22,9 +22,10 @@
 
 import { GamePhase, type Enemy } from '../types';
 import { RomanBoard } from './RomanBoard';
-import { mountBuildControls, type BuildControls } from './LegionControls';
+import { mountLegionSidebar, type LegionSidebar } from './LegionSidebar';
+import { SFX, stopAllMusicTracks } from '../render/AudioManager';
 import {
-  createRome, romeDamageFor, applyRomeDamage, romeHpFraction, romeBarColor, isRomeFallen,
+  createRome, romeDamageFor, applyRomeDamage, isRomeFallen,
 } from './LegionRome';
 import { serializeLeak, resolveLeakHop } from './LegionCircuit';
 import { ghostLeakHp } from './LegionGhost';
@@ -61,9 +62,11 @@ class CoopMatch {
   private peerStats: Record<string, PlayerStats> = {};
   private romePulse = 0;
   private defeated = false;
+  private victorious = false;
   private statsTimer = 0;
   private boardTimer: number | null = null;
-  private ctrls: BuildControls | null = null;
+  private sidebar!: LegionSidebar;
+  private onResize: () => void = () => {};
 
   constructor(a: CoopMatchArgs) {
     this.t = a.transport; this.cfg = a.cfg; this.myQ = a.myQuadrant; this.assignments = a.assignments;
@@ -81,34 +84,17 @@ class CoopMatch {
       "font-family:'Courier New',monospace;color:#e7d6a8;overflow:hidden;display:flex;flex-direction:column";
     this.overlay = overlay;
 
-    const title = POSITION_TITLES[this.myQ];
-    const top = el('div', 'flex:0 0 auto;display:flex;align-items:center;gap:14px;padding:8px 16px;flex-wrap:wrap;background:linear-gradient(#000c,#0000);z-index:5');
-    top.innerHTML =
-      `<div style="font-size:15px;font-weight:900;letter-spacing:2px;color:#ffd34d;text-shadow:0 0 8px #000">⚔ LEGION</div>` +
-      `<div style="font-size:10px;color:#cdb98a">${title.title} · ${this.myQ}</div>` +
-      `<div id="lg-gold" style="font-size:13px;color:#ffe66b">⛁ —</div>` +
-      `<div id="lg-wave" style="font-size:12px;color:#e7d6a8">Wave —</div>` +
-      `<div id="lg-dishonor" style="font-size:12px;color:#ffae6b">⚑ 0</div>` +
-      `<div style="flex:1;min-width:160px;display:flex;align-items:center;gap:8px;justify-content:flex-end">` +
-      `  <span style="font-size:10px;color:#cdb98a">ROMA</span>` +
-      `  <div style="width:160px;height:13px;background:#000a;border:1px solid #5a431c;border-radius:7px;overflow:hidden">` +
-      `    <div id="lg-rome-bar" style="height:100%;width:100%;background:#66ff88;transition:width .25s"></div></div>` +
-      `  <span id="lg-rome-num" style="font-size:10px;color:#e7d6a8;min-width:70px">—</span>` +
-      `</div>` +
-      `<div style="font-size:10px;color:#88cc88;letter-spacing:1px">ROOM ${this.t.roomCode}</div>`;
-    const hintRow = el('div', 'flex:0 0 auto;padding:0 16px 6px;font-size:11px;color:#cdb98a;background:#0008;z-index:5');
-    hintRow.id = 'lg-hint';
-    const host = el('div', 'flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;position:relative');
+    // 3-COLUMN LAYOUT (base parity): [ left panel | board | right panel ].
+    const mainRow = el('div', 'flex:1 1 auto;display:flex;flex-direction:row;align-items:stretch;min-height:0');
+    const host = el('div', 'flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;position:relative;overflow:hidden');
+    // Always-on corner mini-leaderboard (multiplayer teamwork at a glance).
     const score = el('div', 'position:absolute;top:8px;right:10px;width:196px;background:#0d0805ee;border:1px solid #5a431c;border-radius:6px;padding:8px 10px;font-size:10px;z-index:6');
     score.id = 'lg-score';
+    score.style.cursor = 'pointer';
+    score.title = 'Open the full Legion leaderboard';
+    score.onclick = () => this.openLeaderboard();
     host.appendChild(score);
-    const bottom = el('div', 'flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;background:linear-gradient(#0000,#000c);z-index:5');
-    bottom.innerHTML =
-      `<button id="lg-march" style="background:#3a2a0a;color:#ffd34d;border:2px solid #ffd34d;border-radius:6px;padding:9px 26px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:bold;letter-spacing:2px">⚔ MARCH TO WAR</button>` +
-      `<button id="lg-codex" style="background:#1a2535;color:#9fd0ff;border:2px solid #3a6a9a;border-radius:6px;padding:9px 18px;cursor:pointer;font-family:inherit;font-size:12px">📖 CODEX</button>` +
-      `<button id="lg-board" style="background:#2a2540;color:#c8a0ff;border:2px solid #6a4a9a;border-radius:6px;padding:9px 18px;cursor:pointer;font-family:inherit;font-size:12px">⚜ LEGION BOARD</button>` +
-      `<button id="lg-leave" style="background:#3a1810;color:#ff8080;border:2px solid #7a2a2a;border-radius:6px;padding:9px 18px;cursor:pointer;font-family:inherit;font-size:12px">◀ LEAVE</button>`;
-    overlay.append(top, hintRow, host, bottom);
+    overlay.append(mainRow);
     document.body.appendChild(overlay);
 
     this.board = new RomanBoard({
@@ -117,25 +103,36 @@ class CoopMatch {
         onFrame: (dt) => { if (this.romePulse > 0) this.romePulse = Math.max(0, this.romePulse - dt); this.statsTimer += dt; if (this.statsTimer > 0.5) { this.statsTimer = 0; this.t.send('stats', this.myStats); } this.syncHud(); },
         onKill: (_t, e) => { this.myStats = (e as any).__circuit ? recordCircuitKill(this.myStats) : recordWaveKill(this.myStats); },
         onHit: (_t, _e, dmg) => { this.myStats = recordDamage(this.myStats, dmg); },
+        onWaveCleared: (wave) => { if (wave >= 20 && !this.victorious && !this.defeated) this.onVictory(); },
         onLeak: (e: Enemy) => this.routeLeak(e),
       },
     });
     await this.board.init();
+
+    this.sidebar = mountLegionSidebar({
+      board: this.board,
+      modeLabel: `${POSITION_TITLES[this.myQ].title} · ${this.myQ}`,
+      onStartWave: () => { if (!this.defeated && !this.victorious) this.board.march(); },
+      onLeaderboard: () => this.openLeaderboard(),
+      onLeave: () => {
+        if (this.boardTimer != null) clearInterval(this.boardTimer);
+        window.removeEventListener('resize', this.onResize);
+        stopAllMusicTracks();
+        this.board.destroy();
+        this.sidebar.destroy();
+        overlay.remove();
+        this.t.leave();
+      },
+      getRome: () => this.rome,
+      getStats: () => this.myStats,
+    });
+    mainRow.append(this.sidebar.leftPanel, host, this.sidebar.rightPanel);
     this.board.mount(host);
-    this.ctrls = mountBuildControls(bottom, this.board);
-    this.fit(top, bottom, hintRow);
-    window.addEventListener('resize', () => this.fit(top, bottom, hintRow));
+    this.fit();
+    this.onResize = () => this.fit();
+    window.addEventListener('resize', this.onResize);
 
     this.wireTransport();
-
-    (bottom.querySelector('#lg-march') as HTMLElement).onclick = () => { if (!this.defeated) this.board.march(); };
-    (bottom.querySelector('#lg-codex') as HTMLElement).onclick = () => this.board.openCodex();
-    (bottom.querySelector('#lg-board') as HTMLElement).onclick = () => this.openLeaderboard();
-    (bottom.querySelector('#lg-leave') as HTMLElement).onclick = () => { if (this.boardTimer != null) clearInterval(this.boardTimer); this.board.destroy(); overlay.remove(); this.t.leave(); };
-    // The always-on corner panel is also a shortcut into the full board.
-    score.style.cursor = 'pointer';
-    score.title = 'Open the full Legion leaderboard';
-    score.onclick = () => this.openLeaderboard();
     this.syncHud();
   }
 
@@ -171,7 +168,46 @@ class CoopMatch {
 
   private onDefeat(): void {
     this.defeated = true; this.board.paused = true;
-    const h = document.getElementById('lg-hint'); if (h) h.textContent = FLAVOR.defeat + ' — Rome has fallen.';
+    this.board.state.hint = FLAVOR.defeat + ' — Rome has fallen.';
+    SFX.defeat();
+    SFX.fatality();
+    stopAllMusicTracks();
+    this.showEndCard(false);
+  }
+
+  private onVictory(): void {
+    this.victorious = true; this.board.paused = true;
+    this.board.state.hint = 'IMPERATOR — the legion holds. Rome stands.';
+    SFX.victory();
+    stopAllMusicTracks();
+    this.showEndCard(true);
+  }
+
+  private showEndCard(win: boolean): void {
+    if (document.getElementById('lg-end-card')) return;
+    const m = el('div', 'position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:#000c');
+    m.id = 'lg-end-card';
+    const k = this.myStats.waveKills + this.myStats.circuitKills;
+    m.innerHTML =
+      `<div style="width:min(460px,90%);background:linear-gradient(#1c140c,#0d0805);border:3px solid ${win ? '#ffd34d' : '#ff5050'};border-radius:12px;padding:26px 28px;text-align:center;box-shadow:0 0 40px #000">` +
+        `<div style="font-size:13px;letter-spacing:6px;color:${win ? '#ffd34d' : '#ff5050'};font-weight:bold">${win ? '★ VICTORY ★' : '☠ ROME HAS FALLEN ☠'}</div>` +
+        `<div style="font-size:24px;font-weight:900;letter-spacing:3px;color:#fff8e0;margin-top:10px">${win ? 'THE LEGION HOLDS' : 'SIC TRANSIT GLORIA'}</div>` +
+        `<div style="font-size:12px;color:#cdb98a;margin-top:12px;line-height:1.6">Your kills <b style="color:#9fd0ff">${k}</b> · Dishonor <b style="color:#ffae6b">${this.myStats.leaksTotal}</b> · Damage <b style="color:#9fd0ff">${fmt(this.myStats.damageDealt)}</b></div>` +
+        `<div style="margin-top:18px;display:flex;gap:10px;justify-content:center">` +
+          `<button id="lg-end-board" style="background:#2a2540;color:#c8a0ff;border:2px solid #6a4a9a;border-radius:6px;padding:10px 22px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:1px">⚜ LEGION BOARD</button>` +
+          `<button id="lg-end-leave" style="background:#3a2a0a;color:#ffd34d;border:2px solid #ffd34d;border-radius:6px;padding:10px 26px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:bold;letter-spacing:2px">◀ LEAVE</button>` +
+        `</div></div>`;
+    this.overlay.appendChild(m);
+    (m.querySelector('#lg-end-board') as HTMLElement).onclick = () => this.openLeaderboard();
+    (m.querySelector('#lg-end-leave') as HTMLElement).onclick = () => {
+      if (this.boardTimer != null) clearInterval(this.boardTimer);
+      window.removeEventListener('resize', this.onResize);
+      stopAllMusicTracks();
+      this.board.destroy();
+      this.sidebar.destroy();
+      this.overlay.remove();
+      this.t.leave();
+    };
   }
 
   private wireTransport(): void {
@@ -195,16 +231,11 @@ class CoopMatch {
 
   // ── HUD ─────────────────────────────────────────────────────────────────
   private syncHud(): void {
-    const s = this.board.state;
-    set('lg-gold', '⛁ ' + Math.floor(s.gold) + 'g');
-    set('lg-wave', s.wave > 0 ? `Wave ${s.wave}/20` : 'Build phase');
-    set('lg-dishonor', '⚑ ' + this.myStats.leaksTotal);
-    set('lg-hint', this.defeated ? (document.getElementById('lg-hint')?.textContent ?? '') : (s.hint ?? ''));
-    const bar = document.getElementById('lg-rome-bar'); if (bar) { bar.style.width = (romeHpFraction(this.rome) * 100).toFixed(1) + '%'; bar.style.background = romeBarColor(this.rome); }
-    set('lg-rome-num', `${Math.ceil(this.rome.hp)} / ${this.rome.maxHp}`);
-    const march = document.getElementById('lg-march'); if (march) march.style.display = s.phase !== GamePhase.WAVE_PHASE && !this.defeated ? '' : 'none';
+    // The left/right sidebar (real base HUD + buttons) + Legion strip
+    // (Rome bar / kills / dishonor) refresh here; the corner mini-board
+    // and the screen-edge damage pulse are Legion-only extras.
+    this.sidebar.refresh();
     this.overlay.style.outline = this.romePulse > 0 ? '6px solid #ff2a2acc' : 'none';
-    this.ctrls?.refresh();
     this.renderScore();
   }
 
@@ -293,10 +324,10 @@ class CoopMatch {
     m.onclick = (ev) => { if (ev.target === m) close(); };
   }
 
-  private fit(top: HTMLElement, bottom: HTMLElement, hintRow: HTMLElement): void {
+  private fit(): void {
     const cv = this.board.canvas;
-    const availW = window.innerWidth - 32;
-    const availH = window.innerHeight - top.offsetHeight - bottom.offsetHeight - hintRow.offsetHeight - 24;
+    const availW = window.innerWidth - 212 * 2 - 28;   // two 212px side panels
+    const availH = window.innerHeight - 24;
     const scale = Math.max(0.4, Math.min(availW / CANVAS_W, availH / CANVAS_H, 1.25));
     cv.style.width = Math.round(CANVAS_W * scale) + 'px';
     cv.style.height = Math.round(CANVAS_H * scale) + 'px';
