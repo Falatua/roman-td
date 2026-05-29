@@ -10,7 +10,7 @@
 // Assignment is HOST-AUTHORITATIVE: the host fills present players into the
 // active quadrants and broadcasts the authoritative map; everyone renders
 // from it. Start is gated on ≥2 players all assigned (Section 8.4).
-// The board mount on 'start' is handed to CoopGame (Phase 9).
+// The board mount on 'start' is handed to CoopMatch (real-engine runtime, LR5).
 // ─────────────────────────────────────────────────────────────────────
 
 import { COOP_PASSWORD, FLAVOR, POSITION_TITLES, type QuadrantId } from './LegionConfig';
@@ -287,21 +287,22 @@ function isActive_help(isHost: boolean): string {
     : 'Click a quadrant to claim or swap your seat. The host begins when the legion is ready.';
 }
 
-// ─── MATCH START (handed to CoopGame, Phase 9) ─────────────────────────
+// ─── MATCH START (handed to the real-engine CoopMatch runtime, LR5) ────
 function beginMatch(transport: LegionNetTransport, cfg: SessionConfig, assignments: Record<string, QuadrantId | null>): void {
   removeOverlay();
   const myQuad = assignments[transport.selfId] ?? cfg.active[0];
-  // Phase 9 mounts the actual board here. Until then, a forming-up screen
-  // confirms the handoff payload is correct.
-  import('./CoopGame').then((m) => {
+  // LR5 — mount the REAL Roman TD board (RomanBoard) for this player's
+  // quadrant, wrapped in the Legion teamwork layer (shared Rome, circuit
+  // leak routing, scoreboard). Looks + plays exactly like single-player.
+  import('./CoopMatch').then((m) => {
     m.startCoopMatch({ transport, cfg, assignments, myQuadrant: myQuad });
   }).catch((err) => {
-    console.error('[legion] CoopGame not available yet:', err);
+    console.error('[legion] CoopMatch failed to load:', err);
     const overlay = el('div', `position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.96);font-family:'Courier New',monospace;color:#d4af37`, `
       <div style="text-align:center">
         <div style="font-size:20px;letter-spacing:4px;font-weight:900">⚔ ${FLAVOR.waveStart}</div>
         <div style="margin-top:10px;font-size:12px;color:#cdb98a">Legion forming — you hold the ${POSITION_TITLES[myQuad].title} (${myQuad}).</div>
-        <div style="margin-top:8px;font-size:10px;color:#aa9a4a">Battlefield mounts in Phase 9.</div>
+        <div style="margin-top:8px;font-size:10px;color:#ff8080">Battlefield failed to load. Check the console.</div>
       </div>`);
     overlay.id = OVERLAY_ID;
     document.body.appendChild(overlay);

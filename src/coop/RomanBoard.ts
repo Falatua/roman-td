@@ -19,7 +19,7 @@
 
 import { ECONOMY, GRID, WORLD } from '../constants';
 import { createGameState, type GameStateShape } from '../GameState';
-import { GamePhase, TileType, type Enemy, type Tower, type TowerType, type DrawCard } from '../types';
+import { GamePhase, TileType, EnemyType, type Enemy, type Tower, type TowerType, type DrawCard } from '../types';
 import { RenderEngine } from '../render/RenderEngine';
 import { initializeGrid, setTile, pixelToTile, isBuildable } from '../systems/GridManager';
 import { buildGroundPath, buildFlyerPath, resnapEnemiesToPath } from '../systems/PathFinder';
@@ -28,6 +28,7 @@ import { tickEnemies } from '../systems/EnemySystem';
 import { tickCombat, type CombatHooks } from '../systems/CombatResolver';
 import { tickProjectiles } from '../systems/ProjectileSystem';
 import { createTower, rollDraw, BASE_TOWER_TYPES } from '../systems/TowerSystem';
+import { spawnEnemy } from '../systems/EnemySystem';
 import { realizableCombos, executeCombo } from '../systems/CombinationEngine';
 import { spendGold, earnGold } from '../systems/EconomySystem';
 import { createInventory, type InventoryState } from '../systems/LootSystem';
@@ -321,6 +322,21 @@ export class RomanBoard {
   }
 
   // ── HELPERS ──────────────────────────────────────────────────────────────
+  /**
+   * Spawn an inbound CIRCUIT leak (multiplayer): an enemy that escaped an
+   * upstream player's board arrives at its RETAINED HP (Section 5.2). It
+   * walks this board's path; if it leaks again, onLeak routes it onward. On
+   * the classic 38x26 map it enters at the spawn cave (no on-board seam).
+   */
+  spawnInboundLeak(enemyType: string, hp: number, maxHp: number, fromQuadrant: string): void {
+    if (this.state.phase !== GamePhase.WAVE_PHASE) return;
+    const e = spawnEnemy(this.state, enemyType as EnemyType, 1);
+    e.hp = Math.max(1, hp);
+    e.maxHp = Math.max(e.hp, maxHp);
+    (e as any).__circuit = true;
+    (e as any).__origin = fromQuadrant;
+  }
+
   markStaticDirty(): void { this.staticDirty = true; }
   private rebuildPath(): void {
     const np = buildGroundPath(this.state);
