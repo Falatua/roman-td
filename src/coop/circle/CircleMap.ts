@@ -21,12 +21,16 @@ export interface CirclePoint { col: number; row: number; }
 /** Pair quadrants around the square map (matches the mock coloring). */
 export type CircleQuadrant = 0 | 1 | 2 | 3; // 0=NW, 1=NE, 2=SE, 3=SW
 
+/** A corner spawn entry on the spiral. Green Circle has 4, all firing at once. */
+export interface CircleSpawn { col: number; row: number; pathIndex: number; quadrant: CircleQuadrant; }
+
 export interface CircleMapGeometry {
   size: number;                 // square grid edge length (tiles)
   ringStep: number;             // spacing between spiral arms (build gap = ringStep-1)
   margin: number;               // unbuildable outer border width
   path: CirclePoint[];          // spiral waypoints, outer -> center (4-adjacent, deduped)
-  spawn: CirclePoint;           // path[0] — outer entry
+  spawn: CirclePoint;           // path[0] — outer entry (legacy single)
+  spawns: CircleSpawn[];        // the 4 corner entries (all fire at once, flow inward)
   center: CirclePoint;          // path[last] — the shared life pool
   /** Pair-segment (quadrant) that owns a given path index. */
   segmentOf: (pathIndex: number) => CircleQuadrant;
@@ -99,12 +103,25 @@ export function generateCircleMap(opts: CircleMapOpts = {}): CircleMapGeometry {
     }
   }
 
+  // Green Circle: the four outer-ring corners are the spawn entries. All fire
+  // at once and flow inward along the one shared spiral (quarter-lap apart).
+  const cornerPts: CirclePoint[] = [
+    { col: margin, row: margin },                          // NW
+    { col: size - 1 - margin, row: margin },               // NE
+    { col: size - 1 - margin, row: size - 1 - margin },    // SE
+    { col: margin, row: size - 1 - margin },               // SW
+  ];
+  const spawns: CircleSpawn[] = cornerPts
+    .map((c) => ({ col: c.col, row: c.row, pathIndex: path.findIndex((p) => p.col === c.col && p.row === c.row), quadrant: quadrantOf(c, size) }))
+    .filter((s) => s.pathIndex >= 0);
+
   return {
     size,
     ringStep,
     margin,
     path,
     spawn: path[0],
+    spawns,
     center: path[path.length - 1],
     segmentOf: (i: number) => quadrantOf(path[Math.max(0, Math.min(path.length - 1, i))], size),
     buildTiles,

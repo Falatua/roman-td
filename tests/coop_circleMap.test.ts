@@ -41,4 +41,13 @@ describe('CircleMap geometry (Green Circle spiral)', () => {
     expect(g.buildTiles.length).toBeGreaterThan(100);
     for (const t of g.buildTiles) expect(g.isPath(t.col, t.row)).toBe(false);
   });
+
+  it('has four corner spawns, one per quadrant, all on the path', () => {
+    expect(g.spawns.length).toBe(4);
+    expect(new Set(g.spawns.map((s) => s.quadrant)).size).toBe(4);
+    for (const s of g.spawns) {
+      expect(s.pathIndex).toBeGreaterThanOrEqual(0);
+      expect(g.isPath(s.col, s.row)).toBe(true);
+    }
+  });
 });

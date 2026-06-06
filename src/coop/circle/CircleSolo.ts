@@ -8,13 +8,12 @@
 // Reachable from the Legion lobby ("GREEN CIRCLE" button).
 // ─────────────────────────────────────────────────────────────────────
 
-import { Application, Graphics } from 'pixi.js';
+import { Application } from 'pixi.js';
 import { generateCircleMap } from './CircleMap';
+import { renderCircleMap } from './CircleRenderer';
 
 const OVERLAY_ID = 'legion-overlay';
 const TILE = 18;
-// Pair colors by quadrant: NW teal, NE purple, SE orange, SW yellow (mock parity).
-const PAIR = [0x00b4aa, 0xaa5adc, 0xeb8228, 0xebc83c];
 
 export async function startCircleSolo(): Promise<void> {
   document.getElementById(OVERLAY_ID)?.remove();
@@ -45,36 +44,9 @@ export async function startCircleSolo(): Promise<void> {
   canvas.style.imageRendering = 'pixelated';
   host.appendChild(canvas);
 
-  const gfx = new Graphics();
-  app.stage.addChild(gfx);
-
-  // Buildable tiles (the gaps between spiral arms) as faint grass.
-  for (const t of g.buildTiles) {
-    gfx.beginFill(0x1f2c18);
-    gfx.drawRect(t.col * TILE, t.row * TILE, TILE - 1, TILE - 1);
-    gfx.endFill();
-  }
-  // The spiral path, each tile colored by which pair-segment owns it.
-  g.path.forEach((p, i) => {
-    gfx.beginFill(PAIR[g.segmentOf(i)]);
-    gfx.drawRect(p.col * TILE, p.row * TILE, TILE - 1, TILE - 1);
-    gfx.endFill();
-  });
-  // Spawn marker (outer entry).
-  const sx = g.spawn.col * TILE + TILE / 2, sy = g.spawn.row * TILE + TILE / 2;
-  gfx.lineStyle(3, 0xff5050);
-  gfx.drawCircle(sx, sy, TILE);
-  gfx.lineStyle(0);
-  // Center life pool (reaching it costs the team a shared life).
-  const cx = g.center.col * TILE + TILE / 2, cy = g.center.row * TILE + TILE / 2;
-  gfx.lineStyle(4, 0xffd24f);
-  gfx.beginFill(0x2a2010);
-  gfx.drawCircle(cx, cy, TILE * 1.7);
-  gfx.endFill();
-  gfx.lineStyle(0);
-  gfx.beginFill(0xffd24f);
-  gfx.drawCircle(cx, cy, TILE * 0.6);
-  gfx.endFill();
+  // Draw the circular map in Roman TD's art (grass, cobblestone spiral, 4
+  // corner caves, Rome center, biome tint, faint pair-color territories).
+  renderCircleMap(app.stage, g, TILE, 1);
 
   app.render();
 
