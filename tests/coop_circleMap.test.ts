@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { generateCircleMap, quadrantOf } from '../src/coop/circle/CircleMap';
 
 describe('CircleMap geometry (Green Circle spiral)', () => {
-  const g = generateCircleMap(); // 40 / step 3 / margin 1
+  const g = generateCircleMap(); // 24 / step 3 / margin 1
 
   it('produces a non-trivial spiral path', () => {
-    expect(g.path.length).toBeGreaterThan(200);
+    expect(g.path.length).toBeGreaterThan(120);
   });
 
   it('spawns at the outer corner and ends near the center', () => {
@@ -31,10 +31,10 @@ describe('CircleMap geometry (Green Circle spiral)', () => {
   it('covers all four pair-quadrants', () => {
     const segs = new Set(g.path.map((_, i) => g.segmentOf(i)));
     expect(segs.size).toBe(4);
-    expect(quadrantOf({ col: 1, row: 1 }, g.size)).toBe(0);   // NW
-    expect(quadrantOf({ col: 38, row: 1 }, g.size)).toBe(1);  // NE
-    expect(quadrantOf({ col: 38, row: 38 }, g.size)).toBe(2); // SE
-    expect(quadrantOf({ col: 1, row: 38 }, g.size)).toBe(3);  // SW
+    expect(quadrantOf({ col: 1, row: 1 }, g.size)).toBe(0);                   // NW
+    expect(quadrantOf({ col: g.size - 2, row: 1 }, g.size)).toBe(1);          // NE
+    expect(quadrantOf({ col: g.size - 2, row: g.size - 2 }, g.size)).toBe(2); // SE
+    expect(quadrantOf({ col: 1, row: g.size - 2 }, g.size)).toBe(3);          // SW
   });
 
   it('build tiles exist and never overlap the path', () => {

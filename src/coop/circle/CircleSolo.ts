@@ -13,7 +13,7 @@ import { generateCircleMap } from './CircleMap';
 import { renderCircleMap } from './CircleRenderer';
 
 const OVERLAY_ID = 'legion-overlay';
-const TILE = 18;
+const TILE = 30;   // big tiles so towers (one per tile) read clearly
 
 export async function startCircleSolo(): Promise<void> {
   document.getElementById(OVERLAY_ID)?.remove();

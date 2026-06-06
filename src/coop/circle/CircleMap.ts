@@ -87,7 +87,7 @@ function generateSpiral(size: number, step: number, margin: number): CirclePoint
 }
 
 export function generateCircleMap(opts: CircleMapOpts = {}): CircleMapGeometry {
-  const size = opts.size ?? 40;
+  const size = opts.size ?? 24;   // fewer, bigger tiles so towers read clearly
   const ringStep = opts.ringStep ?? 3;
   const margin = opts.margin ?? 1;
 
