@@ -25,7 +25,7 @@ import { Application, Container } from 'pixi.js';
 import { createGameState, type GameStateShape } from '../../GameState';
 import { GRID, ECONOMY, WAVE, type AuraTile } from '../../constants';
 import { TileType, GamePhase, EnemyType, TowerType, TargetingMode, type Enemy, type DrawCard } from '../../types';
-import { generateCircleMap, type CircleMapGeometry } from './CircleMap';
+import { generateCircleMap, quadrantOf, type CircleMapGeometry } from './CircleMap';
 import { renderCircleMap, renderCircleEntities, renderCircleHud } from './CircleRenderer';
 import { spawnEnemy, tickEnemies, tickBurnPatches, tickBossHazards } from '../../systems/EnemySystem';
 import { tickCombat, type CombatHooks } from '../../systems/CombatResolver';
@@ -60,6 +60,10 @@ export interface CircleBoardOpts {
   startingLives?: number;
   /** DOM element used as the parent for modals (codex/shop). */
   overlay?: HTMLElement;
+  /** Quadrants this player may build in (NW=0/NE=1/SE=2/SW=3). Solo owns all 4. */
+  ownedQuads?: number[];
+  /** Restrict building to owned quadrants (MP). Solo leaves false so the whole map is buildable. */
+  restrictBuild?: boolean;
 }
 
 export class CircleBoard {
@@ -79,6 +83,11 @@ export class CircleBoard {
   zoom = 1.3;
   private camPanX = 0;
   private camPanY = 0;
+  // Per-player quadrants + kill-steal economy (NW=0/NE=1/SE=2/SW=3).
+  ownedQuads: Set<number>;
+  restrictBuild: boolean;
+  readonly quadKills = [0, 0, 0, 0];   // kill credit (leaderboard) per quadrant/player
+  readonly quadGold = [0, 0, 0, 0];    // gold earned per quadrant/player (the defender)
 
   readonly fx: CircleFx;
   readonly gore: GoreState = createGoreState();
@@ -100,6 +109,8 @@ export class CircleBoard {
     this.geo = generateCircleMap();           // 24 / step 3 / margin 1
     this.auraTiles = buildCircleAuraTiles(this.geo);
     setAuraTilesOverride(this.auraTiles);     // circle aura tiles (cleared on destroy)
+    this.ownedQuads = new Set(opts.ownedQuads ?? [0, 1, 2, 3]);   // solo owns all 4
+    this.restrictBuild = opts.restrictBuild ?? false;
     if (opts.overlay) this.overlay = opts.overlay;
     this.state = createGameState();
     this.state.gold = opts.startingGold ?? ECONOMY.STARTING_GOLD;
@@ -134,7 +145,15 @@ export class CircleBoard {
     // buildCombatHooks already mints kill gold + totalKills; we add score.
     this.fx = new CircleFx(this.app.stage);
     this.combatHooks = buildCombatHooks(this.fx as any, this.state, this.gore, {
-      onKill: () => { this.state.score += 1; },
+      // Kill-steal economy: GOLD goes to the defender of the quadrant the creep
+      // came from; the KILL credit (leaderboard) goes to the finisher's quadrant.
+      onKill: (tower: any, enemy: any) => {
+        this.state.score += 1;
+        const killerQ = tower ? quadrantOf({ col: tower.tileX, row: tower.tileY }, this.geo.size) : 0;
+        const originQ = (enemy && enemy.__originQuad != null) ? enemy.__originQuad : killerQ;
+        this.quadKills[killerQ] += 1;
+        this.quadGold[originQ] += (enemy?.reward ?? 0) + ECONOMY.BASE_GOLD_PER_KILL;
+      },
     });
     this.projHooks = buildProjectileHooks(this.fx as any, this.state, this.gore, this.combatHooks);
     // Hero ability hooks → circle VFX (single-player parity; the unique
@@ -156,6 +175,12 @@ export class CircleBoard {
     const lo = this.geo.margin, hi = this.geo.size - 1 - this.geo.margin;
     if (col < lo || col > hi || row < lo || row > hi) return false;
     return !this.geo.isPath(col, row);
+  }
+  /** Buildable AND in a quadrant this player owns (MP restriction; solo owns all). */
+  isOwnedBuildTile(col: number, row: number): boolean {
+    if (!this.isBuildTile(col, row)) return false;
+    if (!this.restrictBuild) return true;
+    return this.ownedQuads.has(quadrantOf({ col, row }, this.geo.size));
   }
 
   // ── Lifecycle (board interface) ────────────────────────────────────────
@@ -246,7 +271,7 @@ export class CircleBoard {
 
   /** Place a tower on a grass build tile (prototype build: rolls a real type). */
   placeTower(col: number, row: number, type?: TowerType, tier: 1 | 2 | 3 | 4 | 5 = 1, cost = 10): boolean {
-    if (!this.isBuildTile(col, row)) return false;
+    if (!this.isOwnedBuildTile(col, row)) return false;
     if ((this.state as any).tiles[row]?.[col] !== TileType.EMPTY) return false;  // one tower per tile
     if (this.state.gold < cost) return false;
     let t: TowerType; let q: 1 | 2 | 3 | 4 | 5 = tier;
@@ -277,7 +302,7 @@ export class CircleBoard {
   /** Reveal a prospect on a grass build tile (1g, pending=true). No path validate — the spiral is fixed. */
   placeProspectAt(col: number, row: number): boolean {
     if (this.state.phase !== GamePhase.PROSPECT_PLACEMENT) return false;
-    if (!this.isBuildTile(col, row)) return false;
+    if (!this.isOwnedBuildTile(col, row)) return false;
     if ((this.state as any).tiles[row]?.[col] !== TileType.EMPTY) return false;
     if (this.state.prospectsPlaced >= MAX_PROSPECTS_PER_ROUND) { this.state.hint = 'Prospect cap reached this round. KEEP or START WAVE.'; return false; }
     if (this.state.gold < PROSPECT_PLACE_COST) { this.state.hint = 'Not enough gold to roll a prospect.'; return false; }
@@ -328,7 +353,7 @@ export class CircleBoard {
   placeHeroAt(col: number, row: number): boolean {
     const pend = this.state.pendingPurchasedTowers;
     if (!pend || pend.length === 0 || pend[0].source !== 'hero') return false;
-    if (!this.isBuildTile(col, row)) return false;
+    if (!this.isOwnedBuildTile(col, row)) return false;
     if ((this.state as any).tiles[row]?.[col] !== TileType.EMPTY) return false;
     const head = pend.shift()!;
     const tw = createTower(head.type as TowerType, (head.tier ?? 1) as 1 | 2 | 3 | 4 | 5, col, row, Math.max(1, this.state.wave), false);
@@ -375,6 +400,7 @@ export class CircleBoard {
     e.pathProgress = 0;
     e.x = e.prevX = tile.col * TILE + TILE / 2;
     e.y = e.prevY = tile.row * TILE + TILE / 2;
+    (e as any).__originQuad = sp.quadrant;   // kill-steal economy: gold credits this defender
   }
 
   private step(dt: number): void {
