@@ -43,8 +43,10 @@ function hashPhase(id: string): number {
   return ((Math.abs(h) % 1000) / 1000) * Math.PI * 2;
 }
 
-// Faint pair tints by quadrant (NW teal, NE purple, SE orange, SW yellow).
-const PAIR_TINT = [0x00b4aa, 0xaa5adc, 0xeb8228, 0xebc83c];
+// Muted Graveyard-Keeper-palette quadrant tints (NW slate-teal, NE dusty mauve,
+// SE aged amber, SW pale gold) — desaturated so they mark ownership without
+// breaking the somber atmosphere.
+const PAIR_TINT = [0x4f8f88, 0x8a5f9a, 0xb07a4a, 0xb0a050];
 
 export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: number, wave = 1, auraTiles: AuraTile[] = [], ownedQuads: number[] = [0, 1, 2, 3]): void {
   const ground = new Container();
@@ -66,13 +68,13 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
     }
   }
 
-  // 1b) Cozy decoration scatter — sparse, edge-weighted, deterministic. Sits on
-  //     grass under the entity layer, so a placed tower simply covers it. Skips
-  //     the path, aura tiles, and the area around Rome so nothing reads as
-  //     buildable-but-blocked. Pure cosmetic Stardew/FF1 dressing.
-  const COZY_DECOR = ['COZY_BUSH', 'COZY_FLOWERS', 'COZY_TREE', 'COZY_MUSHROOM', 'COZY_REEDS',
-    'COZY_BERRYBUSH', 'COZY_STUMP', 'COZY_FLOWERPOT', 'COZY_BOULDER', 'COZY_HAYBALE',
-    'COZY_LANTERN', 'COZY_BARREL', 'COZY_POND', 'COZY_WELL'];
+  // 1b) Graveyard-Keeper decoration scatter — sparse, edge-weighted, deterministic.
+  //     Sits on grass under the entity layer, so a placed tower simply covers it.
+  //     Skips the path, aura tiles, and the area around Rome so nothing reads as
+  //     buildable-but-blocked. Somber medieval-graveyard dressing.
+  const COZY_DECOR = ['GK_GRAVESTONE', 'GK_CROSS', 'GK_DEADTREE', 'GK_BOULDER', 'GK_MUSHROOMS',
+    'GK_DEADBUSH', 'GK_STUMP', 'GK_URN', 'GK_LANTERN', 'GK_BARREL', 'GK_CRATES', 'GK_FENCE',
+    'GK_WHEEL', 'GK_SLAB', 'GK_POND', 'GK_WELL'];
   const auraSet = new Set(auraTiles.map((a) => a.row * 1000 + a.col));
   const dhash = (a: number, b: number) => { let h = (Math.imul(a, 73856093) ^ Math.imul(b, 19349663)) >>> 0; h = (h ^ (h >>> 13)) >>> 0; return h; };
   const cR = g.center.row, cC = g.center.col;
@@ -114,8 +116,8 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
       const q = quadrantOf({ col, row }, g.size);
       const tint = PAIR_TINT[q];
       const isOwned = owned.has(q);
-      wash.beginFill(tint, isOwned ? 0.20 : 0.07).drawRect(col * tile, row * tile, tile, tile).endFill();
-      wash.lineStyle(1, tint, isOwned ? 0.5 : 0.16).drawRect(col * tile + 0.5, row * tile + 0.5, tile - 1, tile - 1).lineStyle(0);
+      wash.beginFill(tint, isOwned ? 0.11 : 0.04).drawRect(col * tile, row * tile, tile, tile).endFill();
+      wash.lineStyle(1, tint, isOwned ? 0.38 : 0.12).drawRect(col * tile + 0.5, row * tile + 0.5, tile - 1, tile - 1).lineStyle(0);
     }
   }
   overlay.addChild(wash);
@@ -147,16 +149,26 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
     features.addChild(label);
   }
 
-  // 3) Procedural cobblestone spiral path (sandstone base + mortar + cobbles).
-  const pathG = new Graphics();
-  for (const p of g.path) {
-    const x = p.col * tile, y = p.row * tile;
-    pathG.beginFill(0xb89a6a).drawRect(x, y, tile, tile).endFill();
-    pathG.beginFill(0xc8aa7a).drawRect(x + 2, y + 2, tile / 2 - 2, tile / 2 - 2).endFill();
-    pathG.beginFill(0xa88a5a).drawRect(x + tile / 2, y + tile / 2, tile / 2 - 2, tile / 2 - 2).endFill();
-    pathG.lineStyle(1, 0x6a5436, 0.7).drawRect(x + 0.5, y + 0.5, tile - 1, tile - 1).lineStyle(0);
+  // 3) Graveyard-Keeper aged cobblestone spiral path (sprite tile; falls back
+  //    to a muted procedural cobble if the GK tile is missing).
+  const pathTex = tex('GK_PATH');
+  if (pathTex) {
+    for (const p of g.path) {
+      const s = new Sprite(pathTex);
+      s.x = p.col * tile; s.y = p.row * tile; s.width = tile + 1; s.height = tile + 1;
+      ground.addChild(s);
+    }
+  } else {
+    const pathG = new Graphics();
+    for (const p of g.path) {
+      const x = p.col * tile, y = p.row * tile;
+      pathG.beginFill(0x6f6a60).drawRect(x, y, tile, tile).endFill();
+      pathG.beginFill(0x7c776c).drawRect(x + 2, y + 2, tile / 2 - 2, tile / 2 - 2).endFill();
+      pathG.beginFill(0x5f5a52).drawRect(x + tile / 2, y + tile / 2, tile / 2 - 2, tile / 2 - 2).endFill();
+      pathG.lineStyle(1, 0x3a382f, 0.7).drawRect(x + 0.5, y + 0.5, tile - 1, tile - 1).lineStyle(0);
+    }
+    ground.addChild(pathG);
   }
-  ground.addChild(pathG);
 
   // 4) A DARK_CAVE at each of the 4 corner spawns.
   for (const sp of g.spawns) {
@@ -207,7 +219,20 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
     }
   }
 
-  // 6) Per-wave biome tint wash over everything (warm sun -> hellscape).
+  // 6) Graveyard-Keeper mood grade: a cool charcoal-blue wash deepens the whole
+  //    map (the map layer only — towers/enemies render above it and stay clear),
+  //    plus a soft edge vignette for somber atmosphere. Applied UNDER the
+  //    per-wave biome tint so late-biome hellscape reds still come through.
+  const N = g.size * tile;
+  tintLayer.beginFill(0x12141d, 0.18).drawRect(0, 0, N, N).endFill();
+  for (let k = 0; k < 4; k++) {                       // vignette: darker toward the rim
+    const inset = k * tile * 1.2;
+    tintLayer.lineStyle(tile * 1.3, 0x0a0b12, 0.06);
+    tintLayer.drawRect(inset, inset, N - inset * 2, N - inset * 2);
+  }
+  tintLayer.lineStyle(0);
+
+  // 6b) Per-wave biome tint wash over everything (warm sun -> hellscape).
   const biome = BIOMES[biomeForWave(wave)];
   if (biome && biome.tint && biome.tint.alpha > 0) {
     tintLayer.beginFill(biome.tint.color, biome.tint.alpha);
