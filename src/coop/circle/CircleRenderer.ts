@@ -93,12 +93,18 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
 
   // 1) Cozy Stardew/FF1 grass over the whole interior (build zones + under path).
   const lo = g.margin, hi = g.size - 1 - g.margin;
+  const dhash = (a: number, b: number) => { let h = (Math.imul(a, 73856093) ^ Math.imul(b, 19349663)) >>> 0; h = (h ^ (h >>> 13)) >>> 0; return h; };
   for (let row = lo; row <= hi; row++) {
     for (let col = lo; col <= hi; col++) {
-      const t = tex((col * 7 + row * 13) % 2 === 0 ? 'COZY_GRASS_A' : 'COZY_GRASS_B') ?? tex('GRASS_A');
+      const h = dhash(col, row);
+      const t = tex(((h >>> 1) & 1) === 0 ? 'COZY_GRASS_A' : 'COZY_GRASS_B') ?? tex('GRASS_A');
       if (!t) continue;
       const s = new Sprite(t);
-      s.x = col * tile; s.y = row * tile; s.width = tile + 1; s.height = tile + 1;
+      s.anchor.set(0.5);                                  // center-anchor so flips stay on-tile
+      s.x = col * tile + tile / 2; s.y = row * tile + tile / 2;
+      s.width = tile + 1; s.height = tile + 1;
+      if (h & 4) s.scale.x = -s.scale.x;                  // per-tile H/V flips break the grid repetition
+      if (h & 8) s.scale.y = -s.scale.y;
       ground.addChild(s);
     }
   }
@@ -111,7 +117,6 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
     'GK_DEADBUSH', 'GK_STUMP', 'GK_URN', 'GK_LANTERN', 'GK_BARREL', 'GK_CRATES', 'GK_FENCE',
     'GK_WHEEL', 'GK_SLAB', 'GK_POND', 'GK_WELL'];
   const auraSet = new Set(auraTiles.map((a) => a.row * 1000 + a.col));
-  const dhash = (a: number, b: number) => { let h = (Math.imul(a, 73856093) ^ Math.imul(b, 19349663)) >>> 0; h = (h ^ (h >>> 13)) >>> 0; return h; };
   const cR = g.center.row, cC = g.center.col;
   for (let row = lo; row <= hi; row++) {
     for (let col = lo; col <= hi; col++) {
