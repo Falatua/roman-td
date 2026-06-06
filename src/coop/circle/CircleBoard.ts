@@ -25,7 +25,7 @@ import { Application, Container } from 'pixi.js';
 import { createGameState, type GameStateShape } from '../../GameState';
 import { GRID, ECONOMY, WAVE, type AuraTile } from '../../constants';
 import { TileType, GamePhase, EnemyType, TowerType, TargetingMode, type Enemy, type DrawCard } from '../../types';
-import { generateCircleMap, quadrantOf, type CircleMapGeometry } from './CircleMap';
+import { generateCircleMap, quadrantOf, type CircleMapGeometry, type CirclePoint } from './CircleMap';
 import { renderCircleMap, renderCircleEntities, renderCircleHud, renderCircleSurprise } from './CircleRenderer';
 import { spawnEnemy, tickEnemies, tickBurnPatches, tickBossHazards } from '../../systems/EnemySystem';
 import { tickCombat, type CombatHooks } from '../../systems/CombatResolver';
@@ -552,13 +552,44 @@ export class CircleBoard {
 }
 
 /** Lay the 6 aura tiles on path-adjacent grass tiles, spread around the spiral. */
+// Place the 6 aura tiles so EVERY quadrant (NW/NE/SE/SW = each player's build
+// zone) is guaranteed at least one. The 6 kinds round-robin across the 4
+// quadrants, so quadrants 0/1 get two tiles and 2/3 get one — nobody's zone is
+// left without an aura buff. (The old build spread the 6 along one flat list,
+// which could clump several into one quadrant and starve others.)
 function buildCircleAuraTiles(geo: CircleMapGeometry): AuraTile[] {
   const KINDS: AuraTile['kind'][] = ['PURPLE', 'BLUE', 'RED', 'CYAN', 'GOLD', 'EMERALD'];
-  const adj = geo.buildTiles.filter((t) =>
-    geo.isPath(t.col + 1, t.row) || geo.isPath(t.col - 1, t.row) || geo.isPath(t.col, t.row + 1) || geo.isPath(t.col, t.row - 1));
-  if (adj.length < KINDS.length) return [];
-  return KINDS.map((kind, i) => {
-    const t = adj[Math.floor(((i + 0.5) / KINDS.length) * adj.length)];
-    return { col: t.col, row: t.row, kind };
+  const isAdj = (t: CirclePoint) =>
+    geo.isPath(t.col + 1, t.row) || geo.isPath(t.col - 1, t.row) ||
+    geo.isPath(t.col, t.row + 1) || geo.isPath(t.col, t.row - 1);
+
+  // Bucket path-adjacent build tiles by quadrant. Fall back to ANY build tile
+  // in a quadrant that has no path-adjacent one (defensive; shouldn't happen).
+  const byQuad: CirclePoint[][] = [[], [], [], []];
+  for (const t of geo.buildTiles) if (isAdj(t)) byQuad[quadrantOf(t, geo.size)].push(t);
+  for (let q = 0; q < 4; q++) {
+    if (byQuad[q].length === 0) {
+      for (const t of geo.buildTiles) if (quadrantOf(t, geo.size) === q) byQuad[q].push(t);
+    }
+  }
+
+  const out: AuraTile[] = [];
+  const used = new Set<string>();
+  const placedPerQuad = [0, 0, 0, 0];
+  const slotsPerQuad = Math.ceil(KINDS.length / 4);   // up to 2 tiles per quadrant
+  KINDS.forEach((kind, i) => {
+    const q = i % 4;                                   // round-robin → every quadrant covered
+    const bucket = byQuad[q];
+    if (bucket.length === 0) return;
+    const nth = placedPerQuad[q]++;
+    // Spread multiple tiles within a quadrant by evenly indexing its bucket.
+    let idx = Math.floor(((nth + 0.5) / slotsPerQuad) * bucket.length) % bucket.length;
+    for (let g = 0; g < bucket.length && used.has(`${bucket[idx].col},${bucket[idx].row}`); g++) {
+      idx = (idx + 1) % bucket.length;                 // nudge off an already-used tile
+    }
+    const t = bucket[idx];
+    used.add(`${t.col},${t.row}`);
+    out.push({ col: t.col, row: t.row, kind });
   });
+  return out;
 }
