@@ -36,6 +36,7 @@ import { tickHeroAbilities, type HeroHooks } from '../../systems/HeroSystem';
 import { tickSurpriseEvents } from '../../systems/SurpriseEvents';
 import { createTower, rollDraw, BASE_TOWER_TYPES, setAuraTilesOverride } from '../../systems/TowerSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo } from '../../systems/WaveManager';
+import { isMercatorWave } from '../../systems/MerchantSystem';
 import { poolUpgradeCost, spendGold, earnGold } from '../../systems/EconomySystem';
 import { realizableCombos, executeCombo } from '../../systems/CombinationEngine';
 import { createGoreState, tickGore, pruneCorpses, fadeCorpsesAtWaveEnd, type GoreState } from '../../systems/GoreSystem';
@@ -104,6 +105,8 @@ export class CircleBoard {
   private readonly heroHooks: HeroHooks;
   /** Notified each frame so the host UI can refresh the HUD/sidebar. */
   onHud: ((b: CircleBoard) => void) | null = null;
+  /** Notified when a wave starts (for boss / mercator banners). */
+  onWaveStart: ((info: { wave: number; isBoss: boolean; mercator: boolean; faction?: string }) => void) | null = null;
 
   constructor(opts: CircleBoardOpts = {}) {
     this.geo = generateCircleMap();           // 24 / step 3 / margin 1
@@ -248,6 +251,7 @@ export class CircleBoard {
     this.waveStartTick = this.state.tick;
     (this.state as any).__waveStartTick = this.state.tick;
     boardWaveAudio(this.fx as any, info?.faction, info?.type === 'B', this.state.wave);  // wave bumper + faction BGM
+    this.onWaveStart?.({ wave: this.state.wave, isBoss: info?.type === 'B', mercator: isMercatorWave(this.state.wave), faction: info?.faction });
   }
   upgradePool(): boolean {
     const cost = poolUpgradeCost(this.state);

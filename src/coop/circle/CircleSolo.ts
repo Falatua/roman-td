@@ -10,6 +10,8 @@
 
 import { CircleBoard } from './CircleBoard';
 import { mountCircleSidebar, type CircleSidebar } from './CircleSidebar';
+import { showEnemyInspect } from '../../render/EnemyInspect';
+import { isMercatorWave } from '../../systems/MerchantSystem';
 import { GamePhase, TileType } from '../../types';
 import { GRID } from '../../constants';
 
@@ -101,9 +103,29 @@ export async function startCircleSolo(): Promise<void> {
     (card.querySelector('#cs-end-leave') as HTMLElement).onclick = () => teardown();
   }
 
+  // Transient on-board banner (boss approach / Mercator visit).
+  function flashBanner(text: string, color: string, ms = 2600): void {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:absolute;left:50%;top:54px;transform:translateX(-50%);z-index:50;pointer-events:none;' +
+      'background:linear-gradient(180deg,#1a1206,#0a0704);border:2px solid ' + color + ';border-radius:9px;padding:9px 24px;' +
+      'color:#ffe9a8;text-align:center;box-shadow:0 0 26px #000a;font-weight:900;letter-spacing:1.5px;font-size:14px';
+    d.textContent = text;
+    host.appendChild(d);
+    setTimeout(() => { d.style.transition = 'opacity .45s'; d.style.opacity = '0'; setTimeout(() => d.remove(), 450); }, ms);
+  }
+  let lastMercatorBannerWave = -1;
+  board.onWaveStart = (info) => {
+    if (info.isBoss) flashBanner('⚔ BOSS APPROACHING — WAVE ' + info.wave, '#cc3322', 3000);
+  };
+
   // Refresh the sidebar/HUD each frame off the board loop + toggle hero banner.
   board.onHud = () => {
     sidebar?.refresh();
+    // Mercator-in-town banner during a mercator wave's build phase (once per visit).
+    if (!board.inWave && isMercatorWave(board.state.wave) && lastMercatorBannerWave !== board.state.wave) {
+      lastMercatorBannerWave = board.state.wave;
+      flashBanner('★ THE MERCATOR IS IN TOWN — rare gear available', '#d4af37', 3200);
+    }
     if (board.pendingHero) {
       const h = board.state.pendingPurchasedTowers![0];
       heroBanner.style.display = '';
@@ -125,8 +147,15 @@ export async function startCircleSolo(): Promise<void> {
     return board.stageToTile((ev.clientX - rect.left) * s, (ev.clientY - rect.top) * s);
   };
 
-  // Click a grass tile: hero placement > tower inspect > prospect reveal (real flow).
+  // Click: enemy inspect (if on an enemy) > hero placement / tower inspect / prospect.
   canvas.addEventListener('click', (ev) => {
+    const rect = canvas.getBoundingClientRect();
+    const s = W / rect.width;
+    const wx = ((ev.clientX - rect.left) * s - board.world.position.x) / board.zoom;
+    const wy = ((ev.clientY - rect.top) * s - board.world.position.y) / board.zoom;
+    let near: import('../../types').Enemy | null = null, best = 20 * 20;
+    for (const e of board.state.enemies.values()) { const d = (e.x - wx) ** 2 + (e.y - wy) ** 2; if (d < best) { best = d; near = e; } }
+    if (near) { showEnemyInspect(overlay, near, board.state.wave); return; }   // "click any enemy to inspect"
     const { col, row } = tileAt(ev);
     board.handleTileClick(col, row);
   });
