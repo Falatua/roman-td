@@ -16,6 +16,7 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { tex } from '../../render/Assets';
 import { biomeForWave, BIOMES } from '../../render/Biomes';
+import type { GameStateShape } from '../../GameState';
 import type { CircleMapGeometry } from './CircleMap';
 import { quadrantOf } from './CircleMap';
 
@@ -98,5 +99,66 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
     tintLayer.beginFill(biome.tint.color, biome.tint.alpha);
     tintLayer.drawRect(0, 0, g.size * tile, g.size * tile);
     tintLayer.endFill();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// LIVE ENTITY LAYER — towers, enemies, projectiles, drawn with the REAL
+// Roman TD sprites (tex(type) / tex(spriteKey)), rebuilt each frame. The
+// circle uses the same enum-to-sprite resolution as the base RenderEngine
+// (tw.type, e.type, p.spriteKey), so every base unit renders identically.
+// Position-based: enemy.x/y and tower.tileX/tileY are in GRID.TILE coords.
+// ─────────────────────────────────────────────────────────────────────
+export function renderCircleEntities(layer: Container, state: GameStateShape, _g: CircleMapGeometry, tile: number): void {
+  for (const c of layer.removeChildren()) c.destroy({ children: true });
+
+  // Towers (one per build tile) — real tower sprite, centered on its tile.
+  for (const t of state.towers.values()) {
+    const tx = tex(t.type);
+    const cx = t.tileX * tile + tile / 2;
+    const cy = t.tileY * tile + tile / 2;
+    if (tx) {
+      const s = new Sprite(tx);
+      s.anchor.set(0.5);
+      s.x = cx; s.y = cy;
+      s.width = s.height = tile * 0.96;
+      if (t.pending) s.alpha = 0.55;
+      layer.addChild(s);
+    }
+  }
+
+  // Enemies — real enemy sprite + a slim HP bar. Bosses render larger.
+  for (const e of state.enemies.values()) {
+    const tx = tex(e.type);
+    const size = (e.isBoss ? tile * 1.7 : tile * 0.82);
+    if (tx) {
+      const s = new Sprite(tx);
+      s.anchor.set(0.5);
+      s.x = e.x; s.y = e.y;
+      s.width = s.height = size;
+      if ((e as any).__veiled) s.alpha = 0.35;
+      layer.addChild(s);
+    }
+    if (e.hp < e.maxHp && e.maxHp > 0) {
+      const w = size * 0.9, h = 3;
+      const frac = Math.max(0, Math.min(1, e.hp / e.maxHp));
+      const bar = new Graphics();
+      bar.beginFill(0x000000, 0.6).drawRect(e.x - w / 2, e.y - size / 2 - 6, w, h).endFill();
+      bar.beginFill(frac > 0.5 ? 0x4fdd6a : frac > 0.25 ? 0xe8c84a : 0xdd4f4f, 0.95)
+        .drawRect(e.x - w / 2, e.y - size / 2 - 6, w * frac, h).endFill();
+      layer.addChild(bar);
+    }
+  }
+
+  // Projectiles — real projectile sprite, rotated toward travel.
+  for (const p of state.projectiles.values()) {
+    const tx = tex(p.spriteKey);
+    if (!tx) continue;
+    const s = new Sprite(tx);
+    s.anchor.set(0.5);
+    s.x = p.x; s.y = p.y;
+    s.width = s.height = tile * 0.5;
+    s.rotation = p.rotation ?? 0;
+    layer.addChild(s);
   }
 }
