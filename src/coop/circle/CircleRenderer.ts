@@ -18,6 +18,7 @@ import { tex } from '../../render/Assets';
 import { biomeForWave, BIOMES } from '../../render/Biomes';
 import { realizableCombos } from '../../systems/CombinationEngine';
 import { towerEffectiveStats } from '../../systems/TowerSystem';
+import { AURA_TILE_EFFECTS, type AuraTile } from '../../constants';
 import { GamePhase } from '../../types';
 import type { GameStateShape } from '../../GameState';
 import type { CircleMapGeometry } from './CircleMap';
@@ -37,7 +38,7 @@ export interface CircleEntityOpts {
 // Faint pair tints by quadrant (NW teal, NE purple, SE orange, SW yellow).
 const PAIR_TINT = [0x00b4aa, 0xaa5adc, 0xeb8228, 0xebc83c];
 
-export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: number, wave = 1): void {
+export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: number, wave = 1, auraTiles: AuraTile[] = []): void {
   const ground = new Container();
   const overlay = new Container();
   const features = new Container();
@@ -105,6 +106,27 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
     glow.lineStyle(3, 0xffd24f, 0.9);
     glow.drawCircle(g.center.col * tile + tile / 2, g.center.row * tile + tile / 2, tile * 2.6);
     features.addChildAt(glow, 0);
+  }
+
+  // 5b) Aura tiles — 6 medallions on grass that buff towers placed on them.
+  for (const a of auraTiles) {
+    const cx = a.col * tile + tile / 2, cy = a.row * tile + tile / 2;
+    const eff = AURA_TILE_EFFECTS[a.kind];
+    const glow = new Graphics();
+    glow.beginFill(eff.color, 0.16).drawCircle(cx, cy, tile * 0.58).endFill();
+    glow.lineStyle(2, eff.color, 0.85).drawCircle(cx, cy, tile * 0.5);
+    features.addChild(glow);
+    const t = tex('MAP_AURA_' + a.kind);
+    if (t) {
+      const s = new Sprite(t);
+      s.anchor.set(0.5); s.x = cx; s.y = cy; s.width = s.height = tile * 0.86;
+      features.addChild(s);
+    } else {
+      const gem = new Graphics();
+      gem.beginFill(eff.color, 0.95).drawCircle(cx, cy, tile * 0.22).endFill();
+      gem.lineStyle(1, 0xffffff, 0.6).drawCircle(cx, cy, tile * 0.22);
+      features.addChild(gem);
+    }
   }
 
   // 6) Per-wave biome tint wash over everything (warm sun -> hellscape).

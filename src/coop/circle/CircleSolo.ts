@@ -75,6 +75,28 @@ export async function startCircleSolo(): Promise<void> {
     document.head.appendChild(st);
   }
 
+  // Victory / defeat end screen (single-player parity — the run resolves).
+  let ended = false;
+  function showEndScreen(win: boolean): void {
+    const s = board.state;
+    const card = document.createElement('div');
+    card.id = 'cs-endscreen';
+    card.style.cssText = 'position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(4,6,3,0.80)';
+    card.innerHTML =
+      `<div style="background:linear-gradient(180deg,#1a1206,#0a0704);border:2px solid ${win ? '#5ac46a' : '#c45a5a'};border-radius:12px;padding:26px 38px;text-align:center;box-shadow:0 0 44px #000">
+        <div style="font-size:26px;font-weight:900;letter-spacing:3px;color:${win ? '#9fe6a0' : '#ff8080'};text-shadow:0 0 10px #000">${win ? '⚔ VICTORY' : '☠ ROME HAS FALLEN'}</div>
+        <div style="font-size:12px;color:#cdb98a;margin:10px 0 16px">${win ? 'The Legion held the circle to Wave 20.' : 'The center pool was breached.'}</div>
+        <div style="font-size:13px;color:#e7d6a8;line-height:1.9">Wave <b>${s.wave}</b> / 20 &nbsp;·&nbsp; Kills <b>${s.totalKills}</b> &nbsp;·&nbsp; Score <b>${s.score}</b> &nbsp;·&nbsp; Rome <b>${board.state.lives}</b></div>
+        <div style="margin-top:20px;display:flex;gap:10px;justify-content:center">
+          <button id="cs-again" style="background:#1a3a18;color:#aaffaa;border:2px solid #2a7a2a;border-radius:6px;padding:9px 20px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:1px;font-weight:900">↻ PLAY AGAIN</button>
+          <button id="cs-end-leave" style="background:#3a1810;color:#ff8080;border:2px solid #7a2a2a;border-radius:6px;padding:9px 20px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:1px">◀ LEAVE</button>
+        </div>
+      </div>`;
+    host.appendChild(card);
+    (card.querySelector('#cs-again') as HTMLElement).onclick = () => { teardown(); void startCircleSolo(); };
+    (card.querySelector('#cs-end-leave') as HTMLElement).onclick = () => teardown();
+  }
+
   // Refresh the sidebar/HUD each frame off the board loop + toggle hero banner.
   board.onHud = () => {
     sidebar?.refresh();
@@ -85,6 +107,10 @@ export async function startCircleSolo(): Promise<void> {
         `<div style="font-size:15px;font-weight:900;letter-spacing:1px">${String(h.type).replace(/^HERO_/, '').replace(/_/g, ' ')}</div>`;
     } else if (heroBanner.style.display !== 'none') {
       heroBanner.style.display = 'none';
+    }
+    if (!ended && (board.state.phase === GamePhase.VICTORY || board.state.phase === GamePhase.GAME_OVER)) {
+      ended = true;
+      showEndScreen(board.state.phase === GamePhase.VICTORY);
     }
   };
 

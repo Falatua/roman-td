@@ -1,6 +1,6 @@
 import { Tower, TowerType, DamageType, TargetingMode, DrawCard } from '../types';
 import { GameStateShape } from '../GameState';
-import { TIER_MULTS, ECONOMY, POOL_PROBABILITIES, GRID, AURA_TILES, AURA_TILE_EFFECTS } from '../constants';
+import { TIER_MULTS, ECONOMY, POOL_PROBABILITIES, GRID, AURA_TILES, AURA_TILE_EFFECTS, type AuraTile } from '../constants';
 import towersData from '../data/towers.json';
 import { damageTypeFromString } from './DamageTypeSystem';
 import { isInsideStructureFootprint } from './GridManager';
@@ -9,6 +9,12 @@ import { isInsideStructureFootprint } from './GridManager';
 // tower sits on, or null. Used by stat math + combat hooks so every
 // tile-bonus path reads the same source-of-truth lookup. O(5) per
 // call (5 fixed tiles), no need to cache.
+// Fixed-path modes (e.g. the Green Circle co-op map) lay out their aura tiles
+// on different coordinates than the base 38x26 map. They inject a list here;
+// null restores the base AURA_TILES. Single-player never sets this.
+let _auraOverride: AuraTile[] | null = null;
+export function setAuraTilesOverride(tiles: AuraTile[] | null): void { _auraOverride = tiles; }
+
 export function towerAuraTileKind(t: Tower): typeof AURA_TILES[number]['kind'] | null {
   // 2026-05-22 — Confirmed aura-tile coverage applies UNIFORMLY to
   // heroes and regular towers. This lookup only checks the tile
@@ -25,7 +31,7 @@ export function towerAuraTileKind(t: Tower): typeof AURA_TILES[number]['kind'] |
   // labels in this comment (they had PURPLE/BLUE/CYAN swapped vs the
   // source-of-truth table at constants.ts:332-342). Code paths were
   // always correct, only the documentation was wrong.
-  for (const a of AURA_TILES) {
+  for (const a of (_auraOverride ?? AURA_TILES)) {
     if (a.col === t.tileX && a.row === t.tileY) return a.kind;
   }
   return null;

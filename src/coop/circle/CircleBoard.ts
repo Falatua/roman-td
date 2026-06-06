@@ -23,7 +23,7 @@
 
 import { Application, Container } from 'pixi.js';
 import { createGameState, type GameStateShape } from '../../GameState';
-import { GRID, ECONOMY, WAVE } from '../../constants';
+import { GRID, ECONOMY, WAVE, type AuraTile } from '../../constants';
 import { TileType, GamePhase, EnemyType, TowerType, TargetingMode, type Enemy, type DrawCard } from '../../types';
 import { generateCircleMap, type CircleMapGeometry } from './CircleMap';
 import { renderCircleMap, renderCircleEntities } from './CircleRenderer';
@@ -34,7 +34,7 @@ import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } 
 type BossRuntime = ReturnType<typeof createBossRuntime>;
 import { tickHeroAbilities, type HeroHooks } from '../../systems/HeroSystem';
 import { tickSurpriseEvents } from '../../systems/SurpriseEvents';
-import { createTower, rollDraw, BASE_TOWER_TYPES } from '../../systems/TowerSystem';
+import { createTower, rollDraw, BASE_TOWER_TYPES, setAuraTilesOverride } from '../../systems/TowerSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo } from '../../systems/WaveManager';
 import { poolUpgradeCost, spendGold, earnGold } from '../../systems/EconomySystem';
 import { realizableCombos, executeCombo } from '../../systems/CombinationEngine';
@@ -76,6 +76,7 @@ export class CircleBoard {
 
   readonly fx: CircleFx;
   readonly gore: GoreState = createGoreState();
+  readonly auraTiles: AuraTile[];
   private readonly mapLayer = new Container();
   private readonly entityLayer = new Container();
   private readonly combatHooks: CombatHooks;
@@ -91,6 +92,8 @@ export class CircleBoard {
 
   constructor(opts: CircleBoardOpts = {}) {
     this.geo = generateCircleMap();           // 24 / step 3 / margin 1
+    this.auraTiles = buildCircleAuraTiles(this.geo);
+    setAuraTilesOverride(this.auraTiles);     // circle aura tiles (cleared on destroy)
     if (opts.overlay) this.overlay = opts.overlay;
     this.state = createGameState();
     this.state.gold = opts.startingGold ?? ECONOMY.STARTING_GOLD;
@@ -149,8 +152,9 @@ export class CircleBoard {
   // ── Lifecycle (board interface) ────────────────────────────────────────
   mount(parent: HTMLElement): void {
     this.host = parent;
+    setAuraTilesOverride(this.auraTiles);     // this board owns the aura tiles while active
     this.app.stage.addChild(this.mapLayer, this.entityLayer, this.fx.goreLayer, this.fx.fxLayer);
-    renderCircleMap(this.mapLayer, this.geo, TILE, 1);
+    renderCircleMap(this.mapLayer, this.geo, TILE, 1, this.auraTiles);
     this.app.render();
     parent.appendChild(this.canvas);
     this.rollProspects();                  // open the first build round (PROSPECT_PLACEMENT)
@@ -159,6 +163,7 @@ export class CircleBoard {
   destroy(): void {
     if (this.loop) window.clearInterval(this.loop);
     this.loop = 0;
+    setAuraTilesOverride(null);               // restore base AURA_TILES for single-player
     try { (this.app.view as HTMLCanvasElement)?.remove(); } catch { /* ignore */ }
     try { this.app.destroy(true); } catch { /* ignore */ }
   }
@@ -376,6 +381,7 @@ export class CircleBoard {
   }
 
   private frame(): void {
+    setAuraTilesOverride(this.auraTiles);    // active board owns the aura tiles (race-proof per-frame re-assert)
     let adv = DT;
     if (!this.paused && this.state.phase !== GamePhase.GAME_OVER && this.state.phase !== GamePhase.VICTORY) {
       const steps = Math.max(1, this.speedMult | 0);
@@ -392,4 +398,16 @@ export class CircleBoard {
     this.app.render();
     this.onHud?.(this);
   }
+}
+
+/** Lay the 6 aura tiles on path-adjacent grass tiles, spread around the spiral. */
+function buildCircleAuraTiles(geo: CircleMapGeometry): AuraTile[] {
+  const KINDS: AuraTile['kind'][] = ['PURPLE', 'BLUE', 'RED', 'CYAN', 'GOLD', 'EMERALD'];
+  const adj = geo.buildTiles.filter((t) =>
+    geo.isPath(t.col + 1, t.row) || geo.isPath(t.col - 1, t.row) || geo.isPath(t.col, t.row + 1) || geo.isPath(t.col, t.row - 1));
+  if (adj.length < KINDS.length) return [];
+  return KINDS.map((kind, i) => {
+    const t = adj[Math.floor(((i + 0.5) / KINDS.length) * adj.length)];
+    return { col: t.col, row: t.row, kind };
+  });
 }
