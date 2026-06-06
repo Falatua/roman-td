@@ -27,9 +27,13 @@ import { GRID, ECONOMY, WAVE } from '../../constants';
 import { TileType, GamePhase, EnemyType, TowerType, TargetingMode, type Enemy, type DrawCard } from '../../types';
 import { generateCircleMap, type CircleMapGeometry } from './CircleMap';
 import { renderCircleMap, renderCircleEntities } from './CircleRenderer';
-import { spawnEnemy, tickEnemies } from '../../systems/EnemySystem';
+import { spawnEnemy, tickEnemies, tickBurnPatches, tickBossHazards } from '../../systems/EnemySystem';
 import { tickCombat, type CombatHooks } from '../../systems/CombatResolver';
 import { tickProjectiles } from '../../systems/ProjectileSystem';
+import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from '../../systems/BossScripts';
+type BossRuntime = ReturnType<typeof createBossRuntime>;
+import { tickHeroAbilities, type HeroHooks } from '../../systems/HeroSystem';
+import { tickSurpriseEvents } from '../../systems/SurpriseEvents';
 import { createTower, rollDraw, BASE_TOWER_TYPES } from '../../systems/TowerSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo } from '../../systems/WaveManager';
 import { poolUpgradeCost, spendGold, earnGold } from '../../systems/EconomySystem';
@@ -77,6 +81,9 @@ export class CircleBoard {
   private loop = 0;
   private cornerRR = 0;
   private _lastCombo = 0;
+  private bossRuntime: BossRuntime = createBossRuntime();
+  private waveStartTick = 0;
+  private readonly heroHooks: HeroHooks;
   /** Notified each frame so the host UI can refresh the HUD/sidebar. */
   onHud: ((b: CircleBoard) => void) | null = null;
 
@@ -116,6 +123,18 @@ export class CircleBoard {
       onKill: () => { this.state.score += 1; },
     });
     this.projHooks = buildProjectileHooks(this.fx as any, this.state, this.gore, this.combatHooks);
+    // Hero ability hooks → circle VFX (single-player parity; the unique
+    // per-ability shape renderers are RenderEngine-only, so abilities pulse
+    // a ring + flash here instead of their bespoke shapes).
+    this.heroHooks = {
+      triggerImpactRing: (x, y, tick, maxR, color) => this.fx.triggerImpactRing(x, y, tick, maxR, color),
+      triggerShake: (i, d) => this.fx.triggerShake(i, d),
+      resnapEnemiesToPath: () => { /* fixed spiral — no reroute */ },
+      triggerHeroAbilityFx: (spec: any) => {
+        this.fx.triggerImpactRing(spec.x, spec.y, spec.tick ?? this.state.tick, 44, spec.color ?? 0xffd34d);
+        this.fx.triggerMuzzleFlash(spec.x, spec.y, spec.color ?? 0xffd34d, this.state.tick);
+      },
+    };
   }
 
   /** Buildable = interior, not on the path, not on the outer margin. */
@@ -153,6 +172,8 @@ export class CircleBoard {
     if (this.hasPending) this.crystallizeAll();    // unkept prospects cement to walls
     const info: any = getNextWaveInfo(this.state);
     startWave(this.state);                         // bumps wave, builds spawnQueue, sets WAVE_PHASE
+    this.bossRuntime = createBossRuntime();        // fresh boss-script runtime per wave
+    this.waveStartTick = this.state.tick;
     (this.state as any).__waveStartTick = this.state.tick;
     boardWaveAudio(this.fx as any, info?.faction, info?.type === 'B', this.state.wave);  // wave bumper + faction BGM
   }
@@ -318,13 +339,24 @@ export class CircleBoard {
         if (before.has(id) || e.isFlyer) continue;
         this.assignCorner(e);
       }
+      // Full single-player per-frame parity: surprise events, boss scripts,
+      // enemy auras, hero abilities, fire-ground DoT, boss hazards.
+      tickSurpriseEvents(this.state);
+      tickBossScripts(this.state, dt, this.bossRuntime, this.waveStartTick);
+      applyEnemyAuras(this.state);
+      tickHeroAbilities(this.state, this.heroHooks);
+      tickBurnPatches(this.state, dt);
+      tickBossHazards(this.state, dt);
       tickEnemies(
         this.state, dt,
         (e) => {                                   // reached Rome → shared life pool
           this.state.lives = Math.max(0, this.state.lives - (e.livesCost ?? 1));
           if (this.state.lives <= 0) this.state.phase = GamePhase.GAME_OVER;
         },
-        (e) => emitBoardDeathFx(this.fx as any, this.state, this.gore, e),   // death blood + ring + SFX
+        (e) => {                                   // death blood + ring + SFX + boss bookkeeping
+          emitBoardDeathFx(this.fx as any, this.state, this.gore, e);
+          if (e.isBoss) handleBossDeath(this.state, e, this.bossRuntime);
+        },
       );
       tickCombat(this.state, dt, this.combatHooks);
       tickProjectiles(this.state, dt, this.projHooks);
