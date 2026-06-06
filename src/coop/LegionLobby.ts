@@ -115,6 +115,8 @@ function openLegionLobby(): void {
     <div style="margin-top:16px;border-top:1px dashed #5a4a30;padding-top:12px">
       <button id="legion-solo" style="width:100%;background:#2a3a1a;color:#cfe8b0;border:2px solid #88cc66;padding:9px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:2px;font-weight:bold">▶ SOLO TEST (1 player)</button>
       <div style="font-size:9.5px;color:#aa9a4a;margin-top:5px;line-height:1.5">Temporary: drop into a real Roman TD board solo to test feel + visuals. The teamwork circuit, shared Rome, and live multiplayer land in the next phases.</div>
+      <button id="legion-circle" style="width:100%;margin-top:10px;background:#1a3a2a;color:#aaffcc;border:2px solid #44dd99;padding:9px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:2px;font-weight:bold">🟢 GREEN CIRCLE — MAP PROTOTYPE</button>
+      <div style="font-size:9.5px;color:#aa9a4a;margin-top:5px;line-height:1.5">New direction: the shared circular map (single spiral, 4 pairs, leaks circle to the next pair, center life pool). Geometry-only preview for now.</div>
     </div>
     <div id="legion-status" style="height:18px;margin-top:14px;font-size:11px;color:#aa9a4a;letter-spacing:1px"></div>
     <button id="legion-back" style="margin-top:6px;background:#3a2010;color:#cdb98a;border:2px solid #7a5a1a;padding:8px 24px;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:2px;font-weight:bold">◀ BACK TO MAIN</button>`;
@@ -149,6 +151,10 @@ function openLegionLobby(): void {
     removeOverlay();
     import('./CoopSolo').then((m) => m.startSoloLegionTest()).catch((err) => console.error('[legion] solo test failed:', err));
   };
+  (box.querySelector('#legion-circle') as HTMLElement)?.addEventListener('click', () => {
+    removeOverlay();
+    import('./circle/CircleSolo').then((m) => m.startCircleSolo()).catch((err) => console.error('[legion] circle prototype failed:', err));
+  });
   (box.querySelector('#legion-back') as HTMLElement).onclick = removeOverlay;
   setTimeout(() => nameInput.focus(), 30);
 }
