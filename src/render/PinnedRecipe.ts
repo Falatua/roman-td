@@ -232,9 +232,16 @@ function buildChipHtml(pinnedId: string, state: any): { html: string; sig: strin
 // 2026-05-15 v6: container holds up to MAX_PINS chips, scrolls if needed,
 // and uses event delegation on the outer wrapper so per-chip UNPIN clicks
 // survive the per-frame innerHTML rewrites that update ingredient state.
-export function renderPinnedRecipeWidget(state: any) {
+export function renderPinnedRecipeWidget(state: any, buttonsEl?: HTMLElement | null) {
+  // Single-player passes nothing → the global #buttons rail. Green Circle
+  // passes its own right-panel #buttons so the widget lands in the circle's
+  // sidebar even if a stale single-player #buttons still lingers in the DOM.
+  const buttons = buttonsEl ?? document.getElementById('buttons');
   const pinnedIds = readStored();
-  let wrap = document.getElementById('pinned-recipe-wrap') as HTMLElement | null;
+  // Scope the wrap to its owning button rail so the two mount contexts never
+  // fight over one shared #pinned-recipe-wrap node.
+  let wrap = (buttons?.querySelector('#pinned-recipe-wrap')
+    ?? document.getElementById('pinned-recipe-wrap')) as HTMLElement | null;
   if (pinnedIds.length === 0) {
     if (wrap) wrap.remove();
     return;
@@ -283,7 +290,6 @@ export function renderPinnedRecipeWidget(state: any) {
       // frame's renderPinnedRecipeWidget call handles the redraw.
       (wrap as any).__sig = '';
     });
-    const buttons = document.getElementById('buttons');
     buttons?.appendChild(wrap);
   }
 

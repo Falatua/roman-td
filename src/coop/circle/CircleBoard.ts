@@ -46,6 +46,8 @@ import { showTowerMenu } from '../../render/TowerMenu';
 import { showCodex } from '../../render/Codex';
 import { createInventory, type InventoryState } from '../../systems/LootSystem';
 import { CircleFx } from './CircleFx';
+import wavesData from '../../data/waves.json';
+import enemiesData from '../../data/enemies.json';
 
 const TILE = GRID.TILE;          // 32px game coords so base combat ranges match
 const FRAME_MS = 1000 / 60;
@@ -117,6 +119,19 @@ export class CircleBoard {
     this.ownedQuads = new Set(opts.ownedQuads ?? [0, 1, 2, 3]);   // solo owns all 4
     this.restrictBuild = opts.restrictBuild ?? false;
     if (opts.overlay) this.overlay = opts.overlay;
+
+    // Wave-brief preview parity: the base UIManager renders the next-wave
+    // roster (NEXT: WAVE n · faction · enemies · THREATS) by reading these two
+    // window globals. Single-player sets them in main.ts; a player who enters
+    // Green Circle straight from the Legion lobby never ran that path, so the
+    // preview would silently stay blank. Populate defensively (non-clobbering),
+    // exactly like RomanBoard does for the board-each Legion mode.
+    if (typeof window !== 'undefined') {
+      const w = window as any;
+      if (!w.__waves__) w.__waves__ = wavesData;
+      if (!w.__enemiesData) w.__enemiesData = enemiesData;
+    }
+
     this.state = createGameState();
     this.state.gold = opts.startingGold ?? ECONOMY.STARTING_GOLD;
     this.state.lives = opts.startingLives ?? ECONOMY.STARTING_LIVES;   // shared center pool

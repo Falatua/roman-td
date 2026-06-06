@@ -22,6 +22,7 @@ import { TargetingMode, EnemyType } from '../../types';
 import { UIManager } from '../../render/UIManager';
 import { showSettingsPanel } from '../../render/SettingsPanel';
 import { renderShop, showInventoryModal } from '../../render/ShopUI';
+import { renderPinnedRecipeWidget, ensurePinnedRecipeDefault } from '../../render/PinnedRecipe';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave } from '../../systems/MerchantSystem';
 import { currentlyOwnedLegendarySet, inventoryRemove } from '../../systems/LootSystem';
 import { spawnEnemy } from '../../systems/EnemySystem';
@@ -181,16 +182,24 @@ export function mountCircleSidebar(o: CircleSidebarOpts): CircleSidebar {
   ui.hud.insertAdjacentElement('afterend', tip);
 
   // Append a LEAVE control to the right rail.
+  const buttonsRail = (rightPanel.querySelector('#buttons') ?? rightPanel) as HTMLElement;
   const leaveBtn = document.createElement('button');
   leaveBtn.textContent = '◀ LEAVE';
   leaveBtn.style.cssText =
     'background:#3a1810;color:#ff8080;border:2px solid #7a2a2a;padding:8px 14px;font-family:inherit;font-size:13px;cursor:pointer;letter-spacing:1px;font-weight:bold';
   leaveBtn.onclick = () => o.onLeave();
-  (rightPanel.querySelector('#buttons') ?? rightPanel).appendChild(leaveBtn);
+  buttonsRail.appendChild(leaveBtn);
+
+  // Pinned-recipe widget parity (single-player QoL): seed the tutorial default
+  // once, then render the live chip(s) into THIS sidebar's button rail every
+  // frame. Passing buttonsRail keeps the widget in the circle's panel even if
+  // a single-player #buttons still lives in the DOM underneath.
+  ensurePinnedRecipeDefault();
 
   function refresh(): void {
     ui.update(board.state, null);
     if (tip.previousElementSibling !== ui.hud) ui.hud.insertAdjacentElement('afterend', tip);
+    renderPinnedRecipeWidget(board.state, buttonsRail);
   }
   function destroy(): void {
     leftPanel.remove();
