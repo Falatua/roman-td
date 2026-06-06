@@ -13,7 +13,7 @@
 // sprite layers.
 // ─────────────────────────────────────────────────────────────────────
 
-import { Container, Graphics, Sprite, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, Texture, BLEND_MODES } from 'pixi.js';
 import { tex } from '../../render/Assets';
 import { biomeForWave, BIOMES } from '../../render/Biomes';
 import { realizableCombos } from '../../systems/CombinationEngine';
@@ -48,13 +48,48 @@ function hashPhase(id: string): number {
 // breaking the somber atmosphere.
 const PAIR_TINT = [0x4f8f88, 0x8a5f9a, 0xb07a4a, 0xb0a050];
 
+// Soft radial-gradient glow texture (built once), used additively for the
+// Graveyard-Keeper torch/lantern lighting so warm light pools through the gloom.
+let _glowTex: Texture | null = null;
+function glowTexture(): Texture {
+  if (_glowTex) return _glowTex;
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const ctx = c.getContext('2d');
+  if (ctx) {
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.45, 'rgba(255,255,255,0.42)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+  }
+  _glowTex = Texture.from(c);
+  return _glowTex;
+}
+
+// Per-biome mood grade. Real Graveyard Keeper is NOT uniformly dark — its
+// overworld is warm + bright daylight, its witch's-land is cool desaturated
+// fog, and only its morgue/dungeon is the dark torch-lit gloom. One fixed
+// dark wash made every wave a dungeon; this spans GK's actual tonal range.
+//   grade/alpha = full-map wash · vig = vignette strength · light = torch ×.
+const BIOME_MOOD: Record<string, { grade: number; alpha: number; vig: number; light: number }> = {
+  BIOME_GRASSLAND:     { grade: 0x000000, alpha: 0.00, vig: 0.05, light: 0.5 },  // warm GK daylight
+  BIOME_CELTIC_WOOD:   { grade: 0x10180f, alpha: 0.08, vig: 0.06, light: 0.7 },  // dappled woodland
+  BIOME_CARTHAGE_ARID: { grade: 0x000000, alpha: 0.00, vig: 0.06, light: 0.5 },  // bright arid sun
+  BIOME_UNDEAD_FOREST: { grade: 0x121826, alpha: 0.18, vig: 0.07, light: 1.0 },  // cool witch's fog
+  BIOME_UNDEAD_RUINS:  { grade: 0x181226, alpha: 0.20, vig: 0.07, light: 1.0 },  // purple gloom
+  BIOME_HELLSCAPE:     { grade: 0x1c0a08, alpha: 0.20, vig: 0.07, light: 1.0 },  // ember-dark morgue
+};
+
 export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: number, wave = 1, auraTiles: AuraTile[] = [], ownedQuads: number[] = [0, 1, 2, 3]): void {
   const ground = new Container();
   const overlay = new Container();
   const decorLayer = new Container();   // cozy scatter props (above wash, below towers)
   const features = new Container();
   const tintLayer = new Graphics();
-  parent.addChild(ground, overlay, decorLayer, features, tintLayer);
+  const lightLayer = new Container();   // GK torch/lantern glow (above the mood grade)
+  lightLayer.name = 'gk-lights';        // named so the frame loop can flicker it
+  parent.addChild(ground, overlay, decorLayer, features, tintLayer, lightLayer);
+  const lanternPos: { x: number; y: number }[] = [];
 
   // 1) Cozy Stardew/FF1 grass over the whole interior (build zones + under path).
   const lo = g.margin, hi = g.size - 1 - g.margin;
@@ -89,7 +124,8 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
       const edge = Math.min(col - lo, hi - col, row - lo, hi - row);
       const density = (nearPath ? 0.05 : 0.15) * (edge <= 2 ? 1.7 : 1);   // denser at the rim
       if ((h % 1000) / 1000 > density) continue;
-      const t = tex(COZY_DECOR[h % COZY_DECOR.length]);
+      const decorKey = COZY_DECOR[h % COZY_DECOR.length];
+      const t = tex(decorKey);
       if (!t) continue;
       const s = new Sprite(t);
       const aspect = (t.height || 1) / (t.width || 1);
@@ -98,6 +134,7 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
       s.width = w; s.height = w * aspect;
       s.x = col * tile + tile / 2; s.y = row * tile + tile * 0.72;
       decorLayer.addChild(s);
+      if (decorKey === 'GK_LANTERN') lanternPos.push({ x: s.x, y: s.y - w * aspect * 0.42 });
     }
   }
 
@@ -219,26 +256,51 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
     }
   }
 
-  // 6) Graveyard-Keeper mood grade: a cool charcoal-blue wash deepens the whole
-  //    map (the map layer only — towers/enemies render above it and stay clear),
-  //    plus a soft edge vignette for somber atmosphere. Applied UNDER the
-  //    per-wave biome tint so late-biome hellscape reds still come through.
+  // 6) Mood grade — biome-aware to span Graveyard Keeper's REAL tonal range:
+  //    warm bright daylight early (GK overworld), cool fog mid (witch's land),
+  //    dark torch-lit late (the morgue). One fixed dark wash made every wave a
+  //    dungeon; this reads the biome so the early game stays warm and inviting.
+  //    Map layer only — towers/enemies render above it and stay clear.
   const N = g.size * tile;
-  tintLayer.beginFill(0x12141d, 0.18).drawRect(0, 0, N, N).endFill();
+  const biomeId = biomeForWave(wave);
+  const mood = BIOME_MOOD[biomeId] ?? BIOME_MOOD.BIOME_UNDEAD_FOREST;
+  if (mood.alpha > 0) tintLayer.beginFill(mood.grade, mood.alpha).drawRect(0, 0, N, N).endFill();
   for (let k = 0; k < 4; k++) {                       // vignette: darker toward the rim
     const inset = k * tile * 1.2;
-    tintLayer.lineStyle(tile * 1.3, 0x0a0b12, 0.06);
+    tintLayer.lineStyle(tile * 1.3, 0x0a0b12, mood.vig);
     tintLayer.drawRect(inset, inset, N - inset * 2, N - inset * 2);
   }
   tintLayer.lineStyle(0);
 
   // 6b) Per-wave biome tint wash over everything (warm sun -> hellscape).
-  const biome = BIOMES[biomeForWave(wave)];
+  const biome = BIOMES[biomeId];
   if (biome && biome.tint && biome.tint.alpha > 0) {
     tintLayer.beginFill(biome.tint.color, biome.tint.alpha);
-    tintLayer.drawRect(0, 0, g.size * tile, g.size * tile);
-    tintLayer.endFill();
+    tintLayer.drawRect(0, 0, N, N).endFill();
   }
+
+  // 7) Graveyard-Keeper dynamic lighting. Warm light pools from every lantern
+  //    prop, the four corner caves, and Rome's central hearth; each aura
+  //    medallion gets a colored magical glow. Additive blend (lightLayer sits
+  //    above the grade, below the live units) so they read as real torchlight.
+  //    Intensity scales with the biome's `light` factor — subtle in daylight,
+  //    full in the dark biomes, matching GK's morgue torch-pools.
+  const glowTex = glowTexture();
+  const lx = mood.light;
+  const addLight = (x: number, y: number, radius: number, color: number, alpha: number): Sprite => {
+    const l = new Sprite(glowTex);
+    l.anchor.set(0.5); l.blendMode = BLEND_MODES.ADD; l.tint = color;
+    l.x = x; l.y = y; l.width = l.height = radius * 2; l.alpha = alpha;
+    (l as any)._base = alpha; (l as any)._phase = lightLayer.children.length * 1.7;   // flicker params
+    lightLayer.addChild(l);
+    return l;
+  };
+  for (const p of lanternPos) addLight(p.x, p.y, tile * 2.4, 0xffb45a, 0.5 * lx);            // hanging-lantern flame
+  for (const sp of g.spawns)                                                                  // torch-lit cave mouths
+    addLight(sp.col * tile + tile / 2, sp.row * tile + tile / 2, tile * 3.2, 0xff8a3a, 0.42 * lx);
+  addLight(g.center.col * tile + tile / 2, g.center.row * tile + tile / 2, tile * 4.6, 0xffca92, 0.46 * lx);  // Rome hearth
+  for (const a of auraTiles)                                                                   // aura-medallion glow (always lit)
+    addLight(a.col * tile + tile / 2, a.row * tile + tile / 2, tile * 1.8, AURA_TILE_EFFECTS[a.kind].color, 0.5);
 }
 
 // ─────────────────────────────────────────────────────────────────────

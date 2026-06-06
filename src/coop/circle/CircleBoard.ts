@@ -546,6 +546,16 @@ export class CircleBoard {
     const cc = realizableComboCount(this.state);
     if (this._lastCombo === 0 && cc > 0) SFX.comboAvailable();
     this._lastCombo = cc;
+    // GK torch flicker: gently pulse the additive light pools (named layer on the map).
+    const lights = this.mapLayer.getChildByName('gk-lights') as Container | null;
+    if (lights) {
+      const tk = this.state.tick;
+      for (const c of lights.children) {
+        const base = (c as any)._base ?? 1;
+        const ph = (c as any)._phase ?? 0;
+        c.alpha = base * (0.85 + 0.10 * Math.sin(tk * 6.5 + ph) + 0.05 * Math.sin(tk * 15 + ph * 1.7));
+      }
+    }
     this.app.render();
     this.onHud?.(this);
   }

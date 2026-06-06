@@ -3839,6 +3839,17 @@ async function boot() {
   // Assets are in — reveal the coin slot and hand off to the player.
   if (slotWrap) slotWrap.classList.add('ready');
   if (barEl) barEl.style.width = '100%';
+
+  // Entry shortcut: #circlesolo (or #circle) boots straight into the Green Circle
+  // co-op prototype now that the map/sprite assets are hot, skipping the coin-slot
+  // mini-game and Legion lobby. The circle harness paints its own full-screen
+  // overlay and tears down cleanly, so a plain early return is safe here.
+  if (location.hash === '#circlesolo' || location.hash === '#circle') {
+    const le = document.getElementById('loading'); if (le) le.style.display = 'none';
+    void import('./coop/circle/CircleSolo').then((m) => m.startCircleSolo())
+      .catch((err) => console.error('[circle] direct boot failed:', err));
+    return;
+  }
   // JAMMED COIN SLOT MINI-GAME.
   // 2026-05-19 — Trimmed from 10 clicks → 5 clicks per user feedback.
   // Each click nudges the coin down 1/5 of the gap so the motion
