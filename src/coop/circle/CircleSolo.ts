@@ -17,6 +17,10 @@ const OVERLAY_ID = 'legion-overlay';
 const TILE = GRID.TILE;
 
 export async function startCircleSolo(): Promise<void> {
+  // Tear down any prior circle session first — otherwise its setInterval loop
+  // keeps running (CPU/memory leak) and rival boards fight over global state.
+  try { (window as any).__circleSolo?.board?.destroy?.(); } catch { /* ignore */ }
+  try { (window as any).__circleSolo?.sidebar?.destroy?.(); } catch { /* ignore */ }
   document.getElementById(OVERLAY_ID)?.remove();
 
   const overlay = document.createElement('div');
