@@ -118,10 +118,11 @@ export async function startCircleSolo(): Promise<void> {
     }
   };
 
+  // Convert a mouse event to a tile, inverting the camera (zoom + pan).
   const tileAt = (ev: MouseEvent): { col: number; row: number } => {
     const rect = canvas.getBoundingClientRect();
-    const scale = rect.width / W;
-    return { col: Math.floor((ev.clientX - rect.left) / scale / TILE), row: Math.floor((ev.clientY - rect.top) / scale / TILE) };
+    const s = W / rect.width;          // CSS px -> stage units (stage is W across)
+    return board.stageToTile((ev.clientX - rect.left) * s, (ev.clientY - rect.top) * s);
   };
 
   // Click a grass tile: hero placement > tower inspect > prospect reveal (real flow).
@@ -130,14 +131,32 @@ export async function startCircleSolo(): Promise<void> {
     board.handleTileClick(col, row);
   });
 
-  // Hover highlight on build tiles (green = buildable, red = blocked).
+  // Mouse move: cursor-follow camera pan (zoomed in, so move to see the edges)
+  // + build hover highlight.
   canvas.addEventListener('mousemove', (ev) => {
+    const rect = canvas.getBoundingClientRect();
+    board.panToFraction((ev.clientX - rect.left) / rect.width, (ev.clientY - rect.top) / rect.height);
     const { col, row } = tileAt(ev);
     if (col < 0 || row < 0 || col >= board.geo.size || row >= board.geo.size) { board.hover = null; return; }
     const empty = board.isBuildTile(col, row) && board.state.tiles[row]?.[col] === TileType.EMPTY;
     board.hover = { col, row, valid: empty && (board.state.phase === GamePhase.PROSPECT_PLACEMENT || board.pendingHero) };
   });
   canvas.addEventListener('mouseleave', () => { board.hover = null; });
+  // Scroll wheel = zoom.
+  canvas.addEventListener('wheel', (ev) => { ev.preventDefault(); board.zoomBy(ev.deltaY < 0 ? 0.12 : -0.12); }, { passive: false });
+
+  // Zoom in/out controls (bottom-right of the board).
+  const zoomCtl = document.createElement('div');
+  zoomCtl.style.cssText = 'position:absolute;right:12px;bottom:12px;z-index:45;display:flex;flex-direction:column;gap:6px';
+  const mkZoom = (label: string, d: number) => {
+    const z = document.createElement('button');
+    z.textContent = label;
+    z.style.cssText = 'width:34px;height:34px;background:#1a1206cc;color:#ffd34d;border:2px solid #5a431c;border-radius:7px;cursor:pointer;font-family:inherit;font-size:18px;font-weight:900;line-height:1';
+    z.onclick = () => board.zoomBy(d);
+    return z;
+  };
+  zoomCtl.append(mkZoom('+', 0.2), mkZoom('−', -0.2));
+  host.appendChild(zoomCtl);
 
   // Start-of-game hero draft (real ChooseHeroModal → state.pendingPurchasedTowers).
   import('../../render/ChooseHeroModal')

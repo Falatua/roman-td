@@ -35,6 +35,13 @@ export interface CircleEntityOpts {
   hover?: { col: number; row: number; valid: boolean } | null;
 }
 
+/** Stable per-entity animation phase from its id (so they don't sync up). */
+function hashPhase(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return ((Math.abs(h) % 1000) / 1000) * Math.PI * 2;
+}
+
 // Faint pair tints by quadrant (NW teal, NE purple, SE orange, SW yellow).
 const PAIR_TINT = [0x00b4aa, 0xaa5adc, 0xeb8228, 0xebc83c];
 
@@ -185,8 +192,12 @@ export function renderCircleEntities(layer: Container, state: GameStateShape, g:
     if (tx) {
       const s = new Sprite(tx);
       s.anchor.set(0.5);
-      s.x = cx; s.y = cy;
-      s.width = s.height = tile * 0.96;
+      // Bigger + a gentle idle "breathe" so towers read as alive.
+      const ph = hashPhase(t.id);
+      const breathe = 1 + Math.sin(state.tick * 2.3 + ph) * 0.04;
+      const base = tile * 1.14;
+      s.width = base * breathe; s.height = base * breathe;
+      s.x = cx; s.y = cy + Math.sin(state.tick * 2.3 + ph) * 0.9;
       if (t.pending) s.alpha = 0.55;
       layer.addChild(s);
     }
@@ -203,12 +214,17 @@ export function renderCircleEntities(layer: Container, state: GameStateShape, g:
   // Enemies — real sprite + status tint + HP bar. Bosses render larger.
   for (const e of state.enemies.values()) {
     const tx = tex(e.type);
-    const size = (e.isBoss ? tile * 1.7 : tile * 0.82);
+    const size = (e.isBoss ? tile * 1.9 : tile * 0.96);   // bigger + livelier
     if (tx) {
       const s = new Sprite(tx);
       s.anchor.set(0.5);
-      s.x = e.x; s.y = e.y;
-      s.width = s.height = size;
+      // Walk-bob + squash/stretch + face the travel direction.
+      const t2 = state.tick * 7 + hashPhase(e.id);
+      const sq = 1 + Math.sin(t2 * 2) * 0.06;
+      const faceSign = (e.dirX ?? 1) < 0 ? -1 : 1;
+      s.x = e.x; s.y = e.y + Math.sin(t2) * (size * 0.05);
+      s.height = size * sq;
+      s.width = (size / sq) * faceSign;     // negative width flips horizontally (facing)
       if ((e as any).__veiled) s.alpha = 0.35;
       // Dominant-status tint (slow/burn/poison/freeze/etc.).
       const st = e.statusEffects?.[0]?.kind as string | undefined;
@@ -238,23 +254,29 @@ export function renderCircleEntities(layer: Container, state: GameStateShape, g:
     layer.addChild(s);
   }
 
-  // Boss HP bar — big bar across the top during boss waves (readability).
-  let boss = null as any;
+}
+
+/**
+ * Screen-fixed HUD layer (boss HP bar). Drawn on a container that lives on
+ * app.stage (NOT inside the camera world), so it stays put when the player
+ * zooms or pans. `screenW` is the stage width (worldPx).
+ */
+export function renderCircleHud(layer: Container, state: GameStateShape, screenW: number): void {
+  for (const c of layer.removeChildren()) c.destroy({ children: true });
+  let boss: any = null;
   for (const e of state.enemies.values()) if (e.isBoss && (!boss || e.maxHp > boss.maxHp)) boss = e;
-  if (boss) {
-    const mapW = g.size * tile;
-    const bw = mapW * 0.6, bh = 14, bx = (mapW - bw) / 2, by = tile * 0.6;
-    const frac = Math.max(0, Math.min(1, boss.hp / boss.maxHp));
-    const bar = new Graphics();
-    bar.beginFill(0x000000, 0.7).drawRect(bx - 2, by - 2, bw + 4, bh + 4).endFill();
-    bar.lineStyle(1, 0x7a2a2a, 1).drawRect(bx, by, bw, bh);
-    bar.beginFill(0xcc2a2a, 0.95).drawRect(bx, by, bw * frac, bh).endFill();
-    layer.addChild(bar);
-    const label = new Text(`${String(boss.type).replace(/_/g, ' ')}   ${Math.ceil(boss.hp).toLocaleString()} / ${boss.maxHp.toLocaleString()}`, {
-      fontFamily: 'Courier New, monospace', fontSize: 10, fontWeight: '700', fill: 0xffe9a8, stroke: 0x000000, strokeThickness: 3,
-    });
-    label.anchor.set(0.5, 0.5);
-    label.x = bx + bw / 2; label.y = by + bh / 2;
-    layer.addChild(label);
-  }
+  if (!boss) return;
+  const bw = screenW * 0.6, bh = 14, bx = (screenW - bw) / 2, by = 16;
+  const frac = Math.max(0, Math.min(1, boss.hp / boss.maxHp));
+  const bar = new Graphics();
+  bar.beginFill(0x000000, 0.7).drawRect(bx - 2, by - 2, bw + 4, bh + 4).endFill();
+  bar.lineStyle(1, 0x7a2a2a, 1).drawRect(bx, by, bw, bh);
+  bar.beginFill(0xcc2a2a, 0.95).drawRect(bx, by, bw * frac, bh).endFill();
+  layer.addChild(bar);
+  const label = new Text(`${String(boss.type).replace(/_/g, ' ')}   ${Math.ceil(boss.hp).toLocaleString()} / ${boss.maxHp.toLocaleString()}`, {
+    fontFamily: 'Courier New, monospace', fontSize: 10, fontWeight: '700', fill: 0xffe9a8, stroke: 0x000000, strokeThickness: 3,
+  });
+  label.anchor.set(0.5, 0.5);
+  label.x = bx + bw / 2; label.y = by + bh / 2;
+  layer.addChild(label);
 }

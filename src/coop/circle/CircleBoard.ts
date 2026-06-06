@@ -26,7 +26,7 @@ import { createGameState, type GameStateShape } from '../../GameState';
 import { GRID, ECONOMY, WAVE, type AuraTile } from '../../constants';
 import { TileType, GamePhase, EnemyType, TowerType, TargetingMode, type Enemy, type DrawCard } from '../../types';
 import { generateCircleMap, type CircleMapGeometry } from './CircleMap';
-import { renderCircleMap, renderCircleEntities } from './CircleRenderer';
+import { renderCircleMap, renderCircleEntities, renderCircleHud } from './CircleRenderer';
 import { spawnEnemy, tickEnemies, tickBurnPatches, tickBossHazards } from '../../systems/EnemySystem';
 import { tickCombat, type CombatHooks } from '../../systems/CombatResolver';
 import { tickProjectiles } from '../../systems/ProjectileSystem';
@@ -73,6 +73,12 @@ export class CircleBoard {
   host: HTMLElement = document.body;
   selectedTowerId: string | null = null;
   hover: { col: number; row: number; valid: boolean } | null = null;
+  // Camera: a tad zoomed in by default so players pan to see the whole circle.
+  readonly world = new Container();
+  private readonly hudLayer = new Container();   // screen-fixed (boss bar) — outside the camera world
+  zoom = 1.3;
+  private camPanX = 0;
+  private camPanY = 0;
 
   readonly fx: CircleFx;
   readonly gore: GoreState = createGoreState();
@@ -118,7 +124,10 @@ export class CircleBoard {
     }
     (this.state as any).tiles = tiles;
 
-    this.app = new Application({ width: N * TILE, height: N * TILE, backgroundColor: 0x0c1208, antialias: false, autoStart: false });
+    this.app = new Application({
+      width: N * TILE, height: N * TILE, backgroundColor: 0x0c1208, antialias: false, autoStart: false,
+      resolution: Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1), autoDensity: false,
+    });
 
     // REAL combat presentation: reuse the single-player BoardPresentation hooks
     // (SFX + gore + slash/muzzle/ring/shake VFX) via the CircleFx renderer shim.
@@ -153,7 +162,9 @@ export class CircleBoard {
   mount(parent: HTMLElement): void {
     this.host = parent;
     setAuraTilesOverride(this.auraTiles);     // this board owns the aura tiles while active
-    this.app.stage.addChild(this.mapLayer, this.entityLayer, this.fx.goreLayer, this.fx.fxLayer);
+    this.world.addChild(this.mapLayer, this.entityLayer, this.fx.goreLayer, this.fx.fxLayer);
+    this.app.stage.addChild(this.world, this.hudLayer);
+    this.applyCamera();
     renderCircleMap(this.mapLayer, this.geo, TILE, 1, this.auraTiles);
     this.app.render();
     parent.appendChild(this.canvas);
@@ -170,6 +181,35 @@ export class CircleBoard {
   get canvas(): HTMLCanvasElement { return this.app.view as HTMLCanvasElement; }
   get enemiesAlive(): number { return this.state.enemies.size; }
   get inWave(): boolean { return this.state.phase === GamePhase.WAVE_PHASE; }
+
+  // ── Camera (zoom + pan) ────────────────────────────────────────────────
+  get worldPx(): number { return this.geo.size * TILE; }
+  applyCamera(): void {
+    const W = this.worldPx;
+    const overflow = W * (this.zoom - 1);
+    const half = overflow / 2;
+    this.camPanX = Math.max(-half, Math.min(half, this.camPanX));
+    this.camPanY = Math.max(-half, Math.min(half, this.camPanY));
+    this.world.scale.set(this.zoom);
+    this.world.position.set((W - W * this.zoom) / 2 + this.camPanX, (W - W * this.zoom) / 2 + this.camPanY);
+  }
+  zoomBy(delta: number): void {
+    this.zoom = Math.max(0.9, Math.min(2.6, +(this.zoom + delta).toFixed(3)));
+    this.applyCamera();
+  }
+  /** Pan from a cursor fraction (0..1 across the viewport): cursor at an edge reveals that edge. */
+  panToFraction(fx: number, fy: number): void {
+    const overflow = this.worldPx * (this.zoom - 1);
+    this.camPanX = (0.5 - Math.max(0, Math.min(1, fx))) * overflow;
+    this.camPanY = (0.5 - Math.max(0, Math.min(1, fy))) * overflow;
+    this.applyCamera();
+  }
+  /** Stage-space point (0..worldPx) -> tile, inverting the camera transform. */
+  stageToTile(sx: number, sy: number): { col: number; row: number } {
+    const wx = (sx - this.world.position.x) / this.zoom;
+    const wy = (sy - this.world.position.y) / this.zoom;
+    return { col: Math.floor(wx / TILE), row: Math.floor(wy / TILE) };
+  }
 
   // ── Board interface the sidebar wires to ───────────────────────────────
   /** START WAVE — boot the real WaveManager wave (fanned to 4 corners). */
@@ -391,6 +431,7 @@ export class CircleBoard {
     renderCircleEntities(this.entityLayer, this.state, this.geo, TILE, { selectedTowerId: this.selectedTowerId, hover: this.hover });
     this.fx.update(adv);              // advance slash/muzzle/ring/shake
     this.fx.renderGore(this.gore);    // blood + corpses + floating damage numbers
+    renderCircleHud(this.hudLayer, this.state, this.worldPx);   // screen-fixed boss bar
     // Combo-available chime (0 -> >=1) during build — base parity.
     const cc = realizableComboCount(this.state);
     if (this._lastCombo === 0 && cc > 0) SFX.comboAvailable();
