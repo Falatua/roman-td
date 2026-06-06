@@ -171,7 +171,10 @@ export function mountCircleSidebar(o: CircleSidebarOpts): CircleSidebar {
     onOpenSettings: () => showSettingsPanel(o.overlay),
     onDpsCheck: () => dpsCheck(),
     onSetAllTargeting: (mode: TargetingMode) => board.setAllTargeting(mode),
-    onHeroInspect: () => { /* hero draft wired next slice */ },
+    onHeroInspect: () => {
+      const h = Array.from(board.state.towers.values()).find((t) => String(t.type).startsWith('HERO_'));
+      if (h) board.inspectAt(h.tileX, h.tileY);   // open the real tower menu on the placed hero
+    },
   }, { leftPanel, rightPanel });
 
   // Place the tip bar directly under the HUD stat block.
