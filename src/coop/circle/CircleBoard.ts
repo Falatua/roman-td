@@ -28,15 +28,19 @@ import { TileType, GamePhase, EnemyType, TowerType, TargetingMode, type Enemy, t
 import { generateCircleMap, type CircleMapGeometry } from './CircleMap';
 import { renderCircleMap, renderCircleEntities } from './CircleRenderer';
 import { spawnEnemy, tickEnemies } from '../../systems/EnemySystem';
-import { tickCombat, applyDamageAndStatus, type CombatHooks } from '../../systems/CombatResolver';
+import { tickCombat, type CombatHooks } from '../../systems/CombatResolver';
 import { tickProjectiles } from '../../systems/ProjectileSystem';
 import { createTower, rollDraw, BASE_TOWER_TYPES } from '../../systems/TowerSystem';
-import { startWave, tickSpawns, checkWaveEnd } from '../../systems/WaveManager';
+import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo } from '../../systems/WaveManager';
 import { poolUpgradeCost, spendGold, earnGold } from '../../systems/EconomySystem';
 import { realizableCombos, executeCombo } from '../../systems/CombinationEngine';
+import { createGoreState, tickGore, pruneCorpses, fadeCorpsesAtWaveEnd, type GoreState } from '../../systems/GoreSystem';
+import { buildCombatHooks, buildProjectileHooks, emitBoardDeathFx, boardWaveAudio, realizableComboCount } from '../BoardPresentation';
+import { SFX } from '../../render/AudioManager';
 import { showTowerMenu } from '../../render/TowerMenu';
 import { showCodex } from '../../render/Codex';
 import { createInventory, type InventoryState } from '../../systems/LootSystem';
+import { CircleFx } from './CircleFx';
 
 const TILE = GRID.TILE;          // 32px game coords so base combat ranges match
 const FRAME_MS = 1000 / 60;
@@ -64,12 +68,15 @@ export class CircleBoard {
   overlay: HTMLElement = document.body;
   host: HTMLElement = document.body;
 
+  readonly fx: CircleFx;
+  readonly gore: GoreState = createGoreState();
   private readonly mapLayer = new Container();
   private readonly entityLayer = new Container();
   private readonly combatHooks: CombatHooks;
   private readonly projHooks: { onImpact: (p: any, target: Enemy | null, hx: number, hy: number) => void };
   private loop = 0;
   private cornerRR = 0;
+  private _lastCombo = 0;
   /** Notified each frame so the host UI can refresh the HUD/sidebar. */
   onHud: ((b: CircleBoard) => void) | null = null;
 
@@ -101,35 +108,14 @@ export class CircleBoard {
 
     this.app = new Application({ width: N * TILE, height: N * TILE, backgroundColor: 0x0c1208, antialias: false, autoStart: false });
 
-    this.combatHooks = {
-      onKill: (_t, e) => {
-        this.state.gold += (e.reward ?? 0) + ECONOMY.BASE_GOLD_PER_KILL;
-        this.state.totalKills += 1;
-        this.state.enemiesKilledThisWave += 1;
-        this.state.score += 1;
-      },
-      onHit: () => { /* VFX added next slice */ },
-      onMeleeSwing: () => { /* VFX/SFX added next slice */ },
-      onProjectileFire: () => { /* SFX added next slice */ },
-    };
-    this.projHooks = {
-      onImpact: (p, target, hx, hy) => {
-        if (p.cosmetic) return;
-        if (target && target.hp > 0) {
-          const tw = this.state.towers.get(p.sourceTowerId);
-          if (tw) applyDamageAndStatus(this.state, tw, target, p.damage, this.combatHooks);
-          if (p.splash > 0) {
-            const r = p.splash * TILE;
-            for (const other of this.state.enemies.values()) {
-              if (other.id === (target as Enemy).id) continue;
-              if (Math.hypot(other.x - hx, other.y - hy) <= r && tw) {
-                applyDamageAndStatus(this.state, tw, other, p.damage * 0.6, this.combatHooks);
-              }
-            }
-          }
-        }
-      },
-    };
+    // REAL combat presentation: reuse the single-player BoardPresentation hooks
+    // (SFX + gore + slash/muzzle/ring/shake VFX) via the CircleFx renderer shim.
+    // buildCombatHooks already mints kill gold + totalKills; we add score.
+    this.fx = new CircleFx(this.app.stage);
+    this.combatHooks = buildCombatHooks(this.fx as any, this.state, this.gore, {
+      onKill: () => { this.state.score += 1; },
+    });
+    this.projHooks = buildProjectileHooks(this.fx as any, this.state, this.gore, this.combatHooks);
   }
 
   /** Buildable = interior, not on the path, not on the outer margin. */
@@ -142,7 +128,7 @@ export class CircleBoard {
   // ── Lifecycle (board interface) ────────────────────────────────────────
   mount(parent: HTMLElement): void {
     this.host = parent;
-    this.app.stage.addChild(this.mapLayer, this.entityLayer);
+    this.app.stage.addChild(this.mapLayer, this.entityLayer, this.fx.goreLayer, this.fx.fxLayer);
     renderCircleMap(this.mapLayer, this.geo, TILE, 1);
     this.app.render();
     parent.appendChild(this.canvas);
@@ -165,8 +151,10 @@ export class CircleBoard {
     if (this.inWave) return;
     if (this.state.phase === GamePhase.GAME_OVER || this.state.phase === GamePhase.VICTORY) return;
     if (this.hasPending) this.crystallizeAll();    // unkept prospects cement to walls
+    const info: any = getNextWaveInfo(this.state);
     startWave(this.state);                         // bumps wave, builds spawnQueue, sets WAVE_PHASE
     (this.state as any).__waveStartTick = this.state.tick;
+    boardWaveAudio(this.fx as any, info?.faction, info?.type === 'B', this.state.wave);  // wave bumper + faction BGM
   }
   upgradePool(): boolean {
     const cost = poolUpgradeCost(this.state);
@@ -232,6 +220,7 @@ export class CircleBoard {
     this.state.towers.set(t.id, t);
     (this.state as any).tiles[row][col] = TileType.TOWER;
     this.state.prospectsPlaced += 1;
+    SFX.prospectPlace();
     return true;
   }
 
@@ -241,6 +230,7 @@ export class CircleBoard {
     if (!keeper || !keeper.pending) return;
     keeper.pending = false;
     keeper.placedAtWave = this.state.wave;
+    SFX.prospectKeep();
     if ((keeper as any).isAerarium) this.state.goldTowerCount += 1;
     this.state.hasKeptAnyTowerEver = true;
     this.state.keepsRemainingThisRound = Math.max(0, this.state.keepsRemainingThisRound - 1);
@@ -291,7 +281,7 @@ export class CircleBoard {
       onKeep: (id: string) => { this.keepProspect(id); document.getElementById('tower-menu')?.remove(); },
       onCombine: prewave ? (recipeIndex: number, isSameTierMerge: boolean, resultTileTowerId: string) => {
         const combo = realizableCombos(this.state).find((c) => c.recipeIndex === recipeIndex && !!c.isSameTierMerge === isSameTierMerge);
-        if (combo) executeCombo(this.state, combo, resultTileTowerId);
+        if (combo && executeCombo(this.state, combo, resultTileTowerId)) SFX.comboMade();
         document.getElementById('tower-menu')?.remove();
       } : undefined,
     });
@@ -334,24 +324,36 @@ export class CircleBoard {
           this.state.lives = Math.max(0, this.state.lives - (e.livesCost ?? 1));
           if (this.state.lives <= 0) this.state.phase = GamePhase.GAME_OVER;
         },
-        () => { /* death gold handled in combat onKill */ },
+        (e) => emitBoardDeathFx(this.fx as any, this.state, this.gore, e),   // death blood + ring + SFX
       );
       tickCombat(this.state, dt, this.combatHooks);
       tickProjectiles(this.state, dt, this.projHooks);
+      tickGore(this.gore, dt);
       checkWaveEnd(this.state, (gold) => {
         earnGold(this.state, Math.max(0, gold));
+        SFX.waveSurvived();
+        fadeCorpsesAtWaveEnd(this.gore, this.state.tick);
         if (this.state.wave >= WAVE.TOTAL) { this.state.phase = GamePhase.VICTORY; return; }
         this.rollProspects();                        // open the next build round
       });
     }
+    pruneCorpses(this.gore, this.state.tick);
   }
 
   private frame(): void {
+    let adv = DT;
     if (!this.paused && this.state.phase !== GamePhase.GAME_OVER && this.state.phase !== GamePhase.VICTORY) {
       const steps = Math.max(1, this.speedMult | 0);
       for (let s = 0; s < steps; s++) this.step(DT);
+      adv = DT * steps;
     }
     renderCircleEntities(this.entityLayer, this.state, this.geo, TILE);
+    this.fx.update(adv);              // advance slash/muzzle/ring/shake
+    this.fx.renderGore(this.gore);    // blood + corpses + floating damage numbers
+    // Combo-available chime (0 -> >=1) during build — base parity.
+    const cc = realizableComboCount(this.state);
+    if (this._lastCombo === 0 && cc > 0) SFX.comboAvailable();
+    this._lastCombo = cc;
     this.app.render();
     this.onHud?.(this);
   }
