@@ -18,6 +18,7 @@ import { tex } from '../../render/Assets';
 import { biomeForWave, BIOMES } from '../../render/Biomes';
 import { realizableCombos } from '../../systems/CombinationEngine';
 import { towerEffectiveStats } from '../../systems/TowerSystem';
+import { isSurpriseEventActive, getAllActiveSurpriseEvents } from '../../systems/SurpriseEvents';
 import { AURA_TILE_EFFECTS, type AuraTile } from '../../constants';
 import { GamePhase } from '../../types';
 import type { GameStateShape } from '../../GameState';
@@ -261,6 +262,44 @@ export function renderCircleEntities(layer: Container, state: GameStateShape, g:
  * app.stage (NOT inside the camera world), so it stays put when the player
  * zooms or pans. `screenW` is the stage width (worldPx).
  */
+/**
+ * Surprise-event FX on the circle. While Invasion / Uprising / Gates of Hell is
+ * active, paints a screen tint + a pulsing breach at each of the four corner
+ * caves (the circle's "gates"): fire for INVASION, a skull urn for UPRISING,
+ * a hellfire glow for GATES_OF_HELL (the HELL_GATE spawners themselves render
+ * as enemies at the corners). Drawn under the entity layer.
+ */
+export function renderCircleSurprise(layer: Container, state: GameStateShape, g: CircleMapGeometry, tile: number): void {
+  for (const c of layer.removeChildren()) c.destroy({ children: true });
+  if (!isSurpriseEventActive(state)) return;
+  const kind = (state.activeSurpriseEvent?.kind ?? getAllActiveSurpriseEvents(state)[0]?.kind) as string | undefined;
+  const color = kind === 'UPRISING' ? 0x8a4ad0 : kind === 'GATES_OF_HELL' ? 0xcc2a10 : 0xff7722;
+  const iconKey = kind === 'UPRISING' ? 'SKULL_URN' : kind === 'GATES_OF_HELL' ? null : 'FIRE_LARGE';
+
+  // Screen tint wash over the whole board.
+  const tint = new Graphics();
+  tint.beginFill(color, 0.10).drawRect(0, 0, g.size * tile, g.size * tile).endFill();
+  layer.addChild(tint);
+
+  // Pulsing breach at each of the 4 corner caves.
+  const pulse = 0.55 + 0.45 * Math.sin(state.tick * 6);
+  for (const sp of g.spawns) {
+    const cx = sp.col * tile + tile / 2, cy = sp.row * tile + tile / 2;
+    const glow = new Graphics();
+    glow.beginFill(color, 0.26 * pulse).drawCircle(cx, cy, tile * 1.7).endFill();
+    glow.beginFill(color, 0.18 * pulse).drawCircle(cx, cy, tile * 2.6).endFill();
+    layer.addChild(glow);
+    if (iconKey) {
+      const t = tex(iconKey);
+      if (t) {
+        const s = new Sprite(t);
+        s.anchor.set(0.5); s.x = cx; s.y = cy; s.width = s.height = tile * 1.9 * (0.9 + 0.15 * pulse);
+        layer.addChild(s);
+      }
+    }
+  }
+}
+
 export function renderCircleHud(layer: Container, state: GameStateShape, screenW: number): void {
   for (const c of layer.removeChildren()) c.destroy({ children: true });
   let boss: any = null;

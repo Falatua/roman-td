@@ -26,7 +26,7 @@ import { createGameState, type GameStateShape } from '../../GameState';
 import { GRID, ECONOMY, WAVE, type AuraTile } from '../../constants';
 import { TileType, GamePhase, EnemyType, TowerType, TargetingMode, type Enemy, type DrawCard } from '../../types';
 import { generateCircleMap, quadrantOf, type CircleMapGeometry } from './CircleMap';
-import { renderCircleMap, renderCircleEntities, renderCircleHud } from './CircleRenderer';
+import { renderCircleMap, renderCircleEntities, renderCircleHud, renderCircleSurprise } from './CircleRenderer';
 import { spawnEnemy, tickEnemies, tickBurnPatches, tickBossHazards } from '../../systems/EnemySystem';
 import { tickCombat, type CombatHooks } from '../../systems/CombatResolver';
 import { tickProjectiles } from '../../systems/ProjectileSystem';
@@ -94,7 +94,9 @@ export class CircleBoard {
   readonly gore: GoreState = createGoreState();
   readonly auraTiles: AuraTile[];
   private readonly mapLayer = new Container();
+  private readonly surpriseLayer = new Container();   // surprise-event breaches/tint (under entities)
   private readonly entityLayer = new Container();
+  private gateRR = 0;                                  // distributes the 4 hell gates one-per-corner
   private readonly combatHooks: CombatHooks;
   private readonly projHooks: { onImpact: (p: any, target: Enemy | null, hx: number, hy: number) => void };
   private loop = 0;
@@ -190,7 +192,7 @@ export class CircleBoard {
   mount(parent: HTMLElement): void {
     this.host = parent;
     setAuraTilesOverride(this.auraTiles);     // this board owns the aura tiles while active
-    this.world.addChild(this.mapLayer, this.entityLayer, this.fx.goreLayer, this.fx.fxLayer);
+    this.world.addChild(this.mapLayer, this.surpriseLayer, this.entityLayer, this.fx.goreLayer, this.fx.fxLayer);
     this.app.stage.addChild(this.world, this.hudLayer);
     this.applyCamera();
     renderCircleMap(this.mapLayer, this.geo, TILE, 1, this.auraTiles);
@@ -396,8 +398,12 @@ export class CircleBoard {
 
   // ── Per-frame simulation ───────────────────────────────────────────────
   private assignCorner(e: Enemy): void {
-    const sp = this.geo.spawns[this.cornerRR % this.geo.spawns.length];
-    this.cornerRR += 1;
+    // Hell gates (stationary spawners) get their own round-robin so the 4 gates
+    // land one per corner cave ("Gates of Hell at each gate"); everything else
+    // shares the normal corner round-robin.
+    const isGate = (e.type as string) === 'HELL_GATE';
+    const idx = (isGate ? this.gateRR++ : this.cornerRR++) % this.geo.spawns.length;
+    const sp = this.geo.spawns[idx];
     if (!sp) return;
     const tile = this.geo.path[sp.pathIndex];
     e.pathIndex = sp.pathIndex;
@@ -412,14 +418,13 @@ export class CircleBoard {
     if (this.inWave) {
       const before = new Set(this.state.enemies.keys());
       tickSpawns(this.state, dt);
-      // Fan every newly-spawned ground creep across the 4 corner caves.
+      tickSurpriseEvents(this.state);   // surprise spawns BEFORE the fan, so invaders + hell gates emerge from the 4 corners
+      // Fan every newly-spawned ground creep (incl. surprise invaders / hell gates) across the 4 corner caves.
       for (const [id, e] of this.state.enemies) {
         if (before.has(id) || e.isFlyer) continue;
         this.assignCorner(e);
       }
-      // Full single-player per-frame parity: surprise events, boss scripts,
-      // enemy auras, hero abilities, fire-ground DoT, boss hazards.
-      tickSurpriseEvents(this.state);
+      // Boss scripts run AFTER the fan so boss-summoned minions keep their spawn position.
       tickBossScripts(this.state, dt, this.bossRuntime, this.waveStartTick);
       applyEnemyAuras(this.state);
       tickHeroAbilities(this.state, this.heroHooks);
@@ -458,6 +463,7 @@ export class CircleBoard {
       for (let s = 0; s < steps; s++) this.step(DT);
       adv = DT * steps;
     }
+    renderCircleSurprise(this.surpriseLayer, this.state, this.geo, TILE);   // invasion fire / uprising urns / hell-gate glow at the corners
     renderCircleEntities(this.entityLayer, this.state, this.geo, TILE, { selectedTowerId: this.selectedTowerId, hover: this.hover });
     this.fx.update(adv);              // advance slash/muzzle/ring/shake
     this.fx.renderGore(this.gore);    // blood + corpses + floating damage numbers
