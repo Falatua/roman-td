@@ -81,6 +81,14 @@ export class CircleFx {
 
   setBossWaveActive(on: boolean): void { this.bossWaveActive = on; }
 
+  /** Boss-death "blood rain" — a brief crimson wash over the board (called by emitBoardDeathFx). */
+  triggerBloodRain(_tick: number, _count = 80, scale = 1): void {
+    const g = new Graphics();
+    g.beginFill(0x7a0d0d, Math.min(0.35, 0.2 * scale)).drawRect(-32, -32, 9999, 9999).endFill();
+    this.fxLayer.addChild(g);
+    this.slashes.push({ node: g, life: 0.6, max: 0.6 });   // slashes list only fades alpha (no scale)
+  }
+
   // ── Per-frame advance ──────────────────────────────────────────────────
   update(dt: number): void {
     for (let i = this.slashes.length - 1; i >= 0; i--) {
