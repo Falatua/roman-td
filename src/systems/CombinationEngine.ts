@@ -283,7 +283,10 @@ export function executeCombo(state: GameStateShape, combo: AvailableCombo, resul
     prevTiles.push({ col: t.tileX, row: t.tileY, tile: state.tiles[t.tileY][t.tileX] });
     state.tiles[t.tileY][t.tileX] = (t.id === resultIngr.id) ? TileType.TOWER : TileType.STONE;
   }
-  const pathOk = buildGroundPath(state) !== null;
+  // Fixed-path modes (e.g. the Green Circle co-op map) have an immutable
+  // spiral that build-tile towers can never block, and no 38x26 spawn/gate
+  // for buildGroundPath to resolve — so skip the maze re-validation there.
+  const pathOk = (state as any).__fixedPath ? true : (buildGroundPath(state) !== null);
   for (const p of prevTiles) state.tiles[p.row][p.col] = p.tile; // roll back
   if (!pathOk) {
     state.hint = 'That combo would block the path. Choose a different result tile or sell a stone first.';

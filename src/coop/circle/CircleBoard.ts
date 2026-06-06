@@ -24,7 +24,7 @@
 import { Application, Container } from 'pixi.js';
 import { createGameState, type GameStateShape } from '../../GameState';
 import { GRID, ECONOMY, WAVE } from '../../constants';
-import { TileType, GamePhase, EnemyType, TowerType, TargetingMode, type Enemy } from '../../types';
+import { TileType, GamePhase, EnemyType, TowerType, TargetingMode, type Enemy, type DrawCard } from '../../types';
 import { generateCircleMap, type CircleMapGeometry } from './CircleMap';
 import { renderCircleMap, renderCircleEntities } from './CircleRenderer';
 import { spawnEnemy, tickEnemies } from '../../systems/EnemySystem';
@@ -32,13 +32,20 @@ import { tickCombat, applyDamageAndStatus, type CombatHooks } from '../../system
 import { tickProjectiles } from '../../systems/ProjectileSystem';
 import { createTower, rollDraw, BASE_TOWER_TYPES } from '../../systems/TowerSystem';
 import { startWave, tickSpawns, checkWaveEnd } from '../../systems/WaveManager';
-import { poolUpgradeCost } from '../../systems/EconomySystem';
+import { poolUpgradeCost, spendGold, earnGold } from '../../systems/EconomySystem';
+import { realizableCombos, executeCombo } from '../../systems/CombinationEngine';
+import { showTowerMenu } from '../../render/TowerMenu';
 import { showCodex } from '../../render/Codex';
 import { createInventory, type InventoryState } from '../../systems/LootSystem';
 
 const TILE = GRID.TILE;          // 32px game coords so base combat ranges match
 const FRAME_MS = 1000 / 60;
 const DT = FRAME_MS / 1000;
+
+// Prospecting constants — base parity (RomanBoard / main.ts).
+const PROSPECT_PLACE_COST = 1;
+const MAX_PROSPECTS_PER_ROUND = 10;
+const KEEPS_PER_ROUND = 2;
 
 export interface CircleBoardOpts {
   startingGold?: number;
@@ -55,6 +62,7 @@ export class CircleBoard {
   speedMult = 1;
   paused = false;
   overlay: HTMLElement = document.body;
+  host: HTMLElement = document.body;
 
   private readonly mapLayer = new Container();
   private readonly entityLayer = new Container();
@@ -73,6 +81,7 @@ export class CircleBoard {
     this.state.lives = opts.startingLives ?? ECONOMY.STARTING_LIVES;   // shared center pool
     this.state.wave = 0;                       // pre-game; march() -> wave 1
     this.state.phase = GamePhase.BUILD_PHASE;
+    (this.state as any).__fixedPath = true;    // immutable spiral: skip maze re-validation in combos
 
     // The circle spiral IS the ground path. Flyer path = pixel-center version.
     this.state.groundPath = this.geo.path.map((p) => ({ col: p.col, row: p.row }));
@@ -132,10 +141,12 @@ export class CircleBoard {
 
   // ── Lifecycle (board interface) ────────────────────────────────────────
   mount(parent: HTMLElement): void {
+    this.host = parent;
     this.app.stage.addChild(this.mapLayer, this.entityLayer);
     renderCircleMap(this.mapLayer, this.geo, TILE, 1);
     this.app.render();
     parent.appendChild(this.canvas);
+    this.rollProspects();                  // open the first build round (PROSPECT_PLACEMENT)
     this.loop = window.setInterval(() => this.frame(), FRAME_MS);
   }
   destroy(): void {
@@ -153,7 +164,9 @@ export class CircleBoard {
   march(): void {
     if (this.inWave) return;
     if (this.state.phase === GamePhase.GAME_OVER || this.state.phase === GamePhase.VICTORY) return;
-    startWave(this.state);                     // bumps wave, builds spawnQueue, sets WAVE_PHASE
+    if (this.hasPending) this.crystallizeAll();    // unkept prospects cement to walls
+    startWave(this.state);                         // bumps wave, builds spawnQueue, sets WAVE_PHASE
+    (this.state as any).__waveStartTick = this.state.tick;
   }
   upgradePool(): boolean {
     const cost = poolUpgradeCost(this.state);
@@ -192,6 +205,107 @@ export class CircleBoard {
     return true;
   }
 
+  // ── PROSPECTING (base parity, build-tile placement, fixed spiral) ──────
+  get hasPending(): boolean { for (const t of this.state.towers.values()) if (t.pending) return true; return false; }
+  get pendingHero(): boolean { const p = this.state.pendingPurchasedTowers; return !!(p && p.length && p[0].source === 'hero'); }
+
+  /** Roll a fresh draw and enter PROSPECT_PLACEMENT (mirrors rollProspects). */
+  rollProspects(): void {
+    this.state.prospectQueue = rollDraw(this.state, BASE_TOWER_TYPES);
+    this.state.prospectsPlaced = 0;
+    this.state.keepsRemainingThisRound = KEEPS_PER_ROUND;
+    this.state.phase = GamePhase.PROSPECT_PLACEMENT;
+    this.state.hint = 'Click empty grass tiles to reveal prospects (1g each). Click a tower to KEEP / COMBINE. START WAVE when ready.';
+  }
+
+  /** Reveal a prospect on a grass build tile (1g, pending=true). No path validate — the spiral is fixed. */
+  placeProspectAt(col: number, row: number): boolean {
+    if (this.state.phase !== GamePhase.PROSPECT_PLACEMENT) return false;
+    if (!this.isBuildTile(col, row)) return false;
+    if ((this.state as any).tiles[row]?.[col] !== TileType.EMPTY) return false;
+    if (this.state.prospectsPlaced >= MAX_PROSPECTS_PER_ROUND) { this.state.hint = 'Prospect cap reached this round. KEEP or START WAVE.'; return false; }
+    if (this.state.gold < PROSPECT_PLACE_COST) { this.state.hint = 'Not enough gold to roll a prospect.'; return false; }
+    if (this.state.prospectQueue.length === 0) this.state.prospectQueue = rollDraw(this.state, BASE_TOWER_TYPES);
+    spendGold(this.state, PROSPECT_PLACE_COST);
+    const card = this.state.prospectQueue.shift() as DrawCard;
+    const t = createTower(card.type as TowerType, card.tier as 1 | 2 | 3 | 4 | 5, col, row, Math.max(1, this.state.wave), true);
+    this.state.towers.set(t.id, t);
+    (this.state as any).tiles[row][col] = TileType.TOWER;
+    this.state.prospectsPlaced += 1;
+    return true;
+  }
+
+  /** Keep a pending prospect; crystallize the rest + return to BUILD when keeps run out. */
+  keepProspect(id: string): void {
+    const keeper = this.state.towers.get(id);
+    if (!keeper || !keeper.pending) return;
+    keeper.pending = false;
+    keeper.placedAtWave = this.state.wave;
+    if ((keeper as any).isAerarium) this.state.goldTowerCount += 1;
+    this.state.hasKeptAnyTowerEver = true;
+    this.state.keepsRemainingThisRound = Math.max(0, this.state.keepsRemainingThisRound - 1);
+    if (this.state.keepsRemainingThisRound > 0 && this.hasPending) {
+      this.state.phase = this.state.prospectQueue.length > 0 ? GamePhase.PROSPECT_PLACEMENT : GamePhase.PICK_KEEPER;
+    } else {
+      this.crystallizeRemaining(id);
+      this.state.phase = GamePhase.BUILD_PHASE;
+    }
+  }
+
+  /** Convert every pending prospect to a stone wall (mirrors crystallizeAll). */
+  crystallizeAll(): void {
+    for (const t of Array.from(this.state.towers.values())) {
+      if (t.pending) { this.state.towers.delete(t.id); (this.state as any).tiles[t.tileY][t.tileX] = TileType.STONE; }
+    }
+    this.state.prospectQueue = [];
+    this.state.phase = GamePhase.BUILD_PHASE;
+  }
+  private crystallizeRemaining(exceptId: string): void {
+    for (const t of Array.from(this.state.towers.values())) {
+      if (t.pending && t.id !== exceptId) { this.state.towers.delete(t.id); (this.state as any).tiles[t.tileY][t.tileX] = TileType.STONE; }
+    }
+  }
+
+  /** Place the drafted hero (state.pendingPurchasedTowers) on a grass tile. */
+  placeHeroAt(col: number, row: number): boolean {
+    const pend = this.state.pendingPurchasedTowers;
+    if (!pend || pend.length === 0 || pend[0].source !== 'hero') return false;
+    if (!this.isBuildTile(col, row)) return false;
+    if ((this.state as any).tiles[row]?.[col] !== TileType.EMPTY) return false;
+    const head = pend.shift()!;
+    const tw = createTower(head.type as TowerType, (head.tier ?? 1) as 1 | 2 | 3 | 4 | 5, col, row, Math.max(1, this.state.wave), false);
+    this.state.towers.set(tw.id, tw);
+    (this.state as any).tiles[row][col] = TileType.TOWER;
+    if (!this.state.activeHeroId) this.state.activeHeroId = head.type as any;
+    return true;
+  }
+
+  /** The REAL tower menu (stats / items / targeting / keep / combine). */
+  inspectAt(col: number, row: number): void {
+    const tw = Array.from(this.state.towers.values()).find((t) => t.tileX === col && t.tileY === row);
+    if (!tw) return;
+    const prewave = this.state.phase !== GamePhase.WAVE_PHASE;
+    showTowerMenu(this.host, tw, this.state, this.inventory, {
+      onClose: () => document.getElementById('tower-menu')?.remove(),
+      onPathRefresh: () => { /* fixed spiral — no path rebuild */ },
+      onKeep: (id: string) => { this.keepProspect(id); document.getElementById('tower-menu')?.remove(); },
+      onCombine: prewave ? (recipeIndex: number, isSameTierMerge: boolean, resultTileTowerId: string) => {
+        const combo = realizableCombos(this.state).find((c) => c.recipeIndex === recipeIndex && !!c.isSameTierMerge === isSameTierMerge);
+        if (combo) executeCombo(this.state, combo, resultTileTowerId);
+        document.getElementById('tower-menu')?.remove();
+      } : undefined,
+    });
+  }
+
+  /** Route a tile click: hero placement > tower inspect > prospect reveal. */
+  handleTileClick(col: number, row: number): void {
+    if (this.state.phase === GamePhase.GAME_OVER || this.state.phase === GamePhase.VICTORY) return;
+    const tile = (this.state as any).tiles[row]?.[col];
+    if (tile === TileType.TOWER) { this.inspectAt(col, row); return; }
+    if (this.pendingHero) { this.placeHeroAt(col, row); return; }
+    if (this.state.phase === GamePhase.PROSPECT_PLACEMENT && tile === TileType.EMPTY) this.placeProspectAt(col, row);
+  }
+
   // ── Per-frame simulation ───────────────────────────────────────────────
   private assignCorner(e: Enemy): void {
     const sp = this.geo.spawns[this.cornerRR % this.geo.spawns.length];
@@ -225,8 +339,9 @@ export class CircleBoard {
       tickCombat(this.state, dt, this.combatHooks);
       tickProjectiles(this.state, dt, this.projHooks);
       checkWaveEnd(this.state, (gold) => {
-        this.state.gold += gold;
-        if (this.state.wave >= WAVE.TOTAL) this.state.phase = GamePhase.VICTORY;
+        earnGold(this.state, Math.max(0, gold));
+        if (this.state.wave >= WAVE.TOTAL) { this.state.phase = GamePhase.VICTORY; return; }
+        this.rollProspects();                        // open the next build round
       });
     }
   }

@@ -61,18 +61,46 @@ export async function startCircleSolo(): Promise<void> {
   canvas.style.imageRendering = 'pixelated';
   canvas.style.cursor = 'crosshair';
 
-  // Refresh the sidebar/HUD each frame off the board loop.
-  board.onHud = () => sidebar?.refresh();
+  // Hero-placement banner (bottom-center), shown while a drafted hero awaits placement.
+  const heroBanner = document.createElement('div');
+  heroBanner.style.cssText =
+    'position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:40;display:none;' +
+    'background:linear-gradient(180deg,#0d1830,#08101f);border:2px solid #4a90e2;border-radius:8px;' +
+    'padding:8px 20px;text-align:center;color:#cfe6ff;box-shadow:0 0 22px #0009;pointer-events:none;' +
+    'animation:cs-pulse 1.2s ease-in-out infinite';
+  host.appendChild(heroBanner);
+  if (!document.getElementById('cs-pulse-style')) {
+    const st = document.createElement('style'); st.id = 'cs-pulse-style';
+    st.textContent = '@keyframes cs-pulse{0%,100%{opacity:.78}50%{opacity:1}}';
+    document.head.appendChild(st);
+  }
 
-  // Click a grass tile to build (prototype: rolls a real tower type).
+  // Refresh the sidebar/HUD each frame off the board loop + toggle hero banner.
+  board.onHud = () => {
+    sidebar?.refresh();
+    if (board.pendingHero) {
+      const h = board.state.pendingPurchasedTowers![0];
+      heroBanner.style.display = '';
+      heroBanner.innerHTML = `<div style="font-size:11px;letter-spacing:2px;color:#9fd0ff">★ CLICK ANY GRASS TILE TO PLACE</div>` +
+        `<div style="font-size:15px;font-weight:900;letter-spacing:1px">${String(h.type).replace(/^HERO_/, '').replace(/_/g, ' ')}</div>`;
+    } else if (heroBanner.style.display !== 'none') {
+      heroBanner.style.display = 'none';
+    }
+  };
+
+  // Click a grass tile: hero placement > tower inspect > prospect reveal (real flow).
   canvas.addEventListener('click', (ev) => {
-    if (board.state.phase === GamePhase.GAME_OVER || board.state.phase === GamePhase.VICTORY) return;
     const rect = canvas.getBoundingClientRect();
     const scale = rect.width / W;
     const col = Math.floor((ev.clientX - rect.left) / scale / TILE);
     const row = Math.floor((ev.clientY - rect.top) / scale / TILE);
-    board.placeTower(col, row);
+    board.handleTileClick(col, row);
   });
+
+  // Start-of-game hero draft (real ChooseHeroModal → state.pendingPurchasedTowers).
+  import('../../render/ChooseHeroModal')
+    .then((m) => m.showChooseHeroModal(board.state))
+    .catch(() => { /* hero draft optional */ });
 
   function fit(): void {
     const availW = host.clientWidth - 16;
