@@ -10,7 +10,7 @@
 
 import { CircleBoard } from './CircleBoard';
 import { mountCircleSidebar, type CircleSidebar } from './CircleSidebar';
-import { GamePhase } from '../../types';
+import { GamePhase, TileType } from '../../types';
 import { GRID } from '../../constants';
 
 const OVERLAY_ID = 'legion-overlay';
@@ -88,14 +88,26 @@ export async function startCircleSolo(): Promise<void> {
     }
   };
 
-  // Click a grass tile: hero placement > tower inspect > prospect reveal (real flow).
-  canvas.addEventListener('click', (ev) => {
+  const tileAt = (ev: MouseEvent): { col: number; row: number } => {
     const rect = canvas.getBoundingClientRect();
     const scale = rect.width / W;
-    const col = Math.floor((ev.clientX - rect.left) / scale / TILE);
-    const row = Math.floor((ev.clientY - rect.top) / scale / TILE);
+    return { col: Math.floor((ev.clientX - rect.left) / scale / TILE), row: Math.floor((ev.clientY - rect.top) / scale / TILE) };
+  };
+
+  // Click a grass tile: hero placement > tower inspect > prospect reveal (real flow).
+  canvas.addEventListener('click', (ev) => {
+    const { col, row } = tileAt(ev);
     board.handleTileClick(col, row);
   });
+
+  // Hover highlight on build tiles (green = buildable, red = blocked).
+  canvas.addEventListener('mousemove', (ev) => {
+    const { col, row } = tileAt(ev);
+    if (col < 0 || row < 0 || col >= board.geo.size || row >= board.geo.size) { board.hover = null; return; }
+    const empty = board.isBuildTile(col, row) && board.state.tiles[row]?.[col] === TileType.EMPTY;
+    board.hover = { col, row, valid: empty && (board.state.phase === GamePhase.PROSPECT_PLACEMENT || board.pendingHero) };
+  });
+  canvas.addEventListener('mouseleave', () => { board.hover = null; });
 
   // Start-of-game hero draft (real ChooseHeroModal → state.pendingPurchasedTowers).
   import('../../render/ChooseHeroModal')

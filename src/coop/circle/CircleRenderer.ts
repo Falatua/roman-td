@@ -13,12 +13,26 @@
 // sprite layers.
 // ─────────────────────────────────────────────────────────────────────
 
-import { Container, Graphics, Sprite } from 'pixi.js';
+import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import { tex } from '../../render/Assets';
 import { biomeForWave, BIOMES } from '../../render/Biomes';
+import { realizableCombos } from '../../systems/CombinationEngine';
+import { towerEffectiveStats } from '../../systems/TowerSystem';
+import { GamePhase } from '../../types';
 import type { GameStateShape } from '../../GameState';
 import type { CircleMapGeometry } from './CircleMap';
 import { quadrantOf } from './CircleMap';
+
+/** Dominant status-effect tint for an enemy sprite (combat readability cue). */
+const STATUS_TINT: Record<string, number> = {
+  FREEZE: 0x8fd6ff, SLOW: 0x6fb6ff, STUN: 0xffffff, POISON: 0x8fe06a,
+  BURN: 0xff8a3a, HELLFIRE: 0xff5a2a, BLEED: 0xff6b6b, ARMOR_SHRED: 0xffd24f, FEAR: 0xc89cff,
+};
+
+export interface CircleEntityOpts {
+  selectedTowerId?: string | null;
+  hover?: { col: number; row: number; valid: boolean } | null;
+}
 
 // Faint pair tints by quadrant (NW teal, NE purple, SE orange, SW yellow).
 const PAIR_TINT = [0x00b4aa, 0xaa5adc, 0xeb8228, 0xebc83c];
@@ -109,14 +123,43 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
 // (tw.type, e.type, p.spriteKey), so every base unit renders identically.
 // Position-based: enemy.x/y and tower.tileX/tileY are in GRID.TILE coords.
 // ─────────────────────────────────────────────────────────────────────
-export function renderCircleEntities(layer: Container, state: GameStateShape, _g: CircleMapGeometry, tile: number): void {
+export function renderCircleEntities(layer: Container, state: GameStateShape, g: CircleMapGeometry, tile: number, opts: CircleEntityOpts = {}): void {
   for (const c of layer.removeChildren()) c.destroy({ children: true });
 
-  // Towers (one per build tile) — real tower sprite, centered on its tile.
+  // Build-tile hover highlight (green = buildable, red = blocked).
+  if (opts.hover) {
+    const h = new Graphics();
+    const col = opts.hover.valid ? 0x6fff8f : 0xff6f6f;
+    h.lineStyle(2, col, 0.9).beginFill(col, 0.14)
+      .drawRect(opts.hover.col * tile + 1, opts.hover.row * tile + 1, tile - 2, tile - 2).endFill();
+    layer.addChild(h);
+  }
+
+  // Combo-eligible glow (build phases only — cheap enough, and only when relevant).
+  const comboIds = new Set<string>();
+  if (state.phase !== GamePhase.WAVE_PHASE) {
+    for (const c of realizableCombos(state)) for (const ing of c.ingredients) comboIds.add(ing.id);
+  }
+
+  // Towers — real sprite + tier pips + combo glow + selected range ring.
   for (const t of state.towers.values()) {
-    const tx = tex(t.type);
     const cx = t.tileX * tile + tile / 2;
     const cy = t.tileY * tile + tile / 2;
+
+    if (opts.selectedTowerId === t.id) {
+      const range = towerEffectiveStats(t).range;
+      const ring = new Graphics();
+      ring.lineStyle(2, 0xffd34f, 0.85).drawCircle(cx, cy, range * tile);
+      ring.beginFill(0xffd34f, 0.06).drawCircle(cx, cy, range * tile).endFill();
+      layer.addChild(ring);
+    }
+    if (comboIds.has(t.id)) {
+      const glow = new Graphics();
+      glow.lineStyle(2, 0xff5a5a, 0.9).drawCircle(cx, cy, tile * 0.62);  // red ring = combo-eligible
+      layer.addChild(glow);
+    }
+
+    const tx = tex(t.type);
     if (tx) {
       const s = new Sprite(tx);
       s.anchor.set(0.5);
@@ -125,9 +168,17 @@ export function renderCircleEntities(layer: Container, state: GameStateShape, _g
       if (t.pending) s.alpha = 0.55;
       layer.addChild(s);
     }
+    // Tier pips (small gold dots, one per tier above the tower).
+    const tier = t.qualityTier ?? 1;
+    if (tier > 1 && !t.pending) {
+      const pips = new Graphics();
+      const startX = cx - (tier - 1) * 2.5;
+      for (let i = 0; i < tier; i++) pips.beginFill(0xffd34f, 0.95).drawCircle(startX + i * 5, cy - tile / 2 + 2, 1.6).endFill();
+      layer.addChild(pips);
+    }
   }
 
-  // Enemies — real enemy sprite + a slim HP bar. Bosses render larger.
+  // Enemies — real sprite + status tint + HP bar. Bosses render larger.
   for (const e of state.enemies.values()) {
     const tx = tex(e.type);
     const size = (e.isBoss ? tile * 1.7 : tile * 0.82);
@@ -137,6 +188,9 @@ export function renderCircleEntities(layer: Container, state: GameStateShape, _g
       s.x = e.x; s.y = e.y;
       s.width = s.height = size;
       if ((e as any).__veiled) s.alpha = 0.35;
+      // Dominant-status tint (slow/burn/poison/freeze/etc.).
+      const st = e.statusEffects?.[0]?.kind as string | undefined;
+      if (st && STATUS_TINT[st]) s.tint = STATUS_TINT[st];
       layer.addChild(s);
     }
     if (e.hp < e.maxHp && e.maxHp > 0) {
@@ -150,7 +204,7 @@ export function renderCircleEntities(layer: Container, state: GameStateShape, _g
     }
   }
 
-  // Projectiles — real projectile sprite, rotated toward travel.
+  // Projectiles — real sprite, rotated toward travel.
   for (const p of state.projectiles.values()) {
     const tx = tex(p.spriteKey);
     if (!tx) continue;
@@ -160,5 +214,25 @@ export function renderCircleEntities(layer: Container, state: GameStateShape, _g
     s.width = s.height = tile * 0.5;
     s.rotation = p.rotation ?? 0;
     layer.addChild(s);
+  }
+
+  // Boss HP bar — big bar across the top during boss waves (readability).
+  let boss = null as any;
+  for (const e of state.enemies.values()) if (e.isBoss && (!boss || e.maxHp > boss.maxHp)) boss = e;
+  if (boss) {
+    const mapW = g.size * tile;
+    const bw = mapW * 0.6, bh = 14, bx = (mapW - bw) / 2, by = tile * 0.6;
+    const frac = Math.max(0, Math.min(1, boss.hp / boss.maxHp));
+    const bar = new Graphics();
+    bar.beginFill(0x000000, 0.7).drawRect(bx - 2, by - 2, bw + 4, bh + 4).endFill();
+    bar.lineStyle(1, 0x7a2a2a, 1).drawRect(bx, by, bw, bh);
+    bar.beginFill(0xcc2a2a, 0.95).drawRect(bx, by, bw * frac, bh).endFill();
+    layer.addChild(bar);
+    const label = new Text(`${String(boss.type).replace(/_/g, ' ')}   ${Math.ceil(boss.hp).toLocaleString()} / ${boss.maxHp.toLocaleString()}`, {
+      fontFamily: 'Courier New, monospace', fontSize: 10, fontWeight: '700', fill: 0xffe9a8, stroke: 0x000000, strokeThickness: 3,
+    });
+    label.anchor.set(0.5, 0.5);
+    label.x = bx + bw / 2; label.y = by + bh / 2;
+    layer.addChild(label);
   }
 }

@@ -71,6 +71,8 @@ export class CircleBoard {
   paused = false;
   overlay: HTMLElement = document.body;
   host: HTMLElement = document.body;
+  selectedTowerId: string | null = null;
+  hover: { col: number; row: number; valid: boolean } | null = null;
 
   readonly fx: CircleFx;
   readonly gore: GoreState = createGoreState();
@@ -295,9 +297,10 @@ export class CircleBoard {
   inspectAt(col: number, row: number): void {
     const tw = Array.from(this.state.towers.values()).find((t) => t.tileX === col && t.tileY === row);
     if (!tw) return;
+    this.selectedTowerId = tw.id;
     const prewave = this.state.phase !== GamePhase.WAVE_PHASE;
     showTowerMenu(this.host, tw, this.state, this.inventory, {
-      onClose: () => document.getElementById('tower-menu')?.remove(),
+      onClose: () => { document.getElementById('tower-menu')?.remove(); this.selectedTowerId = null; },
       onPathRefresh: () => { /* fixed spiral — no path rebuild */ },
       onKeep: (id: string) => { this.keepProspect(id); document.getElementById('tower-menu')?.remove(); },
       onCombine: prewave ? (recipeIndex: number, isSameTierMerge: boolean, resultTileTowerId: string) => {
@@ -379,7 +382,7 @@ export class CircleBoard {
       for (let s = 0; s < steps; s++) this.step(DT);
       adv = DT * steps;
     }
-    renderCircleEntities(this.entityLayer, this.state, this.geo, TILE);
+    renderCircleEntities(this.entityLayer, this.state, this.geo, TILE, { selectedTowerId: this.selectedTowerId, hover: this.hover });
     this.fx.update(adv);              // advance slash/muzzle/ring/shake
     this.fx.renderGore(this.gore);    // blood + corpses + floating damage numbers
     // Combo-available chime (0 -> >=1) during build — base parity.
