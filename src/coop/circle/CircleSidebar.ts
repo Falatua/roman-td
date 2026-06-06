@@ -18,8 +18,12 @@
 // Isolated in /coop/circle — no single-player change.
 // ─────────────────────────────────────────────────────────────────────
 
-import { TargetingMode, EnemyType } from '../../types';
+import { TargetingMode, EnemyType, GamePhase } from '../../types';
 import { UIManager } from '../../render/UIManager';
+import { realizableCombos } from '../../systems/CombinationEngine';
+import { showComboInfoModal } from '../../render/ComboPreview';
+import { texUrl } from '../../render/Assets';
+import towersData from '../../data/towers.json';
 import { showSettingsPanel } from '../../render/SettingsPanel';
 import { renderShop, showInventoryModal } from '../../render/ShopUI';
 import { renderPinnedRecipeWidget, ensurePinnedRecipeDefault } from '../../render/PinnedRecipe';
@@ -71,6 +75,86 @@ function toast(msg: string): void {
     "font-family:'Courier New',monospace;font-size:12px;letter-spacing:1px;box-shadow:0 0 20px #000a";
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2400);
+}
+
+// Prospect column (single-player parity of main.ts updateProspectSidebar):
+// during the prospect/keeper phase, list each PLACED-PENDING prospect as a
+// portrait cell (click → its tower menu) plus a live RECIPES block of the
+// combos those prospects can complete (green = kept, orange = still pending;
+// click → the centered combo-info modal). Renders into the circle's LEFT panel.
+const PS_TIER_HEX: Record<number, string> = { 1:'#aaaaaa', 2:'#b87333', 3:'#c0c0c0', 4:'#ffd34d', 5:'#ff5050' };
+function renderCircleProspectColumn(board: CircleBoard, host: HTMLElement): void {
+  const state = board.state;
+  const inFlow = state.phase === GamePhase.PROSPECT_PLACEMENT || state.phase === GamePhase.PICK_KEEPER;
+  const placed = Array.from(state.towers.values()).filter((t) => t.pending)
+    .sort((a, b) => (a.tileY === b.tileY ? a.tileX - b.tileX : a.tileY - b.tileY));
+  let panel = host.querySelector('#circle-prospect-col') as HTMLElement | null;
+  if (!inFlow || placed.length === 0) { if (panel) panel.remove(); return; }
+
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'circle-prospect-col';
+    panel.style.cssText =
+      'width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;padding:8px;margin-top:6px;' +
+      'background:linear-gradient(180deg,rgba(26,20,16,0.96),rgba(12,10,8,0.96));border:2px solid #d4af37;' +
+      "box-shadow:0 0 14px rgba(212,175,55,0.25);font-family:'Courier New',monospace;max-height:48vh;overflow-y:auto;overflow-x:hidden";
+    host.appendChild(panel);
+  }
+
+  const combos = realizableCombos(state).filter((cb: any) =>
+    cb.ingredients.some((ing: any) => placed.some((p) => p.id === ing.id)));
+
+  // Signature guard so per-frame refreshes don't destroy a mid-click handler.
+  const sig = `${state.phase}|${placed.map((t) => `${t.id}:${t.qualityTier}`).join(',')}|`
+    + combos.map((c: any) => `${c.result}:${c.ingredients.map((i: any) => !!state.towers.get(i.id)?.pending).join('')}`).join(';');
+  if ((panel as any).__sig === sig) return;
+  (panel as any).__sig = sig;
+
+  const headline = state.phase === GamePhase.PICK_KEEPER
+    ? `KEEP ${state.keepsRemainingThisRound ?? 2} / 2`
+    : `${placed.length} PLACED`;
+  const cell = (t: any) => {
+    const src = texUrl(String(t.type)) ?? '';
+    const def: any = (towersData as any)[t.type] ?? {};
+    const cc = (def.critChance ?? 0) as number;
+    const critTxt = cc > 0 ? `${Math.round(cc * 100)}% ${(def.critMult ?? 1.5).toFixed(1)}×` : '—';
+    const col = PS_TIER_HEX[t.qualityTier] ?? '#aaa';
+    return `<div class="cps-cell" data-col="${t.tileX}" data-row="${t.tileY}" style="position:relative;border:2px solid ${col};background:#0c0a08;padding:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="width:84px;height:84px">${src ? `<img src="${src}" style="width:84px;height:84px;image-rendering:pixelated;display:block"/>` : ''}</div>
+      <div style="font-size:11px;color:${col};font-weight:bold;letter-spacing:1px">T${t.qualityTier}</div>
+      <div style="font-size:10px;color:#cdb98a;text-align:center;line-height:1.2;font-weight:bold;word-break:break-word">${String(t.type).replace(/_/g, ' ')}</div>
+      <div style="font-size:9px;color:#aa9a4a;font-weight:bold">CRIT ${critTxt}</div>
+    </div>`;
+  };
+  let recipeHtml = '';
+  if (combos.length > 0) {
+    const rows = combos.slice(0, 5).map((cb: any) => {
+      const anyPending = cb.ingredients.some((ing: any) => state.towers.get(ing.id)?.pending);
+      const hc = anyPending ? '#ff9933' : '#88ff88';
+      const ing = cb.ingredients.map((i: any) => {
+        const c = state.towers.get(i.id)?.pending ? '#ff9933' : '#88ff88';
+        return `<span style="color:${c}">${String(i.type).replace(/_/g, ' ')}</span>`;
+      }).join('<span style="color:#cdb98a"> + </span>');
+      return `<div class="cps-recipe" data-combo="${String(cb.result)}" style="margin-bottom:6px;border-left:2px solid ${hc};background:#100c08;cursor:pointer;padding:6px 8px">
+        <div style="color:${hc};font-weight:bold;letter-spacing:1px;font-size:11px">${String(cb.result).replace(/_/g, ' ')}</div>
+        <div style="font-size:10px;margin-top:2px;word-break:break-word">${ing}</div>
+        <div style="font-size:9px;color:${hc};letter-spacing:1px;margin-top:2px;font-weight:bold">${anyPending ? 'READY-IF-KEPT' : 'READY'} · ${cb.cost}g <span style="opacity:0.6;font-weight:normal">· click for details</span></div>
+      </div>`;
+    }).join('');
+    recipeHtml = `<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #5a4a30">
+      <div style="font-size:11px;letter-spacing:3px;color:#ffd34d;text-align:center;margin-bottom:5px;font-weight:bold">RECIPES</div>${rows}</div>`;
+  }
+  panel.innerHTML = `<div style="text-align:center;padding-bottom:6px;border-bottom:1px solid #5a4a30;margin-bottom:4px">
+      <div style="font-size:12px;letter-spacing:3px;color:#ffd34d;font-weight:bold">${headline}</div></div>`
+    + placed.map(cell).join('') + recipeHtml;
+  panel.querySelectorAll('.cps-cell').forEach((el) => {
+    const c = Number((el as HTMLElement).dataset.col), r = Number((el as HTMLElement).dataset.row);
+    (el as HTMLElement).onclick = () => board.inspectAt(c, r);
+  });
+  panel.querySelectorAll('.cps-recipe').forEach((row) => {
+    const key = (row as HTMLElement).dataset.combo ?? '';
+    if (key) (row as HTMLElement).onclick = () => showComboInfoModal(key);
+  });
 }
 
 export function mountCircleSidebar(o: CircleSidebarOpts): CircleSidebar {
@@ -200,6 +284,7 @@ export function mountCircleSidebar(o: CircleSidebarOpts): CircleSidebar {
     ui.update(board.state, null);
     if (tip.previousElementSibling !== ui.hud) ui.hud.insertAdjacentElement('afterend', tip);
     renderPinnedRecipeWidget(board.state, buttonsRail);
+    renderCircleProspectColumn(board, leftPanel);   // prospect column in the left HUD
   }
   function destroy(): void {
     leftPanel.remove();
