@@ -114,6 +114,15 @@ const MANIFEST: Record<string, string> = {
   PROJ_STORM_BOLT: 'i_storm_javelin.png',
   // Map
   GRASS_A: 'm_grass_a.png', GRASS_B: 'm_grass_b.png', BLOOD_GRASS: 'm_blood_grass.png',
+  // 2026-06-06 — Cozy Stardew/FF1 tileset (Higgsfield Nano Banana Pro). Cozy
+  // grass + 16 decoration props for the Green Circle. m_ prefix = critical load.
+  COZY_GRASS_A: 'm_cozy_grass_a.png', COZY_GRASS_B: 'm_cozy_grass_b.png',
+  COZY_BUSH: 'm_cozy_bush.png', COZY_FLOWERS: 'm_cozy_flowers.png', COZY_TREE: 'm_cozy_tree.png',
+  COZY_MUSHROOM: 'm_cozy_mushroom.png', COZY_BOULDER: 'm_cozy_boulder.png', COZY_SIGNPOST: 'm_cozy_signpost.png',
+  COZY_WELL: 'm_cozy_well.png', COZY_BARREL: 'm_cozy_barrel.png', COZY_HAYBALE: 'm_cozy_haybale.png',
+  COZY_FLOWERPOT: 'm_cozy_flowerpot.png', COZY_REEDS: 'm_cozy_reeds.png', COZY_LANTERN: 'm_cozy_lantern.png',
+  COZY_CRATE: 'm_cozy_crate.png', COZY_BERRYBUSH: 'm_cozy_berrybush.png', COZY_STUMP: 'm_cozy_stump.png',
+  COZY_POND: 'm_cozy_pond.png',
   STONE_BLOCK: 'm_stone_block.png', BORDER_TREE: 'm_border_tree.png', BORDER_BOULDER: 'm_border_boulder.png',
   DARK_CAVE: 'm_dark_cave.png', ROMAN_GATE: 'm_roman_gate.png', ROMAN_GATE_DESTROYED: 'm_roman_gate_destroyed.png',
   // 2026-05-21 — VISUAL OVERHAUL: late-biome decoration pack.

@@ -49,19 +49,53 @@ const PAIR_TINT = [0x00b4aa, 0xaa5adc, 0xeb8228, 0xebc83c];
 export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: number, wave = 1, auraTiles: AuraTile[] = [], ownedQuads: number[] = [0, 1, 2, 3]): void {
   const ground = new Container();
   const overlay = new Container();
+  const decorLayer = new Container();   // cozy scatter props (above wash, below towers)
   const features = new Container();
   const tintLayer = new Graphics();
-  parent.addChild(ground, overlay, features, tintLayer);
+  parent.addChild(ground, overlay, decorLayer, features, tintLayer);
 
-  // 1) Grass over the whole interior (build zones + under the path).
+  // 1) Cozy Stardew/FF1 grass over the whole interior (build zones + under path).
   const lo = g.margin, hi = g.size - 1 - g.margin;
   for (let row = lo; row <= hi; row++) {
     for (let col = lo; col <= hi; col++) {
-      const t = tex((col * 7 + row * 13) % 2 === 0 ? 'GRASS_A' : 'GRASS_B');
+      const t = tex((col * 7 + row * 13) % 2 === 0 ? 'COZY_GRASS_A' : 'COZY_GRASS_B') ?? tex('GRASS_A');
       if (!t) continue;
       const s = new Sprite(t);
       s.x = col * tile; s.y = row * tile; s.width = tile + 1; s.height = tile + 1;
       ground.addChild(s);
+    }
+  }
+
+  // 1b) Cozy decoration scatter — sparse, edge-weighted, deterministic. Sits on
+  //     grass under the entity layer, so a placed tower simply covers it. Skips
+  //     the path, aura tiles, and the area around Rome so nothing reads as
+  //     buildable-but-blocked. Pure cosmetic Stardew/FF1 dressing.
+  const COZY_DECOR = ['COZY_BUSH', 'COZY_FLOWERS', 'COZY_TREE', 'COZY_MUSHROOM', 'COZY_REEDS',
+    'COZY_BERRYBUSH', 'COZY_STUMP', 'COZY_FLOWERPOT', 'COZY_BOULDER', 'COZY_HAYBALE',
+    'COZY_LANTERN', 'COZY_BARREL', 'COZY_POND', 'COZY_WELL'];
+  const auraSet = new Set(auraTiles.map((a) => a.row * 1000 + a.col));
+  const dhash = (a: number, b: number) => { let h = (Math.imul(a, 73856093) ^ Math.imul(b, 19349663)) >>> 0; h = (h ^ (h >>> 13)) >>> 0; return h; };
+  const cR = g.center.row, cC = g.center.col;
+  for (let row = lo; row <= hi; row++) {
+    for (let col = lo; col <= hi; col++) {
+      if (g.isPath(col, row)) continue;
+      if (auraSet.has(row * 1000 + col)) continue;
+      if (Math.abs(row - cR) <= 3 && Math.abs(col - cC) <= 3) continue;   // keep Rome clear
+      let nearPath = false;
+      for (let dr = -1; dr <= 1 && !nearPath; dr++) for (let dc = -1; dc <= 1; dc++) if (g.isPath(col + dc, row + dr)) { nearPath = true; break; }
+      const h = dhash(col, row);
+      const edge = Math.min(col - lo, hi - col, row - lo, hi - row);
+      const density = (nearPath ? 0.05 : 0.15) * (edge <= 2 ? 1.7 : 1);   // denser at the rim
+      if ((h % 1000) / 1000 > density) continue;
+      const t = tex(COZY_DECOR[h % COZY_DECOR.length]);
+      if (!t) continue;
+      const s = new Sprite(t);
+      const aspect = (t.height || 1) / (t.width || 1);
+      const w = tile * (1.05 + ((h >>> 9) % 35) / 100);   // 1.05-1.40 tiles wide
+      s.anchor.set(0.5, 0.9);                              // "sits" on the tile
+      s.width = w; s.height = w * aspect;
+      s.x = col * tile + tile / 2; s.y = row * tile + tile * 0.72;
+      decorLayer.addChild(s);
     }
   }
 
