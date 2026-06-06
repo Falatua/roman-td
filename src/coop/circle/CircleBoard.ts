@@ -39,12 +39,13 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo } from '../../syst
 import { isMercatorWave } from '../../systems/MerchantSystem';
 import { poolUpgradeCost, spendGold, earnGold } from '../../systems/EconomySystem';
 import { realizableCombos, executeCombo } from '../../systems/CombinationEngine';
+import { ensureQuestState, evaluateQuests, evaluateQuestTierBonuses, QUEST_TIER_BONUS, type QuestDef } from '../../systems/QuestSystem';
 import { createGoreState, tickGore, pruneCorpses, fadeCorpsesAtWaveEnd, type GoreState } from '../../systems/GoreSystem';
 import { buildCombatHooks, buildProjectileHooks, emitBoardDeathFx, boardWaveAudio, realizableComboCount } from '../BoardPresentation';
 import { SFX } from '../../render/AudioManager';
 import { showTowerMenu } from '../../render/TowerMenu';
 import { showCodex } from '../../render/Codex';
-import { createInventory, type InventoryState } from '../../systems/LootSystem';
+import { createInventory, inventoryAdd, type InventoryState } from '../../systems/LootSystem';
 import { CircleFx } from './CircleFx';
 import wavesData from '../../data/waves.json';
 import enemiesData from '../../data/enemies.json';
@@ -111,6 +112,8 @@ export class CircleBoard {
   onHud: ((b: CircleBoard) => void) | null = null;
   /** Notified when a wave starts (for boss / mercator banners). */
   onWaveStart: ((info: { wave: number; isBoss: boolean; mercator: boolean; faction?: string }) => void) | null = null;
+  /** Notified when a quest (or whole tier) completes, for a celebratory banner. */
+  onQuestComplete: ((info: { title: string; reward: string; detail: string }) => void) | null = null;
 
   constructor(opts: CircleBoardOpts = {}) {
     this.geo = generateCircleMap();           // 24 / step 3 / margin 1
@@ -310,6 +313,8 @@ export class CircleBoard {
   // ── PROSPECTING (base parity, build-tile placement, fixed spiral) ──────
   get hasPending(): boolean { for (const t of this.state.towers.values()) if (t.pending) return true; return false; }
   get pendingHero(): boolean { const p = this.state.pendingPurchasedTowers; return !!(p && p.length && p[0].source === 'hero'); }
+  /** Any tower waiting for placement — drafted hero, quest reward, or a bought Mercator/Fortuna tower. */
+  get pendingPlacement(): boolean { const p = this.state.pendingPurchasedTowers; return !!(p && p.length); }
 
   /** Roll a fresh draw and enter PROSPECT_PLACEMENT (mirrors rollProspects). */
   rollProspects(): void {
@@ -370,18 +375,71 @@ export class CircleBoard {
     }
   }
 
-  /** Place the drafted hero (state.pendingPurchasedTowers) on a grass tile. */
-  placeHeroAt(col: number, row: number): boolean {
+  /**
+   * Place the head of the placement queue (state.pendingPurchasedTowers) on a
+   * grass tile. Handles every source single-player does — the drafted hero, a
+   * quest TOWER reward, and a bought Mercator/Fortuna tower — not just heroes,
+   * so none of those rewards dead-end in the queue.
+   */
+  placePendingAt(col: number, row: number): boolean {
     const pend = this.state.pendingPurchasedTowers;
-    if (!pend || pend.length === 0 || pend[0].source !== 'hero') return false;
+    if (!pend || pend.length === 0) return false;
     if (!this.isOwnedBuildTile(col, row)) return false;
     if ((this.state as any).tiles[row]?.[col] !== TileType.EMPTY) return false;
     const head = pend.shift()!;
     const tw = createTower(head.type as TowerType, (head.tier ?? 1) as 1 | 2 | 3 | 4 | 5, col, row, Math.max(1, this.state.wave), false);
     this.state.towers.set(tw.id, tw);
     (this.state as any).tiles[row][col] = TileType.TOWER;
-    if (!this.state.activeHeroId) this.state.activeHeroId = head.type as any;
+    if (head.source === 'hero' && !this.state.activeHeroId) this.state.activeHeroId = head.type as any;
     return true;
+  }
+
+  /**
+   * Quest progression parity. main.ts ticks quests every frame; the circle
+   * never did, so the 18 campaign quests (and their gold / item / tower / tier
+   * rewards) sat dormant. Mirror main.ts: recompute progress, grant each newly
+   * completed quest's reward, then pay any newly cleared tier bonus. Idempotent
+   * (evaluateQuests grants once), so calling it every step is safe.
+   */
+  private tickCircleQuests(): void {
+    ensureQuestState(this.state);
+    for (const q of evaluateQuests(this.state)) this.grantQuestReward(q);
+    for (const tierKey of evaluateQuestTierBonuses(this.state)) {
+      const amount = QUEST_TIER_BONUS[tierKey];
+      earnGold(this.state, amount);
+      SFX.bossArrival();
+      const label = tierKey === 'ALL' ? 'EVERY QUEST CLEARED' : `${tierKey}-GAME QUESTS CLEARED`;
+      this.onQuestComplete?.({ title: label, reward: `+${amount}g`, detail: 'Tier bonus paid to the treasury.' });
+    }
+  }
+
+  /** Dispatch one quest reward (gold / life / item / tower), matching main.ts. */
+  private grantQuestReward(q: QuestDef): void {
+    const r = q.reward;
+    let reward = '';
+    let detail = '';
+    if (r.kind === 'GOLD') {
+      earnGold(this.state, r.amount ?? 0);
+      reward = `+${r.amount}g`; detail = `Added to the treasury (now ${this.state.gold}g).`;
+      SFX.bossArrival();
+    } else if (r.kind === 'LIFE') {
+      this.state.lives = Math.min(ECONOMY.MAX_LIVES, this.state.lives + (r.amount ?? 1));
+      reward = `+${r.amount ?? 1} life`; detail = `Center pool restored (now ${this.state.lives}).`;
+      SFX.bossArrival();
+    } else if (r.kind === 'ITEM' && r.item) {
+      const name = r.item.replace(/_/g, ' ').toLowerCase();
+      const ok = inventoryAdd(this.inventory, r.item as any, 'RARE', false);
+      reward = `+1 ${name}`;
+      detail = ok ? 'Placed in your INVENTORY — open it to equip on a tower.' : 'INVENTORY FULL — the item is forfeit.';
+      if (ok) SFX.bossArrival();
+    } else if (r.kind === 'TOWER' && r.towerType && r.towerTier) {
+      if (!this.state.pendingPurchasedTowers) this.state.pendingPurchasedTowers = [];
+      this.state.pendingPurchasedTowers.push({ type: String(r.towerType), tier: r.towerTier, source: 'quest' } as any);
+      reward = `+1 ${String(r.towerType).replace(/_/g, ' ')} T${r.towerTier}`;
+      detail = 'Added to your TOWER QUEUE — click any empty grass tile to place it.';
+      SFX.comboExecuted();
+    }
+    this.onQuestComplete?.({ title: q.title, reward, detail });
   }
 
   /** The REAL tower menu (stats / items / targeting / keep / combine). */
@@ -407,7 +465,7 @@ export class CircleBoard {
     if (this.state.phase === GamePhase.GAME_OVER || this.state.phase === GamePhase.VICTORY) return;
     const tile = (this.state as any).tiles[row]?.[col];
     if (tile === TileType.TOWER) { this.inspectAt(col, row); return; }
-    if (this.pendingHero) { this.placeHeroAt(col, row); return; }
+    if (this.pendingPlacement) { this.placePendingAt(col, row); return; }
     if (this.state.phase === GamePhase.PROSPECT_PLACEMENT && tile === TileType.EMPTY) this.placeProspectAt(col, row);
   }
 
@@ -430,6 +488,7 @@ export class CircleBoard {
 
   private step(dt: number): void {
     this.state.tick += dt;
+    this.tickCircleQuests();   // quest progress + rewards advance in every phase (build + wave), like main.ts
     if (this.inWave) {
       const before = new Set(this.state.enemies.keys());
       tickSpawns(this.state, dt);

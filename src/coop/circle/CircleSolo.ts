@@ -117,6 +117,8 @@ export async function startCircleSolo(): Promise<void> {
   board.onWaveStart = (info) => {
     if (info.isBoss) flashBanner('⚔ BOSS APPROACHING — WAVE ' + info.wave, '#cc3322', 3000);
   };
+  // Quest-completion banner (single-player parity) — celebrate the reward.
+  board.onQuestComplete = (q) => flashBanner(`✓ QUEST COMPLETE — ${q.title}  ${q.reward}`, '#88ff88', 3400);
 
   // Refresh the sidebar/HUD each frame off the board loop + toggle hero banner.
   board.onHud = () => {
@@ -126,11 +128,14 @@ export async function startCircleSolo(): Promise<void> {
       lastMercatorBannerWave = board.state.wave;
       flashBanner('★ THE MERCATOR IS IN TOWN — rare gear available', '#d4af37', 3200);
     }
-    if (board.pendingHero) {
+    if (board.pendingPlacement) {
       const h = board.state.pendingPurchasedTowers![0];
+      const isHero = (h as any).source === 'hero';
+      const name = String(h.type).replace(/^HERO_/, '').replace(/_/g, ' ');
+      const label = isHero ? name : `${name}${(h as any).tier ? ' T' + (h as any).tier : ''}`;
       heroBanner.style.display = '';
-      heroBanner.innerHTML = `<div style="font-size:11px;letter-spacing:2px;color:#9fd0ff">★ CLICK ANY GRASS TILE TO PLACE</div>` +
-        `<div style="font-size:15px;font-weight:900;letter-spacing:1px">${String(h.type).replace(/^HERO_/, '').replace(/_/g, ' ')}</div>`;
+      heroBanner.innerHTML = `<div style="font-size:11px;letter-spacing:2px;color:#9fd0ff">★ CLICK ANY GRASS TILE TO PLACE${isHero ? '' : ' (' + String((h as any).source).toUpperCase() + ')'}</div>` +
+        `<div style="font-size:15px;font-weight:900;letter-spacing:1px">${label}</div>`;
     } else if (heroBanner.style.display !== 'none') {
       heroBanner.style.display = 'none';
     }
@@ -168,7 +173,7 @@ export async function startCircleSolo(): Promise<void> {
     const { col, row } = tileAt(ev);
     if (col < 0 || row < 0 || col >= board.geo.size || row >= board.geo.size) { board.hover = null; return; }
     const empty = board.isBuildTile(col, row) && board.state.tiles[row]?.[col] === TileType.EMPTY;
-    board.hover = { col, row, valid: empty && (board.state.phase === GamePhase.PROSPECT_PLACEMENT || board.pendingHero) };
+    board.hover = { col, row, valid: empty && (board.state.phase === GamePhase.PROSPECT_PLACEMENT || board.pendingPlacement) };
   });
   canvas.addEventListener('mouseleave', () => { board.hover = null; });
   // Scroll wheel = zoom.
