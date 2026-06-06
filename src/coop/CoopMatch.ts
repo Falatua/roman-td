@@ -32,7 +32,6 @@ import { ghostLeakHp } from './LegionGhost';
 import { recordLeak, recordWaveKill, recordCircuitKill, recordDamage } from './LegionEconomy';
 import { emptyStats, type PlayerStats, type RomeState, type LegionNetMessage, type LegionNetTransport, type LeakUnit } from './LegionTypes';
 import { POSITION_TITLES, FLAVOR, type QuadrantId } from './LegionConfig';
-import { romeStartingHp } from './LegionScaling';
 import type { SessionConfig } from './LegionSession';
 
 export interface CoopMatchArgs {
@@ -70,9 +69,8 @@ class CoopMatch {
 
   constructor(a: CoopMatchArgs) {
     this.t = a.transport; this.cfg = a.cfg; this.myQ = a.myQuadrant; this.assignments = a.assignments;
-    const max = romeStartingHp(this.cfg.players);
+    // createRome(players) already sets HP from ROME_HP_BY_PLAYERS (500/750/1000).
     this.rome = createRome(this.cfg.players);
-    void max;
   }
 
   async mount(): Promise<void> {

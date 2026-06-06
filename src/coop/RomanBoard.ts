@@ -378,6 +378,20 @@ export class RomanBoard {
     const e = spawnEnemy(this.state, enemyType as EnemyType, 1);
     e.hp = Math.max(1, hp);
     e.maxHp = Math.max(e.hp, maxHp);
+    // Legion seam (spec, 2026-06-05): a routed circuit leak does NOT re-walk
+    // the whole board from the spawn cave. It enters at a mid-path checkpoint
+    // (~halfway) and walks the back half to this player's gate. LEAK_ENTRY_FRACTION
+    // is the tunable knob (0 = cave, 1 = gate).
+    const LEAK_ENTRY_FRACTION = 0.5;
+    const path = this.state.groundPath;
+    if (path && path.length > 2) {
+      const idx = Math.min(path.length - 1, Math.max(1, Math.floor(path.length * LEAK_ENTRY_FRACTION)));
+      const wp = path[idx];
+      e.pathIndex = idx;
+      e.pathProgress = 0;
+      e.x = wp.col * GRID.TILE + GRID.TILE / 2;
+      e.y = wp.row * GRID.TILE + GRID.TILE / 2;
+    }
     (e as any).__circuit = true;
     (e as any).__origin = fromQuadrant;
   }
