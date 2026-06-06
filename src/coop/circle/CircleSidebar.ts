@@ -25,7 +25,7 @@ import { showComboInfoModal } from '../../render/ComboPreview';
 import { texUrl } from '../../render/Assets';
 import towersData from '../../data/towers.json';
 import { showSettingsPanel } from '../../render/SettingsPanel';
-import { renderShop, showInventoryModal } from '../../render/ShopUI';
+import { renderShop, showInventoryModal, renderInventoryButton } from '../../render/ShopUI';
 import { renderPinnedRecipeWidget, ensurePinnedRecipeDefault } from '../../render/PinnedRecipe';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave } from '../../systems/MerchantSystem';
 import { currentlyOwnedLegendarySet, inventoryRemove } from '../../systems/LootSystem';
@@ -285,6 +285,7 @@ export function mountCircleSidebar(o: CircleSidebarOpts): CircleSidebar {
     if (tip.previousElementSibling !== ui.hud) ui.hud.insertAdjacentElement('afterend', tip);
     renderPinnedRecipeWidget(board.state, buttonsRail);
     renderCircleProspectColumn(board, leftPanel);   // prospect column in the left HUD
+    renderInventoryButton(buttonsRail, board.inventory, { onOpen: openInventory });  // INVENTORY button + live count
   }
   function destroy(): void {
     leftPanel.remove();

@@ -46,7 +46,7 @@ function hashPhase(id: string): number {
 // Faint pair tints by quadrant (NW teal, NE purple, SE orange, SW yellow).
 const PAIR_TINT = [0x00b4aa, 0xaa5adc, 0xeb8228, 0xebc83c];
 
-export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: number, wave = 1, auraTiles: AuraTile[] = []): void {
+export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: number, wave = 1, auraTiles: AuraTile[] = [], ownedQuads: number[] = [0, 1, 2, 3]): void {
   const ground = new Container();
   const overlay = new Container();
   const features = new Container();
@@ -65,17 +65,53 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
     }
   }
 
-  // 2) Faint pair-color wash per quadrant so the 4 team territories read.
+  // 2) Per-quadrant TERRITORY + BUILD ZONES. Each of the 4 quadrants is a
+  //    player's zone in multiplayer (NW teal, NE purple, SE orange, SW gold).
+  //    Buildable grass glows in that color with a matching border so players
+  //    instantly read whose zone it is and exactly where they can build; the
+  //    spiral path stays neutral cobble (the no-build lane). Non-owned zones
+  //    (multiplayer restrictBuild) render dimmer so "can't build here" is clear.
+  const owned = new Set(ownedQuads);
+  const QNAME = ['NW', 'NE', 'SE', 'SW'];
   const wash = new Graphics();
   for (let row = lo; row <= hi; row++) {
     for (let col = lo; col <= hi; col++) {
       if (g.isPath(col, row)) continue;
-      wash.beginFill(PAIR_TINT[quadrantOf({ col, row }, g.size)], 0.10);
-      wash.drawRect(col * tile, row * tile, tile, tile);
-      wash.endFill();
+      const q = quadrantOf({ col, row }, g.size);
+      const tint = PAIR_TINT[q];
+      const isOwned = owned.has(q);
+      wash.beginFill(tint, isOwned ? 0.20 : 0.07).drawRect(col * tile, row * tile, tile, tile).endFill();
+      wash.lineStyle(1, tint, isOwned ? 0.5 : 0.16).drawRect(col * tile + 0.5, row * tile + 0.5, tile - 1, tile - 1).lineStyle(0);
     }
   }
   overlay.addChild(wash);
+
+  // 2b) Bold dividers down the quadrant seams so the 4 zones read at a glance.
+  const mid = Math.floor(g.size / 2);
+  const div = new Graphics();
+  div.lineStyle(3, 0xffffff, 0.26);
+  div.moveTo(mid * tile, lo * tile); div.lineTo(mid * tile, (hi + 1) * tile);
+  div.moveTo(lo * tile, mid * tile); div.lineTo((hi + 1) * tile, mid * tile);
+  overlay.addChild(div);
+
+  // 2c) A color-keyed zone label in each quadrant's outer corner.
+  const labelAt: { q: number; col: number; row: number }[] = [
+    { q: 0, col: lo + (mid - lo) / 2, row: lo + 1.0 },
+    { q: 1, col: mid + (hi - mid) / 2, row: lo + 1.0 },
+    { q: 2, col: mid + (hi - mid) / 2, row: hi - 0.5 },
+    { q: 3, col: lo + (mid - lo) / 2, row: hi - 0.5 },
+  ];
+  for (const la of labelAt) {
+    const owns = owned.has(la.q);
+    const label = new Text(`${QNAME[la.q]}${owns ? '' : ' (locked)'}`, {
+      fontFamily: 'Courier New, monospace', fontSize: 15, fontWeight: '900',
+      fill: PAIR_TINT[la.q], stroke: 0x000000, strokeThickness: 4, letterSpacing: 2,
+    });
+    label.anchor.set(0.5);
+    label.alpha = owns ? 0.9 : 0.5;
+    label.x = la.col * tile; label.y = la.row * tile;
+    features.addChild(label);
+  }
 
   // 3) Procedural cobblestone spiral path (sandstone base + mortar + cobbles).
   const pathG = new Graphics();

@@ -213,7 +213,7 @@ export class CircleBoard {
     this.world.addChild(this.mapLayer, this.surpriseLayer, this.entityLayer, this.fx.goreLayer, this.fx.fxLayer);
     this.app.stage.addChild(this.world, this.hudLayer);
     this.applyCamera();
-    renderCircleMap(this.mapLayer, this.geo, TILE, 1, this.auraTiles);
+    renderCircleMap(this.mapLayer, this.geo, TILE, 1, this.auraTiles, Array.from(this.ownedQuads));
     this.app.render();
     parent.appendChild(this.canvas);
     this.rollProspects();                  // open the first build round (PROSPECT_PLACEMENT)
