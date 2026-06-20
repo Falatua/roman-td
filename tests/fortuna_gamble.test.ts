@@ -31,7 +31,11 @@ describe('Fortuna\'s Wheel — 500g combo-tower gamble', () => {
   // Triumvirate, Legion Prime, Consular Fatebinder).
   const APEX_BLOCKED = new Set([
     'IMPERIUM_ETERNUM', 'CARTHAGE_SCOURGE',
-    'TRIUMVIRATE', 'LEGION_PRIME', 'CONSULAR_FATEBINDER', 'MARS_VICTOR'
+    'TRIUMVIRATE', 'LEGION_PRIME', 'CONSULAR_FATEBINDER', 'MARS_VICTOR',
+    // 2026 v2 Ch8 — the 6 Champions of Rome are COMBO-kind but Mercator-only
+    // (350g recruit → Mars Victor), so they are blocked from Fortuna too.
+    'CHAMPION_MARIUS', 'CHAMPION_AGRIPPA', 'CHAMPION_AGRICOLA',
+    'CHAMPION_SCIPIO', 'CHAMPION_CAESAR', 'CHAMPION_SULLA'
   ]);
 
   it('pool contains every non-apex COMBO-kind tower in towers.json', () => {
@@ -49,10 +53,10 @@ describe('Fortuna\'s Wheel — 500g combo-tower gamble', () => {
     }
   });
 
-  it('pool has 33 towers (39 combos minus 6 apex)', () => {
-    // 2026 v2 Ch9 — MARS_VICTOR DIVINE apex combo added + blocked. Pool
-    // count: 39 total combos minus 6 apex super-combos still blocked = 33
-    // buyable combos.
+  it('pool has 33 towers (45 combos minus 6 apex minus 6 champions)', () => {
+    // 2026 v2 Ch8 — the 6 Champions of Rome are COMBO-kind but Mercator-only,
+    // so they join the 6 apex super-combos on the Fortuna blocklist. Pool
+    // count: 45 total combos minus 12 blocked (6 apex + 6 champion) = 33.
     expect(FORTUNA_GAMBLE_POOL.length).toBe(33);
   });
 

@@ -682,14 +682,30 @@
     "tier": 5,
     "ingredients": [
       {
-        "type": "IMPERIUM_ETERNUM",
+        "type": "CHAMPION_MARIUS",
         "minTier": 1
       },
       {
-        "type": "LEGION_PRIME",
+        "type": "CHAMPION_AGRIPPA",
+        "minTier": 1
+      },
+      {
+        "type": "CHAMPION_AGRICOLA",
+        "minTier": 1
+      },
+      {
+        "type": "CHAMPION_SCIPIO",
+        "minTier": 1
+      },
+      {
+        "type": "CHAMPION_CAESAR",
+        "minTier": 1
+      },
+      {
+        "type": "CHAMPION_SULLA",
         "minTier": 1
       }
     ],
-    "cost": 80
+    "cost": 0
   }
 ]

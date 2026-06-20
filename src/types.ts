@@ -126,6 +126,14 @@ export enum TowerType {
   // "6-hero combo" — activeHeroId is singular, so 6 literal heroes can't be
   // built without rearchitecting the whole hero system.
   MARS_VICTOR = 'MARS_VICTOR',
+  // 2026 v2 Ch8 — Champions of Rome: buyable at Mercator (350g each), the
+  // 6 of them combine into MARS_VICTOR. Skinned with the hero portraits.
+  CHAMPION_MARIUS = 'CHAMPION_MARIUS',
+  CHAMPION_AGRIPPA = 'CHAMPION_AGRIPPA',
+  CHAMPION_AGRICOLA = 'CHAMPION_AGRICOLA',
+  CHAMPION_SCIPIO = 'CHAMPION_SCIPIO',
+  CHAMPION_CAESAR = 'CHAMPION_CAESAR',
+  CHAMPION_SULLA = 'CHAMPION_SULLA',
   // 2026-05-15 — two new mid-game (T4) combos with unique melee mechanics
   // that don't overlap with existing auras / shred / bleed / brutal-opener
   // designs. Both are intentionally boss-strong.

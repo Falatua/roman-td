@@ -166,9 +166,21 @@ function rollTier(_wave: number): number {
   return 5;
 }
 
+// 2026 v2 Ch8 — the 6 Champions of Rome. Always stocked at Mercator (350g
+// each) so the player can recruit them across visits and combine all six
+// into MARS VICTOR. They reuse the hero portraits in the shop + the hero
+// board sprites once placed.
+export const CHAMPION_TYPES = [
+  'CHAMPION_MARIUS', 'CHAMPION_AGRIPPA', 'CHAMPION_AGRICOLA',
+  'CHAMPION_SCIPIO', 'CHAMPION_CAESAR', 'CHAMPION_SULLA'
+];
+export const CHAMPION_PRICE = 350;
+
 export function buildMercatorTowerOffers(wave: number, count = 5): MercatorTowerOffer[] {
   const offers: MercatorTowerOffer[] = [];
-  const used = new Set<string>();
+  // The 6 Champions always head the lineup at a flat 350g — the Mars Victor path.
+  for (const ct of CHAMPION_TYPES) offers.push({ type: ct, tier: 5, price: CHAMPION_PRICE });
+  const used = new Set<string>(CHAMPION_TYPES);
   let tries = 0;
   // 2026-05 v9: defensive filter — APEX cross-combos (Imperium Eternum,
   // Carthage Scourge, Triumvirate, Legion Prime, Consular Fatebinder)
@@ -176,7 +188,9 @@ export function buildMercatorTowerOffers(wave: number, count = 5): MercatorTower
   // adds one to MERCATOR_TOWER_POOL, this filter blocks it from
   // reaching the player. Apex towers must be crafted, not bought.
   const eligible = MERCATOR_TOWER_POOL.filter(id => !FORTUNA_APEX_BLOCKLIST.has(id));
-  while (offers.length < count && tries++ < 50) {
+  // Fill the rest with 3 random T5 towers (champions already took 6 slots).
+  const randomCount = 3;
+  while (offers.length < CHAMPION_TYPES.length + randomCount && tries++ < 50) {
     const type = eligible[Math.floor(Math.random() * eligible.length)];
     if (used.has(type)) continue;
     used.add(type);
@@ -190,7 +204,10 @@ function asRarity(s: string): Rarity { return s as Rarity; }
 
 // 20-WAVE CAMPAIGN: Mercator visits land on the wave BEFORE each scheduled
 // boss (W5/W10/W15/W20). Visits: W4, W9, W14, W19.
-export const MERCATOR_WAVES = [4, 9, 14, 19];
+// 2026 v2 — 30-wave campaign. Mercator now also visits in the late game so
+// the Champions of Rome (350g each, ~2100g for all six) are reachable before
+// the W24 Anubis King and the W30 Daemon finale.
+export const MERCATOR_WAVES = [4, 9, 14, 19, 23, 27];
 
 // 2026-05-18 — Gate shop is now a thin starter shop: it sells the
 // two gate-exclusive commons (SHARPENED_BLADE + WATCHTOWER_LENS) and
@@ -335,7 +352,10 @@ const FORTUNA_APEX_BLOCKLIST = new Set([
   'TRIUMVIRATE',
   'LEGION_PRIME',
   'CONSULAR_FATEBINDER',
-  'MARS_VICTOR'   // 2026 v2 Ch9 — DIVINE apex; recipe-only, never gambled/bought
+  'MARS_VICTOR',   // 2026 v2 Ch9 — DIVINE apex; recipe-only, never gambled/bought
+  // 2026 v2 Ch8 — Champions are a deliberate 350g Mercator buy, never gambled.
+  'CHAMPION_MARIUS', 'CHAMPION_AGRIPPA', 'CHAMPION_AGRICOLA',
+  'CHAMPION_SCIPIO', 'CHAMPION_CAESAR', 'CHAMPION_SULLA'
 ]);
 export const FORTUNA_GAMBLE_POOL: string[] = Object.entries(towersJson as any)
   .filter(([id, def]: any) => def.kind === 'COMBO' && !FORTUNA_APEX_BLOCKLIST.has(id))
