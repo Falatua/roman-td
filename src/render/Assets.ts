@@ -54,6 +54,8 @@ const MANIFEST: Record<string, string> = {
   IMPERIUM_ETERNUM: 'tcc_imperium_eternum.png', CARTHAGE_SCOURGE: 'tcc_carthage_scourge.png', TRIUMVIRATE: 'tcc_triumvirate.png',
   // 3 SUPER combos — sliced from sheet 32_super_combos.png (3×3, 3 used).
   TRIPLEX_ACIES: 'ts_triplex_acies.png', LEGION_PRIME: 'ts_legion_prime.png', CONSULAR_FATEBINDER: 'ts_consular_fatebinder.png',
+  // 2026 v2 spec Ch9 — Mars Victor DIVINE apex super-tower.
+  MARS_VICTOR: 'ts_mars_victor.png',
   // 2026-05-15 — Two new mid-game T4 combo towers with unique mechanics
   // (cone attack + rage gauge). Both sprites are user-supplied, chroma-
   // keyed clean via tools/slice_sprite_sheet.py (zero magenta residue).

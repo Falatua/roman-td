@@ -31,7 +31,7 @@ describe('Fortuna\'s Wheel — 500g combo-tower gamble', () => {
   // Triumvirate, Legion Prime, Consular Fatebinder).
   const APEX_BLOCKED = new Set([
     'IMPERIUM_ETERNUM', 'CARTHAGE_SCOURGE',
-    'TRIUMVIRATE', 'LEGION_PRIME', 'CONSULAR_FATEBINDER'
+    'TRIUMVIRATE', 'LEGION_PRIME', 'CONSULAR_FATEBINDER', 'MARS_VICTOR'
   ]);
 
   it('pool contains every non-apex COMBO-kind tower in towers.json', () => {
@@ -43,16 +43,16 @@ describe('Fortuna\'s Wheel — 500g combo-tower gamble', () => {
     expect(actual).toEqual(expected);
   });
 
-  it('pool excludes all 5 apex super-combos', () => {
+  it('pool excludes all 6 apex super-combos', () => {
     for (const apex of APEX_BLOCKED) {
       expect(FORTUNA_GAMBLE_POOL).not.toContain(apex);
     }
   });
 
-  it('pool has 33 towers (38 combos minus 5 apex)', () => {
-    // 2026-05-17 — MURMILLO combo added (Ballistarius + Librator + Arcuballista
-    // anti-Carthage specialist). Pool count: 38 total combos minus 5 apex
-    // super-combos still blocked = 33 buyable combos.
+  it('pool has 33 towers (39 combos minus 6 apex)', () => {
+    // 2026 v2 Ch9 — MARS_VICTOR DIVINE apex combo added + blocked. Pool
+    // count: 39 total combos minus 6 apex super-combos still blocked = 33
+    // buyable combos.
     expect(FORTUNA_GAMBLE_POOL.length).toBe(33);
   });
 

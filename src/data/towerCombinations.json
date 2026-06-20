@@ -676,5 +676,20 @@
       }
     ],
     "cost": 50
+  },
+  {
+    "result": "MARS_VICTOR",
+    "tier": 5,
+    "ingredients": [
+      {
+        "type": "IMPERIUM_ETERNUM",
+        "minTier": 1
+      },
+      {
+        "type": "LEGION_PRIME",
+        "minTier": 1
+      }
+    ],
+    "cost": 80
   }
 ]

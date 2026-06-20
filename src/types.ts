@@ -121,6 +121,11 @@ export enum TowerType {
   TRIPLEX_ACIES = 'TRIPLEX_ACIES',
   LEGION_PRIME = 'LEGION_PRIME',
   CONSULAR_FATEBINDER = 'CONSULAR_FATEBINDER',
+  // 2026 v2 spec Ch9 — Mars Victor: DIVINE apex super-tower (fusion of
+  // Imperium Eternum + Legion Prime). Engine-faithful read of the spec's
+  // "6-hero combo" — activeHeroId is singular, so 6 literal heroes can't be
+  // built without rearchitecting the whole hero system.
+  MARS_VICTOR = 'MARS_VICTOR',
   // 2026-05-15 — two new mid-game (T4) combos with unique melee mechanics
   // that don't overlap with existing auras / shred / bleed / brutal-opener
   // designs. Both are intentionally boss-strong.

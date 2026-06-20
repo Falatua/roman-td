@@ -1115,5 +1115,18 @@
     "critMult": 2.0,
     "isHero": true,
     "tint": "#fff5cc"
+  },
+  "MARS_VICTOR": {
+    "name": "Mars Victor",
+    "damageType": "DIVINE",
+    "baseDps": 320.0,
+    "attackSpeed": 0.45,
+    "range": 7.0,
+    "kind": "COMBO",
+    "melee": false,
+    "tierBand": 5,
+    "ability": "DIVINE WRATH: a column of sacred fire smites the target and every enemy within a wide radius for massive DIVINE damage. The apex of Roman faith made war.",
+    "critChance": 0.2,
+    "critMult": 2.5
   }
 }

@@ -687,7 +687,7 @@
   "BOSS_FLYER_VULTURE": {
     "name": "Vulture Imperator",
     "faction": "EGYPTIANS",
-    "baseHp": 3200,
+    "baseHp": 16000,
     "speed": 1.4,
     "isFlyer": true,
     "isBoss": true,

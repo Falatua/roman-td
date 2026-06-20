@@ -323,7 +323,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
 import towersJson from '../data/towers.json';
 export const FORTUNA_GAMBLE_COST = 500;
 // 2026-05 v9: APEX super-combos are no longer rollable from Fortuna or
-// offered in the Mercator tower lineup. The 5 LATE-game cross-combos
+// offered in the Mercator tower lineup. The 6 LATE-game cross-combos
 // (Imperium Eternum, Carthage Scourge, Triumvirate, Legion Prime,
 // Consular Fatebinder) are win-condition towers — they MUST be earned
 // through crafting, not bought. Buying-your-way-to-victory was hollowing
@@ -334,7 +334,8 @@ const FORTUNA_APEX_BLOCKLIST = new Set([
   'CARTHAGE_SCOURGE',
   'TRIUMVIRATE',
   'LEGION_PRIME',
-  'CONSULAR_FATEBINDER'
+  'CONSULAR_FATEBINDER',
+  'MARS_VICTOR'   // 2026 v2 Ch9 — DIVINE apex; recipe-only, never gambled/bought
 ]);
 export const FORTUNA_GAMBLE_POOL: string[] = Object.entries(towersJson as any)
   .filter(([id, def]: any) => def.kind === 'COMBO' && !FORTUNA_APEX_BLOCKLIST.has(id))

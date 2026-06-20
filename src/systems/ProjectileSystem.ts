@@ -144,6 +144,8 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   // ── Super combos (ts_*) ──────────────────────────────────────────────
   // Legion Prime — heavy divine artillery (slow barrel arc)
   [TowerType.LEGION_PRIME]:   { key: 'PROJ_BARREL',        arc: true,  speed: 400, splash: 1.8,  embed: false },
+  // Mars Victor — DIVINE apex: a radiant smiting orb with a wide holy splash.
+  [TowerType.MARS_VICTOR]:    { key: 'PROJ_DIVINE_APEX_ORB', arc: false, speed: 720, splash: 1.0, embed: false },
   // Consular Fatebinder — every shot strikes every enemy on the map
   // (true damage map-wide handled separately). The visible cast is a
   // fate-binding apex orb to the primary target — cosmetic anchor for the
