@@ -846,7 +846,15 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // face target
     t.rotation = Math.atan2(target.y - tilePxY(t), target.x - tilePxX(t));
     if (t.attackCooldown <= 0) {
-      const debuff = ((t as any).__auraSpeedDebuff ?? 0) as number;
+      // 2026 v2 spec — attack-speed debuff = MAX of the continuous proximity
+      // aura debuff and any TIMED ability debuff (Dive Bomb / Ground Slam /
+      // Fire Breath / Shriek / Titan Stomp set __atkSpeedDebuffUntil + Pct via
+      // applyTowerAtkSpeedDebuff). Take the worst, don't stack, so overlapping
+      // sources can't zero a tower out.
+      const auraDebuff = ((t as any).__auraSpeedDebuff ?? 0) as number;
+      const timedDebuff = (state.tick < ((t as any).__atkSpeedDebuffUntil ?? 0))
+        ? (((t as any).__atkSpeedDebuffPct ?? 0) as number) : 0;
+      const debuff = Math.min(0.85, Math.max(auraDebuff, timedDebuff));
       const supportSpeed = towerSpeedMult.get(t.id) ?? 1;
       const supportDmg = towerDmgMult.get(t.id) ?? 1;
       // Weather: reduce attack speed
