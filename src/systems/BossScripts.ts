@@ -73,6 +73,109 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
         break;
       }
 
+      // ─── ROMAN-MYTH ELITES (W25-29, 2026 v2 spec Ch10-11) ───────────────
+      // Abilities reuse the shared primitives: Fire Breath / Ground Slam =
+      // timed atk-speed debuff (applyTowerAtkSpeedDebuff); Eye Blast /
+      // Serpent Storm = tower silence (silencedUntil + attackCooldown, the
+      // Tusk-Quake pattern); Triple Howl = a one-time pack speed surge.
+      case EnemyType.CHIMERA: {
+        // FIRE BREATH — every 3s: towers within ~2 tiles lose 30% atk speed for 2s.
+        const next = (e as any).__nextFireBreath ?? (state.tick + 3);
+        if (state.tick >= next) {
+          (e as any).__nextFireBreath = state.tick + 3;
+          const r = 32 * 2.2;
+          for (const tw of state.towers.values()) {
+            if (tw.pending) continue;
+            if (Math.hypot(tw.tileX * 32 + 16 - e.x, tw.tileY * 32 + 16 - e.y) <= r)
+              applyTowerAtkSpeedDebuff(tw, 0.30, 2, state.tick);
+          }
+        }
+        break;
+      }
+      case EnemyType.GIANT_GIGAS: {
+        // GROUND SLAM — every 5s: towers within ~2.5 tiles lose 35% atk speed for 2.5s.
+        const next = (e as any).__nextGroundSlam ?? (state.tick + 5);
+        if (state.tick >= next) {
+          (e as any).__nextGroundSlam = state.tick + 5;
+          const r = 32 * 2.5;
+          let hit = 0;
+          for (const tw of state.towers.values()) {
+            if (tw.pending) continue;
+            if (Math.hypot(tw.tileX * 32 + 16 - e.x, tw.tileY * 32 + 16 - e.y) <= r) {
+              applyTowerAtkSpeedDebuff(tw, 0.35, 2.5, state.tick); hit++;
+            }
+          }
+          if (hit > 0) {
+            const renderer = (window as any).__renderer;
+            renderer?.triggerImpactRing?.(e.x, e.y, state.tick, r, 0xE87020);
+            renderer?.triggerShake?.(2, 0.15);
+          }
+        }
+        break;
+      }
+      case EnemyType.CYCLOPS: {
+        // EYE BLAST — every 6s: fully silence the single nearest tower for 2s.
+        const next = (e as any).__nextEyeBlast ?? (state.tick + 6);
+        if (state.tick >= next) {
+          (e as any).__nextEyeBlast = state.tick + 6;
+          let best: any = null, bestD = Infinity;
+          for (const tw of state.towers.values()) {
+            if (tw.pending) continue;
+            const d = Math.hypot(tw.tileX * 32 + 16 - e.x, tw.tileY * 32 + 16 - e.y);
+            if (d < bestD) { bestD = d; best = tw; }
+          }
+          if (best) {
+            best.silencedUntil = Math.max(best.silencedUntil ?? 0, state.tick + 2);
+            best.attackCooldown = Math.max(best.attackCooldown, 2);
+            const renderer = (window as any).__renderer;
+            renderer?.triggerImpactRing?.(best.tileX * 32 + 16, best.tileY * 32 + 16, state.tick, 24, 0xE87020);
+            state.hint = '👁 EYE BLAST — a tower is struck blind!';
+          }
+        }
+        break;
+      }
+      case EnemyType.TYPHON: {
+        // SERPENT STORM — every 5s: silence every tower within ~3 tiles for 1.5s.
+        const next = (e as any).__nextSerpentStorm ?? (state.tick + 5);
+        if (state.tick >= next) {
+          (e as any).__nextSerpentStorm = state.tick + 5;
+          const r = 32 * 3;
+          let silenced = 0;
+          for (const tw of state.towers.values()) {
+            if (tw.pending) continue;
+            if (Math.hypot(tw.tileX * 32 + 16 - e.x, tw.tileY * 32 + 16 - e.y) <= r) {
+              tw.silencedUntil = Math.max(tw.silencedUntil ?? 0, state.tick + 1.5);
+              tw.attackCooldown = Math.max(tw.attackCooldown, 1.5); silenced++;
+            }
+          }
+          if (silenced > 0) {
+            const renderer = (window as any).__renderer;
+            renderer?.triggerImpactRing?.(e.x, e.y, state.tick, r, 0x6a5acd);
+            renderer?.triggerShake?.(3, 0.2);
+            state.hint = `🐍 SERPENT STORM — ${silenced} tower${silenced === 1 ? '' : 's'} silenced!`;
+          }
+        }
+        break;
+      }
+      case EnemyType.CERBERUS: {
+        // TRIPLE HOWL — every 7s: one-time +25% speed surge to nearby myth
+        // allies that haven't been howled yet (flag-gated, no compounding).
+        const next = (e as any).__nextTripleHowl ?? (state.tick + 7);
+        if (state.tick >= next) {
+          (e as any).__nextTripleHowl = state.tick + 7;
+          let buffed = 0;
+          for (const ally of state.enemies.values()) {
+            if (ally.faction !== e.faction || (ally as any).__cerberusHowled) continue;
+            if (Math.hypot(ally.x - e.x, ally.y - e.y) <= 32 * 3) {
+              (ally as any).__cerberusHowled = true;
+              ally.baseSpeed *= 1.25; ally.currentSpeed *= 1.25; buffed++;
+            }
+          }
+          if (buffed > 0) state.hint = '🐺 TRIPLE HOWL — the myth horde surges forward!';
+        }
+        break;
+      }
+
       // ─── ALPHA DOG (W5) ──────────────────────────────────────────────────
       // Frenzy at <30% HP (existing) + Pack Howl every 8s buffing nearby Feral Dogs.
       case EnemyType.ALPHA_DOG:

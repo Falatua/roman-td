@@ -275,6 +275,10 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     const existingResist: number = (e as any).__lateResistMult ?? 1.0;
     (e as any).__lateResistMult = existingResist * 0.65;     // multiplies again — 35 % more reduction
   }
+  // 2026 v2 spec Ch10-13 — elite flag drives the universal #E87020 glow;
+  // bigGlow = the larger Typhon / Super-Giant aura (read by RenderEngine).
+  if ((def as any).isElite) (e as any).isElite = true;
+  if ((def as any).bigGlow) { (e as any).__bigGlow = true; (e as any).__glowScale = 1.4; }
   state.enemies.set(e.id, e);
   // Trigger spawn-emergence puff at spawn pixel (Animation Doc §22.1)
   const renderer = (window as any).__renderer;
@@ -292,6 +296,7 @@ function factionFromString(s: string): EnemyFaction {
     case 'SUPER_DEMONS': return EnemyFaction.SUPER_DEMONS;
     case 'MONGOLS': return EnemyFaction.MONGOLS;
     case 'EGYPTIANS': return EnemyFaction.EGYPTIANS;
+    case 'ROMAN_MYTH': return EnemyFaction.ROMAN_MYTH;
     default: return EnemyFaction.DOGS;
   }
 }

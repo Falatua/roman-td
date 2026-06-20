@@ -694,5 +694,60 @@
     "livesCost": 5,
     "meleeImmune": true,
     "immuneFire": true
+  },
+  "CHIMERA": {
+    "name": "Chimera",
+    "faction": "ROMAN_MYTH",
+    "baseHp": 4200,
+    "speed": 1.6,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 2,
+    "isElite": true
+  },
+  "CERBERUS": {
+    "name": "Cerberus",
+    "faction": "ROMAN_MYTH",
+    "baseHp": 3400,
+    "speed": 2.2,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 2,
+    "isElite": true,
+    "immuneFreeze": true
+  },
+  "TYPHON": {
+    "name": "Typhon",
+    "faction": "ROMAN_MYTH",
+    "baseHp": 9000,
+    "speed": 1.0,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 3,
+    "isElite": true,
+    "bigGlow": true,
+    "immuneSlow": true,
+    "immuneStun": true
+  },
+  "GIANT_GIGAS": {
+    "name": "Giant",
+    "faction": "ROMAN_MYTH",
+    "baseHp": 5200,
+    "speed": 1.2,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 2,
+    "isElite": true,
+    "immuneSlow": true
+  },
+  "CYCLOPS": {
+    "name": "Cyclops",
+    "faction": "ROMAN_MYTH",
+    "baseHp": 4600,
+    "speed": 1.3,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 2,
+    "isElite": true
   }
 }

@@ -472,99 +472,99 @@
   {
     "wave": 25,
     "type": "G",
-    "faction": "SUPER_DEMONS",
+    "faction": "ROMAN_MYTH",
     "hpMult": 14.0,
     "gold": 40,
     "fixedCount": true,
     "spawns": [
       {
-        "type": "UNDEAD_WAR_ELEPHANT",
-        "count": 5
+        "type": "GIANT_GIGAS",
+        "count": 4
       }
     ]
   },
   {
     "wave": 26,
     "type": "M",
-    "faction": "SUPER_DEMONS",
+    "faction": "ROMAN_MYTH",
     "hpMult": 14.0,
     "gold": 40,
     "fixedCount": true,
     "spawns": [
       {
-        "type": "UNDEAD_WAR_ELEPHANT",
+        "type": "CERBERUS",
+        "count": 3
+      },
+      {
+        "type": "CYCLOPS",
         "count": 2
       },
       {
-        "type": "IRON_PHALANX",
-        "count": 2
-      },
-      {
-        "type": "UNDEAD_CELT",
-        "count": 40
+        "type": "DEMON_HELLHOUND",
+        "count": 30
       }
     ]
   },
   {
     "wave": 27,
     "type": "G",
-    "faction": "SUPER_DEMONS",
+    "faction": "ROMAN_MYTH",
     "hpMult": 17.0,
     "gold": 44,
     "fixedCount": true,
     "spawns": [
       {
-        "type": "UNDEAD_WAR_ELEPHANT",
-        "count": 4
+        "type": "CHIMERA",
+        "count": 3
       },
       {
-        "type": "IRON_PHALANX",
+        "type": "GIANT_GIGAS",
+        "count": 3
+      },
+      {
+        "type": "CYCLOPS",
         "count": 2
-      },
-      {
-        "type": "MONGOL_CAPTAIN",
-        "count": 4
       }
     ]
   },
   {
     "wave": 28,
     "type": "G",
-    "faction": "SUPER_DEMONS",
+    "faction": "ROMAN_MYTH",
     "hpMult": 18.0,
     "gold": 44,
     "fixedCount": true,
     "superGiantActive": true,
     "spawns": [
       {
-        "type": "UNDEAD_WAR_ELEPHANT",
-        "count": 6
+        "type": "GIANT_GIGAS",
+        "count": 5
       }
     ]
   },
   {
     "wave": 29,
     "type": "G",
-    "faction": "SUPER_DEMONS",
+    "faction": "ROMAN_MYTH",
     "hpMult": 20.0,
     "gold": 48,
     "fixedCount": true,
     "spawns": [
       {
-        "type": "IRON_PHALANX",
-        "count": 5
-      },
-      {
-        "type": "UNDEAD_WAR_ELEPHANT",
-        "count": 3
-      },
-      {
-        "type": "ARCHITECTUS",
+        "type": "TYPHON",
         "count": 1
       },
       {
-        "type": "MONGOL_CAPTAIN",
-        "count": 1
+        "type": "CYCLOPS",
+        "count": 4
+      },
+      {
+        "type": "GIANT_GIGAS",
+        "count": 2
+      },
+      {
+        "type": "CHIMERA",
+        "count": 2
       }
     ]
   },

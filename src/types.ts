@@ -31,7 +31,10 @@ export enum EnemyFaction {
   // the player crosses into post-W20 Endless. Free-mix with each other
   // and with returning W1-W20 enemies inside the same Endless wave.
   MONGOLS,
-  EGYPTIANS
+  EGYPTIANS,
+  // 2026 v2 spec Ch10-11 — Roman-myth elite creatures (W25-29). Tough vs
+  // steel/fire, but weak to DIVINE (Rome's gods smite the old monsters).
+  ROMAN_MYTH
 }
 
 export enum EntityType {
@@ -222,6 +225,12 @@ export enum EnemyType {
   MONGOL_CAPTAIN = 'MONGOL_CAPTAIN',
   // 2026 v2 spec Ch6 — W20 boss flyer (Egyptian undead vulture)
   BOSS_FLYER_VULTURE = 'BOSS_FLYER_VULTURE',
+  // 2026 v2 spec Ch10-11 — Roman-myth elite creatures (W25-29 gauntlet)
+  CHIMERA = 'CHIMERA',
+  CERBERUS = 'CERBERUS',
+  TYPHON = 'TYPHON',
+  GIANT_GIGAS = 'GIANT_GIGAS',
+  CYCLOPS = 'CYCLOPS',
   // ─── GATES OF HELL (2026-05-17 surprise event) ───────────────────────
   // HELL_GATE — stationary "enemy" that anchors the event at WP3/WP4.
   // Has HP, takes tower fire, dies via the regular death path. Its

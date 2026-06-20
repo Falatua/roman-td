@@ -297,7 +297,14 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.MONGOL_SHAMAN]:     { ranged: 0.55, slow: 0.4, burn: 0.6 },
   [EnemyType.MONGOL_CAPTAIN]:    { melee: 0.6, ranged: 0.5, slow: 0.3 },
   // 2026 v2 spec Ch6 — Vulture Imperator: ranged-resistant; fire-immune + melee-untargetable handled via enemies.json flags.
-  [EnemyType.BOSS_FLYER_VULTURE]: { ranged: 0.7, slow: 0.4 }
+  [EnemyType.BOSS_FLYER_VULTURE]: { ranged: 0.7, slow: 0.4 },
+  // 2026 v2 spec Ch10-11 — Roman-myth elites. Thematic specialty resists
+  // stack on the ROMAN_MYTH faction row (tough vs steel/fire, weak to DIVINE).
+  [EnemyType.CHIMERA]:     { burn: 0.6 },
+  [EnemyType.CERBERUS]:    { burn: 0.5, poison: 0.3 },
+  [EnemyType.TYPHON]:      { slow: 0.6, ranged: 0.3 },
+  [EnemyType.GIANT_GIGAS]: { slow: 0.7, melee: 0.3 },
+  [EnemyType.CYCLOPS]:     { melee: 0.3, slow: 0.4 }
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
