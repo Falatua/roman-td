@@ -766,5 +766,29 @@
     "immuneStun": true,
     "immuneFreeze": true,
     "regenPctPerSec": 0.012
+  },
+  "PLAGUE_BEARER": {
+    "name": "Plague Bearer",
+    "faction": "EGYPTIANS",
+    "baseHp": 880,
+    "speed": 0.95,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 2,
+    "isElite": true,
+    "auraTowerSlow": 0.25,
+    "immunePoison": true
+  },
+  "MEDJAY_SOLDIER": {
+    "name": "Medjay Soldier",
+    "faction": "EGYPTIANS",
+    "baseHp": 1400,
+    "speed": 1.1,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 1,
+    "isElite": true,
+    "shieldBlockChance": 0.35,
+    "requiresMeleeBreak": true
   }
 }

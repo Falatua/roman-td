@@ -245,6 +245,29 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
         break;
       }
 
+      // ─── PLAGUE BEARER (Egyptian, 2026 v2 spec Ch14) ────────────────────
+      // The continuous plague aura is data-driven (auraTowerSlow). On top of
+      // it, once at <=20% HP the bearer's cracked urn shatters: a PLAGUE
+      // BURST saps every tower within ~2.5 tiles by 40% atk speed for 5s —
+      // the on-death plague-zone, delivered via the shared debuff framework.
+      case EnemyType.PLAGUE_BEARER: {
+        if (!(e as any).__plagueBurst && e.hp / e.maxHp <= 0.2) {
+          (e as any).__plagueBurst = true;
+          const r = 32 * 2.5;
+          let hit = 0;
+          for (const tw of state.towers.values()) {
+            if (tw.pending) continue;
+            if (Math.hypot(tw.tileX * 32 + 16 - e.x, tw.tileY * 32 + 16 - e.y) <= r) {
+              applyTowerAtkSpeedDebuff(tw, 0.40, 5, state.tick); hit++;
+            }
+          }
+          const renderer = (window as any).__renderer;
+          renderer?.triggerImpactRing?.(e.x, e.y, state.tick, r, 0x6fae3a);
+          if (hit > 0) state.hint = `☠ PLAGUE BURST — ${hit} tower${hit === 1 ? '' : 's'} sickened!`;
+        }
+        break;
+      }
+
       // ─── ALPHA DOG (W5) ──────────────────────────────────────────────────
       // Frenzy at <30% HP (existing) + Pack Howl every 8s buffing nearby Feral Dogs.
       case EnemyType.ALPHA_DOG:

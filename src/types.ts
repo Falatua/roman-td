@@ -233,6 +233,9 @@ export enum EnemyType {
   TYPHON = 'TYPHON',
   GIANT_GIGAS = 'GIANT_GIGAS',
   CYCLOPS = 'CYCLOPS',
+  // 2026 v2 spec Ch14 — Egyptian roster expansion (W18-23)
+  PLAGUE_BEARER = 'PLAGUE_BEARER',
+  MEDJAY_SOLDIER = 'MEDJAY_SOLDIER',
   // ─── GATES OF HELL (2026-05-17 surprise event) ───────────────────────
   // HELL_GATE — stationary "enemy" that anchors the event at WP3/WP4.
   // Has HP, takes tower fire, dies via the regular death path. Its

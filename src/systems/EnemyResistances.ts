@@ -306,7 +306,10 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.GIANT_GIGAS]: { slow: 0.7, melee: 0.3 },
   [EnemyType.CYCLOPS]:     { melee: 0.3, slow: 0.4 },
   // Colossus Gigas — the fused Super-Giant: very tough all-round.
-  [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0.3, slow: 0.8 }
+  [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0.3, slow: 0.8 },
+  // 2026 v2 spec Ch14 — Egyptian roster expansion.
+  [EnemyType.PLAGUE_BEARER]:  { ranged: 0.2, poison: 0.8, burn: 0.3 },
+  [EnemyType.MEDJAY_SOLDIER]: { melee: 0.5, ranged: 0.3, slow: 0.3 }
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {

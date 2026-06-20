@@ -331,6 +331,14 @@
       {
         "type": "MUMMY_WARRIOR",
         "count": 16
+      },
+      {
+        "type": "MEDJAY_SOLDIER",
+        "count": 8
+      },
+      {
+        "type": "PLAGUE_BEARER",
+        "count": 4
       }
     ]
   },
@@ -356,6 +364,14 @@
       {
         "type": "EGYPTIAN_ARCHER",
         "count": 40
+      },
+      {
+        "type": "MEDJAY_SOLDIER",
+        "count": 8
+      },
+      {
+        "type": "PLAGUE_BEARER",
+        "count": 4
       }
     ]
   },
@@ -445,6 +461,14 @@
       {
         "type": "ANUBIS_PRIEST",
         "count": 8
+      },
+      {
+        "type": "MEDJAY_SOLDIER",
+        "count": 8
+      },
+      {
+        "type": "PLAGUE_BEARER",
+        "count": 4
       }
     ]
   },

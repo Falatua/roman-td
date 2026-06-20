@@ -99,6 +99,9 @@ const MANIFEST: Record<string, string> = {
   CYCLOPS: 'e3_cyclops.png',
   // 2026 v2 spec Ch12 — Colossus Gigas (W28 merged Super-Giant).
   SUPER_GIANT_COLOSSUS: 'e3_super_giant_colossus.png',
+  // 2026 v2 spec Ch14 — Egyptian roster expansion.
+  PLAGUE_BEARER: 'e3_plague_bearer.png',
+  MEDJAY_SOLDIER: 'e3_medjay_soldier.png',
   EGYPTIAN_ARCHER: 'endless/e_endless_egyptian_archer.png',
   EGYPTIAN_SPEARMAN: 'endless/e_endless_egyptian_spearman.png',
   EGYPTIAN_CHARIOT: 'endless/e_endless_egyptian_chariot.png',
