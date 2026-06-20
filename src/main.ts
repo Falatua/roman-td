@@ -7400,7 +7400,7 @@ async function boot() {
     {
       const wIdx = Math.min(49, Math.max(0, state.wave - 1));
       const wInfo = wavesData[wIdx];
-      renderer.drawAmbient(state.tick, state.wave, wInfo?.type === 'B');
+      renderer.drawAmbient(state.tick, state.wave, wInfo?.type === 'B', state.caveBActive === true);
     }
     renderer.drawImpactOverlays(state.tick);
     renderer.applyShake(dt, state.tick);

@@ -150,6 +150,10 @@ export function startWave(state: GameStateShape) {
   }
   state.wave += 1;
   if (state.wave > WAVE.TOTAL) return;
+  // 2026 v2 spec Ch7 — Cave B reveals only when its first enemy emerges (set
+  // in the spawn loop below). Re-hide it whenever we (re)enter a pre-W21 wave:
+  // a fresh run or a sandbox jump backward.
+  if (state.wave < 21) state.caveBActive = false;
   const w = wavesData[state.wave - 1];
   // 2026-05-23 — TRUESIGHT REVEAL RESET. The Truesight Lens marks
   // stealth/ambush enemies with `__truesightRevealed = true` once they
@@ -296,6 +300,9 @@ export function tickSpawns(state: GameStateShape, dt: number) {
       const cbIdx = (state as any).__caveBSpawnIdx ?? 0;
       (state as any).__caveBSpawnIdx = cbIdx + 1;
       fromCaveB = (cbIdx % (state.wave >= 25 ? 2 : 3)) === 0;
+      // Reveal the second cave the instant its first enemy actually emerges
+      // (the renderer reads this to un-hide the archway + fire the eruption).
+      if (fromCaveB) state.caveBActive = true;
     }
     const e = spawnEnemy(state, item.type as EnemyType, spawnHpMult, false, fromCaveB);
     // 2026-05-17 — Surprise event waveOverride: redirect this enemy to

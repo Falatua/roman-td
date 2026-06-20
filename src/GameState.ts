@@ -51,6 +51,10 @@ export interface GameStateShape {
   groundPath: { col: number; row: number }[];
   // 2026 v2 spec Ch7 — Cave B (second spawn) lane; empty when Cave B inactive.
   groundPathB: { col: number; row: number }[];
+  // 2026 v2 spec Ch7 — flips true the instant the first enemy emerges from
+  // Cave B (W21+). Gates the archway reveal + eruption so the second cave
+  // stays a surprise and is never shown sitting on the map beforehand.
+  caveBActive?: boolean;
   flyerPath: { x: number; y: number }[];
   // Game-over flag for animation
   gameOverAt: number;       // tick when lives reached 0
@@ -251,6 +255,7 @@ export function createGameState(): GameStateShape {
     leaksByArchetype: {},
     groundPath: [],
     groundPathB: [],
+    caveBActive: false,
     flyerPath: [],
     gameOverAt: -1,
     victoryAt: -1,

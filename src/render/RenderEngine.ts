@@ -264,13 +264,19 @@ export class RenderEngine {
   // Cheap (just modulates Graphics each frame), keeps the world feeling alive (Visual §3.1, §8.1, §8.2, §8.5).
   private ambientGfx?: Graphics;
   private grassWindGfx?: Graphics;
-  drawAmbient(tick: number, wave: number = 0, isBossWave: boolean = false) {
-    // 2026 v2 spec Ch7 — Cave B one-time ERUPTION when it activates at W21:
-    // a triple molten ring + screen shake from the second cave. Self-resets
-    // below W21 so it re-fires on a fresh run.
+  drawAmbient(tick: number, wave: number = 0, isBossWave: boolean = false, caveBActive: boolean = false) {
+    // 2026 v2 spec Ch7 — Cave B stays HIDDEN until its first enemy emerges
+    // (caveBActive, set in the spawn loop). The frame it activates, the
+    // archway bursts into view with a one-time eruption (triple molten ring +
+    // screen shake), keeping the second front a genuine surprise. Visibility
+    // is driven every frame so a fresh run / sandbox jump re-hides it.
     const caveBData = (waypointsData as any).caveB;
     if (caveBData) {
-      if (wave < 21) (this as any).__caveBErupted = false;
+      const cbGfx = (this as any).__caveBGfx as Graphics | undefined;
+      const cbSpr = (this as any).__caveBSprite as Sprite | undefined;
+      if (cbGfx) cbGfx.visible = caveBActive;
+      if (cbSpr) cbSpr.visible = caveBActive;
+      if (!caveBActive) (this as any).__caveBErupted = false;
       else if (!(this as any).__caveBErupted) {
         (this as any).__caveBErupted = true;
         const ex = caveBData.col * GRID.TILE + GRID.TILE / 2;
@@ -2874,12 +2880,19 @@ export class RenderEngine {
       bf.beginFill(caveGlowColor, 0.22).drawCircle(bcx, bcy, 66).endFill();
       bf.beginFill(caveGlowColor, 0.12).drawCircle(bcx, bcy, 90).endFill();
       this.layers.bg.addChild(bf);
+      // 2026 v2 spec Ch7 — created HIDDEN. drawAmbient reveals it the moment
+      // the first enemy emerges from Cave B (state.caveBActive), so it stays a
+      // surprise instead of sitting on the map from W1.
+      bf.visible = false;
+      (this as any).__caveBGfx = bf;
       const caveTexB = tex(biome.caveKey) ?? tex('DARK_CAVE');
       if (caveTexB) {
         const cbs = new Sprite(caveTexB);
         cbs.anchor.set(0.5); cbs.x = bcx; cbs.y = bcy;
         cbs.width = 84; cbs.height = 84;
+        cbs.visible = false;
         this.layers.bg.addChild(cbs);
+        (this as any).__caveBSprite = cbs;
       }
     }
 
