@@ -263,7 +263,7 @@
     "immunePoison": true,
     "requiresMeleeBreak": true,
     "shieldBlockChance": 0.35,
-    "allAttackBlockChance": 0.20,
+    "allAttackBlockChance": 0.2,
     "phaseHits": 1,
     "checkpointHealPct": 0.15
   },
@@ -405,7 +405,7 @@
     "spriteCell": 1,
     "meleeImmune": true,
     "phaseHits": 2,
-    "allAttackBlockChance": 0.20,
+    "allAttackBlockChance": 0.2,
     "outOfCombatRegen": 0.042
   },
   "HELL_GATE": {
@@ -683,5 +683,16 @@
     "isBoss": false,
     "livesCost": 3,
     "outOfCombatRegen": 0.025
+  },
+  "BOSS_FLYER_VULTURE": {
+    "name": "Vulture Imperator",
+    "faction": "EGYPTIANS",
+    "baseHp": 3200,
+    "speed": 1.4,
+    "isFlyer": true,
+    "isBoss": true,
+    "livesCost": 5,
+    "meleeImmune": true,
+    "immuneFire": true
   }
 }

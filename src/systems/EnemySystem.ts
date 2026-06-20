@@ -73,6 +73,15 @@ const ARCHETYPE: Record<string, Enemy['archetype']> = {
   MONGOL_SCOUT: 'RUNNER', MONGOL_SHAMAN: 'ELITE', MONGOL_CAPTAIN: 'RESISTANT'
 };
 
+// 2026 v2 spec — TIMED tower attack-speed debuff (Dive Bomb / Ground Slam /
+// Fire Breath / Shriek / Titan Stomp). CombatResolver MAX-combines this with
+// the proximity aura debuff. Refresh keeps the stronger pct while active.
+export function applyTowerAtkSpeedDebuff(t: any, pct: number, durationSec: number, tick: number): void {
+  const active = tick < (t.__atkSpeedDebuffUntil ?? 0);
+  t.__atkSpeedDebuffPct = active ? Math.max(t.__atkSpeedDebuffPct ?? 0, pct) : pct;
+  t.__atkSpeedDebuffUntil = Math.max(active ? (t.__atkSpeedDebuffUntil ?? 0) : 0, tick + durationSec);
+}
+
 export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: number, derived?: boolean): Enemy {
   const def: any = (enemiesData as any)[type];
   if (!def) {

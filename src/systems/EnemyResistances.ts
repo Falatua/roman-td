@@ -295,7 +295,9 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.MONGOL_BERSERKER]:  { melee: 0.55, slow: 0.35, bleed: 0.4 },
   [EnemyType.MONGOL_SCOUT]:      { ranged: 0.7, slow: 0.3, burn: 0.8 },
   [EnemyType.MONGOL_SHAMAN]:     { ranged: 0.55, slow: 0.4, burn: 0.6 },
-  [EnemyType.MONGOL_CAPTAIN]:    { melee: 0.6, ranged: 0.5, slow: 0.3 }
+  [EnemyType.MONGOL_CAPTAIN]:    { melee: 0.6, ranged: 0.5, slow: 0.3 },
+  // 2026 v2 spec Ch6 — Vulture Imperator: ranged-resistant; fire-immune + melee-untargetable handled via enemies.json flags.
+  [EnemyType.BOSS_FLYER_VULTURE]: { ranged: 0.7, slow: 0.4 }
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {

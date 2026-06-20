@@ -220,6 +220,8 @@ export enum EnemyType {
   MONGOL_SCOUT = 'MONGOL_SCOUT',
   MONGOL_SHAMAN = 'MONGOL_SHAMAN',
   MONGOL_CAPTAIN = 'MONGOL_CAPTAIN',
+  // 2026 v2 spec Ch6 — W20 boss flyer (Egyptian undead vulture)
+  BOSS_FLYER_VULTURE = 'BOSS_FLYER_VULTURE',
   // ─── GATES OF HELL (2026-05-17 surprise event) ───────────────────────
   // HELL_GATE — stationary "enemy" that anchors the event at WP3/WP4.
   // Has HP, takes tower fire, dies via the regular death path. Its

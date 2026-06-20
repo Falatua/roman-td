@@ -367,7 +367,7 @@
     "gold": 30,
     "spawns": [
       {
-        "type": "SPHINX",
+        "type": "BOSS_FLYER_VULTURE",
         "count": 1
       },
       {

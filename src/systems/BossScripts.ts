@@ -1,6 +1,6 @@
 import { Enemy, EnemyType, EnemyFaction, StatusEffectKind } from '../types';
 import { GameStateShape } from '../GameState';
-import { spawnEnemy } from './EnemySystem';
+import { spawnEnemy, applyTowerAtkSpeedDebuff } from './EnemySystem';
 import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
 
@@ -49,6 +49,29 @@ export function createBossRuntime(): BossRuntime {
 export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRuntime, waveStartTick: number) {
   for (const e of state.enemies.values()) {
     switch (e.type) {
+
+      // ─── VULTURE IMPERATOR (W20 boss flyer, 2026 v2 spec Ch6) ───────────
+      case EnemyType.BOSS_FLYER_VULTURE: {
+        // DIVE BOMB — every 8s: -40% attack speed for 4s on the highest-kill tower.
+        const nextDive = (e as any).__nextDiveBomb ?? (waveStartTick + 8);
+        if (state.tick >= nextDive) {
+          (e as any).__nextDiveBomb = state.tick + 8;
+          let best: any = null, bestKills = -1;
+          for (const tw of state.towers.values()) {
+            const kc = (tw as any).killCount ?? 0;
+            if (kc > bestKills) { bestKills = kc; best = tw; }
+          }
+          if (best) applyTowerAtkSpeedDebuff(best, 0.40, 4, state.tick);
+        }
+        // FLOCK CALL — once at <=50% HP: summon 3 escort flyers (Sphinx).
+        if (!(e as any).__flockCalled && e.hp / e.maxHp <= 0.5) {
+          (e as any).__flockCalled = true;
+          const hpM = (wavesData[Math.min(state.wave - 1, wavesData.length - 1)] as any)?.hpMult ?? 1;
+          for (let i = 0; i < 3; i++) spawnEnemy(state, EnemyType.SPHINX, hpM);
+          state.hint = '🦅 FLOCK CALL — the Vulture summons its murder!';
+        }
+        break;
+      }
 
       // ─── ALPHA DOG (W5) ──────────────────────────────────────────────────
       // Frenzy at <30% HP (existing) + Pack Howl every 8s buffing nearby Feral Dogs.

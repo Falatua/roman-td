@@ -89,6 +89,8 @@ const MANIFEST: Record<string, string> = {
   // Sliced from a 3×3 sprite-sheet drop and stored in
   // /public/assets/sprites/endless/. Sprites are auto-cropped + alpha
   // keyed so the renderer composites them onto the field cleanly.
+  // 2026 v2 spec Ch6 — Vulture Imperator (W20 boss flyer); e3_ prefix = prerendered + critical.
+  BOSS_FLYER_VULTURE: 'e3_boss_flyer_vulture.png',
   EGYPTIAN_ARCHER: 'endless/e_endless_egyptian_archer.png',
   EGYPTIAN_SPEARMAN: 'endless/e_endless_egyptian_spearman.png',
   EGYPTIAN_CHARIOT: 'endless/e_endless_egyptian_chariot.png',
