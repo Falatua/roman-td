@@ -1119,15 +1119,15 @@
   "MARS_VICTOR": {
     "name": "Mars Victor",
     "damageType": "DIVINE",
-    "baseDps": 320.0,
+    "baseDps": 720.0,
     "attackSpeed": 0.45,
-    "range": 7.0,
+    "range": 8.0,
     "kind": "COMBO",
     "melee": false,
     "tierBand": 5,
-    "ability": "DIVINE WRATH: a column of sacred fire smites the target and every enemy within a wide radius for massive DIVINE damage. The apex of Roman faith made war.",
-    "critChance": 0.2,
-    "critMult": 2.5
+    "ability": "THE WAR-GOD INCARNATE. Forged from all 6 Champions of Rome, Mars Victor fuses every hero passive into one army-wide aura: +25% damage and +15% attack speed to EVERY tower, all towers may strike flyers, and +25% damage vs bosses. His own DIVINE WRATH smites the target and a wide radius for colossal divine damage. Worth more than the six heroes combined.",
+    "critChance": 0.28,
+    "critMult": 3.2
   },
   "CHAMPION_MARIUS": {
     "name": "Champion Marius",

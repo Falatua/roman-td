@@ -423,6 +423,13 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     globalSpeedMult *= 1.10;
   }
   const scipioActive = state.activeHeroId === 'HERO_SCIPIO';
+  // 2026 v2 — Mars Victor fuses the 6 hero passives into one global buff while
+  // it stands on the board (its own DPS is already capstone-tier). Computed
+  // once; the dmg/speed halves apply in the aura loop below, the vs-boss +
+  // melee-vs-flyers halves in the damage/targeting passes.
+  const marsVictorActive = towers.some(t => t.type === TowerType.MARS_VICTOR);
+  // Stash for pickTarget() (a separate function) so melee-vs-flyers can read it.
+  (state as any).__marsVictorActive = marsVictorActive;
   // Resolve hero tower position ONCE for per-tower local-aura checks
   // below. Avoids a per-tower state.towers.get lookup.
   const heroTowerForAura = state.activeHeroTowerId
@@ -477,6 +484,13 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     if (t.type === TowerType.AQUILIFER_TITAN && !auraOff) {
       globalDmgBonus += 0.30 * (1 + 0.05 * (t.qualityTier - 1));
       enemyTakenAuras.push({ x: cx, y: cy, r: 5 * GRID.TILE, pct: 0.20 });
+    }
+    if (t.type === TowerType.MARS_VICTOR && !auraOff) {
+      // The fused war-god aura: Caesar's global tempo + the legions' offense,
+      // granted to EVERY tower on the board (the vs-boss + melee-vs-flyers
+      // halves of the fusion fire in the damage / targeting passes below).
+      globalDmgBonus += 0.25;
+      globalSpeedMult *= 1.15;
     }
     // JULIUS_CAESAR (2026-05 v6 audit fix): the +45% global damage aura
     // was only wired into the stat-breakdown UI, not the combat math.
@@ -1008,6 +1022,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Pontifex (3.0×), Tyrant's Laurel (1.75×), and the RED-tile
       // aura — the curve was producing 8× boss kills late-game.
       if (scipioActive && target.isBoss) damage *= 1.25;
+      if (marsVictorActive && target.isBoss) damage *= 1.25;   // Mars Victor fuses Scipio's vs-boss passive
       // 2026-05-21 — Zama (Scipio tier-3) + Triumph (Marius tier-3)
       // damage windows removed alongside the tier-3 ability deletion.
       // The Scipio passive boss bonus above still fires; the per-
@@ -1669,6 +1684,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   // CYAN/AQUILA_TALONS unlock to ALL melee towers map-wide.
   const meleeAirEnabled = isMelee && (
     state.activeHeroId === 'HERO_AGRICOLA' ||
+    (state as any).__marsVictorActive ||   // Mars Victor fuses Agricola's all-towers-strike-flyers passive
     t.equippedItems.includes('AQUILA_TALONS') ||
     towerAuraTileKind(t) === 'CYAN'
   );
