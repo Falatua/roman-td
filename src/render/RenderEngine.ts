@@ -854,26 +854,39 @@ export class RenderEngine {
   // HP bar + the boss-arrival banner. Only the LOW-HP URGENCY RING
   // remains — kicks in below 25% HP to signal the kill window. Bosses
   // at full / mid HP now render exactly like other enemies (no halo).
+  // 2026 v2 spec Ch13 — UNIVERSAL BOSS/ELITE GLOW (name kept for caller
+  // stability; behaviour now matches the global standard). Every live boss
+  // OR elite (`isElite` flagged on Giants/Cyclops/myth in Phase 7) carries
+  // an always-on pulsing orange #E87020 aura: the "this unit is dangerous"
+  // signal JB asked to bring back. 1.2s pulse, 60% peak opacity (80% for the
+  // biggest units via __bigGlow), ~4px ring (6px biggest). Sits behind/around
+  // the sprite, never obscures it. A low-HP pass intensifies it for the kill
+  // window. Shared Graphics, cleared each frame, no per-unit allocations.
   drawBossLowHpAura(state: GameStateShape) {
     const g = this.bossAuraGfx;
     g.clear();
+    const GLOW = 0xE87020;
     for (const e of state.enemies.values()) {
-      if (!e.isBoss) continue;
       if (e.hp <= 0) continue;
-      const ratio = e.hp / e.maxHp;
-      // ONLY render when the boss is below 25% HP. No passive glow.
-      if (ratio >= 0.25) continue;
-      const dangerT = 1 - (ratio / 0.25);     // 0 at 25%, 1 at death
-      const pulse = 0.5 + 0.5 * Math.sin(state.tick * 3 * Math.PI);
-      const baseR = GRID.TILE * 1.6;
-      const r = baseR * (1 + 0.10 * pulse + 0.06 * dangerT);
-      const alpha = (0.25 + 0.35 * pulse) * (0.6 + 0.4 * dangerT);
-      g.beginFill(0xff2222, alpha * 0.18);
-      g.drawCircle(e.x, e.y, r * 1.18);
+      if (!e.isBoss && !(e as any).isElite) continue;
+      const big = !!(e as any).__bigGlow;                       // Typhon / Super Giant
+      const half = (e.isBoss ? GRID.TILE * 1.2 : GRID.TILE * 0.9) * ((e as any).__glowScale ?? 1);
+      const pulse = 0.5 + 0.5 * Math.sin(state.tick * (2 * Math.PI / 1.2));  // 1.2s cycle
+      const peak = big ? 0.80 : 0.60;
+      const ringPx = big ? 6 : 4;
+      const alpha = peak * (0.55 + 0.45 * pulse);
+      const r = half + ringPx;
+      g.beginFill(GLOW, alpha * 0.20);
+      g.drawCircle(e.x, e.y, r * 1.12);
       g.endFill();
-      g.lineStyle(3 + dangerT * 2, 0xff3030, alpha);
+      g.lineStyle(ringPx * 0.9, GLOW, alpha);
       g.drawCircle(e.x, e.y, r);
       g.lineStyle(0);
+      if (e.hp / e.maxHp < 0.25) {                              // low-HP urgency intensifier
+        g.lineStyle(2, GLOW, alpha * 0.9);
+        g.drawCircle(e.x, e.y, r * 1.25 * (0.96 + 0.06 * pulse));
+        g.lineStyle(0);
+      }
     }
   }
   // BOSS-FIGHT VIGNETTE (2026-05 v6 polish):
