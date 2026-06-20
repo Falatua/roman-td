@@ -6650,6 +6650,18 @@ async function boot() {
               renderer.triggerMuzzleFlash(tipX, tipY, 0xff7733, state.tick);
               renderer.triggerImpactRing(sx, sy, state.tick, 18, 0xcc3322);
               renderer.triggerShake(1.8, 0.08);
+            } else if (t.type === 'MARS_VICTOR') {
+              // 2026 v2 spec Ch9 — Mars Victor, the war-god apex: the grandest
+              // firing signature. Quad muzzle flash (gold / white / divine-gold
+              // / imperial crimson) + a double sacred-fire ring + a strong
+              // shake so its Divine Wrath shot reads as the ultimate tower.
+              renderer.triggerMuzzleFlash(tipX, tipY, 0xffd34d, state.tick);
+              renderer.triggerMuzzleFlash(tipX, tipY, 0xffffff, state.tick);
+              renderer.triggerMuzzleFlash(tipX, tipY, 0xfff4a8, state.tick);
+              renderer.triggerMuzzleFlash(tipX, tipY, 0xc8322a, state.tick);
+              renderer.triggerImpactRing(sx, sy, state.tick, 34, 0xffd34d);
+              renderer.triggerImpactRing(sx, sy, state.tick, 22, 0xfff4a8);
+              renderer.triggerShake(4.5, 0.24);
             }
           }
         },
