@@ -265,6 +265,22 @@ export class RenderEngine {
   private ambientGfx?: Graphics;
   private grassWindGfx?: Graphics;
   drawAmbient(tick: number, wave: number = 0, isBossWave: boolean = false) {
+    // 2026 v2 spec Ch7 — Cave B one-time ERUPTION when it activates at W21:
+    // a triple molten ring + screen shake from the second cave. Self-resets
+    // below W21 so it re-fires on a fresh run.
+    const caveBData = (waypointsData as any).caveB;
+    if (caveBData) {
+      if (wave < 21) (this as any).__caveBErupted = false;
+      else if (!(this as any).__caveBErupted) {
+        (this as any).__caveBErupted = true;
+        const ex = caveBData.col * GRID.TILE + GRID.TILE / 2;
+        const ey = caveBData.row * GRID.TILE + GRID.TILE / 2;
+        this.triggerImpactRing(ex, ey, tick, 40, 0xff5522);
+        this.triggerImpactRing(ex, ey, tick + 0.08, 72, 0xffaa33);
+        this.triggerImpactRing(ex, ey, tick + 0.16, 110, 0xff3018);
+        this.triggerShake(5, 0.4);
+      }
+    }
     if (!this.ambientGfx) {
       this.ambientGfx = new Graphics();
       this.layers.fx.addChildAt(this.ambientGfx, 0);
