@@ -288,7 +288,16 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     const spawnHpMult = (isBossSpawn
       ? effectiveWaveHpMult(state.wave, w.hpMult, true) * bossWaveSoloBuff
       : basicHpMult) * layerMult;
-    const e = spawnEnemy(state, item.type as EnemyType, spawnHpMult);
+    // 2026 v2 spec Ch7 — Cave B: from W21 on, a share of GROUND enemies pour
+    // from the second cave (W21-24 ~33%, W25-30 ~50%). Deterministic
+    // round-robin (no RNG); bosses + flyers always use the main cave.
+    let fromCaveB = false;
+    if (state.wave >= 21 && !isBossSpawn && !isFlyerSpawn && state.groundPathB.length > 0) {
+      const cbIdx = (state as any).__caveBSpawnIdx ?? 0;
+      (state as any).__caveBSpawnIdx = cbIdx + 1;
+      fromCaveB = (cbIdx % (state.wave >= 25 ? 2 : 3)) === 0;
+    }
+    const e = spawnEnemy(state, item.type as EnemyType, spawnHpMult, false, fromCaveB);
     // 2026-05-17 — Surprise event waveOverride: redirect this enemy to
     // spawn at a perimeter fire (Invasion) or center urn (Uprising)
     // instead of the cave. Round-robin across the 4 visual points so
@@ -304,7 +313,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // produced the auto-death this guard fixes. Flyers now always
     // spawn from the normal flyer cave entry regardless of any active
     // surprise event.
-    if (!isBossSpawn && !isFlyerSpawn) {
+    if (!isBossSpawn && !isFlyerSpawn && !fromCaveB) {
       spawnAtSurpriseEventPoint(state, e, surpriseSpawnIdx);
       surpriseSpawnIdx++;
     }

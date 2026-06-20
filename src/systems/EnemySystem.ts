@@ -22,6 +22,7 @@ import enemiesData from '../data/enemies.json';
 import waypointsData from '../data/waypoints.json';
 import wavesData from '../data/waves.json';
 import { statusEffectiveness } from './EnemyResistances';
+import { buildGroundPathB } from './PathFinder';
 
 // Pre-computed waypoint centers in WORLD pixel coordinates, used by the
 // per-frame proximity test so the checkpoint heal fires the instant an
@@ -82,7 +83,7 @@ export function applyTowerAtkSpeedDebuff(t: any, pct: number, durationSec: numbe
   t.__atkSpeedDebuffUntil = Math.max(active ? (t.__atkSpeedDebuffUntil ?? 0) : 0, tick + durationSec);
 }
 
-export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: number, derived?: boolean): Enemy {
+export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: number, derived?: boolean, caveB?: boolean): Enemy {
   const def: any = (enemiesData as any)[type];
   if (!def) {
     // Defensive: if a wave references an unknown enemy type, fall back to
@@ -91,8 +92,10 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     return spawnEnemy(state, EnemyType.FERAL_DOG, hpMult);
   }
   const factionEnum = factionFromString(def.faction);
-  const path = state.groundPath;
   const flyer: boolean = !!def.isFlyer;
+  // 2026 v2 spec Ch7 — Cave B routes GROUND enemies down the second lane.
+  const useCaveB = !!caveB && !flyer && state.groundPathB.length > 0;
+  const path = useCaveB ? state.groundPathB : state.groundPath;
   const startTile = path[0];
   const startX = (flyer ? state.flyerPath[0].x : startTile.col * GRID.TILE + GRID.TILE / 2);
   const startY = (flyer ? state.flyerPath[0].y : startTile.row * GRID.TILE + GRID.TILE / 2);
@@ -280,6 +283,7 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   if ((def as any).isElite) (e as any).isElite = true;
   if ((def as any).bigGlow) { (e as any).__bigGlow = true; (e as any).__glowScale = 1.4; }
   if ((def as any).renderScale) (e as any).__renderScale = (def as any).renderScale;
+  if (useCaveB) (e as any).__caveB = true;
   state.enemies.set(e.id, e);
   // Trigger spawn-emergence puff at spawn pixel (Animation Doc §22.1)
   const renderer = (window as any).__renderer;
@@ -797,6 +801,14 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
   const groundPathPx: { x: number; y: number }[] = [];
   for (const t of state.groundPath) {
     groundPathPx.push({ x: t.col * GRID.TILE + GRID.TILE / 2, y: t.row * GRID.TILE + GRID.TILE / 2 });
+  }
+  // 2026 v2 spec Ch7 — Cave B lane, cached the same way. buildGroundPathB is
+  // sticky so this only does real A* work when a tower/stone alters the lane.
+  const gpB = buildGroundPathB(state);
+  if (gpB) state.groundPathB = gpB;
+  const groundPathBPx: { x: number; y: number }[] = [];
+  for (const t of state.groundPathB) {
+    groundPathBPx.push({ x: t.col * GRID.TILE + GRID.TILE / 2, y: t.row * GRID.TILE + GRID.TILE / 2 });
   }
   for (const e of Array.from(state.enemies.values())) {
     if (e.hp <= 0) {
@@ -1321,7 +1333,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // V38 — Use the cached groundPathPx (built once at top of
     // tickEnemies). state.flyerPath is already pixel-coords so no
     // conversion needed.
-    const path = e.isFlyer ? state.flyerPath : groundPathPx;
+    const path = e.isFlyer ? state.flyerPath : ((e as any).__caveB ? groundPathBPx : groundPathPx);
     if (e.pathIndex >= path.length - 1) {
       // reached gate
       onLeak(e);

@@ -181,7 +181,9 @@ export function resnapEnemiesToPath(state: GameStateShape, newPath: { col: numbe
   // Precompute pixel centers for the new path.
   const px = newPath.map(t => tileToPixel(t.col, t.row));
   for (const e of state.enemies.values()) {
-    if (e.isFlyer) continue;
+    // 2026 v2 spec Ch7 — Cave B enemies follow lane B; the main-lane resnap
+    // must skip them (their pathIndex indexes groundPathB, not newPath).
+    if (e.isFlyer || (e as any).__caveB) continue;
     let bestI = 0, bestProg = 0, bestD2 = Infinity;
     for (let i = 0; i < px.length - 1; i++) {
       const a = px[i], b = px[i + 1];

@@ -2843,6 +2843,30 @@ export class RenderEngine {
       this.layers.bg.addChild(cs);
     }
 
+    // 2026 v2 spec Ch7 — CAVE B (second spawn), drawn only when defined. A
+    // compact mirror of the main cave so its W21+ enemies emerge from a real
+    // archway, not blank ground. Reuses the biome glow color + cave texture.
+    const caveB = (waypointsData as any).caveB;
+    if (caveB) {
+      const bcx = caveB.col * GRID.TILE + GRID.TILE / 2;
+      const bcy = caveB.row * GRID.TILE + GRID.TILE / 2;
+      const bf = new Graphics();
+      bf.beginFill(0x2a2622, 1).drawRoundedRect(bcx - 48, bcy - 48, 96, 96, 14).endFill();
+      bf.beginFill(0x3b342c, 1).drawRoundedRect(bcx - 42, bcy - 42, 84, 84, 12).endFill();
+      bf.beginFill(0x000000, 0.85).drawCircle(bcx, bcy, 36).endFill();
+      bf.beginFill(0x1a0d2a, 0.90).drawCircle(bcx, bcy, 28).endFill();
+      bf.beginFill(caveGlowColor, 0.22).drawCircle(bcx, bcy, 66).endFill();
+      bf.beginFill(caveGlowColor, 0.12).drawCircle(bcx, bcy, 90).endFill();
+      this.layers.bg.addChild(bf);
+      const caveTexB = tex(biome.caveKey) ?? tex('DARK_CAVE');
+      if (caveTexB) {
+        const cbs = new Sprite(caveTexB);
+        cbs.anchor.set(0.5); cbs.x = bcx; cbs.y = bcy;
+        cbs.width = 84; cbs.height = 84;
+        this.layers.bg.addChild(cbs);
+      }
+    }
+
     // GATE: 4×4 fortress with biome-aware glow + crenellated frame.
     // 2026-05-21 — Phase V11 upgrade. Sprite size 76 → 112px. Added
     // crenellation frame + flanking pilasters + brighter gold halo.

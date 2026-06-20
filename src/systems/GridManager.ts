@@ -59,6 +59,13 @@ export function isInsideStructureFootprint(col: number, row: number): boolean {
   const dGateC = Math.abs(col - waypointsData.gate.col);
   const dGateR = Math.abs(row - waypointsData.gate.row);
   if (dGateC <= CAVE_GATE_RESERVE_RADIUS && dGateR <= CAVE_GATE_RESERVE_RADIUS) return true;
+  // 2026 v2 spec Ch7 — Cave B archway gets the same reserve (only when defined).
+  const caveB = (waypointsData as any).caveB;
+  if (caveB) {
+    const dBC = Math.abs(col - caveB.col);
+    const dBR = Math.abs(row - caveB.row);
+    if (dBC <= CAVE_GATE_RESERVE_RADIUS && dBR <= CAVE_GATE_RESERVE_RADIUS) return true;
+  }
   return false;
 }
 
