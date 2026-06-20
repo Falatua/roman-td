@@ -4,7 +4,7 @@ import { GamePhase, TileType, TowerType, TargetingMode, DrawCard, DamageType } f
 // on load and wires the rtd:viewport-change custom event used by
 // fitStageToViewport and (in later phases) touch handlers + modals.
 import { isMobile as isMobileDevice } from './Mobile';
-import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, TIER_COLORS } from './constants';
+import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, TIER_COLORS, WAVE } from './constants';
 import { createGameState, isWaveModifierActive } from './GameState';
 import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
@@ -1049,7 +1049,7 @@ async function boot() {
     const stage = document.getElementById('stage-wrap');
     if (!stage) return;
     let v = document.getElementById('final-hour-aura') as HTMLElement | null;
-    const isFinalBuild = state.wave + 1 === 20 && (
+    const isFinalBuild = state.wave + 1 === WAVE.TOTAL && (
       state.phase === GamePhase.BUILD_PHASE ||
       state.phase === GamePhase.PROSPECT_PLACEMENT ||
       state.phase === GamePhase.PICK_KEEPER
@@ -1876,7 +1876,7 @@ async function boot() {
     const hasRegen = types.has('HANNIBAL_BARCA') || types.has('DAEMON_IMPERATOR') || types.has('GALLIC_DRUID');
     const isBossWave = w.type === 'B';
     const isPhalanx = nextWave === 17;
-    const isDecade = nextWave === 5 || nextWave === 10 || nextWave === 15 || nextWave === 20;
+    const isDecade = nextWave === 5 || nextWave === 10 || nextWave === 15 || nextWave === 20 || nextWave === 25 || nextWave === 30;
     // NECROMANCY / CHECKPOINT-HEAL flags pulled directly from data so any
     // future wave tweak surfaces automatically in the pre-wave brief.
     const isNecromancy = !!(w as any).necromancy;
@@ -4583,7 +4583,7 @@ async function boot() {
         // the track (normal flow), this call is a no-op. If somehow
         // the wave started without the modal (sandbox jump etc.),
         // this still serves as a fallback music kick.
-        if (state.wave === 20 && justStarted?.type === 'B') {
+        if (state.wave === WAVE.TOTAL && justStarted?.type === 'B') {
           playMusicTrack('boss-fate', sfx('assets/sfx/ff7_one_winged_angel.mp3'), { loop: true, gain: 0.7, replace: false });
         }
         // BOSS VIGNETTE (2026-05 v6 polish): fade in the subtle red-shifted
@@ -4606,7 +4606,7 @@ async function boot() {
             // 2026-05-17 — W20 swaps the regular boss banner for the over-
             // the-top HP callout (counts up to 600M with satirical
             // captions). Every other boss wave keeps the standard banner.
-            if (state.wave === 20) {
+            if (state.wave === WAVE.TOTAL) {
               showFinalBossHpBanner();
             } else {
               showBossBanner(`WAVE ${state.wave} — ${factionName(w.faction).toUpperCase()} BOSS APPROACHES`, w.faction);
@@ -6215,7 +6215,7 @@ async function boot() {
           // reported a phantom W2-Endless death with no obvious cause;
           // this was it. Gate the W20 lockdown to non-endless only so
           // Endless mode obeys the normal per-leak life-cost rules.
-          if (state.wave === 20 && !state.endlessMode) {
+          if (state.wave === WAVE.TOTAL && !state.endlessMode) {
             state.lives = 0;
             state.enemiesLeakedThisWave++;
             state.leaksByArchetype[e.archetype] = (state.leaksByArchetype[e.archetype] ?? 0) + 1;
@@ -7172,7 +7172,7 @@ async function boot() {
           // player rolls into W20's build phase. Queued AFTER the standard
           // pre-wave tip so the hype banner stacks on top in the queue order
           // and reads as the headline event.
-          if (state.wave + 1 === 20) showFinalHourHype();
+          if (state.wave + 1 === WAVE.TOTAL) showFinalHourHype();
         }
         // Quest evaluation tick (also runs after kills, but safety net here).
         tickQuests();
@@ -7226,7 +7226,7 @@ async function boot() {
         // endless wave clear. Gate on `!state.endlessMode` so victory
         // only triggers on the ORIGINAL W20 clear, then Endless takes
         // over and the player can't re-enter the victory state.
-        if (state.wave >= 20 && state.lives > 0 && !state.endlessMode) {
+        if (state.wave >= WAVE.TOTAL && state.lives > 0 && !state.endlessMode) {
           state.phase = GamePhase.VICTORY;
           state.victoryAt = state.tick;
         }
@@ -7379,9 +7379,9 @@ async function boot() {
       // W20 entry rank against everyone else's. Now: leaderboard
       // mounts, and onPostVictory is wired to a button inside the
       // Hall of Glory rather than firing automatically.
-      runEndOfGameFlow(app, state, true, () => location.reload(), undefined, (savedName) => {
-        beginEndlessMode(savedName);
-      });
+      // 2026 v2 spec Ch4: Endless Mode removed — W30 victory is final, no endless continuation.
+      void beginEndlessMode;   // retained (unreachable) to avoid unused-symbol churn; see Phase 9 cleanup.
+      runEndOfGameFlow(app, state, true, () => location.reload(), undefined, undefined);
     }
     renderer.drawDynamic(state);
     renderer.setTileRef(state.tiles);

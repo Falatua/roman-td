@@ -248,114 +248,344 @@
   },
   {
     "wave": 15,
-    "type": "B",
-    "faction": "UNDEAD_CELTS",
-    "hpMult": 8.0,
-    "gold": 42,
+    "type": "M",
+    "faction": "MONGOLS",
+    "hpMult": 7.0,
+    "gold": 40,
     "spawns": [
       {
-        "type": "UNDEAD_WARLORD",
-        "count": 5
+        "type": "MONGOL_FOOTMAN",
+        "count": 48
       },
       {
-        "type": "UNDEAD_CELT",
-        "count": 44
+        "type": "MONGOL_SCOUT",
+        "count": 30
+      },
+      {
+        "type": "MONGOL_SPEARMAN",
+        "count": 24
       }
     ]
   },
   {
     "wave": 16,
     "type": "G",
-    "faction": "UNDEAD_CARTHAGE",
-    "hpMult": 6.5,
+    "faction": "MONGOLS",
+    "hpMult": 7.5,
     "gold": 22,
-    "enemyDamageReductPct": 0.15,
     "spawns": [
       {
-        "type": "UNDEAD_SPEARMAN",
-        "count": 66
+        "type": "MONGOL_HORSE_ARCHER",
+        "count": 40
       },
       {
-        "type": "ARCHITECTUS",
-        "count": 6
+        "type": "MONGOL_BERSERKER",
+        "count": 24
+      },
+      {
+        "type": "MONGOL_FOOTMAN",
+        "count": 32
       }
     ]
   },
   {
     "wave": 17,
     "type": "M",
-    "faction": "UNDEAD_CARTHAGE",
-    "hpMult": 7.8,
+    "faction": "MONGOLS",
+    "hpMult": 8.0,
     "gold": 24,
-    "enemyDamageReductPct": 0.2,
     "spawns": [
       {
-        "type": "IRON_PHALANX",
-        "count": 30
+        "type": "MONGOL_SPEAR_RIDER",
+        "count": 36
       },
       {
-        "type": "UNDEAD_SPEARMAN",
-        "count": 42
+        "type": "MONGOL_CAPTAIN",
+        "count": 12
       },
       {
-        "type": "GHOST_RIDER",
-        "count": 48
+        "type": "MONGOL_SHAMAN",
+        "count": 8
+      },
+      {
+        "type": "MONGOL_SPEARMAN",
+        "count": 40
       }
     ]
   },
   {
     "wave": 18,
-    "type": "F",
-    "faction": "UNDEAD_CARTHAGE",
-    "hpMult": 6.8,
+    "type": "M",
+    "faction": "EGYPTIANS",
+    "hpMult": 8.5,
     "gold": 24,
-    "flyerInitialStealthSec": 15,
-    "enemySpeedBoostPct": 0.1,
-    "enemyDotResistPct": 0.25,
     "spawns": [
       {
-        "type": "GHOST_RIDER",
-        "count": 78
+        "type": "EGYPTIAN_SPEARMAN",
+        "count": 48
       },
       {
-        "type": "CELTIC_FIRE_DEMON",
+        "type": "EGYPTIAN_ARCHER",
         "count": 40
+      },
+      {
+        "type": "MUMMY_WARRIOR",
+        "count": 16
       }
     ]
   },
   {
     "wave": 19,
     "type": "M",
-    "faction": "SUPER_DEMONS",
-    "hpMult": 7.2,
+    "faction": "EGYPTIANS",
+    "hpMult": 9.0,
     "gold": 27,
-    "enemyRegenPctPerSec": 0.008,
-    "enemyDotResistPct": 0.2,
     "spawns": [
       {
-        "type": "DEMON_HELLHOUND",
-        "count": 42
-      },
-      {
-        "type": "CELTIC_FIRE_DEMON",
-        "count": 14
-      },
-      {
-        "type": "SHADOW_CAVALRY",
+        "type": "EGYPTIAN_CHARIOT",
         "count": 28
+      },
+      {
+        "type": "ANUBIS_PRIEST",
+        "count": 8
+      },
+      {
+        "type": "SOBEK_WARRIOR",
+        "count": 24
+      },
+      {
+        "type": "EGYPTIAN_ARCHER",
+        "count": 40
       }
     ]
   },
   {
     "wave": 20,
     "type": "B",
+    "faction": "EGYPTIANS",
+    "hpMult": 7.0,
+    "gold": 30,
+    "spawns": [
+      {
+        "type": "SPHINX",
+        "count": 1
+      },
+      {
+        "type": "EGYPTIAN_SPEARMAN",
+        "count": 40
+      },
+      {
+        "type": "PHARAOH_GUARD",
+        "count": 16
+      }
+    ]
+  },
+  {
+    "wave": 21,
+    "type": "B",
+    "faction": "MONGOLS",
+    "hpMult": 10.0,
+    "gold": 34,
+    "spawns": [
+      {
+        "type": "KHAN_RIDER",
+        "count": 1
+      },
+      {
+        "type": "MONGOL_CAPTAIN",
+        "count": 24
+      },
+      {
+        "type": "MONGOL_BERSERKER",
+        "count": 36
+      },
+      {
+        "type": "MONGOL_SPEAR_RIDER",
+        "count": 28
+      }
+    ]
+  },
+  {
+    "wave": 22,
+    "type": "M",
+    "faction": "MONGOLS",
+    "hpMult": 11.0,
+    "gold": 34,
+    "fixedCount": true,
+    "spawns": [
+      {
+        "type": "UNDEAD_WAR_ELEPHANT",
+        "count": 3
+      },
+      {
+        "type": "MONGOL_CAPTAIN",
+        "count": 7
+      }
+    ]
+  },
+  {
+    "wave": 23,
+    "type": "M",
+    "faction": "EGYPTIANS",
+    "hpMult": 12.0,
+    "gold": 34,
+    "spawns": [
+      {
+        "type": "PHARAOH_GUARD",
+        "count": 36
+      },
+      {
+        "type": "EGYPTIAN_CHARIOT",
+        "count": 24
+      },
+      {
+        "type": "SOBEK_WARRIOR",
+        "count": 28
+      },
+      {
+        "type": "ANUBIS_PRIEST",
+        "count": 8
+      }
+    ]
+  },
+  {
+    "wave": 24,
+    "type": "B",
+    "faction": "EGYPTIANS",
+    "hpMult": 10.0,
+    "gold": 36,
+    "spawns": [
+      {
+        "type": "ANUBIS_KING",
+        "count": 1
+      },
+      {
+        "type": "PHARAOH_GUARD",
+        "count": 24
+      },
+      {
+        "type": "EGYPTIAN_SPEARMAN",
+        "count": 32
+      }
+    ]
+  },
+  {
+    "wave": 25,
+    "type": "G",
     "faction": "SUPER_DEMONS",
-    "hpMult": 6.0,
+    "hpMult": 14.0,
+    "gold": 40,
+    "fixedCount": true,
+    "spawns": [
+      {
+        "type": "UNDEAD_WAR_ELEPHANT",
+        "count": 5
+      }
+    ]
+  },
+  {
+    "wave": 26,
+    "type": "M",
+    "faction": "SUPER_DEMONS",
+    "hpMult": 14.0,
+    "gold": 40,
+    "fixedCount": true,
+    "spawns": [
+      {
+        "type": "UNDEAD_WAR_ELEPHANT",
+        "count": 2
+      },
+      {
+        "type": "IRON_PHALANX",
+        "count": 2
+      },
+      {
+        "type": "UNDEAD_CELT",
+        "count": 40
+      }
+    ]
+  },
+  {
+    "wave": 27,
+    "type": "G",
+    "faction": "SUPER_DEMONS",
+    "hpMult": 17.0,
+    "gold": 44,
+    "fixedCount": true,
+    "spawns": [
+      {
+        "type": "UNDEAD_WAR_ELEPHANT",
+        "count": 4
+      },
+      {
+        "type": "IRON_PHALANX",
+        "count": 2
+      },
+      {
+        "type": "MONGOL_CAPTAIN",
+        "count": 4
+      }
+    ]
+  },
+  {
+    "wave": 28,
+    "type": "G",
+    "faction": "SUPER_DEMONS",
+    "hpMult": 18.0,
+    "gold": 44,
+    "fixedCount": true,
+    "superGiantActive": true,
+    "spawns": [
+      {
+        "type": "UNDEAD_WAR_ELEPHANT",
+        "count": 6
+      }
+    ]
+  },
+  {
+    "wave": 29,
+    "type": "G",
+    "faction": "SUPER_DEMONS",
+    "hpMult": 20.0,
+    "gold": 48,
+    "fixedCount": true,
+    "spawns": [
+      {
+        "type": "IRON_PHALANX",
+        "count": 5
+      },
+      {
+        "type": "UNDEAD_WAR_ELEPHANT",
+        "count": 3
+      },
+      {
+        "type": "ARCHITECTUS",
+        "count": 1
+      },
+      {
+        "type": "MONGOL_CAPTAIN",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "wave": 30,
+    "type": "B",
+    "faction": "SUPER_DEMONS",
+    "hpMult": 10.0,
     "gold": 0,
     "spawns": [
       {
         "type": "DAEMON_IMPERATOR",
         "count": 1
+      },
+      {
+        "type": "UNDEAD_WAR_ELEPHANT",
+        "count": 4
+      },
+      {
+        "type": "IRON_PHALANX",
+        "count": 4
       }
     ]
   }

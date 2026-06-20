@@ -24,12 +24,14 @@ function freshState() {
 describe('Boss drop guarantee (2026-05-19)', () => {
   const SCHEDULED_BOSS_WAVES = (wavesData as any[]).filter(w => w.type === 'B');
 
-  it('every scheduled-boss wave is present (W5/10/15/20 + bonus)', () => {
+  it('every scheduled-boss wave is present (W5/10/20/30 + bonus)', () => {
     // Sanity: there should be at least 4 scheduled boss waves in the
-    // 20-wave campaign. If this drops below 4 someone removed a boss.
+    // 30-wave campaign. If this drops below 4 someone removed a boss.
+    // 2026 v2 spec Ch5: W15-17 reassigned to Hun infantry (no boss); the
+    // milestone bosses are now W5/10/20/30 (plus W21 Khan + W24 Nectanebo).
     expect(SCHEDULED_BOSS_WAVES.length).toBeGreaterThanOrEqual(4);
     const waveNums = SCHEDULED_BOSS_WAVES.map(w => w.wave);
-    for (const expected of [5, 10, 15, 20]) {
+    for (const expected of [5, 10, 20, 30]) {
       expect(waveNums).toContain(expected);
     }
   });

@@ -64,7 +64,7 @@ export const ECONOMY = {
 } as const;
 
 export const WAVE = {
-  TOTAL: 20,
+  TOTAL: 30,           // 2026 v2 spec Ch4: campaign expanded 20 -> 30 waves; Endless removed.
   SPAWN_INTERVAL: 1.0, // seconds between enemies; keeps the incoming line readable
   POST_WAVE_DELAY: 0.3,
   // 20-WAVE COMPRESSED DIFFICULTY (2026-05):
