@@ -318,6 +318,15 @@ export function renderCircleMap(parent: Container, g: CircleMapGeometry, tile: n
 export function renderCircleEntities(layer: Container, state: GameStateShape, g: CircleMapGeometry, tile: number, opts: CircleEntityOpts = {}): void {
   for (const c of layer.removeChildren()) c.destroy({ children: true });
 
+  // Soft grounding shadow under a unit (GK/Stardew "feet" shadow) — a squashed
+  // black radial blob that sits the sprite on the terrain and adds depth.
+  const addShadow = (x: number, y: number, w: number, h: number, a = 0.22): void => {
+    const sh = new Sprite(glowTexture());
+    sh.anchor.set(0.5); sh.tint = 0x000000; sh.alpha = a;
+    sh.x = x; sh.y = y; sh.width = w; sh.height = h;
+    layer.addChild(sh);
+  };
+
   // Build-tile hover highlight (green = buildable, red = blocked).
   if (opts.hover) {
     const h = new Graphics();
@@ -351,6 +360,7 @@ export function renderCircleEntities(layer: Container, state: GameStateShape, g:
       layer.addChild(glow);
     }
 
+    if (!t.pending) addShadow(cx, cy + tile * 0.42, tile * 1.0, tile * 0.42);   // grounding shadow
     const tx = tex(t.type);
     if (tx) {
       const s = new Sprite(tx);
@@ -378,6 +388,7 @@ export function renderCircleEntities(layer: Container, state: GameStateShape, g:
   for (const e of state.enemies.values()) {
     const tx = tex(e.type);
     const size = (e.isBoss ? tile * 1.9 : tile * 0.96);   // bigger + livelier
+    if (!(e as any).__veiled) addShadow(e.x, e.y + size * 0.4, size * 0.9, size * 0.4, 0.2);   // grounding shadow
     if (tx) {
       const s = new Sprite(tx);
       s.anchor.set(0.5);
@@ -409,6 +420,11 @@ export function renderCircleEntities(layer: Container, state: GameStateShape, g:
   for (const p of state.projectiles.values()) {
     const tx = tex(p.spriteKey);
     if (!tx) continue;
+    // Additive energy glow behind each shot so projectiles read as live light.
+    const glow = new Sprite(glowTexture());
+    glow.anchor.set(0.5); glow.blendMode = BLEND_MODES.ADD; glow.tint = 0xffe6a8; glow.alpha = 0.55;
+    glow.x = p.x; glow.y = p.y; glow.width = glow.height = tile * 0.85;
+    layer.addChild(glow);
     const s = new Sprite(tx);
     s.anchor.set(0.5);
     s.x = p.x; s.y = p.y;
