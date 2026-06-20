@@ -4,11 +4,11 @@
     "type": "G",
     "faction": "DOGS",
     "hpMult": 1.1,
-    "gold": 8,
+    "gold": 13,
     "spawns": [
       {
         "type": "FERAL_DOG",
-        "count": 32
+        "count": 64
       }
     ]
   },
@@ -17,15 +17,15 @@
     "type": "M",
     "faction": "DOGS",
     "hpMult": 1.5,
-    "gold": 9,
+    "gold": 14,
     "spawns": [
       {
         "type": "RABID_DOG",
-        "count": 24
+        "count": 48
       },
       {
         "type": "FERAL_DOG",
-        "count": 14
+        "count": 28
       }
     ]
   },
@@ -34,7 +34,7 @@
     "type": "M",
     "faction": "DOGS",
     "hpMult": 1.7,
-    "gold": 10,
+    "gold": 16,
     "spawns": [
       {
         "type": "ALPHA_DOG",
@@ -42,7 +42,7 @@
       },
       {
         "type": "FERAL_DOG",
-        "count": 30
+        "count": 60
       }
     ]
   },
@@ -51,16 +51,16 @@
     "type": "G",
     "faction": "CELTS",
     "hpMult": 1.8,
-    "gold": 9,
-    "enemySpeedBoostPct": 0.10,
+    "gold": 14,
+    "enemySpeedBoostPct": 0.1,
     "spawns": [
       {
         "type": "CELTIC_FOOTMAN",
-        "count": 36
+        "count": 72
       },
       {
         "type": "GALLIC_DRUID",
-        "count": 4
+        "count": 8
       }
     ]
   },
@@ -69,7 +69,7 @@
     "type": "B",
     "faction": "CELTS",
     "hpMult": 5.0,
-    "gold": 16,
+    "gold": 26,
     "spawns": [
       {
         "type": "CELTIC_WARLORD",
@@ -77,7 +77,7 @@
       },
       {
         "type": "CELTIC_BERSERKER",
-        "count": 20
+        "count": 40
       }
     ]
   },
@@ -86,11 +86,11 @@
     "type": "F",
     "faction": "CELTS",
     "hpMult": 1.8,
-    "gold": 12,
+    "gold": 19,
     "spawns": [
       {
         "type": "CELTIC_SCOUT",
-        "count": 48
+        "count": 96
       }
     ]
   },
@@ -99,15 +99,15 @@
     "type": "G",
     "faction": "CARTHAGE",
     "hpMult": 1.8,
-    "gold": 10,
+    "gold": 16,
     "spawns": [
       {
         "type": "CARTHAGE_SPEARMAN",
-        "count": 48
+        "count": 96
       },
       {
         "type": "NUMIDIAN_RIDER",
-        "count": 11
+        "count": 22
       }
     ]
   },
@@ -116,20 +116,20 @@
     "type": "M",
     "faction": "CARTHAGE",
     "hpMult": 2.1,
-    "gold": 11,
+    "gold": 18,
     "resistReduction": 0.15,
     "spawns": [
       {
         "type": "CARTHAGE_ELITE_GUARD",
-        "count": 33
+        "count": 66
       },
       {
         "type": "CARTHAGE_SPEARMAN",
-        "count": 18
+        "count": 36
       },
       {
         "type": "NUMIDIAN_RIDER",
-        "count": 5
+        "count": 10
       }
     ]
   },
@@ -138,7 +138,7 @@
     "type": "G",
     "faction": "CARTHAGE",
     "hpMult": 2.4,
-    "gold": 13,
+    "gold": 21,
     "spawns": [
       {
         "type": "WAR_ELEPHANT",
@@ -146,11 +146,11 @@
       },
       {
         "type": "CARTHAGE_SPEARMAN",
-        "count": 33
+        "count": 66
       },
       {
         "type": "CARTHAGE_ELITE_GUARD",
-        "count": 9
+        "count": 18
       }
     ]
   },
@@ -159,7 +159,7 @@
     "type": "B",
     "faction": "CARTHAGE",
     "hpMult": 5.5,
-    "gold": 20,
+    "gold": 32,
     "spawns": [
       {
         "type": "HANNIBAL_BARCA",
@@ -176,14 +176,14 @@
     "type": "G",
     "faction": "UNDEAD_CELTS",
     "hpMult": 6.5,
-    "gold": 10,
+    "gold": 16,
     "necromancy": true,
     "disableCheckpointHeal": true,
     "enemyRegenPctPerSec": 0.005,
     "spawns": [
       {
         "type": "UNDEAD_CELT",
-        "count": 42
+        "count": 84
       }
     ]
   },
@@ -192,12 +192,12 @@
     "type": "F",
     "faction": "UNDEAD_CELTS",
     "hpMult": 5.4,
-    "gold": 9,
+    "gold": 14,
     "enemyDamageReductPct": 0.15,
     "spawns": [
       {
         "type": "SPECTRAL_SCOUT",
-        "count": 39
+        "count": 78
       }
     ]
   },
@@ -206,21 +206,21 @@
     "type": "M",
     "faction": "UNDEAD_CELTS",
     "hpMult": 6.5,
-    "gold": 10,
+    "gold": 16,
     "necromancy": true,
-    "enemyDotResistPct": 0.30,
+    "enemyDotResistPct": 0.3,
     "spawns": [
       {
         "type": "UNDEAD_BERSERKER",
-        "count": 24
+        "count": 48
       },
       {
         "type": "ZOMBIE_DRUID",
-        "count": 5
+        "count": 10
       },
       {
         "type": "SPECTRAL_SCOUT",
-        "count": 14
+        "count": 28
       }
     ]
   },
@@ -229,7 +229,7 @@
     "type": "M",
     "faction": "UNDEAD_CELTS",
     "hpMult": 9.0,
-    "gold": 12,
+    "gold": 19,
     "enemySpeedBoostPct": 0.15,
     "spawns": [
       {
@@ -238,11 +238,11 @@
       },
       {
         "type": "UNDEAD_CELT",
-        "count": 27
+        "count": 54
       },
       {
         "type": "SPECTRAL_SCOUT",
-        "count": 8
+        "count": 16
       }
     ]
   },
@@ -251,7 +251,7 @@
     "type": "B",
     "faction": "UNDEAD_CELTS",
     "hpMult": 8.0,
-    "gold": 26,
+    "gold": 42,
     "spawns": [
       {
         "type": "UNDEAD_WARLORD",
@@ -259,7 +259,7 @@
       },
       {
         "type": "UNDEAD_CELT",
-        "count": 22
+        "count": 44
       }
     ]
   },
@@ -268,16 +268,16 @@
     "type": "G",
     "faction": "UNDEAD_CARTHAGE",
     "hpMult": 6.5,
-    "gold": 14,
+    "gold": 22,
     "enemyDamageReductPct": 0.15,
     "spawns": [
       {
         "type": "UNDEAD_SPEARMAN",
-        "count": 33
+        "count": 66
       },
       {
         "type": "ARCHITECTUS",
-        "count": 3
+        "count": 6
       }
     ]
   },
@@ -286,20 +286,20 @@
     "type": "M",
     "faction": "UNDEAD_CARTHAGE",
     "hpMult": 7.8,
-    "gold": 15,
-    "enemyDamageReductPct": 0.20,
+    "gold": 24,
+    "enemyDamageReductPct": 0.2,
     "spawns": [
       {
         "type": "IRON_PHALANX",
-        "count": 15
+        "count": 30
       },
       {
         "type": "UNDEAD_SPEARMAN",
-        "count": 21
+        "count": 42
       },
       {
         "type": "GHOST_RIDER",
-        "count": 24
+        "count": 48
       }
     ]
   },
@@ -308,18 +308,18 @@
     "type": "F",
     "faction": "UNDEAD_CARTHAGE",
     "hpMult": 6.8,
-    "gold": 15,
+    "gold": 24,
     "flyerInitialStealthSec": 15,
-    "enemySpeedBoostPct": 0.10,
+    "enemySpeedBoostPct": 0.1,
     "enemyDotResistPct": 0.25,
     "spawns": [
       {
         "type": "GHOST_RIDER",
-        "count": 39
+        "count": 78
       },
       {
         "type": "CELTIC_FIRE_DEMON",
-        "count": 20
+        "count": 40
       }
     ]
   },
@@ -328,21 +328,21 @@
     "type": "M",
     "faction": "SUPER_DEMONS",
     "hpMult": 7.2,
-    "gold": 17,
+    "gold": 27,
     "enemyRegenPctPerSec": 0.008,
-    "enemyDotResistPct": 0.20,
+    "enemyDotResistPct": 0.2,
     "spawns": [
       {
         "type": "DEMON_HELLHOUND",
-        "count": 21
+        "count": 42
       },
       {
         "type": "CELTIC_FIRE_DEMON",
-        "count": 7
+        "count": 14
       },
       {
         "type": "SHADOW_CAVALRY",
-        "count": 14
+        "count": 28
       }
     ]
   },
