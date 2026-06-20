@@ -688,12 +688,13 @@
     "name": "Vulture Imperator",
     "faction": "EGYPTIANS",
     "baseHp": 16000,
-    "speed": 1.4,
+    "speed": 0.6,
     "isFlyer": true,
     "isBoss": true,
     "livesCost": 5,
     "meleeImmune": true,
-    "immuneFire": true
+    "immuneFire": true,
+    "renderScale": 1.5
   },
   "CHIMERA": {
     "name": "Chimera",
