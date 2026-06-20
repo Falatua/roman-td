@@ -595,22 +595,20 @@
     "faction": "MONGOLS",
     "baseHp": 418,
     "speed": 1.6,
-    "isFlyer": true,
+    "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
-    "dodgeChance": 0.25,
-    "groundConvertAs": "MONGOL_FOOTMAN"
+    "dodgeChance": 0.25
   },
   "MONGOL_SPEAR_RIDER": {
     "name": "Hun Spear Rider",
     "faction": "MONGOLS",
     "baseHp": 682,
     "speed": 1.5,
-    "isFlyer": true,
+    "isFlyer": false,
     "isBoss": false,
     "livesCost": 2,
-    "dodgeChance": 0.18,
-    "groundConvertAs": "MONGOL_SPEARMAN"
+    "dodgeChance": 0.18
   },
   "KHAN_RIDER": {
     "name": "Khan Rider",

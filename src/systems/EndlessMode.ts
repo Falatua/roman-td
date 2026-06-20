@@ -185,7 +185,7 @@ export function generateEndlessWave(endlessIdx: number): EndlessWaveConfig {
 
   // Flyer guarantee — at least one flyer group if the dice rolled in.
   if (hasFlyers) {
-    const allFlyers = ['SPHINX', 'MONGOL_HORSE_ARCHER', 'MONGOL_SPEAR_RIDER', 'SPECTRAL_SCOUT', 'GHOST_RIDER', 'SHADOW_CAVALRY'];
+    const allFlyers = ['SPHINX', 'SPECTRAL_SCOUT', 'GHOST_RIDER', 'SHADOW_CAVALRY'];   // Hun Horse Archer + Spear Rider grounded 2026-06-12 (mounted, no flight cue)
     const fl = rand(allFlyers);
     if (!spawns.some(s => s.type === fl)) {
       // 2026-05-20 — Bumped flyer group from 4+0.4×idx to 6+0.6×idx
