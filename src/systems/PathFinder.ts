@@ -104,15 +104,13 @@ function isPathStillValid(state: GameStateShape, path: { col: number; row: numbe
 // combos / stone placements that don't actually block the existing route
 // from cosmetically rerouting it via A* tie-breaks. Only when a blocker
 // lands ON the current path do we rebuild from scratch.
-export function buildGroundPath(state: GameStateShape): { col: number; row: number }[] | null {
-  const current = (state as any).groundPath as { col: number; row: number }[] | undefined;
-  if (isPathStillValid(state, current)) return current!.slice();
-  const stops: Node[] = [];
-  stops.push({ col: waypointsData.spawn.col, row: waypointsData.spawn.row });
-  for (const wp of waypointsData.waypoints) {
-    stops.push({ col: wp.topLeft.col, row: wp.topLeft.row });
-  }
-  stops.push({ col: waypointsData.gate.col, row: waypointsData.gate.row });
+// 2026 v2 spec Ch7 — Cave B (second spawn). Active only when waypoints.json
+// defines `caveB`. Its lane shares the checkpoint chain from waypoint 2 onward
+// (a clean left-middle entrance that merges into the existing maze).
+const CAVE_B = (waypointsData as any).caveB as { col: number; row: number } | undefined;
+
+// A* through an ordered list of stops, deduping the shared junction tile.
+function buildPathThroughStops(state: GameStateShape, stops: Node[]): Node[] | null {
   const full: Node[] = [];
   for (let i = 0; i < stops.length - 1; i++) {
     const seg = aStar(state, stops[i], stops[i + 1], true);
@@ -121,6 +119,40 @@ export function buildGroundPath(state: GameStateShape): { col: number; row: numb
     full.push(...seg);
   }
   return full;
+}
+
+// Cave B lane: caveB -> waypoint 2 -> ... -> gate (skips wp1; caveB enters
+// mid-route from the left edge). Sticky like the main path.
+export function buildGroundPathB(state: GameStateShape): { col: number; row: number }[] | null {
+  if (!CAVE_B) return null;
+  const current = (state as any).groundPathB as { col: number; row: number }[] | undefined;
+  if (isPathStillValid(state, current)) return current!.slice();
+  const stops: Node[] = [{ col: CAVE_B.col, row: CAVE_B.row }];
+  for (const wp of (waypointsData.waypoints as any[]).slice(1)) stops.push({ col: wp.topLeft.col, row: wp.topLeft.row });
+  stops.push({ col: waypointsData.gate.col, row: waypointsData.gate.row });
+  return buildPathThroughStops(state, stops);
+}
+
+export function buildGroundPath(state: GameStateShape): { col: number; row: number }[] | null {
+  const current = (state as any).groundPath as { col: number; row: number }[] | undefined;
+  let main: { col: number; row: number }[] | null;
+  if (isPathStillValid(state, current)) {
+    main = current!.slice();
+  } else {
+    const stops: Node[] = [{ col: waypointsData.spawn.col, row: waypointsData.spawn.row }];
+    for (const wp of waypointsData.waypoints) stops.push({ col: wp.topLeft.col, row: wp.topLeft.row });
+    stops.push({ col: waypointsData.gate.col, row: waypointsData.gate.row });
+    main = buildPathThroughStops(state, stops);
+    if (!main) return null;
+  }
+  // 2026 v2 spec Ch7 — the Cave B lane MUST also stay reachable. buildGroundPath
+  // is the SINGLE validation chokepoint (canPlaceStone, executeCombo, and every
+  // main.ts placement gate on `!= null`), so checking caveB here keeps BOTH
+  // lanes open with zero per-site edits and no softlock. Pure check, no store
+  // (tickEnemies caches state.groundPathB for movement) so canPlaceStone's
+  // simulate-then-revert stays side-effect-free.
+  if (CAVE_B && buildGroundPathB(state) === null) return null;
+  return main;
 }
 
 // Flyer path: waypoint center pixels in same order, point-to-point.

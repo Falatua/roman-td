@@ -17,6 +17,9 @@ export function initializeGrid(state: GameStateShape) {
   state.tiles[waypointsData.spawn.row][waypointsData.spawn.col] = TileType.SPAWN;
   // Gate marker from map data. Gate art can be larger, but only this tile is reserved.
   state.tiles[waypointsData.gate.row][waypointsData.gate.col] = TileType.GATE;
+  // 2026 v2 spec Ch7 — Cave B second spawn (only when waypoints.json defines it).
+  const caveB = (waypointsData as any).caveB;
+  if (caveB) state.tiles[caveB.row][caveB.col] = TileType.SPAWN;
   // Checkpoints: one reserved tile each, Gem TD style.
   for (const wp of waypointsData.waypoints) {
     for (let dr = 0; dr < COIN_FOOTPRINT_TILES; dr++) {

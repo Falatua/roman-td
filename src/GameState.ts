@@ -49,6 +49,8 @@ export interface GameStateShape {
   leaksByArchetype: Record<string, number>;
   // Path geometry: precomputed tile center sequences and pixel sequences
   groundPath: { col: number; row: number }[];
+  // 2026 v2 spec Ch7 — Cave B (second spawn) lane; empty when Cave B inactive.
+  groundPathB: { col: number; row: number }[];
   flyerPath: { x: number; y: number }[];
   // Game-over flag for animation
   gameOverAt: number;       // tick when lives reached 0
@@ -248,6 +250,7 @@ export function createGameState(): GameStateShape {
     enemiesLeakedThisWave: 0,
     leaksByArchetype: {},
     groundPath: [],
+    groundPathB: [],
     flyerPath: [],
     gameOverAt: -1,
     victoryAt: -1,

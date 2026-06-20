@@ -161,10 +161,10 @@ describe('Merchant pools reference only real towers', () => {
   });
 
   it('Fortuna pool size matches count of NON-APEX COMBO-kind towers', () => {
-    // 2026-05 v9: apex super-combos (5 cross-combos) are blocked from
-    // Fortuna so they have to be crafted, not bought. Test asserts the
-    // pool equals (total combos − 5 blocked apex) and has no duplicates.
-    const APEX = new Set(['IMPERIUM_ETERNUM','CARTHAGE_SCOURGE','TRIUMVIRATE','LEGION_PRIME','CONSULAR_FATEBINDER']);
+    // 2026-05 v9 + v2 Ch9: apex super-combos (6 cross-combos incl. Mars Victor)
+    // are blocked from Fortuna so they have to be crafted, not bought. Test
+    // asserts the pool equals (total combos − 6 blocked apex), no duplicates.
+    const APEX = new Set(['IMPERIUM_ETERNUM','CARTHAGE_SCOURGE','TRIUMVIRATE','LEGION_PRIME','CONSULAR_FATEBINDER','MARS_VICTOR']);
     const eligibleCombos = Object.entries(towersData as any)
       .filter(([id, d]: any) => d.kind === 'COMBO' && !APEX.has(id))
       .map(([id]) => id);
