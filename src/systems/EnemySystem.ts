@@ -279,6 +279,7 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   // bigGlow = the larger Typhon / Super-Giant aura (read by RenderEngine).
   if ((def as any).isElite) (e as any).isElite = true;
   if ((def as any).bigGlow) { (e as any).__bigGlow = true; (e as any).__glowScale = 1.4; }
+  if ((def as any).renderScale) (e as any).__renderScale = (def as any).renderScale;
   state.enemies.set(e.id, e);
   // Trigger spawn-emergence puff at spawn pixel (Animation Doc §22.1)
   const renderer = (window as any).__renderer;

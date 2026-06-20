@@ -727,7 +727,8 @@
     "isElite": true,
     "bigGlow": true,
     "immuneSlow": true,
-    "immuneStun": true
+    "immuneStun": true,
+    "renderScale": 1.4
   },
   "GIANT_GIGAS": {
     "name": "Giant",
@@ -749,5 +750,21 @@
     "isBoss": false,
     "livesCost": 2,
     "isElite": true
+  },
+  "SUPER_GIANT_COLOSSUS": {
+    "name": "Colossus Gigas",
+    "faction": "ROMAN_MYTH",
+    "baseHp": 12000,
+    "speed": 1.0,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 5,
+    "isElite": true,
+    "bigGlow": true,
+    "renderScale": 1.7,
+    "immuneSlow": true,
+    "immuneStun": true,
+    "immuneFreeze": true,
+    "regenPctPerSec": 0.012
   }
 }

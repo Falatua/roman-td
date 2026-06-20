@@ -228,6 +228,8 @@ export enum EnemyType {
   // 2026 v2 spec Ch10-11 — Roman-myth elite creatures (W25-29 gauntlet)
   CHIMERA = 'CHIMERA',
   CERBERUS = 'CERBERUS',
+  // 2026 v2 spec Ch12 — W28 Super-Giant: two GIANT_GIGAS fuse into this.
+  SUPER_GIANT_COLOSSUS = 'SUPER_GIANT_COLOSSUS',
   TYPHON = 'TYPHON',
   GIANT_GIGAS = 'GIANT_GIGAS',
   CYCLOPS = 'CYCLOPS',

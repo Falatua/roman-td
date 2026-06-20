@@ -3477,10 +3477,10 @@ export class RenderEngine {
       const dirY = (e.dirY ?? Math.sign(e.y - (e.prevY ?? e.y))) || 0;
       // 2026-05-17 — GATES OF HELL sprite sizing (isHellGate/isFireGiant
       // declared earlier at the top of the per-enemy block).
-      const size = isHellGate ? GRID.TILE * 3.0
+      const size = (isHellGate ? GRID.TILE * 3.0
                  : isFireGiant ? GRID.TILE * 2.4
                  : e.isBoss ? GRID.TILE * 2.4
-                 : GRID.TILE * 1.75;
+                 : GRID.TILE * 1.75) * ((e as any).__renderScale ?? 1);
       const baseScaleX = size / (entry.sp.texture?.width || 1);
       const baseScaleY = size / (entry.sp.texture?.height || 1);
       const runAmt = e.currentSpeed > 0 ? Math.min(1, e.currentSpeed / 2.4) : 0;

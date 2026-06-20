@@ -93,6 +93,50 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
         break;
       }
       case EnemyType.GIANT_GIGAS: {
+        // SUPER-GIANT MERGE (W28, 2026 v2 spec Ch12) — two Giants within 1.5
+        // tiles past Checkpoint 2 fuse into a Colossus Gigas after a 1.5s
+        // cancellable wind-up. The lower-id Giant drives the fusion. The
+        // merged Giants are REMOVED (not killed) so the fusion yields no
+        // gold / loot / kill-credit — only the Colossus does, on its death.
+        if (e.pathIndex >= 2 && !(e as any).__mergedAway) {
+          const windUntil = (e as any).__mergeWindupUntil ?? 0;
+          if (windUntil > 0) {
+            const partner = state.enemies.get((e as any).__mergePartner);
+            const ok = partner && partner.hp > 0 && partner.type === EnemyType.GIANT_GIGAS
+                       && !(partner as any).__mergedAway
+                       && Math.hypot(partner.x - e.x, partner.y - e.y) <= 32 * 2.0;
+            if (!ok) {
+              (e as any).__mergeWindupUntil = 0; (e as any).__mergePartner = undefined; (e as any).__glowScale = 1;
+            } else if (state.tick >= windUntil && e.id < partner!.id) {
+              const cx = (e.x + partner!.x) / 2, cy = (e.y + partner!.y) / 2;
+              const colossus = spawnEnemy(state, EnemyType.SUPER_GIANT_COLOSSUS, 1);
+              const sumHp = (e.hp + partner!.hp) * 1.3;
+              colossus.maxHp = sumHp; colossus.hp = sumHp;
+              colossus.x = colossus.prevX = cx; colossus.y = colossus.prevY = cy;
+              colossus.pathIndex = Math.max(e.pathIndex, partner!.pathIndex);
+              colossus.pathProgress = e.pathProgress ?? 0;
+              (e as any).__mergedAway = true; (partner as any).__mergedAway = true;
+              state.enemies.delete(e.id); state.enemies.delete(partner!.id);
+              const renderer = (window as any).__renderer;
+              renderer?.triggerImpactRing?.(cx, cy, state.tick, 32 * 3, 0xE87020);
+              renderer?.triggerShake?.(6, 0.4);
+              state.hint = '🗿 THE GIANTS FUSE — COLOSSUS GIGAS RISES!';
+              break;
+            }
+          } else {
+            for (const o of state.enemies.values()) {
+              if (o.id === e.id || o.type !== EnemyType.GIANT_GIGAS) continue;
+              if (((o as any).__mergeWindupUntil ?? 0) > 0 || (o as any).__mergedAway) continue;
+              if (o.pathIndex >= 2 && Math.hypot(o.x - e.x, o.y - e.y) <= 32 * 1.5) {
+                const until = state.tick + 1.5;
+                (e as any).__mergeWindupUntil = until; (e as any).__mergePartner = o.id; (e as any).__glowScale = 1.6;
+                (o as any).__mergeWindupUntil = until; (o as any).__mergePartner = e.id; (o as any).__glowScale = 1.6;
+                state.hint = '🗿 TWO GIANTS CONVERGE — they begin to merge!';
+                break;
+              }
+            }
+          }
+        }
         // GROUND SLAM — every 5s: towers within ~2.5 tiles lose 35% atk speed for 2.5s.
         const next = (e as any).__nextGroundSlam ?? (state.tick + 5);
         if (state.tick >= next) {
@@ -109,6 +153,31 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
             const renderer = (window as any).__renderer;
             renderer?.triggerImpactRing?.(e.x, e.y, state.tick, r, 0xE87020);
             renderer?.triggerShake?.(2, 0.15);
+          }
+        }
+        break;
+      }
+      // ─── COLOSSUS GIGAS (W28 merged Super-Giant, 2026 v2 spec Ch12) ──────
+      case EnemyType.SUPER_GIANT_COLOSSUS: {
+        // TITAN STOMP — a heavier Ground Slam: every 4s, towers within ~3.5
+        // tiles lose 45% atk speed for 3s. (Colossal Regen is data-driven via
+        // regenPctPerSec in enemies.json.)
+        const nextStomp = (e as any).__nextTitanStomp ?? (state.tick + 4);
+        if (state.tick >= nextStomp) {
+          (e as any).__nextTitanStomp = state.tick + 4;
+          const r = 32 * 3.5;
+          let hit = 0;
+          for (const tw of state.towers.values()) {
+            if (tw.pending) continue;
+            if (Math.hypot(tw.tileX * 32 + 16 - e.x, tw.tileY * 32 + 16 - e.y) <= r) {
+              applyTowerAtkSpeedDebuff(tw, 0.45, 3, state.tick); hit++;
+            }
+          }
+          if (hit > 0) {
+            const renderer = (window as any).__renderer;
+            renderer?.triggerImpactRing?.(e.x, e.y, state.tick, r, 0xE87020);
+            renderer?.triggerShake?.(5, 0.3);
+            state.hint = `🗿 TITAN STOMP — ${hit} tower${hit === 1 ? '' : 's'} staggered!`;
           }
         }
         break;

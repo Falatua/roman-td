@@ -304,7 +304,9 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.CERBERUS]:    { burn: 0.5, poison: 0.3 },
   [EnemyType.TYPHON]:      { slow: 0.6, ranged: 0.3 },
   [EnemyType.GIANT_GIGAS]: { slow: 0.7, melee: 0.3 },
-  [EnemyType.CYCLOPS]:     { melee: 0.3, slow: 0.4 }
+  [EnemyType.CYCLOPS]:     { melee: 0.3, slow: 0.4 },
+  // Colossus Gigas — the fused Super-Giant: very tough all-round.
+  [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0.3, slow: 0.8 }
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {

@@ -97,6 +97,8 @@ const MANIFEST: Record<string, string> = {
   TYPHON: 'e3_typhon.png',
   GIANT_GIGAS: 'e3_giant_gigas.png',
   CYCLOPS: 'e3_cyclops.png',
+  // 2026 v2 spec Ch12 — Colossus Gigas (W28 merged Super-Giant).
+  SUPER_GIANT_COLOSSUS: 'e3_super_giant_colossus.png',
   EGYPTIAN_ARCHER: 'endless/e_endless_egyptian_archer.png',
   EGYPTIAN_SPEARMAN: 'endless/e_endless_egyptian_spearman.png',
   EGYPTIAN_CHARIOT: 'endless/e_endless_egyptian_chariot.png',
