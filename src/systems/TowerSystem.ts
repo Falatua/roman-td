@@ -293,6 +293,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   if (t.equippedItems.includes('QUICKDRAW_GLOVES')) itemSpeedMult *= 1.15;
   if (t.equippedItems.includes('MERCURY_FEATHER')) itemSpeedMult *= 1.22;
   if (t.equippedItems.includes('HOURGLASS_OF_SATURN')) itemSpeedMult *= 1.30;
+  if (t.equippedItems.includes('FALCONERS_WATCHPOST')) itemSpeedMult *= 1.25;   // 2026 v2 — EPIC anti-air: faster pelting (range below)
   // 2026-05 v6: CAVALRY niche dropped — CAVALRY_SPUR is now MELEE-only
   // (equip gate in ItemRules); NUMIDIAN_SADDLE is now RANGED-only. Both
   // apply universally within their class with no per-tower cavalry filter.
@@ -351,6 +352,9 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // 2026-05-19 — Gate-exclusive range items.
     (t.equippedItems.includes('BRONZE_GREAVES') ? 0.5 : 0) +
     (t.equippedItems.includes('CONSULAR_TOKEN') ? 0.5 : 0) +
+    // 2026 v2 — anti-air items add reach to catch fliers.
+    (t.equippedItems.includes('FALCONERS_WATCHPOST') ? 2 : 0) +
+    (t.equippedItems.includes('STORM_AQUILA_TALONS') ? 1 : 0) +
     // 2026-05-22 — Agrippa hero passive: +1.0 tile range to every
     // SIEGE tower within 5 tiles of Agrippa's tile. Read off the
     // global state ref (set by main.ts in renderer mode); test env

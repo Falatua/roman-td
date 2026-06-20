@@ -961,6 +961,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if ((t.type === TowerType.SAGITTARIUS || t.type === TowerType.VENATOR) && target.isFlyer) damage *= 1.45;
       if (t.type === TowerType.AQUILA_VENATOR && target.isFlyer) damage *= 1.75;
       if (t.equippedItems.includes('FLYER_BANE') && target.isFlyer) damage *= 1.30;
+      // 2026 v2 — anti-air item suite (any tower; range/speed halves live in TowerSystem).
+      if (t.equippedItems.includes('SKYPIERCER_BOLTS') && target.isFlyer) damage *= 1.55;     // EPIC
+      if (t.equippedItems.includes('JUPITERS_SKYFIRE') && target.isFlyer) damage *= 1.95;     // LEGENDARY nuke
+      if (t.equippedItems.includes('STORM_AQUILA_TALONS') && target.isFlyer) damage *= 1.55;  // LEGENDARY enabler
       // 2026-05-17 — BEAST-BANE. Beast Hunter (T1) + Beast Slayer (T2)
       // deal +200% damage (×3 total) to animal-faction enemies: dogs
       // (Feral / Rabid / Alpha), Demon Hellhound, and both elephant
@@ -1686,6 +1690,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
     state.activeHeroId === 'HERO_AGRICOLA' ||
     (state as any).__marsVictorActive ||   // Mars Victor fuses Agricola's all-towers-strike-flyers passive
     t.equippedItems.includes('AQUILA_TALONS') ||
+    t.equippedItems.includes('STORM_AQUILA_TALONS') ||   // 2026 v2 — legendary grants ANY tower anti-air
     towerAuraTileKind(t) === 'CYAN'
   );
   const canHitFlyers = !isMelee || meleeAirEnabled;

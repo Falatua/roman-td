@@ -488,5 +488,33 @@
     "buy": 150,
     "sell": 50,
     "effect": "MELEE ONLY: instantly executes any non-Boss enemy below 25% HP. Bosses are immune."
+  },
+  "SKYPIERCER_BOLTS": {
+    "name": "Skypiercer Bolts",
+    "rarity": "EPIC",
+    "buy": 48,
+    "sell": 16,
+    "effect": "+55% damage vs Flyers. Equips on any tower."
+  },
+  "FALCONERS_WATCHPOST": {
+    "name": "Falconer's Watchpost",
+    "rarity": "EPIC",
+    "buy": 48,
+    "sell": 16,
+    "effect": "+2 tile range and +25% attack speed. Reach out and shred fliers before they pass."
+  },
+  "JUPITERS_SKYFIRE": {
+    "name": "Jupiter's Skyfire",
+    "rarity": "LEGENDARY",
+    "buy": 150,
+    "sell": 48,
+    "effect": "+95% damage vs Flyers. The sky-god scorches their wings from the air."
+  },
+  "STORM_AQUILA_TALONS": {
+    "name": "Storm Aquila Talons",
+    "rarity": "LEGENDARY",
+    "buy": 160,
+    "sell": 50,
+    "effect": "ANY tower can target Flyers (even melee), +55% damage vs Flyers, and +1 tile range."
   }
 }

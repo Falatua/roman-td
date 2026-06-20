@@ -83,11 +83,15 @@ const MERCATOR_EXCLUSIVE_RARE = [
 // Whistle). Mercator-exclusive — gate never carries Epic items.
 const MERCATOR_EPIC = [
   'BERSERKERS_MUZZLE','CELTIC_LONGSWORD','NECROTIC_LONGSWORD',
-  'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE'
+  'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE',
+  // 2026 v2 — anti-air EPIC options.
+  'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST'
 ];
 // Premium Mercator stock — Legendary trophies that the Gate Shop never carries.
 // These cost 3-5× a normal item but offer build-defining effects.
 const MERCATOR_LEGENDARY = [
+  // 2026 v2 — anti-air LEGENDARY options.
+  'JUPITERS_SKYFIRE','STORM_AQUILA_TALONS',
   'ALPHA_PACK_FANG','WAR_HOUND_COLLAR','ELEPHANT_TUSK',
   'NUMIDIAN_SADDLE','FALCATA_BLADE','BARCA_WAR_HORN','GILDED_SCALE_ARMOR',
   'LICH_GENERALS_SEAL','HANNIBALS_STRATEGY_SCROLL',
