@@ -38,6 +38,10 @@ export const HERO_POOL = [
 ] as const;
 export type HeroId = typeof HERO_POOL[number];
 
+const HERO_WAKEUP_ORDER: Record<string, number> = Object.fromEntries(
+  HERO_IDS.map((id, idx) => [id, idx])
+) as Record<string, number>;
+
 // Side-effect hooks provided by main.ts so HeroSystem stays decoupled
 // from the renderer + DOM. All hooks are optional — missing hooks
 // degrade gracefully (no VFX / no banner), system logic still runs.
@@ -240,6 +244,9 @@ export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): voi
     const tier = isStarterHero ? getHeroTier(state) : 4;
     // Initialize cooldown scratchpad on first access.
     if (!hero.__heroCooldowns) hero.__heroCooldowns = {};
+    if (isMercatorChampion && !(hero as any).__championAbilityWakeupDone) {
+      initializeChampionAbilityWakeup(hero, def, heroId, state.tick);
+    }
 
     // Starter heroes use the run's forge investment. Mercator Champions
     // arrive as fully trained T5 recruit forms but do not consume or alter
@@ -262,6 +269,20 @@ export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): voi
 
   // Drain timed events (Capite Censi per-throw damage events, etc.).
   tickHeroTimedEvents(state, hooks);
+}
+
+function initializeChampionAbilityWakeup(hero: Tower, def: any, heroId: HeroIdentityId, tick: number): void {
+  if (!hero.__heroCooldowns) hero.__heroCooldowns = {};
+  const heroOffset = HERO_WAKEUP_ORDER[heroId] ?? 0;
+  const baseDelay = 0.75 + heroOffset * 0.7;
+  const abilities: any[] = def?.abilities ?? [];
+  abilities.forEach((ability, idx) => {
+    if (!ability?.id) return;
+    if ((hero.__heroCooldowns![ability.id] ?? 0) <= tick) {
+      hero.__heroCooldowns![ability.id] = tick + baseDelay + idx * 0.45;
+    }
+  });
+  (hero as any).__championAbilityWakeupDone = true;
 }
 
 // ─── Ability dispatch ────────────────────────────────────────────────

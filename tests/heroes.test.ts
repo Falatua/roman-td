@@ -280,8 +280,42 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     tickHeroAbilities(s);
 
     expect(s.activeHeroId).toBe('HERO_MARIUS');
+    expect(milites.attackCooldown).toBe(5);
+    expect(champion.__heroCooldowns?.SPQR_DECREE).toBeGreaterThan(s.tick);
+
+    s.tick = 20;
+    tickHeroAbilities(s);
+
+    expect(s.activeHeroId).toBe('HERO_MARIUS');
     expect(milites.attackCooldown).toBe(0);
     expect(champion.__heroCooldowns?.SPQR_DECREE).toBeGreaterThan(s.tick);
+  });
+
+  it('stagger-wakes a full Champion roster so all hero abilities do not fire on the same frame', () => {
+    const s = freshState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 10;
+    s.activeHeroId = 'HERO_CAESAR';
+    const champions = [
+      TowerType.CHAMPION_MARIUS,
+      TowerType.CHAMPION_AGRIPPA,
+      TowerType.CHAMPION_AGRICOLA,
+      TowerType.CHAMPION_SCIPIO,
+      TowerType.CHAMPION_CAESAR,
+      TowerType.CHAMPION_SULLA
+    ];
+    champions.forEach((type, idx) => {
+      const tw = createTower(type, 5, 4 + idx, 6, 9);
+      s.towers.set(tw.id, tw);
+    });
+    let fxCount = 0;
+    tickHeroAbilities(s, { triggerHeroAbilityFx: () => { fxCount++; } });
+    expect(fxCount).toBe(0);
+
+    s.tick = 20;
+    tickHeroAbilities(s, { triggerHeroAbilityFx: () => { fxCount++; } });
+    expect(fxCount).toBeGreaterThan(0);
+    expect(fxCount).toBeLessThan(12);
   });
 });
 
