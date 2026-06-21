@@ -6199,7 +6199,8 @@ async function boot() {
       tickBossHazards(state, dt);
       // 2026 v2 — consumable traps fire on contact, flash a ring + pop damage numbers.
       { const __tfx = tickTraps(state, Array.from(state.enemies.values()), dt,
-          (x, y, dmg, color) => emitFloatingNumber(gore, x, y, dmg, color));
+          (x, y, dmg, color) => emitFloatingNumber(gore, x, y, dmg, color),
+          (x, y, kind) => emitStatusImpact(gore, x, y, kind));
         for (const f of __tfx) renderer.triggerImpactRing(f.x, f.y, state.tick, f.radius, f.color); }
       // 2026-05 v10 — BOSS LOW-HP CUE. Per-frame scan: if ANY boss on
       // the field drops below 25% HP and hasn't already triggered the

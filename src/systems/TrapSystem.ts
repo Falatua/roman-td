@@ -128,6 +128,7 @@ export function tickTraps(
   enemies: any[],
   _dt: number,
   onDamage?: (x: number, y: number, dmg: number, color: number) => void,
+  onStatus?: (x: number, y: number, kind: string) => void,
 ): Array<{ x: number; y: number; color: number; radius: number }> {
   const fired: Array<{ x: number; y: number; color: number; radius: number }> = [];
   const traps = state.placedTraps;
@@ -160,9 +161,9 @@ export function tickTraps(
         e.hp -= dmg;
         onDamage?.(e.x, e.y, dmg, def.color);          // show the damage-number popup
       }
-      if (def.effect === 'POISON' && def.dotDuration) pushStatus(e, StatusEffectKind.POISON, def.dotDuration, def.dotMag ?? 0.05, 3);
-      if (def.effect === 'BURN' && def.dotDuration)   pushStatus(e, StatusEffectKind.BURN, def.dotDuration, def.dotMag ?? 0.05, 3);
-      if (def.slowDuration)                            pushStatus(e, StatusEffectKind.SLOW, def.slowDuration, def.slowMag ?? 0.5, 3);
+      if (def.effect === 'POISON' && def.dotDuration) { pushStatus(e, StatusEffectKind.POISON, def.dotDuration, def.dotMag ?? 0.05, 3); onStatus?.(e.x, e.y, 'POISON'); }
+      if (def.effect === 'BURN' && def.dotDuration)   { pushStatus(e, StatusEffectKind.BURN, def.dotDuration, def.dotMag ?? 0.05, 3); onStatus?.(e.x, e.y, 'BURN'); }
+      if (def.slowDuration)                            { pushStatus(e, StatusEffectKind.SLOW, def.slowDuration, def.slowMag ?? 0.5, 3); onStatus?.(e.x, e.y, 'FREEZE'); }
     }
     fired.push({ x: trap.x, y: trap.y, color: def.color, radius: aoePx });
     // trap is consumed (not pushed to survivors)
