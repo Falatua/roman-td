@@ -90,7 +90,7 @@
     "spawns": [
       {
         "type": "CELTIC_SCOUT",
-        "count": 96
+        "count": 48
       }
     ]
   },
@@ -107,7 +107,7 @@
       },
       {
         "type": "NUMIDIAN_RIDER",
-        "count": 22
+        "count": 11
       }
     ]
   },
@@ -129,7 +129,7 @@
       },
       {
         "type": "NUMIDIAN_RIDER",
-        "count": 10
+        "count": 5
       }
     ]
   },
@@ -197,7 +197,7 @@
     "spawns": [
       {
         "type": "SPECTRAL_SCOUT",
-        "count": 78
+        "count": 39
       }
     ]
   },
@@ -220,7 +220,7 @@
       },
       {
         "type": "SPECTRAL_SCOUT",
-        "count": 28
+        "count": 14
       }
     ]
   },
@@ -242,7 +242,7 @@
       },
       {
         "type": "SPECTRAL_SCOUT",
-        "count": 16
+        "count": 8
       }
     ]
   },

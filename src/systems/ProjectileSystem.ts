@@ -184,7 +184,7 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   //   Sulla    (ELEMENTAL_FIRE)→ PROJ_HELLFIRE_BOLT — fire bolt with
   //                              splash, matches GOD_OF_WAR's hellfire.
   [TowerType.HERO_AGRIPPA]:   { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
-  [TowerType.HERO_AGRICOLA]:  { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0,   embed: true  },
+  [TowerType.HERO_AGRICOLA]:  { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0.8, embed: true  },
   [TowerType.HERO_SCIPIO]:    { key: 'PROJ_JAVELIN',       arc: false, speed: 820, splash: 0.5, embed: true  },
   [TowerType.HERO_SULLA]:     { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false }
   // ──────────────────────────────────────────────────────────────────

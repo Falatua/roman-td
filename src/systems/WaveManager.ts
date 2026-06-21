@@ -178,9 +178,12 @@ export function startWave(state: GameStateShape) {
   for (const grp of w.spawns) {
     const isBossGrp = !!(enemiesData as any)[grp.type]?.isBoss;
     if (isBossWave && !isBossGrp) continue;       // skip mobs on boss waves
+    // 2026 v2 — stagger FLYER releases by >=1s each so air groups arrive in a
+    // readable trickle instead of a swarm (per design feedback).
+    const isFlyerGrp = !!(enemiesData as any)[grp.type]?.isFlyer && !isBossGrp;
     for (let i = 0; i < grp.count; i++) {
       state.spawnQueue.push({ type: grp.type, spawnAt: t });
-      t += WAVE.SPAWN_INTERVAL;
+      t += isFlyerGrp ? Math.max(WAVE.SPAWN_INTERVAL, 1.0) : WAVE.SPAWN_INTERVAL;
     }
   }
   // 20-WAVE CAMPAIGN: Iron Phalanx now has a single dedicated appearance at

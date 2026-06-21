@@ -248,7 +248,9 @@ const CLEAVE_MELEE = new Set<TowerType>([
 // top of native cleave). VOLLEY_QUIVER adds +1 shot to any ranged
 // tower's multi-shot count.
 export function hasCleave(t: Tower): boolean {
-  return CLEAVE_MELEE.has(t.type) || t.equippedItems.includes('FALX_BLADE');
+  // 2026 v2 — every HERO gets cleave on melee strikes (ranged heroes get
+  // projectile splash via ProjectileSystem instead).
+  return CLEAVE_MELEE.has(t.type) || t.equippedItems.includes('FALX_BLADE') || !!t.isHero;
 }
 // Maximum targets a melee tower can hit per swing (primary + cleave
 // secondaries). FALX_BLADE extends the cap by +2 since its identity is
@@ -896,7 +898,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
       const proscriptionUntil = (state as any).__proscriptionUntilTick ?? 0;
       if (state.tick < proscriptionUntil) effectiveDmgType = DamageType.DIVINE;
-      let resMod = resistanceModifier(target.faction, effectiveDmgType, armorShred) * enemyDamageMultiplier(target, effectiveDmgType);
+      let resMod: number;
+      if (t.type === TowerType.MARS_VICTOR) {
+        // 2026 v2 — Mars Victor strikes as BOTH Siege and Divine: resolve
+        // against whichever type the target resists least, so it is never
+        // walled by a single resistance.
+        const rS = resistanceModifier(target.faction, DamageType.SIEGE, armorShred) * enemyDamageMultiplier(target, DamageType.SIEGE);
+        const rD = resistanceModifier(target.faction, DamageType.DIVINE, armorShred) * enemyDamageMultiplier(target, DamageType.DIVINE);
+        resMod = Math.max(rS, rD);
+      } else {
+        resMod = resistanceModifier(target.faction, effectiveDmgType, armorShred) * enemyDamageMultiplier(target, effectiveDmgType);
+      }
       // 2026-05-21 — Battle of Actium resistance-bypass window
       // removed alongside the tier-3 ability deletion.
       // 2026-05 v9: post-W7 GROUND units get +25% ranged resistance — they
