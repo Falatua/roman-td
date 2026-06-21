@@ -223,22 +223,13 @@ const MELEE_TYPES = new Set<TowerType>([
 ]);
 
 // Towers that ONLY hit flyers — useless on ground waves, devastating on air ones.
-export const ANTI_AIR_ONLY_TYPES = new Set<TowerType>([
-  TowerType.AQUILA_VENATOR,
-  // 2026-05 v7: Sagittarius converted to anti-air specialist. Heavier
-  // base damage to compensate for losing ground targets. Its +45%-vs-
-  // flyer modifier (per-tower bonus below) stacks on top.
-  TowerType.SAGITTARIUS,
-  // 2026-05-19 v3 — Numidian Cavalry (displayed as "Eques") converted
-  // from generalist anti-air-leaning to flyer-only apex combo per
-  // user direction. Recipe now pairs the two flyer-only base towers
-  // (Aquila Venator + Sagittarius) with the Decurion cavalry officer,
-  // so the ingredients telegraph the anti-air identity. baseDps
-  // bumped 34 → 85 in towers.json to compensate for losing every
-  // ground target; the +40% vs-flyer rider was bumped to +75% (see
-  // the damage-block per-tower bonuses below).
-  TowerType.NUMIDIAN_CAVALRY
-]);
+// 2026 v2 — ANTI-AIR-ONLY RETIRED. Per design feedback, no tower is locked to
+// air-only: any tower that CAN hit flyers also hits ground (the Scorpio model).
+// Sagittarius / Aquila Venator / Numidian Cavalry keep their large +vs-flyer
+// damage bonuses (applied per-tower in the damage block) but now also engage
+// ground targets. The set is kept empty so the two gate checks that read it
+// (target acquisition in pickTarget + the per-tick damage loop) never fire.
+export const ANTI_AIR_ONLY_TYPES = new Set<TowerType>([]);
 
 // Cleave melee — these towers hit ALL enemies in their melee range per swing,
 // not just one. Cleave damage on secondary targets is reduced to 70%.
