@@ -27,13 +27,14 @@ import {
   scaleParams,
   tickHeroAbilities
 } from '../src/systems/HeroSystem';
-import { createTower } from '../src/systems/TowerSystem';
+import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { createGameState, GameStateShape } from '../src/GameState';
 import { GamePhase, TowerType } from '../src/types';
 import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
 import { previewSpawnHp } from '../src/systems/WaveManager';
 import { buildMercatorTowerOffers } from '../src/systems/MerchantSystem';
 import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity';
+import { heroAuraScaleForTier } from '../src/systems/HeroScaling';
 import HERO_DEFS from '../src/data/herodefs.json';
 
 function freshState(): GameStateShape {
@@ -223,12 +224,32 @@ describe('Hero tier thresholds (TIRO 0 / LEGATUS 75 / CONSUL 280 / IMPERATOR 580
 // ─────────────────────────────────────────────────────────────────────
 // BASIC ATTACK SCALE
 // ─────────────────────────────────────────────────────────────────────
-describe('Basic attack scale per tier (1.0 / 1.2 / 1.5 / 1.9 / 2.4)', () => {
+describe('Basic attack scale per tier (1.0 / 1.5 / 2.2 / 3.2 / 4.5)', () => {
   it('every hero has the locked 5-tier ramp', () => {
     for (const id of HERO_POOL) {
       const def: any = (HERO_DEFS as any)[id];
-      expect(def.basicAtkScalePerTier).toEqual([1.0, 1.2, 1.5, 1.9, 2.4]);
+      expect(def.basicAtkScalePerTier).toEqual([1.0, 1.5, 2.2, 3.2, 4.5]);
     }
+  });
+
+  it('starter hero regular attacks become much stronger as rank rises', () => {
+    const s = freshState();
+    pickHero(s, 'HERO_CAESAR');
+    const h = createTower(TowerType.HERO_CAESAR, 1, 8, 8, 1);
+    s.towers.set(h.id, h);
+    s.activeHeroTowerId = h.id;
+    (globalThis as any).__game = s;
+    s.heroTier = 0;
+    const tiroDps = towerEffectiveStats(h).dps;
+    s.heroTier = 4;
+    const divusDps = towerEffectiveStats(h).dps;
+    delete (globalThis as any).__game;
+    expect(divusDps).toBeCloseTo(tiroDps * 4.5, 5);
+  });
+
+  it('hero passive aura strength doubles by DIVUS', () => {
+    expect(heroAuraScaleForTier(0)).toBe(1.0);
+    expect(heroAuraScaleForTier(4)).toBe(2.0);
   });
 });
 
@@ -378,7 +399,7 @@ describe('herodefs.json shape (single source of tuning)', () => {
   it('every hero has 2 abilities at levels 1, 2', () => {
     // 2026-05-21 — Tier-3 abilities dropped for every hero. The
     // tier-3 milestone (IMPERATOR) becomes a stat-only upgrade; the
-    // basic-attack scale still climbs 1.0× → 2.4× across the 5 tiers
+    // basic-attack scale now climbs 1.0× → 4.5× across the 5 tiers
     // but no new ability unlocks at tier 3.
     for (const id of HERO_POOL) {
       const def: any = (HERO_DEFS as any)[id];

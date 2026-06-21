@@ -28,6 +28,7 @@ import { campaignRelicDamageMult } from './CampaignRelicSystem';
 import { bossTrophyDamageMult } from './BossTrophySystem';
 import { commanderDamageTakenMult } from './CommanderSystem';
 import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
+import { heroAuraScaleForTower } from './HeroScaling';
 import enemiesData from '../data/enemies.json';
 import towersData from '../data/towers.json';
 import wavesData from '../data/waves.json';
@@ -410,31 +411,28 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // L10 caps at +27%. L1 only gives the probability shift, no damage.
   let globalDmgBonus = 0.03 * Math.max(0, (state.poolLevel ?? 0) - 1);
   let globalSpeedMult = 1;
-  // ── HERO PASSIVE AURAS (2026-05-19, balance-tuned 2026-05-22 V19,
-  // restored to +10% 2026-05-22 to match the hero card art) ──
-  // Caesar: +10% damage and +10% attack speed for every tower while
-  // he's active. (Earlier V19 trim took this 10→8 over a DPS audit,
-  // but the baked-in card art reads "+10% dmg and +10% atk speed" so
-  // the description card mismatched what the engine applied. Restored
-  // to 10 to keep the card / passive description / engine math aligned.)
-  // Scipio: +25% damage vs Bosses globally — applied later in the
-  // damage resolution loop where target.isBoss is known. (Was +30% in
-  // earlier builds, tuned to +25% in commit ~f959055.)
-  const heroAuraSources: Array<{ heroId: string; tower: Tower }> = [];
+  // ── HERO PASSIVE AURAS ────────────────────────────────────────────
+  // Hero rank now matters to passives, not only to ability unlocks.
+  // Starter heroes scale from 1.0× aura strength at TIRO to 2.0× at
+  // DIVUS. Mercator Champions count as DIVUS recruits for their passive
+  // math without touching the starter hero's XP ladder.
+  const heroAuraSources: Array<{ heroId: string; tower: Tower; auraScale: number }> = [];
   for (const t of towers) {
     const heroId = heroIdForTowerType(String(t.type));
     if (!heroId) continue;
     if (t.id === state.activeHeroTowerId || isMercatorChampionType(String(t.type))) {
-      heroAuraSources.push({ heroId, tower: t });
+      heroAuraSources.push({ heroId, tower: t, auraScale: heroAuraScaleForTower(state, t) });
     }
   }
   const activeHeroKinds = new Set(heroAuraSources.map(h => h.heroId));
 
-  if (activeHeroKinds.has('HERO_CAESAR')) {
-    globalDmgBonus += 0.10;
-    globalSpeedMult *= 1.10;
+  const caesarAuraScale = Math.max(0, ...heroAuraSources.filter(h => h.heroId === 'HERO_CAESAR').map(h => h.auraScale));
+  if (caesarAuraScale > 0) {
+    globalDmgBonus += 0.10 * caesarAuraScale;
+    globalSpeedMult *= 1 + 0.10 * caesarAuraScale;
   }
-  const scipioActive = activeHeroKinds.has('HERO_SCIPIO');
+  const scipioBossDamageMult = 1 + 0.25 * Math.max(0, ...heroAuraSources.filter(h => h.heroId === 'HERO_SCIPIO').map(h => h.auraScale));
+  const agricolaFlyerDamageMult = 1 + 0.15 * Math.max(0, ...heroAuraSources.filter(h => h.heroId === 'HERO_AGRICOLA').map(h => h.auraScale));
   // 2026 v2 — Mars Victor fuses the 6 hero passives into one global buff while
   // it stands on the board (its own DPS is already capstone-tier). Computed
   // once; the dmg/speed halves apply in the aura loop below, the vs-boss +
@@ -713,12 +711,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (source.heroId === 'HERO_MARIUS'
           && t.damageType === DamageType.PHYS_MELEE
           && dh <= 5 * GRID.TILE) {
-        dm *= 1.30;
+        dm *= 1 + 0.30 * source.auraScale;
       }
       if (source.heroId === 'HERO_AGRIPPA'
           && t.damageType === DamageType.SIEGE
           && dh <= 5 * GRID.TILE) {
-        dm *= 1.30;
+        dm *= 1 + 0.30 * source.auraScale;
       }
       // 2026-05-22 — Agricola local +20% ranged-tower damage aura
       // removed per user feedback that it stacked too strongly with
@@ -740,7 +738,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // a flat damage rider, so the smaller radius is the balance lever).
       // Type conversion still happens at the per-attack site below.
       if (source.heroId === 'HERO_SULLA' && dh <= 3 * GRID.TILE) {
-        dm *= 1.15;
+        dm *= 1 + 0.15 * source.auraScale;
       }
     }
     // Marian Formation per-tower stamp: N nearest melee get +X% speed,
@@ -1026,11 +1024,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // deals +50% damage vs bosses. Stacks with the trophies above.
       if (target.isBoss && towerAuraTileKind(t) === 'RED') damage *= 1.50;
       // ── HERO PASSIVES + ABILITY WINDOWS (2026-05-19) ──────────────
-      // Scipio passive: every tower deals +25% damage vs Bosses.
-      // Tuned 30% → 25% to avoid runaway compound stacking with
-      // Pontifex (3.0×), Tyrant's Laurel (1.75×), and the RED-tile
-      // aura — the curve was producing 8× boss kills late-game.
-      if (scipioActive && target.isBoss) damage *= 1.25;
+      // Scipio passive scales by rank: +25% boss damage at TIRO, up
+      // to +50% at DIVUS. Agricola mirrors that pattern for flyers at
+      // +15% → +30%, alongside his always-on anti-air targeting.
+      if (target.isBoss) damage *= scipioBossDamageMult;
+      if (target.isFlyer) damage *= agricolaFlyerDamageMult;
       if (marsVictorActive && target.isBoss) damage *= 1.25;   // Mars Victor fuses Scipio's vs-boss passive
       // 2026-05-21 — Zama (Scipio tier-3) + Triumph (Marius tier-3)
       // damage windows removed alongside the tier-3 ability deletion.

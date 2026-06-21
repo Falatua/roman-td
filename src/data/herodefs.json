@@ -11,7 +11,7 @@
       "radiusTiles": 5,
       "filter": "PHYS_MELEE",
       "dmgBonusPercent": 30,
-      "description": "Every MELEE tower within 5 tiles gains +30% damage permanently."
+      "description": "Every MELEE tower within 5 tiles gains +30% damage at TIRO, scaling up to +60% by DIVUS."
     },
     "abilities": [
       {
@@ -39,7 +39,7 @@
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
-    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "basicAtkScalePerTier": [1.0, 1.5, 2.2, 3.2, 4.5],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
     "bannerCopy": [
       "Marius takes the field. The legions reform.",
@@ -67,7 +67,7 @@
       "filter": "SIEGE",
       "dmgBonusPercent": 30,
       "rangeBonusTiles": 1.0,
-      "description": "Every SIEGE tower within 5 tiles gains +30% damage and +1.0 tile of range permanently."
+      "description": "Every SIEGE tower within 5 tiles gains +30% damage and +1.0 range at TIRO, scaling up to +60% damage and +2.0 range by DIVUS."
     },
     "abilities": [
       {
@@ -95,7 +95,7 @@
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
-    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "basicAtkScalePerTier": [1.0, 1.5, 2.2, 3.2, 4.5],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
     "bannerCopy": [
       "Agrippa commands the line. The volleys begin.",
@@ -122,7 +122,7 @@
     "passive": {
       "kind": "GLOBAL",
       "enableMeleeVsFlyers": true,
-      "description": "Every tower on the map — including MELEE — can target and attack flyers."
+      "description": "Every tower on the map — including MELEE — can target and attack flyers. All towers also gain +15% damage vs flyers at TIRO, scaling up to +30% by DIVUS."
     },
     "abilities": [
       {
@@ -150,7 +150,7 @@
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
-    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "basicAtkScalePerTier": [1.0, 1.5, 2.2, 3.2, 4.5],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
     "bannerCopy": [
       "Agricola takes the field. The skies are no longer safe.",
@@ -178,7 +178,7 @@
       "kind": "GLOBAL_AURA",
       "filter": "VS_BOSS",
       "dmgBonusPercent": 25,
-      "description": "Every tower on the map permanently deals +25% damage against Boss-type enemies. No radius limit."
+      "description": "Every tower on the map deals +25% damage against Boss-type enemies at TIRO, scaling up to +50% by DIVUS. No radius limit."
     },
     "abilities": [
       {
@@ -188,7 +188,7 @@
         "cooldownSec": 6,
         "durationSec": 0,
         "params": { "target": "HIGHEST_HP_BOSS", "dmgMultiplier": 5.0, "ignoreResistances": true },
-        "description": "Pierces the highest-HP boss for 500% of Scipio's basic-attack damage as TRUE damage — ignores every faction resistance, every shield, every boss damping. At Scipio T5 (basic-atk scale 2.4×) this single shot lands as ~12× his base hit damage. The reliable boss-burst Scipio brings to every fight.",
+        "description": "Pierces the highest-HP boss for 500% of Scipio's basic-attack damage as TRUE damage — ignores every faction resistance, every shield, every boss damping. At Scipio T5 (basic-atk scale 4.5×) this single shot lands as ~22.5× his base hit damage. The reliable boss-burst Scipio brings to every fight.",
         "vfxColor": "#ff8800",
         "vfxStyle": "RED_LANCE_ARC"
       },
@@ -199,14 +199,14 @@
         "cooldownSec": 15,
         "durationSec": 6,
         "params": { "targets": "ALL_BOSSES", "dmgTakenIncreasePercent": 30 },
-        "description": "Brands every boss on the field for 6s. Marked bosses take +30% damage from ALL sources (1.30×), stacking multiplicatively with Scipio's +25% boss passive (1.25×) and any other MARK debuffs. Combined with the passive: 1.25 × 1.30 = 1.625× damage on every boss for the full 6s — before any item, freeze amp, or other modifier piles on top.",
+        "description": "Brands every boss on the field for 6s. Marked bosses take +30% damage from ALL sources (1.30×), stacking multiplicatively with Scipio's rank-scaling boss passive (+25% at TIRO, +50% at DIVUS) and any other MARK debuffs.",
         "vfxColor": "#ff4400",
         "vfxStyle": "RED_BANNER_BRAND"
       }
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
-    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "basicAtkScalePerTier": [1.0, 1.5, 2.2, 3.2, 4.5],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
     "bannerCopy": [
       "Scipio takes the field. Carthage must fall.",
@@ -234,7 +234,7 @@
       "kind": "GLOBAL_AURA",
       "dmgBonusPercent": 10,
       "speedMultPercent": 10,
-      "description": "Every tower on the map permanently gains +10% damage and +10% attack speed. Stacks with all other aura towers."
+      "description": "Every tower on the map gains +10% damage and +10% attack speed at TIRO, scaling up to +20% damage and +20% attack speed by DIVUS. Stacks with all other aura towers."
     },
     "abilities": [
       {
@@ -262,7 +262,7 @@
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
-    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "basicAtkScalePerTier": [1.0, 1.5, 2.2, 3.2, 4.5],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
     "bannerCopy": [
       "Caesar takes the field. The Rubicon is crossed.",
@@ -291,7 +291,7 @@
       "radiusTiles": 3,
       "convertTo": "ELEMENTAL_FIRE",
       "dmgBonusPercent": 15,
-      "description": "Every tower within 3 tiles converts to FIRE damage and gains +15% damage."
+      "description": "Every tower within 3 tiles converts to FIRE damage and gains +15% damage at TIRO, scaling up to +30% by DIVUS."
     },
     "abilities": [
       {
@@ -319,7 +319,7 @@
     ],
     "xpThresholds": [0, 75, 280, 580, 850],
     "tierTitles": ["TIRO", "LEGATUS", "CONSUL", "IMPERATOR", "DIVUS"],
-    "basicAtkScalePerTier": [1.0, 1.2, 1.5, 1.9, 2.4],
+    "basicAtkScalePerTier": [1.0, 1.5, 2.2, 3.2, 4.5],
     "killBonus": { "killsPerStack": [5, 4, 3, 2, 1], "flatDpsPerStack": [3, 5, 7, 10, 15], "maxStacks": 15 },
     "bannerCopy": [
       "Sulla lights the flame. Rome does not fall tonight.",

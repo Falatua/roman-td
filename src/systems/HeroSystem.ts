@@ -29,6 +29,7 @@ import { pushStatus } from './CombatResolver';
 import { setTile } from './GridManager';
 import { buildGroundPath } from './PathFinder';
 import { HERO_IDS, HeroIdentityId, heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
+import { heroBasicAttackScaleForTier, heroBasicAttackScaleForTower } from './HeroScaling';
 
 // 6-hero pool (locked design). The draft surfaces ALL 6 every run
 // (shuffled for a fresh layout) — players choose freely from the full
@@ -338,8 +339,9 @@ function heroBasicAttackDamage(state: GameStateShape, hero: Tower): number {
   const ctx = (hero as any).__heroAbilityContext as { heroId?: HeroIdentityId; tier?: 0 | 1 | 2 | 3 | 4 } | undefined;
   const heroId = ctx?.heroId ?? state.activeHeroId;
   if (!heroId) return hero.baseDps;
-  const def: any = (HERO_DEFS as any)[heroId];
-  const scale = def?.basicAtkScalePerTier?.[ctx?.tier ?? getHeroTier(state)] ?? 1.0;
+  const scale = ctx?.tier !== undefined
+    ? heroBasicAttackScaleForTier(heroId, ctx.tier)
+    : heroBasicAttackScaleForTower(state, hero);
   // Per-tier damage scale × baseDps. attackSpeed not factored in — Cornu
   // Charge is a single-shot ability, not a damage-per-second slot.
   return hero.baseDps * scale;

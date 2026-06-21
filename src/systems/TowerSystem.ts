@@ -7,6 +7,7 @@ import { isInsideStructureFootprint } from './GridManager';
 import { hasBossTrophy } from './BossTrophySystem';
 import { campaignRelicTowerDpsMult, campaignRelicTowerRangeBonus, campaignRelicTowerSpeedMult } from './CampaignRelicSystem';
 import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
+import { heroAuraScaleForTower, heroBasicAttackScaleForTower } from './HeroScaling';
 
 // 2026-05-19 — AURA TILE LOOKUP. Returns the kind of aura tile the
 // tower sits on, or null. Used by stat math + combat hooks so every
@@ -386,7 +387,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
         if (hero.id !== gs.activeHeroTowerId && !isMercatorChampionType(String(hero.type))) continue;
         const dx = (hero.tileX - t.tileX);
         const dy = (hero.tileY - t.tileY);
-        if (Math.hypot(dx, dy) <= 5) return 1.0;
+        if (Math.hypot(dx, dy) <= 5) return 1.0 * heroAuraScaleForTower(gs, hero);
       }
       return 0;
     })()) +
@@ -456,14 +457,16 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   // the tower instance) so this branch reads from globalThis.__game,
   // same pattern used by the Agrippa range-aura block at line 314.
   let forgeDmgMult = 1;
+  let heroLevelDmgMult = 1;
   if (t.isHero) {
     const g: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
-    const gs: any = g?.__game;
-    const n = gs?.heroForgeStacks?.dmg ?? 0;
+    const heroGs: any = g?.__game ?? g?.__lastState;
+    heroLevelDmgMult = heroGs ? heroBasicAttackScaleForTower(heroGs, t) : 1;
+    const n = heroGs?.heroForgeStacks?.dmg ?? 0;
     if (n > 0) forgeDmgMult = 1 + 0.06 * n;
   }
   return {
-    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult * forgeDmgMult * relicDpsMult,
+    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult * heroLevelDmgMult * forgeDmgMult * relicDpsMult,
     attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult * relicSpeedMult,
     range: Math.max(1, t.range + extraRange + endlessRangeBoost + auraRangeBonus + relicRangeBonus)
   };
