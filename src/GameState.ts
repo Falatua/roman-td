@@ -55,6 +55,11 @@ export interface GameStateShape {
   // Cave B (W21+). Gates the archway reveal + eruption so the second cave
   // stays a surprise and is never shown sitting on the map beforehand.
   caveBActive?: boolean;
+  // 2026 v2 — consumable TRAPS (TrapSystem): owned counts per type, placed
+  // traps on the map, and the trap currently selected for placement.
+  trapInventory?: Record<string, number>;
+  placedTraps?: { id: string; type: string; x: number; y: number; col: number; row: number; born: number }[];
+  selectedTrapType?: string | null;
   flyerPath: { x: number; y: number }[];
   // Game-over flag for animation
   gameOverAt: number;       // tick when lives reached 0
@@ -256,6 +261,9 @@ export function createGameState(): GameStateShape {
     groundPath: [],
     groundPathB: [],
     caveBActive: false,
+    trapInventory: {},
+    placedTraps: [],
+    selectedTrapType: null,
     flyerPath: [],
     gameOverAt: -1,
     victoryAt: -1,

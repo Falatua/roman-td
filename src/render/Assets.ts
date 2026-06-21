@@ -342,6 +342,13 @@ const MANIFEST: Record<string, string> = {
   ITEM_FALCONERS_WATCHPOST: 'inew_falconers_watchpost.png',
   ITEM_JUPITERS_SKYFIRE: 'inew_jupiters_skyfire.png',
   ITEM_STORM_AQUILA_TALONS: 'inew_storm_aquila_talons.png',
+  // 2026 v2 — consumable trap sprites (placed on the map, drawn pulsing).
+  TRAP_IRON_SPIKE: 'trap_iron_spike.png',
+  TRAP_VENOM: 'trap_venom.png',
+  TRAP_TAR_FIRE: 'trap_tar_fire.png',
+  TRAP_FROST: 'trap_frost.png',
+  TRAP_BALLISTA: 'trap_ballista.png',
+  TRAP_SKY_NET: 'trap_sky_net.png',
   ITEM_STORM_JAVELIN: 'inew_storm_javelin.png',
   ITEM_JUPITERS_WRATH: 'inew_jupiters_wrath.png',
   ITEM_IRON_TIP: 'inew_iron_tip.png',
