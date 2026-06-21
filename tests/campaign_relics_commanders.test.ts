@@ -79,13 +79,21 @@ describe('Campaign relics', () => {
     expect(s.campaignRelicSkippedWaves).toContain(5);
   });
 
-  it('Saturn debt grants the immediate 300g campaign bankroll', () => {
+  it('relics are high-stakes campaign bargains, not tiny stat nudges', () => {
+    const byId = Object.fromEntries(CAMPAIGN_RELICS.map(r => [r.id, r]));
+    expect(byId.MARS_TAX.upside).toContain('-75%');
+    expect(byId.BLACK_OIL.upside).toContain('+125%');
+    expect(byId.AEGIS_WALL.caveat).toContain('+35%');
+    expect(byId.LAST_EAGLE.upside).toContain('+70%');
+  });
+
+  it('Saturn debt grants the immediate 900g campaign bankroll', () => {
     const s = bootstrapState();
     const before = s.gold;
     applyCampaignRelic(s, 'SATURNS_DEBT');
     expect(s.campaignRelicId).toBe('SATURNS_DEBT');
     expect(s.campaignRelicIds).toContain('SATURNS_DEBT');
-    expect(s.gold).toBe(before + 300);
+    expect(s.gold).toBe(before + 900);
   });
 
   it('Jupiter mandate buffs divine damage and commander damage', () => {
@@ -94,15 +102,15 @@ describe('Campaign relics', () => {
     const tower = createTower(TowerType.SOLAR_PRIEST, 5, 1, 1, 21);
     tower.damageType = DamageType.DIVINE;
     const target = { isCommander: true, type: 'STANDARD_BEARER_COMMANDER' };
-    expect(campaignRelicDamageMult(s, tower, target)).toBeCloseTo(1.25 * 1.15, 4);
+    expect(campaignRelicDamageMult(s, tower, target)).toBeCloseTo(1.8 * 1.5, 4);
   });
 
   it('Mars Tax discounts trap prices and raises enemy speed', () => {
     const s = bootstrapState();
     applyCampaignRelic(s, 'MARS_TAX');
     const id = 'IRON_SPIKE_TRAP';
-    expect(trapPrice(s, id)).toBe(Math.round(TRAP_DEFS[id].price * 0.5));
-    expect(campaignRelicEnemySpeedMult(s)).toBeCloseTo(1.08, 4);
+    expect(trapPrice(s, id)).toBe(Math.round(TRAP_DEFS[id].price * 0.25));
+    expect(campaignRelicEnemySpeedMult(s)).toBeCloseTo(1.25, 4);
     s.gold = 999;
     const spent = buyTraps(s, id, 2);
     expect(spent).toBe(trapPrice(s, id) * 2);
@@ -112,7 +120,7 @@ describe('Campaign relics', () => {
   it('Ceres Tithe increases wave gold while retaining its caveat elsewhere', () => {
     const s = bootstrapState();
     applyCampaignRelic(s, 'CERES_TITHE');
-    expect(campaignRelicWaveGoldMult(s)).toBeCloseTo(1.25, 4);
+    expect(campaignRelicWaveGoldMult(s)).toBeCloseTo(1.75, 4);
   });
 
   it('tower-stat relics read live game state for speed and range changes', () => {
@@ -123,8 +131,8 @@ describe('Campaign relics', () => {
     applyCampaignRelic(s, 'RAPID_MUSTER');
     applyCampaignRelic(s, 'SCOUT_MAPS');
     const boosted = towerEffectiveStats(tower);
-    expect(boosted.attackSpeed).toBeCloseTo(base.attackSpeed * 1.15, 4);
-    expect(boosted.range).toBeCloseTo(base.range + 1, 4);
+    expect(boosted.attackSpeed).toBeCloseTo(base.attackSpeed * 1.55, 4);
+    expect(boosted.range).toBeCloseTo(base.range + 2, 4);
     delete (globalThis as any).__game;
   });
 });
