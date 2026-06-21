@@ -186,7 +186,11 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   [TowerType.HERO_AGRIPPA]:   { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
   [TowerType.HERO_AGRICOLA]:  { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0.8, embed: true  },
   [TowerType.HERO_SCIPIO]:    { key: 'PROJ_JAVELIN',       arc: false, speed: 820, splash: 0.5, embed: true  },
-  [TowerType.HERO_SULLA]:     { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false }
+  [TowerType.HERO_SULLA]:     { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false },
+  [TowerType.CHAMPION_AGRIPPA]:  { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
+  [TowerType.CHAMPION_AGRICOLA]: { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0.8, embed: true  },
+  [TowerType.CHAMPION_SCIPIO]:   { key: 'PROJ_JAVELIN',       arc: false, speed: 820, splash: 0.5, embed: true  },
+  [TowerType.CHAMPION_SULLA]:    { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false }
   // ──────────────────────────────────────────────────────────────────
   // Pure-aura support towers — intentionally NOT in this map because
   // they never call spawnProjectile (`CombatResolver` routes them

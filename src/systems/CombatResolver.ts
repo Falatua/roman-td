@@ -27,6 +27,7 @@ import { enemyDamageMultiplier, statusEffectiveness } from './EnemyResistances';
 import { campaignRelicDamageMult } from './CampaignRelicSystem';
 import { bossTrophyDamageMult } from './BossTrophySystem';
 import { commanderDamageTakenMult } from './CommanderSystem';
+import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 import enemiesData from '../data/enemies.json';
 import towersData from '../data/towers.json';
 import wavesData from '../data/waves.json';
@@ -216,7 +217,9 @@ const MELEE_TYPES = new Set<TowerType>([
   // positioned next to the path like every other melee hero, but
   // his hits land reliably and the swing rhythm reads from any
   // distance.
-  TowerType.HERO_CAESAR
+  TowerType.HERO_CAESAR,
+  TowerType.CHAMPION_MARIUS,
+  TowerType.CHAMPION_CAESAR
 ]);
 
 // Towers that ONLY hit flyers — useless on ground waves, devastating on air ones.
@@ -423,11 +426,21 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // Scipio: +25% damage vs Bosses globally — applied later in the
   // damage resolution loop where target.isBoss is known. (Was +30% in
   // earlier builds, tuned to +25% in commit ~f959055.)
-  if (state.activeHeroId === 'HERO_CAESAR') {
+  const heroAuraSources: Array<{ heroId: string; tower: Tower }> = [];
+  for (const t of towers) {
+    const heroId = heroIdForTowerType(String(t.type));
+    if (!heroId) continue;
+    if (t.id === state.activeHeroTowerId || isMercatorChampionType(String(t.type))) {
+      heroAuraSources.push({ heroId, tower: t });
+    }
+  }
+  const activeHeroKinds = new Set(heroAuraSources.map(h => h.heroId));
+
+  if (activeHeroKinds.has('HERO_CAESAR')) {
     globalDmgBonus += 0.10;
     globalSpeedMult *= 1.10;
   }
-  const scipioActive = state.activeHeroId === 'HERO_SCIPIO';
+  const scipioActive = activeHeroKinds.has('HERO_SCIPIO');
   // 2026 v2 — Mars Victor fuses the 6 hero passives into one global buff while
   // it stands on the board (its own DPS is already capstone-tier). Computed
   // once; the dmg/speed halves apply in the aura loop below, the vs-boss +
@@ -437,11 +450,6 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   (state as any).__marsVictorActive = marsVictorActive;
   // Resolve hero tower position ONCE for per-tower local-aura checks
   // below. Avoids a per-tower state.towers.get lookup.
-  const heroTowerForAura = state.activeHeroTowerId
-    ? state.towers.get(state.activeHeroTowerId) ?? null
-    : null;
-  const heroAuraCx = heroTowerForAura ? heroTowerForAura.tileX * GRID.TILE + GRID.TILE / 2 : 0;
-  const heroAuraCy = heroTowerForAura ? heroTowerForAura.tileY * GRID.TILE + GRID.TILE / 2 : 0;
   const localAuras: Array<{ x: number; y: number; r: number; dmg?: number; spd?: number }> = [];
   const enemyTakenAuras: Array<{ x: number; y: number; r: number; pct: number }> = [];
   // AURA NULLIFIER enemies (Architectus on W16): if alive AND within 2 tiles
@@ -703,33 +711,19 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // Mirrors the Cohort-Guard distance scan above but filters by the
     // tower's damage type. Hero must be placed (heroTowerForAura set)
     // for any of these to fire. Skip the hero itself.
-    if (heroTowerForAura && t.id !== heroTowerForAura.id) {
-      const dh = Math.hypot(heroAuraCx - cx, heroAuraCy - cy);
-      if (state.activeHeroId === 'HERO_MARIUS'
+    for (const source of heroAuraSources) {
+      if (t.id === source.tower.id) continue;
+      const sx = source.tower.tileX * GRID.TILE + GRID.TILE / 2;
+      const sy = source.tower.tileY * GRID.TILE + GRID.TILE / 2;
+      const dh = Math.hypot(sx - cx, sy - cy);
+      if (source.heroId === 'HERO_MARIUS'
           && t.damageType === DamageType.PHYS_MELEE
           && dh <= 5 * GRID.TILE) {
-        // 2026-05-22 — Marius local melee aura bumped 1.20 → 1.30 per
-        // user feedback (felt undertuned vs the global heroes Caesar
-        // +10% global, Scipio +25% vs bosses). Marius gives up Caesar/
-        // Scipio's global reach, so the local payoff is proportionally
-        // bigger now. Was 1.25 → 1.20 in V19 audit; restored above
-        // that to give the kit real teeth without the global scope.
-        // 2026-05-22 (later) — Aura radius bumped 3 → 5 tiles so the
-        // melee bunker build can stretch across a longer maze segment
-        // without forcing every melee tower into a tiny cluster.
         dm *= 1.30;
       }
-      if (state.activeHeroId === 'HERO_AGRIPPA'
+      if (source.heroId === 'HERO_AGRIPPA'
           && t.damageType === DamageType.SIEGE
           && dh <= 5 * GRID.TILE) {
-        // 2026-05-22 — Agrippa local siege aura bumped 1.20 → 1.30 per
-        // user feedback that the hero felt undertuned. Range bonus
-        // also bumped 0.5 → 1.0 tile in TowerSystem.ts (and fixed: was
-        // checking PHYS_RANGED instead of SIEGE after the V19 type swap,
-        // so the range portion of the passive was silently broken).
-        // 2026-05-22 (later) — Aura radius bumped 3 → 5 tiles to match
-        // Marius's wider footprint so a single Agrippa drop can buff
-        // a whole siege lane instead of just neighbors.
         dm *= 1.30;
       }
       // 2026-05-22 — Agricola local +20% ranged-tower damage aura
@@ -751,7 +745,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // 3 tiles by design (his FIRE-conversion is more impactful than
       // a flat damage rider, so the smaller radius is the balance lever).
       // Type conversion still happens at the per-attack site below.
-      if (state.activeHeroId === 'HERO_SULLA' && dh <= 3 * GRID.TILE) {
+      if (source.heroId === 'HERO_SULLA' && dh <= 3 * GRID.TILE) {
         dm *= 1.15;
       }
     }
@@ -893,9 +887,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // the ult's DIVINE override still wins during its window. Skips
       // the hero tower itself (Sulla is already FIRE; no-op). Skipped
       // when Sulla isn't the active hero or his tower isn't placed yet.
-      if (state.activeHeroId === 'HERO_SULLA' && heroTowerForAura && t.id !== heroTowerForAura.id) {
+      const sullaSources = heroAuraSources.filter(h => h.heroId === 'HERO_SULLA' && h.tower.id !== t.id);
+      if (sullaSources.length > 0) {
         const tcx2 = tilePxX(t), tcy2 = tilePxY(t);
-        if (Math.hypot(heroAuraCx - tcx2, heroAuraCy - tcy2) <= 3 * GRID.TILE) {
+        if (sullaSources.some(h => Math.hypot(tilePxX(h.tower) - tcx2, tilePxY(h.tower) - tcy2) <= 3 * GRID.TILE)) {
           effectiveDmgType = DamageType.ELEMENTAL_FIRE;
         }
       }
@@ -1373,10 +1368,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // 2026-05-19 — Agricola hero passive extends the CYAN/AQUILA_TALONS
       // melee-vs-flyer unlock to EVERY tower on the map. Same pipeline
       // — just sets the flag map-wide while Agricola is active.
-      const agricolaActive = state.activeHeroId === 'HERO_AGRICOLA';
+      const agricolaActive = activeHeroKinds.has('HERO_AGRICOLA');
       const meleeHitsFlyers = isMeleeRow && (
         agricolaActive ||
+        (state as any).__marsVictorActive ||
         t.equippedItems.includes('AQUILA_TALONS') ||
+        t.equippedItems.includes('STORM_AQUILA_TALONS') ||
         towerAuraTileKind(t) === 'CYAN'
       );
       const inRange: Enemy[] = enemies.filter((e: Enemy) => {
@@ -1704,6 +1701,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   // CYAN/AQUILA_TALONS unlock to ALL melee towers map-wide.
   const meleeAirEnabled = isMelee && (
     state.activeHeroId === 'HERO_AGRICOLA' ||
+    Array.from(state.towers.values()).some(tw => heroIdForTowerType(String(tw.type)) === 'HERO_AGRICOLA' && (tw.id === state.activeHeroTowerId || isMercatorChampionType(String(tw.type)))) ||
     (state as any).__marsVictorActive ||   // Mars Victor fuses Agricola's all-towers-strike-flyers passive
     t.equippedItems.includes('AQUILA_TALONS') ||
     t.equippedItems.includes('STORM_AQUILA_TALONS') ||   // 2026 v2 — legendary grants ANY tower anti-air

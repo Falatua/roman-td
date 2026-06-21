@@ -1,6 +1,7 @@
 import { ItemId } from '../types';
 import items from '../data/items_permanent.json';
 import { Rarity } from './LootSystem';
+import { championForHero } from './HeroIdentity';
 
 export interface ShopOffer {
   itemId: ItemId;
@@ -180,10 +181,24 @@ export const CHAMPION_TYPES = [
 ];
 export const CHAMPION_PRICE = 350;
 
-export function buildMercatorTowerOffers(wave: number, count = 5): MercatorTowerOffer[] {
+export interface MercatorTowerOfferOptions {
+  activeHeroId?: string | null;
+  excludeTypes?: string[];
+}
+
+export function mercatorExcludedChampionForHero(activeHeroId?: string | null): string | null {
+  return championForHero(activeHeroId);
+}
+
+export function buildMercatorTowerOffers(wave: number, count = 5, options: MercatorTowerOfferOptions = {}): MercatorTowerOffer[] {
   const offers: MercatorTowerOffer[] = [];
+  const excluded = new Set(options.excludeTypes ?? []);
+  const activeHeroChampion = mercatorExcludedChampionForHero(options.activeHeroId);
+  if (activeHeroChampion) excluded.add(activeHeroChampion);
   // The 6 Champions always head the lineup at a flat 350g — the Mars Victor path.
-  for (const ct of CHAMPION_TYPES) offers.push({ type: ct, tier: 5, price: CHAMPION_PRICE });
+  for (const ct of CHAMPION_TYPES) {
+    if (!excluded.has(ct)) offers.push({ type: ct, tier: 5, price: CHAMPION_PRICE });
+  }
   const used = new Set<string>(CHAMPION_TYPES);
   let tries = 0;
   // 2026-05 v9: defensive filter — APEX cross-combos (Imperium Eternum,
@@ -194,7 +209,8 @@ export function buildMercatorTowerOffers(wave: number, count = 5): MercatorTower
   const eligible = MERCATOR_TOWER_POOL.filter(id => !FORTUNA_APEX_BLOCKLIST.has(id));
   // Fill the rest with 3 random T5 towers (champions already took 6 slots).
   const randomCount = 3;
-  while (offers.length < CHAMPION_TYPES.length + randomCount && tries++ < 50) {
+  const targetCount = offers.length + randomCount;
+  while (offers.length < targetCount && tries++ < 50) {
     const type = eligible[Math.floor(Math.random() * eligible.length)];
     if (used.has(type)) continue;
     used.add(type);

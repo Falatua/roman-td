@@ -1141,6 +1141,9 @@
     "spriteSheet": 1,
     "spriteCell": 0,
     "tint": "#cc44ff",
+    "isHero": true,
+    "critChance": 0.5,
+    "critMult": 2.0,
     "ability": "Champion of Rome, recruited at Mercator for 350g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "CHAMPION_AGRIPPA": {
@@ -1155,6 +1158,9 @@
     "spriteSheet": 1,
     "spriteCell": 4,
     "tint": "#5599ff",
+    "isHero": true,
+    "critChance": 0.5,
+    "critMult": 2.0,
     "ability": "Champion of Rome, recruited at Mercator for 350g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "CHAMPION_AGRICOLA": {
@@ -1169,6 +1175,9 @@
     "spriteSheet": 1,
     "spriteCell": 2,
     "tint": "#aaccff",
+    "isHero": true,
+    "critChance": 0.5,
+    "critMult": 2.0,
     "ability": "Champion of Rome, recruited at Mercator for 350g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "CHAMPION_SCIPIO": {
@@ -1183,6 +1192,9 @@
     "spriteSheet": 1,
     "spriteCell": 3,
     "tint": "#d4883a",
+    "isHero": true,
+    "critChance": 0.5,
+    "critMult": 2.0,
     "ability": "Champion of Rome, recruited at Mercator for 350g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "CHAMPION_CAESAR": {
@@ -1197,6 +1209,9 @@
     "spriteSheet": 3,
     "spriteCell": 5,
     "tint": "#ffe066",
+    "isHero": true,
+    "critChance": 0.5,
+    "critMult": 2.0,
     "ability": "Champion of Rome, recruited at Mercator for 350g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "CHAMPION_SULLA": {
@@ -1211,6 +1226,9 @@
     "spriteSheet": 1,
     "spriteCell": 3,
     "tint": "#fff5cc",
+    "isHero": true,
+    "critChance": 0.5,
+    "critMult": 2.0,
     "ability": "Champion of Rome, recruited at Mercator for 350g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   }
 }

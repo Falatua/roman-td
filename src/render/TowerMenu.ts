@@ -24,6 +24,7 @@ import { tex } from './Assets';
 import { closeGameModals } from './ModalManager';
 import { itemIconSvg } from './ItemIcon';
 import { comboPreviewBlockHtml } from './ComboPreview';
+import { heroIdForTowerType, isMercatorChampionType } from '../systems/HeroIdentity';
 
 const RAR: Record<string, string> = { COMMON:'#cccccc', UNCOMMON:'#5cd05c', RARE:'#5ca0ff', LEGENDARY:'#ff9933', UNIQUE:'#ffd34d' };
 
@@ -123,7 +124,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   // item slots, plus ability cards. Delegated to a dedicated renderer
   // so the regular tower-menu code below stays clean. 2026-05-21 —
   // Slot count bumped 2 → 6 alongside the tier-3 ability deletion.
-  if (t.isHero) {
+  if (t.isHero && !isMercatorChampionType(String(t.type))) {
     showHeroInspectPanel(parent, t, state, inv, hooks);
     return;
   }
@@ -885,11 +886,13 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   // footer. Hero-specific elements (XP bar, tier titles, tier-locked
   // ability cards, kill bonus) layer on top so the panel reads as
   // an enriched tower menu rather than a separate UI altogether.
-  const heroDef: any = (HERO_DEFS_FOR_INSPECT as any)[t.type] ?? {};
+  const heroId = heroIdForTowerType(String(t.type)) ?? String(t.type);
+  const heroDef: any = (HERO_DEFS_FOR_INSPECT as any)[heroId] ?? {};
   const towerDef: any = (towersData as any)[t.type] ?? {};
   const tint = heroDef.visual?.tierUpColor ?? '#ffd34d';
-  const tier = state.heroTier ?? 0;
-  const xp = state.heroXp ?? 0;
+  const mercatorChampion = isMercatorChampionType(String(t.type));
+  const tier = mercatorChampion ? 4 : (state.heroTier ?? 0);
+  const xp = mercatorChampion ? Number.POSITIVE_INFINITY : (state.heroXp ?? 0);
   const thresholds: number[] = heroDef.xpThresholds ?? [0, 75, 280, 650, 1300];
   const tierTitles: string[] = heroDef.tierTitles ?? ['TIRO','LEGATUS','CONSUL','IMPERATOR','DIVUS'];
   const curTh = thresholds[tier] ?? 0;

@@ -200,7 +200,7 @@ export function mountCircleSidebar(o: CircleSidebarOpts): CircleSidebar {
     if (board.inWave) { toast('The Mercator only trades between waves. Survive the current wave first.'); return; }
     if (!mercatorShop) {
       mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, board.inventory));
-      mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5);
+      mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, { activeHeroId: state.activeHeroId });
     }
     renderShop(o.overlay, mercatorShop, state, board.inventory, {
       onClose: () => document.getElementById('shop-modal')?.remove(),

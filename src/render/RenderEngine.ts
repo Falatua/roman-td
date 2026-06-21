@@ -17,6 +17,7 @@ import towersData from '../data/towers.json';
 import HERO_DEFS_FOR_AURA from '../data/herodefs.json';
 import { surpriseEventTintRGBA, VFX_TIMING, getAllActiveSurpriseEvents } from '../systems/SurpriseEvents';
 import { SurpriseEventKind } from '../types';
+import { heroIdForTowerType } from '../systems/HeroIdentity';
 
 // 2026-05-20 v2 — Per-hero halo ring assignment. Each ring style was
 // hand-picked to match the hero's color tint + thematic identity:
@@ -3192,7 +3193,7 @@ export class RenderEngine {
         // sprite as a clear "I'm the hero" visual marker.
         let ring: Sprite | undefined;
         if (isHeroSprite) {
-          const ringKey = HERO_RING_FOR[tw.type] ?? 'HERO_RING_PLAIN_WHITE';
+          const ringKey = HERO_RING_FOR[heroIdForTowerType(String(tw.type)) ?? tw.type] ?? 'HERO_RING_PLAIN_WHITE';
           const ringTex = tex(ringKey);
           if (ringTex) {
             ring = new Sprite(ringTex);
@@ -3972,7 +3973,8 @@ export class RenderEngine {
       // no ring is drawn (a ring on a global aura would lie about
       // where the buff applies).
       if (tw.isHero) {
-        const hd: any = (HERO_DEFS_FOR_AURA as any)[tw.type];
+        const heroId = heroIdForTowerType(String(tw.type)) ?? String(tw.type);
+        const hd: any = (HERO_DEFS_FOR_AURA as any)[heroId];
         const passive = hd?.passive;
         if (passive) {
           // Pull radiusTiles from either top-level (LOCAL_AURA /

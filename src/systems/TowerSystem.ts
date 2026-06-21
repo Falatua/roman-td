@@ -6,6 +6,7 @@ import { damageTypeFromString } from './DamageTypeSystem';
 import { isInsideStructureFootprint } from './GridManager';
 import { hasBossTrophy } from './BossTrophySystem';
 import { campaignRelicTowerDpsMult, campaignRelicTowerRangeBonus, campaignRelicTowerSpeedMult } from './CampaignRelicSystem';
+import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 
 // 2026-05-19 — AURA TILE LOOKUP. Returns the kind of aura tile the
 // tower sits on, or null. Used by stat math + combat hooks so every
@@ -378,13 +379,16 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     ((() => {
       const g: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
       const gs: any = g?.__game;
-      if (!gs || gs.activeHeroId !== 'HERO_AGRIPPA' || !gs.activeHeroTowerId) return 0;
+      if (!gs) return 0;
       if (t.damageType !== DamageType.SIEGE) return 0;
-      const hero = gs.towers?.get?.(gs.activeHeroTowerId);
-      if (!hero) return 0;
-      const dx = (hero.tileX - t.tileX);
-      const dy = (hero.tileY - t.tileY);
-      return Math.hypot(dx, dy) <= 5 ? 1.0 : 0;
+      for (const hero of gs.towers?.values?.() ?? []) {
+        if (heroIdForTowerType(String(hero.type)) !== 'HERO_AGRIPPA') continue;
+        if (hero.id !== gs.activeHeroTowerId && !isMercatorChampionType(String(hero.type))) continue;
+        const dx = (hero.tileX - t.tileX);
+        const dy = (hero.tileY - t.tileY);
+        if (Math.hypot(dx, dy) <= 5) return 1.0;
+      }
+      return 0;
     })()) +
     // SPEAR OF MARS — converts a melee tower into a thrown-spear unit by
     // adding five tiles of reach. CombatResolver spawns a visible PROJ_HASTA

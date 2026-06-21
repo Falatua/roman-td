@@ -24,13 +24,16 @@ import {
   heroForgeDmgMult,
   heroForgeCooldownMult,
   heroForgeMagnitudeMult,
-  scaleParams
+  scaleParams,
+  tickHeroAbilities
 } from '../src/systems/HeroSystem';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState, GameStateShape } from '../src/GameState';
-import { TowerType } from '../src/types';
+import { GamePhase, TowerType } from '../src/types';
 import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
 import { previewSpawnHp } from '../src/systems/WaveManager';
+import { buildMercatorTowerOffers } from '../src/systems/MerchantSystem';
+import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity';
 import HERO_DEFS from '../src/data/herodefs.json';
 
 function freshState(): GameStateShape {
@@ -252,6 +255,33 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
       const tower = createTower(t, 1, 0, 0, 0);
       expect((tower as any).isHero).toBe(true);
     }
+  });
+
+  it('Mercator excludes the Champion matching the starter hero', () => {
+    const offers = buildMercatorTowerOffers(9, 5, { activeHeroId: 'HERO_CAESAR' });
+    expect(offers.map(o => o.type)).not.toContain(championForHero('HERO_CAESAR'));
+    expect(offers.map(o => o.type)).toContain('CHAMPION_MARIUS');
+  });
+
+  it('Mercator Champions are hero equivalents without overwriting the starter hero', () => {
+    const s = freshState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 10;
+    s.activeHeroId = 'HERO_MARIUS';
+    const champion = createTower(TowerType.CHAMPION_CAESAR, 5, 5, 5, 9);
+    const milites = createTower(TowerType.MILITES, 1, 7, 5, 9);
+    milites.attackCooldown = 5;
+    s.towers.set(champion.id, champion);
+    s.towers.set(milites.id, milites);
+
+    expect((champion as any).isHero).toBe(true);
+    expect(heroIdForTowerType(String(champion.type))).toBe('HERO_CAESAR');
+
+    tickHeroAbilities(s);
+
+    expect(s.activeHeroId).toBe('HERO_MARIUS');
+    expect(milites.attackCooldown).toBe(0);
+    expect(champion.__heroCooldowns?.SPQR_DECREE).toBeGreaterThan(s.tick);
   });
 });
 

@@ -28,6 +28,7 @@ import { activateSandbox, sandboxAddGold, sandboxAllTowerOptions, sandboxSpawnTo
 // feature. awardHeroXp hooks into the kill handler; tickHeroAbilities
 // runs once per WAVE_PHASE frame.
 import { awardHeroXp as heroAwardXp, tickHeroAbilities, type HeroHooks } from './systems/HeroSystem';
+import { heroIdForTowerType } from './systems/HeroIdentity';
 import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
 import itemsData from './data/items_permanent.json';
@@ -80,8 +81,10 @@ import { shouldOfferBossTrophy, markBossTrophyOfferedForWave } from './systems/B
 // colored. Marius (PHYS_MELEE) intentionally returns undefined so his
 // swing stays the default silvered slash.
 function meleeSlashTintFor(towerType: TowerType | string): number | undefined {
+  const heroId = heroIdForTowerType(String(towerType));
   switch (towerType) {
     case TowerType.HERO_CAESAR:
+    case TowerType.CHAMPION_CAESAR:
     case TowerType.JULIUS_CAESAR:
     case TowerType.PONTIFEX_MAXIMUS:
       return 0xffd34d;                          // divine gold
@@ -90,6 +93,7 @@ function meleeSlashTintFor(towerType: TowerType | string): number | undefined {
     case TowerType.GOD_OF_WAR:
       return 0xff7733;                          // hellfire orange-red
     default:
+      if (heroId === 'HERO_CAESAR') return 0xffd34d;
       return undefined;                         // PHYS_MELEE default
   }
 }
@@ -4793,7 +4797,7 @@ async function boot() {
       }
       if (!mercatorShop) {
         mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
-        mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5);
+        mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, { activeHeroId: state.activeHeroId });
       }
       renderShop(app, mercatorShop, state, inventory, {
         onClose: () => document.getElementById('shop-modal')?.remove()
@@ -5948,7 +5952,7 @@ async function boot() {
       if (mercatorActive && state.phase === GamePhase.BUILD_PHASE) {
         if (!mercatorShop) {
           mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
-          mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5);
+          mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, { activeHeroId: state.activeHeroId });
         }
         renderShop(app, mercatorShop, state, inventory, { onClose: () => document.getElementById('shop-modal')?.remove() });
       }
@@ -6633,7 +6637,7 @@ async function boot() {
                 HERO_SCIPIO:   0xffe6a8,    // pale gold javelin
                 HERO_SULLA:    0xff7733     // hellfire orange
               };
-              const heroC = HERO_TINT[t.type] ?? c;
+              const heroC = HERO_TINT[heroIdForTowerType(String(t.type)) ?? t.type] ?? c;
               // A SECOND muzzle flash with the hero color makes the
               // tip pop twice in one frame — reads as a real
               // burst of energy at the moment of release.
@@ -7238,7 +7242,7 @@ async function boot() {
         if (isMercatorWave(state.wave)) {
           mercatorActive = true;
           mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
-          mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5);
+          mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, { activeHeroId: state.activeHeroId });
           ui.setMercatorAvailable(true);
           state.hint = `★ Mercator arrives — wave ${state.wave + 1} boss imminent. Click ★ MERCATOR for his stock, or hit SHOP for the gate. Both vendors are open this round.`;
           // Show the big floating banner so the player can't miss it.
@@ -7247,7 +7251,7 @@ async function boot() {
             onView: () => {
               if (!mercatorShop) {
                 mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
-                mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5);
+                mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, { activeHeroId: state.activeHeroId });
               }
               renderShop(app, mercatorShop, state, inventory, {
                 onClose: () => document.getElementById('shop-modal')?.remove()

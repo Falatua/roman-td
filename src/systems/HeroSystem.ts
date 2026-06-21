@@ -28,17 +28,13 @@ import { GRID } from '../constants';
 import { pushStatus } from './CombatResolver';
 import { setTile } from './GridManager';
 import { buildGroundPath } from './PathFinder';
+import { HERO_IDS, HeroIdentityId, heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 
 // 6-hero pool (locked design). The draft surfaces ALL 6 every run
 // (shuffled for a fresh layout) — players choose freely from the full
 // roster instead of being handed a random subset.
 export const HERO_POOL = [
-  'HERO_MARIUS',
-  'HERO_AGRIPPA',
-  'HERO_AGRICOLA',
-  'HERO_SCIPIO',
-  'HERO_CAESAR',
-  'HERO_SULLA'
+  ...HERO_IDS
 ] as const;
 export type HeroId = typeof HERO_POOL[number];
 
@@ -233,27 +229,35 @@ function updateHeroTier(state: GameStateShape, hooks?: HeroHooks): void {
 /** Per-frame ability dispatcher. Called once per WAVE_PHASE tick. */
 export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): void {
   if (state.phase !== GamePhase.WAVE_PHASE) return;
-  if (!state.activeHeroId || !state.activeHeroTowerId) return;
-  const hero = state.towers.get(state.activeHeroTowerId);
-  if (!hero) return;
-  const def: any = (HERO_DEFS as any)[state.activeHeroId];
-  if (!def?.abilities) return;
-  const tier = getHeroTier(state);
-  // Initialize cooldown scratchpad on first access.
-  if (!hero.__heroCooldowns) hero.__heroCooldowns = {};
+  for (const hero of state.towers.values()) {
+    const heroId = heroIdForTowerType(String(hero.type));
+    if (!heroId) continue;
+    const isStarterHero = hero.id === state.activeHeroTowerId && heroId === state.activeHeroId;
+    const isMercatorChampion = isMercatorChampionType(String(hero.type));
+    if (!isStarterHero && !isMercatorChampion) continue;
+    const def: any = (HERO_DEFS as any)[heroId];
+    if (!def?.abilities) continue;
+    const tier = isStarterHero ? getHeroTier(state) : 4;
+    // Initialize cooldown scratchpad on first access.
+    if (!hero.__heroCooldowns) hero.__heroCooldowns = {};
 
-  // 2026-05-20 v2 — Hero Forge Path B (HASTEN). Multiply this fire's
-  // cooldown stamp by the forge CD scalar so abilities come up faster
-  // as the player invests gold. Computed once per tick so all three
-  // ability slots see the same scalar this frame.
-  const cdMult = heroForgeCooldownMult(state);
-  for (const ability of def.abilities) {
-    if (tier < ability.level) continue;
-    const nextFire = hero.__heroCooldowns[ability.id] ?? 0;
-    if (state.tick < nextFire) continue;
-    // Stamp BEFORE executing so a long-running executor can't double-fire.
-    hero.__heroCooldowns[ability.id] = state.tick + (ability.cooldownSec ?? 60) * cdMult;
-    dispatchAbility(state, hero, ability, hooks);
+    // Starter heroes use the run's forge investment. Mercator Champions
+    // arrive as fully trained T5 recruit forms but do not consume or alter
+    // the starter hero's XP/forge ladder.
+    const cdMult = isStarterHero ? heroForgeCooldownMult(state) : 1;
+    (hero as any).__heroAbilityContext = {
+      heroId,
+      tier,
+      magnitudeMult: isStarterHero ? heroForgeMagnitudeMult(state) : 1
+    };
+    for (const ability of def.abilities) {
+      if (tier < ability.level) continue;
+      const nextFire = hero.__heroCooldowns[ability.id] ?? 0;
+      if (state.tick < nextFire) continue;
+      // Stamp BEFORE executing so a long-running executor can't double-fire.
+      hero.__heroCooldowns[ability.id] = state.tick + (ability.cooldownSec ?? 60) * cdMult;
+      dispatchAbility(state, hero, ability, hooks);
+    }
   }
 
   // Drain timed events (Capite Censi per-throw damage events, etc.).
@@ -268,7 +272,8 @@ function dispatchAbility(state: GameStateShape, hero: Tower, ability: any, hooks
   // booleans, strings, and lifetimeHealCap are skipped (see scaleParams).
   // Each executor reads from `params.X` so the scaled values land
   // transparently without per-executor code changes.
-  const params = scaleParams(ability.params ?? {}, heroForgeMagnitudeMult(state));
+  const magnitudeMult = (hero as any).__heroAbilityContext?.magnitudeMult ?? heroForgeMagnitudeMult(state);
+  const params = scaleParams(ability.params ?? {}, magnitudeMult);
   switch (ability.id) {
     // MARIUS
     case 'MARIAN_FORMATION':   return executeMARIAN_FORMATION(state, hero, params, ability, hooks);
@@ -309,9 +314,11 @@ function hexToInt(hex: string): number {
 
 /** Hero tower's effective basic-attack damage at current tier. Used by Cornu Charge. */
 function heroBasicAttackDamage(state: GameStateShape, hero: Tower): number {
-  if (!state.activeHeroId) return hero.baseDps;
-  const def: any = (HERO_DEFS as any)[state.activeHeroId];
-  const scale = def?.basicAtkScalePerTier?.[getHeroTier(state)] ?? 1.0;
+  const ctx = (hero as any).__heroAbilityContext as { heroId?: HeroIdentityId; tier?: 0 | 1 | 2 | 3 | 4 } | undefined;
+  const heroId = ctx?.heroId ?? state.activeHeroId;
+  if (!heroId) return hero.baseDps;
+  const def: any = (HERO_DEFS as any)[heroId];
+  const scale = def?.basicAtkScalePerTier?.[ctx?.tier ?? getHeroTier(state)] ?? 1.0;
   // Per-tier damage scale × baseDps. attackSpeed not factored in — Cornu
   // Charge is a single-shot ability, not a damage-per-second slot.
   return hero.baseDps * scale;
