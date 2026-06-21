@@ -8,6 +8,7 @@ import { InventoryState, inventoryAdd, isConsumable } from '../systems/LootSyste
 import items from '../data/items_permanent.json';
 import consumables from '../data/items_consumable.json';
 import towersData from '../data/towers.json';
+import heroDefs from '../data/herodefs.json';
 import { closeGameModals } from './ModalManager';
 import { itemIconSvg } from './ItemIcon';
 import { tex } from './Assets';
@@ -15,6 +16,7 @@ import { purchaseCompletesRecipe } from '../systems/CombinationEngine';
 import { itemFamily } from '../systems/ItemRules';
 import { markScrollable } from './ScrollCues';
 import { HERO_FORGE_CAP, heroForgeNextCost } from '../systems/HeroSystem';
+import { heroIdForTowerType, isMercatorChampionType } from '../systems/HeroIdentity';
 
 // Inject the recipe-ready pulse keyframes once. Mirrors the green glow used on
 // pending prospects whose `id` lands in scanCombos's ingredient set, so the
@@ -45,6 +47,73 @@ function imgSrcFromTex(key: string): string | null {
   if (!t) return null;
   const res: any = t.baseTexture?.resource;
   return res?.src ?? res?.url ?? (t as any).__srcPath ?? null;
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function championHeroDetailsHtml(type: string, towerDef: any, tint: string): string {
+  const heroId = heroIdForTowerType(type);
+  const heroDef: any = heroId ? (heroDefs as any)[heroId] : null;
+  if (!heroDef) return '';
+  const abilities: any[] = heroDef.abilities ?? [];
+  const tierTitles: string[] = heroDef.tierTitles ?? [];
+  const scales: number[] = heroDef.basicAtkScalePerTier ?? [];
+  const critPct = Math.round((towerDef.critChance ?? 0) * 100);
+  const critMult = Number(towerDef.critMult ?? 0).toFixed(1);
+  const dmgType = String(towerDef.damageType ?? heroDef.specialty ?? '').replace(/_/g, ' ');
+  const statCell = (label: string, value: string) => `
+    <div style="background:#120d08;border:1px solid ${tint}55;padding:5px 4px;text-align:center">
+      <div style="font-size:8px;color:#8f8060;letter-spacing:1px">${label}</div>
+      <div style="font-size:10px;color:#fff8e0;font-weight:bold;line-height:1.2">${value}</div>
+    </div>`;
+  return `
+    <div class="merc-champion-details" style="display:none;width:100%;box-sizing:border-box;margin-top:4px;text-align:left;background:linear-gradient(180deg,#17100a,#080604);border:1px solid ${tint};box-shadow:inset 0 0 12px ${tint}22;padding:8px;color:#d8c79a;font-size:10px;line-height:1.45">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;border-bottom:1px solid ${tint}55;padding-bottom:5px;margin-bottom:6px">
+        <div>
+          <div style="color:${tint};font-size:10px;font-weight:bold;letter-spacing:2px">${escapeHtml(heroDef.specialty ?? 'CHAMPION')}</div>
+          <div style="color:#fff8e0;font-size:12px;font-weight:bold;line-height:1.2">${escapeHtml(heroDef.name)}</div>
+          <div style="color:#aa9a4a;font-size:9px;font-style:italic">${escapeHtml(heroDef.title)}</div>
+        </div>
+        <div style="color:#f0c040;font-size:9px;letter-spacing:1px;text-align:right;white-space:nowrap">FULL KIT<br/>ON BUY</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:7px">
+        ${statCell('DPS', escapeHtml(towerDef.baseDps ?? '?'))}
+        ${statCell('RANGE', `${escapeHtml(towerDef.range ?? '?')} tiles`)}
+        ${statCell('CRIT', `${critPct}% x${critMult}`)}
+        ${statCell('TYPE', escapeHtml(dmgType))}
+        ${statCell('SPEED', `${Number(towerDef.attackSpeed ?? 0).toFixed(2)}/s`)}
+        ${statCell('SLOTS', '6 items')}
+      </div>
+      <div style="margin-bottom:6px">
+        <div style="color:${tint};font-size:9px;font-weight:bold;letter-spacing:1.5px;margin-bottom:2px">WHY BUY</div>
+        <div style="color:#cdb98a">${escapeHtml(heroDef.playerProblemSolved)}</div>
+      </div>
+      <div style="margin-bottom:6px">
+        <div style="color:${tint};font-size:9px;font-weight:bold;letter-spacing:1.5px;margin-bottom:2px">PASSIVE</div>
+        <div style="color:#fff8e0">${escapeHtml(heroDef.passive?.description)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${abilities.map((a, i) => `
+          <div style="border-top:1px dashed ${tint}55;padding-top:5px">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:2px">
+              <div style="color:#fff8e0;font-weight:bold">${escapeHtml(a.name)}</div>
+              <div style="color:#f0c040;font-size:9px;white-space:nowrap">${escapeHtml(tierTitles[a.level] ?? (i === 0 ? 'LEGATUS' : 'CONSUL'))} · ${escapeHtml(a.cooldownSec)}s</div>
+            </div>
+            <div style="color:#cdb98a">${escapeHtml(a.description)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="margin-top:7px;padding-top:5px;border-top:1px solid ${tint}33;color:#aa9a4a;font-size:9px">
+        Basic attack scales ${scales.length ? scales.map(n => `${Number(n).toFixed(1)}x`).join(' → ') : 'with hero tier'} across hero ranks. Mercator Champions use these passives and abilities immediately after placement.
+      </div>
+    </div>`;
 }
 
 // ─── HERO FORGE SECTION (2026-05-20 v2) ──────────────────────────────
@@ -276,6 +345,8 @@ function renderMercatorShop(
       .merc-buy:not(:disabled):hover { background:#4a6a28; }
       .merc-buy:disabled { background:#2a2a2a; color:#666; border-color:#3a3a3a; cursor:not-allowed; }
       .merc-section-title { font-size:11px; letter-spacing:4px; color:#d4af37; font-weight:bold; padding:0 0 4px; border-bottom:1px solid #5a4a30; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; }
+      .merc-champion-toggle { font-family:'Courier New',monospace; font-size:10px; letter-spacing:1.5px; font-weight:bold; padding:5px 8px; border:1px solid #5a4a30; background:#17100a; color:#d4af37; cursor:pointer; width:100%; }
+      .merc-champion-toggle:hover { background:#2a1a0e; border-color:#d4af37; }
     `;
     document.head.appendChild(st);
   }
@@ -357,6 +428,9 @@ function renderMercatorShop(
       const spriteSrc = imgSrcFromTex(offer.type);
       const towerDef: any = (towersData as any)[offer.type] ?? {};
       const towerName = towerDef.name ?? offer.type.replace(/_/g,' ');
+      const championDetails = isMercatorChampionType(offer.type)
+        ? championHeroDetailsHtml(offer.type, towerDef, towerDef.tint ?? TIER_COL[offer.tier])
+        : '';
       const portrait = spriteSrc
         ? `<div style="width:64px;height:64px;border:1px solid ${TIER_COL[offer.tier]};background:#1a1410;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 8px ${TIER_COL[offer.tier]}55"><img src="${spriteSrc}" style="width:56px;height:56px;image-rendering:pixelated" alt="${towerName}"/></div>`
         : `<div style="width:64px;height:64px;border:1px solid ${TIER_COL[offer.tier]};background:#1a1410;color:#cdb98a;font-size:9px;display:flex;align-items:center;justify-content:center;letter-spacing:1px">NO IMG</div>`;
@@ -379,7 +453,26 @@ function renderMercatorShop(
           <span title="Range (tiles)">◎ ${range}t</span>
         </div>
         <div style="font-size:9.5px;color:#cdb98a;line-height:1.35;margin-top:3px;min-height:34px">${ability}</div>
+        ${championDetails ? `<button class="merc-champion-toggle" type="button" data-champion-details="${offer.type}" aria-expanded="false">DETAILS</button>${championDetails}` : ''}
         <div style="color:#f0c040;font-size:12px;font-weight:bold;margin-top:2px">${offer.price}g</div>`;
+      const detailBtn = card.querySelector<HTMLButtonElement>('button[data-champion-details]');
+      const detailPanel = card.querySelector<HTMLElement>('.merc-champion-details');
+      if (detailBtn && detailPanel) {
+        detailBtn.onclick = (ev) => {
+          ev.stopPropagation();
+          const opening = detailPanel.style.display === 'none';
+          tList.querySelectorAll<HTMLElement>('.merc-champion-details').forEach(el => { el.style.display = 'none'; });
+          tList.querySelectorAll<HTMLButtonElement>('button[data-champion-details]').forEach(btn => {
+            btn.textContent = 'DETAILS';
+            btn.setAttribute('aria-expanded', 'false');
+          });
+          if (opening) {
+            detailPanel.style.display = 'block';
+            detailBtn.textContent = 'HIDE';
+            detailBtn.setAttribute('aria-expanded', 'true');
+          }
+        };
+      }
       const canAfford = state.gold >= offer.price;
       const buy = document.createElement('button');
       buy.textContent = canAfford ? 'BUY' : 'NEED ' + (offer.price - state.gold) + 'g';

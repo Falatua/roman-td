@@ -263,6 +263,20 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(offers.map(o => o.type)).toContain('CHAMPION_MARIUS');
   });
 
+  it('every Mercator Champion resolves to a full hero kit for shop details', () => {
+    const offers = buildMercatorTowerOffers(9, 5, { activeHeroId: null });
+    const championOffers = offers.filter(o => String(o.type).startsWith('CHAMPION_'));
+    expect(championOffers.length).toBe(6);
+    for (const offer of championOffers) {
+      const heroId = heroIdForTowerType(offer.type);
+      expect(heroId, `${offer.type} should map back to a HERO_* identity`).toBeTruthy();
+      const def: any = heroId ? (HERO_DEFS as any)[heroId] : null;
+      expect(def?.passive?.description, `${offer.type} must expose passive copy for Mercator details`).toBeTruthy();
+      expect(def?.abilities?.length, `${offer.type} must expose both ability descriptions for Mercator details`).toBe(2);
+      expect(def?.basicAtkScalePerTier?.length, `${offer.type} must expose hero tier scaling for Mercator details`).toBe(5);
+    }
+  });
+
   it('Mercator Champions are hero equivalents without overwriting the starter hero', () => {
     const s = freshState();
     s.phase = GamePhase.WAVE_PHASE;
