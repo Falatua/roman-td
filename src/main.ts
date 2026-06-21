@@ -6410,6 +6410,25 @@ async function boot() {
           }
         }
       );
+      const allowHeroBasicVisualFx = (tower: any, minTowerGap = 0.12): boolean => {
+        const lastTowerFxTick = tower.__lastHeroBasicVisualFxTick ?? -999;
+        if (state.tick - lastTowerFxTick < minTowerGap) return false;
+        const bucketKey = Math.floor(state.tick * 10);
+        if ((state as any).__heroBasicFxBucketKey !== bucketKey) {
+          (state as any).__heroBasicFxBucketKey = bucketKey;
+          (state as any).__heroBasicFxBucketCount = 0;
+        }
+        if (((state as any).__heroBasicFxBucketCount ?? 0) >= 3) return false;
+        tower.__lastHeroBasicVisualFxTick = state.tick;
+        (state as any).__heroBasicFxBucketCount = ((state as any).__heroBasicFxBucketCount ?? 0) + 1;
+        return true;
+      };
+      const allowHeroBasicShake = (): boolean => {
+        const lastShakeTick = (state as any).__lastHeroBasicShakeTick ?? -999;
+        if (state.tick - lastShakeTick < 0.35) return false;
+        (state as any).__lastHeroBasicShakeTick = state.tick;
+        return true;
+      };
       const combatHooks = {
         onHit: (t: any, e: any, d: number, resMod = 1, isCrit = false) => {
           // 2026-05 v6: blood spray now ONLY fires when the target is
@@ -6514,9 +6533,9 @@ async function boot() {
             // (not just boss hits). Caesar gets a gold impact ring on
             // top; Marius gets a silver one. Reads as a hero strike,
             // not a routine attack.
-            if (isHero) {
+            if (isHero && allowHeroBasicVisualFx(t)) {
               renderer.triggerMeleeSlash(e.x, e.y, angle + 0.5, state.tick, size * 0.75, false, slashTint);
-              renderer.triggerShake(3, 0.18);
+              if (e.isBoss && allowHeroBasicShake()) renderer.triggerShake(1.4, 0.10);
               if (renderer.triggerImpactRing) {
                 const ringColor = slashTint ?? 0xfff5cc;
                 renderer.triggerImpactRing(e.x, e.y, state.tick, GRID.TILE * 0.9, ringColor);
@@ -6641,9 +6660,11 @@ async function boot() {
               // A SECOND muzzle flash with the hero color makes the
               // tip pop twice in one frame — reads as a real
               // burst of energy at the moment of release.
-              renderer.triggerMuzzleFlash(tipX, tipY, heroC, state.tick);
-              renderer.triggerImpactRing(sx, sy, state.tick, 22, heroC);
-              renderer.triggerShake(2, 0.10);
+              if (allowHeroBasicVisualFx(t)) {
+                renderer.triggerMuzzleFlash(tipX, tipY, heroC, state.tick);
+                renderer.triggerImpactRing(sx, sy, state.tick, 22, heroC);
+                if (target?.isBoss && allowHeroBasicShake()) renderer.triggerShake(1.2, 0.08);
+              }
             }
             // 2026-05-20 — APEX SUPER-COMBO RANGED SIGNATURES. Each
             // ranged super combo gets a unique multi-layer firing

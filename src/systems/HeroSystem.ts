@@ -642,11 +642,14 @@ function executeSCIPIO_BRAND(state: GameStateShape, hero: Tower, params: any, ab
 function executeSPQR_DECREE(state: GameStateShape, hero: Tower, _params: any, ability: any, hooks?: HeroHooks): void {
   // Force every tower to fire one bonus attack. Implementation: zero out
   // each tower's attackCooldown so the next combat tick fires immediately.
+  const MAX_TOWER_RELAY_FX = 28;
   const towerPositions: Array<{ x: number; y: number }> = [];
   for (const t of state.towers.values()) {
     if (t.id === hero.id) continue;
     t.attackCooldown = 0;
-    towerPositions.push({ x: t.tileX * GRID.TILE + GRID.TILE / 2, y: t.tileY * GRID.TILE + GRID.TILE / 2 });
+    if (towerPositions.length < MAX_TOWER_RELAY_FX) {
+      towerPositions.push({ x: t.tileX * GRID.TILE + GRID.TILE / 2, y: t.tileY * GRID.TILE + GRID.TILE / 2 });
+    }
   }
   // Signature VFX: massive gold ring sweep from Caesar + a small gold
   // flare on every tower as the decree reaches them.
@@ -701,9 +704,11 @@ function executePROSCRIPTION(state: GameStateShape, hero: Tower, _params: any, a
   // Signature VFX: orange X-mark above every tower (the "proscription
   // list") + Sulla-origin pulsing ring. Each tower carries a brand for
   // the duration of the window.
+  const MAX_TOWER_RELAY_FX = 28;
   const towerPositions: Array<{ x: number; y: number }> = [];
   for (const t of state.towers.values()) {
     if (t.id === hero.id || t.pending) continue;
+    if (towerPositions.length >= MAX_TOWER_RELAY_FX) break;
     towerPositions.push({ x: t.tileX * GRID.TILE + GRID.TILE / 2, y: t.tileY * GRID.TILE + GRID.TILE / 2 });
   }
   fireAbilityFx(hero, hooks, state.tick, ability, '#ff9900', 1.2, { towers: towerPositions });
@@ -715,7 +720,12 @@ interface HeroTimedEvent { atTick: number; action: () => void; }
 
 function scheduleHeroTimedEvent(state: GameStateShape, atTick: number, action: () => void): void {
   (state as any).__heroTimedEvents = (state as any).__heroTimedEvents ?? [];
-  ((state as any).__heroTimedEvents as HeroTimedEvent[]).push({ atTick, action });
+  const queue = (state as any).__heroTimedEvents as HeroTimedEvent[];
+  const MAX_HERO_TIMED_EVENTS = 96;
+  if (queue.length >= MAX_HERO_TIMED_EVENTS) {
+    queue.splice(0, queue.length - MAX_HERO_TIMED_EVENTS + 1);
+  }
+  queue.push({ atTick, action });
 }
 
 function tickHeroTimedEvents(state: GameStateShape, _hooks?: HeroHooks): void {
@@ -728,7 +738,15 @@ function tickHeroTimedEvents(state: GameStateShape, _hooks?: HeroHooks): void {
     else remaining.push(ev);
   }
   (state as any).__heroTimedEvents = remaining;
-  for (const ev of ready) {
+  const MAX_READY_EVENTS_PER_TICK = 24;
+  const readyNow = ready.slice(0, MAX_READY_EVENTS_PER_TICK);
+  const deferred = ready.slice(MAX_READY_EVENTS_PER_TICK);
+  if (deferred.length > 0) {
+    const nextTick = state.tick + 0.016;
+    remaining.unshift(...deferred.map(ev => ({ ...ev, atTick: nextTick })));
+    (state as any).__heroTimedEvents = remaining;
+  }
+  for (const ev of readyNow) {
     try { ev.action(); } catch (err) { console.error('[hero] timed event failed:', err); }
   }
 }

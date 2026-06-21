@@ -40,9 +40,25 @@ function ac(): AudioContext {
   return ctx;
 }
 
+let sfxToneBucketMs = 0;
+let sfxToneBucketCount = 0;
+const MAX_SYNTH_SFX_TONES_PER_SECOND = 96;
+
+function allowSynthSfxTone(): boolean {
+  const nowMs = Math.floor(performance.now() / 1000) * 1000;
+  if (nowMs !== sfxToneBucketMs) {
+    sfxToneBucketMs = nowMs;
+    sfxToneBucketCount = 0;
+  }
+  if (sfxToneBucketCount >= MAX_SYNTH_SFX_TONES_PER_SECOND) return false;
+  sfxToneBucketCount += 1;
+  return true;
+}
+
 // `track` switches between sfx and music volume buses. Defaults to 'sfx'.
 function tone(freq: number, durationSec: number, type: OscillatorType = 'sine', gain = 0.18, sweepTo?: number, track: 'sfx' | 'music' = 'sfx') {
   if (muted) return;
+  if (track === 'sfx' && !allowSynthSfxTone()) return;
   const trackVol = track === 'music' ? musicVol : sfxVol;
   const finalGain = gain * masterVol * trackVol;
   if (finalGain <= 0.0001) return; // fully attenuated — skip Web Audio work
