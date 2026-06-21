@@ -6887,7 +6887,7 @@ async function boot() {
             state.hint = `★ BONUS BOSS DEFEATED! +${bonus}g${livesNote}${itemNote} ★`;
             renderer.triggerShake(5, 0.6);
             // Big gold sparkle
-            for (let i = 0; i < 28; i++) {
+            for (let i = 0; i < 10; i++) {
               const a = Math.random() * Math.PI * 2;
               const sp = 80 + Math.random() * 160;
               gore.particles.push({
@@ -6916,13 +6916,10 @@ async function boot() {
             // bossDeath sting — together they sell the moment).
             SFX.bossKilled();
             renderer.triggerShake(3, 0.4);    // §10.5 dramatic finish
-            // 2026-05 v6 polish: rain blood across the map when a boss
-            // falls. Champion / twin / ambush bosses get a lighter rain
-            // (~70 drops) while scheduled wave bosses (W5/10/15/20) get
-            // the full 130-drop downpour. Visceral payoff using the
-            // existing v_blood_* sprites — no shaders, no new assets.
+            // 2026-06 perf pass: boss kills still get a brief flourish, but
+            // not the old 70-130 falling sprites that spiked the render loop.
             const isScheduledBoss = (wavesData[state.wave - 1]?.type === 'B') && !e.isBonusBoss;
-            const drops = isScheduledBoss ? 130 : 70;
+            const drops = isScheduledBoss ? 32 : 18;
             const intensity = isScheduledBoss ? 1.15 : 0.9;
             renderer.triggerBloodRain(state.tick, drops, intensity);
             if (shouldOfferBossTrophy(state, e)) {
@@ -7017,7 +7014,7 @@ async function boot() {
               LEGENDARY: 0xff9933, UNIQUE: 0xffd34d
             };
             const c = COLOR[dropRarity] ?? 0xffd34d;
-            for (let i = 0; i < 22; i++) {
+            for (let i = 0; i < 8; i++) {
               const a = Math.random() * Math.PI * 2;
               const sp = 60 + Math.random() * 130;
               gore.particles.push({

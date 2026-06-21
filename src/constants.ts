@@ -138,9 +138,9 @@ export const RENDER_LIMITS = {
   // on .shift() at the caps + corpses accumulating with no eviction. The
   // caps below are tighter so the eviction churn is cheaper AND there's
   // less to redraw each frame. Corpse cap added (was unbounded mid-wave).
-  MAX_BLOOD_STAINS: 100,
-  MAX_PARTICLES: 250,
-  MAX_CORPSES: 40,
+  MAX_BLOOD_STAINS: 20,
+  MAX_PARTICLES: 120,
+  MAX_CORPSES: 8,
   MAX_FX_QUEUE: 24,
   PROJECTILE_POOL: 80
 } as const;

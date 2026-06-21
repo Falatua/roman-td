@@ -307,7 +307,7 @@ export function emitBoardDeathFx(
     SFX.bossKilled();
     renderer.triggerShake(3, 0.4);
     const isScheduledBoss = (wavesData as any)[state.wave - 1]?.type === 'B' && !e.isBonusBoss;
-    renderer.triggerBloodRain(state.tick, isScheduledBoss ? 130 : 70, isScheduledBoss ? 1.15 : 0.9);
+    renderer.triggerBloodRain(state.tick, isScheduledBoss ? 32 : 18, isScheduledBoss ? 1.15 : 0.9);
   } else if (!e.isFlyer && !(e as any).__reanimated) {
     const lastCoin = (state as any).__lastCoinSfxTick ?? -999;
     if (state.tick - lastCoin >= 0.09) {

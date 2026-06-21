@@ -48,6 +48,11 @@ export function createGoreState(): GoreState {
   return { particles: [], stains: [], corpses: [], numbers: [] };
 }
 
+function pushParticle(gore: GoreState, p: BloodParticle) {
+  if (gore.particles.length >= RENDER_LIMITS.MAX_PARTICLES) return;
+  gore.particles.push(p);
+}
+
 export function emitFloatingNumber(gore: GoreState, x: number, y: number, dmg: number, color = 0xffe6a8, isCrit = false) {
   // PERF: drop NEWEST when at cap instead of shifting the oldest.
   // .shift() on an 80-element array is O(80) per overflow push and
@@ -73,27 +78,27 @@ export function emitHitSplatter(gore: GoreState, x: number, y: number, big = fal
   // 2026-05-18 — non-boss count bumped 6 → 9 to make each kill feel
   // visibly weightier without overrunning the particle pool. Boss
   // splatter unchanged (already meaty at 14).
-  const n = big ? 14 : 9;
+  const n = big ? 8 : 3;
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2;
     const sp = 40 + Math.random() * (big ? 220 : 90);
-    gore.particles.push({
+    pushParticle(gore, {
       x, y,
       vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 30,
       life: 0.45 + Math.random() * 0.3,
       size: 2 + Math.random() * 2
     });
-    if (gore.particles.length > RENDER_LIMITS.MAX_PARTICLES) gore.particles.shift();
   }
 }
 
 // Yellow-white spark burst on impact (game feel §6.2 — distinct from red blood)
-// 2026-05-18 — spark count 4 → 6 so every hit pops more clearly.
+// 2026-06-21 perf pass — spark count 6 → 2. Every hit used to add a
+// burst, which became a frame-budget tax on dense late waves.
 export function emitHitSpark(gore: GoreState, x: number, y: number) {
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 2; i++) {
     const a = Math.random() * Math.PI * 2;
     const sp = 80 + Math.random() * 100;
-    gore.particles.push({
+    pushParticle(gore, {
       x, y,
       vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
       life: 0.18 + Math.random() * 0.10,
@@ -107,19 +112,19 @@ export function emitHitSpark(gore: GoreState, x: number, y: number) {
 // Different damage types emit different colored particles for at-a-glance readability.
 export function emitTypedImpact(gore: GoreState, x: number, y: number, damageType: number) {
   let color = 0xffe85a;
-  let count = 4;
+  let count = 2;
   let speed = 90;
   let life = 0.25;
   switch (damageType) {
-    case 2: color = 0xb88a4a; count = 6; speed = 130; life = 0.3; break;  // SIEGE: brown debris
-    case 3: color = 0xff7733; count = 8; speed = 80; life = 0.45; break;  // FIRE: orange embers
-    case 4: color = 0xfff4a8; count = 10; speed = 60; life = 0.55; break; // DIVINE: gold-white flash
+    case 2: color = 0xb88a4a; count = 2; speed = 130; life = 0.24; break;  // SIEGE: brown debris
+    case 3: color = 0xff7733; count = 3; speed = 80; life = 0.32; break;   // FIRE: orange embers
+    case 4: color = 0xfff4a8; count = 4; speed = 60; life = 0.38; break;   // DIVINE: gold-white flash
     default: return; // PHYS_MELEE / PHYS_RANGED already handled by hitSpark
   }
   for (let i = 0; i < count; i++) {
     const a = Math.random() * Math.PI * 2;
     const sp = speed + Math.random() * (speed * 0.5);
-    gore.particles.push({
+    pushParticle(gore, {
       x, y,
       vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - (damageType === 3 ? 30 : 0),
       life: life * (0.7 + Math.random() * 0.5),
@@ -131,28 +136,11 @@ export function emitTypedImpact(gore: GoreState, x: number, y: number, damageTyp
 
 // Status-specific impact (poison cloud / frost burst). Called when status applied this hit.
 export function emitStatusImpact(gore: GoreState, x: number, y: number, kind: string) {
-  const SPEC: Record<string, { color: number; count: number; sp: number; life: number }> = {
-    POISON: { color: 0x33cc33, count: 8, sp: 50, life: 0.6 },
-    BLEED:  { color: 0xaa1f1f, count: 7, sp: 65, life: 0.45 },
-    FREEZE: { color: 0xddeeff, count: 8, sp: 100, life: 0.4 },
-    BURN:   { color: 0xff5522, count: 6, sp: 90, life: 0.45 },
-    HELLFIRE: { color: 0xff3030, count: 10, sp: 110, life: 0.5 }
-  };
-  const s = SPEC[kind]; if (!s) return;
-  for (let i = 0; i < s.count; i++) {
-    const a = Math.random() * Math.PI * 2;
-    const sp = s.sp + Math.random() * (s.sp * 0.4);
-    gore.particles.push({
-      x, y,
-      vx: Math.cos(a) * sp * 0.6, vy: Math.sin(a) * sp * 0.6 - 20,
-      life: s.life * (0.7 + Math.random() * 0.5),
-      size: 1.5 + Math.random() * 1.5,
-      color: s.color
-    });
-  }
+  void gore; void x; void y; void kind;
 }
 
 export function emitDeathSplatter(gore: GoreState, e: Enemy, tick: number) {
+  if (!e.isBoss) return;
   emitHitSplatter(gore, e.x, e.y, e.isBoss);
   // permanent stain decal
   const intensity = (Math.min(4, 1 + Math.floor((e.maxHp / 100) * (e.isBoss ? 4 : 1)))) as 1 | 2 | 3 | 4;

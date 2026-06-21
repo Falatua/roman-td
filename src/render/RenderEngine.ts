@@ -2129,6 +2129,7 @@ export class RenderEngine {
   // randomly across them for visual variety. Visceral payoff that reads
   // immediately on every boss kill without affecting any combat path.
   triggerBloodRain(tick: number, dropCount = 110, intensity = 1.0) {
+    dropCount = Math.min(dropCount, 32);
     const stainTextures = ['BLOOD_LIGHT', 'BLOOD_MEDIUM', 'BLOOD_HEAVY', 'BLOOD_SATURATED'];
     for (let i = 0; i < dropCount; i++) {
       const key = stainTextures[Math.floor(Math.random() * stainTextures.length)];
@@ -3649,50 +3650,9 @@ export class RenderEngine {
         entry.knockX = Math.cos(ang) * mag;
         entry.knockY = Math.sin(ang) * mag;
         entry.knockTimer = 0.18;
-        // Add a persistent wound on hit. Stuck arrows are damage decals
-        // (no blood) and always fire; the bloody slash-gash variant is
-        // gated by BLEED status — only enemies actively bleeding accrue
-        // visible red wounds on their sprite. Cap at 8 wounds total.
-        if (entry.wounds && (entry.woundCount ?? 0) < 8) {
-          const hasBleed = e.statusEffects.some((s: any) => s.kind === 'BLEED');
-          const radius = e.isBoss ? GRID.TILE * 0.7 : GRID.TILE * 0.4;
-          const wx = (Math.random() - 0.5) * radius;
-          const wy = (Math.random() - 0.5) * radius;
-          // Arrow (no-blood damage decal) chance bumped from 30% to 45%
-          // since the slash-gash now requires BLEED. Without this bump
-          // non-bleeding enemies would accumulate ZERO wounds, losing
-          // the "this guy has been shot a lot" visual altogether.
-          if (Math.random() < 0.45) {
-            entry.woundCount = (entry.woundCount ?? 0) + 1;
-            const arrowTex = tex(Math.random() < 0.5 ? 'PROJ_ARROW' : 'PROJ_PILUM');
-            if (arrowTex) {
-              const arrow = new Sprite(arrowTex);
-              arrow.anchor.set(0.5);
-              arrow.width = e.isBoss ? 18 : 12;
-              arrow.height = e.isBoss ? 18 : 12;
-              arrow.x = wx; arrow.y = wy;
-              arrow.rotation = Math.random() * Math.PI * 2;
-              arrow.alpha = 0.85;
-              entry.wounds.addChild(arrow);
-            }
-          } else if (hasBleed) {
-            // Slash gash — only when the target is bleeding. Crimson
-            // line + dark scab + blood droplet.
-            entry.woundCount = (entry.woundCount ?? 0) + 1;
-            const w = new Graphics();
-            const len = (e.isBoss ? 9 : 6) + Math.random() * 4;
-            const angle = Math.random() * Math.PI * 2;
-            const dx = Math.cos(angle) * len * 0.5;
-            const dy = Math.sin(angle) * len * 0.5;
-            w.lineStyle(2.5, 0x440505, 1).moveTo(wx - dx, wy - dy).lineTo(wx + dx, wy + dy);
-            w.lineStyle(1.5, 0xc81818, 1).moveTo(wx - dx * 0.85, wy - dy * 0.85).lineTo(wx + dx * 0.85, wy + dy * 0.85);
-            w.lineStyle(0);
-            // Small blood droplet near the cut
-            w.beginFill(0x9a1010, 0.85).drawCircle(wx + dx * 0.7, wy + dy * 0.7, 1.5).endFill();
-            entry.wounds.addChild(w);
-          }
-          // Non-bleeding non-arrow path: no wound this frame. Quiet.
-        }
+        // PERF: persistent wound/arrow decals were removed. The sprite hit
+        // flash + knockback jolt still communicates impact, without adding
+        // extra display children that ride along with every living enemy.
       }
       // Position wound overlay on the enemy
       if (entry.wounds) {
@@ -3797,18 +3757,14 @@ export class RenderEngine {
       if ((entry as any).tag) {
         (entry as any).tag.visible = false;
       }
-      // Status effects — much louder visualization than before:
-      //   1) bright outline ring around the enemy (color of dominant status, pulsing)
-      //   2) row of larger colored badges above the HP bar with single-letter glyphs
-      //   3) faint colored tint on the enemy sprite itself
+      // Status effects: tint-only in the hot render loop. The old overhead
+      // badge row rebuilt Graphics/Sprites for every statused enemy every
+      // frame, which felt laggy on dense waves. Gameplay, HP bars, Codex,
+      // and inspect panels still expose the exact status details.
       const STATUS_COLOR: Record<string, number> = {
         SLOW: 0x66ccff, POISON: 0x33cc33, BLEED: 0xaa1f1f, FREEZE: 0xddeeff, BURN: 0xff7733,
         ARMOR_SHRED: 0xb88a4a, STUN: 0xffd34d, HELLFIRE: 0xff5533, FEAR: 0xcccccc,
         KNOCKBACK: 0xffaa55, MARK: 0xff66cc
-      };
-      const STATUS_GLYPH: Record<string, string> = {
-        SLOW: 'S', POISON: 'P', BLEED: 'B', FREEZE: '❄', BURN: '🔥',
-        ARMOR_SHRED: 'A', STUN: '⚡', HELLFIRE: 'H', FEAR: '!'
       };
       // (statusBar clear was moved up — see "STATUS BAR RESET" near
       // the top of the per-enemy block. Shield + mutation indicators
@@ -3816,68 +3772,15 @@ export class RenderEngine {
       // wiped out by this loop.)
       if (e.statusEffects.length > 0) {
         const dominant = e.statusEffects[0].kind;
-        const ringColor = STATUS_COLOR[dominant] ?? 0xffffff;
-        const pulseT = 0.55 + 0.35 * Math.sin(state.tick * 5);
-        const ringG = new Graphics();
-        const ringR = (e.isBoss ? GRID.TILE * 0.85 : GRID.TILE * 0.5);
-        ringG.lineStyle(2.5, ringColor, pulseT);
-        ringG.drawCircle(entry.displayX, entry.displayY, ringR);
-        // soft glow inner
-        ringG.lineStyle(5, ringColor, pulseT * 0.25);
-        ringG.drawCircle(entry.displayX, entry.displayY, ringR * 0.95);
-        entry.statusBar.addChild(ringG);
-        // tint sprite slightly
-        const r = ((ringColor >> 16) & 0xff), g = ((ringColor >> 8) & 0xff), b = (ringColor & 0xff);
-        const tintBlend = 0.35;
+        const statusColor = STATUS_COLOR[dominant] ?? 0xffffff;
+        const r = ((statusColor >> 16) & 0xff), g = ((statusColor >> 8) & 0xff), b = (statusColor & 0xff);
+        const tintBlend = e.isBoss ? 0.22 : 0.32;
         const orig = (entry as any).baseSpriteTint ?? 0xffffff;
         const oR = ((orig >> 16) & 0xff), oG = ((orig >> 8) & 0xff), oB = (orig & 0xff);
         const tR = Math.round(oR * (1 - tintBlend) + r * tintBlend);
         const tG = Math.round(oG * (1 - tintBlend) + g * tintBlend);
         const tB = Math.round(oB * (1 - tintBlend) + b * tintBlend);
         entry.sp.tint = (tR << 16) | (tG << 8) | tB;
-      }
-      // Real status sprites (s_freeze.png, s_burn.png, s_poison.png, etc.) above
-      // each affected enemy — large enough to read mid-wave, with a dark backing
-      // for contrast and a gentle bob.
-      {
-        const STATUS_TEX: Record<string, string> = {
-          SLOW: 'S_SLOW', POISON: 'S_POISON', BLEED: 'S_POISON', FREEZE: 'S_FREEZE',
-          BURN: 'S_BURN', ARMOR_SHRED: 'S_SHRED', STUN: 'S_STUN',
-          HELLFIRE: 'S_HELLFIRE', FEAR: 'S_FEAR',
-          KNOCKBACK: 'MB_KNOCKBACK',
-          MARK: 'MB_MARK'
-        };
-        const badgeW = 18;
-        const yOff = (e.isBoss ? GRID.TILE * 0.95 : GRID.TILE * 0.6) + 18;
-        for (let si = 0; si < e.statusEffects.length; si++) {
-          const s = e.statusEffects[si];
-          const xOff = (si - (e.statusEffects.length - 1) / 2) * (badgeW + 3);
-          const cx = entry.displayX + xOff;
-          const cy = entry.displayY - yOff + Math.sin(state.tick * 3 + si) * 1.5;
-          const sprKey = STATUS_TEX[s.kind];
-          const sprTex = sprKey ? tex(sprKey) : null;
-          // Dark circular backing for contrast
-          const back = new Graphics();
-          back.beginFill(0x000000, 0.65).drawCircle(cx, cy, badgeW / 2 + 1).endFill();
-          entry.statusBar.addChild(back);
-          if (sprTex) {
-            const sp = new Sprite(sprTex);
-            sp.anchor.set(0.5);
-            sp.width = badgeW;
-            sp.height = badgeW;
-            sp.x = cx; sp.y = cy;
-            // BLEED reuses the poison sprite — tint it red so the player can
-            // tell bleed from poison at a glance.
-            if (s.kind === 'BLEED') sp.tint = 0xff5555;
-            entry.statusBar.addChild(sp);
-          } else {
-            // Fallback colored dot if a status has no sprite mapping
-            const color = STATUS_COLOR[s.kind] ?? 0xffffff;
-            const dotG = new Graphics();
-            dotG.beginFill(color, 1).drawCircle(cx, cy, badgeW / 2 - 1).endFill();
-            entry.statusBar.addChild(dotG);
-          }
-        }
       }
     }
     for (const [id, entry] of this.enemySprites) {
@@ -3904,27 +3807,7 @@ export class RenderEngine {
   // scales with how hurt they are so a near-death bleeding enemy gushes
   // more than one at 50% HP.
   emitBloodDripsForWounded(state: GameStateShape, gore: any, tick: number) {
-    for (const e of state.enemies.values()) {
-      const hasBleed = e.statusEffects.some((s: any) => s.kind === 'BLEED');
-      if (!hasBleed) continue;             // bleed-only gate
-      const hpFrac = e.hp / e.maxHp;
-      const entry = this.enemySprites.get(e.id);
-      if (!entry) continue;
-      // Drip rate scales with how hurt the enemy is (more frequent when near death)
-      const dripInterval = 0.10 + Math.max(0, hpFrac) * 0.45;
-      if ((entry.nextDripTick ?? 0) <= tick) {
-        entry.nextDripTick = tick + dripInterval;
-        gore.particles.push({
-          x: e.x + (Math.random() - 0.5) * 6,
-          y: e.y + 4,
-          vx: (Math.random() - 0.5) * 18,
-          vy: 30 + Math.random() * 40,
-          life: 0.55 + Math.random() * 0.35,
-          size: 1.5 + Math.random() * 1.0,
-          color: 0xaa1010
-        });
-      }
-    }
+    void state; void gore; void tick;
   }
 
   drawSelectedRange(state: GameStateShape) {

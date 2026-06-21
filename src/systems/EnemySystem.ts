@@ -16,7 +16,7 @@
 //      - Fire onLeak / onDeath callbacks for the game-loop to handle.
 
 import { Enemy, EnemyType, EnemyFaction, StatusEffectKind } from '../types';
-import { GRID } from '../constants';
+import { GRID, RENDER_LIMITS } from '../constants';
 import { GameStateShape, isWaveModifierActive } from '../GameState';
 import enemiesData from '../data/enemies.json';
 import waypointsData from '../data/waypoints.json';
@@ -1477,6 +1477,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
             for (let i = 0; i < count; i++) {
               const angle = Math.PI + (Math.random() - 0.5) * 1.4;        // mostly behind
               const sp = 20 + Math.random() * 30;
+              if (gore.particles.length >= RENDER_LIMITS.MAX_PARTICLES) continue;
               gore.particles.push({
                 x: e.x + (Math.random() - 0.5) * 6,
                 y: e.y + 6 + Math.random() * 3,
