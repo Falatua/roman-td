@@ -5214,19 +5214,36 @@ export class RenderEngine {
     if (!profile) return;
     const intensity = state.weatherIntensity ?? 1;
     const W = GRID.CANVAS_W, H = GRID.CANVAS_H;
+    const reduceWeatherFx = (typeof window !== 'undefined' && (
+        !!(window as any).__reduceDecor
+        || !!(window as any).__reduceMotion
+      ))
+      || (typeof document !== 'undefined' && (
+        document.documentElement.classList.contains('reduce-decor')
+        || document.documentElement.classList.contains('reduce-motion-opt-in')
+      ));
 
     // Tint vignette
-    wg.beginFill(profile.color, profile.density * 0.18 * intensity).drawRect(0, 0, W, H).endFill();
+    wg.beginFill(profile.color, profile.density * 0.10 * intensity).drawRect(0, 0, W, H).endFill();
+
+    if (reduceWeatherFx) {
+      this.weatherParticles = [];
+      for (const sp of this.weatherSpritePool) sp.visible = false;
+      return;
+    }
 
     // Try to use the real Higgsfield weather sprite for this faction.
     const wxKey = this.weatherSpriteFor(key);
     const wxTex = wxKey ? tex(wxKey) : null;
 
-    // Spawn particles up to a target count for this profile
-    const targetCount = Math.floor(80 * profile.density * intensity);
+    // Spawn particles up to a modest target count. Older builds used dozens of
+    // translucent weather sprites over the entire board every frame; Carthage's
+    // sandstorm around W9/W10 made that overdraw visible as lag on weaker GPUs.
+    const targetCount = Math.min(14, Math.max(3, Math.floor(26 * profile.density * intensity)));
     while (this.weatherParticles.length < targetCount) {
       this.weatherParticles.push(this.spawnWeatherParticle(profile));
     }
+    while (this.weatherParticles.length > targetCount) this.weatherParticles.pop();
 
     // Ensure pool has enough sprites
     while (this.weatherSpritePool.length < this.weatherParticles.length) {

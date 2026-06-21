@@ -248,7 +248,7 @@ export function showSettingsPanel(parent: HTMLElement) {
 
     const note = document.createElement('div');
     note.style.cssText = `font-size:10px;color:#aa9a4a;letter-spacing:1px;line-height:1.5;margin-top:10px;text-align:center;font-style:italic`;
-    note.innerHTML = `Reduce motion disables card hover scaling, banner pulses, and ambient animation.<br/>Reduce decoration thins the prop layer for older / low-end devices.`;
+    note.innerHTML = `Reduce motion disables card hover scaling, banner pulses, ambient animation, and weather clouds.<br/>Reduce decoration thins the prop layer and weather clouds for older / low-end devices.`;
     body.appendChild(note);
   }
 
