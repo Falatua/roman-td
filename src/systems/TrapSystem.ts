@@ -6,8 +6,8 @@
 // once, applies its effect to a small AoE, then is removed. Reuses the
 // burn-patch ground-hazard model + the exported pushStatus status system.
 //
-// Per design: traps do NOT spawn damage-number floaters (clean board), they
-// are drawn bright + pulsing (RenderEngine.drawTraps), and some specialise vs
+// Traps DO pop a damage number when they hit (via the onDamage callback), are
+// drawn bright + pulsing (RenderEngine.drawTraps), and some specialise vs
 // bosses / flyers.
 import { GameStateShape } from '../GameState';
 import { GRID } from '../constants';
@@ -123,7 +123,12 @@ export function placeTrap(state: GameStateShape, id: string, col: number, row: n
 // Per-frame: detect enemies on traps, fire the effect, remove spent traps.
 // Returns the world positions + colors of traps that fired this tick so the
 // renderer can flash an impact ring (no damage-number floaters by design).
-export function tickTraps(state: GameStateShape, enemies: any[], _dt: number): Array<{ x: number; y: number; color: number; radius: number }> {
+export function tickTraps(
+  state: GameStateShape,
+  enemies: any[],
+  _dt: number,
+  onDamage?: (x: number, y: number, dmg: number, color: number) => void,
+): Array<{ x: number; y: number; color: number; radius: number }> {
   const fired: Array<{ x: number; y: number; color: number; radius: number }> = [];
   const traps = state.placedTraps;
   if (!traps || traps.length === 0) return fired;
@@ -152,7 +157,8 @@ export function tickTraps(state: GameStateShape, enemies: any[], _dt: number): A
       if (def.damage) {
         let dmg = def.damage;
         if (def.bossMult && e.isBoss) dmg *= def.bossMult;
-        e.hp -= dmg;                                  // direct, no floater
+        e.hp -= dmg;
+        onDamage?.(e.x, e.y, dmg, def.color);          // show the damage-number popup
       }
       if (def.effect === 'POISON' && def.dotDuration) pushStatus(e, StatusEffectKind.POISON, def.dotDuration, def.dotMag ?? 0.05, 3);
       if (def.effect === 'BURN' && def.dotDuration)   pushStatus(e, StatusEffectKind.BURN, def.dotDuration, def.dotMag ?? 0.05, 3);
