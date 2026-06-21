@@ -1,9 +1,10 @@
 // TrapSystem — consumable, purchasable ground traps (2026 v2).
 //
-// Flow: buy from the shop/Mercator into state.trapInventory; select one
-// (state.selectedTrapType); click a tile to place it (consumes 1, pushes a
+// Flow: buy from the shop/Mercator into state.trapInventory; arm one from the
+// inventory UI (state.selectedTrapType); click a tile to place it (consumes 1, pushes a
 // placedTraps entry); when an enemy comes within trigger range the trap fires
-// once, applies its effect to a small AoE, then is removed. Reuses the
+// once, applies its effect to a small AoE, then is removed. Unfired deployed
+// traps are also removed at wave end. Reuses the
 // burn-patch ground-hazard model + the exported pushStatus status system.
 //
 // Traps DO pop a damage number when they hit (via the onDamage callback), are
@@ -108,6 +109,14 @@ export function buyTraps(state: GameStateShape, id: string, qty: number): number
   return cost;
 }
 
+// Arm a trap from inventory so the next empty map clicks place that trap one
+// at a time. Buying traps deliberately does not arm them.
+export function armTrapFromInventory(state: GameStateShape, id: string): boolean {
+  if (!TRAP_DEFS[id] || trapOwned(state, id) <= 0) return false;
+  state.selectedTrapType = id;
+  return true;
+}
+
 // Consume 1 from inventory and drop a placed trap at a tile. Returns false if
 // none owned. Traps do NOT block the path (they are an overlay entity).
 export function placeTrap(state: GameStateShape, id: string, col: number, row: number): boolean {
@@ -127,6 +136,14 @@ export function placeTrap(state: GameStateShape, id: string, col: number, row: n
     pulse: def.pulse,
   });
   return true;
+}
+
+// Deployed traps are tactical commitments for the current wave only. Stocked
+// traps remain in inventory, but anything placed and not triggered expires.
+export function clearPlacedTrapsForWaveEnd(state: GameStateShape): number {
+  const count = state.placedTraps?.length ?? 0;
+  if (count > 0) state.placedTraps = [];
+  return count;
 }
 
 // Per-frame: detect enemies on traps, fire the effect, remove spent traps.

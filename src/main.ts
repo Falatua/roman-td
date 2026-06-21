@@ -9,7 +9,7 @@ import { createGameState, isWaveModifierActive } from './GameState';
 import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
 import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards } from './systems/EnemySystem';
-import { tickTraps, placeTrap, trapOwned, TRAP_DEFS } from './systems/TrapSystem';
+import { tickTraps, placeTrap, trapOwned, TRAP_DEFS, clearPlacedTrapsForWaveEnd } from './systems/TrapSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } from './systems/WaveManager';
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
@@ -7127,6 +7127,7 @@ async function boot() {
       tickGore(gore, dt);
       checkWaveEnd(state, (gold) => {
         earnGold(state, gold);
+        clearPlacedTrapsForWaveEnd(state);
         // 2026-05 v11: user-supplied wave-survived bumper SFX. Fires the
         // moment a wave's spawn queue empties + no live enemies remain.
         // VICTORY (W20 clear) overrides phase below to GamePhase.VICTORY

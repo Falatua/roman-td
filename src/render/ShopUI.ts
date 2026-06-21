@@ -1,5 +1,5 @@
 import { ShopState, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds } from '../systems/MerchantSystem';
-import { TRAP_DEFS, TRAP_IDS, buyTraps, trapPrice } from '../systems/TrapSystem';
+import { TRAP_DEFS, TRAP_IDS, armTrapFromInventory, buyTraps, trapPrice } from '../systems/TrapSystem';
 import { GameStateShape } from '../GameState';
 import { INVENTORY_SIZE, ECONOMY } from '../constants';
 import { SFX } from './AudioManager';
@@ -420,11 +420,11 @@ function renderMercatorShop(
     const trapSection = document.createElement('div');
     const trapTitle = document.createElement('div');
     trapTitle.className = 'merc-section-title';
-    trapTitle.innerHTML = `<span>☠ CONSUMABLE TRAPS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">buy → SELECT → click the map · one-shot</span>`;
+    trapTitle.innerHTML = `<span>☠ CONSUMABLE TRAPS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">buy → inventory → arm → place · wave-only</span>`;
     trapSection.appendChild(trapTitle);
     const tNote = document.createElement('div');
     tNote.style.cssText = `font-size:9.5px;color:#aa9a4a;line-height:1.35;margin:2px 0 8px;font-style:italic`;
-    tNote.innerHTML = `Stockpile traps and lay them along the path. Each fires once, then is spent. <b style="color:#ffcc44">Ballista Snare</b> shreds bosses; <b style="color:#88ddff">Sky Net</b> is the only trap that catches fliers.`;
+    tNote.innerHTML = `Stockpile traps, then open inventory and click one to arm it. Deployed traps expire when the wave ends. <b style="color:#ffcc44">Ballista Snare</b> shreds bosses; <b style="color:#88ddff">Sky Net</b> is the only trap that catches fliers.`;
     trapSection.appendChild(tNote);
     const tg = document.createElement('div');
     tg.style.cssText = `display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;`;
@@ -455,8 +455,7 @@ function renderMercatorShop(
         b.onclick = () => {
           const spent = buyTraps(state, tid, n);
           if (spent <= 0) { (window as any).__showInsufficientGoldToast?.(price * n); return; }
-          state.selectedTrapType = tid;
-          state.hint = `Bought ${n}x ${def.name}. Click an empty tile near the path to place it.`;
+          state.hint = `Bought ${n}x ${def.name}. Open inventory and click it to arm placement.`;
           SFX.buy();
           refresh();
         };
@@ -467,8 +466,7 @@ function renderMercatorShop(
       card.onclick = (ev) => {
         if ((ev.target as HTMLElement).tagName === 'BUTTON') return;
         if (((state.trapInventory ?? {})[tid] ?? 0) > 0) {
-          state.selectedTrapType = tid;
-          state.hint = `${def.name} selected — click an empty tile near the path to place it.`;
+          state.hint = `Open inventory and click ${def.name} to arm it.`;
           refresh();
         }
       };
@@ -1070,6 +1068,50 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
 
   // Selection state: which slot is currently selected.
   let selectedIdx = -1;
+
+  const ownedTrapIds = TRAP_IDS.filter(tid => ((state.trapInventory ?? {})[tid] ?? 0) > 0);
+  if (ownedTrapIds.length > 0) {
+    const trapShelf = document.createElement('div');
+    trapShelf.style.cssText = `margin-bottom:12px;padding:10px;background:#100c09;border:2px solid #4a3a24;`;
+    const trapHead = document.createElement('div');
+    trapHead.style.cssText = `display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;`;
+    trapHead.innerHTML = `
+      <div style="font-size:12px;color:#d4af37;font-weight:bold;letter-spacing:2px">TRAPS</div>
+      <div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;text-align:right">CLICK TO ARM · DEPLOYED TRAPS EXPIRE AT WAVE END</div>
+    `;
+    trapShelf.appendChild(trapHead);
+    const trapGrid = document.createElement('div');
+    trapGrid.style.cssText = `display:grid;grid-template-columns:repeat(auto-fit,minmax(126px,1fr));gap:8px;`;
+    for (const tid of ownedTrapIds) {
+      const def = TRAP_DEFS[tid];
+      const owned = (state.trapInventory ?? {})[tid] ?? 0;
+      const selected = state.selectedTrapType === tid;
+      const colHex = '#' + def.color.toString(16).padStart(6, '0');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.style.cssText = `min-height:58px;background:${selected ? 'linear-gradient(180deg,#3a2a14,#1a1208)' : 'linear-gradient(180deg,#1a1410,#100c09)'};border:${selected ? '3px solid #ffd34d' : `2px solid ${colHex}`};color:#e8d6a8;padding:6px;display:flex;align-items:center;gap:8px;cursor:pointer;font-family:inherit;text-align:left;box-shadow:${selected ? '0 0 14px rgba(255,211,77,0.45)' : 'inset 0 0 10px #000'};`;
+      const src = imgSrcFromTex(def.spriteKey);
+      const icon = src
+        ? `<img src="${src}" style="width:36px;height:36px;image-rendering:pixelated;flex-shrink:0"/>`
+        : `<div style="width:36px;height:36px;border:1px solid ${colHex};flex-shrink:0"></div>`;
+      btn.innerHTML = `
+        ${icon}
+        <div style="min-width:0;line-height:1.2">
+          <div style="font-size:11px;color:#fff8e0;font-weight:bold;white-space:normal">${def.name}</div>
+          <div style="font-size:10px;color:#88ff88;margin-top:2px">x${owned}</div>
+        </div>
+      `;
+      btn.title = `${def.name}\n${def.blurb}\nClick to arm`;
+      btn.onclick = () => {
+        if (!armTrapFromInventory(state, tid)) return;
+        state.hint = `${def.name} armed. Click empty tiles to place one at a time.`;
+        hooks.onClose();
+      };
+      trapGrid.appendChild(btn);
+    }
+    trapShelf.appendChild(trapGrid);
+    panel.appendChild(trapShelf);
+  }
 
   // 2026-05 v11 (B4 Inventory sort + filter): controls row above the grid.
   // Sort dropdown reorders slots via CSS `order`; family chips hide
