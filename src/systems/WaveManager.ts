@@ -22,6 +22,7 @@ import { generateEndlessWave, EndlessWaveConfig, endlessClearScore } from './End
 import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, clearSurpriseEventsForWaveEnd, spawnAtSurpriseEventPoint, notifySurpriseEventWaveEnded } from './SurpriseEvents';
 import { injectCampaignCommanders } from './CommanderSystem';
 import { campaignRelicWaveGoldMult } from './CampaignRelicSystem';
+import { prepareHeroAbilitiesForWave } from './HeroSystem';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
 const FACTION_BOSS: Record<string, string> = {
@@ -237,6 +238,7 @@ export function startWave(state: GameStateShape) {
   (state as any).carriedEnemiesThisWave = state.enemies.size;
   (state as any).totalEnemiesThisWave = state.spawnQueue.length + state.enemies.size;
   state.phase = GamePhase.WAVE_PHASE;
+  prepareHeroAbilitiesForWave(state);
   // Set faction weather (boss waves intensify by 50%).
   state.weatherKey = w.faction;
   state.weatherIntensity = w.type === 'B' ? 1.5 : 1.0;
@@ -533,6 +535,7 @@ function runEndlessSpawnQueue(state: GameStateShape, cfg: EndlessWaveConfig) {
   // Stash the cfg so spawnEnemy / pre-wave brief / scoring can read it.
   (state as any).__endlessWaveCfg = cfg;
   state.phase = GamePhase.WAVE_PHASE;
+  prepareHeroAbilitiesForWave(state);
   // 2026-05-20 — ENDLESS MODIFIER ROLL. The campaign's modifier RNG was
   // dormant (intentionally — campaign is deterministic). Endless now
   // activates it with stacking: 1 modifier at E1-3, 2 at E4-7, 3 at

@@ -32,7 +32,7 @@ import { pickTarget, tickCombat } from '../src/systems/CombatResolver';
 import { createGameState, GameStateShape } from '../src/GameState';
 import { DamageType, Enemy, EnemyFaction, EnemyType, GamePhase, StatusEffectKind, TowerType } from '../src/types';
 import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
-import { previewSpawnHp } from '../src/systems/WaveManager';
+import { previewSpawnHp, startWave } from '../src/systems/WaveManager';
 import { buildMercatorTowerOffers } from '../src/systems/MerchantSystem';
 import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity';
 import { heroAuraScaleForTier } from '../src/systems/HeroScaling';
@@ -372,10 +372,55 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     tickHeroAbilities(s, { triggerHeroAbilityFx: () => { fxCount++; } });
     expect(fxCount).toBe(0);
 
-    s.tick = 20;
-    tickHeroAbilities(s, { triggerHeroAbilityFx: () => { fxCount++; } });
+    for (let i = 0; i < 20 && fxCount === 0; i++) {
+      s.tick = 20 + i * 0.2;
+      tickHeroAbilities(s, { triggerHeroAbilityFx: () => { fxCount++; } });
+    }
     expect(fxCount).toBeGreaterThan(0);
     expect(fxCount).toBeLessThan(12);
+  });
+
+  it('re-staggers overdue hero abilities at every wave start after build time expires cooldowns', () => {
+    const s = freshState();
+    s.phase = GamePhase.BUILD_PHASE;
+    s.tick = 100;
+    s.activeHeroId = 'HERO_MARIUS';
+    s.heroTier = 4;
+
+    const starter = createTower(TowerType.HERO_MARIUS, 5, 6, 6, 8);
+    const champions = [
+      TowerType.CHAMPION_AGRIPPA,
+      TowerType.CHAMPION_AGRICOLA,
+      TowerType.CHAMPION_SCIPIO,
+      TowerType.CHAMPION_CAESAR,
+      TowerType.CHAMPION_SULLA
+    ].map((type, idx) => createTower(type, 5, 8 + idx, 6, 8));
+    s.activeHeroTowerId = starter.id;
+
+    for (const hero of [starter, ...champions]) {
+      const heroId = heroIdForTowerType(String(hero.type))!;
+      const def: any = (HERO_DEFS as any)[heroId];
+      hero.__heroCooldowns = Object.fromEntries(def.abilities.map((ability: any) => [ability.id, 30]));
+      (hero as any).__championAbilityWakeupDone = true;
+      s.towers.set(hero.id, hero);
+    }
+    // Keep a genuinely active cooldown and discard unfinished prior-wave throws.
+    starter.__heroCooldowns!.MARIAN_FORMATION = 130;
+    (s as any).__heroTimedEvents = [{ atTick: 101, action: () => {} }];
+
+    startWave(s);
+
+    const scheduled = [starter, ...champions].flatMap(hero => Object.values(hero.__heroCooldowns ?? {}));
+    const openingCasts = scheduled.filter(tick => tick > 100 && tick < 107);
+    expect(s.phase).toBe(GamePhase.WAVE_PHASE);
+    expect(starter.__heroCooldowns!.MARIAN_FORMATION).toBe(130);
+    expect(openingCasts.length).toBe(11);
+    expect(new Set(openingCasts).size).toBe(11);
+    expect((s as any).__heroTimedEvents).toEqual([]);
+
+    let fxCount = 0;
+    tickHeroAbilities(s, { triggerHeroAbilityFx: () => { fxCount++; } });
+    expect(fxCount).toBe(0);
   });
 
   it('starter plus five Mercator Champions coexist with abilities, passives, damage, and targeting intact', () => {
@@ -442,11 +487,36 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
       (hero as any).__championAbilityWakeupDone = true;
     }
 
+    const castIds: string[] = [];
     const fxIds: string[] = [];
-    tickHeroAbilities(s, { triggerHeroAbilityFx: (fx: any) => fxIds.push(fx.ability) });
+    const castsPerTick: number[] = [];
+    for (let i = 0; i < 80 && new Set(castIds).size < 12; i++) {
+      const before = castIds.length;
+      tickHeroAbilities(s, {
+        onAbilityCast: (abilityId: string) => castIds.push(abilityId),
+        triggerHeroAbilityFx: (fx: any) => fxIds.push(fx.ability)
+      });
+      castsPerTick.push(castIds.length - before);
+      s.tick += 0.1;
+    }
 
     expect(s.activeHeroId).toBe('HERO_MARIUS');
     expect(new Set([starter, ...champions].map(t => heroIdForTowerType(String(t.type))))).toEqual(new Set(HERO_POOL));
+    expect(Math.max(...castsPerTick)).toBe(1);
+    expect(castIds).toEqual(expect.arrayContaining([
+      'MARIAN_FORMATION',
+      'CAPITE_CENSI',
+      'PILUM_VOLLEY',
+      'NAVAL_BOMBARDMENT',
+      'EAGLE_SCOUT',
+      'FRONTIER_WALL',
+      'CORNU_CHARGE',
+      'SCIPIO_BRAND',
+      'SPQR_DECREE',
+      'PAX_ROMANA',
+      'FORTUNES_BOLT',
+      'PROSCRIPTION'
+    ]));
     expect(fxIds).toEqual(expect.arrayContaining([
       'MARIAN_FORMATION',
       'CAPITE_CENSI',

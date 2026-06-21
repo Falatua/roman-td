@@ -12,6 +12,7 @@
 //   - pickHero(state, heroId)          : commit selection + queue placement
 //   - awardHeroXp(state, isBoss)       : called from kill handler
 //   - getHeroTier(state)               : current tier 0..4
+//   - prepareHeroAbilitiesForWave(state): stagger ready casts at wave start
 //   - tickHeroAbilities(state, hooks)  : per-frame ability dispatcher
 //
 // Cooldown idiom: each ability stamps its next-fire tick onto the hero
@@ -47,6 +48,7 @@ const HERO_WAKEUP_ORDER: Record<string, number> = Object.fromEntries(
 // from the renderer + DOM. All hooks are optional — missing hooks
 // degrade gracefully (no VFX / no banner), system logic still runs.
 export interface HeroHooks {
+  onAbilityCast?: (abilityId: string) => void;
   triggerImpactRing?: (x: number, y: number, tick: number, maxR: number, color: number) => void;
   triggerShake?: (intensity: number, duration: number) => void;
   pushTierUpBanner?: (text: string) => void;
@@ -234,6 +236,8 @@ function updateHeroTier(state: GameStateShape, hooks?: HeroHooks): void {
 /** Per-frame ability dispatcher. Called once per WAVE_PHASE tick. */
 export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): void {
   if (state.phase !== GamePhase.WAVE_PHASE) return;
+  let castsThisTick = 0;
+  let deferredCasts = 0;
   for (const hero of state.towers.values()) {
     const heroId = heroIdForTowerType(String(hero.type));
     if (!heroId) continue;
@@ -262,14 +266,82 @@ export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): voi
       if (tier < ability.level) continue;
       const nextFire = hero.__heroCooldowns[ability.id] ?? 0;
       if (state.tick < nextFire) continue;
+      // Hero abilities are heavyweight, often touching every enemy/tower and
+      // spawning signature VFX. Cooldown reductions and long build phases can
+      // align several of them on one frame, so serialize collisions without
+      // dropping a cast. The short offsets are imperceptible in play.
+      if (castsThisTick >= 1) {
+        hero.__heroCooldowns[ability.id] = state.tick + 0.12 + deferredCasts * 0.08;
+        deferredCasts++;
+        continue;
+      }
       // Stamp BEFORE executing so a long-running executor can't double-fire.
       hero.__heroCooldowns[ability.id] = state.tick + (ability.cooldownSec ?? 60) * cdMult;
       dispatchAbility(state, hero, ability, hooks);
+      hooks?.onAbilityCast?.(ability.id);
+      castsThisTick++;
     }
   }
 
   // Drain timed events (Capite Censi per-throw damage events, etc.).
   tickHeroTimedEvents(state, hooks);
+}
+
+/**
+ * Re-arm overdue hero abilities at every wave boundary.
+ *
+ * The global game clock advances during build/shop time, so cooldowns that
+ * were safely spread during the previous wave can all become overdue before
+ * the next wave starts. Interleave those ready casts across the opening
+ * seconds while preserving any cooldown that is still genuinely in flight.
+ */
+export function prepareHeroAbilitiesForWave(state: GameStateShape): void {
+  (state as any).__heroTimedEvents = [];
+
+  const heroes: Array<{
+    hero: Tower;
+    heroId: HeroIdentityId;
+    abilities: any[];
+  }> = [];
+
+  for (const hero of state.towers.values()) {
+    if (hero.pending) continue;
+    const heroId = heroIdForTowerType(String(hero.type));
+    if (!heroId) continue;
+    const isStarterHero = hero.id === state.activeHeroTowerId && heroId === state.activeHeroId;
+    const isMercatorChampion = isMercatorChampionType(String(hero.type));
+    if (!isStarterHero && !isMercatorChampion) continue;
+
+    const def: any = (HERO_DEFS as any)[heroId];
+    const tier = isStarterHero ? getHeroTier(state) : 4;
+    const abilities = (def?.abilities ?? []).filter((ability: any) => tier >= ability.level);
+    if (abilities.length === 0) continue;
+    if (!hero.__heroCooldowns) hero.__heroCooldowns = {};
+    heroes.push({ hero, heroId, abilities });
+    if (isMercatorChampion) (hero as any).__championAbilityWakeupDone = true;
+  }
+
+  heroes.sort((a, b) => (HERO_WAKEUP_ORDER[a.heroId] ?? 0) - (HERO_WAKEUP_ORDER[b.heroId] ?? 0));
+
+  const ready: Array<{ hero: Tower; ability: any }> = [];
+  const maxAbilityCount = Math.max(0, ...heroes.map(entry => entry.abilities.length));
+  // Ability-slot-first ordering prevents one hero from launching both of its
+  // abilities back-to-back before the rest of the council gets a turn.
+  for (let abilityIdx = 0; abilityIdx < maxAbilityCount; abilityIdx++) {
+    for (const entry of heroes) {
+      const ability = entry.abilities[abilityIdx];
+      if (!ability?.id) continue;
+      if ((entry.hero.__heroCooldowns?.[ability.id] ?? 0) <= state.tick) {
+        ready.push({ hero: entry.hero, ability });
+      }
+    }
+  }
+
+  const FIRST_CAST_DELAY = 0.75;
+  const CAST_SPACING = 0.55;
+  ready.forEach(({ hero, ability }, idx) => {
+    hero.__heroCooldowns![ability.id] = state.tick + FIRST_CAST_DELAY + idx * CAST_SPACING;
+  });
 }
 
 function initializeChampionAbilityWakeup(hero: Tower, def: any, heroId: HeroIdentityId, tick: number): void {
