@@ -173,7 +173,7 @@ function rollTier(_wave: number): number {
   return 5;
 }
 
-// 2026 v2 Ch8 — the 6 Champions of Rome. Always stocked at Mercator (350g
+// 2026 v2 Ch8 — the 6 Champions of Rome. Always stocked at Mercator (500g
 // each) so the player can recruit them across visits and combine all six
 // into MARS VICTOR. They reuse the hero portraits in the shop + the hero
 // board sprites once placed.
@@ -181,7 +181,7 @@ export const CHAMPION_TYPES = [
   'CHAMPION_MARIUS', 'CHAMPION_AGRIPPA', 'CHAMPION_AGRICOLA',
   'CHAMPION_SCIPIO', 'CHAMPION_CAESAR', 'CHAMPION_SULLA'
 ];
-export const CHAMPION_PRICE = 350;
+export const CHAMPION_PRICE = 500;
 
 export interface MercatorTowerOfferOptions {
   activeHeroId?: string | null;
@@ -197,7 +197,7 @@ export function buildMercatorTowerOffers(wave: number, count = 5, options: Merca
   const excluded = new Set(options.excludeTypes ?? []);
   const activeHeroChampion = mercatorExcludedChampionForHero(options.activeHeroId);
   if (activeHeroChampion) excluded.add(activeHeroChampion);
-  // The 6 Champions always head the lineup at a flat 350g — the Mars Victor path.
+  // The 6 Champions always head the lineup at a flat 500g — the Mars Victor path.
   for (const ct of CHAMPION_TYPES) {
     if (!excluded.has(ct)) offers.push({ type: ct, tier: 5, price: CHAMPION_PRICE });
   }
@@ -227,7 +227,7 @@ function asRarity(s: string): Rarity { return s as Rarity; }
 // 20-WAVE CAMPAIGN: Mercator visits land on the wave BEFORE each scheduled
 // boss (W5/W10/W15/W20). Visits: W4, W9, W14, W19.
 // 2026 v2 — 30-wave campaign. Mercator now also visits in the late game so
-// the Champions of Rome (350g each, ~2100g for all six) are reachable before
+// the Champions of Rome (500g each, ~3000g for all six) are reachable before
 // the W24 Anubis King and the W30 Daemon finale.
 export const MERCATOR_WAVES = [4, 9, 14, 19, 23, 27];
 
@@ -375,7 +375,7 @@ const FORTUNA_APEX_BLOCKLIST = new Set([
   'LEGION_PRIME',
   'CONSULAR_FATEBINDER',
   'MARS_VICTOR',   // 2026 v2 Ch9 — DIVINE apex; recipe-only, never gambled/bought
-  // 2026 v2 Ch8 — Champions are a deliberate 350g Mercator buy, never gambled.
+  // 2026 v2 Ch8 — Champions are a deliberate 500g Mercator buy, never gambled.
   'CHAMPION_MARIUS', 'CHAMPION_AGRIPPA', 'CHAMPION_AGRICOLA',
   'CHAMPION_SCIPIO', 'CHAMPION_CAESAR', 'CHAMPION_SULLA'
 ]);

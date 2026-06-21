@@ -496,8 +496,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // The fused war-god aura: Caesar's global tempo + the legions' offense,
       // granted to EVERY tower on the board (the vs-boss + melee-vs-flyers
       // halves of the fusion fire in the damage / targeting passes below).
-      globalDmgBonus += 0.25;
-      globalSpeedMult *= 1.15;
+      globalDmgBonus += 0.35;
+      globalSpeedMult *= 1.20;
     }
     // JULIUS_CAESAR (2026-05 v6 audit fix): the +45% global damage aura
     // was only wired into the stat-breakdown UI, not the combat math.
@@ -1514,6 +1514,24 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           if (hc > 0 && hc % 5 === 0) {
             const novaR = 2.5 * GRID.TILE;
             const novaDmg = damage * 4;
+            for (const e of state.enemies.values()) {
+              if (e.hp <= 0) continue;
+              if (Math.hypot(e.x - target.x, e.y - target.y) > novaR) continue;
+              e.hp -= novaDmg;
+              e.hpFlashTimer = 0.20;
+              e.lastDamagedTick = state.tick;
+              hooks.onHit(t, e, novaDmg, resMod);
+              if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
+            }
+          }
+        }
+        // 2026 v2 — MARS VICTOR · TRIUMPH OF MARS: every 3rd hit a divine
+        // shockwave smites all enemies within 3.5 tiles for 3× damage.
+        if (t.type === TowerType.MARS_VICTOR) {
+          const hc = (t as any).__hitCount ?? 0;
+          if (hc > 0 && hc % 3 === 0) {
+            const novaR = 3.5 * GRID.TILE;
+            const novaDmg = damage * 3;
             for (const e of state.enemies.values()) {
               if (e.hp <= 0) continue;
               if (Math.hypot(e.x - target.x, e.y - target.y) > novaR) continue;

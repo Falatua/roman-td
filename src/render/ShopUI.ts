@@ -339,7 +339,7 @@ function renderMercatorShop(
     const towersSection = document.createElement('div');
     const towersTitle = document.createElement('div');
     towersTitle.className = 'merc-section-title';
-    towersTitle.innerHTML = `<span>★ TRAVELING ARMORY — CHAMPIONS & T5 TOWERS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">recruit all 6 Champions (350g) → MARS VICTOR · click empty tile to place</span>`;
+    towersTitle.innerHTML = `<span>★ TRAVELING ARMORY — CHAMPIONS & T5 TOWERS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">recruit all 6 Champions (500g) → MARS VICTOR · click empty tile to place</span>`;
     towersSection.appendChild(towersTitle);
     // 2026-05 v9 — disclaim apex super-combos are NOT in this pool.
     const towersNote = document.createElement('div');
