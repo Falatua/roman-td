@@ -9,6 +9,7 @@ import { createGameState, isWaveModifierActive } from './GameState';
 import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
 import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards } from './systems/EnemySystem';
+import { tickTraps, placeTrap, trapOwned, TRAP_DEFS } from './systems/TrapSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } from './systems/WaveManager';
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
@@ -5629,6 +5630,21 @@ async function boot() {
       }
     }
 
+    // 2026 v2 — TRAP placement takes precedence: when a trap is selected, the
+    // next empty-tile click drops it (consuming 1). Traps don't block the path.
+    {
+      const selTrap = state.selectedTrapType;
+      if (selTrap && trapOwned(state, selTrap) > 0 && tile === TileType.EMPTY) {
+        if (placeTrap(state, selTrap, col, row)) {
+          const left = trapOwned(state, selTrap);
+          state.hint = left > 0
+            ? `Placed ${TRAP_DEFS[selTrap].name}. ${left} left — click to drop more, or pick another trap.`
+            : `Placed your last ${TRAP_DEFS[selTrap].name}. Buy more from the shop.`;
+          if (left <= 0) state.selectedTrapType = null;
+          return;
+        }
+      }
+    }
     // SANDBOX: direct tower spawn. If the player picked a tower from
     // the dev panel, the sandbox-pending entry sits in __sandboxPendingTower
     // and the next empty-tile click drops it. No gold, no prospects,
@@ -6181,6 +6197,9 @@ async function boot() {
       tickHeroAbilities(state, heroSystemHooks);
       tickBurnPatches(state, dt);
       tickBossHazards(state, dt);
+      // 2026 v2 — consumable traps fire on contact, flash a ring (NO damage floaters).
+      { const __tfx = tickTraps(state, Array.from(state.enemies.values()), dt);
+        for (const f of __tfx) renderer.triggerImpactRing(f.x, f.y, state.tick, f.radius, f.color); }
       // 2026-05 v10 — BOSS LOW-HP CUE. Per-frame scan: if ANY boss on
       // the field drops below 25% HP and hasn't already triggered the
       // "FINISH HIM" sample this wave, fire it once. `__finishHimFired`
@@ -7424,6 +7443,7 @@ async function boot() {
     renderer.drawSelectedRange(state);
     renderer.drawSellStoneSelection(state, state.tick);
     renderer.drawBurnPatches(state, state.tick);
+    renderer.drawTraps(state, state.tick);
     // 2026-05-16 — Surprise event VFX (fires/urns/scars + screen tint).
     // Sits between burn patches and weather so the event tint sits over
     // the play area but under the weather overlay (rain still reads).

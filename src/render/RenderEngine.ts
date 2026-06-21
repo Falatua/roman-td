@@ -4526,6 +4526,34 @@ export class RenderEngine {
     }
   }
 
+  // 2026 v2 — placed consumable traps. Drawn bright + (mostly) pulsing so they
+  // are easy to spot, with a glow ring under each. Render info is stashed on
+  // the placed-trap entity so this needs no TrapSystem import.
+  private trapSprites: Sprite[] = [];
+  private trapGlowGfx?: Graphics;
+  drawTraps(state: GameStateShape, tick: number) {
+    const traps = (state as any).placedTraps as Array<{ x: number; y: number; color: number; spriteKey: string; pulse: boolean }> | undefined;
+    if (!this.trapGlowGfx) { this.trapGlowGfx = new Graphics(); this.layers.bg.addChild(this.trapGlowGfx); }
+    const glow = this.trapGlowGfx; glow.clear();
+    let idx = 0;
+    if (traps && traps.length > 0) {
+      for (const tr of traps) {
+        const p = tr.pulse ? (0.55 + 0.45 * Math.sin(tick * 4 + tr.x * 0.05 + tr.y * 0.05)) : 0.9;
+        // Bright glow disc + ring = easy to spot on the map.
+        glow.beginFill(tr.color, 0.22 * p).drawCircle(tr.x, tr.y, GRID.TILE * 0.95).endFill();
+        glow.lineStyle(2.5, tr.color, 0.75 * p); glow.drawCircle(tr.x, tr.y, GRID.TILE * 0.62); glow.lineStyle(0);
+        let sp = this.trapSprites[idx];
+        if (!sp) { sp = new Sprite(); sp.anchor.set(0.5); this.layers.bg.addChild(sp); this.trapSprites.push(sp); }
+        const tx = tex(tr.spriteKey);
+        if (tx) sp.texture = tx;
+        const sz = GRID.TILE * (tr.pulse ? (0.90 + 0.10 * Math.sin(tick * 4 + tr.x * 0.05)) : 0.95);
+        sp.x = tr.x; sp.y = tr.y; sp.width = sz; sp.height = sz; sp.visible = !!tx;
+        idx++;
+      }
+    }
+    for (let i = idx; i < this.trapSprites.length; i++) this.trapSprites[i].visible = false;
+  }
+
   // ─── SURPRISE EVENTS — fires, urns, screen tint (v2 polish) ─────────────
   // v2 changes per player feedback:
   //   • Fires actively animate: alternating FIRE_SMALL/FIRE_LARGE frames

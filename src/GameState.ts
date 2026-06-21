@@ -58,7 +58,7 @@ export interface GameStateShape {
   // 2026 v2 — consumable TRAPS (TrapSystem): owned counts per type, placed
   // traps on the map, and the trap currently selected for placement.
   trapInventory?: Record<string, number>;
-  placedTraps?: { id: string; type: string; x: number; y: number; col: number; row: number; born: number }[];
+  placedTraps?: { id: string; type: string; x: number; y: number; col: number; row: number; born: number; color: number; spriteKey: string; pulse: boolean }[];
   selectedTrapType?: string | null;
   flyerPath: { x: number; y: number }[];
   // Game-over flag for animation

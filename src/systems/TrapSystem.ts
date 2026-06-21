@@ -78,6 +78,9 @@ export interface PlacedTrap {
   x: number; y: number;
   col: number; row: number;
   born: number;          // state.tick when placed (pulse phase)
+  color: number;         // stashed from the def so the renderer needs no TrapSystem import
+  spriteKey: string;
+  pulse: boolean;
 }
 
 export function trapOwned(state: GameStateShape, id: string): number {
@@ -99,7 +102,8 @@ export function buyTraps(state: GameStateShape, id: string, qty: number): number
 // Consume 1 from inventory and drop a placed trap at a tile. Returns false if
 // none owned. Traps do NOT block the path (they are an overlay entity).
 export function placeTrap(state: GameStateShape, id: string, col: number, row: number): boolean {
-  if (trapOwned(state, id) <= 0) return false;
+  const def = TRAP_DEFS[id];
+  if (!def || trapOwned(state, id) <= 0) return false;
   state.trapInventory![id] -= 1;
   if (!state.placedTraps) state.placedTraps = [];
   state.placedTraps.push({
@@ -109,6 +113,9 @@ export function placeTrap(state: GameStateShape, id: string, col: number, row: n
     y: row * GRID.TILE + GRID.TILE / 2,
     col, row,
     born: state.tick,
+    color: def.color,
+    spriteKey: def.spriteKey,
+    pulse: def.pulse,
   });
   return true;
 }

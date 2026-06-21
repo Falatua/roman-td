@@ -1,4 +1,5 @@
 import { ShopState, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds } from '../systems/MerchantSystem';
+import { TRAP_DEFS, TRAP_IDS, buyTraps } from '../systems/TrapSystem';
 import { GameStateShape } from '../GameState';
 import { INVENTORY_SIZE, ECONOMY } from '../constants';
 import { SFX } from './AudioManager';
@@ -412,6 +413,68 @@ function renderMercatorShop(
     }
     towersSection.appendChild(tList);
     body.appendChild(towersSection);
+  }
+
+  // ─── CONSUMABLE TRAPS (shown at BOTH the gate shop and Mercator) ─────
+  {
+    const trapSection = document.createElement('div');
+    const trapTitle = document.createElement('div');
+    trapTitle.className = 'merc-section-title';
+    trapTitle.innerHTML = `<span>☠ CONSUMABLE TRAPS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">buy → SELECT → click the map · one-shot</span>`;
+    trapSection.appendChild(trapTitle);
+    const tNote = document.createElement('div');
+    tNote.style.cssText = `font-size:9.5px;color:#aa9a4a;line-height:1.35;margin:2px 0 8px;font-style:italic`;
+    tNote.innerHTML = `Stockpile traps and lay them along the path. Each fires once, then is spent. <b style="color:#ffcc44">Ballista Snare</b> shreds bosses; <b style="color:#88ddff">Sky Net</b> is the only trap that catches fliers.`;
+    trapSection.appendChild(tNote);
+    const tg = document.createElement('div');
+    tg.style.cssText = `display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;`;
+    for (const tid of TRAP_IDS) {
+      const def = TRAP_DEFS[tid];
+      const colHex = '#' + def.color.toString(16).padStart(6, '0');
+      const selected = state.selectedTrapType === tid;
+      const owned = (state.trapInventory ?? {})[tid] ?? 0;
+      const card = document.createElement('div');
+      card.style.cssText = `border:2px solid ${selected ? '#ffe066' : colHex};padding:8px 6px;background:#0c0a08;display:flex;flex-direction:column;gap:3px;text-align:center;align-items:center;`;
+      const src = imgSrcFromTex(def.spriteKey);
+      const portrait = src
+        ? `<div style="width:54px;height:54px;border:1px solid ${colHex};background:#1a1410;display:flex;align-items:center;justify-content:center"><img src="${src}" style="width:48px;height:48px;image-rendering:pixelated"/></div>`
+        : `<div style="width:54px;height:54px;border:1px solid ${colHex};color:#cdb98a;font-size:8px;display:flex;align-items:center;justify-content:center">NO IMG</div>`;
+      card.innerHTML = `
+        ${portrait}
+        <div style="color:#fff8e0;font-size:11px;font-weight:bold;line-height:1.2">${def.name}</div>
+        <div style="font-size:8.5px;color:#cdb98a;line-height:1.3;min-height:30px">${def.blurb.replace(/"/g, "'")}</div>
+        <div style="color:#f0c040;font-size:11px;font-weight:bold">${def.price}g${owned > 0 ? ` · <span style="color:#88ff88">x${owned}</span>` : ''}</div>`;
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex;gap:4px;width:100%;margin-top:3px`;
+      const mkBuy = (n: number) => {
+        const b = document.createElement('button');
+        b.className = 'merc-buy';
+        b.textContent = `BUY ${n}`;
+        b.style.cssText = `flex:1;background:#3a5520;color:#e8d6a8;cursor:pointer;font-size:10px`;
+        b.onclick = () => {
+          const spent = buyTraps(state, tid, n);
+          if (spent <= 0) { (window as any).__showInsufficientGoldToast?.(def.price * n); return; }
+          state.selectedTrapType = tid;
+          state.hint = `Bought ${n}x ${def.name}. Click an empty tile near the path to place it.`;
+          SFX.buy();
+          refresh();
+        };
+        return b;
+      };
+      row.appendChild(mkBuy(1)); row.appendChild(mkBuy(5));
+      card.appendChild(row);
+      card.onclick = (ev) => {
+        if ((ev.target as HTMLElement).tagName === 'BUTTON') return;
+        if (((state.trapInventory ?? {})[tid] ?? 0) > 0) {
+          state.selectedTrapType = tid;
+          state.hint = `${def.name} selected — click an empty tile near the path to place it.`;
+          refresh();
+        }
+      };
+      tg.appendChild(card);
+    }
+    trapSection.appendChild(tg);
+    body.appendChild(trapSection);
   }
 
   // ─── SECTION 2: ITEMS (grouped by rarity bucket so player sees the
