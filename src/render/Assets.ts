@@ -339,6 +339,8 @@ const MANIFEST: Record<string, string> = {
   ITEM_CELTIC_LONGSWORD: 'inew_celtic_longsword.png',
   ITEM_NECROTIC_LONGSWORD: 'inew_necrotic_longsword.png',
   ITEM_FALX_BLADE: 'inew_falx_blade.png',
+  ITEM_EXECUTIONERS_FALX: 'inew_executioners_falx.png',
+  ITEM_CONCUSSIVE_WARHEAD: 'inew_concussive_warhead.png',
   ITEM_SPEAR_OF_MARS: 'inew_spear_of_mars.png',
   ITEM_RUSTED_HASTA: 'inew_rusted_hasta.png',
   ITEM_VANGUARD_PILUM: 'inew_vanguard_pilum.png',

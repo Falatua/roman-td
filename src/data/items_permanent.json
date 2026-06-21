@@ -516,5 +516,19 @@
     "buy": 160,
     "sell": 50,
     "effect": "ANY tower can target Flyers (even melee), +55% damage vs Flyers, and +1 tile range."
+  },
+  "EXECUTIONERS_FALX": {
+    "name": "Executioner's Falx",
+    "rarity": "LEGENDARY",
+    "buy": 145,
+    "sell": 46,
+    "effect": "MELEE ONLY: grants full-power CLEAVE. Every swing hits up to 9 enemies in melee range and secondary targets take FULL (100%) damage."
+  },
+  "CONCUSSIVE_WARHEAD": {
+    "name": "Concussive Warhead",
+    "rarity": "LEGENDARY",
+    "buy": 150,
+    "sell": 48,
+    "effect": "RANGED ONLY: every shot detonates in a 1.6-tile blast, dealing SPLASH damage to all enemies caught in it."
   }
 }

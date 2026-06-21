@@ -253,7 +253,7 @@ export function spawnProjectile(state: GameStateShape, tower: Tower, target: Ene
     travelTime: 0,
     rotation: Math.atan2(dy, dx),
     alive: true,
-    splash: def.splash,
+    splash: Math.max(def.splash, tower.equippedItems.includes('CONCUSSIVE_WARHEAD') ? 1.6 : 0),   // 2026 v2 legendary splash
     embedAfter: def.embed && !usesStormBolt && !fireOilEligible   // storm/fire-oil don't stick
   });
 }

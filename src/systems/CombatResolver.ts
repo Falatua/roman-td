@@ -256,7 +256,7 @@ const CLEAVE_MELEE = new Set<TowerType>([
 export function hasCleave(t: Tower): boolean {
   // 2026 v2 — every HERO gets cleave on melee strikes (ranged heroes get
   // projectile splash via ProjectileSystem instead).
-  return CLEAVE_MELEE.has(t.type) || t.equippedItems.includes('FALX_BLADE') || !!t.isHero;
+  return CLEAVE_MELEE.has(t.type) || t.equippedItems.includes('FALX_BLADE') || t.equippedItems.includes('EXECUTIONERS_FALX') || !!t.isHero;
 }
 // Maximum targets a melee tower can hit per swing (primary + cleave
 // secondaries). FALX_BLADE extends the cap by +2 since its identity is
@@ -264,7 +264,8 @@ export function hasCleave(t: Tower): boolean {
 // default cap.
 function meleeHitCap(t: Tower): number {
   const base = 6;
-  const bonus = t.equippedItems.includes('FALX_BLADE') ? 2 : 0;
+  const bonus = (t.equippedItems.includes('FALX_BLADE') ? 2 : 0)
+              + (t.equippedItems.includes('EXECUTIONERS_FALX') ? 3 : 0);   // legendary: wider swing, up to 9
   return base + bonus;
 }
 
@@ -273,6 +274,8 @@ function cleaveSecondaryMult(t: Tower): number {
   // to 90% — meaningful enough to justify the UNCOMMON slot but still
   // below primary damage. Non-native cleavers (item-only) also start
   // at 60% so they're a step below natives without the item.
+  // 2026 v2 — Executioner's Falx (legendary) = full-power cleave, secondaries take 100%.
+  if (t.equippedItems.includes('EXECUTIONERS_FALX')) return 1.0;
   if (CLEAVE_MELEE.has(t.type)) {
     return t.equippedItems.includes('FALX_BLADE') ? 0.90 : 0.70;
   }

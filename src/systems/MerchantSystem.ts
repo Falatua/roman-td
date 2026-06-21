@@ -104,7 +104,9 @@ const MERCATOR_LEGENDARY = [
   // 2026-05-19 — DAMNATIO MEMORIAE execute item joins the Mercator
   // legendary pool so the player can buy it directly between waves
   // rather than relying on a random boss drop.
-  'DAMNATIO_MEMORIAE'
+  'DAMNATIO_MEMORIAE',
+  // 2026 v2 — legendary AoE items: full cleave (melee) + splash (ranged).
+  'EXECUTIONERS_FALX', 'CONCUSSIVE_WARHEAD'
   // CELTIC_LONGSWORD + NECROTIC_LONGSWORD removed from this list — they
   // are now EPIC (see MERCATOR_EPIC).
 ];

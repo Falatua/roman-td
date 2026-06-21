@@ -57,7 +57,9 @@ const EQUIP_MODE: Record<string, EquipMode> = {
   FIRE_OIL_FLASK: 'RANGED',
   NUMIDIAN_SADDLE: 'RANGED',         // Numidian skirmisher — ranged identity
   VENOM_TIPPED_ARROWS: 'RANGED',     // 2026-05 v9: ranged-poison Mercator stock
-  AUXILIARY_SLING: 'RANGED'          // 2026-05-18: Epic ranged sling
+  AUXILIARY_SLING: 'RANGED',         // 2026-05-18: Epic ranged sling
+  CONCUSSIVE_WARHEAD: 'RANGED',      // 2026 v2: legendary ranged splash
+  EXECUTIONERS_FALX: 'MELEE'         // 2026 v2: legendary melee cleave
   // SERPENT_AMULET and WITCHS_VENOM omitted → default ANY (equip on any tower).
 };
 
@@ -93,6 +95,8 @@ const FAMILY: Record<string, ItemFamily> = {
   BARBED_GLADIUS: 'SPECIAL',
   FALCATA_BLADE: 'SPECIAL',
   ALPHA_PACK_FANG: 'SPECIAL',
+  EXECUTIONERS_FALX: 'SPECIAL',   // 2026 v2 — AoE legendaries stack freely
+  CONCUSSIVE_WARHEAD: 'SPECIAL',
   // CURSED_TORC moved out of DOT (description was actually +30% damage)
   // into AURA — now emits an enemy-debuff (nearby enemies take +18%).
 
