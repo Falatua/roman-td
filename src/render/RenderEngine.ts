@@ -38,6 +38,12 @@ const HERO_RING_FOR: Record<string, string> = {
   HERO_SULLA:    'HERO_RING_FLAME_RED'
 };
 
+const MAX_TRANSIENT_SLASHES = 72;
+const MAX_TRANSIENT_MUZZLE_FLASHES = 96;
+const MAX_TRANSIENT_IMPACT_RINGS = 96;
+const MAX_TRANSIENT_TELEGRAPH_RINGS = 32;
+const MAX_HERO_ABILITY_FX = 28;
+
 export class RenderEngine {
   app: Application;
   layers: {
@@ -1228,6 +1234,15 @@ export class RenderEngine {
   // the ground for extra weight.
   private slashes: { sp: Sprite; born: number; life: number; size: number }[] = [];
   private impactRings: { x: number; y: number; born: number; life: number; maxR: number; color: number }[] = [];
+  private trimSlashQueue(): void {
+    while (this.slashes.length > MAX_TRANSIENT_SLASHES) {
+      const old = this.slashes.shift();
+      old?.sp.destroy();
+    }
+  }
+  private trimPlainFxQueue<T>(queue: T[], max: number): void {
+    if (queue.length > max) queue.splice(0, queue.length - max);
+  }
   triggerMeleeSlash(x: number, y: number, angle: number, tick: number, size = 1, cleaver = false, tint?: number) {
     const t = tex('PROJ_SLASH');
     if (t) {
@@ -1265,6 +1280,7 @@ export class RenderEngine {
       if (tint !== undefined) sp.tint = tint;
       this.layers.fx.addChild(sp);
       this.slashes.push({ sp, born: tick, life: 0.22, size: baseW });
+      this.trimSlashQueue();
       if (cleaver) {
         // Echo slash — narrower, slightly offset angle, shorter life so it
         // reads as a trailing follow-through rather than two distinct hits.
@@ -1278,6 +1294,7 @@ export class RenderEngine {
         if (tint !== undefined) echo.tint = tint;
         this.layers.fx.addChild(echo);
         this.slashes.push({ sp: echo, born: tick, life: 0.18, size: baseW * 0.85 });
+        this.trimSlashQueue();
       }
     }
     // Heavy hits get a ground impact shockwave ring + dust. Threshold
@@ -1293,6 +1310,7 @@ export class RenderEngine {
     } else if (cleaver) {
       this.impactRings.push({ x, y, born: tick, life: 0.20, maxR: GRID.TILE * 0.35, color: tint ?? 0xeed8a0 });
     }
+    this.trimPlainFxQueue(this.impactRings, MAX_TRANSIENT_IMPACT_RINGS);
   }
   // Generic ranged "muzzle flash" at the tower's firing tip, plus a brief recoil.
   // Color keyed to damage flavor so divine hits look different from siege.
@@ -1303,10 +1321,12 @@ export class RenderEngine {
     // rapid-fire units (Velites, Eques, Pugio) don't get a continuous
     // glow at the firing tip.
     this.muzzleFlashes.push({ x, y, born: tick, life: 0.22, color });
+    this.trimPlainFxQueue(this.muzzleFlashes, MAX_TRANSIENT_MUZZLE_FLASHES);
   }
   // Generic ground ring (used by heavy melee + boss death).
   triggerImpactRing(x: number, y: number, tick: number, maxR = 24, color = 0xffffff) {
     this.impactRings.push({ x, y, born: tick, life: 0.32, maxR, color });
+    this.trimPlainFxQueue(this.impactRings, MAX_TRANSIENT_IMPACT_RINGS);
   }
 
   // ─── HERO ABILITY VFX (2026-05-19 v2) ──────────────────────────────
@@ -1328,6 +1348,34 @@ export class RenderEngine {
     color: number;
     extras?: any;
   }> = [];
+  private destroyHeroAbilityFxAssets(fx: { extras?: any }): void {
+    const arrayKeys = ['__auxSprites', '__pilumSprites', '__shellSprites', '__eagleSprites'];
+    const singleKeys = ['__pilumSprite', '__hornSprite', '__brandSprite', '__aquilaSprite', '__laurelSprite', '__boltSprite'];
+    for (const k of arrayKeys) {
+      const arr: Sprite[] | undefined = fx.extras?.[k];
+      if (arr) {
+        for (const sp of arr) {
+          this.layers.fx.removeChild(sp);
+          sp.destroy();
+        }
+        fx.extras[k] = undefined;
+      }
+    }
+    for (const k of singleKeys) {
+      const sp: Sprite | undefined = fx.extras?.[k];
+      if (sp) {
+        this.layers.fx.removeChild(sp);
+        sp.destroy();
+        fx.extras[k] = undefined;
+      }
+    }
+  }
+  private trimHeroFxQueue(): void {
+    while (this.heroFxQueue.length > MAX_HERO_ABILITY_FX) {
+      const old = this.heroFxQueue.shift();
+      if (old) this.destroyHeroAbilityFxAssets(old);
+    }
+  }
   triggerHeroAbilityFx(spec: {
     ability: string;
     x: number; y: number;
@@ -1344,6 +1392,7 @@ export class RenderEngine {
       color: spec.color ?? 0xffffff,
       extras: spec.extras
     });
+    this.trimHeroFxQueue();
   }
   drawHeroAbilityFx(tick: number): void {
     if (!this.heroFxGfx) {
@@ -1371,24 +1420,7 @@ export class RenderEngine {
         //   __aquilaSprite    SPQR Decree (Caesar) — Roman eagle standard
         //   __laurelSprite    Pax Romana (Caesar) — laurel wreath
         //   __boltSprite      Fortune's Bolt (Sulla) — storm javelin
-        const arrayKeys = ['__auxSprites', '__pilumSprites', '__shellSprites', '__eagleSprites'];
-        const singleKeys = ['__pilumSprite', '__hornSprite', '__brandSprite', '__aquilaSprite', '__laurelSprite', '__boltSprite'];
-        for (const k of arrayKeys) {
-          const arr: Sprite[] | undefined = fx.extras?.[k];
-          if (arr) {
-            for (const sp of arr) {
-              this.layers.fx.removeChild(sp);
-              sp.destroy();
-            }
-          }
-        }
-        for (const k of singleKeys) {
-          const sp: Sprite | undefined = fx.extras?.[k];
-          if (sp) {
-            this.layers.fx.removeChild(sp);
-            sp.destroy();
-          }
-        }
+        this.destroyHeroAbilityFxAssets(fx);
         this.heroFxQueue.splice(i, 1);
         continue;
       }
@@ -2121,6 +2153,7 @@ export class RenderEngine {
   private telegraphRings: { x: number; y: number; born: number; life: number; maxR: number; color: number }[] = [];
   triggerTelegraphRing(x: number, y: number, tick: number, duration = 1.0, maxR = 64, color = 0xff2222) {
     this.telegraphRings.push({ x, y, born: tick, life: duration, maxR, color });
+    this.trimPlainFxQueue(this.telegraphRings, MAX_TRANSIENT_TELEGRAPH_RINGS);
   }
   // BOSS-DEATH BLOOD RAIN (2026-05 v6 polish):
   // When a boss falls, spawn N falling blood Sprites scattered across the
