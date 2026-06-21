@@ -38,12 +38,11 @@ export interface QuestDef {
   reward: QuestRewardPayload;
 }
 
-// All quests in the game — 18 across 3 tiers, every one tuned to require
-// genuine work and to feel mechanically distinct from its peers. Rewards
-// scale with tier difficulty:
-//   EARLY  — gold 25-50 OR a common item (gateway feel, but real targets)
-//   MID    — gold 100-150 OR a rare item OR a mid-tier tower
-//   LATE   — gold 350+ (enough to fund a Mercator T5)
+// All quests in the game — 18 across 3 tiers, tuned for the 30-wave Solo
+// campaign and its roughly 1,600 authored kills. Kill/boss targets land near
+// the ends of each campaign third instead of completing in the first 7 waves.
+// Non-kill goals remain action-based so the larger spawn counts do not
+// accidentally force wasteful walls or repetitive combo crafting.
 //
 // Helper: highest single-tower kill count anywhere on the board.
 const bestSingleTowerKills = (s: GameStateShape): number => {
@@ -77,10 +76,10 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'bloodline', tier: 'EARLY',
     title: 'Bloodline',
-    blurb: 'Total 150 enemy kills across the field. No shortcuts.',
+    blurb: 'Total 300 enemy kills across the field. Hold through the first campaign act.',
     condition: s => s.totalKills,
-    target: 150,
-    reward: { kind: 'GOLD', amount: 12 }
+    target: 300,
+    reward: { kind: 'GOLD', amount: 25 }
   },
   {
     id: 'maze_architect', tier: 'EARLY',
@@ -101,9 +100,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'iron_discipline', tier: 'EARLY',
     title: 'Iron Discipline',
-    blurb: 'A single tower lands 60 kills. Keep your veterans alive.',
+    blurb: 'A single tower lands 100 kills. Keep your veterans alive.',
     condition: bestSingleTowerKills,
-    target: 60,
+    target: 100,
     reward: { kind: 'ITEM', item: 'TRAINING_SCROLL' }
   },
   {
@@ -112,23 +111,23 @@ export const QUESTS: QuestDef[] = [
     blurb: 'Kill 2 wave bosses. The hunt has only just begun.',
     condition: s => s.bossesKilled ?? 0,
     target: 2,
-    reward: { kind: 'GOLD', amount: 18 }
+    reward: { kind: 'GOLD', amount: 25 }
   },
   // ─── MID (commitment-tier — meaningful run investment) ─────────────────
   {
     id: 'butcher', tier: 'MID',
     title: 'Butcher of Rome',
-    blurb: 'Total 320 enemy kills. The legions remember every cut.',
+    blurb: 'Total 850 enemy kills. Break the campaign midpoint.',
     condition: s => s.totalKills,
-    target: 320,
-    reward: { kind: 'GOLD', amount: 35 }
+    target: 850,
+    reward: { kind: 'GOLD', amount: 75 }
   },
   {
     id: 'champion_tower', tier: 'MID',
     title: 'Champion of the Cohort',
-    blurb: 'A single tower passes 120 kills. The Silver-badge milestone.',
+    blurb: 'A single tower reaches 200 kills. Claim the Silver badge.',
     condition: bestSingleTowerKills,
-    target: 120,
+    target: 200,
     reward: { kind: 'ITEM', item: 'BATTLE_STANDARD' }
   },
   {
@@ -158,27 +157,27 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'boss_hunter', tier: 'MID',
     title: 'Boss Hunter',
-    blurb: 'Kill 5 wave bosses. The Decade weighs heavy.',
+    blurb: 'Kill 12 boss-class enemies. Survive the campaign midpoint.',
     condition: s => s.bossesKilled ?? 0,
-    target: 5,
+    target: 12,
     reward: { kind: 'TOWER', towerType: TowerType.CENTURION, towerTier: 4 }
   },
   // ─── LATE (campaign-defining — only the prepared finish these) ─────────
   {
     id: 'destroyer', tier: 'LATE',
     title: 'Destroyer of Legions',
-    blurb: 'Total 400 enemy kills. Survive long enough to clear nearly every spawn.',
+    blurb: 'Total 1,500 enemy kills. Break the late-campaign armies.',
     condition: s => s.totalKills,
-    target: 400,
-    reward: { kind: 'GOLD', amount: 100 }
+    target: 1500,
+    reward: { kind: 'GOLD', amount: 180 }
   },
   {
     id: 'legend_tower', tier: 'LATE',
     title: 'Tower of Legend',
-    blurb: 'A single tower passes 200 kills. The Gold-badge ceiling.',
+    blurb: 'A single tower reaches 500 kills. Claim the Gold badge.',
     condition: bestSingleTowerKills,
-    target: 200,
-    reward: { kind: 'GOLD', amount: 120 }
+    target: 500,
+    reward: { kind: 'GOLD', amount: 200 }
   },
   {
     id: 'apex_forger', tier: 'LATE',
@@ -203,18 +202,18 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'boss_slayer_supreme', tier: 'LATE',
     title: 'Boss Slayer Supreme',
-    blurb: 'Kill 8 wave bosses across the campaign — clear champions and twin spawns too.',
+    blurb: 'Kill 18 boss-class enemies across the full campaign.',
     condition: s => s.bossesKilled ?? 0,
-    target: 8,
-    reward: { kind: 'GOLD', amount: 120 }
+    target: 18,
+    reward: { kind: 'GOLD', amount: 200 }
   },
   {
     id: 'eternal_bulwark', tier: 'LATE',
     title: 'Eternal Bulwark',
-    blurb: 'Survive to wave 18. Few legions reach this far.',
+    blurb: 'Reach wave 27. Stand through the mythic gauntlet.',
     condition: s => s.wave,
-    target: 18,
-    reward: { kind: 'GOLD', amount: 150 }
+    target: 27,
+    reward: { kind: 'GOLD', amount: 250 }
   }
 ];
 
