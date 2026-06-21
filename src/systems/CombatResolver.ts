@@ -337,9 +337,10 @@ const MULTI_SHOT_COUNT: Partial<Record<TowerType, number>> = {
 
 // Process all towers vs enemies for one frame.
 export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks) {
-  // Stash state on window so the pushStatus helper (and other free functions)
+  // Stash state globally so the pushStatus helper (and other free functions)
   // can read live tower data without changing every signature. Cheap and safe.
-  (window as any).__lastState = state;
+  const globalRef: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
+  if (globalRef) globalRef.__lastState = state;
   // Sort towers by placement age for deterministic kill credit (oldest first).
   // Pending towers (Gem TD pre-keep) don't fight.
   const towers = Array.from(state.towers.values()).filter(t => !t.pending).sort((a, b) => a.placedAtWave - b.placedAtWave);
@@ -1444,7 +1445,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             // Visual punch — extra gold impact ring so the player sees
             // the burst land. Reuses the existing tower-render shake
             // path via attackFlash, no new VFX wiring needed.
-            const r: any = (window as any).__renderer;
+            const r: any = globalRef?.__renderer;
             if (r?.triggerImpactRing) r.triggerImpactRing(target.x, target.y, state.tick, 40, 0xffd34d);
           }
           (t as any).__furyTarget = target.id;
@@ -1494,7 +1495,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           target.shieldBroken = true;
           // Visual: brief impact ring at the shield-break moment — bigger
           // + golder for the +50% bash hit so it reads as a real moment.
-          const renderer = (window as any).__renderer;
+          const renderer = globalRef?.__renderer;
           if (renderer?.triggerImpactRing) renderer.triggerImpactRing(target.x, target.y, state.tick, 32, 0xffe066);
         }
         hooks.onHit(t, target, damage, resMod, !!(t as any).__lastWasCrit);
@@ -1559,7 +1560,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
               if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
             }
             // Fire an impact ring so the player sees the blast visually.
-            const r: any = (window as any).__renderer;
+            const r: any = globalRef?.__renderer;
             if (r?.triggerImpactRing) r.triggerImpactRing(target.x, target.y, state.tick, 32, 0xffe6a8);
           }
         }
@@ -1599,7 +1600,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             other.lastDamagedTick = state.tick;
             if (otherShielded) {
               other.shieldBroken = true;
-              const renderer = (window as any).__renderer;
+              const renderer = globalRef?.__renderer;
               if (renderer?.triggerImpactRing) renderer.triggerImpactRing(other.x, other.y, state.tick, 32, 0xffe066);
             }
             hooks.onHit(t, other, cleaveDmg, resMod);
@@ -1710,7 +1711,6 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   // 2026-05-19 — Agricola hero global passive extends the
   // CYAN/AQUILA_TALONS unlock to ALL melee towers map-wide.
   const meleeAirEnabled = isMelee && (
-    state.activeHeroId === 'HERO_AGRICOLA' ||
     Array.from(state.towers.values()).some(tw => heroIdForTowerType(String(tw.type)) === 'HERO_AGRICOLA' && (tw.id === state.activeHeroTowerId || isMercatorChampionType(String(tw.type)))) ||
     (state as any).__marsVictorActive ||   // Mars Victor fuses Agricola's all-towers-strike-flyers passive
     t.equippedItems.includes('AQUILA_TALONS') ||
@@ -2317,7 +2317,7 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
     if (t.equippedItems.includes('FIRE_OIL_FLASK')) {
       pushStatus(target, StatusEffectKind.BURN, 3, 0.04, tier);
       const splashR = 32 * 1;     // 1-tile splash
-      const stateRef = (window as any).__lastState;
+      const stateRef = typeof globalThis !== 'undefined' ? (globalThis as any).__lastState : undefined;
       if (stateRef?.enemies) {
         for (const other of stateRef.enemies.values()) {
           if (other.id === target.id || other.hp <= 0) continue;
@@ -2378,13 +2378,15 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
 // Read at module scope so pushStatus can adjust durations from weather.
 function getWeatherStatusPenalty(): number {
   // Lazily fetch from window-stashed game state — keeps signature unchanged.
-  const gs = (window as any).__game;
+  const g: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
+  const gs = g?.__game;
   if (!gs?.weatherKey) return 0;
   const w = FACTION_WEATHER[gs.weatherKey];
   if (!w) return 0;
   return w.statusDurationPenalty * (gs.weatherIntensity ?? 1);
 }
 export function pushStatus(e: Enemy, kind: StatusEffectKind, duration: number, magnitude: number, sourceTier: number) {
+  const globalRef: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
   if (statusEffectiveness(e, kind) <= 0) return;
   // BOSSES ARE IMMUNE TO STUN. Stuns paired with splash/cleave were locking
   // bosses in place — boss mechanics (rebirth, stampede, summons) need the
@@ -2407,7 +2409,7 @@ export function pushStatus(e: Enemy, kind: StatusEffectKind, duration: number, m
   // damage still pours in but they never freeze in place. Towers'
   // mechanics, durations, and trigger conditions are untouched.
   if (kind === StatusEffectKind.STUN || kind === StatusEffectKind.FREEZE) {
-    const tickNow = (window as any).__lastState?.tick ?? 0;
+    const tickNow = globalRef?.__lastState?.tick ?? 0;
     const drUntil = (e as any).__lockdownDRUntil ?? 0;
     if (tickNow < drUntil) {
       // Still in the active lockdown window OR in the post-lockdown
@@ -2425,7 +2427,7 @@ export function pushStatus(e: Enemy, kind: StatusEffectKind, duration: number, m
   if (penalty > 0) duration *= (1 - penalty);
   // SACER_VESTAL — VESTAL SANCTUM: doubles status duration on enemies inside
   // any Vestal's range. Read live tower set off the global state ref.
-  const stateRef = (window as any).__lastState;
+  const stateRef = globalRef?.__lastState;
   if (stateRef?.towers) {
     for (const tw of stateRef.towers.values()) {
       if (tw.type !== TowerType.SACER_VESTAL || tw.pending) continue;

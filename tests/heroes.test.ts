@@ -28,8 +28,9 @@ import {
   tickHeroAbilities
 } from '../src/systems/HeroSystem';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
+import { pickTarget, tickCombat } from '../src/systems/CombatResolver';
 import { createGameState, GameStateShape } from '../src/GameState';
-import { GamePhase, TowerType } from '../src/types';
+import { DamageType, Enemy, EnemyFaction, EnemyType, GamePhase, StatusEffectKind, TowerType } from '../src/types';
 import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
 import { previewSpawnHp } from '../src/systems/WaveManager';
 import { buildMercatorTowerOffers } from '../src/systems/MerchantSystem';
@@ -40,6 +41,30 @@ import HERO_DEFS from '../src/data/herodefs.json';
 function freshState(): GameStateShape {
   const s = createGameState();
   return s;
+}
+
+function testEnemy(id: string, opts: Partial<Enemy> = {}): Enemy {
+  return {
+    id,
+    type: opts.type ?? EnemyType.FERAL_DOG,
+    faction: opts.faction ?? EnemyFaction.DOGS,
+    hp: opts.hp ?? 1000,
+    maxHp: opts.maxHp ?? opts.hp ?? 1000,
+    baseSpeed: opts.baseSpeed ?? 1,
+    currentSpeed: opts.currentSpeed ?? 1,
+    isFlyer: opts.isFlyer ?? false,
+    x: opts.x ?? 0,
+    y: opts.y ?? 0,
+    pathIndex: opts.pathIndex ?? 0,
+    pathProgress: opts.pathProgress ?? 0,
+    statusEffects: opts.statusEffects ?? [],
+    hasFeared: opts.hasFeared ?? false,
+    livesCost: opts.livesCost ?? 1,
+    isBoss: opts.isBoss ?? false,
+    reward: opts.reward ?? 0,
+    archetype: opts.archetype ?? 'SWARM',
+    hpFlashTimer: opts.hpFlashTimer ?? 0
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -351,6 +376,120 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     tickHeroAbilities(s, { triggerHeroAbilityFx: () => { fxCount++; } });
     expect(fxCount).toBeGreaterThan(0);
     expect(fxCount).toBeLessThan(12);
+  });
+
+  it('starter plus five Mercator Champions coexist with abilities, passives, damage, and targeting intact', () => {
+    const s = freshState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 100;
+    s.wave = 12;
+    s.activeHeroId = 'HERO_MARIUS';
+    s.heroTier = 4;
+    s.groundPath = Array.from({ length: 12 }, (_, idx) => ({ col: 12 + idx, row: 12 }));
+
+    const starter = createTower(TowerType.HERO_MARIUS, 5, 12, 12, 12);
+    const championTypes = [
+      TowerType.CHAMPION_AGRIPPA,
+      TowerType.CHAMPION_AGRICOLA,
+      TowerType.CHAMPION_SCIPIO,
+      TowerType.CHAMPION_CAESAR,
+      TowerType.CHAMPION_SULLA
+    ];
+    const champions = championTypes.map((type, idx) => createTower(type, 5, 14 + idx * 2, 12, 12));
+    const melee = createTower(TowerType.MILITES, 1, 11, 12, 12);
+    const siege = createTower(TowerType.SCORPIO, 1, 15, 12, 12);
+    const flyerTargeter = createTower(TowerType.HASTATI, 1, 15, 14, 12);
+    const decreeTarget = createTower(TowerType.SAGITTARIUS, 1, 18, 14, 12);
+    decreeTarget.attackCooldown = 5;
+
+    s.activeHeroTowerId = starter.id;
+    for (const tower of [starter, ...champions, melee, siege, flyerTargeter, decreeTarget]) {
+      s.towers.set(tower.id, tower);
+    }
+
+    const boss = testEnemy('boss', {
+      type: EnemyType.HANNIBAL_BARCA,
+      faction: EnemyFaction.CARTHAGE,
+      isBoss: true,
+      hp: 50_000,
+      maxHp: 50_000,
+      x: 18 * 32 + 16,
+      y: 12 * 32 + 16
+    });
+    const flyer = testEnemy('flyer', {
+      type: EnemyType.CELTIC_SCOUT,
+      faction: EnemyFaction.CELTS,
+      isFlyer: true,
+      hp: 20_000,
+      maxHp: 20_000,
+      x: 15 * 32 + 16,
+      y: 14 * 32 + 16
+    });
+    const ground = testEnemy('ground', {
+      hp: 20_000,
+      maxHp: 20_000,
+      x: 22 * 32 + 16,
+      y: 12 * 32 + 16
+    });
+    s.enemies.set(boss.id, boss);
+    s.enemies.set(flyer.id, flyer);
+    s.enemies.set(ground.id, ground);
+
+    for (const hero of [starter, ...champions]) {
+      const heroId = heroIdForTowerType(String(hero.type));
+      const def: any = heroId ? (HERO_DEFS as any)[heroId] : null;
+      hero.__heroCooldowns = Object.fromEntries((def?.abilities ?? []).map((a: any) => [a.id, 0]));
+      (hero as any).__championAbilityWakeupDone = true;
+    }
+
+    const fxIds: string[] = [];
+    tickHeroAbilities(s, { triggerHeroAbilityFx: (fx: any) => fxIds.push(fx.ability) });
+
+    expect(s.activeHeroId).toBe('HERO_MARIUS');
+    expect(new Set([starter, ...champions].map(t => heroIdForTowerType(String(t.type))))).toEqual(new Set(HERO_POOL));
+    expect(fxIds).toEqual(expect.arrayContaining([
+      'MARIAN_FORMATION',
+      'CAPITE_CENSI',
+      'PILUM_VOLLEY',
+      'NAVAL_BOMBARDMENT',
+      'EAGLE_SCOUT',
+      'FRONTIER_WALL',
+      'CORNU_CHARGE',
+      'SCIPIO_BRAND',
+      'SPQR_DECREE',
+      'PAX_ROMANA',
+      'FORTUNES_BOLT',
+      'PROSCRIPTION'
+    ]));
+    expect((melee as any).__marianFormationUntilTick).toBeGreaterThan(s.tick);
+    expect((s as any).__heroTimedEvents?.length).toBeGreaterThan(0);
+    expect((flyer as any).__eagleScoutUntilTick).toBeGreaterThan(s.tick);
+    expect((s as any).__frontierWallUntilTick).toBeGreaterThan(s.tick);
+    expect(boss.hp).toBeLessThan(50_000);
+    expect(boss.statusEffects.some(st => st.kind === StatusEffectKind.MARK)).toBe(true);
+    expect([...s.enemies.values()].every(e => e.statusEffects.some(st => st.kind === StatusEffectKind.SLOW))).toBe(true);
+    expect((s as any).__proscriptionUntilTick).toBeGreaterThan(s.tick);
+    expect(decreeTarget.attackCooldown).toBe(0);
+
+    const flyerPick = pickTarget(s, flyerTargeter, [flyer], flyerTargeter.range);
+    expect(flyerPick?.id).toBe('flyer');
+
+    const siegeRangeWithoutAgrippa = siege.range;
+    (globalThis as any).__game = s;
+    expect(towerEffectiveStats(siege).range).toBeCloseTo(siegeRangeWithoutAgrippa + 2, 5);
+    delete (globalThis as any).__game;
+
+    const flyerHpBeforeCombat = flyer.hp;
+    flyerTargeter.attackCooldown = 0;
+    tickCombat(s, 0.016, {
+      onHit: () => {},
+      onMeleeSwing: () => {},
+      onProjectileFire: () => {},
+      onKill: () => {}
+    });
+    expect(flyer.hp).toBeLessThan(flyerHpBeforeCombat);
+    expect(flyerTargeter.damageType).toBe(DamageType.PHYS_MELEE);
+    delete (globalThis as any).__lastState;
   });
 });
 

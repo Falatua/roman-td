@@ -23,7 +23,7 @@
 import HERO_DEFS from '../data/herodefs.json';
 import towersData from '../data/towers.json';
 import { GameStateShape } from '../GameState';
-import { Tower, Enemy, GamePhase, StatusEffectKind, TileType } from '../types';
+import { Tower, Enemy, DamageType, GamePhase, StatusEffectKind, TileType } from '../types';
 import { GRID } from '../constants';
 import { pushStatus } from './CombatResolver';
 import { setTile } from './GridManager';
@@ -366,7 +366,7 @@ function executeMARIAN_FORMATION(state: GameStateShape, hero: Tower, params: any
   const candidates: Array<{ t: Tower; d: number }> = [];
   for (const t of state.towers.values()) {
     if (t.id === hero.id) continue;
-    if (t.damageType !== ('PHYS_MELEE' as any) && (t as any).mode !== 0) continue;
+    if (t.damageType !== DamageType.PHYS_MELEE && (t as any).mode !== 0) continue;
     candidates.push({ t, d: distanceTiles(t, hero) });
   }
   candidates.sort((a, b) => a.d - b.d);
