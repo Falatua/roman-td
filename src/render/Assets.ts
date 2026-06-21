@@ -122,6 +122,10 @@ const MANIFEST: Record<string, string> = {
   MONGOL_SCOUT: 'endless/e_endless_mongol_scout.png',
   MONGOL_SHAMAN: 'endless/e_endless_mongol_shaman.png',
   MONGOL_CAPTAIN: 'endless/e_endless_mongol_captain.png',
+  STANDARD_BEARER_COMMANDER: 'endless/e_endless_mongol_captain.png',
+  PATHFINDER_COMMANDER: 'endless/e_endless_mongol_scout.png',
+  ANUBIS_PRIEST_COMMANDER: 'endless/e_endless_anubis_priest.png',
+  SIEGE_CAPTAIN_COMMANDER: 'e3_demon_legate.png',
   // Projectile swap art for JUPITER'S WRATH — re-uses the storm-javelin
   // sprite so ranged towers carrying the legendary throw an electrified
   // bolt instead of their usual pilum / arrow. Plus a dedicated chain
@@ -559,6 +563,12 @@ const MANIFEST: Record<string, string> = {
   HERO_SCIPIO:   '../heroes/hero_scipio.png',
   HERO_CAESAR:   '../heroes/hero_caesar.png',
   HERO_SULLA:    '../heroes/hero_sulla.png',
+  CHAMPION_MARIUS:   '../heroes/hero_marius.png',
+  CHAMPION_AGRIPPA:  '../heroes/hero_agrippa.png',
+  CHAMPION_AGRICOLA: '../heroes/hero_agricola.png',
+  CHAMPION_SCIPIO:   '../heroes/hero_scipio.png',
+  CHAMPION_CAESAR:   '../heroes/hero_caesar.png',
+  CHAMPION_SULLA:    '../heroes/hero_sulla.png',
   // 2026-05-20 v2 — Hero tower halo rings. Layered under each hero
   // sprite at render time so the player can see at a glance "this is
   // the hero, not a regular T1/T2 tower." 9 styles cropped from a

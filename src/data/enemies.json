@@ -791,5 +791,55 @@
     "isElite": true,
     "shieldBlockChance": 0.35,
     "requiresMeleeBreak": true
+  },
+  "STANDARD_BEARER_COMMANDER": {
+    "name": "Commander: Standard Bearer",
+    "faction": "ROMAN_MYTH",
+    "baseHp": 5200,
+    "speed": 0.9,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 3,
+    "isElite": true,
+    "bigGlow": true,
+    "renderScale": 1.25,
+    "outOfCombatRegen": 0.015
+  },
+  "PATHFINDER_COMMANDER": {
+    "name": "Commander: Pathfinder",
+    "faction": "MONGOLS",
+    "baseHp": 2600,
+    "speed": 1.8,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 2,
+    "isElite": true,
+    "dodgeChance": 0.2,
+    "renderScale": 1.15
+  },
+  "ANUBIS_PRIEST_COMMANDER": {
+    "name": "Commander: Anubis Priest",
+    "faction": "EGYPTIANS",
+    "baseHp": 3600,
+    "speed": 1.0,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 2,
+    "isElite": true,
+    "immunePoison": true,
+    "renderScale": 1.2
+  },
+  "SIEGE_CAPTAIN_COMMANDER": {
+    "name": "Commander: Siege Captain",
+    "faction": "SUPER_DEMONS",
+    "baseHp": 6200,
+    "speed": 0.85,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 4,
+    "isElite": true,
+    "shieldBlockChance": 0.25,
+    "requiresMeleeBreak": true,
+    "renderScale": 1.25
   }
 }

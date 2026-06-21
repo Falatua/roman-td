@@ -20,6 +20,8 @@ import enemiesData from '../data/enemies.json';
 import { spawnEnemy } from './EnemySystem';
 import { generateEndlessWave, EndlessWaveConfig, endlessClearScore } from './EndlessMode';
 import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, clearSurpriseEventsForWaveEnd, spawnAtSurpriseEventPoint, notifySurpriseEventWaveEnded } from './SurpriseEvents';
+import { injectCampaignCommanders } from './CommanderSystem';
+import { campaignRelicWaveGoldMult } from './CampaignRelicSystem';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
 const FACTION_BOSS: Record<string, string> = {
@@ -229,6 +231,7 @@ export function startWave(state: GameStateShape) {
     state.spawnQueue.push({ type: bonusBossType as EnemyType, spawnAt: t + 2.5 });
     (state as any).pendingBonusBoss = bonusReason;
   }
+  injectCampaignCommanders(state, state.spawnQueue);
   state.enemiesKilledThisWave = 0;
   state.enemiesLeakedThisWave = 0;
   (state as any).carriedEnemiesThisWave = state.enemies.size;
@@ -472,7 +475,7 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
     if (w.type === 'F') {
       flyerBonus = Math.max(5, Math.round(w.gold * 0.5));
     }
-    const totalWaveGold = w.gold + flyerBonus;
+    const totalWaveGold = Math.round((w.gold + flyerBonus) * campaignRelicWaveGoldMult(state));
     const modSuffix = modBonus > 0 ? ` +${modBonus}g RNG bonus +${modScoreBonus} score.` : '';
     const flyerSuffix = flyerBonus > 0 ? ` +${flyerBonus}g Flyer-Survival bonus.` : '';
     state.hint = `Wave ${state.wave} survived. +${totalWaveGold} Gold.${flyerSuffix}${modSuffix} The empire pretends not to be impressed.`;

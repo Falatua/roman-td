@@ -227,6 +227,16 @@ export interface GameStateShape {
   // is refunded before the stacks reset to zero.
   heroForgeStacks?: { dmg: number; cd: number; aura: number };
   heroForgeGoldSpent?: number;
+  // Campaign Relics + Boss Trophies. These are run-level choices, not tower
+  // items, so they live directly on game state.
+  campaignRelicIds?: string[];
+  campaignRelicId?: string | null;
+  campaignRelicOffered?: boolean;
+  campaignRelicOfferWaves?: number[];
+  campaignRelicSkippedWaves?: number[];
+  campaignRelicOffers?: Record<string, string[]>;
+  bossTrophies?: string[];
+  bossTrophyWavesClaimed?: number[];
 }
 
 export function createGameState(): GameStateShape {
@@ -287,7 +297,15 @@ export function createGameState(): GameStateShape {
     heroTier: 0,
     heroLifeHealedThisRun: 0,
     heroForgeStacks: { dmg: 0, cd: 0, aura: 0 },
-    heroForgeGoldSpent: 0
+    heroForgeGoldSpent: 0,
+    campaignRelicIds: [],
+    campaignRelicId: null,
+    campaignRelicOffered: false,
+    campaignRelicOfferWaves: [],
+    campaignRelicSkippedWaves: [],
+    campaignRelicOffers: {},
+    bossTrophies: [],
+    bossTrophyWavesClaimed: []
   };
 }
 

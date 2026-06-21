@@ -24,6 +24,9 @@ import { resistanceModifier } from './DamageTypeSystem';
 import { spawnPhoenixMinions } from './EnemySystem';
 import { spawnProjectile, spawnCosmeticProjectile } from './ProjectileSystem';
 import { enemyDamageMultiplier, statusEffectiveness } from './EnemyResistances';
+import { campaignRelicDamageMult } from './CampaignRelicSystem';
+import { bossTrophyDamageMult } from './BossTrophySystem';
+import { commanderDamageTakenMult } from './CommanderSystem';
 import enemiesData from '../data/enemies.json';
 import towersData from '../data/towers.json';
 import wavesData from '../data/waves.json';
@@ -950,6 +953,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const bossesCleared = Math.max(0, Math.floor(((state.wave ?? 1) - 1) / 5));
       const lateWaveDmgScale = Math.pow(1.50, bossesCleared);
       let damage = (perAttackBase * resMod * supportDmg * takenMult * lateWaveDmgScale) + t.killBonusFlat;
+      damage *= campaignRelicDamageMult(state, t, target) * bossTrophyDamageMult(state, t, target) * commanderDamageTakenMult(state, target);
       // MARK debuff: marked targets take +mag% damage from ANY tower.
       const markS = target.statusEffects.find(s => s.kind === StatusEffectKind.MARK);
       if (markS) damage *= 1 + markS.magnitude;
@@ -1873,6 +1877,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   if (waveDmgReduct > 0 && damage > 0) {
     damage *= (1 - waveDmgReduct);
   }
+  damage *= campaignRelicDamageMult(state, t, target) * bossTrophyDamageMult(state, t, target) * commanderDamageTakenMult(state, target);
   target.hp -= damage;
   target.hpFlashTimer = 0.16;
   target.lastDamagedTick = state.tick;

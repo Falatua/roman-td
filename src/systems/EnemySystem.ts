@@ -23,6 +23,8 @@ import waypointsData from '../data/waypoints.json';
 import wavesData from '../data/waves.json';
 import { statusEffectiveness } from './EnemyResistances';
 import { buildGroundPathB } from './PathFinder';
+import { campaignRelicEnemyHpMult, campaignRelicEnemySpeedMult } from './CampaignRelicSystem';
+import { commanderSpeedMult, isCommanderType, tickCommanderSupport } from './CommanderSystem';
 
 // Pre-computed waypoint centers in WORLD pixel coordinates, used by the
 // per-frame proximity test so the checkpoint heal fires the instant an
@@ -71,7 +73,11 @@ const ARCHETYPE: Record<string, Enemy['archetype']> = {
   MUMMY_WARRIOR: 'RESISTANT', SPHINX: 'ELITE', ANUBIS_KING: 'BOSS',
   MONGOL_HORSE_ARCHER: 'RUNNER', MONGOL_SPEAR_RIDER: 'RUNNER', KHAN_RIDER: 'BOSS',
   MONGOL_FOOTMAN: 'SWARM', MONGOL_SPEARMAN: 'ARMORED', MONGOL_BERSERKER: 'RUNNER',
-  MONGOL_SCOUT: 'RUNNER', MONGOL_SHAMAN: 'ELITE', MONGOL_CAPTAIN: 'RESISTANT'
+  MONGOL_SCOUT: 'RUNNER', MONGOL_SHAMAN: 'ELITE', MONGOL_CAPTAIN: 'RESISTANT',
+  STANDARD_BEARER_COMMANDER: 'ELITE',
+  PATHFINDER_COMMANDER: 'RUNNER',
+  ANUBIS_PRIEST_COMMANDER: 'ELITE',
+  SIEGE_CAPTAIN_COMMANDER: 'ARMORED'
 };
 
 // 2026 v2 spec — TIMED tower attack-speed debuff (Dive Bomb / Ground Slam /
@@ -116,7 +122,8 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   // — Scipio's +25% vs-boss already nets them slightly harder against
   // his roster pick so a uniform bump is the right call.
   const heroComp = state.activeHeroId ? 1.15 : 1.00;
-  const finalHp = def.baseHp * hpMult * moonBoost * basicHpBuff * heroComp;
+  const relicHpMult = campaignRelicEnemyHpMult(state, def);
+  const finalHp = def.baseHp * hpMult * moonBoost * basicHpBuff * heroComp * relicHpMult;
   const e: Enemy = {
     id: newId(),
     type,
@@ -146,6 +153,10 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     checkpointHealPct: def.checkpointHealPct,
     healedCheckpoints: []
   };
+  if (isCommanderType(type as any)) {
+    (e as any).isCommander = true;
+    (e as any).__commanderSpawnWave = state.wave;
+  }
   // ─── ELITE MUTATIONS ────────────────────────────────────────────────
   // Late-wave spawns roll a small chance to be "elites" — single-modifier
   // champions with a tactical wrinkle. Bosses are exempt.
@@ -548,6 +559,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
   // is within 3 tiles. Applied to currentSpeed below.
   const auraStars: Enemy[] = [];
   for (const e of state.enemies.values()) if (e.mutation === 'AURA_STAR') auraStars.push(e);
+  tickCommanderSupport(state, dt);
   // ─── ELEPHANT RANGED-PROTECTION AURA (2026-05 v10) ────────────────────
   // Living + Undead war elephants project a 4-tile dust shield that
   // makes nearby GROUND enemies untargetable by ranged towers until the
@@ -1325,6 +1337,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       }
       if (near >= 2) e.currentSpeed *= 1.20;
     }
+    e.currentSpeed *= campaignRelicEnemySpeedMult(state, e) * commanderSpeedMult(state, e);
 
     // Move along path. Preserve leftover distance across segment boundaries so
     // fast enemies glide through turns instead of pausing on tile centers.

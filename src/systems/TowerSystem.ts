@@ -4,6 +4,8 @@ import { TIER_MULTS, ECONOMY, POOL_PROBABILITIES, GRID, AURA_TILES, AURA_TILE_EF
 import towersData from '../data/towers.json';
 import { damageTypeFromString } from './DamageTypeSystem';
 import { isInsideStructureFootprint } from './GridManager';
+import { hasBossTrophy } from './BossTrophySystem';
+import { campaignRelicTowerDpsMult, campaignRelicTowerRangeBonus, campaignRelicTowerSpeedMult } from './CampaignRelicSystem';
 
 // 2026-05-19 — AURA TILE LOOKUP. Returns the kind of aura tile the
 // tower sits on, or null. Used by stat math + combat hooks so every
@@ -67,7 +69,9 @@ function classBalanceScalar(t: Tower): number {
   // their JSON-canonical DPS in chaos mode. The endless wave generator
   // is doing all the difficulty work — towers don't also need to be
   // suppressed. Window guard so vitest (node env) doesn't crash.
-  const gs: any = typeof window !== 'undefined' ? (window as any).__lastState : null;
+  const gs: any = typeof globalThis !== 'undefined'
+    ? ((globalThis as any).__lastState ?? (globalThis as any).__game ?? (typeof window !== 'undefined' ? (window as any).__lastState : null))
+    : null;
   if (gs?.endlessMode) return 1;
   let mult = 1;
   // Apex super-combo nerf (12%)
@@ -398,7 +402,9 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   // ranged builds can still reach the path. Lets skilled players
   // express mastery through tower mastery + combo recipes even as
   // enemies become near-unkillable per the design brief.
-  const gs: any = typeof window !== 'undefined' ? (window as any).__lastState : null;
+  const gs: any = typeof globalThis !== 'undefined'
+    ? ((globalThis as any).__lastState ?? (globalThis as any).__game ?? (typeof window !== 'undefined' ? (window as any).__lastState : null))
+    : null;
   let endlessDmgBoost = 1, endlessSpdBoost = 1, endlessRangeBoost = 0;
   if (gs?.endlessMode) {
     const ew = gs.endlessWave ?? 1;
@@ -409,6 +415,14 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // +1 tile range flat (matches the Watchtower Lens bonus).
     endlessRangeBoost = 1;
   }
+  if (gs && hasBossTrophy(gs, 'AUXILIA_DRILL')) {
+    const def: any = (towersData as any)[t.type];
+    if (def?.kind === 'BASE') itemSpeedMult *= 1.10;
+  }
+  const defForRelic: any = (towersData as any)[t.type];
+  const relicDpsMult = gs ? campaignRelicTowerDpsMult(gs, t, defForRelic?.kind) : 1;
+  const relicSpeedMult = gs ? campaignRelicTowerSpeedMult(gs, t, defForRelic?.kind) : 1;
+  const relicRangeBonus = gs ? campaignRelicTowerRangeBonus(gs, t) : 0;
   // 2026-05-19 — AURA TILE BUFFS. If the tower sits on one of the 5
   // fixed aura tiles, apply that tile's damage / attack-speed
   // multiplier here. Stacks multiplicatively with items and the
@@ -445,9 +459,9 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     if (n > 0) forgeDmgMult = 1 + 0.06 * n;
   }
   return {
-    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult * forgeDmgMult,
-    attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult,
-    range: t.range + extraRange + endlessRangeBoost + auraRangeBonus
+    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult * forgeDmgMult * relicDpsMult,
+    attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult * relicSpeedMult,
+    range: Math.max(1, t.range + extraRange + endlessRangeBoost + auraRangeBonus + relicRangeBonus)
   };
 }
 

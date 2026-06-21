@@ -66,6 +66,10 @@ import { armorProfileForGroup, armorDamageTypeShortLabel } from './systems/Enemy
 import { SFX, setFactionBGM, setMuted, isMuted, playMusicTrack, stopMusicTrack, stopAllMusicTracks, surpriseEventSting, sfx, preloadAllSamples, unmuteAndRestartMusicTrack } from './render/AudioManager';
 import { tickSurpriseEvents, notifySurpriseEnemyResolved, clearSurpriseEventsForWaveEnd, notifyHellGateDestroyed } from './systems/SurpriseEvents';
 import { showSurpriseRewardModal } from './render/SurpriseReward';
+import { showCampaignRelicModal } from './render/CampaignRelicModal';
+import { showBossTrophyModal } from './render/BossTrophyModal';
+import { campaignRelicKillGoldBonus, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
+import { shouldOfferBossTrophy, markBossTrophyOfferedForWave } from './systems/BossTrophySystem';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -6050,7 +6054,7 @@ async function boot() {
     // 2026-05-16: surprise-reward modal also forces a hard pause so the
     // player can decide strategically (per the design lock — "pauses the
     // game so they can choose strategically").
-    const rewardModalOpen = !!(state as any).__surpriseRewardOpen;
+    const rewardModalOpen = !!(state as any).__surpriseRewardOpen || !!(state as any).__campaignRelicOpen || !!(state as any).__bossTrophyOpen;
     if (paused || autoPaused || rewardModalOpen) {
       dt = 0;
     } else {
@@ -6720,6 +6724,8 @@ async function boot() {
           // bounty below — this baseline is flat.
           earnGold(state, ECONOMY.BASE_GOLD_PER_KILL);
           goldEarnedHere += ECONOMY.BASE_GOLD_PER_KILL;
+          const relicKillGold = campaignRelicKillGoldBonus(state);
+          if (relicKillGold > 0) { earnGold(state, relicKillGold); goldEarnedHere += relicKillGold; }
           if (t.isAerarium) { earnGold(state, ECONOMY.AERARIUM_BONUS); goldEarnedHere += ECONOMY.AERARIUM_BONUS; }
           // GOLD-PER-KILL TROPHIES — linear rarity ladder (2026-05-19
           // rebalance): Common +1 → Rare +2 → Legendary +3. Stack
@@ -6919,6 +6925,15 @@ async function boot() {
             const drops = isScheduledBoss ? 130 : 70;
             const intensity = isScheduledBoss ? 1.15 : 0.9;
             renderer.triggerBloodRain(state.tick, drops, intensity);
+            if (shouldOfferBossTrophy(state, e)) {
+              markBossTrophyOfferedForWave(state);
+              const stage = document.getElementById('stage-wrap');
+              if (stage) {
+                showBossTrophyModal(stage, state, enemyName(e.type as string), () => {
+                  state.hint = 'Boss trophy claimed. The campaign remembers this kill.';
+                });
+              }
+            }
           }
           else SFX.enemyDeath();
           // Hero XP / level-up
@@ -7251,6 +7266,16 @@ async function boot() {
           // 2026-05 v11: stamp the "NEW STOCK" badge flag so the SHOP button
           // glows until the player opens it. Cleared in onOpenShop below.
           state.shopRefreshedUnopened = true;
+        }
+        if (shouldOfferCampaignRelics(state)) {
+          const stage = document.getElementById('stage-wrap');
+          if (stage) {
+            showCampaignRelicModal(stage, state, (id) => {
+              showBonusBossBanner(id
+                ? '⚜ CAMPAIGN RELIC CLAIMED — THE RUN HAS CHANGED ⚜'
+                : '⚜ NO RELIC CLAIMED — ROME KEEPS ITS OWN TERMS ⚜');
+            });
+          }
         }
         // 20-WAVE CAMPAIGN VICTORY: clearing W20 with the gate intact
         // wins the main run. 2026-05 v10 — Endless mode freezes

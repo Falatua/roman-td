@@ -12,9 +12,16 @@ const GAME_MODAL_IDS = [
   // them stacked. Register both so closeGameModals() sweeps them out
   // uniformly with every other game modal.
   'settings-modal',
-  'dps-check-summary'
+  'dps-check-summary',
+  'campaign-relic-modal',
+  'boss-trophy-modal'
 ];
 
 export function closeGameModals() {
-  for (const id of GAME_MODAL_IDS) document.getElementById(id)?.remove();
+  for (const id of GAME_MODAL_IDS) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.dispatchEvent(new CustomEvent('rtd:modal-force-close'));
+    el.remove();
+  }
 }

@@ -1,5 +1,5 @@
 import { ShopState, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds } from '../systems/MerchantSystem';
-import { TRAP_DEFS, TRAP_IDS, buyTraps } from '../systems/TrapSystem';
+import { TRAP_DEFS, TRAP_IDS, buyTraps, trapPrice } from '../systems/TrapSystem';
 import { GameStateShape } from '../GameState';
 import { INVENTORY_SIZE, ECONOMY } from '../constants';
 import { SFX } from './AudioManager';
@@ -430,6 +430,7 @@ function renderMercatorShop(
     tg.style.cssText = `display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;`;
     for (const tid of TRAP_IDS) {
       const def = TRAP_DEFS[tid];
+      const price = trapPrice(state, tid);
       const colHex = '#' + def.color.toString(16).padStart(6, '0');
       const selected = state.selectedTrapType === tid;
       const owned = (state.trapInventory ?? {})[tid] ?? 0;
@@ -443,7 +444,7 @@ function renderMercatorShop(
         ${portrait}
         <div style="color:#fff8e0;font-size:11px;font-weight:bold;line-height:1.2">${def.name}</div>
         <div style="font-size:8.5px;color:#cdb98a;line-height:1.3;min-height:30px">${def.blurb.replace(/"/g, "'")}</div>
-        <div style="color:#f0c040;font-size:11px;font-weight:bold">${def.price}g${owned > 0 ? ` · <span style="color:#88ff88">x${owned}</span>` : ''}</div>`;
+        <div style="color:#f0c040;font-size:11px;font-weight:bold">${price}g${owned > 0 ? ` · <span style="color:#88ff88">x${owned}</span>` : ''}</div>`;
       const row = document.createElement('div');
       row.style.cssText = `display:flex;gap:4px;width:100%;margin-top:3px`;
       const mkBuy = (n: number) => {
@@ -453,7 +454,7 @@ function renderMercatorShop(
         b.style.cssText = `flex:1;background:#3a5520;color:#e8d6a8;cursor:pointer;font-size:10px`;
         b.onclick = () => {
           const spent = buyTraps(state, tid, n);
-          if (spent <= 0) { (window as any).__showInsufficientGoldToast?.(def.price * n); return; }
+          if (spent <= 0) { (window as any).__showInsufficientGoldToast?.(price * n); return; }
           state.selectedTrapType = tid;
           state.hint = `Bought ${n}x ${def.name}. Click an empty tile near the path to place it.`;
           SFX.buy();

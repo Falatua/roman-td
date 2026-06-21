@@ -249,6 +249,12 @@ export enum EnemyType {
   // 2026 v2 spec Ch14 — Egyptian roster expansion (W18-23)
   PLAGUE_BEARER = 'PLAGUE_BEARER',
   MEDJAY_SOLDIER = 'MEDJAY_SOLDIER',
+  // W21-W30 campaign commanders — rare non-boss support enemies that
+  // change the wave until killed.
+  STANDARD_BEARER_COMMANDER = 'STANDARD_BEARER_COMMANDER',
+  PATHFINDER_COMMANDER = 'PATHFINDER_COMMANDER',
+  ANUBIS_PRIEST_COMMANDER = 'ANUBIS_PRIEST_COMMANDER',
+  SIEGE_CAPTAIN_COMMANDER = 'SIEGE_CAPTAIN_COMMANDER',
   // ─── GATES OF HELL (2026-05-17 surprise event) ───────────────────────
   // HELL_GATE — stationary "enemy" that anchors the event at WP3/WP4.
   // Has HP, takes tower fire, dies via the regular death path. Its

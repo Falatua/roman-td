@@ -26,6 +26,7 @@ import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath, buildFlyerPath } from '../src/systems/PathFinder';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
+import { WAVE } from '../src/constants';
 
 function bootstrapState() {
   const s = createGameState();
@@ -72,7 +73,7 @@ describe('previewSpawnHp parity with actual tickSpawns spawn HP', () => {
   // Boss waves strip non-boss spawns in the runtime; the preview helper
   // should NOT be called for those (the chip already filters them out),
   // so we mirror that filter here.
-  for (let waveNum = 1; waveNum <= 20; waveNum++) {
+  for (let waveNum = 1; waveNum <= WAVE.TOTAL; waveNum++) {
     const w: any = (wavesData as any[])[waveNum - 1];
     if (!w) continue;
     const isBossWave = w.type === 'B';

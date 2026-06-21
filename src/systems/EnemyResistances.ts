@@ -309,7 +309,13 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0.3, slow: 0.8 },
   // 2026 v2 spec Ch14 — Egyptian roster expansion.
   [EnemyType.PLAGUE_BEARER]:  { ranged: 0.2, poison: 0.8, burn: 0.3 },
-  [EnemyType.MEDJAY_SOLDIER]: { melee: 0.5, ranged: 0.3, slow: 0.3 }
+  [EnemyType.MEDJAY_SOLDIER]: { melee: 0.5, ranged: 0.3, slow: 0.3 },
+  // W21-W30 commanders — sturdy support pieces, but deliberately not
+  // boss-grade. Killing them should feel like solving the wave.
+  [EnemyType.STANDARD_BEARER_COMMANDER]: { melee: 0.55, ranged: 0.5, slow: 0.35, divine: 1.25 },
+  [EnemyType.PATHFINDER_COMMANDER]:      { ranged: 0.65, slow: 0.25, bleed: 0.65 },
+  [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { ranged: 0.5, slow: 0.3, poison: 0, divine: 1.30 },
+  [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0.7, divine: 1.20 }
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {

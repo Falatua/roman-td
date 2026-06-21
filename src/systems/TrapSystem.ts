@@ -13,6 +13,9 @@ import { GameStateShape } from '../GameState';
 import { GRID } from '../constants';
 import { StatusEffectKind } from '../types';
 import { pushStatus } from './CombatResolver';
+import { campaignRelicTrapDamageMult, campaignRelicTrapPriceMult, campaignRelicTrapRadiusMult } from './CampaignRelicSystem';
+import { bossTrophyTrapDamageMult, bossTrophyTrapRadiusMult } from './BossTrophySystem';
+import { commanderTrapRadiusDisabled } from './CommanderSystem';
 
 export type TrapEffect = 'DAMAGE' | 'POISON' | 'BURN' | 'SLOW' | 'BOSS' | 'FLYER';
 
@@ -87,11 +90,17 @@ export function trapOwned(state: GameStateShape, id: string): number {
   return (state.trapInventory ?? {})[id] ?? 0;
 }
 
+export function trapPrice(state: GameStateShape, id: string): number {
+  const def = TRAP_DEFS[id];
+  if (!def) return 0;
+  return Math.max(1, Math.round(def.price * campaignRelicTrapPriceMult(state)));
+}
+
 // Buy `qty` of a trap into inventory. Returns gold spent (0 if unaffordable).
 export function buyTraps(state: GameStateShape, id: string, qty: number): number {
   const def = TRAP_DEFS[id];
   if (!def || qty <= 0) return 0;
-  const cost = def.price * qty;
+  const cost = trapPrice(state, id) * qty;
   if ((state.gold ?? 0) < cost) return 0;
   state.gold -= cost;
   if (!state.trapInventory) state.trapInventory = {};
@@ -137,7 +146,10 @@ export function tickTraps(
   for (const trap of traps) {
     const def = TRAP_DEFS[trap.type];
     if (!def) continue;
-    const trigPx = def.triggerTiles * GRID.TILE;
+    if (commanderTrapRadiusDisabled(state, trap.x, trap.y)) { survivors.push(trap); continue; }
+    const radiusMult = campaignRelicTrapRadiusMult(state) * bossTrophyTrapRadiusMult(state);
+    const damageMult = campaignRelicTrapDamageMult(state) * bossTrophyTrapDamageMult(state);
+    const trigPx = def.triggerTiles * radiusMult * GRID.TILE;
     // Find a valid trigger: an enemy alive within trigger range that the trap
     // can affect (flyer traps only fire on fliers; ground traps ignore fliers).
     let triggered = false;
@@ -149,14 +161,14 @@ export function tickTraps(
     }
     if (!triggered) { survivors.push(trap); continue; }
     // FIRE: apply the effect to everything in the AoE that the trap can hit.
-    const aoePx = def.radiusTiles * GRID.TILE;
+    const aoePx = def.radiusTiles * radiusMult * GRID.TILE;
     for (const e of enemies) {
       if (e.hp <= 0) continue;
       if (def.flyerOnly && !e.isFlyer) continue;
       if (!def.flyerOnly && e.isFlyer) continue;
       if (Math.hypot(e.x - trap.x, e.y - trap.y) > aoePx) continue;
       if (def.damage) {
-        let dmg = def.damage;
+        let dmg = def.damage * damageMult;
         if (def.bossMult && e.isBoss) dmg *= def.bossMult;
         e.hp -= dmg;
         onDamage?.(e.x, e.y, dmg, def.color);          // show the damage-number popup
