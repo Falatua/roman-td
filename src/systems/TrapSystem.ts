@@ -106,6 +106,7 @@ export function buyTraps(state: GameStateShape, id: string, qty: number): number
   state.gold -= cost;
   if (!state.trapInventory) state.trapInventory = {};
   state.trapInventory[id] = (state.trapInventory[id] ?? 0) + qty;
+  state.trapsPurchased = (state.trapsPurchased ?? 0) + qty;
   return cost;
 }
 

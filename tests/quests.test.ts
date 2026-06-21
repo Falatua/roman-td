@@ -23,12 +23,22 @@ function soloCampaignCumulative() {
 }
 
 describe('30-wave Solo quest pacing', () => {
-  it('keeps 18 unique quests split evenly across the three campaign acts', () => {
-    expect(QUESTS).toHaveLength(18);
-    expect(new Set(QUESTS.map(q => q.id)).size).toBe(18);
+  it('keeps 19 unique quests distributed across the three campaign acts', () => {
+    expect(QUESTS).toHaveLength(19);
+    expect(new Set(QUESTS.map(q => q.id)).size).toBe(19);
     expect(QUESTS.filter(q => q.tier === 'EARLY')).toHaveLength(6);
-    expect(QUESTS.filter(q => q.tier === 'MID')).toHaveLength(6);
+    expect(QUESTS.filter(q => q.tier === 'MID')).toHaveLength(7);
     expect(QUESTS.filter(q => q.tier === 'LATE')).toHaveLength(6);
+  });
+
+  it('completes Field Engineer from cumulative purchases without repeating', () => {
+    const state = createGameState();
+    expect(quest('field_engineer').tier).toBe('MID');
+    expect(quest('field_engineer').target).toBe(8);
+
+    state.trapsPurchased = 8;
+    expect(evaluateQuests(state).map(q => q.id)).toContain('field_engineer');
+    expect(evaluateQuests(state).map(q => q.id)).not.toContain('field_engineer');
   });
 
   it('paces total-kill quests near waves 6, 14, and 23', () => {

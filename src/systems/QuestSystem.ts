@@ -38,7 +38,7 @@ export interface QuestDef {
   reward: QuestRewardPayload;
 }
 
-// All quests in the game — 18 across 3 tiers, tuned for the 30-wave Solo
+// All quests in the game — tuned for the 30-wave Solo
 // campaign and its roughly 1,600 authored kills. Kill/boss targets land near
 // the ends of each campaign third instead of completing in the first 7 waves.
 // Non-kill goals remain action-based so the larger spawn counts do not
@@ -139,6 +139,14 @@ export const QUESTS: QuestDef[] = [
     reward: { kind: 'GOLD', amount: 40 }
   },
   {
+    id: 'field_engineer', tier: 'MID',
+    title: 'Field Engineer',
+    blurb: 'Purchase 8 traps across the campaign. Stockpile them or commit them when the road turns ugly.',
+    condition: s => s.trapsPurchased ?? 0,
+    target: 8,
+    reward: { kind: 'GOLD', amount: 60 }
+  },
+  {
     id: 'diverse_legions', tier: 'MID',
     title: 'Diverse Legions',
     blurb: 'Build 5 DIFFERENT combo types. Variety, not volume.',
@@ -225,6 +233,7 @@ export function ensureQuestState(s: GameStateShape) {
   if (s.combosBuilt === undefined) s.combosBuilt = 0;
   if (!s.combosBuiltUniqueTypes) s.combosBuiltUniqueTypes = [];
   if (s.stonesPlaced === undefined) s.stonesPlaced = 0;
+  if (s.trapsPurchased === undefined) s.trapsPurchased = 0;
 }
 
 // 2026-05-17 — Quest tier-completion bonuses.

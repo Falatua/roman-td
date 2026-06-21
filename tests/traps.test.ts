@@ -20,7 +20,22 @@ describe('Trap inventory flow', () => {
 
     expect(spent).toBe(TRAP_DEFS[id].price * 3);
     expect(trapOwned(s, id)).toBe(3);
+    expect(s.trapsPurchased).toBe(3);
     expect(s.selectedTrapType).toBeNull();
+  });
+
+  it('counts only successful purchases toward lifetime trap progress', () => {
+    const s = createGameState();
+    const id = 'SKY_NET';
+
+    s.gold = 0;
+    expect(buyTraps(s, id, 2)).toBe(0);
+    expect(buyTraps(s, 'NOT_A_TRAP', 2)).toBe(0);
+    expect(s.trapsPurchased).toBe(0);
+
+    s.gold = trapPrice(s, id) * 2;
+    expect(buyTraps(s, id, 2)).toBeGreaterThan(0);
+    expect(s.trapsPurchased).toBe(2);
   });
 
   it('only arms traps when the player selects an owned trap from inventory', () => {
@@ -46,11 +61,13 @@ describe('Trap inventory flow', () => {
     expect(placeTrap(s, id, 4, 4)).toBe(true);
     expect(placeTrap(s, id, 5, 4)).toBe(true);
     expect(trapOwned(s, id)).toBe(1);
+    expect(s.trapsPurchased).toBe(3);
     expect(s.placedTraps).toHaveLength(2);
 
     expect(clearPlacedTrapsForWaveEnd(s)).toBe(2);
     expect(s.placedTraps).toHaveLength(0);
     expect(trapOwned(s, id)).toBe(1);
+    expect(s.trapsPurchased).toBe(3);
     expect(s.selectedTrapType).toBe(id);
   });
 });
