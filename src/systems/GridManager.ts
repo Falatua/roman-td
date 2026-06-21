@@ -59,12 +59,13 @@ export function isInsideStructureFootprint(col: number, row: number): boolean {
   const dGateC = Math.abs(col - waypointsData.gate.col);
   const dGateR = Math.abs(row - waypointsData.gate.row);
   if (dGateC <= CAVE_GATE_RESERVE_RADIUS && dGateR <= CAVE_GATE_RESERVE_RADIUS) return true;
-  // 2026 v2 spec Ch7 — Cave B archway gets the same reserve (only when defined).
+  // Cave B's anchor tile is already marked SPAWN, but its surrounding grass
+  // should remain buildable. The second cave is a path entry, not a large
+  // decorative arch like the main cave/gate, and a 5x5 reserve on row 13
+  // blocked useful maze cells left of checkpoint 2.
   const caveB = (waypointsData as any).caveB;
   if (caveB) {
-    const dBC = Math.abs(col - caveB.col);
-    const dBR = Math.abs(row - caveB.row);
-    if (dBC <= CAVE_GATE_RESERVE_RADIUS && dBR <= CAVE_GATE_RESERVE_RADIUS) return true;
+    if (col === caveB.col && row === caveB.row) return true;
   }
   return false;
 }

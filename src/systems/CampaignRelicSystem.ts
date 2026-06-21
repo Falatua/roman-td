@@ -349,7 +349,7 @@ export function shouldOfferCampaignRelics(state: GameStateShape): boolean {
   return !offered.includes(state.wave) && !skipped.includes(state.wave);
 }
 
-export function campaignRelicOffersForWave(state: GameStateShape, wave = state.wave, count = 3): CampaignRelicDef[] {
+export function campaignRelicOffersForWave(state: GameStateShape, wave = state.wave, count = 4): CampaignRelicDef[] {
   if (!state.campaignRelicOffers) state.campaignRelicOffers = {};
   const key = String(wave);
   const existing = state.campaignRelicOffers[key];

@@ -61,6 +61,14 @@ describe('Grid initialization', () => {
       }
     }
   });
+
+  it('keeps Cave B anchor protected but allows adjacent checkpoint-2-left grass', () => {
+    const s = createGameState();
+    initializeGrid(s);
+    expect(isBuildable(s, 3, 13)).toBe(false); // Cave B spawn anchor.
+    expect(tileAt(s, 3, 13)).toBe(TileType.SPAWN);
+    expect(isBuildable(s, 4, 13)).toBe(true);
+  });
 });
 
 describe('Pathfinding — A* through checkpoints', () => {
@@ -76,6 +84,13 @@ describe('Pathfinding — A* through checkpoints', () => {
     const s = createGameState();
     initializeGrid(s);
     expect(canPlaceStone(s, 10, 10)).toBe(true);
+  });
+
+  it('can place a blocker left of checkpoint 2 when both lanes still route around it', () => {
+    const s = createGameState();
+    initializeGrid(s);
+    expect(isBuildable(s, 4, 13)).toBe(true);
+    expect(canPlaceStone(s, 4, 13)).toBe(true);
   });
 
   it('canPlaceStone returns false on an already-occupied tile', () => {

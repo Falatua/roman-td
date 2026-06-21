@@ -58,13 +58,13 @@ describe('Campaign relics', () => {
     }
   });
 
-  it('builds three unclaimed offers and preserves them for the wave', () => {
+  it('builds four unclaimed offers and preserves them for the wave', () => {
     const s = bootstrapState();
     s.wave = 10;
     applyCampaignRelic(s, 'MARS_TAX');
     const offers = campaignRelicOffersForWave(s, 10);
-    expect(offers.length).toBe(3);
-    expect(new Set(offers.map(o => o.id)).size).toBe(3);
+    expect(offers.length).toBe(4);
+    expect(new Set(offers.map(o => o.id)).size).toBe(4);
     expect(offers.map(o => o.id)).not.toContain('MARS_TAX');
     expect(campaignRelicOffersForWave(s, 10).map(o => o.id)).toEqual(offers.map(o => o.id));
   });

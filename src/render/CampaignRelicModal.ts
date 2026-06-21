@@ -27,14 +27,14 @@ export function showCampaignRelicModal(
   });
 
   const panel = document.createElement('div');
-  panel.style.cssText = `width:min(760px,95vw);background:linear-gradient(180deg,#241a12,#0b0907);border:3px solid #ffd34d;color:#e8d6a8;box-shadow:0 0 38px rgba(255,211,77,0.42);padding:22px;`;
+  panel.style.cssText = `width:min(980px,96vw);background:linear-gradient(180deg,#241a12,#0b0907);border:3px solid #ffd34d;color:#e8d6a8;box-shadow:0 0 38px rgba(255,211,77,0.42);padding:22px;`;
   panel.innerHTML = `
     <div style="text-align:center;margin-bottom:16px">
       <div style="font-size:11px;font-weight:bold;letter-spacing:5px;color:#ffd34d;text-shadow:1px 1px 0 #000">CAMPAIGN RELIC</div>
       <div style="font-size:23px;font-weight:bold;letter-spacing:4px;color:#fff0b8;text-shadow:2px 2px 0 #000;margin-top:6px">THE CAMPAIGN OFFERS A BARGAIN</div>
-      <div style="font-size:12px;color:#cdb98a;line-height:1.45;margin-top:8px;letter-spacing:1px">After every fifth wave, choose one randomized relic or reject all three. Each blessing carries a cost.</div>
+      <div style="font-size:12px;color:#cdb98a;line-height:1.45;margin-top:8px;letter-spacing:1px">After every fifth wave, choose one randomized relic or reject all four. Each blessing carries a cost.</div>
     </div>
-    <div id="campaign-relic-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>
+    <div id="campaign-relic-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px"></div>
     <div style="display:flex;justify-content:center;margin-top:14px">
       <button id="campaign-relic-skip" style="font-family:inherit;background:#1b1713;border:2px solid #5a4a30;color:#cdb98a;padding:9px 14px;cursor:pointer;font-size:11px;font-weight:bold;letter-spacing:2px">REJECT ALL RELICS</button>
     </div>
