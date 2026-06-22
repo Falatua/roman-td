@@ -2088,6 +2088,16 @@ async function boot() {
     startWave(state);
     return { placed, phase: state.phase, towers: state.towers.size };
   };
+  // DEV REPRO (temporary): drive the real frame() loop directly with pause
+  // forced off and a faked ~16ms delta, so headless tab auto-pause cannot
+  // confound the observation. Returns the first thrown stack if frame() crashes.
+  (window as any).__dbgUnpause = () => {
+    paused = false; autoPaused = false;
+    (state as any).__surpriseRewardOpen = false;
+    (state as any).__campaignRelicOpen = false;
+    (state as any).__bossTrophyOpen = false;
+    return { paused, autoPaused, tick: state.tick };
+  };
   // Expose floating-number emitter so EnemySystem can pop DOT damage numbers.
   (window as any).__emitFloatingNumber = emitFloatingNumber;
   (window as any).__inv = inventory;
