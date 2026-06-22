@@ -135,6 +135,7 @@ export class RenderEngine {
   // renders in a dimmer color underneath the selected one. Driven by
   // canvas-mousemove + prospect-sidebar hover handlers in main.ts.
   hoveredTowerId: string | null = null;
+  private lastAuraDrawTick = -Infinity;
 
   constructor() {
     this.app = new Application({
@@ -3985,6 +3986,12 @@ export class RenderEngine {
   // triple global, Imperium global speed, Consular global) are NOT drawn
   // — they cover the whole map and a giant ring would be useless.
   drawAuras(state: GameStateShape, tick: number) {
+    // Aura ranges are persistent information, not 60 FPS action. Rebuilding
+    // several large filled Pixi circles every frame becomes expensive when
+    // multiple heroes overlap. Twelve refreshes per second keeps the pulse
+    // alive while cutting geometry uploads by about 80%.
+    if (tick >= this.lastAuraDrawTick && tick - this.lastAuraDrawTick < 1 / 12) return;
+    this.lastAuraDrawTick = tick;
     this.auraGfx.clear();
     const pulse = 0.55 + Math.sin(tick * 2.2) * 0.20;
     const ALLY = 0xc070ff;        // violet — ally buff
@@ -4023,7 +4030,7 @@ export class RenderEngine {
             // violet if the JSON ever ships without the field.
             const tintHex: string = hd?.visual?.tierUpColor ?? '#c070ff';
             const colorInt = parseInt(tintHex.replace('#', ''), 16);
-            this.drawAuraRing(cx, cy, radius * GRID.TILE, colorInt, pulse * 0.92);
+            this.drawAuraRing(cx, cy, radius * GRID.TILE, colorInt, pulse * 0.92, false, false);
           }
         }
       }
@@ -4114,11 +4121,11 @@ export class RenderEngine {
     this.auraGfx.lineStyle(0);
   }
 
-  private drawAuraRing(cx: number, cy: number, r: number, color: number, alpha: number, dashed = false) {
+  private drawAuraRing(cx: number, cy: number, r: number, color: number, alpha: number, dashed = false, filled = true) {
     if (dashed) {
       // dashed outer ring + soft inner fill
       const segs = 32;
-      this.auraGfx.beginFill(color, alpha * 0.06).drawCircle(cx, cy, r).endFill();
+      if (filled) this.auraGfx.beginFill(color, alpha * 0.06).drawCircle(cx, cy, r).endFill();
       this.auraGfx.lineStyle(2, color, alpha);
       for (let i = 0; i < segs; i += 2) {
         const a0 = (i / segs) * Math.PI * 2;
@@ -4128,7 +4135,7 @@ export class RenderEngine {
       }
       this.auraGfx.lineStyle(0);
     } else {
-      this.auraGfx.beginFill(color, alpha * 0.08).drawCircle(cx, cy, r).endFill();
+      if (filled) this.auraGfx.beginFill(color, alpha * 0.08).drawCircle(cx, cy, r).endFill();
       this.auraGfx.lineStyle(2, color, alpha * 0.85);
       this.auraGfx.drawCircle(cx, cy, r);
       this.auraGfx.lineStyle(0);

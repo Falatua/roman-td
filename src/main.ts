@@ -141,6 +141,7 @@ async function boot() {
   let bossLegendaryDropped = false;
   // (stoneMode removed — stones merged into prospect placement)
   let lastComboCount = 0;    // for one-shot audio cue when combo becomes newly available
+  let nextUiRefreshAt = 0;
   let speedMult = 1;          // 1× / 2× / 4× cycle (2026-05-20: 4× added)
   // 2026-05 v11 (B1 Pause). Manual pause toggled by HUD button or P key.
   // autoPaused fires on tab blur via visibilitychange; resumes only if
@@ -2065,6 +2066,28 @@ async function boot() {
   }
   (window as any).__game = state; // debug handle
   (window as any).__gore = gore;
+  // DEV REPRO (temporary): reproduce the multi-hero Start-Wave crash headlessly
+  // from the console. Places N hero/champion towers in sandbox, mirrors the
+  // real corrupted activeHeroTowerId (champion placed last), then starts a wave.
+  (window as any).__reproMultiHero = (heroTypes?: TowerType[]) => {
+    activateSandbox(state);
+    sandboxAddGold(state);
+    const types = heroTypes ?? [TowerType.HERO_MARIUS, TowerType.CHAMPION_AGRIPPA];
+    const placed: string[] = [];
+    let found = 0;
+    for (let r = 0; r < state.tiles.length && found < types.length; r++) {
+      for (let c = 0; c < state.tiles[r].length && found < types.length; c++) {
+        if (state.tiles[r][c] === TileType.EMPTY) {
+          const t = sandboxSpawnTowerDirect(state, types[found], 5, c, r);
+          if (t) { placed.push(t.id); found++; }
+        }
+      }
+    }
+    state.activeHeroId = 'HERO_MARIUS';
+    if (placed.length) state.activeHeroTowerId = placed[placed.length - 1];
+    startWave(state);
+    return { placed, phase: state.phase, towers: state.towers.size };
+  };
   // Expose floating-number emitter so EnemySystem can pop DOT damage numbers.
   (window as any).__emitFloatingNumber = emitFloatingNumber;
   (window as any).__inv = inventory;
@@ -7610,38 +7633,57 @@ async function boot() {
     } else if (state.phase === GamePhase.BUILD_PHASE && state.draw.length > 0) {
       info = `Build phase. Pick a card, click a tile. Next wave: ${factionName(getNextWaveInfo(state).faction)}.`;
     }
-    ui.update(state, info);
-    // SANDBOX: keep the pinned banner's wave + phase tag fresh.
-    // Direct call (no per-frame dynamic import) — the function ref
-    // was cached during mount above.
-    if (state.sandboxMode && sandboxBannerUpdater) sandboxBannerUpdater(state);
-    renderInventoryButton(app, inventory, { onOpen: () => (ui as any).cb.onOpenInventory?.() });
-    // 2026-05 v11 (Pin Recipe QoL): floats the player's pinned combo recipe
-    // below the INVENTORY button with live ingredient status colors.
-    renderPinnedRecipeWidget(state);
+    // UIManager rebuilds substantial DOM, including the full HUD and cards.
+    // Ten refreshes per second is visually immediate but avoids doing that
+    // work 60 times per second while combat and hero VFX are also active.
+    if (now >= nextUiRefreshAt) {
+      nextUiRefreshAt = now + 100;
+      ui.update(state, info);
+      // SANDBOX: keep the pinned banner's wave + phase tag fresh.
+      if (state.sandboxMode && sandboxBannerUpdater) sandboxBannerUpdater(state);
+      renderInventoryButton(app, inventory, { onOpen: () => (ui as any).cb.onOpenInventory?.() });
+      renderPinnedRecipeWidget(state);
+    }
   }
   // Configure logger to surface errors into the game's hint bar.
   Logger.configure({
     level: 'warn',
     surfaceErrorsToHint: (m) => { state.hint = m; }
   });
-  // Crash-resistant frame driver: wrap each tick in try/catch so a single
-  // bad frame can't kill the whole session. Errors get logged + surfaced.
+  // Crash-resistant, display-synchronized frame driver. setInterval can run
+  // expensive frames back-to-back when a burst exceeds 16ms, denying the
+  // browser a chance to paint or process input. requestAnimationFrame applies
+  // natural backpressure and the existing visibility handler already pauses
+  // simulation when the tab is hidden.
   let frameErrorCount = 0;
+  let frameHandle = 0;
+  let frameStopped = false;
+  let frameEmaMs = 16;
+  let maxFrameMs = 0;
+  let slowFrameCount = 0;
   function safeFrame() {
+    if (frameStopped) return;
+    const frameStartedAt = performance.now();
     try {
       frame();
+      frameErrorCount = 0;
     } catch (err) {
       frameErrorCount++;
       Logger.error('GameLoop', err, { wave: state.wave, phase: state.phase, frameErrorCount });
       // After many consecutive errors, stop hammering the loop and warn loudly.
       if (frameErrorCount > 20) {
         console.error('[Roman TD] Frame loop has thrown 20+ times — halting to prevent runaway logs.');
-        clearInterval(loopHandle);
+        frameStopped = true;
       }
     }
+    const frameMs = performance.now() - frameStartedAt;
+    frameEmaMs = frameEmaMs * 0.92 + frameMs * 0.08;
+    maxFrameMs = Math.max(maxFrameMs, frameMs);
+    if (frameMs > 50) slowFrameCount++;
+    (window as any).__rtdPerf = { frameMs, frameEmaMs, maxFrameMs, slowFrameCount, frameErrorCount };
+    if (!frameStopped) frameHandle = requestAnimationFrame(safeFrame);
   }
-  const loopHandle = setInterval(safeFrame, 16);
+  frameHandle = requestAnimationFrame(safeFrame);
   // Debug: manual tick driver for headless / hidden-iframe environments.
   (window as any).__tick = (seconds: number, dt = 0.016) => {
     const steps = Math.max(1, Math.round(seconds / dt));

@@ -244,7 +244,7 @@
         "cooldownSec": 8,
         "durationSec": 0,
         "params": { "forceBonusAttack": true, "targets": "ALL_TOWERS" },
-        "description": "Forces every placed tower on the map to fire one bonus attack at its current target. With a typical 15-tower board that's 15 instant hits at full damage — an entire combat round delivered in a single frame. The bigger your maze, the bigger the burst (a 25-tower late-game board = 25 instant hits).",
+        "description": "Commands every placed combat tower to fire one early bonus attack at its current target. The decree rolls across the formation over roughly 1.5 seconds, preserving the full extra combat round without forcing every projectile and on-hit effect into one frame. The bigger your maze, the bigger the burst.",
         "vfxColor": "#ffe066",
         "vfxStyle": "GOLD_RING_SWEEP"
       },

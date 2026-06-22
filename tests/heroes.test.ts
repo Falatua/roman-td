@@ -347,8 +347,34 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     tickHeroAbilities(s);
 
     expect(s.activeHeroId).toBe('HERO_MARIUS');
-    expect(milites.attackCooldown).toBe(0);
+    expect(milites.attackCooldown).toBeGreaterThan(0);
+    expect(milites.attackCooldown).toBeLessThan(0.2);
     expect(champion.__heroCooldowns?.SPQR_DECREE).toBeGreaterThan(s.tick);
+  });
+
+  it('SPQR Decree spreads a large board volley instead of zeroing every cooldown together', () => {
+    const s = freshState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 10;
+    s.activeHeroId = 'HERO_MARIUS';
+    const caesar = createTower(TowerType.CHAMPION_CAESAR, 5, 5, 5, 9);
+    s.towers.set(caesar.id, caesar);
+    const commanded = Array.from({ length: 60 }, (_, idx) => {
+      const tower = createTower(TowerType.MILITES, 1, 6 + (idx % 20), 7 + Math.floor(idx / 20), 9);
+      tower.attackCooldown = 4;
+      s.towers.set(tower.id, tower);
+      return tower;
+    });
+
+    tickHeroAbilities(s); // initialize Champion wake-up
+    s.tick = 20;
+    tickHeroAbilities(s); // SPQR Decree
+
+    const cooldowns = commanded.map(t => t.attackCooldown);
+    expect(Math.min(...cooldowns)).toBeGreaterThanOrEqual(0.08);
+    expect(Math.max(...cooldowns)).toBeLessThanOrEqual(1.5);
+    expect(new Set(cooldowns).size).toBe(commanded.length);
+    expect(cooldowns.filter(cooldown => cooldown <= 0.016).length).toBe(0);
   });
 
   it('stagger-wakes a full Champion roster so all hero abilities do not fire on the same frame', () => {
@@ -417,6 +443,9 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(openingCasts.length).toBe(11);
     expect(new Set(openingCasts).size).toBe(11);
     expect((s as any).__heroTimedEvents).toEqual([]);
+    const openingAttacks = [starter, ...champions].map(hero => hero.attackCooldown);
+    expect(Math.min(...openingAttacks)).toBeGreaterThanOrEqual(0.12);
+    expect(new Set(openingAttacks).size).toBe(openingAttacks.length);
 
     let fxCount = 0;
     tickHeroAbilities(s, { triggerHeroAbilityFx: () => { fxCount++; } });
@@ -539,7 +568,8 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(boss.statusEffects.some(st => st.kind === StatusEffectKind.MARK)).toBe(true);
     expect([...s.enemies.values()].every(e => e.statusEffects.some(st => st.kind === StatusEffectKind.SLOW))).toBe(true);
     expect((s as any).__proscriptionUntilTick).toBeGreaterThan(s.tick);
-    expect(decreeTarget.attackCooldown).toBe(0);
+    expect(decreeTarget.attackCooldown).toBeGreaterThan(0);
+    expect(decreeTarget.attackCooldown).toBeLessThanOrEqual(1.5);
 
     const flyerPick = pickTarget(s, flyerTargeter, [flyer], flyerTargeter.range);
     expect(flyerPick?.id).toBe('flyer');

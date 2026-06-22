@@ -323,6 +323,15 @@ export function prepareHeroAbilitiesForWave(state: GameStateShape): void {
 
   heroes.sort((a, b) => (HERO_WAKEUP_ORDER[a.heroId] ?? 0) - (HERO_WAKEUP_ORDER[b.heroId] ?? 0));
 
+  // Every placed tower starts life with attackCooldown=0. High-range heroes
+  // can see the cave immediately, so a council used to fire every basic
+  // attack on the first enemy in the same frame. Give each hero a distinct
+  // opening beat. This does not change attack speed after the first shot.
+  heroes.forEach(({ hero }, idx) => {
+    const openingDelay = 0.12 + idx * 0.11;
+    hero.attackCooldown = Math.max(hero.attackCooldown, openingDelay);
+  });
+
   const ready: Array<{ hero: Tower; ability: any }> = [];
   const maxAbilityCount = Math.max(0, ...heroes.map(entry => entry.abilities.length));
   // Ability-slot-first ordering prevents one hero from launching both of its
@@ -714,13 +723,20 @@ function executeSCIPIO_BRAND(state: GameStateShape, hero: Tower, params: any, ab
 // ── CAESAR ──
 
 function executeSPQR_DECREE(state: GameStateShape, hero: Tower, _params: any, ability: any, hooks?: HeroHooks): void {
-  // Force every tower to fire one bonus attack. Implementation: zero out
-  // each tower's attackCooldown so the next combat tick fires immediately.
+  // Force every combat tower to fire one bonus attack. Do not zero every
+  // cooldown on the same frame: a late board can emit hundreds of hits,
+  // projectiles, sounds, and on-hit effects at once and stall the browser.
+  // The decree now travels across the formation over a short command wave,
+  // preserving one early attack per tower without a single-frame burst.
   const MAX_TOWER_RELAY_FX = 28;
   const towerPositions: Array<{ x: number; y: number }> = [];
-  for (const t of state.towers.values()) {
-    if (t.id === hero.id) continue;
-    t.attackCooldown = 0;
+  const commanded = Array.from(state.towers.values())
+    .filter(t => t.id !== hero.id && !t.pending && t.damageType !== DamageType.NONE)
+    .sort((a, b) => a.placedAtWave - b.placedAtWave || a.tileY - b.tileY || a.tileX - b.tileX || a.id.localeCompare(b.id));
+  const spacing = Math.min(0.06, 1.35 / Math.max(1, commanded.length));
+  for (let idx = 0; idx < commanded.length; idx++) {
+    const t = commanded[idx];
+    t.attackCooldown = 0.08 + idx * spacing;
     if (towerPositions.length < MAX_TOWER_RELAY_FX) {
       towerPositions.push({ x: t.tileX * GRID.TILE + GRID.TILE / 2, y: t.tileY * GRID.TILE + GRID.TILE / 2 });
     }
