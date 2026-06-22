@@ -30,6 +30,9 @@ export interface SandboxPanelHooks {
   // by default; this is the explicit "start over with a blank maze"
   // button. Called after a confirm() prompt in the panel itself.
   onWipeAllTowers: () => void;
+  // Build deterministic late-board hero stress layouts without relying on
+  // canvas coordinates. Used for the recurring multi-hero freeze audit.
+  onSpawnHeroStress: (mode: 'PAIR' | 'COUNCIL') => void;
 }
 
 // Mount the persistent banner + right-panel buttons. Idempotent —
@@ -76,6 +79,10 @@ export function mountSandboxPanel(state: GameStateShape, hooks: SandboxPanelHook
     'Hard-reset to any wave 1-20 or jump into Endless mode. Clears enemies, projectiles, loot, and surprise-event state. Towers and the maze are PRESERVED (use WIPE TOWERS for a clean slate).'));
   panel.appendChild(mkSbBtn('+ SPAWN TOWER', () => showTowerPicker(hooks),
     'Direct tower spawn — pick any tower at any tier (T1-T5, base or combo). Bypasses the prospect / recipe flow entirely. Click an empty tile to drop. Free.'));
+  panel.appendChild(mkSbBtn('2 HERO STRESS', () => hooks.onSpawnHeroStress('PAIR'),
+    'Build a deterministic W9 board with starter Marius, Champion Caesar, and 18 regular towers. Click START WAVE to reproduce the two-hero case.'));
+  panel.appendChild(mkSbBtn('6 HERO STRESS', () => hooks.onSpawnHeroStress('COUNCIL'),
+    'Build a deterministic W9 board with the full hero council and 30 regular towers. Click START WAVE for the maximum hero-combination test.'));
   panel.appendChild(mkSbBtn('💰 +1000g', () => hooks.onAddGold(),
     'Add 1000 gold to your treasury. Sandbox starts with 999,999g so you rarely need it — useful for testing exact buy thresholds.'));
   // SANDBOX 2026-05-19: red-bordered wipe button. Visually distinct

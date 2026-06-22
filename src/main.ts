@@ -28,7 +28,7 @@ import { activateSandbox, sandboxAddGold, sandboxAllTowerOptions, sandboxSpawnTo
 // feature. awardHeroXp hooks into the kill handler; tickHeroAbilities
 // runs once per WAVE_PHASE frame.
 import { awardHeroXp as heroAwardXp, tickHeroAbilities, type HeroHooks } from './systems/HeroSystem';
-import { heroIdForTowerType } from './systems/HeroIdentity';
+import { heroIdForTowerType, isMercatorChampionType } from './systems/HeroIdentity';
 import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
 import itemsData from './data/items_permanent.json';
@@ -546,7 +546,11 @@ async function boot() {
         state.towers.set(tw.id, tw);
         state.pendingPurchasedTowers = queue;
         state.pendingPurchasedTower = null;
-        state.activeHeroTowerId = tw.id;
+        // Only the run's starter hero owns activeHeroTowerId. Mercator
+        // champions are heroes too but must NOT hijack the starter pointer —
+        // doing so orphaned the starter and corrupted hero bookkeeping when a
+        // second hero was on the board.
+        if (!isMercatorChampionType(String(popped.type))) state.activeHeroTowerId = tw.id;
         (state as any).__heroPlacementConfirmed = false;
         // First-time hero teaching tip (same as the inline path).
         if (!state.sandboxMode && !localStorage.getItem('roman_td_seen_hero_tip')) {
@@ -2066,38 +2070,6 @@ async function boot() {
   }
   (window as any).__game = state; // debug handle
   (window as any).__gore = gore;
-  // DEV REPRO (temporary): reproduce the multi-hero Start-Wave crash headlessly
-  // from the console. Places N hero/champion towers in sandbox, mirrors the
-  // real corrupted activeHeroTowerId (champion placed last), then starts a wave.
-  (window as any).__reproMultiHero = (heroTypes?: TowerType[]) => {
-    activateSandbox(state);
-    sandboxAddGold(state);
-    const types = heroTypes ?? [TowerType.HERO_MARIUS, TowerType.CHAMPION_AGRIPPA];
-    const placed: string[] = [];
-    let found = 0;
-    for (let r = 0; r < state.tiles.length && found < types.length; r++) {
-      for (let c = 0; c < state.tiles[r].length && found < types.length; c++) {
-        if (state.tiles[r][c] === TileType.EMPTY) {
-          const t = sandboxSpawnTowerDirect(state, types[found], 5, c, r);
-          if (t) { placed.push(t.id); found++; }
-        }
-      }
-    }
-    state.activeHeroId = 'HERO_MARIUS';
-    if (placed.length) state.activeHeroTowerId = placed[placed.length - 1];
-    startWave(state);
-    return { placed, phase: state.phase, towers: state.towers.size };
-  };
-  // DEV REPRO (temporary): drive the real frame() loop directly with pause
-  // forced off and a faked ~16ms delta, so headless tab auto-pause cannot
-  // confound the observation. Returns the first thrown stack if frame() crashes.
-  (window as any).__dbgUnpause = () => {
-    paused = false; autoPaused = false;
-    (state as any).__surpriseRewardOpen = false;
-    (state as any).__campaignRelicOpen = false;
-    (state as any).__bossTrophyOpen = false;
-    return { paused, autoPaused, tick: state.tick };
-  };
   // Expose floating-number emitter so EnemySystem can pop DOT damage numbers.
   (window as any).__emitFloatingNumber = emitFloatingNumber;
   (window as any).__inv = inventory;
@@ -5052,6 +5024,76 @@ async function boot() {
   // the render loop below is a direct function call, not a fresh
   // dynamic-import lookup every tick.
   let sandboxBannerUpdater: ((state: any) => void) | null = null;
+  function setupSandboxHeroStress(mode: 'PAIR' | 'COUNCIL') {
+    if (!state.sandboxMode || state.phase === GamePhase.WAVE_PHASE) return;
+    sandboxWipeAllTowers(state);
+    sandboxResetForWave(state, 9);
+    state.activeHeroId = 'HERO_MARIUS';
+    state.heroTier = 4;
+    state.heroXp = Math.max(state.heroXp ?? 0, 850);
+    state.activeHeroTowerId = null;
+    (window as any).__lastFrameError = null;
+    (window as any).__rtdPerf = null;
+
+    const heroTypes: TowerType[] = mode === 'PAIR'
+      ? [TowerType.HERO_MARIUS, TowerType.CHAMPION_CAESAR]
+      : [
+          TowerType.HERO_MARIUS,
+          TowerType.CHAMPION_AGRIPPA,
+          TowerType.CHAMPION_AGRICOLA,
+          TowerType.CHAMPION_SCIPIO,
+          TowerType.CHAMPION_CAESAR,
+          TowerType.CHAMPION_SULLA
+        ];
+    const fillerTypes: TowerType[] = [
+      TowerType.MILITES,
+      TowerType.SAGITTARIUS,
+      TowerType.SCORPIO,
+      TowerType.VELITES,
+      TowerType.HASTATI,
+      TowerType.VULCAN_ENGINEER
+    ];
+    const fillerCount = mode === 'PAIR' ? 18 : 30;
+    const queue = [
+      ...heroTypes,
+      ...Array.from({ length: fillerCount }, (_, idx) => fillerTypes[idx % fillerTypes.length])
+    ];
+    const candidates: Array<{ col: number; row: number }> = [];
+    for (let row = 1; row < GRID.ROWS - 1; row++) {
+      for (let col = 1; col < GRID.COLS - 1; col++) {
+        if (isBuildable(state, col, row)) candidates.push({ col, row });
+      }
+    }
+    candidates.sort((a, b) => {
+      const da = Math.abs(a.col - GRID.COLS / 2) + Math.abs(a.row - GRID.ROWS / 2);
+      const db = Math.abs(b.col - GRID.COLS / 2) + Math.abs(b.row - GRID.ROWS / 2);
+      return da - db || a.row - b.row || a.col - b.col;
+    });
+
+    const placed: any[] = [];
+    for (const type of queue) {
+      let accepted = false;
+      for (const pos of candidates) {
+        if (!isBuildable(state, pos.col, pos.row)) continue;
+        const tower = sandboxSpawnTowerDirect(state, type, 5, pos.col, pos.row);
+        if (!tower) continue;
+        const path = buildGroundPath(state);
+        if (path) {
+          state.groundPath = path;
+          placed.push(tower);
+          accepted = true;
+          break;
+        }
+        state.towers.delete(tower.id);
+        setTile(state, pos.col, pos.row, TileType.EMPTY);
+      }
+      if (!accepted) break;
+    }
+    const starter = placed.find(t => t.type === TowerType.HERO_MARIUS);
+    state.activeHeroTowerId = starter?.id ?? null;
+    const heroCount = placed.filter(t => !!t.isHero).length;
+    state.hint = `🧪 ${mode} HERO STRESS READY — W9, ${heroCount} heroes, ${placed.length - heroCount} regular towers. Click START WAVE.`;
+  }
   if (state.sandboxMode) {
     import('./render/SandboxPanel').then(({ mountSandboxPanel, updateSandboxBanner }) => {
       sandboxBannerUpdater = updateSandboxBanner;
@@ -5089,7 +5131,8 @@ async function boot() {
           const p = buildGroundPath(state);
           if (p) { state.groundPath = p; resnapEnemiesToPath(state, p); }
           state.hint = '🧪 SANDBOX → all towers + stones wiped. Maze is blank.';
-        }
+        },
+        onSpawnHeroStress: setupSandboxHeroStress
       });
     });
   }
@@ -5773,7 +5816,7 @@ async function boot() {
       // Hero bookkeeping (existing). Also clears the confirmation
       // flag now that the placement actually committed.
       if (popped.source === 'hero') {
-        state.activeHeroTowerId = tw.id;
+        if (!isMercatorChampionType(String(popped.type))) state.activeHeroTowerId = tw.id;
         (state as any).__heroPlacementConfirmed = false;
         if (!state.sandboxMode && !localStorage.getItem('roman_td_seen_hero_tip')) {
           const tipEl = document.createElement('div');
@@ -7517,36 +7560,52 @@ async function boot() {
       void beginEndlessMode;   // retained (unreachable) to avoid unused-symbol churn; see Phase 9 cleanup.
       runEndOfGameFlow(app, state, true, () => location.reload(), undefined, undefined);
     }
-    renderer.drawDynamic(state);
-    renderer.setTileRef(state.tiles);
-    {
-      const wIdx = Math.min(49, Math.max(0, state.wave - 1));
-      const wInfo = wavesData[wIdx];
-      renderer.drawAmbient(state.tick, state.wave, wInfo?.type === 'B', state.caveBActive === true);
+    // 2026-06-22 — RENDER RESILIENCE. The game-state update above is already
+    // complete by this point, so a render-layer exception must never abort the
+    // frame and (via safeFrame's consecutive-throw halt) hard-freeze the game.
+    // This bit the multi-hero case: a draw exception thrown every frame tripped
+    // the 20-throw halt and froze the board the instant a wave started with two
+    // heroes on the map. Catch render exceptions here so the simulation keeps
+    // running, and stash the FIRST stack on window.__lastFrameError +
+    // console.error it once so the exact crashing RenderEngine call is captured
+    // from a real (WebGL) browser session.
+    try {
+      renderer.drawDynamic(state);
+      renderer.setTileRef(state.tiles);
+      {
+        const wIdx = Math.min(49, Math.max(0, state.wave - 1));
+        const wInfo = wavesData[wIdx];
+        renderer.drawAmbient(state.tick, state.wave, wInfo?.type === 'B', state.caveBActive === true);
+      }
+      renderer.drawImpactOverlays(state.tick);
+      renderer.applyShake(dt, state.tick);
+      renderer.drawGore(gore, state.tick);
+      // 2026-05-19 — Aura buff tiles: 5 fixed glowing tiles with
+      // per-frame pulse animation.
+      renderer.drawAuraTiles(state, state.tick);
+      renderer.drawComboFx(state, state.tick);
+      renderer.drawCheckpointHealFx(state, state.tick);
+      renderer.drawReanimationFx(state, state.tick);
+      renderer.drawChainLightningFx(state, state.tick);
+      renderer.drawProjectiles(state);
+      renderer.drawDruidSleepDarts(state);
+      renderer.drawElephantAura(state);
+      renderer.drawMeleeSlashes(state.tick);
+      renderer.drawHeroAbilityFx(state.tick);
+      renderer.drawBossBar(state);
+      renderer.drawBossLowHpAura(state);
+      renderer.drawBossVignette(state, dt);
+      renderer.tickBloodRain(dt);
+      renderer.drawSelectedRange(state);
+      renderer.drawSellStoneSelection(state, state.tick);
+      renderer.drawBurnPatches(state, state.tick);
+      renderer.drawTraps(state, state.tick);
+    } catch (drawErr: any) {
+      if (!(window as any).__lastFrameError) {
+        (window as any).__lastFrameError = String((drawErr && drawErr.stack) || drawErr);
+        console.error('[Roman TD] RENDER EXCEPTION (caught, sim continues):', drawErr);
+      }
     }
-    renderer.drawImpactOverlays(state.tick);
-    renderer.applyShake(dt, state.tick);
-    renderer.drawGore(gore, state.tick);
-    // 2026-05-19 — Aura buff tiles: 5 fixed glowing tiles with
-    // per-frame pulse animation.
-    renderer.drawAuraTiles(state, state.tick);
-    renderer.drawComboFx(state, state.tick);
-    renderer.drawCheckpointHealFx(state, state.tick);
-    renderer.drawReanimationFx(state, state.tick);
-    renderer.drawChainLightningFx(state, state.tick);
-    renderer.drawProjectiles(state);
-    renderer.drawDruidSleepDarts(state);
-    renderer.drawElephantAura(state);
-    renderer.drawMeleeSlashes(state.tick);
-    renderer.drawHeroAbilityFx(state.tick);
-    renderer.drawBossBar(state);
-    renderer.drawBossLowHpAura(state);
-    renderer.drawBossVignette(state, dt);
-    renderer.tickBloodRain(dt);
-    renderer.drawSelectedRange(state);
-    renderer.drawSellStoneSelection(state, state.tick);
-    renderer.drawBurnPatches(state, state.tick);
-    renderer.drawTraps(state, state.tick);
     // 2026-05-16 — Surprise event VFX (fires/urns/scars + screen tint).
     // Sits between burn patches and weather so the event tint sits over
     // the play area but under the weather overlay (rain still reads).
@@ -7679,11 +7738,19 @@ async function boot() {
       frameErrorCount = 0;
     } catch (err) {
       frameErrorCount++;
-      Logger.error('GameLoop', err, { wave: state.wave, phase: state.phase, frameErrorCount });
-      // After many consecutive errors, stop hammering the loop and warn loudly.
-      if (frameErrorCount > 20) {
-        console.error('[Roman TD] Frame loop has thrown 20+ times — halting to prevent runaway logs.');
-        frameStopped = true;
+      // 2026-06-22 — NEVER permanently halt the loop on a frame exception.
+      // The old "20 consecutive throws → frameStopped" halt is exactly what
+      // hard-froze the game in the multi-hero Start-Wave case: a presentation
+      // exception thrown every frame tripped the halt in ~0.3s. The state
+      // update runs BEFORE presentation each frame, so keeping the loop alive
+      // lets the simulation (and the wave) keep advancing even if drawing
+      // throws. Capture the first stack for diagnosis; throttle logging so a
+      // persistent throw can't spam the console.
+      if (!(window as any).__lastFrameError) {
+        (window as any).__lastFrameError = String((err && (err as any).stack) || err);
+      }
+      if (frameErrorCount <= 3 || frameErrorCount % 600 === 0) {
+        Logger.error('GameLoop', err, { wave: state.wave, phase: state.phase, frameErrorCount });
       }
     }
     const frameMs = performance.now() - frameStartedAt;

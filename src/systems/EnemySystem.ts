@@ -297,7 +297,7 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   if (useCaveB) (e as any).__caveB = true;
   state.enemies.set(e.id, e);
   // Trigger spawn-emergence puff at spawn pixel (Animation Doc §22.1)
-  const renderer = (window as any).__renderer;
+  const renderer = (globalThis as any).__renderer;
   if (renderer?.triggerSpawnPuff) renderer.triggerSpawnPuff(startX, startY, state.tick);
   return e;
 }
