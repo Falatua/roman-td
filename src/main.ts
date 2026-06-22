@@ -14,7 +14,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, rollBossDrop, rollEpicDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, premiumDropRoll, rollBossDrop, rollEpicDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
@@ -71,6 +71,7 @@ import { showCampaignRelicModal } from './render/CampaignRelicModal';
 import { showBossTrophyModal } from './render/BossTrophyModal';
 import { campaignRelicKillGoldBonus, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { shouldOfferBossTrophy, markBossTrophyOfferedForWave } from './systems/BossTrophySystem';
+import { canReceiveRunReward, isMajorBossRewardEnemy } from './systems/RewardEligibility';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -2638,7 +2639,7 @@ async function boot() {
     // fair stand-in. Fortuna spins cost 500g but the player took a
     // gamble — they don't get the full 500g back, just the 50g
     // mercator-equivalent so refunds remain bounded.
-    if (entry.source === 'mercator' || entry.source === 'fortuna') return 50;
+    if (entry.source === 'mercator' || entry.source === 'fortuna') return 250;
     // 2026-05-19 — Hero placement is free and yields no refund.
     if (entry.source === 'hero') return 0;
     return (ECONOMY.TIER_PLACE_COST as Record<number, number>)[entry.tier] ?? 5;
@@ -4789,8 +4790,8 @@ async function boot() {
     // separately via onOpenShop, so the two vendors never lock each other out.
     onOpenMercator: () => {
       if (!mercatorActive) {
-        state.hint = 'The Mercator is not in town. He visits W4 / 9 / 14 / 19 only.';
-        showActionBlockedToast('The Mercator only visits on W4 / W9 / W14 / W19. Catch him next visit.');
+        state.hint = 'The Mercator is not in town. He visits W4 / 9 / 14 / 19 / 23 / 27.';
+        showActionBlockedToast('The Mercator visits on W4 / W9 / W14 / W19 / W23 / W27. Catch him next visit.');
         return;
       }
       if (!isPreWavePhase()) {
@@ -6097,7 +6098,8 @@ async function boot() {
     // survival gold bonus — is held until the wave wraps. Stacked events
     // still queue normally via queuedSurpriseRewards and all fire
     // back-to-back during the post-wave BUILD_PHASE.
-    if (state.pendingSurpriseReward && !(state as any).__surpriseRewardModalShown
+    if (canReceiveRunReward(state)
+        && state.pendingSurpriseReward && !(state as any).__surpriseRewardModalShown
         && state.phase !== GamePhase.WAVE_PHASE) {
       (state as any).__surpriseRewardModalShown = true;
       const kind = state.pendingSurpriseReward.kind;
@@ -6760,7 +6762,7 @@ async function boot() {
           // additively if multiple are equipped (rare in practice — same
           // ECONOMY family, so only one fits per tower slot anyway).
           if (t.equippedItems?.includes('GOLD_PURSE'))                  { earnGold(state, 2); goldEarnedHere += 2; }
-          if (t.equippedItems?.includes('HANNIBALS_STRATEGY_SCROLL'))   { earnGold(state, 3); goldEarnedHere += 3; }
+          if (t.equippedItems?.includes('HANNIBALS_STRATEGY_SCROLL'))   { earnGold(state, 5); goldEarnedHere += 5; }
           // Gate-exclusive PRAETORIAN_COIN (Common): +1g per kill.
           // Cheaper than the Rare GOLD_PURSE (+2); same ECONOMY family
           // so they can't both be equipped on the same tower.
@@ -6844,8 +6846,9 @@ async function boot() {
           // the killing blow. Sulla's March (tier-3) was also deleted
           // in the 2026-05-21 hero pass.
           // BOSS-KILL gold bonus — extra reward separate from wave-end gold.
-          // Scales with wave so late-game bosses pay proper bounties.
-          if (e.isBoss) {
+          // Only true scheduled bosses pay it; boss-class adds already
+          // receive boss stats and no longer multiply the campaign purse.
+          if (isMajorBossRewardEnemy(e)) {
             // 20-WAVE CAMPAIGN: bounty scales faster with wave so the
             // BOSS BOUNTY (2026-05 tuning): playtest showed players
             // ended W12 swimming in gold. Trimmed from 60+wave×8 (W20=220g)
@@ -7002,15 +7005,20 @@ async function boot() {
           // via rollBossDrop.
           const ELEPHANT_TYPES = new Set(['WAR_ELEPHANT', 'UNDEAD_WAR_ELEPHANT']);
           if (ELEPHANT_TYPES.has(e.type as string)) {
-            const drop = rollEpicDrop(state, inventory);
-            if (drop) spawnLootAt(state, e, drop);
-          } else if (e.isBoss) {
+            if (premiumDropRoll(0.20)) {
+              const drop = rollEpicDrop(state, inventory);
+              if (drop) spawnLootAt(state, e, drop);
+            }
+          } else if (isMajorBossRewardEnemy(e)) {
             const drop = rollBossDrop(w.faction, state, inventory);
             if (drop) {
               spawnLootAt(state, e, drop);
               bossLegendaryDropped = true;
             }
-          } else if (e.type === 'FIRE_GIANT') {
+          } else if (e.isBoss && premiumDropRoll(0.12)) {
+            const drop = rollEpicDrop(state, inventory);
+            if (drop) spawnLootAt(state, e, drop);
+          } else if (e.type === 'FIRE_GIANT' && premiumDropRoll(0.10)) {
             // 2026-05-20 — Fire Giant kills drop a guaranteed EPIC item.
             // The W16 GATES_OF_HELL event pumps out ~15 Fire Giants in
             // total (alternating from the two destructible Hell Gates,
@@ -7038,7 +7046,7 @@ async function boot() {
             const dropRarity = newOrb.rarity;
             // Bright sparkle burst at the drop location, color-keyed to rarity.
             const COLOR: Record<string, number> = {
-              COMMON: 0xcccccc, UNCOMMON: 0x5cd05c, RARE: 0x5ca0ff,
+              COMMON: 0xcccccc, UNCOMMON: 0x5cd05c, RARE: 0x5ca0ff, EPIC: 0xa060ff,
               LEGENDARY: 0xff9933, UNIQUE: 0xffd34d
             };
             const c = COLOR[dropRarity] ?? 0xffd34d;
@@ -7393,6 +7401,15 @@ async function boot() {
     // Lives reaching 0 always forces GAME_OVER, regardless of which phase fired the leak.
     if (state.lives <= 0 && state.phase !== GamePhase.GAME_OVER) {
       if (state.gameOverAt < 0) state.gameOverAt = state.tick;
+      state.pendingSurpriseReward = null;
+      state.queuedSurpriseRewards = [];
+      (state as any).__surpriseRewardModalShown = false;
+      (state as any).__surpriseRewardOpen = false;
+      (state as any).__campaignRelicOpen = false;
+      (state as any).__bossTrophyOpen = false;
+      document.getElementById('surprise-reward-modal')?.remove();
+      document.getElementById('campaign-relic-modal')?.remove();
+      document.getElementById('boss-trophy-modal')?.remove();
       // Brief delay so the death animation can be seen, then snap to GAME_OVER.
       if (state.tick - state.gameOverAt > 1.0) state.phase = GamePhase.GAME_OVER;
     }

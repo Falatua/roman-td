@@ -290,42 +290,41 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   const spdMult = TIER_MULTS.speed[t.qualityTier];
   // Item damage/speed multipliers — kept in lockstep with items_permanent.json.
   // Adjusted 2026-05 so common/uncommon/rare/legendary actually escalate.
-  let itemDmgMult = t.equippedItems.includes('SHARPENED_BLADE') ? 1.12 : 1;
-  if ((t.equippedItems.includes('CELTIC_LONGSWORD')) && (t.damageType === DamageType.PHYS_MELEE || t.damageType === DamageType.PHYS_RANGED)) itemDmgMult *= 1.25;
-  if ((t.equippedItems.includes('NECROTIC_LONGSWORD')) && (t.damageType === DamageType.PHYS_MELEE || t.damageType === DamageType.PHYS_RANGED)) itemDmgMult *= 1.28;
-  if (t.equippedItems.includes('STORM_JAVELIN') && t.damageType === DamageType.PHYS_RANGED) itemDmgMult *= 1.22;
+  let itemDmgMult = t.equippedItems.includes('SHARPENED_BLADE') ? 1.10 : 1;
+  if ((t.equippedItems.includes('CELTIC_LONGSWORD')) && (t.damageType === DamageType.PHYS_MELEE || t.damageType === DamageType.PHYS_RANGED)) itemDmgMult *= 1.50;
+  if ((t.equippedItems.includes('NECROTIC_LONGSWORD')) && (t.damageType === DamageType.PHYS_MELEE || t.damageType === DamageType.PHYS_RANGED)) itemDmgMult *= 1.55;
+  if (t.equippedItems.includes('STORM_JAVELIN') && t.damageType === DamageType.PHYS_RANGED) itemDmgMult *= 1.40;
   let itemSpeedMult = 1;
-  if (t.equippedItems.includes('TRAINING_SCROLL')) itemSpeedMult *= 1.12;
-  if (t.equippedItems.includes('QUICKDRAW_GLOVES')) itemSpeedMult *= 1.15;
-  if (t.equippedItems.includes('MERCURY_FEATHER')) itemSpeedMult *= 1.22;
-  if (t.equippedItems.includes('HOURGLASS_OF_SATURN')) itemSpeedMult *= 1.30;
-  if (t.equippedItems.includes('FALCONERS_WATCHPOST')) itemSpeedMult *= 1.25;   // 2026 v2 — EPIC anti-air: faster pelting (range below)
+  if (t.equippedItems.includes('TRAINING_SCROLL')) itemSpeedMult *= 1.10;
+  if (t.equippedItems.includes('QUICKDRAW_GLOVES')) itemSpeedMult *= 1.12;
+  if (t.equippedItems.includes('MERCURY_FEATHER')) itemSpeedMult *= 1.25;
+  if (t.equippedItems.includes('HOURGLASS_OF_SATURN')) itemSpeedMult *= 1.40;
+  if (t.equippedItems.includes('FALCONERS_WATCHPOST')) itemSpeedMult *= 1.40;
   // 2026-05 v6: CAVALRY niche dropped — CAVALRY_SPUR is now MELEE-only
   // (equip gate in ItemRules); NUMIDIAN_SADDLE is now RANGED-only. Both
   // apply universally within their class with no per-tower cavalry filter.
-  // 2026-05-19 rarity rebalance — Cavalry Spur tuned from +30% → +22%
-  // atk speed so it sits cleanly in the UNCOMMON tier next to Mercury
-  // Feather (+22% any-tower). Keeps the +0.5 range bonus from below.
-  if (t.equippedItems.includes('CAVALRY_SPUR') && t.damageType === DamageType.PHYS_MELEE) itemSpeedMult *= 1.22;
+  // Uncommon speed items sit at +25%, above Common and below Rare.
+  if (t.equippedItems.includes('CAVALRY_SPUR') && t.damageType === DamageType.PHYS_MELEE) itemSpeedMult *= 1.25;
   // WAR_HOUND_COLLAR converted to AURA (2026-05) — applies to nearby
   // towers via CombatResolver's localAuras pass, not as a self-buff.
-  if (t.equippedItems.includes('NUMIDIAN_SADDLE') && t.damageType === DamageType.PHYS_RANGED) itemSpeedMult *= 1.35;
+  if (t.equippedItems.includes('NUMIDIAN_SADDLE') && t.damageType === DamageType.PHYS_RANGED) itemSpeedMult *= 1.60;
   // ─── BOSS / LEGENDARY TROPHIES (2026-05) ───────────────────────────────
   // Every trophy now carries a real, legible effect so the inventory text
   // matches what the tower actually does. Boss-only damage bonuses
   // (WARLORDS_WAR_PAINT, UNDEAD_ELEPHANT_BONE, ELEPHANT_TUSK) apply per-hit
   // in CombatResolver, not here.
-  if (t.equippedItems.includes('BERSERKERS_MUZZLE') && (t.damageType === DamageType.PHYS_MELEE)) { itemDmgMult *= 1.25; itemSpeedMult *= 1.20; }
+  if (t.equippedItems.includes('BERSERKERS_MUZZLE') && (t.damageType === DamageType.PHYS_MELEE)) { itemDmgMult *= 1.45; itemSpeedMult *= 1.30; }
   // DRUIDS_TORC converted to AURA — applies via CombatResolver localAuras.
-  if (t.equippedItems.includes('GALLIC_SHIELD_BOSS')) itemDmgMult *= 1.18;
-  if (t.equippedItems.includes('GILDED_SCALE_ARMOR')) itemDmgMult *= 1.22;
+  if (t.equippedItems.includes('GALLIC_SHIELD_BOSS')) itemDmgMult *= 1.40;
+  if (t.equippedItems.includes('GILDED_SCALE_ARMOR')) itemDmgMult *= 1.55;
+  if (t.equippedItems.includes('SPEAR_OF_MARS')) itemDmgMult *= 1.35;
   // 2026-05-18 — EPIC TIER (purple) STATS.
-  // LICTOR_FASCES: +18% damage (range +1 below in extraRange).
-  // AUXILIARY_SLING: ranged-only +30% damage.
-  // OPTIO_WHISTLE: +12% attack speed aura — applied via CombatResolver
+  // LICTOR_FASCES: +40% damage (range +2 below in extraRange).
+  // AUXILIARY_SLING: ranged-only +55% damage.
+  // OPTIO_WHISTLE: +28% attack speed aura — applied via CombatResolver
   //                localAuras pass below, no self-buff here.
-  if (t.equippedItems.includes('LICTOR_FASCES')) itemDmgMult *= 1.18;
-  if (t.equippedItems.includes('AUXILIARY_SLING') && (t.damageType === DamageType.PHYS_RANGED)) itemDmgMult *= 1.30;
+  if (t.equippedItems.includes('LICTOR_FASCES')) itemDmgMult *= 1.40;
+  if (t.equippedItems.includes('AUXILIARY_SLING') && (t.damageType === DamageType.PHYS_RANGED)) itemDmgMult *= 1.55;
   // 2026-05-19 — GATE-EXCLUSIVE COMMONS/UNCOMMONS. Five new items
   // that live only at the gate shop:
   //   • RUSTED_HASTA: +10% damage
@@ -334,33 +333,33 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   //   • PRAETORIAN_COIN: +1 gold per kill (wired in main.ts kill hook)
   //   • BRONZE_GREAVES: +0.5 tile range (below in extraRange)
   if (t.equippedItems.includes('RUSTED_HASTA')) itemDmgMult *= 1.10;
-  if (t.equippedItems.includes('AUGUR_SCROLL')) itemSpeedMult *= 1.20;
-  if (t.equippedItems.includes('CONSULAR_TOKEN')) itemDmgMult *= 1.08;
+  if (t.equippedItems.includes('AUGUR_SCROLL')) itemSpeedMult *= 1.25;
+  if (t.equippedItems.includes('CONSULAR_TOKEN')) itemDmgMult *= 1.15;
   // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES (atk-speed half).
   // PERIMETER_TORCH (invasion):    +25% atk speed (damage in CombatResolver)
   // HELLGATE_BRAND   (gates):      +25% atk speed (damage in CombatResolver)
-  if (t.equippedItems.includes('PERIMETER_TORCH')) itemSpeedMult *= 1.25;
-  if (t.equippedItems.includes('HELLGATE_BRAND')) itemSpeedMult *= 1.25;
+  if (t.equippedItems.includes('PERIMETER_TORCH')) itemSpeedMult *= 1.50;
+  if (t.equippedItems.includes('HELLGATE_BRAND')) itemSpeedMult *= 1.40;
   // CURSED_TORC, LICH_GENERALS_SEAL, BARCA_WAR_HORN all converted to
   // AURA emitters in CombatResolver (2026-05). Self-buff lines removed
   // so a tower no longer double-dips its own aura.
   const extraRange =
-    (t.equippedItems.includes('WATCHTOWER_LENS') ? 1 : 0) +
-    (t.equippedItems.includes('DRUID_STAFF_FRAGMENT') ? 2 : 0) +
-    (t.equippedItems.includes('GALLIC_SHIELD_BOSS') ? 1 : 0) +
-    (t.equippedItems.includes('GILDED_SCALE_ARMOR') ? 1 : 0) +
+    (t.equippedItems.includes('WATCHTOWER_LENS') ? 0.75 : 0) +
+    (t.equippedItems.includes('DRUID_STAFF_FRAGMENT') ? 3 : 0) +
+    (t.equippedItems.includes('GALLIC_SHIELD_BOSS') ? 2 : 0) +
+    (t.equippedItems.includes('GILDED_SCALE_ARMOR') ? 3 : 0) +
     // 2026-05-18 — INVASION-exclusive VANGUARD_PILUM: +1 tile range
     // alongside its +35% damage (applied in CombatResolver).
-    (t.equippedItems.includes('VANGUARD_PILUM') ? 1 : 0) +
+    (t.equippedItems.includes('VANGUARD_PILUM') ? 2 : 0) +
     // 2026-05-18 — EPIC LICTOR_FASCES: +1 tile range alongside its
-    // +18% damage (applied above in itemDmgMult).
-    (t.equippedItems.includes('LICTOR_FASCES') ? 1 : 0) +
+    // +40% damage (applied above in itemDmgMult).
+    (t.equippedItems.includes('LICTOR_FASCES') ? 2 : 0) +
     // 2026-05-19 — Gate-exclusive range items.
     (t.equippedItems.includes('BRONZE_GREAVES') ? 0.5 : 0) +
-    (t.equippedItems.includes('CONSULAR_TOKEN') ? 0.5 : 0) +
+    (t.equippedItems.includes('CONSULAR_TOKEN') ? 0.75 : 0) +
     // 2026 v2 — anti-air items add reach to catch fliers.
-    (t.equippedItems.includes('FALCONERS_WATCHPOST') ? 2 : 0) +
-    (t.equippedItems.includes('STORM_AQUILA_TALONS') ? 1 : 0) +
+    (t.equippedItems.includes('FALCONERS_WATCHPOST') ? 3 : 0) +
+    (t.equippedItems.includes('STORM_AQUILA_TALONS') ? 2 : 0) +
     // 2026-05-22 — Agrippa hero passive: +1.0 tile range to every
     // SIEGE tower within 5 tiles of Agrippa's tile. Read off the
     // global state ref (set by main.ts in renderer mode); test env
@@ -395,7 +394,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // adding five tiles of reach. CombatResolver spawns a visible PROJ_HASTA
     // flying from the tower to the target whenever a melee swing fires
     // while this item is equipped, so the extended range reads visually.
-    (t.equippedItems.includes('SPEAR_OF_MARS') ? 5 : 0) +
+    (t.equippedItems.includes('SPEAR_OF_MARS') ? 7 : 0) +
     // CAVALRY SPUR (2026-05 v6): MELEE-only (gated in ItemRules) — adds
     // +0.5 tile range on top of the +30% atk speed so it stays distinct
     // from MERCURY_FEATHER (universal +22% speed, no range bonus).
@@ -533,40 +532,46 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
 
   // ── Items ──────────────────────────────────────────────────────────────
   const items = t.equippedItems;
-  if (items.includes('SHARPENED_BLADE')) dmgMods.push({ source: 'Sharpened Blade', multiplier: 1.12 });
+  if (items.includes('SHARPENED_BLADE')) dmgMods.push({ source: 'Sharpened Blade', multiplier: 1.10 });
   if (items.includes('CELTIC_LONGSWORD') &&
       (t.damageType === DamageType.PHYS_MELEE || t.damageType === DamageType.PHYS_RANGED)) {
-    dmgMods.push({ source: 'Celtic Longsword', multiplier: 1.25 });
+    dmgMods.push({ source: 'Celtic Longsword', multiplier: 1.50 });
   }
   if (items.includes('NECROTIC_LONGSWORD') &&
       (t.damageType === DamageType.PHYS_MELEE || t.damageType === DamageType.PHYS_RANGED)) {
-    dmgMods.push({ source: 'Necrotic Longsword', multiplier: 1.28 });
+    dmgMods.push({ source: 'Necrotic Longsword', multiplier: 1.55 });
   }
   if (items.includes('STORM_JAVELIN') && t.damageType === DamageType.PHYS_RANGED) {
-    dmgMods.push({ source: 'Storm Javelin', multiplier: 1.22 });
+    dmgMods.push({ source: 'Storm Javelin', multiplier: 1.40 });
   }
-  if (items.includes('TRAINING_SCROLL')) spdMods.push({ source: 'Training Scroll', multiplier: 1.12 });
-  if (items.includes('QUICKDRAW_GLOVES')) spdMods.push({ source: 'Quickdraw Gloves', multiplier: 1.15 });
-  if (items.includes('MERCURY_FEATHER')) spdMods.push({ source: 'Mercury Feather', multiplier: 1.22 });
-  if (items.includes('HOURGLASS_OF_SATURN')) spdMods.push({ source: 'Hourglass of Saturn', multiplier: 1.30 });
-  if (items.includes('CAVALRY_SPUR') && t.damageType === DamageType.PHYS_MELEE) spdMods.push({ source: 'Cavalry Spur (melee)', multiplier: 1.22 });
+  if (items.includes('TRAINING_SCROLL')) spdMods.push({ source: 'Training Scroll', multiplier: 1.10 });
+  if (items.includes('QUICKDRAW_GLOVES')) spdMods.push({ source: 'Quickdraw Gloves', multiplier: 1.12 });
+  if (items.includes('MERCURY_FEATHER')) spdMods.push({ source: 'Mercury Feather', multiplier: 1.25 });
+  if (items.includes('HOURGLASS_OF_SATURN')) spdMods.push({ source: 'Hourglass of Saturn', multiplier: 1.40 });
+  if (items.includes('CAVALRY_SPUR') && t.damageType === DamageType.PHYS_MELEE) spdMods.push({ source: 'Cavalry Spur (melee)', multiplier: 1.25 });
   // WAR_HOUND_COLLAR is an AURA (2026-05) — buff appears via the
   // cross-tower aura pass below, not on self.
-  if (items.includes('NUMIDIAN_SADDLE') && t.damageType === DamageType.PHYS_RANGED) spdMods.push({ source: 'Numidian Saddle (ranged)', multiplier: 1.35 });
+  if (items.includes('NUMIDIAN_SADDLE') && t.damageType === DamageType.PHYS_RANGED) spdMods.push({ source: 'Numidian Saddle (ranged)', multiplier: 1.60 });
   // CAVALRY_SPUR's +0.5 range bonus stays paired with the speed mod (melee-only).
   if (items.includes('CAVALRY_SPUR') && t.damageType === DamageType.PHYS_MELEE) rngMods.push({ source: 'Cavalry Spur (melee)', flat: 0.5 });
-  if (items.includes('WATCHTOWER_LENS')) rngMods.push({ source: 'Watchtower Lens', flat: 1 });
+  if (items.includes('WATCHTOWER_LENS')) rngMods.push({ source: 'Watchtower Lens', flat: 0.75 });
   // ── Legendary trophies (real effects) ─────────────────────────────────
   if (items.includes('BERSERKERS_MUZZLE') && t.damageType === DamageType.PHYS_MELEE) {
-    dmgMods.push({ source: "Berserker's Muzzle (melee)", multiplier: 1.25 });
-    spdMods.push({ source: "Berserker's Muzzle (melee)", multiplier: 1.20 });
+    dmgMods.push({ source: "Berserker's Muzzle (melee)", multiplier: 1.45 });
+    spdMods.push({ source: "Berserker's Muzzle (melee)", multiplier: 1.30 });
   }
   // DRUIDS_TORC is an AURA — buff appears via aura pass below.
-  if (items.includes('GALLIC_SHIELD_BOSS')) { dmgMods.push({ source: 'Gallic Shield Boss', multiplier: 1.18 }); rngMods.push({ source: 'Gallic Shield Boss', flat: 1 }); }
-  if (items.includes('GILDED_SCALE_ARMOR')) { dmgMods.push({ source: 'Gilded Scale Armor', multiplier: 1.22 }); rngMods.push({ source: 'Gilded Scale Armor', flat: 1 }); }
+  if (items.includes('GALLIC_SHIELD_BOSS')) { dmgMods.push({ source: 'Gallic Shield Boss', multiplier: 1.40 }); rngMods.push({ source: 'Gallic Shield Boss', flat: 2 }); }
+  if (items.includes('GILDED_SCALE_ARMOR')) { dmgMods.push({ source: 'Gilded Scale Armor', multiplier: 1.55 }); rngMods.push({ source: 'Gilded Scale Armor', flat: 3 }); }
   // CURSED_TORC / LICH_GENERALS_SEAL / BARCA_WAR_HORN are AURAS — they
   // buff nearby allies (or debuff nearby enemies), not the wearer.
-  if (items.includes('DRUID_STAFF_FRAGMENT')) rngMods.push({ source: 'Druid Staff Fragment', flat: 2 });
+  if (items.includes('DRUID_STAFF_FRAGMENT')) rngMods.push({ source: 'Druid Staff Fragment', flat: 3 });
+  if (items.includes('LICTOR_FASCES')) { dmgMods.push({ source: "Lictor's Fasces", multiplier: 1.40 }); rngMods.push({ source: "Lictor's Fasces", flat: 2 }); }
+  if (items.includes('AUXILIARY_SLING') && t.damageType === DamageType.PHYS_RANGED) dmgMods.push({ source: 'Auxiliary Sling', multiplier: 1.55 });
+  if (items.includes('FALCONERS_WATCHPOST')) { spdMods.push({ source: "Falconer's Watchpost", multiplier: 1.40 }); rngMods.push({ source: "Falconer's Watchpost", flat: 3 }); }
+  if (items.includes('AUGUR_SCROLL')) spdMods.push({ source: "Augur's Scroll", multiplier: 1.25 });
+  if (items.includes('CONSULAR_TOKEN')) { dmgMods.push({ source: 'Consular Token', multiplier: 1.15 }); rngMods.push({ source: 'Consular Token', flat: 0.75 }); }
+  if (items.includes('SPEAR_OF_MARS')) { dmgMods.push({ source: 'Spear of Mars', multiplier: 1.35 }); rngMods.push({ source: 'Spear of Mars', flat: 7 }); }
 
   // ── Pool level (additive global damage) ───────────────────────────────
   // Pool damage bonus kicks in starting at L2 (L0 and L1 = no bonus).
@@ -625,36 +630,36 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       if (other.type === TowerType.COHORT_GUARD && d <= 3 * GRID.TILE) {
         dmgMods.push({ source: 'Cohort Guard local', multiplier: 1.15 });
       }
-      if (other.equippedItems.includes('CENTURIONS_TRUMPET') && d <= 2 * GRID.TILE) {
-        spdMods.push({ source: "Centurion's Trumpet aura", multiplier: 1.12 });
+      if (other.equippedItems.includes('CENTURIONS_TRUMPET') && d <= 2.5 * GRID.TILE) {
+        spdMods.push({ source: "Centurion's Trumpet aura", multiplier: 1.18 });
       }
-      if (other.equippedItems.includes('BATTLE_STANDARD') && d <= 2 * GRID.TILE) {
-        dmgMods.push({ source: 'Battle Standard aura', multiplier: 1.10 });
+      if (other.equippedItems.includes('BATTLE_STANDARD') && d <= 2.5 * GRID.TILE) {
+        dmgMods.push({ source: 'Battle Standard aura', multiplier: 1.18 });
       }
       // 2026-05 aura expansion — five legendaries that used to be
       // single-tower self-buffs now project to nearby allies.
-      if (other.equippedItems.includes('WAR_HOUND_COLLAR') && d <= 2.5 * GRID.TILE) {
-        spdMods.push({ source: 'War-Hound Collar aura', multiplier: 1.18 });
+      if (other.equippedItems.includes('WAR_HOUND_COLLAR') && d <= 3 * GRID.TILE) {
+        spdMods.push({ source: 'War-Hound Collar aura', multiplier: 1.28 });
       }
-      if (other.equippedItems.includes('DRUIDS_TORC') && d <= 2.5 * GRID.TILE) {
-        dmgMods.push({ source: "Druid's Torc aura", multiplier: 1.18 });
+      if (other.equippedItems.includes('DRUIDS_TORC') && d <= 3 * GRID.TILE) {
+        dmgMods.push({ source: "Druid's Torc aura", multiplier: 1.28 });
       }
-      if (other.equippedItems.includes('BARCA_WAR_HORN') && d <= 3 * GRID.TILE) {
-        dmgMods.push({ source: 'Barca War Horn aura', multiplier: 1.12 });
-        spdMods.push({ source: 'Barca War Horn aura', multiplier: 1.10 });
+      if (other.equippedItems.includes('BARCA_WAR_HORN') && d <= 3.5 * GRID.TILE) {
+        dmgMods.push({ source: 'Barca War Horn aura', multiplier: 1.25 });
+        spdMods.push({ source: 'Barca War Horn aura', multiplier: 1.20 });
       }
-      if (other.equippedItems.includes('LICH_GENERALS_SEAL') && d <= 3 * GRID.TILE) {
-        dmgMods.push({ source: "Lich General's Seal aura", multiplier: 1.12 });
-        spdMods.push({ source: "Lich General's Seal aura", multiplier: 1.15 });
+      if (other.equippedItems.includes('LICH_GENERALS_SEAL') && d <= 3.5 * GRID.TILE) {
+        dmgMods.push({ source: "Lich General's Seal aura", multiplier: 1.30 });
+        spdMods.push({ source: "Lich General's Seal aura", multiplier: 1.30 });
       }
       // 2026-05-24 audit fix — three more item auras missing from the
       // breakdown panel. All apply in combat at CombatResolver.ts:612-636.
-      if (other.equippedItems.includes('AQUILIFER_BANNER') && d <= 2.5 * GRID.TILE) {
-        dmgMods.push({ source: "Aquilifer's Banner aura", multiplier: 1.14 });
-        spdMods.push({ source: "Aquilifer's Banner aura", multiplier: 1.10 });
+      if (other.equippedItems.includes('AQUILIFER_BANNER') && d <= 3 * GRID.TILE) {
+        dmgMods.push({ source: "Aquilifer's Banner aura", multiplier: 1.20 });
+        spdMods.push({ source: "Aquilifer's Banner aura", multiplier: 1.15 });
       }
-      if (other.equippedItems.includes('OPTIO_WHISTLE') && d <= 2 * GRID.TILE) {
-        spdMods.push({ source: "Optio's Whistle aura", multiplier: 1.12 });
+      if (other.equippedItems.includes('OPTIO_WHISTLE') && d <= 3 * GRID.TILE) {
+        spdMods.push({ source: "Optio's Whistle aura", multiplier: 1.28 });
       }
       if (other.equippedItems.includes('INFERNO_STANDARD') && d <= 3 * GRID.TILE) {
         dmgMods.push({ source: 'Inferno Standard aura', multiplier: 1.25 });

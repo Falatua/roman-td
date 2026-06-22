@@ -8,7 +8,7 @@ import { setTile } from '../systems/GridManager';
 import { towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, StatModifier } from '../systems/TowerSystem';
 import { getTowerProjectileProfile } from '../systems/ProjectileSystem';
 import { TileType } from '../types';
-import { InventoryState, inventoryAdd, inventoryRemove, Rarity } from '../systems/LootSystem';
+import { InventoryState, inventoryAdd, inventoryRemove, itemBuyPrice, Rarity } from '../systems/LootSystem';
 import permItems from '../data/items_permanent.json';
 import consumables from '../data/items_consumable.json';
 import towersData from '../data/towers.json';
@@ -26,7 +26,7 @@ import { itemIconSvg } from './ItemIcon';
 import { comboPreviewBlockHtml } from './ComboPreview';
 import { heroIdForTowerType, isMercatorChampionType } from '../systems/HeroIdentity';
 
-const RAR: Record<string, string> = { COMMON:'#cccccc', UNCOMMON:'#5cd05c', RARE:'#5ca0ff', LEGENDARY:'#ff9933', UNIQUE:'#ffd34d' };
+const RAR: Record<string, string> = { COMMON:'#cccccc', UNCOMMON:'#5cd05c', RARE:'#5ca0ff', EPIC:'#a060ff', LEGENDARY:'#ff9933', UNIQUE:'#ffd34d' };
 
 export interface TowerMenuHooks {
   onClose: () => void;
@@ -85,7 +85,7 @@ function attachItemTooltip(el: HTMLElement, itemId: string, rarity: string, def:
         <span>${family}</span><span>${rarity}</span>
       </div>
       <div style="margin-top:8px;color:#cdb98a;font-size:11px;line-height:1.5">${def?.effect ?? '(no effect description)'}</div>
-      ${def?.buy != null ? `<div style="margin-top:6px;font-size:10px;color:#f0c040">Base cost: ${def.buy}g</div>` : ''}
+      ${def?.rarity ? `<div style="margin-top:6px;font-size:10px;color:#f0c040">Base cost: ${itemBuyPrice(itemId)}g</div>` : ''}
       ${action}`;
     tip.style.display = 'block';
     positionTooltip(tip, ev as MouseEvent);

@@ -5278,6 +5278,7 @@ export class RenderEngine {
         sp.anchor.set(0.5);
         sp.width = 22;
         sp.height = 22;
+        if (orb.rarity === 'EPIC') sp.tint = 0xb86cff;
         this.layers.fx.addChild(sp);
         this.orbSprites.set(orb.id, sp);
       }

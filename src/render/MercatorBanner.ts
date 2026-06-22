@@ -357,7 +357,7 @@ export function showMercatorBanner(parent: HTMLElement, visitWave: number, hooks
     <div class="merc-body">
       <div class="merc-row is-tower">
         <span class="merc-row-label">★ ARMORY</span>
-        <span class="merc-row-body">5 random <b style="color:#ff5050">T5</b> towers · <b style="color:#f0c040">50g</b> each</span>
+        <span class="merc-row-body">3 random <b style="color:#ff5050">T5</b> towers · <b style="color:#f0c040">250g</b> each</span>
       </div>
       <div class="merc-row is-item">
         <span class="merc-row-label">★ TROPHIES</span>
@@ -365,7 +365,7 @@ export function showMercatorBanner(parent: HTMLElement, visitWave: number, hooks
       </div>
       <div class="merc-row is-life">
         <span class="merc-row-label">+ LIVES</span>
-        <span class="merc-row-body">Up to 3 lives at <b style="color:#f0c040">7g</b> each</span>
+        <span class="merc-row-body">Up to 3 lives at <b style="color:#f0c040">45g</b> each</span>
       </div>
     </div>
     <div class="merc-foot">
@@ -448,9 +448,9 @@ export function showMercatorTab(parent: HTMLElement, hooks: MercatorBannerHooks,
         <div class="tab-title">MERCATOR</div>
         <div class="tab-sub">Traveling merchant — this wave only</div>
         <div class="tab-pricerow">
-          <span class="tab-chip t">T5 · 50g</span>
+          <span class="tab-chip t">T5 · 250g</span>
           <span class="tab-chip">★ Trophies</span>
-          <span class="tab-chip l">+ Lives 7g</span>
+          <span class="tab-chip l">+ Lives 45g</span>
         </div>
       </div>
       <div class="tab-cta">BROWSE</div>

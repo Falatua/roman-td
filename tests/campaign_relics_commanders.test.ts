@@ -19,6 +19,7 @@ import { applyBossTrophy, bossTrophyDamageMult, bossTrophyTrapDamageMult, bossTr
 import { buyTraps, trapPrice, TRAP_DEFS } from '../src/systems/TrapSystem';
 import { commanderDamageTakenMult, commanderSpeedMult, commanderTrapRadiusDisabled, isCommanderType } from '../src/systems/CommanderSystem';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
+import { canReceiveRunReward } from '../src/systems/RewardEligibility';
 
 beforeAll(() => {
   (globalThis as any).window = (globalThis as any).window ?? {};
@@ -83,8 +84,10 @@ describe('Campaign relics', () => {
     const byId = Object.fromEntries(CAMPAIGN_RELICS.map(r => [r.id, r]));
     expect(byId.MARS_TAX.upside).toContain('-75%');
     expect(byId.BLACK_OIL.upside).toContain('+125%');
-    expect(byId.AEGIS_WALL.caveat).toContain('+35%');
+    expect(byId.AEGIS_WALL.caveat).toContain('+65%');
     expect(byId.LAST_EAGLE.upside).toContain('+70%');
+    expect(byId.LAUREL_CENSUS.caveat).toContain('+100%');
+    expect(byId.SENATE_AUDIT.caveat).toContain('+80%');
   });
 
   it('Saturn debt grants the immediate 900g campaign bankroll', () => {
@@ -110,7 +113,7 @@ describe('Campaign relics', () => {
     applyCampaignRelic(s, 'MARS_TAX');
     const id = 'IRON_SPIKE_TRAP';
     expect(trapPrice(s, id)).toBe(Math.round(TRAP_DEFS[id].price * 0.25));
-    expect(campaignRelicEnemySpeedMult(s)).toBeCloseTo(1.25, 4);
+    expect(campaignRelicEnemySpeedMult(s)).toBeCloseTo(1.40, 4);
     s.gold = 999;
     const spent = buyTraps(s, id, 2);
     expect(spent).toBe(trapPrice(s, id) * 2);
@@ -144,6 +147,21 @@ describe('Boss trophies', () => {
     expect(shouldOfferBossTrophy(s, { isBoss: true, isScheduledBoss: true, type: 'ANUBIS_KING' })).toBe(true);
     expect(shouldOfferBossTrophy(s, { isBoss: true, isScheduledBoss: true, type: 'UNDEAD_WAR_ELEPHANT' })).toBe(false);
     expect(shouldOfferBossTrophy(s, { isBoss: true, isScheduledBoss: false, type: 'ANUBIS_KING' })).toBe(false);
+  });
+
+  it('suppresses every run reward once the player has died', () => {
+    const s = bootstrapState();
+    s.wave = 10;
+    s.lives = 0;
+    s.gameOverAt = s.tick;
+    expect(canReceiveRunReward(s)).toBe(false);
+    expect(shouldOfferCampaignRelics(s)).toBe(false);
+    expect(shouldOfferBossTrophy(s, { isBoss: true, isScheduledBoss: true, type: 'HANNIBAL_BARCA' })).toBe(false);
+
+    s.phase = GamePhase.GAME_OVER;
+    s.lives = 30;
+    s.gameOverAt = -1;
+    expect(canReceiveRunReward(s)).toBe(false);
   });
 
   it('applies run-level boss trophy damage and trap modifiers', () => {

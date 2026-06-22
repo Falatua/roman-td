@@ -280,7 +280,7 @@ function multiShotCountFor(t: Tower): number {
   return base + bonus;
 }
 // 2026-05-15 anti-demon damage multiplier from SIGIL_OF_SOL_INVICTUS.
-// Returns 1.85 if the tower has the sigil AND target is in the demon
+// Returns 2.50 if the tower has the sigil AND target is in the demon
 // roster; otherwise 1. Demon roster pulled from the SUPER_DEMONS
 // faction roster — Hellhound, Fire Demon, Shadow Cavalry, Demon
 // Legate, Daemon Imperator.
@@ -290,7 +290,7 @@ const DEMON_TYPES = new Set([
 ]);
 function sigilOfSolMult(t: Tower, target: Enemy): number {
   if (!t.equippedItems.includes('SIGIL_OF_SOL_INVICTUS')) return 1;
-  return DEMON_TYPES.has(target.type as string) ? 1.85 : 1;
+  return DEMON_TYPES.has(target.type as string) ? 2.50 : 1;
 }
 
 // 2026-05-23 — SECONDARY HIT BLOCK ROLL. Re-runs the dodge / W8-block /
@@ -609,36 +609,32 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // Item auras — same suppression rule. If a nullifier enemy is within
     // 2 tiles of THIS tower, the tower's item aura silently drops out.
     if (t.equippedItems.includes('CENTURIONS_TRUMPET') && !auraOff) {
-      localAuras.push({ x: cx, y: cy, r: 2 * GRID.TILE, spd: 0.12 });
-    }
-    if (t.equippedItems.includes('BATTLE_STANDARD') && !auraOff) {
-      localAuras.push({ x: cx, y: cy, r: 2 * GRID.TILE, dmg: 0.10 });
-    }
-    if (t.equippedItems.includes('WAR_HOUND_COLLAR') && !auraOff) {
       localAuras.push({ x: cx, y: cy, r: 2.5 * GRID.TILE, spd: 0.18 });
     }
-    if (t.equippedItems.includes('DRUIDS_TORC') && !auraOff) {
+    if (t.equippedItems.includes('BATTLE_STANDARD') && !auraOff) {
       localAuras.push({ x: cx, y: cy, r: 2.5 * GRID.TILE, dmg: 0.18 });
     }
+    if (t.equippedItems.includes('WAR_HOUND_COLLAR') && !auraOff) {
+      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, spd: 0.28 });
+    }
+    if (t.equippedItems.includes('DRUIDS_TORC') && !auraOff) {
+      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.28 });
+    }
     if (t.equippedItems.includes('BARCA_WAR_HORN') && !auraOff) {
-      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.12, spd: 0.10 });
+      localAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, dmg: 0.25, spd: 0.20 });
     }
     if (t.equippedItems.includes('LICH_GENERALS_SEAL') && !auraOff) {
-      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.12, spd: 0.15 });
+      localAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, dmg: 0.30, spd: 0.30 });
     }
     if (t.equippedItems.includes('CURSED_TORC') && !auraOff) {
-      enemyTakenAuras.push({ x: cx, y: cy, r: 2 * GRID.TILE, pct: 0.18 });
+      enemyTakenAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, pct: 0.35 });
     }
     if (t.equippedItems.includes('AQUILIFER_BANNER') && !auraOff) {
-      localAuras.push({ x: cx, y: cy, r: 2.5 * GRID.TILE, dmg: 0.14, spd: 0.10 });
+      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.20, spd: 0.15 });
     }
-    // 2026-05-18 — OPTIO_WHISTLE (Epic): +12% attack speed aura, 2-tile
-    // radius. Drill-master's command — gives allies the crisp tempo
-    // boost without a damage bonus. Cheap, broadly useful, sits cleanly
-    // below Centurion's Trumpet's RARE version (+12% spd same radius
-    // but different family).
+    // OPTIO_WHISTLE (Epic): +28% attack speed aura over 3 tiles.
     if (t.equippedItems.includes('OPTIO_WHISTLE') && !auraOff) {
-      localAuras.push({ x: cx, y: cy, r: 2 * GRID.TILE, spd: 0.12 });
+      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, spd: 0.28 });
     }
     // 2026-05-18 — EVENT-EXCLUSIVE AURAS.
     // NECROMANCERS_LANTERN (uprising): enemies in 3 tiles take +25%
@@ -650,10 +646,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // INFERNO_STANDARD: +25% damage aura, 3 tiles. Burn-on-hit handled
     // in the on-hit pass.
     if (t.equippedItems.includes('NECROMANCERS_LANTERN') && !auraOff) {
-      enemyTakenAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, pct: 0.25 });
+      enemyTakenAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, pct: 0.45 });
     }
     if (t.equippedItems.includes('INFERNO_STANDARD') && !auraOff) {
-      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.25 });
+      localAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, dmg: 0.40 });
     }
     // SCOUT_VEXILLUM — every 4 seconds, mass-mark every enemy in range.
     if (t.type === TowerType.SCOUT_VEXILLUM) {
@@ -914,7 +910,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         resMod *= 0.75;
       }
       if (t.equippedItems.includes('IRON_TIP') && (t.damageType === DamageType.PHYS_MELEE || t.damageType === DamageType.PHYS_RANGED) && resMod < 1) {
-        resMod += (1 - resMod) * 0.2;
+        resMod += (1 - resMod) * 0.15;
       }
       // 2026-05-20 — Per-wave resistance relief. If the current wave
       // carries a `resistReduction` value, bring the effective resMod
@@ -964,11 +960,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.RORARIUS && target.archetype === 'RUNNER') damage *= 1.35;
       if ((t.type === TowerType.SAGITTARIUS || t.type === TowerType.VENATOR) && target.isFlyer) damage *= 1.45;
       if (t.type === TowerType.AQUILA_VENATOR && target.isFlyer) damage *= 1.75;
-      if (t.equippedItems.includes('FLYER_BANE') && target.isFlyer) damage *= 1.30;
+      if (t.equippedItems.includes('FLYER_BANE') && target.isFlyer) damage *= 1.35;
       // 2026 v2 — anti-air item suite (any tower; range/speed halves live in TowerSystem).
-      if (t.equippedItems.includes('SKYPIERCER_BOLTS') && target.isFlyer) damage *= 1.55;     // EPIC
-      if (t.equippedItems.includes('JUPITERS_SKYFIRE') && target.isFlyer) damage *= 1.95;     // LEGENDARY nuke
-      if (t.equippedItems.includes('STORM_AQUILA_TALONS') && target.isFlyer) damage *= 1.55;  // LEGENDARY enabler
+      if (t.equippedItems.includes('SKYPIERCER_BOLTS') && target.isFlyer) damage *= 1.85;
+      if (t.equippedItems.includes('JUPITERS_SKYFIRE') && target.isFlyer) damage *= 2.40;
+      if (t.equippedItems.includes('STORM_AQUILA_TALONS') && target.isFlyer) damage *= 1.90;
+      if (t.equippedItems.includes('AQUILA_TALONS') && target.isFlyer) damage *= 1.60;
       // 2026-05-17 — BEAST-BANE. Beast Hunter (T1) + Beast Slayer (T2)
       // deal +200% damage (×3 total) to animal-faction enemies: dogs
       // (Feral / Rabid / Alpha), Demon Hellhound, and both elephant
@@ -999,10 +996,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Dedicated boss-hunter item, occupies the DAMAGE slot. Stacks
       // multiplicatively with native per-tower boss bonuses (Primus
       // Pilus, Scorpio, Triumphator, Eques, etc.).
-      if (t.equippedItems.includes('TYRANTS_LAUREL') && target.isBoss) damage *= 1.75;
+      if (t.equippedItems.includes('TYRANTS_LAUREL') && target.isBoss) damage *= 2.50;
       // 2026-05 v6 Mercator-exclusive items:
       if (t.equippedItems.includes('TYRIAN_DYE') && (target.archetype === 'ELITE' || target.isBoss)) {
-        damage *= 1.25;
+        damage *= 1.35;
       }
       if (t.equippedItems.includes('SCIPIO_PLAYBOOK')) {
         // +20% vs the highest-HP enemy in this tower's range.
@@ -1013,14 +1010,14 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           if (Math.hypot(e.x - tcx0, e.y - tcy0) > rPx0) continue;
           if (e.hp > topHp) { topHp = e.hp; topId = e.id; }
         }
-        if (topId && target.id === topId) damage *= 1.20;
+        if (topId && target.id === topId) damage *= 1.35;
       }
       // BOSS-DAMAGE TROPHIES (2026-05): per-hit multipliers that only fire
       // against bosses. Stack multiplicatively if a tower somehow holds
       // multiple, but the family system already gates duplicates.
-      if (target.isBoss && t.equippedItems.includes('ELEPHANT_TUSK'))        damage *= 1.30;
-      if (target.isBoss && t.equippedItems.includes('WARLORDS_WAR_PAINT'))   damage *= 1.40;
-      if (target.isBoss && t.equippedItems.includes('UNDEAD_ELEPHANT_BONE')) damage *= 1.50;
+      if (target.isBoss && t.equippedItems.includes('ELEPHANT_TUSK'))        damage *= 1.75;
+      if (target.isBoss && t.equippedItems.includes('WARLORDS_WAR_PAINT'))   damage *= 2.00;
+      if (target.isBoss && t.equippedItems.includes('UNDEAD_ELEPHANT_BONE')) damage *= 2.25;
       // 2026-05-19 — AURA TILE: TYRANT TILE (RED). Tower on a red tile
       // deals +50% damage vs bosses. Stacks with the trophies above.
       if (target.isBoss && towerAuraTileKind(t) === 'RED') damage *= 1.50;
@@ -1054,9 +1051,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       //   • VANGUARD_PILUM: +35% damage (range +1 is applied in stats)
       //   • AQUILA_RAMPART: +50% damage vs enemies above 70% HP
       //   • PERIMETER_TORCH: +25% damage (atk speed in stats)
-      if (t.equippedItems.includes('VANGUARD_PILUM')) damage *= 1.35;
-      if (t.equippedItems.includes('AQUILA_RAMPART') && (target.hp / target.maxHp) > 0.70) damage *= 1.50;
-      if (t.equippedItems.includes('PERIMETER_TORCH')) damage *= 1.25;
+      if (t.equippedItems.includes('VANGUARD_PILUM')) damage *= 1.75;
+      if (t.equippedItems.includes('AQUILA_RAMPART') && (target.hp / target.maxHp) > 0.70) damage *= 2.00;
+      if (t.equippedItems.includes('PERIMETER_TORCH')) damage *= 1.50;
       //
       // UPRISING rewards:
       //   • GRAVEKEEPERS_SCYTHE: +60% damage vs UNDEAD-faction enemies
@@ -1071,17 +1068,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         const isUndead = fk === 'UNDEAD_CELTS' || fk === 'UNDEAD_CARTHAGE'
           || fk === '3' || fk === '4'
           || String(target.type ?? '').startsWith('REANIMATED_');
-        if (isUndead) damage *= 1.60;
+        if (isUndead) damage *= 2.25;
       }
       //
       // GATES OF HELL rewards:
       //   • HELLGATE_BRAND: +50% damage (atk speed in stats, silence imm in flag)
       //   • DEMONSWORN_CROWN: +100% vs demons, +50% vs bosses (stacks)
       //   • INFERNO_STANDARD: aura applied separately
-      if (t.equippedItems.includes('HELLGATE_BRAND')) damage *= 1.50;
+      if (t.equippedItems.includes('HELLGATE_BRAND')) damage *= 1.80;
       if (t.equippedItems.includes('DEMONSWORN_CROWN')) {
-        if (DEMON_TYPES.has(target.type as string)) damage *= 2.0;
-        if (target.isBoss) damage *= 1.50;
+        if (DEMON_TYPES.has(target.type as string)) damage *= 2.50;
+        if (target.isBoss) damage *= 2.00;
       }
       if (t.type === TowerType.PRAEFECTUS && (target.archetype === 'ELITE' || target.archetype === 'BOSS')) damage *= 1.25;
       // ─── NEW COMBOS: identity damage multipliers ─────────────────────
@@ -1470,13 +1467,13 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           target.hpFlashTimer = 0.16;
           target.lastDamagedTick = state.tick;
           // 2026-05-19 — DAMNATIO MEMORIAE execute: after damage lands,
-          // any non-boss enemy that's now below 25% maxHp is instantly
+          // any non-boss enemy that's now below 35% maxHp is instantly
           // killed by this tower's attacks. Bosses are immune. MELEE
           // only (equip-gated in ItemRules so a ranged tower can't
           // mount it; the damageType guard below is a defense-in-depth
           // belt to match the player-facing copy "MELEE ONLY").
           if (target.hp > 0 && !target.isBoss && t.equippedItems.includes('DAMNATIO_MEMORIAE') && t.damageType === DamageType.PHYS_MELEE) {
-            if (target.hp / target.maxHp < 0.25) {
+            if (target.hp / target.maxHp < 0.35) {
               target.hp = 0;
             }
           }
@@ -1892,7 +1889,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   // 2026-05-19 — DAMNATIO MEMORIAE execute (see line ~1055 for the
   // primary hit-site copy). Bosses immune. MELEE only.
   if (target.hp > 0 && !target.isBoss && t.equippedItems.includes('DAMNATIO_MEMORIAE') && t.damageType === DamageType.PHYS_MELEE) {
-    if (target.hp / target.maxHp < 0.25) {
+    if (target.hp / target.maxHp < 0.35) {
       target.hp = 0;
     }
   }
@@ -2330,7 +2327,7 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
     // POISONED_BLADE (2026-05 v6): melee-only (gated in ItemRules).
     // Single-target but deeper — 6% HP/sec for 4s vs the old 2s. Identity:
     // sustained single-target finisher applied with every cut.
-    if (t.equippedItems.includes('POISONED_BLADE')) pushStatus(target, StatusEffectKind.POISON, 4, 0.06, tier);
+    if (t.equippedItems.includes('POISONED_BLADE')) pushStatus(target, StatusEffectKind.POISON, 4, 0.04, tier);
     // 2026-05-18 — UPRISING-exclusive SOULFIRE_BRAND: stamps HELLFIRE
     // on the target. HELLFIRE bypasses every resistance and immunity
     // (it's divine fire) so this is the dedicated answer to anything
@@ -2338,13 +2335,13 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
     // bosses. 4% maxHP/sec for 4s = 16% maxHP per application; stacks
     // with the in-system HELLFIRE-on-hit from RITE OF DOOM towers.
     if (t.equippedItems.includes('SOULFIRE_BRAND')) {
-      pushStatus(target, StatusEffectKind.HELLFIRE, 4, 0.04, tier);
+      pushStatus(target, StatusEffectKind.HELLFIRE, 4, 0.07, tier);
     }
     // 2026-05-18 — GATES OF HELL-exclusive INFERNO_STANDARD: aura
     // damage buff is handled in the localAuras pass; the on-hit
     // BURN ride-along stamps a BURN status on every direct hit.
     if (t.equippedItems.includes('INFERNO_STANDARD')) {
-      pushStatus(target, StatusEffectKind.BURN, 3, 0.05, tier);
+      pushStatus(target, StatusEffectKind.BURN, 3, 0.08, tier);
     }
     // 2026-05 v11 BLEED BOOST: bleed items felt under-tuned relative to the
     // poison / burn family. Each tier doubled-ish to make bleed a real
@@ -2352,11 +2349,11 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
     //   BARBED_GLADIUS    : 10s × 2.0% = 20% maxHP (was 10%)
     //   FALCATA_BLADE     :  8s × 3.0% = 24% maxHP (was 17.6%) — "hot bleed"
     //   ALPHA_PACK_FANG   : 14s × 2.4% = 33.6% maxHP (was 22.4%) — "heavy bleed"
-    if (t.equippedItems.includes('BARBED_GLADIUS')) pushStatus(target, StatusEffectKind.BLEED, 10, 0.020, tier);
+    if (t.equippedItems.includes('BARBED_GLADIUS')) pushStatus(target, StatusEffectKind.BLEED, 8, 0.012, tier);
     // FALCATA_BLADE: front-loaded variant, shorter / hottest tick of the three.
-    if (t.equippedItems.includes('FALCATA_BLADE')) pushStatus(target, StatusEffectKind.BLEED, 8, 0.030, tier);
+    if (t.equippedItems.includes('FALCATA_BLADE')) pushStatus(target, StatusEffectKind.BLEED, 10, 0.060, tier);
     // ALPHA PACK FANG: longest envelope, highest total damage.
-    if (t.equippedItems.includes('ALPHA_PACK_FANG')) pushStatus(target, StatusEffectKind.BLEED, 14, 0.024, tier);
+    if (t.equippedItems.includes('ALPHA_PACK_FANG')) pushStatus(target, StatusEffectKind.BLEED, 15, 0.050, tier);
     // VESTAL PYRE: every-tower fire DoT. Applies BURN on hit. Magnitude
     // 5% maxHP/sec × 3s = 15% maxHP total per application. Lower
     // single-tower throughput than FIRE_OIL_FLASK but unrestricted

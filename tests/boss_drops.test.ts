@@ -16,6 +16,7 @@ import { createInventory } from '../src/systems/LootSystem';
 import { createGameState } from '../src/GameState';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
+import itemsData from '../src/data/items_permanent.json';
 
 function freshState() {
   return createGameState();
@@ -59,6 +60,7 @@ describe('Boss drop guarantee (2026-05-19)', () => {
       const drop = rollBossDrop(w.faction, state, inv);
       expect(drop, `boss drop missing for W${w.wave} (${w.faction})`).not.toBeNull();
       expect(drop!.rarity).toBe('LEGENDARY');
+      expect((itemsData as any)[drop!.itemId]?.rarity).toBe('LEGENDARY');
     }
   });
 
@@ -82,8 +84,7 @@ describe('Boss drop guarantee (2026-05-19)', () => {
     // still return something rather than null.
     const state = freshState();
     const inv = createInventory();
-    const CELTS_POOL = ['DRUIDS_TORC', 'CELTIC_LONGSWORD', 'WARLORDS_WAR_PAINT',
-      'GALLIC_SHIELD_BOSS', 'DRUID_STAFF_FRAGMENT', 'SPEAR_OF_MARS', 'JUPITERS_WRATH'];
+    const CELTS_POOL = ['WARLORDS_WAR_PAINT', 'SPEAR_OF_MARS', 'JUPITERS_WRATH'];
     for (const id of CELTS_POOL) {
       inv.slots.push({ itemId: id as any, rarity: 'LEGENDARY', consumable: false });
     }

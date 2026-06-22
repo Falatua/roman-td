@@ -1,9 +1,10 @@
 // Tests for item rules, inventory operations, and shop pool sampling.
 import { describe, it, expect } from 'vitest';
 import { itemFamily, canEquipItemFamily } from '../src/systems/ItemRules';
-import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, rollDrop, rollEpicDrop } from '../src/systems/LootSystem';
-import { buildGateShop, buildMercatorStock, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
+import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollEpicDrop } from '../src/systems/LootSystem';
+import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
+import { LOOT_DROP_RATES } from '../src/constants';
 
 describe('Item families', () => {
   it('classifies items into the correct family', () => {
@@ -109,6 +110,28 @@ describe('Loot drop rolling', () => {
       expect(['COMMON','UNCOMMON','RARE','LEGENDARY','UNIQUE']).toContain(drop!.rarity);
     }
   });
+
+  it('uses 30-wave drop rates and deterministic premium-roll boundaries', () => {
+    expect(LOOT_DROP_RATES.GROUND).toBe(0.0035);
+    expect(LOOT_DROP_RATES.FLYER).toBe(0.007);
+    expect(premiumDropRoll(0.20, 0.1999)).toBe(true);
+    expect(premiumDropRoll(0.20, 0.20)).toBe(false);
+    expect(premiumDropRoll(0.10, 0.95)).toBe(false);
+  });
+});
+
+describe('Item rarity economy', () => {
+  it('uses a strict five-tier purchase ladder for every permanent item', () => {
+    expect(RARITY_BUY_PRICE.COMMON).toBe(20);
+    expect(RARITY_BUY_PRICE.UNCOMMON).toBe(45);
+    expect(RARITY_BUY_PRICE.RARE).toBe(100);
+    expect(RARITY_BUY_PRICE.EPIC).toBe(210);
+    expect(RARITY_BUY_PRICE.LEGENDARY).toBe(400);
+
+    for (const [id, def] of Object.entries(itemsData as any)) {
+      expect(itemBuyPrice(id), id).toBe(RARITY_BUY_PRICE[(def as any).rarity as keyof typeof RARITY_BUY_PRICE]);
+    }
+  });
 });
 
 describe('Merchant — gate shop', () => {
@@ -169,7 +192,16 @@ describe('Merchant — Mercator stock', () => {
   it('Mercator legendaries are priced significantly higher than gate shop rares', () => {
     const merc = buildMercatorStock();
     const legPrices = merc.offers.filter(o => o.rarity === 'LEGENDARY').map(o => o.price);
-    expect(Math.min(...legPrices)).toBeGreaterThan(30);
+    expect(new Set(legPrices)).toEqual(new Set([400]));
+    expect(merc.offers.filter(o => o.rarity === 'EPIC').every(o => o.price === 210)).toBe(true);
+    expect(merc.livesPrice).toBe(45);
+  });
+
+  it('prices Mercator T5 towers as campaign investments', () => {
+    const towers = buildMercatorTowerOffers(10, 5);
+    const armory = towers.filter(o => !o.type.startsWith('CHAMPION_'));
+    expect(armory).toHaveLength(3);
+    expect(armory.every(o => o.tier === 5 && o.price === 250)).toBe(true);
   });
 });
 
@@ -192,10 +224,9 @@ describe('Merchant — wave timing predicates', () => {
   });
 });
 
-describe('Fire Giant EPIC drop — rollEpicDrop', () => {
-  // 2026-05-20 — Every Fire Giant kill (W16 GATES_OF_HELL) drops a
-  // guaranteed EPIC item. The kill hook in main.ts uses rollEpicDrop()
-  // which picks from the auto-built EPIC_ITEM_POOL.
+describe('EPIC premium drop payload — rollEpicDrop', () => {
+  // The caller now performs the chance roll; this helper validates the
+  // payload whenever an elephant, minor boss, or Fire Giant wins that roll.
   it('always returns an EPIC-rarity drop', () => {
     for (let i = 0; i < 50; i++) {
       const drop = rollEpicDrop();

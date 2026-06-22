@@ -49,28 +49,28 @@ describe('Tower effective stats', () => {
     expect(TIER_MULTS.damage[5]).toBe(2.5);
   });
 
-  it('applies item damage multipliers (Sharpened Blade +12%)', () => {
+  it('applies Common item damage multipliers (Sharpened Blade +10%)', () => {
     const t = createTower(TowerType.MILITES, 1, 0, 0, 0);
     const before = towerEffectiveStats(t).dps;
     t.equippedItems.push('SHARPENED_BLADE');
     const after = towerEffectiveStats(t).dps;
-    expect(after).toBeCloseTo(before * 1.12, 4);
+    expect(after).toBeCloseTo(before * 1.10, 4);
   });
 
-  it('Watchtower Lens adds +1 tile range', () => {
+  it('Watchtower Lens adds +0.75 tile range', () => {
     const t = createTower(TowerType.SAGITTARIUS, 1, 0, 0, 0);
     const before = towerEffectiveStats(t).range;
     t.equippedItems.push('WATCHTOWER_LENS');
     const after = towerEffectiveStats(t).range;
-    expect(after).toBe(before + 1);
+    expect(after).toBe(before + 0.75);
   });
 
-  it('multiplies attack speed via Mercury Feather (+22%)', () => {
+  it('multiplies attack speed via Mercury Feather (+25%)', () => {
     const t = createTower(TowerType.SAGITTARIUS, 1, 0, 0, 0);
     const before = towerEffectiveStats(t).attackSpeed;
     t.equippedItems.push('MERCURY_FEATHER');
     const after = towerEffectiveStats(t).attackSpeed;
-    expect(after).toBeCloseTo(before * 1.22, 4);
+    expect(after).toBeCloseTo(before * 1.25, 4);
   });
 
   it('Cavalry Spur (2026-05 v6 — MELEE only) buffs only melee towers', () => {
@@ -85,9 +85,21 @@ describe('Tower effective stats', () => {
     ranged.equippedItems.push('CAVALRY_SPUR');
     melee.equippedItems.push('CAVALRY_SPUR');
     expect(towerEffectiveStats(ranged).attackSpeed).toBeCloseTo(rangedBefore, 4);  // ranged: no effect
-    // 2026-05-19 rarity rebalance: Cavalry Spur tuned 1.30 → 1.22 so it
-    // fits the UNCOMMON tier next to Mercury Feather (+22%).
-    expect(towerEffectiveStats(melee).attackSpeed).toBeCloseTo(meleeBefore * 1.22, 4);
+    expect(towerEffectiveStats(melee).attackSpeed).toBeCloseTo(meleeBefore * 1.25, 4);
+  });
+
+  it('keeps a visible Common to Legendary attack-speed ladder', () => {
+    const multiplier = (item: string) => {
+      const tower = createTower(TowerType.SAGITTARIUS, 1, 0, 0, 0);
+      const before = towerEffectiveStats(tower).attackSpeed;
+      tower.equippedItems.push(item as any);
+      return towerEffectiveStats(tower).attackSpeed / before;
+    };
+    expect(multiplier('TRAINING_SCROLL')).toBeCloseTo(1.10, 4);
+    expect(multiplier('MERCURY_FEATHER')).toBeCloseTo(1.25, 4);
+    expect(multiplier('HOURGLASS_OF_SATURN')).toBeCloseTo(1.40, 4);
+    expect(multiplier('FALCONERS_WATCHPOST')).toBeCloseTo(1.40, 4);
+    expect(multiplier('NUMIDIAN_SADDLE')).toBeCloseTo(1.60, 4);
   });
 });
 

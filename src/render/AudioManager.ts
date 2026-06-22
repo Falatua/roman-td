@@ -127,7 +127,7 @@ export const SFX = {
     setTimeout(() => { tone(55, 0.6, 'square', 0.34, 28); tone(82, 0.4, 'sawtooth', 0.20, 40); }, 800);
   },
   itemPickup: (rarity: string) => {
-    const base = { COMMON: 440, UNCOMMON: 520, RARE: 660, LEGENDARY: 880, UNIQUE: 1024 } as Record<string, number>;
+    const base = { COMMON: 440, UNCOMMON: 520, RARE: 660, EPIC: 770, LEGENDARY: 880, UNIQUE: 1024 } as Record<string, number>;
     const f = base[rarity] ?? 440;
     tone(f, 0.12, 'sine', 0.18);
     setTimeout(() => tone(f * 1.5, 0.12, 'sine', 0.16), 80);
@@ -139,7 +139,7 @@ export const SFX = {
   // Distinct from pickup: this fires the moment an enemy DROPS the item on the ground,
   // so the player notices the drop before auto-pickup at wave end. Bright bell-toll triad.
   itemDrop: (rarity: string) => {
-    const base = { COMMON: 660, UNCOMMON: 740, RARE: 880, LEGENDARY: 988, UNIQUE: 1175 } as Record<string, number>;
+    const base = { COMMON: 660, UNCOMMON: 740, RARE: 880, EPIC: 932, LEGENDARY: 988, UNIQUE: 1175 } as Record<string, number>;
     const f = base[rarity] ?? 660;
     tone(f, 0.18, 'triangle', 0.22);
     setTimeout(() => tone(f * 1.25, 0.18, 'triangle', 0.20), 90);

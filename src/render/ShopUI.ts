@@ -4,7 +4,7 @@ import { GameStateShape } from '../GameState';
 import { INVENTORY_SIZE, ECONOMY } from '../constants';
 import { SFX } from './AudioManager';
 import { spendGold } from '../systems/EconomySystem';
-import { InventoryState, inventoryAdd, isConsumable } from '../systems/LootSystem';
+import { InventoryState, inventoryAdd, isConsumable, itemBuyPrice } from '../systems/LootSystem';
 import items from '../data/items_permanent.json';
 import consumables from '../data/items_consumable.json';
 import towersData from '../data/towers.json';
@@ -1114,18 +1114,15 @@ export function renderInventoryButton(parent: HTMLElement, inv: InventoryState, 
 // drop (falls back to items_permanent.json `buy` field, halved). Old
 // system used a sub-half rarity-flat schedule for loot drops which felt
 // punitive — half-of-buy is the consistent rule the user expects.
-import permItems from '../data/items_permanent.json';
-const PERM_ITEMS = permItems as Record<string, { buy?: number; rarity?: string }>;
-
 // Fallback rarity prices — used only when neither a tracked buyPrice NOR
 // an items_permanent.json buy field exists (e.g. legacy consumables).
 export const SELL_PRICE: Record<string, number> = {
-  COMMON: 4,        // half of average 8g buy
-  UNCOMMON: 9,      // half of average 18g buy
-  RARE: 18,         // half of average 36g buy
-  EPIC: 30,         // 2026-05-18 — half of 60g Epic buy
-  LEGENDARY: 65,    // half of average 130g buy
-  UNIQUE: 75
+  COMMON: 10,
+  UNCOMMON: 22,
+  RARE: 50,
+  EPIC: 105,
+  LEGENDARY: 200,
+  UNIQUE: 250
 };
 
 // Compute sell price from an inventory slot. Half-of-buy-price for every
@@ -1138,7 +1135,7 @@ export function inventorySellPrice(rarityOrSlot: any): number {
   const slot = rarityOrSlot as { rarity: string; buyPrice?: number; itemId?: string };
   if (slot.buyPrice && slot.buyPrice > 0) return Math.max(1, Math.floor(slot.buyPrice / 2));
   // Fallback: look up the items.json buy price for this itemId.
-  const baseBuy = slot.itemId ? PERM_ITEMS[slot.itemId]?.buy : undefined;
+  const baseBuy = slot.itemId ? itemBuyPrice(slot.itemId) : undefined;
   if (baseBuy && baseBuy > 0) return Math.max(1, Math.floor(baseBuy / 2));
   return SELL_PRICE[slot.rarity] ?? 2;
 }
@@ -1210,7 +1207,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   // Sort dropdown reorders slots via CSS `order`; family chips hide
   // non-matching slots via `display: none`. Empty slots float to the end.
   // State persists within this modal session only.
-  const RARITY_ORDER: Record<string, number> = { LEGENDARY: 0, UNIQUE: 1, RARE: 2, UNCOMMON: 3, COMMON: 4 };
+  const RARITY_ORDER: Record<string, number> = { LEGENDARY: 0, UNIQUE: 1, EPIC: 2, RARE: 3, UNCOMMON: 4, COMMON: 5 };
   const controls = document.createElement('div');
   controls.style.cssText = `display:flex;gap:8px;align-items:center;margin-bottom:10px;font-size:11px;color:#cdb98a;letter-spacing:1px;flex-wrap:wrap;`;
   const sortLabel = document.createElement('span');
@@ -1368,7 +1365,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
             break;
           case 'BUY PRICE':
             // descending: most expensive first
-            primary = -((def?.buy ?? 0) as number) * 1000 + idx;
+            primary = -itemBuyPrice(itm.itemId) * 1000 + idx;
             break;
         }
       } else {

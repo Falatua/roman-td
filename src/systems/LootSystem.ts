@@ -12,6 +12,20 @@ import consumables from '../data/items_consumable.json';
 // items that fill the gap between Rare and Legendary.
 export type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'UNIQUE';
 
+export const RARITY_BUY_PRICE: Record<Rarity, number> = {
+  COMMON: 20,
+  UNCOMMON: 45,
+  RARE: 100,
+  EPIC: 210,
+  LEGENDARY: 400,
+  UNIQUE: 500
+};
+
+export function itemBuyPrice(itemId: string): number {
+  const rarity = (items as any)[itemId]?.rarity as Rarity | undefined;
+  return rarity ? RARITY_BUY_PRICE[rarity] : 0;
+}
+
 let nextId = 1;
 function newId(): string { return `lo${nextId++}`; }
 
@@ -61,9 +75,13 @@ const RARE_ITEMS: ItemId[] = ['CENTURIONS_TRUMPET','GOLD_PURSE','BATTLE_STANDARD
 export function rollDrop(): { itemId: ItemId; rarity: Rarity } | null {
   // Mostly Common/Uncommon for ground/flyer drops.
   const r = Math.random();
-  if (r < 0.6) return { itemId: pick(COMMON_ITEMS), rarity: 'COMMON' };
-  if (r < 0.9) return { itemId: pick(UNCOMMON_ITEMS), rarity: 'UNCOMMON' };
+  if (r < 0.72) return { itemId: pick(COMMON_ITEMS), rarity: 'COMMON' };
+  if (r < 0.95) return { itemId: pick(UNCOMMON_ITEMS), rarity: 'UNCOMMON' };
   return { itemId: pick(RARE_ITEMS), rarity: 'RARE' };
+}
+
+export function premiumDropRoll(chance: number, randomValue = Math.random()): boolean {
+  return randomValue < Math.max(0, Math.min(1, chance));
 }
 
 function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -172,9 +190,10 @@ export function rollBossDrop(
 ): { itemId: ItemId; rarity: Rarity } | null {
   const table = BOSS_LEGENDARIES[faction];
   const basePool = (table && table.length > 0) ? table : FALLBACK_LEGENDARIES;
+  const legendaryPool = basePool.filter(id => (items as any)[id]?.rarity === 'LEGENDARY');
   // Filter out already-owned legendaries so the player can't stack duplicates.
   const owned = currentlyOwnedLegendarySet(state, inv);
-  let pool = basePool.filter(id => !owned.has(id));
+  let pool = legendaryPool.filter(id => !owned.has(id));
   // If the boss-specific table is exhausted, widen to the full legendary set
   // before giving up — most runs won't get past the boss-table here, but the
   // late-game player who has the whole CARTHAGE table already shouldn't get

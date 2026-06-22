@@ -8,12 +8,14 @@ import {
 } from '../systems/CampaignRelicSystem';
 import { closeGameModals } from './ModalManager';
 import { SFX } from './AudioManager';
+import { canReceiveRunReward } from '../systems/RewardEligibility';
 
 export function showCampaignRelicModal(
   parent: HTMLElement,
   state: GameStateShape,
   onChoose: (id: CampaignRelicId | null) => void
 ): void {
+  if (!canReceiveRunReward(state)) return;
   closeGameModals();
   (state as any).__campaignRelicOpen = true;
   markCampaignRelicOffered(state);

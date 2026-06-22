@@ -1,6 +1,7 @@
 import { DamageType, Tower } from '../types';
 import { GameStateShape } from '../GameState';
 import { WAVE } from '../constants';
+import { canReceiveRunReward } from './RewardEligibility';
 
 export const CAMPAIGN_RELIC_IDS = [
   'JUPITERS_MANDATE',
@@ -54,8 +55,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'DIVINE CAMPAIGN LAW',
     blurb: 'The gods demand spectacle. Holy engines become executioners, but the enemy marches under storm winds.',
     upside: 'Divine towers +80% damage and commanders take +50% damage.',
-    caveat: 'All enemies move +18% faster.',
-    effects: ['DIVINE +80% damage.', 'Commander enemies take +50% damage.', 'Enemies move +18% faster.']
+    caveat: 'All enemies move +30% faster.',
+    effects: ['DIVINE +80% damage.', 'Commander enemies take +50% damage.', 'Enemies move +30% faster.']
   },
   {
     id: 'MARS_TAX',
@@ -63,8 +64,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'WAR FUND DECREE',
     blurb: 'Mars pays for steel in advance. Traps become brutally efficient, but the enemy answers with speed.',
     upside: 'Trap prices -75%, trap damage +80%, trap radius +60%.',
-    caveat: 'All enemies move +25% faster.',
-    effects: ['Trap prices cut by 75%.', 'Trap damage +80% and radius +60%.', 'Enemies move +25% faster.']
+    caveat: 'All enemies move +40% faster.',
+    effects: ['Trap prices cut by 75%.', 'Trap damage +80% and radius +60%.', 'Enemies move +40% faster.']
   },
   {
     id: 'SATURNS_DEBT',
@@ -72,8 +73,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'BORROWED TIME',
     blurb: 'The treasury opens now. Rome will collect interest when the final daemon arrives.',
     upside: 'Gain 900 gold immediately.',
-    caveat: 'At W30, Daemon Imperator takes up to 60% less direct damage based on banked gold.',
-    effects: ['Gain 900 gold now.', 'W30 Daemon direct-damage reduction scales with your banked gold.']
+    caveat: 'At W30, Daemon Imperator takes up to 75% less direct damage based on banked gold.',
+    effects: ['Gain 900 gold now.', 'W30 Daemon direct-damage reduction scales up to 75% with banked gold.']
   },
   {
     id: 'VULCANS_FORGE',
@@ -81,8 +82,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SIEGE BARGAIN',
     blurb: 'The forges burn white-hot for siege crews. Flyers use the smoke to attack faster.',
     upside: 'Siege towers +70% damage; traps +35% damage.',
-    caveat: 'Flyers move +45% faster.',
-    effects: ['SIEGE +70% damage.', 'Trap damage +35%.', 'Flyers move +45% faster.']
+    caveat: 'Flyers move +70% faster.',
+    effects: ['SIEGE +70% damage.', 'Trap damage +35%.', 'Flyers move +70% faster.']
   },
   {
     id: 'MERCURYS_ROADS',
@@ -90,8 +91,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SPEED DECREE',
     blurb: 'Every tower crew moves on courier timing. So does the invasion.',
     upside: 'All towers +35% attack speed.',
-    caveat: 'All enemies move +25% faster.',
-    effects: ['Tower attack speed +35%.', 'Enemies move +25% faster.']
+    caveat: 'All enemies move +40% faster.',
+    effects: ['Tower attack speed +35%.', 'Enemies move +40% faster.']
   },
   {
     id: 'CERES_TITHE',
@@ -99,8 +100,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'HARVEST LAW',
     blurb: 'The fields pay generously after each battle, but base garrisons are pulled into tax duty.',
     upside: 'Wave-clear gold +75%.',
-    caveat: 'Base towers deal -30% damage.',
-    effects: ['Wave gold +75%.', 'BASE tower damage -30%.']
+    caveat: 'Base towers deal -45% damage.',
+    effects: ['Wave gold +75%.', 'BASE tower damage -45%.']
   },
   {
     id: 'PLUTOS_PACT',
@@ -108,8 +109,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'UNDERWORLD WRIT',
     blurb: 'Bosses are marked for death. Their followers arrive swollen with grave-strength.',
     upside: 'Bosses take +60% damage.',
-    caveat: 'Non-boss enemies spawn with +25% HP.',
-    effects: ['Bosses take +60% damage.', 'Non-boss enemy HP +25%.']
+    caveat: 'Non-boss enemies spawn with +45% HP.',
+    effects: ['Bosses take +60% damage.', 'Non-boss enemy HP +45%.']
   },
   {
     id: 'MINERVAS_DOCTRINE',
@@ -117,8 +118,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'DRILL MANUAL',
     blurb: 'Line troops learn perfect timing. Complex war machines lose some improvisational edge.',
     upside: 'Base towers +45% attack speed.',
-    caveat: 'Combo towers deal -25% damage.',
-    effects: ['BASE attack speed +45%.', 'COMBO damage -25%.']
+    caveat: 'Combo towers deal -40% damage.',
+    effects: ['BASE attack speed +45%.', 'COMBO damage -40%.']
   },
   {
     id: 'NEPTUNES_SURGE',
@@ -126,8 +127,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'RANGED TIDE',
     blurb: 'Ballista strings and bow arms snap like surf. Ground troops ride the same current.',
     upside: 'Physical ranged towers +55% damage.',
-    caveat: 'Ground enemies move +22% faster.',
-    effects: ['PHYS_RANGED +55% damage.', 'Ground enemies move +22% faster.']
+    caveat: 'Ground enemies move +35% faster.',
+    effects: ['PHYS_RANGED +55% damage.', 'Ground enemies move +35% faster.']
   },
   {
     id: 'VESTAL_FLAME',
@@ -135,8 +136,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SACRED FIRE',
     blurb: 'Fire and divine rites burn brighter. The enemy brings heavier shields against the omen.',
     upside: 'Fire and Divine towers +55% damage.',
-    caveat: 'Enemy HP +22%.',
-    effects: ['FIRE and DIVINE +55% damage.', 'Enemy HP +22%.']
+    caveat: 'Enemy HP +40%.',
+    effects: ['FIRE and DIVINE +55% damage.', 'Enemy HP +40%.']
   },
   {
     id: 'FORTUNAS_DICE',
@@ -144,8 +145,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'LUCK CONTRACT',
     blurb: 'Fortuna spills gold on the floor and laughs while the road gets faster.',
     upside: 'Gain 500 gold immediately.',
-    caveat: 'All enemies move +18% faster.',
-    effects: ['Gain 500 gold now.', 'Enemies move +18% faster.']
+    caveat: 'All enemies move +35% faster.',
+    effects: ['Gain 500 gold now.', 'Enemies move +35% faster.']
   },
   {
     id: 'JANUS_GATE',
@@ -153,8 +154,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'TWO-FACED MAP',
     blurb: 'Every tower sees farther through one door and strikes softer through the other.',
     upside: 'All towers +2 range.',
-    caveat: 'All tower damage -28%.',
-    effects: ['Tower range +2 tiles.', 'Tower damage -28%.']
+    caveat: 'All tower damage -45%.',
+    effects: ['Tower range +2 tiles.', 'Tower damage -45%.']
   },
   {
     id: 'AEGIS_WALL',
@@ -162,8 +163,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SURVIVAL BARGAIN',
     blurb: 'Rome receives new shields at the gate. The invading line receives heavier armor.',
     upside: 'Gain 15 lives immediately.',
-    caveat: 'Enemy HP +35%.',
-    effects: ['Gain 15 lives now.', 'Enemy HP +35%.']
+    caveat: 'Enemy HP +65%.',
+    effects: ['Gain 15 lives now.', 'Enemy HP +65%.']
   },
   {
     id: 'LAUREL_CENSUS',
@@ -171,8 +172,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'KILL LEDGER',
     blurb: 'Every fallen enemy is counted and paid. Bosses hire better guards.',
     upside: 'Every kill pays +3 gold.',
-    caveat: 'Boss HP +35%.',
-    effects: ['Kills pay +3 gold.', 'Boss HP +35%.']
+    caveat: 'Boss HP +100%.',
+    effects: ['Kills pay +3 gold.', 'Boss HP +100%.']
   },
   {
     id: 'BLOOD_STANDARD',
@@ -180,8 +181,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'MELEE OATH',
     blurb: 'The front line fights like a legend and sacrifices the clean geometry of range.',
     upside: 'Melee towers +80% damage.',
-    caveat: 'All towers lose 1.5 range.',
-    effects: ['PHYS_MELEE +80% damage.', 'Tower range -1.5 tiles.']
+    caveat: 'All towers lose 2.5 range.',
+    effects: ['PHYS_MELEE +80% damage.', 'Tower range -2.5 tiles.']
   },
   {
     id: 'EAGLE_OMEN',
@@ -189,8 +190,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'ANTI-AIR SIGN',
     blurb: 'The sky becomes readable. The ground war gets thicker.',
     upside: 'Flyers take +100% damage.',
-    caveat: 'Ground enemies spawn with +30% HP.',
-    effects: ['Flyers take +100% damage.', 'Ground enemy HP +30%.']
+    caveat: 'Ground enemies spawn with +50% HP.',
+    effects: ['Flyers take +100% damage.', 'Ground enemy HP +50%.']
   },
   {
     id: 'ENGINEERS_CHARTER',
@@ -198,8 +199,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'MACHINE LAW',
     blurb: 'Siege crews and trapwrights share plans. The invoice arrives immediately.',
     upside: 'Siege and traps deal +50% damage.',
-    caveat: 'Trap prices +100%.',
-    effects: ['SIEGE +50% damage.', 'Trap damage +50%.', 'Trap prices +100%.']
+    caveat: 'Trap prices +175%.',
+    effects: ['SIEGE +50% damage.', 'Trap damage +50%.', 'Trap prices +175%.']
   },
   {
     id: 'GLADIATOR_OATH',
@@ -207,8 +208,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'ARENA DOCTRINE',
     blurb: 'Elites and commanders are hunted like arena champions. Bosses prepare for the spectacle.',
     upside: 'Elites and commanders take +75% damage.',
-    caveat: 'Boss HP +35%.',
-    effects: ['ELITE and commander enemies take +75% damage.', 'Boss HP +35%.']
+    caveat: 'Boss HP +60%.',
+    effects: ['ELITE and commander enemies take +75% damage.', 'Boss HP +60%.']
   },
   {
     id: 'TEMPLE_LOAN',
@@ -216,8 +217,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'PRIESTLY CREDIT',
     blurb: 'The temples front the war chest. Every later purchase carries a little guilt.',
     upside: 'Gain 700 gold immediately.',
-    caveat: 'Trap prices +75% and enemies move +15% faster.',
-    effects: ['Gain 700 gold now.', 'Trap prices +75%.', 'Enemies move +15% faster.']
+    caveat: 'Trap prices +150% and enemies move +30% faster.',
+    effects: ['Gain 700 gold now.', 'Trap prices +150%.', 'Enemies move +30% faster.']
   },
   {
     id: 'ROME_BURNS',
@@ -225,8 +226,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'DESPERATE FLAME',
     blurb: 'Fire and divine wrath surge while the enemy hardens against panic.',
     upside: 'Fire and Divine towers +75% damage.',
-    caveat: 'Enemy HP +30%.',
-    effects: ['FIRE and DIVINE +75% damage.', 'Enemy HP +30%.']
+    caveat: 'Enemy HP +50%.',
+    effects: ['FIRE and DIVINE +75% damage.', 'Enemy HP +50%.']
   },
   {
     id: 'IRON_DISCIPLINE',
@@ -234,8 +235,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'HEAVY DRILL',
     blurb: 'Every strike lands harder. Every crew reloads with ceremony.',
     upside: 'All towers +35% damage.',
-    caveat: 'All towers -30% attack speed.',
-    effects: ['Tower damage +35%.', 'Tower attack speed -30%.']
+    caveat: 'All towers -45% attack speed.',
+    effects: ['Tower damage +35%.', 'Tower attack speed -45%.']
   },
   {
     id: 'RAPID_MUSTER',
@@ -243,8 +244,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'HASTE ORDER',
     blurb: 'Crews fire before fear can settle. Accuracy and force suffer.',
     upside: 'All towers +55% attack speed.',
-    caveat: 'All towers -35% damage.',
-    effects: ['Tower attack speed +55%.', 'Tower damage -35%.']
+    caveat: 'All towers -50% damage.',
+    effects: ['Tower attack speed +55%.', 'Tower damage -50%.']
   },
   {
     id: 'SCOUT_MAPS',
@@ -252,8 +253,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'LONG VIEW',
     blurb: 'The route is measured in advance. The enemy also finds the cleanest road.',
     upside: 'All towers +2 range.',
-    caveat: 'All enemies move +25% faster.',
-    effects: ['Tower range +2 tiles.', 'Enemies move +25% faster.']
+    caveat: 'All enemies move +40% faster.',
+    effects: ['Tower range +2 tiles.', 'Enemies move +40% faster.']
   },
   {
     id: 'BLACK_OIL',
@@ -261,8 +262,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'TRAPWRIGHT SIN',
     blurb: 'The ground becomes murderous. Flyers waste no time above it.',
     upside: 'Traps deal +125% damage.',
-    caveat: 'Flyers move +55% faster.',
-    effects: ['Trap damage +125%.', 'Flyers move +55% faster.']
+    caveat: 'Flyers move +85% faster.',
+    effects: ['Trap damage +125%.', 'Flyers move +85% faster.']
   },
   {
     id: 'SENATE_AUDIT',
@@ -270,8 +271,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'PUBLIC ACCOUNTING',
     blurb: 'The books become healthier after each wave. Bosses receive better stipends.',
     upside: 'Wave-clear gold +45% and kills pay +2 gold.',
-    caveat: 'Boss HP +30%.',
-    effects: ['Wave gold +45%.', 'Kills pay +2 gold.', 'Boss HP +30%.']
+    caveat: 'Boss HP +80%.',
+    effects: ['Wave gold +45%.', 'Kills pay +2 gold.', 'Boss HP +80%.']
   },
   {
     id: 'HARUSPEX_WARNING',
@@ -279,8 +280,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'COMMANDER OMEN',
     blurb: 'The priests read the enemy officers in the entrails. The rank and file are harder to break.',
     upside: 'Commanders take +125% damage.',
-    caveat: 'Non-boss enemy HP +20%.',
-    effects: ['Commanders take +125% damage.', 'Non-boss enemy HP +20%.']
+    caveat: 'Non-boss enemy HP +40%.',
+    effects: ['Commanders take +125% damage.', 'Non-boss enemy HP +40%.']
   },
   {
     id: 'IMPERIAL_GRANARIES',
@@ -288,8 +289,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SUPPLY FLOOD',
     blurb: 'Rome eats well and pays well. The invasion fattens too.',
     upside: 'Gain 500 gold and wave-clear gold +40%.',
-    caveat: 'Enemy HP +30%.',
-    effects: ['Gain 500 gold now.', 'Wave gold +40%.', 'Enemy HP +30%.']
+    caveat: 'Enemy HP +55%.',
+    effects: ['Gain 500 gold now.', 'Wave gold +40%.', 'Enemy HP +55%.']
   },
   {
     id: 'BLESSING_OF_MARS',
@@ -297,17 +298,17 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'STEEL PRAYER',
     blurb: 'Mars favors steel and stone over miracles.',
     upside: 'Melee and Siege towers +55% damage.',
-    caveat: 'Divine towers -35% damage.',
-    effects: ['MELEE and SIEGE +55% damage.', 'DIVINE -35% damage.']
+    caveat: 'Divine towers -50% damage.',
+    effects: ['MELEE and SIEGE +55% damage.', 'DIVINE -50% damage.']
   },
   {
     id: 'FROST_TITHE',
     name: 'Frost Tithe',
     eyebrow: 'COLD BARGAIN',
     blurb: 'The road slows under impossible frost, and so do Roman hands.',
-    upside: 'All enemies move -18% slower.',
-    caveat: 'All towers deal -35% damage.',
-    effects: ['Enemies move -18% slower.', 'Tower damage -35%.']
+    upside: 'All enemies move -22% slower.',
+    caveat: 'All towers deal -50% damage.',
+    effects: ['Enemies move -22% slower.', 'Tower damage -50%.']
   },
   {
     id: 'LAST_EAGLE',
@@ -315,8 +316,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'FINAL STANDARD',
     blurb: 'The final act belongs to Rome. The final act also hits back.',
     upside: 'From W25 onward, towers deal +70% damage.',
-    caveat: 'From W25 onward, enemy HP +45%.',
-    effects: ['W25+ tower damage +70%.', 'W25+ enemy HP +45%.']
+    caveat: 'From W25 onward, enemy HP +65%.',
+    effects: ['W25+ tower damage +70%.', 'W25+ enemy HP +65%.']
   }
 ];
 
@@ -342,6 +343,7 @@ function relicMilestoneWave(wave: number): boolean {
 }
 
 export function shouldOfferCampaignRelics(state: GameStateShape): boolean {
+  if (!canReceiveRunReward(state)) return false;
   if (state.endlessMode || !relicMilestoneWave(state.wave)) return false;
   if ((state as any).__campaignRelicOpen) return false;
   const offered = state.campaignRelicOfferWaves ?? [];
@@ -400,13 +402,13 @@ export function campaignRelicTowerDpsMult(state: GameStateShape, tower: Tower, t
   let mult = 1;
   for (const id of activeCampaignRelicIds(state)) {
     switch (id) {
-      case 'CERES_TITHE': if (towerKind === 'BASE') mult *= 0.70; break;
-      case 'MINERVAS_DOCTRINE': if (towerKind === 'COMBO') mult *= 0.75; break;
-      case 'JANUS_GATE': mult *= 0.72; break;
+      case 'CERES_TITHE': if (towerKind === 'BASE') mult *= 0.55; break;
+      case 'MINERVAS_DOCTRINE': if (towerKind === 'COMBO') mult *= 0.60; break;
+      case 'JANUS_GATE': mult *= 0.55; break;
       case 'IRON_DISCIPLINE': mult *= 1.35; break;
-      case 'RAPID_MUSTER': mult *= 0.65; break;
-      case 'BLESSING_OF_MARS': if (tower.damageType === DamageType.DIVINE) mult *= 0.65; break;
-      case 'FROST_TITHE': mult *= 0.65; break;
+      case 'RAPID_MUSTER': mult *= 0.50; break;
+      case 'BLESSING_OF_MARS': if (tower.damageType === DamageType.DIVINE) mult *= 0.50; break;
+      case 'FROST_TITHE': mult *= 0.50; break;
       case 'LAST_EAGLE': if ((state.wave ?? 1) >= 25) mult *= 1.70; break;
     }
   }
@@ -419,7 +421,7 @@ export function campaignRelicTowerSpeedMult(state: GameStateShape, _tower: Tower
     switch (id) {
       case 'MERCURYS_ROADS': mult *= 1.35; break;
       case 'MINERVAS_DOCTRINE': if (towerKind === 'BASE') mult *= 1.45; break;
-      case 'IRON_DISCIPLINE': mult *= 0.70; break;
+      case 'IRON_DISCIPLINE': mult *= 0.55; break;
       case 'RAPID_MUSTER': mult *= 1.55; break;
     }
   }
@@ -430,7 +432,7 @@ export function campaignRelicTowerRangeBonus(state: GameStateShape, _tower: Towe
   let bonus = 0;
   for (const id of activeCampaignRelicIds(state)) {
     if (id === 'JANUS_GATE' || id === 'SCOUT_MAPS') bonus += 2;
-    if (id === 'BLOOD_STANDARD') bonus -= 1.5;
+    if (id === 'BLOOD_STANDARD') bonus -= 2.5;
   }
   return bonus;
 }
@@ -446,7 +448,7 @@ export function campaignRelicDamageMult(state: GameStateShape, tower: Tower, tar
       case 'SATURNS_DEBT':
         if (state.wave >= 30 && target?.type === 'DAEMON_IMPERATOR') {
           const banked = Math.max(0, state.gold ?? 0);
-          const reduction = Math.min(0.60, Math.floor(banked / 100) * 0.10);
+          const reduction = Math.min(0.75, Math.floor(banked / 100) * 0.10);
           mult *= (1 - reduction);
         }
         break;
@@ -492,16 +494,16 @@ export function campaignRelicEnemySpeedMult(state: GameStateShape, enemy?: any):
   let mult = 1;
   for (const id of activeCampaignRelicIds(state)) {
     switch (id) {
-      case 'JUPITERS_MANDATE': mult *= 1.18; break;
-      case 'MARS_TAX': mult *= 1.25; break;
-      case 'MERCURYS_ROADS': mult *= 1.25; break;
-      case 'NEPTUNES_SURGE': if (!enemy?.isFlyer) mult *= 1.22; break;
-      case 'FORTUNAS_DICE': mult *= 1.18; break;
-      case 'TEMPLE_LOAN': mult *= 1.15; break;
-      case 'SCOUT_MAPS': mult *= 1.25; break;
-      case 'VULCANS_FORGE': if (enemy?.isFlyer) mult *= 1.45; break;
-      case 'BLACK_OIL': if (enemy?.isFlyer) mult *= 1.55; break;
-      case 'FROST_TITHE': mult *= 0.82; break;
+      case 'JUPITERS_MANDATE': mult *= 1.30; break;
+      case 'MARS_TAX': mult *= 1.40; break;
+      case 'MERCURYS_ROADS': mult *= 1.40; break;
+      case 'NEPTUNES_SURGE': if (!enemy?.isFlyer) mult *= 1.35; break;
+      case 'FORTUNAS_DICE': mult *= 1.35; break;
+      case 'TEMPLE_LOAN': mult *= 1.30; break;
+      case 'SCOUT_MAPS': mult *= 1.40; break;
+      case 'VULCANS_FORGE': if (enemy?.isFlyer) mult *= 1.70; break;
+      case 'BLACK_OIL': if (enemy?.isFlyer) mult *= 1.85; break;
+      case 'FROST_TITHE': mult *= 0.78; break;
     }
   }
   return mult;
@@ -513,17 +515,17 @@ export function campaignRelicEnemyHpMult(state: GameStateShape, enemyDef: any): 
   const isFlyer = !!enemyDef?.isFlyer;
   for (const id of activeCampaignRelicIds(state)) {
     switch (id) {
-      case 'PLUTOS_PACT': if (!isBoss) mult *= 1.25; break;
-      case 'VESTAL_FLAME': mult *= 1.22; break;
-      case 'AEGIS_WALL': mult *= 1.35; break;
-      case 'LAUREL_CENSUS': if (isBoss) mult *= 1.35; break;
-      case 'EAGLE_OMEN': if (!isFlyer) mult *= 1.30; break;
-      case 'GLADIATOR_OATH': if (isBoss) mult *= 1.35; break;
-      case 'ROME_BURNS': mult *= 1.30; break;
-      case 'SENATE_AUDIT': if (isBoss) mult *= 1.30; break;
-      case 'HARUSPEX_WARNING': if (!isBoss) mult *= 1.20; break;
-      case 'IMPERIAL_GRANARIES': mult *= 1.30; break;
-      case 'LAST_EAGLE': if ((state.wave ?? 1) >= 25) mult *= 1.45; break;
+      case 'PLUTOS_PACT': if (!isBoss) mult *= 1.45; break;
+      case 'VESTAL_FLAME': mult *= 1.40; break;
+      case 'AEGIS_WALL': mult *= 1.65; break;
+      case 'LAUREL_CENSUS': if (isBoss) mult *= 2.00; break;
+      case 'EAGLE_OMEN': if (!isFlyer) mult *= 1.50; break;
+      case 'GLADIATOR_OATH': if (isBoss) mult *= 1.60; break;
+      case 'ROME_BURNS': mult *= 1.50; break;
+      case 'SENATE_AUDIT': if (isBoss) mult *= 1.80; break;
+      case 'HARUSPEX_WARNING': if (!isBoss) mult *= 1.40; break;
+      case 'IMPERIAL_GRANARIES': mult *= 1.55; break;
+      case 'LAST_EAGLE': if ((state.wave ?? 1) >= 25) mult *= 1.65; break;
     }
   }
   return mult;
@@ -533,8 +535,8 @@ export function campaignRelicTrapPriceMult(state: GameStateShape): number {
   let mult = 1;
   for (const id of activeCampaignRelicIds(state)) {
     if (id === 'MARS_TAX') mult *= 0.25;
-    if (id === 'ENGINEERS_CHARTER') mult *= 2.00;
-    if (id === 'TEMPLE_LOAN') mult *= 1.75;
+    if (id === 'ENGINEERS_CHARTER') mult *= 2.75;
+    if (id === 'TEMPLE_LOAN') mult *= 2.50;
   }
   return mult;
 }

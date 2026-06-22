@@ -311,6 +311,7 @@ const MANIFEST: Record<string, string> = {
   CODEX_BOOK: 'u_codex_book.png', UPGRADE_ALTAR: 'u_upgrade_altar.png',
   TIER_1: 'u_tier_1.png', TIER_2: 'u_tier_2.png', TIER_3: 'u_tier_3.png', TIER_4: 'u_tier_4.png', TIER_5: 'u_tier_5.png',
   ORB_COMMON: 'u_orb_common.png', ORB_UNCOMMON: 'u_orb_uncommon.png', ORB_RARE: 'u_orb_rare.png',
+  ORB_EPIC: 'u_orb_rare.png',
   ORB_LEGENDARY: 'u_orb_legendary.png', ORB_UNIQUE: 'u_orb_unique.png',
   BADGE_BRONZE: 'u_badge_bronze.png', BADGE_SILVER: 'u_badge_silver.png', BADGE_GOLD: 'u_badge_gold.png',
   CRACKED_BASE: 'u_cracked_base.png',

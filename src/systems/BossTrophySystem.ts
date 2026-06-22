@@ -1,5 +1,6 @@
 import { DamageType, Tower } from '../types';
 import { GameStateShape } from '../GameState';
+import { canReceiveRunReward, isMajorBossRewardEnemy } from './RewardEligibility';
 
 export type BossTrophyId = 'EXECUTIONERS_LAUREL' | 'FIELD_ENGINEERS' | 'AUXILIA_DRILL';
 
@@ -57,9 +58,8 @@ export function applyBossTrophy(state: GameStateShape, id: BossTrophyId): void {
 }
 
 export function shouldOfferBossTrophy(state: GameStateShape, enemy: any): boolean {
-  if (!enemy?.isBoss || enemy?.isBonusBoss) return false;
-  if (!enemy?.isScheduledBoss) return false;
-  if (enemy.type === 'WAR_ELEPHANT' || enemy.type === 'UNDEAD_WAR_ELEPHANT') return false;
+  if (!canReceiveRunReward(state)) return false;
+  if (!isMajorBossRewardEnemy(enemy)) return false;
   const claimedWaves = state.bossTrophyWavesClaimed ?? [];
   if (claimedWaves.includes(state.wave)) return false;
   return unclaimedBossTrophies(state).length > 0;

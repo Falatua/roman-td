@@ -1,6 +1,6 @@
 import { ItemId } from '../types';
 import items from '../data/items_permanent.json';
-import { Rarity } from './LootSystem';
+import { itemBuyPrice, Rarity } from './LootSystem';
 import { championForHero } from './HeroIdentity';
 
 export interface ShopOffer {
@@ -147,7 +147,7 @@ export interface ShopState {
 // TYPE (the pool below picks 3 distinct types per visit) — they just
 // always arrive at apex tier and at the same price tag.
 const MERCATOR_TOWER_PRICE: Record<number, number> = {
-  1: 50, 2: 50, 3: 50, 4: 50, 5: 50
+  1: 250, 2: 250, 3: 250, 4: 250, 5: 250
 };
 
 // Buyable tower pool — base & low-tier combo towers only. Specifically
@@ -252,14 +252,14 @@ export function buildGateShop(_refreshSeed = 0, _ownedLegendaries?: Set<string>)
   // varied enough that they don't always see the same lineup.
   const commons = sampleN(entries(GATE_COMMON), Math.min(4, GATE_COMMON.length));
   for (const [id, def] of commons) {
-    offers.push({ itemId: id, rarity: 'COMMON', price: def?.buy ?? 8, isConsumable: false });
+    offers.push({ itemId: id, rarity: 'COMMON', price: itemBuyPrice(id), isConsumable: false });
   }
   // Sample 2 uncommons (the pool has 2, so always both for now).
   const uncommons = sampleN(entries(GATE_UNCOMMON), Math.min(2, GATE_UNCOMMON.length));
   for (const [id, def] of uncommons) {
-    offers.push({ itemId: id, rarity: 'UNCOMMON', price: def?.buy ?? 18, isConsumable: false });
+    offers.push({ itemId: id, rarity: 'UNCOMMON', price: itemBuyPrice(id), isConsumable: false });
   }
-  return { type: 'GATE', offers, livesPrice: 5, livesMaxThisVisit: 5, livesBoughtThisVisit: 0 };
+  return { type: 'GATE', offers, livesPrice: 30, livesMaxThisVisit: 5, livesBoughtThisVisit: 0 };
 }
 
 export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): ShopState {
@@ -276,21 +276,21 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   // regardless of items.json baseline. Keeps trophies aspirational but
   // reachable without the prior 120-140g price tags.
   const filteredLegendaryIds = ownedLegendaries
-    ? MERCATOR_LEGENDARY.filter(id => !ownedLegendaries.has(id))
-    : MERCATOR_LEGENDARY;
+    ? MERCATOR_LEGENDARY.filter(id => ITEMS[id]?.rarity === 'LEGENDARY' && !ownedLegendaries.has(id))
+    : MERCATOR_LEGENDARY.filter(id => ITEMS[id]?.rarity === 'LEGENDARY');
   // 2026-05 v6: bumped 2 → 4 legendary slots so each Mercator visit
   // actually feels like a trophy haul. Still filtered against owned
   // legendaries so no duplicates land in the stock.
   const legs = sampleN(entries(filteredLegendaryIds), 4);
   for (const [id] of legs) {
-    offers.push({ itemId: id, rarity: 'LEGENDARY', price: 75, isConsumable: false });
+    offers.push({ itemId: id, rarity: 'LEGENDARY', price: itemBuyPrice(id), isConsumable: false });
   }
 
   // 1 guaranteed Rare with a steep markup.
   const rares = sampleN(entries(MERCATOR_RARE), 1);
   if (rares.length > 0) {
     const [rId, rDef] = rares[0];
-    offers.push({ itemId: rId, rarity: 'RARE', price: (rDef?.buy ?? 8) + 8, isConsumable: false });
+    offers.push({ itemId: rId, rarity: 'RARE', price: itemBuyPrice(rId) + 15, isConsumable: false });
   }
 
   // 2026-05 v6: 1 GUARANTEED Mercator-exclusive item (Scipio's Playbook,
@@ -300,7 +300,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   const excl = sampleN(entries(MERCATOR_EXCLUSIVE_RARE), 1);
   if (excl.length > 0) {
     const [eId, eDef] = excl[0];
-    offers.push({ itemId: eId, rarity: 'RARE', price: (eDef?.buy ?? 36), isConsumable: false });
+    offers.push({ itemId: eId, rarity: 'RARE', price: itemBuyPrice(eId), isConsumable: false });
   }
 
   // Consumables removed 2026-05 — Mercator now slots an extra mid-tier
@@ -311,7 +311,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   const mids = sampleN(entries(MERCATOR_MID), 3);
   for (const [id, def] of mids) {
     if (!def) continue;
-    offers.push({ itemId: id, rarity: asRarity(def.rarity), price: (def.buy ?? 5) + 4, isConsumable: false });
+    offers.push({ itemId: id, rarity: asRarity(def.rarity), price: itemBuyPrice(id) + 10, isConsumable: false });
   }
 
   // 2026-05-18 — 2 GUARANTEED EPIC slots. Pulled from the new purple
@@ -321,7 +321,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   const epics = sampleN(entries(MERCATOR_EPIC), 2);
   for (const [id, def] of epics) {
     if (!def) continue;
-    offers.push({ itemId: id, rarity: 'EPIC' as Rarity, price: def.buy ?? 60, isConsumable: false });
+    offers.push({ itemId: id, rarity: 'EPIC' as Rarity, price: itemBuyPrice(id), isConsumable: false });
   }
 
   // 2026-05-25 — GUARANTEED TRUESIGHT_LENS slot. The stealth-reveal
@@ -335,12 +335,12 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
     offers.push({
       itemId: 'TRUESIGHT_LENS',
       rarity: asRarity(tsDef.rarity ?? 'UNCOMMON'),
-      price: (tsDef.buy ?? 18) + 4,
+      price: itemBuyPrice('TRUESIGHT_LENS') + 10,
       isConsumable: false
     });
   }
 
-  return { type: 'MERCATOR', offers, livesPrice: 7, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };
+  return { type: 'MERCATOR', offers, livesPrice: 45, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };
 }
 
 // ─── Fortuna's Wheel — 500g RNG combo-tower gamble ─────────────────────
