@@ -14,7 +14,8 @@ const GAME_MODAL_IDS = [
   'settings-modal',
   'dps-check-summary',
   'campaign-relic-modal',
-  'boss-trophy-modal'
+  'boss-trophy-modal',
+  'test-your-might-modal'
 ];
 
 export function closeGameModals() {

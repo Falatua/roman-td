@@ -23,6 +23,7 @@ import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, cle
 import { injectCampaignCommanders } from './CommanderSystem';
 import { campaignRelicWaveGoldMult } from './CampaignRelicSystem';
 import { prepareHeroAbilitiesForWave } from './HeroSystem';
+import { completeTestYourMight, tickTestYourMightSpawns } from './TestYourMightSystem';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
 const FACTION_BOSS: Record<string, string> = {
@@ -268,6 +269,7 @@ export function startWave(state: GameStateShape) {
 export function tickSpawns(state: GameStateShape, dt: number) {
   if (state.phase !== GamePhase.WAVE_PHASE) return;
   state.spawnElapsed += dt;
+  if (tickTestYourMightSpawns(state)) return;
   // 2026-05 v10 — ENDLESS MODE: route to a dedicated tick handler that
   // uses the procedurally-generated cfg's hpMult/speedMult/resistBoost.
   // Lets normal tickSpawns keep its waves.json-driven path untouched.
@@ -405,6 +407,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
 
 export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) => void) {
   if (state.phase !== GamePhase.WAVE_PHASE) return;
+  if (state.testYourMightFailed) return;
   // BOSS REBIRTH (2026-05 v6): bosses that leak to Rome are now deleted
   // from state.enemies and queued for respawn on the NEXT wave's start
   // (see EnemySystem leak path + WaveManager.startWave). So wave-end is
@@ -417,6 +420,11 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
     if (!(e as any).isDpsCheck) liveEnemies++;
   }
   if (state.spawnQueue.length === 0 && liveEnemies === 0) {
+    if (state.testYourMightActive) {
+      completeTestYourMight(state);
+      onWaveEnd(0);
+      return;
+    }
     // 2026-05 v10 — ENDLESS MODE wave-end path. Cumulative endless
     // score bumps by endlessClearScore(cfg) per cleared wave; gold
     // intentionally unstable (±50% jitter on the cfg.gold baseline)

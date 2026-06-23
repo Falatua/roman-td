@@ -69,8 +69,10 @@ import { tickSurpriseEvents, notifySurpriseEnemyResolved, clearSurpriseEventsFor
 import { showSurpriseRewardModal } from './render/SurpriseReward';
 import { showCampaignRelicModal } from './render/CampaignRelicModal';
 import { showBossTrophyModal } from './render/BossTrophyModal';
+import { showTestYourMightModal } from './render/TestYourMightModal';
 import { campaignRelicKillGoldBonus, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { shouldOfferBossTrophy, markBossTrophyOfferedForWave } from './systems/BossTrophySystem';
+import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD } from './systems/TestYourMightSystem';
 import { canReceiveRunReward, isMajorBossRewardEnemy } from './systems/RewardEligibility';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
@@ -6138,7 +6140,10 @@ async function boot() {
     // 2026-05-16: surprise-reward modal also forces a hard pause so the
     // player can decide strategically (per the design lock — "pauses the
     // game so they can choose strategically").
-    const rewardModalOpen = !!(state as any).__surpriseRewardOpen || !!(state as any).__campaignRelicOpen || !!(state as any).__bossTrophyOpen;
+    const rewardModalOpen = !!(state as any).__surpriseRewardOpen
+      || !!(state as any).__campaignRelicOpen
+      || !!(state as any).__bossTrophyOpen
+      || !!(state as any).__testYourMightOpen;
     if (paused || autoPaused || rewardModalOpen) {
       dt = 0;
     } else {
@@ -6334,6 +6339,15 @@ async function boot() {
             SFX.gateBreach(true);
             state.hint = '☠ ROME HAS FALLEN — W20 admits no leaks.';
             if (state.gameOverAt < 0) state.gameOverAt = state.tick;
+            return;
+          }
+          if (state.testYourMightActive) {
+            state.enemiesLeakedThisWave++;
+            state.leaksByArchetype[e.archetype] = (state.leaksByArchetype[e.archetype] ?? 0) + 1;
+            renderer.triggerGateImpact();
+            renderer.triggerShake(e.isBoss ? 9 : 6, 1.0);
+            SFX.gateBreach(true);
+            failTestYourMight(state);
             return;
           }
           state.lives -= e.livesCost;
@@ -7235,7 +7249,15 @@ async function boot() {
       }
       tickGore(gore, dt);
       checkWaveEnd(state, (gold) => {
-        earnGold(state, gold);
+        if (gold > 0) earnGold(state, gold);
+        const clearedTestYourMight = state.testYourMightCleared === true && (state as any).__testYourMightRewardPaid !== true;
+        if (clearedTestYourMight) {
+          (state as any).__testYourMightRewardPaid = true;
+          earnGold(state, TEST_YOUR_MIGHT_REWARD_GOLD);
+          state.score += 5000;
+          state.hint = `TEST YOUR MIGHT PERFECT CLEAR — +${TEST_YOUR_MIGHT_REWARD_GOLD}g. The treasury is now visibly nervous.`;
+          showBonusBossBanner(`TEST YOUR MIGHT CLEARED — +${TEST_YOUR_MIGHT_REWARD_GOLD} GOLD`);
+        }
         clearPlacedTrapsForWaveEnd(state);
         // 2026-05 v11: user-supplied wave-survived bumper SFX. Fires the
         // moment a wave's spawn queue empties + no live enemies remain.
@@ -7267,10 +7289,10 @@ async function boot() {
         // this wave pays +200 score AND +50 gold on top of the normal
         // wave reward. Clean defense is now a meaningful gold spike
         // (roughly half a Mercator legendary per clean wave).
-        if (state.enemiesLeakedThisWave === 0) {
+        if (state.enemiesLeakedThisWave === 0 && !clearedTestYourMight) {
           state.score += 200;
           earnGold(state, 50);
-          state.hint = `✨ PERFECT WAVE — +50g bonus on top of the +${gold}g wave reward.`;
+          if (!clearedTestYourMight) state.hint = `✨ PERFECT WAVE — +50g bonus on top of the +${gold}g wave reward.`;
           if (renderer?.triggerImpactRing) {
             // Gold celebration ring at the gate location (middle-right of map).
             renderer.triggerImpactRing(GRID.COLS * GRID.TILE - 64, GRID.ROWS * GRID.TILE / 2, state.tick, 48, 0xffd34d);
@@ -7323,6 +7345,9 @@ async function boot() {
         // banner fires instead.
         if (state.endlessMode) {
           showEndlessPreWaveBanner((state.endlessWave ?? 0) + 1);
+        } else if (clearedTestYourMight) {
+          showNextWaveWarning(state.wave + 1);
+          showPreWaveTip(state.wave + 1);
         } else {
           showNextWaveWarning(state.wave + 1);
           showPreWaveTip(state.wave + 1);
@@ -7377,7 +7402,8 @@ async function boot() {
           // glows until the player opens it. Cleared in onOpenShop below.
           state.shopRefreshedUnopened = true;
         }
-        if (shouldOfferCampaignRelics(state)) {
+        const offerCampaignRelic = () => {
+          if (!shouldOfferCampaignRelics(state)) return;
           const stage = document.getElementById('stage-wrap');
           if (stage) {
             showCampaignRelicModal(stage, state, (id) => {
@@ -7386,6 +7412,18 @@ async function boot() {
                 : '⚜ NO RELIC CLAIMED — ROME KEEPS ITS OWN TERMS ⚜');
             });
           }
+        };
+        if (shouldOfferTestYourMight(state)) {
+          const stage = document.getElementById('stage-wrap');
+          if (stage) {
+            showTestYourMightModal(stage, state, (accepted) => {
+              if (!accepted && state.lives > 0) offerCampaignRelic();
+            });
+          } else {
+            offerCampaignRelic();
+          }
+        } else {
+          offerCampaignRelic();
         }
         // 20-WAVE CAMPAIGN VICTORY: clearing W20 with the gate intact
         // wins the main run. 2026-05 v10 — Endless mode freezes
@@ -7483,9 +7521,11 @@ async function boot() {
       (state as any).__surpriseRewardOpen = false;
       (state as any).__campaignRelicOpen = false;
       (state as any).__bossTrophyOpen = false;
+      (state as any).__testYourMightOpen = false;
       document.getElementById('surprise-reward-modal')?.remove();
       document.getElementById('campaign-relic-modal')?.remove();
       document.getElementById('boss-trophy-modal')?.remove();
+      document.getElementById('test-your-might-modal')?.remove();
       // Brief delay so the death animation can be seen, then snap to GAME_OVER.
       if (state.tick - state.gameOverAt > 1.0) state.phase = GamePhase.GAME_OVER;
     }

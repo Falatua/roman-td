@@ -240,6 +240,14 @@ export interface GameStateShape {
   campaignRelicOffers?: Record<string, string[]>;
   bossTrophies?: string[];
   bossTrophyWavesClaimed?: number[];
+  // Test Your Might bonus challenge. Offered once after W10. If accepted,
+  // the special wave does not advance the campaign counter, but any leak
+  // immediately ends the run.
+  testYourMightOffered?: boolean;
+  testYourMightDeclined?: boolean;
+  testYourMightActive?: boolean;
+  testYourMightCleared?: boolean;
+  testYourMightFailed?: boolean;
 }
 
 export function createGameState(): GameStateShape {
@@ -309,7 +317,12 @@ export function createGameState(): GameStateShape {
     campaignRelicSkippedWaves: [],
     campaignRelicOffers: {},
     bossTrophies: [],
-    bossTrophyWavesClaimed: []
+    bossTrophyWavesClaimed: [],
+    testYourMightOffered: false,
+    testYourMightDeclined: false,
+    testYourMightActive: false,
+    testYourMightCleared: false,
+    testYourMightFailed: false
   };
 }
 
