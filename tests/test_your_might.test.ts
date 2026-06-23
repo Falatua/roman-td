@@ -15,6 +15,7 @@ import {
 import { checkWaveEnd, tickSpawns } from '../src/systems/WaveManager';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildFlyerPath, buildGroundPath } from '../src/systems/PathFinder';
+import enemiesData from '../src/data/enemies.json';
 
 function bootstrapState() {
   const s = createGameState();
@@ -57,7 +58,29 @@ describe('Test Your Might bonus wave', () => {
     expect(s.testYourMightActive).toBe(true);
     expect(s.spawnQueue.length).toBe(expectedCount);
     expect(s.weatherIntensity).toBeGreaterThan(1);
+    expect(s.weatherIntensity).toBeLessThanOrEqual(1.5);
     expect(s.waveModifier).toBe('GROUP_MARCH');
+    expect(s.endlessExtraModifiers).toEqual([]);
+  });
+
+  it('is tuned as a wave-15-strength mixed gauntlet with bosses, flyers, ground, and commanders', () => {
+    const byType = new Map(TEST_YOUR_MIGHT_SPAWNS.map(g => [g.type, g]));
+    const types = TEST_YOUR_MIGHT_SPAWNS.map(g => g.type);
+    const enemyDefs: any = enemiesData as any;
+
+    expect(types.some(type => enemyDefs[type]?.isBoss === true)).toBe(true);
+    expect(types.some(type => enemyDefs[type]?.isFlyer === true)).toBe(true);
+    expect(types.some(type => enemyDefs[type]?.isBoss !== true && enemyDefs[type]?.isFlyer !== true)).toBe(true);
+    expect(types).toContain('PATHFINDER_COMMANDER');
+    expect(types).toContain('SIEGE_CAPTAIN_COMMANDER');
+
+    expect(byType.get('HANNIBAL_BARCA')?.hpMult).toBeGreaterThanOrEqual(35);
+    expect(byType.get('HANNIBAL_BARCA')?.hpMult).toBeLessThanOrEqual(70);
+    expect(byType.get('HANNIBAL_BARCA')?.majorReward).toBe(true);
+    expect(byType.get('CARTHAGE_SPEARMAN')?.hpMult).toBeGreaterThanOrEqual(200);
+    expect(byType.get('CARTHAGE_SPEARMAN')?.hpMult).toBeLessThanOrEqual(320);
+    expect(byType.get('SPECTRAL_SCOUT')?.hpMult).toBeGreaterThanOrEqual(240);
+    expect(byType.get('SPECTRAL_SCOUT')?.hpMult).toBeLessThanOrEqual(380);
   });
 
   it('routes tickSpawns through the bonus spawner and creates real enemies', () => {
@@ -69,6 +92,7 @@ describe('Test Your Might bonus wave', () => {
     expect(s.enemies.size).toBeGreaterThan(0);
     expect(Array.from(s.enemies.values()).some(e => e.isBoss)).toBe(true);
     expect(Array.from(s.enemies.values()).some(e => e.isFlyer)).toBe(true);
+    expect(Array.from(s.enemies.values()).filter(e => e.isScheduledBoss).map(e => e.type)).toEqual(['HANNIBAL_BARCA']);
   });
 
   it('also works through the normal WaveManager tickSpawns entrypoint', () => {
