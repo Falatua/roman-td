@@ -328,6 +328,9 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     s.phase = GamePhase.WAVE_PHASE;
     s.tick = 10;
     s.activeHeroId = 'HERO_MARIUS';
+    // Champions now share the run's hero tier (identical to the starter), so a
+    // maxed run is needed for the full Champion ability kit to be online.
+    s.heroTier = 4;
     const champion = createTower(TowerType.CHAMPION_CAESAR, 5, 5, 5, 9);
     const milites = createTower(TowerType.MILITES, 1, 7, 5, 9);
     milites.attackCooldown = 5;
@@ -357,6 +360,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     s.phase = GamePhase.WAVE_PHASE;
     s.tick = 10;
     s.activeHeroId = 'HERO_MARIUS';
+    s.heroTier = 4;  // champions share the run tier; max it so SPQR Decree is online
     const caesar = createTower(TowerType.CHAMPION_CAESAR, 5, 5, 5, 9);
     s.towers.set(caesar.id, caesar);
     const commanded = Array.from({ length: 60 }, (_, idx) => {
@@ -382,6 +386,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     s.phase = GamePhase.WAVE_PHASE;
     s.tick = 10;
     s.activeHeroId = 'HERO_CAESAR';
+    s.heroTier = 4;  // champions share the run tier; max it so the full kit is online
     const champions = [
       TowerType.CHAMPION_MARIUS,
       TowerType.CHAMPION_AGRIPPA,

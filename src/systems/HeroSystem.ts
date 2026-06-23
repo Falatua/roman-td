@@ -246,21 +246,23 @@ export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): voi
     if (!isStarterHero && !isMercatorChampion) continue;
     const def: any = (HERO_DEFS as any)[heroId];
     if (!def?.abilities) continue;
-    const tier = isStarterHero ? getHeroTier(state) : 4;
+    // 2026-06-22 — Mercator Champions are functionally IDENTICAL to the
+    // starter hero: they share the run's hero tier (0 at game start = a fresh
+    // pick) and the same Hero Forge investment, rather than arriving as
+    // max-tier recruits. So a champion you buy is exactly as strong as if you
+    // had started the run with that hero.
+    const tier = getHeroTier(state);
     // Initialize cooldown scratchpad on first access.
     if (!hero.__heroCooldowns) hero.__heroCooldowns = {};
     if (isMercatorChampion && !(hero as any).__championAbilityWakeupDone) {
       initializeChampionAbilityWakeup(hero, def, heroId, state.tick);
     }
 
-    // Starter heroes use the run's forge investment. Mercator Champions
-    // arrive as fully trained T5 recruit forms but do not consume or alter
-    // the starter hero's XP/forge ladder.
-    const cdMult = isStarterHero ? heroForgeCooldownMult(state) : 1;
+    const cdMult = heroForgeCooldownMult(state);
     (hero as any).__heroAbilityContext = {
       heroId,
       tier,
-      magnitudeMult: isStarterHero ? heroForgeMagnitudeMult(state) : 1
+      magnitudeMult: heroForgeMagnitudeMult(state)
     };
     for (const ability of def.abilities) {
       if (tier < ability.level) continue;
@@ -313,7 +315,10 @@ export function prepareHeroAbilitiesForWave(state: GameStateShape): void {
     if (!isStarterHero && !isMercatorChampion) continue;
 
     const def: any = (HERO_DEFS as any)[heroId];
-    const tier = isStarterHero ? getHeroTier(state) : 4;
+    // Champions share the run's hero tier exactly like the starter (see
+    // tickHeroAbilities) — they unlock abilities on the same tier ladder, not
+    // the full kit up front.
+    const tier = getHeroTier(state);
     const abilities = (def?.abilities ?? []).filter((ability: any) => tier >= ability.level);
     if (abilities.length === 0) continue;
     if (!hero.__heroCooldowns) hero.__heroCooldowns = {};
