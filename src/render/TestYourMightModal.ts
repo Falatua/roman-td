@@ -30,7 +30,7 @@ export function showTestYourMightModal(
     <div style="margin:16px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:650px;text-align:left">
       <div style="background:rgba(0,0,0,0.42);border:2px solid #88ff88;padding:12px">
         <div style="font-size:10px;letter-spacing:3px;color:#88ff88;font-weight:bold;margin-bottom:6px">PERFECT CLEAR</div>
-        <div style="font-size:13px;color:#ddffdd;line-height:1.45">Gain <b style="color:#ffcc44">${TEST_YOUR_MIGHT_REWARD_GOLD.toLocaleString()} gold</b>. The accountants faint. You continue to wave 11 with pockets full of poor decisions.</div>
+        <div style="font-size:13px;color:#ddffdd;line-height:1.45">Gain <b style="color:#ffcc44">${TEST_YOUR_MIGHT_REWARD_GOLD.toLocaleString()} gold</b> and <b style="color:#ff9933">1 random Legendary item</b>. The accountants faint. You continue to wave 11 with pockets full of poor decisions.</div>
       </div>
       <div style="background:rgba(0,0,0,0.42);border:2px solid #ff6655;padding:12px">
         <div style="font-size:10px;letter-spacing:3px;color:#ff6655;font-weight:bold;margin-bottom:6px">ONE LEAK</div>
@@ -38,7 +38,7 @@ export function showTestYourMightModal(
       </div>
     </div>
     <div style="margin:14px auto 0;max-width:620px;font-size:11px;color:#cdb98a;line-height:1.5;letter-spacing:1px">
-      Expect bosses, flyers, ground swarms, commanders, and weather nonsense. This wave is rude on purpose.
+      Expect a wave-15-strength gauntlet with bosses, flyers, ground swarms, commanders, and weather nonsense. This wave is rude on purpose.
     </div>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px">
       <button id="tym-accept" style="font-family:inherit;background:#7a120c;border:3px solid #ffcc44;color:#fff2b8;padding:12px 18px;cursor:pointer;font-size:13px;font-weight:bold;letter-spacing:3px;box-shadow:0 0 18px rgba(255,204,68,0.35)">YES, TEST ME</button>
