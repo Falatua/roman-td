@@ -1527,7 +1527,8 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // field stays on the enemy).
     const currentWaveDef: any = (wavesData as any[])[state.wave - 1];
     const checkpointHealSuppressed = !!currentWaveDef?.disableCheckpointHeal;
-    if (!e.isFlyer && !e.isBoss && e.checkpointHealPct && e.checkpointHealPct > 0 && !checkpointHealSuppressed) {
+    const w9WarElephantCheckpointHeal = state.wave === 9 && e.type === EnemyType.WAR_ELEPHANT;
+    if (!e.isFlyer && (!e.isBoss || w9WarElephantCheckpointHeal) && e.checkpointHealPct && e.checkpointHealPct > 0 && !checkpointHealSuppressed) {
       for (let i = 0; i < WAYPOINT_CENTERS.length; i++) {
         const wp = WAYPOINT_CENTERS[i];
         const dxw = e.x - wp.x;

@@ -235,14 +235,14 @@
     "rarity": "LEGENDARY",
     "buy": 140,
     "sell": 45,
-    "effect": "Aura 3.5 tiles: allies gain +25% damage, +20% attack speed"
+    "effect": "Aura 3.5 tiles: allies gain +30% damage, +20% attack speed"
   },
   "GILDED_SCALE_ARMOR": {
     "name": "Gilded Scale Armor",
     "rarity": "LEGENDARY",
     "buy": 140,
     "sell": 45,
-    "effect": "+55% damage, range +3 tiles"
+    "effect": "+60% damage, range +3 tiles"
   },
   "CURSED_TORC": {
     "name": "Cursed Torc",
@@ -277,14 +277,14 @@
     "rarity": "LEGENDARY",
     "buy": 140,
     "sell": 45,
-    "effect": "MELEE ONLY: tower can target flyers and deals +60% damage to them."
+    "effect": "MELEE ONLY: tower can target flyers and deals +90% damage to them."
   },
   "SPEAR_OF_MARS": {
     "name": "Spear of Mars",
     "rarity": "LEGENDARY",
     "buy": 150,
     "sell": 50,
-    "effect": "MELEE ONLY: +35% damage and +7 tile range."
+    "effect": "MELEE ONLY: +60% damage and +7 tile range."
   },
   "JUPITERS_WRATH": {
     "name": "Jupiter's Wrath",

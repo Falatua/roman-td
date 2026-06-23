@@ -1,8 +1,9 @@
 // Tests for the wave system: HP scaling, wave-end conditions, win/loss state.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { effectiveWaveHpMult, startWave, tickSpawns, checkWaveEnd } from '../src/systems/WaveManager';
+import { tickEnemies } from '../src/systems/EnemySystem';
 import { createGameState } from '../src/GameState';
-import { GamePhase } from '../src/types';
+import { EnemyType, GamePhase } from '../src/types';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath, buildFlyerPath } from '../src/systems/PathFinder';
 import wavesData from '../src/data/waves.json';
@@ -195,6 +196,28 @@ describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () =
   it('no other wave currently carries disableCheckpointHeal (clean data)', () => {
     const others = (wavesData as any[]).filter(w => w.wave !== 11 && w.disableCheckpointHeal === true);
     expect(others.length).toBe(0);
+  });
+
+  it('wave 9 war elephants heal at checkpoint coins despite being boss-class enemies', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.BUILD_PHASE;
+    s.wave = 8;
+    startWave(s);
+    tickSpawns(s, 999);
+
+    const elephant = Array.from(s.enemies.values()).find(e => e.type === EnemyType.WAR_ELEPHANT);
+    expect(elephant).toBeDefined();
+    expect(elephant!.isBoss).toBe(true);
+    expect(elephant!.checkpointHealPct).toBe(0.15);
+
+    elephant!.hp = elephant!.maxHp * 0.50;
+    const before = elephant!.hp;
+    elephant!.x = 10 * 32 + 16;
+    elephant!.y = 5 * 32 + 16;
+    tickEnemies(s, 0, () => {}, () => {});
+
+    expect(elephant!.hp).toBeGreaterThan(before);
+    expect(elephant!.healedCheckpoints).toContain(1);
   });
 });
 

@@ -201,7 +201,7 @@ describe('Merchant — Mercator stock', () => {
     const towers = buildMercatorTowerOffers(10, 5);
     const armory = towers.filter(o => !o.type.startsWith('CHAMPION_'));
     expect(armory).toHaveLength(3);
-    expect(armory.every(o => o.tier === 5 && o.price === 460)).toBe(true);
+    expect(armory.every(o => o.tier === 5 && o.price === 250)).toBe(true);
   });
 });
 

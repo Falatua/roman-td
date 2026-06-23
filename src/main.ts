@@ -2636,15 +2636,16 @@ async function boot() {
       updateTowerQueueIndicator();
     };
   }
-  // Refund price for queued purchased towers. Mercator T5 flat 50g; quest
+  // Refund price for queued purchased towers. Mercator T5 armory buys refund
+  // their current flat price; quest
   // grants refund the wave's place cost as a fair stand-in (no purchase price
   // to recover). Tower types from `pendingPurchasedTowers` carry .source.
   function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' }): number {
-    // Mercator buys = flat 50g refund (matches purchase price). Everything
+    // Mercator buys = flat 250g refund (matches purchase price). Everything
     // else (quest reward, Fortuna gamble win, bonus/gift) wasn't bought
     // with gold, so the refund falls back to the wave's place cost as a
     // fair stand-in. Fortuna spins cost 500g but the player took a
-    // gamble — they don't get the full 500g back, just the 50g
+    // gamble — they don't get the full 500g back, just the 250g
     // mercator-equivalent so refunds remain bounded.
     if (entry.source === 'mercator' || entry.source === 'fortuna') return 250;
     // 2026-05-19 — Hero placement is free and yields no refund.

@@ -30,7 +30,7 @@ import { pushStatus } from './CombatResolver';
 import { setTile } from './GridManager';
 import { buildGroundPath } from './PathFinder';
 import { HERO_IDS, HeroIdentityId, heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
-import { heroBasicAttackScaleForTier, heroBasicAttackScaleForTower } from './HeroScaling';
+import { heroBasicAttackScaleForTier, heroBasicAttackScaleForTower, heroTierForTower } from './HeroScaling';
 
 // 6-hero pool (locked design). The draft surfaces ALL 6 every run
 // (shuffled for a fresh layout) — players choose freely from the full
@@ -248,12 +248,9 @@ export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): voi
     if (!isStarterHero && !isMercatorChampion) continue;
     const def: any = (HERO_DEFS as any)[heroId];
     if (!def?.abilities) continue;
-    // 2026-06-22 — Mercator Champions are functionally IDENTICAL to the
-    // starter hero: they share the run's hero tier (0 at game start = a fresh
-    // pick) and the same Hero Forge investment, rather than arriving as
-    // max-tier recruits. So a champion you buy is exactly as strong as if you
-    // had started the run with that hero.
-    const tier = getHeroTier(state);
+    // Purchased Champions start with a T2 floor while still sharing any
+    // higher run tier earned by the starter. The starter uses the run tier.
+    const tier = heroTierForTower(state, hero);
     // Initialize cooldown scratchpad on first access.
     if (!hero.__heroCooldowns) hero.__heroCooldowns = {};
     if (isMercatorChampion && !(hero as any).__championAbilityWakeupDone) {
@@ -317,10 +314,9 @@ export function prepareHeroAbilitiesForWave(state: GameStateShape): void {
     if (!isStarterHero && !isMercatorChampion) continue;
 
     const def: any = (HERO_DEFS as any)[heroId];
-    // Champions share the run's hero tier exactly like the starter (see
-    // tickHeroAbilities) — they unlock abilities on the same tier ladder, not
-    // the full kit up front.
-    const tier = getHeroTier(state);
+    // Purchased Champions start with a T2 floor while still sharing any
+    // higher run tier earned by the starter. The starter uses the run tier.
+    const tier = heroTierForTower(state, hero);
     const abilities = (def?.abilities ?? []).filter((ability: any) => tier >= ability.level);
     if (abilities.length === 0) continue;
     if (!hero.__heroCooldowns) hero.__heroCooldowns = {};

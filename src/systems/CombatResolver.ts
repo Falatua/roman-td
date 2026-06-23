@@ -621,7 +621,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.28 });
     }
     if (t.equippedItems.includes('BARCA_WAR_HORN') && !auraOff) {
-      localAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, dmg: 0.25, spd: 0.20 });
+      // 2026-06-23 LEG dmg 0.25→0.30: beat EPIC Druid's Torc aura (+28%)
+      localAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, dmg: 0.30, spd: 0.20 });
     }
     if (t.equippedItems.includes('LICH_GENERALS_SEAL') && !auraOff) {
       localAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, dmg: 0.30, spd: 0.30 });
@@ -965,7 +966,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.equippedItems.includes('SKYPIERCER_BOLTS') && target.isFlyer) damage *= 1.85;
       if (t.equippedItems.includes('JUPITERS_SKYFIRE') && target.isFlyer) damage *= 2.40;
       if (t.equippedItems.includes('STORM_AQUILA_TALONS') && target.isFlyer) damage *= 1.90;
-      if (t.equippedItems.includes('AQUILA_TALONS') && target.isFlyer) damage *= 1.60;
+      if (t.equippedItems.includes('AQUILA_TALONS') && target.isFlyer) damage *= 1.90;  // 2026-06-23 LEG 1.60→1.90: beat EPIC Skypiercer (+85%)
       // 2026-05-17 — BEAST-BANE. Beast Hunter (T1) + Beast Slayer (T2)
       // deal +200% damage (×3 total) to animal-faction enemies: dogs
       // (Feral / Rabid / Alpha), Demon Hellhound, and both elephant
@@ -1358,7 +1359,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // 2026-05-19 — Agricola hero passive extends the CYAN/AQUILA_TALONS
       // melee-vs-flyer unlock to EVERY tower on the map. Same pipeline
       // — just sets the flag map-wide while Agricola is active.
-      const agricolaActive = activeHeroKinds.has('HERO_AGRICOLA');
+      const agricolaActive = agricolaEnablesAirAt(state, tcx, tcy);  // scoped to 10 tiles of an Agricola hero
       const meleeHitsFlyers = isMeleeRow && (
         agricolaActive ||
         (state as any).__marsVictorActive ||
@@ -1693,6 +1694,21 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
 function tilePxX(t: Tower): number { return t.tileX * GRID.TILE + GRID.TILE / 2; }
 function tilePxY(t: Tower): number { return t.tileY * GRID.TILE + GRID.TILE / 2; }
 
+// 2026-06-23 — Agricola's "all towers may strike flyers" passive is scoped to
+// a 10-tile radius around the Agricola hero (was global / map-wide). A tower
+// only gains melee anti-air if an Agricola hero stands within 10 tiles of it.
+// Mars Victor still fuses the passive army-wide on its own (__marsVictorActive).
+const AGRICOLA_FLYER_RADIUS_TILES = 10;
+function agricolaEnablesAirAt(state: GameStateShape, cx: number, cy: number): boolean {
+  const r = AGRICOLA_FLYER_RADIUS_TILES * GRID.TILE;
+  for (const tw of state.towers.values()) {
+    if (heroIdForTowerType(String(tw.type)) !== 'HERO_AGRICOLA') continue;
+    if (!(tw.id === state.activeHeroTowerId || isMercatorChampionType(String(tw.type)))) continue;
+    if (Math.hypot(tilePxX(tw) - cx, tilePxY(tw) - cy) <= r) return true;
+  }
+  return false;
+}
+
 // Exported for testing — tests/targeting.test.ts asserts behavior per
 // TargetingMode. Production code calls this only from tickCombat above.
 export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], rangeTiles: number): Enemy | null {
@@ -1708,7 +1724,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   // 2026-05-19 — Agricola hero global passive extends the
   // CYAN/AQUILA_TALONS unlock to ALL melee towers map-wide.
   const meleeAirEnabled = isMelee && (
-    Array.from(state.towers.values()).some(tw => heroIdForTowerType(String(tw.type)) === 'HERO_AGRICOLA' && (tw.id === state.activeHeroTowerId || isMercatorChampionType(String(tw.type)))) ||
+    agricolaEnablesAirAt(state, tx, ty) ||   // scoped to 10 tiles of an Agricola hero (was global)
     (state as any).__marsVictorActive ||   // Mars Victor fuses Agricola's all-towers-strike-flyers passive
     t.equippedItems.includes('AQUILA_TALONS') ||
     t.equippedItems.includes('STORM_AQUILA_TALONS') ||   // 2026 v2 — legendary grants ANY tower anti-air

@@ -143,13 +143,13 @@ export interface ShopState {
 }
 
 // Mercator tower offerings (2026-05): Mercator now ONLY stocks T5 towers
-// and every offer is a flat 50g. The player still gets variety in tower
+// and every offer has a flat armory price. The player still gets variety in tower
 // TYPE (the pool below picks 3 distinct types per visit) — they just
 // always arrive at apex tier and at the same price tag.
-// 2026-06-23 — 250 → 460 (~1.85x) to match the ~1.86x gold income from the
-// doubled enemy counts. Champions stay at 500g (Mars Victor path unchanged).
+// 2026-06-23 — JB set T5 Mercator armory towers to 250g. Champions stay
+// at 500g because they feed the Mars Victor path.
 const MERCATOR_TOWER_PRICE: Record<number, number> = {
-  1: 460, 2: 460, 3: 460, 4: 460, 5: 460
+  1: 250, 2: 250, 3: 250, 4: 250, 5: 250
 };
 
 // Buyable tower pool — base & low-tier combo towers only. Specifically
@@ -201,7 +201,9 @@ export function buildMercatorTowerOffers(wave: number, count = 5, options: Merca
   if (activeHeroChampion) excluded.add(activeHeroChampion);
   // The 6 Champions always head the lineup at a flat 500g — the Mars Victor path.
   for (const ct of CHAMPION_TYPES) {
-    if (!excluded.has(ct)) offers.push({ type: ct, tier: 5, price: CHAMPION_PRICE });
+    // 2026-06-23 — Purchased Champions arrive as T2 recruits: stronger
+    // than a fresh starter, but not full apex heroes.
+    if (!excluded.has(ct)) offers.push({ type: ct, tier: 2, price: CHAMPION_PRICE });
   }
   const used = new Set<string>(CHAMPION_TYPES);
   let tries = 0;

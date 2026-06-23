@@ -117,7 +117,9 @@ function championHeroDetailsHtml(type: string, towerDef: any, tint: string): str
 }
 
 // ─── HERO FORGE SECTION (2026-05-20 v2) ──────────────────────────────
-// Pay-to-upgrade hero system at the gate shop. Renders a 3-button row:
+// Pay-to-upgrade hero system at the gate shop. The Forge is a run-wide
+// hero investment: starter heroes and Mercator Champions all read the
+// same stacks. Renders a 3-button row:
 //   ⚔ SHARPEN  — +6% basic-attack damage / tap (5 cap)
 //   ⏱ HASTEN   — −5% ability cooldown / tap  (5 cap)
 //   ✨ EMPOWER  — +5% to all numeric ability magnitudes / tap (5 cap)
@@ -144,22 +146,22 @@ const FORGE_PATHS: Array<{
   {
     key: 'dmg', label: 'SHARPEN', icon: '⚔', tint: '#ff5a4a',
     headline: 'BASIC ATTACK POWER',
-    effect: '+6% damage to your hero\'s basic attack per tap.',
-    maxedAt5: '5/5 stacks → +30% hero DPS.',
+    effect: '+6% damage to every deployed hero\'s basic attack per tap.',
+    maxedAt5: '5/5 stacks → +30% hero DPS for the starter and all bought Champions.',
     bestFor: 'Best for hitter heroes whose basic attack is the carry — Scipio, Caesar, Marius.'
   },
   {
     key: 'cd', label: 'HASTEN', icon: '⏱', tint: '#5a9fff',
     headline: 'ABILITY COOLDOWN',
-    effect: '−5% cooldown on every ability per tap (compounding).',
-    maxedAt5: '5/5 stacks → cooldowns at 0.77× (≈23% faster cycle).',
+    effect: '−5% cooldown on every deployed hero ability per tap (compounding).',
+    maxedAt5: '5/5 stacks → all hero cooldowns at 0.77× (≈23% faster cycle).',
     bestFor: 'Best for caster heroes — Marius (Capite Censi), Sulla (Proscription), Caesar (Pax Romana). Drops the time between ability windows so the wave never gets a quiet moment.'
   },
   {
     key: 'aura', label: 'EMPOWER', icon: '✨', tint: '#ffd34d',
     headline: 'ABILITY STRENGTH',
-    effect: '+5% to every numeric magnitude inside every ability per tap (damage multipliers, slow %, stun durations, execute thresholds, heal amounts).',
-    maxedAt5: '5/5 stacks → +25% to all ability magnitudes.',
+    effect: '+5% to every numeric magnitude inside every deployed hero ability per tap (damage multipliers, slow %, stun durations, execute thresholds, heal amounts).',
+    maxedAt5: '5/5 stacks → +25% to all hero ability magnitudes.',
     bestFor: 'Best for balanced heroes where the abilities themselves are the value — Agricola, Agrippa.',
     notes: 'Skips integer COUNTS (javelin/eagle/shell numbers stay the same) and binary triggers. bossSpeedMultiplier scales INVERSE — higher EMPOWER slows bosses MORE.'
   }
@@ -232,11 +234,11 @@ function renderHeroForgeSection(contentRoot: HTMLElement, state: GameStateShape,
   }).join('');
   wrap.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-      <div style="font-size:10px;letter-spacing:4px;font-weight:bold;color:${heroTint}">⚒ HERO FORGE · ${heroName.toUpperCase()}</div>
-      <div style="font-size:9px;color:#aa9a4a;letter-spacing:1px">Independent of XP/tier</div>
+      <div style="font-size:10px;letter-spacing:4px;font-weight:bold;color:${heroTint}">⚒ HERO FORGE · ${heroName.toUpperCase()} + CHAMPIONS</div>
+      <div style="font-size:9px;color:#aa9a4a;letter-spacing:1px">All deployed heroes</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">${buttonsHtml}</div>
-    <div style="margin-top:6px;font-size:10px;color:#aa9a4a;line-height:1.45">Pays gold to upgrade your hero. Each tap raises the next cost on THAT path only (the other two stay cheap). Lost on hero destruction — 50% gold refund when you draft a new hero.</div>`;
+    <div style="margin-top:6px;font-size:10px;color:#aa9a4a;line-height:1.45">Pays gold to upgrade the starter hero and every Mercator Champion you deploy. Each tap raises the next cost on THAT path only (the other two stay cheap). Lost on hero destruction — 50% gold refund when you draft a new hero.</div>`;
   // Wire each button. Click → check cap + gold → deduct + bump stack +
   // bump heroForgeGoldSpent + refresh the modal so the price ramps up
   // and the HUD chip badges below also re-render on next state read.

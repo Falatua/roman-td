@@ -35,7 +35,7 @@ import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
 import { previewSpawnHp, startWave } from '../src/systems/WaveManager';
 import { buildMercatorTowerOffers } from '../src/systems/MerchantSystem';
 import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity';
-import { heroAuraScaleForTier } from '../src/systems/HeroScaling';
+import { heroAuraScaleForTier, heroTierForTower } from '../src/systems/HeroScaling';
 import HERO_DEFS from '../src/data/herodefs.json';
 
 function freshState(): GameStateShape {
@@ -314,6 +314,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     const championOffers = offers.filter(o => String(o.type).startsWith('CHAMPION_'));
     expect(championOffers.length).toBe(6);
     for (const offer of championOffers) {
+      expect(offer.tier).toBe(2);
       const heroId = heroIdForTowerType(offer.type);
       expect(heroId, `${offer.type} should map back to a HERO_* identity`).toBeTruthy();
       const def: any = heroId ? (HERO_DEFS as any)[heroId] : null;
@@ -328,8 +329,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     s.phase = GamePhase.WAVE_PHASE;
     s.tick = 10;
     s.activeHeroId = 'HERO_MARIUS';
-    // Champions now share the run's hero tier (identical to the starter), so a
-    // maxed run is needed for the full Champion ability kit to be online.
+    // Champions keep a T2 floor, then share any higher run tier.
     s.heroTier = 4;
     const champion = createTower(TowerType.CHAMPION_CAESAR, 5, 5, 5, 9);
     const milites = createTower(TowerType.MILITES, 1, 7, 5, 9);
@@ -455,6 +455,36 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     let fxCount = 0;
     tickHeroAbilities(s, { triggerHeroAbilityFx: () => { fxCount++; } });
     expect(fxCount).toBe(0);
+  });
+
+  it('Hero Forge applies to purchased Champions, not only the starter hero', () => {
+    const s = freshState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 10;
+    s.activeHeroId = 'HERO_MARIUS';
+    s.heroTier = 0;
+    s.heroForgeStacks = { dmg: 5, cd: 5, aura: 0 };
+
+    const champion = createTower(TowerType.CHAMPION_CAESAR, 2, 5, 5, 9);
+    (champion as any).__championAbilityWakeupDone = true;
+    champion.__heroCooldowns = { SPQR_DECREE: 0 };
+    s.towers.set(champion.id, champion);
+
+    const g: any = globalThis as any;
+    const prevGame = g.__game;
+    g.__game = s;
+    const withForge = towerEffectiveStats(champion).dps;
+    s.heroForgeStacks = { dmg: 0, cd: 0, aura: 0 };
+    const withoutForge = towerEffectiveStats(champion).dps;
+    s.heroForgeStacks = { dmg: 5, cd: 5, aura: 0 };
+    g.__game = prevGame;
+
+    expect(heroTierForTower(s, champion)).toBe(1);
+    expect(withForge / withoutForge).toBeCloseTo(1.30, 2);
+
+    tickHeroAbilities(s);
+    const spqr = (HERO_DEFS as any).HERO_CAESAR.abilities.find((a: any) => a.id === 'SPQR_DECREE');
+    expect(champion.__heroCooldowns?.SPQR_DECREE).toBeCloseTo(10 + spqr.cooldownSec * heroForgeCooldownMult(s), 6);
   });
 
   it('starter plus five Mercator Champions coexist with abilities, passives, damage, and targeting intact', () => {

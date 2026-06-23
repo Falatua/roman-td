@@ -315,6 +315,12 @@ export function tickSpawns(state: GameStateShape, dt: number) {
       if (fromCaveB) state.caveBActive = true;
     }
     const e = spawnEnemy(state, item.type as EnemyType, spawnHpMult, false, fromCaveB);
+    // 2026-06-23 — W9 war elephants teach checkpoint healing before the
+    // Hannibal boss wave. Keep it wave-scoped so W10 escort elephants and
+    // later elephant variants do not inherit the sustain spike.
+    if (state.wave === 9 && item.type === EnemyType.WAR_ELEPHANT) {
+      e.checkpointHealPct = 0.15;
+    }
     // 2026-05-17 — Surprise event waveOverride: redirect this enemy to
     // spawn at a perimeter fire (Invasion) or center urn (Uprising)
     // instead of the cave. Round-robin across the 4 visual points so
