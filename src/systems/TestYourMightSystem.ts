@@ -1,22 +1,26 @@
 import { GameStateShape } from '../GameState';
 import { GamePhase } from '../types';
-import { WAVE } from '../constants';
 import { spawnEnemy } from './EnemySystem';
 import { prepareHeroAbilitiesForWave } from './HeroSystem';
 
 export const TEST_YOUR_MIGHT_REWARD_GOLD = 2000;
 export const TEST_YOUR_MIGHT_AFTER_WAVE = 10;
+export const TEST_YOUR_MIGHT_REWARD_RARITY = 'LEGENDARY' as const;
 
-export const TEST_YOUR_MIGHT_SPAWNS: { type: string; count: number; gap: number; start?: number; hpMult: number; speedMult?: number }[] = [
-  { type: 'HANNIBAL_BARCA', count: 1, gap: 0, start: 0.0, hpMult: 2.8, speedMult: 1.08 },
-  { type: 'WAR_ELEPHANT', count: 2, gap: 2.2, start: 2.0, hpMult: 1.55, speedMult: 1.12 },
-  { type: 'NUMIDIAN_RIDER', count: 10, gap: 0.85, start: 3.0, hpMult: 2.2, speedMult: 1.35 },
-  { type: 'CARTHAGE_SPEARMAN', count: 38, gap: 0.35, start: 4.0, hpMult: 2.05, speedMult: 1.25 },
-  { type: 'CARTHAGE_ELITE_GUARD', count: 18, gap: 0.55, start: 7.0, hpMult: 2.25, speedMult: 1.2 },
-  { type: 'PATHFINDER_COMMANDER', count: 1, gap: 0, start: 8.0, hpMult: 1.8, speedMult: 1.1 },
-  { type: 'SIEGE_CAPTAIN_COMMANDER', count: 1, gap: 0, start: 13.0, hpMult: 1.7, speedMult: 1.05 },
-  { type: 'SPECTRAL_SCOUT', count: 8, gap: 0.9, start: 14.0, hpMult: 2.35, speedMult: 1.28 },
-  { type: 'ANUBIS_KING', count: 1, gap: 0, start: 22.0, hpMult: 1.15, speedMult: 1.04 }
+export const TEST_YOUR_MIGHT_SPAWNS: { type: string; count: number; gap: number; start?: number; hpMult: number; speedMult?: number; majorReward?: boolean }[] = [
+  // These are direct spawn multipliers, not authored wave hpMult values.
+  // Normal W15/W16 scaling enters EnemySystem near 250x to 700x after
+  // global and late-game layers. Test Your Might sits near the W15 band,
+  // then adds mixed bosses, flyers, commanders, weather, and one-leak death.
+  { type: 'HANNIBAL_BARCA', count: 1, gap: 0, start: 0.0, hpMult: 42, speedMult: 1.02, majorReward: true },
+  { type: 'WAR_ELEPHANT', count: 2, gap: 2.4, start: 2.2, hpMult: 30, speedMult: 1.02 },
+  { type: 'NUMIDIAN_RIDER', count: 10, gap: 0.9, start: 3.2, hpMult: 285, speedMult: 1.14 },
+  { type: 'CARTHAGE_SPEARMAN', count: 34, gap: 0.42, start: 4.0, hpMult: 235, speedMult: 1.08 },
+  { type: 'CARTHAGE_ELITE_GUARD', count: 16, gap: 0.62, start: 7.4, hpMult: 265, speedMult: 1.06 },
+  { type: 'PATHFINDER_COMMANDER', count: 1, gap: 0, start: 8.5, hpMult: 190, speedMult: 1.02 },
+  { type: 'SIEGE_CAPTAIN_COMMANDER', count: 1, gap: 0, start: 13.6, hpMult: 165, speedMult: 1.0 },
+  { type: 'SPECTRAL_SCOUT', count: 8, gap: 1.0, start: 15.0, hpMult: 305, speedMult: 1.12 },
+  { type: 'ANUBIS_KING', count: 1, gap: 0, start: 23.0, hpMult: 18, speedMult: 1.0 }
 ];
 
 export function shouldOfferTestYourMight(state: GameStateShape): boolean {
@@ -57,7 +61,8 @@ export function startTestYourMight(state: GameStateShape): void {
         type: group.type,
         spawnAt: start + i * group.gap,
         __testYourMightHpMult: group.hpMult,
-        __testYourMightSpeedMult: group.speedMult ?? 1
+        __testYourMightSpeedMult: group.speedMult ?? 1,
+        __testYourMightMajorReward: group.majorReward === true
       } as any);
     }
   }
@@ -66,11 +71,11 @@ export function startTestYourMight(state: GameStateShape): void {
   (state as any).__waveStartTick = state.tick;
   state.phase = GamePhase.WAVE_PHASE;
   state.weatherKey = 'CARTHAGE';
-  state.weatherIntensity = 1.9;
+  state.weatherIntensity = 1.5;
   state.waveModifier = 'GROUP_MARCH';
-  state.endlessExtraModifiers = ['STORM_SURGE'];
+  state.endlessExtraModifiers = [];
   state.waveModifierTick = 0;
-  state.hint = 'TEST YOUR MIGHT! One leak ends the run. Perfect clear pays 2000g.';
+  state.hint = 'TEST YOUR MIGHT! One leak ends the run. Perfect clear pays 2000g and a random Legendary.';
   prepareHeroAbilitiesForWave(state);
 }
 
@@ -82,7 +87,7 @@ export function tickTestYourMightSpawns(state: GameStateShape): boolean {
     const speedMult = item.__testYourMightSpeedMult ?? 1;
     e.baseSpeed *= speedMult;
     e.currentSpeed = e.baseSpeed;
-    if (e.isBoss) e.isScheduledBoss = false;
+    if (e.isBoss) e.isScheduledBoss = item.__testYourMightMajorReward === true;
     (e as any).__testYourMightEnemy = true;
   }
   return true;
@@ -99,7 +104,7 @@ export function completeTestYourMight(state: GameStateShape): boolean {
   state.waveModifier = null;
   state.endlessExtraModifiers = [];
   state.waveModifierTick = 0;
-  state.hint = `TEST YOUR MIGHT cleared perfectly. +${TEST_YOUR_MIGHT_REWARD_GOLD}g. Rome is acting very normal about this.`;
+  state.hint = `TEST YOUR MIGHT cleared perfectly. +${TEST_YOUR_MIGHT_REWARD_GOLD}g and a random Legendary. Rome is acting very normal about this.`;
   return true;
 }
 
