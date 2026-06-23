@@ -45,7 +45,9 @@ export const ECONOMY = {
   // 2026-05 v10: another +10% across the board — the 100g starting purse
   // already accelerates the early curve, so the per-step cost needs to
   // rise to keep apex (L8) a real commitment. Rounded to whole gold.
-  POOL_UPGRADE_COSTS: [7, 15, 31, 53, 83, 127, 193, 297] as const,
+  // 2026-06-23 — prices ~1.85x to match the ~1.86x gold income from the
+  // doubled enemy counts (1g/kill). Restores pre-doubling gold pressure.
+  POOL_UPGRADE_COSTS: [13, 28, 57, 98, 154, 235, 357, 549] as const,
   POOL_MAX_LEVEL: 8,
   AERARIUM_BONUS: 4,
   AERARIUM_MAX_COUNT: 3,
@@ -54,7 +56,7 @@ export const ECONOMY = {
   // bonuses. Bosses get this baseline AND their separate scaled boss
   // bounty.
   BASE_GOLD_PER_KILL: 1,
-  TIER_PLACE_COST: { 1: 2, 2: 4, 3: 6, 4: 8, 5: 10 } as Record<number, number>,
+  TIER_PLACE_COST: { 1: 4, 2: 7, 3: 11, 4: 15, 5: 19 } as Record<number, number>,
   TIER_SELL_REFUND: { 1: 1, 2: 3, 3: 5, 4: 7, 5: 9 } as Record<number, number>,
   STONE_COST: 1,
   STONES_PER_DRAW: 4,

@@ -20,9 +20,9 @@ import {
 } from '../src/systems/MerchantSystem';
 import towers from '../src/data/towers.json';
 
-describe('Fortuna\'s Wheel — 500g combo-tower gamble', () => {
-  it('charges 500g per spin', () => {
-    expect(FORTUNA_GAMBLE_COST).toBe(500);
+describe('Fortuna\'s Wheel — 925g combo-tower gamble', () => {
+  it('charges 925g per spin', () => {
+    expect(FORTUNA_GAMBLE_COST).toBe(925);
   });
 
   // 2026-05 v9: Fortuna's pool now EXCLUDES apex super-combos so they

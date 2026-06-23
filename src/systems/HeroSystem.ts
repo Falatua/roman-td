@@ -92,7 +92,9 @@ export const HERO_FORGE_CAP = 5;
 /** Returns the cost of the NEXT tap on this path, or null when MAXED. */
 export function heroForgeNextCost(stacks: number): number | null {
   if (stacks >= HERO_FORGE_CAP) return null;
-  return 30 * Math.pow(2, stacks); // 30/60/120/240/480 (V25 — was 20/40/80/160/320)
+  // 2026-06-23 — 30→40 base (40/80/160/320/640) to reach ~1.85x of the
+  // original 20-base, matching the gold income from doubled enemy counts.
+  return 40 * Math.pow(2, stacks); // 40/80/160/320/640
 }
 
 /** Path A SHARPEN — +6% basic-attack damage per tap. */

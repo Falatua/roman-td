@@ -122,11 +122,11 @@ describe('Loot drop rolling', () => {
 
 describe('Item rarity economy', () => {
   it('uses a strict five-tier purchase ladder for every permanent item', () => {
-    expect(RARITY_BUY_PRICE.COMMON).toBe(20);
-    expect(RARITY_BUY_PRICE.UNCOMMON).toBe(45);
-    expect(RARITY_BUY_PRICE.RARE).toBe(100);
-    expect(RARITY_BUY_PRICE.EPIC).toBe(210);
-    expect(RARITY_BUY_PRICE.LEGENDARY).toBe(400);
+    expect(RARITY_BUY_PRICE.COMMON).toBe(37);
+    expect(RARITY_BUY_PRICE.UNCOMMON).toBe(83);
+    expect(RARITY_BUY_PRICE.RARE).toBe(185);
+    expect(RARITY_BUY_PRICE.EPIC).toBe(390);
+    expect(RARITY_BUY_PRICE.LEGENDARY).toBe(740);
 
     for (const [id, def] of Object.entries(itemsData as any)) {
       expect(itemBuyPrice(id), id).toBe(RARITY_BUY_PRICE[(def as any).rarity as keyof typeof RARITY_BUY_PRICE]);
@@ -192,16 +192,16 @@ describe('Merchant — Mercator stock', () => {
   it('Mercator legendaries are priced significantly higher than gate shop rares', () => {
     const merc = buildMercatorStock();
     const legPrices = merc.offers.filter(o => o.rarity === 'LEGENDARY').map(o => o.price);
-    expect(new Set(legPrices)).toEqual(new Set([400]));
-    expect(merc.offers.filter(o => o.rarity === 'EPIC').every(o => o.price === 210)).toBe(true);
-    expect(merc.livesPrice).toBe(45);
+    expect(new Set(legPrices)).toEqual(new Set([740]));
+    expect(merc.offers.filter(o => o.rarity === 'EPIC').every(o => o.price === 390)).toBe(true);
+    expect(merc.livesPrice).toBe(83);
   });
 
   it('prices Mercator T5 towers as campaign investments', () => {
     const towers = buildMercatorTowerOffers(10, 5);
     const armory = towers.filter(o => !o.type.startsWith('CHAMPION_'));
     expect(armory).toHaveLength(3);
-    expect(armory.every(o => o.tier === 5 && o.price === 250)).toBe(true);
+    expect(armory.every(o => o.tier === 5 && o.price === 460)).toBe(true);
   });
 });
 

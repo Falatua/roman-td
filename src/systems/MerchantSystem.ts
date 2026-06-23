@@ -146,8 +146,10 @@ export interface ShopState {
 // and every offer is a flat 50g. The player still gets variety in tower
 // TYPE (the pool below picks 3 distinct types per visit) — they just
 // always arrive at apex tier and at the same price tag.
+// 2026-06-23 — 250 → 460 (~1.85x) to match the ~1.86x gold income from the
+// doubled enemy counts. Champions stay at 500g (Mars Victor path unchanged).
 const MERCATOR_TOWER_PRICE: Record<number, number> = {
-  1: 250, 2: 250, 3: 250, 4: 250, 5: 250
+  1: 460, 2: 460, 3: 460, 4: 460, 5: 460
 };
 
 // Buyable tower pool — base & low-tier combo towers only. Specifically
@@ -259,7 +261,7 @@ export function buildGateShop(_refreshSeed = 0, _ownedLegendaries?: Set<string>)
   for (const [id, def] of uncommons) {
     offers.push({ itemId: id, rarity: 'UNCOMMON', price: itemBuyPrice(id), isConsumable: false });
   }
-  return { type: 'GATE', offers, livesPrice: 30, livesMaxThisVisit: 5, livesBoughtThisVisit: 0 };
+  return { type: 'GATE', offers, livesPrice: 55, livesMaxThisVisit: 5, livesBoughtThisVisit: 0 };
 }
 
 export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): ShopState {
@@ -290,7 +292,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   const rares = sampleN(entries(MERCATOR_RARE), 1);
   if (rares.length > 0) {
     const [rId, rDef] = rares[0];
-    offers.push({ itemId: rId, rarity: 'RARE', price: itemBuyPrice(rId) + 15, isConsumable: false });
+    offers.push({ itemId: rId, rarity: 'RARE', price: itemBuyPrice(rId) + 28, isConsumable: false });
   }
 
   // 2026-05 v6: 1 GUARANTEED Mercator-exclusive item (Scipio's Playbook,
@@ -311,7 +313,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   const mids = sampleN(entries(MERCATOR_MID), 3);
   for (const [id, def] of mids) {
     if (!def) continue;
-    offers.push({ itemId: id, rarity: asRarity(def.rarity), price: itemBuyPrice(id) + 10, isConsumable: false });
+    offers.push({ itemId: id, rarity: asRarity(def.rarity), price: itemBuyPrice(id) + 18, isConsumable: false });
   }
 
   // 2026-05-18 — 2 GUARANTEED EPIC slots. Pulled from the new purple
@@ -335,12 +337,12 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
     offers.push({
       itemId: 'TRUESIGHT_LENS',
       rarity: asRarity(tsDef.rarity ?? 'UNCOMMON'),
-      price: itemBuyPrice('TRUESIGHT_LENS') + 10,
+      price: itemBuyPrice('TRUESIGHT_LENS') + 18,
       isConsumable: false
     });
   }
 
-  return { type: 'MERCATOR', offers, livesPrice: 45, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };
+  return { type: 'MERCATOR', offers, livesPrice: 83, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };
 }
 
 // ─── Fortuna's Wheel — 500g RNG combo-tower gamble ─────────────────────
@@ -360,7 +362,9 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
 // spins (5,000g) to land any T5; getting a SPECIFIC T5 averages ~230
 // spins (115,000g). T2/T3 stay common so 500g still has a clear floor.
 import towersJson from '../data/towers.json';
-export const FORTUNA_GAMBLE_COST = 500;
+// 2026-06-23 — 500 → 925 (~1.85x) to match the ~1.86x gold income from the
+// doubled enemy counts.
+export const FORTUNA_GAMBLE_COST = 925;
 // 2026-05 v9: APEX super-combos are no longer rollable from Fortuna or
 // offered in the Mercator tower lineup. The 6 LATE-game cross-combos
 // (Imperium Eternum, Carthage Scourge, Triumvirate, Legion Prime,

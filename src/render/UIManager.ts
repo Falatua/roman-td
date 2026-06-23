@@ -600,7 +600,7 @@ export class UIManager {
       const arrivesIn2  = MERCATOR_VISIT_WAVES.includes(nextWaveNum + 1);
       if (arrivesNext) {
         mercChip.style.display = '';
-        mercChip.innerHTML = `★ MERCATOR ARRIVES NEXT WAVE (W${nextWaveNum}) — save your gold · 400g LEGENDARIES · 250g T5 TOWERS`;
+        mercChip.innerHTML = `★ MERCATOR ARRIVES NEXT WAVE (W${nextWaveNum}) — save your gold · 740g LEGENDARIES · 460g T5 TOWERS`;
       } else if (arrivesIn2) {
         mercChip.style.display = '';
         mercChip.innerHTML = `★ MERCATOR ARRIVES IN 2 WAVES (W${nextWaveNum + 1}) — start banking gold`;

@@ -12,13 +12,16 @@ import consumables from '../data/items_consumable.json';
 // items that fill the gap between Rare and Legendary.
 export type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'UNIQUE';
 
+// 2026-06-23 — item prices ~1.85x to match the ~1.86x gold income from the
+// doubled enemy counts (1g/kill). Sell refunds (floor(buyPrice/2)) scale with
+// these automatically, as do Mercator trophy + item offers and loot-orb values.
 export const RARITY_BUY_PRICE: Record<Rarity, number> = {
-  COMMON: 20,
-  UNCOMMON: 45,
-  RARE: 100,
-  EPIC: 210,
-  LEGENDARY: 400,
-  UNIQUE: 500
+  COMMON: 37,
+  UNCOMMON: 83,
+  RARE: 185,
+  EPIC: 390,
+  LEGENDARY: 740,
+  UNIQUE: 925
 };
 
 export function itemBuyPrice(itemId: string): number {
