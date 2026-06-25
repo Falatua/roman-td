@@ -7,20 +7,44 @@ export const TEST_YOUR_MIGHT_REWARD_GOLD = 2000;
 export const TEST_YOUR_MIGHT_AFTER_WAVE = 10;
 export const TEST_YOUR_MIGHT_REWARD_RARITY = 'LEGENDARY' as const;
 
-export const TEST_YOUR_MIGHT_SPAWNS: { type: string; count: number; gap: number; start?: number; hpMult: number; speedMult?: number; majorReward?: boolean }[] = [
+type TestYourMightMutation = 'WARDED' | 'AURA_STAR';
+type TestYourMightSpawn = {
+  type: string;
+  count: number;
+  gap: number;
+  start?: number;
+  hpMult: number;
+  speedMult?: number;
+  majorReward?: boolean;
+  resistMult?: number;
+  statusGuard?: number;
+  rangedBlock?: number;
+  checkpointHeal?: number;
+  outOfCombatRegen?: number;
+  mutation?: TestYourMightMutation;
+};
+
+export const TEST_YOUR_MIGHT_SPAWNS: TestYourMightSpawn[] = [
   // These are direct spawn multipliers, not authored wave hpMult values.
-  // Normal W15/W16 scaling enters EnemySystem near 250x to 700x after
-  // global and late-game layers. Test Your Might sits near the W15 band,
-  // then adds mixed bosses, flyers, commanders, weather, and one-leak death.
-  { type: 'HANNIBAL_BARCA', count: 1, gap: 0, start: 0.0, hpMult: 42, speedMult: 1.02, majorReward: true },
-  { type: 'WAR_ELEPHANT', count: 2, gap: 2.4, start: 2.2, hpMult: 30, speedMult: 1.02 },
-  { type: 'NUMIDIAN_RIDER', count: 10, gap: 0.9, start: 3.2, hpMult: 285, speedMult: 1.14 },
-  { type: 'CARTHAGE_SPEARMAN', count: 34, gap: 0.42, start: 4.0, hpMult: 235, speedMult: 1.08 },
-  { type: 'CARTHAGE_ELITE_GUARD', count: 16, gap: 0.62, start: 7.4, hpMult: 265, speedMult: 1.06 },
-  { type: 'PATHFINDER_COMMANDER', count: 1, gap: 0, start: 8.5, hpMult: 190, speedMult: 1.02 },
-  { type: 'SIEGE_CAPTAIN_COMMANDER', count: 1, gap: 0, start: 13.6, hpMult: 165, speedMult: 1.0 },
-  { type: 'SPECTRAL_SCOUT', count: 8, gap: 1.0, start: 15.0, hpMult: 305, speedMult: 1.12 },
-  { type: 'ANUBIS_KING', count: 1, gap: 0, start: 23.0, hpMult: 18, speedMult: 1.0 }
+  // The challenge now sits above the W15/W16 band: bigger mixed density,
+  // stacked wave modifiers, all commander auras, and challenge-only
+  // resistance stamps. Only Hannibal is marked as the scheduled reward
+  // boss so the run still pays exactly one randomized Legendary item.
+  { type: 'HANNIBAL_BARCA', count: 1, gap: 0, start: 0.0, hpMult: 56, speedMult: 1.08, majorReward: true, resistMult: 0.74, statusGuard: 0.25, rangedBlock: 0.18, checkpointHeal: 0.08, outOfCombatRegen: 0.045 },
+  { type: 'BOSS_FLYER_VULTURE', count: 1, gap: 0, start: 1.8, hpMult: 16, speedMult: 1.12, resistMult: 0.72, statusGuard: 0.30, rangedBlock: 0.16, outOfCombatRegen: 0.035 },
+  { type: 'UNDEAD_WAR_ELEPHANT', count: 2, gap: 3.4, start: 3.0, hpMult: 34, speedMult: 1.06, resistMult: 0.70, statusGuard: 0.28, rangedBlock: 0.20, checkpointHeal: 0.12, outOfCombatRegen: 0.04 },
+  { type: 'WAR_ELEPHANT', count: 3, gap: 2.8, start: 4.0, hpMult: 38, speedMult: 1.08, resistMult: 0.72, statusGuard: 0.32, rangedBlock: 0.18, checkpointHeal: 0.12, outOfCombatRegen: 0.04 },
+  { type: 'NUMIDIAN_RIDER', count: 14, gap: 0.58, start: 4.7, hpMult: 350, speedMult: 1.22, resistMult: 0.78, statusGuard: 0.42, rangedBlock: 0.12 },
+  { type: 'CARTHAGE_SPEARMAN', count: 42, gap: 0.30, start: 5.2, hpMult: 310, speedMult: 1.14, resistMult: 0.78, statusGuard: 0.45, rangedBlock: 0.14, checkpointHeal: 0.08 },
+  { type: 'CARTHAGE_ELITE_GUARD', count: 22, gap: 0.42, start: 8.8, hpMult: 340, speedMult: 1.11, resistMult: 0.72, statusGuard: 0.35, rangedBlock: 0.22, checkpointHeal: 0.10, outOfCombatRegen: 0.045, mutation: 'WARDED' },
+  { type: 'IRON_PHALANX', count: 8, gap: 0.78, start: 12.8, hpMult: 38, speedMult: 1.04, resistMult: 0.70, statusGuard: 0.30, checkpointHeal: 0.10, outOfCombatRegen: 0.035 },
+  { type: 'PATHFINDER_COMMANDER', count: 1, gap: 0, start: 7.0, hpMult: 250, speedMult: 1.10, resistMult: 0.72, statusGuard: 0.35, rangedBlock: 0.14, mutation: 'AURA_STAR' },
+  { type: 'STANDARD_BEARER_COMMANDER', count: 1, gap: 0, start: 10.8, hpMult: 230, speedMult: 1.04, resistMult: 0.70, statusGuard: 0.30, rangedBlock: 0.16, outOfCombatRegen: 0.035 },
+  { type: 'SIEGE_CAPTAIN_COMMANDER', count: 1, gap: 0, start: 14.4, hpMult: 225, speedMult: 1.02, resistMult: 0.70, statusGuard: 0.32, rangedBlock: 0.18, outOfCombatRegen: 0.035 },
+  { type: 'ANUBIS_PRIEST_COMMANDER', count: 1, gap: 0, start: 18.0, hpMult: 235, speedMult: 1.06, resistMult: 0.68, statusGuard: 0.28, rangedBlock: 0.16, outOfCombatRegen: 0.04 },
+  { type: 'SPECTRAL_SCOUT', count: 12, gap: 0.58, start: 15.0, hpMult: 385, speedMult: 1.22, resistMult: 0.76, statusGuard: 0.28, rangedBlock: 0.12, mutation: 'WARDED' },
+  { type: 'SHADOW_CAVALRY', count: 8, gap: 0.72, start: 19.5, hpMult: 360, speedMult: 1.20, resistMult: 0.74, statusGuard: 0.25, rangedBlock: 0.14, mutation: 'WARDED' },
+  { type: 'ANUBIS_KING', count: 1, gap: 0, start: 26.0, hpMult: 24, speedMult: 1.08, resistMult: 0.66, statusGuard: 0.22, rangedBlock: 0.20, checkpointHeal: 0.08, outOfCombatRegen: 0.045 }
 ];
 
 export function shouldOfferTestYourMight(state: GameStateShape): boolean {
@@ -62,7 +86,13 @@ export function startTestYourMight(state: GameStateShape): void {
         spawnAt: start + i * group.gap,
         __testYourMightHpMult: group.hpMult,
         __testYourMightSpeedMult: group.speedMult ?? 1,
-        __testYourMightMajorReward: group.majorReward === true
+        __testYourMightMajorReward: group.majorReward === true,
+        __testYourMightResistMult: group.resistMult,
+        __testYourMightStatusGuard: group.statusGuard,
+        __testYourMightRangedBlock: group.rangedBlock,
+        __testYourMightCheckpointHeal: group.checkpointHeal,
+        __testYourMightOocRegen: group.outOfCombatRegen,
+        __testYourMightMutation: group.mutation
       } as any);
     }
   }
@@ -71,11 +101,11 @@ export function startTestYourMight(state: GameStateShape): void {
   (state as any).__waveStartTick = state.tick;
   state.phase = GamePhase.WAVE_PHASE;
   state.weatherKey = 'CARTHAGE';
-  state.weatherIntensity = 1.5;
+  state.weatherIntensity = 1.85;
   state.waveModifier = 'GROUP_MARCH';
-  state.endlessExtraModifiers = [];
+  state.endlessExtraModifiers = ['STORM_SURGE', 'VEIL', 'DEATH_PACT'];
   state.waveModifierTick = 0;
-  state.hint = 'TEST YOUR MIGHT! One leak ends the run. Perfect clear pays 2000g and a random Legendary.';
+  state.hint = 'TEST YOUR MIGHT! One leak ends the run. Perfect clear pays 2000g and a random Legendary. The wave cheats tastefully.';
   prepareHeroAbilitiesForWave(state);
 }
 
@@ -89,6 +119,24 @@ export function tickTestYourMightSpawns(state: GameStateShape): boolean {
     e.currentSpeed = e.baseSpeed;
     if (e.isBoss) e.isScheduledBoss = item.__testYourMightMajorReward === true;
     (e as any).__testYourMightEnemy = true;
+    if (typeof item.__testYourMightResistMult === 'number') {
+      (e as any).__lateResistMult = ((e as any).__lateResistMult ?? 1) * item.__testYourMightResistMult;
+    }
+    if (typeof item.__testYourMightStatusGuard === 'number') {
+      (e as any).__lateStatusGuard = Math.min((e as any).__lateStatusGuard ?? 1, item.__testYourMightStatusGuard);
+    }
+    if (typeof item.__testYourMightRangedBlock === 'number') {
+      (e as any).__lateRangedBlock = Math.max((e as any).__lateRangedBlock ?? 0, item.__testYourMightRangedBlock);
+    }
+    if (typeof item.__testYourMightCheckpointHeal === 'number' && !e.isFlyer) {
+      e.checkpointHealPct = Math.max(e.checkpointHealPct ?? 0, item.__testYourMightCheckpointHeal);
+    }
+    if (typeof item.__testYourMightOocRegen === 'number') {
+      (e as any).outOfCombatRegen = Math.max((e as any).outOfCombatRegen ?? 0, item.__testYourMightOocRegen);
+    }
+    if (item.__testYourMightMutation === 'WARDED' || item.__testYourMightMutation === 'AURA_STAR') {
+      e.mutation = item.__testYourMightMutation;
+    }
   }
   return true;
 }
