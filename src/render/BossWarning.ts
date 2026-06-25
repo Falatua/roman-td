@@ -204,6 +204,14 @@ const BOSS_DATA: Record<number, BossDossier> = {
   }
 };
 
+const VERIFIED_BOSS_WAVES = [5, 10, 20, 21, 24, 25, 27, 30] as const;
+
+export function bossWarningPortraitForWave(wave: number): string | null {
+  const dossier = BOSS_DATA[wave] ?? GENERIC_DOSSIER;
+  if (typeof dossier.portrait === 'string') return dossier.portrait;
+  return spriteSrcFor(dossier.sprite);
+}
+
 // Fallback dossier — fires if a boss wave outside the table somehow triggers.
 const GENERIC_DOSSIER: BossDossier = {
   name: 'A BOSS',
@@ -603,6 +611,5 @@ export function showBossWarning(parent: HTMLElement, wave: number, onConfirm: ()
 export function isVerifiedBossWave(wave: number): boolean {
   // 2026-06-25 — added the myth-age signature bosses W25 (Super Giant
   // Colossus) and W27 (Typhon); dropped W15 (no longer a boss wave).
-  return wave === 5 || wave === 10 || wave === 20 || wave === 21
-      || wave === 24 || wave === 25 || wave === 27 || wave === 30;
+  return (VERIFIED_BOSS_WAVES as readonly number[]).includes(wave);
 }
