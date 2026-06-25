@@ -313,6 +313,8 @@ function secondaryHitBlocked(t: Tower, target: Enemy, state: GameStateShape): bo
   // W8-only ranged block — every W8 spawn gets a 20% per-hit ranged whiff.
   const w8Block: number = (target as any).__w8RangedBlock ?? 0;
   if (w8Block > 0 && isRangedClass && Math.random() < w8Block) return true;
+  const lateRangedBlock: number = (target as any).__lateRangedBlock ?? 0;
+  if (lateRangedBlock > 0 && isRangedClass && Math.random() < lateRangedBlock) return true;
   // Shield block — Carthage Elite Guard, Undead Spearman — until shield broken.
   const shieldBlockChance: number = (enemiesData as any)[target.type]?.shieldBlockChance ?? 0;
   if (shieldBlockChance > 0 && !target.shieldBroken && isRangedClass &&
@@ -1315,6 +1317,14 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         damage = 0;
         (target as any).__weatherMissTick = state.tick;
       }
+      const lateRangedBlock: number = (target as any).__lateRangedBlock ?? 0;
+      const lateBlocked = !missed && !dodged && !w8Blocked && lateRangedBlock > 0 &&
+                          (t.damageType === DamageType.PHYS_RANGED || t.damageType === DamageType.SIEGE) &&
+                          Math.random() < lateRangedBlock;
+      if (lateBlocked) {
+        damage = 0;
+        (target as any).__weatherMissTick = state.tick;
+      }
       // SHIELD BLOCK (2026-05): shielded enemies (Carthage Elite Guard,
       // Undead Spearman) have a per-hit chance to deflect ranged / siege
       // attacks WHILE their shield is unbroken. Once a melee tower cracks
@@ -1323,7 +1333,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // with melee, then volley". Different from dodge: shield block is
       // conditional on the shield, dodge is a permanent trait.
       const shieldBlockChance: number = (enemiesData as any)[target.type]?.shieldBlockChance ?? 0;
-      const shieldBlocked = !missed && !dodged && !w8Blocked && shieldBlockChance > 0 && !target.shieldBroken &&
+      const shieldBlocked = !missed && !dodged && !w8Blocked && !lateBlocked && shieldBlockChance > 0 && !target.shieldBroken &&
                             (t.damageType === DamageType.PHYS_RANGED || t.damageType === DamageType.SIEGE) &&
                             Math.random() < shieldBlockChance;
       if (shieldBlocked) {

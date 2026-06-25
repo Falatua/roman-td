@@ -34,7 +34,7 @@ import waypointsData from '../data/waypoints.json';
 
 // ─── PUBLIC API ────────────────────────────────────────────────────────
 
-// Fixed trigger schedule for the 20-wave campaign. All non-boss, non-flyer
+// Fixed trigger schedule for the 30-wave campaign. All non-boss, non-flyer
 // waves. Cooldown ≥3 waves (W14→W16 is 2 apart, but GATES_OF_HELL is
 // special: it doesn't override the wave's normal spawn flow, so the
 // cooldown rule is relaxed for it specifically).

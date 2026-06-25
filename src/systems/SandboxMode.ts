@@ -15,7 +15,7 @@
 //     player data)
 //   • A persistent banner stamps the screen "🧪 SANDBOX MODE"
 //   • Free tower placement bypasses prospects + combos
-//   • Wave jump button lets the player hard-reset to any wave 1-20
+//   • Wave jump button lets the player hard-reset to any campaign wave
 //     or trigger endless mode
 //
 // CLEANUP RECIPE (when sandbox mode is no longer wanted):
@@ -34,7 +34,7 @@
 
 import { GameStateShape } from '../GameState';
 import { TowerType, Tower, TileType, GamePhase } from '../types';
-import { ECONOMY, GRID, TIER_MULTS } from '../constants';
+import { ECONOMY, GRID, TIER_MULTS, WAVE } from '../constants';
 import { createTower } from './TowerSystem';
 import towersData from '../data/towers.json';
 
@@ -137,7 +137,7 @@ export function sandboxResetForWave(state: GameStateShape, targetWave: number): 
   // the increment lands on targetWave. The banner display logic
   // (updateSandboxBanner) shows state.wave + 1 during pre-wave
   // phases so the tester never sees the "off by one" number.
-  const clamped = Math.max(1, Math.min(20, Math.floor(targetWave)));
+  const clamped = Math.max(1, Math.min(WAVE.TOTAL, Math.floor(targetWave)));
   state.wave = clamped - 1;
   state.tick = 0;
   state.phase = GamePhase.BUILD_PHASE;

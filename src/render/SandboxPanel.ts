@@ -3,7 +3,7 @@
 // Mounted on the right-panel when state.sandboxMode is true. Provides:
 //   • A persistent "🧪 SANDBOX MODE" banner at the top of the screen
 //     so the player can never forget they're in dev-test mode.
-//   • JUMP TO WAVE button → modal with W1-W20 buttons + ENDLESS.
+//   • JUMP TO WAVE button → modal with W1-WAVE.TOTAL buttons + ENDLESS.
 //   • SPAWN TOWER button → modal listing every tower at every tier.
 //     Click a tower → it goes into a placement queue, click any
 //     empty tile to drop it.
@@ -15,10 +15,11 @@
 import { GameStateShape } from '../GameState';
 import { TowerType } from '../types';
 import { sandboxAllTowerOptions } from '../systems/SandboxMode';
+import { WAVE } from '../constants';
 
 export interface SandboxPanelHooks {
   // Called when the player picks a wave from the JUMP TO WAVE modal.
-  // wave = 1..20 OR -1 for endless.
+  // wave = 1..WAVE.TOTAL OR -1 for endless.
   onJumpToWave: (wave: number) => void;
   // Called when the player picks a tower from the SPAWN TOWER modal.
   // Loads the picked tower+tier into a placement queue; the
@@ -76,7 +77,7 @@ export function mountSandboxPanel(state: GameStateShape, hooks: SandboxPanelHook
   };
 
   panel.appendChild(mkSbBtn('▶ JUMP TO WAVE', () => showWavePicker(hooks),
-    'Hard-reset to any wave 1-20 or jump into Endless mode. Clears enemies, projectiles, loot, and surprise-event state. Towers and the maze are PRESERVED (use WIPE TOWERS for a clean slate).'));
+    `Hard-reset to any wave 1-${WAVE.TOTAL} or jump into Endless mode. Clears enemies, projectiles, loot, and surprise-event state. Towers and the maze are PRESERVED (use WIPE TOWERS for a clean slate).`));
   panel.appendChild(mkSbBtn('+ SPAWN TOWER', () => showTowerPicker(hooks),
     'Direct tower spawn — pick any tower at any tier (T1-T5, base or combo). Bypasses the prospect / recipe flow entirely. Click an empty tile to drop. Free.'));
   panel.appendChild(mkSbBtn('2 HERO STRESS', () => hooks.onSpawnHeroStress('PAIR'),
@@ -122,7 +123,7 @@ export function updateSandboxBanner(state: GameStateShape): void {
   // in pre-wave phases. During WAVE_PHASE state.wave is already the
   // current wave, so no offset is needed.
   const isPreWave = state.phase === 0 || state.phase === 4 || state.phase === 5;
-  const displayWaveNum = isPreWave ? Math.min(20, (state.wave || 0) + 1) : (state.wave || 1);
+  const displayWaveNum = isPreWave ? Math.min(WAVE.TOTAL, (state.wave || 0) + 1) : (state.wave || 1);
   const wave = (state as any).endlessMode
     ? `ENDLESS W${(state as any).endlessWave ?? 1}`
     : `W${displayWaveNum}`;
@@ -141,7 +142,7 @@ export function updateSandboxBanner(state: GameStateShape): void {
 }
 
 // ── WAVE PICKER MODAL ──
-// 4x5 grid of W1-W20 buttons + ENDLESS button at the bottom.
+// Campaign wave buttons + ENDLESS button at the bottom.
 function showWavePicker(hooks: SandboxPanelHooks): void {
   const existing = document.getElementById('sandbox-wave-picker');
   if (existing) { existing.remove(); return; }
@@ -149,13 +150,13 @@ function showWavePicker(hooks: SandboxPanelHooks): void {
   modal.id = 'sandbox-wave-picker';
   modal.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:230;font-family:"Courier New",monospace';
   const panel = document.createElement('div');
-  panel.style.cssText = 'width:min(440px,94vw);padding:18px 22px;background:linear-gradient(180deg,#1a0820,#0c0410);border:3px solid #ff5cc8;color:#ffb3d9;box-shadow:0 0 32px rgba(255,92,200,0.5);max-height:92vh;overflow:auto';
+  panel.style.cssText = 'width:min(520px,94vw);padding:18px 22px;background:linear-gradient(180deg,#1a0820,#0c0410);border:3px solid #ff5cc8;color:#ffb3d9;box-shadow:0 0 32px rgba(255,92,200,0.5);max-height:92vh;overflow:auto';
   panel.innerHTML = `
     <div style="font-size:14px;letter-spacing:3px;font-weight:bold;color:#ff5cc8;margin-bottom:4px">▶ JUMP TO WAVE</div>
     <div style="font-size:10px;color:#aa6090;margin-bottom:14px;letter-spacing:1px">Hard reset: clears towers, enemies, projectiles. Fresh wave spawn.</div>`;
   const grid = document.createElement('div');
-  grid.style.cssText = 'display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px';
-  for (let w = 1; w <= 20; w++) {
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px';
+  for (let w = 1; w <= WAVE.TOTAL; w++) {
     const b = document.createElement('button');
     b.textContent = `W${w}`;
     b.style.cssText = 'padding:8px 4px;background:#2a1a25;border:1px solid #5a3a4a;color:#ffb3d9;font-family:inherit;font-size:12px;font-weight:bold;letter-spacing:1px;cursor:pointer';

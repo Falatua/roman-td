@@ -152,11 +152,11 @@ describe('previewSpawnHp formula spot-checks', () => {
     expect(lateGameLayerMult(11, true, false)).toBeCloseTo(1.25, 4);          // boss only (post-W10)
   });
 
-  it('Post-W15 layer adds ×1.20 to every class on top of the W11+ creative buff', () => {
-    // W16 ground: W7 1.30 × W10 ground 1.50 × W11 ground 1.30 × W15 1.20 = 3.042
-    expect(lateGameLayerMult(16, false, false)).toBeCloseTo(1.30 * 1.50 * 1.30 * 1.20, 4);
-    // W16 boss: W10 boss 1.25 × W11 boss 1.40 × W15 1.20 = 2.10
-    expect(lateGameLayerMult(16, true, false)).toBeCloseTo(1.25 * 1.40 * 1.20, 4);
+  it('Post-W15 layer escalates every class on top of the W11+ creative buff', () => {
+    // W16 ground: W7 1.30 × W10 ground 1.50 × W11 ground 1.30 × W16 late layer 1.33
+    expect(lateGameLayerMult(16, false, false)).toBeCloseTo(1.30 * 1.50 * 1.30 * 1.33, 4);
+    // W16 boss: W10 boss 1.25 × W11 boss 1.40 × W16 late layer 1.46
+    expect(lateGameLayerMult(16, true, false)).toBeCloseTo(1.25 * 1.40 * 1.46, 4);
   });
 
   it('effectiveWaveHpMult linear curve includes the W11+ aggressive +15%/wave step', () => {

@@ -1,6 +1,6 @@
 // BossWarning — two-stage CRT-arcade verification screen that appears
-// before every scheduled boss wave (W5/W10/W15/W20 in the 20-wave
-// campaign). The game taunts the player twice before letting them
+// before every scheduled boss wave (W5/W10/W20/W21/W24/W30 in the
+// 30-wave campaign). The game taunts the player twice before letting them
 // proceed. Same visual language as the Hall of Glory + loading screen:
 // dark CRT background, scanlines, screen flicker, gold/amber text,
 // deep red accents.
@@ -20,8 +20,8 @@ import { tex } from './Assets';
 // 2026-05-22 — Audio kick on the I ACCEPT MY FATE button: fire a
 // short "FINISH HIM" Mortal-Kombat-style punch + start FF7's
 // One-Winged Angel as the dramatic music bed. Same track used on
-// W20 boss arrival; the click-to-start path here owns the lifecycle
-// so any boss wave (W5 / W10 / W15 / W20) gets the iconic Sephiroth
+// W30 boss arrival; the click-to-start path here owns the lifecycle
+// so any major boss wave gets the iconic Sephiroth
 // swell on confirmation, not just the final boss.
 import { SFX, playMusicTrack, sfx } from './AudioManager';
 
@@ -99,15 +99,68 @@ const BOSS_DATA: Record<number, BossDossier> = {
     ]
   },
   20: {
+    name: 'VULTURE IMPERATOR',
+    faction: 'EGYPTIANS',
+    sprite: 'BOSS_FLYER_VULTURE',
+    warning: [
+      'The sky has developed an opinion about your anti-air coverage.',
+      'Wave 20 is a flyer boss. Ground-only confidence will not be accepted.',
+      'The Vulture Imperator dives past sloppy lanes and punishes lazy target modes.',
+      'If your ranged towers are ornamental, Rome is about to learn bird law.',
+      'ARE YOU REALLY SURE?'
+    ],
+    doom: [
+      'You clicked yes. The bird noticed.',
+      'Your melee towers look inspiring. They will be cheering from below.',
+      'If Sagittarius and Aquila Venator are asleep, wake them now.',
+      'There are ten waves after this. Surviving this one is merely permission to suffer.',
+      'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
+    ]
+  },
+  21: {
+    name: 'KHAN RIDER',
+    faction: 'HUNS',
+    sprite: 'KHAN_RIDER',
+    warning: [
+      'The second cave opens and the riders do not wait politely.',
+      'Khan Rider brings late-campaign speed, commander pressure, and no patience.',
+      'Your maze now has two mouths to feed. One of them bites.',
+      'ARE YOU REALLY SURE?'
+    ],
+    doom: [
+      'You clicked yes. The Khan appreciates punctual generals.',
+      'Your slows are weaker now. Your excuses remain fully effective.',
+      'Watch both lanes or the second cave will write your ending.',
+      'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
+    ]
+  },
+  24: {
+    name: 'ANUBIS KING',
+    faction: 'EGYPTIANS',
+    sprite: 'ANUBIS_KING',
+    warning: [
+      'The desert has upgraded from unpleasant to theological.',
+      'Anubis King arrives after priests, plague, sphinxes, and checkpoint-healing guards.',
+      'Status builds still help, but the late campaign no longer lets them do all the work.',
+      'ARE YOU REALLY SURE?'
+    ],
+    doom: [
+      'You clicked yes. Anubis has opened the ledger.',
+      'Your towers may continue firing while judgment is processed.',
+      'If this boss leaks, the Hall of Glory will not be gentle.',
+      'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
+    ]
+  },
+  30: {
     name: 'DAEMON IMPERATOR',
     faction: 'SUPER_DEMONS',
     sprite: 'DAEMON_IMPERATOR',
     warning: [
       'THIS IS THE FINAL WAVE.',
-      'Wave 20 admits ZERO leaks. One step over the gate and Rome falls.',
+      'Wave 30 admits ZERO leaks. One step over the gate and Rome falls.',
       'The Daemon Imperator hellscapes your towers every 12 seconds.',
       'He regenerates 2.8% maxHP per second out of combat — keep the pressure on.',
-      'No banner pitied you. The Senate stopped watching at wave 14.',
+      'No banner pitied you. The Senate stopped watching at wave 24.',
       'ARE YOU REALLY SURE?'
     ],
     doom: [
@@ -115,7 +168,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
       'The legends remember winners and warn about everyone else. You are between.',
       'The Hall of Glory has a seat reserved. It is not the one you want.',
       'Hellscape weather is already shortening your status durations 20%.',
-      'There is no wave 21. There is only victory or the leaderboard.',
+      'There is no wave 31. There is only victory or the leaderboard.',
       'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
     ]
   }
@@ -514,7 +567,7 @@ export function showBossWarning(parent: HTMLElement, wave: number, onConfirm: ()
 }
 
 // Helper used by main.ts to check if a wave should gate behind verification.
-// Currently any boss wave (type 'B') in the 20-wave schedule (W5/10/15/20).
+// Currently the authored major boss waves in the 30-wave campaign.
 export function isVerifiedBossWave(wave: number): boolean {
-  return wave === 5 || wave === 10 || wave === 15 || wave === 20;
+  return wave === 5 || wave === 10 || wave === 20 || wave === 21 || wave === 24 || wave === 30;
 }

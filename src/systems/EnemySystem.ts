@@ -202,7 +202,7 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   //     the extra speed means leak-pressure is real and the player
   //     can't just sit on top of them safely.
   // Late-game resistance stamp — starts ramping at W6 and gets harsher
-  // through W20. Multiplies into every damage-type mult AND DoT
+  // through W30. Multiplies into every damage-type mult AND DoT
   // effectiveness via EnemyResistances. Flyers stay at 1.0 (no stamp)
   // since they're already balanced against ranged-only counterplay.
   if (!derived && !e.isFlyer && (state.wave ?? 1) >= 6) {
@@ -214,9 +214,11 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     if (w >= 6) mult -= 0.04;   // W6  → 0.96
     if (w >= 7) mult -= 0.04;   // W7  → 0.92  (W7-W9 resist bump)
     if (w >= 11) mult -= 0.07;  // W11 → 0.85  (existing breakpoint)
-    if (w >= 16) mult -= 0.05;  // W16 → 0.80
-    if (e.isBoss) mult -= 0.10; // bosses always tougher than ground
-    mult = Math.max(0.50, mult);
+    if (w >= 16) mult -= 0.08;  // W16+ late campaign starts biting
+    if (w >= 21) mult -= 0.07;  // W21+ second-cave era
+    if (w >= 25) mult -= 0.06;  // W25+ mythic finale
+    if (e.isBoss) mult -= (w >= 21 ? 0.15 : 0.10); // bosses always tougher than ground
+    mult = Math.max(w >= 25 ? 0.34 : w >= 21 ? 0.38 : 0.45, mult);
     (e as any).__lateResistMult = mult;
   }
   // Other W11+ creative buffs — OOC regen + boss speed.
@@ -229,6 +231,37 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     if (e.isBoss) {
       e.baseSpeed *= 1.20;
       e.currentSpeed = e.baseSpeed;
+    }
+  }
+  // W16-W30 campaign pressure kit. Primary spawns gain varied march speeds
+  // plus mechanics that force tactical answers beyond raw DPS: late elites
+  // heal at checkpoints, shielded cohorts punish ranged-only mazes, and
+  // bosses resist status while regenerating if the player lets pressure drop.
+  if (!derived && (state.wave ?? 1) >= 16) {
+    const w = state.wave ?? 1;
+    const band = w >= 25 ? 3 : w >= 21 ? 2 : 1;
+    const variance = [0.94, 1.00, 1.10, 1.18][state.enemies.size % 4];
+    const classSpeed = e.isBoss ? (1 + 0.04 * band) : e.isFlyer ? (1 + 0.03 * band) : (1 + 0.05 * band);
+    e.baseSpeed *= classSpeed * variance;
+    e.currentSpeed = e.baseSpeed;
+
+    if (!e.isFlyer && !e.isBoss) {
+      (e as any).outOfCombatRegen = Math.max((e as any).outOfCombatRegen ?? def.outOfCombatRegen ?? 0, 0.035 + 0.01 * band);
+      if (w >= 21 && (e.livesCost >= 2 || (def as any).isElite || ARCHETYPE[type] === 'ARMORED' || ARCHETYPE[type] === 'BULKY')) {
+        e.checkpointHealPct = Math.max(e.checkpointHealPct ?? 0, 0.10 + 0.02 * band);
+      }
+      if (w >= 21) (e as any).__lateRangedBlock = Math.max((e as any).__lateRangedBlock ?? 0, 0.08 + 0.04 * band);
+      if (w >= 25) (e as any).__lateStatusGuard = Math.min((e as any).__lateStatusGuard ?? 1, 0.35);
+    }
+
+    if (e.isFlyer && w >= 21) {
+      (e as any).__lateStatusGuard = Math.min((e as any).__lateStatusGuard ?? 1, 0.55);
+    }
+
+    if (e.isBoss) {
+      (e as any).outOfCombatRegen = Math.max((e as any).outOfCombatRegen ?? def.outOfCombatRegen ?? 0, 0.025 + 0.01 * band);
+      (e as any).__lateStatusGuard = Math.min((e as any).__lateStatusGuard ?? 1, w >= 25 ? 0.20 : 0.35);
+      if (w >= 25) e.checkpointHealPct = Math.max(e.checkpointHealPct ?? 0, 0.10);
     }
   }
   // 2026-05-23 — W8 RANGED-BLOCK STAMP. Per user request: "Give enemies

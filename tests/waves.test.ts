@@ -3,9 +3,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { effectiveWaveHpMult, startWave, tickSpawns, checkWaveEnd } from '../src/systems/WaveManager';
 import { tickEnemies } from '../src/systems/EnemySystem';
 import { createGameState } from '../src/GameState';
-import { EnemyType, GamePhase } from '../src/types';
+import { EnemyType, GamePhase, SurpriseEventKind } from '../src/types';
 import { initializeGrid } from '../src/systems/GridManager';
-import { buildGroundPath, buildFlyerPath } from '../src/systems/PathFinder';
+import { buildGroundPath, buildGroundPathB, buildFlyerPath } from '../src/systems/PathFinder';
 import wavesData from '../src/data/waves.json';
 
 function bootstrapState() {
@@ -13,11 +13,13 @@ function bootstrapState() {
   initializeGrid(s);
   const path = buildGroundPath(s);
   if (path) s.groundPath = path;
+  const pathB = buildGroundPathB(s);
+  if (pathB) s.groundPathB = pathB;
   s.flyerPath = buildFlyerPath();
   return s;
 }
 
-describe('Wave HP scaling — 20-wave linear + mid-late accelerator + boss-cleared bump', () => {
+describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-cleared bump', () => {
   it('applies linear + mid-late accelerator + x2.00 per cleared 5-wave boss', () => {
     // Reference formula:
     //   linearStep    = 1 + 0.10*w
@@ -40,9 +42,9 @@ describe('Wave HP scaling — 20-wave linear + mid-late accelerator + boss-clear
     expect(result).toBeCloseTo(w20Authored * (3.00 + 1.00 + 1.35) * Math.pow(2.0, 3), 4);
   });
 
-  it('curve is monotonic across the 20-wave run', () => {
+  it('curve is monotonic across the 30-wave run', () => {
     let last = 0;
-    for (let w = 1; w <= 20; w++) {
+    for (let w = 1; w <= 30; w++) {
       const m = effectiveWaveHpMult(w, 1);
       expect(m).toBeGreaterThanOrEqual(last);
       last = m;
@@ -57,6 +59,7 @@ describe('Wave HP scaling — 20-wave linear + mid-late accelerator + boss-clear
     expect(effectiveWaveHpMult(10, 1, true)).toBeCloseTo(2.00, 4);
     expect(effectiveWaveHpMult(15, 1, true)).toBeCloseTo(2.50 + 0.50 + 0.60, 4);  // W15: aggressive +60%
     expect(effectiveWaveHpMult(20, 1, true)).toBeCloseTo(3.00 + 1.00 + 1.35, 4);  // W20: aggressive +135%
+    expect(effectiveWaveHpMult(30, 1, true)).toBeCloseTo(4.00 + 2.00 + 2.85, 4);  // W30: aggressive +285%
     // And each boss wave is strictly heavier than the previous:
     expect(effectiveWaveHpMult(10, 1, true)).toBeGreaterThan(effectiveWaveHpMult(5, 1, true));
     expect(effectiveWaveHpMult(15, 1, true)).toBeGreaterThan(effectiveWaveHpMult(10, 1, true));
@@ -144,6 +147,63 @@ describe('Spawn queue ticking', () => {
     tickSpawns(s, 0.1);
     expect(s.spawnQueue.length).toBe(1);   // unchanged
     expect(s.enemies.size).toBe(0);
+  });
+});
+
+describe('Wave 22 regression guards', () => {
+  it('clears stale waveOverride surprise routing before W22 starts', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.BUILD_PHASE;
+    s.wave = 21;
+    s.lives = 30;
+    s.lastSurpriseEventWave = 18;
+    s.activeSurpriseEvent = {
+      kind: SurpriseEventKind.INVASION,
+      startedAt: 100,
+      spawnPoints: [
+        {
+          vfxX: 12,
+          vfxY: 12,
+          pathTileX: s.groundPath[Math.max(0, s.groundPath.length - 2)].col,
+          pathTileY: s.groundPath[Math.max(0, s.groundPath.length - 2)].row,
+          pathIndex: Math.max(0, s.groundPath.length - 2),
+          spawnAt: 100,
+          enemyType: 'MONGOL_CAPTAIN',
+          fired: false,
+          pointId: 0
+        }
+      ],
+      spawnedEnemyIds: new Set<string>(),
+      scarPersistsThroughTick: 0,
+      lastSpawnFiredAt: 0,
+      vfxFadeOutAt: 0,
+      rewardGiven: false,
+      atmosProps: [],
+      waveOverride: true
+    };
+
+    startWave(s);
+
+    expect(s.wave).toBe(22);
+    expect(s.activeSurpriseEvent).toBeNull();
+    expect(s.lives).toBe(30);
+  });
+
+  it('does not leak or kill the player on the first W22 spawn tick', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.BUILD_PHASE;
+    s.wave = 21;
+    s.lives = 30;
+    startWave(s);
+
+    let leaked = 0;
+    tickSpawns(s, 0);
+    tickEnemies(s, 0, () => { leaked += 1; }, e => s.enemies.delete(e.id));
+
+    expect(s.wave).toBe(22);
+    expect(leaked).toBe(0);
+    expect(s.lives).toBe(30);
+    expect(s.enemies.size).toBeGreaterThan(0);
   });
 });
 

@@ -61,13 +61,13 @@ const TIPS: WaveTip[] = [
     wave: 5,
     icon: '🛡',
     title: 'READ THE WAVE BRIEF',
-    body: 'Bottom-left of the screen. Lists every threat coming this wave — flyers, bosses, faction resists, surprise events. Prep flyer-killers and siege BEFORE the boss waves (W5/10/15/20).',
+    body: 'Bottom-left of the screen. Lists every threat coming this wave — flyers, bosses, faction resists, surprise events. Prep flyer-killers and siege BEFORE the boss waves (W5/10/20/24/30).',
   },
   {
     wave: 6,
     icon: '⚱',
     title: 'STOCK THE SHOP',
-    body: 'Top-right SHOP button. Buy items between waves to fill tower slots — even commons add real damage. The MERCATOR (W4/9/14/19) sells T5 towers and trophies you can\'t get anywhere else.',
+    body: 'Top-right SHOP button. Buy items between waves to fill tower slots — even commons add real damage. The MERCATOR (W4/9/14/19/23/27) sells T5 towers and trophies you can\'t get anywhere else.',
   },
   // 2026-05-24 — Added W7 (DPS Check), W10 (don't rush merges), W11
   // (stones are buildable) per player request.

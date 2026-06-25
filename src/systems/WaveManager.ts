@@ -83,7 +83,7 @@ export function effectiveWaveHpMult(waveNumber: number, baseHpMult: number, isBo
 //                                    post-mid-game; gate moved from W8
 //                                    and uplift bumped from 1.20)
 //   POST-W10 ground:        ×1.50   (or flyer ×1.20, or boss ×1.25)
-//   POST-W15 every class:   ×1.20
+//   POST-W15 every class:   escalating late-campaign pressure through W30
 export function lateGameLayerMult(waveNumber: number, isBoss: boolean, isFlyer: boolean): number {
   let m = 1;
   if (waveNumber > 7 && !isBoss && !isFlyer) m *= 1.30;
@@ -100,8 +100,34 @@ export function lateGameLayerMult(waveNumber: number, isBoss: boolean, isFlyer: 
     if (isBoss) m *= 1.40;
     else if (!isFlyer) m *= 1.30;
   }
-  if (waveNumber > 15) m *= 1.20;
+  if (waveNumber > 15) {
+    const late = waveNumber - 15;
+    if (isBoss) m *= 1.30 + late * 0.16;
+    else if (isFlyer) m *= 1.12 + late * 0.08;
+    else m *= 1.22 + late * 0.11;
+  }
+  if (waveNumber >= 21) {
+    if (isBoss) m *= 1.30;
+    else if (isFlyer) m *= 1.15;
+    else m *= 1.25;
+  }
+  if (waveNumber >= 25) {
+    if (isBoss) m *= 1.35;
+    else if (isFlyer) m *= 1.20;
+    else m *= 1.30;
+  }
+  if (waveNumber >= 30 && isBoss) m *= 1.50;
   return m;
+}
+
+function clearStaleSurpriseEventRuntimeForNewWave(state: GameStateShape): void {
+  const hasRuntime = !!state.activeSurpriseEvent || !!(state.extraSurpriseEvents && state.extraSurpriseEvents.length > 0);
+  if (!hasRuntime) return;
+  if ((state.lastSurpriseEventWave ?? 0) === state.wave) return;
+  state.activeSurpriseEvent = null;
+  state.extraSurpriseEvents = [];
+  state.surpriseEventScars = [];
+  (state as any).__surpriseSpawnRoundIdx = 0;
 }
 
 // Canonical preview HP — exactly what spawnEnemy will produce for this
@@ -154,6 +180,11 @@ export function startWave(state: GameStateShape) {
   }
   state.wave += 1;
   if (state.wave > WAVE.TOTAL) return;
+  // Defensive campaign guard: if a previous surprise event was waiting on
+  // a reward/modal when the next wave began, its waveOverride routing could
+  // still redirect later non-boss spawns. That made W22 look like an
+  // invisible instant leak/death. New waves always get fresh spawn routing.
+  clearStaleSurpriseEventRuntimeForNewWave(state);
   // 2026 v2 spec Ch7 — Cave B reveals only when its first enemy emerges (set
   // in the spawn loop below). Re-hide it whenever we (re)enter a pre-W21 wave:
   // a fresh run or a sandbox jump backward.

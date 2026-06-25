@@ -2519,7 +2519,7 @@ async function boot() {
   // helper opens it. Steps:
   //   1) Tap an empty tile to spend 1g and roll a tower.
   //   2) Keep your two best — the rest become stone walls for free.
-  //   3) Survive 20 waves. Tap START WAVE when ready.
+  //   3) Survive 30 waves. Tap START WAVE when ready.
   // Steps were chosen by the user-feedback audit to match the three
   // most-confused first-run questions on mobile.
   const ONBOARDING_KEY = 'roman_td_onboarding_seen_v1';
@@ -2532,7 +2532,7 @@ async function boot() {
     const STEPS = [
       { step: 'STEP 1 OF 3', title: 'BUILD YOUR MAZE', body: 'Tap any empty tile to spend 1 gold and roll a random tower. The legion walks the path you build.' },
       { step: 'STEP 2 OF 3', title: 'KEEP TWO PER ROUND', body: 'You roll up to 5 towers each round but only your best 2 stay. The rest become free stone walls — useful for stretching the path.' },
-      { step: 'STEP 3 OF 3', title: 'HOLD THE LINE', body: 'Survive 20 waves. Tap START WAVE when your maze is ready. Pinch the map to zoom, double-tap to recenter.' }
+      { step: 'STEP 3 OF 3', title: 'HOLD THE LINE', body: 'Survive 30 waves. Tap START WAVE when your maze is ready. Pinch the map to zoom, double-tap to recenter.' }
     ];
     let i = 0;
     const stepEl = document.getElementById('ob-step');
@@ -3090,8 +3090,8 @@ async function boot() {
     b.style.cssText = `width:min(560px,86%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #ffd34d;box-shadow:0 0 36px rgba(255,211,77,0.55),inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;cursor:pointer;`;
     pushBanner(b, 0, { modal: true, clickDismiss: true });
   }
-  // ─── FINAL HOUR HYPE — fires once at the start of W20's build phase ───
-  // The player just cleared W19. They have ONE round to finalize their
+  // ─── FINAL HOUR HYPE — fires once at the start of W30's build phase ───
+  // The player just cleared W29. They have ONE round to finalize their
   // legion before the Daemon Imperator walks onto the field. This is a
   // celebratory but lethal modal that names what's earned, what's at
   // stake, and what last-chance resources are still on the table. The
@@ -3118,19 +3118,19 @@ async function boot() {
     b.innerHTML = `
       <div style="font-size:11px;letter-spacing:6px;color:#ff5050;font-weight:bold;text-shadow:0 0 8px #ff5050">⚔ ROME IS WATCHING ⚔</div>
       <div style="margin-top:8px;font-size:30px;font-weight:bold;letter-spacing:6px;color:#ffd34d;text-shadow:3px 3px 0 #000,0 0 22px #ffaa00cc;line-height:1.1">THE FINAL HOUR</div>
-      <div style="margin-top:6px;font-size:14px;letter-spacing:3px;color:#fff8e0;font-weight:bold;text-shadow:1px 1px 0 #000">WAVE 20 · IMPERATOR OR COLUMN</div>
+      <div style="margin-top:6px;font-size:14px;letter-spacing:3px;color:#fff8e0;font-weight:bold;text-shadow:1px 1px 0 #000">WAVE 30 · IMPERATOR OR COLUMN</div>
 
       <div style="margin-top:18px;font-size:13px;color:#fff8e0;line-height:1.7;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(0,0,0,0.35);border-left:3px solid #ffd34d;padding:10px 14px">
-        <b style="color:#ffd34d">Nineteen waves. Six bosses. You're still here.</b><br/>
+        <b style="color:#ffd34d">Twenty-nine waves. Six bosses. You're still here.</b><br/>
         The Senate stopped writing speeches halfway through. The leaderboard sharpened its pen. The Daemon Imperator finished sharpening his.
       </div>
 
       <div style="margin-top:14px;padding:12px 14px;background:rgba(80,0,0,0.45);border:1px solid #ff5050;text-align:left">
         <div style="font-size:11px;letter-spacing:3px;color:#ff5050;font-weight:bold;margin-bottom:6px">⚔ WHAT WALKS ONTO THE FIELD</div>
         <div style="font-size:12px;color:#fff8e0;line-height:1.55;text-shadow:1px 1px 0 #000">
-          <b style="color:#ff5050">Daemon Imperator</b> · TRUE solo arrival — no mobs, no escort, just the boss. 6× HP, base speed 0.85, 10 lives per leak, and a single leak ends the run (W20 LOCKDOWN).<br/>
+          <b style="color:#ff5050">Daemon Imperator</b> · TRUE solo arrival — no mobs, no escort, just the boss. 6× HP, base speed 0.85, 10 lives per leak, and a single leak ends the run (W30 LOCKDOWN).<br/>
           <b style="color:#ffaa55">HELLSCAPE</b> every 12s stuns towers within ~5 tiles for 1.5s. <b style="color:#88ff88">No rebirth — sustained burst sticks.</b> Out-of-combat regen 2.8%/sec — keep the pressure on.<br/>
-          <span style="color:#ff7766">Hellscape weather is already shortening your status durations 20%. There is no wave 21.</span>
+          <span style="color:#ff7766">Hellscape weather is already shortening your status durations 20%. There is no wave 31.</span>
         </div>
       </div>
 
@@ -3162,8 +3162,8 @@ async function boot() {
     try { renderer.triggerShake(3, 0.35); } catch {}
   }
 
-  // ─── W20 OVER-THE-TOP HP CALLOUT ────────────────────────────────────────
-  // 2026-05-17 — When wave 20 actually starts (the player clicks past the
+  // ─── W30 OVER-THE-TOP HP CALLOUT ────────────────────────────────────────
+  // 2026-05-17 — When wave 30 actually starts (the player clicks past the
   // BossWarning gate and the Daemon Imperator walks onto the field), swap
   // the normal "BOSS APPROACHES" banner for a cartoonishly exaggerated HP
   // readout. The Daemon Imperator carries 100M baseHp × 6.0 wave hpMult =
@@ -3178,15 +3178,15 @@ async function boot() {
     // 2026-05-19 (bugfix) — Use previewSpawnHp so the banner shows the
     // ACTUAL spawn HP the player will fight. Previous version was
     // baseHp × hpMult only (= 600M), missing the soloBuff ×2.0 +
-    // lateGameLayerMult ×2.10 that the W20 boss path applies. Real
+    // lateGameLayerMult that the final boss path applies. Real
     // spawn HP is ~13.5 billion — the banner was wildly understating
     // by ~22×.
     const def: any = (enemiesData as any).DAEMON_IMPERATOR;
-    const waveDef: any = (wavesData as any[])[19]; // W20 = index 19
-    // 2026-05-19 — Thread state.activeHeroId so the W20 banner reflects
+    const waveDef: any = (wavesData as any[])[WAVE.TOTAL - 1];
+    // 2026-05-19 — Thread state.activeHeroId so the W30 banner reflects
     // the +15% hero-comp HP applied at spawn. Without this the banner
     // under-reports the boss HP by ~15% when a hero is active.
-    const finalHp = previewSpawnHp(def, 20, waveDef?.type ?? 'B', waveDef?.hpMult ?? 6.0, !!state.activeHeroId);
+    const finalHp = previewSpawnHp(def, WAVE.TOTAL, waveDef?.type ?? 'B', waveDef?.hpMult ?? 6.0, !!state.activeHeroId);
     const portraitSrc = imgSrc(bossPortraitKey('SUPER_DEMONS') ?? '');
     // Inject one-shot style block (animations are unique to this banner).
     if (!document.getElementById('final-boss-hp-style')) {
@@ -3298,7 +3298,7 @@ async function boot() {
       : `<div class="fbhp-portrait" style="display:flex;align-items:center;justify-content:center;background:#1a0404;border:3px solid #aa1010;color:#ee5050;font-size:14px;letter-spacing:3px">BOSS</div>`;
     b.innerHTML = `
       <div class="fbhp-eyebrow">⚔ THE GATE OPENS ⚔</div>
-      <div class="fbhp-headline">WAVE 20 — DAEMON IMPERATOR</div>
+      <div class="fbhp-headline">WAVE 30 — DAEMON IMPERATOR</div>
       ${portraitHtml}
       <div class="fbhp-bossname">EMPEROR OF THE NINTH PIT</div>
       <div class="fbhp-hp-block">
@@ -6320,8 +6320,8 @@ async function boot() {
             showDpsCheckSummary(e, /*killed=*/false);
             return;
           }
-          // W20 LOCKDOWN (2026-05): the final wave does not allow ANY leaks.
-          // A single enemy reaching Rome on W20 zeros lives and ends the run
+          // FINAL-WAVE LOCKDOWN: the final wave does not allow ANY leaks.
+          // A single enemy reaching Rome on WAVE.TOTAL zeros lives and ends the run
           // immediately — Rome falls if you can't hold the gate.
           //
           // 2026-05-22 BUGFIX: previously this fired on `state.wave === 20`
@@ -6329,7 +6329,7 @@ async function boot() {
           // endlessWave counter is what increments), so any leak in E2,
           // E3, … instantly zeroed lives and ended the run. The user
           // reported a phantom W2-Endless death with no obvious cause;
-          // this was it. Gate the W20 lockdown to non-endless only so
+          // this was it. Gate the final-wave lockdown to non-endless only so
           // Endless mode obeys the normal per-leak life-cost rules.
           if (state.wave === WAVE.TOTAL && !state.endlessMode) {
             state.lives = 0;
@@ -6338,7 +6338,7 @@ async function boot() {
             renderer.triggerGateImpact();
             renderer.triggerShake(8, 1.0);
             SFX.gateBreach(true);
-            state.hint = '☠ ROME HAS FALLEN — W20 admits no leaks.';
+            state.hint = `☠ ROME HAS FALLEN — W${WAVE.TOTAL} admits no leaks.`;
             if (state.gameOverAt < 0) state.gameOverAt = state.tick;
             return;
           }

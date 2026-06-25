@@ -122,13 +122,13 @@ describe('Sandbox wave reset', () => {
     }
   });
 
-  it('clamps wave to 1..20 (with the -1 startWave-compensation offset)', () => {
+  it('clamps wave to 1..30 (with the -1 startWave-compensation offset)', () => {
     const s = bootstrapState();
     activateSandbox(s);
     sandboxResetForWave(s, 0);
     expect(s.wave).toBe(0);     // clamped to 1, then -1 for startWave-compensation
     sandboxResetForWave(s, 30);
-    expect(s.wave).toBe(19);    // clamped to 20, then -1 for startWave-compensation
+    expect(s.wave).toBe(29);    // clamped to 30, then -1 for startWave-compensation
     sandboxResetForWave(s, -5);
     expect(s.wave).toBe(0);     // clamped to 1, then -1
   });

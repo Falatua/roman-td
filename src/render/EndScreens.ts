@@ -1,4 +1,5 @@
 import { GameStateShape } from '../GameState';
+import { WAVE } from '../constants';
 import { TowerType } from '../types';
 
 const HS_KEY = 'roman_td_highscore_v1';
@@ -124,7 +125,7 @@ function buildDeathAnalysis(state: GameStateShape): string {
     tips.push('⚠ <b>NO ANTI-AIR TOWERS</b> — every run will see flyer waves. Sagittarius, Aquila Venator (AA-only), Eques, or the Nemesis Engine combo cover the sky.');
   }
   if (!hasBossKiller && wave >= 5) {
-    tips.push('⚠ <b>NO BOSS-KILLER</b> — bosses land every 5 waves (W5 / 10 / 15 / 20) with 2× HP. Build at least one Scorpio / Primus Pilus / War Chariot / Pontifex Maximus before W10.');
+    tips.push('⚠ <b>NO BOSS-KILLER</b> — major bosses land at W5 / 10 / 20 / 24 / 30. Build at least one Scorpio / Primus Pilus / War Chariot / Pontifex Maximus before W10.');
   }
   if (combosBuilt < Math.floor(wave / 4) && wave >= 6) {
     tips.push(`⚠ <b>LOW COMBO COUNT</b> — only ${combosBuilt} combos built by wave ${wave}. Base towers fall off past W10; the recipes in the codex are how you keep up.`);
@@ -196,7 +197,7 @@ export function showGameOver(parent: HTMLElement, state: GameStateShape, onResta
     <h1 style="margin:0;font-size:32px;color:#ee2a2a;letter-spacing:6px;text-shadow:3px 3px 0 #000">ROME HAS FALLEN</h1>
     <div style="margin:6px 0 18px;font-size:14px;color:#aa6a6a;letter-spacing:2px">CASTRUM LUNUM, AVGVSTI MMXXVI</div>
     <div style="font-size:14px;line-height:1.7">
-      <div>Wave reached: <b style="color:#d4af37">${state.wave}</b> / 20</div>
+      <div>Wave reached: <b style="color:#d4af37">${state.wave}</b> / ${WAVE.TOTAL}</div>
       <div>Score: <b style="color:#d4af37">${finalScore.toLocaleString()}</b></div>
       ${speedLine}
       <div>Latin Rank: <b style="color:#d4af37">${rank}</b></div>

@@ -174,9 +174,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'destroyer', tier: 'LATE',
     title: 'Destroyer of Legions',
-    blurb: 'Total 1,500 enemy kills. Break the late-campaign armies.',
+    blurb: 'Total 1,800 enemy kills. Break the late-campaign armies.',
     condition: s => s.totalKills,
-    target: 1500,
+    target: 1800,
     reward: { kind: 'GOLD', amount: 180 }
   },
   {
@@ -210,9 +210,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'boss_slayer_supreme', tier: 'LATE',
     title: 'Boss Slayer Supreme',
-    blurb: 'Kill 18 boss-class enemies across the full campaign.',
+    blurb: 'Kill 19 boss-class enemies across the full campaign.',
     condition: s => s.bossesKilled ?? 0,
-    target: 18,
+    target: 19,
     reward: { kind: 'GOLD', amount: 200 }
   },
   {

@@ -119,12 +119,11 @@ function spriteSrc(towerType: string): string | null {
 
 export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateShape, inv: InventoryState, hooks: TowerMenuHooks) {
   closeGameModals();
-  // 2026-05-19 — Hero inspect panel short-circuit. Heroes have their
-  // own layout: no SELL/COMBINE/DOWNGRADE actions, HERO_ITEM_SLOTS (6)
-  // item slots, plus ability cards. Delegated to a dedicated renderer
-  // so the regular tower-menu code below stays clean. 2026-05-21 —
-  // Slot count bumped 2 → 6 alongside the tier-3 ability deletion.
-  if (t.isHero && !isMercatorChampionType(String(t.type))) {
+  // 2026-06-24 — Hero inspect panel short-circuit. Starter heroes and
+  // Mercator-purchased champions share the same hero layout: no regular
+  // sell/combine/downgrade controls, HERO_ITEM_SLOTS item slots, and the
+  // full ability/passive readout players need before gearing them.
+  if (t.isHero) {
     showHeroInspectPanel(parent, t, state, inv, hooks);
     return;
   }
@@ -141,11 +140,8 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     speed: effective.attackSpeed,
     range: effective.range,
     damagePerHit: towerPerAttackDamageBase(t),
-    // 2026-05-21 — Hero towers always carry HERO_ITEM_SLOTS (=6)
-    // regardless of tier; non-hero towers use the per-tier table.
-    // The slot bump compensates for the tier-3 ability that was
-    // dropped in the same pass — players invest in heroes through
-    // gear instead of waiting on a deleted ultimate cooldown.
+    // Hero towers always carry HERO_ITEM_SLOTS regardless of tier;
+    // non-hero towers use the per-tier table.
     slots: (t as any).isHero ? HERO_ITEM_SLOTS : TIER_MULTS.itemSlots[t.qualityTier],
     refund: Math.max(1, Math.floor((t.costPaid ?? ECONOMY.TIER_PLACE_COST[t.qualityTier] ?? 0) / 2))
   };
@@ -874,7 +870,7 @@ function itemInitials(name: string): string {
 // Dedicated layout shown when the player clicks the hero tile or the
 // HUD hero chip. Mirrors the tower-menu CSS pattern (responsive
 // clamping, fixed-width panel) but with hero-specific content blocks:
-// portrait + tier + XP bar + kill bonus, HERO_ITEM_SLOTS (6) item
+// portrait + tier + XP bar + kill bonus, HERO_ITEM_SLOTS item
 // slots, 2 ability cards (locked badge if heroTier < ability.level),
 // equip-from-inventory grid, no sell/combine/downgrade.
 // ─────────────────────────────────────────────────────────────────────
@@ -1069,11 +1065,8 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   passive.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:4px">⚜ PASSIVE</div><div style="font-size:11px;color:#cdb98a;line-height:1.5">${passiveText}</div>`;
   panel.appendChild(passive);
 
-  // 2026-05-21 — Hero item grid bumped 2 → 6 slots to compensate for
-  // the removed tier-3 ability. Tile width drops 64px → 52px so all
-  // six tiles still fit in the same row width without scroll. Loop
-  // bound, grid template, and the EQUIPPED counter all read from
-  // HERO_ITEM_SLOTS so the slot count lives in one place.
+  // Hero item grid. Loop bound, grid template, and the EQUIPPED counter
+  // all read from HERO_ITEM_SLOTS so the slot count lives in one place.
   const eqRow = document.createElement('div');
   eqRow.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025';
   eqRow.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:2px;margin-bottom:6px">⚒ EQUIPPED (${t.equippedItems.length}/${HERO_ITEM_SLOTS})</div>`;
@@ -1118,12 +1111,9 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   eqRow.appendChild(eqGrid);
   panel.appendChild(eqRow);
 
-  // 2026-05-21 — Hero equip-from-inventory section. Heroes used to
-  // have only 2 slots and the player could equip them via the regular
-  // tower menu, but now that heroes get a dedicated 6-slot grid, the
-  // hero panel needs its own equip flow. Mirrors the regular tower
-  // menu's grid (family/mode gates, blocker chips, click-to-equip)
-  // with HERO_ITEM_SLOTS as the slot cap.
+  // Hero equip-from-inventory section. Mirrors the regular tower menu's
+  // grid (family/mode gates, blocker chips, click-to-equip) with
+  // HERO_ITEM_SLOTS as the slot cap.
   if (t.equippedItems.length < HERO_ITEM_SLOTS && inv.slots.length > 0) {
     const equipRow = document.createElement('div');
     equipRow.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025';

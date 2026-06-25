@@ -46,7 +46,7 @@ describe('30-wave Solo quest pacing', () => {
     const completionWave = (target: number) => campaign.find(row => row.kills >= target)?.wave;
     expect(quest('bloodline').target).toBe(300);
     expect(quest('butcher').target).toBe(850);
-    expect(quest('destroyer').target).toBe(1500);
+    expect(quest('destroyer').target).toBe(1800);
     expect(completionWave(quest('bloodline').target)).toBe(6);
     expect(completionWave(quest('butcher').target)).toBe(14);
     expect(completionWave(quest('destroyer').target)).toBe(23);
@@ -57,7 +57,7 @@ describe('30-wave Solo quest pacing', () => {
     const completionWave = (target: number) => campaign.find(row => row.bosses >= target)?.wave;
     expect(quest('beast_slayer').target).toBe(2);
     expect(quest('boss_hunter').target).toBe(12);
-    expect(quest('boss_slayer_supreme').target).toBe(18);
+    expect(quest('boss_slayer_supreme').target).toBe(19);
     expect(completionWave(quest('beast_slayer').target)).toBe(5);
     expect(completionWave(quest('boss_hunter').target)).toBe(14);
     expect(completionWave(quest('boss_slayer_supreme').target)).toBe(24);
@@ -72,8 +72,8 @@ describe('30-wave Solo quest pacing', () => {
 
   it('completes new thresholds exactly once and preserves tier identity', () => {
     const state = createGameState();
-    state.totalKills = 1500;
-    state.bossesKilled = 18;
+    state.totalKills = 1800;
+    state.bossesKilled = 19;
     state.wave = 27;
     const first = evaluateQuests(state).map(q => q.id);
     expect(first).toEqual(expect.arrayContaining([

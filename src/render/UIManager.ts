@@ -3,7 +3,7 @@ import { GamePhase, TowerType, TargetingMode } from '../types';
 // 2026-05-19 — Hero defs for HUD chip rendering. Reads tier title,
 // XP thresholds, and ability tier requirements off the JSON.
 import HERO_DEFS_TABLE from '../data/herodefs.json';
-import { ECONOMY, GRID, POOL_PROBABILITIES } from '../constants';
+import { ECONOMY, GRID, POOL_PROBABILITIES, WAVE } from '../constants';
 import { tex } from './Assets';
 import { canAfford, poolUpgradeCost } from '../systems/EconomySystem';
 import { previewSpawnHp } from '../systems/WaveManager';
@@ -380,14 +380,14 @@ export class UIManager {
         ${topThreats ? `<span class="hud-icon" title="Most common archetypes on field" style="font-size:12px;opacity:0.85">${topThreats}</span>` : ''}`;
     }
     // 2026-05 v10 — Endless mode: display E1/E2/… and the running
-    // endless score in place of the 20-wave campaign counter.
+    // endless score in place of the campaign counter.
     // 2026-05-22 UX6 — Each hud-icon gains data-stat="…" so the mobile
     // tap-to-reveal popover (wired below) can match it to a friendly
     // explanation. Desktop hover-title strings stay as the fallback.
     const waveDisplay = state.endlessMode
       ? `<span class="hud-icon" data-stat="endless" style="color:#ff5050"><span class="ic ic-wave"></span><b>ENDLESS</b> E${state.endlessWave ?? 0}</span>
          <span class="hud-icon" data-stat="score" title="Cumulative endless score" style="color:#ff5050"><b>SCORE</b> ${(state.endlessScore ?? 0).toLocaleString()}</span>`
-      : `<span class="hud-icon" data-stat="wave"><span class="ic ic-wave"></span><b>WAVE</b> ${state.wave}/20</span>`;
+      : `<span class="hud-icon" data-stat="wave"><span class="ic ic-wave"></span><b>WAVE</b> ${state.wave}/${WAVE.TOTAL}</span>`;
     left.innerHTML = `
       ${waveDisplay}
       <span class="hud-icon" data-stat="lives"><span class="ic ic-life"></span><b>LIVES</b> ${Math.floor(state.lives)}</span>
@@ -703,17 +703,17 @@ export class UIManager {
       // pre-rolled pool that auto-refills, not the placement budget.
       // 2026-05 v11: cap raised 8 → 10 for more maze-shaping flexibility.
       const prospectsLeft = Math.max(0, 10 - (state.prospectsPlaced ?? 0));
-      // FINAL HOUR override — when the next wave to start is W20 (the
+      // FINAL HOUR override — when the next wave to start is W30 (the
       // upcoming-wave index is state.wave during the build/prospect/keeper
       // round), the tip bar trades its normal coaching line for a hype
       // sliver so the player sees the stakes every time they glance down.
-      const upcomingIsFinal = state.wave + 1 === 20 && (
+      const upcomingIsFinal = state.wave + 1 === WAVE.TOTAL && (
         state.phase === GamePhase.PROSPECT_PLACEMENT ||
         state.phase === GamePhase.PICK_KEEPER ||
         state.phase === GamePhase.BUILD_PHASE
       );
       const phaseTip = upcomingIsFinal
-        ? `⚔ FINAL HOUR — wave 20 is one fight against the Daemon Imperator. Combine, shop, top off lives. There is no wave 21. Glory or the column.`
+        ? `⚔ FINAL HOUR — wave ${WAVE.TOTAL} is one fight against the Daemon Imperator. Combine, shop, top off lives. There is no wave ${WAVE.TOTAL + 1}. Glory or the column.`
         : state.phase === GamePhase.PROSPECT_PLACEMENT
           ? (prospectsLeft > 0
               ? `Click any empty grass tile to roll a prospect (1g each). ${prospectsLeft} roll${prospectsLeft === 1 ? '' : 's'} left this round. Press START WAVE when done — unkept prospects cement into walls.`

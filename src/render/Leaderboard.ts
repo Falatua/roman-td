@@ -13,6 +13,7 @@
 // Keeps top 20. New entry pulses; top 3 ranks render gold/silver/bronze.
 
 import { GameStateShape } from '../GameState';
+import { WAVE } from '../constants';
 // 2026-05-22 — Mobile detection for swapping "Press ENTER" prompts to
 // touch-friendly "Tap" equivalents on phones / tablets. Desktop string
 // is unchanged.
@@ -410,7 +411,7 @@ export function showEndSummary(parent: HTMLElement, state: GameStateShape, won: 
         <div style="display:flex;justify-content:space-between;border-top:1px solid #5a4a30;margin-top:6px;padding-top:6px;font-size:14px"><span>TOTAL</span><span style="color:#ffd34d">${breakdown.final.toLocaleString()}</span></div>
       </div>
       <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:11px;color:#cdb98a;text-align:left;font-weight:700">
-        <div>Wave reached: <span style="color:${accent}">${state.wave}/20</span></div>
+        <div>Wave reached: <span style="color:${accent}">${state.wave}/${WAVE.TOTAL}</span></div>
         <div>Enemies defeated: <span style="color:${accent}">${kills}</span></div>
         <div>Time survived: <span style="color:${accent}">${timeStr}</span></div>
         <div>Towers built: <span style="color:${accent}">${state.towersBuilt ?? 0}</span></div>

@@ -271,20 +271,28 @@
     "wave": 16,
     "type": "G",
     "faction": "MONGOLS",
-    "hpMult": 7.5,
-    "gold": 22,
+    "hpMult": 9.0,
+    "gold": 14,
     "spawns": [
       {
         "type": "MONGOL_HORSE_ARCHER",
-        "count": 40
+        "count": 48
       },
       {
         "type": "MONGOL_BERSERKER",
-        "count": 24
+        "count": 32
       },
       {
         "type": "MONGOL_FOOTMAN",
-        "count": 32
+        "count": 44
+      },
+      {
+        "type": "MONGOL_SCOUT",
+        "count": 18
+      },
+      {
+        "type": "PATHFINDER_COMMANDER",
+        "count": 1
       }
     ]
   },
@@ -292,24 +300,32 @@
     "wave": 17,
     "type": "M",
     "faction": "MONGOLS",
-    "hpMult": 8.0,
-    "gold": 24,
+    "hpMult": 10.5,
+    "gold": 14,
     "spawns": [
       {
         "type": "MONGOL_SPEAR_RIDER",
-        "count": 36
+        "count": 44
       },
       {
         "type": "MONGOL_CAPTAIN",
-        "count": 12
+        "count": 20
       },
       {
         "type": "MONGOL_SHAMAN",
-        "count": 8
+        "count": 14
       },
       {
         "type": "MONGOL_SPEARMAN",
-        "count": 40
+        "count": 48
+      },
+      {
+        "type": "STANDARD_BEARER_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "PATHFINDER_COMMANDER",
+        "count": 1
       }
     ]
   },
@@ -317,28 +333,36 @@
     "wave": 18,
     "type": "M",
     "faction": "EGYPTIANS",
-    "hpMult": 8.5,
-    "gold": 24,
+    "hpMult": 11.0,
+    "gold": 14,
     "spawns": [
       {
         "type": "EGYPTIAN_SPEARMAN",
-        "count": 48
+        "count": 56
       },
       {
         "type": "EGYPTIAN_ARCHER",
-        "count": 40
+        "count": 48
       },
       {
         "type": "MUMMY_WARRIOR",
-        "count": 16
+        "count": 24
+      },
+      {
+        "type": "SPHINX",
+        "count": 10
       },
       {
         "type": "MEDJAY_SOLDIER",
-        "count": 8
+        "count": 12
       },
       {
         "type": "PLAGUE_BEARER",
-        "count": 4
+        "count": 8
+      },
+      {
+        "type": "ANUBIS_PRIEST_COMMANDER",
+        "count": 1
       }
     ]
   },
@@ -346,32 +370,40 @@
     "wave": 19,
     "type": "M",
     "faction": "EGYPTIANS",
-    "hpMult": 9.0,
-    "gold": 27,
+    "hpMult": 12.5,
+    "gold": 16,
     "spawns": [
       {
         "type": "EGYPTIAN_CHARIOT",
-        "count": 28
+        "count": 36
       },
       {
         "type": "ANUBIS_PRIEST",
-        "count": 8
+        "count": 14
       },
       {
         "type": "SOBEK_WARRIOR",
-        "count": 24
+        "count": 34
       },
       {
         "type": "EGYPTIAN_ARCHER",
-        "count": 40
+        "count": 48
+      },
+      {
+        "type": "SPHINX",
+        "count": 12
       },
       {
         "type": "MEDJAY_SOLDIER",
-        "count": 8
+        "count": 14
       },
       {
         "type": "PLAGUE_BEARER",
-        "count": 4
+        "count": 8
+      },
+      {
+        "type": "SIEGE_CAPTAIN_COMMANDER",
+        "count": 1
       }
     ]
   },
@@ -379,8 +411,8 @@
     "wave": 20,
     "type": "B",
     "faction": "EGYPTIANS",
-    "hpMult": 7.0,
-    "gold": 30,
+    "hpMult": 10.0,
+    "gold": 18,
     "spawns": [
       {
         "type": "BOSS_FLYER_VULTURE",
@@ -400,8 +432,8 @@
     "wave": 21,
     "type": "B",
     "faction": "MONGOLS",
-    "hpMult": 10.0,
-    "gold": 34,
+    "hpMult": 14.0,
+    "gold": 18,
     "spawns": [
       {
         "type": "KHAN_RIDER",
@@ -425,17 +457,36 @@
     "wave": 22,
     "type": "M",
     "faction": "MONGOLS",
-    "hpMult": 11.0,
-    "gold": 34,
-    "fixedCount": true,
+    "hpMult": 15.0,
+    "gold": 18,
     "spawns": [
       {
         "type": "UNDEAD_WAR_ELEPHANT",
-        "count": 3
+        "count": 4
       },
       {
         "type": "MONGOL_CAPTAIN",
-        "count": 7
+        "count": 20
+      },
+      {
+        "type": "MONGOL_SHAMAN",
+        "count": 14
+      },
+      {
+        "type": "MONGOL_SPEAR_RIDER",
+        "count": 34
+      },
+      {
+        "type": "MONGOL_SCOUT",
+        "count": 24
+      },
+      {
+        "type": "STANDARD_BEARER_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "PATHFINDER_COMMANDER",
+        "count": 2
       }
     ]
   },
@@ -443,32 +494,40 @@
     "wave": 23,
     "type": "M",
     "faction": "EGYPTIANS",
-    "hpMult": 12.0,
-    "gold": 34,
+    "hpMult": 16.0,
+    "gold": 18,
     "spawns": [
       {
         "type": "PHARAOH_GUARD",
-        "count": 36
+        "count": 46
       },
       {
         "type": "EGYPTIAN_CHARIOT",
-        "count": 24
+        "count": 34
       },
       {
         "type": "SOBEK_WARRIOR",
-        "count": 28
+        "count": 42
       },
       {
         "type": "ANUBIS_PRIEST",
-        "count": 8
+        "count": 16
+      },
+      {
+        "type": "SPHINX",
+        "count": 16
       },
       {
         "type": "MEDJAY_SOLDIER",
-        "count": 8
+        "count": 16
       },
       {
         "type": "PLAGUE_BEARER",
-        "count": 4
+        "count": 10
+      },
+      {
+        "type": "ANUBIS_PRIEST_COMMANDER",
+        "count": 1
       }
     ]
   },
@@ -476,8 +535,8 @@
     "wave": 24,
     "type": "B",
     "faction": "EGYPTIANS",
-    "hpMult": 10.0,
-    "gold": 36,
+    "hpMult": 14.0,
+    "gold": 20,
     "spawns": [
       {
         "type": "ANUBIS_KING",
@@ -497,12 +556,20 @@
     "wave": 25,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 14.0,
-    "gold": 40,
+    "hpMult": 18.0,
+    "gold": 20,
     "fixedCount": true,
     "spawns": [
       {
+        "type": "SUPER_GIANT_COLOSSUS",
+        "count": 2
+      },
+      {
         "type": "GIANT_GIGAS",
+        "count": 8
+      },
+      {
+        "type": "CHIMERA",
         "count": 4
       }
     ]
@@ -511,21 +578,25 @@
     "wave": 26,
     "type": "M",
     "faction": "ROMAN_MYTH",
-    "hpMult": 14.0,
-    "gold": 40,
+    "hpMult": 19.0,
+    "gold": 20,
     "fixedCount": true,
     "spawns": [
       {
         "type": "CERBERUS",
-        "count": 3
+        "count": 5
       },
       {
         "type": "CYCLOPS",
-        "count": 2
+        "count": 4
+      },
+      {
+        "type": "CHIMERA",
+        "count": 4
       },
       {
         "type": "DEMON_HELLHOUND",
-        "count": 30
+        "count": 46
       }
     ]
   },
@@ -533,21 +604,25 @@
     "wave": 27,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 17.0,
-    "gold": 44,
+    "hpMult": 22.0,
+    "gold": 22,
     "fixedCount": true,
     "spawns": [
       {
         "type": "CHIMERA",
-        "count": 3
+        "count": 7
       },
       {
         "type": "GIANT_GIGAS",
-        "count": 3
+        "count": 6
       },
       {
         "type": "CYCLOPS",
-        "count": 2
+        "count": 5
+      },
+      {
+        "type": "TYPHON",
+        "count": 1
       }
     ]
   },
@@ -555,14 +630,22 @@
     "wave": 28,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 18.0,
-    "gold": 44,
+    "hpMult": 24.0,
+    "gold": 22,
     "fixedCount": true,
     "superGiantActive": true,
     "spawns": [
       {
+        "type": "SUPER_GIANT_COLOSSUS",
+        "count": 3
+      },
+      {
         "type": "GIANT_GIGAS",
-        "count": 5
+        "count": 8
+      },
+      {
+        "type": "CERBERUS",
+        "count": 4
       }
     ]
   },
@@ -570,25 +653,29 @@
     "wave": 29,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 20.0,
-    "gold": 48,
+    "hpMult": 27.0,
+    "gold": 24,
     "fixedCount": true,
     "spawns": [
       {
         "type": "TYPHON",
-        "count": 1
+        "count": 2
+      },
+      {
+        "type": "SUPER_GIANT_COLOSSUS",
+        "count": 2
       },
       {
         "type": "CYCLOPS",
-        "count": 4
+        "count": 8
       },
       {
         "type": "GIANT_GIGAS",
-        "count": 2
+        "count": 6
       },
       {
         "type": "CHIMERA",
-        "count": 2
+        "count": 6
       }
     ]
   },
@@ -596,7 +683,7 @@
     "wave": 30,
     "type": "B",
     "faction": "SUPER_DEMONS",
-    "hpMult": 10.0,
+    "hpMult": 16.0,
     "gold": 0,
     "spawns": [
       {

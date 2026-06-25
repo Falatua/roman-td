@@ -419,6 +419,8 @@ export function statusEffectiveness(enemy: Enemy, kind: StatusEffectKind): numbe
   // the late-game wall.
   const lateMult = (enemy as any).__lateResistMult;
   if (typeof lateMult === 'number') base *= lateMult;
+  const statusGuard = (enemy as any).__lateStatusGuard;
+  if (typeof statusGuard === 'number') base *= statusGuard;
   return base;
 }
 
