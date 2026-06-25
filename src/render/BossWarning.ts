@@ -36,9 +36,12 @@ function spriteSrcFor(key: string): string | null {
 interface BossDossier {
   name: string;             // Display name
   faction: string;          // Faction display string
-  sprite: string;           // Assets.ts key for boss sprite
+  sprite: string;           // Assets.ts key for the in-game boss sprite (fallback)
   warning: string[];        // Lines for FIRST screen (after the headline)
   doom: string[];           // Lines for SECOND screen
+  portrait?: string;        // Optional dedicated boss-portrait art (direct DOM
+                            // src under public/, e.g. 'assets/bosses/boss_brennus.png').
+                            // Preferred over `sprite` when present.
 }
 
 const BOSS_DATA: Record<number, BossDossier> = {
@@ -46,6 +49,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     name: 'BRENNUS',
     faction: 'CELTS',
     sprite: 'CELTIC_WARLORD',
+    portrait: 'assets/bosses/boss_brennus.png',
     warning: [
       'The Celts already buried three of your towers and the wave hasn\'t started.',
       'Brennus once sacked Rome. He is here to repeat the lesson.',
@@ -64,6 +68,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     name: 'HANNIBAL BARCA',
     faction: 'CARTHAGE',
     sprite: 'HANNIBAL_BARCA',
+    portrait: 'assets/bosses/boss_hannibal.png',
     warning: [
       'You barely survived Brennus. Hannibal already knows.',
       'He brings three war elephants. They are all bosses. They all leak 10 lives.',
@@ -83,6 +88,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     name: 'SUPER GIANT COLOSSUS',
     faction: 'ROMAN MYTH',
     sprite: 'SUPER_GIANT_COLOSSUS',
+    portrait: 'assets/bosses/boss_colossus.png',
     warning: [
       'The myth-age opens and the ground files a complaint.',
       'Wave 25 fields TWO Colossus Gigas — each two Giants fused into one titan.',
@@ -102,6 +108,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     name: 'TYPHON',
     faction: 'ROMAN MYTH',
     sprite: 'TYPHON',
+    portrait: 'assets/bosses/boss_typhon.png',
     warning: [
       'Father of monsters. The other bosses were his children.',
       'Wave 27 brings Typhon himself, escorted by a herd of Giant Gigas.',
@@ -121,6 +128,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     name: 'VULTURE IMPERATOR',
     faction: 'EGYPTIANS',
     sprite: 'BOSS_FLYER_VULTURE',
+    portrait: 'assets/bosses/boss_vulture.png',
     warning: [
       'The sky has developed an opinion about your anti-air coverage.',
       'Wave 20 is a flyer boss. Ground-only confidence will not be accepted.',
@@ -140,6 +148,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     name: 'KHAN RIDER',
     faction: 'MONGOLS',
     sprite: 'KHAN_RIDER',
+    portrait: 'assets/bosses/boss_khan.png',
     warning: [
       'The second cave opens and the riders do not wait politely.',
       'Khan Rider brings late-campaign speed, commander pressure, and no patience.',
@@ -157,6 +166,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     name: 'ANUBIS KING',
     faction: 'EGYPTIANS',
     sprite: 'ANUBIS_KING',
+    portrait: 'assets/bosses/boss_anubis.png',
     warning: [
       'The desert has upgraded from unpleasant to theological.',
       'Anubis King arrives after priests, plague, sphinxes, and checkpoint-healing guards.',
@@ -174,6 +184,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     name: 'DAEMON IMPERATOR',
     faction: 'SUPER_DEMONS',
     sprite: 'DAEMON_IMPERATOR',
+    portrait: 'assets/bosses/boss_daemon.png',
     warning: [
       'THIS IS THE FINAL WAVE.',
       'Wave 30 admits ZERO leaks. One step over the gate and Rome falls.',
@@ -436,7 +447,9 @@ function renderScreen(args: RenderArgs): HTMLElement {
   const wrap = document.createElement('div');
   wrap.id = args.isFinal ? 'boss-warning-2' : 'boss-warning-1';
   wrap.className = 'bw-overlay';
-  const portrait = spriteSrcFor(args.dossier.sprite);
+  // Prefer dedicated boss-portrait art when supplied; fall back to the
+  // in-game enemy sprite otherwise.
+  const portrait = args.dossier.portrait ?? spriteSrcFor(args.dossier.sprite);
   const portraitHtml = portrait
     ? `<img src="${portrait}" alt="${args.dossier.name}"/>`
     : '<div style="width:96px;height:96px;border:2px solid #aa1a1a;background:#1a0404;color:#ee5050;display:flex;align-items:center;justify-content:center;font-size:11px;letter-spacing:2px">BOSS</div>';
