@@ -1,5 +1,5 @@
 // BossWarning — two-stage CRT-arcade verification screen that appears
-// before every scheduled boss wave (W5/W10/W20/W21/W24/W30 in the
+// before every scheduled boss wave (W5/W10/W20/W21/W24/W25/W27/W30 in the
 // 30-wave campaign). The game taunts the player twice before letting them
 // proceed. Same visual language as the Hall of Glory + loading screen:
 // dark CRT background, scanlines, screen flicker, gold/amber text,
@@ -79,22 +79,41 @@ const BOSS_DATA: Record<number, BossDossier> = {
       'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
     ]
   },
-  15: {
-    name: 'UNDEAD WARLORD',
-    faction: 'UNDEAD_CELTS',
-    sprite: 'UNDEAD_WARLORD',
+  25: {
+    name: 'SUPER GIANT COLOSSUS',
+    faction: 'ROMAN MYTH',
+    sprite: 'SUPER_GIANT_COLOSSUS',
     warning: [
-      'Hannibal pitied you. The dead will not.',
-      'W15 spawns FIVE Undead Warlords. Each ambushes 10 berserkers mid-path. Five seconds in.',
-      'At 40% HP he raises 6 Undead Celts. At 15% HP, 5 more. On death, 20 more (6 berserkers + 14 celts).',
-      'Necrotic Miasma cuts your attack speed 15%. You will feel it.',
+      'The myth-age opens and the ground files a complaint.',
+      'Wave 25 fields TWO Colossus Gigas — each two Giants fused into one titan.',
+      'Titan Stomp slows your towers. Colossal Regen heals what you fail to finish.',
+      'Bring DIVINE. Bring burst. Bring an apology to the Senate, just in case.',
       'ARE YOU REALLY SURE?'
     ],
     doom: [
-      'You said yes. The Undead Warlord smiled. He has a face for that now.',
-      'Your DoT plan is, at best, theoretical.',
-      'Poison-immune enemies are about to embarrass you publicly.',
-      'The Senate has moved your bust to the basement, just in case.',
+      'You clicked yes. The Colossus felt the tremor of your confidence and ignored it.',
+      'Chip damage is a personality, not a strategy. The titan regenerates faster than you commit.',
+      'Your maze is tall. The Colossus is taller, and significantly less polite.',
+      'Five waves remain after this. The titans are merely the warm-up act.',
+      'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
+    ]
+  },
+  27: {
+    name: 'TYPHON',
+    faction: 'ROMAN MYTH',
+    sprite: 'TYPHON',
+    warning: [
+      'Father of monsters. The other bosses were his children.',
+      'Wave 27 brings Typhon himself, escorted by a herd of Giant Gigas.',
+      'Serpent storms, dread auras, and a hide that laughs at single damage types.',
+      'If your composition is one trick, this is where the trick runs out.',
+      'ARE YOU REALLY SURE?'
+    ],
+    doom: [
+      'You clicked yes. Typhon has been killed by gods. You are not one.',
+      'Diversify your damage or watch every type bounce off in turn.',
+      'The Hall of Glory keeps a special page for generals who died on wave 27.',
+      'Three waves left. Typhon intends to make them academic.',
       'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
     ]
   },
@@ -119,7 +138,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
   },
   21: {
     name: 'KHAN RIDER',
-    faction: 'HUNS',
+    faction: 'MONGOLS',
     sprite: 'KHAN_RIDER',
     warning: [
       'The second cave opens and the riders do not wait politely.',
@@ -569,5 +588,8 @@ export function showBossWarning(parent: HTMLElement, wave: number, onConfirm: ()
 // Helper used by main.ts to check if a wave should gate behind verification.
 // Currently the authored major boss waves in the 30-wave campaign.
 export function isVerifiedBossWave(wave: number): boolean {
-  return wave === 5 || wave === 10 || wave === 20 || wave === 21 || wave === 24 || wave === 30;
+  // 2026-06-25 — added the myth-age signature bosses W25 (Super Giant
+  // Colossus) and W27 (Typhon); dropped W15 (no longer a boss wave).
+  return wave === 5 || wave === 10 || wave === 20 || wave === 21
+      || wave === 24 || wave === 25 || wave === 27 || wave === 30;
 }

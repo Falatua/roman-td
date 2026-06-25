@@ -26,6 +26,22 @@ import comboData from '../data/towerCombinations.json';
 import towersData from '../data/towers.json';
 import { canEquipItemOnDamageType } from './ItemRules';
 import { DamageType } from '../types';
+import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
+
+// 2026-06-25 — MARS VICTOR ingredient matching. The recipe lists the six
+// CHAMPION_* heroes, but Mercator never sells the champion matching the
+// player's STARTER hero (HERO_*), so the set could never be completed. A
+// CHAMPION_* ingredient slot is satisfied by EITHER that champion OR the
+// matching starter hero (same hero identity) — so starter + 5 bought
+// champions = all six = Mars Victor. Non-champion slots stay exact-match.
+function ingTypeMatches(towerType: string, ingType: string): boolean {
+  if (towerType === ingType) return true;
+  if (isMercatorChampionType(ingType)) {
+    const a = heroIdForTowerType(towerType);
+    return a != null && a === heroIdForTowerType(ingType);
+  }
+  return false;
+}
 
 // Per-tier merge cost (spec §3.4): T1=2g, T2=4g, T3=6g, T4=8g, T5 cannot merge.
 const SAME_TIER_MERGE_COST: Record<number, number> = { 1: 2, 2: 4, 3: 6, 4: 8 };
@@ -106,7 +122,7 @@ export function scanCombos(state: GameStateShape): AvailableCombo[] {
       // only as a last resort.
       const found = sortedTowers.find(t =>
         !localUsed.has(t.id)
-        && t.type === (ing.type as TowerType)
+        && ingTypeMatches(String(t.type), String(ing.type))
         && t.qualityTier >= ing.minTier
       );
       if (!found) { picked.length = 0; break; }
@@ -195,7 +211,7 @@ export function purchaseCompletesRecipe(state: GameStateShape, type: TowerType |
     let existingOk = true;
     for (const ing of recipe.ingredients) {
       const f = towers.find(t => !localUsedExisting.has(t.id)
-        && t.type === (ing.type as TowerType)
+        && ingTypeMatches(String(t.type), String(ing.type))
         && t.qualityTier >= ing.minTier);
       if (!f) { existingOk = false; break; }
       localUsedExisting.add(f.id);
@@ -212,7 +228,7 @@ export function purchaseCompletesRecipe(state: GameStateShape, type: TowerType |
         if (i === slotIdx) continue; // offer fills this one
         const ing = recipe.ingredients[i];
         const f = towers.find(t => !localUsed.has(t.id)
-          && t.type === (ing.type as TowerType)
+          && ingTypeMatches(String(t.type), String(ing.type))
           && t.qualityTier >= ing.minTier);
         if (!f) { ok = false; break; }
         localUsed.add(f.id);

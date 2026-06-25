@@ -63,11 +63,11 @@
     "biography": "Agrippa's naval genius delivered Rome the Mediterranean. Under his command, siege towers reach farther, hit harder, and rain mortar shells that scatter the enemy line.",
     "passive": {
       "kind": "LOCAL_AURA",
-      "radiusTiles": 5,
+      "radiusTiles": 6,
       "filter": "SIEGE",
-      "dmgBonusPercent": 30,
+      "dmgBonusPercent": 40,
       "rangeBonusTiles": 1.0,
-      "description": "Every SIEGE tower within 5 tiles gains +30% damage and +1.0 range at TIRO, scaling up to +60% damage and +2.0 range by DIVUS."
+      "description": "Every SIEGE tower within 6 tiles gains +40% damage and +1.0 range at TIRO, scaling up to +80% damage and +2.0 range by DIVUS."
     },
     "abilities": [
       {
@@ -177,8 +177,8 @@
     "passive": {
       "kind": "GLOBAL_AURA",
       "filter": "VS_BOSS",
-      "dmgBonusPercent": 25,
-      "description": "Every tower on the map deals +25% damage against Boss-type enemies at TIRO, scaling up to +50% by DIVUS. No radius limit."
+      "dmgBonusPercent": 33,
+      "description": "Every tower on the map deals +33% damage against Boss-type enemies at TIRO, scaling up to +66% by DIVUS. No radius limit."
     },
     "abilities": [
       {
@@ -232,9 +232,9 @@
     "biography": "Caesar did not wait for opportunity — he manufactured it. Under his command, Rome's defenders act faster, hit harder, and leave nothing alive that's already dying.",
     "passive": {
       "kind": "GLOBAL_AURA",
-      "dmgBonusPercent": 10,
-      "speedMultPercent": 10,
-      "description": "Every tower on the map gains +10% damage and +10% attack speed at TIRO, scaling up to +20% damage and +20% attack speed by DIVUS. Stacks with all other aura towers."
+      "dmgBonusPercent": 13,
+      "speedMultPercent": 13,
+      "description": "Every tower on the map gains +13% damage and +13% attack speed at TIRO, scaling up to +26% damage and +26% attack speed by DIVUS. Stacks with all other aura towers."
     },
     "abilities": [
       {
@@ -288,10 +288,10 @@
     "biography": "Sulla was famously lucky — he said so himself, and Rome believed him. On this field his luck translates into pyres and divine wrath: every nearby attack becomes flame, and on command every tower's strike becomes pure DIVINE.",
     "passive": {
       "kind": "DAMAGE_TYPE_CONVERSION",
-      "radiusTiles": 3,
+      "radiusTiles": 4,
       "convertTo": "ELEMENTAL_FIRE",
-      "dmgBonusPercent": 15,
-      "description": "Every tower within 3 tiles converts to FIRE damage and gains +15% damage at TIRO, scaling up to +30% by DIVUS."
+      "dmgBonusPercent": 22,
+      "description": "Every tower within 4 tiles converts to FIRE damage and gains +22% damage at TIRO, scaling up to +44% by DIVUS."
     },
     "abilities": [
       {

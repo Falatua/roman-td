@@ -386,7 +386,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
         if (hero.id !== gs.activeHeroTowerId && !isMercatorChampionType(String(hero.type))) continue;
         const dx = (hero.tileX - t.tileX);
         const dy = (hero.tileY - t.tileY);
-        if (Math.hypot(dx, dy) <= 5) return 1.0 * heroAuraScaleForTower(gs, hero);
+        if (Math.hypot(dx, dy) <= 6) return 1.0 * heroAuraScaleForTower(gs, hero);  // 2026-06-25 radius 5→6 to match buffed SIEGE dmg aura
       }
       return 0;
     })()) +

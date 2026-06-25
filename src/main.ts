@@ -44,6 +44,7 @@ import { renderShop, renderInventoryButton, showInventoryModal, inventorySellPri
 import { showGameOver, showVictory } from './render/EndScreens';
 import { runEndOfGameFlow, insertEndlessEntry, showEndlessLeaderboard, showLeaderboard } from './render/Leaderboard';
 import { showBossWarning, isVerifiedBossWave } from './render/BossWarning';
+import { maybeOfferMarsVictor } from './render/MarsVictorAlert';
 import { showCodex } from './render/Codex';
 import { showTowerMenu } from './render/TowerMenu';
 import { showTowerLeaderboard } from './render/TowerLeaderboard';
@@ -5829,6 +5830,31 @@ async function boot() {
           try { localStorage.setItem('roman_td_seen_hero_tip', '1'); } catch { /* ignore */ }
         }
       }
+      // 2026-06-25 — Mars Victor readiness. If this placement completes the
+      // six-hero set (starter + five recruited Champions, matched by hero
+      // IDENTITY in CombinationEngine), celebrate and offer a one-click fuse.
+      maybeOfferMarsVictor(
+        document.getElementById('stage-wrap'),
+        state,
+        Array.from(state.towers.values()).some(t => t.type === TowerType.MARS_VICTOR),
+        () => {
+          const mv = realizableCombos(state).find(cb =>
+            cb.result === TowerType.MARS_VICTOR && !cb.ingredients.some(t => t.pending)
+          );
+          if (!mv) { state.hint = 'Mars Victor needs all six heroes placed (none pending) and a clear path.'; return; }
+          // Land Mars Victor on the starter hero's tile when present.
+          const anchor = mv.ingredients.find(t => t.id === state.activeHeroTowerId) ?? mv.ingredients[0];
+          const sx = anchor.tileX * 32 + 16, sy = anchor.tileY * 32 + 16;
+          if (executeCombo(state, mv, anchor.id)) {
+            SFX.comboMade();
+            if (renderer?.triggerImpactRing) {
+              renderer.triggerImpactRing(sx, sy, state.tick, 42, 0xffd34d);
+              renderer.triggerImpactRing(sx, sy, state.tick + 0.1, 72, 0xffe88c);
+            }
+            state.hint = 'MARS VICTOR rises — the god of war takes the field.';
+          }
+        }
+      );
       const remaining = queue.length;
       state.hint = remaining > 0
         ? `Placed ${popped.type.replace(/_/g,' ')} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
