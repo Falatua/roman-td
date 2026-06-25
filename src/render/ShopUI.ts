@@ -500,7 +500,13 @@ function renderMercatorShop(
           ? `Bought ${offer.type.replace(/_/g,' ')} T${offer.tier}. ${qLen} towers queued — click empty tiles to place.`
           : `Bought ${offer.type.replace(/_/g,' ')} T${offer.tier}. Click an empty tile to place it.`;
         SFX.itemPickup(tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
-        if (shop.towerOffers) shop.towerOffers = shop.towerOffers.filter(o => o !== offer);
+        // 2026-06-25 — Champions are "always stocked" (the 6-Champion Mars
+        // Victor path). Keep them on the shelf after purchase so a player can
+        // recruit multiples or re-buy them; only one-off T5 towers are
+        // consumed on purchase.
+        if (shop.towerOffers && !isMercatorChampionType(offer.type)) {
+          shop.towerOffers = shop.towerOffers.filter(o => o !== offer);
+        }
         refresh();
       };
       card.appendChild(buy);
@@ -1068,7 +1074,12 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
         // Tier-flavored purchase sound (T1=COMMON, T5=UNIQUE)
         const tierToRarity = ['COMMON','UNCOMMON','RARE','LEGENDARY','UNIQUE'];
         SFX.itemPickup(tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
-        if (shop.towerOffers) shop.towerOffers = shop.towerOffers.filter(o => o !== offer);
+        // 2026-06-25 — Champions stay stocked after purchase (re-buyable);
+        // only one-off T5 towers are consumed. See note in the main shop
+        // render path above.
+        if (shop.towerOffers && !isMercatorChampionType(offer.type)) {
+          shop.towerOffers = shop.towerOffers.filter(o => o !== offer);
+        }
         refresh();
       };
       card.appendChild(buy);
