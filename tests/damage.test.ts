@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { resistanceModifier, damageTypeFromString } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier, statusEffectiveness } from '../src/systems/EnemyResistances';
 import { DamageType, EnemyFaction, EnemyType, StatusEffectKind, Enemy } from '../src/types';
+import enemiesData from '../src/data/enemies.json';
 
 function makeEnemy(type: EnemyType, faction: EnemyFaction = EnemyFaction.DOGS): Enemy {
   return {
@@ -135,5 +136,24 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     ghost.isFlyer = true;
     const ranged = enemyDamageMultiplier(ghost, DamageType.PHYS_RANGED);
     expect(ranged).not.toBeCloseTo(1.20, 4);   // ranged uses its own profile
+  });
+
+  it('war elephants are heavy-hide tanks with only modest siege vulnerability', () => {
+    const living = makeEnemy(EnemyType.WAR_ELEPHANT, EnemyFaction.CARTHAGE);
+    const undead = makeEnemy(EnemyType.UNDEAD_WAR_ELEPHANT, EnemyFaction.UNDEAD_CARTHAGE);
+    const defs: any = enemiesData as any;
+
+    expect(defs.WAR_ELEPHANT.baseHp).toBeGreaterThanOrEqual(20000);
+    expect(defs.WAR_ELEPHANT.regenPctPerSec).toBeGreaterThan(0);
+    expect(defs.WAR_ELEPHANT.outOfCombatRegen).toBeGreaterThan(0);
+    expect(defs.UNDEAD_WAR_ELEPHANT.baseHp).toBeGreaterThanOrEqual(9000);
+
+    expect(enemyDamageMultiplier(living, DamageType.SIEGE)).toBeCloseTo(1.25, 4);
+    expect(enemyDamageMultiplier(undead, DamageType.SIEGE)).toBeCloseTo(1.05, 4);
+    expect(enemyDamageMultiplier(living, DamageType.PHYS_MELEE)).toBeLessThan(0.20);
+    expect(statusEffectiveness(living, StatusEffectKind.POISON)).toBeLessThanOrEqual(0.05);
+    expect(statusEffectiveness(living, StatusEffectKind.BLEED)).toBeLessThanOrEqual(0.12);
+    expect(statusEffectiveness(undead, StatusEffectKind.POISON)).toBe(0);
+    expect(statusEffectiveness(undead, StatusEffectKind.BLEED)).toBe(0);
   });
 });

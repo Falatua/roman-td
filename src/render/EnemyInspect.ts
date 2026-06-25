@@ -350,7 +350,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'IMMUNE TO SLOW & FREEZE (data flags)',
       'TUSK QUAKE — every 6s, silences every tower within 2 tiles for 0.6s (dust-brown ring + screen shake)',
       'DUST-SHIELD AURA — 4-tile dome protects nearby ground allies from ranged attacks while alive (see SPECIAL TRAITS above)',
-      'WEAKNESS: takes +45% damage from SIEGE — heavy stones crush elephant hide',
+      'HEAVY HIDE: higher HP, light sustain, and only +25% damage from SIEGE',
       'GUARANTEED EPIC drop on kill'
     ],
     UNDEAD_WAR_ELEPHANT: [
@@ -359,7 +359,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'IMMUNE TO SLOW & FREEZE',
       'TUSK QUAKE every 6s — silences nearby towers for 0.6s (25% stronger tower-slow aura than the living elephant)',
       'DUST-SHIELD AURA — 4-tile dome protects nearby ground allies from ranged attacks while alive',
-      'WEAKNESS: takes +20% damage from SIEGE (V31 trim — undead hide is denser; living variant still +45%)',
+      'DENSE BONE HIDE: higher HP and only +5% damage from SIEGE; fire still helps',
       'GUARANTEED EPIC drop on kill'
     ],
     HANNIBAL_BARCA: [

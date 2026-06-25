@@ -77,22 +77,11 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   //   siege bumped from default 1.0 to 1.40× (+40%). Bronze armor cracks
   //   under crushing stone; this is the unit's hardest counter now.
   [EnemyType.CARTHAGE_ELITE_GUARD]: { melee: 0.6, ranged: 0.45, bleed: 0.5, fire: 0.6, divine: 0.55, siege: 1.40 },
-  // WAR ELEPHANT — melee resist buffed 0.40 → 0.25 (hide is much tougher
-  // to crack with swords now) and bleed dropped 0.35 → 0.20 (elephants
-  // don't bleed easily — thick hide). Combined effect: melee + bleed
-  // combos that used to chip them down quickly now require ranged /
-  // siege / fire damage to do real work.
-  // 2026-05 v10 — WAR_ELEPHANT siege change: per design feedback,
-  // elephants now take EXTRA siege damage (1.45×) — the heavy stones
-  // crush hide that arrows can't pierce. Combined with their poor
-  // bleed and existing tough melee profile, siege becomes the
-  // dedicated answer for elephant waves. The previous 0.55 (siege-
-  // resistant) reading was inverted on purpose.
-  // 2026-05-17 — Poison resistance bumped 0.30 → 0.10 (90% reduction).
-  // Thick elephant hide and the mass of the animal shrug off poison
-  // procs that would melt a footman. Bleed already at 0.20 (80% resist)
-  // for the same anatomical reason.
-  [EnemyType.WAR_ELEPHANT]: { melee: 0.25, ranged: 0.6, slow: 0.25, burn: 0.6, poison: 0.10, bleed: 0.20, siege: 1.45 },
+  // WAR ELEPHANT — heavy-hide pass (2026-06-25). Elephants should be
+  // hard to kill even when the player brought the right counter. Siege
+  // remains the intended answer, but it is no longer a huge +45% melt
+  // window; DoT and sword-chip are heavily damped.
+  [EnemyType.WAR_ELEPHANT]: { melee: 0.18, ranged: 0.5, slow: 0.20, burn: 0.45, poison: 0.05, bleed: 0.12, siege: 1.25 },
   // HANNIBAL_BARCA: 2026-05-17 — siege bumped from default 1.0 to 1.25×
   // (+25%). The whole Carthaginian roster is now siege-soft, the boss
   // included. Siege towers (Onager, Ballistarius, Carroballista, Vulcan
@@ -147,16 +136,10 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // becomes a real payoff angle through the late mid-game.
   [EnemyType.UNDEAD_SPEARMAN]: { ranged: 0.45, melee: 0.85, fire: 1.40, burn: 1.40, poison: 0, bleed: 0 },
   [EnemyType.GHOST_RIDER]: { melee: 0.2, ranged: 0.55, slow: 0.15, fire: 1.40, burn: 1.40, poison: 0, bleed: 0 },
-  // UNDEAD WAR ELEPHANT — bone hide still cracks; siege + fire are
-  // both real angles. Boss-tier so burn vulnerability is slightly
-  // lower than minions' (1.20 vs 1.25).
-  // 2026-05-22 V31 — siege vulnerability tightened 1.40 → 1.20 per user
-  // feedback ("UWE was way too easy to kill on W14"). The HP bump in
-  // the JSON does most of the work; this trim takes the siege auto-
-  // answer down from 140% → 120% damage taken so the spike doesn't
-  // melt as fast. Fire stays at 1.20 — still vulnerable, two clean
-  // damage-type counters preserved.
-  [EnemyType.UNDEAD_WAR_ELEPHANT]: { melee: 0.20, ranged: 0.45, slow: 0.2, fire: 1.20, burn: 1.20, poison: 0, bleed: 0, siege: 1.20 },
+  // UNDEAD WAR ELEPHANT — denser bone-hide pass (2026-06-25). Nearly
+  // siege-neutral now, with fire still a modest vulnerability through
+  // undead faction pressure. Poison and bleed remain fully dead data.
+  [EnemyType.UNDEAD_WAR_ELEPHANT]: { melee: 0.15, ranged: 0.35, slow: 0.15, fire: 1.10, burn: 1.10, poison: 0, bleed: 0, siege: 1.05 },
 
   // SUPER DEMONS — fire-immune across the board (lore: born from
   // hellfire). Poison and bleed land HARDER on demons (×1.30 / ×1.25)

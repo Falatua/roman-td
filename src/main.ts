@@ -1284,11 +1284,12 @@ async function boot() {
     // Separate callout from the slow-aura line so the player sees both.
     if (enemiesInWave.has('GALLIC_DRUID') || enemiesInWave.has('ZOMBIE_DRUID')) enemyCallouts.push({ text: '💤 DRUID SLEEP CURSE · channels a 0.5s telegraph then launches a slow cyan dart at the nearest tower. Hit = tower asleep 3s. Burst the druid mid-channel or stun/freeze it.', cat: 'ENEMY' });
     // 2026-05 v10 — ELEPHANT DUST SHIELD: nearby ground allies become
-    // ranged-immune until the elephant dies. Pairs with the +45/+40%
-    // siege weakness so the player has a clear answer (siege + melee).
+    // ranged-immune until the elephant dies. Siege remains the cleanest
+    // answer after the 2026-06-25 heavy-hide buff, but elephants no
+    // longer melt to it.
     // The gold sparkle that pops over each protected ally is the same
     // visual cue surfaced here so players can read the field at a glance.
-    if (enemiesInWave.has('WAR_ELEPHANT') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) enemyCallouts.push({ text: '🐘 ELEPHANT DUST SHIELD · the 4-tile dust dome around every elephant blocks ranged attacks on nearby GROUND allies until the elephant dies. Allies inside the dome are marked with a small <b>gold sparkle</b> overhead — those are the ones currently shielded. Ranged towers will silently skip them; melee and the elephant itself stay targetable. Counter: SIEGE (elephants take +45%) or melee inside the dome.', cat: 'ENEMY' });
+    if (enemiesInWave.has('WAR_ELEPHANT') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) enemyCallouts.push({ text: '🐘 ELEPHANT DUST SHIELD · the 4-tile dust dome around every elephant blocks ranged attacks on nearby GROUND allies until the elephant dies. Allies inside the dome are marked with a small <b>gold sparkle</b> overhead — those are the ones currently shielded. Ranged towers will silently skip them; melee and the elephant itself stay targetable. Counter: SIEGE is still best, but elephants are now heavy-hide tanks and will not melt quickly.', cat: 'ENEMY' });
     // 2026-05 v10 — GENERALIZED DAMAGE-CLASS EFFECTIVENESS CALLOUTS.
     // Tell the player which damage type EXPLOITS the enemies they're
     // about to fight, scoped to the actual wave roster. The existing
@@ -1300,18 +1301,17 @@ async function boot() {
     // Daemon Imperator's per-enemy 0.70 damper drops the boss to ~1.40×
     // final. DoT resists: Daemon takes only 30% poison/bleed.
     if (enemiesInWave.has('DEMON_HELLHOUND') || enemiesInWave.has('CELTIC_FIRE_DEMON') || enemiesInWave.has('SHADOW_CAVALRY') || enemiesInWave.has('DEMON_LEGATE') || enemiesInWave.has('DAEMON_IMPERATOR')) enemyCallouts.push({ text: '✨ DEMONS — DIVINE WEAKNESS · lesser demons take ~2.4× damage from divine sources (Flamen / Augur / Haruspex / Solar Priest / Pontifex). Fire deals 0 damage. Bleed and poison hit lesser demons hard, but the W20 Daemon Imperator boss takes only ~1.40× divine (per-enemy damper) and resists poison + bleed to 30%.', cat: 'ENEMY' });
-    // ELEPHANTS — siege weakness. 2026-05-24 copy fix: split living
-    // (+45%) vs undead (+20%) per EnemyResistances.ts:159 — the V31
-    // pass cut the undead elephant's siege weakness from 1.45 → 1.20
-    // to make it tankier vs siege-spam builds.
+    // ELEPHANTS — siege weakness. 2026-06-25 heavy-hide pass: living
+    // now take +25% siege, undead only +5%. Siege remains the best
+    // answer, but neither variant should be trivial to burn down.
     if (enemiesInWave.has('WAR_ELEPHANT') || enemiesInWave.has('UNDEAD_WAR_ELEPHANT')) {
       const livingOnly = enemiesInWave.has('WAR_ELEPHANT') && !enemiesInWave.has('UNDEAD_WAR_ELEPHANT');
       const undeadOnly = !enemiesInWave.has('WAR_ELEPHANT') && enemiesInWave.has('UNDEAD_WAR_ELEPHANT');
       const txt = livingOnly
-        ? '🪨 WAR ELEPHANTS — SIEGE WEAKNESS · take +45% damage from SIEGE (Libritor, Turris, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine). Bleed and poison resisted heavily.'
+        ? '🪨 WAR ELEPHANTS — HEAVY HIDE · take +25% damage from SIEGE (Libritor, Turris, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine), but have more HP and sustain now. Bleed and poison are barely useful.'
         : undeadOnly
-        ? '🪨 UNDEAD WAR ELEPHANTS — SIEGE WEAKNESS · take +20% damage from SIEGE (was +45% on the living variant — undead hide is denser). Fire (+30% faction taken) is the real answer; bleed and poison deal 0.'
-        : '🪨 ELEPHANTS — SIEGE WEAKNESS · living take +45% SIEGE, undead take +20% SIEGE. Bleed and poison resisted heavily — DoT-stacker builds skip elephants.';
+        ? '🪨 UNDEAD WAR ELEPHANTS — DENSE BONE HIDE · take only +5% damage from SIEGE. Fire still helps through undead faction pressure; bleed and poison deal 0.'
+        : '🪨 ELEPHANTS — HEAVY HIDE · living take +25% SIEGE, undead only +5% SIEGE. Siege is still best, but bring sustained damage; DoT-stacker builds skip elephants.';
       enemyCallouts.push({ text: txt, cat: 'ENEMY' });
     }
     // 2026-05-24 audit fix — CELTS callout. Faction is PHYS_MELEE -0.20
@@ -1996,8 +1996,8 @@ async function boot() {
     // in one banner. The gold-sparkle visual cue is named so they know
     // what they're seeing on the field.
     if (hasElephants) tips.push({
-      headline: '🐘 ELEPHANTS — DUST SHIELD + SIEGE WEAKNESS',
-      body: `Wave <b>${nextWave}</b> has war elephants. Each one projects a <b style="color:#cdb98a">4-tile dust dome</b> around itself that <b style="color:#ff5050">blocks ranged attacks on every nearby GROUND ally</b> until the elephant dies. Protected allies get a small <b style="color:#ffe066">gold sparkle</b> overhead — that's your visual cue. Counter: <b style="color:#ffd34d">SIEGE</b> towers (Librator, Turris, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine) — elephants take <b style="color:#88ff88">+45% damage</b> from siege. Melee also pierces the dome and hits the allies inside.`,
+      headline: '🐘 ELEPHANTS — DUST SHIELD + HEAVY HIDE',
+      body: `Wave <b>${nextWave}</b> has war elephants. Each one projects a <b style="color:#cdb98a">4-tile dust dome</b> around itself that <b style="color:#ff5050">blocks ranged attacks on every nearby GROUND ally</b> until the elephant dies. Protected allies get a small <b style="color:#ffe066">gold sparkle</b> overhead — that's your visual cue. Counter: <b style="color:#ffd34d">SIEGE</b> towers (Librator, Turris, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine), but elephants are now <b style="color:#ffcc88">heavy-hide tanks</b>: living take only <b style="color:#88ff88">+25%</b> siege, undead only <b style="color:#88ff88">+5%</b>. Melee pierces the dome and hits allies inside.`,
       color: '#cdb98a'
     });
     // Late-game divine smite tip — fires only when undead celts are

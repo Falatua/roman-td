@@ -148,13 +148,15 @@
   "WAR_ELEPHANT": {
     "name": "War Elephant",
     "faction": "CARTHAGE",
-    "baseHp": 16023,
+    "baseHp": 20500,
     "speed": 1.6,
     "isFlyer": false,
     "isBoss": true,
     "livesCost": 10,
     "spriteSheet": 5,
     "spriteCell": 2,
+    "regenPctPerSec": 0.0035,
+    "outOfCombatRegen": 0.025,
     "immuneSlow": true,
     "immuneFreeze": true,
     "auraTowerSlow": 0.2
@@ -288,7 +290,7 @@
   "UNDEAD_WAR_ELEPHANT": {
     "name": "Undead War Elephant",
     "faction": "UNDEAD_CARTHAGE",
-    "baseHp": 6792,
+    "baseHp": 9200,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": true,
