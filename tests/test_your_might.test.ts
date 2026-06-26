@@ -164,7 +164,7 @@ describe('Test Your Might bonus wave', () => {
     expect(s.phase).toBe(GamePhase.BUILD_PHASE);
     expect(s.wave).toBe(10);
     expect(s.testYourMightCleared).toBe(true);
-    expect(s.gold - beforeGold).toBe(2000);
+    expect(s.gold - beforeGold).toBe(3000);
     expect(s.weatherKey).toBeNull();
     expect(s.waveModifier).toBeNull();
   });

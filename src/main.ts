@@ -7287,8 +7287,11 @@ async function boot() {
           (state as any).__testYourMightRewardPaid = true;
           earnGold(state, TEST_YOUR_MIGHT_REWARD_GOLD);
           state.score += 5000;
-          state.hint = `TEST YOUR MIGHT PERFECT CLEAR — +${TEST_YOUR_MIGHT_REWARD_GOLD}g. The treasury is now visibly nervous.`;
-          showBonusBossBanner(`TEST YOUR MIGHT CLEARED — +${TEST_YOUR_MIGHT_REWARD_GOLD} GOLD`);
+          // 2026-06-25 — reward is gold + a free Tier-5 Scorpio to place.
+          if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
+          state.pendingPurchasedTowers.push({ type: TowerType.SCORPIO, tier: 5, source: 'reward' as any });
+          state.hint = `TEST YOUR MIGHT PERFECT CLEAR — +${TEST_YOUR_MIGHT_REWARD_GOLD}g and a Tier-5 Scorpio. Click an empty tile to place it.`;
+          showBonusBossBanner(`TEST YOUR MIGHT CLEARED — +${TEST_YOUR_MIGHT_REWARD_GOLD}g + TIER-5 SCORPIO`);
         }
         clearPlacedTrapsForWaveEnd(state);
         // 2026-05 v11: user-supplied wave-survived bumper SFX. Fires the
@@ -7439,6 +7442,21 @@ async function boot() {
           const stage = document.getElementById('stage-wrap');
           if (stage) {
             showCampaignRelicModal(stage, state, (id) => {
+              // 2026-06-25 — SEALED_RELIQUARY relic grants a random unowned
+              // Legendary item (inventory is only in scope here, not in the
+              // relic system). The relic set its __pendingRelicLegendary flag.
+              if ((state as any).__pendingRelicLegendary) {
+                (state as any).__pendingRelicLegendary = false;
+                const owned = currentlyOwnedLegendarySet(state, inventory);
+                const legendaries = Object.entries(itemsData as any)
+                  .filter(([iid, def]: any) => def?.rarity === 'LEGENDARY' && !owned.has(iid))
+                  .map(([iid]) => iid);
+                if (legendaries.length > 0) {
+                  const pick = legendaries[Math.floor(Math.random() * legendaries.length)];
+                  inventoryAdd(inventory, pick as any, 'LEGENDARY', false);
+                  state.hint = `Sealed Reliquary opened — gained ${String(pick).replace(/_/g, ' ')} (Legendary).`;
+                }
+              }
               showBonusBossBanner(id
                 ? '⚜ CAMPAIGN RELIC CLAIMED — THE RUN HAS CHANGED ⚜'
                 : '⚜ NO RELIC CLAIMED — ROME KEEPS ITS OWN TERMS ⚜');

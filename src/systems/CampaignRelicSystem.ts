@@ -33,7 +33,9 @@ export const CAMPAIGN_RELIC_IDS = [
   'IMPERIAL_GRANARIES',
   'BLESSING_OF_MARS',
   'FROST_TITHE',
-  'LAST_EAGLE'
+  'LAST_EAGLE',
+  'TRIUMPHAL_SPOILS',
+  'SEALED_RELIQUARY'
 ] as const;
 
 export type CampaignRelicId = typeof CAMPAIGN_RELIC_IDS[number];
@@ -318,6 +320,24 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     upside: 'From W25 onward, towers deal +70% damage.',
     caveat: 'From W25 onward, enemy HP +65%.',
     effects: ['W25+ tower damage +70%.', 'W25+ enemy HP +65%.']
+  },
+  {
+    id: 'TRIUMPHAL_SPOILS',
+    name: 'Triumphal Spoils',
+    eyebrow: 'WAR-BOOTY GRANT',
+    blurb: 'The triumph parades a captured siege engine into your service. The enemy quickens to take it back.',
+    upside: 'Immediately gain a free Tier-5 Scorpio to place.',
+    caveat: 'All enemies move +35% faster for the rest of the run.',
+    effects: ['Gain a free Tier-5 SCORPIO now.', 'Enemies move +35% faster all run.']
+  },
+  {
+    id: 'SEALED_RELIQUARY',
+    name: 'Sealed Reliquary',
+    eyebrow: 'CONSECRATED HOARD',
+    blurb: 'A sealed reliquary yields a legendary relic of war. Its theft from the gods swells the horde with borrowed strength.',
+    upside: 'Immediately gain a random Legendary item.',
+    caveat: 'All enemies gain +30% HP for the rest of the run.',
+    effects: ['Gain a random Legendary item now.', 'Enemy HP +30% all run.']
   }
 ];
 
@@ -395,6 +415,14 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   if (id === 'TEMPLE_LOAN') state.gold += 700;
   if (id === 'IMPERIAL_GRANARIES') state.gold += 500;
   if (id === 'AEGIS_WALL') state.lives += 15;
+  // 2026-06-25 — concrete reward grants. T5 tower is self-contained; the
+  // legendary item is granted by main.ts (inventory in scope there) when it
+  // sees this flag.
+  if (id === 'TRIUMPHAL_SPOILS') {
+    if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
+    state.pendingPurchasedTowers.push({ type: 'SCORPIO' as any, tier: 5, source: 'relic' as any });
+  }
+  if (id === 'SEALED_RELIQUARY') (state as any).__pendingRelicLegendary = true;
   state.hint = `${def.name} claimed. ${def.upside} Caveat: ${def.caveat}`;
 }
 
@@ -504,6 +532,7 @@ export function campaignRelicEnemySpeedMult(state: GameStateShape, enemy?: any):
       case 'VULCANS_FORGE': if (enemy?.isFlyer) mult *= 1.70; break;
       case 'BLACK_OIL': if (enemy?.isFlyer) mult *= 1.85; break;
       case 'FROST_TITHE': mult *= 0.78; break;
+      case 'TRIUMPHAL_SPOILS': mult *= 1.35; break;   // pays for the free T5 Scorpio
     }
   }
   return mult;
@@ -526,6 +555,7 @@ export function campaignRelicEnemyHpMult(state: GameStateShape, enemyDef: any): 
       case 'HARUSPEX_WARNING': if (!isBoss) mult *= 1.40; break;
       case 'IMPERIAL_GRANARIES': mult *= 1.55; break;
       case 'LAST_EAGLE': if ((state.wave ?? 1) >= 25) mult *= 1.65; break;
+      case 'SEALED_RELIQUARY': mult *= 1.30; break;   // pays for the free Legendary
     }
   }
   return mult;

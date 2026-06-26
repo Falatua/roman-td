@@ -38,8 +38,8 @@ function bootstrapState() {
 
 describe('Campaign relics', () => {
   it('ships a full 30-relic randomized campaign pool', () => {
-    expect(CAMPAIGN_RELICS.length).toBe(30);
-    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(30);
+    expect(CAMPAIGN_RELICS.length).toBe(32);
+    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(32);
     for (const relic of CAMPAIGN_RELICS) {
       expect(relic.upside.length).toBeGreaterThan(5);
       expect(relic.caveat.length).toBeGreaterThan(5);

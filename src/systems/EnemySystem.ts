@@ -680,6 +680,36 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       }
     }
   }
+  // ─── NULLIFYING AURA (2026-06-25): selected late-game (post-W15) enemies,
+  //   minions, commanders, and bosses carry a constant 2-tile aura that
+  //   temporarily DISABLES any tower standing inside it. Reuses the silence
+  //   stamp (tower cooldown pinned + silencedUntil → X-mark) refreshed every
+  //   frame the tower is in range, so a tower wakes the instant the carrier
+  //   leaves its radius. A live violet ring is drawn around each carrier via
+  //   __nullifyAuraSources. Wider + visually distinct from the 1.5-tile
+  //   presence-silence above.
+  const nullSources: { x: number; y: number; r: number }[] = [];
+  for (const e of state.enemies.values()) {
+    const radiusTiles = (enemiesData as any)[e.type]?.nullifyAuraRadiusTiles;
+    if (!radiusTiles) continue;
+    const radiusPx = GRID.TILE * radiusTiles;
+    nullSources.push({ x: e.x, y: e.y, r: radiusPx });
+    const radiusPxSq = radiusPx * radiusPx;
+    for (const t of state.towers.values()) {
+      if (t.pending) continue;
+      const cx = t.tileX * GRID.TILE + GRID.TILE / 2;
+      const cy = t.tileY * GRID.TILE + GRID.TILE / 2;
+      const dx = cx - e.x, dy = cy - e.y;
+      if (dx * dx + dy * dy <= radiusPxSq) {
+        const until = t.silencedUntil ?? 0;
+        if (state.tick > until - 0.4) {
+          t.silencedUntil = state.tick + 0.5;
+          if (t.attackCooldown < 0.5) t.attackCooldown = 0.5;
+        }
+      }
+    }
+  }
+  (state as any).__nullifyAuraSources = nullSources;
   // ─── TOWER SILENCE: Spectral Scout / Ghost Rider passing within 1.0 tile
   // of a tower forces the tower into a 0.6s cooldown spike. They literally
   // walk past and disrupt the legion's rhythm.

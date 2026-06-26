@@ -72,6 +72,9 @@ export class RenderEngine {
   // 2026-05 v10: dust-shield dome rendered behind elephants + soft
   // shimmer over protected ground allies. Cleared each frame.
   elephantAuraGfx: Graphics;
+  // 2026-06-25 — constant violet "Nullifying Aura" dome around late-game
+  // carriers that disable towers standing inside it. Cleared each frame.
+  nullifyAuraGfx: Graphics;
   // 2026-05 v6 polish
   bossAuraGfx: Graphics;
   bossVignetteGfx: Graphics;
@@ -174,6 +177,10 @@ export class RenderEngine {
     // layer so the dome reads behind the units it's protecting.
     this.elephantAuraGfx = new Graphics();
     this.layers.overlay.addChild(this.elephantAuraGfx);
+    // 2026-06-25 — Nullifying Aura dome, sits just above the elephant dome
+    // on the overlay so the violet ring reads clearly under the carriers.
+    this.nullifyAuraGfx = new Graphics();
+    this.layers.overlay.addChild(this.nullifyAuraGfx);
     // 2026-05 v6: shared Graphics for the boss low-HP red pulse aura.
     // Sits in the overlay layer below the enemy sprite so the ring
     // appears behind the boss but above the terrain. Cleared each frame.
@@ -1168,6 +1175,28 @@ export class RenderEngine {
   // it — so the player can read at a glance "these guys are immune to
   // ranged until the elephant dies".
   drawElephantAura(state: GameStateShape) {
+    // ─── NULLIFYING AURA dome (2026-06-25) ──────────────────────────────
+    // Constant violet "magic-null" ring around every live carrier (data
+    // flag nullifyAuraRadiusTiles). Re-derived from state.enemies each frame
+    // so a stale source list can't leave a ghost ring. Towers inside are
+    // disabled (see EnemySystem) and show the silence X-mark.
+    this.nullifyAuraGfx.clear();
+    for (const e of state.enemies.values()) {
+      const nr = (enemiesData as any)[e.type]?.nullifyAuraRadiusTiles;
+      if (!nr || e.hp <= 0) continue;
+      const rad = GRID.TILE * nr;
+      const pulse = 0.55 + Math.sin(state.tick * 3.0 + e.x * 0.04) * 0.22;
+      this.nullifyAuraGfx.beginFill(0x6a1fb0, 0.10 * pulse).drawCircle(e.x, e.y, rad).endFill();
+      this.nullifyAuraGfx.beginFill(0xa64dff, 0.13 * pulse).drawCircle(e.x, e.y, rad * 0.74).endFill();
+      const tk = state.tick;
+      const halfArc = 0.5 * Math.PI;
+      this.nullifyAuraGfx.lineStyle(2.5, 0xcc88ff, 0.85);
+      this.nullifyAuraGfx.arc(e.x, e.y, rad, tk * 0.9, tk * 0.9 + halfArc);
+      this.nullifyAuraGfx.arc(e.x, e.y, rad, tk * 0.9 + Math.PI, tk * 0.9 + Math.PI + halfArc);
+      this.nullifyAuraGfx.lineStyle(1.5, 0x9933ff, 0.6);
+      this.nullifyAuraGfx.arc(e.x, e.y, rad * 0.9, Math.PI - tk * 1.0, Math.PI - tk * 1.0 + halfArc);
+      this.nullifyAuraGfx.lineStyle(0);
+    }
     this.elephantAuraGfx.clear();
     // 2026-05-17 — Re-validate sources against state.enemies every frame
     // so a stale __elephantAuraSources (e.g. left over from a tick where
@@ -4261,7 +4290,10 @@ export class RenderEngine {
       }
       // Tower silence flash (Ghost Rider/Spectral pass) — uses real Higgsfield sprite
       const silencedUntil = (tw as any).silencedUntil ?? 0;
-      if (silenceAffected && state.tick < silencedUntil) {
+      // 2026-06-25 — show the disabled X-mark on ANY silenced/nullified tower,
+      // not only on weather-profile waves (the old `silenceAffected` gate hid
+      // the Nullifying Aura disable on clear-weather late waves).
+      if (state.tick < silencedUntil) {
         const ix = cx + GRID.TILE * 0.42;
         const iy = cy - GRID.TILE * 0.42;
         // 2026-05 v6: pulse opacity 0.5 → 1.0 → 0.5 over ~0.6s so the

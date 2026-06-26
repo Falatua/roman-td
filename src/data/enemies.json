@@ -337,6 +337,7 @@
     }
   },
   "SHADOW_CAVALRY": {
+    "nullifyAuraRadiusTiles": 2,
     "name": "Shadow Cavalry",
     "faction": "SUPER_DEMONS",
     "baseHp": 307,
@@ -380,6 +381,7 @@
     "outOfCombatRegen": 0.028
   },
   "ARCHITECTUS": {
+    "nullifyAuraRadiusTiles": 2,
     "name": "Architectus",
     "faction": "UNDEAD_CARTHAGE",
     "baseHp": 330000,
@@ -580,6 +582,7 @@
     "groundConvertAs": "EGYPTIAN_SPEARMAN"
   },
   "ANUBIS_KING": {
+    "nullifyAuraRadiusTiles": 2,
     "name": "Anubis Death-Lord",
     "faction": "EGYPTIANS",
     "baseHp": 23760,
@@ -613,6 +616,7 @@
     "dodgeChance": 0.18
   },
   "KHAN_RIDER": {
+    "nullifyAuraRadiusTiles": 2,
     "name": "Khan Rider",
     "faction": "MONGOLS",
     "baseHp": 4620,
@@ -666,6 +670,7 @@
     }
   },
   "MONGOL_SHAMAN": {
+    "nullifyAuraRadiusTiles": 2,
     "name": "Hun Shaman",
     "faction": "MONGOLS",
     "baseHp": 800,
@@ -720,6 +725,7 @@
     "immuneFreeze": true
   },
   "TYPHON": {
+    "nullifyAuraRadiusTiles": 2,
     "name": "Typhon",
     "faction": "ROMAN_MYTH",
     "baseHp": 9000,
@@ -783,6 +789,7 @@
     "immunePoison": true
   },
   "MEDJAY_SOLDIER": {
+    "nullifyAuraRadiusTiles": 2,
     "name": "Medjay Soldier",
     "faction": "EGYPTIANS",
     "baseHp": 1400,
@@ -820,6 +827,7 @@
     "renderScale": 1.15
   },
   "ANUBIS_PRIEST_COMMANDER": {
+    "nullifyAuraRadiusTiles": 2,
     "name": "Commander: Anubis Priest",
     "faction": "EGYPTIANS",
     "baseHp": 3600,
