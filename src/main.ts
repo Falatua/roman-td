@@ -4625,12 +4625,17 @@ async function boot() {
         if (w) {
           setFactionBGM(w.faction);
           if (w.type === 'B') {
-            // 2026-05-17 — W20 swaps the regular boss banner for the over-
-            // the-top HP callout (counts up to 600M with satirical
-            // captions). Every other boss wave keeps the standard banner.
+            // 2026-06-25 — One pre-boss banner per boss, not two. Verified
+            // boss waves already showed the pre-wave CRT warning screen, so
+            // the in-wave "BOSS APPROACHES" banner is redundant and was
+            // confusing (some bosses appeared to get two banners). The W30
+            // finale keeps its signature satirical HP callout (a distinct
+            // climactic gag, not a duplicate warning). All current type-B
+            // waves are verified, so the standalone banner only fires for a
+            // hypothetical future boss wave that isn't CRT-warned.
             if (state.wave === WAVE.TOTAL) {
               showFinalBossHpBanner();
-            } else {
+            } else if (!isVerifiedBossWave(state.wave)) {
               showBossBanner(`WAVE ${state.wave} — ${factionName(w.faction).toUpperCase()} BOSS APPROACHES`, w.faction);
             }
           } else if (state.wave === 17) {
