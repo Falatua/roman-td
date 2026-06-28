@@ -4,7 +4,7 @@ import { TileType, GamePhase, TowerType, DamageType } from '../types';
 import { GameStateShape, isWaveModifierActive } from '../GameState';
 import { GoreState } from '../systems/GoreSystem';
 import { towerEffectiveStats } from '../systems/TowerSystem';
-import { tex } from './Assets';
+import { tex, texFrame } from './Assets';
 import { biomeForWave, BIOMES, pickGrassTile, STATIC_BATTLE_DEBRIS } from './Biomes';
 import waypointsData from '../data/waypoints.json';
 import enemiesData from '../data/enemies.json';
@@ -37,6 +37,18 @@ const HERO_RING_FOR: Record<string, string> = {
   HERO_SCIPIO:   'HERO_RING_GOLD_ROPE',
   HERO_SULLA:    'HERO_RING_FLAME_RED'
 };
+
+const HERO_ATTACK_SHEET_FOR: Record<string, string> = {
+  HERO_MARIUS: 'HERO_ATTACK_MARIUS',
+  HERO_AGRIPPA: 'HERO_ATTACK_AGRIPPA',
+  HERO_AGRICOLA: 'HERO_ATTACK_AGRICOLA',
+  HERO_SCIPIO: 'HERO_ATTACK_SCIPIO',
+  HERO_CAESAR: 'HERO_ATTACK_CAESAR',
+  HERO_SULLA: 'HERO_ATTACK_SULLA'
+};
+
+const HERO_ATTACK_FRAME_SIZE = 256;
+const HERO_ATTACK_FRAME_COUNT = 6;
 
 const MAX_TRANSIENT_SLASHES = 72;
 const MAX_TRANSIENT_MUZZLE_FLASHES = 96;
@@ -3436,6 +3448,22 @@ export class RenderEngine {
       // along the firing direction for satisfying combat feel.
       const flashWindow = tw.isHero ? 0.32 : 0.18;
       const flashT = tw.attackFlash > 0 ? Math.min(1, tw.attackFlash / flashWindow) : 0;
+      const heroIdentity = heroIdForTowerType(String(tw.type));
+      let usingHeroAttackSheet = false;
+      if (tw.isHero && heroIdentity && flashT > 0) {
+        const sheetKey = HERO_ATTACK_SHEET_FOR[heroIdentity];
+        const frameAge = Math.max(0, Math.min(0.999, 1 - flashT));
+        const frameIndex = Math.min(HERO_ATTACK_FRAME_COUNT - 1, Math.floor(frameAge * HERO_ATTACK_FRAME_COUNT));
+        const attackTex = sheetKey
+          ? texFrame(sheetKey, frameIndex, HERO_ATTACK_FRAME_SIZE, HERO_ATTACK_FRAME_SIZE)
+          : null;
+        const idleTex = tex(tw.type);
+        entry.sp.texture = attackTex ?? idleTex ?? entry.sp.texture;
+        usingHeroAttackSheet = !!attackTex;
+      } else {
+        const idleTex = tex(tw.type);
+        if (idleTex && entry.sp.texture !== idleTex) entry.sp.texture = idleTex;
+      }
       const baseTint = blendWithWhite(TIER_COLORS[tw.qualityTier] ?? 0xffffff, 0.5);
       // 2026-05 v6: gold-glow window — when an Aerarium or GOLD_PURSE-equipped
       // tower scores a kill, main.ts stamps __goldGlowUntil on the tower for
@@ -3463,16 +3491,19 @@ export class RenderEngine {
       let heroAttackRotation = 0;
       let heroAttackSkewX = 0;
       if (isAttacking) {
-        const heroId = heroIdForTowerType(String(tw.type));
+        const heroId = heroIdentity;
         const meleeHero = heroId === 'HERO_MARIUS' || heroId === 'HERO_SCIPIO' || heroId === 'HERO_CAESAR';
-        const recoilDist = flashT * (heroId ? 6.5 : 4.5);
+        const recoilDist = flashT * (heroId ? 4.0 : 4.5);
         const dir = meleeHero ? 1 : -1;
         attackOffX = Math.cos(tw.rotation) * recoilDist * dir;
         attackOffY = Math.sin(tw.rotation) * recoilDist * dir;
         if (heroId) {
           const age = 1 - flashT;
           const side = (tw.id.charCodeAt(tw.id.length - 1) % 2 === 0) ? 1 : -1;
-          if (meleeHero) {
+          if (usingHeroAttackSheet) {
+            heroAttackRotation = meleeHero ? Math.sin(age * Math.PI) * 0.05 * side : Math.sin(age * Math.PI) * -0.04 * side;
+            heroAttackSkewX = 0;
+          } else if (meleeHero) {
             const windupToRelease = age < 0.46
               ? -0.38 + (age / 0.46) * 0.92
               : 0.54 * Math.max(0, 1 - ((age - 0.46) / 0.54));

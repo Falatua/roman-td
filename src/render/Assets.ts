@@ -1,4 +1,4 @@
-import { Assets as PixiAssets, Texture, SCALE_MODES, BaseTexture } from 'pixi.js';
+import { Assets as PixiAssets, Texture, SCALE_MODES, BaseTexture, Rectangle } from 'pixi.js';
 
 // Force every freshly-loaded texture in this session to use NEAREST
 // sampling. Pixi's default is LINEAR (bilinear) which makes high-res
@@ -584,6 +584,12 @@ const MANIFEST: Record<string, string> = {
   CHAMPION_SCIPIO:   '../heroes/hero_scipio.png',
   CHAMPION_CAESAR:   '../heroes/hero_caesar.png',
   CHAMPION_SULLA:    '../heroes/hero_sulla.png',
+  HERO_ATTACK_MARIUS:   '../heroes/attacks/hero_marius_attack_sheet.png',
+  HERO_ATTACK_AGRIPPA:  '../heroes/attacks/hero_agrippa_attack_sheet.png',
+  HERO_ATTACK_AGRICOLA: '../heroes/attacks/hero_agricola_attack_sheet.png',
+  HERO_ATTACK_SCIPIO:   '../heroes/attacks/hero_scipio_attack_sheet.png',
+  HERO_ATTACK_CAESAR:   '../heroes/attacks/hero_caesar_attack_sheet.png',
+  HERO_ATTACK_SULLA:    '../heroes/attacks/hero_sulla_attack_sheet.png',
   // 2026-05-20 v2 — Hero tower halo rings. Layered under each hero
   // sprite at render time so the player can see at a glance "this is
   // the hero, not a regular T1/T2 tower." 9 styles cropped from a
@@ -811,6 +817,21 @@ export async function loadAllAssets(onProgress?: (loaded: number, total: number)
 
 export function tex(key: string): Texture | null {
   return cache.get(key) ?? null;
+}
+
+const frameCache: Map<string, Texture> = new Map();
+
+export function texFrame(key: string, frame: number, frameW: number, frameH: number): Texture | null {
+  const sheet = cache.get(key);
+  if (!sheet) return null;
+  const idx = Math.max(0, Math.floor(frame));
+  const cacheKey = `${key}:${idx}:${frameW}x${frameH}`;
+  const cached = frameCache.get(cacheKey);
+  if (cached) return cached;
+  const out = new Texture(sheet.baseTexture, new Rectangle(idx * frameW, 0, frameW, frameH));
+  out.baseTexture.scaleMode = SCALE_MODES.NEAREST;
+  frameCache.set(cacheKey, out);
+  return out;
 }
 
 // 2026-05-22 — Deferred-batch completion flag. Set to true when the
