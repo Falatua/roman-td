@@ -307,7 +307,7 @@
     "name": "Demon Hellhound",
     "faction": "SUPER_DEMONS",
     "baseHp": 220,
-    "speed": 4.8,
+    "speed": 3.2,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
