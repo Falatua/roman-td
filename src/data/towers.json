@@ -528,7 +528,7 @@
   "WAR_CHARIOT": {
     "name": "War Chariot",
     "damageType": "PHYS_MELEE",
-    "baseDps": 79.9,
+    "baseDps": 99.9,
     "attackSpeed": 0.88,
     "range": 2.0,
     "kind": "COMBO",
@@ -644,7 +644,7 @@
   "INFERNO_CART": {
     "name": "Inferno Cart",
     "damageType": "ELEMENTAL_FIRE",
-    "baseDps": 48.4,
+    "baseDps": 60.5,
     "attackSpeed": 0.7,
     "range": 3,
     "kind": "COMBO",
@@ -659,7 +659,7 @@
   "FROZEN_LEGION": {
     "name": "Frozen Legion",
     "damageType": "PHYS_RANGED",
-    "baseDps": 113.2,
+    "baseDps": 141.5,
     "attackSpeed": 1.4,
     "range": 4.5,
     "kind": "COMBO",
@@ -673,7 +673,7 @@
   "JULIUS_CAESAR": {
     "name": "Julius Caesar",
     "damageType": "PHYS_MELEE",
-    "baseDps": 112.0,
+    "baseDps": 140.0,
     "attackSpeed": 1.95,
     "range": 1.5,
     "kind": "COMBO",
@@ -701,7 +701,7 @@
   "GOD_OF_WAR": {
     "name": "God of War",
     "damageType": "PHYS_MELEE",
-    "baseDps": 146.4,
+    "baseDps": 183.0,
     "attackSpeed": 1.32,
     "range": 1.5,
     "kind": "COMBO",
@@ -833,7 +833,7 @@
   "TURMA_LANCERS": {
     "name": "Turma Lancers",
     "damageType": "PHYS_MELEE",
-    "baseDps": 99.9,
+    "baseDps": 124.9,
     "attackSpeed": 1.705,
     "range": 2.0,
     "kind": "COMBO",
@@ -846,7 +846,7 @@
   "AURORA_LEGION": {
     "name": "Aurora Legion",
     "damageType": "DIVINE",
-    "baseDps": 93.2,
+    "baseDps": 116.5,
     "attackSpeed": 0.417,
     "range": 5,
     "kind": "COMBO",
@@ -859,7 +859,7 @@
   "STORM_VEXILLATION": {
     "name": "Storm Vexilla",
     "damageType": "DIVINE",
-    "baseDps": 66.1,
+    "baseDps": 82.6,
     "attackSpeed": 0.417,
     "range": 4.6,
     "kind": "COMBO",
@@ -872,7 +872,7 @@
   "IMPERIUM_ETERNUM": {
     "name": "Imperium Eternum",
     "damageType": "DIVINE",
-    "baseDps": 186.3,
+    "baseDps": 232.9,
     "attackSpeed": 0.417,
     "range": 6,
     "kind": "COMBO",
@@ -886,7 +886,7 @@
   "CARTHAGE_SCOURGE": {
     "name": "Carthage Scourge",
     "damageType": "SIEGE",
-    "baseDps": 102.5,
+    "baseDps": 128.1,
     "attackSpeed": 0.357,
     "range": 7,
     "kind": "COMBO",
@@ -1119,7 +1119,7 @@
   "MARS_VICTOR": {
     "name": "Mars Victor",
     "damageType": "DIVINE",
-    "baseDps": 1375.0,
+    "baseDps": 1718.8,
     "attackSpeed": 0.45,
     "range": 9.0,
     "kind": "COMBO",

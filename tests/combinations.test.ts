@@ -7,6 +7,7 @@ import { TowerType, GamePhase, TileType } from '../src/types';
 import { initializeGrid, setTile } from '../src/systems/GridManager';
 import { buildGroundPath } from '../src/systems/PathFinder';
 import comboData from '../src/data/towerCombinations.json';
+import towersData from '../src/data/towers.json';
 
 function bootstrapState() {
   const s = createGameState();
@@ -105,6 +106,27 @@ describe('Recipe combo detection', () => {
     const combos = scanCombos(s);
     const sb = combos.find(c => c.result === TowerType.SCORPION_BOLT);
     expect(sb).toBeFalsy();
+  });
+
+  it('keeps nested-combo DPS boosts while excluding Hannibal Nightmare', () => {
+    const expectedBoosted: Partial<Record<TowerType, number>> = {
+      [TowerType.WAR_CHARIOT]: 99.9,
+      [TowerType.INFERNO_CART]: 60.5,
+      [TowerType.FROZEN_LEGION]: 141.5,
+      [TowerType.JULIUS_CAESAR]: 140.0,
+      [TowerType.GOD_OF_WAR]: 183.0,
+      [TowerType.TURMA_LANCERS]: 124.9,
+      [TowerType.AURORA_LEGION]: 116.5,
+      [TowerType.STORM_VEXILLATION]: 82.6,
+      [TowerType.IMPERIUM_ETERNUM]: 232.9,
+      [TowerType.CARTHAGE_SCOURGE]: 128.1,
+      [TowerType.MARS_VICTOR]: 1718.8
+    };
+    for (const [type, expectedDps] of Object.entries(expectedBoosted)) {
+      expect((towersData as any)[type].baseDps).toBe(expectedDps);
+    }
+    expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(151.8);
+    expect((towersData as any)[TowerType.COHORT_GUARD].baseDps).toBe(79.9);
   });
 });
 
