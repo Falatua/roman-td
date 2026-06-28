@@ -4103,29 +4103,38 @@ export class RenderEngine {
       // in CombatResolver localAuras so player-visible and player-affected
       // ranges always match.
       if (tw.equippedItems.includes('CENTURIONS_TRUMPET')) {
-        this.drawAuraRing(cx, cy, 2 * GRID.TILE, ALLY, pulse * 0.75);
+        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, ALLY, pulse * 0.75);
       }
       if (tw.equippedItems.includes('BATTLE_STANDARD')) {
-        this.drawAuraRing(cx, cy, 2 * GRID.TILE, ALLY, pulse * 0.75);
+        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, ALLY, pulse * 0.75);
       }
       if (tw.equippedItems.includes('WAR_HOUND_COLLAR')) {
-        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, ALLY, pulse * 0.8);
+        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.8);
       }
       if (tw.equippedItems.includes('DRUIDS_TORC')) {
-        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, ALLY, pulse * 0.8);
+        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.8);
       }
       if (tw.equippedItems.includes('BARCA_WAR_HORN')) {
-        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.85);
+        this.drawAuraRing(cx, cy, 3.5 * GRID.TILE, ALLY, pulse * 0.85);
       }
       if (tw.equippedItems.includes('LICH_GENERALS_SEAL')) {
-        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.85);
+        this.drawAuraRing(cx, cy, 3.5 * GRID.TILE, ALLY, pulse * 0.85);
       }
       if (tw.equippedItems.includes('AQUILIFER_BANNER')) {
-        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, ALLY, pulse * 0.8);
+        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.8);
       }
-      // Enemy-debuff item: Cursed Torc — every enemy within 2 tiles takes +18%.
+      if (tw.equippedItems.includes('OPTIO_WHISTLE')) {
+        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.8);
+      }
+      if (tw.equippedItems.includes('INFERNO_STANDARD')) {
+        this.drawAuraRing(cx, cy, 3.5 * GRID.TILE, ALLY, pulse * 0.9);
+      }
+      // Enemy-debuff items: dashed crimson rings mark enemy vulnerability zones.
       if (tw.equippedItems.includes('CURSED_TORC')) {
-        this.drawAuraRing(cx, cy, 2 * GRID.TILE, ENEMY, pulse * 0.85, true);
+        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ENEMY, pulse * 0.85, true);
+      }
+      if (tw.equippedItems.includes('NECROMANCERS_LANTERN')) {
+        this.drawAuraRing(cx, cy, 3.5 * GRID.TILE, ENEMY, pulse * 0.9, true);
       }
     }
   }

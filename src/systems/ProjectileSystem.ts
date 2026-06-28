@@ -159,7 +159,7 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   // hellfire/barrel, DIVINE = staff/orb), and heroes plug into that
   // same convention rather than carrying off-theme sprites.
   //
-  // HERO_MARIUS (PHYS_MELEE) and HERO_CAESAR (DIVINE melee) stay OUT
+  // HERO_MARIUS (PHYS_MELEE), HERO_SCIPIO (PHYS_MELEE), and HERO_CAESAR (DIVINE melee) stay OUT
   // of this map — they're in MELEE_TYPES (CombatResolver:113) and use
   // the slash-arc VFX. Caesar's slash is tinted gold at the call site
   // in main.ts to read as a DIVINE swing.
@@ -174,23 +174,13 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   //                              pila are PHYS_RANGED throws).
   //   Agricola (PHYS_RANGED)  → PROJ_ARROW — arching arrow, matches
   //                              Sagittarius / Venator / Aquila Venator.
-  //   Scipio   (PHYS_RANGED)  → PROJ_JAVELIN — heavy thrown spear, the
-  //                              PHYS_RANGED convention for heavy
-  //                              throwers (Decurion, Numidian Cavalry,
-  //                              Hannibal's Nightmare). 2026-05-20: was
-  //                              PROJ_BALLISTA (that's the SIEGE sprite;
-  //                              Scipio is PHYS_RANGED, not SIEGE).
-  //                              Boss-hunter identity comes from his
-  //                              ability + bonus damage, not the sprite.
   //   Sulla    (ELEMENTAL_FIRE)→ PROJ_HELLFIRE_BOLT — fire bolt with
   //                              splash, matches GOD_OF_WAR's hellfire.
   [TowerType.HERO_AGRIPPA]:   { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
   [TowerType.HERO_AGRICOLA]:  { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0.8, embed: true  },
-  [TowerType.HERO_SCIPIO]:    { key: 'PROJ_JAVELIN',       arc: false, speed: 820, splash: 0.5, embed: true  },
   [TowerType.HERO_SULLA]:     { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false },
   [TowerType.CHAMPION_AGRIPPA]:  { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
   [TowerType.CHAMPION_AGRICOLA]: { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0.8, embed: true  },
-  [TowerType.CHAMPION_SCIPIO]:   { key: 'PROJ_JAVELIN',       arc: false, speed: 820, splash: 0.5, embed: true  },
   [TowerType.CHAMPION_SULLA]:    { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false }
   // ──────────────────────────────────────────────────────────────────
   // Pure-aura support towers — intentionally NOT in this map because
@@ -207,6 +197,7 @@ export function getTowerProjectileProfile(type: TowerType) {
 export function spawnProjectile(state: GameStateShape, tower: Tower, target: Enemy, damage: number) {
   const def = PROJ_FOR_TOWER[tower.type];
   if (!def) return; // melee — no projectile (handled separately as slash VFX)
+  const siegeSplash = tower.damageType === DamageType.SIEGE ? 0.8 : 0;
 
   // ITEM-DRIVEN PROJECTILE SWAPS (2026-05): the projectile sprite reads
   // the tower's equipped legendaries / themed items so the visual matches
@@ -254,10 +245,12 @@ export function spawnProjectile(state: GameStateShape, tower: Tower, target: Ene
     travelTime: 0,
     rotation: Math.atan2(dy, dx),
     alive: true,
-    // 2026-06-27 — AMBER (BLAST) tile grants a minimum splash radius so any
-    // tower standing on it gains an AoE blast on top of its own kit.
+    // 2026-06-27 — Every SIEGE attacker now carries at least a small blast,
+    // while existing artillery keeps its larger tuned radius. AMBER (BLAST)
+    // tile and Concussive Warhead remain minimum-radius upgrades on top.
     splash: Math.max(
       def.splash,
+      siegeSplash,
       tower.equippedItems.includes('CONCUSSIVE_WARHEAD') ? 1.6 : 0,   // 2026 v2 legendary splash
       (() => { const k = towerAuraTileKind(tower); return (k && AURA_TILE_EFFECTS[k].splashBonus) || 0; })()
     ),

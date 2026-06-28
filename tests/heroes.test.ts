@@ -29,6 +29,7 @@ import {
 } from '../src/systems/HeroSystem';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { pickTarget, tickCombat } from '../src/systems/CombatResolver';
+import { getTowerProjectileProfile } from '../src/systems/ProjectileSystem';
 import { createGameState, GameStateShape } from '../src/GameState';
 import { DamageType, Enemy, EnemyFaction, EnemyType, GamePhase, StatusEffectKind, TowerType } from '../src/types';
 import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
@@ -730,11 +731,9 @@ describe('herodefs.json shape (single source of tuning)', () => {
     }
   });
 
-  // 2026-05-19 — Damage-type distribution test. The roster ships with
-  // 5-type coverage: 1 melee / 2 ranged / 1 siege / 1 divine / 1 fire.
-  // Pins the spread so a future hero-aura tuning pass can't quietly
-  // reintroduce the original 3-ranged / 2-divine / 0-siege / 0-fire
-  // imbalance.
+  // 2026-05-19 — Passive coverage test. The roster's passive hooks still
+  // cover melee, siege, fire conversion, and boss hunting even as individual
+  // hero basic-attack classes get retuned.
   //
   // 2026-05-20 v2 — Sulla's passive was reworked from a +35% damage
   // aura on FIRE towers (which used the legacy `filter:
@@ -763,6 +762,20 @@ describe('herodefs.json shape (single source of tuning)', () => {
     // VS_BOSS is the Scipio filter; Caesar carries no filter at all;
     // Agricola carries no filter at all (global anti-air effect only).
     expect(filters).toContain('VS_BOSS');
+  });
+
+  it('Scipio is a melee boss-hunter hero in starter and Champion form', () => {
+    const starter = createTower(TowerType.HERO_SCIPIO, 5, 5, 5, 1);
+    const champion = createTower(TowerType.CHAMPION_SCIPIO, 5, 6, 5, 1);
+
+    expect(starter.damageType).toBe(DamageType.PHYS_MELEE);
+    expect(champion.damageType).toBe(DamageType.PHYS_MELEE);
+    expect(starter.range).toBeLessThanOrEqual(1.6);
+    expect(champion.range).toBeLessThanOrEqual(1.6);
+    expect(starter.baseDps).toBeCloseTo(147.7 * 1.10, 4);
+    expect(champion.baseDps).toBeCloseTo(162.5 * 1.10, 4);
+    expect(getTowerProjectileProfile(TowerType.HERO_SCIPIO)).toBeNull();
+    expect(getTowerProjectileProfile(TowerType.CHAMPION_SCIPIO)).toBeNull();
   });
 });
 

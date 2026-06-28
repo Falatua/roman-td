@@ -219,7 +219,12 @@ const MELEE_TYPES = new Set<TowerType>([
   // his hits land reliably and the swing rhythm reads from any
   // distance.
   TowerType.HERO_CAESAR,
+  // 2026-06-27 — Scipio is now a melee boss-hunter hero. He keeps his
+  // boss-focused passive/abilities, but his basic attacks route through
+  // the direct melee branch and slash VFX instead of the javelin projectile.
+  TowerType.HERO_SCIPIO,
   TowerType.CHAMPION_MARIUS,
+  TowerType.CHAMPION_SCIPIO,
   TowerType.CHAMPION_CAESAR
 ]);
 
@@ -642,13 +647,13 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, spd: 0.28 });
     }
     // 2026-05-18 — EVENT-EXCLUSIVE AURAS.
-    // NECROMANCERS_LANTERN (uprising): enemies in 3 tiles take +25%
+    // NECROMANCERS_LANTERN (uprising): enemies in 3.5 tiles take +45%
     // damage from all sources. Regen-block is enforced separately
     // in EnemySystem via the existing __regenBlocked flag (set below
     // when this aura is active).
     // HELLGATE_BRAND immunity to silence/tower-slow is set on the
     // tower as __silenceImmune so EnemySystem's silence loop skips it.
-    // INFERNO_STANDARD: +25% damage aura, 3 tiles. Burn-on-hit handled
+    // INFERNO_STANDARD: +40% damage aura, 3.5 tiles. Burn-on-hit handled
     // in the on-hit pass.
     if (t.equippedItems.includes('NECROMANCERS_LANTERN') && !auraOff) {
       enemyTakenAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, pct: 0.45 });

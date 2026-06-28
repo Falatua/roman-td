@@ -896,16 +896,14 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   const pctXp = tier >= 4 ? 100 : Math.max(0, Math.min(100, ((xp - curTh) / Math.max(1, nextTh - curTh)) * 100));
 
   // Stats — pull the breakdown helper (same one the regular tower
-  // menu uses). Heroes have a basic-attack scale per tier on their
-  // def: `basicAtkScalePerTier[tier]`. We bake that into the
-  // displayed "Damage / hit" by injecting it as a synthetic damage
-  // modifier so the player can see the per-tier scaling visibly.
+  // menu uses). Heroes gain a natural rank bonus from their definition,
+  // which is folded into the displayed "Damage / hit".
   const effective = towerEffectiveStats(t);
   const breakdown = towerStatBreakdown(t, state);
   const tierScales: number[] = heroDef.basicAtkScalePerTier ?? [1, 1.2, 1.5, 1.9, 2.4];
   const tierScale = tierScales[tier] ?? 1;
   if (tierScale !== 1) {
-    breakdown.damageMods.push({ source: `${tierTitles[tier]} basic-atk scale`, multiplier: tierScale });
+    breakdown.damageMods.push({ source: `${tierTitles[tier]} rank bonus`, multiplier: tierScale });
     breakdown.damageFinal *= tierScale;
   }
 

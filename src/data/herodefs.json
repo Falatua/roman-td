@@ -11,7 +11,7 @@
       "radiusTiles": 5,
       "filter": "PHYS_MELEE",
       "dmgBonusPercent": 30,
-      "description": "Every MELEE tower within 5 tiles gains +30% damage at TIRO, scaling up to +60% by DIVUS."
+      "description": "Every MELEE tower within 5 tiles gains +30% damage."
     },
     "abilities": [
       {
@@ -67,7 +67,7 @@
       "filter": "SIEGE",
       "dmgBonusPercent": 40,
       "rangeBonusTiles": 1.0,
-      "description": "Every SIEGE tower within 6 tiles gains +40% damage and +1.0 range at TIRO, scaling up to +80% damage and +2.0 range by DIVUS."
+      "description": "Every SIEGE tower within 6 tiles gains +40% damage and +1.0 range."
     },
     "abilities": [
       {
@@ -122,7 +122,7 @@
     "passive": {
       "kind": "GLOBAL",
       "enableMeleeVsFlyers": true,
-      "description": "Every tower within 10 tiles of Agricola — including MELEE — can target and attack flyers. All towers also gain +15% damage vs flyers at TIRO, scaling up to +30% by DIVUS."
+      "description": "Every tower within 10 tiles of Agricola — including MELEE — can target and attack flyers. All towers also gain +15% damage vs flyers."
     },
     "abilities": [
       {
@@ -178,7 +178,7 @@
       "kind": "GLOBAL_AURA",
       "filter": "VS_BOSS",
       "dmgBonusPercent": 33,
-      "description": "Every tower on the map deals +33% damage against Boss-type enemies at TIRO, scaling up to +66% by DIVUS. No radius limit."
+      "description": "Every tower on the map deals +33% damage against Boss-type enemies. No radius limit."
     },
     "abilities": [
       {
@@ -188,7 +188,7 @@
         "cooldownSec": 6,
         "durationSec": 0,
         "params": { "target": "HIGHEST_HP_BOSS", "dmgMultiplier": 5.0, "ignoreResistances": true },
-        "description": "Pierces the highest-HP boss for 500% of Scipio's basic-attack damage as TRUE damage — ignores every faction resistance, every shield, every boss damping. At Scipio T5 (basic-atk scale 4.5×) this single shot lands as ~22.5× his base hit damage. The reliable boss-burst Scipio brings to every fight.",
+        "description": "Pierces the highest-HP boss for 500% of Scipio's basic-attack damage as TRUE damage — ignores every faction resistance, every shield, every boss damping. The reliable boss-burst Scipio brings to every fight.",
         "vfxColor": "#ff8800",
         "vfxStyle": "RED_LANCE_ARC"
       },
@@ -199,7 +199,7 @@
         "cooldownSec": 15,
         "durationSec": 6,
         "params": { "targets": "ALL_BOSSES", "dmgTakenIncreasePercent": 30 },
-        "description": "Brands every boss on the field for 6s. Marked bosses take +30% damage from ALL sources (1.30×), stacking multiplicatively with Scipio's rank-scaling boss passive (+25% at TIRO, +50% at DIVUS) and any other MARK debuffs.",
+        "description": "Brands every boss on the field for 6s. Marked bosses take +30% damage from ALL sources (1.30×), stacking multiplicatively with Scipio's boss-hunting passive and any other MARK debuffs.",
         "vfxColor": "#ff4400",
         "vfxStyle": "RED_BANNER_BRAND"
       }
@@ -234,7 +234,7 @@
       "kind": "GLOBAL_AURA",
       "dmgBonusPercent": 13,
       "speedMultPercent": 13,
-      "description": "Every tower on the map gains +13% damage and +13% attack speed at TIRO, scaling up to +26% damage and +26% attack speed by DIVUS. Stacks with all other aura towers."
+      "description": "Every tower on the map gains +13% damage and +13% attack speed. Stacks with all other aura towers."
     },
     "abilities": [
       {
@@ -291,7 +291,7 @@
       "radiusTiles": 4,
       "convertTo": "ELEMENTAL_FIRE",
       "dmgBonusPercent": 22,
-      "description": "Every tower within 4 tiles converts to FIRE damage and gains +22% damage at TIRO, scaling up to +44% by DIVUS."
+      "description": "Every tower within 4 tiles converts to FIRE damage and gains +22% damage."
     },
     "abilities": [
       {

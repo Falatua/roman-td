@@ -2,9 +2,34 @@
 import { describe, it, expect } from 'vitest';
 import { createTower, towerEffectiveStats, towerPerAttackDamageBase, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
-import { TowerType, DamageType } from '../src/types';
+import { spawnProjectile } from '../src/systems/ProjectileSystem';
+import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType } from '../src/types';
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS } from '../src/constants';
 import { createGameState } from '../src/GameState';
+
+function testEnemy(id: string, x = 160, y = 160): Enemy {
+  return {
+    id,
+    type: EnemyType.FERAL_DOG,
+    faction: EnemyFaction.DOGS,
+    hp: 1000,
+    maxHp: 1000,
+    baseSpeed: 1,
+    currentSpeed: 1,
+    isFlyer: false,
+    x,
+    y,
+    pathIndex: 0,
+    pathProgress: 0,
+    statusEffects: [],
+    hasFeared: false,
+    livesCost: 1,
+    isBoss: false,
+    reward: 0,
+    archetype: 'SWARM',
+    hpFlashTimer: 0
+  };
+}
 
 describe('Tower creation', () => {
   it('creates a tower with correct base fields', () => {
@@ -185,6 +210,20 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
   it('AMBER tile declares a splash blast radius', () => {
     expect(AURA_TILE_EFFECTS.AMBER?.splashBonus).toBeGreaterThan(0);
     expect(AURA_TILE_EFFECTS.AMBER?.label).toBe('BLAST TILE');
+  });
+
+  it('all siege projectiles get at least a baseline splash radius', () => {
+    const state = createGameState();
+    const target = testEnemy('target');
+    state.enemies.set(target.id, target);
+
+    const scorpio = createTower(TowerType.SCORPIO, 1, 4, 4, 1);
+    spawnProjectile(state, scorpio, target, 100);
+    expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(0.8, 5);
+
+    const onager = createTower(TowerType.COLOSSUS_ONAGER, 5, 4, 4, 1);
+    spawnProjectile(state, onager, target, 100);
+    expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(2.4, 5);
   });
 });
 
