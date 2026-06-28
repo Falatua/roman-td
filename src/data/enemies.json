@@ -876,7 +876,7 @@
     "livesCost": 1,
     "renderScale": 0.92,
     "dodgeChance": 0.15,
-    "lowHpSpeedBoost": true,
+    "lowHpSpeedBoost": 1.5,
     "stealthInterval": { "period": 4.5, "duration": 1.0 }
   },
   "STONE_JUGGERNAUT": {
