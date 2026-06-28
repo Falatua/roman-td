@@ -236,8 +236,8 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     const ivory = AURA_TILES.find(t => t.kind === 'IVORY')!;
     expect(AURA_TILE_EFFECTS.IVORY?.divineDamage).toBe(true);
     expect(AURA_TILE_EFFECTS.IVORY?.label).toBe('DIVINE TILE');
-    // The tile sits on buildable terrain (col 28 is clear of waypoints).
-    expect(ivory.col).toBe(28);
+    // The tile sits on open buildable terrain (clear of every waypoint).
+    expect(ivory.col).toBe(32);
   });
 
   it('AMBER tile declares a splash blast radius', () => {
