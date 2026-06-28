@@ -363,6 +363,10 @@
       {
         "type": "ANUBIS_PRIEST_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "DUNE_STALKER",
+        "count": 6
       }
     ]
   },
@@ -404,6 +408,10 @@
       {
         "type": "SIEGE_CAPTAIN_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "SIEGE_WAGON",
+        "count": 2
       }
     ]
   },
@@ -528,6 +536,10 @@
       {
         "type": "ANUBIS_PRIEST_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "SIEGE_WAGON",
+        "count": 2
       }
     ]
   },
@@ -571,6 +583,10 @@
       {
         "type": "CHIMERA",
         "count": 4
+      },
+      {
+        "type": "STONE_JUGGERNAUT",
+        "count": 3
       }
     ]
   },
@@ -597,6 +613,10 @@
       {
         "type": "DEMON_HELLHOUND",
         "count": 46
+      },
+      {
+        "type": "STONE_JUGGERNAUT",
+        "count": 3
       }
     ]
   },

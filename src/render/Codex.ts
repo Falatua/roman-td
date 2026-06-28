@@ -1617,6 +1617,12 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.rebirthAtPct) {
     traits.push(`PHOENIX REBIRTH — on death, bursts into 3 minions of the same type at ${Math.round(def.rebirthAtPct*100)}% HP each (kill still counts; minions can't chain-phoenix)`);
   }
+  if (def.deathBurst) {
+    const b = def.deathBurst;
+    const burstDef: any = (enemies as any)[b.type];
+    const burstName = burstDef?.name ?? String(b.type).replace(/_/g, ' ');
+    traits.push(`SIEGE CARRIER — when destroyed, cracks open and pours out ${b.count} × ${burstName} at ${Math.round((b.hpFrac ?? 0.5) * 100)}% HP, scattering from the death tile (the burst can't chain)`);
+  }
   if (def.reanimateAs) {
     const reanimDef: any = (enemies as any)[def.reanimateAs];
     const reanimName = reanimDef?.name ?? String(def.reanimateAs).replace(/_/g, ' ');

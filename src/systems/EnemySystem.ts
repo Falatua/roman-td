@@ -77,7 +77,9 @@ const ARCHETYPE: Record<string, Enemy['archetype']> = {
   STANDARD_BEARER_COMMANDER: 'ELITE',
   PATHFINDER_COMMANDER: 'RUNNER',
   ANUBIS_PRIEST_COMMANDER: 'ELITE',
-  SIEGE_CAPTAIN_COMMANDER: 'ARMORED'
+  SIEGE_CAPTAIN_COMMANDER: 'ARMORED',
+  // 2026-06-26 variety roster
+  SIEGE_WAGON: 'BULKY', DUNE_STALKER: 'RUNNER', STONE_JUGGERNAUT: 'ARMORED'
 };
 
 // 2026 v2 spec — TIMED tower attack-speed debuff (Dive Bomb / Ground Slam /
@@ -1098,6 +1100,31 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
           if (rfq.length > 32) rfq.shift();
         }
         state.hint = '💀 THE WARLORD\'S CURSE — 20 undead rise from the corpse!';
+      }
+      // ─── DEATH BURST (2026-06-26): data-driven "siege carrier" payload.
+      //   An enemy with `deathBurst { type, count, hpFrac }` detonates on
+      //   death and spits out `count` minions clustered at the death tile,
+      //   scattering outward so they read as "bursting out." Headline case:
+      //   the slow, tanky Siege Wagon that cracks open into 30 fast Dune
+      //   Stalkers. Children carry __reanimated so their own death effects
+      //   (reanimate / burst) can't chain and stall the wave.
+      const deathBurst = (enemiesData as any)[e.type]?.deathBurst;
+      if (deathBurst && deathBurst.type && (deathBurst.count | 0) > 0 && !e.__reanimated) {
+        const bCount = Math.min(60, deathBurst.count | 0);   // hard perf cap
+        const bHpFrac = typeof deathBurst.hpFrac === 'number' ? deathBurst.hpFrac : 0.5;
+        for (let i = 0; i < bCount; i++) {
+          const child = spawnEnemy(state, deathBurst.type as EnemyType, bHpFrac, /*derived=*/true);
+          const ang = (i / bCount) * Math.PI * 2 + Math.random() * 0.5;
+          const dist = i === 0 ? 0 : (6 + Math.random() * 14);
+          child.x = e.x + Math.cos(ang) * dist;
+          child.y = e.y + Math.sin(ang) * dist;
+          child.prevX = child.x;
+          child.prevY = child.y;
+          child.pathIndex = e.pathIndex;
+          child.pathProgress = e.pathProgress;
+          child.__reanimated = true;
+        }
+        state.hint = `⚔ THE SIEGE WAGON SHATTERS — ${bCount} skirmishers pour out!`;
       }
       onDeath(e);
       state.enemies.delete(e.id);

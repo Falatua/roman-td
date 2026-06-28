@@ -249,6 +249,10 @@ export enum EnemyType {
   // 2026 v2 spec Ch14 — Egyptian roster expansion (W18-23)
   PLAGUE_BEARER = 'PLAGUE_BEARER',
   MEDJAY_SOLDIER = 'MEDJAY_SOLDIER',
+  // ─── VARIETY ROSTER (2026-06-26) — speed/tank/stealth/burst dynamics ──
+  SIEGE_WAGON = 'SIEGE_WAGON',            // slow, tanky transport; bursts 30 Dune Stalkers on death
+  DUNE_STALKER = 'DUNE_STALKER',          // fast, low-HP skirmisher with periodic stealth
+  STONE_JUGGERNAUT = 'STONE_JUGGERNAUT',  // very slow super-tank; shrugs slows + stuns
   // W21-W30 campaign commanders — rare non-boss support enemies that
   // change the wave until killed.
   STANDARD_BEARER_COMMANDER = 'STANDARD_BEARER_COMMANDER',

@@ -851,5 +851,46 @@
     "shieldBlockChance": 0.25,
     "requiresMeleeBreak": true,
     "renderScale": 1.25
+  },
+  "SIEGE_WAGON": {
+    "name": "Siege Wagon",
+    "faction": "EGYPTIANS",
+    "baseHp": 8200,
+    "speed": 0.6,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 3,
+    "isElite": true,
+    "renderScale": 1.45,
+    "shieldBlockChance": 0.25,
+    "immuneStun": true,
+    "deathBurst": { "type": "DUNE_STALKER", "count": 30, "hpFrac": 0.4 }
+  },
+  "DUNE_STALKER": {
+    "name": "Dune Stalker",
+    "faction": "EGYPTIANS",
+    "baseHp": 280,
+    "speed": 1.9,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 1,
+    "renderScale": 0.92,
+    "dodgeChance": 0.15,
+    "lowHpSpeedBoost": true,
+    "stealthInterval": { "period": 4.5, "duration": 1.0 }
+  },
+  "STONE_JUGGERNAUT": {
+    "name": "Stone Juggernaut",
+    "faction": "ROMAN_MYTH",
+    "baseHp": 9000,
+    "speed": 0.5,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 3,
+    "isElite": true,
+    "renderScale": 1.5,
+    "shieldBlockChance": 0.35,
+    "immuneSlow": true,
+    "immuneStun": true
   }
 }

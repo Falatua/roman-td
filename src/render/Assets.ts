@@ -104,6 +104,10 @@ const MANIFEST: Record<string, string> = {
   // 2026 v2 spec Ch14 — Egyptian roster expansion.
   PLAGUE_BEARER: 'e3_plague_bearer.png',
   MEDJAY_SOLDIER: 'e3_medjay_soldier.png',
+  // 2026-06-26 variety roster — siege carrier + fast stealth skirmisher + super-tank.
+  SIEGE_WAGON: 'e3_siege_wagon.png',
+  DUNE_STALKER: 'e3_dune_stalker.png',
+  STONE_JUGGERNAUT: 'e3_stone_juggernaut.png',
   EGYPTIAN_ARCHER: 'endless/e_endless_egyptian_archer.png',
   EGYPTIAN_SPEARMAN: 'endless/e_endless_egyptian_spearman.png',
   EGYPTIAN_CHARIOT: 'endless/e_endless_egyptian_chariot.png',

@@ -298,7 +298,14 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.STANDARD_BEARER_COMMANDER]: { melee: 0.55, ranged: 0.5, slow: 0.35, divine: 1.25 },
   [EnemyType.PATHFINDER_COMMANDER]:      { ranged: 0.65, slow: 0.25, bleed: 0.65 },
   [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { ranged: 0.5, slow: 0.3, poison: 0, divine: 1.30 },
-  [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0.7, divine: 1.20 }
+  [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0.7, divine: 1.20 },
+  // 2026-06-26 variety roster.
+  // Siege Wagon: heavily plated transport — shrugs melee/ranged, weak to siege.
+  [EnemyType.SIEGE_WAGON]:      { melee: 0.65, ranged: 0.6, slow: 0.5, siege: 1.30 },
+  // Dune Stalker: lightly-wrapped fast skirmisher — little armor, slippery to slows.
+  [EnemyType.DUNE_STALKER]:     { slow: 0.6, poison: 0.85 },
+  // Stone Juggernaut: living granite — resists physical + DoT, cracked by siege/divine.
+  [EnemyType.STONE_JUGGERNAUT]: { melee: 0.6, ranged: 0.6, bleed: 0.3, poison: 0.3, siege: 1.25, divine: 1.20 }
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
