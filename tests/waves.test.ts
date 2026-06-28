@@ -6,6 +6,7 @@ import { createGameState } from '../src/GameState';
 import { EnemyType, GamePhase, SurpriseEventKind } from '../src/types';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath, buildGroundPathB, buildFlyerPath } from '../src/systems/PathFinder';
+import { enemyResistanceProfile } from '../src/systems/EnemyResistances';
 import wavesData from '../src/data/waves.json';
 
 function bootstrapState() {
@@ -64,6 +65,34 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
     expect(effectiveWaveHpMult(10, 1, true)).toBeGreaterThan(effectiveWaveHpMult(5, 1, true));
     expect(effectiveWaveHpMult(15, 1, true)).toBeGreaterThan(effectiveWaveHpMult(10, 1, true));
     expect(effectiveWaveHpMult(20, 1, true)).toBeGreaterThan(effectiveWaveHpMult(15, 1, true));
+  });
+});
+
+describe('Late-wave DoT profile coverage', () => {
+  it('gives every W16-W30 enemy at least one explicit burn, poison, or bleed profile', () => {
+    for (const wave of (wavesData as any[]).filter(w => w.wave >= 16 && w.wave <= 30)) {
+      const types = [...new Set((wave.spawns ?? []).map((s: any) => s.type))] as EnemyType[];
+      expect(types.length).toBeGreaterThan(0);
+      for (const type of types) {
+        const profile = enemyResistanceProfile(type);
+        expect(
+          typeof profile.burn === 'number' ||
+          typeof profile.poison === 'number' ||
+          typeof profile.bleed === 'number'
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('keeps late DoT identities varied instead of one universal answer', () => {
+    expect(enemyResistanceProfile(EnemyType.DEMON_HELLHOUND).burn).toBe(0);
+    expect(enemyResistanceProfile(EnemyType.DEMON_HELLHOUND).poison).toBeGreaterThan(1);
+    expect(enemyResistanceProfile(EnemyType.MUMMY_WARRIOR).burn).toBeGreaterThan(1);
+    expect(enemyResistanceProfile(EnemyType.MUMMY_WARRIOR).poison).toBe(0);
+    expect(enemyResistanceProfile(EnemyType.STONE_JUGGERNAUT).poison).toBeLessThan(0.5);
+    expect(enemyResistanceProfile(EnemyType.DUNE_STALKER).bleed).toBeGreaterThan(1);
+    expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).burn).toBe(0);
+    expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).bleed).toBeGreaterThan(1);
   });
 });
 

@@ -45,7 +45,7 @@
   "SAGITTARIUS": {
     "name": "Sagittarius",
     "damageType": "PHYS_RANGED",
-    "baseDps": 93.1,
+    "baseDps": 111.7,
     "attackSpeed": 1.3,
     "range": 5.5,
     "kind": "BASE",
@@ -53,14 +53,14 @@
     "spriteSheet": 1,
     "spriteCell": 3,
     "antiAirOnly": false,
-    "ability": "Hits BOTH ground and flyers, keeping its large anti-flyer bonus. Heavy damage (103.4 base DPS, +45% on flyers via signature crit), long range. The premier flyer-killer of the early game.",
+    "ability": "Hits BOTH ground and flyers, keeping its large anti-flyer bonus. Heavy damage (111.7 base DPS, +45% on flyers via signature crit), long range. The premier flyer-killer of the early game.",
     "critChance": 0.22,
     "critMult": 2.5
   },
   "SCORPIO": {
     "name": "Scorpio",
     "damageType": "SIEGE",
-    "baseDps": 22.5,
+    "baseDps": 27.0,
     "attackSpeed": 0.35,
     "range": 6.5,
     "kind": "BASE",
@@ -275,7 +275,7 @@
   "VENATOR": {
     "name": "Venator",
     "damageType": "PHYS_RANGED",
-    "baseDps": 16.6,
+    "baseDps": 19.9,
     "attackSpeed": 1.85,
     "range": 4.9,
     "kind": "BASE",
@@ -472,7 +472,7 @@
   "AQUILA_VENATOR": {
     "name": "Aquila Venator",
     "damageType": "PHYS_RANGED",
-    "baseDps": 160.7,
+    "baseDps": 192.8,
     "attackSpeed": 1.8,
     "range": 6,
     "kind": "BASE",
@@ -500,7 +500,7 @@
   "SCORPION_BOLT": {
     "name": "Scorpion Bolt",
     "damageType": "SIEGE",
-    "baseDps": 83.8,
+    "baseDps": 100.6,
     "attackSpeed": 0.357,
     "range": 6.5,
     "kind": "COMBO",
@@ -570,7 +570,7 @@
   "NUMIDIAN_CAVALRY": {
     "name": "Eques",
     "damageType": "PHYS_RANGED",
-    "baseDps": 171.4,
+    "baseDps": 205.7,
     "attackSpeed": 2.1,
     "range": 4.5,
     "kind": "COMBO",
@@ -794,7 +794,7 @@
   "NEMESIS_ENGINE": {
     "name": "Nemesis Engine",
     "damageType": "SIEGE",
-    "baseDps": 223.6,
+    "baseDps": 268.3,
     "attackSpeed": 0.12,
     "range": 50,
     "kind": "COMBO",
@@ -1233,12 +1233,12 @@
   },
   "PRAETORIAN_EXECUTIONER": {"name": "Praetorian Executioner", "damageType": "PHYS_MELEE", "baseDps": 135.0, "attackSpeed": 1.5, "range": 1.8, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.15, "critMult": 2.4, "ability": "Heavy maul. EXECUTIONER'S RHYTHM: every 2nd strike STUNS 0.8s — and he deals +40% damage to any STUNNED, SLOWED, or FROZEN target, caving in everything his own lockdown leaves helpless."},
   "SACRED_BAND": {"name": "Sacred Band", "damageType": "DIVINE", "baseDps": 165.0, "attackSpeed": 1.3, "range": 1.6, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.18, "critMult": 2.6, "ability": "Holy blade — DIVINE melee that bypasses most resistances. AEGIS NOVA: every 4th strike erupts a 2-tile divine shockwave for 2.2× damage that STUNS everything caught (0.4s). Elite anti-armor + area lockdown."},
-  "BEASTLORD_CHAMPION": {"name": "Beastlord Champion", "damageType": "PHYS_MELEE", "baseDps": 120.0, "attackSpeed": 1.7, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.2, "critMult": 2.2, "ability": "Eagle-spear hunter. Can strike FLYERS even as melee, and deals +70% damage to them. A melee anti-air specialist for chokepoints under air pressure."},
+  "BEASTLORD_CHAMPION": {"name": "Beastlord Champion", "damageType": "PHYS_MELEE", "baseDps": 144.0, "attackSpeed": 1.7, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.2, "critMult": 2.2, "ability": "Eagle-spear hunter. Can strike FLYERS even as melee, and deals +70% damage to them. A melee anti-air specialist for chokepoints under air pressure."},
   "MIRMILLO_REAVER": {"name": "Mirmillo Reaver", "damageType": "PHYS_MELEE", "baseDps": 125.0, "attackSpeed": 1.9, "range": 1.8, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.22, "critMult": 2.1, "ability": "Curved sica. Every hit applies stacking BLEED (DoT). Fast swings + bleed shred make him a sustained-damage grinder vs tanky ground."},
   "TRIBUNE_AVENGER": {"name": "Tribune Avenger", "damageType": "DIVINE", "baseDps": 145.0, "attackSpeed": 1.2, "range": 1.8, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.15, "critMult": 2.3, "ability": "Consecrated scepter — DIVINE melee + POISON DoT on every strike. Magic damage that also rots resistant ground over time."},
   "CATAPHRACT_LANCER": {"name": "Cataphract Lancer", "damageType": "PHYS_MELEE", "baseDps": 150.0, "attackSpeed": 1.1, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.14, "critMult": 2.5, "ability": "POLEARM REACH (2.0). LANCE CHARGE: every 3rd couched thrust STUNS 1.0s AND knocks the target back ~0.5 tiles. Slow, devastating swings; a wall-anchor that pins AND shoves bosses back down the lane."},
   "STORM_BALLISTA": {"name": "Storm Ballista", "damageType": "SIEGE", "baseDps": 160.0, "attackSpeed": 0.6, "range": 6.0, "kind": "COMBO", "melee": false, "tierBand": 4, "critChance": 0.12, "critMult": 3.0, "ability": "Long-range SIEGE bolt-thrower with 1.4-tile splash. SHOCK BURST: every 3rd bolt discharges on impact and STUNS every enemy in the splash (0.6s) — AoE lockdown. Siege bypasses ranged resists."},
-  "SKYREAPER_BATTERY": {"name": "Skyreaper Battery", "damageType": "PHYS_RANGED", "baseDps": 135.0, "attackSpeed": 1.5, "range": 5.5, "kind": "COMBO", "melee": false, "tierBand": 4, "critChance": 0.2, "critMult": 2.5, "ability": "Eagle-eyed volley. +110% damage vs FLYERS and prioritizes them — the premier dedicated anti-air combo for late flyer swarms."},
+  "SKYREAPER_BATTERY": {"name": "Skyreaper Battery", "damageType": "PHYS_RANGED", "baseDps": 162.0, "attackSpeed": 1.5, "range": 5.5, "kind": "COMBO", "melee": false, "tierBand": 4, "critChance": 0.2, "critMult": 2.5, "ability": "Eagle-eyed volley. +110% damage vs FLYERS and prioritizes them — the premier dedicated anti-air combo for late flyer swarms."},
   "PLAGUE_LOBBER": {"name": "Plague Lobber", "damageType": "ELEMENTAL_FIRE", "baseDps": 105.0, "attackSpeed": 0.8, "range": 4.0, "kind": "COMBO", "melee": false, "tierBand": 3, "critChance": 0.1, "critMult": 2.0, "burnsGround": true, "ability": "Arcs a toxin-and-fire pot with 1.2-tile splash. Stamps a BURNING patch on impact AND applies POISON to the cluster. Stacked DoT zone control."},
   "AUGURS_WRATH": {"name": "Augur's Wrath", "damageType": "DIVINE", "baseDps": 175.0, "attackSpeed": 0.7, "range": 5.0, "kind": "COMBO", "melee": false, "tierBand": 5, "critChance": 0.2, "critMult": 2.6, "ability": "Hurls a radiant omen-fireball — DIVINE damage with 1.0-tile splash that sets the struck cluster BURNING. Apex magic artillery."}
 }

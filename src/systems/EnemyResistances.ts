@@ -261,51 +261,57 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // for the steepening damage-reduction curve. Per-enemy entries left
   // open so future tuning can specialize without re-wiring the type
   // system.
-  [EnemyType.EGYPTIAN_ARCHER]:   { ranged: 0.85, slow: 0.4 },
-  [EnemyType.EGYPTIAN_SPEARMAN]: { melee: 0.8, ranged: 0.6 },
-  [EnemyType.EGYPTIAN_CHARIOT]:  { ranged: 0.5, slow: 0.35, bleed: 0.6 },
-  [EnemyType.PHARAOH_GUARD]:     { melee: 0.55, ranged: 0.4, burn: 0.55, divine: 0.7 },
-  [EnemyType.ANUBIS_PRIEST]:     { ranged: 0.5, slow: 0.3, poison: 0 },
-  [EnemyType.SOBEK_WARRIOR]:     { melee: 0.45, ranged: 0.5, slow: 0.3, burn: 0.5 },
+  // 2026-06-28 — W16-W30 DoT identity pass. Late enemies should not all
+  // read as "neutral to every DoT unless undead/demon." Mongols now resist
+  // bleed/poison through armor and discipline; Egyptians vary between
+  // embalmed poison immunity, sun-baked burn resistance, and exposed
+  // infantry bleed weakness; myth units split into fire-born, stone, and
+  // giant bodies so poison / bleed / burn each has good and bad targets.
+  [EnemyType.EGYPTIAN_ARCHER]:   { ranged: 0.85, slow: 0.4, burn: 0.90, poison: 0.75, bleed: 0.85 },
+  [EnemyType.EGYPTIAN_SPEARMAN]: { melee: 0.8, ranged: 0.6, burn: 0.85, poison: 0.90, bleed: 0.75 },
+  [EnemyType.EGYPTIAN_CHARIOT]:  { ranged: 0.5, slow: 0.35, burn: 0.95, poison: 0.85, bleed: 0.6 },
+  [EnemyType.PHARAOH_GUARD]:     { melee: 0.55, ranged: 0.4, burn: 0.55, poison: 0.45, bleed: 0.60, divine: 0.7 },
+  [EnemyType.ANUBIS_PRIEST]:     { ranged: 0.5, slow: 0.3, burn: 0.70, poison: 0, bleed: 0.55 },
+  [EnemyType.SOBEK_WARRIOR]:     { melee: 0.45, ranged: 0.5, slow: 0.3, burn: 0.5, poison: 0.55, bleed: 0.65 },
   [EnemyType.MUMMY_WARRIOR]:     { ranged: 0.65, slow: 0.5, poison: 0, bleed: 0.4, burn: 1.30 },
-  [EnemyType.SPHINX]:            { ranged: 0.55, slow: 0.25, divine: 1.30 },
-  [EnemyType.ANUBIS_KING]:       { melee: 0.35, ranged: 0.25, slow: 0.15, burn: 0.5, poison: 0.7, divine: 1.40 },
-  [EnemyType.MONGOL_HORSE_ARCHER]: { ranged: 0.6, slow: 0.3, bleed: 0.7 },
-  [EnemyType.MONGOL_SPEAR_RIDER]:  { ranged: 0.55, slow: 0.3, bleed: 0.7 },
-  [EnemyType.KHAN_RIDER]:        { melee: 0.55, ranged: 0.4, slow: 0.25, bleed: 0.5 },
-  [EnemyType.MONGOL_FOOTMAN]:    { ranged: 0.8, melee: 0.9 },
-  [EnemyType.MONGOL_SPEARMAN]:   { melee: 0.85, ranged: 0.6 },
-  [EnemyType.MONGOL_BERSERKER]:  { melee: 0.55, slow: 0.35, bleed: 0.4 },
-  [EnemyType.MONGOL_SCOUT]:      { ranged: 0.7, slow: 0.3, burn: 0.8 },
-  [EnemyType.MONGOL_SHAMAN]:     { ranged: 0.55, slow: 0.4, burn: 0.6 },
-  [EnemyType.MONGOL_CAPTAIN]:    { melee: 0.6, ranged: 0.5, slow: 0.3 },
+  [EnemyType.SPHINX]:            { ranged: 0.55, slow: 0.25, burn: 0.75, poison: 0.50, bleed: 0.40, divine: 1.30 },
+  [EnemyType.ANUBIS_KING]:       { melee: 0.35, ranged: 0.25, slow: 0.15, burn: 0.5, poison: 0.7, bleed: 0.55, divine: 1.40 },
+  [EnemyType.MONGOL_HORSE_ARCHER]: { ranged: 0.6, slow: 0.3, burn: 0.95, poison: 0.85, bleed: 0.7 },
+  [EnemyType.MONGOL_SPEAR_RIDER]:  { ranged: 0.55, slow: 0.3, burn: 0.90, poison: 0.80, bleed: 0.7 },
+  [EnemyType.KHAN_RIDER]:        { melee: 0.55, ranged: 0.4, slow: 0.25, burn: 0.80, poison: 0.60, bleed: 0.5 },
+  [EnemyType.MONGOL_FOOTMAN]:    { ranged: 0.8, melee: 0.9, burn: 0.90, poison: 0.85, bleed: 0.75 },
+  [EnemyType.MONGOL_SPEARMAN]:   { melee: 0.85, ranged: 0.6, burn: 0.85, poison: 0.75, bleed: 0.60 },
+  [EnemyType.MONGOL_BERSERKER]:  { melee: 0.55, slow: 0.35, burn: 1.10, poison: 0.75, bleed: 0.4 },
+  [EnemyType.MONGOL_SCOUT]:      { ranged: 0.7, slow: 0.3, burn: 0.8, poison: 0.75, bleed: 0.90 },
+  [EnemyType.MONGOL_SHAMAN]:     { ranged: 0.55, slow: 0.4, burn: 0.6, poison: 0.65, bleed: 0.80 },
+  [EnemyType.MONGOL_CAPTAIN]:    { melee: 0.6, ranged: 0.5, slow: 0.3, burn: 0.75, poison: 0.55, bleed: 0.60 },
   // 2026 v2 spec Ch6 — Vulture Imperator: ranged-resistant; fire-immune + melee-untargetable handled via enemies.json flags.
-  [EnemyType.BOSS_FLYER_VULTURE]: { ranged: 0.7, slow: 0.4 },
+  [EnemyType.BOSS_FLYER_VULTURE]: { ranged: 0.7, slow: 0.4, burn: 0.25, poison: 0.45, bleed: 0.35 },
   // 2026 v2 spec Ch10-11 — Roman-myth elites. Thematic specialty resists
   // stack on the ROMAN_MYTH faction row (tough vs steel/fire, weak to DIVINE).
-  [EnemyType.CHIMERA]:     { burn: 0.6 },
-  [EnemyType.CERBERUS]:    { burn: 0.5, poison: 0.3 },
-  [EnemyType.TYPHON]:      { slow: 0.6, ranged: 0.3 },
-  [EnemyType.GIANT_GIGAS]: { slow: 0.7, melee: 0.3 },
-  [EnemyType.CYCLOPS]:     { melee: 0.3, slow: 0.4 },
+  [EnemyType.CHIMERA]:     { burn: 0.6, poison: 0.70, bleed: 0.90 },
+  [EnemyType.CERBERUS]:    { burn: 0.5, poison: 0.3, bleed: 1.20 },
+  [EnemyType.TYPHON]:      { slow: 0.6, ranged: 0.3, burn: 0.65, poison: 0.55, bleed: 0.45 },
+  [EnemyType.GIANT_GIGAS]: { slow: 0.7, melee: 0.3, burn: 0.80, poison: 0.35, bleed: 0.30 },
+  [EnemyType.CYCLOPS]:     { melee: 0.3, slow: 0.4, burn: 0.85, poison: 0.60, bleed: 0.50 },
   // Colossus Gigas — the fused Super-Giant: very tough all-round.
-  [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0.3, slow: 0.8 },
+  [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0.3, slow: 0.8, burn: 0.65, poison: 0.25, bleed: 0.20 },
   // 2026 v2 spec Ch14 — Egyptian roster expansion.
-  [EnemyType.PLAGUE_BEARER]:  { ranged: 0.2, poison: 0.8, burn: 0.3 },
-  [EnemyType.MEDJAY_SOLDIER]: { melee: 0.5, ranged: 0.3, slow: 0.3 },
+  [EnemyType.PLAGUE_BEARER]:  { ranged: 0.2, poison: 0.8, bleed: 0.65, burn: 0.3 },
+  [EnemyType.MEDJAY_SOLDIER]: { melee: 0.5, ranged: 0.3, slow: 0.3, burn: 0.80, poison: 0.85, bleed: 0.65 },
   // W21-W30 commanders — sturdy support pieces, but deliberately not
   // boss-grade. Killing them should feel like solving the wave.
-  [EnemyType.STANDARD_BEARER_COMMANDER]: { melee: 0.55, ranged: 0.5, slow: 0.35, divine: 1.25 },
-  [EnemyType.PATHFINDER_COMMANDER]:      { ranged: 0.65, slow: 0.25, bleed: 0.65 },
-  [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { ranged: 0.5, slow: 0.3, poison: 0, divine: 1.30 },
-  [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0.7, divine: 1.20 },
+  [EnemyType.STANDARD_BEARER_COMMANDER]: { melee: 0.55, ranged: 0.5, slow: 0.35, burn: 0.75, poison: 0.65, bleed: 0.60, divine: 1.25 },
+  [EnemyType.PATHFINDER_COMMANDER]:      { ranged: 0.65, slow: 0.25, burn: 0.90, poison: 0.75, bleed: 0.65 },
+  [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { ranged: 0.5, slow: 0.3, burn: 0.70, poison: 0, bleed: 0.50, divine: 1.30 },
+  [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0.7, burn: 0, poison: 1.15, bleed: 1.10, divine: 1.20 },
   // 2026-06-26 variety roster.
   // Siege Wagon: heavily plated transport — shrugs melee/ranged, weak to siege.
-  [EnemyType.SIEGE_WAGON]:      { melee: 0.65, ranged: 0.6, slow: 0.5, siege: 1.75 },
+  [EnemyType.SIEGE_WAGON]:      { melee: 0.65, ranged: 0.6, slow: 0.5, burn: 0.55, poison: 0.35, bleed: 0.25, siege: 1.75 },
   // Dune Stalker: lightly-wrapped fast skirmisher — little armor, slippery to slows.
-  [EnemyType.DUNE_STALKER]:     { slow: 0.6, poison: 0.85 },
+  [EnemyType.DUNE_STALKER]:     { slow: 0.6, burn: 1.10, poison: 0.85, bleed: 1.10 },
   // Stone Juggernaut: living granite — resists physical + DoT, cracked by siege/divine.
-  [EnemyType.STONE_JUGGERNAUT]: { melee: 0.6, ranged: 0.6, bleed: 0.3, poison: 0.3, siege: 1.75, divine: 1.55 }
+  [EnemyType.STONE_JUGGERNAUT]: { melee: 0.6, ranged: 0.6, burn: 0.55, bleed: 0.3, poison: 0.3, siege: 1.75, divine: 1.55 }
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {

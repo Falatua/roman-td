@@ -7,6 +7,7 @@ import { spawnProjectile } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind } from '../src/types';
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS } from '../src/constants';
 import { createGameState } from '../src/GameState';
+import towersData from '../src/data/towers.json';
 
 function testEnemy(id: string, x = 160, y = 160): Enemy {
   return {
@@ -65,6 +66,24 @@ describe('Tower creation', () => {
 });
 
 describe('Tower effective stats', () => {
+  it('keeps anti-air specialist towers on the boosted DPS line', () => {
+    const expectedAntiAirDps: Partial<Record<TowerType, number>> = {
+      [TowerType.SAGITTARIUS]: 111.7,
+      [TowerType.SCORPIO]: 27.0,
+      [TowerType.VENATOR]: 19.9,
+      [TowerType.AQUILA_VENATOR]: 192.8,
+      [TowerType.SCORPION_BOLT]: 100.6,
+      [TowerType.NUMIDIAN_CAVALRY]: 205.7,
+      [TowerType.NEMESIS_ENGINE]: 268.3,
+      [TowerType.BEASTLORD_CHAMPION]: 144.0,
+      [TowerType.SKYREAPER_BATTERY]: 162.0
+    };
+    for (const [type, expectedDps] of Object.entries(expectedAntiAirDps)) {
+      expect((towersData as any)[type].baseDps).toBe(expectedDps);
+    }
+    expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(151.8);
+  });
+
   it('applies a linear tier damage ramp (T5 hits 2.5x T1)', () => {
     const t1 = createTower(TowerType.MILITES, 1, 0, 0, 0);
     const t5 = createTower(TowerType.MILITES, 5, 0, 0, 0);
