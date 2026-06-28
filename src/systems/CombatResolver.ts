@@ -982,6 +982,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // 2026-06-28 — new anti-flyer combos.
       if (t.type === TowerType.SKYREAPER_BATTERY && target.isFlyer) damage *= 2.10;   // +110% vs flyers
       if (t.type === TowerType.BEASTLORD_CHAMPION && target.isFlyer) damage *= 1.70;  // +70% vs flyers
+      // PRAETORIAN EXECUTIONER — +40% vs disabled targets (stun/slow/freeze).
+      if (t.type === TowerType.PRAETORIAN_EXECUTIONER && target.statusEffects.some(s =>
+        (s.kind === StatusEffectKind.STUN || s.kind === StatusEffectKind.SLOW || s.kind === StatusEffectKind.FREEZE) && s.remaining > 0)) damage *= 1.40;
       if (t.type === TowerType.AQUILA_VENATOR && target.isFlyer) damage *= 1.75;
       if (t.equippedItems.includes('FLYER_BANE') && target.isFlyer) damage *= 1.35;
       // 2026 v2 — anti-air item suite (any tower; range/speed halves live in TowerSystem).
@@ -1593,6 +1596,42 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             if (r?.triggerImpactRing) r.triggerImpactRing(target.x, target.y, state.tick, 32, 0xffe6a8);
           }
         }
+        // 2026-06-28 — SACRED BAND · AEGIS NOVA: every 4th strike erupts a
+        // 2.0-tile DIVINE nova for 2.2× damage that also STUNS every enemy
+        // caught (0.4s). Its signature — distinct from the divine-priest
+        // cluster (which only stuns single targets).
+        if (t.type === TowerType.SACRED_BAND) {
+          const hc = (t as any).__hitCount ?? 0;
+          if (hc > 0 && hc % 4 === 0) {
+            const novaR = 2.0 * GRID.TILE; const novaDmg = damage * 2.2;
+            for (const e of state.enemies.values()) {
+              if (e.hp <= 0) continue;
+              if (Math.hypot(e.x - target.x, e.y - target.y) > novaR) continue;
+              e.hp -= novaDmg; e.hpFlashTimer = 0.20; e.lastDamagedTick = state.tick;
+              hooks.onHit(t, e, novaDmg, resMod);
+              pushStatus(e, StatusEffectKind.STUN, 0.4, 0, t.qualityTier);
+              if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
+            }
+            const r2: any = globalRef?.__renderer;
+            if (r2?.triggerImpactRing) r2.triggerImpactRing(target.x, target.y, state.tick, 30, 0xfff0b0);
+          }
+        }
+        // 2026-06-28 — STORM BALLISTA · SHOCK BURST: every 3rd bolt, the
+        // impact discharges and STUNS every enemy inside the bolt's splash
+        // radius (1.4 tiles, 0.6s) — an AoE stun, not a single-target one.
+        if (t.type === TowerType.STORM_BALLISTA) {
+          const hc = (t as any).__hitCount ?? 0;
+          if (hc > 0 && hc % 3 === 0) {
+            const burstR = 1.4 * GRID.TILE;
+            for (const e of state.enemies.values()) {
+              if (e.hp <= 0) continue;
+              if (Math.hypot(e.x - target.x, e.y - target.y) > burstR) continue;
+              pushStatus(e, StatusEffectKind.STUN, 0.6, 0, t.qualityTier);
+            }
+            const r3: any = globalRef?.__renderer;
+            if (r3?.triggerImpactRing) r3.triggerImpactRing(target.x, target.y, state.tick, 26, 0x66bbff);
+          }
+        }
         // Cleave melee — hit every other enemy in melee range. Native
         // cleavers default to 70% on secondaries; FALX_BLADE bumps that
         // to 90% for natives or grants 60% cleave to any other melee
@@ -2127,21 +2166,22 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       break;
     // ─── 2026-06-28 new combo on-hit effects ──────────────────────────
     case TowerType.PRAETORIAN_EXECUTIONER:
-      // STUN every 2nd strike (0.8s) — heavy lockdown without perma-stun.
+      // EXECUTIONER'S RHYTHM — STUN every 2nd strike (0.8s). His damage
+      // pass also adds +40% vs already-disabled targets (see ~line 983),
+      // so he stuns, then caves the helpless in: a self-synergy no other
+      // combo has.
       if ((((t as any).__hitCount ?? 0) % 2) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.8), 0, tier);
       break;
-    case TowerType.SACRED_BAND:
-      // Divine knight — 0.5s stun on every hit (short, like the priest cluster).
-      pushStatus(target, StatusEffectKind.STUN, dur(0.5), 0, tier);
-      break;
     case TowerType.CATAPHRACT_LANCER:
-      // Couched lance — heavy 1.0s STUN every 3rd thrust.
-      if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(1.0), 0, tier);
+      // LANCE CHARGE — every 3rd couched thrust STUNS 1.0s AND knocks the
+      // target back ~0.5 tiles. Stun+knockback together is its signature.
+      if ((((t as any).__hitCount ?? 0) % 3) === 0) {
+        pushStatus(target, StatusEffectKind.STUN, dur(1.0), 0, tier);
+        pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.5, tier);
+      }
       break;
-    case TowerType.STORM_BALLISTA:
-      // Storm bolt — 0.7s STUN every 3rd shot.
-      if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.7), 0, tier);
-      break;
+    // SACRED_BAND + STORM_BALLISTA carry AOE signatures in the buff pass
+    // (~line 1576), not a per-target on-hit status, so they're not here.
     case TowerType.MIRMILLO_REAVER:
       // Sica — stacking BLEED DoT on every cut.
       pushStatus(target, StatusEffectKind.BLEED, 6, 0.012, tier);
