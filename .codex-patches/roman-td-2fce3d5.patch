@@ -1,0 +1,455 @@
+diff --git a/src/data/herodefs.json b/src/data/herodefs.json
+index 57dc4c6..e0562c1 100644
+--- a/src/data/herodefs.json
++++ b/src/data/herodefs.json
+@@ -11,7 +11,7 @@
+       "radiusTiles": 5,
+       "filter": "PHYS_MELEE",
+       "dmgBonusPercent": 30,
+-      "description": "Every MELEE tower within 5 tiles gains +30% damage at TIRO, scaling up to +60% by DIVUS."
++      "description": "Every MELEE tower within 5 tiles gains +30% damage."
+     },
+     "abilities": [
+       {
+@@ -67,7 +67,7 @@
+       "filter": "SIEGE",
+       "dmgBonusPercent": 40,
+       "rangeBonusTiles": 1.0,
+-      "description": "Every SIEGE tower within 6 tiles gains +40% damage and +1.0 range at TIRO, scaling up to +80% damage and +2.0 range by DIVUS."
++      "description": "Every SIEGE tower within 6 tiles gains +40% damage and +1.0 range."
+     },
+     "abilities": [
+       {
+@@ -122,7 +122,7 @@
+     "passive": {
+       "kind": "GLOBAL",
+       "enableMeleeVsFlyers": true,
+-      "description": "Every tower within 10 tiles of Agricola — including MELEE — can target and attack flyers. All towers also gain +15% damage vs flyers at TIRO, scaling up to +30% by DIVUS."
++      "description": "Every tower within 10 tiles of Agricola — including MELEE — can target and attack flyers. All towers also gain +15% damage vs flyers."
+     },
+     "abilities": [
+       {
+@@ -178,7 +178,7 @@
+       "kind": "GLOBAL_AURA",
+       "filter": "VS_BOSS",
+       "dmgBonusPercent": 33,
+-      "description": "Every tower on the map deals +33% damage against Boss-type enemies at TIRO, scaling up to +66% by DIVUS. No radius limit."
++      "description": "Every tower on the map deals +33% damage against Boss-type enemies. No radius limit."
+     },
+     "abilities": [
+       {
+@@ -188,7 +188,7 @@
+         "cooldownSec": 6,
+         "durationSec": 0,
+         "params": { "target": "HIGHEST_HP_BOSS", "dmgMultiplier": 5.0, "ignoreResistances": true },
+-        "description": "Pierces the highest-HP boss for 500% of Scipio's basic-attack damage as TRUE damage — ignores every faction resistance, every shield, every boss damping. At Scipio T5 (basic-atk scale 4.5×) this single shot lands as ~22.5× his base hit damage. The reliable boss-burst Scipio brings to every fight.",
++        "description": "Pierces the highest-HP boss for 500% of Scipio's basic-attack damage as TRUE damage — ignores every faction resistance, every shield, every boss damping. The reliable boss-burst Scipio brings to every fight.",
+         "vfxColor": "#ff8800",
+         "vfxStyle": "RED_LANCE_ARC"
+       },
+@@ -199,7 +199,7 @@
+         "cooldownSec": 15,
+         "durationSec": 6,
+         "params": { "targets": "ALL_BOSSES", "dmgTakenIncreasePercent": 30 },
+-        "description": "Brands every boss on the field for 6s. Marked bosses take +30% damage from ALL sources (1.30×), stacking multiplicatively with Scipio's rank-scaling boss passive (+25% at TIRO, +50% at DIVUS) and any other MARK debuffs.",
++        "description": "Brands every boss on the field for 6s. Marked bosses take +30% damage from ALL sources (1.30×), stacking multiplicatively with Scipio's boss-hunting passive and any other MARK debuffs.",
+         "vfxColor": "#ff4400",
+         "vfxStyle": "RED_BANNER_BRAND"
+       }
+@@ -234,7 +234,7 @@
+       "kind": "GLOBAL_AURA",
+       "dmgBonusPercent": 13,
+       "speedMultPercent": 13,
+-      "description": "Every tower on the map gains +13% damage and +13% attack speed at TIRO, scaling up to +26% damage and +26% attack speed by DIVUS. Stacks with all other aura towers."
++      "description": "Every tower on the map gains +13% damage and +13% attack speed. Stacks with all other aura towers."
+     },
+     "abilities": [
+       {
+@@ -291,7 +291,7 @@
+       "radiusTiles": 4,
+       "convertTo": "ELEMENTAL_FIRE",
+       "dmgBonusPercent": 22,
+-      "description": "Every tower within 4 tiles converts to FIRE damage and gains +22% damage at TIRO, scaling up to +44% by DIVUS."
++      "description": "Every tower within 4 tiles converts to FIRE damage and gains +22% damage."
+     },
+     "abilities": [
+       {
+diff --git a/src/data/towers.json b/src/data/towers.json
+index fcc3fb3..788a1ad 100644
+--- a/src/data/towers.json
++++ b/src/data/towers.json
+@@ -1030,7 +1030,7 @@
+     "melee": true,
+     "spriteSheet": 1,
+     "spriteCell": 0,
+-    "ability": "Father of the Legion. Melee veteran with a rank-scaling local damage aura for melee towers (+30% at TIRO → +60% at DIVUS), plus Marian Formation (5 nearest melee get +75% attack speed, +30% damage, shared crit, 5s) and Capite Censi (3 phantom auxilia rise adjacent to Marius and hurl pila at any enemy within 2.5 tiles for 6s, ~75% of basic damage per throw). Heroic crit profile (50% × 2.0).",
++    "ability": "Father of the Legion. Melee veteran with a local damage aura for melee towers, plus Marian Formation (5 nearest melee get +75% attack speed, +30% damage, shared crit, 5s) and Capite Censi (3 phantom auxilia rise adjacent to Marius and hurl pila at any enemy within 2.5 tiles for 6s, ~75% of basic damage per throw). Heroic crit profile (50% × 2.0).",
+     "critChance": 0.5,
+     "critMult": 2.0,
+     "isHero": true,
+@@ -1046,7 +1046,7 @@
+     "melee": false,
+     "spriteSheet": 1,
+     "spriteCell": 4,
+-    "ability": "Admiral of the Fleet. Siege hero with 10-tile cannon-range reach and a rank-scaling local aura for nearby siege towers (+30% damage/+1.0 range at TIRO → +60%/+2.0 at DIVUS). Abilities: Pilum Volley (5 javelins on 5 highest-HP enemies, pierces 2) and Naval Bombardment (3 splash shells stun). Heroic crit profile (50% × 2.0).",
++    "ability": "Admiral of the Fleet. Siege hero with 10-tile cannon-range reach and a local damage-and-range aura for nearby siege towers. Abilities: Pilum Volley (5 javelins on 5 highest-HP enemies, pierces 2) and Naval Bombardment (3 splash shells stun). Heroic crit profile (50% × 2.0).",
+     "critChance": 0.5,
+     "critMult": 2.0,
+     "isHero": true,
+@@ -1062,7 +1062,7 @@
+     "melee": false,
+     "spriteSheet": 1,
+     "spriteCell": 2,
+-    "ability": "Governor of the Frontier. Global anti-air passive lets every tower target flyers and adds rank-scaling anti-flyer damage (+15% at TIRO → +30% at DIVUS), plus abilities Eagle Scout (marks every flyer for +60% damage taken) and Frontier Wall (slows flyers 70% + every tower deals +25% vs flyers). Heroic crit profile (50% × 2.0).",
++    "ability": "Governor of the Frontier. Global anti-air passive lets every tower target flyers and adds anti-flyer damage, plus abilities Eagle Scout (marks every flyer for +60% damage taken) and Frontier Wall (slows flyers 70% + every tower deals +25% vs flyers). Heroic crit profile (50% × 2.0).",
+     "critChance": 0.5,
+     "critMult": 2.0,
+     "isHero": true,
+@@ -1070,15 +1070,15 @@
+   },
+   "HERO_SCIPIO": {
+     "name": "Scipio Africanus",
+-    "damageType": "PHYS_RANGED",
+-    "baseDps": 117.7,
++    "damageType": "PHYS_MELEE",
++    "baseDps": 147.7,
+     "attackSpeed": 0.605,
+-    "range": 4.5,
++    "range": 1.6,
+     "kind": "BASE",
+-    "melee": false,
++    "melee": true,
+     "spriteSheet": 1,
+     "spriteCell": 3,
+-    "ability": "Conqueror of Carthage. Global boss-damage passive scales from +25% at TIRO to +50% at DIVUS, plus boss-hunting abilities Cornu Charge (5× burst on highest-HP boss, 6s cooldown) and Scipio's Brand (marks every boss for +30% damage-taken, 6s). Heroic crit profile (50% × 2.0).",
++    "ability": "Conqueror of Carthage. Global boss-damage passive boosts the whole map against bosses, plus boss-hunting abilities Cornu Charge (5× burst on highest-HP boss, 6s cooldown) and Scipio's Brand (marks every boss for +30% damage-taken, 6s). Heroic crit profile (50% × 2.0).",
+     "critChance": 0.5,
+     "critMult": 2.0,
+     "isHero": true,
+@@ -1094,7 +1094,7 @@
+     "melee": true,
+     "spriteSheet": 3,
+     "spriteCell": 5,
+-    "ability": "Dictator of Rome. Global command aura scales from +10% damage/+10% attack speed at TIRO to +20%/+20% at DIVUS, plus battlefield-control abilities SPQR Decree and Pax Romana. Heroic crit profile (50% × 2.0).",
++    "ability": "Dictator of Rome. Global command aura boosts tower damage and attack speed, plus battlefield-control abilities SPQR Decree and Pax Romana. Heroic crit profile (50% × 2.0).",
+     "critChance": 0.5,
+     "critMult": 2.0,
+     "isHero": true,
+@@ -1110,7 +1110,7 @@
+     "melee": false,
+     "spriteSheet": 1,
+     "spriteCell": 3,
+-    "ability": "The Fortunate. PYRE WARD: every tower within 3 tiles converts to FIRE damage and gains rank-scaling damage (+15% at TIRO → +30% at DIVUS). Fortune's Bolt fires a 1.5× divine bolt every 7s. Proscription temporarily overrides every tower's damage to DIVINE, bypassing all faction resistances. Heroic crit profile (50% × 2.0).",
++    "ability": "The Fortunate. PYRE WARD: every tower within 3 tiles converts to FIRE damage and gains bonus damage. Fortune's Bolt fires a 1.5× divine bolt every 7s. Proscription temporarily overrides every tower's damage to DIVINE, bypassing all faction resistances. Heroic crit profile (50% × 2.0).",
+     "critChance": 0.5,
+     "critMult": 2.0,
+     "isHero": true,
+@@ -1182,12 +1182,12 @@
+   },
+   "CHAMPION_SCIPIO": {
+     "name": "Champion Scipio",
+-    "damageType": "PHYS_RANGED",
+-    "baseDps": 129.5,
++    "damageType": "PHYS_MELEE",
++    "baseDps": 162.5,
+     "attackSpeed": 0.55,
+-    "range": 4.5,
++    "range": 1.6,
+     "kind": "COMBO",
+-    "melee": false,
++    "melee": true,
+     "tierBand": 5,
+     "spriteSheet": 1,
+     "spriteCell": 3,
+diff --git a/src/render/Codex.ts b/src/render/Codex.ts
+index 110912b..196e4d3 100644
+--- a/src/render/Codex.ts
++++ b/src/render/Codex.ts
+@@ -1397,7 +1397,7 @@ function renderTab(tab: string): string {
+         <b style="color:#ff7733">Persistence + refund:</b> Forge stacks reset to 0/0/0 when you draft a fresh hero (after destruction). You get <b style="color:#88ff88">50% of the gold spent</b> refunded on the re-draft so the investment isn't a total loss. Forge progression does <b>not</b> affect XP, tier, or natural ability unlocks — it's a separate axis on top.
+       </div>
+     `);
+-    return `${section('THE ROSTER', '<div style="font-size:11px;color:#cdb98a;line-height:1.5">Six historical Roman generals stand in the hero pool. Every run shows <b style="color:#fff8e0">all six in a horizontal-scroll picker</b> — only one champion serves you per campaign. Each hero unlocks <b style="color:#fff8e0">2 abilities</b> (one at LEGATUS, one at CONSUL) and carries up to <b style="color:#fff8e0">6 equipped items</b> — gear is the primary expression lever. Heroes earn XP from every kill on the field (+1 non-boss / +20 boss) and tier up through five ranks; the basic-attack scale still climbs 1.0× → 2.4× across all five tiers, with the IMPERATOR and DIVUS milestones being stat-only steps. Heroes occupy a single tile and cannot be sold, combined, moved, or downgraded.</div>')}
++    return `${section('THE ROSTER', '<div style="font-size:11px;color:#cdb98a;line-height:1.5">Six historical Roman generals stand in the hero pool. Every run shows <b style="color:#fff8e0">all six in a horizontal-scroll picker</b> — only one champion serves you per campaign. Each hero unlocks <b style="color:#fff8e0">2 abilities</b> (one at LEGATUS, one at CONSUL) and carries up to <b style="color:#fff8e0">3 equipped items</b> — gear is the primary expression lever. Heroes earn XP from every kill on the field (+1 non-boss / +20 boss) and tier up through five ranks as they grow stronger. Heroes occupy a single tile and cannot be sold, combined, moved, or downgraded.</div>')}
+       ${forgeSection}
+       ${cards}`;
+   }
+diff --git a/src/render/RenderEngine.ts b/src/render/RenderEngine.ts
+index 974bd32..a10a48a 100644
+--- a/src/render/RenderEngine.ts
++++ b/src/render/RenderEngine.ts
+@@ -4103,29 +4103,38 @@ export class RenderEngine {
+       // in CombatResolver localAuras so player-visible and player-affected
+       // ranges always match.
+       if (tw.equippedItems.includes('CENTURIONS_TRUMPET')) {
+-        this.drawAuraRing(cx, cy, 2 * GRID.TILE, ALLY, pulse * 0.75);
++        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, ALLY, pulse * 0.75);
+       }
+       if (tw.equippedItems.includes('BATTLE_STANDARD')) {
+-        this.drawAuraRing(cx, cy, 2 * GRID.TILE, ALLY, pulse * 0.75);
++        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, ALLY, pulse * 0.75);
+       }
+       if (tw.equippedItems.includes('WAR_HOUND_COLLAR')) {
+-        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, ALLY, pulse * 0.8);
++        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.8);
+       }
+       if (tw.equippedItems.includes('DRUIDS_TORC')) {
+-        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, ALLY, pulse * 0.8);
++        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.8);
+       }
+       if (tw.equippedItems.includes('BARCA_WAR_HORN')) {
+-        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.85);
++        this.drawAuraRing(cx, cy, 3.5 * GRID.TILE, ALLY, pulse * 0.85);
+       }
+       if (tw.equippedItems.includes('LICH_GENERALS_SEAL')) {
+-        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.85);
++        this.drawAuraRing(cx, cy, 3.5 * GRID.TILE, ALLY, pulse * 0.85);
+       }
+       if (tw.equippedItems.includes('AQUILIFER_BANNER')) {
+-        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, ALLY, pulse * 0.8);
++        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.8);
++      }
++      if (tw.equippedItems.includes('OPTIO_WHISTLE')) {
++        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.8);
+       }
+-      // Enemy-debuff item: Cursed Torc — every enemy within 2 tiles takes +18%.
++      if (tw.equippedItems.includes('INFERNO_STANDARD')) {
++        this.drawAuraRing(cx, cy, 3.5 * GRID.TILE, ALLY, pulse * 0.9);
++      }
++      // Enemy-debuff items: dashed crimson rings mark enemy vulnerability zones.
+       if (tw.equippedItems.includes('CURSED_TORC')) {
+-        this.drawAuraRing(cx, cy, 2 * GRID.TILE, ENEMY, pulse * 0.85, true);
++        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ENEMY, pulse * 0.85, true);
++      }
++      if (tw.equippedItems.includes('NECROMANCERS_LANTERN')) {
++        this.drawAuraRing(cx, cy, 3.5 * GRID.TILE, ENEMY, pulse * 0.9, true);
+       }
+     }
+   }
+diff --git a/src/render/TowerMenu.ts b/src/render/TowerMenu.ts
+index d14bf5c..7faa420 100644
+--- a/src/render/TowerMenu.ts
++++ b/src/render/TowerMenu.ts
+@@ -896,16 +896,14 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
+   const pctXp = tier >= 4 ? 100 : Math.max(0, Math.min(100, ((xp - curTh) / Math.max(1, nextTh - curTh)) * 100));
+ 
+   // Stats — pull the breakdown helper (same one the regular tower
+-  // menu uses). Heroes have a basic-attack scale per tier on their
+-  // def: `basicAtkScalePerTier[tier]`. We bake that into the
+-  // displayed "Damage / hit" by injecting it as a synthetic damage
+-  // modifier so the player can see the per-tier scaling visibly.
++  // menu uses). Heroes gain a natural rank bonus from their definition,
++  // which is folded into the displayed "Damage / hit".
+   const effective = towerEffectiveStats(t);
+   const breakdown = towerStatBreakdown(t, state);
+   const tierScales: number[] = heroDef.basicAtkScalePerTier ?? [1, 1.2, 1.5, 1.9, 2.4];
+   const tierScale = tierScales[tier] ?? 1;
+   if (tierScale !== 1) {
+-    breakdown.damageMods.push({ source: `${tierTitles[tier]} basic-atk scale`, multiplier: tierScale });
++    breakdown.damageMods.push({ source: `${tierTitles[tier]} rank bonus`, multiplier: tierScale });
+     breakdown.damageFinal *= tierScale;
+   }
+ 
+diff --git a/src/systems/CombatResolver.ts b/src/systems/CombatResolver.ts
+index 2138955..7365bd8 100644
+--- a/src/systems/CombatResolver.ts
++++ b/src/systems/CombatResolver.ts
+@@ -219,7 +219,12 @@ const MELEE_TYPES = new Set<TowerType>([
+   // his hits land reliably and the swing rhythm reads from any
+   // distance.
+   TowerType.HERO_CAESAR,
++  // 2026-06-27 — Scipio is now a melee boss-hunter hero. He keeps his
++  // boss-focused passive/abilities, but his basic attacks route through
++  // the direct melee branch and slash VFX instead of the javelin projectile.
++  TowerType.HERO_SCIPIO,
+   TowerType.CHAMPION_MARIUS,
++  TowerType.CHAMPION_SCIPIO,
+   TowerType.CHAMPION_CAESAR
+ ]);
+ 
+@@ -642,13 +647,13 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
+       localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, spd: 0.28 });
+     }
+     // 2026-05-18 — EVENT-EXCLUSIVE AURAS.
+-    // NECROMANCERS_LANTERN (uprising): enemies in 3 tiles take +25%
++    // NECROMANCERS_LANTERN (uprising): enemies in 3.5 tiles take +45%
+     // damage from all sources. Regen-block is enforced separately
+     // in EnemySystem via the existing __regenBlocked flag (set below
+     // when this aura is active).
+     // HELLGATE_BRAND immunity to silence/tower-slow is set on the
+     // tower as __silenceImmune so EnemySystem's silence loop skips it.
+-    // INFERNO_STANDARD: +25% damage aura, 3 tiles. Burn-on-hit handled
++    // INFERNO_STANDARD: +40% damage aura, 3.5 tiles. Burn-on-hit handled
+     // in the on-hit pass.
+     if (t.equippedItems.includes('NECROMANCERS_LANTERN') && !auraOff) {
+       enemyTakenAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, pct: 0.45 });
+diff --git a/src/systems/ProjectileSystem.ts b/src/systems/ProjectileSystem.ts
+index 61590d9..c2ca142 100644
+--- a/src/systems/ProjectileSystem.ts
++++ b/src/systems/ProjectileSystem.ts
+@@ -159,7 +159,7 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
+   // hellfire/barrel, DIVINE = staff/orb), and heroes plug into that
+   // same convention rather than carrying off-theme sprites.
+   //
+-  // HERO_MARIUS (PHYS_MELEE) and HERO_CAESAR (DIVINE melee) stay OUT
++  // HERO_MARIUS (PHYS_MELEE), HERO_SCIPIO (PHYS_MELEE), and HERO_CAESAR (DIVINE melee) stay OUT
+   // of this map — they're in MELEE_TYPES (CombatResolver:113) and use
+   // the slash-arc VFX. Caesar's slash is tinted gold at the call site
+   // in main.ts to read as a DIVINE swing.
+@@ -174,23 +174,13 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
+   //                              pila are PHYS_RANGED throws).
+   //   Agricola (PHYS_RANGED)  → PROJ_ARROW — arching arrow, matches
+   //                              Sagittarius / Venator / Aquila Venator.
+-  //   Scipio   (PHYS_RANGED)  → PROJ_JAVELIN — heavy thrown spear, the
+-  //                              PHYS_RANGED convention for heavy
+-  //                              throwers (Decurion, Numidian Cavalry,
+-  //                              Hannibal's Nightmare). 2026-05-20: was
+-  //                              PROJ_BALLISTA (that's the SIEGE sprite;
+-  //                              Scipio is PHYS_RANGED, not SIEGE).
+-  //                              Boss-hunter identity comes from his
+-  //                              ability + bonus damage, not the sprite.
+   //   Sulla    (ELEMENTAL_FIRE)→ PROJ_HELLFIRE_BOLT — fire bolt with
+   //                              splash, matches GOD_OF_WAR's hellfire.
+   [TowerType.HERO_AGRIPPA]:   { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
+   [TowerType.HERO_AGRICOLA]:  { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0.8, embed: true  },
+-  [TowerType.HERO_SCIPIO]:    { key: 'PROJ_JAVELIN',       arc: false, speed: 820, splash: 0.5, embed: true  },
+   [TowerType.HERO_SULLA]:     { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false },
+   [TowerType.CHAMPION_AGRIPPA]:  { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
+   [TowerType.CHAMPION_AGRICOLA]: { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0.8, embed: true  },
+-  [TowerType.CHAMPION_SCIPIO]:   { key: 'PROJ_JAVELIN',       arc: false, speed: 820, splash: 0.5, embed: true  },
+   [TowerType.CHAMPION_SULLA]:    { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false }
+   // ──────────────────────────────────────────────────────────────────
+   // Pure-aura support towers — intentionally NOT in this map because
+@@ -207,6 +197,7 @@ export function getTowerProjectileProfile(type: TowerType) {
+ export function spawnProjectile(state: GameStateShape, tower: Tower, target: Enemy, damage: number) {
+   const def = PROJ_FOR_TOWER[tower.type];
+   if (!def) return; // melee — no projectile (handled separately as slash VFX)
++  const siegeSplash = tower.damageType === DamageType.SIEGE ? 0.8 : 0;
+ 
+   // ITEM-DRIVEN PROJECTILE SWAPS (2026-05): the projectile sprite reads
+   // the tower's equipped legendaries / themed items so the visual matches
+@@ -254,10 +245,12 @@ export function spawnProjectile(state: GameStateShape, tower: Tower, target: Ene
+     travelTime: 0,
+     rotation: Math.atan2(dy, dx),
+     alive: true,
+-    // 2026-06-27 — AMBER (BLAST) tile grants a minimum splash radius so any
+-    // tower standing on it gains an AoE blast on top of its own kit.
++    // 2026-06-27 — Every SIEGE attacker now carries at least a small blast,
++    // while existing artillery keeps its larger tuned radius. AMBER (BLAST)
++    // tile and Concussive Warhead remain minimum-radius upgrades on top.
+     splash: Math.max(
+       def.splash,
++      siegeSplash,
+       tower.equippedItems.includes('CONCUSSIVE_WARHEAD') ? 1.6 : 0,   // 2026 v2 legendary splash
+       (() => { const k = towerAuraTileKind(tower); return (k && AURA_TILE_EFFECTS[k].splashBonus) || 0; })()
+     ),
+diff --git a/tests/heroes.test.ts b/tests/heroes.test.ts
+index 1690025..3fae22a 100644
+--- a/tests/heroes.test.ts
++++ b/tests/heroes.test.ts
+@@ -29,6 +29,7 @@ import {
+ } from '../src/systems/HeroSystem';
+ import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
+ import { pickTarget, tickCombat } from '../src/systems/CombatResolver';
++import { getTowerProjectileProfile } from '../src/systems/ProjectileSystem';
+ import { createGameState, GameStateShape } from '../src/GameState';
+ import { DamageType, Enemy, EnemyFaction, EnemyType, GamePhase, StatusEffectKind, TowerType } from '../src/types';
+ import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
+@@ -730,11 +731,9 @@ describe('herodefs.json shape (single source of tuning)', () => {
+     }
+   });
+ 
+-  // 2026-05-19 — Damage-type distribution test. The roster ships with
+-  // 5-type coverage: 1 melee / 2 ranged / 1 siege / 1 divine / 1 fire.
+-  // Pins the spread so a future hero-aura tuning pass can't quietly
+-  // reintroduce the original 3-ranged / 2-divine / 0-siege / 0-fire
+-  // imbalance.
++  // 2026-05-19 — Passive coverage test. The roster's passive hooks still
++  // cover melee, siege, fire conversion, and boss hunting even as individual
++  // hero basic-attack classes get retuned.
+   //
+   // 2026-05-20 v2 — Sulla's passive was reworked from a +35% damage
+   // aura on FIRE towers (which used the legacy `filter:
+@@ -764,6 +763,20 @@ describe('herodefs.json shape (single source of tuning)', () => {
+     // Agricola carries no filter at all (global anti-air effect only).
+     expect(filters).toContain('VS_BOSS');
+   });
++
++  it('Scipio is a melee boss-hunter hero in starter and Champion form', () => {
++    const starter = createTower(TowerType.HERO_SCIPIO, 5, 5, 5, 1);
++    const champion = createTower(TowerType.CHAMPION_SCIPIO, 5, 6, 5, 1);
++
++    expect(starter.damageType).toBe(DamageType.PHYS_MELEE);
++    expect(champion.damageType).toBe(DamageType.PHYS_MELEE);
++    expect(starter.range).toBeLessThanOrEqual(1.6);
++    expect(champion.range).toBeLessThanOrEqual(1.6);
++    expect(starter.baseDps).toBeCloseTo(147.7 * 1.10, 4);
++    expect(champion.baseDps).toBeCloseTo(162.5 * 1.10, 4);
++    expect(getTowerProjectileProfile(TowerType.HERO_SCIPIO)).toBeNull();
++    expect(getTowerProjectileProfile(TowerType.CHAMPION_SCIPIO)).toBeNull();
++  });
+ });
+ 
+ // ─────────────────────────────────────────────────────────────────────
+diff --git a/tests/towers.test.ts b/tests/towers.test.ts
+index 4b81d50..8ffbb0d 100644
+--- a/tests/towers.test.ts
++++ b/tests/towers.test.ts
+@@ -2,10 +2,35 @@
+ import { describe, it, expect } from 'vitest';
+ import { createTower, towerEffectiveStats, towerPerAttackDamageBase, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
+ import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
+-import { TowerType, DamageType } from '../src/types';
++import { spawnProjectile } from '../src/systems/ProjectileSystem';
++import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType } from '../src/types';
+ import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS } from '../src/constants';
+ import { createGameState } from '../src/GameState';
+ 
++function testEnemy(id: string, x = 160, y = 160): Enemy {
++  return {
++    id,
++    type: EnemyType.FERAL_DOG,
++    faction: EnemyFaction.DOGS,
++    hp: 1000,
++    maxHp: 1000,
++    baseSpeed: 1,
++    currentSpeed: 1,
++    isFlyer: false,
++    x,
++    y,
++    pathIndex: 0,
++    pathProgress: 0,
++    statusEffects: [],
++    hasFeared: false,
++    livesCost: 1,
++    isBoss: false,
++    reward: 0,
++    archetype: 'SWARM',
++    hpFlashTimer: 0
++  };
++}
++
+ describe('Tower creation', () => {
+   it('creates a tower with correct base fields', () => {
+     const t = createTower(TowerType.MILITES, 1, 5, 5, 0);
+@@ -186,6 +211,20 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
+     expect(AURA_TILE_EFFECTS.AMBER?.splashBonus).toBeGreaterThan(0);
+     expect(AURA_TILE_EFFECTS.AMBER?.label).toBe('BLAST TILE');
+   });
++
++  it('all siege projectiles get at least a baseline splash radius', () => {
++    const state = createGameState();
++    const target = testEnemy('target');
++    state.enemies.set(target.id, target);
++
++    const scorpio = createTower(TowerType.SCORPIO, 1, 4, 4, 1);
++    spawnProjectile(state, scorpio, target, 100);
++    expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(0.8, 5);
++
++    const onager = createTower(TowerType.COLOSSUS_ONAGER, 5, 4, 4, 1);
++    spawnProjectile(state, onager, target, 100);
++    expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(2.4, 5);
++  });
+ });
+ 
+ describe('Tower per-attack damage', () => {
