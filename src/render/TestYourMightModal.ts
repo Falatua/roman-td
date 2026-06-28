@@ -2,6 +2,7 @@ import { GameStateShape } from '../GameState';
 import { closeGameModals } from './ModalManager';
 import { SFX } from './AudioManager';
 import { declineTestYourMight, startTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD } from '../systems/TestYourMightSystem';
+import { TEST_YOUR_MIGHT_DISPLAY_WAVE } from '../systems/TestYourMightLabels';
 
 export function showTestYourMightModal(
   parent: HTMLElement,
@@ -22,8 +23,9 @@ export function showTestYourMightModal(
   const panel = document.createElement('div');
   panel.style.cssText = `width:min(760px,94vw);background:linear-gradient(180deg,#3b0b08,#120706 58%,#070504);border:4px solid #ffcc44;color:#f3dfaa;box-shadow:0 0 44px rgba(255,40,20,0.62), inset 0 0 24px rgba(255,204,68,0.12);padding:24px;text-align:center;`;
   panel.innerHTML = `
-    <div style="font-size:11px;font-weight:bold;letter-spacing:6px;color:#ffcc44;text-shadow:1px 1px 0 #000">BONUS WAVE UNLOCKED</div>
+    <div style="font-size:11px;font-weight:bold;letter-spacing:6px;color:#ffcc44;text-shadow:1px 1px 0 #000">BONUS WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} UNLOCKED</div>
     <div style="font-size:34px;font-weight:bold;letter-spacing:5px;color:#fff2b8;text-shadow:3px 3px 0 #000,0 0 18px rgba(255,80,40,0.8);margin-top:8px">TEST YOUR MIGHT</div>
+    <div style="font-size:12px;font-weight:bold;letter-spacing:4px;color:#ffcc44;margin-top:6px">WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE}</div>
     <div style="font-size:13px;color:#ffd0a0;line-height:1.55;margin:12px auto 0;max-width:610px;letter-spacing:1px">
       The arena door creaks open. A clerk whispers, "This is optional," which is exactly how traps talk.
     </div>

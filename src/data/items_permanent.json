@@ -193,7 +193,7 @@
     "rarity": "EPIC",
     "buy": 60,
     "sell": 30,
-    "effect": "+40% damage, range +2 tiles"
+    "effect": "Any tower: every 4th hit shield-bashes the target, stunning non-boss enemies for 1s."
   },
   "DRUID_STAFF_FRAGMENT": {
     "name": "Druid Staff Fragment",

@@ -18,6 +18,7 @@ import { tex } from './Assets';
 import { damageTypeLabel } from '../format';
 import towersData from '../data/towers.json';
 import { TIER_COLORS } from '../constants';
+import { displayWaveNumber } from '../systems/TestYourMightLabels';
 
 function spriteSrc(towerType: string): string | null {
   const t = tex(towerType);
@@ -53,7 +54,7 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
   parent.appendChild(modal);
 
   // Header bar — title + wave number + close button
-  const waveDisplay = state.wave > 0 ? `WAVE ${state.wave}` : 'PRE-WAVE 1';
+  const waveDisplay = state.wave > 0 ? `WAVE ${displayWaveNumber(state)}` : 'PRE-WAVE 1';
   const header = document.createElement('div');
   header.style.cssText = `padding:14px 18px;background:linear-gradient(90deg,#3a2a14,#1a1410,#3a2a14);border-bottom:2px solid #d4af37;display:flex;justify-content:space-between;align-items:center`;
   header.innerHTML = `
@@ -232,7 +233,7 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
     // Re-paint header text each tick too so "WAVE N" stays in sync.
     const headerTimer = window.setInterval(() => {
       if (!document.body.contains(modal)) { window.clearInterval(headerTimer); return; }
-      const waveDisplayNow = state.wave > 0 ? `WAVE ${state.wave}` : 'PRE-WAVE 1';
+      const waveDisplayNow = state.wave > 0 ? `WAVE ${displayWaveNumber(state)}` : 'PRE-WAVE 1';
       headerTitleEl.innerHTML = `⚔ WAVE BREAKDOWN — <span style="color:#9be0ff">${waveDisplayNow}</span><span style="font-size:9px;color:#88ff88;margin-left:8px;letter-spacing:2px">● LIVE</span>`;
     }, 1000);
   }

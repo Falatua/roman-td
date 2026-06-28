@@ -2,10 +2,11 @@ import { GameStateShape } from '../GameState';
 import { GamePhase } from '../types';
 import { spawnEnemy } from './EnemySystem';
 import { prepareHeroAbilitiesForWave } from './HeroSystem';
+import { TEST_YOUR_MIGHT_AFTER_WAVE, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './TestYourMightLabels';
 
 export const TEST_YOUR_MIGHT_REWARD_GOLD = 3000;
-export const TEST_YOUR_MIGHT_AFTER_WAVE = 10;
 export const TEST_YOUR_MIGHT_REWARD_RARITY = 'LEGENDARY' as const;
+export { displayWaveNumber, TEST_YOUR_MIGHT_AFTER_WAVE, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './TestYourMightLabels';
 
 type TestYourMightMutation = 'WARDED' | 'AURA_STAR';
 type TestYourMightSpawn = {
@@ -105,7 +106,7 @@ export function startTestYourMight(state: GameStateShape): void {
   state.waveModifier = 'GROUP_MARCH';
   state.endlessExtraModifiers = ['STORM_SURGE', 'VEIL', 'DEATH_PACT'];
   state.waveModifierTick = 0;
-  state.hint = 'TEST YOUR MIGHT! One leak ends the run. Perfect clear pays 3000g and a free Tier-5 Scorpio. The wave cheats tastefully.';
+  state.hint = `WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} — TEST YOUR MIGHT! One leak ends the run. Perfect clear pays 3000g and a free Tier-5 Scorpio. The wave cheats tastefully.`;
   prepareHeroAbilitiesForWave(state);
 }
 
@@ -152,7 +153,7 @@ export function completeTestYourMight(state: GameStateShape): boolean {
   state.waveModifier = null;
   state.endlessExtraModifiers = [];
   state.waveModifierTick = 0;
-  state.hint = `TEST YOUR MIGHT cleared perfectly. +${TEST_YOUR_MIGHT_REWARD_GOLD}g and a free Tier-5 Scorpio. Rome is acting very normal about this.`;
+  state.hint = `WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} cleared perfectly. +${TEST_YOUR_MIGHT_REWARD_GOLD}g and a free Tier-5 Scorpio. Rome is acting very normal about this.`;
   return true;
 }
 
@@ -162,5 +163,5 @@ export function failTestYourMight(state: GameStateShape): void {
   state.testYourMightFailed = true;
   state.lives = 0;
   if (state.gameOverAt < 0) state.gameOverAt = state.tick;
-  state.hint = 'TEST YOUR MIGHT failed. One got through. The Senate has chosen screaming.';
+  state.hint = `WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} failed. One got through. The Senate has chosen screaming.`;
 }

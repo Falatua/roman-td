@@ -132,6 +132,16 @@ describe('Item rarity economy', () => {
       expect(itemBuyPrice(id), id).toBe(RARITY_BUY_PRICE[(def as any).rarity as keyof typeof RARITY_BUY_PRICE]);
     }
   });
+
+  it('keeps Gallic Shield Boss distinct from the Lictor stat item', () => {
+    const shield = (itemsData as any).GALLIC_SHIELD_BOSS.effect as string;
+    const fasces = (itemsData as any).LICTOR_FASCES.effect as string;
+    expect(shield.toLowerCase()).toContain('stun');
+    expect(shield).not.toContain('+40% damage');
+    expect(shield).not.toContain('+2');
+    expect(fasces).toContain('+40% damage');
+    expect(fasces).toContain('+2');
+  });
 });
 
 describe('Merchant — gate shop', () => {

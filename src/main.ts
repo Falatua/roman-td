@@ -74,6 +74,7 @@ import { showTestYourMightModal } from './render/TestYourMightModal';
 import { campaignRelicKillGoldBonus, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { shouldOfferBossTrophy, markBossTrophyOfferedForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD } from './systems/TestYourMightSystem';
+import { displayWaveNumber } from './systems/TestYourMightLabels';
 import { canReceiveRunReward, isMajorBossRewardEnemy } from './systems/RewardEligibility';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
@@ -1445,7 +1446,7 @@ async function boot() {
     const toggleTitle = collapsed ? 'Click to expand the wave brief' : 'Click to collapse the wave brief (it stays out of your way during the wave)';
     const waveLabel = endlessCfg
       ? `⚔  ENDLESS ${state.endlessWave} BRIEF`
-      : `⚔  WAVE ${state.wave} BRIEF`;
+      : `⚔  WAVE ${displayWaveNumber(state)} BRIEF`;
     const header = `<div style="display:flex;align-items:center;gap:8px;${collapsed ? '' : 'padding-bottom:7px;margin-bottom:8px;border-bottom:1px solid #5a4a30'}">
       <span style="font-size:11px;letter-spacing:3px;color:${endlessCfg ? '#ff5050' : '#d4af37'};font-weight:bold;text-shadow:1px 1px 0 #000">${waveLabel}</span>
       <span style="flex:1"></span>
@@ -7290,7 +7291,7 @@ async function boot() {
           // 2026-06-25 — reward is gold + a free Tier-5 Scorpio to place.
           if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
           state.pendingPurchasedTowers.push({ type: TowerType.SCORPIO, tier: 5, source: 'reward' as any });
-          state.hint = `TEST YOUR MIGHT PERFECT CLEAR — +${TEST_YOUR_MIGHT_REWARD_GOLD}g and a Tier-5 Scorpio. Click an empty tile to place it.`;
+          state.hint = `WAVE ${displayWaveNumber(state)} PERFECT CLEAR — +${TEST_YOUR_MIGHT_REWARD_GOLD}g and a Tier-5 Scorpio. Click an empty tile to place it.`;
           showBonusBossBanner(`TEST YOUR MIGHT CLEARED — +${TEST_YOUR_MIGHT_REWARD_GOLD}g + TIER-5 SCORPIO`);
         }
         clearPlacedTrapsForWaveEnd(state);

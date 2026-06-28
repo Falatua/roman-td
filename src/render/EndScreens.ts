@@ -1,6 +1,7 @@
 import { GameStateShape } from '../GameState';
 import { WAVE } from '../constants';
 import { TowerType } from '../types';
+import { displayWaveNumber } from '../systems/TestYourMightLabels';
 
 const HS_KEY = 'roman_td_highscore_v1';
 
@@ -197,7 +198,7 @@ export function showGameOver(parent: HTMLElement, state: GameStateShape, onResta
     <h1 style="margin:0;font-size:32px;color:#ee2a2a;letter-spacing:6px;text-shadow:3px 3px 0 #000">ROME HAS FALLEN</h1>
     <div style="margin:6px 0 18px;font-size:14px;color:#aa6a6a;letter-spacing:2px">CASTRUM LUNUM, AVGVSTI MMXXVI</div>
     <div style="font-size:14px;line-height:1.7">
-      <div>Wave reached: <b style="color:#d4af37">${state.wave}</b> / ${WAVE.TOTAL}</div>
+      <div>Wave reached: <b style="color:#d4af37">${displayWaveNumber(state)}</b> / ${WAVE.TOTAL}</div>
       <div>Score: <b style="color:#d4af37">${finalScore.toLocaleString()}</b></div>
       ${speedLine}
       <div>Latin Rank: <b style="color:#d4af37">${rank}</b></div>

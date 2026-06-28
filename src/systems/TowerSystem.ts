@@ -315,7 +315,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   // in CombatResolver, not here.
   if (t.equippedItems.includes('BERSERKERS_MUZZLE') && (t.damageType === DamageType.PHYS_MELEE)) { itemDmgMult *= 1.45; itemSpeedMult *= 1.30; }
   // DRUIDS_TORC converted to AURA — applies via CombatResolver localAuras.
-  if (t.equippedItems.includes('GALLIC_SHIELD_BOSS')) itemDmgMult *= 1.40;
+  // GALLIC_SHIELD_BOSS is a control proc now, applied in CombatResolver.
   if (t.equippedItems.includes('GILDED_SCALE_ARMOR')) itemDmgMult *= 1.60;   // 2026-06-23 LEG 1.55→1.60: beat EPIC Necrotic/Celtic (+55%)
   if (t.equippedItems.includes('SPEAR_OF_MARS')) itemDmgMult *= 1.60;        // 2026-06-23 LEG 1.35→1.60: beat EPIC melee dmg items
   // 2026-05-18 — EPIC TIER (purple) STATS.
@@ -346,7 +346,6 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   const extraRange =
     (t.equippedItems.includes('WATCHTOWER_LENS') ? 0.75 : 0) +
     (t.equippedItems.includes('DRUID_STAFF_FRAGMENT') ? 3 : 0) +
-    (t.equippedItems.includes('GALLIC_SHIELD_BOSS') ? 2 : 0) +
     (t.equippedItems.includes('GILDED_SCALE_ARMOR') ? 3 : 0) +
     // 2026-05-18 — INVASION-exclusive VANGUARD_PILUM: +1 tile range
     // alongside its +35% damage (applied in CombatResolver).
@@ -561,7 +560,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
     spdMods.push({ source: "Berserker's Muzzle (melee)", multiplier: 1.30 });
   }
   // DRUIDS_TORC is an AURA — buff appears via aura pass below.
-  if (items.includes('GALLIC_SHIELD_BOSS')) { dmgMods.push({ source: 'Gallic Shield Boss', multiplier: 1.40 }); rngMods.push({ source: 'Gallic Shield Boss', flat: 2 }); }
+  // GALLIC_SHIELD_BOSS is a control proc, not a stat modifier.
   if (items.includes('GILDED_SCALE_ARMOR')) { dmgMods.push({ source: 'Gilded Scale Armor', multiplier: 1.55 }); rngMods.push({ source: 'Gilded Scale Armor', flat: 3 }); }
   // CURSED_TORC / LICH_GENERALS_SEAL / BARCA_WAR_HORN are AURAS — they
   // buff nearby allies (or debuff nearby enemies), not the wearer.

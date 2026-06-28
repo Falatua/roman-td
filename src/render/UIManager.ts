@@ -7,6 +7,7 @@ import { ECONOMY, GRID, POOL_PROBABILITIES, WAVE } from '../constants';
 import { tex } from './Assets';
 import { canAfford, poolUpgradeCost } from '../systems/EconomySystem';
 import { previewSpawnHp } from '../systems/WaveManager';
+import { displayWaveNumber } from '../systems/TestYourMightLabels';
 import { factionName, enemyName, damageTypeLabel } from '../format';
 import towersData from '../data/towers.json';
 
@@ -384,10 +385,11 @@ export class UIManager {
     // 2026-05-22 UX6 — Each hud-icon gains data-stat="…" so the mobile
     // tap-to-reveal popover (wired below) can match it to a friendly
     // explanation. Desktop hover-title strings stay as the fallback.
+    const waveNum = displayWaveNumber(state);
     const waveDisplay = state.endlessMode
       ? `<span class="hud-icon" data-stat="endless" style="color:#ff5050"><span class="ic ic-wave"></span><b>ENDLESS</b> E${state.endlessWave ?? 0}</span>
          <span class="hud-icon" data-stat="score" title="Cumulative endless score" style="color:#ff5050"><b>SCORE</b> ${(state.endlessScore ?? 0).toLocaleString()}</span>`
-      : `<span class="hud-icon" data-stat="wave"><span class="ic ic-wave"></span><b>WAVE</b> ${state.wave}/${WAVE.TOTAL}</span>`;
+      : `<span class="hud-icon" data-stat="wave"><span class="ic ic-wave"></span><b>WAVE</b> ${waveNum}/${WAVE.TOTAL}</span>`;
     left.innerHTML = `
       ${waveDisplay}
       <span class="hud-icon" data-stat="lives"><span class="ic ic-life"></span><b>LIVES</b> ${Math.floor(state.lives)}</span>
@@ -725,7 +727,7 @@ export class UIManager {
                   ? `LOW LIVES. Buy +Lives at the SHOP, combine glowing towers, sell weak stones to redraw the maze. Press START WAVE when ready.`
                   : 'Build phase. Combine eligible (red-ringed) towers, shop the gate, sell stones to redraw the maze. Press START WAVE when ready.')
               : state.phase === GamePhase.WAVE_PHASE
-                ? `Wave ${state.wave} in progress. Towers fight automatically. Click any enemy to inspect resistances.`
+                ? `Wave ${displayWaveNumber(state)} in progress. Towers fight automatically. Click any enemy to inspect resistances.`
                 : state.hint;
       tipText.textContent = selectedTowerInfo ?? phaseTip ?? state.hint;
     }

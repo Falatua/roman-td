@@ -1,9 +1,10 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect } from 'vitest';
 import { createTower, towerEffectiveStats, towerPerAttackDamageBase, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
+import { applyDamageAndStatus } from '../src/systems/CombatResolver';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { spawnProjectile } from '../src/systems/ProjectileSystem';
-import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType } from '../src/types';
+import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind } from '../src/types';
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS } from '../src/constants';
 import { createGameState } from '../src/GameState';
 
@@ -125,6 +126,38 @@ describe('Tower effective stats', () => {
     expect(multiplier('HOURGLASS_OF_SATURN')).toBeCloseTo(1.40, 4);
     expect(multiplier('FALCONERS_WATCHPOST')).toBeCloseTo(1.40, 4);
     expect(multiplier('NUMIDIAN_SADDLE')).toBeCloseTo(1.60, 4);
+  });
+
+  it('Gallic Shield Boss no longer duplicates Lictor damage/range stats', () => {
+    const shieldTower = createTower(TowerType.SAGITTARIUS, 1, 0, 0, 0);
+    const fascesTower = createTower(TowerType.SAGITTARIUS, 1, 0, 0, 0);
+    const before = towerEffectiveStats(shieldTower);
+    shieldTower.equippedItems.push('GALLIC_SHIELD_BOSS');
+    fascesTower.equippedItems.push('LICTOR_FASCES');
+
+    expect(towerEffectiveStats(shieldTower).dps).toBeCloseTo(before.dps, 4);
+    expect(towerEffectiveStats(shieldTower).range).toBeCloseTo(before.range, 4);
+    expect(towerEffectiveStats(fascesTower).dps).toBeCloseTo(before.dps * 1.40, 4);
+    expect(towerEffectiveStats(fascesTower).range).toBeCloseTo(before.range + 2, 4);
+  });
+
+  it('Gallic Shield Boss stuns on every fourth hit', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    const tower = createTower(TowerType.SAGITTARIUS, 1, 4, 4, 0);
+    tower.equippedItems.push('GALLIC_SHIELD_BOSS');
+    (tower as any).__hitCount = 4;
+    const target = testEnemy('shield-bash-target');
+    state.enemies.set(target.id, target);
+
+    applyDamageAndStatus(state, tower, target, 1, {
+      onKill: () => {},
+      onHit: () => {},
+      onMeleeSwing: () => {},
+      onProjectileFire: () => {}
+    });
+
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.STUN && s.remaining > 0.9)).toBe(true);
   });
 });
 

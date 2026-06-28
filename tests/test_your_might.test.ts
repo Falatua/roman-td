@@ -5,10 +5,12 @@ import { DamageType, StatusEffectKind } from '../src/types';
 import {
   completeTestYourMight,
   declineTestYourMight,
+  displayWaveNumber,
   failTestYourMight,
   shouldOfferTestYourMight,
   startTestYourMight,
   TEST_YOUR_MIGHT_AFTER_WAVE,
+  TEST_YOUR_MIGHT_DISPLAY_WAVE,
   TEST_YOUR_MIGHT_REWARD_GOLD,
   TEST_YOUR_MIGHT_SPAWNS,
   tickTestYourMightSpawns
@@ -57,6 +59,8 @@ describe('Test Your Might bonus wave', () => {
     const expectedCount = TEST_YOUR_MIGHT_SPAWNS.reduce((sum, g) => sum + g.count, 0);
     expect(s.phase).toBe(GamePhase.WAVE_PHASE);
     expect(s.wave).toBe(10);
+    expect(TEST_YOUR_MIGHT_DISPLAY_WAVE).toBe('10.5');
+    expect(displayWaveNumber(s)).toBe('10.5');
     expect(s.testYourMightActive).toBe(true);
     expect(s.spawnQueue.length).toBe(expectedCount);
     expect(s.weatherIntensity).toBeGreaterThan(1);
@@ -136,6 +140,7 @@ describe('Test Your Might bonus wave', () => {
     const s = bootstrapState();
     startTestYourMight(s);
     failTestYourMight(s);
+    expect(displayWaveNumber(s)).toBe('10.5');
     expect(s.testYourMightActive).toBe(false);
     expect(s.testYourMightFailed).toBe(true);
     expect(s.lives).toBe(0);
@@ -164,6 +169,7 @@ describe('Test Your Might bonus wave', () => {
     expect(s.phase).toBe(GamePhase.BUILD_PHASE);
     expect(s.wave).toBe(10);
     expect(s.testYourMightCleared).toBe(true);
+    expect(displayWaveNumber(s)).toBe('10.5');
     expect(s.gold - beforeGold).toBe(3000);
     expect(s.weatherKey).toBeNull();
     expect(s.waveModifier).toBeNull();
