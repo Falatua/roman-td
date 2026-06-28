@@ -30,7 +30,7 @@ export function showTestYourMightModal(
     <div style="margin:16px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:650px;text-align:left">
       <div style="background:rgba(0,0,0,0.42);border:2px solid #88ff88;padding:12px">
         <div style="font-size:10px;letter-spacing:3px;color:#88ff88;font-weight:bold;margin-bottom:6px">PERFECT CLEAR</div>
-        <div style="font-size:13px;color:#ddffdd;line-height:1.45">Gain <b style="color:#ffcc44">${TEST_YOUR_MIGHT_REWARD_GOLD.toLocaleString()} gold</b> and <b style="color:#ff9933">1 random Legendary item</b>. The accountants faint. You continue to wave 11 with pockets full of poor decisions.</div>
+        <div style="font-size:13px;color:#ddffdd;line-height:1.45">Gain <b style="color:#ffcc44">${TEST_YOUR_MIGHT_REWARD_GOLD.toLocaleString()} gold</b>, a <b style="color:#9be0ff">free Tier-5 Scorpio</b>, and the <b style="color:#ff9933">Legendary the boss drops</b>. The accountants faint. You continue to wave 11 with pockets full of poor decisions.</div>
       </div>
       <div style="background:rgba(0,0,0,0.42);border:2px solid #ff6655;padding:12px">
         <div style="font-size:10px;letter-spacing:3px;color:#ff6655;font-weight:bold;margin-bottom:6px">ONE LEAK</div>
