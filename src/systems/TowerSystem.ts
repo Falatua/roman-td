@@ -62,6 +62,13 @@ const APEX_COMBOS = new Set<string>([
   'IMPERIUM_ETERNUM', 'CARTHAGE_SCOURGE', 'TRIUMVIRATE',
   'LEGION_PRIME', 'CONSULAR_FATEBINDER'
 ]);
+const MELEE_ATTACK_SPEED_MULT = 1.06;
+
+function isMeleeClassTower(t: Tower): boolean {
+  const def: any = (towersData as any)[t.type];
+  return def?.melee === true || t.damageType === DamageType.PHYS_MELEE;
+}
+
 function classBalanceScalar(t: Tower): number {
   const def: any = (towersData as any)[t.type];
   if (!def) return 1;
@@ -465,15 +472,16 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   }
   return {
     dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult * heroLevelDmgMult * forgeDmgMult * relicDpsMult,
-    attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult * relicSpeedMult,
+    attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult * relicSpeedMult * (isMeleeClassTower(t) ? MELEE_ATTACK_SPEED_MULT : 1),
     range: Math.max(1, t.range + extraRange + endlessRangeBoost + auraRangeBonus + relicRangeBonus)
   };
 }
 
 export function towerPerAttackDamageBase(t: Tower): number {
   const stats = towerEffectiveStats(t);
-  const tierSpeed = Math.max(0.05, t.attackSpeed * TIER_MULTS.speed[t.qualityTier]);
-  return stats.dps / tierSpeed;
+  const meleeTempo = isMeleeClassTower(t) ? MELEE_ATTACK_SPEED_MULT : 1;
+  const effectiveBaseSpeed = Math.max(0.05, t.attackSpeed * TIER_MULTS.speed[t.qualityTier] * meleeTempo);
+  return stats.dps / effectiveBaseSpeed;
 }
 
 // ─── STAT BREAKDOWN ─────────────────────────────────────────────────────
@@ -511,6 +519,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
   const tierSpd = TIER_MULTS.speed[t.qualityTier];
   if (tierDmg !== 1) dmgMods.push({ source: `Tier ${t.qualityTier}`, multiplier: tierDmg });
   if (tierSpd !== 1) spdMods.push({ source: `Tier ${t.qualityTier}`, multiplier: tierSpd });
+  if (isMeleeClassTower(t)) spdMods.push({ source: 'Melee tempo', multiplier: MELEE_ATTACK_SPEED_MULT });
 
   // 2026-05 v10 — CLASS BALANCE SCALAR. Surface the hidden class scalar
   // from classBalanceScalar() so the player can see why their tower's
@@ -599,7 +608,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       if (other.type === TowerType.AQUILIFER_TITAN) {
         dmgMods.push({ source: `Aquilifer Titan T${oTier}`, multiplier: 1 + 0.30 * (1 + 0.05 * (oTier - 1)) });
       }
-      if (other.type === TowerType.JULIUS_CAESAR) dmgMods.push({ source: 'Julius Caesar', multiplier: 1.45 });
+      if (other.type === TowerType.JULIUS_CAESAR) dmgMods.push({ source: 'Julius Caesar', multiplier: 1.55 });
       if (other.type === TowerType.TRIUMVIRATE) {
         dmgMods.push({ source: 'Triumvirate', multiplier: 1.35 });
         spdMods.push({ source: 'Triumvirate', multiplier: 1.25 });

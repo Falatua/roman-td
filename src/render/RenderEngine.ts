@@ -4012,7 +4012,7 @@ export class RenderEngine {
   //     (0xff5566) — same dashing style as Aquilifer's existing ring.
   //   • Tower-attack-range is always gold (drawSelectedRange) so the
   //     three layers never get confused.
-  // Global auras (Triarius +12% global, Caesar +45% global, Triumvirate
+  // Global auras (Triarius +12% global, Caesar +55% global, Triumvirate
   // triple global, Imperium global speed, Consular global) are NOT drawn
   // — they cover the whole map and a giant ring would be useless.
   drawAuras(state: GameStateShape, tick: number) {

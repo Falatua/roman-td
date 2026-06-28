@@ -99,6 +99,13 @@ describe('Tower effective stats', () => {
     expect(after).toBeCloseTo(before * 1.25, 4);
   });
 
+  it('gives melee towers a small baseline attack-speed lift', () => {
+    const melee = createTower(TowerType.MILITES, 1, 0, 0, 0);
+    const ranged = createTower(TowerType.DECURION, 1, 0, 0, 0);
+    expect(towerEffectiveStats(melee).attackSpeed).toBeCloseTo(melee.attackSpeed * 1.06, 4);
+    expect(towerEffectiveStats(ranged).attackSpeed).toBeCloseTo(ranged.attackSpeed, 4);
+  });
+
   it('Cavalry Spur (2026-05 v6 — MELEE only) buffs only melee towers', () => {
     // CAVALRY_SPUR was reclassified from "cavalry-only archetype" to
     // "MELEE-only" so a ranged Decurion no longer gets the speed buff;

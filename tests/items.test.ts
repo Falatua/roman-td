@@ -1,5 +1,5 @@
 // Tests for item rules, inventory operations, and shop pool sampling.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { itemFamily, canEquipItemFamily } from '../src/systems/ItemRules';
 import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollEpicDrop } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
@@ -107,8 +107,17 @@ describe('Loot drop rolling', () => {
       const drop = rollDrop();
       expect(drop).not.toBeNull();
       expect(drop!.itemId).toBeTruthy();
-      expect(['COMMON','UNCOMMON','RARE','LEGENDARY','UNIQUE']).toContain(drop!.rarity);
+      expect(['COMMON','UNCOMMON','RARE','EPIC','LEGENDARY','UNIQUE']).toContain(drop!.rarity);
     }
+  });
+
+  it('makes Rare drops more visible and allows very rare Epic ordinary drops', () => {
+    const randomSpy = vi.spyOn(Math, 'random');
+    randomSpy.mockReturnValue(0.965);
+    expect(rollDrop()?.rarity).toBe('RARE');
+    randomSpy.mockReturnValue(0.995);
+    expect(rollDrop()?.rarity).toBe('EPIC');
+    randomSpy.mockRestore();
   });
 
   it('uses 30-wave drop rates and deterministic premium-roll boundaries', () => {

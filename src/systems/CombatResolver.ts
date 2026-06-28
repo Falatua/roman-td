@@ -191,7 +191,7 @@ const MELEE_TYPES = new Set<TowerType>([
   // dependency. Now has to sit on the lane to deliver the strike.
   TowerType.GOD_OF_WAR,
   // 2026-05 v9: Julius Caesar — gladius-wielding consul now strikes in
-  // melee. Keeps +45% global damage aura and the 3s magisterial stun
+  // melee. Keeps +55% global damage aura and the 3s magisterial stun
   // pulse (pulse radius pinned to 5.5 tiles in the aura block so the
   // command-presence reach isn't tied to the sword's reach).
   TowerType.JULIUS_CAESAR,
@@ -406,12 +406,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // ─── ADDITIVE GLOBAL DAMAGE STACK ──────────────────────────────────────
   // Previously every global-aura tower (Eagle Standard, Aquilifer Titan,
   // Julius Caesar, Triumvirate, Consular Fatebinder) and the pool-level
-  // bonus all multiplied together. Stacking 1.18 × 1.30 × 1.45 × 1.35 × 1.30
+  // bonus all multiplied together. Stacking 1.18 × 1.30 × 1.55 × 1.35 × 1.30
   // × 1.30 × 1.30 = 5.06× *before* per-tower buffs — which made late-game
   // DPS impossible to predict and trivialized many encounters.
   //
   // New model: collect everyone's CONTRIBUTION, sum them, apply once.
-  // Pool +30% + EagleStandard +18% + AquiliferTitan +30% + JuliusCaesar +45%
+  // Pool +30% + EagleStandard +18% + AquiliferTitan +30% + JuliusCaesar +55%
   // + Triumvirate +35% + ConsularFatebinder +30% = 1 + 1.88 = 2.88× max,
   // a meaningful but legible cap.
   // Pool damage bonus — starts at pool level 2 (the FIRST upgrade past L1
@@ -507,17 +507,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       globalDmgBonus += 0.35;
       globalSpeedMult *= 1.20;
     }
-    // JULIUS_CAESAR (2026-05 v6 audit fix): the +45% global damage aura
+    // JULIUS_CAESAR (2026-05 v6 audit fix): the global damage aura
     // was only wired into the stat-breakdown UI, not the combat math.
     // Wire it into globalDmgBonus here so the aura actually fires. Also
     // pulse a 3s AoE stun and apply ARMOR_SHRED (~50% magnitude) on bosses
     // in range, matching the tower card's full ability text.
     if (t.type === TowerType.JULIUS_CAESAR) {
-      // The +45% global damage aura is suppressed when nullified, but the
+      // The global damage aura is suppressed when nullified, but the
       // periodic 3s stun pulse below still fires under nullification —
       // it's a triggered AoE ability, not a continuous aura. SLEEP is
       // different: a sleeping Caesar can't pulse (he's asleep).
-      if (!auraOff) globalDmgBonus += 0.45;
+      if (!auraOff) globalDmgBonus += 0.55;
       const nextStun = (t as any).__nextCaesarStunTick ?? 0;
       if (state.tick >= nextStun && !asleep) {
         (t as any).__nextCaesarStunTick = state.tick + 3.0;

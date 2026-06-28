@@ -74,13 +74,20 @@ export function inventoryRemove(inv: InventoryState, slotId: string): InventoryS
 const COMMON_ITEMS: ItemId[] = ['SHARPENED_BLADE','TRAINING_SCROLL','WATCHTOWER_LENS'];
 const UNCOMMON_ITEMS: ItemId[] = ['FLYER_BANE','CAVALRY_SPUR','IRON_TIP'];
 const RARE_ITEMS: ItemId[] = ['CENTURIONS_TRUMPET','GOLD_PURSE','BATTLE_STANDARD','HOURGLASS_OF_SATURN','STORM_JAVELIN'];
+const ORDINARY_EPIC_ITEMS: ItemId[] = Object.keys(items).filter(id => {
+  const def: any = (items as any)[id];
+  return def?.rarity === 'EPIC' && !def?.eventExclusive;
+}) as ItemId[];
 
 export function rollDrop(): { itemId: ItemId; rarity: Rarity } | null {
-  // Mostly Common/Uncommon for ground/flyer drops.
+  // Mostly Common/Uncommon for ground/flyer drops, with a slightly more
+  // generous late-run ceiling: Rare is more visible and Epic can now
+  // appear very rarely from ordinary kills.
   const r = Math.random();
-  if (r < 0.72) return { itemId: pick(COMMON_ITEMS), rarity: 'COMMON' };
-  if (r < 0.95) return { itemId: pick(UNCOMMON_ITEMS), rarity: 'UNCOMMON' };
-  return { itemId: pick(RARE_ITEMS), rarity: 'RARE' };
+  if (r < 0.68) return { itemId: pick(COMMON_ITEMS), rarity: 'COMMON' };
+  if (r < 0.94) return { itemId: pick(UNCOMMON_ITEMS), rarity: 'UNCOMMON' };
+  if (r < 0.99 || ORDINARY_EPIC_ITEMS.length === 0) return { itemId: pick(RARE_ITEMS), rarity: 'RARE' };
+  return { itemId: pick(ORDINARY_EPIC_ITEMS), rarity: 'EPIC' };
 }
 
 export function premiumDropRoll(chance: number, randomValue = Math.random()): boolean {
