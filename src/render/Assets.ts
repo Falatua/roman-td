@@ -272,6 +272,8 @@ const MANIFEST: Record<string, string> = {
   MAP_AURA_CYAN:    'map_overhaul/m_aura_cyan.png',
   MAP_AURA_GOLD:    'map_overhaul/m_aura_gold.png',
   MAP_AURA_EMERALD: 'map_overhaul/m_aura_emerald.png',
+  MAP_AURA_IVORY:   'map_overhaul/m_aura_ivory.png',
+  MAP_AURA_AMBER:   'map_overhaul/m_aura_amber.png',
   // Waypoints
   WP1: 'w_wp1_aquila.png', WP2: 'w_wp2_laurel.png', WP3: 'w_wp3_spqr.png',
   WP4: 'w_wp4_shewolf.png', WP5: 'w_wp5_fasces.png', WP6: 'w_wp6_jupiter.png',

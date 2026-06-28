@@ -290,9 +290,9 @@ function renderTab(tab: string): string {
           ${noteCard('Boss Leak Toll', '<b style="color:#ff5050">Every boss costs 10 lives when it reaches Rome</b>. The boss dies at the gate but is <b>REBORN ON THE NEXT WAVE with the HP he had at the gate</b> — chip damage carries over (Hannibal leaks at 5% HP, returns at 5% HP). The 10 lives is the real toll; the rebirth is a second swing for you to finish him.')}
         </div>
       `)}
-      ${foldSection('✨ AURA BUFF TILES — SIX GLOWING SPOTS ON THE MAP', `
+      ${foldSection('✨ AURA BUFF TILES — EIGHT GLOWING SPOTS ON THE MAP', `
         <div style="font-size:11px;color:#cdb98a;line-height:1.6;margin-bottom:10px;background:#0c0a08;padding:10px 14px;border-left:3px solid #a060ff">
-          Six glowing tiles sit at fixed positions across the map. A tower placed on one inherits the tile's bonus — auras stack multiplicatively with items and other buffs, so a Tempo Tile + Cavalry Spur combo lands at <b>1.30 × 1.22 ≈ 1.59× attack speed</b>. Tile positions never change between runs so every player has the same six strategic anchors to plan around. <b>Hover</b> any tile to see its full effect; the glowing ring brightens when a tower is sitting on top. Stone walls placed on an aura tile do nothing — the bonus only fires for actual towers.
+          Eight glowing tiles sit at fixed positions across the map. A tower placed on one inherits the tile's bonus — auras stack multiplicatively with items and other buffs, so a Tempo Tile + Cavalry Spur combo lands at <b>1.30 × 1.22 ≈ 1.59× attack speed</b>. Tile positions never change between runs so every player has the same strategic anchors to plan around. <b>Hover</b> any tile to see its full effect; the glowing ring brightens when a tower is sitting on top. Stone walls placed on an aura tile do nothing — the bonus only fires for actual towers.
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           ${noteCard('🟣 TEMPO TILE (Purple)', '<b style="color:#a060ff">+30% attack speed</b> for any tower placed on it. Best for fast-firing towers (Velites, Eques, Pugio Assassin) and DoT carriers that want more tick applications.')}
@@ -301,6 +301,8 @@ function renderTab(tab: string): string {
           ${noteCard('🩵 AETHER TILE (Cyan)', '<b style="color:#66ffdd">Any tower on this tile can target FLYERS</b>, including melee towers without Aquila Talons. A cheaper alternative to the legendary item — but only one tower at a time benefits.')}
           ${noteCard('🟡 TREASURY TILE (Gold)', '<b style="color:#ffd34d">+2 Gold per kill</b> on top of any other gold sources. A high-traffic tower placed here pays for itself in 2-3 waves.')}
           ${noteCard('🟢 WATCHTOWER TILE (Emerald)', '<b style="color:#66ff88">+2 tiles of range</b> for any tower placed on it. Turns a Scorpio (5.0) into a 7.0-range cannon that covers nearly half the map width. Stacks additively with the Watchtower Lens trophy (+1) — three-deep range stacks are real. Sits in the upper-middle of the map so a tower on it commands a wide central sight-line over the path.')}
+          ${noteCard('⚪ DIVINE TILE (Ivory)', '<b style="color:#fff2cc">Any tower on this tile strikes as DIVINE damage</b> — keeps its own stats and abilities, but its hits bypass most resistances. Park a high-DPS tower here to crack armored ground that walls physical/siege. Sits on the WP3↔WP4 gauntlet (near the 4th checkpoint).')}
+          ${noteCard('🟠 BLAST TILE (Amber)', '<b style="color:#ff8a3c">Any tower on this tile gains a 1.2-tile splash blast</b> — every hit also damages enemies around the target, even single-target towers like Scorpio or Sagittarius. Turns a sniper into an AoE clearer on the dense WP3↔WP4 lane (near the 3rd checkpoint).')}
         </div>
       `)}
       ${foldSection('🌀 SURPRISE EVENTS — INVASION, UPRISING, GATES OF HELL', `

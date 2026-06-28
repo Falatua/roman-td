@@ -141,22 +141,50 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     expect(onRange - offRange).toBeCloseTo(2.0, 4);
   });
 
-  it('minimum 11 manhattan separation between every pair of aura tiles', () => {
-    for (let i = 0; i < AURA_TILES.length; i++) {
-      for (let j = i + 1; j < AURA_TILES.length; j++) {
-        const a = AURA_TILES[i];
-        const b = AURA_TILES[j];
-        const d = Math.abs(a.col - b.col) + Math.abs(a.row - b.row);
+  it('the 6 spread tiles keep >=11 manhattan separation', () => {
+    // 2026-06-27 — the IVORY (divine) + AMBER (blast) tiles are
+    // DELIBERATELY clustered on the WP3<->WP4 gauntlet (per user), so
+    // they're exempt from the spacing rule that keeps the original six
+    // anchors spread across the map.
+    const spread = AURA_TILES.filter(t => t.kind !== 'IVORY' && t.kind !== 'AMBER');
+    expect(spread.length).toBe(6);
+    for (let i = 0; i < spread.length; i++) {
+      for (let j = i + 1; j < spread.length; j++) {
+        const d = Math.abs(spread[i].col - spread[j].col) + Math.abs(spread[i].row - spread[j].row);
         expect(d).toBeGreaterThanOrEqual(11);
       }
     }
   });
 
-  it('exactly 6 aura tiles on the map (one of each kind)', () => {
-    expect(AURA_TILES.length).toBe(6);
+  it('no two aura tiles share the same cell', () => {
+    const seen = new Set<string>();
+    for (const t of AURA_TILES) {
+      const k = `${t.col},${t.row}`;
+      expect(seen.has(k)).toBe(false);
+      seen.add(k);
+    }
+  });
+
+  it('exactly 8 aura tiles on the map (one of each kind)', () => {
+    expect(AURA_TILES.length).toBe(8);
     const kinds = new Set(AURA_TILES.map(t => t.kind));
-    expect(kinds.size).toBe(6);  // all distinct
+    expect(kinds.size).toBe(8);  // all distinct
     expect(kinds.has('EMERALD')).toBe(true);
+    expect(kinds.has('IVORY')).toBe(true);
+    expect(kinds.has('AMBER')).toBe(true);
+  });
+
+  it('IVORY tile converts a tower\'s damage type to DIVINE', () => {
+    const ivory = AURA_TILES.find(t => t.kind === 'IVORY')!;
+    expect(AURA_TILE_EFFECTS.IVORY?.divineDamage).toBe(true);
+    expect(AURA_TILE_EFFECTS.IVORY?.label).toBe('DIVINE TILE');
+    // The tile sits on buildable terrain (col 28 is clear of waypoints).
+    expect(ivory.col).toBe(28);
+  });
+
+  it('AMBER tile declares a splash blast radius', () => {
+    expect(AURA_TILE_EFFECTS.AMBER?.splashBonus).toBeGreaterThan(0);
+    expect(AURA_TILE_EFFECTS.AMBER?.label).toBe('BLAST TILE');
   });
 });
 

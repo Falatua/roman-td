@@ -1,6 +1,7 @@
 import { Tower, Enemy, DamageType, TowerType } from '../types';
 import { GameStateShape } from '../GameState';
-import { GRID, RENDER_LIMITS } from '../constants';
+import { GRID, RENDER_LIMITS, AURA_TILE_EFFECTS } from '../constants';
+import { towerAuraTileKind } from './TowerSystem';
 
 export interface FlyingProjectile {
   id: string;
@@ -253,7 +254,13 @@ export function spawnProjectile(state: GameStateShape, tower: Tower, target: Ene
     travelTime: 0,
     rotation: Math.atan2(dy, dx),
     alive: true,
-    splash: Math.max(def.splash, tower.equippedItems.includes('CONCUSSIVE_WARHEAD') ? 1.6 : 0),   // 2026 v2 legendary splash
+    // 2026-06-27 — AMBER (BLAST) tile grants a minimum splash radius so any
+    // tower standing on it gains an AoE blast on top of its own kit.
+    splash: Math.max(
+      def.splash,
+      tower.equippedItems.includes('CONCUSSIVE_WARHEAD') ? 1.6 : 0,   // 2026 v2 legendary splash
+      (() => { const k = towerAuraTileKind(tower); return (k && AURA_TILE_EFFECTS[k].splashBonus) || 0; })()
+    ),
     embedAfter: def.embed && !usesStormBolt && !fireOilEligible   // storm/fire-oil don't stick
   });
 }

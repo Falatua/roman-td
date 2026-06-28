@@ -300,7 +300,7 @@ export const COIN_FOOTPRINT_TILES = 1; // 1x1 waypoint coin footprint (smaller, 
 export interface AuraTile {
   col: number;
   row: number;
-  kind: 'PURPLE' | 'BLUE' | 'RED' | 'CYAN' | 'GOLD' | 'EMERALD';
+  kind: 'PURPLE' | 'BLUE' | 'RED' | 'CYAN' | 'GOLD' | 'EMERALD' | 'IVORY' | 'AMBER';
 }
 export const AURA_TILES: AuraTile[] = [
   { col: 6,  row: 9,  kind: 'PURPLE'  },  // early-left      · +30% attack speed
@@ -316,7 +316,13 @@ export const AURA_TILES: AuraTile[] = [
   // row so it sits directly ABOVE the checkpoint instead. Still
   // satisfies the ≥11 manhattan rule vs every other aura:
   // PURPLE 19 / BLUE 13 / RED 12 / CYAN 19 / GOLD 24.
-  { col: 20, row: 4,  kind: 'EMERALD' }   // upper-middle · above WP5 · +2 tile range
+  { col: 20, row: 4,  kind: 'EMERALD' },  // upper-middle · above WP5 · +2 tile range
+  // 2026-06-27 — Two strategic tiles flanking the RED tile (28,8) on the
+  // right-side WP3↔WP4 vertical gauntlet, forming a 3-tile "power column"
+  // over the third + fourth checkpoints. Both sit on open buildable terrain
+  // (col 28 is clear of every waypoint footprint, which all start at col 30).
+  { col: 28, row: 6,  kind: 'IVORY'   },  // near WP4 (SPQR)    · tower strikes as DIVINE
+  { col: 28, row: 11, kind: 'AMBER'   }   // near WP3 (She-Wolf) · tower gains splash blast
 ];
 // Effect lookup table — used by stat math, combat hooks, and tooltips
 // so the same numbers come out of one source. Multipliers are applied
@@ -332,6 +338,8 @@ export const AURA_TILE_EFFECTS: Record<AuraTile['kind'], {
   goldPerKill?: number;   // optional gold-per-kill bonus
   meleeFlyer?: boolean;   // optional anti-air for melee towers
   rangeBonus?: number;    // optional flat range bonus in tiles
+  divineDamage?: boolean; // optional — tower's attacks resolve as DIVINE damage
+  splashBonus?: number;   // optional — minimum splash (AoE) radius in tiles
 }> = {
   PURPLE:  { color: 0xa060ff, label: 'TEMPO TILE',      description: 'Tower on this tile attacks +30% faster.',                                     spdMult: 1.30 },
   BLUE:    { color: 0x66aaff, label: 'WAR TILE',        description: 'Tower on this tile deals +30% damage.',                                       dmgMult: 1.30 },
@@ -343,5 +351,12 @@ export const AURA_TILE_EFFECTS: Record<AuraTile['kind'], {
   // most of the map. Range stacks ADDITIVELY in towerEffectiveStats
   // (line 370), so this lands inside `extraRange` alongside lens and
   // pool-level bonuses.
-  EMERALD: { color: 0x66ff88, label: 'WATCHTOWER TILE', description: 'Tower on this tile gains +2 tiles of range — a commanding sight line.', rangeBonus: 2 }
+  EMERALD: { color: 0x66ff88, label: 'WATCHTOWER TILE', description: 'Tower on this tile gains +2 tiles of range — a commanding sight line.', rangeBonus: 2 },
+  // 2026-06-27 — Two new keyword tiles. The tower keeps all of its own
+  // stats and abilities; the tile only layers the extra effect on top.
+  // IVORY converts the attack's damage type to DIVINE (pierces most
+  // resistances). AMBER grants a splash blast (applied as a minimum
+  // projectile splash radius in ProjectileSystem.spawnProjectile).
+  IVORY:   { color: 0xfff2cc, label: 'DIVINE TILE',     description: 'Any tower on this tile strikes as DIVINE damage — bypasses most resistances.', divineDamage: true },
+  AMBER:   { color: 0xff8a3c, label: 'BLAST TILE',      description: 'Tower on this tile gains a splash blast — every hit also damages enemies within 1.2 tiles.', splashBonus: 1.2 }
 };

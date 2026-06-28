@@ -892,6 +892,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           effectiveDmgType = DamageType.ELEMENTAL_FIRE;
         }
       }
+      // 2026-06-27 — DIVINE TILE (IVORY). A tower standing on the divine
+      // tile resolves this attack as DIVINE damage, keeping all of its own
+      // stats + abilities. Overrides the Sulla FIRE conversion above (a
+      // deliberate placement beats a walk-by aura). Mars Victor ignores
+      // effectiveDmgType entirely (it resolves Siege+Divine), so no clash.
+      if (towerAuraTileKind(t) === 'IVORY') effectiveDmgType = DamageType.DIVINE;
       const proscriptionUntil = (state as any).__proscriptionUntilTick ?? 0;
       if (state.tick < proscriptionUntil) effectiveDmgType = DamageType.DIVINE;
       let resMod: number;
