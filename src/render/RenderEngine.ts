@@ -232,13 +232,20 @@ export class RenderEngine {
     const c = (towersData as any)[tw.type]?.tint
       ? parseInt(String((towersData as any)[tw.type].tint).replace('#', ''), 16)
       : 0xffd34d;
+    g.beginFill(c, 0.14 * fade).drawCircle(cx, cy, GRID.TILE * (0.62 + age * 0.18)).endFill();
+    g.lineStyle(2.5 * fade, c, 0.58 * fade).drawCircle(cx, cy, GRID.TILE * (0.74 + age * 0.20));
+    g.lineStyle(0);
 
     const drawSlash = (color: number, radius: number, width = 3, offset = 0) => {
       const sweep = 0.95 + age * 0.55;
       const a0 = angle - sweep * 0.5 + offset;
       const a1 = angle + sweep * 0.5 + offset;
+      g.lineStyle((width + 5) * fade, color, 0.22 * fade);
+      g.arc(cx + forwardX * 8, cy + forwardY * 8, radius, a0, a1, false);
       g.lineStyle(width * fade, color, 0.90 * fade);
       g.arc(cx + forwardX * 8, cy + forwardY * 8, radius, a0, a1, false);
+      g.lineStyle(Math.max(1.5, width * 0.45) * fade, 0xffffff, 0.75 * fade);
+      g.arc(cx + forwardX * 8, cy + forwardY * 8, radius - 5, a0 + 0.05, a1 - 0.05, false);
       g.lineStyle(0);
     };
 
@@ -248,6 +255,9 @@ export class RenderEngine {
         drawSlash(0xffffff, GRID.TILE * 0.48, 2, 0.22);
         break;
       case 'HERO_SCIPIO':
+        g.lineStyle(10 * fade, 0xffaa44, 0.18 * fade);
+        g.moveTo(cx - forwardX * 8, cy - forwardY * 8);
+        g.lineTo(tipX + forwardX * 26, tipY + forwardY * 26);
         g.lineStyle(4 * fade, 0xffd18a, 0.95 * fade);
         g.moveTo(cx - forwardX * 4, cy - forwardY * 4);
         g.lineTo(tipX + forwardX * 18, tipY + forwardY * 18);
@@ -255,6 +265,7 @@ export class RenderEngine {
         g.moveTo(cx + rightX * 4, cy + rightY * 4);
         g.lineTo(tipX + forwardX * 14 + rightX * 4, tipY + forwardY * 14 + rightY * 4);
         g.lineStyle(0);
+        g.beginFill(0xfff0c0, 0.75 * fade).drawCircle(tipX + forwardX * 20, tipY + forwardY * 20, 5 + age * 5).endFill();
         break;
       case 'HERO_CAESAR':
         drawSlash(0xffd34d, GRID.TILE * 0.78, 4, 0.02);
@@ -268,6 +279,10 @@ export class RenderEngine {
         g.lineStyle(0);
         break;
       case 'HERO_AGRIPPA':
+        g.beginFill(0x88bbff, 0.16 * fade).drawCircle(tipX, tipY, 10 + age * 8).endFill();
+        g.lineStyle(9 * fade, 0x3366ff, 0.18 * fade);
+        g.moveTo(cx - forwardX * 12, cy - forwardY * 12);
+        g.lineTo(tipX + forwardX * 30, tipY + forwardY * 30);
         g.lineStyle(3 * fade, 0x88bbff, 0.9 * fade);
         g.moveTo(cx - forwardX * 10, cy - forwardY * 10);
         g.lineTo(tipX + forwardX * 22, tipY + forwardY * 22);
@@ -277,6 +292,9 @@ export class RenderEngine {
         g.lineStyle(0);
         break;
       case 'HERO_AGRICOLA':
+        g.beginFill(0xaaccff, 0.16 * fade).drawCircle(tipX, tipY, 8 + age * 7).endFill();
+        g.lineStyle(8 * fade, 0x6fc8ff, 0.18 * fade);
+        g.arc(cx, cy, GRID.TILE * 0.56, angle - 1.05, angle + 1.05, false);
         g.lineStyle(3 * fade, 0xaaccff, 0.9 * fade);
         g.arc(cx, cy, GRID.TILE * 0.48, angle - 0.95, angle + 0.95, false);
         g.lineStyle(2 * fade, 0xe8f8ff, 0.85 * fade);
@@ -285,7 +303,10 @@ export class RenderEngine {
         g.lineStyle(0);
         break;
       case 'HERO_SULLA':
-        g.beginFill(0xff7733, 0.32 * fade).drawCircle(cx, cy, GRID.TILE * (0.35 + age * 0.25)).endFill();
+        g.beginFill(0xff7733, 0.42 * fade).drawCircle(cx, cy, GRID.TILE * (0.42 + age * 0.35)).endFill();
+        g.beginFill(0xffd34d, 0.20 * fade).drawCircle(tipX, tipY, 10 + age * 10).endFill();
+        g.lineStyle(8 * fade, 0xff5522, 0.20 * fade);
+        g.arc(cx, cy, GRID.TILE * 0.66, angle - 0.85, angle + 0.85, false);
         g.lineStyle(3 * fade, 0xffb066, 0.9 * fade);
         g.arc(cx, cy, GRID.TILE * 0.58, angle - 0.75, angle + 0.75, false);
         g.lineStyle(0);
@@ -297,6 +318,8 @@ export class RenderEngine {
         }
         break;
       default:
+        g.lineStyle(8 * fade, c, 0.18 * fade);
+        g.arc(cx, cy, GRID.TILE * 0.66, angle - 0.8, angle + 0.8, false);
         g.lineStyle(3 * fade, c, 0.85 * fade);
         g.arc(cx, cy, GRID.TILE * 0.58, angle - 0.7, angle + 0.7, false);
         g.lineStyle(0);
@@ -3411,7 +3434,8 @@ export class RenderEngine {
       // the target's position.)
       // Attack flash + recoil: stronger brightening, scale jump, kickback offset
       // along the firing direction for satisfying combat feel.
-      const flashT = tw.attackFlash > 0 ? Math.min(1, tw.attackFlash / 0.18) : 0;
+      const flashWindow = tw.isHero ? 0.32 : 0.18;
+      const flashT = tw.attackFlash > 0 ? Math.min(1, tw.attackFlash / flashWindow) : 0;
       const baseTint = blendWithWhite(TIER_COLORS[tw.qualityTier] ?? 0xffffff, 0.5);
       // 2026-05 v6: gold-glow window — when an Aerarium or GOLD_PURSE-equipped
       // tower scores a kill, main.ts stamps __goldGlowUntil on the tower for

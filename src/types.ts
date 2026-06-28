@@ -438,7 +438,7 @@ export interface Tower {
   duplicateBumped?: number;       // tier bump from duplicate-card upgrade
   isAerarium: boolean;      // shortcut
   pending: boolean;         // Gem TD: just-placed, awaiting KEEP-or-convert decision
-  attackFlash: number;      // 0..0.18s — set on each attack for visual feedback
+  attackFlash: number;      // 0..0.18s normally; heroes use a longer visible attack window
   // Gold actually paid to create this tower (place cost, OR combo cost when applicable).
   // Sell refund = floor(costPaid / 2). Defaults to TIER_PLACE_COST[tier] if unknown.
   costPaid?: number;
