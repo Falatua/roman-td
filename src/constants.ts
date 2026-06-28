@@ -91,7 +91,10 @@ export const WAVE = {
 export const TIER_MULTS = {
   damage:    { 1: 1.0, 2: 1.25, 3: 1.55, 4: 1.95, 5: 2.50 } as Record<number, number>,
   speed:     { 1: 1.0, 2: 1.10, 3: 1.20, 4: 1.30, 5: 1.42 } as Record<number, number>,
-  itemSlots: { 1: 1,   2: 2,    3: 3,    4: 4,    5: 5    } as Record<number, number>
+  // 2026-06-27 — Per user: EVERY tower holds exactly 3 items regardless of
+  // tier (T1-T5 all = 3), matching the hero 3-slot kit below. The board now
+  // shares one uniform 3-item rule.
+  itemSlots: { 1: 3,   2: 3,    3: 3,    4: 3,    5: 3    } as Record<number, number>
 } as const;
 
 // 2026-06-24 — Hero towers override the per-tier slot count above and

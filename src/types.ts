@@ -162,7 +162,7 @@ export enum TowerType {
   // auto-pulse abilities; they earn XP from every kill on the field and
   // tier up through TIRO → LEGATUS → CONSUL → IMPERATOR → DIVUS.
   // Tunable data lives in src/data/herodefs.json; placement rules
-  // (no sell / no combine / no move / 2 item slots) live in
+  // (no sell / no combine / no move / 3 item slots) live in
   // TowerSystem.createTower.
   HERO_MARIUS   = 'HERO_MARIUS',
   HERO_AGRIPPA  = 'HERO_AGRIPPA',
@@ -440,7 +440,7 @@ export interface Tower {
   // TowerSystem.createTower. Heroes are placed towers with their own
   // basic attack + auto-pulse abilities (see HeroSystem.ts). When
   // true: tower cannot be sold / combined / moved / downgraded, has
-  // exactly 2 item slots regardless of tier, and is excluded from
+  // exactly 3 item slots regardless of tier, and is excluded from
   // combine recipe lookups.
   isHero?: boolean;
   // 2026-05-19 — Per-hero ability cooldown scratchpad. Keys are

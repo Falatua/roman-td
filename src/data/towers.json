@@ -393,7 +393,7 @@
   "CLIBANARIUS": {
     "name": "Clibanarius",
     "damageType": "PHYS_MELEE",
-    "baseDps": 94.4,
+    "baseDps": 103.8,
     "attackSpeed": 1.485,
     "range": 2.0,
     "kind": "COMBO",
@@ -486,7 +486,7 @@
   "HORSEMAN": {
     "name": "Horseman",
     "damageType": "PHYS_MELEE",
-    "baseDps": 60.5,
+    "baseDps": 66.6,
     "attackSpeed": 1.87,
     "range": 2.0,
     "kind": "COMBO",
@@ -500,7 +500,7 @@
   "SCORPION_BOLT": {
     "name": "Scorpion Bolt",
     "damageType": "SIEGE",
-    "baseDps": 76.2,
+    "baseDps": 83.8,
     "attackSpeed": 0.357,
     "range": 6.5,
     "kind": "COMBO",
@@ -514,7 +514,7 @@
   "COHORT_GUARD": {
     "name": "Cohort Guard",
     "damageType": "PHYS_MELEE",
-    "baseDps": 72.6,
+    "baseDps": 79.9,
     "attackSpeed": 1.65,
     "range": 1.5,
     "kind": "COMBO",
@@ -528,7 +528,7 @@
   "WAR_CHARIOT": {
     "name": "War Chariot",
     "damageType": "PHYS_MELEE",
-    "baseDps": 72.6,
+    "baseDps": 79.9,
     "attackSpeed": 0.88,
     "range": 2.0,
     "kind": "COMBO",
@@ -556,7 +556,7 @@
   "PLAGUE_CART": {
     "name": "Plague Cart",
     "damageType": "ELEMENTAL_FIRE",
-    "baseDps": 25.4,
+    "baseDps": 27.9,
     "attackSpeed": 0.5,
     "range": 3.5,
     "kind": "COMBO",
@@ -570,7 +570,7 @@
   "NUMIDIAN_CAVALRY": {
     "name": "Eques",
     "damageType": "PHYS_RANGED",
-    "baseDps": 155.8,
+    "baseDps": 171.4,
     "attackSpeed": 2.1,
     "range": 4.5,
     "kind": "COMBO",
@@ -586,7 +586,7 @@
   "PRAETORIAN_WALL": {
     "name": "Praetorian Wall",
     "damageType": "PHYS_MELEE",
-    "baseDps": 78.7,
+    "baseDps": 86.6,
     "attackSpeed": 1.43,
     "range": 1.5,
     "kind": "COMBO",
@@ -600,7 +600,7 @@
   "AERARIUM": {
     "name": "Aerarium",
     "damageType": "PHYS_RANGED",
-    "baseDps": 41.8,
+    "baseDps": 46.0,
     "attackSpeed": 2.0,
     "range": 4.2,
     "kind": "COMBO",
@@ -615,7 +615,7 @@
   "SIEGE_ONAGER": {
     "name": "Siege Onager",
     "damageType": "SIEGE",
-    "baseDps": 84.7,
+    "baseDps": 93.2,
     "attackSpeed": 0.16,
     "range": 8,
     "kind": "COMBO",
@@ -644,7 +644,7 @@
   "INFERNO_CART": {
     "name": "Inferno Cart",
     "damageType": "ELEMENTAL_FIRE",
-    "baseDps": 44.0,
+    "baseDps": 48.4,
     "attackSpeed": 0.7,
     "range": 3,
     "kind": "COMBO",
@@ -659,7 +659,7 @@
   "FROZEN_LEGION": {
     "name": "Frozen Legion",
     "damageType": "PHYS_RANGED",
-    "baseDps": 102.9,
+    "baseDps": 113.2,
     "attackSpeed": 1.4,
     "range": 4.5,
     "kind": "COMBO",
@@ -673,7 +673,7 @@
   "JULIUS_CAESAR": {
     "name": "Julius Caesar",
     "damageType": "PHYS_MELEE",
-    "baseDps": 80.5,
+    "baseDps": 88.6,
     "attackSpeed": 1.76,
     "range": 1.5,
     "kind": "COMBO",
@@ -687,7 +687,7 @@
   "HANNIBALS_NIGHTMARE": {
     "name": "Hannibal's Nightmare",
     "damageType": "SIEGE",
-    "baseDps": 115.0,
+    "baseDps": 126.5,
     "attackSpeed": 0.357,
     "range": 7.0,
     "kind": "COMBO",
@@ -701,7 +701,7 @@
   "GOD_OF_WAR": {
     "name": "God of War",
     "damageType": "PHYS_MELEE",
-    "baseDps": 133.1,
+    "baseDps": 146.4,
     "attackSpeed": 1.32,
     "range": 1.5,
     "kind": "COMBO",
@@ -716,7 +716,7 @@
   "VEXILLATION": {
     "name": "Vexillation",
     "damageType": "PHYS_MELEE",
-    "baseDps": 87.1,
+    "baseDps": 95.8,
     "attackSpeed": 1.705,
     "range": 1.5,
     "kind": "COMBO",
@@ -729,7 +729,7 @@
   "TESSERARIUS": {
     "name": "Tesserarius",
     "damageType": "PHYS_RANGED",
-    "baseDps": 66.6,
+    "baseDps": 73.3,
     "attackSpeed": 1.55,
     "range": 4.6,
     "kind": "COMBO",
@@ -742,7 +742,7 @@
   "SCOUT_VEXILLUM": {
     "name": "Scout Vexillum",
     "damageType": "PHYS_RANGED",
-    "baseDps": 48.4,
+    "baseDps": 53.2,
     "attackSpeed": 1.2,
     "range": 4.8,
     "kind": "COMBO",
@@ -755,7 +755,7 @@
   "STORMCALLER": {
     "name": "Stormcaller",
     "damageType": "DIVINE",
-    "baseDps": 74.0,
+    "baseDps": 81.4,
     "attackSpeed": 0.417,
     "range": 4.4,
     "kind": "COMBO",
@@ -768,7 +768,7 @@
   "SACER_VESTAL": {
     "name": "Vestalis",
     "damageType": "DIVINE",
-    "baseDps": 42.4,
+    "baseDps": 46.6,
     "attackSpeed": 0.417,
     "range": 4.5,
     "kind": "COMBO",
@@ -781,7 +781,7 @@
   "TRIBUNUS_LATICLAVIUS": {
     "name": "Tribunus",
     "damageType": "PHYS_RANGED",
-    "baseDps": 84.7,
+    "baseDps": 93.2,
     "attackSpeed": 0.95,
     "range": 5,
     "kind": "COMBO",
@@ -794,7 +794,7 @@
   "NEMESIS_ENGINE": {
     "name": "Nemesis Engine",
     "damageType": "SIEGE",
-    "baseDps": 203.3,
+    "baseDps": 223.6,
     "attackSpeed": 0.12,
     "range": 50,
     "kind": "COMBO",
@@ -807,7 +807,7 @@
   "TRIUMPHATOR": {
     "name": "Triumphator",
     "damageType": "PHYS_MELEE",
-    "baseDps": 115.0,
+    "baseDps": 126.5,
     "attackSpeed": 1.485,
     "range": 1.5,
     "kind": "COMBO",
@@ -820,7 +820,7 @@
   "PONTIFEX_MAXIMUS": {
     "name": "Pontifex",
     "damageType": "DIVINE",
-    "baseDps": 76.2,
+    "baseDps": 83.8,
     "attackSpeed": 0.4587,
     "range": 1.5,
     "kind": "COMBO",
@@ -833,7 +833,7 @@
   "TURMA_LANCERS": {
     "name": "Turma Lancers",
     "damageType": "PHYS_MELEE",
-    "baseDps": 90.8,
+    "baseDps": 99.9,
     "attackSpeed": 1.705,
     "range": 2.0,
     "kind": "COMBO",
@@ -846,7 +846,7 @@
   "AURORA_LEGION": {
     "name": "Aurora Legion",
     "damageType": "DIVINE",
-    "baseDps": 84.7,
+    "baseDps": 93.2,
     "attackSpeed": 0.417,
     "range": 5,
     "kind": "COMBO",
@@ -859,7 +859,7 @@
   "STORM_VEXILLATION": {
     "name": "Storm Vexilla",
     "damageType": "DIVINE",
-    "baseDps": 60.1,
+    "baseDps": 66.1,
     "attackSpeed": 0.417,
     "range": 4.6,
     "kind": "COMBO",
@@ -872,7 +872,7 @@
   "IMPERIUM_ETERNUM": {
     "name": "Imperium Eternum",
     "damageType": "DIVINE",
-    "baseDps": 169.4,
+    "baseDps": 186.3,
     "attackSpeed": 0.417,
     "range": 6,
     "kind": "COMBO",
@@ -886,7 +886,7 @@
   "CARTHAGE_SCOURGE": {
     "name": "Carthage Scourge",
     "damageType": "SIEGE",
-    "baseDps": 93.2,
+    "baseDps": 102.5,
     "attackSpeed": 0.357,
     "range": 7,
     "kind": "COMBO",
@@ -912,7 +912,7 @@
   "TRIPLEX_ACIES": {
     "name": "Triplex Acies",
     "damageType": "PHYS_MELEE",
-    "baseDps": 108.9,
+    "baseDps": 119.8,
     "attackSpeed": 1.76,
     "range": 2,
     "kind": "COMBO",
@@ -925,7 +925,7 @@
   "LEGION_PRIME": {
     "name": "Legion Prime",
     "damageType": "DIVINE",
-    "baseDps": 111.3,
+    "baseDps": 122.4,
     "attackSpeed": 0.417,
     "range": 5,
     "kind": "COMBO",
@@ -938,7 +938,7 @@
   "CONSULAR_FATEBINDER": {
     "name": "Fatebinder",
     "damageType": "PHYS_MELEE",
-    "baseDps": 157.3,
+    "baseDps": 173.0,
     "attackSpeed": 0.55,
     "range": 1.5,
     "kind": "COMBO",
@@ -952,7 +952,7 @@
   "SIGNIFERS_DRACONARIUS": {
     "name": "Draconarius",
     "damageType": "PHYS_MELEE",
-    "baseDps": 94.4,
+    "baseDps": 103.8,
     "attackSpeed": 0.99,
     "range": 2.0,
     "kind": "COMBO",
@@ -970,7 +970,7 @@
   "BESTIARIUS": {
     "name": "Bestiarius",
     "damageType": "PHYS_MELEE",
-    "baseDps": 78.7,
+    "baseDps": 86.6,
     "attackSpeed": 1.65,
     "range": 2.0,
     "kind": "COMBO",
@@ -1010,7 +1010,7 @@
   "MURMILLO": {
     "name": "Murmillo",
     "damageType": "PHYS_MELEE",
-    "baseDps": 102.9,
+    "baseDps": 113.2,
     "attackSpeed": 1.21,
     "range": 1.5,
     "kind": "COMBO",
@@ -1119,7 +1119,7 @@
   "MARS_VICTOR": {
     "name": "Mars Victor",
     "damageType": "DIVINE",
-    "baseDps": 1250.0,
+    "baseDps": 1375.0,
     "attackSpeed": 0.45,
     "range": 9.0,
     "kind": "COMBO",
@@ -1132,7 +1132,7 @@
   "CHAMPION_MARIUS": {
     "name": "Champion Marius",
     "damageType": "PHYS_MELEE",
-    "baseDps": 160.6,
+    "baseDps": 176.7,
     "attackSpeed": 1.65,
     "range": 2.5,
     "kind": "COMBO",
@@ -1149,7 +1149,7 @@
   "CHAMPION_AGRIPPA": {
     "name": "Champion Agrippa",
     "damageType": "SIEGE",
-    "baseDps": 149.6,
+    "baseDps": 164.6,
     "attackSpeed": 1.0,
     "range": 10.0,
     "kind": "COMBO",
@@ -1166,7 +1166,7 @@
   "CHAMPION_AGRICOLA": {
     "name": "Champion Agricola",
     "damageType": "PHYS_RANGED",
-    "baseDps": 84.7,
+    "baseDps": 93.2,
     "attackSpeed": 1.1,
     "range": 5.0,
     "kind": "COMBO",
@@ -1183,7 +1183,7 @@
   "CHAMPION_SCIPIO": {
     "name": "Champion Scipio",
     "damageType": "PHYS_RANGED",
-    "baseDps": 117.7,
+    "baseDps": 129.5,
     "attackSpeed": 0.55,
     "range": 4.5,
     "kind": "COMBO",
@@ -1200,7 +1200,7 @@
   "CHAMPION_CAESAR": {
     "name": "Champion Caesar",
     "damageType": "DIVINE",
-    "baseDps": 119.9,
+    "baseDps": 131.9,
     "attackSpeed": 1.32,
     "range": 1.6,
     "kind": "COMBO",
@@ -1217,7 +1217,7 @@
   "CHAMPION_SULLA": {
     "name": "Champion Sulla",
     "damageType": "ELEMENTAL_FIRE",
-    "baseDps": 91.3,
+    "baseDps": 100.4,
     "attackSpeed": 0.9,
     "range": 3.5,
     "kind": "COMBO",
