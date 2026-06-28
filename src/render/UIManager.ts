@@ -415,7 +415,7 @@ export class UIManager {
     // is created on-demand and dismissed by tapping the document
     // anywhere outside it.
     const STAT_HELP: Record<string, { title: string; body: string }> = {
-      wave:    { title: 'WAVE',     body: 'Current wave out of 20. Survive all 20 to clear the campaign. Bosses arrive every 5 waves; the difficulty curve steepens hard after W10.' },
+      wave:    { title: 'WAVE',     body: 'Current wave out of 30. Survive all 30 to clear the campaign. Bosses arrive at major milestones; the difficulty curve steepens hard after W15.' },
       endless: { title: 'ENDLESS',  body: 'Endless mode in progress. HP scales +50% per endless wave; rewards stack with the campaign score on the leaderboard.' },
       lives:   { title: 'LIVES',    body: 'How many enemies can reach your gate before Rome falls. Bosses cost 10 lives if they leak. Buy more lives in the SHOP — but each purchased life dings your score.' },
       gold:    { title: 'GOLD',     body: 'Spent on placing prospects (1 g per roll), buying items in the SHOP, and upgrading your draw POOL. Earned from kills and quests.' },

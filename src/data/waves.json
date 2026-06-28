@@ -271,28 +271,24 @@
     "wave": 16,
     "type": "G",
     "faction": "MONGOLS",
-    "hpMult": 9.0,
+    "hpMult": 7.6,
     "gold": 14,
     "spawns": [
       {
         "type": "MONGOL_HORSE_ARCHER",
-        "count": 48
+        "count": 34
       },
       {
         "type": "MONGOL_BERSERKER",
-        "count": 32
+        "count": 22
       },
       {
         "type": "MONGOL_FOOTMAN",
-        "count": 44
+        "count": 34
       },
       {
         "type": "MONGOL_SCOUT",
-        "count": 18
-      },
-      {
-        "type": "PATHFINDER_COMMANDER",
-        "count": 1
+        "count": 12
       }
     ]
   },
@@ -419,7 +415,7 @@
     "wave": 20,
     "type": "B",
     "faction": "EGYPTIANS",
-    "hpMult": 10.0,
+    "hpMult": 55.0,
     "gold": 18,
     "spawns": [
       {
@@ -502,7 +498,7 @@
     "wave": 23,
     "type": "M",
     "faction": "EGYPTIANS",
-    "hpMult": 16.0,
+    "hpMult": 10.5,
     "gold": 18,
     "spawns": [
       {
@@ -547,7 +543,7 @@
     "wave": 24,
     "type": "B",
     "faction": "EGYPTIANS",
-    "hpMult": 14.0,
+    "hpMult": 44.0,
     "gold": 20,
     "spawns": [
       {

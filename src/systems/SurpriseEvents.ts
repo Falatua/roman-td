@@ -60,13 +60,12 @@ export const SURPRISE_EVENT_SCHEDULE: Record<number, SurpriseEventKind> = {
 // that the gates auto-seal (no more spawns) regardless of whether the
 // player destroyed them. Already-spawned giants persist normally and
 // the wave still has to clear them.
-// 2026-05-22 V37 — Window 15s → 20s per user direction ("Hell Gate
-// should close after 20 seconds"). The Hell Gate now stays active
-// for a full 20s of spawn cadence before auto-sealing. Combined
-// with the 300K HP bump in enemies.json, players who want to break
-// the gate before timeout need a serious damage commitment — but
-// they have 5 extra seconds to do it.
-const GATES_OF_HELL_WINDOW_SECONDS = 20;
+// 2026-06-28 — W16 pacing pass. The first late-campaign wave should be
+// an omen, not a wall, so Gates stays dramatic but seals sooner. Later
+// campaign difficulty now comes from the W18/W21/W25 systems ramp. The
+// gate/giant base HP is also kept low because event spawns still pass
+// through the normal W16 late-game HP scaler.
+const GATES_OF_HELL_WINDOW_SECONDS = 12;
 const GATES_OF_HELL_CADENCE_SECONDS = 2;
 
 // v2 spawn tuning. Each of the 4 visual points (fire or urn) spawns

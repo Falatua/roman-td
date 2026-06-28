@@ -14,7 +14,7 @@ function soloCampaignCumulative() {
   return (wavesData as any[]).map(wave => {
     for (const group of wave.spawns) {
       const isBoss = !!(enemiesData as any)[group.type]?.isBoss;
-      if (wave.type === 'B' && !isBoss) continue;
+      if (wave.type === 'B' && wave.wave <= 15 && !isBoss) continue;
       kills += group.count;
       if (isBoss) bosses += group.count;
     }
@@ -46,7 +46,7 @@ describe('30-wave Solo quest pacing', () => {
     const completionWave = (target: number) => campaign.find(row => row.kills >= target)?.wave;
     expect(quest('bloodline').target).toBe(300);
     expect(quest('butcher').target).toBe(850);
-    expect(quest('destroyer').target).toBe(1800);
+    expect(quest('destroyer').target).toBe(1900);
     expect(completionWave(quest('bloodline').target)).toBe(6);
     expect(completionWave(quest('butcher').target)).toBe(14);
     expect(completionWave(quest('destroyer').target)).toBe(23);
@@ -72,7 +72,7 @@ describe('30-wave Solo quest pacing', () => {
 
   it('completes new thresholds exactly once and preserves tier identity', () => {
     const state = createGameState();
-    state.totalKills = 1800;
+    state.totalKills = 1900;
     state.bossesKilled = 19;
     state.wave = 27;
     const first = evaluateQuests(state).map(q => q.id);

@@ -84,6 +84,9 @@ export function effectiveWaveHpMult(waveNumber: number, baseHpMult: number, isBo
 //                                    and uplift bumped from 1.20)
 //   POST-W10 ground:        ×1.50   (or flyer ×1.20, or boss ×1.25)
 //   POST-W15 every class:   escalating late-campaign pressure through W30
+//                            W16 is intentionally a softer bridge out of
+//                            W15; the climb becomes severe as the campaign
+//                            crosses W18, W21, W25, and W30.
 export function lateGameLayerMult(waveNumber: number, isBoss: boolean, isFlyer: boolean): number {
   let m = 1;
   if (waveNumber > 7 && !isBoss && !isFlyer) m *= 1.30;
@@ -102,9 +105,9 @@ export function lateGameLayerMult(waveNumber: number, isBoss: boolean, isFlyer: 
   }
   if (waveNumber > 15) {
     const late = waveNumber - 15;
-    if (isBoss) m *= 1.30 + late * 0.16;
-    else if (isFlyer) m *= 1.12 + late * 0.08;
-    else m *= 1.22 + late * 0.11;
+    if (isBoss) m *= 1.12 + late * 0.10;
+    else if (isFlyer) m *= 1.04 + late * 0.065;
+    else m *= 1.08 + late * 0.09;
   }
   if (waveNumber >= 21) {
     if (isBoss) m *= 1.30;
@@ -155,7 +158,7 @@ export function previewSpawnHp(def: any, waveNumber: number, wType: 'B' | 'M' | 
   const isBoss  = !!def.isBoss;
   const isFlyer = !!def.isFlyer;
   const waveMult = effectiveWaveHpMult(waveNumber, hpMult, isBoss);
-  const soloBuff = (isBoss && wType === 'B') ? 2.0 : 1.0;
+  const soloBuff = (isBoss && wType === 'B' && waveNumber <= 15) ? 2.0 : 1.0;
   const layer    = lateGameLayerMult(waveNumber, isBoss, isFlyer);
   const basicBuff = isBoss ? 1.0 : 1.70;
   const heroComp = heroActive ? 1.15 : 1.00;
@@ -204,15 +207,15 @@ export function startWave(state: GameStateShape) {
   state.spawnQueue = [];
   state.spawnElapsed = 0;
   let t = 0;
-  // BOSS-SOLO RULE: on authored boss waves (type 'B'), strip the mob horde
-  // so the boss arrives alone. Boss scripts can still summon helpers from
-  // BossScripts.ts at runtime — those are part of the boss's own mechanics
-  // and remain untouched. Bosses spawned solo get +HP via tickSpawns to
-  // compensate for the missing chip damage from cleared mobs.
+  // BOSS-SOLO RULE: early authored boss waves strip the mob horde so the
+  // boss arrives as a clean teaching encounter. After W15, boss waves keep
+  // their authored escort groups so the 30-wave campaign ramps smoothly
+  // instead of dipping into a one-unit valley at W20/W21/W24.
   const isBossWave = w.type === 'B';
+  const soloBossWave = isBossWave && state.wave <= 15;
   for (const grp of w.spawns) {
     const isBossGrp = !!(enemiesData as any)[grp.type]?.isBoss;
-    if (isBossWave && !isBossGrp) continue;       // skip mobs on boss waves
+    if (soloBossWave && !isBossGrp) continue;       // skip mobs on early boss waves
     // 2026 v2 — stagger FLYER releases by >=1s each so air groups arrive in a
     // readable trickle instead of a swarm (per design feedback).
     const isFlyerGrp = !!(enemiesData as any)[grp.type]?.isFlyer && !isBossGrp;
@@ -312,7 +315,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
   // Basic-enemy HP path (with the every-5-wave doubling). Computed once
   // per tickSpawns; bosses use a separate linear-only path below.
   const basicHpMult = effectiveWaveHpMult(state.wave, w.hpMult, false);
-  const bossWaveSoloBuff = w.type === 'B' ? 2.0 : 1.0;     // +100% HP when boss is alone
+  const bossWaveSoloBuff = (w.type === 'B' && state.wave <= 15) ? 2.0 : 1.0;     // early solo boss HP
   // 2026-05-17 — Round-robin counter for surprise-event waveOverride mode.
   // Each spawn off the queue gets the next point in sequence so all 4
   // fires/urns stay active throughout the wave instead of just one.

@@ -216,7 +216,8 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     if (w >= 6) mult -= 0.04;   // W6  → 0.96
     if (w >= 7) mult -= 0.04;   // W7  → 0.92  (W7-W9 resist bump)
     if (w >= 11) mult -= 0.07;  // W11 → 0.85  (existing breakpoint)
-    if (w >= 16) mult -= 0.08;  // W16+ late campaign starts biting
+    if (w >= 16) mult -= 0.04;  // W16 is now a bridge wave, not a cliff
+    if (w >= 18) mult -= 0.04;  // W18+ restores the full late-campaign bite
     if (w >= 21) mult -= 0.07;  // W21+ second-cave era
     if (w >= 25) mult -= 0.06;  // W25+ mythic finale
     if (e.isBoss) mult -= (w >= 21 ? 0.15 : 0.10); // bosses always tougher than ground
@@ -241,14 +242,14 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   // bosses resist status while regenerating if the player lets pressure drop.
   if (!derived && (state.wave ?? 1) >= 16) {
     const w = state.wave ?? 1;
-    const band = w >= 25 ? 3 : w >= 21 ? 2 : 1;
-    const variance = [0.94, 1.00, 1.10, 1.18][state.enemies.size % 4];
+    const band = w >= 25 ? 3 : w >= 21 ? 2 : w >= 18 ? 1 : 0;
+    const variance = (w < 18 ? [0.96, 1.00, 1.06, 1.10] : [0.94, 1.00, 1.10, 1.18])[state.enemies.size % 4];
     const classSpeed = e.isBoss ? (1 + 0.04 * band) : e.isFlyer ? (1 + 0.03 * band) : (1 + 0.05 * band);
     e.baseSpeed *= classSpeed * variance;
     e.currentSpeed = e.baseSpeed;
 
     if (!e.isFlyer && !e.isBoss) {
-      (e as any).outOfCombatRegen = Math.max((e as any).outOfCombatRegen ?? def.outOfCombatRegen ?? 0, 0.035 + 0.01 * band);
+      (e as any).outOfCombatRegen = Math.max((e as any).outOfCombatRegen ?? def.outOfCombatRegen ?? 0, 0.025 + 0.01 * band);
       if (w >= 21 && (e.livesCost >= 2 || (def as any).isElite || ARCHETYPE[type] === 'ARMORED' || ARCHETYPE[type] === 'BULKY')) {
         e.checkpointHealPct = Math.max(e.checkpointHealPct ?? 0, 0.10 + 0.02 * band);
       }

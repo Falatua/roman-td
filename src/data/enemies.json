@@ -415,7 +415,7 @@
   "HELL_GATE": {
     "name": "Hell Gate",
     "faction": "SUPER_DEMONS",
-    "baseHp": 300000,
+    "baseHp": 5000,
     "speed": 0,
     "isFlyer": false,
     "isBoss": false,
@@ -433,7 +433,7 @@
   "FIRE_GIANT": {
     "name": "Fire Giant",
     "faction": "SUPER_DEMONS",
-    "baseHp": 300000,
+    "baseHp": 6000,
     "speed": 0.65,
     "isFlyer": false,
     "isBoss": false,
