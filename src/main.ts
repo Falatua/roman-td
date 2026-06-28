@@ -73,7 +73,7 @@ import { showBossTrophyModal } from './render/BossTrophyModal';
 import { showTestYourMightModal } from './render/TestYourMightModal';
 import { campaignRelicKillGoldBonus, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { shouldOfferBossTrophy, markBossTrophyOfferedForWave } from './systems/BossTrophySystem';
-import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD } from './systems/TestYourMightSystem';
+import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
 import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy } from './systems/RewardEligibility';
 
@@ -7468,7 +7468,15 @@ async function boot() {
           const stage = document.getElementById('stage-wrap');
           if (stage) {
             showTestYourMightModal(stage, state, (accepted) => {
-              if (!accepted && state.lives > 0) offerCampaignRelic();
+              if (accepted) {
+                // 2026-06-28 — make entering the bonus unmistakable: it is
+                // a distinct Wave 10.5, not the start of Wave 11. The modal
+                // already launched it via startTestYourMight; this banner is
+                // the on-map confirmation the player just stepped into it.
+                showBonusBossBanner(`⚔ WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} — TEST YOUR MIGHT · ONE LEAK ENDS THE RUN ⚔`);
+              } else if (state.lives > 0) {
+                offerCampaignRelic();
+              }
             });
           } else {
             offerCampaignRelic();

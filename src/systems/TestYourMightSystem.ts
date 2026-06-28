@@ -67,7 +67,18 @@ export function declineTestYourMight(state: GameStateShape): void {
 }
 
 export function startTestYourMight(state: GameStateShape): void {
-  if (state.phase !== GamePhase.BUILD_PHASE) return;
+  // 2026-06-28 HARDENING: the accept button can resolve from any
+  // non-combat phase — after a wave clears the run passes through the
+  // build / prospecting sub-phases (PROSPECT_PLACEMENT, PICK_KEEPER)
+  // before the player presses START. The old `phase !== BUILD_PHASE`
+  // guard SILENTLY no-opped the accept whenever the phase had drifted,
+  // so "YES, TEST ME" did nothing and the player slid straight into
+  // Wave 11 instead of the bonus Wave 10.5. Only refuse to launch if a
+  // wave is already live or the run is already decided.
+  if (state.phase === GamePhase.WAVE_PHASE
+    || state.phase === GamePhase.GAME_OVER
+    || state.phase === GamePhase.VICTORY) return;
+  if (state.testYourMightActive) return;   // never double-launch
   state.testYourMightOffered = true;
   state.testYourMightDeclined = false;
   state.testYourMightActive = true;
