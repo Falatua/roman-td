@@ -1,0 +1,44 @@
+name: Codex Publish 2fce3d5
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/codex-publish-2fce3d5.yml'
+      - '.codex-patches/roman-td-2fce3d5.patch'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PATCH_FILE: .codex-patches/roman-td-2fce3d5.patch
+  WORKFLOW_FILE: .github/workflows/codex-publish-2fce3d5.yml
+
+jobs:
+  apply-patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply verified Codex patch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ ! -f "$PATCH_FILE" ]; then
+            echo "Patch file missing: $PATCH_FILE"
+            exit 1
+          fi
+          git apply --check "$PATCH_FILE"
+          git apply "$PATCH_FILE"
+          rm -f "$PATCH_FILE" "$WORKFLOW_FILE"
+          rmdir .codex-patches 2>/dev/null || true
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Tune heroes and aura visibility"
+          git push
