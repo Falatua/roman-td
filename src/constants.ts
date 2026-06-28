@@ -317,12 +317,12 @@ export const AURA_TILES: AuraTile[] = [
   // satisfies the ≥11 manhattan rule vs every other aura:
   // PURPLE 19 / BLUE 13 / RED 12 / CYAN 19 / GOLD 24.
   { col: 20, row: 4,  kind: 'EMERALD' },  // upper-middle · above WP5 · +2 tile range
-  // 2026-06-27 — Two strategic tiles flanking the RED tile (28,8) on the
-  // right-side WP3↔WP4 vertical gauntlet, forming a 3-tile "power column"
-  // over the third + fourth checkpoints. Both sit on open buildable terrain
-  // (col 28 is clear of every waypoint footprint, which all start at col 30).
-  { col: 28, row: 6,  kind: 'IVORY'   },  // near WP4 (SPQR)    · tower strikes as DIVINE
-  { col: 28, row: 11, kind: 'AMBER'   }   // near WP3 (She-Wolf) · tower gains splash blast
+  // 2026-06-28 — DIVINE (ivory) + BLAST (amber) tiles, dispersed organically
+  // instead of stacked in a column. They scatter with the other six rather
+  // than lining up, while still anchoring the right-side WP3↔WP4 lanes. Both
+  // on open buildable terrain (clear of every waypoint + structure footprint).
+  { col: 32, row: 7,  kind: 'IVORY'   },  // upper-right pocket · near WP4 · tower strikes as DIVINE
+  { col: 25, row: 15, kind: 'AMBER'   }   // centre-lower pocket · near WP3 · tower gains splash blast
 ];
 // Effect lookup table — used by stat math, combat hooks, and tooltips
 // so the same numbers come out of one source. Multipliers are applied
