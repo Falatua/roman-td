@@ -687,7 +687,7 @@
   "HANNIBALS_NIGHTMARE": {
     "name": "Hannibal's Nightmare",
     "damageType": "SIEGE",
-    "baseDps": 126.5,
+    "baseDps": 151.8,
     "attackSpeed": 0.357,
     "range": 7.0,
     "kind": "COMBO",
