@@ -3460,6 +3460,8 @@ export class RenderEngine {
       // now uses the same recoil pattern as every other tower so the
       // sprite stays flat against the base texture.)
       let attackOffX = 0, attackOffY = 0;
+      let heroAttackRotation = 0;
+      let heroAttackSkewX = 0;
       if (isAttacking) {
         const heroId = heroIdForTowerType(String(tw.type));
         const meleeHero = heroId === 'HERO_MARIUS' || heroId === 'HERO_SCIPIO' || heroId === 'HERO_CAESAR';
@@ -3467,9 +3469,25 @@ export class RenderEngine {
         const dir = meleeHero ? 1 : -1;
         attackOffX = Math.cos(tw.rotation) * recoilDist * dir;
         attackOffY = Math.sin(tw.rotation) * recoilDist * dir;
+        if (heroId) {
+          const age = 1 - flashT;
+          const side = (tw.id.charCodeAt(tw.id.length - 1) % 2 === 0) ? 1 : -1;
+          if (meleeHero) {
+            const windupToRelease = age < 0.46
+              ? -0.38 + (age / 0.46) * 0.92
+              : 0.54 * Math.max(0, 1 - ((age - 0.46) / 0.54));
+            heroAttackRotation = windupToRelease * side;
+            heroAttackSkewX = Math.sin(age * Math.PI) * 0.08 * side;
+          } else {
+            heroAttackRotation = Math.sin(age * Math.PI) * -0.16 * side;
+            heroAttackSkewX = Math.sin(age * Math.PI) * 0.05 * side;
+          }
+        }
       }
       entry.sp.x = baseX + idleSway + attackOffX;
       entry.sp.y = baseY + idleBob + attackOffY;
+      entry.sp.rotation = heroAttackRotation;
+      entry.sp.skew.x = heroAttackSkewX;
       if (tw.isHero && flashT > 0) {
         this.drawHeroAttackAnimation(this.heroAttackGfx, tw, baseX, baseY, tw.rotation, flashT);
       }
