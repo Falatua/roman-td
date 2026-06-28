@@ -1,0 +1,47 @@
+name: Apply Codex Patch 9411565
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-codex-patch-9411565.yml'
+      - 'codex-patches/9411565.patch.gz.b64'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PATCH_FILE: codex-patches/9411565.patch.gz.b64
+  WORKFLOW_FILE: .github/workflows/apply-codex-patch-9411565.yml
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git author
+        run: |
+          git config user.name "Codex Publisher"
+          git config user.email "codex-publisher@users.noreply.github.com"
+
+      - name: Apply local Codex commit patch
+        run: |
+          test -f "$PATCH_FILE"
+          base64 -d "$PATCH_FILE" > /tmp/codex.patch.gz
+          gunzip -c /tmp/codex.patch.gz > /tmp/codex.patch
+          git am /tmp/codex.patch
+
+      - name: Remove temporary publisher files
+        run: |
+          rm -f "$PATCH_FILE" "$WORKFLOW_FILE"
+          git add -A
+          git commit -m "Clean up variety roster counters publisher"
+
+      - name: Push published changes
+        run: git push origin HEAD:main
