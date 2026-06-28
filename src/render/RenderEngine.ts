@@ -65,6 +65,10 @@ export class RenderEngine {
   comboGfx: Graphics;
   auraGfx: Graphics;
   tierPipGfx: Graphics;
+  // Hero-only attack animation prototype. This is the first "Green TD /
+  // Warcraft III" style pass: short release/recover overlays around the
+  // hero sprite instead of full body spritesheets. Cleared every frame.
+  heroAttackGfx: Graphics;
   // 2026-05 v9: dedicated Graphics for the druid sleep-dart trail
   // ribbons + orb glows. Cleared and redrawn every frame in
   // drawDruidSleepDarts().
@@ -170,6 +174,7 @@ export class RenderEngine {
     this.comboGfx = new Graphics();
     this.auraGfx = new Graphics();
     this.tierPipGfx = new Graphics();
+    this.heroAttackGfx = new Graphics();
     this.druidDartGfx = new Graphics();
     this.layers.fx.addChild(this.druidDartGfx);   // above projectiles, with the rest of fx
     // 2026-05 v10: dedicated Graphics for the war-elephant dust shield
@@ -208,8 +213,94 @@ export class RenderEngine {
     this.layers.overlay.addChild(this.bossAuraGfx);     // below enemies (overlay < enemies)
     this.layers.hud.addChild(this.bossVignetteGfx);     // above everything except UI
     this.layers.towers.addChild(this.tierPipGfx);
+    this.layers.fx.addChild(this.heroAttackGfx);
     this.enemySprites = new Map();
     this.towerSprites = new Map();
+  }
+
+  private drawHeroAttackAnimation(g: Graphics, tw: any, cx: number, cy: number, angle: number, flashT: number) {
+    const heroId = heroIdForTowerType(String(tw.type));
+    if (!heroId || flashT <= 0) return;
+    const age = 1 - flashT;
+    const fade = Math.max(0, flashT);
+    const forwardX = Math.cos(angle);
+    const forwardY = Math.sin(angle);
+    const rightX = Math.cos(angle + Math.PI / 2);
+    const rightY = Math.sin(angle + Math.PI / 2);
+    const tipX = cx + forwardX * (GRID.TILE * (0.45 + age * 0.35));
+    const tipY = cy + forwardY * (GRID.TILE * (0.45 + age * 0.35));
+    const c = (towersData as any)[tw.type]?.tint
+      ? parseInt(String((towersData as any)[tw.type].tint).replace('#', ''), 16)
+      : 0xffd34d;
+
+    const drawSlash = (color: number, radius: number, width = 3, offset = 0) => {
+      const sweep = 0.95 + age * 0.55;
+      const a0 = angle - sweep * 0.5 + offset;
+      const a1 = angle + sweep * 0.5 + offset;
+      g.lineStyle(width * fade, color, 0.90 * fade);
+      g.arc(cx + forwardX * 8, cy + forwardY * 8, radius, a0, a1, false);
+      g.lineStyle(0);
+    };
+
+    switch (heroId) {
+      case 'HERO_MARIUS':
+        drawSlash(0xd8e8ff, GRID.TILE * 0.72, 4, -0.08);
+        drawSlash(0xffffff, GRID.TILE * 0.48, 2, 0.22);
+        break;
+      case 'HERO_SCIPIO':
+        g.lineStyle(4 * fade, 0xffd18a, 0.95 * fade);
+        g.moveTo(cx - forwardX * 4, cy - forwardY * 4);
+        g.lineTo(tipX + forwardX * 18, tipY + forwardY * 18);
+        g.lineStyle(2 * fade, 0xffffff, 0.70 * fade);
+        g.moveTo(cx + rightX * 4, cy + rightY * 4);
+        g.lineTo(tipX + forwardX * 14 + rightX * 4, tipY + forwardY * 14 + rightY * 4);
+        g.lineStyle(0);
+        break;
+      case 'HERO_CAESAR':
+        drawSlash(0xffd34d, GRID.TILE * 0.78, 4, 0.02);
+        g.beginFill(0xfff4a8, 0.45 * fade).drawCircle(tipX, tipY, 5 + age * 6).endFill();
+        for (let i = 0; i < 5; i++) {
+          const a = angle - 0.45 + i * 0.225;
+          g.lineStyle(1.5 * fade, 0xfff4a8, 0.7 * fade);
+          g.moveTo(cx + Math.cos(a) * 12, cy + Math.sin(a) * 12);
+          g.lineTo(cx + Math.cos(a) * 24, cy + Math.sin(a) * 24);
+        }
+        g.lineStyle(0);
+        break;
+      case 'HERO_AGRIPPA':
+        g.lineStyle(3 * fade, 0x88bbff, 0.9 * fade);
+        g.moveTo(cx - forwardX * 10, cy - forwardY * 10);
+        g.lineTo(tipX + forwardX * 22, tipY + forwardY * 22);
+        g.lineStyle(1.5 * fade, 0xffffff, 0.65 * fade);
+        g.moveTo(cx - forwardX * 4 + rightX * 5, cy - forwardY * 4 + rightY * 5);
+        g.lineTo(tipX + forwardX * 18 + rightX * 5, tipY + forwardY * 18 + rightY * 5);
+        g.lineStyle(0);
+        break;
+      case 'HERO_AGRICOLA':
+        g.lineStyle(3 * fade, 0xaaccff, 0.9 * fade);
+        g.arc(cx, cy, GRID.TILE * 0.48, angle - 0.95, angle + 0.95, false);
+        g.lineStyle(2 * fade, 0xe8f8ff, 0.85 * fade);
+        g.moveTo(cx - rightX * 11, cy - rightY * 11);
+        g.lineTo(tipX + forwardX * 18, tipY + forwardY * 18);
+        g.lineStyle(0);
+        break;
+      case 'HERO_SULLA':
+        g.beginFill(0xff7733, 0.32 * fade).drawCircle(cx, cy, GRID.TILE * (0.35 + age * 0.25)).endFill();
+        g.lineStyle(3 * fade, 0xffb066, 0.9 * fade);
+        g.arc(cx, cy, GRID.TILE * 0.58, angle - 0.75, angle + 0.75, false);
+        g.lineStyle(0);
+        for (let i = 0; i < 4; i++) {
+          const a = angle - 0.5 + i * 0.33;
+          g.beginFill(i % 2 ? 0xffd34d : 0xff5522, 0.55 * fade)
+            .drawCircle(cx + Math.cos(a) * (15 + age * 12), cy + Math.sin(a) * (15 + age * 12), 2.5)
+            .endFill();
+        }
+        break;
+      default:
+        g.lineStyle(3 * fade, c, 0.85 * fade);
+        g.arc(cx, cy, GRID.TILE * 0.58, angle - 0.7, angle + 0.7, false);
+        g.lineStyle(0);
+    }
   }
 
   // Lazy text-pool for floating damage numbers and status icons
@@ -3105,6 +3196,7 @@ export class RenderEngine {
 
   // Render dynamic state each frame.
   drawDynamic(state: GameStateShape) {
+    this.heroAttackGfx.clear();
     // 2026-05-22 V27 — Stone-tile rendering is now dirty-checked. The
     // V26 stamp work was being repeated 60×/sec even when the stone
     // set hadn't changed (which is most of every wave). Hash the
@@ -3345,12 +3437,18 @@ export class RenderEngine {
       // sprite stays flat against the base texture.)
       let attackOffX = 0, attackOffY = 0;
       if (isAttacking) {
-        const recoilDist = flashT * 4.5;
-        attackOffX = -Math.cos(tw.rotation) * recoilDist;
-        attackOffY = -Math.sin(tw.rotation) * recoilDist;
+        const heroId = heroIdForTowerType(String(tw.type));
+        const meleeHero = heroId === 'HERO_MARIUS' || heroId === 'HERO_SCIPIO' || heroId === 'HERO_CAESAR';
+        const recoilDist = flashT * (heroId ? 6.5 : 4.5);
+        const dir = meleeHero ? 1 : -1;
+        attackOffX = Math.cos(tw.rotation) * recoilDist * dir;
+        attackOffY = Math.sin(tw.rotation) * recoilDist * dir;
       }
       entry.sp.x = baseX + idleSway + attackOffX;
       entry.sp.y = baseY + idleBob + attackOffY;
+      if (tw.isHero && flashT > 0) {
+        this.drawHeroAttackAnimation(this.heroAttackGfx, tw, baseX, baseY, tw.rotation, flashT);
+      }
       // Keep the fallback monogram (if any) glued to the sprite position.
       const fb = (entry.sp as any).__fallback as Graphics | undefined;
       if (fb) { fb.x = entry.sp.x; fb.y = entry.sp.y; }
