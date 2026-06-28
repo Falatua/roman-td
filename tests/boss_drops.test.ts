@@ -17,6 +17,7 @@ import { createGameState } from '../src/GameState';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
 import itemsData from '../src/data/items_permanent.json';
+import { isLegendaryBossDropEnemy, isMajorBossRewardEnemy } from '../src/systems/RewardEligibility';
 
 function freshState() {
   return createGameState();
@@ -76,6 +77,26 @@ describe('Boss drop guarantee (2026-05-19)', () => {
       expect(drop).not.toBeNull();
       expect(drop!.rarity).toBe('LEGENDARY');
     }
+  });
+
+  it('Boss Dog gets the legendary item drop without becoming a major trophy boss', () => {
+    const alphaDog = { type: 'ALPHA_DOG', isBoss: true, isScheduledBoss: false, isBonusBoss: false };
+    expect(isLegendaryBossDropEnemy(alphaDog)).toBe(true);
+    expect(isMajorBossRewardEnemy(alphaDog)).toBe(false);
+
+    const state = freshState();
+    const inv = createInventory();
+    const drop = rollBossDrop('DOGS', state, inv);
+    expect(drop).not.toBeNull();
+    expect(drop!.rarity).toBe('LEGENDARY');
+    expect((itemsData as any)[drop!.itemId]?.rarity).toBe('LEGENDARY');
+  });
+
+  it('War Elephants keep their non-legendary boss-add item path', () => {
+    const elephant = { type: 'WAR_ELEPHANT', isBoss: true, isScheduledBoss: false, isBonusBoss: false };
+    const undeadElephant = { type: 'UNDEAD_WAR_ELEPHANT', isBoss: true, isScheduledBoss: true, isBonusBoss: false };
+    expect(isLegendaryBossDropEnemy(elephant)).toBe(false);
+    expect(isLegendaryBossDropEnemy(undeadElephant)).toBe(false);
   });
 
   it('rollBossDrop avoids legendaries the player already owns (no-dup rule)', () => {

@@ -75,7 +75,7 @@ import { campaignRelicKillGoldBonus, shouldOfferCampaignRelics } from './systems
 import { shouldOfferBossTrophy, markBossTrophyOfferedForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
-import { canReceiveRunReward, isMajorBossRewardEnemy } from './systems/RewardEligibility';
+import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy } from './systems/RewardEligibility';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -7132,7 +7132,7 @@ async function boot() {
               const drop = rollEpicDrop(state, inventory);
               if (drop) spawnLootAt(state, e, drop);
             }
-          } else if (isMajorBossRewardEnemy(e)) {
+          } else if (isLegendaryBossDropEnemy(e)) {
             const drop = rollBossDrop(w.faction, state, inventory);
             if (drop) {
               spawnLootAt(state, e, drop);
