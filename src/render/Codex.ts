@@ -807,6 +807,10 @@ function renderTab(tab: string): string {
       // 2026-05-17 — Murmillo combo (Ballistarius + Librator + Arcuballista).
       // Anti-Carthage specialist with heavy single-shot CC (Scutum Bash).
       MURMILLO: 'MID',
+      // 2026-06-28 — 10 new combos featuring under-represented base towers.
+      PRAETORIAN_EXECUTIONER: 'MID', SACRED_BAND: 'MID', BEASTLORD_CHAMPION: 'MID',
+      MIRMILLO_REAVER: 'MID', TRIBUNE_AVENGER: 'MID', CATAPHRACT_LANCER: 'MID',
+      STORM_BALLISTA: 'MID', SKYREAPER_BATTERY: 'MID', PLAGUE_LOBBER: 'MID', AUGURS_WRATH: 'MID',
       // 5-ingredient super-combos at lower result tiers — they require
       // 5 simultaneous towers but unlock at mid-pool levels.
       TRIPLEX_ACIES: 'MID',

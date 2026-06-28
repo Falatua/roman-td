@@ -121,6 +121,18 @@ export enum TowerType {
   TRIPLEX_ACIES = 'TRIPLEX_ACIES',
   LEGION_PRIME = 'LEGION_PRIME',
   CONSULAR_FATEBINDER = 'CONSULAR_FATEBINDER',
+  // 2026-06-28 — 10 new combos featuring under-represented base towers.
+  // Themes: stun / anti-flyer / DoT (bleed-poison-burn) / divine. 60/40 melee.
+  PRAETORIAN_EXECUTIONER = 'PRAETORIAN_EXECUTIONER',
+  SACRED_BAND = 'SACRED_BAND',
+  BEASTLORD_CHAMPION = 'BEASTLORD_CHAMPION',
+  MIRMILLO_REAVER = 'MIRMILLO_REAVER',
+  TRIBUNE_AVENGER = 'TRIBUNE_AVENGER',
+  CATAPHRACT_LANCER = 'CATAPHRACT_LANCER',
+  STORM_BALLISTA = 'STORM_BALLISTA',
+  SKYREAPER_BATTERY = 'SKYREAPER_BATTERY',
+  PLAGUE_LOBBER = 'PLAGUE_LOBBER',
+  AUGURS_WRATH = 'AUGURS_WRATH',
   // 2026 v2 spec Ch9 — Mars Victor: DIVINE apex super-tower (fusion of
   // Imperium Eternum + Legion Prime). Engine-faithful read of the spec's
   // "6-hero combo" — activeHeroId is singular, so 6 literal heroes can't be

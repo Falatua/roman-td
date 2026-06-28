@@ -979,6 +979,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Per-tower archetype/role bonuses + signatures
       if (t.type === TowerType.RORARIUS && target.archetype === 'RUNNER') damage *= 1.35;
       if ((t.type === TowerType.SAGITTARIUS || t.type === TowerType.VENATOR) && target.isFlyer) damage *= 1.45;
+      // 2026-06-28 — new anti-flyer combos.
+      if (t.type === TowerType.SKYREAPER_BATTERY && target.isFlyer) damage *= 2.10;   // +110% vs flyers
+      if (t.type === TowerType.BEASTLORD_CHAMPION && target.isFlyer) damage *= 1.70;  // +70% vs flyers
       if (t.type === TowerType.AQUILA_VENATOR && target.isFlyer) damage *= 1.75;
       if (t.equippedItems.includes('FLYER_BANE') && target.isFlyer) damage *= 1.35;
       // 2026 v2 — anti-air item suite (any tower; range/speed halves live in TowerSystem).
@@ -1390,6 +1393,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const meleeHitsFlyers = isMeleeRow && (
         agricolaActive ||
         (state as any).__marsVictorActive ||
+        t.type === TowerType.BEASTLORD_CHAMPION ||   // 2026-06-28 — melee anti-air combo
         t.equippedItems.includes('AQUILA_TALONS') ||
         t.equippedItems.includes('STORM_AQUILA_TALONS') ||
         towerAuraTileKind(t) === 'CYAN'
@@ -2121,6 +2125,39 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
     case TowerType.FROZEN_LEGION:
       pushStatus(target, StatusEffectKind.FREEZE, dur(2.5), 0, tier);
       break;
+    // ─── 2026-06-28 new combo on-hit effects ──────────────────────────
+    case TowerType.PRAETORIAN_EXECUTIONER:
+      // STUN every 2nd strike (0.8s) — heavy lockdown without perma-stun.
+      if ((((t as any).__hitCount ?? 0) % 2) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.8), 0, tier);
+      break;
+    case TowerType.SACRED_BAND:
+      // Divine knight — 0.5s stun on every hit (short, like the priest cluster).
+      pushStatus(target, StatusEffectKind.STUN, dur(0.5), 0, tier);
+      break;
+    case TowerType.CATAPHRACT_LANCER:
+      // Couched lance — heavy 1.0s STUN every 3rd thrust.
+      if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(1.0), 0, tier);
+      break;
+    case TowerType.STORM_BALLISTA:
+      // Storm bolt — 0.7s STUN every 3rd shot.
+      if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.7), 0, tier);
+      break;
+    case TowerType.MIRMILLO_REAVER:
+      // Sica — stacking BLEED DoT on every cut.
+      pushStatus(target, StatusEffectKind.BLEED, 6, 0.012, tier);
+      break;
+    case TowerType.TRIBUNE_AVENGER:
+      // Consecrated scepter — POISON DoT on every divine strike.
+      pushStatus(target, StatusEffectKind.POISON, dur(3), 0.05, tier);
+      break;
+    case TowerType.PLAGUE_LOBBER:
+      // Toxin pot — POISON on the cluster (BURNING patch is auto-fired by burnsGround).
+      pushStatus(target, StatusEffectKind.POISON, dur(2.5), 0.05, tier);
+      break;
+    case TowerType.AUGURS_WRATH:
+      // Radiant omen-fire — BURN DoT on the struck cluster.
+      pushStatus(target, StatusEffectKind.BURN, dur(2), 0.05, tier);
+      break;
     case TowerType.JULIUS_CAESAR:
       // 0.5s stun on every primary strike — matches the divine-priest
       // cluster below.
@@ -2350,6 +2387,16 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
   // (Pure support towers with damageType NONE still skip — they don't hit.)
   const canApplyItems = t.damageType !== DamageType.NONE;
   if (canApplyItems) {
+    // GALLIC_SHIELD_BOSS used to duplicate Lictor's Fasces (+damage/+range).
+    // It is now a distinct control item: every 4th hit shield-bashes the
+    // target for a fixed 1s stun. pushStatus keeps boss stun immunity and
+    // lockdown diminishing returns centralized.
+    if (t.equippedItems.includes('GALLIC_SHIELD_BOSS')) {
+      const hc = (t as any).__hitCount ?? 0;
+      if (hc > 0 && hc % 4 === 0) {
+        pushStatus(target, StatusEffectKind.STUN, 1.0, 0, tier);
+      }
+    }
     // 2026-05 v6: FIRE_OIL_FLASK is ranged-only (gated in ItemRules) and
     // applies a burn to the target PLUS splashes the same burn to enemies
     // within 1 tile of impact. Bigger envelope, lower per-target DPS than

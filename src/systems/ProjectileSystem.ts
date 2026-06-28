@@ -147,6 +147,11 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   [TowerType.LEGION_PRIME]:   { key: 'PROJ_BARREL',        arc: true,  speed: 400, splash: 1.8,  embed: false },
   // Mars Victor — DIVINE apex: a radiant smiting orb with a wide holy splash.
   [TowerType.MARS_VICTOR]:    { key: 'PROJ_DIVINE_APEX_ORB', arc: false, speed: 720, splash: 1.0, embed: false },
+  // 2026-06-28 — 4 new ranged combos.
+  [TowerType.STORM_BALLISTA]:    { key: 'PROJ_BALLISTA',       arc: false, speed: 780, splash: 1.4, embed: true  },
+  [TowerType.SKYREAPER_BATTERY]: { key: 'PROJ_ARROW',          arc: true,  speed: 640, splash: 0,   embed: true  },
+  [TowerType.PLAGUE_LOBBER]:     { key: 'PROJ_POISON_CLOUD',   arc: true,  speed: 340, splash: 1.2, embed: false },
+  [TowerType.AUGURS_WRATH]:      { key: 'PROJ_DIVINE_APEX_ORB', arc: true, speed: 600, splash: 1.0, embed: false },
   // Consular Fatebinder — every shot strikes every enemy on the map
   // (true damage map-wide handled separately). The visible cast is a
   // fate-binding apex orb to the primary target — cosmetic anchor for the

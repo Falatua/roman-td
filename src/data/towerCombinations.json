@@ -707,5 +707,195 @@
       }
     ],
     "cost": 0
+  },
+  {
+    "result": "PRAETORIAN_EXECUTIONER",
+    "tier": 3,
+    "cost": 10,
+    "ingredients": [
+      {
+        "type": "LIBRITOR",
+        "minTier": 2
+      },
+      {
+        "type": "ACCENSUS",
+        "minTier": 2
+      },
+      {
+        "type": "RETIARIUS",
+        "minTier": 2
+      }
+    ]
+  },
+  {
+    "result": "SACRED_BAND",
+    "tier": 4,
+    "cost": 10,
+    "ingredients": [
+      {
+        "type": "CATAPHRACT",
+        "minTier": 2
+      },
+      {
+        "type": "EVOCATUS",
+        "minTier": 2
+      },
+      {
+        "type": "IMPERATOR_GUARD",
+        "minTier": 2
+      }
+    ]
+  },
+  {
+    "result": "BEASTLORD_CHAMPION",
+    "tier": 3,
+    "cost": 10,
+    "ingredients": [
+      {
+        "type": "BEAST_HUNTER",
+        "minTier": 2
+      },
+      {
+        "type": "BEAST_SLAYER",
+        "minTier": 2
+      },
+      {
+        "type": "PUGIO_ASSASSIN",
+        "minTier": 2
+      }
+    ]
+  },
+  {
+    "result": "MIRMILLO_REAVER",
+    "tier": 3,
+    "cost": 10,
+    "ingredients": [
+      {
+        "type": "RETIARIUS",
+        "minTier": 2
+      },
+      {
+        "type": "RORARIUS",
+        "minTier": 2
+      },
+      {
+        "type": "SPECULATOR",
+        "minTier": 2
+      }
+    ]
+  },
+  {
+    "result": "TRIBUNE_AVENGER",
+    "tier": 4,
+    "cost": 10,
+    "ingredients": [
+      {
+        "type": "EVOCATUS",
+        "minTier": 2
+      },
+      {
+        "type": "ACCENSUS",
+        "minTier": 2
+      },
+      {
+        "type": "FLAMEN",
+        "minTier": 2
+      }
+    ]
+  },
+  {
+    "result": "CATAPHRACT_LANCER",
+    "tier": 4,
+    "cost": 10,
+    "ingredients": [
+      {
+        "type": "CATAPHRACT",
+        "minTier": 2
+      },
+      {
+        "type": "IMPERATOR_GUARD",
+        "minTier": 2
+      },
+      {
+        "type": "LIBRITOR",
+        "minTier": 2
+      }
+    ]
+  },
+  {
+    "result": "STORM_BALLISTA",
+    "tier": 4,
+    "cost": 10,
+    "ingredients": [
+      {
+        "type": "BALLISTARIUS",
+        "minTier": 2
+      },
+      {
+        "type": "CARROBALLISTA",
+        "minTier": 2
+      },
+      {
+        "type": "ARCUBALLISTA",
+        "minTier": 2
+      }
+    ]
+  },
+  {
+    "result": "SKYREAPER_BATTERY",
+    "tier": 4,
+    "cost": 10,
+    "ingredients": [
+      {
+        "type": "AQUILA_VENATOR",
+        "minTier": 2
+      },
+      {
+        "type": "VENATOR",
+        "minTier": 2
+      },
+      {
+        "type": "SAGITTARIUS",
+        "minTier": 2
+      }
+    ]
+  },
+  {
+    "result": "PLAGUE_LOBBER",
+    "tier": 3,
+    "cost": 10,
+    "ingredients": [
+      {
+        "type": "FUNDIBULUS",
+        "minTier": 2
+      },
+      {
+        "type": "IGNIFER",
+        "minTier": 2
+      },
+      {
+        "type": "OPTIO",
+        "minTier": 2
+      }
+    ]
+  },
+  {
+    "result": "AUGURS_WRATH",
+    "tier": 5,
+    "cost": 10,
+    "ingredients": [
+      {
+        "type": "HARUSPEX",
+        "minTier": 2
+      },
+      {
+        "type": "SOLAR_PRIEST",
+        "minTier": 2
+      },
+      {
+        "type": "AUGUR",
+        "minTier": 2
+      }
+    ]
   }
 ]

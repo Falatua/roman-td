@@ -60,6 +60,12 @@ const MANIFEST: Record<string, string> = {
   // (cone attack + rage gauge). Both sprites are user-supplied, chroma-
   // keyed clean via tools/slice_sprite_sheet.py (zero magenta residue).
   SIGNIFERS_DRACONARIUS: 'tc_signifers_draconarius.png', BESTIARIUS: 'tc_bestiarius.png',
+  // 2026-06-28 — 10 new under-represented-base combos.
+  PRAETORIAN_EXECUTIONER: 'tc_praetorian_executioner.png', SACRED_BAND: 'tc_sacred_band.png',
+  BEASTLORD_CHAMPION: 'tc_beastlord_champion.png', MIRMILLO_REAVER: 'tc_mirmillo_reaver.png',
+  TRIBUNE_AVENGER: 'tc_tribune_avenger.png', CATAPHRACT_LANCER: 'tc_cataphract_lancer.png',
+  STORM_BALLISTA: 'tc_storm_ballista.png', SKYREAPER_BATTERY: 'tc_skyreaper_battery.png',
+  PLAGUE_LOBBER: 'tc_plague_lobber.png', AUGURS_WRATH: 'tc_augurs_wrath.png',
   // 2026-05-17 — MURMILLO (T4 mid-game combo). Heavy Roman gladiator with
   // fish-helmet + scutum + gladius. Sliced from the user-supplied gladiator
   // roster sheet (top-left cell); chroma-keyed via the standard pipeline.
