@@ -243,7 +243,8 @@ export const ANTI_AIR_ONLY_TYPES = new Set<TowerType>([]);
 const CLEAVE_MELEE = new Set<TowerType>([
   TowerType.HASTATI, TowerType.TRIARIUS, TowerType.COHORT_GUARD,
   TowerType.PRAETORIAN_WALL, TowerType.IMPERATOR_GUARD,
-  TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES
+  TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
+  TowerType.PONTIFEX_MAXIMUS
 ]);
 
 // 2026-05-15 cleave/multi-shot item helpers. The FALX_BLADE item adds

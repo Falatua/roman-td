@@ -117,7 +117,7 @@ describe('Recipe combo detection', () => {
       [TowerType.GOD_OF_WAR]: 183.0,
       [TowerType.TURMA_LANCERS]: 124.9,
       [TowerType.AURORA_LEGION]: 116.5,
-      [TowerType.STORM_VEXILLATION]: 82.6,
+      [TowerType.STORM_VEXILLATION]: 125.0,
       [TowerType.IMPERIUM_ETERNUM]: 232.9,
       [TowerType.CARTHAGE_SCOURGE]: 128.1,
       [TowerType.MARS_VICTOR]: 1718.8

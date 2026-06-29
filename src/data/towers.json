@@ -820,13 +820,13 @@
   "PONTIFEX_MAXIMUS": {
     "name": "Pontifex",
     "damageType": "DIVINE",
-    "baseDps": 83.8,
+    "baseDps": 130.0,
     "attackSpeed": 0.4587,
-    "range": 1.5,
+    "range": 2.0,
     "kind": "COMBO",
     "melee": true,
     "tierBand": 5,
-    "ability": "RITE OF DOOM (MELEE): +200% damage to Bosses. Every hit on a boss refreshes a HELLFIRE curse (1% maxHP/sec per tower tier, permanent until the boss dies). The High Priest now strikes with a sanctified ritual blade — bring him to the front line.",
+    "ability": "RITE OF DOOM (MELEE CLEAVE — POLEARM REACH 2.0): cleaves every enemy in melee range each swing (secondaries 70%). +200% damage to Bosses. Every hit on a boss refreshes a HELLFIRE curse (1% maxHP/sec per tower tier, permanent until the boss dies). The High Priest strikes with a sanctified ritual blade — bring him to the front line.",
     "critChance": 0.18,
     "critMult": 2.5
   },
@@ -859,13 +859,13 @@
   "STORM_VEXILLATION": {
     "name": "Storm Vexilla",
     "damageType": "DIVINE",
-    "baseDps": 82.6,
+    "baseDps": 125.0,
     "attackSpeed": 0.417,
     "range": 4.6,
     "kind": "COMBO",
     "melee": false,
     "tierBand": 4,
-    "ability": "COMBO-OF-COMBO (T4): Stormcaller forged into a banner. Chain lightning to 6 enemies, retaining 80% damage per jump (20% decay).",
+    "ability": "COMBO-OF-COMBO (T4): Stormcaller forged into a banner. Heavy divine bolt that chains to 6 enemies, retaining 80% damage per jump (20% decay) — a real step up from the Stormcaller it was forged from.",
     "critChance": 0.2,
     "critMult": 2.5
   },
