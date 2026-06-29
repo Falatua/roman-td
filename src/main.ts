@@ -7148,6 +7148,15 @@ async function boot() {
             // the kill hook. No legendaries, so it doesn't overshadow W15/W20.
             const drop = premiumDropRoll(0.45) ? rollEpicDrop(state, inventory) : rollRareDrop();
             if (drop) spawnLootAt(state, e, drop);
+          } else if ((e as any).isElite && premiumDropRoll(0.30)) {
+            // 2026-06-28 — Per user: elites should also drop epics. Commanders
+            // + elite-ARCHETYPE units already pay a guaranteed epic above; this
+            // catches the big elite-FLAGGED creatures (Chimera, Cerberus,
+            // Typhon, Giant, Cyclops, Colossus, Siege Wagon, Stone Juggernaut)
+            // whose archetype isn't 'ELITE'. 30% so these premium kills reward
+            // gear reliably without flooding the late game.
+            const drop = rollEpicDrop(state, inventory);
+            if (drop) spawnLootAt(state, e, drop);
           } else {
             // 2026-05-24 — Elephant EPIC drop hook was moved above the
             // boss-drop branch so it actually fires (elephants are
