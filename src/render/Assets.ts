@@ -138,6 +138,9 @@ const MANIFEST: Record<string, string> = {
   PATHFINDER_COMMANDER: 'endless/e_endless_mongol_scout.png',
   ANUBIS_PRIEST_COMMANDER: 'endless/e_endless_anubis_priest.png',
   SIEGE_CAPTAIN_COMMANDER: 'e3_demon_legate.png',
+  SKY_STANDARD_COMMANDER: 'e_sky_standard_commander.png',
+  SKY_PATHFINDER_COMMANDER: 'e_sky_pathfinder_commander.png',
+  SKY_ANUBIS_COMMANDER: 'e_sky_anubis_commander.png',
   // Projectile swap art for JUPITER'S WRATH — re-uses the storm-javelin
   // sprite so ranged towers carrying the legendary throw an electrified
   // bolt instead of their usual pilum / arrow. Plus a dedicated chain
@@ -595,6 +598,22 @@ const MANIFEST: Record<string, string> = {
   PROJ_SULLA_METEOR:    '../heroes/attacks/sulla_meteor_projectile.png',
   SULLA_METEOR_PROJECTILE: '../heroes/attacks/sulla_meteor_projectile_sheet.png',
   SULLA_METEOR_IMPACT:     '../heroes/attacks/sulla_meteor_impact_sheet.png',
+  // 2026-06-29 — Dedicated per-ability hero VFX sprites (hfx_*). Each of
+  // the 11 non-Meteor hero abilities now has its own unique projectile/
+  // emblem instead of borrowing a tower/item/PROJ texture. Live under
+  // heroes/attacks/ so isCriticalAsset() force-loads them on the critical
+  // path (abilities can fire on W1). Consumed by drawHeroAbilityFx().
+  HFX_MARIAN_STANDARD: '../heroes/attacks/hfx_marian_standard.png',  // Marius — Marian Formation (violet signum)
+  HFX_CAPITE_PILUM:    '../heroes/attacks/hfx_capite_pilum.png',     // Marius — Capite Censi (amber levy pilum)
+  HFX_PILUM_VOLLEY:    '../heroes/attacks/hfx_pilum_volley.png',     // Agrippa — Pilum Volley (steel-blue javelin)
+  HFX_NAVAL_SHELL:     '../heroes/attacks/hfx_naval_shell.png',      // Agrippa — Naval Bombardment (fire-pot shell)
+  HFX_SCOUT_EAGLE:     '../heroes/attacks/hfx_scout_eagle.png',      // Agricola — Eagle Scout (silver diving aquila)
+  HFX_FRONTIER_WALL:   '../heroes/attacks/hfx_frontier_wall.png',    // Agricola — Frontier Wall (palisade rampart)
+  HFX_CORNU_CHARGE:    '../heroes/attacks/hfx_cornu_charge.png',     // Scipio — Cornu Charge (brass war horn)
+  HFX_SCIPIO_BRAND:    '../heroes/attacks/hfx_scipio_brand.png',     // Scipio — Scipio's Brand (red-hot branding iron)
+  HFX_SPQR_DECREE:     '../heroes/attacks/hfx_spqr_decree.png',      // Caesar — SPQR Decree (golden aquila standard)
+  HFX_PAX_LAUREL:      '../heroes/attacks/hfx_pax_laurel.png',       // Caesar — Pax Romana (gold laurel + olive)
+  HFX_PROSCRIPTION:    '../heroes/attacks/hfx_proscription.png',     // Sulla — Proscription (flaming condemnation tablet)
   // 2026-05-20 v2 — Hero tower halo rings. Layered under each hero
   // sprite at render time so the player can see at a glance "this is
   // the hero, not a regular T1/T2 tower." 9 styles cropped from a

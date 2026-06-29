@@ -271,12 +271,15 @@ export enum EnemyType {
   SIEGE_WAGON = 'SIEGE_WAGON',            // slow, tanky transport; bursts 30 Dune Stalkers on death
   DUNE_STALKER = 'DUNE_STALKER',          // fast, low-HP skirmisher with periodic stealth
   STONE_JUGGERNAUT = 'STONE_JUGGERNAUT',  // very slow super-tank; shrugs slows + stuns
-  // W21-W30 campaign commanders — rare non-boss support enemies that
+  // Campaign commanders — rare non-boss support enemies that
   // change the wave until killed.
   STANDARD_BEARER_COMMANDER = 'STANDARD_BEARER_COMMANDER',
   PATHFINDER_COMMANDER = 'PATHFINDER_COMMANDER',
   ANUBIS_PRIEST_COMMANDER = 'ANUBIS_PRIEST_COMMANDER',
   SIEGE_CAPTAIN_COMMANDER = 'SIEGE_CAPTAIN_COMMANDER',
+  SKY_STANDARD_COMMANDER = 'SKY_STANDARD_COMMANDER',
+  SKY_PATHFINDER_COMMANDER = 'SKY_PATHFINDER_COMMANDER',
+  SKY_ANUBIS_COMMANDER = 'SKY_ANUBIS_COMMANDER',
   // ─── GATES OF HELL (2026-05-17 surprise event) ───────────────────────
   // HELL_GATE — stationary "enemy" that anchors the event at WP3/WP4.
   // Has HP, takes tower fire, dies via the regular death path. Its

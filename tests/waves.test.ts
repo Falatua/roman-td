@@ -93,6 +93,8 @@ describe('Late-wave DoT profile coverage', () => {
     expect(enemyResistanceProfile(EnemyType.DUNE_STALKER).bleed).toBeGreaterThan(1);
     expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).burn).toBe(0);
     expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).bleed).toBeGreaterThan(1);
+    expect(enemyResistanceProfile(EnemyType.SKY_PATHFINDER_COMMANDER).siege).toBeGreaterThan(1);
+    expect(enemyResistanceProfile(EnemyType.SKY_ANUBIS_COMMANDER).poison).toBe(0);
   });
 });
 
@@ -117,6 +119,7 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(byWave.get(24).spawns.some((s: any) => s.type === 'SIEGE_WAGON')).toBe(true);
     expect(byWave.get(25).spawns.some((s: any) => s.type === 'DEMON_HELLHOUND')).toBe(true);
     expect(byWave.get(28).spawns.some((s: any) => s.type === 'SIEGE_CAPTAIN_COMMANDER')).toBe(true);
+    expect(byWave.get(28).spawns.some((s: any) => s.type === 'SKY_PATHFINDER_COMMANDER')).toBe(true);
     expect(byWave.get(30).spawns.some((s: any) => s.type === 'CHIMERA')).toBe(true);
   });
 });

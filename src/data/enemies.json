@@ -852,6 +852,44 @@
     "requiresMeleeBreak": true,
     "renderScale": 1.25
   },
+  "SKY_STANDARD_COMMANDER": {
+    "name": "Commander: Sky Standard",
+    "faction": "EGYPTIANS",
+    "baseHp": 3100,
+    "speed": 0.82,
+    "isFlyer": true,
+    "isBoss": false,
+    "livesCost": 3,
+    "isElite": true,
+    "bigGlow": true,
+    "renderScale": 1.16,
+    "outOfCombatRegen": 0.01
+  },
+  "SKY_PATHFINDER_COMMANDER": {
+    "name": "Commander: Sky Pathfinder",
+    "faction": "EGYPTIANS",
+    "baseHp": 1900,
+    "speed": 0.95,
+    "isFlyer": true,
+    "isBoss": false,
+    "livesCost": 2,
+    "isElite": true,
+    "dodgeChance": 0.16,
+    "renderScale": 1.1
+  },
+  "SKY_ANUBIS_COMMANDER": {
+    "nullifyAuraRadiusTiles": 1.5,
+    "name": "Commander: Wind Priest",
+    "faction": "EGYPTIANS",
+    "baseHp": 2600,
+    "speed": 0.78,
+    "isFlyer": true,
+    "isBoss": false,
+    "livesCost": 3,
+    "isElite": true,
+    "immunePoison": true,
+    "renderScale": 1.12
+  },
   "SIEGE_WAGON": {
     "name": "Siege Wagon",
     "faction": "EGYPTIANS",

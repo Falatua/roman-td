@@ -299,12 +299,15 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // 2026 v2 spec Ch14 — Egyptian roster expansion.
   [EnemyType.PLAGUE_BEARER]:  { ranged: 0.2, poison: 0.8, bleed: 0.65, burn: 0.3 },
   [EnemyType.MEDJAY_SOLDIER]: { melee: 0.5, ranged: 0.3, slow: 0.3, burn: 0.80, poison: 0.85, bleed: 0.65 },
-  // W21-W30 commanders — sturdy support pieces, but deliberately not
+  // Campaign commanders — sturdy support pieces, but deliberately not
   // boss-grade. Killing them should feel like solving the wave.
   [EnemyType.STANDARD_BEARER_COMMANDER]: { melee: 0.55, ranged: 0.5, slow: 0.35, burn: 0.75, poison: 0.65, bleed: 0.60, divine: 1.25 },
   [EnemyType.PATHFINDER_COMMANDER]:      { ranged: 0.65, slow: 0.25, burn: 0.90, poison: 0.75, bleed: 0.65 },
   [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { ranged: 0.5, slow: 0.3, burn: 0.70, poison: 0, bleed: 0.50, divine: 1.30 },
   [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0.7, burn: 0, poison: 1.15, bleed: 1.10, divine: 1.20 },
+  [EnemyType.SKY_STANDARD_COMMANDER]:     { melee: 0.7, ranged: 0.55, slow: 0.35, siege: 1.2, burn: 0.8, poison: 0.65, bleed: 0.6, divine: 1.2 },
+  [EnemyType.SKY_PATHFINDER_COMMANDER]:   { ranged: 0.7, slow: 0.3, siege: 1.25, burn: 0.85, poison: 0.75, bleed: 0.75 },
+  [EnemyType.SKY_ANUBIS_COMMANDER]:       { ranged: 0.55, slow: 0.35, siege: 1.15, burn: 0.75, poison: 0, bleed: 0.55, divine: 1.25 },
   // 2026-06-26 variety roster.
   // Siege Wagon: heavily plated transport — shrugs melee/ranged, weak to siege.
   [EnemyType.SIEGE_WAGON]:      { melee: 0.65, ranged: 0.6, slow: 0.5, burn: 0.55, poison: 0.35, bleed: 0.25, siege: 1.75 },

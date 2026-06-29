@@ -6,19 +6,29 @@ export type CommanderType =
   | 'STANDARD_BEARER_COMMANDER'
   | 'PATHFINDER_COMMANDER'
   | 'ANUBIS_PRIEST_COMMANDER'
-  | 'SIEGE_CAPTAIN_COMMANDER';
+  | 'SIEGE_CAPTAIN_COMMANDER'
+  | 'SKY_STANDARD_COMMANDER'
+  | 'SKY_PATHFINDER_COMMANDER'
+  | 'SKY_ANUBIS_COMMANDER';
 
 export const COMMANDER_TYPES = new Set<string>([
   'STANDARD_BEARER_COMMANDER',
   'PATHFINDER_COMMANDER',
   'ANUBIS_PRIEST_COMMANDER',
-  'SIEGE_CAPTAIN_COMMANDER'
+  'SIEGE_CAPTAIN_COMMANDER',
+  'SKY_STANDARD_COMMANDER',
+  'SKY_PATHFINDER_COMMANDER',
+  'SKY_ANUBIS_COMMANDER'
 ]);
 
 const CAMPAIGN_COMMANDERS: Record<number, CommanderType> = {
+  8: 'SKY_PATHFINDER_COMMANDER',
+  18: 'SKY_STANDARD_COMMANDER',
   21: 'PATHFINDER_COMMANDER',
   23: 'ANUBIS_PRIEST_COMMANDER',
+  24: 'SKY_ANUBIS_COMMANDER',
   26: 'STANDARD_BEARER_COMMANDER',
+  28: 'SKY_PATHFINDER_COMMANDER',
   29: 'SIEGE_CAPTAIN_COMMANDER',
   30: 'STANDARD_BEARER_COMMANDER'
 };
@@ -49,18 +59,30 @@ function activeCommanders(state: GameStateShape, type?: CommanderType): any[] {
 
 export function commanderDamageTakenMult(state: GameStateShape, target: any): number {
   if (!target || target.hp <= 0 || target.isBoss || isCommanderType(target.type)) return 1;
+  let mult = 1;
   for (const commander of activeCommanders(state, 'STANDARD_BEARER_COMMANDER')) {
     if (Math.hypot(commander.x - target.x, commander.y - target.y) <= 4 * GRID.TILE) {
-      return (state.wave ?? 1) >= 21 ? 0.80 : 0.85;
+      mult = Math.min(mult, (state.wave ?? 1) >= 21 ? 0.80 : 0.85);
     }
   }
-  return 1;
+  for (const commander of activeCommanders(state, 'SKY_STANDARD_COMMANDER')) {
+    if (Math.hypot(commander.x - target.x, commander.y - target.y) <= 4.5 * GRID.TILE) {
+      mult = Math.min(mult, target.isFlyer ? 0.82 : 0.92);
+    }
+  }
+  return mult;
 }
 
 export function commanderSpeedMult(state: GameStateShape, enemy: any): number {
   if (!enemy || enemy.hp <= 0 || isCommanderType(enemy.type)) return 1;
-  if (activeCommanders(state, 'PATHFINDER_COMMANDER').length === 0) return 1;
-  return (state.wave ?? 1) >= 25 ? 1.20 : (state.wave ?? 1) >= 21 ? 1.16 : 1.12;
+  let mult = 1;
+  if (activeCommanders(state, 'PATHFINDER_COMMANDER').length > 0) {
+    mult *= (state.wave ?? 1) >= 25 ? 1.20 : (state.wave ?? 1) >= 21 ? 1.16 : 1.12;
+  }
+  if (enemy.isFlyer && activeCommanders(state, 'SKY_PATHFINDER_COMMANDER').length > 0) {
+    mult *= (state.wave ?? 1) >= 21 ? 1.13 : 1.08;
+  }
+  return mult;
 }
 
 export function commanderTrapRadiusDisabled(state: GameStateShape, x: number, y: number): boolean {
@@ -72,14 +94,19 @@ export function commanderTrapRadiusDisabled(state: GameStateShape, x: number, y:
 
 export function tickCommanderSupport(state: GameStateShape, dt: number): void {
   if (dt <= 0) return;
-  for (const commander of activeCommanders(state, 'ANUBIS_PRIEST_COMMANDER')) {
+  const healers = [
+    ...activeCommanders(state, 'ANUBIS_PRIEST_COMMANDER').map(commander => ({ commander, sky: false })),
+    ...activeCommanders(state, 'SKY_ANUBIS_COMMANDER').map(commander => ({ commander, sky: true }))
+  ];
+  for (const { commander, sky } of healers) {
     const next = (commander as any).__anubisPulseAt ?? 0;
     if (state.tick < next) continue;
     (commander as any).__anubisPulseAt = state.tick + 3.5;
     for (const e of state.enemies.values()) {
       if (e.hp <= 0 || e.isBoss || isCommanderType(e.type as any)) continue;
-      if (Math.hypot(e.x - commander.x, e.y - commander.y) > 3.5 * GRID.TILE) continue;
-      const healPct = (state.wave ?? 1) >= 21 ? 0.08 : 0.06;
+      if (sky && !e.isFlyer) continue;
+      if (Math.hypot(e.x - commander.x, e.y - commander.y) > (sky ? 4.5 : 3.5) * GRID.TILE) continue;
+      const healPct = sky ? ((state.wave ?? 1) >= 21 ? 0.07 : 0.045) : ((state.wave ?? 1) >= 21 ? 0.08 : 0.06);
       e.hp = Math.min(e.maxHp, e.hp + e.maxHp * healPct);
       (e as any).__commanderHealedUntil = state.tick + 0.35;
     }

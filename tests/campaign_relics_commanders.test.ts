@@ -177,11 +177,15 @@ describe('Boss trophies', () => {
 });
 
 describe('Enemy commanders', () => {
-  it('injects authored commander spawns into W21, W23, W26, W29, and W30', () => {
+  it('injects authored commander spawns into early, mid, and late campaign waves', () => {
     const expected: Record<number, string> = {
+      8: 'SKY_PATHFINDER_COMMANDER',
+      18: 'SKY_STANDARD_COMMANDER',
       21: 'PATHFINDER_COMMANDER',
       23: 'ANUBIS_PRIEST_COMMANDER',
+      24: 'SKY_ANUBIS_COMMANDER',
       26: 'STANDARD_BEARER_COMMANDER',
+      28: 'SKY_PATHFINDER_COMMANDER',
       29: 'SIEGE_CAPTAIN_COMMANDER',
       30: 'STANDARD_BEARER_COMMANDER'
     };
@@ -223,5 +227,19 @@ describe('Enemy commanders', () => {
     expect(commanderSpeedMult(s, { type: EnemyType.MONGOL_FOOTMAN, hp: 100 })).toBeCloseTo(1.12, 4);
     expect(commanderTrapRadiusDisabled(s, 210, 210)).toBe(true);
     expect(commanderTrapRadiusDisabled(s, 500, 500)).toBe(false);
+  });
+
+  it('flying commanders specialize in flyer support', () => {
+    const s = bootstrapState();
+    const skyStandard: any = { id: 'ss', type: EnemyType.SKY_STANDARD_COMMANDER, hp: 100, x: 100, y: 100 };
+    const skyPathfinder: any = { id: 'sp', type: EnemyType.SKY_PATHFINDER_COMMANDER, hp: 100, x: 130, y: 100 };
+    s.enemies.set(skyStandard.id, skyStandard);
+    s.enemies.set(skyPathfinder.id, skyPathfinder);
+
+    expect(isCommanderType(EnemyType.SKY_ANUBIS_COMMANDER)).toBe(true);
+    expect(commanderDamageTakenMult(s, { type: EnemyType.SPHINX, hp: 100, isBoss: false, isFlyer: true, x: 120, y: 100 })).toBeCloseTo(0.82, 4);
+    expect(commanderDamageTakenMult(s, { type: EnemyType.MONGOL_FOOTMAN, hp: 100, isBoss: false, x: 120, y: 100 })).toBeCloseTo(0.92, 4);
+    expect(commanderSpeedMult(s, { type: EnemyType.SPHINX, hp: 100, isFlyer: true })).toBeCloseTo(1.08, 4);
+    expect(commanderSpeedMult(s, { type: EnemyType.MONGOL_FOOTMAN, hp: 100, isFlyer: false })).toBeCloseTo(1, 4);
   });
 });

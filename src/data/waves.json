@@ -116,7 +116,7 @@
     "type": "M",
     "faction": "CARTHAGE",
     "hpMult": 2.1,
-    "gold": 18,
+    "gold": 17,
     "resistReduction": 0.15,
     "spawns": [
       {
@@ -130,6 +130,10 @@
       {
         "type": "NUMIDIAN_RIDER",
         "count": 5
+      },
+      {
+        "type": "SKY_PATHFINDER_COMMANDER",
+        "count": 1
       }
     ]
   },
@@ -334,7 +338,7 @@
     "type": "M",
     "faction": "EGYPTIANS",
     "hpMult": 11,
-    "gold": 14,
+    "gold": 15,
     "spawns": [
       {
         "type": "EGYPTIAN_SPEARMAN",
@@ -342,7 +346,7 @@
       },
       {
         "type": "EGYPTIAN_ARCHER",
-        "count": 48
+        "count": 46
       },
       {
         "type": "MUMMY_WARRIOR",
@@ -362,6 +366,10 @@
       },
       {
         "type": "ANUBIS_PRIEST_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "SKY_STANDARD_COMMANDER",
         "count": 1
       },
       {
@@ -605,7 +613,7 @@
     "type": "B",
     "faction": "EGYPTIANS",
     "hpMult": 44,
-    "gold": 18,
+    "gold": 17,
     "spawns": [
       {
         "type": "ANUBIS_KING",
@@ -621,6 +629,10 @@
       },
       {
         "type": "ANUBIS_PRIEST_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "SKY_ANUBIS_COMMANDER",
         "count": 1
       },
       {
@@ -783,7 +795,7 @@
     "type": "G",
     "faction": "ROMAN_MYTH",
     "hpMult": 24,
-    "gold": 20,
+    "gold": 19,
     "fixedCount": true,
     "superGiantActive": true,
     "spawns": [
@@ -805,6 +817,10 @@
       },
       {
         "type": "SIEGE_CAPTAIN_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "SKY_PATHFINDER_COMMANDER",
         "count": 1
       },
       {

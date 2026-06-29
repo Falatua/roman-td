@@ -1519,7 +1519,7 @@ export class RenderEngine {
   }> = [];
   private destroyHeroAbilityFxAssets(fx: { extras?: any }): void {
     const arrayKeys = ['__auxSprites', '__pilumSprites', '__shellSprites', '__eagleSprites'];
-    const singleKeys = ['__pilumSprite', '__hornSprite', '__brandSprite', '__aquilaSprite', '__laurelSprite', '__boltSprite', '__meteorSprite', '__meteorImpactSprite'];
+    const singleKeys = ['__pilumSprite', '__hornSprite', '__brandSprite', '__aquilaSprite', '__laurelSprite', '__boltSprite', '__meteorSprite', '__meteorImpactSprite', '__marianSprite', '__wallSprite', '__proscriptionSprite'];
     for (const k of arrayKeys) {
       const arr: Sprite[] | undefined = fx.extras?.[k];
       if (arr) {
@@ -1606,6 +1606,28 @@ export class RenderEngine {
           // Targets is an array of {x,y} for the buffed towers (passed in
           // from the executor).
           const tgts: Array<{ x: number; y: number }> = fx.extras?.targets ?? [];
+          // 2026-06-29 — dedicated violet signum standard (HFX_MARIAN_STANDARD)
+          // rises at Marius as the formation rallies; the ring-pulses below
+          // remain as the buff-aura accent. Lazy-alloc + cached on extras,
+          // cleaned up via __marianSprite in destroyHeroAbilityFxAssets.
+          if (!fx.extras) fx.extras = {};
+          if (!fx.extras.__marianSprite) {
+            const stex = tex('HFX_MARIAN_STANDARD');
+            if (stex && stex.width > 0) {
+              const sp = new Sprite(stex);
+              sp.anchor.set(0.5, 0.92);
+              const sz = GRID.TILE * 1.6;
+              sp.width = sz; sp.height = sz;
+              this.layers.fx.addChild(sp);
+              fx.extras.__marianSprite = sp;
+            }
+          }
+          const msp = fx.extras.__marianSprite as Sprite | undefined;
+          if (msp) {
+            const rise = GRID.TILE * 0.35 * (1 - Math.min(1, t * 2.2));
+            msp.position.set(fx.x, fx.y + rise);
+            msp.alpha = 0.96 * fade;
+          }
           const r0 = 36 + t * 36;
           g.lineStyle(3 * fade, fx.color, 0.85 * fade);
           g.drawCircle(fx.x, fx.y, r0);
@@ -1643,7 +1665,7 @@ export class RenderEngine {
             const prog = Math.min(1, t * 1.4);
             // Lazy sprite alloc
             if (!fx.extras.__pilumSprite) {
-              const ptex = tex('PROJ_PILUM');
+              const ptex = tex('HFX_CAPITE_PILUM') ?? tex('PROJ_PILUM');
               if (ptex && ptex.width > 0 && ptex.height > 0) {
                 const sp = new Sprite(ptex);
                 sp.anchor.set(0.5, 0.5);
@@ -1791,7 +1813,7 @@ export class RenderEngine {
           const tgts: Array<{ x: number; y: number }> = fx.extras?.targets ?? [];
           const arcLift = 38;
           if (!fx.extras.__pilumSprites && tgts.length > 0) {
-            const ptex = tex('PROJ_PILUM');
+            const ptex = tex('HFX_PILUM_VOLLEY') ?? tex('PROJ_PILUM');
             const sprites: Sprite[] = [];
             // 2026-05-24 v2 — absolute pixel sizing (was scale ratio
             // that blew up on Higgsfield's high-res native textures).
@@ -1846,7 +1868,7 @@ export class RenderEngine {
           // than a pilum and reads as a true naval-bombardment shell.
           const pts: Array<{ x: number; y: number }> = fx.extras?.impacts ?? [];
           if (!fx.extras.__shellSprites && pts.length > 0) {
-            const btex = tex('PROJ_BALLISTA');
+            const btex = tex('HFX_NAVAL_SHELL') ?? tex('PROJ_BALLISTA');
             const sprites: Sprite[] = [];
             // 2026-05-24 v2 — absolute pixel sizing (was 1.4 scale ratio).
             const shellSize = GRID.TILE * 1.0;
@@ -1902,7 +1924,7 @@ export class RenderEngine {
           // briefly so the player reads which flyer is marked.
           const tgts: Array<{ x: number; y: number }> = fx.extras?.targets ?? [];
           if (!fx.extras.__eagleSprites && tgts.length > 0) {
-            const etex = tex('AQUILA_VENATOR');
+            const etex = tex('HFX_SCOUT_EAGLE') ?? tex('AQUILA_VENATOR');
             const sprites: Sprite[] = [];
             // 2026-05-24 v2 — absolute pixel sizing. AQUILA_VENATOR is
             // a tower portrait (~512×512 native); the old 0.45× scale
@@ -1962,34 +1984,29 @@ export class RenderEngine {
           // a frontier-era wood fortification (matches Agricola's
           // historical role at Hadrian's Wall / Caledonia). Stayed
           // procedural since no specific palisade sprite exists.
-          const spread = GRID.TILE * 1.2;
-          const positions = [-spread, 0, spread];
-          const fullH = GRID.TILE * 1.6;
-          const h = fullH * Math.min(1, t * 2.5); // rise animation
-          for (const dx of positions) {
-            const px = fx.x + dx;
-            // Pillar body — dark wood + lighter highlight strip
-            g.beginFill(0x2a4a1a, 0.92 * fade).drawRect(px - 6, fx.y - h, 12, h).endFill();
-            g.beginFill(fx.color, 0.55 * fade).drawRect(px - 4, fx.y - h, 3, h).endFill();
-            g.lineStyle(1.5 * fade, 0x1a2a0a, 0.95 * fade);
-            g.drawRect(px - 6, fx.y - h, 12, h);
-            g.lineStyle(0);
-            // Sharpened top spike
-            g.beginFill(0x3a5a2a, 0.95 * fade);
-            g.moveTo(px, fx.y - h - 7);
-            g.lineTo(px - 6, fx.y - h);
-            g.lineTo(px + 6, fx.y - h);
-            g.endFill();
-            g.lineStyle(1 * fade, 0x1a2a0a, 0.9 * fade);
-            g.moveTo(px, fx.y - h - 7).lineTo(px - 6, fx.y - h);
-            g.moveTo(px, fx.y - h - 7).lineTo(px + 6, fx.y - h);
-            g.lineStyle(0);
+          // 2026-06-29 — dedicated palisade-rampart sprite (HFX_FRONTIER_WALL)
+          // rises from the ground in place of the old procedural pillars; the
+          // ground-dust accent below remains. Lazy-alloc + cached on extras,
+          // cleaned up via __wallSprite in destroyHeroAbilityFxAssets.
+          if (!fx.extras) fx.extras = {};
+          if (!fx.extras.__wallSprite) {
+            const wtex = tex('HFX_FRONTIER_WALL');
+            if (wtex && wtex.width > 0) {
+              const sp = new Sprite(wtex);
+              sp.anchor.set(0.5, 0.9);
+              const sz = GRID.TILE * 2.2;
+              sp.width = sz; sp.height = sz;
+              this.layers.fx.addChild(sp);
+              fx.extras.__wallSprite = sp;
+            }
           }
-          // Crossbeam between pillars
-          g.beginFill(0x2a4a1a, 0.9 * fade).drawRect(fx.x - spread - 6, fx.y - h * 0.75, spread * 2 + 12, 5).endFill();
-          g.lineStyle(1 * fade, 0x1a2a0a, 0.95 * fade);
-          g.drawRect(fx.x - spread - 6, fx.y - h * 0.75, spread * 2 + 12, 5);
-          g.lineStyle(0);
+          const wsp = fx.extras.__wallSprite as Sprite | undefined;
+          if (wsp) {
+            // Rise-in over the first ~40% of life, then settle.
+            const rise = GRID.TILE * 0.5 * (1 - Math.min(1, t * 2.5));
+            wsp.position.set(fx.x, fx.y + rise);
+            wsp.alpha = 0.96 * fade;
+          }
           // Ground-impact dust at base — the wall slams in
           if (t < 0.3) {
             const dustR = 24 + t * 60;
@@ -2008,7 +2025,7 @@ export class RenderEngine {
           // procedural waves for the audio-shockwave feeling.
           const target = fx.extras?.target;
           if (!fx.extras.__hornSprite) {
-            const htex = tex('ITEM_BARCA_WAR_HORN');
+            const htex = tex('HFX_CORNU_CHARGE') ?? tex('ITEM_BARCA_WAR_HORN');
             if (htex) {
               const sp = new Sprite(htex);
               sp.anchor.set(0.5, 0.5);
@@ -2067,7 +2084,7 @@ export class RenderEngine {
           const target = fx.extras?.target ?? { x: fx.x, y: fx.y };
           const stamp = Math.min(1, t * 1.5);
           if (!fx.extras.__brandSprite) {
-            const btex = tex('ITEM_SOULFIRE_BRAND');
+            const btex = tex('HFX_SCIPIO_BRAND') ?? tex('ITEM_SOULFIRE_BRAND');
             if (btex) {
               const sp = new Sprite(btex);
               sp.anchor.set(0.5, 0.85); // anchor near brand tip
@@ -2117,7 +2134,7 @@ export class RenderEngine {
           // — and golden seal flares pop at every tower he's buffing.
           const tgts: Array<{ x: number; y: number }> = fx.extras?.towers ?? [];
           if (!fx.extras.__aquilaSprite) {
-            const atex = tex('AR_EAGLE_STANDARD') ?? tex('ITEM_AQUILA_STANDARD');
+            const atex = tex('HFX_SPQR_DECREE') ?? tex('AR_EAGLE_STANDARD') ?? tex('ITEM_AQUILA_STANDARD');
             if (atex) {
               const sp = new Sprite(atex);
               sp.anchor.set(0.5, 0.85);
@@ -2163,7 +2180,7 @@ export class RenderEngine {
           // across the map as the imperial order spreads, and a big
           // gold pulse marks Caesar's center.
           if (!fx.extras.__laurelSprite) {
-            const ltex = tex('MU_LAUREL') ?? tex('ITEM_TYRANTS_LAUREL');
+            const ltex = tex('HFX_PAX_LAUREL') ?? tex('MU_LAUREL') ?? tex('ITEM_TYRANTS_LAUREL');
             if (ltex) {
               const sp = new Sprite(ltex);
               sp.anchor.set(0.5, 0.5);
