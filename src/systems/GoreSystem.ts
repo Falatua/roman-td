@@ -197,5 +197,12 @@ export function fadeCorpsesAtWaveEnd(gore: GoreState, tick: number) {
 
 // Drop fully faded corpses
 export function pruneCorpses(gore: GoreState, tick: number, fadeDuration = 3) {
-  gore.corpses = gore.corpses.filter(c => c.fadeStartTick < 0 || (tick - c.fadeStartTick) < fadeDuration);
+  let write = 0;
+  for (let i = 0; i < gore.corpses.length; i++) {
+    const c = gore.corpses[i];
+    if (c.fadeStartTick < 0 || (tick - c.fadeStartTick) < fadeDuration) {
+      gore.corpses[write++] = c;
+    }
+  }
+  gore.corpses.length = write;
 }

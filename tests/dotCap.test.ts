@@ -55,10 +55,9 @@ function setStatus(e: Enemy, kind: StatusEffectKind, magnitude: number, remainin
   e.statusEffects.push({ kind, magnitude, remaining, sourceTier: 1 } as any);
 }
 
-describe('B1 — DoT aggregate cap (4% maxHp/sec) + HELLFIRE sub-cap (1%/sec)', () => {
-  // 2026-05-22 — caps halved (8% → 4% aggregate, 2% → 1% Hellfire)
-  // per user balance feedback: "I was able to kill the final boss
-  // in 5 s with DoTs." Tests retuned to match the new numbers.
+describe('B1 — DoT aggregate cap (7% maxHp/sec) + HELLFIRE sub-cap (2%/sec)', () => {
+  // 2026-06-29 — caps RAISED (4% → 7% aggregate, 1% → 2% Hellfire) to revive
+  // the fire/poison DoT archetype so a 2nd-3rd DoT tower scales meaningfully.
   it('single BURN at 3%/sec ticks at full rate (under cap)', () => {
     const s = createGameState();
     const e = makeEnemy(EnemyType.FERAL_DOG, EnemyFaction.DOGS, 1000);
@@ -70,9 +69,9 @@ describe('B1 — DoT aggregate cap (4% maxHp/sec) + HELLFIRE sub-cap (1%/sec)', 
     expect(e.hp).toBeLessThan(1000 - 29);
   });
 
-  it('stacked DoTs at 14% raw are clamped to 4% maxHp/sec aggregate', () => {
+  it('stacked DoTs at 14% raw are clamped to 7% maxHp/sec aggregate', () => {
     // 6% BURN + 6% POISON + 1% BLEED + 1% HELLFIRE = 14% raw stacking.
-    // After cap: 4%/sec = 40 HP/sec on a 1000-HP enemy.
+    // After cap: 7%/sec = 70 HP/sec on a 1000-HP enemy.
     const s = createGameState();
     const e = makeEnemy(EnemyType.FERAL_DOG, EnemyFaction.DOGS, 1000);
     setStatus(e, StatusEffectKind.BURN,     0.06);
@@ -81,19 +80,19 @@ describe('B1 — DoT aggregate cap (4% maxHp/sec) + HELLFIRE sub-cap (1%/sec)', 
     setStatus(e, StatusEffectKind.HELLFIRE, 0.01);
     s.enemies.set(e.id, e);
     tickEnemies(s, 1.0, () => {}, () => {});
-    expect(e.hp).toBeGreaterThan(1000 - 41);
-    expect(e.hp).toBeLessThan(1000 - 39);
+    expect(e.hp).toBeGreaterThan(1000 - 71);
+    expect(e.hp).toBeLessThan(1000 - 69);
   });
 
-  it('lone HELLFIRE 5%/sec is clamped to 1%/sec sub-cap', () => {
+  it('lone HELLFIRE 5%/sec is clamped to 2%/sec sub-cap', () => {
     const s = createGameState();
     const e = makeEnemy(EnemyType.FERAL_DOG, EnemyFaction.DOGS, 1000);
     setStatus(e, StatusEffectKind.HELLFIRE, 0.05);
     s.enemies.set(e.id, e);
     tickEnemies(s, 1.0, () => {}, () => {});
-    // Hellfire sub-cap = 10 HP/sec on a 1000-HP enemy (1% of maxHp).
-    expect(e.hp).toBeGreaterThan(1000 - 11);
-    expect(e.hp).toBeLessThan(1000 - 9);
+    // Hellfire sub-cap = 20 HP/sec on a 1000-HP enemy (2% of maxHp).
+    expect(e.hp).toBeGreaterThan(1000 - 21);
+    expect(e.hp).toBeLessThan(1000 - 19);
   });
 
   it('two BURN sources at 1.5% each stack additively to 3% (below cap)', () => {
@@ -109,17 +108,17 @@ describe('B1 — DoT aggregate cap (4% maxHp/sec) + HELLFIRE sub-cap (1%/sec)', 
     expect(e.hp).toBeLessThan(1000 - 29);
   });
 
-  it('aggregate cap binds even when HELLFIRE is at exactly 1% (sub-cap pass-through)', () => {
-    // Hellfire 1% (right at the sub-cap) + Burn 5% (above aggregate
-    // alone) → raw 6%. Aggregate cap = 4%. After cap: 40 HP/sec.
+  it('aggregate cap binds even when HELLFIRE is at exactly 2% (sub-cap pass-through)', () => {
+    // Hellfire 2% (right at the sub-cap) + Burn 6% (above aggregate
+    // alone) → raw 8%. Aggregate cap = 7%. After cap: 70 HP/sec.
     const s = createGameState();
     const e = makeEnemy(EnemyType.FERAL_DOG, EnemyFaction.DOGS, 1000);
-    setStatus(e, StatusEffectKind.HELLFIRE, 0.01);
-    setStatus(e, StatusEffectKind.BURN,     0.05);
+    setStatus(e, StatusEffectKind.HELLFIRE, 0.02);
+    setStatus(e, StatusEffectKind.BURN,     0.06);
     s.enemies.set(e.id, e);
     tickEnemies(s, 1.0, () => {}, () => {});
-    expect(e.hp).toBeGreaterThan(1000 - 41);
-    expect(e.hp).toBeLessThan(1000 - 39);
+    expect(e.hp).toBeGreaterThan(1000 - 71);
+    expect(e.hp).toBeLessThan(1000 - 69);
   });
 });
 

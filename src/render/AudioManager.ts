@@ -131,7 +131,9 @@ export const SFX = {
     const f = base[rarity] ?? 440;
     tone(f, 0.12, 'sine', 0.18);
     setTimeout(() => tone(f * 1.5, 0.12, 'sine', 0.16), 80);
-    if (rarity === 'LEGENDARY' || rarity === 'UNIQUE') {
+    // 2026-06-29 — EPIC joins the fanfare tier (epics are now a frequent
+    // premium reward from fire giants + elites, so they should feel earned).
+    if (rarity === 'EPIC' || rarity === 'LEGENDARY' || rarity === 'UNIQUE') {
       setTimeout(() => tone(f * 2, 0.18, 'sine', 0.14), 160);
       setTimeout(() => tone(f * 2.5, 0.22, 'sine', 0.12), 250);
     }
@@ -144,8 +146,8 @@ export const SFX = {
     tone(f, 0.18, 'triangle', 0.22);
     setTimeout(() => tone(f * 1.25, 0.18, 'triangle', 0.20), 90);
     setTimeout(() => tone(f * 1.5, 0.22, 'sine', 0.18), 180);
-    if (rarity === 'LEGENDARY' || rarity === 'UNIQUE') {
-      // Extra fanfare for legendaries
+    // 2026-06-29 — EPIC joins the legendary-tier fanfare so premium drops land.
+    if (rarity === 'EPIC' || rarity === 'LEGENDARY' || rarity === 'UNIQUE') {
       setTimeout(() => tone(f * 2, 0.30, 'sine', 0.20), 280);
       setTimeout(() => tone(f * 2.5, 0.40, 'sine', 0.16), 380);
     }

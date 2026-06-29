@@ -1209,7 +1209,12 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       }
       // MARK has no per-tick effect; the +damage multiplier is read in CombatResolver.
     }
-    e.statusEffects = e.statusEffects.filter(s => s.remaining > 0);
+    let statusWrite = 0;
+    for (let si = 0; si < e.statusEffects.length; si++) {
+      const s = e.statusEffects[si];
+      if (s.remaining > 0) e.statusEffects[statusWrite++] = s;
+    }
+    e.statusEffects.length = statusWrite;
     // 2026-05-21 — DoT AGGREGATE CAP. Sum of all DoT ticks on one enemy
     // is clamped to a fraction of maxHP/sec, with HELLFIRE carving out
     // a tighter sub-cap. Caps the "stack 4 DoT sources and melt
@@ -1251,8 +1256,12 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       dotByKind.HELLFIRE = 0;
     }
     if (dotDps > 0) {
-      const HELLFIRE_CAP = 0.01 * e.maxHp;     // 1%/sec ceiling
-      const AGGREGATE_CAP = 0.04 * e.maxHp;    // 4%/sec ceiling
+      // 2026-06-29 — caps raised (4%→7% aggregate, 1%→2% Hellfire) so the
+      // fire/poison DoT archetype scales past a single tower. A 2nd-3rd DoT
+      // source now adds real value before the ceiling binds, while still
+      // preventing pure-DoT boss cheese.
+      const HELLFIRE_CAP = 0.02 * e.maxHp;     // 2%/sec ceiling
+      const AGGREGATE_CAP = 0.07 * e.maxHp;    // 7%/sec ceiling
       const hellfireCapped = Math.min(dotByKind.HELLFIRE, HELLFIRE_CAP);
       const nonHellfireRaw = dotByKind.BURN + dotByKind.POISON + dotByKind.BLEED;
       const aggregateRaw = hellfireCapped + nonHellfireRaw;

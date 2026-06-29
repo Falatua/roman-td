@@ -52,6 +52,12 @@ for (const w of (wavesData as any[])) {
 let nextBurnPatchId = 1;
 function newBurnPatchId(): string { return `bp${nextBurnPatchId++}`; }
 
+// Hot-loop scratch buffers. `tickCombat` runs every frame, so reusing these
+// short-lived lists avoids repeated garbage-collector work during dense waves.
+const activeTowerScratch: Tower[] = [];
+const enemySnapshotScratch: Enemy[] = [];
+const targetCandidateScratch: Enemy[] = [];
+
 // BURNING GROUND — fire-themed towers stamp a 3-second patch at the impact
 // point. Any enemy within the patch radius takes burn DoT each frame.
 // Patches stack additively but each patch decays independently.
@@ -353,7 +359,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   if (globalRef) globalRef.__lastState = state;
   // Sort towers by placement age for deterministic kill credit (oldest first).
   // Pending towers (Gem TD pre-keep) don't fight.
-  const towers = Array.from(state.towers.values()).filter(t => !t.pending).sort((a, b) => a.placedAtWave - b.placedAtWave);
+  const towers = activeTowerScratch;
+  towers.length = 0;
+  for (const t of state.towers.values()) {
+    if (!t.pending) towers.push(t);
+  }
+  towers.sort((a, b) => a.placedAtWave - b.placedAtWave);
 
   // ─── TRUESIGHT REVEAL (2026-05-22 V23, reworked 2026-05-23) ───────────
   // TRUESIGHT_LENS (item) used to be a global "everyone sees every stealth
@@ -436,17 +447,23 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       heroAuraSources.push({ heroId, tower: t, auraScale: heroAuraScaleForTower(state, t) });
     }
   }
-  const activeHeroKinds = new Set(heroAuraSources.map(h => h.heroId));
+  let caesarAuraScale = 0;
+  let scipioAuraScale = 0;
+  let agricolaAuraScale = 0;
+  for (const h of heroAuraSources) {
+    if (h.heroId === 'HERO_CAESAR' && h.auraScale > caesarAuraScale) caesarAuraScale = h.auraScale;
+    if (h.heroId === 'HERO_SCIPIO' && h.auraScale > scipioAuraScale) scipioAuraScale = h.auraScale;
+    if (h.heroId === 'HERO_AGRICOLA' && h.auraScale > agricolaAuraScale) agricolaAuraScale = h.auraScale;
+  }
 
-  const caesarAuraScale = Math.max(0, ...heroAuraSources.filter(h => h.heroId === 'HERO_CAESAR').map(h => h.auraScale));
   if (caesarAuraScale > 0) {
     // 2026-06-25 — slight buff: global +10%→+13% dmg & speed (DIVUS +26%).
     globalDmgBonus += 0.13 * caesarAuraScale;
     globalSpeedMult *= 1 + 0.13 * caesarAuraScale;
   }
   // 2026-06-25 — slight buff: Scipio vs-boss +25%→+33% (DIVUS +66%).
-  const scipioBossDamageMult = 1 + 0.33 * Math.max(0, ...heroAuraSources.filter(h => h.heroId === 'HERO_SCIPIO').map(h => h.auraScale));
-  const agricolaFlyerDamageMult = 1 + 0.15 * Math.max(0, ...heroAuraSources.filter(h => h.heroId === 'HERO_AGRICOLA').map(h => h.auraScale));
+  const scipioBossDamageMult = 1 + 0.33 * scipioAuraScale;
+  const agricolaFlyerDamageMult = 1 + 0.15 * agricolaAuraScale;
   // 2026 v2 — Mars Victor fuses the 6 hero passives into one global buff while
   // it stands on the board (its own DPS is already capstone-tier). Computed
   // once; the dmg/speed halves apply in the aura loop below, the vs-boss +
@@ -785,7 +802,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   const wMissChance       = weather ? weather.missChance       * wInt : 0;
   const wRangePenalty     = weather ? weather.rangePenalty     * wInt : 0;
   const wAtkSpeedPenalty  = weather ? weather.attackSpeedPenalty * wInt : 0;
-  const enemies = Array.from(state.enemies.values());
+  const enemies = enemySnapshotScratch;
+  enemies.length = 0;
+  for (const e of state.enemies.values()) enemies.push(e);
   if (enemies.length === 0) {
     for (const t of towers) t.attackCooldown = Math.max(0, t.attackCooldown - dt);
     return;
@@ -894,11 +913,18 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // the ult's DIVINE override still wins during its window. Skips
       // the hero tower itself (Sulla is already FIRE; no-op). Skipped
       // when Sulla isn't the active hero or his tower isn't placed yet.
-      const sullaSources = heroAuraSources.filter(h => h.heroId === 'HERO_SULLA' && h.tower.id !== t.id);
-      if (sullaSources.length > 0) {
+      let hasSullaSource = false;
+      for (const h of heroAuraSources) {
+        if (h.heroId === 'HERO_SULLA' && h.tower.id !== t.id) { hasSullaSource = true; break; }
+      }
+      if (hasSullaSource) {
         const tcx2 = tilePxX(t), tcy2 = tilePxY(t);
-        if (sullaSources.some(h => Math.hypot(tilePxX(h.tower) - tcx2, tilePxY(h.tower) - tcy2) <= 4 * GRID.TILE)) {
-          effectiveDmgType = DamageType.ELEMENTAL_FIRE;
+        for (const h of heroAuraSources) {
+          if (h.heroId !== 'HERO_SULLA' || h.tower.id === t.id) continue;
+          if (Math.hypot(tilePxX(h.tower) - tcx2, tilePxY(h.tower) - tcy2) <= 4 * GRID.TILE) {
+            effectiveDmgType = DamageType.ELEMENTAL_FIRE;
+            break;
+          }
         }
       }
       // 2026-06-27 — DIVINE TILE (IVORY). A tower standing on the divine
@@ -1409,16 +1435,21 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         t.equippedItems.includes('STORM_AQUILA_TALONS') ||
         towerAuraTileKind(t) === 'CYAN'
       );
-      const inRange: Enemy[] = enemies.filter((e: Enemy) => {
-        if (Math.hypot(e.x - tcx, e.y - tcy) > rPx) return false;
-        if (isMeleeRow && e.isFlyer && !meleeHitsFlyers) return false;
-        if (ANTI_AIR_ONLY_TYPES.has(t.type)) return e.isFlyer;
+      const inRange = targetCandidateScratch;
+      inRange.length = 0;
+      const rPx2 = rPx * rPx;
+      for (const e of enemies) {
+        const dx = e.x - tcx;
+        const dy = e.y - tcy;
+        if (dx * dx + dy * dy > rPx2) continue;
+        if (isMeleeRow && e.isFlyer && !meleeHitsFlyers) continue;
+        if (ANTI_AIR_ONLY_TYPES.has(t.type) && !e.isFlyer) continue;
         // 2026-05-19 v3 — meleeImmune now only blocks PHYS_MELEE
         // damage. Divine / fire / siege melee towers still hit. See
         // meleeImmuneBlocksTower comment for the design rationale.
-        if (isMeleeRow && meleeImmuneBlocksTower(e.type, t.damageType)) return false;
-        return true;
-      });
+        if (isMeleeRow && meleeImmuneBlocksTower(e.type, t.damageType)) continue;
+        inRange.push(e);
+      }
       // BURNING GROUND: fire-themed towers stamp a 3s burn patch at impact
       // (target's current position). Applied to melee primary and ranged
       // projectile-impact paths alike. Cleave secondaries and multi-shot
@@ -1835,6 +1866,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   const tx = tilePxX(t);
   const ty = tilePxY(t);
   const rangePx = rangeTiles * GRID.TILE;
+  const rangePx2 = rangePx * rangePx;
   const isMelee = MELEE_TYPES.has(t.type);
   // AQUILA TALONS — melee towers carrying this legendary can target flyers
   // in their range too. Mirrors the same flag used in the per-tick attack
@@ -1852,36 +1884,47 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   );
   const canHitFlyers = !isMelee || meleeAirEnabled;
   const antiAirOnly = ANTI_AIR_ONLY_TYPES.has(t.type);
-  let inRange = enemies.filter(e => {
-    if (Math.hypot(e.x - tx, e.y - ty) > rangePx) return false;
+  const inRange = targetCandidateScratch;
+  inRange.length = 0;
+  for (const e of enemies) {
+    const dx = e.x - tx;
+    const dy = e.y - ty;
+    if (dx * dx + dy * dy > rangePx2) continue;
     // 2026-05-22 V23 (reworked 2026-05-23) — Truesight Lens reveals
     // enemies on a per-enemy basis. An enemy gets `__truesightRevealed`
     // when it walks into range of any truesight tower (see the tickCombat
     // reveal scan). Once tagged, every tower — not just the truesight
     // one — can acquire it through the veil.
     const revealed = !!(e as any).__truesightRevealed;
-    if (antiAirOnly) return e.isFlyer && (revealed || !(e as any).__veiled);
-    if (!canHitFlyers && e.isFlyer) return false;
+    if (antiAirOnly) {
+      if (e.isFlyer && (revealed || !(e as any).__veiled)) inRange.push(e);
+      continue;
+    }
+    if (!canHitFlyers && e.isFlyer) continue;
     // 2026-05-19 v3 — Only PHYS_MELEE damage is blocked by meleeImmune.
     // Divine / fire / siege melee towers still acquire these targets.
-    if (isMelee && meleeImmuneBlocksTower(e.type, t.damageType)) return false;
-    if ((e as any).__veiled && !revealed) return false;       // VEIL modifier: untargetable
+    if (isMelee && meleeImmuneBlocksTower(e.type, t.damageType)) continue;
+    if ((e as any).__veiled && !revealed) continue;       // VEIL modifier: untargetable
     // SHIELDED units: ranged towers cannot target until a melee tower has
     // broken the shield. Melee towers can always hit and will set the flag.
-    if (!isMelee && requiresMeleeBreak(e.type) && !e.shieldBroken) return false;
+    if (!isMelee && requiresMeleeBreak(e.type) && !e.shieldBroken) continue;
     // 2026-05 v10 — ELEPHANT RANGED PROTECTION: ground enemies near a
     // living war elephant are untargetable by ranged towers. The aura
     // drops the moment the elephant dies. Melee towers ignore the
     // shield (they're inside the dust cloud anyway).
-    if (!isMelee && (e as any).__rangedProtected) return false;
-    return true;
-  });
+    if (!isMelee && (e as any).__rangedProtected) continue;
+    inRange.push(e);
+  }
   if (inRange.length === 0) return null;
   // NEMESIS_ENGINE always prioritizes flyers if any are in range, regardless
   // of the player's selected targeting mode. (It's a sky-ripper.)
   if (t.type === TowerType.NEMESIS_ENGINE) {
-    const fl = inRange.filter(e => e.isFlyer);
-    if (fl.length > 0) inRange = fl;
+    let write = 0;
+    for (let i = 0; i < inRange.length; i++) {
+      const e = inRange[i];
+      if (e.isFlyer) inRange[write++] = e;
+    }
+    if (write > 0) inRange.length = write;
   }
   // Phase-through: SPECTRAL_SCOUT phases first 2 hits — for simplicity ignore here; combat still hits
   switch (t.targetingMode) {
@@ -1942,12 +1985,22 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
     }
     case TargetingMode.CLOSE: {
       let best: Enemy | null = null; let bestD = Infinity;
-      for (const e of inRange) { const d = Math.hypot(e.x - tx, e.y - ty); if (d < bestD) { bestD = d; best = e; } }
+      for (const e of inRange) {
+        const dx = e.x - tx;
+        const dy = e.y - ty;
+        const d = dx * dx + dy * dy;
+        if (d < bestD) { bestD = d; best = e; }
+      }
       return best;
     }
     case TargetingMode.FLYERS: {
-      const fl = inRange.filter(e => e.isFlyer);
-      if (fl.length > 0) return pickByFurthest(fl);
+      let bestFlyer: Enemy | null = null; let bestFlyerProg = -1;
+      for (const e of inRange) {
+        if (!e.isFlyer) continue;
+        const p = e.pathIndex + e.pathProgress;
+        if (p > bestFlyerProg) { bestFlyerProg = p; bestFlyer = e; }
+      }
+      if (bestFlyer) return bestFlyer;
       return pickByFurthest(inRange);
     }
     case TargetingMode.FIRST:

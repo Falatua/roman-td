@@ -853,6 +853,7 @@ export async function loadAllAssets(onProgress?: (loaded: number, total: number)
       }
     });
     await Promise.all(workers);
+    prewarmAttackFrameCache();
     _deferredDone = true;     // flag for main.ts race-window guard
     try {
       if (typeof window !== 'undefined') {
@@ -897,6 +898,24 @@ export function texGridFrame(key: string, frame: number, frameW: number, frameH:
   out.baseTexture.scaleMode = SCALE_MODES.NEAREST;
   frameCache.set(cacheKey, out);
   return out;
+}
+
+export function prewarmAttackFrameCache(): void {
+  const HERO_ATTACK_KEYS = [
+    'HERO_ATTACK_MARIUS',
+    'HERO_ATTACK_AGRIPPA',
+    'HERO_ATTACK_AGRICOLA',
+    'HERO_ATTACK_SCIPIO',
+    'HERO_ATTACK_CAESAR',
+    'HERO_ATTACK_SULLA'
+  ];
+  for (const key of HERO_ATTACK_KEYS) {
+    for (let frame = 0; frame < 9; frame++) texGridFrame(key, frame, 256, 256, 3);
+  }
+  for (const type of BASE_TOWER_ATTACK_TYPES) {
+    const key = `ATTACK_${type}`;
+    for (let frame = 0; frame < 9; frame++) texGridFrame(key, frame, 128, 128, 3);
+  }
 }
 
 // 2026-05-22 — Deferred-batch completion flag. Set to true when the
