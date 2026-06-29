@@ -170,16 +170,16 @@ describe('Tower roster integrity', () => {
     }
   });
 
-  it('every non-hero base tower has a 3x3 attack sprite sheet', async () => {
+  it('every non-melee, non-hero base tower has a 3x3 attack sprite sheet', async () => {
     const fs = await import('node:fs');
     const path = await import('node:path');
     const sharp = (await import('sharp')).default;
     const baseTowers = Object.entries(towersData as any)
-      .filter(([, def]: any) => def.kind === 'BASE' && !def.isHero)
+      .filter(([, def]: any) => def.kind === 'BASE' && !def.isHero && !def.melee)
       .map(([id]) => id)
       .sort();
     expect(baseTowers.length, 'expected the base tower roster to be non-empty').toBeGreaterThan(0);
-    expect([...BASE_TOWER_ATTACK_TYPES].sort(), 'runtime attack-sheet roster should match base tower roster').toEqual(baseTowers);
+    expect([...BASE_TOWER_ATTACK_TYPES].sort(), 'runtime attack-sheet roster should match ranged/caster base tower roster').toEqual(baseTowers);
     for (const id of baseTowers) {
       expect((ASSET_KEYS as any)[`ATTACK_${id}`], `${id} attack sheet missing from asset manifest`).toBe(`attacks/atk_${id.toLowerCase()}.png`);
       const file = path.join(process.cwd(), 'public/assets/sprites/attacks', `atk_${id.toLowerCase()}.png`);
@@ -198,13 +198,14 @@ describe('Tower roster integrity', () => {
   });
 
   it('base tower attack animations use speed windows that match tower families', () => {
-    expect(isBaseTowerAttackAnimated('MILITES')).toBe(true);
+    expect(isBaseTowerAttackAnimated('MILITES')).toBe(false);
+    expect(isBaseTowerAttackAnimated('BEAST_HUNTER')).toBe(false);
     expect(isBaseTowerAttackAnimated('SCORPIO')).toBe(true);
     expect(isBaseTowerAttackAnimated('HERO_MARIUS')).toBe(false);
     expect(isBaseTowerAttackAnimated('JULIUS_CAESAR')).toBe(false);
-    expect(baseTowerAttackFlashWindow('BEAST_HUNTER')).toBeCloseTo(0.22, 4);
+    expect(baseTowerAttackFlashWindow('BEAST_HUNTER')).toBeCloseTo(0.18, 4);
     expect(baseTowerAttackFlashWindow('VELITES')).toBeCloseTo(0.24, 4);
-    expect(baseTowerAttackFlashWindow('MILITES')).toBeCloseTo(0.26, 4);
+    expect(baseTowerAttackFlashWindow('MILITES')).toBeCloseTo(0.18, 4);
     expect(baseTowerAttackFlashWindow('SCORPIO')).toBeCloseTo(0.36, 4);
     expect(baseTowerAttackFlashWindow('FLAMEN')).toBeCloseTo(0.34, 4);
     expect(baseTowerAttackFlashWindow('JULIUS_CAESAR')).toBeCloseTo(0.18, 4);

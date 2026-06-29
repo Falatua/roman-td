@@ -4,12 +4,12 @@ const DEFAULT_FLASH_WINDOW = 0.18;
 
 export function isBaseTowerAttackAnimated(type: string): boolean {
   const def: any = (towersData as any)[type];
-  return def?.kind === 'BASE' && !def?.isHero;
+  return def?.kind === 'BASE' && !def?.isHero && !def?.melee;
 }
 
 export function baseTowerAttackFlashWindow(type: string): number {
   const def: any = (towersData as any)[type];
-  if (!def || def.kind !== 'BASE' || def.isHero) return DEFAULT_FLASH_WINDOW;
+  if (!def || def.kind !== 'BASE' || def.isHero || def.melee) return DEFAULT_FLASH_WINDOW;
   const speed = Number(def.attackSpeed ?? 1);
   if (def.damageType === 'DIVINE' || def.damageType === 'ELEMENTAL_FIRE') return 0.34;
   if (def.damageType === 'SIEGE' || speed <= 0.45) return 0.36;
