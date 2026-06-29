@@ -22,12 +22,12 @@ const HEROES = [
 ];
 
 const POSES = [
-  { rot: 0, scale: 0.94, dx: 0, dy: 0, alpha: 0.00 },
-  { rot: -15, scale: 0.92, dx: -5, dy: 1, alpha: 0.38 },
-  { rot: 16, scale: 0.98, dx: 9, dy: -2, alpha: 0.95 },
-  { rot: 24, scale: 0.96, dx: 12, dy: -1, alpha: 0.72 },
-  { rot: 8, scale: 0.94, dx: 4, dy: 0, alpha: 0.36 },
-  { rot: 0, scale: 0.94, dx: 0, dy: 0, alpha: 0.00 }
+  { scale: 0.94, dx: 0, dy: 0, alpha: 0.00 },
+  { scale: 0.94, dx: -4, dy: 1, alpha: 0.38 },
+  { scale: 0.94, dx: 7, dy: -2, alpha: 0.95 },
+  { scale: 0.94, dx: 9, dy: -1, alpha: 0.72 },
+  { scale: 0.94, dx: 3, dy: 0, alpha: 0.36 },
+  { scale: 0.94, dx: 0, dy: 0, alpha: 0.00 }
 ];
 
 function svgOverlay(hero, frameIndex) {
@@ -96,8 +96,6 @@ async function makeFrame(hero, frameIndex) {
   const sprite = await sharp(join(HERO_DIR, hero.file))
     .ensureAlpha()
     .resize(size, size, { fit: 'contain', kernel: sharp.kernel.nearest })
-    .rotate(p.rot * hero.side, { background: transparent })
-    .resize(246, 246, { fit: 'inside', kernel: sharp.kernel.nearest })
     .png()
     .toBuffer();
   const meta = await sharp(sprite).metadata();

@@ -3446,14 +3446,14 @@ export class RenderEngine {
       // the target's position.)
       // Attack flash + recoil: stronger brightening, scale jump, kickback offset
       // along the firing direction for satisfying combat feel.
-      const flashWindow = tw.isHero ? 0.32 : 0.18;
+      const flashWindow = tw.isHero ? 0.42 : 0.18;
       const flashT = tw.attackFlash > 0 ? Math.min(1, tw.attackFlash / flashWindow) : 0;
       const heroIdentity = heroIdForTowerType(String(tw.type));
       let usingHeroAttackSheet = false;
       if (tw.isHero && heroIdentity && flashT > 0) {
         const sheetKey = HERO_ATTACK_SHEET_FOR[heroIdentity];
         const frameAge = Math.max(0, Math.min(0.999, 1 - flashT));
-        const frameIndex = Math.min(HERO_ATTACK_FRAME_COUNT - 1, Math.floor(frameAge * HERO_ATTACK_FRAME_COUNT));
+        const frameIndex = Math.min(HERO_ATTACK_FRAME_COUNT - 1, 1 + Math.floor(frameAge * (HERO_ATTACK_FRAME_COUNT - 1)));
         const attackTex = sheetKey
           ? texFrame(sheetKey, frameIndex, HERO_ATTACK_FRAME_SIZE, HERO_ATTACK_FRAME_SIZE)
           : null;
@@ -3501,7 +3501,7 @@ export class RenderEngine {
           const age = 1 - flashT;
           const side = (tw.id.charCodeAt(tw.id.length - 1) % 2 === 0) ? 1 : -1;
           if (usingHeroAttackSheet) {
-            heroAttackRotation = meleeHero ? Math.sin(age * Math.PI) * 0.05 * side : Math.sin(age * Math.PI) * -0.04 * side;
+            heroAttackRotation = meleeHero ? Math.sin(age * Math.PI) * 0.12 * side : Math.sin(age * Math.PI) * -0.07 * side;
             heroAttackSkewX = 0;
           } else if (meleeHero) {
             const windupToRelease = age < 0.46
