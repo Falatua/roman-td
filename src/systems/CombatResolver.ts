@@ -29,6 +29,7 @@ import { bossTrophyDamageMult } from './BossTrophySystem';
 import { commanderDamageTakenMult } from './CommanderSystem';
 import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 import { heroAuraScaleForTower } from './HeroScaling';
+import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from './BaseTowerAttackAnimation';
 import enemiesData from '../data/enemies.json';
 import towersData from '../data/towers.json';
 import wavesData from '../data/waves.json';
@@ -1378,9 +1379,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         damage = 0;
         (target as any).__weatherMissTick = state.tick;
       }
-      const attackTowerDef: any = (towersData as any)[t.type];
-      const hasBaseAttackSheet = attackTowerDef?.kind === 'BASE' && !attackTowerDef?.isHero;
-      t.attackFlash = t.isHero ? 0.42 : hasBaseAttackSheet ? 0.28 : 0.18;     // game-feel flash on every attack; heroes + base towers get readable attack VFX
+      const hasBaseAttackSheet = isBaseTowerAttackAnimated(String(t.type));
+      t.attackFlash = t.isHero ? 0.42 : hasBaseAttackSheet ? baseTowerAttackFlashWindow(String(t.type)) : 0.18;     // game-feel flash on every attack; heroes + base towers get readable attack VFX
       // Compute "in melee/range" enemies once for cleave + multi-shot lookups.
       const tcx = tilePxX(t);
       const tcy = tilePxY(t);

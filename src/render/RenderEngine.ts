@@ -18,6 +18,7 @@ import HERO_DEFS_FOR_AURA from '../data/herodefs.json';
 import { surpriseEventTintRGBA, VFX_TIMING, getAllActiveSurpriseEvents } from '../systems/SurpriseEvents';
 import { SurpriseEventKind } from '../types';
 import { heroIdForTowerType } from '../systems/HeroIdentity';
+import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from '../systems/BaseTowerAttackAnimation';
 
 // 2026-05-20 v2 — Per-hero halo ring assignment. Each ring style was
 // hand-picked to match the hero's color tint + thematic identity:
@@ -51,7 +52,6 @@ const HERO_ATTACK_FRAME_SIZE = 256;
 const HERO_ATTACK_FRAME_COUNT = 6;
 const BASE_TOWER_ATTACK_FRAME_SIZE = 128;
 const BASE_TOWER_ATTACK_FRAME_COUNT = 6;
-const BASE_TOWER_ATTACK_FLASH_WINDOW = 0.28;
 
 const MAX_TRANSIENT_SLASHES = 72;
 const MAX_TRANSIENT_MUZZLE_FLASHES = 96;
@@ -3470,9 +3470,8 @@ export class RenderEngine {
       // the target's position.)
       // Attack flash + recoil: stronger brightening, scale jump, kickback offset
       // along the firing direction for satisfying combat feel.
-      const towerDef: any = (towersData as any)[tw.type];
-      const hasBaseAttackSheet = towerDef?.kind === 'BASE' && !towerDef?.isHero;
-      const flashWindow = tw.isHero ? 0.42 : hasBaseAttackSheet ? BASE_TOWER_ATTACK_FLASH_WINDOW : 0.18;
+      const hasBaseAttackSheet = isBaseTowerAttackAnimated(String(tw.type));
+      const flashWindow = tw.isHero ? 0.42 : hasBaseAttackSheet ? baseTowerAttackFlashWindow(String(tw.type)) : 0.18;
       const flashT = tw.attackFlash > 0 ? Math.min(1, tw.attackFlash / flashWindow) : 0;
       const heroIdentity = heroIdForTowerType(String(tw.type));
       let usingHeroAttackSheet = false;

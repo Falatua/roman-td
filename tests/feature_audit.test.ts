@@ -25,6 +25,7 @@ import {
   rollFortunaCombo
 } from '../src/systems/MerchantSystem';
 import { ASSET_KEYS, BASE_TOWER_ATTACK_TYPES } from '../src/render/Assets';
+import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from '../src/systems/BaseTowerAttackAnimation';
 import comboData from '../src/data/towerCombinations.json';
 import towersData from '../src/data/towers.json';
 
@@ -157,7 +158,24 @@ describe('Tower roster integrity', () => {
       const meta = await sharp(file).metadata();
       expect(meta.width, `${id} attack sheet should be 6 frames × 128px wide`).toBe(768);
       expect(meta.height, `${id} attack sheet should be 128px tall`).toBe(128);
+      const { data } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      let tinyAlpha = 0;
+      for (let i = 3; i < data.length; i += 4) if (data[i] > 0 && data[i] <= 4) tinyAlpha++;
+      expect(tinyAlpha, `${id} attack sheet has barely-visible alpha dust that can look like a dirty background`).toBe(0);
     }
+  });
+
+  it('base tower attack animations use speed windows that match tower families', () => {
+    expect(isBaseTowerAttackAnimated('MILITES')).toBe(true);
+    expect(isBaseTowerAttackAnimated('SCORPIO')).toBe(true);
+    expect(isBaseTowerAttackAnimated('HERO_MARIUS')).toBe(false);
+    expect(isBaseTowerAttackAnimated('JULIUS_CAESAR')).toBe(false);
+    expect(baseTowerAttackFlashWindow('BEAST_HUNTER')).toBeCloseTo(0.22, 4);
+    expect(baseTowerAttackFlashWindow('VELITES')).toBeCloseTo(0.24, 4);
+    expect(baseTowerAttackFlashWindow('MILITES')).toBeCloseTo(0.26, 4);
+    expect(baseTowerAttackFlashWindow('SCORPIO')).toBeCloseTo(0.36, 4);
+    expect(baseTowerAttackFlashWindow('FLAMEN')).toBeCloseTo(0.34, 4);
+    expect(baseTowerAttackFlashWindow('JULIUS_CAESAR')).toBeCloseTo(0.18, 4);
   });
 });
 
