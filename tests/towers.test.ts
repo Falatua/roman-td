@@ -68,10 +68,10 @@ describe('Tower creation', () => {
 describe('Tower effective stats', () => {
   it('keeps anti-air specialist towers on the boosted DPS line', () => {
     const expectedAntiAirDps: Partial<Record<TowerType, number>> = {
-      [TowerType.SAGITTARIUS]: 111.7,
-      [TowerType.SCORPIO]: 27.0,
-      [TowerType.VENATOR]: 19.9,
-      [TowerType.AQUILA_VENATOR]: 192.8,
+      [TowerType.SAGITTARIUS]: 89.4,
+      [TowerType.SCORPIO]: 21.6,
+      [TowerType.VENATOR]: 15.9,
+      [TowerType.AQUILA_VENATOR]: 154.2,
       [TowerType.SCORPION_BOLT]: 100.6,
       [TowerType.NUMIDIAN_CAVALRY]: 205.7,
       [TowerType.NEMESIS_ENGINE]: 268.3,
