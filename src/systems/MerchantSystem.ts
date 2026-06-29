@@ -263,6 +263,8 @@ export function buildGateShop(_refreshSeed = 0, _ownedLegendaries?: Set<string>)
   for (const [id, def] of uncommons) {
     offers.push({ itemId: id, rarity: 'UNCOMMON', price: itemBuyPrice(id), isConsumable: false });
   }
+  // 2026-06-28 — every item costs 10% less to buy from the gate shop.
+  for (const o of offers) o.price = Math.max(1, Math.round(o.price * 0.9));
   return { type: 'GATE', offers, livesPrice: 55, livesMaxThisVisit: 5, livesBoughtThisVisit: 0 };
 }
 
@@ -344,6 +346,8 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
     });
   }
 
+  // 2026-06-28 — every item costs 10% less to buy from the Mercator (premiums included).
+  for (const o of offers) o.price = Math.max(1, Math.round(o.price * 0.9));
   return { type: 'MERCATOR', offers, livesPrice: 83, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };
 }
 

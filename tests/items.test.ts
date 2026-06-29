@@ -211,8 +211,9 @@ describe('Merchant — Mercator stock', () => {
   it('Mercator legendaries are priced significantly higher than gate shop rares', () => {
     const merc = buildMercatorStock();
     const legPrices = merc.offers.filter(o => o.rarity === 'LEGENDARY').map(o => o.price);
-    expect(new Set(legPrices)).toEqual(new Set([740]));
-    expect(merc.offers.filter(o => o.rarity === 'EPIC').every(o => o.price === 390)).toBe(true);
+    // 2026-06-28 — all shop/Mercator item buys are 10% cheaper (round(base*0.9)).
+    expect(new Set(legPrices)).toEqual(new Set([666]));
+    expect(merc.offers.filter(o => o.rarity === 'EPIC').every(o => o.price === 351)).toBe(true);
     expect(merc.livesPrice).toBe(83);
   });
 
