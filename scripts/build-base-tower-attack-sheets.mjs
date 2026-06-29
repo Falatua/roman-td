@@ -269,6 +269,7 @@ for (const id of baseTowerIds) {
   const family = familyFor(id, def);
   const frames = [];
   for (let i = 0; i < FRAMES; i++) frames.push(await makeFrame(source, family, def, i));
+  frames[FRAMES - 1] = frames[0];
   const sheet = await sharp({ create: { width: FRAME * COLS, height: FRAME * ROWS, channels: 4, background: transparent } })
     .composite(frames.map((input, i) => ({
       input,

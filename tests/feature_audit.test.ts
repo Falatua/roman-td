@@ -112,6 +112,13 @@ describe('Every authored recipe is discoverable + executable', () => {
 // 2. Tower roster integrity
 // ───────────────────────────────────────────────────────────────────────
 describe('Tower roster integrity', () => {
+  function meanFrameDiff(a: Buffer, b: Buffer): number {
+    const len = Math.min(a.length, b.length);
+    let diff = 0;
+    for (let i = 0; i < len; i++) diff += Math.abs(a[i] - b[i]);
+    return diff / Math.max(1, len);
+  }
+
   it('every tower id in towers.json has matching TowerType enum entry', () => {
     const enumKeys = new Set(Object.values(TowerType));
     for (const tid of Object.keys(towersData as any)) {
@@ -157,6 +164,9 @@ describe('Tower roster integrity', () => {
       let tinyAlpha = 0;
       for (let i = 3; i < data.length; i += 4) if (data[i] > 0 && data[i] <= 4) tinyAlpha++;
       expect(tinyAlpha, `${id} hero attack sheet has barely-visible alpha dust that can look like a dirty background`).toBe(0);
+      const first = await sharp(file).extract({ left: 0, top: 0, width: 256, height: 256 }).ensureAlpha().raw().toBuffer();
+      const ninth = await sharp(file).extract({ left: 512, top: 512, width: 256, height: 256 }).ensureAlpha().raw().toBuffer();
+      expect(meanFrameDiff(first, ninth), `${id} hero attack frame 9 should visibly settle back to idle frame 1`).toBeLessThan(0.05);
     }
   });
 
@@ -181,6 +191,9 @@ describe('Tower roster integrity', () => {
       let tinyAlpha = 0;
       for (let i = 3; i < data.length; i += 4) if (data[i] > 0 && data[i] <= 4) tinyAlpha++;
       expect(tinyAlpha, `${id} attack sheet has barely-visible alpha dust that can look like a dirty background`).toBe(0);
+      const first = await sharp(file).extract({ left: 0, top: 0, width: 128, height: 128 }).ensureAlpha().raw().toBuffer();
+      const ninth = await sharp(file).extract({ left: 256, top: 256, width: 128, height: 128 }).ensureAlpha().raw().toBuffer();
+      expect(meanFrameDiff(first, ninth), `${id} attack frame 9 should visibly settle back to idle frame 1`).toBeLessThan(0.05);
     }
   });
 

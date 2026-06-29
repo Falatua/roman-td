@@ -53,6 +53,7 @@ const HERO_ATTACK_FRAME_COUNT = 9;
 const BASE_TOWER_ATTACK_FRAME_SIZE = 128;
 const BASE_TOWER_ATTACK_FRAME_COUNT = 9;
 const ATTACK_SHEET_COLUMNS = 3;
+const HERO_ATTACK_WINDOW = 0.50;
 
 const MAX_TRANSIENT_SLASHES = 72;
 const MAX_TRANSIENT_MUZZLE_FLASHES = 96;
@@ -3472,14 +3473,14 @@ export class RenderEngine {
       // Attack flash + recoil: stronger brightening, scale jump, kickback offset
       // along the firing direction for satisfying combat feel.
       const hasBaseAttackSheet = isBaseTowerAttackAnimated(String(tw.type));
-      const flashWindow = tw.isHero ? 0.42 : hasBaseAttackSheet ? baseTowerAttackFlashWindow(String(tw.type)) : 0.18;
+      const flashWindow = tw.isHero ? HERO_ATTACK_WINDOW : hasBaseAttackSheet ? baseTowerAttackFlashWindow(String(tw.type)) : 0.18;
       const flashT = tw.attackFlash > 0 ? Math.min(1, tw.attackFlash / flashWindow) : 0;
       const heroIdentity = heroIdForTowerType(String(tw.type));
       let usingHeroAttackSheet = false;
       if (tw.isHero && heroIdentity && flashT > 0) {
         const sheetKey = HERO_ATTACK_SHEET_FOR[heroIdentity];
         const frameAge = Math.max(0, Math.min(0.999, 1 - flashT));
-        const frameIndex = Math.min(HERO_ATTACK_FRAME_COUNT - 1, 1 + Math.floor(frameAge * (HERO_ATTACK_FRAME_COUNT - 1)));
+        const frameIndex = Math.min(HERO_ATTACK_FRAME_COUNT - 1, Math.floor(frameAge * HERO_ATTACK_FRAME_COUNT));
         const attackTex = sheetKey
           ? texGridFrame(sheetKey, frameIndex, HERO_ATTACK_FRAME_SIZE, HERO_ATTACK_FRAME_SIZE, ATTACK_SHEET_COLUMNS)
           : null;
@@ -3488,7 +3489,7 @@ export class RenderEngine {
         usingHeroAttackSheet = !!attackTex;
       } else if (hasBaseAttackSheet && flashT > 0) {
         const frameAge = Math.max(0, Math.min(0.999, 1 - flashT));
-        const frameIndex = Math.min(BASE_TOWER_ATTACK_FRAME_COUNT - 1, 1 + Math.floor(frameAge * (BASE_TOWER_ATTACK_FRAME_COUNT - 1)));
+        const frameIndex = Math.min(BASE_TOWER_ATTACK_FRAME_COUNT - 1, Math.floor(frameAge * BASE_TOWER_ATTACK_FRAME_COUNT));
         const attackTex = texGridFrame(`ATTACK_${tw.type}`, frameIndex, BASE_TOWER_ATTACK_FRAME_SIZE, BASE_TOWER_ATTACK_FRAME_SIZE, ATTACK_SHEET_COLUMNS);
         const idleTex = tex(tw.type);
         entry.sp.texture = attackTex ?? idleTex ?? entry.sp.texture;
