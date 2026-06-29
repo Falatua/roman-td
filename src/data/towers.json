@@ -742,7 +742,7 @@
   "SCOUT_VEXILLUM": {
     "name": "Scout Vexillum",
     "damageType": "PHYS_RANGED",
-    "baseDps": 53.2,
+    "baseDps": 70.0,
     "attackSpeed": 1.2,
     "range": 4.8,
     "kind": "COMBO",
@@ -781,13 +781,13 @@
   "TRIBUNUS_LATICLAVIUS": {
     "name": "Tribunus",
     "damageType": "PHYS_RANGED",
-    "baseDps": 93.2,
-    "attackSpeed": 0.95,
+    "baseDps": 122.0,
+    "attackSpeed": 1.15,
     "range": 5,
     "kind": "COMBO",
     "melee": false,
     "tierBand": 4,
-    "ability": "TIME WARP: hit targets crawl at 40% speed (60% Slow). +20% damage to Elites.",
+    "ability": "TIME WARP: hit targets crawl at 40% speed (60% Slow). Faster cadence means the slow blankets more of the lane. +20% damage to Elites.",
     "critChance": 0.18,
     "critMult": 2.3
   },
