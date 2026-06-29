@@ -1,7 +1,7 @@
 // Tests for item rules, inventory operations, and shop pool sampling.
 import { describe, it, expect, vi } from 'vitest';
 import { itemFamily, canEquipItemFamily } from '../src/systems/ItemRules';
-import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollEpicDrop } from '../src/systems/LootSystem';
+import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollEpicDrop, isGuaranteedEpicDropEnemy } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
 import { LOOT_DROP_RATES } from '../src/constants';
@@ -267,5 +267,12 @@ describe('EPIC premium drop payload — rollEpicDrop', () => {
       const drop = rollEpicDrop();
       expect(expected.has(drop!.itemId as string)).toBe(true);
     }
+  });
+
+  it('guarantees EPIC drops for commanders, elite archetypes, and mutated elites', () => {
+    expect(isGuaranteedEpicDropEnemy({ type: 'PATHFINDER_COMMANDER', isCommander: true, archetype: 'RUNNER' })).toBe(true);
+    expect(isGuaranteedEpicDropEnemy({ type: 'GALLIC_DRUID', archetype: 'ELITE' })).toBe(true);
+    expect(isGuaranteedEpicDropEnemy({ type: 'FERAL_DOG', archetype: 'SWARM', mutation: 'VETERAN' })).toBe(true);
+    expect(isGuaranteedEpicDropEnemy({ type: 'FERAL_DOG', archetype: 'SWARM' })).toBe(false);
   });
 });

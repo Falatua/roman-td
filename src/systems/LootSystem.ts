@@ -198,6 +198,13 @@ export function rollEpicDrop(_state?: GameStateShape | null, _inv?: InventorySta
   return { itemId: pick(EPIC_ITEM_POOL), rarity: 'EPIC' };
 }
 
+export function isGuaranteedEpicDropEnemy(enemy: Partial<Enemy> | any): boolean {
+  if (!enemy) return false;
+  if (enemy.isCommander) return true;
+  if (enemy.archetype === 'ELITE') return true;
+  return !!enemy.mutation;
+}
+
 export function rollBossDrop(
   faction: string,
   state?: GameStateShape | null,
