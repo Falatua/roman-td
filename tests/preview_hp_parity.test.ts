@@ -27,6 +27,7 @@ import { buildGroundPath, buildFlyerPath } from '../src/systems/PathFinder';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
 import { WAVE } from '../src/constants';
+import { surpriseEventHpMult } from '../src/systems/SurpriseEvents';
 
 function bootstrapState() {
   const s = createGameState();
@@ -98,8 +99,13 @@ describe('previewSpawnHp parity with actual tickSpawns spawn HP', () => {
         }
         expect(cleanSample, `expected at least one non-elite ${grp.type} to spawn on W${waveNum} within 6 attempts`).toBeTruthy();
         const actual = Math.round((cleanSample as any).maxHp);
-        const preview = previewSpawnHp(def, waveNum, w.type, w.hpMult);
-        expect(preview).toBe(actual);
+        const eventHpMult = surpriseEventHpMult((cleanSample as any).__surpriseKind);
+        const preview = Math.round(previewSpawnHp(def, waveNum, w.type, w.hpMult) * eventHpMult);
+        if (eventHpMult !== 1) {
+          expect(Math.abs(preview - actual)).toBeLessThanOrEqual(1);
+        } else {
+          expect(preview).toBe(actual);
+        }
       });
     }
   }

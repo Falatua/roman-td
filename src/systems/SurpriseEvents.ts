@@ -91,6 +91,13 @@ const VFX_HOLD_AFTER_LAST = 0.25;
 // Smooth fade-out duration after the hold ends.
 const VFX_FADEOUT_SECONDS = 0.7;
 
+export function surpriseEventHpMult(kind: SurpriseEventKind | string | undefined): number {
+  if (kind === SurpriseEventKind.INVASION || kind === 'INVASION') return 1.50;
+  if (kind === SurpriseEventKind.UPRISING || kind === 'UPRISING') return 1.65;
+  if (kind === SurpriseEventKind.GATES_OF_HELL || kind === 'GATES_OF_HELL') return 1.35;
+  return 1;
+}
+
 // Triggered from WaveManager.startWave after the standard spawn queue
 // is built. If this wave matches the schedule, kicks off the event
 // IMMEDIATELY in WAVE-OVERRIDE mode: every enemy in the wave will spawn
@@ -537,6 +544,11 @@ function attachSurpriseSpawnTags(state: GameStateShape, enemy: any, ev: Surprise
   // Carry the pointId so the gate-destruction handler can flag the
   // matching spawn schedule entries when this enemy dies.
   enemy.__surprisePointId = point.pointId;
+  const hpMult = surpriseEventHpMult(ev.kind);
+  if (hpMult !== 1) {
+    enemy.maxHp *= hpMult;
+    enemy.hp *= hpMult;
+  }
   // 2026-05-18 — INVASION AGGRESSION BUFF. Every invader gains +25%
   // base speed to sell the "frenzied breach" feel. They run at the
   // gate instead of plodding — the player has less time to redirect

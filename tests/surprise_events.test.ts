@@ -12,7 +12,7 @@
 // all 8 leaked on spawn AND the 27 UNDEAD_CELTs reanimated/rebirthed
 // cascade pushed the player to 0 lives without a fair shot.
 import { describe, it, expect } from 'vitest';
-import { spawnAtSurpriseEventPoint } from '../src/systems/SurpriseEvents';
+import { spawnAtSurpriseEventPoint, surpriseEventHpMult } from '../src/systems/SurpriseEvents';
 import { SurpriseEventKind } from '../src/types';
 import { createGameState } from '../src/GameState';
 import { GRID } from '../src/constants';
@@ -80,11 +80,19 @@ describe('Surprise event spawn redirect — flyer guard (2026-05-19)', () => {
 
   it('ground enemies ARE redirected normally', () => {
     const s = makeState();
-    const ground = fakeEnemy({ isFlyer: false });
+    const ground = { ...fakeEnemy({ isFlyer: false }), hp: 1000, maxHp: 1000 };
     const ok = spawnAtSurpriseEventPoint(s, ground, 0);
     expect(ok).toBe(true);
     // The redirect did run — pathIndex pinned to the urn's path entry.
     expect(ground.pathIndex).toBe(30);
+    expect(ground.maxHp).toBeCloseTo(1650, 4);
+    expect(ground.hp).toBeCloseTo(1650, 4);
+  });
+
+  it('event enemies get stronger HP profiles by event type', () => {
+    expect(surpriseEventHpMult(SurpriseEventKind.INVASION)).toBeCloseTo(1.50, 4);
+    expect(surpriseEventHpMult(SurpriseEventKind.UPRISING)).toBeCloseTo(1.65, 4);
+    expect(surpriseEventHpMult(SurpriseEventKind.GATES_OF_HELL)).toBeCloseTo(1.35, 4);
   });
 
   it('the guard catches ALL queue indices for flyers (not just idx 0)', () => {
