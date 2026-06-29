@@ -120,7 +120,7 @@ function svgOverlay(hero, frameIndex) {
 
 async function makeFrame(hero, frameIndex) {
   const p = POSES[frameIndex];
-  const size = Math.round(238 * p.scale);
+  const size = Math.round(218 * p.scale);
   let sprite = await sharp(join(HERO_DIR, hero.file))
     .ensureAlpha()
     .resize(size, size, { fit: 'contain', kernel: sharp.kernel.nearest, background: transparent })

@@ -4,7 +4,7 @@ import { TileType, GamePhase, TowerType, DamageType } from '../types';
 import { GameStateShape, isWaveModifierActive } from '../GameState';
 import { GoreState } from '../systems/GoreSystem';
 import { towerEffectiveStats } from '../systems/TowerSystem';
-import { tex, texFrame } from './Assets';
+import { tex, texFrame, texGridFrame } from './Assets';
 import { biomeForWave, BIOMES, pickGrassTile, STATIC_BATTLE_DEBRIS } from './Biomes';
 import waypointsData from '../data/waypoints.json';
 import enemiesData from '../data/enemies.json';
@@ -49,9 +49,10 @@ const HERO_ATTACK_SHEET_FOR: Record<string, string> = {
 };
 
 const HERO_ATTACK_FRAME_SIZE = 256;
-const HERO_ATTACK_FRAME_COUNT = 6;
+const HERO_ATTACK_FRAME_COUNT = 9;
 const BASE_TOWER_ATTACK_FRAME_SIZE = 128;
-const BASE_TOWER_ATTACK_FRAME_COUNT = 6;
+const BASE_TOWER_ATTACK_FRAME_COUNT = 9;
+const ATTACK_SHEET_COLUMNS = 3;
 
 const MAX_TRANSIENT_SLASHES = 72;
 const MAX_TRANSIENT_MUZZLE_FLASHES = 96;
@@ -3480,7 +3481,7 @@ export class RenderEngine {
         const frameAge = Math.max(0, Math.min(0.999, 1 - flashT));
         const frameIndex = Math.min(HERO_ATTACK_FRAME_COUNT - 1, 1 + Math.floor(frameAge * (HERO_ATTACK_FRAME_COUNT - 1)));
         const attackTex = sheetKey
-          ? texFrame(sheetKey, frameIndex, HERO_ATTACK_FRAME_SIZE, HERO_ATTACK_FRAME_SIZE)
+          ? texGridFrame(sheetKey, frameIndex, HERO_ATTACK_FRAME_SIZE, HERO_ATTACK_FRAME_SIZE, ATTACK_SHEET_COLUMNS)
           : null;
         const idleTex = tex(tw.type);
         entry.sp.texture = attackTex ?? idleTex ?? entry.sp.texture;
@@ -3488,7 +3489,7 @@ export class RenderEngine {
       } else if (hasBaseAttackSheet && flashT > 0) {
         const frameAge = Math.max(0, Math.min(0.999, 1 - flashT));
         const frameIndex = Math.min(BASE_TOWER_ATTACK_FRAME_COUNT - 1, 1 + Math.floor(frameAge * (BASE_TOWER_ATTACK_FRAME_COUNT - 1)));
-        const attackTex = texFrame(`ATTACK_${tw.type}`, frameIndex, BASE_TOWER_ATTACK_FRAME_SIZE, BASE_TOWER_ATTACK_FRAME_SIZE);
+        const attackTex = texGridFrame(`ATTACK_${tw.type}`, frameIndex, BASE_TOWER_ATTACK_FRAME_SIZE, BASE_TOWER_ATTACK_FRAME_SIZE, ATTACK_SHEET_COLUMNS);
         const idleTex = tex(tw.type);
         entry.sp.texture = attackTex ?? idleTex ?? entry.sp.texture;
       } else {

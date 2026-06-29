@@ -8,9 +8,11 @@ const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const SPRITES_DIR = join(ROOT, 'public/assets/sprites');
 const OUT_DIR = join(SPRITES_DIR, 'attacks');
 const FRAME = 128;
-const FRAMES = 6;
+const COLS = 3;
+const ROWS = 3;
+const FRAMES = COLS * ROWS;
 const transparent = { r: 0, g: 0, b: 0, alpha: 0 };
-const RELEASE_FRAME = 2;
+const RELEASE_FRAME = 3;
 
 const towers = JSON.parse(await readFile(join(ROOT, 'src/data/towers.json'), 'utf8'));
 const assetsSource = await readFile(join(ROOT, 'src/render/Assets.ts'), 'utf8');
@@ -48,66 +50,90 @@ function poseFor(family, frame) {
   const posesByFamily = {
     melee: [
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 },
-      { dx: -4, dy: 1, scale: 0.88, effect: 0.28 },
-      { dx: 6, dy: -2, scale: 0.89, effect: 1.00 },
-      { dx: 5, dy: -1, scale: 0.89, effect: 0.72 },
+      { dx: -3, dy: 1, scale: 0.88, effect: 0.18 },
+      { dx: -7, dy: 1, scale: 0.88, effect: 0.42 },
+      { dx: 6, dy: -2, scale: 0.90, effect: 1.00 },
+      { dx: 8, dy: -2, scale: 0.90, effect: 0.86 },
+      { dx: 5, dy: -1, scale: 0.89, effect: 0.62 },
       { dx: 2, dy: 0, scale: 0.88, effect: 0.34 },
+      { dx: 1, dy: 0, scale: 0.88, effect: 0.14 },
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 }
     ],
     spear: [
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 },
-      { dx: -5, dy: 1, scale: 0.88, effect: 0.22 },
-      { dx: 8, dy: -2, scale: 0.90, effect: 1.00 },
-      { dx: 7, dy: -1, scale: 0.89, effect: 0.62 },
+      { dx: -4, dy: 1, scale: 0.88, effect: 0.18 },
+      { dx: -8, dy: 1, scale: 0.88, effect: 0.36 },
+      { dx: 9, dy: -2, scale: 0.90, effect: 1.00 },
+      { dx: 8, dy: -2, scale: 0.90, effect: 0.78 },
+      { dx: 5, dy: -1, scale: 0.89, effect: 0.52 },
       { dx: 2, dy: 0, scale: 0.88, effect: 0.24 },
+      { dx: 1, dy: 0, scale: 0.88, effect: 0.10 },
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 }
     ],
     archer: [
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 },
       { dx: -3, dy: 0, scale: 0.88, effect: 0.34 },
       { dx: -5, dy: 0, scale: 0.88, effect: 0.58 },
-      { dx: 5, dy: -1, scale: 0.88, effect: 1.00 },
+      { dx: -6, dy: 0, scale: 0.88, effect: 0.74 },
+      { dx: 5, dy: -1, scale: 0.89, effect: 1.00 },
+      { dx: 4, dy: -1, scale: 0.88, effect: 0.62 },
       { dx: 2, dy: 0, scale: 0.88, effect: 0.34 },
+      { dx: 1, dy: 0, scale: 0.88, effect: 0.12 },
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 }
     ],
     thrower: [
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 },
-      { dx: -5, dy: 1, scale: 0.88, effect: 0.30 },
-      { dx: 6, dy: -2, scale: 0.89, effect: 1.00 },
-      { dx: 7, dy: -1, scale: 0.88, effect: 0.52 },
+      { dx: -4, dy: 1, scale: 0.88, effect: 0.20 },
+      { dx: -8, dy: 1, scale: 0.88, effect: 0.44 },
+      { dx: 6, dy: -2, scale: 0.90, effect: 1.00 },
+      { dx: 8, dy: -1, scale: 0.89, effect: 0.72 },
+      { dx: 5, dy: -1, scale: 0.88, effect: 0.52 },
       { dx: 2, dy: 0, scale: 0.88, effect: 0.18 },
+      { dx: 1, dy: 0, scale: 0.88, effect: 0.08 },
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 }
     ],
     command: [
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 },
-      { dx: -2, dy: 0, scale: 0.88, effect: 0.28 },
-      { dx: 4, dy: -1, scale: 0.88, effect: 0.82 },
-      { dx: 5, dy: -1, scale: 0.88, effect: 0.78 },
+      { dx: -2, dy: 0, scale: 0.88, effect: 0.20 },
+      { dx: -4, dy: 0, scale: 0.88, effect: 0.44 },
+      { dx: 4, dy: -1, scale: 0.89, effect: 0.86 },
+      { dx: 6, dy: -1, scale: 0.89, effect: 1.00 },
+      { dx: 5, dy: -1, scale: 0.88, effect: 0.68 },
       { dx: 2, dy: 0, scale: 0.88, effect: 0.30 },
+      { dx: 1, dy: 0, scale: 0.88, effect: 0.12 },
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 }
     ],
     siege: [
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 },
-      { dx: 2, dy: 0, scale: 0.88, effect: 0.24 },
-      { dx: -7, dy: 1, scale: 0.88, effect: 1.00 },
-      { dx: -5, dy: 1, scale: 0.88, effect: 0.76 },
+      { dx: 2, dy: 0, scale: 0.88, effect: 0.18 },
+      { dx: 4, dy: 0, scale: 0.88, effect: 0.38 },
+      { dx: -8, dy: 1, scale: 0.89, effect: 1.00 },
+      { dx: -7, dy: 1, scale: 0.89, effect: 0.82 },
+      { dx: -5, dy: 1, scale: 0.88, effect: 0.62 },
       { dx: -2, dy: 0, scale: 0.88, effect: 0.36 },
+      { dx: -1, dy: 0, scale: 0.88, effect: 0.14 },
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 }
     ],
     fire: [
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 },
-      { dx: -1, dy: 0, scale: 0.88, effect: 0.42 },
-      { dx: 3, dy: -2, scale: 0.89, effect: 1.00 },
-      { dx: 4, dy: -1, scale: 0.89, effect: 0.86 },
+      { dx: -1, dy: 0, scale: 0.88, effect: 0.24 },
+      { dx: -3, dy: 0, scale: 0.88, effect: 0.52 },
+      { dx: 3, dy: -2, scale: 0.90, effect: 1.00 },
+      { dx: 5, dy: -1, scale: 0.90, effect: 0.92 },
+      { dx: 4, dy: -1, scale: 0.89, effect: 0.72 },
       { dx: 2, dy: 0, scale: 0.88, effect: 0.42 },
+      { dx: 1, dy: 0, scale: 0.88, effect: 0.16 },
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 }
     ],
     divine: [
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 },
-      { dx: -1, dy: 0, scale: 0.88, effect: 0.38 },
-      { dx: 2, dy: -2, scale: 0.89, effect: 0.96 },
-      { dx: 3, dy: -1, scale: 0.89, effect: 1.00 },
+      { dx: -1, dy: 0, scale: 0.88, effect: 0.22 },
+      { dx: -2, dy: 0, scale: 0.88, effect: 0.50 },
+      { dx: 2, dy: -2, scale: 0.90, effect: 0.96 },
+      { dx: 4, dy: -1, scale: 0.90, effect: 1.00 },
+      { dx: 3, dy: -1, scale: 0.89, effect: 0.74 },
       { dx: 1, dy: 0, scale: 0.88, effect: 0.44 },
+      { dx: 1, dy: 0, scale: 0.88, effect: 0.16 },
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 }
     ]
   };
@@ -134,26 +160,30 @@ function svgOverlay(family, frame, tint) {
   let body = '';
 
   if (family === 'melee') {
-    body = `<path d="M30 49 C61 20 105 37 116 78" fill="none" stroke="${color}" stroke-width="${9 + (frame === RELEASE_FRAME ? 5 : 1)}" stroke-linecap="round" opacity="${0.20 * power}"/>
-            <path d="M37 53 C66 31 98 43 108 76" fill="none" stroke="#fff4d0" stroke-width="${4 + (frame === RELEASE_FRAME ? 2 : 0)}" stroke-linecap="round" opacity="${0.82 * power}"/>
-            <path d="M51 65 C69 53 89 58 99 79" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" opacity="${0.72 * power}"/>
+    const swing = Math.min(1, power + (frame >= RELEASE_FRAME ? 0.12 : 0));
+    body = `<path d="M${26 + swing * 10} ${54 - swing * 8} C${57 + swing * 6} ${19 + swing * 6} ${104 + swing * 4} ${36 + swing * 7} ${116 - swing * 6} ${78 + swing * 3}" fill="none" stroke="${color}" stroke-width="${9 + (frame === RELEASE_FRAME ? 5 : 1)}" stroke-linecap="round" opacity="${0.20 * power}"/>
+            <path d="M${35 + swing * 8} ${56 - swing * 7} C${66 + swing * 4} ${31 + swing * 7} ${98 + swing * 5} ${43 + swing * 5} ${108 - swing * 5} ${76 + swing * 3}" fill="none" stroke="#fff4d0" stroke-width="${4 + (frame === RELEASE_FRAME ? 2 : 0)}" stroke-linecap="round" opacity="${0.82 * power}"/>
+            <line x1="58" y1="73" x2="${70 + 38 * swing}" y2="${75 - 36 * swing}" stroke="#fff4d0" stroke-width="3.5" stroke-linecap="round" opacity="${0.66 * Math.max(0.1, power)}"/>
             <ellipse cx="${cx}" cy="91" rx="${33 + t * 3}" ry="9" fill="${color}" opacity="${0.055 * power}"/>`;
   } else if (family === 'spear') {
-    body = `<line x1="35" y1="82" x2="112" y2="38" stroke="${color}" stroke-width="${8 + (frame === RELEASE_FRAME ? 4 : 0)}" stroke-linecap="round" opacity="${0.18 * power}"/>
-            <line x1="43" y1="76" x2="109" y2="40" stroke="#fff4d0" stroke-width="${3.5 + (frame === RELEASE_FRAME ? 1.5 : 0)}" stroke-linecap="round" opacity="${0.84 * power}"/>
-            <polygon points="111,39 122,34 116,46" fill="#fff4d0" opacity="${0.76 * power}"/>
-            <circle cx="114" cy="39" r="${3 + t * 4}" fill="#fff4d0" opacity="${0.55 * power}"/>`;
+    const reach = 20 + power * 20;
+    body = `<line x1="${35 - t * 4}" y1="82" x2="${92 + reach}" y2="${49 - reach * 0.36}" stroke="${color}" stroke-width="${8 + (frame === RELEASE_FRAME ? 4 : 0)}" stroke-linecap="round" opacity="${0.18 * power}"/>
+            <line x1="${43 - t * 4}" y1="76" x2="${91 + reach}" y2="${50 - reach * 0.36}" stroke="#fff4d0" stroke-width="${3.5 + (frame === RELEASE_FRAME ? 1.5 : 0)}" stroke-linecap="round" opacity="${0.84 * power}"/>
+            <polygon points="${95 + reach},${49 - reach * 0.36} ${106 + reach},${44 - reach * 0.36} ${100 + reach},${56 - reach * 0.36}" fill="#fff4d0" opacity="${0.76 * power}"/>
+            <circle cx="${98 + reach}" cy="${49 - reach * 0.36}" r="${3 + t * 4}" fill="#fff4d0" opacity="${0.55 * power}"/>`;
   } else if (family === 'archer') {
-    const release = frame >= 3 ? power : power * 0.35;
+    const release = frame >= RELEASE_FRAME ? power : power * 0.35;
+    const draw = Math.min(1, frame / RELEASE_FRAME);
     body = `<path d="M36 82 C58 45 88 36 113 47" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round" opacity="${0.16 * power}"/>
-            <path d="M41 79 C62 55 89 48 108 50" fill="none" stroke="#fff7d4" stroke-width="3.5" stroke-linecap="round" opacity="${0.70 * power}"/>
-            <line x1="${frame < 3 ? 51 : 60}" y1="${frame < 3 ? 76 : 72}" x2="${frame < 3 ? 100 : 121}" y2="${frame < 3 ? 52 : 38}" stroke="#fff7d4" stroke-width="2.5" stroke-linecap="round" opacity="${0.88 * release}"/>
-            <polygon points="${frame < 3 ? '100,52 108,48 105,57' : '121,38 127,35 125,43'}" fill="#fff7d4" opacity="${0.82 * release}"/>`;
+            <path d="M41 79 C${62 - draw * 6} ${55 + draw * 10} ${89 - draw * 8} ${48 + draw * 7} 108 50" fill="none" stroke="#fff7d4" stroke-width="3.5" stroke-linecap="round" opacity="${0.70 * power}"/>
+            <line x1="${frame < RELEASE_FRAME ? 51 - draw * 5 : 60}" y1="${frame < RELEASE_FRAME ? 76 + draw * 2 : 72}" x2="${frame < RELEASE_FRAME ? 100 - draw * 7 : 121}" y2="${frame < RELEASE_FRAME ? 52 + draw * 4 : 38}" stroke="#fff7d4" stroke-width="2.5" stroke-linecap="round" opacity="${0.88 * release}"/>
+            <polygon points="${frame < RELEASE_FRAME ? `${100 - draw * 7},${52 + draw * 4} ${108 - draw * 7},${48 + draw * 4} ${105 - draw * 7},${57 + draw * 4}` : '121,38 127,35 125,43'}" fill="#fff7d4" opacity="${0.82 * release}"/>`;
   } else if (family === 'thrower' || family === 'command') {
     const isCommand = family === 'command';
-    body = `<line x1="37" y1="82" x2="116" y2="42" stroke="${color}" stroke-width="${isCommand ? 7 : 9}" stroke-linecap="round" opacity="${0.16 * power}"/>
-            <line x1="46" y1="77" x2="111" y2="45" stroke="#ffe9ad" stroke-width="${isCommand ? 3 : 4}" stroke-linecap="round" opacity="${0.82 * power}"/>
-            <polygon points="112,45 124,39 118,52" fill="#ffe9ad" opacity="${0.84 * power}"/>
+    const throwReach = 24 + power * 24;
+    body = `<line x1="${37 - t * 4}" y1="82" x2="${84 + throwReach}" y2="${58 - throwReach * 0.38}" stroke="${color}" stroke-width="${isCommand ? 7 : 9}" stroke-linecap="round" opacity="${0.16 * power}"/>
+            <line x1="${46 - t * 4}" y1="77" x2="${82 + throwReach}" y2="${61 - throwReach * 0.38}" stroke="#ffe9ad" stroke-width="${isCommand ? 3 : 4}" stroke-linecap="round" opacity="${0.82 * power}"/>
+            <polygon points="${84 + throwReach},${61 - throwReach * 0.38} ${96 + throwReach},${55 - throwReach * 0.38} ${90 + throwReach},${68 - throwReach * 0.38}" fill="#ffe9ad" opacity="${0.84 * power}"/>
             ${isCommand ? frameSparkles(4, '#ffe9ad', 0.42 * power, 85, 51) : ''}
             <circle cx="${cx}" cy="${cy}" r="${28 + t * 4}" fill="${color}" opacity="${0.045 * power}"/>`;
   } else if (family === 'siege') {
@@ -239,8 +269,12 @@ for (const id of baseTowerIds) {
   const family = familyFor(id, def);
   const frames = [];
   for (let i = 0; i < FRAMES; i++) frames.push(await makeFrame(source, family, def, i));
-  const sheet = await sharp({ create: { width: FRAME * FRAMES, height: FRAME, channels: 4, background: transparent } })
-    .composite(frames.map((input, i) => ({ input, left: i * FRAME, top: 0 })))
+  const sheet = await sharp({ create: { width: FRAME * COLS, height: FRAME * ROWS, channels: 4, background: transparent } })
+    .composite(frames.map((input, i) => ({
+      input,
+      left: (i % COLS) * FRAME,
+      top: Math.floor(i / COLS) * FRAME
+    })))
     .png({ quality: 95, compressionLevel: 9 })
     .toBuffer();
   await sharp(await cleanTransparentPixels(sheet))
@@ -249,4 +283,4 @@ for (const id of baseTowerIds) {
   wrote++;
 }
 
-console.log(`Wrote ${wrote} base tower attack sheets to ${OUT_DIR}`);
+console.log(`Wrote ${wrote} 3x3 base tower attack sheets to ${OUT_DIR}`);

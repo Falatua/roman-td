@@ -882,6 +882,21 @@ export function texFrame(key: string, frame: number, frameW: number, frameH: num
   return out;
 }
 
+export function texGridFrame(key: string, frame: number, frameW: number, frameH: number, columns: number): Texture | null {
+  const sheet = cache.get(key);
+  if (!sheet) return null;
+  const idx = Math.max(0, Math.floor(frame));
+  const col = idx % columns;
+  const row = Math.floor(idx / columns);
+  const cacheKey = `${key}:grid:${idx}:${frameW}x${frameH}:c${columns}`;
+  const cached = frameCache.get(cacheKey);
+  if (cached) return cached;
+  const out = new Texture(sheet.baseTexture, new Rectangle(col * frameW, row * frameH, frameW, frameH));
+  out.baseTexture.scaleMode = SCALE_MODES.NEAREST;
+  frameCache.set(cacheKey, out);
+  return out;
+}
+
 // 2026-05-22 — Deferred-batch completion flag. Set to true when the
 // deferred Promise.all in loadAllAssets resolves. main.ts checks this
 // AFTER drawStatic to handle the race where deferred completes BEFORE

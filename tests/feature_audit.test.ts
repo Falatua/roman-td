@@ -141,7 +141,26 @@ describe('Tower roster integrity', () => {
     expect(ingTypes).not.toContain('LANCEARIUS');
   });
 
-  it('every non-hero base tower has a six-frame attack sprite sheet', async () => {
+  it('every hero has a 3x3 attack sprite sheet', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const sharp = (await import('sharp')).default;
+    const heroes = ['MARIUS', 'AGRIPPA', 'AGRICOLA', 'SCIPIO', 'CAESAR', 'SULLA'];
+    for (const id of heroes) {
+      expect((ASSET_KEYS as any)[`HERO_ATTACK_${id}`], `${id} hero attack sheet missing from asset manifest`).toBe(`../heroes/attacks/hero_${id.toLowerCase()}_attack_sheet.png`);
+      const file = path.join(process.cwd(), 'public/assets/heroes/attacks', `hero_${id.toLowerCase()}_attack_sheet.png`);
+      expect(fs.existsSync(file), `${id} hero attack sheet missing at ${file}`).toBe(true);
+      const meta = await sharp(file).metadata();
+      expect(meta.width, `${id} hero attack sheet should be a 3x3 grid of 256px frames`).toBe(768);
+      expect(meta.height, `${id} hero attack sheet should be a 3x3 grid of 256px frames`).toBe(768);
+      const { data } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      let tinyAlpha = 0;
+      for (let i = 3; i < data.length; i += 4) if (data[i] > 0 && data[i] <= 4) tinyAlpha++;
+      expect(tinyAlpha, `${id} hero attack sheet has barely-visible alpha dust that can look like a dirty background`).toBe(0);
+    }
+  });
+
+  it('every non-hero base tower has a 3x3 attack sprite sheet', async () => {
     const fs = await import('node:fs');
     const path = await import('node:path');
     const sharp = (await import('sharp')).default;
@@ -156,8 +175,8 @@ describe('Tower roster integrity', () => {
       const file = path.join(process.cwd(), 'public/assets/sprites/attacks', `atk_${id.toLowerCase()}.png`);
       expect(fs.existsSync(file), `${id} attack sheet missing at ${file}`).toBe(true);
       const meta = await sharp(file).metadata();
-      expect(meta.width, `${id} attack sheet should be 6 frames × 128px wide`).toBe(768);
-      expect(meta.height, `${id} attack sheet should be 128px tall`).toBe(128);
+      expect(meta.width, `${id} attack sheet should be a 3x3 grid of 128px frames`).toBe(384);
+      expect(meta.height, `${id} attack sheet should be a 3x3 grid of 128px frames`).toBe(384);
       const { data } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
       let tinyAlpha = 0;
       for (let i = 3; i < data.length; i += 4) if (data[i] > 0 && data[i] <= 4) tinyAlpha++;
