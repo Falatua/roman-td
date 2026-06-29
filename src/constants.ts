@@ -47,7 +47,8 @@ export const ECONOMY = {
   // rise to keep apex (L8) a real commitment. Rounded to whole gold.
   // 2026-06-23 — prices ~1.85x to match the ~1.86x gold income from the
   // doubled enemy counts (1g/kill). Restores pre-doubling gold pressure.
-  POOL_UPGRADE_COSTS: [13, 28, 57, 98, 154, 235, 357, 549] as const,
+  // 2026-06-28 — every pool-upgrade tier cut 10% cheaper (×0.9, rounded).
+  POOL_UPGRADE_COSTS: [12, 25, 51, 88, 139, 212, 321, 494] as const,
   POOL_MAX_LEVEL: 8,
   AERARIUM_BONUS: 4,
   AERARIUM_MAX_COUNT: 3,
