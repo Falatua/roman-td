@@ -14,7 +14,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, premiumDropRoll, rollBossDrop, rollEpicDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, premiumDropRoll, rollBossDrop, rollEpicDrop, rollRareDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
@@ -7131,18 +7131,17 @@ async function boot() {
           } else if (e.isBoss && premiumDropRoll(0.12)) {
             const drop = rollEpicDrop(state, inventory);
             if (drop) spawnLootAt(state, e, drop);
-          } else if (e.type === 'FIRE_GIANT' && premiumDropRoll(0.10)) {
-            // 2026-05-20 — Fire Giant kills drop a guaranteed EPIC item.
-            // The W16 GATES_OF_HELL event pumps out ~15 Fire Giants in
-            // total (alternating from the two destructible Hell Gates,
-            // every 2s for 15s), so killing all of them now pays a
-            // serious item haul on top of the surprise-event reward
-            // modal at event resolution. Fire Giant is `isBoss: false`
-            // in the data so the regular boss-drop branch above
-            // doesn't fire — this explicit type check is the kill-
-            // hook. Drops EPIC, not LEGENDARY, so the W16 haul doesn't
-            // overshadow the W15/W20 boss legendaries.
-            const drop = rollEpicDrop(state, inventory);
+          } else if (e.type === 'FIRE_GIANT') {
+            // 2026-06-28 — EVERY Fire Giant now drops a guaranteed item:
+            // ~45% EPIC, otherwise RARE (was a 10% epic chance, so most
+            // kills paid nothing). Per user: each fire giant drops an epic
+            // or rare item.
+            // The W16 GATES_OF_HELL event pumps out ~15 Fire Giants (from the
+            // two destructible Hell Gates), so guaranteeing an epic/rare per
+            // kill pays a real item haul. Fire Giant is `isBoss: false`, so the
+            // boss-drop branches above don't fire — this explicit type check is
+            // the kill hook. No legendaries, so it doesn't overshadow W15/W20.
+            const drop = premiumDropRoll(0.45) ? rollEpicDrop(state, inventory) : rollRareDrop();
             if (drop) spawnLootAt(state, e, drop);
           } else {
             // 2026-05-24 — Elephant EPIC drop hook was moved above the

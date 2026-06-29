@@ -90,6 +90,11 @@ export function rollDrop(): { itemId: ItemId; rarity: Rarity } | null {
   return { itemId: pick(ORDINARY_EPIC_ITEMS), rarity: 'EPIC' };
 }
 
+// Guaranteed RARE-tier drop (used by the Fire Giant kill hook).
+export function rollRareDrop(): { itemId: ItemId; rarity: Rarity } | null {
+  return RARE_ITEMS.length ? { itemId: pick(RARE_ITEMS), rarity: 'RARE' } : null;
+}
+
 export function premiumDropRoll(chance: number, randomValue = Math.random()): boolean {
   return randomValue < Math.max(0, Math.min(1, chance));
 }

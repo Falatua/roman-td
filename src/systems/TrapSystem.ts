@@ -85,7 +85,13 @@ export interface PlacedTrap {
   color: number;         // stashed from the def so the renderer needs no TrapSystem import
   spriteKey: string;
   pulse: boolean;
+  nextReadyTick?: number; // 2026-06-28 — re-arm gate; trap can fire again once state.tick passes this
 }
+
+// 2026-06-28 — placed traps now PERSIST for the whole wave instead of being
+// consumed on first trigger. After firing they go on a short re-arm cooldown,
+// then fire again. clearPlacedTrapsForWaveEnd wipes them at wave end.
+export const TRAP_REARM_SECONDS = 3.0;
 
 export function trapOwned(state: GameStateShape, id: string): number {
   return (state.trapInventory ?? {})[id] ?? 0;
@@ -165,6 +171,8 @@ export function tickTraps(
     const def = TRAP_DEFS[trap.type];
     if (!def) continue;
     if (commanderTrapRadiusDisabled(state, trap.x, trap.y)) { survivors.push(trap); continue; }
+    // Re-arming: if still cooling down from the last trigger, keep it placed but don't fire.
+    if (state.tick < (trap.nextReadyTick ?? 0)) { survivors.push(trap); continue; }
     const radiusMult = campaignRelicTrapRadiusMult(state) * bossTrophyTrapRadiusMult(state);
     const damageMult = campaignRelicTrapDamageMult(state) * bossTrophyTrapDamageMult(state);
     const trigPx = def.triggerTiles * radiusMult * GRID.TILE;
@@ -196,7 +204,11 @@ export function tickTraps(
       if (def.slowDuration)                            { pushStatus(e, StatusEffectKind.SLOW, def.slowDuration, def.slowMag ?? 0.5, 3); onStatus?.(e.x, e.y, 'FREEZE'); }
     }
     fired.push({ x: trap.x, y: trap.y, color: def.color, radius: aoePx });
-    // trap is consumed (not pushed to survivors)
+    // 2026-06-28 — trap PERSISTS: re-arm and keep it on the map. It stays
+    // until the wave ends (clearPlacedTrapsForWaveEnd), re-firing every
+    // TRAP_REARM_SECONDS so a placed trap works the whole wave.
+    trap.nextReadyTick = state.tick + TRAP_REARM_SECONDS;
+    survivors.push(trap);
   }
   state.placedTraps = survivors;
   return fired;

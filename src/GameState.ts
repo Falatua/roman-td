@@ -61,7 +61,7 @@ export interface GameStateShape {
   // Lifetime traps purchased this run. Kept separate from inventory because
   // placed traps are consumable and should not erase quest progress.
   trapsPurchased?: number;
-  placedTraps?: { id: string; type: string; x: number; y: number; col: number; row: number; born: number; color: number; spriteKey: string; pulse: boolean }[];
+  placedTraps?: { id: string; type: string; x: number; y: number; col: number; row: number; born: number; color: number; spriteKey: string; pulse: boolean; nextReadyTick?: number }[];
   selectedTrapType?: string | null;
   flyerPath: { x: number; y: number }[];
   // Game-over flag for animation

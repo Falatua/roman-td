@@ -103,23 +103,27 @@ export function lateGameLayerMult(waveNumber: number, isBoss: boolean, isFlyer: 
     if (isBoss) m *= 1.40;
     else if (!isFlyer) m *= 1.30;
   }
+  // 2026-06-28 — post-W15 difficulty scaling SOFTENED. W16 felt a touch too
+  // hard and the old linear/slope projection ran away by W25-30. Lower base
+  // + slope on the W>15 bridge and trim the W21/W25/W30 step multipliers.
+  // Net: W16 ~-10%, W20 ~-18%, W25 ~-37%, W30 ~-40% vs the prior curve.
   if (waveNumber > 15) {
     const late = waveNumber - 15;
-    if (isBoss) m *= 1.12 + late * 0.10;
-    else if (isFlyer) m *= 1.04 + late * 0.065;
-    else m *= 1.08 + late * 0.09;
+    if (isBoss) m *= 1.05 + late * 0.06;
+    else if (isFlyer) m *= 1.00 + late * 0.04;
+    else m *= 1.00 + late * 0.05;
   }
   if (waveNumber >= 21) {
-    if (isBoss) m *= 1.30;
-    else if (isFlyer) m *= 1.15;
-    else m *= 1.25;
+    if (isBoss) m *= 1.20;
+    else if (isFlyer) m *= 1.10;
+    else m *= 1.15;
   }
   if (waveNumber >= 25) {
-    if (isBoss) m *= 1.35;
-    else if (isFlyer) m *= 1.20;
-    else m *= 1.30;
+    if (isBoss) m *= 1.22;
+    else if (isFlyer) m *= 1.12;
+    else m *= 1.18;
   }
-  if (waveNumber >= 30 && isBoss) m *= 1.50;
+  if (waveNumber >= 30 && isBoss) m *= 1.40;
   return m;
 }
 
