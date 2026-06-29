@@ -68,7 +68,7 @@
     "wave": 5,
     "type": "B",
     "faction": "CELTS",
-    "hpMult": 5.0,
+    "hpMult": 5,
     "gold": 26,
     "spawns": [
       {
@@ -228,7 +228,7 @@
     "wave": 14,
     "type": "M",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 9.0,
+    "hpMult": 9,
     "gold": 19,
     "enemySpeedBoostPct": 0.15,
     "spawns": [
@@ -250,7 +250,7 @@
     "wave": 15,
     "type": "M",
     "faction": "MONGOLS",
-    "hpMult": 7.0,
+    "hpMult": 7,
     "gold": 40,
     "spawns": [
       {
@@ -290,7 +290,8 @@
         "type": "MONGOL_SCOUT",
         "count": 12
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.05
   },
   {
     "wave": 17,
@@ -323,13 +324,16 @@
         "type": "PATHFINDER_COMMANDER",
         "count": 1
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.08,
+    "enemyDamageReductPct": 0.04,
+    "enemyRegenPctPerSec": 0.003
   },
   {
     "wave": 18,
     "type": "M",
     "faction": "EGYPTIANS",
-    "hpMult": 11.0,
+    "hpMult": 11,
     "gold": 14,
     "spawns": [
       {
@@ -364,7 +368,10 @@
         "type": "DUNE_STALKER",
         "count": 6
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.08,
+    "enemyDotResistPct": 0.2,
+    "enemyRegenPctPerSec": 0.004
   },
   {
     "wave": 19,
@@ -409,13 +416,17 @@
         "type": "SIEGE_WAGON",
         "count": 2
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.06,
+    "enemyDamageReductPct": 0.05,
+    "enemyDotResistPct": 0.25,
+    "enemyRegenPctPerSec": 0.004
   },
   {
     "wave": 20,
     "type": "B",
     "faction": "EGYPTIANS",
-    "hpMult": 55.0,
+    "hpMult": 55,
     "gold": 18,
     "spawns": [
       {
@@ -434,14 +445,17 @@
         "type": "ANUBIS_PRIEST_COMMANDER",
         "count": 1
       }
-    ]
+    ],
+    "enemyDamageReductPct": 0.06,
+    "enemyDotResistPct": 0.2,
+    "enemyRegenPctPerSec": 0.004
   },
   {
     "wave": 21,
     "type": "B",
     "faction": "MONGOLS",
-    "hpMult": 14.0,
-    "gold": 18,
+    "hpMult": 14,
+    "gold": 16,
     "spawns": [
       {
         "type": "KHAN_RIDER",
@@ -458,15 +472,30 @@
       {
         "type": "MONGOL_SPEAR_RIDER",
         "count": 28
+      },
+      {
+        "type": "MONGOL_SCOUT",
+        "count": 8
+      },
+      {
+        "type": "MONGOL_SHAMAN",
+        "count": 4
+      },
+      {
+        "type": "PATHFINDER_COMMANDER",
+        "count": 1
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.1,
+    "enemyDamageReductPct": 0.06,
+    "enemyRegenPctPerSec": 0.004
   },
   {
     "wave": 22,
     "type": "M",
     "faction": "MONGOLS",
-    "hpMult": 15.0,
-    "gold": 18,
+    "hpMult": 15,
+    "gold": 16,
     "spawns": [
       {
         "type": "UNDEAD_WAR_ELEPHANT",
@@ -495,15 +524,27 @@
       {
         "type": "PATHFINDER_COMMANDER",
         "count": 2
+      },
+      {
+        "type": "MONGOL_HORSE_ARCHER",
+        "count": 8
+      },
+      {
+        "type": "SIEGE_CAPTAIN_COMMANDER",
+        "count": 1
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.12,
+    "enemyDamageReductPct": 0.06,
+    "enemyDotResistPct": 0.15,
+    "enemyRegenPctPerSec": 0.004
   },
   {
     "wave": 23,
     "type": "M",
     "faction": "EGYPTIANS",
     "hpMult": 8.5,
-    "gold": 18,
+    "gold": 16,
     "spawns": [
       {
         "type": "PHARAOH_GUARD",
@@ -540,15 +581,31 @@
       {
         "type": "SIEGE_WAGON",
         "count": 1
+      },
+      {
+        "type": "STANDARD_BEARER_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "PATHFINDER_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "DUNE_STALKER",
+        "count": 6
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.06,
+    "enemyDamageReductPct": 0.07,
+    "enemyDotResistPct": 0.3,
+    "enemyRegenPctPerSec": 0.006
   },
   {
     "wave": 24,
     "type": "B",
     "faction": "EGYPTIANS",
-    "hpMult": 44.0,
-    "gold": 20,
+    "hpMult": 44,
+    "gold": 18,
     "spawns": [
       {
         "type": "ANUBIS_KING",
@@ -565,15 +622,34 @@
       {
         "type": "ANUBIS_PRIEST_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "SPHINX",
+        "count": 4
+      },
+      {
+        "type": "SIEGE_WAGON",
+        "count": 1
+      },
+      {
+        "type": "DUNE_STALKER",
+        "count": 5
+      },
+      {
+        "type": "SIEGE_CAPTAIN_COMMANDER",
+        "count": 1
       }
-    ]
+    ],
+    "enemyDamageReductPct": 0.08,
+    "enemyDotResistPct": 0.25,
+    "enemyRegenPctPerSec": 0.006
   },
   {
     "wave": 25,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 18.0,
-    "gold": 20,
+    "hpMult": 18,
+    "gold": 18,
     "fixedCount": true,
     "spawns": [
       {
@@ -595,15 +671,31 @@
       {
         "type": "STANDARD_BEARER_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "CERBERUS",
+        "count": 2
+      },
+      {
+        "type": "DEMON_HELLHOUND",
+        "count": 8
+      },
+      {
+        "type": "PATHFINDER_COMMANDER",
+        "count": 1
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.05,
+    "enemyDamageReductPct": 0.06,
+    "enemyDotResistPct": 0.2,
+    "enemyRegenPctPerSec": 0.004
   },
   {
     "wave": 26,
     "type": "M",
     "faction": "ROMAN_MYTH",
-    "hpMult": 19.0,
-    "gold": 20,
+    "hpMult": 19,
+    "gold": 18,
     "fixedCount": true,
     "spawns": [
       {
@@ -625,15 +717,27 @@
       {
         "type": "STONE_JUGGERNAUT",
         "count": 4
+      },
+      {
+        "type": "STANDARD_BEARER_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "ANUBIS_PRIEST_COMMANDER",
+        "count": 1
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.08,
+    "enemyDamageReductPct": 0.07,
+    "enemyDotResistPct": 0.15,
+    "enemyRegenPctPerSec": 0.005
   },
   {
     "wave": 27,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 22.0,
-    "gold": 22,
+    "hpMult": 22,
+    "gold": 20,
     "fixedCount": true,
     "spawns": [
       {
@@ -655,15 +759,31 @@
       {
         "type": "SIEGE_CAPTAIN_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "DEMON_HELLHOUND",
+        "count": 8
+      },
+      {
+        "type": "STONE_JUGGERNAUT",
+        "count": 1
+      },
+      {
+        "type": "PATHFINDER_COMMANDER",
+        "count": 1
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.07,
+    "enemyDamageReductPct": 0.08,
+    "enemyDotResistPct": 0.2,
+    "enemyRegenPctPerSec": 0.006
   },
   {
     "wave": 28,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 24.0,
-    "gold": 22,
+    "hpMult": 24,
+    "gold": 20,
     "fixedCount": true,
     "superGiantActive": true,
     "spawns": [
@@ -682,15 +802,30 @@
       {
         "type": "ANUBIS_PRIEST_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "SIEGE_CAPTAIN_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "CHIMERA",
+        "count": 5
+      },
+      {
+        "type": "DEMON_HELLHOUND",
+        "count": 8
       }
-    ]
+    ],
+    "enemyDamageReductPct": 0.09,
+    "enemyDotResistPct": 0.25,
+    "enemyRegenPctPerSec": 0.006
   },
   {
     "wave": 29,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 27.0,
-    "gold": 24,
+    "hpMult": 27,
+    "gold": 21,
     "fixedCount": true,
     "spawns": [
       {
@@ -712,14 +847,30 @@
       {
         "type": "CHIMERA",
         "count": 6
+      },
+      {
+        "type": "STANDARD_BEARER_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "ANUBIS_PRIEST_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "SIEGE_CAPTAIN_COMMANDER",
+        "count": 1
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.08,
+    "enemyDamageReductPct": 0.1,
+    "enemyDotResistPct": 0.25,
+    "enemyRegenPctPerSec": 0.007
   },
   {
     "wave": 30,
     "type": "B",
     "faction": "SUPER_DEMONS",
-    "hpMult": 16.0,
+    "hpMult": 16,
     "gold": 0,
     "spawns": [
       {
@@ -741,7 +892,27 @@
       {
         "type": "SIEGE_CAPTAIN_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "CERBERUS",
+        "count": 2
+      },
+      {
+        "type": "CHIMERA",
+        "count": 2
+      },
+      {
+        "type": "STANDARD_BEARER_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "ANUBIS_PRIEST_COMMANDER",
+        "count": 1
       }
-    ]
+    ],
+    "enemySpeedBoostPct": 0.05,
+    "enemyDamageReductPct": 0.1,
+    "enemyDotResistPct": 0.3,
+    "enemyRegenPctPerSec": 0.008
   }
 ]

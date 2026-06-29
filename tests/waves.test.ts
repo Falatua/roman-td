@@ -96,6 +96,31 @@ describe('Late-wave DoT profile coverage', () => {
   });
 });
 
+describe('Late-campaign mechanic variety after combo tower buffs', () => {
+  it('gives W21-W30 multiple difficulty levers beyond health', () => {
+    for (const wave of (wavesData as any[]).filter(w => w.wave >= 21 && w.wave <= 30)) {
+      const levers = [
+        typeof wave.enemySpeedBoostPct === 'number',
+        typeof wave.enemyDamageReductPct === 'number',
+        typeof wave.enemyDotResistPct === 'number',
+        typeof wave.enemyRegenPctPerSec === 'number',
+        (wave.spawns ?? []).some((s: any) => String(s.type).includes('COMMANDER'))
+      ].filter(Boolean).length;
+      expect(levers, `W${wave.wave} should have at least three late-game pressure levers`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('mixes wave roles so late waves ask for different tower answers', () => {
+    const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
+    expect(byWave.get(21).spawns.some((s: any) => s.type === 'MONGOL_SCOUT')).toBe(true);
+    expect(byWave.get(23).spawns.some((s: any) => s.type === 'DUNE_STALKER')).toBe(true);
+    expect(byWave.get(24).spawns.some((s: any) => s.type === 'SIEGE_WAGON')).toBe(true);
+    expect(byWave.get(25).spawns.some((s: any) => s.type === 'DEMON_HELLHOUND')).toBe(true);
+    expect(byWave.get(28).spawns.some((s: any) => s.type === 'SIEGE_CAPTAIN_COMMANDER')).toBe(true);
+    expect(byWave.get(30).spawns.some((s: any) => s.type === 'CHIMERA')).toBe(true);
+  });
+});
+
 describe('Wave start — basic flow', () => {
   let state: ReturnType<typeof createGameState>;
   beforeEach(() => { state = bootstrapState(); });

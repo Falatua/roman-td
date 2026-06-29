@@ -12,7 +12,7 @@
 // all 8 leaked on spawn AND the 27 UNDEAD_CELTs reanimated/rebirthed
 // cascade pushed the player to 0 lives without a fair shot.
 import { describe, it, expect } from 'vitest';
-import { spawnAtSurpriseEventPoint, surpriseEventHpMult } from '../src/systems/SurpriseEvents';
+import { SURPRISE_EVENT_SCHEDULE, spawnAtSurpriseEventPoint, surpriseEventHpMult } from '../src/systems/SurpriseEvents';
 import { SurpriseEventKind } from '../src/types';
 import { createGameState } from '../src/GameState';
 import { GRID } from '../src/constants';
@@ -93,6 +93,26 @@ describe('Surprise event spawn redirect — flyer guard (2026-05-19)', () => {
     expect(surpriseEventHpMult(SurpriseEventKind.INVASION)).toBeCloseTo(1.50, 4);
     expect(surpriseEventHpMult(SurpriseEventKind.UPRISING)).toBeCloseTo(1.65, 4);
     expect(surpriseEventHpMult(SurpriseEventKind.GATES_OF_HELL)).toBeCloseTo(1.35, 4);
+  });
+
+  it('adds late-campaign surprise events as mechanic checks', () => {
+    expect(SURPRISE_EVENT_SCHEDULE[23]).toBe(SurpriseEventKind.UPRISING);
+    expect(SURPRISE_EVENT_SCHEDULE[27]).toBe(SurpriseEventKind.GATES_OF_HELL);
+    expect(SURPRISE_EVENT_SCHEDULE[29]).toBe(SurpriseEventKind.INVASION);
+  });
+
+  it('late surprise enemies gain sustain and status pressure, not just HP', () => {
+    const s = makeState();
+    s.wave = 23;
+    s.activeSurpriseEvent.kind = SurpriseEventKind.UPRISING;
+    const ground = { ...fakeEnemy({ isFlyer: false }), hp: 1000, maxHp: 1000 };
+    const ok = spawnAtSurpriseEventPoint(s, ground, 0);
+    expect(ok).toBe(true);
+    expect(ground.maxHp).toBeCloseTo(1650, 4);
+    expect((ground as any).__lateResistMult).toBeLessThan(1);
+    expect((ground as any).__lateStatusGuard).toBeLessThanOrEqual(0.45);
+    expect((ground as any).outOfCombatRegen).toBeGreaterThanOrEqual(0.04);
+    expect((ground as any).checkpointHealPct).toBeGreaterThanOrEqual(0.10);
   });
 
   it('the guard catches ALL queue indices for flyers (not just idx 0)', () => {

@@ -51,7 +51,7 @@ export function commanderDamageTakenMult(state: GameStateShape, target: any): nu
   if (!target || target.hp <= 0 || target.isBoss || isCommanderType(target.type)) return 1;
   for (const commander of activeCommanders(state, 'STANDARD_BEARER_COMMANDER')) {
     if (Math.hypot(commander.x - target.x, commander.y - target.y) <= 4 * GRID.TILE) {
-      return 0.85;
+      return (state.wave ?? 1) >= 21 ? 0.80 : 0.85;
     }
   }
   return 1;
@@ -59,7 +59,8 @@ export function commanderDamageTakenMult(state: GameStateShape, target: any): nu
 
 export function commanderSpeedMult(state: GameStateShape, enemy: any): number {
   if (!enemy || enemy.hp <= 0 || isCommanderType(enemy.type)) return 1;
-  return activeCommanders(state, 'PATHFINDER_COMMANDER').length > 0 ? 1.12 : 1;
+  if (activeCommanders(state, 'PATHFINDER_COMMANDER').length === 0) return 1;
+  return (state.wave ?? 1) >= 25 ? 1.20 : (state.wave ?? 1) >= 21 ? 1.16 : 1.12;
 }
 
 export function commanderTrapRadiusDisabled(state: GameStateShape, x: number, y: number): boolean {
@@ -78,7 +79,8 @@ export function tickCommanderSupport(state: GameStateShape, dt: number): void {
     for (const e of state.enemies.values()) {
       if (e.hp <= 0 || e.isBoss || isCommanderType(e.type as any)) continue;
       if (Math.hypot(e.x - commander.x, e.y - commander.y) > 3.5 * GRID.TILE) continue;
-      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.06);
+      const healPct = (state.wave ?? 1) >= 21 ? 0.08 : 0.06;
+      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * healPct);
       (e as any).__commanderHealedUntil = state.tick + 0.35;
     }
   }

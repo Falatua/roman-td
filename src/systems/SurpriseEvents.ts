@@ -46,12 +46,18 @@ import waypointsData from '../data/waypoints.json';
 //         destroying the gates. Bridges the undead → demon faction
 //         transition heading into W20.
 //   W18 — Invasion (UNDEAD_CARTHAGE)
+//   W23 — Uprising (late mummy/crypt pressure)
+//   W27 — Gates of Hell (mythic mid-wave demon pressure)
+//   W29 — Invasion (final perimeter breach before Rome)
 export const SURPRISE_EVENT_SCHEDULE: Record<number, SurpriseEventKind> = {
   7:  SurpriseEventKind.INVASION,
   11: SurpriseEventKind.UPRISING,
   14: SurpriseEventKind.UPRISING,
   16: SurpriseEventKind.GATES_OF_HELL,
   18: SurpriseEventKind.INVASION,
+  23: SurpriseEventKind.UPRISING,
+  27: SurpriseEventKind.GATES_OF_HELL,
+  29: SurpriseEventKind.INVASION,
 };
 
 // ─── GATES OF HELL TUNING ─────────────────────────────────────────────
@@ -111,7 +117,7 @@ export function maybeTriggerSurpriseEventForWave(state: GameStateShape): void {
   // override the wave's normal spawn flow. The other two event kinds
   // would feel oppressive back-to-back; gates run in parallel with the
   // wave's regular enemies so the player can still focus-fire normally.
-  if (kind !== SurpriseEventKind.GATES_OF_HELL && state.wave - lastWave < 3) return;
+  if (state.wave < 21 && kind !== SurpriseEventKind.GATES_OF_HELL && state.wave - lastWave < 3) return;
   // GATES_OF_HELL uses waveOverride=false (its spawns are EXTRA, not
   // a replacement for the wave queue). Invasion/Uprising stay on the
   // existing waveOverride=true path so back-compat holds.
@@ -556,8 +562,36 @@ function attachSurpriseSpawnTags(state: GameStateShape, enemy: any, ev: Surprise
   // baseline so the wave-preview HP numbers still match what spawns
   // (the preview-parity tests would break if we touched maxHp here).
   if (ev.kind === SurpriseEventKind.INVASION) {
-    enemy.baseSpeed *= 1.25;
+    enemy.baseSpeed *= state.wave >= 21 ? 1.35 : 1.25;
     enemy.currentSpeed = enemy.baseSpeed;
+  }
+  // 2026-06-29 — late-campaign event pressure. After W20, events are no
+  // longer just reward side-shows; they become mini build checks layered
+  // over the normal wave. Keep the early teaching events unchanged, then
+  // add targeted sustain / speed / resistance stamps for the boosted-combo
+  // endgame so players need priority targeting and maze coverage.
+  if (state.wave >= 21) {
+    const existingResist: number = (enemy as any).__lateResistMult ?? 1;
+    if (ev.kind === SurpriseEventKind.INVASION) {
+      (enemy as any).__lateResistMult = existingResist * 0.90;
+      (enemy as any).__lateStatusGuard = Math.min((enemy as any).__lateStatusGuard ?? 1, 0.55);
+      (enemy as any).outOfCombatRegen = Math.max((enemy as any).outOfCombatRegen ?? 0, 0.030);
+      if (!enemy.isFlyer && !enemy.isBoss) enemy.checkpointHealPct = Math.max(enemy.checkpointHealPct ?? 0, 0.08);
+    } else if (ev.kind === SurpriseEventKind.UPRISING) {
+      (enemy as any).__lateResistMult = existingResist * 0.88;
+      (enemy as any).__lateStatusGuard = Math.min((enemy as any).__lateStatusGuard ?? 1, 0.45);
+      (enemy as any).outOfCombatRegen = Math.max((enemy as any).outOfCombatRegen ?? 0, 0.040);
+      if (!enemy.isFlyer && !enemy.isBoss) enemy.checkpointHealPct = Math.max(enemy.checkpointHealPct ?? 0, 0.10);
+    } else if (ev.kind === SurpriseEventKind.GATES_OF_HELL) {
+      (enemy as any).__lateResistMult = existingResist * 0.88;
+      (enemy as any).__lateStatusGuard = Math.min((enemy as any).__lateStatusGuard ?? 1, 0.40);
+      if (enemy.type !== 'HELL_GATE') {
+        enemy.baseSpeed *= 1.10;
+        enemy.currentSpeed = enemy.baseSpeed;
+        (enemy as any).outOfCombatRegen = Math.max((enemy as any).outOfCombatRegen ?? 0, 0.035);
+        if (!enemy.isFlyer && !enemy.isBoss) enemy.checkpointHealPct = Math.max(enemy.checkpointHealPct ?? 0, 0.08);
+      }
+    }
   }
 }
 

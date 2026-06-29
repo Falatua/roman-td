@@ -20,7 +20,7 @@ import enemiesData from '../data/enemies.json';
 import { spawnEnemy } from './EnemySystem';
 import { generateEndlessWave, EndlessWaveConfig, endlessClearScore } from './EndlessMode';
 import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, clearSurpriseEventsForWaveEnd, spawnAtSurpriseEventPoint, notifySurpriseEventWaveEnded } from './SurpriseEvents';
-import { injectCampaignCommanders } from './CommanderSystem';
+import { injectCampaignCommanders, isCommanderType } from './CommanderSystem';
 import { campaignRelicWaveGoldMult } from './CampaignRelicSystem';
 import { prepareHeroAbilitiesForWave } from './HeroSystem';
 import { completeTestYourMight, tickTestYourMightSpawns } from './TestYourMightSystem';
@@ -217,6 +217,7 @@ export function startWave(state: GameStateShape) {
   // instead of dipping into a one-unit valley at W20/W21/W24.
   const isBossWave = w.type === 'B';
   const soloBossWave = isBossWave && state.wave <= 15;
+  let commanderSpawnAt = 4.5;
   for (const grp of w.spawns) {
     const isBossGrp = !!(enemiesData as any)[grp.type]?.isBoss;
     if (soloBossWave && !isBossGrp) continue;       // skip mobs on early boss waves
@@ -224,10 +225,13 @@ export function startWave(state: GameStateShape) {
     // readable trickle instead of a swarm (per design feedback).
     const isFlyerGrp = !!(enemiesData as any)[grp.type]?.isFlyer && !isBossGrp;
     for (let i = 0; i < grp.count; i++) {
-      state.spawnQueue.push({ type: grp.type, spawnAt: t });
+      const commander = isCommanderType(grp.type);
+      state.spawnQueue.push({ type: grp.type, spawnAt: commander ? commanderSpawnAt : t });
+      if (commander) commanderSpawnAt += 1.3;
       t += isFlyerGrp ? Math.max(WAVE.SPAWN_INTERVAL, 1.0) : WAVE.SPAWN_INTERVAL;
     }
   }
+  state.spawnQueue.sort((a, b) => a.spawnAt - b.spawnAt);
   // 20-WAVE CAMPAIGN: Iron Phalanx now has a single dedicated appearance at
   // W17 (the wave's spawns already list the phalanx group in waves.json so
   // we no longer append a separate tail here — wave 17 is type 'M' and the
