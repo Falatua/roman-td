@@ -82,7 +82,7 @@
   "CELTIC_SCOUT": {
     "name": "Celtic Scout",
     "faction": "CELTS",
-    "baseHp": 307,
+    "baseHp": 260,
     "speed": 1.8,
     "isFlyer": true,
     "isBoss": false,
@@ -120,7 +120,7 @@
   "NUMIDIAN_RIDER": {
     "name": "Numidian Rider",
     "faction": "CARTHAGE",
-    "baseHp": 451,
+    "baseHp": 315,
     "speed": 1.8,
     "isFlyer": true,
     "isBoss": false,
@@ -227,7 +227,7 @@
   "SPECTRAL_SCOUT": {
     "name": "Spectral Scout",
     "faction": "UNDEAD_CELTS",
-    "baseHp": 366,
+    "baseHp": 285,
     "speed": 1.8,
     "isFlyer": true,
     "isBoss": false,
@@ -272,7 +272,7 @@
   "GHOST_RIDER": {
     "name": "Ghost Rider",
     "faction": "UNDEAD_CARTHAGE",
-    "baseHp": 455,
+    "baseHp": 320,
     "speed": 2.6,
     "isFlyer": true,
     "isBoss": false,
@@ -340,7 +340,7 @@
     "nullifyAuraRadiusTiles": 2,
     "name": "Shadow Cavalry",
     "faction": "SUPER_DEMONS",
-    "baseHp": 307,
+    "baseHp": 260,
     "speed": 3.2,
     "isFlyer": true,
     "isBoss": false,
@@ -573,7 +573,7 @@
   "SPHINX": {
     "name": "Sphinx",
     "faction": "EGYPTIANS",
-    "baseHp": 1760,
+    "baseHp": 780,
     "speed": 1.3,
     "isFlyer": true,
     "isBoss": false,

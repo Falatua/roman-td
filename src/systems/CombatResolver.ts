@@ -1154,7 +1154,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (target.isFlyer) damage *= 1.35;
         if (target.isBoss)  damage *= 1.50;
       }
-      if (t.type === TowerType.WAR_CHARIOT && target.isBoss) damage *= 1.50;             // +50% vs Bosses
+      if (t.type === TowerType.WAR_CHARIOT && target.isBoss) damage *= 1.75;             // +75% vs Bosses
       // CLIBANARIUS — mid-game COMBO retheme (2026-05-15 v13). Dedicated
       // boss hunter: +75% damage vs Bosses baseline. AND every 4th hit on
       // a Boss is a CHARGED LANCE EXECUTE that deals 3× the swing's
@@ -1222,13 +1222,13 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
       if (t.type === TowerType.PUGIO_ASSASSIN && target.archetype === 'RUNNER') damage *= 1.5;          // BACKSTAB
       if (t.type === TowerType.ACCENSUS && target.hp / target.maxHp > 0.85) damage *= 1.6;              // BRUTAL OPENER
-      // 2026-05 v11 — DECURION EXECUTE: +250% damage vs enemies below 15% HP.
+      // 2026-05 v11 — DECURION EXECUTE: +250% damage vs enemies below 40% HP.
       // The execute multiplier stacks multiplicatively with the every-5th-hit
       // ×3 crit below, so a 5th-hit landing on a sub-15% target deals 10.5×
       // base — a real finisher swing. Bosses are guarded by isBoss so the
       // execute can't trivialize them (boss-HP fractions take longer to
       // reach 15% anyway, but explicit guard keeps the bonus honest).
-      if (t.type === TowerType.DECURION && !target.isBoss && target.hp / target.maxHp < 0.15) damage *= 3.5;
+      if (t.type === TowerType.DECURION && !target.isBoss && target.hp / target.maxHp < 0.40) damage *= 3.5;
       if (t.type === TowerType.SOLAR_PRIEST && resMod < 1) {
         // ELEMENTAL SPECIALIST: only ignores resist when the target was
         // RESISTING this tower's damage type. If the enemy is neutral or
@@ -2296,10 +2296,10 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       break;
     }
     case TowerType.WAR_CHARIOT: {
-      // CHARIOT TRAMPLE: every 4th attack stuns ground + KNOCKBACK.
+      // CHARIOT TRAMPLE: every 3rd attack stuns ground + KNOCKBACK.
       const hc = (t as any).__hitCount ?? 0;
-      if (hc > 0 && hc % 4 === 0 && !target.isFlyer) {
-        pushStatus(target, StatusEffectKind.STUN, dur(0.6), 0, tier);
+      if (hc > 0 && hc % 3 === 0 && !target.isFlyer) {
+        pushStatus(target, StatusEffectKind.STUN, dur(0.7), 0, tier);
         pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.5, tier);
       }
       break;

@@ -110,7 +110,7 @@ describe('Recipe combo detection', () => {
 
   it('keeps nested-combo DPS boosts while excluding Hannibal Nightmare', () => {
     const expectedBoosted: Partial<Record<TowerType, number>> = {
-      [TowerType.WAR_CHARIOT]: 99.9,
+      [TowerType.WAR_CHARIOT]: 112.0,
       [TowerType.INFERNO_CART]: 60.5,
       [TowerType.FROZEN_LEGION]: 141.5,
       [TowerType.JULIUS_CAESAR]: 140.0,

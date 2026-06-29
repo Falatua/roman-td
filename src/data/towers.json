@@ -96,7 +96,7 @@
     "melee": false,
     "spriteSheet": 1,
     "spriteCell": 6,
-    "ability": "DUAL JAVELIN: throws at 2 targets per attack. EXECUTE: +250% damage vs non-boss enemies below 15% HP (the finishing javelin). Crit every 5th hit.",
+    "ability": "DUAL JAVELIN: throws at 2 targets per attack. EXECUTE: +250% damage vs non-boss enemies below 40% HP (the finishing javelin). Crit every 5th hit.",
     "critChance": 0,
     "critMult": 1
   },
@@ -528,14 +528,14 @@
   "WAR_CHARIOT": {
     "name": "War Chariot",
     "damageType": "PHYS_MELEE",
-    "baseDps": 99.9,
+    "baseDps": 112.0,
     "attackSpeed": 0.88,
     "range": 2.0,
     "kind": "COMBO",
     "melee": true,
     "spriteSheet": 2,
     "spriteCell": 4,
-    "ability": "TRAMPLE (MELEE — POLEARM REACH 2.0): every 4th strike stuns AND knocks back ground enemies. +50% vs Bosses. The chariot runs in close and rolls over the line — physical-melee damage, parks adjacent to the path like Horseman / Turma Lancers.",
+    "ability": "TRAMPLE (MELEE — POLEARM REACH 2.0): every 3rd strike stuns (0.7s) AND knocks back ground enemies. +75% vs Bosses. The chariot runs in close and rolls over the line — physical-melee damage, parks adjacent to the path like Horseman / Turma Lancers.",
     "critChance": 0.12,
     "critMult": 2.5
   },
