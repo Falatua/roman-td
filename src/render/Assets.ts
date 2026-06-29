@@ -611,6 +611,50 @@ const MANIFEST: Record<string, string> = {
   HERO_RING_GOLD_ROPE:      'hero_ring_gold_rope.png'       // Scipio
 };
 
+export const BASE_TOWER_ATTACK_TYPES = [
+  'MILITES',
+  'VELITES',
+  'HASTATI',
+  'SAGITTARIUS',
+  'SCORPIO',
+  'TRIARIUS',
+  'DECURION',
+  'CENTURION',
+  'PRIMUS_PILUS',
+  'LEGATE',
+  'AUXILIA',
+  'FUNDIBULUS',
+  'RORARIUS',
+  'LIBRITOR',
+  'ACCENSUS',
+  'RETIARIUS',
+  'BALLISTARIUS',
+  'OPTIO',
+  'PUGIO_ASSASSIN',
+  'ARCUBALLISTA',
+  'VENATOR',
+  'IGNIFER',
+  'SPECULATOR',
+  'FLAMEN',
+  'CARROBALLISTA',
+  'CATAPHRACT',
+  'AUGUR',
+  'EVOCATUS',
+  'HARUSPEX',
+  'PRAEFECTUS',
+  'VULCAN_ENGINEER',
+  'IMPERATOR_GUARD',
+  'SOLAR_PRIEST',
+  'COLOSSUS_ONAGER',
+  'AQUILA_VENATOR',
+  'BEAST_HUNTER',
+  'BEAST_SLAYER'
+] as const;
+
+Object.assign(MANIFEST, Object.fromEntries(
+  BASE_TOWER_ATTACK_TYPES.map(type => [`ATTACK_${type}`, `attacks/atk_${type.toLowerCase()}.png`])
+));
+
 // Sprite-quality fix: tower / enemy / item sprites are stored as
 // high-resolution PNGs (1024×1024 or 1333×1115), which would force
 // PIXI to re-sample dramatically downscaled textures every frame at
@@ -732,6 +776,7 @@ async function loadOneSprite(key: string, file: string): Promise<void> {
 // exclusive enemies should always be ready when the event fires.
 function isCriticalAsset(file: string): boolean {
   if (file === 'e3_hell_gate.png' || file === 'e3_fire_giant.png') return true;
+  if (/(\/|^)attacks\//.test(file)) return true;
   // 2026-05-19 — Hero sprites are critical so they're cached before
   // the player places their drafted hero on W1. The choose-hero modal
   // fires right after name entry, and the player can drop the hero

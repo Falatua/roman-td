@@ -1378,7 +1378,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         damage = 0;
         (target as any).__weatherMissTick = state.tick;
       }
-      t.attackFlash = t.isHero ? 0.42 : 0.18;     // game-feel flash on every attack; heroes get readable attack VFX
+      const attackTowerDef: any = (towersData as any)[t.type];
+      const hasBaseAttackSheet = attackTowerDef?.kind === 'BASE' && !attackTowerDef?.isHero;
+      t.attackFlash = t.isHero ? 0.42 : hasBaseAttackSheet ? 0.28 : 0.18;     // game-feel flash on every attack; heroes + base towers get readable attack VFX
       // Compute "in melee/range" enemies once for cleave + multi-shot lookups.
       const tcx = tilePxX(t);
       const tcy = tilePxY(t);

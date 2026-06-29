@@ -24,6 +24,7 @@ import {
   FORTUNA_GAMBLE_POOL,
   rollFortunaCombo
 } from '../src/systems/MerchantSystem';
+import { ASSET_KEYS, BASE_TOWER_ATTACK_TYPES } from '../src/render/Assets';
 import comboData from '../src/data/towerCombinations.json';
 import towersData from '../src/data/towers.json';
 
@@ -137,6 +138,26 @@ describe('Tower roster integrity', () => {
     const ingTypes = tess!.ingredients.map(i => i.type);
     expect(ingTypes).toContain('RETIARIUS');
     expect(ingTypes).not.toContain('LANCEARIUS');
+  });
+
+  it('every non-hero base tower has a six-frame attack sprite sheet', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const sharp = (await import('sharp')).default;
+    const baseTowers = Object.entries(towersData as any)
+      .filter(([, def]: any) => def.kind === 'BASE' && !def.isHero)
+      .map(([id]) => id)
+      .sort();
+    expect(baseTowers.length, 'expected the base tower roster to be non-empty').toBeGreaterThan(0);
+    expect([...BASE_TOWER_ATTACK_TYPES].sort(), 'runtime attack-sheet roster should match base tower roster').toEqual(baseTowers);
+    for (const id of baseTowers) {
+      expect((ASSET_KEYS as any)[`ATTACK_${id}`], `${id} attack sheet missing from asset manifest`).toBe(`attacks/atk_${id.toLowerCase()}.png`);
+      const file = path.join(process.cwd(), 'public/assets/sprites/attacks', `atk_${id.toLowerCase()}.png`);
+      expect(fs.existsSync(file), `${id} attack sheet missing at ${file}`).toBe(true);
+      const meta = await sharp(file).metadata();
+      expect(meta.width, `${id} attack sheet should be 6 frames × 128px wide`).toBe(768);
+      expect(meta.height, `${id} attack sheet should be 128px tall`).toBe(128);
+    }
   });
 });
 

@@ -49,6 +49,9 @@ const HERO_ATTACK_SHEET_FOR: Record<string, string> = {
 
 const HERO_ATTACK_FRAME_SIZE = 256;
 const HERO_ATTACK_FRAME_COUNT = 6;
+const BASE_TOWER_ATTACK_FRAME_SIZE = 128;
+const BASE_TOWER_ATTACK_FRAME_COUNT = 6;
+const BASE_TOWER_ATTACK_FLASH_WINDOW = 0.28;
 
 const MAX_TRANSIENT_SLASHES = 72;
 const MAX_TRANSIENT_MUZZLE_FLASHES = 96;
@@ -3467,7 +3470,9 @@ export class RenderEngine {
       // the target's position.)
       // Attack flash + recoil: stronger brightening, scale jump, kickback offset
       // along the firing direction for satisfying combat feel.
-      const flashWindow = tw.isHero ? 0.42 : 0.18;
+      const towerDef: any = (towersData as any)[tw.type];
+      const hasBaseAttackSheet = towerDef?.kind === 'BASE' && !towerDef?.isHero;
+      const flashWindow = tw.isHero ? 0.42 : hasBaseAttackSheet ? BASE_TOWER_ATTACK_FLASH_WINDOW : 0.18;
       const flashT = tw.attackFlash > 0 ? Math.min(1, tw.attackFlash / flashWindow) : 0;
       const heroIdentity = heroIdForTowerType(String(tw.type));
       let usingHeroAttackSheet = false;
@@ -3481,6 +3486,12 @@ export class RenderEngine {
         const idleTex = tex(tw.type);
         entry.sp.texture = attackTex ?? idleTex ?? entry.sp.texture;
         usingHeroAttackSheet = !!attackTex;
+      } else if (hasBaseAttackSheet && flashT > 0) {
+        const frameAge = Math.max(0, Math.min(0.999, 1 - flashT));
+        const frameIndex = Math.min(BASE_TOWER_ATTACK_FRAME_COUNT - 1, 1 + Math.floor(frameAge * (BASE_TOWER_ATTACK_FRAME_COUNT - 1)));
+        const attackTex = texFrame(`ATTACK_${tw.type}`, frameIndex, BASE_TOWER_ATTACK_FRAME_SIZE, BASE_TOWER_ATTACK_FRAME_SIZE);
+        const idleTex = tex(tw.type);
+        entry.sp.texture = attackTex ?? idleTex ?? entry.sp.texture;
       } else {
         const idleTex = tex(tw.type);
         if (idleTex && entry.sp.texture !== idleTex) entry.sp.texture = idleTex;
