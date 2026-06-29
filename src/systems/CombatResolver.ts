@@ -414,8 +414,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   (state as any).__truesightActive = truesightCount > 0;     // legacy flag for render hooks
 
   // SUPPORT AURA scan (Vision §9 / build expression §12).
-  // Eagle Standard:    global +18% damage, +10% atk speed within 4 tiles
-  // Aquilifer Titan:   global +30% damage; enemies near it take +20% from all sources
+  // Eagle Standard:    global +18% damage, +22% atk speed within 5 tiles
+  // Aquilifer Titan:   global +35% damage; enemies near it take +25% from all sources
   // Item: Centurion's Trumpet → 2-tile aura, +10% atk speed to nearby towers
   // Item: Battle Standard    → 2-tile aura, +8% damage to nearby towers
   // ─── ADDITIVE GLOBAL DAMAGE STACK ──────────────────────────────────────
@@ -427,7 +427,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   //
   // New model: collect everyone's CONTRIBUTION, sum them, apply once.
   // Pool +30% + EagleStandard +18% + AquiliferTitan +30% + JuliusCaesar +55%
-  // + Triumvirate +35% + ConsularFatebinder +30% = 1 + 1.88 = 2.88× max,
+  // + Triumvirate +40% + ConsularFatebinder +30% = 1 + 1.98 = 2.98× max,
   // a meaningful but legible cap.
   // Pool damage bonus — starts at pool level 2 (the FIRST upgrade past L1
   // is what grants damage). L0 and L1 = +0%, then +3% per level after that.
@@ -509,17 +509,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // visual cue that this tower is currently silenced.
     (t as any).__auraNullified = auraOff;
     if (t.type === TowerType.EAGLE_STANDARD && !auraOff) {
-      // Aura-only support tower. Global damage 15% base (scales +5% per
-      // tier — T5 lands at ~+19.5% global damage). Local atk-speed +18%
+      // Aura-only support tower. Global damage 18% base (scales +5% per
+      // tier — T5 lands at ~+21.6% global damage). Local atk-speed +22%
       // in 5 tiles. Stacks multiplicatively with same-tier-merge bonus,
       // items, and pool damage. Suppressed entirely if an aura-nullifier
       // enemy is within 2 tiles.
-      globalDmgBonus += 0.15 * (1 + 0.05 * (t.qualityTier - 1));
-      localAuras.push({ x: cx, y: cy, r: 5 * GRID.TILE, spd: 0.18 });
+      globalDmgBonus += 0.18 * (1 + 0.05 * (t.qualityTier - 1));
+      localAuras.push({ x: cx, y: cy, r: 5 * GRID.TILE, spd: 0.22 });
     }
     if (t.type === TowerType.AQUILIFER_TITAN && !auraOff) {
-      globalDmgBonus += 0.30 * (1 + 0.05 * (t.qualityTier - 1));
-      enemyTakenAuras.push({ x: cx, y: cy, r: 5 * GRID.TILE, pct: 0.20 });
+      globalDmgBonus += 0.35 * (1 + 0.05 * (t.qualityTier - 1));
+      enemyTakenAuras.push({ x: cx, y: cy, r: 5 * GRID.TILE, pct: 0.25 });
     }
     if (t.type === TowerType.MARS_VICTOR && !auraOff) {
       // The fused war-god aura: Caesar's global tempo + the legions' offense,
@@ -558,14 +558,14 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
     }
     if (t.type === TowerType.TRIUMVIRATE && !auraOff) {
-      // TRIPLE-AURA: +35% global dmg, +25% global atk speed, +25% enemy taken globally.
-      globalDmgBonus += 0.35;
-      globalSpeedMult *= 1.25;
-      enemyTakenAuras.push({ x: cx, y: cy, r: 999 * GRID.TILE, pct: 0.25 });
+      // TRIPLE-AURA: +40% global dmg, +30% global atk speed, +30% enemy taken globally.
+      globalDmgBonus += 0.40;
+      globalSpeedMult *= 1.30;
+      enemyTakenAuras.push({ x: cx, y: cy, r: 999 * GRID.TILE, pct: 0.30 });
     }
     if (t.type === TowerType.IMPERIUM_ETERNUM && !auraOff) {
-      // APEX: +20% atk speed aura globally.
-      globalSpeedMult *= 1.20;
+      // APEX: +25% atk speed aura globally.
+      globalSpeedMult *= 1.25;
     }
     // 2026-05 audit pass: tower UI claims these auras; wire them up.
     if (t.type === TowerType.TRIARIUS && !auraOff) {
@@ -590,16 +590,16 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         }
       }
     }
-    // CARTHAGE_SCOURGE — periodic AoE freeze every 8s.
+    // CARTHAGE_SCOURGE — periodic AoE freeze every 6s.
     if (t.type === TowerType.CARTHAGE_SCOURGE) {
       const next = (t as any).__nextScourgeFreezeTick ?? 0;
       if (state.tick >= next && !asleep) {
-        (t as any).__nextScourgeFreezeTick = state.tick + 8.0;
+        (t as any).__nextScourgeFreezeTick = state.tick + 6.0;
         const r = (t.range ?? 7) * GRID.TILE;
         for (const e of state.enemies.values()) {
           if (e.hp <= 0) continue;
           if (Math.hypot(e.x - cx, e.y - cy) <= r) {
-            pushStatus(e, StatusEffectKind.FREEZE, 1.5, 0, t.qualityTier);
+            pushStatus(e, StatusEffectKind.FREEZE, 1.8, 0, t.qualityTier);
           }
         }
       }
@@ -624,8 +624,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     }
     // SUPER COMBOS — 5-base-tower mega recipes
     if (t.type === TowerType.TRIPLEX_ACIES && !auraOff) {
-      // +20% atk-speed aura to towers within 3 tiles.
-      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, spd: 0.20 });
+      // +25% atk-speed aura to towers within 3 tiles.
+      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, spd: 0.25 });
     }
     if (t.type === TowerType.LEGION_PRIME && !auraOff) {
       // +25% damage aura to towers within 3 tiles.
@@ -974,7 +974,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (waveResistReduction && resMod < 1) {
         resMod = 1 - (1 - resMod) * (1 - waveResistReduction);
       }
-      // Aquilifer Titan vulnerability: +20% taken if enemy is near the Titan
+      // Aquilifer Titan vulnerability: +25% taken if enemy is near the Titan
       let takenMult = 1;
       for (const a of enemyTakenAuras) {
         if (Math.hypot(a.x - target.x, a.y - target.y) <= a.r) takenMult *= 1 + a.pct;
@@ -1143,9 +1143,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.AURORA_LEGION && target.archetype === 'ELITE') damage *= 1.50;   // 2026-05 v11: 1.30 → 1.50
       if (t.type === TowerType.EXPLORATORES && target.archetype === 'RUNNER') damage *= 1.50;   // RECON: +50% vs runners
       if (t.type === TowerType.VANGUARD_WING && target.archetype === 'ELITE') damage *= 1.40;   // EAGLE-EYE: +40% vs elites
-      if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 1.80;                 // CITY-BREAKER: +80% vs bosses
-      if (t.type === TowerType.CARTHAGE_SCOURGE && target.isBoss) damage *= 3.5;         // +250% vs bosses
-      if (t.type === TowerType.TURMA_LANCERS && !target.isFlyer) damage *= 1.30;         // +30% vs ground
+      if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 2.00;                 // CITY-BREAKER: +100% vs bosses
+      if (t.type === TowerType.CARTHAGE_SCOURGE && target.isBoss) damage *= 4.0;         // +300% vs bosses
+      if (t.type === TowerType.TURMA_LANCERS && !target.isFlyer) damage *= 1.45;         // +45% vs ground
       // ─── 2026-05 AUDIT: damage modifiers claimed by tower UI ─────────
       if (t.type === TowerType.SCORPIO && target.isBoss) damage *= 1.40;                 // +40% vs Bosses
       // SCORPIO anti-air buff (2026-05-15): +30% vs Flyers, stacks
@@ -2123,7 +2123,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   // IMPERIUM_ETERNUM — divine quake on every hit: 3-tile AoE, true damage.
   if (t.type === TowerType.IMPERIUM_ETERNUM) {
     const r = 3 * GRID.TILE;
-    const aoe = damage * 0.65;
+    const aoe = damage * 0.75;
     for (const e of state.enemies.values()) {
       if (e.id === target.id || e.hp <= 0) continue;
       if (Math.hypot(e.x - target.x, e.y - target.y) > r) continue;
@@ -2334,15 +2334,18 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       // hit, but the per-tick bite is gentler so it's a slow-burn pressure
       // tool rather than a stack-and-melt nuke.
       pushStatus(target, StatusEffectKind.HELLFIRE, 999, 0.01, tier);
+      // 2026-06-29 investment pass: execute threshold 10% → 12% so the
+      // apex melee conversion feels like a real finisher without turning
+      // into a full boss delete button.
       // 2026-05-15 v16 DIVINE EXECUTE — after the calling path has
       // already applied this hit's damage to target.hp, if the target is
-      // now at or below 10% maxHp, snap it to 0. The downstream
+      // now at or below 12% maxHp, snap it to 0. The downstream
       // `target.hp <= 0 → hooks.onKill` check in the caller fires
       // normally so gold/quest/loot/score all credit correctly. Applies
       // to BOSSES too (apex T5 combo earns the boss-cleanup tool). The
       // hp > 0 guard skips already-dead targets so we never double-
       // credit a kill if the hit itself was lethal.
-      if (target.hp > 0 && target.hp <= 0.10 * target.maxHp) {
+      if (target.hp > 0 && target.hp <= 0.12 * target.maxHp) {
         target.hp = 0;
       }
       break;

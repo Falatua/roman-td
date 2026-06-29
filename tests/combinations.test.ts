@@ -126,14 +126,14 @@ describe('Recipe combo detection', () => {
     const expectedBoosted: Partial<Record<TowerType, number>> = {
       [TowerType.WAR_CHARIOT]: 112.0,
       [TowerType.INFERNO_CART]: 60.5,
-      [TowerType.FROZEN_LEGION]: 141.5,
+      [TowerType.FROZEN_LEGION]: 175.0,
       [TowerType.JULIUS_CAESAR]: 140.0,
-      [TowerType.GOD_OF_WAR]: 183.0,
-      [TowerType.TURMA_LANCERS]: 124.9,
+      [TowerType.GOD_OF_WAR]: 245.0,
+      [TowerType.TURMA_LANCERS]: 155.0,
       [TowerType.AURORA_LEGION]: 116.5,
       [TowerType.STORM_VEXILLATION]: 125.0,
-      [TowerType.IMPERIUM_ETERNUM]: 232.9,
-      [TowerType.CARTHAGE_SCOURGE]: 128.1,
+      [TowerType.IMPERIUM_ETERNUM]: 300.0,
+      [TowerType.CARTHAGE_SCOURGE]: 240.0,
       [TowerType.MARS_VICTOR]: 1718.8
     };
     for (const [type, expectedDps] of Object.entries(expectedBoosted)) {
@@ -141,6 +141,19 @@ describe('Recipe combo detection', () => {
     }
     expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(151.8);
     expect((towersData as any)[TowerType.COHORT_GUARD].baseDps).toBe(79.9);
+  });
+
+  it('keeps previously underpaying combo investments on the new payoff line', () => {
+    const expectedInvestmentDps: Partial<Record<TowerType, number>> = {
+      [TowerType.PLAGUE_CART]: 42.0,
+      [TowerType.NUMIDIAN_CAVALRY]: 255.0,
+      [TowerType.TRIPLEX_ACIES]: 155.0,
+      [TowerType.SKYREAPER_BATTERY]: 190.0,
+      [TowerType.VULCAN_COLOSSUS]: 245.0
+    };
+    for (const [type, expectedDps] of Object.entries(expectedInvestmentDps)) {
+      expect((towersData as any)[type].baseDps).toBe(expectedDps);
+    }
   });
 });
 

@@ -73,10 +73,10 @@ describe('Tower effective stats', () => {
       [TowerType.VENATOR]: 15.9,
       [TowerType.AQUILA_VENATOR]: 154.2,
       [TowerType.SCORPION_BOLT]: 100.6,
-      [TowerType.NUMIDIAN_CAVALRY]: 205.7,
+      [TowerType.NUMIDIAN_CAVALRY]: 255.0,
       [TowerType.NEMESIS_ENGINE]: 268.3,
       [TowerType.BEASTLORD_CHAMPION]: 144.0,
-      [TowerType.SKYREAPER_BATTERY]: 162.0
+      [TowerType.SKYREAPER_BATTERY]: 190.0
     };
     for (const [type, expectedDps] of Object.entries(expectedAntiAirDps)) {
       expect((towersData as any)[type].baseDps).toBe(expectedDps);

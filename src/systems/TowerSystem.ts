@@ -599,21 +599,20 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       const oTier = other.qualityTier;
       // Global auras (apply regardless of distance)
       if (other.type === TowerType.EAGLE_STANDARD) {
-        // 2026-05-23 — Was 0.18 global + 4-tile 1.10 spd; both stale.
-        // Sync to CombatResolver:464-465 which uses 0.15 global +
-        // 5-tile 1.18 spd. Numbers now match the actual aura output.
-        dmgMods.push({ source: `Eagle Standard T${oTier}`, multiplier: 1 + 0.15 * (1 + 0.05 * (oTier - 1)) });
-        if (d <= 5 * GRID.TILE) spdMods.push({ source: 'Eagle Standard local', multiplier: 1.18 });
+        // Sync to CombatResolver: Eagle Standard is pure support, so its
+        // payoff needs to show clearly in the stat panel.
+        dmgMods.push({ source: `Eagle Standard T${oTier}`, multiplier: 1 + 0.18 * (1 + 0.05 * (oTier - 1)) });
+        if (d <= 5 * GRID.TILE) spdMods.push({ source: 'Eagle Standard local', multiplier: 1.22 });
       }
       if (other.type === TowerType.AQUILIFER_TITAN) {
-        dmgMods.push({ source: `Aquilifer Titan T${oTier}`, multiplier: 1 + 0.30 * (1 + 0.05 * (oTier - 1)) });
+        dmgMods.push({ source: `Aquilifer Titan T${oTier}`, multiplier: 1 + 0.35 * (1 + 0.05 * (oTier - 1)) });
       }
       if (other.type === TowerType.JULIUS_CAESAR) dmgMods.push({ source: 'Julius Caesar', multiplier: 1.55 });
       if (other.type === TowerType.TRIUMVIRATE) {
-        dmgMods.push({ source: 'Triumvirate', multiplier: 1.35 });
-        spdMods.push({ source: 'Triumvirate', multiplier: 1.25 });
+        dmgMods.push({ source: 'Triumvirate', multiplier: 1.40 });
+        spdMods.push({ source: 'Triumvirate', multiplier: 1.30 });
       }
-      if (other.type === TowerType.IMPERIUM_ETERNUM) spdMods.push({ source: 'Imperium Eternum', multiplier: 1.20 });
+      if (other.type === TowerType.IMPERIUM_ETERNUM) spdMods.push({ source: 'Imperium Eternum', multiplier: 1.25 });
       if (other.type === TowerType.CONSULAR_FATEBINDER) {
         dmgMods.push({ source: 'Consular Fatebinder', multiplier: 1.30 });
         spdMods.push({ source: 'Consular Fatebinder', multiplier: 1.30 });
@@ -628,7 +627,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       }
       // Local auras (range-gated)
       if (other.type === TowerType.TRIPLEX_ACIES && d <= 3 * GRID.TILE) {
-        spdMods.push({ source: 'Triplex Acies', multiplier: 1.20 });
+        spdMods.push({ source: 'Triplex Acies', multiplier: 1.25 });
       }
       if (other.type === TowerType.LEGION_PRIME && d <= 3 * GRID.TILE) {
         dmgMods.push({ source: 'Legion Prime', multiplier: 1.25 });

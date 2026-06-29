@@ -4270,12 +4270,12 @@ export class RenderEngine {
       }
 
       // ── TOWER-NATIVE LOCAL AURAS ─────────────────────────────────
-      // Eagle Standard — local +18% atk speed within 5 tiles (v6 buff).
+      // Eagle Standard — local +22% atk speed within 5 tiles.
       if (tw.type === TowerType.EAGLE_STANDARD) {
         this.drawAuraRing(cx, cy, 5 * GRID.TILE, ALLY, pulse);
       }
-      // Aquilifer Titan — local enemy +20% taken (5 tiles). 2026-05 v11:
-      // dedicated prominent variant so the +20% damage radius is obvious
+      // Aquilifer Titan — local enemy +25% taken (5 tiles). 2026-05 v11:
+      // dedicated prominent variant so the damage-vulnerability radius is obvious
       // even on cluttered late-game boards. Thicker line, brighter fill,
       // continuous (not dashed) so it stands apart from other auras.
       if (tw.type === TowerType.AQUILIFER_TITAN) {
@@ -4289,7 +4289,7 @@ export class RenderEngine {
       if (tw.type === TowerType.COHORT_GUARD) {
         this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.85);
       }
-      // Triplex Acies super combo — +20% atk speed aura (3 tiles).
+      // Triplex Acies super combo — +25% atk speed aura (3 tiles).
       if (tw.type === TowerType.TRIPLEX_ACIES) {
         this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.85);
       }
@@ -4343,7 +4343,7 @@ export class RenderEngine {
     }
   }
 
-  // 2026-05 v11: prominent variant for Aquilifer Titan's "+20% damage to
+  // 2026-05 v11: prominent variant for Aquilifer Titan's damage-taken
   // nearby enemies" aura. Bright crimson outer ring, thicker stroke, soft
   // gradient fill, plus a faint inner ring at 0.7r to read as a hot zone
   // rather than just an outline. Continuous (not dashed) for distinction.
