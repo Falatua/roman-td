@@ -7226,7 +7226,7 @@ async function boot() {
               // projectile family for splash-aware coding (orange for
               // BARREL/fire, brown for ballista, neutral cream otherwise).
               if (renderer?.triggerImpactRing) {
-                const ringColor = p.spriteKey === 'PROJ_BARREL' ? 0xff8a22
+                const ringColor = (p.spriteKey === 'PROJ_BARREL' || p.spriteKey === 'PROJ_SULLA_METEOR') ? 0xff8a22
                   : p.spriteKey === 'PROJ_BALLISTA' ? 0xb88a4a
                   : p.spriteKey === 'PROJ_POISON_CLOUD' ? 0x66dd44
                   : 0xeed8a0;

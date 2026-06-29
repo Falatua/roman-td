@@ -179,14 +179,14 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   //                              pila are PHYS_RANGED throws).
   //   Agricola (PHYS_RANGED)  → PROJ_ARROW — arching arrow, matches
   //                              Sagittarius / Venator / Aquila Venator.
-  //   Sulla    (ELEMENTAL_FIRE)→ PROJ_HELLFIRE_BOLT — fire bolt with
-  //                              splash, matches GOD_OF_WAR's hellfire.
+  //   Sulla    (ELEMENTAL_FIRE)→ PROJ_SULLA_METEOR — compact meteor
+  //                              throw with splash, matching Meteor Slam.
   [TowerType.HERO_AGRIPPA]:   { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
   [TowerType.HERO_AGRICOLA]:  { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0.8, embed: true  },
-  [TowerType.HERO_SULLA]:     { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false },
+  [TowerType.HERO_SULLA]:     { key: 'PROJ_SULLA_METEOR',  arc: true,  speed: 560, splash: 1.2, embed: false },
   [TowerType.CHAMPION_AGRIPPA]:  { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
   [TowerType.CHAMPION_AGRICOLA]: { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0.8, embed: true  },
-  [TowerType.CHAMPION_SULLA]:    { key: 'PROJ_HELLFIRE_BOLT', arc: false, speed: 660, splash: 1.2, embed: false }
+  [TowerType.CHAMPION_SULLA]:    { key: 'PROJ_SULLA_METEOR',  arc: true,  speed: 560, splash: 1.2, embed: false }
   // ──────────────────────────────────────────────────────────────────
   // Pure-aura support towers — intentionally NOT in this map because
   // they never call spawnProjectile (`CombatResolver` routes them

@@ -763,7 +763,7 @@ function executePAX_ROMANA(state: GameStateShape, hero: Tower, params: any, abil
 
 // ── SULLA ──
 
-function executeFORTUNES_BOLT(state: GameStateShape, hero: Tower, _params: any, ability: any, hooks?: HeroHooks): void {
+function executeFORTUNES_BOLT(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
   // Find the nearest enemy in hero's range.
   const rangePx = (hero.range ?? 3.5) * GRID.TILE;
   const hx = hero.tileX * GRID.TILE + GRID.TILE / 2;
@@ -775,19 +775,33 @@ function executeFORTUNES_BOLT(state: GameStateShape, hero: Tower, _params: any, 
     if (d <= rangePx && d < bestD) { bestD = d; nearest = e; }
   }
   if (!nearest) return;
-  // Apply DIVINE damage. 2026-05-20 — the kill-bonus gate-heal was
+  // Meteor Slam: divine-fire impact. 2026-05-20 — the kill-bonus gate-heal was
   // removed per design ask ("get rid of the part where Sulla can
   // restore lives"). The hit still deals 1.5× hero basic-attack damage
-  // and lands as a divine bolt VFX; it just no longer pays out a
+  // and lands as a meteor VFX; it just no longer pays out a
   // life on the killing blow. heroLifeHealedThisRun is intentionally
   // left on the state shape for save-load compatibility with older
   // entries; no code path increments it any more.
-  const dmg = heroBasicAttackDamage(state, hero) * 1.5;
+  const dmg = heroBasicAttackDamage(state, hero) * (params.dmgMultiplier ?? 1.5);
+  const splashRadiusTiles = params.splashRadiusTiles ?? 1.35;
+  const splashPct = params.splashDamagePercent ?? 45;
+  const burnDur = params.burnDurationSec ?? 3;
+  const burnMag = params.burnMagnitude ?? 0.04;
   nearest.hp = Math.max(0, nearest.hp - dmg);
-  // Signature VFX: vertical white-gold divine bolt strikes from above
-  // onto the target, with impact burst on landing.
-  fireAbilityFx(hero, hooks, state.tick, ability, '#fff5cc', 0.6, {
-    target: { x: nearest.x, y: nearest.y }
+  pushStatus(nearest, StatusEffectKind.BURN, burnDur, burnMag, hero.qualityTier);
+  const r = splashRadiusTiles * GRID.TILE;
+  for (const e of state.enemies.values()) {
+    if (e.id === nearest.id || e.hp <= 0) continue;
+    if (Math.hypot(e.x - nearest.x, e.y - nearest.y) > r) continue;
+    e.hp = Math.max(0, e.hp - dmg * (splashPct / 100));
+    e.hpFlashTimer = 0.18;
+    e.lastDamagedTick = state.tick;
+    pushStatus(e, StatusEffectKind.BURN, burnDur, burnMag, hero.qualityTier);
+  }
+  // Signature VFX: falling meteor and slam explosion at the target.
+  fireAbilityFx(hero, hooks, state.tick, ability, '#ff7733', 0.95, {
+    target: { x: nearest.x, y: nearest.y },
+    splashRadiusTiles
   });
 }
 

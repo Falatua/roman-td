@@ -356,6 +356,41 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(champion.__heroCooldowns?.SPQR_DECREE).toBeGreaterThan(s.tick);
   });
 
+  it('Sulla Meteor Slam splashes and burns nearby enemies', () => {
+    const s = freshState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 10;
+    s.activeHeroId = 'HERO_SULLA';
+    s.heroTier = 1;
+    const sulla = createTower(TowerType.HERO_SULLA, 5, 5, 5, 1);
+    s.activeHeroTowerId = sulla.id;
+    s.towers.set(sulla.id, sulla);
+    const primary = testEnemy('primary', { hp: 1000, maxHp: 1000, x: 5 * 32 + 16 + 16, y: 5 * 32 + 16 });
+    const nearby = testEnemy('nearby', { hp: 1000, maxHp: 1000, x: primary.x + 28, y: primary.y });
+    const far = testEnemy('far', { hp: 1000, maxHp: 1000, x: primary.x + 120, y: primary.y });
+    s.enemies.set(primary.id, primary);
+    s.enemies.set(nearby.id, nearby);
+    s.enemies.set(far.id, far);
+    const fx: any[] = [];
+
+    tickHeroAbilities(s, { triggerHeroAbilityFx: spec => fx.push(spec) });
+
+    expect(primary.hp).toBeLessThan(1000);
+    expect(nearby.hp).toBeLessThan(1000);
+    expect(primary.hp).toBeLessThan(nearby.hp);
+    expect(far.hp).toBe(1000);
+    expect(primary.statusEffects.some(st => st.kind === StatusEffectKind.BURN)).toBe(true);
+    expect(nearby.statusEffects.some(st => st.kind === StatusEffectKind.BURN)).toBe(true);
+    expect(far.statusEffects.some(st => st.kind === StatusEffectKind.BURN)).toBe(false);
+    expect(fx[0]?.ability).toBe('FORTUNES_BOLT');
+    expect(fx[0]?.extras?.splashRadiusTiles).toBeCloseTo(1.35);
+  });
+
+  it('Sulla basic attacks use meteor projectiles in starter and Champion form', () => {
+    expect(getTowerProjectileProfile(TowerType.HERO_SULLA)?.key).toBe('PROJ_SULLA_METEOR');
+    expect(getTowerProjectileProfile(TowerType.CHAMPION_SULLA)?.key).toBe('PROJ_SULLA_METEOR');
+  });
+
   it('SPQR Decree spreads a large board volley instead of zeroing every cooldown together', () => {
     const s = freshState();
     s.phase = GamePhase.WAVE_PHASE;

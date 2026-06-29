@@ -1217,8 +1217,14 @@ export class RenderEngine {
         const alpha = (4 - s) / 8;
         // Divine projectiles get a brighter gold trail dot on top of the
         // family-keyed dot for unmistakable identity.
-        const trailColor = isDivine ? 0xffe066 : color;
-        this.projGfx.beginFill(trailColor, alpha).drawCircle(tx, ty, isDivine ? 2.0 : 1.6).endFill();
+        const isSullaMeteor = p.spriteKey === 'PROJ_SULLA_METEOR';
+        const trailColor = isSullaMeteor ? 0xff7733 : (isDivine ? 0xffe066 : color);
+        this.projGfx.beginFill(trailColor, isSullaMeteor ? alpha * 1.45 : alpha)
+          .drawCircle(tx, ty, isSullaMeteor ? 3.2 : (isDivine ? 2.0 : 1.6))
+          .endFill();
+        if (isSullaMeteor) {
+          this.projGfx.beginFill(0xffd34d, alpha * 0.45).drawCircle(tx + 2, ty - 1, 1.8).endFill();
+        }
       }
       // Real sprite (rotated to flight direction)
       let sp = this.projSprites.get(p.id);
@@ -1232,9 +1238,10 @@ export class RenderEngine {
           // tint it green so it reads as a flask of toxin in flight rather
           // than the orange status badge.
           const big = p.spriteKey === 'PROJ_BARREL';
+          const isSullaMeteor = p.spriteKey === 'PROJ_SULLA_METEOR';
           const isPoisonCloud = p.spriteKey === 'PROJ_POISON_CLOUD';
-          sp.width = big ? 22 : isPoisonCloud ? 20 : 18;
-          sp.height = big ? 22 : isPoisonCloud ? 20 : 18;
+          sp.width = isSullaMeteor ? 26 : (big ? 22 : isPoisonCloud ? 20 : 18);
+          sp.height = isSullaMeteor ? 26 : (big ? 22 : isPoisonCloud ? 20 : 18);
           if (isPoisonCloud) sp.tint = 0x66dd44;
           this.layers.fx.addChild(sp);
           this.projSprites.set(p.id, sp);
@@ -1507,7 +1514,7 @@ export class RenderEngine {
   }> = [];
   private destroyHeroAbilityFxAssets(fx: { extras?: any }): void {
     const arrayKeys = ['__auxSprites', '__pilumSprites', '__shellSprites', '__eagleSprites'];
-    const singleKeys = ['__pilumSprite', '__hornSprite', '__brandSprite', '__aquilaSprite', '__laurelSprite', '__boltSprite'];
+    const singleKeys = ['__pilumSprite', '__hornSprite', '__brandSprite', '__aquilaSprite', '__laurelSprite', '__boltSprite', '__meteorSprite', '__meteorImpactSprite'];
     for (const k of arrayKeys) {
       const arr: Sprite[] | undefined = fx.extras?.[k];
       if (arr) {
@@ -2203,50 +2210,64 @@ export class RenderEngine {
         }
         // ── SULLA ────────────────────────────────────────────────────
         case 'FORTUNES_BOLT': {
-          // 2026-05-24 — Sprite-upgraded. The Storm Javelin (existing
-          // PROJ_STORM_BOLT sprite) is hurled down from the heavens
-          // onto the targeted enemy — Sulla's signature divine bolt
-          // ("Fortune's chosen one" lore). Bright white core + gold
-          // halo trail + impact shockwave on landing.
+          // 2026-06-28 — Meteor Slam. Sulla now calls down a burning
+          // meteor sheet instead of a generic divine bolt. The first
+          // half is a falling projectile; the second half plays an
+          // impact/explosion sheet plus a splash-radius shock ring.
           const target = fx.extras?.target ?? { x: fx.x, y: fx.y };
-          const prog = Math.min(1, t * 2);
-          const topY = target.y - GRID.TILE * 6;
-          const tipY = topY + (target.y - topY) * prog;
-          if (!fx.extras.__boltSprite) {
-            const btex = tex('PROJ_STORM_BOLT');
-            if (btex) {
-              const sp = new Sprite(btex);
-              sp.anchor.set(0.5, 0.5);
-              // 2026-05-24 v2 — absolute size (was 1.2/1.4 scale ratio).
-              // Stretched slightly vertically so the falling bolt reads
-              // as elongated rather than a circle.
-              sp.width = GRID.TILE * 0.7;
-              sp.height = GRID.TILE * 1.1;
-              sp.tint = 0xfff5cc;
-              sp.rotation = Math.PI / 2; // point downward
-              this.layers.fx.addChild(sp);
-              fx.extras.__boltSprite = sp;
-            }
+          const fallT = Math.min(1, t / 0.58);
+          const impactT = Math.max(0, Math.min(1, (t - 0.46) / 0.54));
+          const topX = target.x - GRID.TILE * 2.8;
+          const topY = target.y - GRID.TILE * 5.2;
+          const mx = topX + (target.x - topX) * fallT;
+          const my = topY + (target.y - topY) * fallT;
+          const meteorFrame = Math.min(5, Math.floor(fallT * 6));
+          const impactFrame = Math.min(5, Math.floor(impactT * 6));
+          const meteorTex = texFrame('SULLA_METEOR_PROJECTILE', meteorFrame, 96, 96);
+          const impactTex = texFrame('SULLA_METEOR_IMPACT', impactFrame, 128, 128);
+          if (!fx.extras.__meteorSprite && meteorTex) {
+            const sp = new Sprite(meteorTex);
+            sp.anchor.set(0.5);
+            sp.width = GRID.TILE * 1.35;
+            sp.height = GRID.TILE * 1.35;
+            this.layers.fx.addChild(sp);
+            fx.extras.__meteorSprite = sp;
           }
-          const sp = fx.extras.__boltSprite as Sprite | undefined;
-          if (sp) {
-            sp.position.set(target.x, tipY);
-            sp.alpha = (prog < 1 ? 0.95 : 0.0) * fade;
+          const meteor = fx.extras.__meteorSprite as Sprite | undefined;
+          if (meteor) {
+            if (meteorTex) meteor.texture = meteorTex;
+            meteor.position.set(mx, my);
+            meteor.rotation = Math.atan2(target.y - topY, target.x - topX);
+            meteor.alpha = fallT < 0.98 ? 0.98 * fade : 0;
           }
-          // Gold halo behind bolt
-          g.lineStyle(8 * fade, fx.color, 0.45 * fade);
-          g.moveTo(target.x, topY).lineTo(target.x, tipY);
-          // White hot core
-          g.lineStyle(3 * fade, 0xffffff, 0.95 * fade);
-          g.moveTo(target.x, topY).lineTo(target.x, tipY);
+          if (!fx.extras.__meteorImpactSprite && impactTex) {
+            const sp = new Sprite(impactTex);
+            sp.anchor.set(0.5);
+            sp.width = GRID.TILE * 2.35;
+            sp.height = GRID.TILE * 2.35;
+            this.layers.fx.addChild(sp);
+            fx.extras.__meteorImpactSprite = sp;
+          }
+          const boom = fx.extras.__meteorImpactSprite as Sprite | undefined;
+          if (boom) {
+            if (impactTex) boom.texture = impactTex;
+            boom.position.set(target.x, target.y);
+            boom.alpha = impactT > 0 ? 0.95 * fade : 0;
+          }
+          // Falling ember trail
+          g.lineStyle(9 * fade, 0xff4a10, 0.18 * fade);
+          g.moveTo(topX, topY).lineTo(mx, my);
+          g.lineStyle(4 * fade, 0xffd34d, 0.36 * fade);
+          g.moveTo(topX + 8, topY + 8).lineTo(mx, my);
           g.lineStyle(0);
-          // Impact burst at the target
-          if (prog >= 1) {
-            g.lineStyle(3 * fade, fx.color, 0.9 * fade);
-            g.drawCircle(target.x, target.y, 20 + (t - 0.5) * 50);
-            g.lineStyle(2 * fade, 0xffffff, 0.85 * fade);
-            g.drawCircle(target.x, target.y, 12 + (t - 0.5) * 28);
-            g.beginFill(0xffffff, 0.4 * fade).drawCircle(target.x, target.y, 12).endFill();
+          if (impactT > 0) {
+            const radiusTiles = fx.extras?.splashRadiusTiles ?? 1.35;
+            const r = radiusTiles * GRID.TILE * (0.55 + impactT * 0.45);
+            g.beginFill(0xff4a10, 0.16 * fade * (1 - impactT * 0.35)).drawCircle(target.x, target.y, r).endFill();
+            g.lineStyle(4 * fade * (1 - impactT * 0.25), 0xffd34d, 0.75 * fade);
+            g.drawCircle(target.x, target.y, r);
+            g.lineStyle(2 * fade, 0xffffff, 0.55 * fade);
+            g.drawCircle(target.x, target.y, Math.max(8, r * 0.42));
             g.lineStyle(0);
           }
           break;

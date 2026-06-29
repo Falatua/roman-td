@@ -297,13 +297,13 @@
       {
         "level": 1,
         "id": "FORTUNES_BOLT",
-        "name": "Fortune's Bolt",
+        "name": "Meteor Slam",
         "cooldownSec": 7,
         "durationSec": 0,
-        "params": { "dmgMultiplier": 1.5 },
-        "description": "Fires a divine bolt at the nearest enemy in range, dealing 150% of Sulla's basic-attack damage as DIVINE — bypasses every faction resistance. A reliable single-target finisher when you need to punch through a high-resist target that your other towers are struggling to scratch.",
+        "params": { "dmgMultiplier": 1.5, "splashRadiusTiles": 1.35, "splashDamagePercent": 45, "burnDurationSec": 3, "burnMagnitude": 0.04 },
+        "description": "Calls down a burning meteor on the nearest enemy in range, dealing 150% of Sulla's basic-attack damage to the main target, splashing 45% damage in 1.35 tiles, and burning everything caught for 3s.",
         "vfxColor": "#fff5cc",
-        "vfxStyle": "WHITE_GOLD_BOLT"
+        "vfxStyle": "METEOR_SLAM"
       },
       {
         "level": 2,

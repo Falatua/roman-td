@@ -590,6 +590,9 @@ const MANIFEST: Record<string, string> = {
   HERO_ATTACK_SCIPIO:   '../heroes/attacks/hero_scipio_attack_sheet.png',
   HERO_ATTACK_CAESAR:   '../heroes/attacks/hero_caesar_attack_sheet.png',
   HERO_ATTACK_SULLA:    '../heroes/attacks/hero_sulla_attack_sheet.png',
+  PROJ_SULLA_METEOR:    '../heroes/attacks/sulla_meteor_projectile.png',
+  SULLA_METEOR_PROJECTILE: '../heroes/attacks/sulla_meteor_projectile_sheet.png',
+  SULLA_METEOR_IMPACT:     '../heroes/attacks/sulla_meteor_impact_sheet.png',
   // 2026-05-20 v2 — Hero tower halo rings. Layered under each hero
   // sprite at render time so the player can see at a glance "this is
   // the hero, not a regular T1/T2 tower." 9 styles cropped from a
