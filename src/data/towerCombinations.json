@@ -889,5 +889,9 @@
         "minTier": 2
       }
     ]
-  }
+  },
+  { "result": "EXPLORATORES", "tier": 3, "cost": 12, "ingredients": [ { "type": "SPECULATOR", "minTier": 2 }, { "type": "VENATOR", "minTier": 2 } ] },
+  { "result": "VULCAN_BOMBARD", "tier": 3, "cost": 12, "ingredients": [ { "type": "COLOSSUS_ONAGER", "minTier": 2 }, { "type": "VULCAN_ENGINEER", "minTier": 2 } ] },
+  { "result": "VANGUARD_WING", "tier": 4, "cost": 55, "ingredients": [ { "type": "EXPLORATORES", "minTier": 3 }, { "type": "TESSERARIUS", "minTier": 2 } ] },
+  { "result": "VULCAN_COLOSSUS", "tier": 5, "cost": 90, "ingredients": [ { "type": "VULCAN_BOMBARD", "minTier": 3 }, { "type": "STORM_BALLISTA", "minTier": 4 } ] }
 ]

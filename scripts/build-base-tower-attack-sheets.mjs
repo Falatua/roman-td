@@ -119,10 +119,10 @@ function poseFor(family, frame) {
       { dx: -1, dy: 0, scale: 0.88, effect: 0.24 },
       { dx: -3, dy: 0, scale: 0.88, effect: 0.52 },
       { dx: 3, dy: -2, scale: 0.90, effect: 1.00 },
-      { dx: 5, dy: -1, scale: 0.90, effect: 0.92 },
-      { dx: 4, dy: -1, scale: 0.89, effect: 0.72 },
-      { dx: 2, dy: 0, scale: 0.88, effect: 0.42 },
-      { dx: 1, dy: 0, scale: 0.88, effect: 0.16 },
+      { dx: 5, dy: -1, scale: 0.90, effect: 0.78 },
+      { dx: 4, dy: -1, scale: 0.89, effect: 0.48 },
+      { dx: 2, dy: 0, scale: 0.88, effect: 0.22 },
+      { dx: 1, dy: 0, scale: 0.88, effect: 0.08 },
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 }
     ],
     divine: [
@@ -130,10 +130,10 @@ function poseFor(family, frame) {
       { dx: -1, dy: 0, scale: 0.88, effect: 0.22 },
       { dx: -2, dy: 0, scale: 0.88, effect: 0.50 },
       { dx: 2, dy: -2, scale: 0.90, effect: 0.96 },
-      { dx: 4, dy: -1, scale: 0.90, effect: 1.00 },
-      { dx: 3, dy: -1, scale: 0.89, effect: 0.74 },
-      { dx: 1, dy: 0, scale: 0.88, effect: 0.44 },
-      { dx: 1, dy: 0, scale: 0.88, effect: 0.16 },
+      { dx: 4, dy: -1, scale: 0.90, effect: 0.64 },
+      { dx: 3, dy: -1, scale: 0.89, effect: 0.28 },
+      { dx: 1, dy: 0, scale: 0.88, effect: 0.06 },
+      { dx: 1, dy: 0, scale: 0.88, effect: 0.02 },
       { dx: 0, dy: 0, scale: 0.88, effect: 0.00 }
     ]
   };
@@ -166,11 +166,11 @@ function svgOverlay(family, frame, tint) {
             <line x1="58" y1="73" x2="${70 + 38 * swing}" y2="${75 - 36 * swing}" stroke="#fff4d0" stroke-width="3.5" stroke-linecap="round" opacity="${0.66 * Math.max(0.1, power)}"/>
             <ellipse cx="${cx}" cy="91" rx="${33 + t * 3}" ry="9" fill="${color}" opacity="${0.055 * power}"/>`;
   } else if (family === 'spear') {
-    const reach = 20 + power * 20;
-    body = `<line x1="${35 - t * 4}" y1="82" x2="${92 + reach}" y2="${49 - reach * 0.36}" stroke="${color}" stroke-width="${8 + (frame === RELEASE_FRAME ? 4 : 0)}" stroke-linecap="round" opacity="${0.18 * power}"/>
-            <line x1="${43 - t * 4}" y1="76" x2="${91 + reach}" y2="${50 - reach * 0.36}" stroke="#fff4d0" stroke-width="${3.5 + (frame === RELEASE_FRAME ? 1.5 : 0)}" stroke-linecap="round" opacity="${0.84 * power}"/>
-            <polygon points="${95 + reach},${49 - reach * 0.36} ${106 + reach},${44 - reach * 0.36} ${100 + reach},${56 - reach * 0.36}" fill="#fff4d0" opacity="${0.76 * power}"/>
-            <circle cx="${98 + reach}" cy="${49 - reach * 0.36}" r="${3 + t * 4}" fill="#fff4d0" opacity="${0.55 * power}"/>`;
+    const reach = 14 + power * 13;
+    body = `<line x1="${36 - t * 3}" y1="82" x2="${87 + reach}" y2="${51 - reach * 0.36}" stroke="${color}" stroke-width="${8 + (frame === RELEASE_FRAME ? 4 : 0)}" stroke-linecap="round" opacity="${0.18 * power}"/>
+            <line x1="${44 - t * 3}" y1="76" x2="${86 + reach}" y2="${52 - reach * 0.36}" stroke="#fff4d0" stroke-width="${3.5 + (frame === RELEASE_FRAME ? 1.5 : 0)}" stroke-linecap="round" opacity="${0.84 * power}"/>
+            <polygon points="${90 + reach},${51 - reach * 0.36} ${100 + reach},${46 - reach * 0.36} ${95 + reach},${58 - reach * 0.36}" fill="#fff4d0" opacity="${0.76 * power}"/>
+            <circle cx="${93 + reach}" cy="${51 - reach * 0.36}" r="${3 + t * 4}" fill="#fff4d0" opacity="${0.55 * power}"/>`;
   } else if (family === 'archer') {
     const release = frame >= RELEASE_FRAME ? power : power * 0.35;
     const draw = Math.min(1, frame / RELEASE_FRAME);
@@ -180,10 +180,10 @@ function svgOverlay(family, frame, tint) {
             <polygon points="${frame < RELEASE_FRAME ? `${100 - draw * 7},${52 + draw * 4} ${108 - draw * 7},${48 + draw * 4} ${105 - draw * 7},${57 + draw * 4}` : '121,38 127,35 125,43'}" fill="#fff7d4" opacity="${0.82 * release}"/>`;
   } else if (family === 'thrower' || family === 'command') {
     const isCommand = family === 'command';
-    const throwReach = 24 + power * 24;
-    body = `<line x1="${37 - t * 4}" y1="82" x2="${84 + throwReach}" y2="${58 - throwReach * 0.38}" stroke="${color}" stroke-width="${isCommand ? 7 : 9}" stroke-linecap="round" opacity="${0.16 * power}"/>
-            <line x1="${46 - t * 4}" y1="77" x2="${82 + throwReach}" y2="${61 - throwReach * 0.38}" stroke="#ffe9ad" stroke-width="${isCommand ? 3 : 4}" stroke-linecap="round" opacity="${0.82 * power}"/>
-            <polygon points="${84 + throwReach},${61 - throwReach * 0.38} ${96 + throwReach},${55 - throwReach * 0.38} ${90 + throwReach},${68 - throwReach * 0.38}" fill="#ffe9ad" opacity="${0.84 * power}"/>
+    const throwReach = 18 + power * 18;
+    body = `<line x1="${38 - t * 3}" y1="82" x2="${80 + throwReach}" y2="${60 - throwReach * 0.38}" stroke="${color}" stroke-width="${isCommand ? 7 : 9}" stroke-linecap="round" opacity="${0.16 * power}"/>
+            <line x1="${47 - t * 3}" y1="77" x2="${78 + throwReach}" y2="${63 - throwReach * 0.38}" stroke="#ffe9ad" stroke-width="${isCommand ? 3 : 4}" stroke-linecap="round" opacity="${0.82 * power}"/>
+            <polygon points="${80 + throwReach},${63 - throwReach * 0.38} ${90 + throwReach},${58 - throwReach * 0.38} ${85 + throwReach},${69 - throwReach * 0.38}" fill="#ffe9ad" opacity="${0.84 * power}"/>
             ${isCommand ? frameSparkles(4, '#ffe9ad', 0.42 * power, 85, 51) : ''}
             <circle cx="${cx}" cy="${cy}" r="${28 + t * 4}" fill="${color}" opacity="${0.045 * power}"/>`;
   } else if (family === 'siege') {
@@ -224,7 +224,7 @@ function tintFor(family, def) {
 
 async function makeFrame(source, family, def, frame) {
   const p = poseFor(family, frame);
-  const spriteSize = Math.round(FRAME * p.scale);
+  const spriteSize = Math.round(FRAME * p.scale * 0.92);
   const sprite = await sharp(source)
     .ensureAlpha()
     .trim({ background: '#000000', threshold: 8 })

@@ -340,7 +340,9 @@ const MULTI_SHOT_COUNT: Partial<Record<TowerType, number>> = {
   [TowerType.CARROBALLISTA]: 2,
   [TowerType.HANNIBALS_NIGHTMARE]: 2,
   [TowerType.AURORA_LEGION]: 4,                // pierces 4 in line (2026-05 v11 buff)
-  [TowerType.CARTHAGE_SCOURGE]: 6              // SIX-bolt volley
+  [TowerType.CARTHAGE_SCOURGE]: 6,             // SIX-bolt volley
+  [TowerType.EXPLORATORES]: 3,                 // RECON VOLLEY — 3 targets
+  [TowerType.VANGUARD_WING]: 4                 // EAGLE-EYE BARRAGE — 4 targets
 };
 
 // Process all towers vs enemies for one frame.
@@ -382,7 +384,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // = 12K/sec plus a per-frame array alloc.
   let truesightCount = 0;
   for (const tw of towers) {
-    if (tw.equippedItems.includes('TRUESIGHT_LENS')) {
+    // 2026-06-28 — Exploratores + Vanguard Wing have INNATE truesight (scout reveal).
+    if (tw.equippedItems.includes('TRUESIGHT_LENS') || tw.type === TowerType.EXPLORATORES || tw.type === TowerType.VANGUARD_WING) {
       truesightCount++;
       const stats = towerEffectiveStats(tw);
       const tx = tw.tileX * GRID.TILE + GRID.TILE / 2;
@@ -1112,6 +1115,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.NEMESIS_ENGINE && target.isFlyer) damage *= 3.0;          // SKY-RIPPER: +200% vs flyers
       if (t.type === TowerType.PONTIFEX_MAXIMUS && target.isBoss) damage *= 3.0;         // RITE OF DOOM: +200% vs bosses
       if (t.type === TowerType.AURORA_LEGION && target.archetype === 'ELITE') damage *= 1.50;   // 2026-05 v11: 1.30 → 1.50
+      if (t.type === TowerType.EXPLORATORES && target.archetype === 'RUNNER') damage *= 1.50;   // RECON: +50% vs runners
+      if (t.type === TowerType.VANGUARD_WING && target.archetype === 'ELITE') damage *= 1.40;   // EAGLE-EYE: +40% vs elites
+      if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 1.80;                 // CITY-BREAKER: +80% vs bosses
       if (t.type === TowerType.CARTHAGE_SCOURGE && target.isBoss) damage *= 3.5;         // +250% vs bosses
       if (t.type === TowerType.TURMA_LANCERS && !target.isFlyer) damage *= 1.30;         // +30% vs ground
       // ─── 2026-05 AUDIT: damage modifiers claimed by tower UI ─────────
@@ -1633,6 +1639,48 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             const r3: any = globalRef?.__renderer;
             if (r3?.triggerImpactRing) r3.triggerImpactRing(target.x, target.y, state.tick, 26, 0x66bbff);
           }
+        }
+        // 2026-06-28 — VULCAN BOMBARD · MAGMA BARRAGE: every blast stamps
+        // ARMOR SHRED (3s) on every enemy in the 3.0-tile crater and STUNS
+        // the primary (0.6s). AoE softener for the rest of your towers.
+        if (t.type === TowerType.VULCAN_BOMBARD) {
+          const crater = 3.0 * GRID.TILE;
+          for (const e of state.enemies.values()) {
+            if (e.hp <= 0) continue;
+            if (Math.hypot(e.x - target.x, e.y - target.y) > crater) continue;
+            pushStatus(e, StatusEffectKind.ARMOR_SHRED, 3, 0, t.qualityTier);
+          }
+          pushStatus(target, StatusEffectKind.STUN, 0.6, 0, t.qualityTier);
+        }
+        // 2026-06-28 — VULCAN COLOSSUS · CITY-BREAKER: every blast stamps
+        // ARMOR SHRED + a 0.8s AoE STUN across the 3.5-tile splash. Every 3rd
+        // shot is a TITAN ROUND dealing +150% bonus damage to the whole crater.
+        if (t.type === TowerType.VULCAN_COLOSSUS) {
+          const crater = 3.5 * GRID.TILE;
+          const hc = (t as any).__hitCount ?? 0;
+          const titan = hc > 0 && hc % 3 === 0;
+          for (const e of state.enemies.values()) {
+            if (e.hp <= 0) continue;
+            if (Math.hypot(e.x - target.x, e.y - target.y) > crater) continue;
+            pushStatus(e, StatusEffectKind.ARMOR_SHRED, 3, 0, t.qualityTier);
+            pushStatus(e, StatusEffectKind.STUN, 0.8, 0, t.qualityTier);
+            if (titan) {
+              const bonus = damage * 1.5;
+              e.hp -= bonus; e.hpFlashTimer = 0.20; e.lastDamagedTick = state.tick;
+              hooks.onHit(t, e, bonus, resMod);
+              if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
+            }
+          }
+          if (titan) {
+            const r4: any = globalRef?.__renderer;
+            if (r4?.triggerImpactRing) r4.triggerImpactRing(target.x, target.y, state.tick, 42, 0xff7733);
+          }
+        }
+        // 2026-06-28 — VANGUARD WING · SIGNAL MARK: every 4th volley plants a
+        // 6s SIGNAL MARK on a Boss (+20% damage taken from ALL towers).
+        if (t.type === TowerType.VANGUARD_WING && target.isBoss) {
+          const hc = (t as any).__hitCount ?? 0;
+          if (hc > 0 && hc % 4 === 0) pushStatus(target, StatusEffectKind.MARK, 6, 0.20, t.qualityTier);
         }
         // Cleave melee — hit every other enemy in melee range. Native
         // cleavers default to 70% on secondaries; FALX_BLADE bumps that
@@ -2343,6 +2391,19 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       // SHIELD WALL: passing enemies are slowed.
       // Slow-buff pass v6.2: 28% → 40%.
       pushStatus(target, StatusEffectKind.SLOW, dur(2.5), 0.40, tier);
+      break;
+    case TowerType.EXPLORATORES:
+      // RECON VOLLEY: every hit MARKS the target (+20% taken). The stealth
+      // reveal + the +50%-vs-Runner rider live in the truesight scan and the
+      // damage-multiplier pass respectively.
+      pushStatus(target, StatusEffectKind.MARK, dur(3), 0.20, tier);
+      break;
+    case TowerType.VANGUARD_WING:
+      // EAGLE-EYE BARRAGE: every hit MARKS and SHREDS armor. The reveal,
+      // +40%-vs-Elite, and every-4th boss SIGNAL MARK live in the truesight
+      // scan, damage pass, and buff pass respectively.
+      pushStatus(target, StatusEffectKind.MARK, dur(3), 0.20, tier);
+      pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(3), 0, tier);
       break;
     // ─── NEW COMBO TOWERS ────────────────────────────────────────────────
     case TowerType.TESSERARIUS:

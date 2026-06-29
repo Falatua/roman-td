@@ -151,6 +151,11 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   [TowerType.SKYREAPER_BATTERY]: { key: 'PROJ_ARROW',          arc: true,  speed: 640, splash: 0,   embed: true  },
   [TowerType.PLAGUE_LOBBER]:     { key: 'PROJ_POISON_CLOUD',   arc: true,  speed: 340, splash: 1.2, embed: false },
   [TowerType.AUGURS_WRATH]:      { key: 'PROJ_DIVINE_APEX_ORB', arc: true, speed: 600, splash: 1.0, embed: false },
+  // 2026-06-28 — 2 new combos + 2 new super-combos.
+  [TowerType.EXPLORATORES]:      { key: 'PROJ_ARROW',          arc: true,  speed: 700, splash: 0,   embed: true  },
+  [TowerType.VULCAN_BOMBARD]:    { key: 'PROJ_BARREL',         arc: true,  speed: 360, splash: 3.0, embed: false },
+  [TowerType.VANGUARD_WING]:     { key: 'PROJ_ARROW',          arc: true,  speed: 730, splash: 0,   embed: true  },
+  [TowerType.VULCAN_COLOSSUS]:   { key: 'PROJ_BARREL',         arc: true,  speed: 380, splash: 3.5, embed: false },
   // Consular Fatebinder — every shot strikes every enemy on the map
   // (true damage map-wide handled separately). The visible cast is a
   // fate-binding apex orb to the primary target — cosmetic anchor for the

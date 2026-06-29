@@ -53,12 +53,13 @@ describe('Fortuna\'s Wheel — 925g combo-tower gamble', () => {
     }
   });
 
-  it('pool has 43 towers (55 combos minus 6 apex minus 6 champions)', () => {
+  it('pool has 47 towers (59 combos minus 6 apex minus 6 champions)', () => {
     // 2026 v2 Ch8 — the 6 Champions of Rome are COMBO-kind but Mercator-only,
     // so they join the 6 apex super-combos on the Fortuna blocklist.
-    // 2026-06-28 — +10 new under-represented-base combos (all gamble-able).
-    // Pool count: 55 total combos minus 12 blocked (6 apex + 6 champion) = 43.
-    expect(FORTUNA_GAMBLE_POOL.length).toBe(43);
+    // 2026-06-28 — +10 under-represented-base combos, then +4 more (Exploratores,
+    // Vulcan Bombard, Vanguard Wing, Vulcan Colossus), all gamble-able.
+    // Pool count: 59 total combos minus 12 blocked (6 apex + 6 champion) = 47.
+    expect(FORTUNA_GAMBLE_POOL.length).toBe(47);
   });
 
   it('rollFortunaCombo returns only valid COMBO tower IDs', () => {

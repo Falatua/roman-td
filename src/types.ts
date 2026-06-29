@@ -133,6 +133,12 @@ export enum TowerType {
   SKYREAPER_BATTERY = 'SKYREAPER_BATTERY',
   PLAGUE_LOBBER = 'PLAGUE_LOBBER',
   AUGURS_WRATH = 'AUGURS_WRATH',
+  // 2026-06-28 — 2 new combos from under-used bases (Speculator/Venator,
+  // Colossus Onager/Vulcan Engineer) + 2 super-combos built from them.
+  EXPLORATORES = 'EXPLORATORES',
+  VULCAN_BOMBARD = 'VULCAN_BOMBARD',
+  VANGUARD_WING = 'VANGUARD_WING',
+  VULCAN_COLOSSUS = 'VULCAN_COLOSSUS',
   // 2026 v2 spec Ch9 — Mars Victor: DIVINE apex super-tower (fusion of
   // Imperium Eternum + Legion Prime). Engine-faithful read of the spec's
   // "6-hero combo" — activeHeroId is singular, so 6 literal heroes can't be
