@@ -652,7 +652,7 @@
     "spriteSheet": 3,
     "spriteCell": 3,
     "burnsGround": true,
-    "ability": "Burn 6% HP/sec. Leaves BURNING GROUND for 3s on every hit.",
+    "ability": "Burn 6% HP/sec. Leaves a long-lasting BURNING GROUND for 5s on every hit — the longest-burning fire tower.",
     "critChance": 0.12,
     "critMult": 2.4
   },

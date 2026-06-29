@@ -52,6 +52,13 @@ for (const w of (wavesData as any[])) {
 let nextBurnPatchId = 1;
 function newBurnPatchId(): string { return `bp${nextBurnPatchId++}`; }
 
+// 2026-06-29: Inferno Cart's identity is its burning DoT, so its ground patch
+// lingers a little longer than the shared 4.0s default (a small duration buff).
+const INFERNO_CART_BURN_LIFE = 5.0;
+function burnPatchLife(towerType: TowerType): number {
+  return towerType === TowerType.INFERNO_CART ? INFERNO_CART_BURN_LIFE : 4.0;
+}
+
 // Hot-loop scratch buffers. `tickCombat` runs every frame, so reusing these
 // short-lived lists avoids repeated garbage-collector work during dense waves.
 const activeTowerScratch: Tower[] = [];
@@ -61,13 +68,16 @@ const targetCandidateScratch: Enemy[] = [];
 // BURNING GROUND — fire-themed towers stamp a 3-second patch at the impact
 // point. Any enemy within the patch radius takes burn DoT each frame.
 // Patches stack additively but each patch decays independently.
-function spawnBurnPatch(state: GameStateShape, x: number, y: number, sourceTier: number) {
+function spawnBurnPatch(state: GameStateShape, x: number, y: number, sourceTier: number, life = 4.0) {
   if (!state.burnPatches) state.burnPatches = [];
   state.burnPatches.push({
     id: newBurnPatchId(),
     x, y,
     born: state.tick,
-    life: 4.0,                 // 2026-05 v11: 3s → 4s — single-DoT consolidation
+    // 2026-05 v11: 3s → 4s — single-DoT consolidation. Default for all fire
+    // towers; Inferno Cart passes a longer life (see call sites) since its
+    // whole identity is the burning DoT.
+    life,
     sourceTier
   });
   // Cap patches to avoid runaway accumulation (rare, but defensive).
@@ -1456,7 +1466,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // projectile impacts call applyDamageAndStatus instead, which also
       // spawns its own patch — so every hit produces one patch.
       if (towerBurnsGround(t.type)) {
-        spawnBurnPatch(state, target.x, target.y, t.qualityTier);
+        spawnBurnPatch(state, target.x, target.y, t.qualityTier, burnPatchLife(t.type));
       }
       if (isMeleeRow) {
         // SPEAR OF MARS — when the melee tower carries this legendary, fire
@@ -2084,7 +2094,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   }
   // Stamp a burn patch at the impact location for fire-themed towers
   if (towerBurnsGround(t.type)) {
-    spawnBurnPatch(state, target.x, target.y, t.qualityTier);
+    spawnBurnPatch(state, target.x, target.y, t.qualityTier, burnPatchLife(t.type));
   }
   const resMod = (target as any).__lastResMod ?? 1;
   hooks.onHit(t, target, damage, resMod, !!(t as any).__lastWasCrit);
