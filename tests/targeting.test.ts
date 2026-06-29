@@ -207,4 +207,13 @@ describe('Tower targeting modes', () => {
     // No ground enemies + melee can't reach flyer → null.
     expect(picked).toBeNull();
   });
+
+  it('hero towers use the same targeting modes as regular towers', () => {
+    const { state, enemies } = setup();
+    const hero = createTower(TowerType.HERO_MARIUS, 5, 5, 5, 1);
+    hero.isHero = true;
+    hero.targetingMode = TargetingMode.CLOSE;
+    const picked = pickTarget(state, hero, enemies, 10);
+    expect(picked?.id).toBe('D');
+  });
 });

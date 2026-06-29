@@ -568,10 +568,6 @@
         "minTier": 3
       },
       {
-        "type": "SPECULATOR",
-        "minTier": 3
-      },
-      {
         "type": "FLAMEN",
         "minTier": 3
       },
@@ -596,10 +592,6 @@
       },
       {
         "type": "SOLAR_PRIEST",
-        "minTier": 5
-      },
-      {
-        "type": "COLOSSUS_ONAGER",
         "minTier": 5
       }
     ],

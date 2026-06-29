@@ -120,17 +120,17 @@ describe('Tower effective stats', () => {
 
   it('gives melee towers a small baseline attack-speed lift', () => {
     const melee = createTower(TowerType.MILITES, 1, 0, 0, 0);
-    const ranged = createTower(TowerType.DECURION, 1, 0, 0, 0);
+    const ranged = createTower(TowerType.VELITES, 1, 0, 0, 0);
     expect(towerEffectiveStats(melee).attackSpeed).toBeCloseTo(melee.attackSpeed * 1.06, 4);
     expect(towerEffectiveStats(ranged).attackSpeed).toBeCloseTo(ranged.attackSpeed, 4);
   });
 
   it('Cavalry Spur (2026-05 v6 — MELEE only) buffs only melee towers', () => {
     // CAVALRY_SPUR was reclassified from "cavalry-only archetype" to
-    // "MELEE-only" so a ranged Decurion no longer gets the speed buff;
+    // "MELEE-only" so a ranged Velites no longer gets the speed buff;
     // a melee Milites does. Spec change tracked in items_permanent.json
     // and ItemRules.EQUIP_MODE = 'MELEE'.
-    const ranged = createTower(TowerType.DECURION, 1, 0, 0, 0);
+    const ranged = createTower(TowerType.VELITES, 1, 0, 0, 0);
     const melee = createTower(TowerType.MILITES, 1, 0, 0, 0);
     const rangedBefore = towerEffectiveStats(ranged).attackSpeed;
     const meleeBefore = towerEffectiveStats(melee).attackSpeed;
@@ -138,6 +138,14 @@ describe('Tower effective stats', () => {
     melee.equippedItems.push('CAVALRY_SPUR');
     expect(towerEffectiveStats(ranged).attackSpeed).toBeCloseTo(rangedBefore, 4);  // ranged: no effect
     expect(towerEffectiveStats(melee).attackSpeed).toBeCloseTo(meleeBefore * 1.25, 4);
+  });
+
+  it('makes Decurion a true one-tile melee tower', () => {
+    const decurion = createTower(TowerType.DECURION, 1, 0, 0, 0);
+    expect(decurion.damageType).toBe(DamageType.PHYS_MELEE);
+    expect((towersData as any)[TowerType.DECURION].melee).toBe(true);
+    expect(decurion.range).toBe(1);
+    expect(towerEffectiveStats(decurion).attackSpeed).toBeCloseTo(decurion.attackSpeed * 1.06, 4);
   });
 
   it('keeps a visible Common to Legendary attack-speed ladder', () => {

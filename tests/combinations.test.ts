@@ -108,6 +108,20 @@ describe('Recipe combo detection', () => {
     expect(sb).toBeFalsy();
   });
 
+  it('keeps the simplified super-combo recipes requested for Solo campaign', () => {
+    const byResult = (result: string) => comboData.find((r: any) => r.result === result) as any;
+    const types = (result: string) => byResult(result).ingredients.map((i: any) => i.type);
+
+    expect(types('LEGION_PRIME')).toEqual(['IGNIFER', 'FLAMEN', 'CARROBALLISTA']);
+    expect(types('LEGION_PRIME')).not.toContain('SPECULATOR');
+
+    expect(types('CONSULAR_FATEBINDER')).toEqual(['PRAEFECTUS', 'VULCAN_ENGINEER', 'SOLAR_PRIEST']);
+    expect(types('CONSULAR_FATEBINDER')).not.toContain('COLOSSUS_ONAGER');
+
+    expect(types('BEASTLORD_CHAMPION')).toEqual(['BEAST_HUNTER', 'BEAST_SLAYER', 'PUGIO_ASSASSIN']);
+    expect(types('BEASTLORD_CHAMPION').filter((t: string) => t === 'BEAST_SLAYER')).toHaveLength(1);
+  });
+
   it('keeps nested-combo DPS boosts while excluding Hannibal Nightmare', () => {
     const expectedBoosted: Partial<Record<TowerType, number>> = {
       [TowerType.WAR_CHARIOT]: 112.0,

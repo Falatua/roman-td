@@ -88,15 +88,15 @@
   },
   "DECURION": {
     "name": "Decurion",
-    "damageType": "PHYS_RANGED",
+    "damageType": "PHYS_MELEE",
     "baseDps": 14.4,
     "attackSpeed": 1.9,
-    "range": 4,
+    "range": 1,
     "kind": "BASE",
-    "melee": false,
+    "melee": true,
     "spriteSheet": 1,
     "spriteCell": 6,
-    "ability": "DUAL JAVELIN: throws at 2 targets per attack. EXECUTE: +250% damage vs non-boss enemies below 40% HP (the finishing javelin). Crit every 5th hit.",
+    "ability": "CLOSE-ORDER OFFICER: melee range 1. EXECUTE: +250% damage vs non-boss enemies below 40% HP. Crit every 5th hit.",
     "critChance": 0,
     "critMult": 1
   },
@@ -579,7 +579,7 @@
     "antiAirOnly": false,
     "spriteSheet": 2,
     "spriteCell": 7,
-    "ability": "Hits BOTH ground and flyers, keeping its large anti-flyer bonus. SKY VOLLEY: rains javelins at 3 distinct flyers per attack. 30% chance to land a triple-damage strike (signature crit). +110% damage vs Flyers on top of the base damage — the premier anti-air apex combo. Recipe pairs the AQUILA VENATOR sky-hunter, the SAGITTARIUS anti-air archer, and the DECURION cavalry officer into a saddle-mounted javelin specialist.",
+    "ability": "Hits BOTH ground and flyers, keeping its large anti-flyer bonus. SKY VOLLEY: rains javelins at 3 distinct flyers per attack. 30% chance to land a triple-damage strike (signature crit). +110% damage vs Flyers on top of the base damage — the premier anti-air apex combo. Recipe pairs the AQUILA VENATOR sky-hunter, the SAGITTARIUS anti-air archer, and the DECURION melee officer into a saddle-mounted javelin specialist.",
     "critChance": 0,
     "critMult": 1
   },
@@ -931,7 +931,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 4,
-    "ability": "SUPER COMBO (4 BASE T3): heavy AoE divine artillery. +25% damage aura to all towers within 3 tiles. Applies SLOW + Armor Shred on every hit. BOSS HUNTER — crit chance jumps from 20% to 80% against any boss target, multiplying the heavy shell by 2.5×.",
+    "ability": "SUPER COMBO (3 BASE T3): heavy AoE divine artillery. +25% damage aura to all towers within 3 tiles. Applies SLOW + Armor Shred on every hit. BOSS HUNTER — crit chance jumps from 20% to 80% against any boss target, multiplying the heavy shell by 2.5×.",
     "critChance": 0.2,
     "critMult": 2.5
   },
@@ -945,7 +945,7 @@
     "melee": true,
     "tierBand": 5,
     "burnsGround": true,
-    "ability": "SUPER COMBO APEX (4 BASE T5, MELEE): primary strike deals TRUE damage (ignores resists), then a divine echo strikes EVERY OTHER enemy on the map at 60% splash. Burns ground on every hit. +30% global damage AND +30% global atk speed aura. The strongest tower in the game.",
+    "ability": "SUPER COMBO APEX (3 BASE T5, MELEE): primary strike deals TRUE damage (ignores resists), then a divine echo strikes EVERY OTHER enemy on the map at 60% splash. Burns ground on every hit. +30% global damage AND +30% global atk speed aura. The strongest tower in the game.",
     "critChance": 0.3,
     "critMult": 3.5
   },

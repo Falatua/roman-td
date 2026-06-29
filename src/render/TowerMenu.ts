@@ -1039,8 +1039,25 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   // breakdown is worth keeping front-and-center.
   const killsBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Kills</div><div style="color:#d4af37;font-size:14px;font-weight:bold;margin-top:2px">${t.killCount}</div></div>`;
   const kbBox    = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Kill Bonus</div><div style="color:#9be0ff;font-size:14px;font-weight:bold;margin-top:2px">+${t.killBonusFlat.toFixed(1)} DPS</div></div>`;
-  statsGrid.innerHTML = dmgBox + spdBox + rngBox + dpsBox + killsBox + kbBox;
+  const targetBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px;grid-column:span 2"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Targeting</div><div style="color:#9be0ff;font-size:14px;font-weight:bold;margin-top:2px">${TargetingMode[t.targetingMode]}</div></div>`;
+  statsGrid.innerHTML = dmgBox + spdBox + rngBox + dpsBox + killsBox + kbBox + targetBox;
   panel.appendChild(statsGrid);
+
+  // Heroes use the same targeting engine as towers. Surface the per-hero
+  // controls here so a purchased champion can be tuned without relying on
+  // the bulk "target all" button.
+  const targetRow = document.createElement('div');
+  targetRow.style.cssText = 'display:flex;gap:4px;padding:10px 14px;border-bottom:1px solid #3a3025;flex-wrap:wrap';
+  targetRow.innerHTML = '<div style="font-size:9px;color:#aa9a4a;width:100%;letter-spacing:2px;margin-bottom:4px">TARGETING</div>';
+  for (const mode of [TargetingMode.FIRST, TargetingMode.LAST, TargetingMode.STRONG, TargetingMode.WEAKEST, TargetingMode.CLOSE, TargetingMode.FLYERS, TargetingMode.FAST]) {
+    const b = document.createElement('button');
+    b.textContent = TargetingMode[mode];
+    const isActive = t.targetingMode === mode;
+    b.style.cssText = `background:${isActive ? '#3a5520' : '#2a2018'};color:${isActive ? '#d4af37' : '#e8d6a8'};border:1px solid #5a4a30;padding:4px 8px;cursor:pointer;font-family:inherit;font-size:10px;letter-spacing:1px`;
+    b.onclick = () => { t.targetingMode = mode; refresh(); };
+    targetRow.appendChild(b);
+  }
+  panel.appendChild(targetRow);
 
   // 2026-05-20 — "BUILT FOR" flavor block removed per design ask.
   // playerProblemSolved was a marketing/draft-pitch line — useful in

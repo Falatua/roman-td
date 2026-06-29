@@ -44,7 +44,6 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   [TowerType.SAGITTARIUS]:    { key: 'PROJ_ARROW',         arc: true,  speed: 560, splash: 0,   embed: true },
   [TowerType.SCORPIO]:        { key: 'PROJ_BALLISTA',      arc: false, speed: 800, splash: 0,   embed: true },
   [TowerType.TRIARIUS]:       { key: 'PROJ_HASTA',         arc: true,  speed: 480, splash: 0,   embed: true },
-  [TowerType.DECURION]:       { key: 'PROJ_JAVELIN',       arc: false, speed: 600, splash: 0,   embed: true },
   [TowerType.LEGATE]:         { key: 'PROJ_STAFF',         arc: false, speed: 540, splash: 1.0, embed: true },
   // T1 band extras
   // FUNDIBULUS — slinger sprite, throws compact projectile in a high arc

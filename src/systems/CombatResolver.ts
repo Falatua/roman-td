@@ -136,7 +136,7 @@ const BEAST_ENEMY_TYPES = new Set<EnemyType>([
 
 // Tower types that fight in melee (no projectile, instant damage with slash VFX).
 const MELEE_TYPES = new Set<TowerType>([
-  TowerType.MILITES, TowerType.HASTATI, TowerType.TRIARIUS, TowerType.CENTURION,
+  TowerType.MILITES, TowerType.HASTATI, TowerType.TRIARIUS, TowerType.DECURION, TowerType.CENTURION,
   TowerType.PRIMUS_PILUS, TowerType.HORSEMAN, TowerType.COHORT_GUARD, TowerType.PRAETORIAN_WALL,
   TowerType.AUXILIA, TowerType.ACCENSUS, TowerType.PUGIO_ASSASSIN, TowerType.CATAPHRACT,
   TowerType.EVOCATUS, TowerType.IMPERATOR_GUARD,
@@ -337,7 +337,6 @@ function secondaryHitBlocked(t: Tower, target: Enemy, state: GameStateShape): bo
 const MULTI_SHOT_COUNT: Partial<Record<TowerType, number>> = {
   [TowerType.SCORPION_BOLT]: 3,
   [TowerType.NUMIDIAN_CAVALRY]: 3,   // 2 → 3 (2026-05-15 v2 buff): TRIPLE VOLLEY upgrade
-  [TowerType.DECURION]: 2,
   [TowerType.CARROBALLISTA]: 2,
   [TowerType.HANNIBALS_NIGHTMARE]: 2,
   [TowerType.AURORA_LEGION]: 4,                // pierces 4 in line (2026-05 v11 buff)

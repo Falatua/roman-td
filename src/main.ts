@@ -4950,11 +4950,9 @@ async function boot() {
     onOpenSettings: () => {
       showSettingsPanel(app);
     },
-    // 2026-05-19 — Bulk-set every placed tower's targeting mode. The
-    // right-panel TARGET ALL button picks a mode; this fan-outs it
-    // across state.towers. Pending prospects are included (their
-    // targetingMode survives the keep flow). Heroes (not in v1) would
-    // be filtered here if/when they ship.
+    // Bulk-set every placed tower/champion's targeting mode. Pending
+    // prospects are included (their targetingMode survives the keep flow),
+    // and heroes now participate in the same targeting controls as towers.
     onSetAllTargeting: (mode) => {
       let n = 0;
       for (const t of state.towers.values()) {
@@ -6727,7 +6725,7 @@ async function boot() {
             // scepter (2026-05 v9 sprite swap) belongs here even though its
             // damage type is PHYS_RANGED — the cast is cosmetic.
             SFX.staffCast();
-          } else if (t.type === 'DECURION' || t.type === 'CLIBANARIUS' || t.type === 'SPECULATOR' || t.type === 'FUNDIBULUS') {
+          } else if (t.type === 'CLIBANARIUS' || t.type === 'SPECULATOR' || t.type === 'FUNDIBULUS') {
             // Spear/javelin/sling throwers — javelin throw whistle.
             // SPECULATOR flings a marker dagger, FUNDIBULUS releases a
             // sling stone. (Venator returned to bow archer in v10.)
