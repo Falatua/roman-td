@@ -304,11 +304,11 @@ export interface AuraTile {
   kind: 'PURPLE' | 'BLUE' | 'RED' | 'CYAN' | 'GOLD' | 'EMERALD' | 'IVORY' | 'AMBER';
 }
 export const AURA_TILES: AuraTile[] = [
-  { col: 6,  row: 9,  kind: 'PURPLE'  },  // early-left      · +30% attack speed
+  { col: 8,  row: 9,  kind: 'PURPLE'  },  // left            · +30% attack speed (tempo, moved right 2)
   { col: 15, row: 12, kind: 'BLUE'    },  // central         · +30% damage
-  { col: 28, row: 8,  kind: 'RED'     },  // right-mid       · +50% damage vs bosses
+  { col: 28, row: 10, kind: 'RED'     },  // right-mid       · +50% damage vs bosses (tyrant, moved down 2)
   { col: 24, row: 19, kind: 'CYAN'    },  // bottom-mid      · melee can hit flyers
-  { col: 11, row: 19, kind: 'GOLD'    },  // bottom-left     · +2 gold per kill
+  { col: 13, row: 16, kind: 'GOLD'    },  // mid-left        · +2 gold per kill (treasury, moved up 3 + right 2)
   // 2026-05-19 — 6th aura tile. WATCHTOWER (emerald green). Moved
   // from the bottom-left corner (2, 22) → upper-middle (20, 5) →
   // (20, 4). The previous (20, 5) sat exactly on waypoint 5
@@ -322,7 +322,7 @@ export const AURA_TILES: AuraTile[] = [
   // instead of stacked in a column. They scatter with the other six rather
   // than lining up, while still anchoring the right-side WP3↔WP4 lanes. Both
   // on open buildable terrain (clear of every waypoint + structure footprint).
-  { col: 32, row: 7,  kind: 'IVORY'   },  // upper-right pocket · near WP4 · tower strikes as DIVINE
+  { col: 32, row: 5,  kind: 'IVORY'   },  // upper-right pocket · near WP4 · tower strikes as DIVINE (moved up 2)
   { col: 25, row: 15, kind: 'AMBER'   }   // centre-lower pocket · near WP3 · tower gains splash blast
 ];
 // Effect lookup table — used by stat math, combat hooks, and tooltips

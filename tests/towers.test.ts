@@ -225,17 +225,19 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     expect(onRange - offRange).toBeCloseTo(2.0, 4);
   });
 
-  it('the 6 spread tiles keep >=11 manhattan separation', () => {
+  it('the 6 spread tiles stay distinct and non-clustered (>=6 manhattan)', () => {
     // 2026-06-27 — the IVORY (divine) + AMBER (blast) tiles are
     // DELIBERATELY clustered on the WP3<->WP4 gauntlet (per user), so
     // they're exempt from the spacing rule that keeps the original six
     // anchors spread across the map.
+    // 2026-06-28 — user hand-moved tempo/tyrant/treasury; tightest pair is
+    // now Treasury<->War at manhattan 6, so the dispersal floor is 6.
     const spread = AURA_TILES.filter(t => t.kind !== 'IVORY' && t.kind !== 'AMBER');
     expect(spread.length).toBe(6);
     for (let i = 0; i < spread.length; i++) {
       for (let j = i + 1; j < spread.length; j++) {
         const d = Math.abs(spread[i].col - spread[j].col) + Math.abs(spread[i].row - spread[j].row);
-        expect(d).toBeGreaterThanOrEqual(11);
+        expect(d).toBeGreaterThanOrEqual(6);
       }
     }
   });
