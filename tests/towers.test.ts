@@ -33,6 +33,21 @@ function testEnemy(id: string, x = 160, y = 160): Enemy {
   };
 }
 
+function flyerEnemy(id: string, x = 160, y = 160): Enemy {
+  const enemy = testEnemy(id, x, y);
+  enemy.isFlyer = true;
+  return enemy;
+}
+
+function noopCombatHooks() {
+  return {
+    onKill: () => {},
+    onHit: () => {},
+    onMeleeSwing: () => {},
+    onProjectileFire: () => {}
+  };
+}
+
 describe('Tower creation', () => {
   it('creates a tower with correct base fields', () => {
     const t = createTower(TowerType.MILITES, 1, 5, 5, 0);
@@ -203,6 +218,64 @@ describe('Tower effective stats', () => {
     });
 
     expect(target.statusEffects.some(s => s.kind === StatusEffectKind.STUN && s.remaining > 0.9)).toBe(true);
+  });
+});
+
+describe('Anti-air tower signatures', () => {
+  function hitFlyer(type: TowerType) {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    const tower = createTower(type, 3, 4, 4, 0);
+    const target = flyerEnemy(`${type}-flyer`);
+    state.enemies.set(target.id, target);
+    applyDamageAndStatus(state, tower, target, 1, noopCombatHooks());
+    return target;
+  }
+
+  it('Sagittarius clips flyer speed so early air leaks are catchable', () => {
+    const target = hitFlyer(TowerType.SAGITTARIUS);
+    const slow = target.statusEffects.find(s => s.kind === StatusEffectKind.SLOW);
+    expect(slow?.magnitude).toBeCloseTo(0.35, 4);
+  });
+
+  it('Venator turns flyers into marked prey for the whole maze', () => {
+    const target = hitFlyer(TowerType.VENATOR);
+    const mark = target.statusEffects.find(s => s.kind === StatusEffectKind.MARK);
+    expect(mark?.magnitude).toBeCloseTo(0.35, 4);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.SLOW)).toBe(true);
+  });
+
+  it('Aquila Venator snares and marks flyers as the mid-game air anchor', () => {
+    const target = hitFlyer(TowerType.AQUILA_VENATOR);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.45)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.25)).toBe(true);
+  });
+
+  it('Scorpio and Scorpion Bolt shred flyer armor with siege control', () => {
+    const scorpioTarget = hitFlyer(TowerType.SCORPIO);
+    const boltTarget = hitFlyer(TowerType.SCORPION_BOLT);
+
+    expect(scorpioTarget.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+    expect(scorpioTarget.statusEffects.some(s => s.kind === StatusEffectKind.SLOW)).toBe(true);
+    expect(boltTarget.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+    expect(boltTarget.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
+  });
+
+  it('late anti-air combos add distinct flyer control, not only DPS', () => {
+    const numidian = hitFlyer(TowerType.NUMIDIAN_CAVALRY);
+    const beastlord = hitFlyer(TowerType.BEASTLORD_CHAMPION);
+    const skyreaper = hitFlyer(TowerType.SKYREAPER_BATTERY);
+    const nemesis = hitFlyer(TowerType.NEMESIS_ENGINE);
+
+    expect(numidian.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.45)).toBe(true);
+    expect(numidian.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.20)).toBe(true);
+    expect(beastlord.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
+    expect(beastlord.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.20)).toBe(true);
+    expect(skyreaper.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.55)).toBe(true);
+    expect(skyreaper.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+    expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
+    expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.40)).toBe(true);
+    expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
   });
 });
 

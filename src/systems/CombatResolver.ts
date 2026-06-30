@@ -2260,6 +2260,15 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       pushStatus(target, StatusEffectKind.POISON, dur(2.5), 0.06, tier);
       pushStatus(target, StatusEffectKind.SLOW, dur(3), 0.50, tier);
       break;
+    case TowerType.SAGITTARIUS:
+      if (target.isFlyer) pushStatus(target, StatusEffectKind.SLOW, dur(1.6), 0.35, tier);
+      break;
+    case TowerType.SCORPIO:
+      if (target.isFlyer) {
+        pushStatus(target, StatusEffectKind.SLOW, dur(1.5), 0.25, tier);
+        pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(3), 0, tier);
+      }
+      break;
     case TowerType.INFERNO_CART:
     case TowerType.IGNIFER:
     case TowerType.VULCAN_ENGINEER:
@@ -2370,8 +2379,16 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       pushStatus(target, StatusEffectKind.MARK, dur(3), 0.15, tier);
       break;
     case TowerType.VENATOR:
-      // MARKED PREY: marks flyers for +25% damage taken
-      if (target.isFlyer) pushStatus(target, StatusEffectKind.MARK, dur(3), 0.25, tier);
+      if (target.isFlyer) {
+        pushStatus(target, StatusEffectKind.MARK, dur(3), 0.35, tier);
+        pushStatus(target, StatusEffectKind.SLOW, dur(1.5), 0.25, tier);
+      }
+      break;
+    case TowerType.AQUILA_VENATOR:
+      if (target.isFlyer) {
+        pushStatus(target, StatusEffectKind.MARK, dur(3), 0.25, tier);
+        pushStatus(target, StatusEffectKind.SLOW, dur(2), 0.45, tier);
+      }
       break;
     case TowerType.PRAETORIAN_WALL: {
       // Slow on every hit (45% magnitude). LAST STAND (2026-05 v7):
@@ -2449,6 +2466,18 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       pushStatus(target, StatusEffectKind.MARK, dur(2), 0.20, tier);
       pushStatus(target, StatusEffectKind.POISON, dur(4), 0.05, tier);
       break;
+    case TowerType.SCORPION_BOLT:
+      if (target.isFlyer) {
+        pushStatus(target, StatusEffectKind.STUN, dur(0.35), 0, tier);
+        pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(3), 0, tier);
+      }
+      break;
+    case TowerType.NUMIDIAN_CAVALRY:
+      if (target.isFlyer) {
+        pushStatus(target, StatusEffectKind.SLOW, dur(2), 0.45, tier);
+        pushStatus(target, StatusEffectKind.MARK, dur(3), 0.20, tier);
+      }
+      break;
     case TowerType.TURMA_LANCERS:
       // CHARGE: heavier double-stack mark (+35% vs +20% Horseman baseline).
       pushStatus(target, StatusEffectKind.MARK, dur(2.5), 0.35, tier);
@@ -2505,10 +2534,11 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       pushStatus(target, StatusEffectKind.SLOW, dur(2.5), 0.60, tier);
       break;
     case TowerType.NEMESIS_ENGINE:
-      // SKY-RIPPER: knock flyers back, stun briefly.
+      // SKY-RIPPER: whole-map flyer control, not just huge damage.
       if (target.isFlyer) {
-        pushStatus(target, StatusEffectKind.STUN, dur(0.5), 0, tier);
-        pushStatus(target, StatusEffectKind.MARK, dur(2), 0.20, tier);
+        pushStatus(target, StatusEffectKind.STUN, dur(1.0), 0, tier);
+        pushStatus(target, StatusEffectKind.MARK, dur(4), 0.40, tier);
+        pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
       }
       break;
     case TowerType.TRIUMPHATOR:
@@ -2532,6 +2562,18 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       // Slow-buff pass v6.2: 40% → 55% on primary + AoE.
       pushStatus(target, StatusEffectKind.SLOW, dur(2.5), 0.55, tier);
       pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(3), 0, tier);
+      break;
+    case TowerType.BEASTLORD_CHAMPION:
+      if (target.isFlyer) {
+        pushStatus(target, StatusEffectKind.STUN, dur(0.55), 0, tier);
+        pushStatus(target, StatusEffectKind.MARK, dur(2.5), 0.20, tier);
+      }
+      break;
+    case TowerType.SKYREAPER_BATTERY:
+      if (target.isFlyer) {
+        pushStatus(target, StatusEffectKind.SLOW, dur(2.5), 0.55, tier);
+        pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
+      }
       break;
     case TowerType.CONSULAR_FATEBINDER:
       // APEX SUPER: stun on hit (doesn't matter much, every enemy is hit anyway).

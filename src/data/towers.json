@@ -53,7 +53,7 @@
     "spriteSheet": 1,
     "spriteCell": 3,
     "antiAirOnly": false,
-    "ability": "Hits BOTH ground and flyers, keeping its large anti-flyer bonus. Heavy damage (111.7 base DPS, +45% on flyers via signature crit), long range. The premier flyer-killer of the early game.",
+    "ability": "Hits BOTH ground and flyers. WING CLIP: flyer hits Slow by 35% for a short window. Heavy damage, long range, +45% damage vs Flyers — the early-game answer to fast air leaks.",
     "critChance": 0.22,
     "critMult": 2.5
   },
@@ -67,7 +67,7 @@
     "melee": false,
     "spriteSheet": 1,
     "spriteCell": 4,
-    "ability": "Slow, devastating SIEGE ballista. +40% damage vs Bosses AND +30% damage vs Flyers — heavy-bolt specialist that pierces armored bosses and punches through high-flying targets. Flying bosses take both bonuses multiplicatively (+82%). Siege damage type bypasses ranged resists.",
+    "ability": "Slow, devastating SIEGE ballista. HARPOON BOLT: flyer hits Slow and apply ARMOR SHRED, helping every follow-up tower punch through. +40% damage vs Bosses and +30% damage vs Flyers. Flying bosses take both bonuses multiplicatively (+82%). Siege bypasses ranged resists.",
     "critChance": 0,
     "critMult": 1
   },
@@ -281,7 +281,7 @@
     "kind": "BASE",
     "melee": false,
     "tierBand": 3,
-    "ability": "MARKED PREY: hits on flyers mark them for +25% damage from all sources. Fast bow.",
+    "ability": "MARKED PREY: flyer hits Slow briefly and mark them for +35% damage from all sources. Fast bow that turns one flying target into a kill callout for the whole maze.",
     "critChance": 0.2,
     "critMult": 2
   },
@@ -479,7 +479,7 @@
     "melee": false,
     "tierBand": 3,
     "antiAirOnly": false,
-    "ability": "Tier III sky hunter. Hits BOTH ground and flyers, keeping its large anti-flyer bonus. Two-shot per attack and devastating crit profile — premier flyer killer of the mid-game.",
+    "ability": "Tier III sky hunter. Hits BOTH ground and flyers. EAGLE SNARE: flyer hits Slow by 45% and mark for +25% damage taken. Two-shot attacks and devastating crits make it the mid-game air-control anchor.",
     "critChance": 0.28,
     "critMult": 3.0
   },
@@ -507,7 +507,7 @@
     "melee": false,
     "spriteSheet": 2,
     "spriteCell": 2,
-    "ability": "TRIPLE BOLT (SIEGE): fires three siege bolts at distinct targets per attack. +35% damage vs Flyers AND +50% damage vs Bosses (multiplicative — Flying Bosses get the full +102.5% stack). Mid-game boss-killer + anti-air specialist in one combo. Siege damage bypasses ranged resists.",
+    "ability": "TRIPLE BOLT (SIEGE): fires three siege bolts at distinct targets per attack. SKY PIN: flyer hits briefly Stun and apply ARMOR SHRED. +35% damage vs Flyers and +50% damage vs Bosses, multiplicative on flying bosses. Mid-game boss-killer plus anti-air control in one combo.",
     "critChance": 0.1,
     "critMult": 3
   },
@@ -579,7 +579,7 @@
     "antiAirOnly": false,
     "spriteSheet": 2,
     "spriteCell": 7,
-    "ability": "Hits BOTH ground and flyers, keeping its large anti-flyer bonus. SKY VOLLEY: rains javelins at 3 distinct flyers per attack. 30% chance to land a triple-damage strike (signature crit). +110% damage vs Flyers on top of the base damage — the premier anti-air apex combo. Recipe pairs the AQUILA VENATOR sky-hunter, the SAGITTARIUS anti-air archer, and the DECURION melee officer into a saddle-mounted javelin specialist.",
+    "ability": "Hits BOTH ground and flyers. NET VOLLEY: rains javelins at 3 distinct flyers per attack, Slowing them by 45% and marking them for +20% damage taken. 30% chance to land a triple-damage strike. +110% damage vs Flyers — an apex anti-air combo that catches whole sky packs.",
     "critChance": 0,
     "critMult": 1
   },
@@ -800,7 +800,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 5,
-    "ability": "SKY-RIPPER: WHOLE-MAP RANGE — fires across the entire battlefield from any tile. +200% damage to Flyers, always prioritizes Flyers. Massive AoE on impact. Reloads slowly (1 shot every ~4.7s at T5) but each shot is a meteor: ~2760 raw at T5, ~8280 vs Flyers.",
+    "ability": "SKY-RIPPER: WHOLE-MAP RANGE — fires across the entire battlefield from any tile. +200% damage to Flyers, always prioritizes Flyers. SKYFALL hits briefly Stun flyers, ARMOR SHRED them, and mark them for +40% damage taken. Slow reload, massive AoE, brutal air-wave opener.",
     "critChance": 0.15,
     "critMult": 3.5
   },
@@ -1233,12 +1233,12 @@
   },
   "PRAETORIAN_EXECUTIONER": {"name": "Praetorian Executioner", "damageType": "PHYS_MELEE", "baseDps": 135.0, "attackSpeed": 1.5, "range": 1.8, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.15, "critMult": 2.4, "ability": "Heavy maul. EXECUTIONER'S RHYTHM: every 2nd strike STUNS 0.8s — and he deals +40% damage to any STUNNED, SLOWED, or FROZEN target, caving in everything his own lockdown leaves helpless."},
   "SACRED_BAND": {"name": "Sacred Band", "damageType": "DIVINE", "baseDps": 165.0, "attackSpeed": 1.3, "range": 1.6, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.18, "critMult": 2.6, "ability": "Holy blade — DIVINE melee that bypasses most resistances. AEGIS NOVA: every 4th strike erupts a 2-tile divine shockwave for 2.2× damage that STUNS everything caught (0.4s). Elite anti-armor + area lockdown."},
-  "BEASTLORD_CHAMPION": {"name": "Beastlord Champion", "damageType": "PHYS_MELEE", "baseDps": 144.0, "attackSpeed": 1.7, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.2, "critMult": 2.2, "ability": "Eagle-spear hunter. Can strike FLYERS even as melee, and deals +70% damage to them. A melee anti-air specialist for chokepoints under air pressure."},
+  "BEASTLORD_CHAMPION": {"name": "Beastlord Champion", "damageType": "PHYS_MELEE", "baseDps": 144.0, "attackSpeed": 1.7, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.2, "critMult": 2.2, "ability": "Eagle-spear hunter. Can strike FLYERS even as melee and deals +70% damage to them. HOOK SPEAR: flyer hits briefly Stun and mark for +20% damage taken. A melee anti-air specialist for chokepoints under air pressure."},
   "MIRMILLO_REAVER": {"name": "Mirmillo Reaver", "damageType": "PHYS_MELEE", "baseDps": 125.0, "attackSpeed": 1.9, "range": 1.8, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.22, "critMult": 2.1, "ability": "Curved sica. Every hit applies stacking BLEED (DoT). Fast swings + bleed shred make him a sustained-damage grinder vs tanky ground."},
   "TRIBUNE_AVENGER": {"name": "Tribune Avenger", "damageType": "DIVINE", "baseDps": 145.0, "attackSpeed": 1.2, "range": 1.8, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.15, "critMult": 2.3, "ability": "Consecrated scepter — DIVINE melee + POISON DoT on every strike. Magic damage that also rots resistant ground over time."},
   "CATAPHRACT_LANCER": {"name": "Cataphract Lancer", "damageType": "PHYS_MELEE", "baseDps": 150.0, "attackSpeed": 1.1, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.14, "critMult": 2.5, "ability": "POLEARM REACH (2.0). LANCE CHARGE: every 3rd couched thrust STUNS 1.0s AND knocks the target back ~0.5 tiles. Slow, devastating swings; a wall-anchor that pins AND shoves bosses back down the lane."},
   "STORM_BALLISTA": {"name": "Storm Ballista", "damageType": "SIEGE", "baseDps": 160.0, "attackSpeed": 0.648, "range": 6.0, "kind": "COMBO", "melee": false, "tierBand": 4, "critChance": 0.12, "critMult": 3.0, "ability": "Long-range SIEGE bolt-thrower with 1.4-tile splash. SHOCK BURST: every 3rd bolt discharges on impact and STUNS every enemy in the splash (0.6s) — AoE lockdown. Siege bypasses ranged resists."},
-  "SKYREAPER_BATTERY": {"name": "Skyreaper Battery", "damageType": "PHYS_RANGED", "baseDps": 190.0, "attackSpeed": 1.5, "range": 5.5, "kind": "COMBO", "melee": false, "tierBand": 4, "critChance": 0.2, "critMult": 2.5, "ability": "Eagle-eyed volley. +110% damage vs FLYERS and prioritizes them — the premier dedicated anti-air combo for late flyer swarms."},
+  "SKYREAPER_BATTERY": {"name": "Skyreaper Battery", "damageType": "PHYS_RANGED", "baseDps": 190.0, "attackSpeed": 1.5, "range": 5.5, "kind": "COMBO", "melee": false, "tierBand": 4, "critChance": 0.2, "critMult": 2.5, "ability": "Eagle-eyed volley. +110% damage vs FLYERS and prioritizes them. FLAK WEB: flyer hits Slow by 55% and apply ARMOR SHRED, letting late air swarms get torn open by the whole defense."},
   "PLAGUE_LOBBER": {"name": "Plague Lobber", "damageType": "ELEMENTAL_FIRE", "baseDps": 105.0, "attackSpeed": 0.8, "range": 4.0, "kind": "COMBO", "melee": false, "tierBand": 3, "critChance": 0.1, "critMult": 2.0, "burnsGround": true, "ability": "Arcs a toxin-and-fire pot with 1.2-tile splash. Stamps a BURNING patch on impact AND applies POISON to the cluster. Stacked DoT zone control."},
   "AUGURS_WRATH": {"name": "Augur's Wrath", "damageType": "DIVINE", "baseDps": 175.0, "attackSpeed": 0.7, "range": 5.0, "kind": "COMBO", "melee": false, "tierBand": 5, "critChance": 0.2, "critMult": 2.6, "ability": "Hurls a radiant omen-fireball — DIVINE damage with 1.0-tile splash that sets the struck cluster BURNING. Apex magic artillery."},
   "EXPLORATORES": {"name": "Exploratores", "damageType": "PHYS_RANGED", "baseDps": 120.0, "attackSpeed": 1.6, "range": 5.5, "kind": "COMBO", "melee": false, "tierBand": 3, "critChance": 0.2, "critMult": 2.2, "ability": "RECON VOLLEY (T3): fires at 3 targets per shot. Every hit applies MARK (+20% damage taken). REVEALS stealthed / ambush enemies in range for every tower. +50% damage vs RUNNER archetype. The far-seeing scout-hunters."},
