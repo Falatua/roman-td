@@ -25,6 +25,7 @@ import { statusEffectiveness } from './EnemyResistances';
 import { buildGroundPathB } from './PathFinder';
 import { campaignRelicEnemyHpMult, campaignRelicEnemySpeedMult } from './CampaignRelicSystem';
 import { commanderSpeedMult, isCommanderType, tickCommanderSupport } from './CommanderSystem';
+import { campaignPressureResistMult } from './CampaignDifficulty';
 
 // Pre-computed waypoint centers in WORLD pixel coordinates, used by the
 // per-frame proximity test so the checkpoint heal fires the instant an
@@ -226,6 +227,13 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     if (e.isBoss) mult -= (w >= 21 ? 0.15 : 0.10); // bosses always tougher than ground
     mult = Math.max(w >= 25 ? 0.34 : w >= 21 ? 0.38 : 0.45, mult);
     (e as any).__lateResistMult = mult;
+  }
+  // Smooth post-W5 campaign pressure. The existing stamps above create
+  // authored difficulty breakpoints; this adds a small linear layer so W6+
+  // health/resistance pressure rises every wave instead of only at milestones.
+  if (!derived && (state.wave ?? 1) > 5) {
+    const pressure = campaignPressureResistMult(state.wave ?? 1, e.isFlyer);
+    (e as any).__lateResistMult = ((e as any).__lateResistMult ?? 1) * pressure;
   }
   // Other W11+ creative buffs — OOC regen + boss speed.
   if (!derived && (state.wave ?? 1) >= 11) {

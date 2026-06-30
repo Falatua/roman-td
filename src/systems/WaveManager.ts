@@ -24,6 +24,7 @@ import { injectCampaignCommanders, isCommanderType } from './CommanderSystem';
 import { campaignRelicWaveGoldMult } from './CampaignRelicSystem';
 import { prepareHeroAbilitiesForWave } from './HeroSystem';
 import { completeTestYourMight, tickTestYourMightSpawns } from './TestYourMightSystem';
+import { campaignPressureHpMult } from './CampaignDifficulty';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
 const FACTION_BOSS: Record<string, string> = {
@@ -66,7 +67,7 @@ export function effectiveWaveHpMult(waveNumber: number, baseHpMult: number, isBo
   const linearStep    = 1 + 0.10 * waveNumber;
   const midLateStep   = 0.10 * Math.max(0, waveNumber - 10);
   const aggressiveLateStep = 0.15 * Math.max(0, waveNumber - 11);
-  const linearTotal   = linearStep + midLateStep + aggressiveLateStep;
+  const linearTotal   = (linearStep + midLateStep + aggressiveLateStep) * campaignPressureHpMult(waveNumber);
   if (isBoss) {
     // Linear progression — no exponential per-5-wave doubling for bosses.
     return baseHpMult * linearTotal;

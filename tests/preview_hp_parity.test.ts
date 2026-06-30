@@ -12,6 +12,7 @@ import {
   startWave,
   tickSpawns
 } from '../src/systems/WaveManager';
+import { campaignPressureHpMult } from '../src/systems/CampaignDifficulty';
 
 // EnemySystem.spawnEnemy reaches into `window.__renderer` for the spawn
 // puff VFX. Vitest runs in Node, so we stub the global before any test
@@ -120,12 +121,11 @@ describe('previewSpawnHp formula spot-checks', () => {
     expect(previewSpawnHp(dog, 1, 'G', 1.0)).toBe(300);
   });
 
-  it('W15 Undead Warlord = baseHp × hpMult × aggressive linear × 2.0 solo × W10+1.25 × W11+1.40 boss layers', () => {
+  it('W15 Undead Warlord = baseHp × hpMult × aggressive linear pressure × 2.0 solo × W10+1.25 × W11+1.40 boss layers', () => {
     const def: any = (enemiesData as any).UNDEAD_WARLORD;
     // Linear at W15: 1 + 0.10*15 + 0.10*5 (>W10) + 0.15*4 (>W11) = 3.60
     // Layer: W10 boss 1.25 × W11 boss 1.40 = 1.75
-    // 2020 × (8.0 × 3.60) × 2.0 solo × 1.75 = 203,616
-    const expected = Math.round(def.baseHp * 8.0 * 3.60 * 2.0 * 1.75);
+    const expected = Math.round(def.baseHp * 8.0 * 3.60 * campaignPressureHpMult(15) * 2.0 * 1.75);
     expect(previewSpawnHp(def, 15, 'B', 8.0)).toBe(expected);
     expect(previewSpawnHp(def, 15, 'B', 8.0)).toBeGreaterThan(150_000);
   });
@@ -138,11 +138,11 @@ describe('previewSpawnHp formula spot-checks', () => {
     expect(hp).toBeGreaterThan(1_000_000_000);
   });
 
-  it('W10 Hannibal Barca solo boss scales by hpMult × linear × 2.0 solo (NO layer yet)', () => {
+  it('W10 Hannibal Barca solo boss scales by hpMult × linear pressure × 2.0 solo (NO layer yet)', () => {
     const def: any = (enemiesData as any).HANNIBAL_BARCA;
     const w10: any = (wavesData as any[])[9];
     // W10 boss layer: wave>10 false (10 is not >10) → layer = 1.0
-    const expected = Math.round(def.baseHp * w10.hpMult * (1 + 0.10 * 10) * 2.0 * 1.0);
+    const expected = Math.round(def.baseHp * w10.hpMult * (1 + 0.10 * 10) * campaignPressureHpMult(10) * 2.0 * 1.0);
     expect(previewSpawnHp(def, 10, w10.type, w10.hpMult)).toBe(expected);
   });
 
@@ -168,9 +168,9 @@ describe('previewSpawnHp formula spot-checks', () => {
 
   it('effectiveWaveHpMult linear curve includes the W11+ aggressive +15%/wave step', () => {
     expect(effectiveWaveHpMult(1, 1)).toBeCloseTo(1.10, 4);
-    // W20 basic: 1+0.10*20 + 0.10*10 (>W10) + 0.15*9 (>W11) = 5.35, ×8.0 doubling
-    expect(effectiveWaveHpMult(20, 1)).toBeCloseTo(5.35 * 8.0, 4);
-    // W20 boss: 5.35 (no doubling)
-    expect(effectiveWaveHpMult(20, 1, true)).toBeCloseTo(5.35, 4);
+    // W20 basic: 1+0.10*20 + 0.10*10 (>W10) + 0.15*9 (>W11) = 5.35, × linear pressure, ×8.0 doubling
+    expect(effectiveWaveHpMult(20, 1)).toBeCloseTo(5.35 * campaignPressureHpMult(20) * 8.0, 4);
+    // W20 boss: 5.35 × linear pressure (no doubling)
+    expect(effectiveWaveHpMult(20, 1, true)).toBeCloseTo(5.35 * campaignPressureHpMult(20), 4);
   });
 });

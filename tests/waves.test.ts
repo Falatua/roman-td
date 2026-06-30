@@ -1,6 +1,7 @@
 // Tests for the wave system: HP scaling, wave-end conditions, win/loss state.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { effectiveWaveHpMult, startWave, tickSpawns, checkWaveEnd } from '../src/systems/WaveManager';
+import { campaignPressureHpMult, campaignPressureResistMult } from '../src/systems/CampaignDifficulty';
 import { tickEnemies } from '../src/systems/EnemySystem';
 import { createGameState } from '../src/GameState';
 import { EnemyType, GamePhase, SurpriseEventKind } from '../src/types';
@@ -26,21 +27,22 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
     //   linearStep    = 1 + 0.10*w
     //   midLateStep   = 0.10 * max(0, w-10)
     //   aggressiveLateStep = 0.15 * max(0, w-11)   (W11+ creative ramp)
-    //   linearTotal   = linearStep + midLateStep + aggressiveLateStep
+    //   pressure      = 1 + min(0.20, max(0, w-5) * 0.0075)
+    //   linearTotal   = (linearStep + midLateStep + aggressiveLateStep) * pressure
     //   hp_mult       = baseHpMult * linearTotal * pow(2.00, floor((w-1)/5))
     expect(effectiveWaveHpMult(1, 1)).toBeCloseTo(1.10 * 1.0, 4);
     expect(effectiveWaveHpMult(5, 1)).toBeCloseTo(1.50 * 1.0, 4);
-    expect(effectiveWaveHpMult(6, 1)).toBeCloseTo(1.60 * 2.0, 4);
-    expect(effectiveWaveHpMult(10, 1)).toBeCloseTo(2.00 * 2.0, 4);
-    expect(effectiveWaveHpMult(11, 1)).toBeCloseTo((2.10 + 0.10) * 4.0, 4);  // W11: +10% mid-late, no aggressive step yet (w-11=0)
-    expect(effectiveWaveHpMult(15, 1)).toBeCloseTo((2.50 + 0.50 + 0.60) * 4.0, 4);  // W15: +60% aggressive (0.15 * 4)
-    expect(effectiveWaveHpMult(20, 1)).toBeCloseTo((3.00 + 1.00 + 1.35) * Math.pow(2.0, 3), 4);  // W20: +135% aggressive (0.15 * 9)
+    expect(effectiveWaveHpMult(6, 1)).toBeCloseTo(1.60 * campaignPressureHpMult(6) * 2.0, 4);
+    expect(effectiveWaveHpMult(10, 1)).toBeCloseTo(2.00 * campaignPressureHpMult(10) * 2.0, 4);
+    expect(effectiveWaveHpMult(11, 1)).toBeCloseTo((2.10 + 0.10) * campaignPressureHpMult(11) * 4.0, 4);  // W11: +10% mid-late, no aggressive step yet (w-11=0)
+    expect(effectiveWaveHpMult(15, 1)).toBeCloseTo((2.50 + 0.50 + 0.60) * campaignPressureHpMult(15) * 4.0, 4);  // W15: +60% aggressive (0.15 * 4)
+    expect(effectiveWaveHpMult(20, 1)).toBeCloseTo((3.00 + 1.00 + 1.35) * campaignPressureHpMult(20) * Math.pow(2.0, 3), 4);  // W20: +135% aggressive (0.15 * 9)
   });
 
   it('respects authored baseHpMult passed in', () => {
     const w20Authored = 8.0;
     const result = effectiveWaveHpMult(20, w20Authored);
-    expect(result).toBeCloseTo(w20Authored * (3.00 + 1.00 + 1.35) * Math.pow(2.0, 3), 4);
+    expect(result).toBeCloseTo(w20Authored * (3.00 + 1.00 + 1.35) * campaignPressureHpMult(20) * Math.pow(2.0, 3), 4);
   });
 
   it('curve is monotonic across the 30-wave run', () => {
@@ -57,14 +59,25 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
     // the linear + mid-late accelerator stack so progression feels like a
     // clean ramp instead of an exponential wall.
     expect(effectiveWaveHpMult(5, 1, true)).toBeCloseTo(1.50, 4);
-    expect(effectiveWaveHpMult(10, 1, true)).toBeCloseTo(2.00, 4);
-    expect(effectiveWaveHpMult(15, 1, true)).toBeCloseTo(2.50 + 0.50 + 0.60, 4);  // W15: aggressive +60%
-    expect(effectiveWaveHpMult(20, 1, true)).toBeCloseTo(3.00 + 1.00 + 1.35, 4);  // W20: aggressive +135%
-    expect(effectiveWaveHpMult(30, 1, true)).toBeCloseTo(4.00 + 2.00 + 2.85, 4);  // W30: aggressive +285%
+    expect(effectiveWaveHpMult(10, 1, true)).toBeCloseTo(2.00 * campaignPressureHpMult(10), 4);
+    expect(effectiveWaveHpMult(15, 1, true)).toBeCloseTo((2.50 + 0.50 + 0.60) * campaignPressureHpMult(15), 4);  // W15: aggressive +60%
+    expect(effectiveWaveHpMult(20, 1, true)).toBeCloseTo((3.00 + 1.00 + 1.35) * campaignPressureHpMult(20), 4);  // W20: aggressive +135%
+    expect(effectiveWaveHpMult(30, 1, true)).toBeCloseTo((4.00 + 2.00 + 2.85) * campaignPressureHpMult(30), 4);  // W30: aggressive +285%
     // And each boss wave is strictly heavier than the previous:
     expect(effectiveWaveHpMult(10, 1, true)).toBeGreaterThan(effectiveWaveHpMult(5, 1, true));
     expect(effectiveWaveHpMult(15, 1, true)).toBeGreaterThan(effectiveWaveHpMult(10, 1, true));
     expect(effectiveWaveHpMult(20, 1, true)).toBeGreaterThan(effectiveWaveHpMult(15, 1, true));
+  });
+
+  it('adds a modest linear campaign pressure layer after W5', () => {
+    expect(campaignPressureHpMult(5)).toBe(1);
+    expect(campaignPressureHpMult(6)).toBeCloseTo(1.0075, 4);
+    expect(campaignPressureHpMult(20)).toBeCloseTo(1.1125, 4);
+    expect(campaignPressureHpMult(30)).toBeCloseTo(1.1875, 4);
+    expect(campaignPressureResistMult(5)).toBe(1);
+    expect(campaignPressureResistMult(6)).toBeCloseTo(0.996, 4);
+    expect(campaignPressureResistMult(30)).toBeCloseTo(0.90, 4);
+    expect(campaignPressureResistMult(30, true)).toBeCloseTo(0.9375, 4);
   });
 });
 
