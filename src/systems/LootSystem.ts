@@ -80,9 +80,10 @@ const ORDINARY_EPIC_ITEMS: ItemId[] = Object.keys(items).filter(id => {
 }) as ItemId[];
 
 export function rollDrop(): { itemId: ItemId; rarity: Rarity } | null {
-  // Mostly Common/Uncommon for ground/flyer drops, with a slightly more
-  // generous late-run ceiling: Rare is more visible and Epic can now
-  // appear very rarely from ordinary kills.
+  // Ordinary kill drops are intentionally rare; the reliable loot moments
+  // are commanders, bosses, and special-event enemies. When a normal enemy
+  // does hit the small drop chance, keep the payload mostly Common/Uncommon
+  // with only a tiny Epic tail.
   const r = Math.random();
   if (r < 0.68) return { itemId: pick(COMMON_ITEMS), rarity: 'COMMON' };
   if (r < 0.94) return { itemId: pick(UNCOMMON_ITEMS), rarity: 'UNCOMMON' };

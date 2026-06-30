@@ -66,7 +66,7 @@ describe('30-wave Solo economy envelope', () => {
     expect(guaranteed).toBeLessThan(3400);
   });
 
-  it('averages roughly six ordinary drops across authored enemies', () => {
+  it('keeps ordinary random drops rare outside bosses, commanders, and events', () => {
     let ground = 0;
     let flyers = 0;
     for (const wave of wavesData as any[]) {
@@ -78,7 +78,7 @@ describe('30-wave Solo economy envelope', () => {
       }
     }
     const expected = ground * LOOT_DROP_RATES.GROUND + flyers * LOOT_DROP_RATES.FLYER;
-    expect(expected).toBeGreaterThan(5);
-    expect(expected).toBeLessThan(7.25);
+    expect(expected).toBeGreaterThan(3);
+    expect(expected).toBeLessThan(4);
   });
 });

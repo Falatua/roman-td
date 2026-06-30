@@ -121,8 +121,8 @@ describe('Loot drop rolling', () => {
   });
 
   it('uses 30-wave drop rates and deterministic premium-roll boundaries', () => {
-    expect(LOOT_DROP_RATES.GROUND).toBe(0.003);
-    expect(LOOT_DROP_RATES.FLYER).toBe(0.006);
+    expect(LOOT_DROP_RATES.GROUND).toBe(0.0015);
+    expect(LOOT_DROP_RATES.FLYER).toBe(0.003);
     expect(premiumDropRoll(0.20, 0.1999)).toBe(true);
     expect(premiumDropRoll(0.20, 0.20)).toBe(false);
     expect(premiumDropRoll(0.10, 0.95)).toBe(false);

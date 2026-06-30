@@ -130,8 +130,8 @@ export const KILL_BONUS_MAX_PCT = 0.10;
 export const HERO_XP_THRESHOLDS: number[] = [120, 330, 660, 1140, 1800];
 
 export const LOOT_DROP_RATES = {
-  GROUND: 0.003,
-  FLYER: 0.006
+  GROUND: 0.0015,
+  FLYER: 0.003
 };
 
 export const DRAW = {
