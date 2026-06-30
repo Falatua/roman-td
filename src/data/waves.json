@@ -98,7 +98,7 @@
     "wave": 7,
     "type": "G",
     "faction": "CARTHAGE",
-    "hpMult": 1.8,
+    "hpMult": 2.16,
     "gold": 16,
     "spawns": [
       {

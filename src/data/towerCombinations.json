@@ -161,10 +161,6 @@
       {
         "type": "SCORPIO",
         "minTier": 3
-      },
-      {
-        "type": "PRIMUS_PILUS",
-        "minTier": 3
       }
     ],
     "cost": 50

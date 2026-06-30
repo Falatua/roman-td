@@ -46,6 +46,11 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
     expect(result).toBeCloseTo(w20Authored * (3.00 + 1.00 + 1.35) * campaignPressureHpMult(20) * Math.pow(2.0, 3), 4);
   });
 
+  it('keeps Wave 7 Carthage enemies on the 20% higher health line', () => {
+    const w7 = (wavesData as any[]).find(w => w.wave === 7);
+    expect(w7.hpMult).toBe(2.16);
+  });
+
   it('curve is monotonic across the 30-wave run', () => {
     let last = 0;
     for (let w = 1; w <= 30; w++) {
