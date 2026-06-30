@@ -1,7 +1,7 @@
 // Tests for item rules, inventory operations, and shop pool sampling.
 import { describe, it, expect, vi } from 'vitest';
 import { itemFamily, canEquipItemFamily } from '../src/systems/ItemRules';
-import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollEpicDrop, isGuaranteedEpicDropEnemy } from '../src/systems/LootSystem';
+import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, isGuaranteedEpicDropEnemy, itemLootPoolCoverage } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
 import { LOOT_DROP_RATES } from '../src/constants';
@@ -108,6 +108,7 @@ describe('Loot drop rolling', () => {
       expect(drop).not.toBeNull();
       expect(drop!.itemId).toBeTruthy();
       expect(['COMMON','UNCOMMON','RARE','EPIC','LEGENDARY','UNIQUE']).toContain(drop!.rarity);
+      expect((itemsData as any)[drop!.itemId]?.rarity).toBe(drop!.rarity);
     }
   });
 
@@ -126,6 +127,65 @@ describe('Loot drop rolling', () => {
     expect(premiumDropRoll(0.20, 0.1999)).toBe(true);
     expect(premiumDropRoll(0.20, 0.20)).toBe(false);
     expect(premiumDropRoll(0.10, 0.95)).toBe(false);
+  });
+
+  it('uses every non-event item in the correct ordinary rarity pool', () => {
+    const coverage = itemLootPoolCoverage();
+    for (const rarity of ['COMMON', 'UNCOMMON', 'RARE', 'EPIC'] as const) {
+      const expected = Object.keys(itemsData as any).filter(id => {
+        const def: any = (itemsData as any)[id];
+        return def?.rarity === rarity && !def?.eventExclusive;
+      }).sort();
+      const actual = [...coverage.ordinary[rarity]].sort();
+      expect(actual, `${rarity} ordinary drop pool`).toEqual(expected);
+      for (const id of actual) {
+        expect((itemsData as any)[id]?.rarity, id).toBe(rarity);
+      }
+    }
+  });
+
+  it('uses every non-event legendary in the boss legendary randomization pool', () => {
+    const coverage = itemLootPoolCoverage();
+    const expected = Object.keys(itemsData as any).filter(id => {
+      const def: any = (itemsData as any)[id];
+      return def?.rarity === 'LEGENDARY' && !def?.eventExclusive;
+    }).sort();
+    expect([...coverage.legendary].sort()).toEqual(expected);
+    expect(coverage.legendary).toContain('TYRANTS_LAUREL');
+    expect(coverage.legendary).toContain('JUPITERS_SKYFIRE');
+    expect(coverage.legendary).toContain('CONCUSSIVE_WARHEAD');
+  });
+
+  it('keeps event-exclusive items out of ordinary and boss RNG while still tracking them by event', () => {
+    const coverage = itemLootPoolCoverage();
+    const ordinaryAndBoss = new Set<string>([
+      ...coverage.ordinary.COMMON,
+      ...coverage.ordinary.UNCOMMON,
+      ...coverage.ordinary.RARE,
+      ...coverage.ordinary.EPIC,
+      ...coverage.legendary
+    ]);
+    const eventExclusive = Object.keys(itemsData as any).filter(id => (itemsData as any)[id]?.eventExclusive);
+    expect(eventExclusive.length).toBeGreaterThan(0);
+    for (const id of eventExclusive) {
+      expect(ordinaryAndBoss.has(id), id).toBe(false);
+      const eventKind = (itemsData as any)[id].eventExclusive;
+      expect(coverage.eventExclusive[eventKind]).toContain(id);
+    }
+  });
+
+  it('guaranteed Rare drops use the full Rare data pool and return Rare payloads', () => {
+    const expected = new Set(Object.keys(itemsData as any).filter(id => {
+      const def: any = (itemsData as any)[id];
+      return def?.rarity === 'RARE' && !def?.eventExclusive;
+    }));
+    expect(expected.size).toBeGreaterThan(0);
+    for (let i = 0; i < 50; i++) {
+      const drop = rollRareDrop();
+      expect(drop).not.toBeNull();
+      expect(drop!.rarity).toBe('RARE');
+      expect(expected.has(drop!.itemId as string)).toBe(true);
+    }
   });
 });
 

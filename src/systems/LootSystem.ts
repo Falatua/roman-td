@@ -66,18 +66,68 @@ export function inventoryRemove(inv: InventoryState, slotId: string): InventoryS
   return inv.slots.splice(idx, 1)[0] ?? null;
 }
 
-// 2026-05 v6: DOT items (BARBED_GLADIUS, FIRE_OIL_FLASK, POISONED_BLADE)
-// removed from random kill-drop pools. DOTs are now Mercator-only stock,
-// making damage-over-time builds a deliberate strategic purchase rather
-// than a passive drop. FALCATA_BLADE / ALPHA_PACK_FANG remain in boss
-// legendary tables (already rare via the v6 35% boss-drop probability).
-const COMMON_ITEMS: ItemId[] = ['SHARPENED_BLADE','TRAINING_SCROLL','WATCHTOWER_LENS'];
-const UNCOMMON_ITEMS: ItemId[] = ['FLYER_BANE','CAVALRY_SPUR','IRON_TIP'];
-const RARE_ITEMS: ItemId[] = ['CENTURIONS_TRUMPET','GOLD_PURSE','BATTLE_STANDARD','HOURGLASS_OF_SATURN','STORM_JAVELIN'];
-const ORDINARY_EPIC_ITEMS: ItemId[] = Object.keys(items).filter(id => {
-  const def: any = (items as any)[id];
-  return def?.rarity === 'EPIC' && !def?.eventExclusive;
-}) as ItemId[];
+function permanentItemPoolByRarity(rarity: Rarity): ItemId[] {
+  return Object.keys(items).filter(id => {
+    const def: any = (items as any)[id];
+    return def?.rarity === rarity && !def?.eventExclusive;
+  }) as ItemId[];
+}
+
+// 2026-06-30 — ordinary item RNG is data-driven by rarity. This keeps the
+// existing rarity odds intact while ensuring every non-event-exclusive item
+// in a tier can actually appear in that tier's random pool. Event-exclusive
+// legendaries stay reserved for surprise-event reward choices.
+export const ORDINARY_DROP_ITEMS_BY_RARITY: Readonly<Record<'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC', readonly ItemId[]>> = {
+  COMMON: permanentItemPoolByRarity('COMMON'),
+  UNCOMMON: permanentItemPoolByRarity('UNCOMMON'),
+  RARE: permanentItemPoolByRarity('RARE'),
+  EPIC: permanentItemPoolByRarity('EPIC')
+};
+
+export const LEGENDARY_DROP_ITEM_POOL: readonly ItemId[] = permanentItemPoolByRarity('LEGENDARY');
+
+const COMMON_ITEMS: readonly ItemId[] = ORDINARY_DROP_ITEMS_BY_RARITY.COMMON;
+const UNCOMMON_ITEMS: readonly ItemId[] = ORDINARY_DROP_ITEMS_BY_RARITY.UNCOMMON;
+const RARE_ITEMS: readonly ItemId[] = ORDINARY_DROP_ITEMS_BY_RARITY.RARE;
+const ORDINARY_EPIC_ITEMS: readonly ItemId[] = ORDINARY_DROP_ITEMS_BY_RARITY.EPIC;
+const EPIC_ITEM_POOL: readonly ItemId[] = ORDINARY_DROP_ITEMS_BY_RARITY.EPIC;
+
+export const EVENT_EXCLUSIVE_ITEMS_BY_EVENT: Readonly<Record<string, readonly ItemId[]>> = Object.freeze(
+  Object.keys(items).reduce((acc, id) => {
+    const def: any = (items as any)[id];
+    if (!def?.eventExclusive) return acc;
+    const key = String(def.eventExclusive);
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(id as ItemId);
+    return acc;
+  }, {} as Record<string, ItemId[]>)
+);
+
+const ALL_EVENT_EXCLUSIVE_ITEMS: readonly ItemId[] = Object.values(EVENT_EXCLUSIVE_ITEMS_BY_EVENT).flat();
+
+export function itemLootPoolCoverage() {
+  return {
+    ordinary: ORDINARY_DROP_ITEMS_BY_RARITY,
+    legendary: LEGENDARY_DROP_ITEM_POOL,
+    eventExclusive: EVENT_EXCLUSIVE_ITEMS_BY_EVENT,
+    allEventExclusive: ALL_EVENT_EXCLUSIVE_ITEMS
+  };
+}
+
+const GLOBAL_NON_EVENT_LEGENDARY_ITEMS: readonly ItemId[] = LEGENDARY_DROP_ITEM_POOL;
+
+function rollFromPool(rarity: Rarity, pool: readonly ItemId[]): { itemId: ItemId; rarity: Rarity } | null {
+  if (pool.length === 0) return null;
+  return { itemId: pick(pool), rarity };
+}
+
+function fallbackDrop(): { itemId: ItemId; rarity: Rarity } | null {
+  return rollFromPool('COMMON', COMMON_ITEMS)
+    ?? rollFromPool('UNCOMMON', UNCOMMON_ITEMS)
+    ?? rollFromPool('RARE', RARE_ITEMS)
+    ?? rollFromPool('EPIC', ORDINARY_EPIC_ITEMS)
+    ?? null;
+}
 
 export function rollDrop(): { itemId: ItemId; rarity: Rarity } | null {
   // Ordinary kill drops are intentionally rare; the reliable loot moments
@@ -85,22 +135,22 @@ export function rollDrop(): { itemId: ItemId; rarity: Rarity } | null {
   // does hit the small drop chance, keep the payload mostly Common/Uncommon
   // with only a tiny Epic tail.
   const r = Math.random();
-  if (r < 0.68) return { itemId: pick(COMMON_ITEMS), rarity: 'COMMON' };
-  if (r < 0.94) return { itemId: pick(UNCOMMON_ITEMS), rarity: 'UNCOMMON' };
-  if (r < 0.99 || ORDINARY_EPIC_ITEMS.length === 0) return { itemId: pick(RARE_ITEMS), rarity: 'RARE' };
-  return { itemId: pick(ORDINARY_EPIC_ITEMS), rarity: 'EPIC' };
+  if (r < 0.68) return rollFromPool('COMMON', COMMON_ITEMS) ?? fallbackDrop();
+  if (r < 0.94) return rollFromPool('UNCOMMON', UNCOMMON_ITEMS) ?? fallbackDrop();
+  if (r < 0.99 || ORDINARY_EPIC_ITEMS.length === 0) return rollFromPool('RARE', RARE_ITEMS) ?? fallbackDrop();
+  return rollFromPool('EPIC', ORDINARY_EPIC_ITEMS) ?? fallbackDrop();
 }
 
 // Guaranteed RARE-tier drop (used by the Fire Giant kill hook).
 export function rollRareDrop(): { itemId: ItemId; rarity: Rarity } | null {
-  return RARE_ITEMS.length ? { itemId: pick(RARE_ITEMS), rarity: 'RARE' } : null;
+  return rollFromPool('RARE', RARE_ITEMS);
 }
 
 export function premiumDropRoll(chance: number, randomValue = Math.random()): boolean {
   return randomValue < Math.max(0, Math.min(1, chance));
 }
 
-function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
 // Faction-specific boss legendary tables. Updated 2026-05: every faction
 // (including SUPER_DEMONS) has a real legendary drop table now, and the
@@ -133,22 +183,10 @@ const BOSS_LEGENDARIES: Record<string, ItemId[]> = {
   SUPER_DEMONS: ['UNDEAD_ELEPHANT_BONE', 'LICH_GENERALS_SEAL', 'CURSED_TORC', 'WARLORDS_WAR_PAINT', 'ELEPHANT_TUSK', 'JUPITERS_WRATH', 'AQUILA_TALONS', 'SPEAR_OF_MARS', 'SIGIL_OF_SOL_INVICTUS']
 };
 
-// Fallback table for any faction that somehow isn't in the map above —
-// the legendary set is wide enough that no boss kill should ever silently
-// fail to drop. Includes the three 2026-05 additions so an out-of-table
-// boss can still seed the new items.
-const FALLBACK_LEGENDARIES: ItemId[] = [
-  'DRUIDS_TORC','CELTIC_LONGSWORD','ELEPHANT_TUSK','HANNIBALS_STRATEGY_SCROLL',
-  'NUMIDIAN_SADDLE','FALCATA_BLADE','BARCA_WAR_HORN','GILDED_SCALE_ARMOR',
-  'CURSED_TORC','LICH_GENERALS_SEAL',
-  'AQUILA_TALONS','SPEAR_OF_MARS','JUPITERS_WRATH',
-  // 2026-05-15: anti-demon sigil falls back here too so out-of-table
-  // bosses can still seed it.
-  'SIGIL_OF_SOL_INVICTUS',
-  // 2026-05-19 — DAMNATIO MEMORIAE execute item. Joins the fallback so
-  // any boss with a low-roster table can still seed it.
-  'DAMNATIO_MEMORIAE'
-];
+// Fallback table for any faction that somehow isn't in the map above.
+// Data-driven so every non-event-exclusive legendary, including future
+// additions, can appear in boss-drop randomization.
+const FALLBACK_LEGENDARIES: readonly ItemId[] = GLOBAL_NON_EVENT_LEGENDARY_ITEMS;
 
 // LEGENDARY UNIQUENESS (2026-05): the player can only HOLD one of each
 // legendary at a time. We walk the live inventory + every tower's
@@ -183,11 +221,6 @@ export function currentlyOwnedLegendarySet(
 // don't carry the legendary one-per-run uniqueness gate, so duplicates
 // are allowed — the player can stack two of the same epic across
 // different towers/inventory slots. Computed once at module load.
-const EPIC_ITEM_POOL: ItemId[] = Object.keys(items).filter(id => {
-  const def: any = (items as any)[id];
-  return def?.rarity === 'EPIC' && !def?.eventExclusive;
-}) as ItemId[];
-
 /**
  * Pick a random EPIC item for a guaranteed-drop kill (currently Fire
  * Giant). Returns null only if the player somehow has zero EPIC items
@@ -195,8 +228,7 @@ const EPIC_ITEM_POOL: ItemId[] = Object.keys(items).filter(id => {
  * Always 100% drop rate — the caller decides whether to call this.
  */
 export function rollEpicDrop(_state?: GameStateShape | null, _inv?: InventoryState | null): { itemId: ItemId; rarity: Rarity } | null {
-  if (EPIC_ITEM_POOL.length === 0) return null;
-  return { itemId: pick(EPIC_ITEM_POOL), rarity: 'EPIC' };
+  return rollFromPool('EPIC', EPIC_ITEM_POOL);
 }
 
 export function isGuaranteedEpicDropEnemy(enemy: Partial<Enemy> | any): boolean {
@@ -224,11 +256,7 @@ export function rollBossDrop(
   if (pool.length === 0) {
     // 2026-05-18 — Boss drops also skip event-exclusive legendaries.
     // Those are reserved for surprise-event reward modals only.
-    const allLegendaries = Object.keys(items).filter(id => {
-      const def: any = (items as any)[id];
-      return def?.rarity === 'LEGENDARY' && !def?.eventExclusive;
-    });
-    pool = allLegendaries.filter(id => !owned.has(id));
+    pool = GLOBAL_NON_EVENT_LEGENDARY_ITEMS.filter(id => !owned.has(id));
   }
   if (pool.length === 0) return null; // player owns every legendary in the game — rare flex
   return { itemId: pick(pool), rarity: 'LEGENDARY' };
