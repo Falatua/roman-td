@@ -23,7 +23,7 @@ import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, cle
 import { injectBossEscortCommanders, injectCampaignCommanders, isCommanderType } from './CommanderSystem';
 import { campaignRelicWaveGoldMult } from './CampaignRelicSystem';
 import { prepareHeroAbilitiesForWave } from './HeroSystem';
-import { completeTestYourMight, tickTestYourMightSpawns } from './TestYourMightSystem';
+import { completeTestYourMight, startTestYourMight, tickTestYourMightSpawns } from './TestYourMightSystem';
 import { campaignPressureHpMult } from './CampaignDifficulty';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
@@ -176,6 +176,10 @@ export function startWave(state: GameStateShape) {
     state.phase !== GamePhase.PROSPECT_PLACEMENT &&
     state.phase !== GamePhase.PICK_KEEPER
   ) return;
+  if (state.testYourMightAccepted && !state.testYourMightActive && !state.testYourMightCleared && !state.testYourMightFailed) {
+    startTestYourMight(state);
+    return;
+  }
   // 2026-05 v10 — ENDLESS MODE: state.wave stays frozen at 20 once the
   // main run is cleared. endlessWave increments per Endless clear and
   // drives the generator. Phase still flips to WAVE_PHASE; spawn queue

@@ -245,6 +245,7 @@ export interface GameStateShape {
   // immediately ends the run.
   testYourMightOffered?: boolean;
   testYourMightDeclined?: boolean;
+  testYourMightAccepted?: boolean;
   testYourMightActive?: boolean;
   testYourMightCleared?: boolean;
   testYourMightFailed?: boolean;

@@ -7487,10 +7487,10 @@ async function boot() {
             showTestYourMightModal(stage, state, (accepted) => {
               if (accepted) {
                 // 2026-06-28 — make entering the bonus unmistakable: it is
-                // a distinct Wave 10.5, not the start of Wave 11. The modal
-                // already launched it via startTestYourMight; this banner is
-                // the on-map confirmation the player just stepped into it.
-                showBonusBossBanner(`⚔ WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} — TEST YOUR MIGHT · ONE LEAK ENDS THE RUN ⚔`);
+                // a distinct Wave 10.5, not the start of Wave 11. Accepting
+                // now arms the challenge and returns to prep; the next START
+                // launches it so the player can adjust towers/traps first.
+                showBonusBossBanner(`⚔ WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} ACCEPTED · PREP, THEN PRESS START ⚔`);
               } else if (state.lives > 0) {
                 offerCampaignRelic();
               }

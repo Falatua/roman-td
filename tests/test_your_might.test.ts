@@ -3,6 +3,7 @@ import { createGameState } from '../src/GameState';
 import { GamePhase } from '../src/types';
 import { DamageType, StatusEffectKind } from '../src/types';
 import {
+  acceptTestYourMight,
   completeTestYourMight,
   declineTestYourMight,
   displayWaveNumber,
@@ -15,7 +16,7 @@ import {
   TEST_YOUR_MIGHT_SPAWNS,
   tickTestYourMightSpawns
 } from '../src/systems/TestYourMightSystem';
-import { checkWaveEnd, tickSpawns } from '../src/systems/WaveManager';
+import { checkWaveEnd, startWave, tickSpawns } from '../src/systems/WaveManager';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildFlyerPath, buildGroundPath } from '../src/systems/PathFinder';
 import { enemyDamageMultiplier, statusEffectiveness } from '../src/systems/EnemyResistances';
@@ -48,9 +49,28 @@ describe('Test Your Might bonus wave', () => {
     declineTestYourMight(s);
     expect(s.testYourMightOffered).toBe(true);
     expect(s.testYourMightDeclined).toBe(true);
+    expect(s.testYourMightAccepted).toBe(false);
     expect(s.testYourMightActive).toBe(false);
     expect(s.wave).toBe(10);
     expect(s.lives).toBeGreaterThan(0);
+  });
+
+  it('accepting arms the challenge without starting it so the player can prep', () => {
+    const s = bootstrapState();
+    acceptTestYourMight(s);
+    expect(s.phase).toBe(GamePhase.BUILD_PHASE);
+    expect(s.wave).toBe(10);
+    expect(s.testYourMightOffered).toBe(true);
+    expect(s.testYourMightAccepted).toBe(true);
+    expect(s.testYourMightActive).toBe(false);
+    expect(s.spawnQueue.length).toBe(0);
+    expect(displayWaveNumber(s)).toBe('10');
+    startWave(s);
+    expect(s.phase).toBe(GamePhase.WAVE_PHASE);
+    expect(s.wave).toBe(10);
+    expect(s.testYourMightAccepted).toBe(false);
+    expect(s.testYourMightActive).toBe(true);
+    expect(displayWaveNumber(s)).toBe('10.5');
   });
 
   it('starts a special spawn queue without advancing the campaign wave', () => {
@@ -64,9 +84,9 @@ describe('Test Your Might bonus wave', () => {
     expect(s.testYourMightActive).toBe(true);
     expect(s.spawnQueue.length).toBe(expectedCount);
     expect(s.weatherIntensity).toBeGreaterThan(1);
-    expect(s.weatherIntensity).toBeGreaterThanOrEqual(1.8);
+    expect(s.weatherIntensity).toBeGreaterThanOrEqual(1.5);
     expect(s.waveModifier).toBe('GROUP_MARCH');
-    expect(s.endlessExtraModifiers).toEqual(['STORM_SURGE', 'VEIL', 'DEATH_PACT']);
+    expect(s.endlessExtraModifiers).toEqual(['STORM_SURGE', 'DEATH_PACT']);
   });
 
   it('is tuned as a brutal mixed gauntlet with bosses, flyers, ground, all commanders, and affixes', () => {
@@ -83,17 +103,18 @@ describe('Test Your Might bonus wave', () => {
     expect(types).toContain('STANDARD_BEARER_COMMANDER');
     expect(types).toContain('SIEGE_CAPTAIN_COMMANDER');
     expect(types).toContain('ANUBIS_PRIEST_COMMANDER');
-    expect(totalCount).toBeGreaterThanOrEqual(110);
+    expect(totalCount).toBeGreaterThanOrEqual(90);
+    expect(totalCount).toBeLessThan(110);
 
     expect(byType.get('HANNIBAL_BARCA')?.hpMult).toBeGreaterThanOrEqual(50);
     expect(byType.get('HANNIBAL_BARCA')?.majorReward).toBe(true);
     expect(TEST_YOUR_MIGHT_SPAWNS.filter(g => g.majorReward).map(g => g.type)).toEqual(['HANNIBAL_BARCA']);
     expect(byType.get('CARTHAGE_SPEARMAN')?.hpMult).toBeGreaterThanOrEqual(300);
     expect(byType.get('SPECTRAL_SCOUT')?.hpMult).toBeGreaterThanOrEqual(380);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.resistMult ?? 1) <= 0.70)).toBe(true);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.statusGuard ?? 1) <= 0.25)).toBe(true);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.rangedBlock ?? 0) >= 0.20)).toBe(true);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.checkpointHeal ?? 0) >= 0.12)).toBe(true);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.resistMult ?? 1) <= 0.76)).toBe(true);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.statusGuard ?? 1) <= 0.38)).toBe(true);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.rangedBlock ?? 0) >= 0.14)).toBe(true);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.checkpointHeal ?? 0) >= 0.08)).toBe(true);
   });
 
   it('routes tickSpawns through the bonus spawner and creates real enemies', () => {
@@ -119,13 +140,13 @@ describe('Test Your Might bonus wave', () => {
     const elephant = enemies.find(e => e.type === 'WAR_ELEPHANT');
 
     expect(hannibal.__lateResistMult).toBeLessThan(0.8);
-    expect(hannibal.__lateStatusGuard).toBeLessThanOrEqual(0.25);
-    expect(enemyDamageMultiplier(hannibal, DamageType.PHYS_RANGED)).toBeLessThan(0.4);
-    expect(statusEffectiveness(hannibal, StatusEffectKind.SLOW)).toBeLessThan(0.1);
+    expect(hannibal.__lateStatusGuard).toBeLessThanOrEqual(0.38);
+    expect(enemyDamageMultiplier(hannibal, DamageType.PHYS_RANGED)).toBeLessThan(0.5);
+    expect(statusEffectiveness(hannibal, StatusEffectKind.SLOW)).toBeLessThan(0.2);
     expect(elite.mutation).toBe('WARDED');
-    expect(elite.__lateRangedBlock).toBeGreaterThanOrEqual(0.2);
-    expect(elite.outOfCombatRegen).toBeGreaterThanOrEqual(0.04);
-    expect(elephant.checkpointHealPct).toBeGreaterThanOrEqual(0.12);
+    expect(elite.__lateRangedBlock).toBeGreaterThanOrEqual(0.14);
+    expect(elite.outOfCombatRegen).toBeGreaterThanOrEqual(0.025);
+    expect(elephant.checkpointHealPct).toBeGreaterThanOrEqual(0.08);
   });
 
   it('also works through the normal WaveManager tickSpawns entrypoint', () => {
