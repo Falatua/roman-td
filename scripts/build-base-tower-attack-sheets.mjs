@@ -224,7 +224,10 @@ function tintFor(family, def) {
 
 async function makeFrame(source, family, def, frame) {
   const p = poseFor(family, frame);
-  const spriteSize = Math.round(FRAME * p.scale * 0.92);
+  // Preserve a stable, near-idle-sized body across every attack frame.
+  // The pose table still moves the unit, but it no longer shrinks the source
+  // art inside the 128px cell and then gets scaled down again in-game.
+  const spriteSize = Math.round(FRAME * 0.97);
   const sprite = await sharp(source)
     .ensureAlpha()
     .trim({ background: '#000000', threshold: 8 })

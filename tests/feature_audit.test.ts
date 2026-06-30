@@ -119,6 +119,50 @@ describe('Tower roster integrity', () => {
     return diff / Math.max(1, len);
   }
 
+  function alphaBounds(raw: Buffer, frameSize: number) {
+    let minX = frameSize;
+    let minY = frameSize;
+    let maxX = -1;
+    let maxY = -1;
+    for (let y = 0; y < frameSize; y++) {
+      for (let x = 0; x < frameSize; x++) {
+        const alpha = raw[(y * frameSize + x) * 4 + 3];
+        if (alpha > 16) {
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (maxX < 0) return { width: 0, height: 0 };
+    return { width: maxX - minX + 1, height: maxY - minY + 1 };
+  }
+
+  async function expectAttackSheetBodyStable(sharp: any, file: string, frameSize: number, label: string, minIdleHeightRatio: number) {
+    const first = await sharp(file).extract({ left: 0, top: 0, width: frameSize, height: frameSize }).ensureAlpha().raw().toBuffer();
+    const firstBounds = alphaBounds(first, frameSize);
+    expect(firstBounds.height / frameSize, `${label} attack frame 1 body is too small inside the sprite cell`).toBeGreaterThanOrEqual(minIdleHeightRatio);
+    for (let frame = 0; frame < 9; frame++) {
+      const raw = await sharp(file)
+        .extract({
+          left: (frame % 3) * frameSize,
+          top: Math.floor(frame / 3) * frameSize,
+          width: frameSize,
+          height: frameSize
+        })
+        .ensureAlpha()
+        .raw()
+        .toBuffer();
+      const bounds = alphaBounds(raw, frameSize);
+      const bodyRatio = Math.min(
+        bounds.width / Math.max(1, firstBounds.width),
+        bounds.height / Math.max(1, firstBounds.height)
+      );
+      expect(bodyRatio, `${label} attack frame ${frame + 1} shrinks too far from idle-sized frame 1`).toBeGreaterThanOrEqual(0.80);
+    }
+  }
+
   it('every tower id in towers.json has matching TowerType enum entry', () => {
     const enumKeys = new Set(Object.values(TowerType));
     for (const tid of Object.keys(towersData as any)) {
@@ -167,6 +211,7 @@ describe('Tower roster integrity', () => {
       const first = await sharp(file).extract({ left: 0, top: 0, width: 256, height: 256 }).ensureAlpha().raw().toBuffer();
       const ninth = await sharp(file).extract({ left: 512, top: 512, width: 256, height: 256 }).ensureAlpha().raw().toBuffer();
       expect(meanFrameDiff(first, ninth), `${id} hero attack frame 9 should visibly settle back to idle frame 1`).toBeLessThan(0.05);
+      await expectAttackSheetBodyStable(sharp, file, 256, `${id} hero`, 0.70);
     }
   });
 
@@ -194,6 +239,7 @@ describe('Tower roster integrity', () => {
       const first = await sharp(file).extract({ left: 0, top: 0, width: 128, height: 128 }).ensureAlpha().raw().toBuffer();
       const ninth = await sharp(file).extract({ left: 256, top: 256, width: 128, height: 128 }).ensureAlpha().raw().toBuffer();
       expect(meanFrameDiff(first, ninth), `${id} attack frame 9 should visibly settle back to idle frame 1`).toBeLessThan(0.05);
+      await expectAttackSheetBodyStable(sharp, file, 128, `${id} base tower`, 0.50);
     }
   });
 

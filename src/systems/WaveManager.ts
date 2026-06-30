@@ -468,6 +468,7 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
     if (!(e as any).isDpsCheck) liveEnemies++;
   }
   if (state.spawnQueue.length === 0 && liveEnemies === 0) {
+    for (const tower of state.towers.values()) tower.attackFlash = 0;
     if (state.testYourMightActive) {
       completeTestYourMight(state);
       onWaveEnd(0);

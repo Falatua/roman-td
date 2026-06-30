@@ -126,7 +126,11 @@ function svgOverlay(hero, frameIndex) {
 
 async function makeFrame(hero, frameIndex) {
   const p = POSES[frameIndex];
-  const size = Math.round(218 * p.scale);
+  // Keep the hero's body footprint stable through the whole 3x3 cycle.
+  // Earlier sheets scaled the source art per pose, which made ranged heroes
+  // look like they shrank during attack frames once the renderer fit the
+  // whole 256px cell back into the normal hero footprint.
+  const size = 222;
   let sprite = await sharp(join(HERO_DIR, hero.file))
     .ensureAlpha()
     .resize(size, size, { fit: 'contain', kernel: sharp.kernel.nearest, background: transparent })
