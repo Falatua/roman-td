@@ -7127,10 +7127,11 @@ async function boot() {
               bossLegendaryDropped = true;
             }
           } else if (isGuaranteedEpicDropEnemy(e)) {
-            // Commanders and elite enemies are premium kills now. Keep this
+            // Commanders are premium support kills now. Keep this
             // below the legendary-boss branch so Boss Dog and scheduled bosses
-            // still pay their higher-tier reward, but above the ordinary boss
-            // and random trash-drop paths so elite support pieces are reliable.
+            // still pay their higher-tier reward, but above random trash drops
+            // so commander support pieces are reliable without flooding normal
+            // waves that use the ELITE archetype for ordinary support enemies.
             const drop = rollEpicDrop(state, inventory);
             if (drop) spawnLootAt(state, e, drop);
           } else if (e.isBoss && premiumDropRoll(0.12)) {
@@ -7148,13 +7149,14 @@ async function boot() {
             // the kill hook. No legendaries, so it doesn't overshadow W15/W20.
             const drop = premiumDropRoll(0.45) ? rollEpicDrop(state, inventory) : rollRareDrop();
             if (drop) spawnLootAt(state, e, drop);
-          } else if ((e as any).isElite && premiumDropRoll(0.30)) {
+          } else if (((e as any).isElite || (e as any).mutation) && premiumDropRoll(0.30)) {
             // 2026-06-28 — Per user: elites should also drop epics. Commanders
-            // + elite-ARCHETYPE units already pay a guaranteed epic above; this
-            // catches the big elite-FLAGGED creatures (Chimera, Cerberus,
-            // Typhon, Giant, Cyclops, Colossus, Siege Wagon, Stone Juggernaut)
-            // whose archetype isn't 'ELITE'. 30% so these premium kills reward
-            // gear reliably without flooding the late game.
+            // pay a guaranteed epic above; actual elite-FLAGGED creatures
+            // (Chimera, Cerberus, Typhon, Giant, Cyclops, Colossus, Siege Wagon,
+            // Stone Juggernaut) and elite mutations use a 30% premium chance.
+            // Do not key this to archetype === 'ELITE': early support enemies
+            // like Gallic Druids use that combat role and would otherwise flood
+            // normal waves with guaranteed items.
             const drop = rollEpicDrop(state, inventory);
             if (drop) spawnLootAt(state, e, drop);
           } else {

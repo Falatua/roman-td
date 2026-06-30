@@ -201,8 +201,7 @@ export function rollEpicDrop(_state?: GameStateShape | null, _inv?: InventorySta
 export function isGuaranteedEpicDropEnemy(enemy: Partial<Enemy> | any): boolean {
   if (!enemy) return false;
   if (enemy.isCommander) return true;
-  if (enemy.archetype === 'ELITE') return true;
-  return !!enemy.mutation;
+  return false;
 }
 
 export function rollBossDrop(
