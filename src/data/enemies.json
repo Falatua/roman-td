@@ -603,7 +603,8 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
-    "dodgeChance": 0.25
+    "dodgeChance": 0.25,
+    "renderScale": 0.86
   },
   "MONGOL_SPEAR_RIDER": {
     "name": "Hun Spear Rider",
@@ -613,7 +614,8 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 2,
-    "dodgeChance": 0.18
+    "dodgeChance": 0.18,
+    "renderScale": 0.86
   },
   "KHAN_RIDER": {
     "nullifyAuraRadiusTiles": 2,
@@ -635,7 +637,8 @@
     "speed": 1.1,
     "isFlyer": false,
     "isBoss": false,
-    "livesCost": 1
+    "livesCost": 1,
+    "renderScale": 0.82
   },
   "MONGOL_SPEARMAN": {
     "name": "Hun Spearman",
@@ -644,7 +647,8 @@
     "speed": 1,
     "isFlyer": false,
     "isBoss": false,
-    "livesCost": 1
+    "livesCost": 1,
+    "renderScale": 0.82
   },
   "MONGOL_BERSERKER": {
     "name": "Hun Berserker",
@@ -654,7 +658,8 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 2,
-    "lowHpSpeedBoost": 1.6
+    "lowHpSpeedBoost": 1.6,
+    "renderScale": 0.82
   },
   "MONGOL_SCOUT": {
     "name": "Hun Scout",
@@ -664,6 +669,7 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
+    "renderScale": 0.82,
     "stealthInterval": {
       "period": 6,
       "duration": 1
@@ -679,7 +685,8 @@
     "isBoss": false,
     "livesCost": 2,
     "auraTowerSlow": 0.22,
-    "healAllyPctPerSec": 0.018
+    "healAllyPctPerSec": 0.018,
+    "renderScale": 0.82
   },
   "MONGOL_CAPTAIN": {
     "name": "Hun Captain",
@@ -689,7 +696,8 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 3,
-    "outOfCombatRegen": 0.025
+    "outOfCombatRegen": 0.025,
+    "renderScale": 0.9
   },
   "BOSS_FLYER_VULTURE": {
     "name": "Vulture Imperator",

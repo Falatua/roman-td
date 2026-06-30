@@ -46,6 +46,24 @@ describe('late-campaign variety roster', () => {
     });
   });
 
+  it('keeps Hun minions visually in the normal enemy size band', () => {
+    const expectedScales: Record<string, number> = {
+      MONGOL_HORSE_ARCHER: 0.86,
+      MONGOL_SPEAR_RIDER: 0.86,
+      MONGOL_FOOTMAN: 0.82,
+      MONGOL_SPEARMAN: 0.82,
+      MONGOL_BERSERKER: 0.82,
+      MONGOL_SCOUT: 0.82,
+      MONGOL_SHAMAN: 0.82,
+      MONGOL_CAPTAIN: 0.9
+    };
+
+    for (const [type, scale] of Object.entries(expectedScales)) {
+      expect((enemiesData as any)[type].renderScale, `${type} render scale`).toBe(scale);
+      expect((enemiesData as any)[type].isBoss, `${type} should remain a minion`).toBe(false);
+    }
+  });
+
   it('wires the intended counters for the new enemy trio', () => {
     const state = bootstrapState();
     const wagon = spawnEnemy(state, EnemyType.SIEGE_WAGON, 1);
