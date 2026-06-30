@@ -2302,24 +2302,28 @@ export class RenderEngine {
           // A floating scroll silhouette unfurls from Sulla's position
           // and the seal slams onto each marked tower.
           const tgts: Array<{ x: number; y: number }> = fx.extras?.towers ?? [];
-          // Scroll silhouette above Sulla — procedural unfurling shape
-          const scrollW = 26 + t * 8;
-          const scrollH = 14;
-          const sy = fx.y - 32 - Math.sin(t * Math.PI) * 4;
-          g.beginFill(0xf0e0c0, 0.85 * fade).drawRect(fx.x - scrollW / 2, sy - scrollH / 2, scrollW, scrollH).endFill();
-          g.lineStyle(1.5 * fade, 0x6a3a1a, 0.95 * fade);
-          g.drawRect(fx.x - scrollW / 2, sy - scrollH / 2, scrollW, scrollH);
-          g.lineStyle(0);
-          // Scroll rollers
-          g.beginFill(0x6a3a1a, 0.95 * fade).drawCircle(fx.x - scrollW / 2, sy, 3).endFill();
-          g.beginFill(0x6a3a1a, 0.95 * fade).drawCircle(fx.x + scrollW / 2, sy, 3).endFill();
-          // Tiny "names" lines on scroll
-          g.lineStyle(0.8 * fade, 0x3a1a0a, 0.7 * fade);
-          for (let r = 0; r < 3; r++) {
-            const ry = sy - 4 + r * 4;
-            g.moveTo(fx.x - 7, ry).lineTo(fx.x + 7, ry);
+          // 2026-06-29 — dedicated flaming proscription-tablet sprite
+          // (HFX_PROSCRIPTION) floats above Sulla in place of the old
+          // procedural scroll; the wax-seal stamps + origin ring below
+          // remain. Lazy-alloc + cached, cleaned via __proscriptionSprite.
+          if (!fx.extras) fx.extras = {};
+          if (!fx.extras.__proscriptionSprite) {
+            const ptex = tex('HFX_PROSCRIPTION');
+            if (ptex && ptex.width > 0) {
+              const sp = new Sprite(ptex);
+              sp.anchor.set(0.5, 0.5);
+              const sz = GRID.TILE * 1.05;
+              sp.width = sz; sp.height = sz;
+              this.layers.fx.addChild(sp);
+              fx.extras.__proscriptionSprite = sp;
+            }
           }
-          g.lineStyle(0);
+          const psp = fx.extras.__proscriptionSprite as Sprite | undefined;
+          if (psp) {
+            const sy = fx.y - 34 - Math.sin(t * Math.PI) * 5;
+            psp.position.set(fx.x, sy);
+            psp.alpha = 0.96 * fade;
+          }
           // Seal stamp at each marked tower
           for (const tg of tgts) {
             const my = tg.y - GRID.TILE * 0.7;
