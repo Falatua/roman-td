@@ -14,7 +14,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, premiumDropRoll, rollBossDrop, rollEpicDrop, rollRareDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet, isGuaranteedEpicDropEnemy } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, premiumDropRoll, rollBossDrop, rollCommanderDrop, rollEpicDrop, rollRareDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
@@ -7126,13 +7126,13 @@ async function boot() {
               spawnLootAt(state, e, drop);
               bossLegendaryDropped = true;
             }
-          } else if (isGuaranteedEpicDropEnemy(e)) {
-            // Commanders are premium support kills now. Keep this
-            // below the legendary-boss branch so Boss Dog and scheduled bosses
-            // still pay their higher-tier reward, but above random trash drops
-            // so commander support pieces are reliable without flooding normal
-            // waves that use the ELITE archetype for ordinary support enemies.
-            const drop = rollEpicDrop(state, inventory);
+          } else if ((e as any).isCommander) {
+            // Commanders are premium support kills now. Regular commanders
+            // drop EPIC; boss-wave escort commanders drop RARE so the player
+            // is still rewarded for killing them without turning boss waves
+            // into Epic floods. Keep this below the legendary-boss branch and
+            // above random trash drops.
+            const drop = rollCommanderDrop(e);
             if (drop) spawnLootAt(state, e, drop);
           } else if (e.isBoss && premiumDropRoll(0.12)) {
             const drop = rollEpicDrop(state, inventory);

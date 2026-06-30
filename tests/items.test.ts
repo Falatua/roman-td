@@ -1,7 +1,7 @@
 // Tests for item rules, inventory operations, and shop pool sampling.
 import { describe, it, expect, vi } from 'vitest';
 import { itemFamily, canEquipItemFamily } from '../src/systems/ItemRules';
-import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, isGuaranteedEpicDropEnemy, itemLootPoolCoverage } from '../src/systems/LootSystem';
+import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, rollCommanderDrop, isGuaranteedEpicDropEnemy, itemLootPoolCoverage } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
 import { LOOT_DROP_RATES } from '../src/constants';
@@ -336,5 +336,18 @@ describe('EPIC premium drop payload — rollEpicDrop', () => {
     expect(isGuaranteedEpicDropEnemy({ type: 'ANUBIS_PRIEST', archetype: 'ELITE' })).toBe(false);
     expect(isGuaranteedEpicDropEnemy({ type: 'FERAL_DOG', archetype: 'SWARM', mutation: 'VETERAN' })).toBe(false);
     expect(isGuaranteedEpicDropEnemy({ type: 'FERAL_DOG', archetype: 'SWARM' })).toBe(false);
+  });
+
+  it('guarantees commanders always drop at least Rare loot', () => {
+    for (let i = 0; i < 30; i++) {
+      const normal = rollCommanderDrop({ type: 'PATHFINDER_COMMANDER', isCommander: true });
+      expect(normal).not.toBeNull();
+      expect(normal!.rarity).toBe('EPIC');
+
+      const escort = rollCommanderDrop({ type: 'STANDARD_BEARER_COMMANDER', isCommander: true, __bossEscortCommander: true });
+      expect(escort).not.toBeNull();
+      expect(escort!.rarity).toBe('RARE');
+    }
+    expect(rollCommanderDrop({ type: 'GALLIC_DRUID', archetype: 'ELITE' })).toBeNull();
   });
 });

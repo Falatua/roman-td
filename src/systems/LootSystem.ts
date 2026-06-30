@@ -231,6 +231,14 @@ export function rollEpicDrop(_state?: GameStateShape | null, _inv?: InventorySta
   return rollFromPool('EPIC', EPIC_ITEM_POOL);
 }
 
+export function rollCommanderDrop(enemy: Partial<Enemy> | any): { itemId: ItemId; rarity: Rarity } | null {
+  if (!enemy?.isCommander) return null;
+  // Boss-wave escort commanders should still reward the player for
+  // prioritizing them, but Rare keeps boss waves from turning into Epic floods.
+  if (enemy.__bossEscortCommander) return rollRareDrop();
+  return rollEpicDrop();
+}
+
 export function isGuaranteedEpicDropEnemy(enemy: Partial<Enemy> | any): boolean {
   if (!enemy) return false;
   if (enemy.__bossEscortCommander) return false;
