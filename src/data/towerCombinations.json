@@ -364,7 +364,7 @@
     "ingredients": [
       {
         "type": "CENTURION",
-        "minTier": 4
+        "minTier": 3
       },
       {
         "type": "EVOCATUS",
