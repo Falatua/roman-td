@@ -33,11 +33,43 @@ const CAMPAIGN_COMMANDERS: Record<number, CommanderType> = {
   30: 'STANDARD_BEARER_COMMANDER'
 };
 
+const BOSS_ESCORT_COMMANDERS: Record<number, CommanderType[]> = {
+  5: ['PATHFINDER_COMMANDER', 'STANDARD_BEARER_COMMANDER'],
+  10: ['PATHFINDER_COMMANDER', 'STANDARD_BEARER_COMMANDER', 'SIEGE_CAPTAIN_COMMANDER'],
+  20: ['SKY_PATHFINDER_COMMANDER', 'STANDARD_BEARER_COMMANDER', 'ANUBIS_PRIEST_COMMANDER', 'SIEGE_CAPTAIN_COMMANDER'],
+  21: ['PATHFINDER_COMMANDER', 'STANDARD_BEARER_COMMANDER', 'SIEGE_CAPTAIN_COMMANDER', 'SKY_PATHFINDER_COMMANDER'],
+  24: ['SKY_ANUBIS_COMMANDER', 'STANDARD_BEARER_COMMANDER', 'PATHFINDER_COMMANDER', 'SIEGE_CAPTAIN_COMMANDER', 'SKY_PATHFINDER_COMMANDER'],
+  30: ['STANDARD_BEARER_COMMANDER', 'PATHFINDER_COMMANDER', 'SIEGE_CAPTAIN_COMMANDER', 'ANUBIS_PRIEST_COMMANDER', 'SKY_STANDARD_COMMANDER', 'SKY_PATHFINDER_COMMANDER']
+};
+
 export function isCommanderType(type: string | EnemyType | undefined): boolean {
   return !!type && COMMANDER_TYPES.has(String(type));
 }
 
-export function injectCampaignCommanders(state: GameStateShape, queue: { type: string; spawnAt: number }[]): void {
+export function bossEscortCommandersForWave(wave: number): CommanderType[] {
+  return BOSS_ESCORT_COMMANDERS[wave] ? [...BOSS_ESCORT_COMMANDERS[wave]] : [];
+}
+
+export function injectBossEscortCommanders(state: GameStateShape, queue: { type: string; spawnAt: number; bossEscort?: boolean }[]): void {
+  if (state.endlessMode) return;
+  const escort = bossEscortCommandersForWave(state.wave);
+  if (escort.length === 0) return;
+  const desiredCount = escort.length;
+  let commanderCount = queue.filter(q => isCommanderType(q.type)).length;
+  const queuedTypes = new Set(queue.map(q => q.type));
+  let spawnAt = Math.max(1.8, Math.min(8.0, state.wave <= 10 ? 2.8 : 4.0));
+  for (const type of escort) {
+    if (commanderCount >= desiredCount) break;
+    if (queuedTypes.has(type)) continue;
+    queue.push({ type, spawnAt, bossEscort: true });
+    queuedTypes.add(type);
+    commanderCount++;
+    spawnAt += state.wave <= 10 ? 1.2 : 1.0;
+  }
+  queue.sort((a, b) => a.spawnAt - b.spawnAt);
+}
+
+export function injectCampaignCommanders(state: GameStateShape, queue: { type: string; spawnAt: number; bossEscort?: boolean }[]): void {
   if (state.endlessMode) return;
   const commander = CAMPAIGN_COMMANDERS[state.wave];
   if (!commander) return;

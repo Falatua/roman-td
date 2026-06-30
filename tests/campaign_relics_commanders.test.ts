@@ -17,7 +17,7 @@ import {
 } from '../src/systems/CampaignRelicSystem';
 import { applyBossTrophy, bossTrophyDamageMult, bossTrophyTrapDamageMult, bossTrophyTrapRadiusMult, shouldOfferBossTrophy } from '../src/systems/BossTrophySystem';
 import { buyTraps, trapPrice, TRAP_DEFS } from '../src/systems/TrapSystem';
-import { commanderDamageTakenMult, commanderSpeedMult, commanderTrapRadiusDisabled, isCommanderType } from '../src/systems/CommanderSystem';
+import { bossEscortCommandersForWave, commanderDamageTakenMult, commanderSpeedMult, commanderTrapRadiusDisabled, isCommanderType } from '../src/systems/CommanderSystem';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { canReceiveRunReward } from '../src/systems/RewardEligibility';
 
@@ -196,6 +196,39 @@ describe('Enemy commanders', () => {
       startWave(s);
       expect(s.spawnQueue.some(q => q.type === type)).toBe(true);
     }
+  });
+
+  it('adds small wave-scaled commander escorts to every authored boss wave', () => {
+    const expectedEscortSize: Record<number, number> = {
+      5: 2,
+      10: 3,
+      20: 4,
+      21: 4,
+      24: 5,
+      30: 6
+    };
+    for (const [waveText, expectedCount] of Object.entries(expectedEscortSize)) {
+      const s = bootstrapState();
+      s.phase = GamePhase.BUILD_PHASE;
+      s.wave = Number(waveText) - 1;
+      startWave(s);
+      const commanders = s.spawnQueue.filter(q => isCommanderType(q.type as any));
+      expect(commanders.length, `W${waveText} commander escort size`).toBe(expectedCount);
+      expect(bossEscortCommandersForWave(Number(waveText)).length).toBe(expectedCount);
+    }
+  });
+
+  it('keeps the W5 boss escort subtle and tagged as escort-only pressure', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.BUILD_PHASE;
+    s.wave = 4;
+    startWave(s);
+    const escort = s.spawnQueue.filter(q => q.bossEscort);
+    expect(escort.map(q => q.type)).toEqual(['PATHFINDER_COMMANDER', 'STANDARD_BEARER_COMMANDER']);
+    tickSpawns(s, 5);
+    const spawnedEscort = Array.from(s.enemies.values()).filter(e => (e as any).__bossEscortCommander);
+    expect(spawnedEscort.length).toBe(2);
+    expect(spawnedEscort.every(e => (e as any).isCommander && !e.isBoss)).toBe(true);
   });
 
   it('marks spawned commanders and gives them non-boss support behavior', () => {

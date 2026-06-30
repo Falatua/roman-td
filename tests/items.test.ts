@@ -271,6 +271,7 @@ describe('EPIC premium drop payload — rollEpicDrop', () => {
 
   it('guarantees EPIC drops for commanders only, not ordinary elite-role enemies', () => {
     expect(isGuaranteedEpicDropEnemy({ type: 'PATHFINDER_COMMANDER', isCommander: true, archetype: 'RUNNER' })).toBe(true);
+    expect(isGuaranteedEpicDropEnemy({ type: 'PATHFINDER_COMMANDER', isCommander: true, __bossEscortCommander: true })).toBe(false);
     expect(isGuaranteedEpicDropEnemy({ type: 'GALLIC_DRUID', archetype: 'ELITE' })).toBe(false);
     expect(isGuaranteedEpicDropEnemy({ type: 'ANUBIS_PRIEST', archetype: 'ELITE' })).toBe(false);
     expect(isGuaranteedEpicDropEnemy({ type: 'FERAL_DOG', archetype: 'SWARM', mutation: 'VETERAN' })).toBe(false);

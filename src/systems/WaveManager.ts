@@ -20,7 +20,7 @@ import enemiesData from '../data/enemies.json';
 import { spawnEnemy } from './EnemySystem';
 import { generateEndlessWave, EndlessWaveConfig, endlessClearScore } from './EndlessMode';
 import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, clearSurpriseEventsForWaveEnd, spawnAtSurpriseEventPoint, notifySurpriseEventWaveEnded } from './SurpriseEvents';
-import { injectCampaignCommanders, isCommanderType } from './CommanderSystem';
+import { injectBossEscortCommanders, injectCampaignCommanders, isCommanderType } from './CommanderSystem';
 import { campaignRelicWaveGoldMult } from './CampaignRelicSystem';
 import { prepareHeroAbilitiesForWave } from './HeroSystem';
 import { completeTestYourMight, tickTestYourMightSpawns } from './TestYourMightSystem';
@@ -276,6 +276,7 @@ export function startWave(state: GameStateShape) {
     state.spawnQueue.push({ type: bonusBossType as EnemyType, spawnAt: t + 2.5 });
     (state as any).pendingBonusBoss = bonusReason;
   }
+  if (isBossWave) injectBossEscortCommanders(state, state.spawnQueue);
   injectCampaignCommanders(state, state.spawnQueue);
   state.enemiesKilledThisWave = 0;
   state.enemiesLeakedThisWave = 0;
@@ -358,6 +359,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
       if (fromCaveB) state.caveBActive = true;
     }
     const e = spawnEnemy(state, item.type as EnemyType, spawnHpMult, false, fromCaveB);
+    if (item.bossEscort) (e as any).__bossEscortCommander = true;
     // 2026-06-23 — W9 war elephants teach checkpoint healing before the
     // Hannibal boss wave. Keep it wave-scoped so W10 escort elephants and
     // later elephant variants do not inherit the sustain spike.
