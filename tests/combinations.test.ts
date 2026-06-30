@@ -172,6 +172,14 @@ describe('Recipe combo detection', () => {
       expect((towersData as any)[type].baseDps).toBe(expectedDps);
     }
   });
+
+  it('keeps Bestiarius on the faster fury-loop line', () => {
+    const bestiarius = (towersData as any)[TowerType.BESTIARIUS];
+    expect(bestiarius.kind).toBe('COMBO');
+    expect(bestiarius.tierBand).toBe(4);
+    expect(bestiarius.attackSpeed).toBe(2.2);
+    expect(bestiarius.ability).toContain('rapid polearm strikes at 2.2/s');
+  });
 });
 
 describe('Combo execution', () => {
