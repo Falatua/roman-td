@@ -359,7 +359,16 @@ export function tickSpawns(state: GameStateShape, dt: number) {
       if (fromCaveB) state.caveBActive = true;
     }
     const e = spawnEnemy(state, item.type as EnemyType, spawnHpMult, false, fromCaveB);
-    if (item.bossEscort) (e as any).__bossEscortCommander = true;
+    if (item.bossEscort) {
+      (e as any).__bossEscortCommander = true;
+      // W5 introduces boss-escort commanders early. Keep them present as
+      // priority targets, but soften their final health by 10% so Brennus's
+      // first boss wave does not over-punish fresh Solo builds.
+      if (state.wave === 5) {
+        e.maxHp *= 0.9;
+        e.hp *= 0.9;
+      }
+    }
     // 2026-06-23 — W9 war elephants teach checkpoint healing before the
     // Hannibal boss wave. Keep it wave-scoped so W10 escort elephants and
     // later elephant variants do not inherit the sustain spike.

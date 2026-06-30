@@ -3,7 +3,7 @@ import { createGameState } from '../src/GameState';
 import { DamageType, EnemyType, GamePhase, TowerType } from '../src/types';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildFlyerPath, buildGroundPath, buildGroundPathB } from '../src/systems/PathFinder';
-import { startWave, tickSpawns } from '../src/systems/WaveManager';
+import { effectiveWaveHpMult, lateGameLayerMult, startWave, tickSpawns } from '../src/systems/WaveManager';
 import {
   CAMPAIGN_RELICS,
   activeCampaignRelicIds,
@@ -20,6 +20,7 @@ import { buyTraps, trapPrice, TRAP_DEFS } from '../src/systems/TrapSystem';
 import { bossEscortCommandersForWave, commanderDamageTakenMult, commanderSpeedMult, commanderTrapRadiusDisabled, isCommanderType } from '../src/systems/CommanderSystem';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { canReceiveRunReward } from '../src/systems/RewardEligibility';
+import enemiesData from '../src/data/enemies.json';
 
 beforeAll(() => {
   (globalThis as any).window = (globalThis as any).window ?? {};
@@ -229,6 +230,13 @@ describe('Enemy commanders', () => {
     const spawnedEscort = Array.from(s.enemies.values()).filter(e => (e as any).__bossEscortCommander);
     expect(spawnedEscort.length).toBe(2);
     expect(spawnedEscort.every(e => (e as any).isCommander && !e.isBoss)).toBe(true);
+    const wave5BasicHpMult = effectiveWaveHpMult(5, 5, false) * lateGameLayerMult(5, false, false);
+    for (const e of spawnedEscort) {
+      const def: any = (enemiesData as any)[e.type];
+      const unreducedHp = def.baseHp * wave5BasicHpMult * 1.7;
+      expect(e.maxHp, e.type).toBeCloseTo(unreducedHp * 0.9, 4);
+      expect(e.hp, e.type).toBeCloseTo(e.maxHp, 4);
+    }
   });
 
   it('marks spawned commanders and gives them non-boss support behavior', () => {
