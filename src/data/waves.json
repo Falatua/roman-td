@@ -540,6 +540,10 @@
       {
         "type": "SIEGE_CAPTAIN_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "SKY_PATHFINDER_COMMANDER",
+        "count": 1
       }
     ],
     "enemySpeedBoostPct": 0.12,
@@ -661,7 +665,7 @@
     "type": "G",
     "faction": "ROMAN_MYTH",
     "hpMult": 18,
-    "gold": 18,
+    "gold": 14,
     "fixedCount": true,
     "spawns": [
       {
@@ -707,7 +711,7 @@
     "type": "M",
     "faction": "ROMAN_MYTH",
     "hpMult": 19,
-    "gold": 18,
+    "gold": 14,
     "fixedCount": true,
     "spawns": [
       {
@@ -737,6 +741,10 @@
       {
         "type": "ANUBIS_PRIEST_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "SKY_STANDARD_COMMANDER",
+        "count": 1
       }
     ],
     "enemySpeedBoostPct": 0.08,
@@ -749,7 +757,7 @@
     "type": "G",
     "faction": "ROMAN_MYTH",
     "hpMult": 22,
-    "gold": 20,
+    "gold": 16,
     "fixedCount": true,
     "spawns": [
       {
@@ -795,7 +803,7 @@
     "type": "G",
     "faction": "ROMAN_MYTH",
     "hpMult": 24,
-    "gold": 19,
+    "gold": 15,
     "fixedCount": true,
     "superGiantActive": true,
     "spawns": [
@@ -841,7 +849,7 @@
     "type": "G",
     "faction": "ROMAN_MYTH",
     "hpMult": 27,
-    "gold": 21,
+    "gold": 17,
     "fixedCount": true,
     "spawns": [
       {
@@ -875,6 +883,10 @@
       {
         "type": "SIEGE_CAPTAIN_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "SHADOW_CAVALRY",
+        "count": 8
       }
     ],
     "enemySpeedBoostPct": 0.08,
@@ -924,6 +936,10 @@
       {
         "type": "ANUBIS_PRIEST_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "SHADOW_CAVALRY",
+        "count": 10
       }
     ],
     "enemySpeedBoostPct": 0.05,

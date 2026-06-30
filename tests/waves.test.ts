@@ -9,6 +9,7 @@ import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath, buildGroundPathB, buildFlyerPath } from '../src/systems/PathFinder';
 import { enemyResistanceProfile } from '../src/systems/EnemyResistances';
 import wavesData from '../src/data/waves.json';
+import enemiesData from '../src/data/enemies.json';
 
 function bootstrapState() {
   const s = createGameState();
@@ -134,6 +135,23 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(byWave.get(28).spawns.some((s: any) => s.type === 'SIEGE_CAPTAIN_COMMANDER')).toBe(true);
     expect(byWave.get(28).spawns.some((s: any) => s.type === 'SKY_PATHFINDER_COMMANDER')).toBe(true);
     expect(byWave.get(30).spawns.some((s: any) => s.type === 'CHIMERA')).toBe(true);
+  });
+
+  it('makes mid-to-late anti-air investment feel necessary', () => {
+    const flyerCountsByWave = new Map((wavesData as any[]).map(wave => {
+      const flyers = (wave.spawns ?? [])
+        .filter((spawn: any) => (enemiesData as any)[spawn.type]?.isFlyer)
+        .reduce((sum: number, spawn: any) => sum + spawn.count, 0);
+      return [wave.wave, flyers];
+    }));
+    for (const wave of [18, 19, 20, 22, 23, 24]) {
+      expect(flyerCountsByWave.get(wave), `W${wave} should include an air-pressure check`).toBeGreaterThan(0);
+    }
+    for (const wave of [25, 26, 27, 28, 29, 30]) {
+      expect(flyerCountsByWave.get(wave), `W${wave} should require endgame anti-air coverage`).toBeGreaterThanOrEqual(2);
+    }
+    expect((enemiesData as any).CHIMERA.isFlyer).toBe(true);
+    expect((enemiesData as any).CHIMERA.phaseHits).toBeGreaterThanOrEqual(3);
   });
 });
 
