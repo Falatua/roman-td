@@ -195,6 +195,9 @@ const MELEE_TYPES = new Set<TowerType>([
   // with scutum + gladius; Punic Hunter damage bonus + Scutum Bash stun-
   // and-knockback every 4th swing. Pure melee, range 1.5.
   TowerType.MURMILLO,
+  // 2026-06-30 — Sacred Band is authored as a DIVINE melee combo. It must
+  // route through the melee branch for direct blade hits and AEGIS NOVA.
+  TowerType.SACRED_BAND,
   // 2026-05 v9: Consular Fatebinder converted from ranged DIVINE to a
   // melee strike (still keeps TRUE-damage primary + map-wide 60% splash
   // + global aura). The melee identity matches its character art (consul

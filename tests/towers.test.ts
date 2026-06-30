@@ -1,7 +1,7 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect } from 'vitest';
 import { createTower, towerEffectiveStats, towerPerAttackDamageBase, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, tickCombat } from '../src/systems/CombatResolver';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { spawnProjectile } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind } from '../src/types';
@@ -276,6 +276,58 @@ describe('Anti-air tower signatures', () => {
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.40)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+  });
+});
+
+describe('Sacred Band combat wiring', () => {
+  it('routes through the melee attack branch and damages enemies', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    const tower = createTower(TowerType.SACRED_BAND, 4, 4, 4, 0);
+    tower.attackCooldown = 0;
+    state.towers.set(tower.id, tower);
+    const target = testEnemy('sacred-band-target');
+    state.enemies.set(target.id, target);
+    const before = target.hp;
+    let meleeSwings = 0;
+    let hits = 0;
+
+    tickCombat(state, 0.016, {
+      onKill: () => {},
+      onHit: () => { hits++; },
+      onMeleeSwing: () => { meleeSwings++; },
+      onProjectileFire: () => {}
+    });
+
+    expect(target.hp).toBeLessThan(before);
+    expect(hits).toBeGreaterThan(0);
+    expect(meleeSwings).toBeGreaterThan(0);
+    expect((tower as any).__hitCount).toBe(1);
+  });
+
+  it('fires Aegis Nova on its fourth melee strike', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    const tower = createTower(TowerType.SACRED_BAND, 4, 4, 4, 0);
+    tower.attackCooldown = 0;
+    (tower as any).__hitCount = 3;
+    state.towers.set(tower.id, tower);
+    const primary = testEnemy('sacred-primary');
+    const nearby = testEnemy('sacred-nearby', primary.x + 16, primary.y);
+    state.enemies.set(primary.id, primary);
+    state.enemies.set(nearby.id, nearby);
+    const before = nearby.hp;
+
+    tickCombat(state, 0.016, {
+      onKill: () => {},
+      onHit: () => {},
+      onMeleeSwing: () => {},
+      onProjectileFire: () => {}
+    });
+
+    expect((tower as any).__hitCount).toBe(4);
+    expect(nearby.hp).toBeLessThan(before);
+    expect(nearby.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
   });
 });
 
