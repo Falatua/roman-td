@@ -81,7 +81,7 @@ describe('Tower effective stats', () => {
     for (const [type, expectedDps] of Object.entries(expectedAntiAirDps)) {
       expect((towersData as any)[type].baseDps).toBe(expectedDps);
     }
-    expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(151.8);
+    expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(235.0);
   });
 
   it('applies a linear tier damage ramp (T5 hits 2.5x T1)', () => {

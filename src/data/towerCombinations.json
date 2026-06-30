@@ -622,7 +622,7 @@
     "ingredients": [
       {
         "type": "BEAST_SLAYER",
-        "minTier": 3
+        "minTier": 2
       },
       {
         "type": "AUXILIA",

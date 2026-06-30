@@ -687,7 +687,7 @@
   "HANNIBALS_NIGHTMARE": {
     "name": "Hannibal's Nightmare",
     "damageType": "SIEGE",
-    "baseDps": 151.8,
+    "baseDps": 235,
     "attackSpeed": 0.386,
     "range": 7.0,
     "kind": "COMBO",
@@ -701,7 +701,7 @@
   "GOD_OF_WAR": {
     "name": "God of War",
     "damageType": "PHYS_MELEE",
-    "baseDps": 245.0,
+    "baseDps": 350,
     "attackSpeed": 1.32,
     "range": 1.5,
     "kind": "COMBO",
@@ -807,7 +807,7 @@
   "TRIUMPHATOR": {
     "name": "Triumphator",
     "damageType": "PHYS_MELEE",
-    "baseDps": 126.5,
+    "baseDps": 200,
     "attackSpeed": 1.485,
     "range": 1.5,
     "kind": "COMBO",
@@ -820,7 +820,7 @@
   "PONTIFEX_MAXIMUS": {
     "name": "Pontifex",
     "damageType": "DIVINE",
-    "baseDps": 130.0,
+    "baseDps": 178,
     "attackSpeed": 0.4587,
     "range": 2.0,
     "kind": "COMBO",
@@ -846,7 +846,7 @@
   "AURORA_LEGION": {
     "name": "Aurora Legion",
     "damageType": "DIVINE",
-    "baseDps": 116.5,
+    "baseDps": 168,
     "attackSpeed": 0.417,
     "range": 5,
     "kind": "COMBO",
@@ -859,7 +859,7 @@
   "STORM_VEXILLATION": {
     "name": "Storm Vexilla",
     "damageType": "DIVINE",
-    "baseDps": 125.0,
+    "baseDps": 172,
     "attackSpeed": 0.417,
     "range": 4.6,
     "kind": "COMBO",
@@ -872,7 +872,7 @@
   "IMPERIUM_ETERNUM": {
     "name": "Imperium Eternum",
     "damageType": "DIVINE",
-    "baseDps": 300.0,
+    "baseDps": 380,
     "attackSpeed": 0.417,
     "range": 6,
     "kind": "COMBO",
@@ -886,7 +886,7 @@
   "CARTHAGE_SCOURGE": {
     "name": "Carthage Scourge",
     "damageType": "SIEGE",
-    "baseDps": 240.0,
+    "baseDps": 335,
     "attackSpeed": 0.386,
     "range": 7,
     "kind": "COMBO",
@@ -938,7 +938,7 @@
   "CONSULAR_FATEBINDER": {
     "name": "Fatebinder",
     "damageType": "PHYS_MELEE",
-    "baseDps": 173.0,
+    "baseDps": 228,
     "attackSpeed": 0.55,
     "range": 1.5,
     "kind": "COMBO",
@@ -1243,6 +1243,6 @@
   "AUGURS_WRATH": {"name": "Augur's Wrath", "damageType": "DIVINE", "baseDps": 175.0, "attackSpeed": 0.7, "range": 5.0, "kind": "COMBO", "melee": false, "tierBand": 5, "critChance": 0.2, "critMult": 2.6, "ability": "Hurls a radiant omen-fireball — DIVINE damage with 1.0-tile splash that sets the struck cluster BURNING. Apex magic artillery."},
   "EXPLORATORES": {"name": "Exploratores", "damageType": "PHYS_RANGED", "baseDps": 120.0, "attackSpeed": 1.6, "range": 5.5, "kind": "COMBO", "melee": false, "tierBand": 3, "critChance": 0.2, "critMult": 2.2, "ability": "RECON VOLLEY (T3): fires at 3 targets per shot. Every hit applies MARK (+20% damage taken). REVEALS stealthed / ambush enemies in range for every tower. +50% damage vs RUNNER archetype. The far-seeing scout-hunters."},
   "VULCAN_BOMBARD": {"name": "Vulcan Bombard", "damageType": "SIEGE", "baseDps": 115.0, "attackSpeed": 0.4, "range": 7.5, "kind": "COMBO", "melee": false, "tierBand": 3, "critChance": 0, "critMult": 1, "ability": "MAGMA BARRAGE (SIEGE, T3): heavy 3.0-tile splash. Every blast stamps stacking ARMOR SHRED (drops resists, 3s) on the whole crater AND a 0.6s STUN on the primary — softens clusters into glass for your other towers. Siege bypasses ranged resists."},
-  "VANGUARD_WING": {"name": "Vanguard Wing", "damageType": "PHYS_RANGED", "baseDps": 165.0, "attackSpeed": 1.5, "range": 6.0, "kind": "COMBO", "melee": false, "tierBand": 4, "critChance": 0.22, "critMult": 2.5, "ability": "COMBO-OF-COMBO (T4): EAGLE-EYE BARRAGE — fires at 4 targets. Every hit applies MARK + ARMOR SHRED. REVEALS stealthed enemies. +40% damage vs ELITE archetype. Every 4th volley plants a SIGNAL MARK on a Boss (+20% damage taken from ALL towers, 6s)."},
-  "VULCAN_COLOSSUS": {"name": "Vulcan Colossus", "damageType": "SIEGE", "baseDps": 245.0, "attackSpeed": 0.42, "range": 9.0, "kind": "COMBO", "melee": false, "tierBand": 5, "critChance": 0, "critMult": 1, "ability": "COMBO-OF-COMBO (T5 SIEGE): CITY-BREAKER — massive 3.5-tile splash with stacking ARMOR SHRED + 0.8s AoE STUN on every blast. +100% damage vs Bosses. Every 3rd shot is a TITAN ROUND dealing 2.5× damage across the splash. Siege bypasses ranged resists."}
+  "VANGUARD_WING": {"name": "Vanguard Wing", "damageType": "PHYS_RANGED", "baseDps": 190, "attackSpeed": 1.5, "range": 6.0, "kind": "COMBO", "melee": false, "tierBand": 4, "critChance": 0.22, "critMult": 2.5, "ability": "COMBO-OF-COMBO (T4): EAGLE-EYE BARRAGE — fires at 4 targets. Every hit applies MARK + ARMOR SHRED. REVEALS stealthed enemies. +40% damage vs ELITE archetype. Every 4th volley plants a SIGNAL MARK on a Boss (+20% damage taken from ALL towers, 6s)."},
+  "VULCAN_COLOSSUS": {"name": "Vulcan Colossus", "damageType": "SIEGE", "baseDps": 275, "attackSpeed": 0.42, "range": 9.0, "kind": "COMBO", "melee": false, "tierBand": 5, "critChance": 0, "critMult": 1, "ability": "COMBO-OF-COMBO (T5 SIEGE): CITY-BREAKER — massive 3.5-tile splash with stacking ARMOR SHRED + 0.8s AoE STUN on every blast. +100% damage vs Bosses. Every 3rd shot is a TITAN ROUND dealing 2.5× damage across the splash. Siege bypasses ranged resists."}
 }

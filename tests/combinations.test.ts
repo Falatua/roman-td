@@ -122,6 +122,20 @@ describe('Recipe combo detection', () => {
     expect(types('BEASTLORD_CHAMPION').filter((t: string) => t === 'BEAST_SLAYER')).toHaveLength(1);
   });
 
+  it('keeps every Beast Slayer combo ingredient at Tier 2', () => {
+    const beastSlayerIngredients = (comboData as any[])
+      .flatMap(recipe => recipe.ingredients.map((ingredient: any) => ({
+        result: recipe.result,
+        ...ingredient
+      })))
+      .filter(ingredient => ingredient.type === 'BEAST_SLAYER');
+
+    expect(beastSlayerIngredients.length).toBeGreaterThan(0);
+    for (const ingredient of beastSlayerIngredients) {
+      expect(ingredient.minTier, ingredient.result).toBe(2);
+    }
+  });
+
   it('detects SIEGE_ONAGER with two T3 Scorpios and one T3 Primus Pilus', () => {
     const recipe = comboData.find((r: any) => r.result === 'SIEGE_ONAGER') as any;
     expect(recipe.ingredients).toEqual([
@@ -139,24 +153,28 @@ describe('Recipe combo detection', () => {
     expect(siege).toBeTruthy();
   });
 
-  it('keeps nested-combo DPS boosts while excluding Hannibal Nightmare', () => {
+  it('rewards harder-to-assemble nested combos with higher DPS', () => {
+    // 2026-06-29 — JB: combos whose recipes are rarer/harder (nested combo
+    // ingredients, high min-tiers, big cost) should be stronger. DPS now
+    // rides a difficulty-monotonic ladder; the apex 3-nested super-combos
+    // and the two-T5-super-combo siege towers top the chart (under Mars).
     const expectedBoosted: Partial<Record<TowerType, number>> = {
       [TowerType.WAR_CHARIOT]: 112.0,
       [TowerType.INFERNO_CART]: 60.5,
       [TowerType.FROZEN_LEGION]: 175.0,
       [TowerType.JULIUS_CAESAR]: 140.0,
-      [TowerType.GOD_OF_WAR]: 245.0,
+      [TowerType.GOD_OF_WAR]: 350.0,
       [TowerType.TURMA_LANCERS]: 155.0,
-      [TowerType.AURORA_LEGION]: 116.5,
-      [TowerType.STORM_VEXILLATION]: 125.0,
-      [TowerType.IMPERIUM_ETERNUM]: 300.0,
-      [TowerType.CARTHAGE_SCOURGE]: 240.0,
+      [TowerType.AURORA_LEGION]: 168.0,
+      [TowerType.STORM_VEXILLATION]: 172.0,
+      [TowerType.IMPERIUM_ETERNUM]: 380.0,
+      [TowerType.CARTHAGE_SCOURGE]: 335.0,
+      [TowerType.HANNIBALS_NIGHTMARE]: 235.0,
       [TowerType.MARS_VICTOR]: 1718.8
     };
     for (const [type, expectedDps] of Object.entries(expectedBoosted)) {
       expect((towersData as any)[type].baseDps).toBe(expectedDps);
     }
-    expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(151.8);
     expect((towersData as any)[TowerType.COHORT_GUARD].baseDps).toBe(79.9);
   });
 
@@ -166,7 +184,7 @@ describe('Recipe combo detection', () => {
       [TowerType.NUMIDIAN_CAVALRY]: 255.0,
       [TowerType.TRIPLEX_ACIES]: 155.0,
       [TowerType.SKYREAPER_BATTERY]: 190.0,
-      [TowerType.VULCAN_COLOSSUS]: 245.0
+      [TowerType.VULCAN_COLOSSUS]: 275.0
     };
     for (const [type, expectedDps] of Object.entries(expectedInvestmentDps)) {
       expect((towersData as any)[type].baseDps).toBe(expectedDps);
