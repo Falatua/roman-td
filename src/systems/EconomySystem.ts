@@ -15,6 +15,13 @@ export function earnGold(state: GameStateShape, amount: number) {
   state.gold += amount;
 }
 
+export function perfectWaveGoldBonus(wave: number): number {
+  if (wave >= 21) return 50;
+  if (wave >= 11) return 35;
+  if (wave >= 6) return 20;
+  return 10;
+}
+
 export function effectivePoolLevel(state: GameStateShape): number {
   return Math.max(state.poolLevel, state.heroLevel);
 }

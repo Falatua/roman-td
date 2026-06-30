@@ -1,6 +1,6 @@
 // Tests for the gold/pool/hero economy. Pure logic — no DOM, no renderer.
 import { describe, it, expect, beforeEach } from 'vitest';
-import { canAfford, spendGold, earnGold, effectivePoolLevel, poolUpgradeCost, bumpHeroXP } from '../src/systems/EconomySystem';
+import { canAfford, spendGold, earnGold, effectivePoolLevel, poolUpgradeCost, bumpHeroXP, perfectWaveGoldBonus } from '../src/systems/EconomySystem';
 import { createGameState } from '../src/GameState';
 import { ECONOMY, HERO_XP_THRESHOLDS } from '../src/constants';
 
@@ -36,6 +36,17 @@ describe('Economy — gold spend/earn', () => {
     expect(state.gold).toBe(10);
     earnGold(state, -3);
     expect(state.gold).toBe(7);
+  });
+
+  it('ramps perfect-wave gold so early clean waves do not flood the opener', () => {
+    expect(perfectWaveGoldBonus(1)).toBe(10);
+    expect(perfectWaveGoldBonus(5)).toBe(10);
+    expect(perfectWaveGoldBonus(6)).toBe(20);
+    expect(perfectWaveGoldBonus(10)).toBe(20);
+    expect(perfectWaveGoldBonus(11)).toBe(35);
+    expect(perfectWaveGoldBonus(20)).toBe(35);
+    expect(perfectWaveGoldBonus(21)).toBe(50);
+    expect(perfectWaveGoldBonus(30)).toBe(50);
   });
 });
 

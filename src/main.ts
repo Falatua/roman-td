@@ -18,7 +18,7 @@ import { createInventory, maybeRollLootOnKill, premiumDropRoll, rollBossDrop, ro
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
-import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel } from './systems/EconomySystem';
+import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
 import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAuraTileKind, towerEffectiveStats } from './systems/TowerSystem';
 import { scanCombos, realizableCombos, executeCombo } from './systems/CombinationEngine';
 // SANDBOX: dev-mode imports. Delete this line + every line tagged
@@ -7326,14 +7326,14 @@ async function boot() {
         const waveSec = Math.max(0, state.tick - waveStartTick);
         if (!state.waveDurations) state.waveDurations = [];
         state.waveDurations[state.wave - 1] = waveSec;
-        // PERFECT WAVE BONUS (2026-05 v6, bumped 20g → 50g): zero leaks
-        // this wave pays +200 score AND +50 gold on top of the normal
-        // wave reward. Clean defense is now a meaningful gold spike
-        // (roughly half a Mercator legendary per clean wave).
+        // PERFECT WAVE BONUS: zero leaks pays +200 score and a staged gold
+        // bonus. Early perfect clears were flooding the opener when every
+        // wave paid the endgame +50g purse, so the reward now ramps by act.
         if (state.enemiesLeakedThisWave === 0 && !clearedTestYourMight) {
+          const perfectBonus = perfectWaveGoldBonus(state.wave);
           state.score += 200;
-          earnGold(state, 50);
-          if (!clearedTestYourMight) state.hint = `✨ PERFECT WAVE — +50g bonus on top of the +${gold}g wave reward.`;
+          earnGold(state, perfectBonus);
+          if (!clearedTestYourMight) state.hint = `✨ PERFECT WAVE — +${perfectBonus}g bonus on top of the +${gold}g wave reward.`;
           if (renderer?.triggerImpactRing) {
             // Gold celebration ring at the gate location (middle-right of map).
             renderer.triggerImpactRing(GRID.COLS * GRID.TILE - 64, GRID.ROWS * GRID.TILE / 2, state.tick, 48, 0xffd34d);

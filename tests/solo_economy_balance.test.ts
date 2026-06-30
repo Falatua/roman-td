@@ -2,10 +2,47 @@ import { describe, expect, it } from 'vitest';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
 import { ECONOMY, LOOT_DROP_RATES } from '../src/constants';
+import { perfectWaveGoldBonus } from '../src/systems/EconomySystem';
+import { QUESTS } from '../src/systems/QuestSystem';
 
 const ADD_BOSS_TYPES = new Set(['WAR_ELEPHANT', 'UNDEAD_WAR_ELEPHANT']);
 
 describe('30-wave Solo economy envelope', () => {
+  it('keeps a perfect early opener below the old runaway 700g feel', () => {
+    let kills = 0;
+    let waveGold = 0;
+    let bossBounties = 0;
+    let questGold = 0;
+    let perfectGold = 0;
+    const completedQuests = new Set<string>();
+
+    for (const wave of (wavesData as any[]).filter(w => w.wave <= 4)) {
+      waveGold += wave.gold;
+      perfectGold += perfectWaveGoldBonus(wave.wave);
+      for (const group of wave.spawns) {
+        const def = (enemiesData as any)[group.type] ?? {};
+        kills += group.count;
+        if (wave.type === 'B' && def.isBoss && !ADD_BOSS_TYPES.has(group.type)) {
+          bossBounties += group.count * (22 + Math.round(wave.wave * 3.5));
+        }
+      }
+      for (const quest of QUESTS) {
+        if (completedQuests.has(quest.id) || quest.reward.kind !== 'GOLD') continue;
+        const progress = quest.id === 'first_blood' ? Math.min(1, kills)
+          : quest.id === 'bloodline' ? kills
+          : 0;
+        if (progress >= quest.target) {
+          completedQuests.add(quest.id);
+          questGold += quest.reward.amount ?? 0;
+        }
+      }
+    }
+
+    const perfectOpenerGold = ECONOMY.STARTING_GOLD + kills + waveGold + bossBounties + questGold + perfectGold;
+    expect(perfectGold).toBe(40);
+    expect(perfectOpenerGold).toBeLessThan(550);
+  });
+
   it('keeps guaranteed authored income below the premium-buyout threshold', () => {
     let kills = 0;
     let waveGold = 0;
