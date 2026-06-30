@@ -63,6 +63,7 @@ const APEX_COMBOS = new Set<string>([
   'LEGION_PRIME', 'CONSULAR_FATEBINDER'
 ]);
 const MELEE_ATTACK_SPEED_MULT = 1.06;
+const MELEE_MIN_RANGE_TILES = 1.5;
 
 function isMeleeClassTower(t: Tower): boolean {
   const def: any = (towersData as any)[t.type];
@@ -473,7 +474,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   return {
     dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult * heroLevelDmgMult * forgeDmgMult * relicDpsMult,
     attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult * relicSpeedMult * (isMeleeClassTower(t) ? MELEE_ATTACK_SPEED_MULT : 1),
-    range: Math.max(1, t.range + extraRange + endlessRangeBoost + auraRangeBonus + relicRangeBonus)
+    range: Math.max(isMeleeClassTower(t) ? MELEE_MIN_RANGE_TILES : 1, t.range + extraRange + endlessRangeBoost + auraRangeBonus + relicRangeBonus)
   };
 }
 
@@ -687,6 +688,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
   for (const m of spdMods) speedFinal *= (m.multiplier ?? 1);
   let rangeFinal = t.range;
   for (const m of rngMods) rangeFinal += (m.flat ?? 0);
+  rangeFinal = Math.max(isMeleeClassTower(t) ? MELEE_MIN_RANGE_TILES : 1, rangeFinal);
 
   return {
     damageBase: t.baseDps,

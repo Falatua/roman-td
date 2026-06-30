@@ -140,11 +140,22 @@ describe('Tower effective stats', () => {
     expect(towerEffectiveStats(melee).attackSpeed).toBeCloseTo(meleeBefore * 1.25, 4);
   });
 
-  it('makes Decurion a true one-tile melee tower', () => {
+  it('keeps all melee towers at a minimum 1.5-tile attack range', () => {
+    for (const [type, def] of Object.entries(towersData as any)) {
+      if (def.damageType !== 'PHYS_MELEE' && def.melee !== true) continue;
+      expect(def.range, `${type} raw melee range`).toBeGreaterThanOrEqual(1.5);
+      const tower = createTower(type as TowerType, 1, 0, 0, 0);
+      tower.range = Math.min(tower.range, 0.5);
+      expect(towerEffectiveStats(tower).range, `${type} effective melee range`).toBeGreaterThanOrEqual(1.5);
+    }
+  });
+
+  it('keeps Decurion as a close-order melee tower with the melee range floor', () => {
     const decurion = createTower(TowerType.DECURION, 1, 0, 0, 0);
     expect(decurion.damageType).toBe(DamageType.PHYS_MELEE);
     expect((towersData as any)[TowerType.DECURION].melee).toBe(true);
-    expect(decurion.range).toBe(1);
+    expect(decurion.range).toBe(1.5);
+    expect(towerEffectiveStats(decurion).range).toBe(1.5);
     expect(towerEffectiveStats(decurion).attackSpeed).toBeCloseTo(decurion.attackSpeed * 1.06, 4);
   });
 
