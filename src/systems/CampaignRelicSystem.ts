@@ -1,4 +1,4 @@
-import { DamageType, Tower } from '../types';
+import { DamageType, Tower, TowerType } from '../types';
 import { GameStateShape } from '../GameState';
 import { WAVE } from '../constants';
 import { canReceiveRunReward } from './RewardEligibility';
@@ -35,7 +35,15 @@ export const CAMPAIGN_RELIC_IDS = [
   'FROST_TITHE',
   'LAST_EAGLE',
   'TRIUMPHAL_SPOILS',
-  'SEALED_RELIQUARY'
+  'SEALED_RELIQUARY',
+  'CONSCRIPTS_WAGER',
+  'ARMORY_BARGAIN',
+  'PATRICIAN_LOCKBOX',
+  'VETERAN_DRAFT',
+  'QUARTERMASTER_LEDGER',
+  'FORTUNA_PURSE',
+  'ARCHITECTS_PERMIT',
+  'FRONTIER_RECRUITS'
 ] as const;
 
 export type CampaignRelicId = typeof CAMPAIGN_RELIC_IDS[number];
@@ -338,6 +346,78 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     upside: 'Immediately gain a random Legendary item.',
     caveat: 'All enemies gain +30% HP for the rest of the run.',
     effects: ['Gain a random Legendary item now.', 'Enemy HP +30% all run.']
+  },
+  {
+    id: 'CONSCRIPTS_WAGER',
+    name: "Conscript's Wager",
+    eyebrow: 'BLOOD FOR STEEL',
+    blurb: 'A full veteran tower crew marches in under emergency oath. Rome pays with bodies at the gate.',
+    upside: 'Immediately gain one random Tier-5 base tower to place.',
+    caveat: 'Lose 20 lives immediately.',
+    effects: ['Gain a random Tier-5 BASE tower now.', 'Lose 20 lives now.']
+  },
+  {
+    id: 'ARMORY_BARGAIN',
+    name: 'Armory Bargain',
+    eyebrow: 'CHEAP STEEL',
+    blurb: 'A quartermaster opens the locked shelf and pretends not to see the missing names on the casualty roll.',
+    upside: 'Immediately gain a random Rare item.',
+    caveat: 'Lose 10 lives immediately.',
+    effects: ['Gain a random Rare item now.', 'Lose 10 lives now.']
+  },
+  {
+    id: 'PATRICIAN_LOCKBOX',
+    name: 'Patrician Lockbox',
+    eyebrow: 'PRIVATE WAR CHEST',
+    blurb: 'A senator offers one excellent piece of equipment with a smile that makes the legions nervous.',
+    upside: 'Immediately gain a random Epic item.',
+    caveat: 'Lose 15 lives immediately.',
+    effects: ['Gain a random Epic item now.', 'Lose 15 lives now.']
+  },
+  {
+    id: 'VETERAN_DRAFT',
+    name: 'Veteran Draft',
+    eyebrow: 'REASSIGNED CENTURIES',
+    blurb: 'Two seasoned detachments are pulled from the reserves. The city walls feel the absence.',
+    upside: 'Immediately gain two random Tier-3 base towers to place.',
+    caveat: 'Lose 12 lives immediately.',
+    effects: ['Gain two random Tier-3 BASE towers now.', 'Lose 12 lives now.']
+  },
+  {
+    id: 'QUARTERMASTER_LEDGER',
+    name: 'Quartermaster Ledger',
+    eyebrow: 'CLEANER BOOKS',
+    blurb: 'The numbers suddenly favor Rome. The gate guards suddenly look thinner.',
+    upside: 'Gain 300 gold immediately.',
+    caveat: 'Lose 8 lives immediately.',
+    effects: ['Gain 300 gold now.', 'Lose 8 lives now.']
+  },
+  {
+    id: 'FORTUNA_PURSE',
+    name: "Fortuna's Purse",
+    eyebrow: 'SMALL LUCK',
+    blurb: 'Fortuna drops a useful trinket, then asks whether Rome really needed all those sentries.',
+    upside: 'Gain 180 gold and a random Rare item immediately.',
+    caveat: 'Lose 12 lives immediately.',
+    effects: ['Gain 180 gold now.', 'Gain a random Rare item now.', 'Lose 12 lives now.']
+  },
+  {
+    id: 'ARCHITECTS_PERMIT',
+    name: "Architect's Permit",
+    eyebrow: 'FAST FOUNDATION',
+    blurb: 'The builders approve one serious emplacement without paperwork. The evacuation lanes get narrower.',
+    upside: 'Immediately gain one random Tier-4 base tower to place.',
+    caveat: 'Lose 10 lives immediately.',
+    effects: ['Gain a random Tier-4 BASE tower now.', 'Lose 10 lives now.']
+  },
+  {
+    id: 'FRONTIER_RECRUITS',
+    name: 'Frontier Recruits',
+    eyebrow: 'BORDER LEVY',
+    blurb: 'Two frontier crews arrive with rough accents and practical weapons. Rome spends the last quiet watch to get them here.',
+    upside: 'Immediately gain one Tier-4 melee base tower and one Tier-4 ranged base tower.',
+    caveat: 'Lose 18 lives immediately.',
+    effects: ['Gain one Tier-4 MELEE BASE tower now.', 'Gain one Tier-4 RANGED BASE tower now.', 'Lose 18 lives now.']
   }
 ];
 
@@ -403,6 +483,45 @@ export function skipCampaignRelic(state: GameStateShape, wave = state.wave): voi
   state.hint = `No campaign relic chosen after wave ${wave}. Rome stays unbound.`;
 }
 
+const BASE_TOWER_RELIC_POOL = [
+  TowerType.MILITES, TowerType.VELITES, TowerType.HASTATI, TowerType.SAGITTARIUS, TowerType.SCORPIO,
+  TowerType.TRIARIUS, TowerType.DECURION, TowerType.CENTURION, TowerType.PRIMUS_PILUS, TowerType.LEGATE,
+  TowerType.AUXILIA, TowerType.FUNDIBULUS, TowerType.RORARIUS, TowerType.LIBRITOR, TowerType.ACCENSUS,
+  TowerType.RETIARIUS, TowerType.BALLISTARIUS, TowerType.OPTIO, TowerType.PUGIO_ASSASSIN, TowerType.ARCUBALLISTA,
+  TowerType.VENATOR, TowerType.IGNIFER, TowerType.SPECULATOR, TowerType.FLAMEN, TowerType.CARROBALLISTA,
+  TowerType.CATAPHRACT, TowerType.AUGUR, TowerType.EVOCATUS, TowerType.HARUSPEX, TowerType.CLIBANARIUS,
+  TowerType.PRAEFECTUS, TowerType.VULCAN_ENGINEER, TowerType.IMPERATOR_GUARD, TowerType.SOLAR_PRIEST,
+  TowerType.COLOSSUS_ONAGER, TowerType.AQUILA_VENATOR
+] as const;
+
+const MELEE_BASE_TOWER_RELIC_POOL = [
+  TowerType.MILITES, TowerType.HASTATI, TowerType.TRIARIUS, TowerType.DECURION, TowerType.CENTURION,
+  TowerType.PRIMUS_PILUS, TowerType.AUXILIA, TowerType.ACCENSUS, TowerType.RETIARIUS, TowerType.PUGIO_ASSASSIN,
+  TowerType.CATAPHRACT, TowerType.EVOCATUS, TowerType.CLIBANARIUS, TowerType.IMPERATOR_GUARD
+] as const;
+
+const RANGED_BASE_TOWER_RELIC_POOL = BASE_TOWER_RELIC_POOL.filter(t => !MELEE_BASE_TOWER_RELIC_POOL.includes(t as any));
+
+function pickRelicTower(pool: readonly TowerType[]): TowerType {
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function queueRelicTower(state: GameStateShape, type: TowerType, tier: 1 | 2 | 3 | 4 | 5): void {
+  if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
+  state.pendingPurchasedTowers.push({ type, tier, source: 'relic' as any });
+}
+
+function queuePendingRelicItem(state: GameStateShape, rarity: 'RARE' | 'EPIC'): void {
+  const key = '__pendingRelicItemRarities';
+  const arr = (((state as any)[key] ?? []) as string[]);
+  arr.push(rarity);
+  (state as any)[key] = arr;
+}
+
+function sacrificeRelicLives(state: GameStateShape, amount: number): void {
+  state.lives = Math.max(1, (state.lives ?? 0) - amount);
+}
+
 export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): void {
   const def = campaignRelicById(id);
   if (!def) return;
@@ -415,6 +534,15 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   if (id === 'TEMPLE_LOAN') state.gold += 700;
   if (id === 'IMPERIAL_GRANARIES') state.gold += 500;
   if (id === 'AEGIS_WALL') state.lives += 15;
+  if (id === 'QUARTERMASTER_LEDGER') {
+    state.gold += 300;
+    sacrificeRelicLives(state, 8);
+  }
+  if (id === 'FORTUNA_PURSE') {
+    state.gold += 180;
+    queuePendingRelicItem(state, 'RARE');
+    sacrificeRelicLives(state, 12);
+  }
   // 2026-06-25 — concrete reward grants. T5 tower is self-contained; the
   // legendary item is granted by main.ts (inventory in scope there) when it
   // sees this flag.
@@ -423,6 +551,32 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
     state.pendingPurchasedTowers.push({ type: 'SCORPIO' as any, tier: 5, source: 'relic' as any });
   }
   if (id === 'SEALED_RELIQUARY') (state as any).__pendingRelicLegendary = true;
+  if (id === 'CONSCRIPTS_WAGER') {
+    queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 5);
+    sacrificeRelicLives(state, 20);
+  }
+  if (id === 'ARMORY_BARGAIN') {
+    queuePendingRelicItem(state, 'RARE');
+    sacrificeRelicLives(state, 10);
+  }
+  if (id === 'PATRICIAN_LOCKBOX') {
+    queuePendingRelicItem(state, 'EPIC');
+    sacrificeRelicLives(state, 15);
+  }
+  if (id === 'VETERAN_DRAFT') {
+    queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 3);
+    queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 3);
+    sacrificeRelicLives(state, 12);
+  }
+  if (id === 'ARCHITECTS_PERMIT') {
+    queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 4);
+    sacrificeRelicLives(state, 10);
+  }
+  if (id === 'FRONTIER_RECRUITS') {
+    queueRelicTower(state, pickRelicTower(MELEE_BASE_TOWER_RELIC_POOL), 4);
+    queueRelicTower(state, pickRelicTower(RANGED_BASE_TOWER_RELIC_POOL), 4);
+    sacrificeRelicLives(state, 18);
+  }
   state.hint = `${def.name} claimed. ${def.upside} Caveat: ${def.caveat}`;
 }
 

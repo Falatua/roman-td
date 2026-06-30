@@ -7463,6 +7463,18 @@ async function boot() {
                   state.hint = `Sealed Reliquary opened — gained ${String(pick).replace(/_/g, ' ')} (Legendary).`;
                 }
               }
+              const pendingRelicItems = (((state as any).__pendingRelicItemRarities ?? []) as string[]);
+              if (pendingRelicItems.length > 0) {
+                (state as any).__pendingRelicItemRarities = [];
+                for (const rarity of pendingRelicItems) {
+                  const drop = rarity === 'EPIC' ? rollEpicDrop(state, inventory)
+                    : rarity === 'RARE' ? rollRareDrop()
+                    : null;
+                  if (!drop) continue;
+                  const ok = inventoryAdd(inventory, drop.itemId as any, drop.rarity, false);
+                  if (ok) state.hint = `Campaign relic opened — gained ${String(drop.itemId).replace(/_/g, ' ')} (${drop.rarity}).`;
+                }
+              }
               showBonusBossBanner(id
                 ? '⚜ CAMPAIGN RELIC CLAIMED — THE RUN HAS CHANGED ⚜'
                 : '⚜ NO RELIC CLAIMED — ROME KEEPS ITS OWN TERMS ⚜');

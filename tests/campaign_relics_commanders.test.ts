@@ -38,9 +38,9 @@ function bootstrapState() {
 }
 
 describe('Campaign relics', () => {
-  it('ships a full 30-relic randomized campaign pool', () => {
-    expect(CAMPAIGN_RELICS.length).toBe(32);
-    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(32);
+  it('ships a full 40-relic randomized campaign pool', () => {
+    expect(CAMPAIGN_RELICS.length).toBe(40);
+    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(40);
     for (const relic of CAMPAIGN_RELICS) {
       expect(relic.upside.length).toBeGreaterThan(5);
       expect(relic.caveat.length).toBeGreaterThan(5);
@@ -89,6 +89,8 @@ describe('Campaign relics', () => {
     expect(byId.LAST_EAGLE.upside).toContain('+70%');
     expect(byId.LAUREL_CENSUS.caveat).toContain('+100%');
     expect(byId.SENATE_AUDIT.caveat).toContain('+80%');
+    expect(byId.CONSCRIPTS_WAGER.upside).toContain('Tier-5');
+    expect(byId.ARMORY_BARGAIN.caveat).toContain('10 lives');
   });
 
   it('Saturn debt grants the immediate 900g campaign bankroll', () => {
@@ -125,6 +127,67 @@ describe('Campaign relics', () => {
     const s = bootstrapState();
     applyCampaignRelic(s, 'CERES_TITHE');
     expect(campaignRelicWaveGoldMult(s)).toBeCloseTo(1.75, 4);
+  });
+
+  it('adds low-key builder bargain relics with immediate life costs', () => {
+    const towerState = bootstrapState();
+    towerState.lives = 35;
+    applyCampaignRelic(towerState, 'CONSCRIPTS_WAGER');
+    expect(towerState.lives).toBe(15);
+    expect(towerState.pendingPurchasedTowers).toHaveLength(1);
+    expect(towerState.pendingPurchasedTowers?.[0].tier).toBe(5);
+    expect(towerState.pendingPurchasedTowers?.[0].source).toBe('relic');
+
+    const rareState = bootstrapState();
+    rareState.lives = 30;
+    applyCampaignRelic(rareState, 'ARMORY_BARGAIN');
+    expect(rareState.lives).toBe(20);
+    expect((rareState as any).__pendingRelicItemRarities).toEqual(['RARE']);
+
+    const epicState = bootstrapState();
+    epicState.lives = 30;
+    applyCampaignRelic(epicState, 'PATRICIAN_LOCKBOX');
+    expect(epicState.lives).toBe(15);
+    expect((epicState as any).__pendingRelicItemRarities).toEqual(['EPIC']);
+  });
+
+  it('queues smaller draft relic rewards without letting the life cost kill the player', () => {
+    const draftState = bootstrapState();
+    draftState.lives = 8;
+    applyCampaignRelic(draftState, 'VETERAN_DRAFT');
+    expect(draftState.lives).toBe(1);
+    expect(draftState.pendingPurchasedTowers).toHaveLength(2);
+    expect(draftState.pendingPurchasedTowers?.every(t => t.tier === 3)).toBe(true);
+
+    const permitState = bootstrapState();
+    permitState.lives = 20;
+    applyCampaignRelic(permitState, 'ARCHITECTS_PERMIT');
+    expect(permitState.lives).toBe(10);
+    expect(permitState.pendingPurchasedTowers?.[0].tier).toBe(4);
+
+    const frontierState = bootstrapState();
+    frontierState.lives = 30;
+    applyCampaignRelic(frontierState, 'FRONTIER_RECRUITS');
+    expect(frontierState.lives).toBe(12);
+    expect(frontierState.pendingPurchasedTowers).toHaveLength(2);
+    expect(frontierState.pendingPurchasedTowers?.every(t => t.tier === 4)).toBe(true);
+  });
+
+  it('adds smaller gold and item bargains beside the high-stakes relics', () => {
+    const ledgerState = bootstrapState();
+    ledgerState.gold = 100;
+    ledgerState.lives = 20;
+    applyCampaignRelic(ledgerState, 'QUARTERMASTER_LEDGER');
+    expect(ledgerState.gold).toBe(400);
+    expect(ledgerState.lives).toBe(12);
+
+    const purseState = bootstrapState();
+    purseState.gold = 100;
+    purseState.lives = 20;
+    applyCampaignRelic(purseState, 'FORTUNA_PURSE');
+    expect(purseState.gold).toBe(280);
+    expect(purseState.lives).toBe(8);
+    expect((purseState as any).__pendingRelicItemRarities).toEqual(['RARE']);
   });
 
   it('tower-stat relics read live game state for speed and range changes', () => {
