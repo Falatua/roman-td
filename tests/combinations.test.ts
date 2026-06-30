@@ -122,6 +122,23 @@ describe('Recipe combo detection', () => {
     expect(types('BEASTLORD_CHAMPION').filter((t: string) => t === 'BEAST_SLAYER')).toHaveLength(1);
   });
 
+  it('detects SIEGE_ONAGER with two T3 Scorpios and one T3 Primus Pilus', () => {
+    const recipe = comboData.find((r: any) => r.result === 'SIEGE_ONAGER') as any;
+    expect(recipe.ingredients).toEqual([
+      { type: 'SCORPIO', minTier: 3 },
+      { type: 'SCORPIO', minTier: 3 },
+      { type: 'PRIMUS_PILUS', minTier: 3 }
+    ]);
+
+    const s = bootstrapState();
+    placeTower(s, TowerType.SCORPIO, 3, 5, 5);
+    placeTower(s, TowerType.SCORPIO, 3, 5, 6);
+    placeTower(s, TowerType.PRIMUS_PILUS, 3, 5, 7);
+    const combos = scanCombos(s);
+    const siege = combos.find(c => c.result === TowerType.SIEGE_ONAGER && !c.isSameTierMerge);
+    expect(siege).toBeTruthy();
+  });
+
   it('keeps nested-combo DPS boosts while excluding Hannibal Nightmare', () => {
     const expectedBoosted: Partial<Record<TowerType, number>> = {
       [TowerType.WAR_CHARIOT]: 112.0,
