@@ -265,6 +265,7 @@ describe('Anti-air tower signatures', () => {
     const numidian = hitFlyer(TowerType.NUMIDIAN_CAVALRY);
     const beastlord = hitFlyer(TowerType.BEASTLORD_CHAMPION);
     const skyreaper = hitFlyer(TowerType.SKYREAPER_BATTERY);
+    const dominion = hitFlyer(TowerType.SKY_DOMINION);
     const nemesis = hitFlyer(TowerType.NEMESIS_ENGINE);
 
     expect(numidian.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.45)).toBe(true);
@@ -273,6 +274,9 @@ describe('Anti-air tower signatures', () => {
     expect(beastlord.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.20)).toBe(true);
     expect(skyreaper.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.55)).toBe(true);
     expect(skyreaper.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+    expect(dominion.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.60)).toBe(true);
+    expect(dominion.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.20)).toBe(true);
+    expect(dominion.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.40)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);

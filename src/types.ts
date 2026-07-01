@@ -139,6 +139,10 @@ export enum TowerType {
   VULCAN_BOMBARD = 'VULCAN_BOMBARD',
   VANGUARD_WING = 'VANGUARD_WING',
   VULCAN_COLOSSUS = 'VULCAN_COLOSSUS',
+  SKY_DOMINION = 'SKY_DOMINION',
+  AUREATE_TRIBUNAL = 'AUREATE_TRIBUNAL',
+  GLACIAL_PALISADE = 'GLACIAL_PALISADE',
+  INFERNAL_COLOSSUS = 'INFERNAL_COLOSSUS',
   // 2026 v2 spec Ch9 — Mars Victor: DIVINE apex super-tower (fusion of
   // Imperium Eternum + Legion Prime). Engine-faithful read of the spec's
   // "6-hero combo" — activeHeroId is singular, so 6 literal heroes can't be

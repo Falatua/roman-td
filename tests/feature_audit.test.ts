@@ -283,6 +283,7 @@ describe('Merchant pools reference only real towers', () => {
     // are blocked from Fortuna so they have to be crafted, not bought. Test
     // asserts the pool equals (total combos − 6 blocked apex), no duplicates.
     const APEX = new Set(['IMPERIUM_ETERNUM','CARTHAGE_SCOURGE','TRIUMVIRATE','LEGION_PRIME','CONSULAR_FATEBINDER','MARS_VICTOR',
+      'SKY_DOMINION','AUREATE_TRIBUNAL','GLACIAL_PALISADE','INFERNAL_COLOSSUS',
       // 2026 v2 Ch8 — Champions are COMBO-kind but Mercator-only, blocked from Fortuna.
       'CHAMPION_MARIUS','CHAMPION_AGRIPPA','CHAMPION_AGRICOLA','CHAMPION_SCIPIO','CHAMPION_CAESAR','CHAMPION_SULLA']);
     const eligibleCombos = Object.entries(towersData as any)

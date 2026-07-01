@@ -384,6 +384,10 @@ const FORTUNA_APEX_BLOCKLIST = new Set([
   'TRIUMVIRATE',
   'LEGION_PRIME',
   'CONSULAR_FATEBINDER',
+  'SKY_DOMINION',
+  'AUREATE_TRIBUNAL',
+  'GLACIAL_PALISADE',
+  'INFERNAL_COLOSSUS',
   'MARS_VICTOR',   // 2026 v2 Ch9 — DIVINE apex; recipe-only, never gambled/bought
   // 2026 v2 Ch8 — Champions are a deliberate 500g Mercator buy, never gambled.
   'CHAMPION_MARIUS', 'CHAMPION_AGRIPPA', 'CHAMPION_AGRICOLA',

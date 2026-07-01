@@ -4322,6 +4322,15 @@ export class RenderEngine {
       if (tw.type === TowerType.SACER_VESTAL) {
         this.drawAuraRing(cx, cy, 4.5 * GRID.TILE, ALLY, pulse * 0.7);
       }
+      // Aureate Tribunal — apex support: global buffs plus local enemy trial zone.
+      if (tw.type === TowerType.AUREATE_TRIBUNAL) {
+        this.drawAuraRing(cx, cy, 6.5 * GRID.TILE, ALLY, pulse * 0.9);
+        this.drawAuraRing(cx, cy, 6.5 * GRID.TILE, ENEMY, pulse * 0.85, true);
+      }
+      // Glacial Palisade — nearby towers fight behind the frost shield.
+      if (tw.type === TowerType.GLACIAL_PALISADE) {
+        this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.8);
+      }
 
       // ── AURA ITEMS ───────────────────────────────────────────────
       // Item rings re-derive their radius from the same constants used

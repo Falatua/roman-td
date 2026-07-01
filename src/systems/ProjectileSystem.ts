@@ -156,6 +156,8 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   [TowerType.VULCAN_BOMBARD]:    { key: 'PROJ_BARREL',         arc: true,  speed: 360, splash: 3.0, embed: false },
   [TowerType.VANGUARD_WING]:     { key: 'PROJ_ARROW',          arc: true,  speed: 730, splash: 0,   embed: true  },
   [TowerType.VULCAN_COLOSSUS]:   { key: 'PROJ_BARREL',         arc: true,  speed: 380, splash: 3.5, embed: false },
+  [TowerType.SKY_DOMINION]:      { key: 'PROJ_STORM_BOLT',     arc: true,  speed: 780, splash: 0.4, embed: false },
+  [TowerType.INFERNAL_COLOSSUS]: { key: 'PROJ_BARREL',         arc: true,  speed: 360, splash: 4.0, embed: false },
   // Consular Fatebinder — every shot strikes every enemy on the map
   // (true damage map-wide handled separately). The visible cast is a
   // fate-binding apex orb to the primary target — cosmetic anchor for the

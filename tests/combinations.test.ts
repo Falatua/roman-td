@@ -1,5 +1,7 @@
 // Tests for tower combination logic: same-tier merge + every recipe in towerCombinations.json.
 import { describe, it, expect } from 'vitest';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { scanCombos, realizableCombos, executeCombo } from '../src/systems/CombinationEngine';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
@@ -202,6 +204,42 @@ describe('Recipe combo detection', () => {
     expect((towersData as any)[TowerType.LEGION_PRIME].baseDps).toBe(134.6);
     expect((towersData as any)[TowerType.CONSULAR_FATEBINDER].baseDps).toBe(250.8);
     expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(235.0);
+  });
+
+  it('adds four new recipe-only supercombo towers from previously unused combo ingredients', () => {
+    const byResult = (result: string) => comboData.find((r: any) => r.result === result) as any;
+    expect(byResult('SKY_DOMINION').ingredients).toEqual([
+      { type: 'SKYREAPER_BATTERY', minTier: 4 },
+      { type: 'NUMIDIAN_CAVALRY', minTier: 4 },
+      { type: 'VANGUARD_WING', minTier: 4 }
+    ]);
+    expect(byResult('AUREATE_TRIBUNAL').ingredients).toEqual([
+      { type: 'AERARIUM', minTier: 4 },
+      { type: 'TRIUMVIRATE', minTier: 5 },
+      { type: 'SACER_VESTAL', minTier: 4 }
+    ]);
+    expect(byResult('GLACIAL_PALISADE').ingredients).toEqual([
+      { type: 'FROZEN_LEGION', minTier: 4 },
+      { type: 'SACRED_BAND', minTier: 4 },
+      { type: 'CATAPHRACT_LANCER', minTier: 4 }
+    ]);
+    expect(byResult('INFERNAL_COLOSSUS').ingredients).toEqual([
+      { type: 'VULCAN_COLOSSUS', minTier: 5 },
+      { type: 'GOD_OF_WAR', minTier: 5 },
+      { type: 'TRIUMPHATOR', minTier: 5 }
+    ]);
+    for (const type of ['SKY_DOMINION', 'AUREATE_TRIBUNAL', 'GLACIAL_PALISADE', 'INFERNAL_COLOSSUS']) {
+      const def = (towersData as any)[type];
+      expect(def?.kind).toBe('COMBO');
+      expect(def?.tierBand).toBe(5);
+      expect(def?.ability).toContain('SUPERCOMBO');
+    }
+  });
+
+  it('ships transparent sprite assets for the new supercombo towers', () => {
+    for (const file of ['ts_sky_dominion.png', 'ts_aureate_tribunal.png', 'ts_glacial_palisade.png', 'ts_infernal_colossus.png']) {
+      expect(existsSync(path.join(process.cwd(), 'public/assets/sprites', file)), file).toBe(true);
+    }
   });
 });
 

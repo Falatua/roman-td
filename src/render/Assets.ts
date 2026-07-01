@@ -68,6 +68,8 @@ const MANIFEST: Record<string, string> = {
   PLAGUE_LOBBER: 'tc_plague_lobber.png', AUGURS_WRATH: 'tc_augurs_wrath.png',
   EXPLORATORES: 'tc_exploratores.png', VULCAN_BOMBARD: 'tc_vulcan_bombard.png',
   VANGUARD_WING: 'tcc_vanguard_wing.png', VULCAN_COLOSSUS: 'tcc_vulcan_colossus.png',
+  SKY_DOMINION: 'ts_sky_dominion.png', AUREATE_TRIBUNAL: 'ts_aureate_tribunal.png',
+  GLACIAL_PALISADE: 'ts_glacial_palisade.png', INFERNAL_COLOSSUS: 'ts_infernal_colossus.png',
   // 2026-05-17 — MURMILLO (T4 mid-game combo). Heavy Roman gladiator with
   // fish-helmet + scutum + gladius. Sliced from the user-supplied gladiator
   // roster sheet (top-left cell); chroma-keyed via the standard pipeline.
@@ -679,7 +681,7 @@ Object.assign(MANIFEST, Object.fromEntries(
 // that's already close to the rendered size, so there's no aliasing
 // or jitter as sprites move at fractional positions.
 const SPRITE_PRERENDER_SIZE = 96;
-const PRERENDER_PREFIXES = ['t1_', 't2_', 't3_', 't_new_', 'tc_', 'e_', 'e2_', 'i_', 'l_'];
+const PRERENDER_PREFIXES = ['t1_', 't2_', 't3_', 't_new_', 'tc_', 'tcc_', 'ts_', 'e_', 'e2_', 'i_', 'l_'];
 
 function shouldPrerender(file: string): boolean {
   // 2026-05 v10: assets under `endless/` (Mongol + Egyptian sprites)

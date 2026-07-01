@@ -889,5 +889,9 @@
   { "result": "EXPLORATORES", "tier": 3, "cost": 12, "ingredients": [ { "type": "SPECULATOR", "minTier": 2 }, { "type": "VENATOR", "minTier": 2 } ] },
   { "result": "VULCAN_BOMBARD", "tier": 3, "cost": 12, "ingredients": [ { "type": "COLOSSUS_ONAGER", "minTier": 2 }, { "type": "VULCAN_ENGINEER", "minTier": 2 } ] },
   { "result": "VANGUARD_WING", "tier": 4, "cost": 55, "ingredients": [ { "type": "EXPLORATORES", "minTier": 3 }, { "type": "TESSERARIUS", "minTier": 2 } ] },
-  { "result": "VULCAN_COLOSSUS", "tier": 5, "cost": 90, "ingredients": [ { "type": "VULCAN_BOMBARD", "minTier": 3 }, { "type": "STORM_BALLISTA", "minTier": 4 } ] }
+  { "result": "VULCAN_COLOSSUS", "tier": 5, "cost": 90, "ingredients": [ { "type": "VULCAN_BOMBARD", "minTier": 3 }, { "type": "STORM_BALLISTA", "minTier": 4 } ] },
+  { "result": "SKY_DOMINION", "tier": 5, "cost": 150, "ingredients": [ { "type": "SKYREAPER_BATTERY", "minTier": 4 }, { "type": "NUMIDIAN_CAVALRY", "minTier": 4 }, { "type": "VANGUARD_WING", "minTier": 4 } ] },
+  { "result": "AUREATE_TRIBUNAL", "tier": 5, "cost": 150, "ingredients": [ { "type": "AERARIUM", "minTier": 4 }, { "type": "TRIUMVIRATE", "minTier": 5 }, { "type": "SACER_VESTAL", "minTier": 4 } ] },
+  { "result": "GLACIAL_PALISADE", "tier": 5, "cost": 150, "ingredients": [ { "type": "FROZEN_LEGION", "minTier": 4 }, { "type": "SACRED_BAND", "minTier": 4 }, { "type": "CATAPHRACT_LANCER", "minTier": 4 } ] },
+  { "result": "INFERNAL_COLOSSUS", "tier": 5, "cost": 180, "ingredients": [ { "type": "VULCAN_COLOSSUS", "minTier": 5 }, { "type": "GOD_OF_WAR", "minTier": 5 }, { "type": "TRIUMPHATOR", "minTier": 5 } ] }
 ]

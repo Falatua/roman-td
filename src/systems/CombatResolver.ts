@@ -198,6 +198,7 @@ const MELEE_TYPES = new Set<TowerType>([
   // 2026-06-30 — Sacred Band is authored as a DIVINE melee combo. It must
   // route through the melee branch for direct blade hits and AEGIS NOVA.
   TowerType.SACRED_BAND,
+  TowerType.GLACIAL_PALISADE,
   // 2026-05 v9: Consular Fatebinder converted from ranged DIVINE to a
   // melee strike (still keeps TRUE-damage primary + map-wide 60% splash
   // + global aura). The melee identity matches its character art (consul
@@ -263,7 +264,7 @@ const CLEAVE_MELEE = new Set<TowerType>([
   TowerType.HASTATI, TowerType.TRIARIUS, TowerType.COHORT_GUARD,
   TowerType.PRAETORIAN_WALL, TowerType.IMPERATOR_GUARD,
   TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
-  TowerType.PONTIFEX_MAXIMUS
+  TowerType.PONTIFEX_MAXIMUS, TowerType.GLACIAL_PALISADE
 ]);
 
 // 2026-05-15 cleave/multi-shot item helpers. The FALX_BLADE item adds
@@ -361,7 +362,8 @@ const MULTI_SHOT_COUNT: Partial<Record<TowerType, number>> = {
   [TowerType.AURORA_LEGION]: 4,                // pierces 4 in line (2026-05 v11 buff)
   [TowerType.CARTHAGE_SCOURGE]: 6,             // SIX-bolt volley
   [TowerType.EXPLORATORES]: 3,                 // RECON VOLLEY — 3 targets
-  [TowerType.VANGUARD_WING]: 4                 // EAGLE-EYE BARRAGE — 4 targets
+  [TowerType.VANGUARD_WING]: 4,                // EAGLE-EYE BARRAGE — 4 targets
+  [TowerType.SKY_DOMINION]: 6                  // SKY DECREE — six-target apex barrage
 };
 
 // Process all towers vs enemies for one frame.
@@ -409,7 +411,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   let truesightCount = 0;
   for (const tw of towers) {
     // 2026-06-28 — Exploratores + Vanguard Wing have INNATE truesight (scout reveal).
-    if (tw.equippedItems.includes('TRUESIGHT_LENS') || tw.type === TowerType.EXPLORATORES || tw.type === TowerType.VANGUARD_WING) {
+    if (tw.equippedItems.includes('TRUESIGHT_LENS') || tw.type === TowerType.EXPLORATORES || tw.type === TowerType.VANGUARD_WING || tw.type === TowerType.SKY_DOMINION) {
       truesightCount++;
       const stats = towerEffectiveStats(tw);
       const tx = tw.tileX * GRID.TILE + GRID.TILE / 2;
@@ -576,6 +578,26 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       globalSpeedMult *= 1.30;
       enemyTakenAuras.push({ x: cx, y: cy, r: 999 * GRID.TILE, pct: 0.30 });
     }
+    if (t.type === TowerType.AUREATE_TRIBUNAL && !auraOff) {
+      globalDmgBonus += 0.55;
+      globalSpeedMult *= 1.40;
+      enemyTakenAuras.push({ x: cx, y: cy, r: 6.5 * GRID.TILE, pct: 0.40 });
+      const nextTribunal = (t as any).__nextTribunalTick ?? 0;
+      if (state.tick >= nextTribunal && !asleep) {
+        (t as any).__nextTribunalTick = state.tick + 4.0;
+        let bossOnTrial = false;
+        for (const e of state.enemies.values()) {
+          if (e.hp <= 0) continue;
+          if (Math.hypot(e.x - cx, e.y - cy) > 6.5 * GRID.TILE) continue;
+          pushStatus(e, StatusEffectKind.MARK, 5, 0.30, t.qualityTier);
+          if (e.isBoss) bossOnTrial = true;
+        }
+        if (bossOnTrial) {
+          state.gold += 25;
+          state.hint = 'Aureate Tribunal collected 25g from a condemned boss.';
+        }
+      }
+    }
     if (t.type === TowerType.IMPERIUM_ETERNUM && !auraOff) {
       // APEX: +25% atk speed aura globally.
       globalSpeedMult *= 1.25;
@@ -648,6 +670,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // APEX OF APEXES: +30% global atk speed, +30% global damage.
       globalSpeedMult *= 1.30;
       globalDmgBonus += 0.30;
+    }
+    if (t.type === TowerType.GLACIAL_PALISADE && !auraOff) {
+      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.20 });
     }
     // Item auras — same suppression rule. If a nullifier enemy is within
     // 2 tiles of THIS tower, the tower's item aura silently drops out.
@@ -1024,6 +1049,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if ((t.type === TowerType.SAGITTARIUS || t.type === TowerType.VENATOR) && target.isFlyer) damage *= 1.45;
       // 2026-06-28 — new anti-flyer combos.
       if (t.type === TowerType.SKYREAPER_BATTERY && target.isFlyer) damage *= 2.10;   // +110% vs flyers
+      if (t.type === TowerType.SKY_DOMINION && target.isFlyer) damage *= 2.80;         // +180% vs flyers
       if (t.type === TowerType.BEASTLORD_CHAMPION && target.isFlyer) damage *= 1.70;  // +70% vs flyers
       // PRAETORIAN EXECUTIONER — +40% vs disabled targets (stun/slow/freeze).
       if (t.type === TowerType.PRAETORIAN_EXECUTIONER && target.statusEffects.some(s =>
@@ -1156,7 +1182,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.AURORA_LEGION && target.archetype === 'ELITE') damage *= 1.50;   // 2026-05 v11: 1.30 → 1.50
       if (t.type === TowerType.EXPLORATORES && target.archetype === 'RUNNER') damage *= 1.50;   // RECON: +50% vs runners
       if (t.type === TowerType.VANGUARD_WING && target.archetype === 'ELITE') damage *= 1.40;   // EAGLE-EYE: +40% vs elites
+      if (t.type === TowerType.SKY_DOMINION && target.archetype === 'ELITE') damage *= 1.50;     // +50% vs elites
       if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 2.00;                 // CITY-BREAKER: +100% vs bosses
+      if (t.type === TowerType.INFERNAL_COLOSSUS && target.isBoss) damage *= 2.50;                // +150% vs bosses
       if (t.type === TowerType.CARTHAGE_SCOURGE && target.isBoss) damage *= 4.0;         // +300% vs bosses
       if (t.type === TowerType.TURMA_LANCERS && !target.isFlyer) damage *= 1.45;         // +45% vs ground
       // ─── 2026-05 AUDIT: damage modifiers claimed by tower UI ─────────
@@ -1725,6 +1753,63 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (t.type === TowerType.VANGUARD_WING && target.isBoss) {
           const hc = (t as any).__hitCount ?? 0;
           if (hc > 0 && hc % 4 === 0) pushStatus(target, StatusEffectKind.MARK, 6, 0.20, t.qualityTier);
+        }
+        // SKY DOMINION — every 5th volley is a sky-wide command burst.
+        if (t.type === TowerType.SKY_DOMINION) {
+          const hc = (t as any).__hitCount ?? 0;
+          if (hc > 0 && hc % 5 === 0) {
+            const r = (t.range ?? 7.5) * GRID.TILE;
+            for (const e of state.enemies.values()) {
+              if (e.hp <= 0 || !e.isFlyer) continue;
+              if (Math.hypot(e.x - tcx, e.y - tcy) > r) continue;
+              pushStatus(e, StatusEffectKind.STUN, 0.9, 0, t.qualityTier);
+              pushStatus(e, StatusEffectKind.MARK, 4, 0.30, t.qualityTier);
+            }
+            const r5: any = globalRef?.__renderer;
+            if (r5?.triggerImpactRing) r5.triggerImpactRing(tcx, tcy, state.tick, 54, 0x88ddff);
+          }
+        }
+        // GLACIAL PALISADE — every 4th strike bursts into an aegis blizzard.
+        if (t.type === TowerType.GLACIAL_PALISADE) {
+          const hc = (t as any).__hitCount ?? 0;
+          if (hc > 0 && hc % 4 === 0) {
+            const r = 2.8 * GRID.TILE;
+            const burst = damage * 0.8;
+            for (const e of state.enemies.values()) {
+              if (e.hp <= 0) continue;
+              if (Math.hypot(e.x - target.x, e.y - target.y) > r) continue;
+              e.hp -= burst; e.hpFlashTimer = 0.20; e.lastDamagedTick = state.tick;
+              pushStatus(e, StatusEffectKind.FREEZE, 1.0, 0, t.qualityTier);
+              pushStatus(e, StatusEffectKind.MARK, 4, 0.20, t.qualityTier);
+              hooks.onHit(t, e, burst, resMod);
+              if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
+            }
+            const r6: any = globalRef?.__renderer;
+            if (r6?.triggerImpactRing) r6.triggerImpactRing(target.x, target.y, state.tick, 44, 0x99ddff);
+          }
+        }
+        // INFERNAL COLOSSUS — every 3rd shot is a wider doom round.
+        if (t.type === TowerType.INFERNAL_COLOSSUS) {
+          const crater = 4.0 * GRID.TILE;
+          const hc = (t as any).__hitCount ?? 0;
+          const doom = hc > 0 && hc % 3 === 0;
+          for (const e of state.enemies.values()) {
+            if (e.hp <= 0) continue;
+            if (Math.hypot(e.x - target.x, e.y - target.y) > crater) continue;
+            pushStatus(e, StatusEffectKind.ARMOR_SHRED, 4, 0, t.qualityTier);
+            pushStatus(e, StatusEffectKind.HELLFIRE, 999, 0.012, t.qualityTier);
+            if (doom) {
+              const bonus = damage * 1.2;
+              e.hp -= bonus; e.hpFlashTimer = 0.22; e.lastDamagedTick = state.tick;
+              pushStatus(e, StatusEffectKind.STUN, 1.0, 0, t.qualityTier);
+              hooks.onHit(t, e, bonus, resMod);
+              if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
+            }
+          }
+          if (doom) {
+            const r7: any = globalRef?.__renderer;
+            if (r7?.triggerImpactRing) r7.triggerImpactRing(target.x, target.y, state.tick, 56, 0xff5533);
+          }
         }
         // Cleave melee — hit every other enemy in melee range. Native
         // cleavers default to 70% on secondaries; FALX_BLADE bumps that
@@ -2577,6 +2662,20 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
         pushStatus(target, StatusEffectKind.SLOW, dur(2.5), 0.55, tier);
         pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
       }
+      break;
+    case TowerType.SKY_DOMINION:
+      pushStatus(target, StatusEffectKind.MARK, dur(3), 0.20, tier);
+      pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
+      if (target.isFlyer) pushStatus(target, StatusEffectKind.SLOW, dur(3), 0.60, tier);
+      break;
+    case TowerType.GLACIAL_PALISADE:
+      pushStatus(target, StatusEffectKind.SLOW, dur(3), 0.55, tier);
+      pushStatus(target, StatusEffectKind.FREEZE, dur(0.55), 0, tier);
+      pushStatus(target, StatusEffectKind.MARK, dur(3), 0.20, tier);
+      break;
+    case TowerType.INFERNAL_COLOSSUS:
+      pushStatus(target, StatusEffectKind.HELLFIRE, 999, 0.012, tier);
+      pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
       break;
     case TowerType.CONSULAR_FATEBINDER:
       // APEX SUPER: stun on hit (doesn't matter much, every enemy is hit anyway).
