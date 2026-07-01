@@ -899,6 +899,31 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
   for (const t of state.groundPathB) {
     groundPathBPx.push({ x: t.col * GRID.TILE + GRID.TILE / 2, y: t.row * GRID.TILE + GRID.TILE / 2 });
   }
+  const anchorDeathChildOnPath = (parent: Enemy, child: Enemy, minRunwayTiles = 8) => {
+    const useCaveB = !!(parent as any).__caveB && groundPathBPx.length > 0;
+    const path = useCaveB ? groundPathBPx : groundPathPx;
+    if (useCaveB) (child as any).__caveB = true;
+    if (path.length === 0) {
+      child.pathIndex = Math.max(0, parent.pathIndex ?? 0);
+      child.pathProgress = Math.max(0, Math.min(0.99, parent.pathProgress ?? 0));
+      return { x: parent.x, y: parent.y };
+    }
+
+    const inheritedIndex = Math.max(0, Math.min(parent.pathIndex ?? 0, path.length - 1));
+    const inheritedProgress = Math.max(0, Math.min(0.99, parent.pathProgress ?? 0));
+    const maxSafeIndex = Math.max(0, path.length - 1 - minRunwayTiles);
+    const tooCloseToGate = inheritedIndex > maxSafeIndex || (inheritedIndex === maxSafeIndex && inheritedProgress > 0.65);
+    child.pathIndex = tooCloseToGate ? maxSafeIndex : inheritedIndex;
+    child.pathProgress = tooCloseToGate ? 0 : inheritedProgress;
+
+    const a = path[child.pathIndex] ?? path[0] ?? { x: parent.x, y: parent.y };
+    const b = path[Math.min(child.pathIndex + 1, path.length - 1)] ?? a;
+    const t = child.pathProgress;
+    return {
+      x: a.x + (b.x - a.x) * t,
+      y: a.y + (b.y - a.y) * t
+    };
+  };
   for (const e of Array.from(state.enemies.values())) {
     if (e.hp <= 0) {
       // SPLIT-ON-DEATH (2026-05): some enemies (Demon Hellhound, Fire
@@ -1038,16 +1063,15 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
           // is nearly the full unit, not a chip-damage filler.
           const hpFrac = (0.85 + Math.random() * 0.15) * reanimHpBump;
           const risen = spawnEnemy(state, reanimateAs as EnemyType, hpFrac, /*derived=*/true);
+          const anchor = anchorDeathChildOnPath(e, risen, 8);
           // Cluster near death point with a small random offset so the
           // sprites don't all overlap to one pixel.
           const ang = (i / count) * Math.PI * 2 + Math.random() * 0.6;
           const dist = i === 0 ? 0 : (4 + Math.random() * 6);
-          risen.x = e.x + Math.cos(ang) * dist;
-          risen.y = e.y + Math.sin(ang) * dist;
+          risen.x = anchor.x + Math.cos(ang) * dist;
+          risen.y = anchor.y + Math.sin(ang) * dist;
           risen.prevX = risen.x;
           risen.prevY = risen.y;
-          risen.pathIndex = e.pathIndex;
-          risen.pathProgress = e.pathProgress;
           risen.__reanimated = true;
           // 1.2s rising window — the renderer paints a portal swirl + bones
           // pillar over the sprite during this time, and the move loop
@@ -1090,14 +1114,13 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
           // is the threat-anchor type; celts swarm and fill the screen.
           const spawnType = (i < 6) ? EnemyType.UNDEAD_BERSERKER : EnemyType.UNDEAD_CELT;
           const risen = spawnEnemy(state, spawnType, _hpMult, /*derived=*/true);
+          const anchor = anchorDeathChildOnPath(e, risen, 8);
           const ang = (i / rattleCount) * Math.PI * 2 + Math.random() * 0.4;
           const dist = i === 0 ? 0 : (5 + Math.random() * 9);
-          risen.x = e.x + Math.cos(ang) * dist;
-          risen.y = e.y + Math.sin(ang) * dist;
+          risen.x = anchor.x + Math.cos(ang) * dist;
+          risen.y = anchor.y + Math.sin(ang) * dist;
           risen.prevX = risen.x;
           risen.prevY = risen.y;
-          risen.pathIndex = e.pathIndex;
-          risen.pathProgress = e.pathProgress;
           risen.__reanimated = true;
           // 1.2s rising window — same VFX cue as the necromancy reanim
           // path below. Stagger by 60ms so the swarm emerges in a wave

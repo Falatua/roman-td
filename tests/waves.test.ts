@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { effectiveWaveHpMult, startWave, tickSpawns, checkWaveEnd } from '../src/systems/WaveManager';
 import { campaignPressureHpMult, campaignPressureResistMult } from '../src/systems/CampaignDifficulty';
-import { tickEnemies } from '../src/systems/EnemySystem';
+import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
 import { createGameState } from '../src/GameState';
 import { EnemyType, GamePhase, SurpriseEventKind } from '../src/types';
 import { initializeGrid } from '../src/systems/GridManager';
@@ -10,6 +10,7 @@ import { buildGroundPath, buildGroundPathB, buildFlyerPath } from '../src/system
 import { enemyResistanceProfile } from '../src/systems/EnemyResistances';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
+import { GRID } from '../src/constants';
 
 function bootstrapState() {
   const s = createGameState();
@@ -189,6 +190,34 @@ describe('Wave start — basic flow', () => {
     state.phase = GamePhase.BUILD_PHASE;
     startWave(state);
     expect(state.weatherKey).toBeTruthy();
+  });
+});
+
+describe('Wave 11 Dead Uprising necromancy safety', () => {
+  it('does not let reanimated children inherit a gate-leak position', () => {
+    const state: any = bootstrapState();
+    state.wave = 11;
+    state.phase = GamePhase.WAVE_PHASE;
+    state.lives = 25;
+
+    const undead = spawnEnemy(state, EnemyType.UNDEAD_CELT, 1, false, false);
+    undead.hp = 0;
+    undead.pathIndex = state.groundPath.length - 1;
+    undead.pathProgress = 0;
+    const gate = state.groundPath[state.groundPath.length - 1];
+    undead.x = gate.col * GRID.TILE + GRID.TILE / 2;
+    undead.y = gate.row * GRID.TILE + GRID.TILE / 2;
+    undead.prevX = undead.x;
+    undead.prevY = undead.y;
+
+    let leaks = 0;
+    tickEnemies(state, 0.016, () => { leaks++; }, () => {});
+
+    const children = [...state.enemies.values()].filter((e: any) => e.__reanimated);
+    expect(children.length).toBeGreaterThan(0);
+    expect(leaks).toBe(0);
+    const maxSafeIndex = state.groundPath.length - 1 - 8;
+    expect(children.every((e: any) => e.pathIndex <= maxSafeIndex)).toBe(true);
   });
 });
 
