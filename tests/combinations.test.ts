@@ -236,8 +236,27 @@ describe('Recipe combo detection', () => {
     }
   });
 
+  it('adds Roman Transformer as the first Omega combo from Hannibal and Caesar', () => {
+    const recipe = comboData.find((r: any) => r.result === 'ROMAN_TRANSFORMER') as any;
+    expect(recipe).toBeTruthy();
+    expect(recipe.tier).toBe(5);
+    expect(recipe.cost).toBe(300);
+    expect(recipe.ingredients).toEqual([
+      { type: 'HANNIBALS_NIGHTMARE', minTier: 5 },
+      { type: 'JULIUS_CAESAR', minTier: 5 }
+    ]);
+
+    const def = (towersData as any)[TowerType.ROMAN_TRANSFORMER];
+    expect(def?.kind).toBe('COMBO');
+    expect(def?.omega).toBe(true);
+    expect(def?.damageType).toBe('DIVINE');
+    expect(def?.melee).toBe(true);
+    expect(def?.range).toBe(6.0);
+    expect(def?.ability).toContain('OMEGA COMBO');
+  });
+
   it('ships transparent sprite assets for the new supercombo towers', () => {
-    for (const file of ['ts_sky_dominion.png', 'ts_aureate_tribunal.png', 'ts_glacial_palisade.png', 'ts_infernal_colossus.png']) {
+    for (const file of ['ts_sky_dominion.png', 'ts_aureate_tribunal.png', 'ts_glacial_palisade.png', 'ts_infernal_colossus.png', 'ts_roman_transformer.png']) {
       expect(existsSync(path.join(process.cwd(), 'public/assets/sprites', file)), file).toBe(true);
     }
   });

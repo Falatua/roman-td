@@ -33,6 +33,7 @@ describe('Fortuna\'s Wheel — 925g combo-tower gamble', () => {
     'IMPERIUM_ETERNUM', 'CARTHAGE_SCOURGE',
     'TRIUMVIRATE', 'LEGION_PRIME', 'CONSULAR_FATEBINDER', 'MARS_VICTOR',
     'SKY_DOMINION', 'AUREATE_TRIBUNAL', 'GLACIAL_PALISADE', 'INFERNAL_COLOSSUS',
+    'ROMAN_TRANSFORMER',
     // 2026 v2 Ch8 — the 6 Champions of Rome are COMBO-kind but Mercator-only
     // (350g recruit → Mars Victor), so they are blocked from Fortuna too.
     'CHAMPION_MARIUS', 'CHAMPION_AGRIPPA', 'CHAMPION_AGRICOLA',
@@ -54,13 +55,14 @@ describe('Fortuna\'s Wheel — 925g combo-tower gamble', () => {
     }
   });
 
-  it('pool has 47 towers (63 combos minus 10 apex minus 6 champions)', () => {
+  it('pool has 47 towers (64 combos minus 11 apex/omega minus 6 champions)', () => {
     // 2026 v2 Ch8 — the 6 Champions of Rome are COMBO-kind but Mercator-only,
     // so they join the 6 apex super-combos on the Fortuna blocklist.
     // 2026-06-28 — +10 under-represented-base combos, then +4 more (Exploratores,
     // Vulcan Bombard, Vanguard Wing, Vulcan Colossus), all gamble-able.
-    // 2026-07-01 — +4 recipe-only supercombo towers, also blocked as apex.
-    // Pool count: 63 total combos minus 16 blocked (10 apex + 6 champion) = 47.
+    // 2026-07-01 — +4 recipe-only supercombo towers and Roman Transformer,
+    // also blocked as apex/omega.
+    // Pool count: 64 total combos minus 17 blocked (11 apex/omega + 6 champion) = 47.
     expect(FORTUNA_GAMBLE_POOL.length).toBe(47);
   });
 

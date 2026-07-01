@@ -893,5 +893,6 @@
   { "result": "SKY_DOMINION", "tier": 5, "cost": 150, "ingredients": [ { "type": "SKYREAPER_BATTERY", "minTier": 4 }, { "type": "NUMIDIAN_CAVALRY", "minTier": 4 }, { "type": "VANGUARD_WING", "minTier": 4 } ] },
   { "result": "AUREATE_TRIBUNAL", "tier": 5, "cost": 150, "ingredients": [ { "type": "AERARIUM", "minTier": 4 }, { "type": "TRIUMVIRATE", "minTier": 5 }, { "type": "SACER_VESTAL", "minTier": 4 } ] },
   { "result": "GLACIAL_PALISADE", "tier": 5, "cost": 150, "ingredients": [ { "type": "FROZEN_LEGION", "minTier": 4 }, { "type": "SACRED_BAND", "minTier": 4 }, { "type": "CATAPHRACT_LANCER", "minTier": 4 } ] },
-  { "result": "INFERNAL_COLOSSUS", "tier": 5, "cost": 180, "ingredients": [ { "type": "VULCAN_COLOSSUS", "minTier": 5 }, { "type": "GOD_OF_WAR", "minTier": 5 }, { "type": "TRIUMPHATOR", "minTier": 5 } ] }
+  { "result": "INFERNAL_COLOSSUS", "tier": 5, "cost": 180, "ingredients": [ { "type": "VULCAN_COLOSSUS", "minTier": 5 }, { "type": "GOD_OF_WAR", "minTier": 5 }, { "type": "TRIUMPHATOR", "minTier": 5 } ] },
+  { "result": "ROMAN_TRANSFORMER", "tier": 5, "cost": 300, "ingredients": [ { "type": "HANNIBALS_NIGHTMARE", "minTier": 5 }, { "type": "JULIUS_CAESAR", "minTier": 5 } ] }
 ]

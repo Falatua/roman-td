@@ -70,6 +70,7 @@ const MANIFEST: Record<string, string> = {
   VANGUARD_WING: 'tcc_vanguard_wing.png', VULCAN_COLOSSUS: 'tcc_vulcan_colossus.png',
   SKY_DOMINION: 'ts_sky_dominion.png', AUREATE_TRIBUNAL: 'ts_aureate_tribunal.png',
   GLACIAL_PALISADE: 'ts_glacial_palisade.png', INFERNAL_COLOSSUS: 'ts_infernal_colossus.png',
+  ROMAN_TRANSFORMER: 'ts_roman_transformer.png',
   // 2026-05-17 — MURMILLO (T4 mid-game combo). Heavy Roman gladiator with
   // fish-helmet + scutum + gladius. Sliced from the user-supplied gladiator
   // roster sheet (top-left cell); chroma-keyed via the standard pipeline.

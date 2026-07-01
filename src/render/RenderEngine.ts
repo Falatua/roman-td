@@ -4331,6 +4331,11 @@ export class RenderEngine {
       if (tw.type === TowerType.GLACIAL_PALISADE) {
         this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.8);
       }
+      // Roman Transformer — Omega vulnerability field plus close immolation.
+      if (tw.type === TowerType.ROMAN_TRANSFORMER) {
+        this.drawAuraRing(cx, cy, 6 * GRID.TILE, ENEMY, pulse * 0.9, true);
+        this.drawAuraRing(cx, cy, 1.5 * GRID.TILE, 0xff6633, pulse * 0.85, true);
+      }
 
       // ── AURA ITEMS ───────────────────────────────────────────────
       // Item rings re-derive their radius from the same constants used

@@ -335,6 +335,50 @@ describe('Sacred Band combat wiring', () => {
   });
 });
 
+describe('Roman Transformer omega combat wiring', () => {
+  it('applies its omega on-hit pressure package', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    const tower = createTower(TowerType.ROMAN_TRANSFORMER, 5, 4, 4, 0);
+    const target = testEnemy('roman-transformer-target');
+    state.enemies.set(target.id, target);
+
+    applyDamageAndStatus(state, tower, target, 1, noopCombatHooks());
+
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.35)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.BURN && s.magnitude === 0.08)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.HELLFIRE && s.magnitude === 0.012)).toBe(true);
+  });
+
+  it('burns nearby enemies with immolation aura and slashes all enemies after two active minutes', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    state.wave = 18;
+    state.tick = 120;
+    const tower = createTower(TowerType.ROMAN_TRANSFORMER, 5, 4, 4, 0);
+    tower.attackCooldown = 999;
+    (tower as any).__omegaWave = 18;
+    (tower as any).__nextOmegaSlashTick = 120;
+    state.towers.set(tower.id, tower);
+    const near = testEnemy('omega-near', 150, 150);
+    near.hp = 800; near.maxHp = 1000;
+    const far = testEnemy('omega-far', 900, 700);
+    far.hp = 400; far.maxHp = 1000;
+    state.enemies.set(near.id, near);
+    state.enemies.set(far.id, far);
+
+    tickCombat(state, 0.016, noopCombatHooks());
+
+    expect(near.hp).toBeCloseTo(600, 4);
+    expect(far.hp).toBeCloseTo(300, 4);
+    expect(near.statusEffects.some(s => s.kind === StatusEffectKind.BURN && s.magnitude === 0.08)).toBe(true);
+    expect(far.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.35)).toBe(true);
+    expect((tower as any).__nextOmegaSlashTick).toBe(240);
+  });
+});
+
 describe('Aura tiles (EMERALD watchtower +2 range)', () => {
   // 2026-05-19 — 6th aura tile. EMERALD WATCHTOWER at (2, 22) grants
   // any tower placed on it +2 tiles of range. Stacks additively with

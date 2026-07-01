@@ -199,6 +199,7 @@ const MELEE_TYPES = new Set<TowerType>([
   // route through the melee branch for direct blade hits and AEGIS NOVA.
   TowerType.SACRED_BAND,
   TowerType.GLACIAL_PALISADE,
+  TowerType.ROMAN_TRANSFORMER,
   // 2026-05 v9: Consular Fatebinder converted from ranged DIVINE to a
   // melee strike (still keeps TRUE-damage primary + map-wide 60% splash
   // + global aura). The melee identity matches its character art (consul
@@ -264,7 +265,7 @@ const CLEAVE_MELEE = new Set<TowerType>([
   TowerType.HASTATI, TowerType.TRIARIUS, TowerType.COHORT_GUARD,
   TowerType.PRAETORIAN_WALL, TowerType.IMPERATOR_GUARD,
   TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
-  TowerType.PONTIFEX_MAXIMUS, TowerType.GLACIAL_PALISADE
+  TowerType.PONTIFEX_MAXIMUS, TowerType.GLACIAL_PALISADE, TowerType.ROMAN_TRANSFORMER
 ]);
 
 // 2026-05-15 cleave/multi-shot item helpers. The FALX_BLADE item adds
@@ -595,6 +596,46 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (bossOnTrial) {
           state.gold += 25;
           state.hint = 'Aureate Tribunal collected 25g from a condemned boss.';
+        }
+      }
+    }
+    if (t.type === TowerType.ROMAN_TRANSFORMER) {
+      if (!auraOff) enemyTakenAuras.push({ x: cx, y: cy, r: 6 * GRID.TILE, pct: 0.55 });
+
+      const lastBurn = (t as any).__lastOmegaImmolationTick ?? -999;
+      if (state.tick - lastBurn >= 0.5 && !asleep) {
+        (t as any).__lastOmegaImmolationTick = state.tick;
+        const burnR = 1.5 * GRID.TILE;
+        for (const e of state.enemies.values()) {
+          if (e.hp <= 0) continue;
+          if (Math.hypot(e.x - cx, e.y - cy) > burnR) continue;
+          pushStatus(e, StatusEffectKind.BURN, 2.0, 0.08, t.qualityTier);
+        }
+      }
+
+      if ((t as any).__omegaWave !== state.wave) {
+        (t as any).__omegaWave = state.wave;
+        (t as any).__nextOmegaSlashTick = state.tick + 120.0;
+      }
+      const nextOmegaSlash = (t as any).__nextOmegaSlashTick ?? (state.tick + 120.0);
+      if (state.tick >= nextOmegaSlash && !asleep) {
+        (t as any).__nextOmegaSlashTick = state.tick + 120.0;
+        let hitCount = 0;
+        for (const e of state.enemies.values()) {
+          if (e.hp <= 0) continue;
+          const slash = Math.max(1, e.hp * 0.25);
+          e.hp -= slash;
+          e.hpFlashTimer = 0.35;
+          e.lastDamagedTick = state.tick;
+          pushStatus(e, StatusEffectKind.MARK, 6, 0.35, t.qualityTier);
+          hooks.onHit(t, e, slash, 1);
+          hitCount++;
+          if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
+        }
+        if (hitCount > 0) {
+          state.hint = `Roman Transformer unleashed Omega Decree on ${hitCount} enemies.`;
+          const renderer: any = globalRef?.__renderer;
+          if (renderer?.triggerImpactRing) renderer.triggerImpactRing(cx, cy, state.tick, 120, 0xffd86b);
         }
       }
     }
@@ -1472,6 +1513,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         agricolaActive ||
         (state as any).__marsVictorActive ||
         t.type === TowerType.BEASTLORD_CHAMPION ||   // 2026-06-28 — melee anti-air combo
+        t.type === TowerType.ROMAN_TRANSFORMER ||     // OMEGA blades reach the sky lane too
         t.equippedItems.includes('AQUILA_TALONS') ||
         t.equippedItems.includes('STORM_AQUILA_TALONS') ||
         towerAuraTileKind(t) === 'CYAN'
@@ -1976,6 +2018,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   const meleeAirEnabled = isMelee && (
     agricolaEnablesAirAt(state, tx, ty) ||   // scoped to 10 tiles of an Agricola hero (was global)
     (state as any).__marsVictorActive ||   // Mars Victor fuses Agricola's all-towers-strike-flyers passive
+    t.type === TowerType.ROMAN_TRANSFORMER ||
     t.equippedItems.includes('AQUILA_TALONS') ||
     t.equippedItems.includes('STORM_AQUILA_TALONS') ||   // 2026 v2 — legendary grants ANY tower anti-air
     towerAuraTileKind(t) === 'CYAN'
@@ -2676,6 +2719,13 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
     case TowerType.INFERNAL_COLOSSUS:
       pushStatus(target, StatusEffectKind.HELLFIRE, 999, 0.012, tier);
       pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
+      break;
+    case TowerType.ROMAN_TRANSFORMER:
+      pushStatus(target, StatusEffectKind.MARK, dur(4), 0.35, tier);
+      pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
+      pushStatus(target, StatusEffectKind.STUN, dur(0.35), 0, tier);
+      pushStatus(target, StatusEffectKind.BURN, dur(3), 0.08, tier);
+      pushStatus(target, StatusEffectKind.HELLFIRE, 999, 0.012, tier);
       break;
     case TowerType.CONSULAR_FATEBINDER:
       // APEX SUPER: stun on hit (doesn't matter much, every enemy is hit anyway).
