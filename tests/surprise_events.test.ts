@@ -12,10 +12,14 @@
 // all 8 leaked on spawn AND the 27 UNDEAD_CELTs reanimated/rebirthed
 // cascade pushed the player to 0 lives without a fair shot.
 import { describe, it, expect } from 'vitest';
-import { SURPRISE_EVENT_SCHEDULE, spawnAtSurpriseEventPoint, surpriseEventHpMult } from '../src/systems/SurpriseEvents';
-import { SurpriseEventKind } from '../src/types';
+import { maybeTriggerSurpriseEventForWave, SURPRISE_EVENT_SCHEDULE, spawnAtSurpriseEventPoint, surpriseEventHpMult } from '../src/systems/SurpriseEvents';
+import { SurpriseEventKind, TileType, TowerType } from '../src/types';
 import { createGameState } from '../src/GameState';
 import { GRID } from '../src/constants';
+import { initializeGrid } from '../src/systems/GridManager';
+import { buildGroundPath } from '../src/systems/PathFinder';
+import { createTower } from '../src/systems/TowerSystem';
+import waypointsData from '../src/data/waypoints.json';
 
 function makeState() {
   const s: any = createGameState();
@@ -59,6 +63,40 @@ function fakeEnemy(opts: { isFlyer: boolean }) {
     baseSpeed: 1, currentSpeed: 1,
     statusEffects: [],
   };
+}
+
+function makeEventState(wave: number) {
+  const s = createGameState();
+  initializeGrid(s);
+  s.wave = wave;
+  s.tick = 0;
+  s.groundPath = buildGroundPath(s) ?? [];
+  return s;
+}
+
+function blockTowerTile(s: any, type: TowerType, col: number, row: number) {
+  const t = createTower(type, 1, col, row, s.wave);
+  s.towers.set(t.id, t);
+  s.tiles[row][col] = TileType.TOWER;
+  return t;
+}
+
+function assertEventPointsAvoidPlayerTiles(s: any) {
+  const ev = s.activeSurpriseEvent;
+  expect(ev).toBeTruthy();
+  for (const point of ev.spawnPoints) {
+    const col = Math.floor(point.vfxX / GRID.TILE);
+    const row = Math.floor(point.vfxY / GRID.TILE);
+    expect(s.tiles[row]?.[col], `event point ${col},${row}`).toBe(TileType.EMPTY);
+    for (const tower of s.towers.values()) {
+      expect(`${col},${row}`).not.toBe(`${tower.tileX},${tower.tileY}`);
+    }
+  }
+  for (const prop of ev.atmosProps ?? []) {
+    const col = Math.floor(prop.x / GRID.TILE);
+    const row = Math.floor(prop.y / GRID.TILE);
+    expect(s.tiles[row]?.[col], `atmos prop ${col},${row}`).toBe(TileType.EMPTY);
+  }
 }
 
 describe('Surprise event spawn redirect — flyer guard (2026-05-19)', () => {
@@ -123,5 +161,63 @@ describe('Surprise event spawn redirect — flyer guard (2026-05-19)', () => {
       expect(ok, `queueIdx ${i} should reject`).toBe(false);
       expect(flyer.pathIndex).toBe(0);
     }
+  });
+
+  it('Dead Uprising never places its urn or atmosphere on a tower or stone', () => {
+    const s: any = makeEventState(11);
+    const midCol = Math.floor(GRID.COLS / 2);
+    const midRow = Math.floor(GRID.ROWS / 2);
+    const tower = blockTowerTile(s, TowerType.MILITES, midCol, midRow);
+    s.tiles[midRow - 1][midCol] = TileType.STONE;
+    s.tiles[midRow][midCol + 1] = TileType.STONE;
+
+    maybeTriggerSurpriseEventForWave(s);
+
+    expect(s.towers.get(tower.id)).toBe(tower);
+    expect(tower.tileX).toBe(midCol);
+    expect(tower.tileY).toBe(midRow);
+    expect(s.tiles[midRow][midCol]).toBe(TileType.TOWER);
+    expect(s.tiles[midRow - 1][midCol]).toBe(TileType.STONE);
+    expect(s.tiles[midRow][midCol + 1]).toBe(TileType.STONE);
+    assertEventPointsAvoidPlayerTiles(s);
+  });
+
+  it('Invasion perimeter fires avoid towers and stones', () => {
+    const s: any = makeEventState(7);
+    s.spawnQueue = Array.from({ length: 32 }, () => ({ type: 'CELTIC_FOOTMAN', spawnAt: 0 }));
+    const tower = blockTowerTile(s, TowerType.SAGITTARIUS, 1, 4);
+    s.tiles[1][6] = TileType.STONE;
+    s.tiles[GRID.ROWS - 2][10] = TileType.STONE;
+
+    maybeTriggerSurpriseEventForWave(s);
+
+    expect(s.towers.get(tower.id)).toBe(tower);
+    expect(s.tiles[tower.tileY][tower.tileX]).toBe(TileType.TOWER);
+    expect(s.tiles[1][6]).toBe(TileType.STONE);
+    expect(s.tiles[GRID.ROWS - 2][10]).toBe(TileType.STONE);
+    assertEventPointsAvoidPlayerTiles(s);
+  });
+
+  it('Gates of Hell relocates gate anchors instead of covering towers or stones', () => {
+    const s: any = makeEventState(16);
+    const wp3 = (waypointsData as any).waypoints.find((w: any) => w.index === 3);
+    const wp4 = (waypointsData as any).waypoints.find((w: any) => w.index === 4);
+    const blocked = [
+      { col: wp3.topLeft.col - 1, row: wp3.topLeft.row },
+      { col: wp3.topLeft.col + 1, row: wp3.topLeft.row },
+      { col: wp4.topLeft.col - 1, row: wp4.topLeft.row },
+      { col: wp4.topLeft.col + 1, row: wp4.topLeft.row }
+    ];
+    const towers = blocked.slice(0, 2).map((p, idx) => blockTowerTile(s, idx === 0 ? TowerType.MILITES : TowerType.SAGITTARIUS, p.col, p.row));
+    for (const p of blocked.slice(2)) s.tiles[p.row][p.col] = TileType.STONE;
+
+    maybeTriggerSurpriseEventForWave(s);
+
+    for (const tower of towers) {
+      expect(s.towers.get(tower.id)).toBe(tower);
+      expect(s.tiles[tower.tileY][tower.tileX]).toBe(TileType.TOWER);
+    }
+    for (const p of blocked.slice(2)) expect(s.tiles[p.row][p.col]).toBe(TileType.STONE);
+    assertEventPointsAvoidPlayerTiles(s);
   });
 });

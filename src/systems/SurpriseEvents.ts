@@ -819,6 +819,7 @@ function generateUprisingAtmosphere(state: GameStateShape, mainPoints: SurpriseE
     const radius = GRID.TILE * (ring === 0 ? 1.2 : 2.2) + Math.random() * 0.4 * GRID.TILE;
     const px = cx + Math.cos(angle) * radius;
     const py = cy + Math.sin(angle) * radius - GRID.TILE * 0.2;
+    if (!isEventPixelSafe(state, px, py)) continue;
     props.push({
       spriteKey: 'SMOKE_PUFF',
       x: px,
@@ -867,12 +868,19 @@ function generateGatesOfHellPoints(state: GameStateShape, startAtTick: number): 
   const wp3 = (waypointsData as any).waypoints.find((w: any) => w.index === 3);
   const wp4 = (waypointsData as any).waypoints.find((w: any) => w.index === 4);
   if (!wp3 || !wp4) return [];
-  const locations = [
+  const rawLocations = [
     { col: wp3.topLeft.col - 1, row: wp3.topLeft.row, pointId: 0 },
     { col: wp3.topLeft.col + 1, row: wp3.topLeft.row, pointId: 1 },
     { col: wp4.topLeft.col - 1, row: wp4.topLeft.row, pointId: 2 },
     { col: wp4.topLeft.col + 1, row: wp4.topLeft.row, pointId: 3 }
   ];
+  const claimed = new Set<string>();
+  const locations = rawLocations
+    .map(loc => {
+      const safe = findNearestEventSafeTile(state, loc.col, loc.row, 4, claimed);
+      return safe ? { ...safe, pointId: loc.pointId } : null;
+    })
+    .filter(Boolean) as Array<{ col: number; row: number; pointId: number }>;
   const out: SurpriseEventSpawnPoint[] = [];
   // Spawn the HELL_GATE structures at all 4 locations. All four
   // rise simultaneously at startAtTick + VFX_RISE_SECONDS (the
@@ -987,10 +995,13 @@ function generateGatesOfHellAtmosphere(state: GameStateShape, mainPoints: Surpri
     for (let i = 0; i < SMOKE_PER_GATE; i++) {
       const angle = (i / SMOKE_PER_GATE) * Math.PI * 2 + Math.random() * 0.5;
       const radius = GRID.TILE * (1.0 + Math.random() * 1.4);
+      const px = gp.x + Math.cos(angle) * radius;
+      const py = gp.y + Math.sin(angle) * radius - GRID.TILE * 0.4;
+      if (!isEventPixelSafe(state, px, py)) continue;
       props.push({
         spriteKey: 'SMOKE_PUFF',
-        x: gp.x + Math.cos(angle) * radius,
-        y: gp.y + Math.sin(angle) * radius - GRID.TILE * 0.4,
+        x: px,
+        y: py,
         scale: 0.8 + Math.random() * 0.4,
         rotation: Math.random() * Math.PI * 2,
         tint: 0xff7a33,             // warm red-orange smoke (vs uprising's purple)
@@ -1067,6 +1078,61 @@ function buildPointsFromLocations(
   return out;
 }
 
+function eventTileKey(col: number, row: number): string {
+  return `${col},${row}`;
+}
+
+function isEventSafeTile(state: GameStateShape, col: number, row: number): boolean {
+  if (col < 0 || col >= GRID.COLS || row < 0 || row >= GRID.ROWS) return false;
+  if (state.tiles[row]?.[col] !== TileType.EMPTY) return false;
+  for (const tower of state.towers.values()) {
+    if (tower.tileX === col && tower.tileY === row) return false;
+  }
+  for (const trap of state.placedTraps ?? []) {
+    if (trap.col === col && trap.row === row) return false;
+  }
+  return true;
+}
+
+function isEventPixelSafe(state: GameStateShape, x: number, y: number): boolean {
+  return isEventSafeTile(state, Math.floor(x / GRID.TILE), Math.floor(y / GRID.TILE));
+}
+
+function findNearestEventSafeTile(
+  state: GameStateShape,
+  col: number,
+  row: number,
+  maxRadius: number,
+  claimed?: Set<string>,
+  extraFilter?: (candidate: { col: number; row: number }) => boolean
+): { col: number; row: number } | null {
+  for (let radius = 0; radius <= maxRadius; radius++) {
+    const candidates: Array<{ col: number; row: number }> = [];
+    for (let dr = -radius; dr <= radius; dr++) {
+      for (let dc = -radius; dc <= radius; dc++) {
+        if (Math.abs(dc) + Math.abs(dr) !== radius) continue;
+        candidates.push({ col: col + dc, row: row + dr });
+      }
+    }
+    candidates.sort((a, b) => {
+      const da = Math.abs(a.col - col) + Math.abs(a.row - row);
+      const db = Math.abs(b.col - col) + Math.abs(b.row - row);
+      if (da !== db) return da - db;
+      if (a.row !== b.row) return a.row - b.row;
+      return a.col - b.col;
+    });
+    for (const candidate of candidates) {
+      const key = eventTileKey(candidate.col, candidate.row);
+      if (claimed?.has(key)) continue;
+      if (!isEventSafeTile(state, candidate.col, candidate.row)) continue;
+      if (extraFilter && !extraFilter(candidate)) continue;
+      claimed?.add(key);
+      return candidate;
+    }
+  }
+  return null;
+}
+
 function generateInvasionPoints(state: GameStateShape, startAtTick: number, waveOverride: boolean): SurpriseEventSpawnPoint[] {
   // 2026-05-19 — FULL-PERIMETER ASSAULT.
   // The invasion now spawns EVERY enemy in the wave from a unique
@@ -1126,12 +1192,19 @@ function generateInvasionPoints(state: GameStateShape, startAtTick: number, wave
     const t = (i + 0.5) / rightCount;
     locations.push({ col: wallSafeRight, row: Math.min(GRID.ROWS - 2, Math.max(1, Math.round(2 + t * rightLen))) });
   }
+  const claimed = new Set<string>();
+  const safeLocations = locations
+    .map(pos => findNearestEventSafeTile(state, pos.col, pos.row, 4, claimed, candidate => {
+      const onEdge = candidate.row <= 3 || candidate.row >= GRID.ROWS - 4 || candidate.col <= 3 || candidate.col >= wallSafeRight - 3;
+      return candidate.col > 0 && candidate.col <= wallSafeRight && candidate.row > 0 && candidate.row < GRID.ROWS - 1 && onEdge;
+    }))
+    .filter(Boolean) as { col: number; row: number }[];
   // In waveOverride mode the spawn-timing is driven by the wave queue
   // (not the per-point spawnAt), so we only need 1 entry per point
   // representing the VISUAL location. tickSpawns reads pointId on each
   // queue entry to choose the spawn location.
   if (waveOverride) {
-    return locations.map((pos, i) => {
+    return safeLocations.map((pos, i) => {
       const vfxX = pos.col * GRID.TILE + GRID.TILE / 2;
       const vfxY = pos.row * GRID.TILE + GRID.TILE / 2;
       const nearest = nearestPathIndexAfterWP2(state, pos.col, pos.row);
@@ -1148,15 +1221,16 @@ function generateInvasionPoints(state: GameStateShape, startAtTick: number, wave
     });
   }
   const enemyType = pickSurpriseEnemyType(state, /*undeadOnly=*/false);
-  return buildPointsFromLocations(locations, SurpriseEventKind.INVASION, enemyType, startAtTick, state);
+  return buildPointsFromLocations(safeLocations, SurpriseEventKind.INVASION, enemyType, startAtTick, state);
 }
 
 function generateUprisingPoints(state: GameStateShape, startAtTick: number, waveOverride: boolean): SurpriseEventSpawnPoint[] {
   // 2026-05-20 — REDESIGNED. Previously a 4-urn diamond (urns at the
   // N/S/E/W tiles two steps off center, with ±1 jitter on the anchor).
   // Per user request the uprising now rises from a SINGLE urn on the
-  // exact center tile — no jitter, no diamond, no scatter. The undead
-  // pour out of one mass grave at the heart of the map.
+  // center of the map whenever it is safe. If the player has built on
+  // that tile, relocate to the nearest empty tile so event VFX never
+  // cover, move, or imply removal of a tower, trap, or stone.
   //
   // We pad the locations array to UPRISING_CLUSTER_SIZE (4) entries
   // all pointing at the SAME center tile so that:
@@ -1172,7 +1246,8 @@ function generateUprisingPoints(state: GameStateShape, startAtTick: number, wave
   // which actually reads as "the urn is glowing brighter" — fine).
   const midCol = Math.floor(GRID.COLS / 2);
   const midRow = Math.floor(GRID.ROWS / 2);
-  const center = { col: midCol, row: midRow };
+  const center = findNearestEventSafeTile(state, midCol, midRow, 8) ?? null;
+  if (!center) return [];
   const locations = [center, center, center, center];
   if (waveOverride) {
     return locations.map((pos, i) => {
