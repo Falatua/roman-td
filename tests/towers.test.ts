@@ -1,11 +1,12 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
 import { createTower, towerEffectiveStats, towerPerAttackDamageBase, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
 import { applyDamageAndStatus, tickCombat } from '../src/systems/CombatResolver';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { spawnProjectile } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind } from '../src/types';
-import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS } from '../src/constants';
+import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS, GRID } from '../src/constants';
 import { createGameState } from '../src/GameState';
 import towersData from '../src/data/towers.json';
 
@@ -45,6 +46,58 @@ function noopCombatHooks() {
     onHit: () => {},
     onMeleeSwing: () => {},
     onProjectileFire: () => {}
+  };
+}
+
+function towerCenter(tower: { tileX: number; tileY: number }) {
+  return {
+    x: tower.tileX * GRID.TILE + GRID.TILE / 2,
+    y: tower.tileY * GRID.TILE + GRID.TILE / 2
+  };
+}
+
+function singleSwingDamage(opts: {
+  support?: Array<{ type: TowerType; x: number; y: number; tier?: 1|2|3|4|5; items?: string[] }>;
+  nullifierAt?: { x: number; y: number };
+  targetOffsetPx?: { x: number; y: number };
+} = {}) {
+  const state = createGameState();
+  (globalThis as any).__lastState = state;
+  const attacker = createTower(TowerType.DECURION, 1, 10, 10, 0);
+  attacker.attackCooldown = 0;
+  state.towers.set(attacker.id, attacker);
+
+  for (const s of opts.support ?? []) {
+    const support = createTower(s.type, s.tier ?? 5, s.x, s.y, 0);
+    support.attackCooldown = 999;
+    support.equippedItems.push(...(s.items ?? []));
+    state.towers.set(support.id, support);
+  }
+
+  const c = towerCenter(attacker);
+  const target = testEnemy(
+    'aura-target',
+    c.x + (opts.targetOffsetPx?.x ?? 0),
+    c.y + (opts.targetOffsetPx?.y ?? 0)
+  );
+  target.hp = 100000;
+  target.maxHp = 100000;
+  state.enemies.set(target.id, target);
+
+  if (opts.nullifierAt) {
+    const nullifier = testEnemy('aura-nullifier', opts.nullifierAt.x, opts.nullifierAt.y);
+    nullifier.type = EnemyType.ARCHITECTUS;
+    nullifier.hp = 100000;
+    nullifier.maxHp = 100000;
+    state.enemies.set(nullifier.id, nullifier);
+  }
+
+  const before = target.hp;
+  tickCombat(state, 0.016, noopCombatHooks());
+  return {
+    damage: before - target.hp,
+    cooldown: attacker.attackCooldown,
+    attacker
   };
 }
 
@@ -477,6 +530,109 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     const onager = createTower(TowerType.COLOSSUS_ONAGER, 5, 4, 4, 1);
     spawnProjectile(state, onager, target, 100);
     expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(2.4, 5);
+  });
+});
+
+describe('Aura mechanics and visibility', () => {
+  it('applies global damage auras additively before the combat aura cap', () => {
+    const base = singleSwingDamage();
+    const withGlobal = singleSwingDamage({
+      support: [
+        { type: TowerType.EAGLE_STANDARD, x: 1, y: 1, tier: 1 },
+        { type: TowerType.TRIARIUS, x: 2, y: 1, tier: 1 }
+      ]
+    });
+
+    expect(withGlobal.damage / base.damage).toBeCloseTo(1.30, 4);
+  });
+
+  it('caps extreme global aura stacking at 2x damage and 2x attack speed', () => {
+    const base = singleSwingDamage();
+    const capped = singleSwingDamage({
+      support: [
+        { type: TowerType.EAGLE_STANDARD, x: 1, y: 1, tier: 5 },
+        { type: TowerType.JULIUS_CAESAR, x: 2, y: 1, tier: 5 },
+        { type: TowerType.CONSULAR_FATEBINDER, x: 3, y: 1, tier: 5 },
+        { type: TowerType.MARS_VICTOR, x: 4, y: 1, tier: 5 },
+        { type: TowerType.IMPERIUM_ETERNUM, x: 5, y: 1, tier: 5 },
+        { type: TowerType.AUREATE_TRIBUNAL, x: 6, y: 1, tier: 5 }
+      ]
+    });
+
+    expect(capped.damage / base.damage).toBeCloseTo(2.0, 4);
+    expect(base.cooldown / capped.cooldown).toBeCloseTo(2.0, 4);
+  });
+
+  it('applies local ally item auras to damage and attack speed', () => {
+    const base = singleSwingDamage();
+    const withBattleStandard = singleSwingDamage({
+      support: [{ type: TowerType.MILITES, x: 8, y: 10, items: ['BATTLE_STANDARD'] }]
+    });
+    const withTrumpet = singleSwingDamage({
+      support: [{ type: TowerType.MILITES, x: 8, y: 10, items: ['CENTURIONS_TRUMPET'] }]
+    });
+
+    expect(withBattleStandard.damage / base.damage).toBeCloseTo(1.18, 4);
+    expect(base.cooldown / withTrumpet.cooldown).toBeCloseTo(1.18, 4);
+  });
+
+  it('applies enemy vulnerability item auras to enemies inside the ring', () => {
+    const base = singleSwingDamage();
+    const cursed = singleSwingDamage({
+      support: [{ type: TowerType.MILITES, x: 8, y: 10, items: ['CURSED_TORC'] }]
+    });
+    const lantern = singleSwingDamage({
+      support: [{ type: TowerType.MILITES, x: 8, y: 10, items: ['NECROMANCERS_LANTERN'] }]
+    });
+
+    expect(cursed.damage / base.damage).toBeCloseTo(1.35, 4);
+    expect(lantern.damage / base.damage).toBeCloseTo(1.45, 4);
+  });
+
+  it('suppresses tower and item auras when an aura nullifier reaches the emitter', () => {
+    const base = singleSwingDamage();
+    const active = singleSwingDamage({
+      support: [{ type: TowerType.MILITES, x: 8, y: 10, items: ['BATTLE_STANDARD'] }]
+    });
+    const supportCenter = towerCenter({ tileX: 8, tileY: 10 });
+    const nullified = singleSwingDamage({
+      support: [{ type: TowerType.MILITES, x: 8, y: 10, items: ['BATTLE_STANDARD'] }],
+      nullifierAt: supportCenter
+    });
+
+    expect(active.damage / base.damage).toBeCloseTo(1.18, 4);
+    expect(nullified.damage).toBeCloseTo(base.damage, 4);
+  });
+
+  it('draws visible rings for every local tower aura and item aura source', () => {
+    const source = fs.readFileSync('src/render/RenderEngine.ts', 'utf8');
+    const visibleAuraSources = [
+      'EAGLE_STANDARD',
+      'AQUILIFER_TITAN',
+      'PRAETORIAN_WALL',
+      'COHORT_GUARD',
+      'TRIPLEX_ACIES',
+      'LEGION_PRIME',
+      'SACER_VESTAL',
+      'AUREATE_TRIBUNAL',
+      'GLACIAL_PALISADE',
+      'ROMAN_TRANSFORMER',
+      'CENTURIONS_TRUMPET',
+      'BATTLE_STANDARD',
+      'WAR_HOUND_COLLAR',
+      'DRUIDS_TORC',
+      'BARCA_WAR_HORN',
+      'LICH_GENERALS_SEAL',
+      'AQUILIFER_BANNER',
+      'OPTIO_WHISTLE',
+      'INFERNO_STANDARD',
+      'CURSED_TORC',
+      'NECROMANCERS_LANTERN'
+    ];
+
+    for (const key of visibleAuraSources) {
+      expect(source, `${key} should have a visible aura ring in RenderEngine.drawAuras`).toContain(key);
+    }
   });
 });
 
