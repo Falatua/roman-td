@@ -85,13 +85,13 @@ describe('Campaign relics', () => {
     const byId = Object.fromEntries(CAMPAIGN_RELICS.map(r => [r.id, r]));
     expect(byId.MARS_TAX.upside).toContain('-75%');
     expect(byId.BLACK_OIL.upside).toContain('+125%');
-    expect(byId.AEGIS_WALL.caveat).toContain('+65%');
+    expect(byId.AEGIS_WALL.caveat).toContain('+45%');
     expect(byId.LAST_EAGLE.upside).toContain('+70%');
-    expect(byId.LAUREL_CENSUS.caveat).toContain('+100%');
-    expect(byId.SENATE_AUDIT.caveat).toContain('+80%');
+    expect(byId.LAUREL_CENSUS.caveat).toContain('+70%');
+    expect(byId.SENATE_AUDIT.caveat).toContain('+55%');
     expect(byId.CONSCRIPTS_WAGER.upside).toContain('Tier-5');
-    expect(byId.ARMORY_BARGAIN.caveat).toContain('10 lives');
-    expect(byId.LEGATE_CONTRACT.caveat).toContain('300 gold');
+    expect(byId.ARMORY_BARGAIN.caveat).toContain('7 lives');
+    expect(byId.LEGATE_CONTRACT.caveat).toContain('225 gold');
     expect(byId.AGRICOLA_LEVY.upside).toContain('Champion Agricola');
   });
 
@@ -118,7 +118,7 @@ describe('Campaign relics', () => {
     applyCampaignRelic(s, 'MARS_TAX');
     const id = 'IRON_SPIKE_TRAP';
     expect(trapPrice(s, id)).toBe(Math.round(TRAP_DEFS[id].price * 0.25));
-    expect(campaignRelicEnemySpeedMult(s)).toBeCloseTo(1.40, 4);
+    expect(campaignRelicEnemySpeedMult(s)).toBeCloseTo(1.30, 4);
     s.gold = 999;
     const spent = buyTraps(s, id, 2);
     expect(spent).toBe(trapPrice(s, id) * 2);
@@ -135,7 +135,7 @@ describe('Campaign relics', () => {
     const towerState = bootstrapState();
     towerState.lives = 35;
     applyCampaignRelic(towerState, 'CONSCRIPTS_WAGER');
-    expect(towerState.lives).toBe(15);
+    expect(towerState.lives).toBe(21);
     expect(towerState.pendingPurchasedTowers).toHaveLength(1);
     expect(towerState.pendingPurchasedTowers?.[0].tier).toBe(5);
     expect(towerState.pendingPurchasedTowers?.[0].source).toBe('relic');
@@ -143,13 +143,13 @@ describe('Campaign relics', () => {
     const rareState = bootstrapState();
     rareState.lives = 30;
     applyCampaignRelic(rareState, 'ARMORY_BARGAIN');
-    expect(rareState.lives).toBe(20);
+    expect(rareState.lives).toBe(23);
     expect((rareState as any).__pendingRelicItemRarities).toEqual(['RARE']);
 
     const epicState = bootstrapState();
     epicState.lives = 30;
     applyCampaignRelic(epicState, 'PATRICIAN_LOCKBOX');
-    expect(epicState.lives).toBe(15);
+    expect(epicState.lives).toBe(20);
     expect((epicState as any).__pendingRelicItemRarities).toEqual(['EPIC']);
   });
 
@@ -164,13 +164,13 @@ describe('Campaign relics', () => {
     const permitState = bootstrapState();
     permitState.lives = 20;
     applyCampaignRelic(permitState, 'ARCHITECTS_PERMIT');
-    expect(permitState.lives).toBe(10);
+    expect(permitState.lives).toBe(13);
     expect(permitState.pendingPurchasedTowers?.[0].tier).toBe(4);
 
     const frontierState = bootstrapState();
     frontierState.lives = 30;
     applyCampaignRelic(frontierState, 'FRONTIER_RECRUITS');
-    expect(frontierState.lives).toBe(12);
+    expect(frontierState.lives).toBe(18);
     expect(frontierState.pendingPurchasedTowers).toHaveLength(2);
     expect(frontierState.pendingPurchasedTowers?.every(t => t.tier === 4)).toBe(true);
   });
@@ -181,14 +181,14 @@ describe('Campaign relics', () => {
     ledgerState.lives = 20;
     applyCampaignRelic(ledgerState, 'QUARTERMASTER_LEDGER');
     expect(ledgerState.gold).toBe(400);
-    expect(ledgerState.lives).toBe(12);
+    expect(ledgerState.lives).toBe(15);
 
     const purseState = bootstrapState();
     purseState.gold = 100;
     purseState.lives = 20;
     applyCampaignRelic(purseState, 'FORTUNA_PURSE');
     expect(purseState.gold).toBe(280);
-    expect(purseState.lives).toBe(8);
+    expect(purseState.lives).toBe(12);
     expect((purseState as any).__pendingRelicItemRarities).toEqual(['RARE']);
   });
 
@@ -196,7 +196,7 @@ describe('Campaign relics', () => {
     const legateState = bootstrapState();
     legateState.gold = 1000;
     applyCampaignRelic(legateState, 'LEGATE_CONTRACT');
-    expect(legateState.gold).toBe(700);
+    expect(legateState.gold).toBe(775);
     expect(legateState.pendingPurchasedTowers).toEqual([
       { type: TowerType.LEGATE, tier: 5, source: 'relic' }
     ]);
@@ -204,13 +204,13 @@ describe('Campaign relics', () => {
     const onagerState = bootstrapState();
     onagerState.gold = 1000;
     applyCampaignRelic(onagerState, 'ONAGER_INDENTURE');
-    expect(onagerState.gold).toBe(650);
+    expect(onagerState.gold).toBe(750);
     expect(onagerState.pendingPurchasedTowers?.[0]).toEqual({ type: TowerType.COLOSSUS_ONAGER, tier: 5, source: 'relic' });
 
     const guardState = bootstrapState();
     guardState.gold = 1000;
     applyCampaignRelic(guardState, 'PRAETORIAN_STIPEND');
-    expect(guardState.gold).toBe(500);
+    expect(guardState.gold).toBe(625);
     expect(guardState.pendingPurchasedTowers?.[0]).toEqual({ type: TowerType.IMPERATOR_GUARD, tier: 5, source: 'relic' });
   });
 
@@ -218,7 +218,7 @@ describe('Campaign relics', () => {
     const agricolaState = bootstrapState();
     agricolaState.lives = 40;
     applyCampaignRelic(agricolaState, 'AGRICOLA_LEVY');
-    expect(agricolaState.lives).toBe(11);
+    expect(agricolaState.lives).toBe(20);
     expect(agricolaState.pendingPurchasedTowers).toEqual([
       { type: TowerType.CHAMPION_AGRICOLA, tier: 2, source: 'relic' }
     ]);
@@ -226,7 +226,7 @@ describe('Campaign relics', () => {
     const epicState = bootstrapState();
     epicState.lives = 30;
     applyCampaignRelic(epicState, 'VESTAL_ORPHANS');
-    expect(epicState.lives).toBe(14);
+    expect(epicState.lives).toBe(20);
     expect((epicState as any).__pendingRelicItemRarities).toEqual(['EPIC']);
 
     const doubleState = bootstrapState();
@@ -240,7 +240,7 @@ describe('Campaign relics', () => {
     const auctionState = bootstrapState();
     auctionState.gold = 600;
     applyCampaignRelic(auctionState, 'EPIC_AUCTION');
-    expect(auctionState.gold).toBe(150);
+    expect(auctionState.gold).toBe(275);
     expect((auctionState as any).__pendingRelicItemRarities).toEqual(['EPIC']);
 
     const ransomState = bootstrapState();

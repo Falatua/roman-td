@@ -75,8 +75,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'DIVINE CAMPAIGN LAW',
     blurb: 'The gods demand spectacle. Holy engines become executioners, but the enemy marches under storm winds.',
     upside: 'Divine towers +80% damage and commanders take +50% damage.',
-    caveat: 'All enemies move +30% faster.',
-    effects: ['DIVINE +80% damage.', 'Commander enemies take +50% damage.', 'Enemies move +30% faster.']
+    caveat: 'All enemies move +25% faster.',
+    effects: ['DIVINE +80% damage.', 'Commander enemies take +50% damage.', 'Enemies move +25% faster.']
   },
   {
     id: 'MARS_TAX',
@@ -84,8 +84,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'WAR FUND DECREE',
     blurb: 'Mars pays for steel in advance. Traps become brutally efficient, but the enemy answers with speed.',
     upside: 'Trap prices -75%, trap damage +80%, trap radius +60%.',
-    caveat: 'All enemies move +40% faster.',
-    effects: ['Trap prices cut by 75%.', 'Trap damage +80% and radius +60%.', 'Enemies move +40% faster.']
+    caveat: 'All enemies move +30% faster.',
+    effects: ['Trap prices cut by 75%.', 'Trap damage +80% and radius +60%.', 'Enemies move +30% faster.']
   },
   {
     id: 'SATURNS_DEBT',
@@ -93,8 +93,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'BORROWED TIME',
     blurb: 'The treasury opens now. Rome will collect interest when the final daemon arrives.',
     upside: 'Gain 900 gold immediately.',
-    caveat: 'At W30, Daemon Imperator takes up to 75% less direct damage based on banked gold.',
-    effects: ['Gain 900 gold now.', 'W30 Daemon direct-damage reduction scales up to 75% with banked gold.']
+    caveat: 'At W30, Daemon Imperator takes up to 60% less direct damage based on banked gold.',
+    effects: ['Gain 900 gold now.', 'W30 Daemon direct-damage reduction scales up to 60% with banked gold.']
   },
   {
     id: 'VULCANS_FORGE',
@@ -102,8 +102,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SIEGE BARGAIN',
     blurb: 'The forges burn white-hot for siege crews. Flyers use the smoke to attack faster.',
     upside: 'Siege towers +70% damage; traps +35% damage.',
-    caveat: 'Flyers move +70% faster.',
-    effects: ['SIEGE +70% damage.', 'Trap damage +35%.', 'Flyers move +70% faster.']
+    caveat: 'Flyers move +50% faster.',
+    effects: ['SIEGE +70% damage.', 'Trap damage +35%.', 'Flyers move +50% faster.']
   },
   {
     id: 'MERCURYS_ROADS',
@@ -111,8 +111,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SPEED DECREE',
     blurb: 'Every tower crew moves on courier timing. So does the invasion.',
     upside: 'All towers +35% attack speed.',
-    caveat: 'All enemies move +40% faster.',
-    effects: ['Tower attack speed +35%.', 'Enemies move +40% faster.']
+    caveat: 'All enemies move +30% faster.',
+    effects: ['Tower attack speed +35%.', 'Enemies move +30% faster.']
   },
   {
     id: 'CERES_TITHE',
@@ -120,8 +120,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'HARVEST LAW',
     blurb: 'The fields pay generously after each battle, but base garrisons are pulled into tax duty.',
     upside: 'Wave-clear gold +75%.',
-    caveat: 'Base towers deal -45% damage.',
-    effects: ['Wave gold +75%.', 'BASE tower damage -45%.']
+    caveat: 'Base towers deal -30% damage.',
+    effects: ['Wave gold +75%.', 'BASE tower damage -30%.']
   },
   {
     id: 'PLUTOS_PACT',
@@ -129,8 +129,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'UNDERWORLD WRIT',
     blurb: 'Bosses are marked for death. Their followers arrive swollen with grave-strength.',
     upside: 'Bosses take +60% damage.',
-    caveat: 'Non-boss enemies spawn with +45% HP.',
-    effects: ['Bosses take +60% damage.', 'Non-boss enemy HP +45%.']
+    caveat: 'Non-boss enemies spawn with +35% HP.',
+    effects: ['Bosses take +60% damage.', 'Non-boss enemy HP +35%.']
   },
   {
     id: 'MINERVAS_DOCTRINE',
@@ -138,8 +138,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'DRILL MANUAL',
     blurb: 'Line troops learn perfect timing. Complex war machines lose some improvisational edge.',
     upside: 'Base towers +45% attack speed.',
-    caveat: 'Combo towers deal -40% damage.',
-    effects: ['BASE attack speed +45%.', 'COMBO damage -40%.']
+    caveat: 'Combo towers deal -30% damage.',
+    effects: ['BASE attack speed +45%.', 'COMBO damage -30%.']
   },
   {
     id: 'NEPTUNES_SURGE',
@@ -147,8 +147,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'RANGED TIDE',
     blurb: 'Ballista strings and bow arms snap like surf. Ground troops ride the same current.',
     upside: 'Physical ranged towers +55% damage.',
-    caveat: 'Ground enemies move +35% faster.',
-    effects: ['PHYS_RANGED +55% damage.', 'Ground enemies move +35% faster.']
+    caveat: 'Ground enemies move +25% faster.',
+    effects: ['PHYS_RANGED +55% damage.', 'Ground enemies move +25% faster.']
   },
   {
     id: 'VESTAL_FLAME',
@@ -156,8 +156,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SACRED FIRE',
     blurb: 'Fire and divine rites burn brighter. The enemy brings heavier shields against the omen.',
     upside: 'Fire and Divine towers +55% damage.',
-    caveat: 'Enemy HP +40%.',
-    effects: ['FIRE and DIVINE +55% damage.', 'Enemy HP +40%.']
+    caveat: 'Enemy HP +30%.',
+    effects: ['FIRE and DIVINE +55% damage.', 'Enemy HP +30%.']
   },
   {
     id: 'FORTUNAS_DICE',
@@ -165,8 +165,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'LUCK CONTRACT',
     blurb: 'Fortuna spills gold on the floor and laughs while the road gets faster.',
     upside: 'Gain 500 gold immediately.',
-    caveat: 'All enemies move +35% faster.',
-    effects: ['Gain 500 gold now.', 'Enemies move +35% faster.']
+    caveat: 'All enemies move +25% faster.',
+    effects: ['Gain 500 gold now.', 'Enemies move +25% faster.']
   },
   {
     id: 'JANUS_GATE',
@@ -174,8 +174,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'TWO-FACED MAP',
     blurb: 'Every tower sees farther through one door and strikes softer through the other.',
     upside: 'All towers +2 range.',
-    caveat: 'All tower damage -45%.',
-    effects: ['Tower range +2 tiles.', 'Tower damage -45%.']
+    caveat: 'All tower damage -30%.',
+    effects: ['Tower range +2 tiles.', 'Tower damage -30%.']
   },
   {
     id: 'AEGIS_WALL',
@@ -183,8 +183,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SURVIVAL BARGAIN',
     blurb: 'Rome receives new shields at the gate. The invading line receives heavier armor.',
     upside: 'Gain 15 lives immediately.',
-    caveat: 'Enemy HP +65%.',
-    effects: ['Gain 15 lives now.', 'Enemy HP +65%.']
+    caveat: 'Enemy HP +45%.',
+    effects: ['Gain 15 lives now.', 'Enemy HP +45%.']
   },
   {
     id: 'LAUREL_CENSUS',
@@ -192,8 +192,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'KILL LEDGER',
     blurb: 'Every fallen enemy is counted and paid. Bosses hire better guards.',
     upside: 'Every kill pays +3 gold.',
-    caveat: 'Boss HP +100%.',
-    effects: ['Kills pay +3 gold.', 'Boss HP +100%.']
+    caveat: 'Boss HP +70%.',
+    effects: ['Kills pay +3 gold.', 'Boss HP +70%.']
   },
   {
     id: 'BLOOD_STANDARD',
@@ -201,8 +201,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'MELEE OATH',
     blurb: 'The front line fights like a legend and sacrifices the clean geometry of range.',
     upside: 'Melee towers +80% damage.',
-    caveat: 'All towers lose 2.5 range.',
-    effects: ['PHYS_MELEE +80% damage.', 'Tower range -2.5 tiles.']
+    caveat: 'All towers lose 1.5 range.',
+    effects: ['PHYS_MELEE +80% damage.', 'Tower range -1.5 tiles.']
   },
   {
     id: 'EAGLE_OMEN',
@@ -210,8 +210,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'ANTI-AIR SIGN',
     blurb: 'The sky becomes readable. The ground war gets thicker.',
     upside: 'Flyers take +100% damage.',
-    caveat: 'Ground enemies spawn with +50% HP.',
-    effects: ['Flyers take +100% damage.', 'Ground enemy HP +50%.']
+    caveat: 'Ground enemies spawn with +35% HP.',
+    effects: ['Flyers take +100% damage.', 'Ground enemy HP +35%.']
   },
   {
     id: 'ENGINEERS_CHARTER',
@@ -219,8 +219,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'MACHINE LAW',
     blurb: 'Siege crews and trapwrights share plans. The invoice arrives immediately.',
     upside: 'Siege and traps deal +50% damage.',
-    caveat: 'Trap prices +175%.',
-    effects: ['SIEGE +50% damage.', 'Trap damage +50%.', 'Trap prices +175%.']
+    caveat: 'Trap prices +100%.',
+    effects: ['SIEGE +50% damage.', 'Trap damage +50%.', 'Trap prices +100%.']
   },
   {
     id: 'GLADIATOR_OATH',
@@ -228,8 +228,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'ARENA DOCTRINE',
     blurb: 'Elites and commanders are hunted like arena champions. Bosses prepare for the spectacle.',
     upside: 'Elites and commanders take +75% damage.',
-    caveat: 'Boss HP +60%.',
-    effects: ['ELITE and commander enemies take +75% damage.', 'Boss HP +60%.']
+    caveat: 'Boss HP +45%.',
+    effects: ['ELITE and commander enemies take +75% damage.', 'Boss HP +45%.']
   },
   {
     id: 'TEMPLE_LOAN',
@@ -237,8 +237,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'PRIESTLY CREDIT',
     blurb: 'The temples front the war chest. Every later purchase carries a little guilt.',
     upside: 'Gain 700 gold immediately.',
-    caveat: 'Trap prices +150% and enemies move +30% faster.',
-    effects: ['Gain 700 gold now.', 'Trap prices +150%.', 'Enemies move +30% faster.']
+    caveat: 'Trap prices +90% and enemies move +20% faster.',
+    effects: ['Gain 700 gold now.', 'Trap prices +90%.', 'Enemies move +20% faster.']
   },
   {
     id: 'ROME_BURNS',
@@ -246,8 +246,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'DESPERATE FLAME',
     blurb: 'Fire and divine wrath surge while the enemy hardens against panic.',
     upside: 'Fire and Divine towers +75% damage.',
-    caveat: 'Enemy HP +50%.',
-    effects: ['FIRE and DIVINE +75% damage.', 'Enemy HP +50%.']
+    caveat: 'Enemy HP +35%.',
+    effects: ['FIRE and DIVINE +75% damage.', 'Enemy HP +35%.']
   },
   {
     id: 'IRON_DISCIPLINE',
@@ -255,8 +255,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'HEAVY DRILL',
     blurb: 'Every strike lands harder. Every crew reloads with ceremony.',
     upside: 'All towers +35% damage.',
-    caveat: 'All towers -45% attack speed.',
-    effects: ['Tower damage +35%.', 'Tower attack speed -45%.']
+    caveat: 'All towers -30% attack speed.',
+    effects: ['Tower damage +35%.', 'Tower attack speed -30%.']
   },
   {
     id: 'RAPID_MUSTER',
@@ -264,8 +264,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'HASTE ORDER',
     blurb: 'Crews fire before fear can settle. Accuracy and force suffer.',
     upside: 'All towers +55% attack speed.',
-    caveat: 'All towers -50% damage.',
-    effects: ['Tower attack speed +55%.', 'Tower damage -50%.']
+    caveat: 'All towers -35% damage.',
+    effects: ['Tower attack speed +55%.', 'Tower damage -35%.']
   },
   {
     id: 'SCOUT_MAPS',
@@ -273,8 +273,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'LONG VIEW',
     blurb: 'The route is measured in advance. The enemy also finds the cleanest road.',
     upside: 'All towers +2 range.',
-    caveat: 'All enemies move +40% faster.',
-    effects: ['Tower range +2 tiles.', 'Enemies move +40% faster.']
+    caveat: 'All enemies move +30% faster.',
+    effects: ['Tower range +2 tiles.', 'Enemies move +30% faster.']
   },
   {
     id: 'BLACK_OIL',
@@ -282,8 +282,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'TRAPWRIGHT SIN',
     blurb: 'The ground becomes murderous. Flyers waste no time above it.',
     upside: 'Traps deal +125% damage.',
-    caveat: 'Flyers move +85% faster.',
-    effects: ['Trap damage +125%.', 'Flyers move +85% faster.']
+    caveat: 'Flyers move +60% faster.',
+    effects: ['Trap damage +125%.', 'Flyers move +60% faster.']
   },
   {
     id: 'SENATE_AUDIT',
@@ -291,8 +291,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'PUBLIC ACCOUNTING',
     blurb: 'The books become healthier after each wave. Bosses receive better stipends.',
     upside: 'Wave-clear gold +45% and kills pay +2 gold.',
-    caveat: 'Boss HP +80%.',
-    effects: ['Wave gold +45%.', 'Kills pay +2 gold.', 'Boss HP +80%.']
+    caveat: 'Boss HP +55%.',
+    effects: ['Wave gold +45%.', 'Kills pay +2 gold.', 'Boss HP +55%.']
   },
   {
     id: 'HARUSPEX_WARNING',
@@ -300,8 +300,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'COMMANDER OMEN',
     blurb: 'The priests read the enemy officers in the entrails. The rank and file are harder to break.',
     upside: 'Commanders take +125% damage.',
-    caveat: 'Non-boss enemy HP +40%.',
-    effects: ['Commanders take +125% damage.', 'Non-boss enemy HP +40%.']
+    caveat: 'Non-boss enemy HP +30%.',
+    effects: ['Commanders take +125% damage.', 'Non-boss enemy HP +30%.']
   },
   {
     id: 'IMPERIAL_GRANARIES',
@@ -309,8 +309,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SUPPLY FLOOD',
     blurb: 'Rome eats well and pays well. The invasion fattens too.',
     upside: 'Gain 500 gold and wave-clear gold +40%.',
-    caveat: 'Enemy HP +55%.',
-    effects: ['Gain 500 gold now.', 'Wave gold +40%.', 'Enemy HP +55%.']
+    caveat: 'Enemy HP +40%.',
+    effects: ['Gain 500 gold now.', 'Wave gold +40%.', 'Enemy HP +40%.']
   },
   {
     id: 'BLESSING_OF_MARS',
@@ -318,8 +318,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'STEEL PRAYER',
     blurb: 'Mars favors steel and stone over miracles.',
     upside: 'Melee and Siege towers +55% damage.',
-    caveat: 'Divine towers -50% damage.',
-    effects: ['MELEE and SIEGE +55% damage.', 'DIVINE -50% damage.']
+    caveat: 'Divine towers -35% damage.',
+    effects: ['MELEE and SIEGE +55% damage.', 'DIVINE -35% damage.']
   },
   {
     id: 'FROST_TITHE',
@@ -327,8 +327,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'COLD BARGAIN',
     blurb: 'The road slows under impossible frost, and so do Roman hands.',
     upside: 'All enemies move -22% slower.',
-    caveat: 'All towers deal -50% damage.',
-    effects: ['Enemies move -22% slower.', 'Tower damage -50%.']
+    caveat: 'All towers deal -35% damage.',
+    effects: ['Enemies move -22% slower.', 'Tower damage -35%.']
   },
   {
     id: 'LAST_EAGLE',
@@ -336,8 +336,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'FINAL STANDARD',
     blurb: 'The final act belongs to Rome. The final act also hits back.',
     upside: 'From W25 onward, towers deal +70% damage.',
-    caveat: 'From W25 onward, enemy HP +65%.',
-    effects: ['W25+ tower damage +70%.', 'W25+ enemy HP +65%.']
+    caveat: 'From W25 onward, enemy HP +45%.',
+    effects: ['W25+ tower damage +70%.', 'W25+ enemy HP +45%.']
   },
   {
     id: 'TRIUMPHAL_SPOILS',
@@ -345,8 +345,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'WAR-BOOTY GRANT',
     blurb: 'The triumph parades a captured siege engine into your service. The enemy quickens to take it back.',
     upside: 'Immediately gain a free Tier-5 Scorpio to place.',
-    caveat: 'All enemies move +35% faster for the rest of the run.',
-    effects: ['Gain a free Tier-5 SCORPIO now.', 'Enemies move +35% faster all run.']
+    caveat: 'All enemies move +25% faster for the rest of the run.',
+    effects: ['Gain a free Tier-5 SCORPIO now.', 'Enemies move +25% faster all run.']
   },
   {
     id: 'SEALED_RELIQUARY',
@@ -354,8 +354,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'CONSECRATED HOARD',
     blurb: 'A sealed reliquary yields a legendary relic of war. Its theft from the gods swells the horde with borrowed strength.',
     upside: 'Immediately gain a random Legendary item.',
-    caveat: 'All enemies gain +30% HP for the rest of the run.',
-    effects: ['Gain a random Legendary item now.', 'Enemy HP +30% all run.']
+    caveat: 'All enemies gain +20% HP for the rest of the run.',
+    effects: ['Gain a random Legendary item now.', 'Enemy HP +20% all run.']
   },
   {
     id: 'CONSCRIPTS_WAGER',
@@ -363,8 +363,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'BLOOD FOR STEEL',
     blurb: 'A full veteran tower crew marches in under emergency oath. Rome pays with bodies at the gate.',
     upside: 'Immediately gain one random Tier-5 base tower to place.',
-    caveat: 'Lose 20 lives immediately.',
-    effects: ['Gain a random Tier-5 BASE tower now.', 'Lose 20 lives now.']
+    caveat: 'Lose 14 lives immediately.',
+    effects: ['Gain a random Tier-5 BASE tower now.', 'Lose 14 lives now.']
   },
   {
     id: 'ARMORY_BARGAIN',
@@ -372,8 +372,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'CHEAP STEEL',
     blurb: 'A quartermaster opens the locked shelf and pretends not to see the missing names on the casualty roll.',
     upside: 'Immediately gain a random Rare item.',
-    caveat: 'Lose 10 lives immediately.',
-    effects: ['Gain a random Rare item now.', 'Lose 10 lives now.']
+    caveat: 'Lose 7 lives immediately.',
+    effects: ['Gain a random Rare item now.', 'Lose 7 lives now.']
   },
   {
     id: 'PATRICIAN_LOCKBOX',
@@ -381,8 +381,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'PRIVATE WAR CHEST',
     blurb: 'A senator offers one excellent piece of equipment with a smile that makes the legions nervous.',
     upside: 'Immediately gain a random Epic item.',
-    caveat: 'Lose 15 lives immediately.',
-    effects: ['Gain a random Epic item now.', 'Lose 15 lives now.']
+    caveat: 'Lose 10 lives immediately.',
+    effects: ['Gain a random Epic item now.', 'Lose 10 lives now.']
   },
   {
     id: 'VETERAN_DRAFT',
@@ -390,8 +390,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'REASSIGNED CENTURIES',
     blurb: 'Two seasoned detachments are pulled from the reserves. The city walls feel the absence.',
     upside: 'Immediately gain two random Tier-3 base towers to place.',
-    caveat: 'Lose 12 lives immediately.',
-    effects: ['Gain two random Tier-3 BASE towers now.', 'Lose 12 lives now.']
+    caveat: 'Lose 8 lives immediately.',
+    effects: ['Gain two random Tier-3 BASE towers now.', 'Lose 8 lives now.']
   },
   {
     id: 'QUARTERMASTER_LEDGER',
@@ -399,8 +399,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'CLEANER BOOKS',
     blurb: 'The numbers suddenly favor Rome. The gate guards suddenly look thinner.',
     upside: 'Gain 300 gold immediately.',
-    caveat: 'Lose 8 lives immediately.',
-    effects: ['Gain 300 gold now.', 'Lose 8 lives now.']
+    caveat: 'Lose 5 lives immediately.',
+    effects: ['Gain 300 gold now.', 'Lose 5 lives now.']
   },
   {
     id: 'FORTUNA_PURSE',
@@ -408,8 +408,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SMALL LUCK',
     blurb: 'Fortuna drops a useful trinket, then asks whether Rome really needed all those sentries.',
     upside: 'Gain 180 gold and a random Rare item immediately.',
-    caveat: 'Lose 12 lives immediately.',
-    effects: ['Gain 180 gold now.', 'Gain a random Rare item now.', 'Lose 12 lives now.']
+    caveat: 'Lose 8 lives immediately.',
+    effects: ['Gain 180 gold now.', 'Gain a random Rare item now.', 'Lose 8 lives now.']
   },
   {
     id: 'ARCHITECTS_PERMIT',
@@ -417,8 +417,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'FAST FOUNDATION',
     blurb: 'The builders approve one serious emplacement without paperwork. The evacuation lanes get narrower.',
     upside: 'Immediately gain one random Tier-4 base tower to place.',
-    caveat: 'Lose 10 lives immediately.',
-    effects: ['Gain a random Tier-4 BASE tower now.', 'Lose 10 lives now.']
+    caveat: 'Lose 7 lives immediately.',
+    effects: ['Gain a random Tier-4 BASE tower now.', 'Lose 7 lives now.']
   },
   {
     id: 'FRONTIER_RECRUITS',
@@ -426,8 +426,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'BORDER LEVY',
     blurb: 'Two frontier crews arrive with rough accents and practical weapons. Rome spends the last quiet watch to get them here.',
     upside: 'Immediately gain one Tier-4 melee base tower and one Tier-4 ranged base tower.',
-    caveat: 'Lose 18 lives immediately.',
-    effects: ['Gain one Tier-4 MELEE BASE tower now.', 'Gain one Tier-4 RANGED BASE tower now.', 'Lose 18 lives now.']
+    caveat: 'Lose 12 lives immediately.',
+    effects: ['Gain one Tier-4 MELEE BASE tower now.', 'Gain one Tier-4 RANGED BASE tower now.', 'Lose 12 lives now.']
   },
   {
     id: 'LEGATE_CONTRACT',
@@ -435,8 +435,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'GOLD FOR COMMAND',
     blurb: 'A proven Legate sells his whole command staff to Rome. His invoice is aggressively unpatriotic.',
     upside: 'Immediately gain a Tier-5 Legate to place.',
-    caveat: 'Lose 300 gold immediately.',
-    effects: ['Gain a Tier-5 LEGATE now.', 'Lose 300 gold now.']
+    caveat: 'Lose 225 gold immediately.',
+    effects: ['Gain a Tier-5 LEGATE now.', 'Lose 225 gold now.']
   },
   {
     id: 'AGRICOLA_LEVY',
@@ -444,8 +444,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'LIVES FOR A HERO',
     blurb: 'Agricola arrives from the frontier with maps, scouts, and a hard look at the casualty rolls.',
     upside: 'Immediately gain Champion Agricola to place.',
-    caveat: 'Lose 29 lives immediately.',
-    effects: ['Gain CHAMPION AGRICOLA now.', 'Lose 29 lives now.']
+    caveat: 'Lose 20 lives immediately.',
+    effects: ['Gain CHAMPION AGRICOLA now.', 'Lose 20 lives now.']
   },
   {
     id: 'EPIC_AUCTION',
@@ -453,8 +453,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'PUBLIC TREASURY SALE',
     blurb: 'The auctioneer opens one velvet case. Every senator suddenly remembers your name.',
     upside: 'Immediately gain a random Epic item.',
-    caveat: 'Lose 450 gold immediately.',
-    effects: ['Gain a random Epic item now.', 'Lose 450 gold now.']
+    caveat: 'Lose 325 gold immediately.',
+    effects: ['Gain a random Epic item now.', 'Lose 325 gold now.']
   },
   {
     id: 'RELIQUARY_RANSOM',
@@ -462,8 +462,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'GOLD FOR A LEGEND',
     blurb: 'A temple guard looks away for one breath. The reliquary changes hands before anyone can pray.',
     upside: 'Immediately gain a random Legendary item.',
-    caveat: 'Lose 650 gold immediately.',
-    effects: ['Gain a random Legendary item now.', 'Lose 650 gold now.']
+    caveat: 'Lose 500 gold immediately.',
+    effects: ['Gain a random Legendary item now.', 'Lose 500 gold now.']
   },
   {
     id: 'ONAGER_INDENTURE',
@@ -471,8 +471,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'DEBT-FUNDED SIEGE',
     blurb: 'A colossal engine is wheeled out under a contract with very small lettering.',
     upside: 'Immediately gain a Tier-5 Colossus Onager to place.',
-    caveat: 'Lose 350 gold immediately.',
-    effects: ['Gain a Tier-5 COLOSSUS ONAGER now.', 'Lose 350 gold now.']
+    caveat: 'Lose 250 gold immediately.',
+    effects: ['Gain a Tier-5 COLOSSUS ONAGER now.', 'Lose 250 gold now.']
   },
   {
     id: 'PRAETORIAN_STIPEND',
@@ -480,8 +480,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'ELITE PAYROLL',
     blurb: 'The guard will stand for Rome. The guard will also be paid before standing for Rome.',
     upside: 'Immediately gain a Tier-5 Imperator Guard to place.',
-    caveat: 'Lose 500 gold immediately.',
-    effects: ['Gain a Tier-5 IMPERATOR GUARD now.', 'Lose 500 gold now.']
+    caveat: 'Lose 375 gold immediately.',
+    effects: ['Gain a Tier-5 IMPERATOR GUARD now.', 'Lose 375 gold now.']
   },
   {
     id: 'VESTAL_ORPHANS',
@@ -489,8 +489,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'LIVES FOR AN EPIC',
     blurb: 'The Vestals release one sanctified weapon, and the city quietly empties another street.',
     upside: 'Immediately gain a random Epic item.',
-    caveat: 'Lose 16 lives immediately.',
-    effects: ['Gain a random Epic item now.', 'Lose 16 lives now.']
+    caveat: 'Lose 10 lives immediately.',
+    effects: ['Gain a random Epic item now.', 'Lose 10 lives now.']
   },
   {
     id: 'DOUBLE_EPIC_FUNERAL',
@@ -498,8 +498,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'TWO CASES, ONE COST',
     blurb: 'Two funeral wagons arrive covered in officer cloaks. The equipment inside is excellent. The silence is not.',
     upside: 'Immediately gain two random Epic items.',
-    caveat: 'Lose 24 lives immediately.',
-    effects: ['Gain two random Epic items now.', 'Lose 24 lives now.']
+    caveat: 'Lose 16 lives immediately.',
+    effects: ['Gain two random Epic items now.', 'Lose 16 lives now.']
   },
   {
     id: 'SKY_TOLL',
@@ -507,8 +507,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'ANTI-AIR PURCHASE',
     blurb: 'Aquila hunters rent their talons to the highest bidder and leave no coin on the table.',
     upside: 'Immediately gain a Tier-5 Aquila Venator to place.',
-    caveat: 'Lose 325 gold immediately.',
-    effects: ['Gain a Tier-5 AQUILA VENATOR now.', 'Lose 325 gold now.']
+    caveat: 'Lose 240 gold immediately.',
+    effects: ['Gain a Tier-5 AQUILA VENATOR now.', 'Lose 240 gold now.']
   },
   {
     id: 'SPECULATOR_BRIBE',
@@ -516,8 +516,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SCOUTING PAYOFF',
     blurb: 'A scout captain sells tomorrow morning early. Rome buys the information and the man carrying it.',
     upside: 'Immediately gain a Tier-5 Speculator to place.',
-    caveat: 'Lose 225 gold immediately.',
-    effects: ['Gain a Tier-5 SPECULATOR now.', 'Lose 225 gold now.']
+    caveat: 'Lose 160 gold immediately.',
+    effects: ['Gain a Tier-5 SPECULATOR now.', 'Lose 160 gold now.']
   }
 ];
 
@@ -640,12 +640,12 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   if (id === 'AEGIS_WALL') state.lives += 15;
   if (id === 'QUARTERMASTER_LEDGER') {
     state.gold += 300;
-    sacrificeRelicLives(state, 8);
+    sacrificeRelicLives(state, 5);
   }
   if (id === 'FORTUNA_PURSE') {
     state.gold += 180;
     queuePendingRelicItem(state, 'RARE');
-    sacrificeRelicLives(state, 12);
+    sacrificeRelicLives(state, 8);
   }
   // 2026-06-25 — concrete reward grants. T5 tower is self-contained; the
   // legendary item is granted by main.ts (inventory in scope there) when it
@@ -657,70 +657,70 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   if (id === 'SEALED_RELIQUARY') (state as any).__pendingRelicLegendary = true;
   if (id === 'CONSCRIPTS_WAGER') {
     queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 5);
-    sacrificeRelicLives(state, 20);
+    sacrificeRelicLives(state, 14);
   }
   if (id === 'ARMORY_BARGAIN') {
     queuePendingRelicItem(state, 'RARE');
-    sacrificeRelicLives(state, 10);
+    sacrificeRelicLives(state, 7);
   }
   if (id === 'PATRICIAN_LOCKBOX') {
     queuePendingRelicItem(state, 'EPIC');
-    sacrificeRelicLives(state, 15);
+    sacrificeRelicLives(state, 10);
   }
   if (id === 'VETERAN_DRAFT') {
     queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 3);
     queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 3);
-    sacrificeRelicLives(state, 12);
+    sacrificeRelicLives(state, 8);
   }
   if (id === 'ARCHITECTS_PERMIT') {
     queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 4);
-    sacrificeRelicLives(state, 10);
+    sacrificeRelicLives(state, 7);
   }
   if (id === 'FRONTIER_RECRUITS') {
     queueRelicTower(state, pickRelicTower(MELEE_BASE_TOWER_RELIC_POOL), 4);
     queueRelicTower(state, pickRelicTower(RANGED_BASE_TOWER_RELIC_POOL), 4);
-    sacrificeRelicLives(state, 18);
+    sacrificeRelicLives(state, 12);
   }
   if (id === 'LEGATE_CONTRACT') {
     queueRelicTower(state, TowerType.LEGATE, 5);
-    sacrificeRelicGold(state, 300);
+    sacrificeRelicGold(state, 225);
   }
   if (id === 'AGRICOLA_LEVY') {
     queueRelicTower(state, TowerType.CHAMPION_AGRICOLA, 2);
-    sacrificeRelicLives(state, 29);
+    sacrificeRelicLives(state, 20);
   }
   if (id === 'EPIC_AUCTION') {
     queuePendingRelicItem(state, 'EPIC');
-    sacrificeRelicGold(state, 450);
+    sacrificeRelicGold(state, 325);
   }
   if (id === 'RELIQUARY_RANSOM') {
     (state as any).__pendingRelicLegendary = true;
-    sacrificeRelicGold(state, 650);
+    sacrificeRelicGold(state, 500);
   }
   if (id === 'ONAGER_INDENTURE') {
     queueRelicTower(state, TowerType.COLOSSUS_ONAGER, 5);
-    sacrificeRelicGold(state, 350);
+    sacrificeRelicGold(state, 250);
   }
   if (id === 'PRAETORIAN_STIPEND') {
     queueRelicTower(state, TowerType.IMPERATOR_GUARD, 5);
-    sacrificeRelicGold(state, 500);
+    sacrificeRelicGold(state, 375);
   }
   if (id === 'VESTAL_ORPHANS') {
     queuePendingRelicItem(state, 'EPIC');
-    sacrificeRelicLives(state, 16);
+    sacrificeRelicLives(state, 10);
   }
   if (id === 'DOUBLE_EPIC_FUNERAL') {
     queuePendingRelicItem(state, 'EPIC');
     queuePendingRelicItem(state, 'EPIC');
-    sacrificeRelicLives(state, 24);
+    sacrificeRelicLives(state, 16);
   }
   if (id === 'SKY_TOLL') {
     queueRelicTower(state, TowerType.AQUILA_VENATOR, 5);
-    sacrificeRelicGold(state, 325);
+    sacrificeRelicGold(state, 240);
   }
   if (id === 'SPECULATOR_BRIBE') {
     queueRelicTower(state, TowerType.SPECULATOR, 5);
-    sacrificeRelicGold(state, 225);
+    sacrificeRelicGold(state, 160);
   }
   state.hint = `${def.name} claimed. ${def.upside} Caveat: ${def.caveat}`;
 }
@@ -729,13 +729,13 @@ export function campaignRelicTowerDpsMult(state: GameStateShape, tower: Tower, t
   let mult = 1;
   for (const id of activeCampaignRelicIds(state)) {
     switch (id) {
-      case 'CERES_TITHE': if (towerKind === 'BASE') mult *= 0.55; break;
-      case 'MINERVAS_DOCTRINE': if (towerKind === 'COMBO') mult *= 0.60; break;
-      case 'JANUS_GATE': mult *= 0.55; break;
+      case 'CERES_TITHE': if (towerKind === 'BASE') mult *= 0.70; break;
+      case 'MINERVAS_DOCTRINE': if (towerKind === 'COMBO') mult *= 0.70; break;
+      case 'JANUS_GATE': mult *= 0.70; break;
       case 'IRON_DISCIPLINE': mult *= 1.35; break;
-      case 'RAPID_MUSTER': mult *= 0.50; break;
-      case 'BLESSING_OF_MARS': if (tower.damageType === DamageType.DIVINE) mult *= 0.50; break;
-      case 'FROST_TITHE': mult *= 0.50; break;
+      case 'RAPID_MUSTER': mult *= 0.65; break;
+      case 'BLESSING_OF_MARS': if (tower.damageType === DamageType.DIVINE) mult *= 0.65; break;
+      case 'FROST_TITHE': mult *= 0.65; break;
       case 'LAST_EAGLE': if ((state.wave ?? 1) >= 25) mult *= 1.70; break;
     }
   }
@@ -748,7 +748,7 @@ export function campaignRelicTowerSpeedMult(state: GameStateShape, _tower: Tower
     switch (id) {
       case 'MERCURYS_ROADS': mult *= 1.35; break;
       case 'MINERVAS_DOCTRINE': if (towerKind === 'BASE') mult *= 1.45; break;
-      case 'IRON_DISCIPLINE': mult *= 0.55; break;
+      case 'IRON_DISCIPLINE': mult *= 0.70; break;
       case 'RAPID_MUSTER': mult *= 1.55; break;
     }
   }
@@ -759,7 +759,7 @@ export function campaignRelicTowerRangeBonus(state: GameStateShape, _tower: Towe
   let bonus = 0;
   for (const id of activeCampaignRelicIds(state)) {
     if (id === 'JANUS_GATE' || id === 'SCOUT_MAPS') bonus += 2;
-    if (id === 'BLOOD_STANDARD') bonus -= 2.5;
+    if (id === 'BLOOD_STANDARD') bonus -= 1.5;
   }
   return bonus;
 }
@@ -775,7 +775,7 @@ export function campaignRelicDamageMult(state: GameStateShape, tower: Tower, tar
       case 'SATURNS_DEBT':
         if (state.wave >= 30 && target?.type === 'DAEMON_IMPERATOR') {
           const banked = Math.max(0, state.gold ?? 0);
-          const reduction = Math.min(0.75, Math.floor(banked / 100) * 0.10);
+          const reduction = Math.min(0.60, Math.floor(banked / 100) * 0.10);
           mult *= (1 - reduction);
         }
         break;
@@ -821,17 +821,17 @@ export function campaignRelicEnemySpeedMult(state: GameStateShape, enemy?: any):
   let mult = 1;
   for (const id of activeCampaignRelicIds(state)) {
     switch (id) {
-      case 'JUPITERS_MANDATE': mult *= 1.30; break;
-      case 'MARS_TAX': mult *= 1.40; break;
-      case 'MERCURYS_ROADS': mult *= 1.40; break;
-      case 'NEPTUNES_SURGE': if (!enemy?.isFlyer) mult *= 1.35; break;
-      case 'FORTUNAS_DICE': mult *= 1.35; break;
-      case 'TEMPLE_LOAN': mult *= 1.30; break;
-      case 'SCOUT_MAPS': mult *= 1.40; break;
-      case 'VULCANS_FORGE': if (enemy?.isFlyer) mult *= 1.70; break;
-      case 'BLACK_OIL': if (enemy?.isFlyer) mult *= 1.85; break;
+      case 'JUPITERS_MANDATE': mult *= 1.25; break;
+      case 'MARS_TAX': mult *= 1.30; break;
+      case 'MERCURYS_ROADS': mult *= 1.30; break;
+      case 'NEPTUNES_SURGE': if (!enemy?.isFlyer) mult *= 1.25; break;
+      case 'FORTUNAS_DICE': mult *= 1.25; break;
+      case 'TEMPLE_LOAN': mult *= 1.20; break;
+      case 'SCOUT_MAPS': mult *= 1.30; break;
+      case 'VULCANS_FORGE': if (enemy?.isFlyer) mult *= 1.50; break;
+      case 'BLACK_OIL': if (enemy?.isFlyer) mult *= 1.60; break;
       case 'FROST_TITHE': mult *= 0.78; break;
-      case 'TRIUMPHAL_SPOILS': mult *= 1.35; break;   // pays for the free T5 Scorpio
+      case 'TRIUMPHAL_SPOILS': mult *= 1.25; break;   // pays for the free T5 Scorpio
     }
   }
   return mult;
@@ -843,18 +843,18 @@ export function campaignRelicEnemyHpMult(state: GameStateShape, enemyDef: any): 
   const isFlyer = !!enemyDef?.isFlyer;
   for (const id of activeCampaignRelicIds(state)) {
     switch (id) {
-      case 'PLUTOS_PACT': if (!isBoss) mult *= 1.45; break;
-      case 'VESTAL_FLAME': mult *= 1.40; break;
-      case 'AEGIS_WALL': mult *= 1.65; break;
-      case 'LAUREL_CENSUS': if (isBoss) mult *= 2.00; break;
-      case 'EAGLE_OMEN': if (!isFlyer) mult *= 1.50; break;
-      case 'GLADIATOR_OATH': if (isBoss) mult *= 1.60; break;
-      case 'ROME_BURNS': mult *= 1.50; break;
-      case 'SENATE_AUDIT': if (isBoss) mult *= 1.80; break;
-      case 'HARUSPEX_WARNING': if (!isBoss) mult *= 1.40; break;
-      case 'IMPERIAL_GRANARIES': mult *= 1.55; break;
-      case 'LAST_EAGLE': if ((state.wave ?? 1) >= 25) mult *= 1.65; break;
-      case 'SEALED_RELIQUARY': mult *= 1.30; break;   // pays for the free Legendary
+      case 'PLUTOS_PACT': if (!isBoss) mult *= 1.35; break;
+      case 'VESTAL_FLAME': mult *= 1.30; break;
+      case 'AEGIS_WALL': mult *= 1.45; break;
+      case 'LAUREL_CENSUS': if (isBoss) mult *= 1.70; break;
+      case 'EAGLE_OMEN': if (!isFlyer) mult *= 1.35; break;
+      case 'GLADIATOR_OATH': if (isBoss) mult *= 1.45; break;
+      case 'ROME_BURNS': mult *= 1.35; break;
+      case 'SENATE_AUDIT': if (isBoss) mult *= 1.55; break;
+      case 'HARUSPEX_WARNING': if (!isBoss) mult *= 1.30; break;
+      case 'IMPERIAL_GRANARIES': mult *= 1.40; break;
+      case 'LAST_EAGLE': if ((state.wave ?? 1) >= 25) mult *= 1.45; break;
+      case 'SEALED_RELIQUARY': mult *= 1.20; break;   // pays for the free Legendary
     }
   }
   return mult;
@@ -864,8 +864,8 @@ export function campaignRelicTrapPriceMult(state: GameStateShape): number {
   let mult = 1;
   for (const id of activeCampaignRelicIds(state)) {
     if (id === 'MARS_TAX') mult *= 0.25;
-    if (id === 'ENGINEERS_CHARTER') mult *= 2.75;
-    if (id === 'TEMPLE_LOAN') mult *= 2.50;
+    if (id === 'ENGINEERS_CHARTER') mult *= 2.00;
+    if (id === 'TEMPLE_LOAN') mult *= 1.90;
   }
   return mult;
 }
