@@ -662,6 +662,90 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(flyerTargeter.damageType).toBe(DamageType.PHYS_MELEE);
     delete (globalThis as any).__lastState;
   });
+
+  it('Scipio priority-hunter kit also affects commanders', () => {
+    const s = freshState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 20;
+    s.wave = 8;
+    s.activeHeroId = 'HERO_SCIPIO';
+    s.heroTier = 2;
+
+    const scipio = createTower(TowerType.HERO_SCIPIO, 1, 3, 3, 8);
+    scipio.attackCooldown = 999;
+    scipio.__heroCooldowns = { CORNU_CHARGE: 0, SCIPIO_BRAND: 0 };
+    s.activeHeroTowerId = scipio.id;
+    s.towers.set(scipio.id, scipio);
+
+    const commander = testEnemy('commander', {
+      type: EnemyType.STANDARD_BEARER_COMMANDER,
+      faction: EnemyFaction.CELTS,
+      hp: 20_000,
+      maxHp: 20_000,
+      x: 12 * 32 + 16,
+      y: 12 * 32 + 16
+    });
+    s.enemies.set(commander.id, commander);
+
+    const castIds: string[] = [];
+    for (let i = 0; i < 20 && new Set(castIds).size < 2; i++) {
+      tickHeroAbilities(s, { onAbilityCast: abilityId => castIds.push(abilityId) });
+      s.tick += 0.1;
+    }
+
+    expect(castIds).toEqual(expect.arrayContaining(['CORNU_CHARGE', 'SCIPIO_BRAND']));
+    expect(commander.hp).toBeLessThan(20_000);
+    expect(commander.statusEffects.some(st => st.kind === StatusEffectKind.MARK)).toBe(true);
+  });
+
+  it('Scipio global passive increases tower damage against commanders', () => {
+    function commanderHitDamage(withScipio: boolean): number {
+      const s = freshState();
+      s.phase = GamePhase.WAVE_PHASE;
+      s.tick = 1;
+      s.wave = 8;
+
+      const attacker = createTower(TowerType.DECURION, 1, 10, 10, 8);
+      attacker.attackCooldown = 0;
+      attacker.critChance = 0;
+      s.towers.set(attacker.id, attacker);
+
+      if (withScipio) {
+        s.activeHeroId = 'HERO_SCIPIO';
+        s.heroTier = 0;
+        const scipio = createTower(TowerType.HERO_SCIPIO, 1, 1, 1, 8);
+        scipio.attackCooldown = 999;
+        s.activeHeroTowerId = scipio.id;
+        s.towers.set(scipio.id, scipio);
+      }
+
+      const commander = testEnemy('commander', {
+        type: EnemyType.STANDARD_BEARER_COMMANDER,
+        faction: EnemyFaction.CELTS,
+        hp: 20_000,
+        maxHp: 20_000,
+        x: 11 * 32 + 16,
+        y: 10 * 32 + 16
+      });
+      s.enemies.set(commander.id, commander);
+
+      let hitDamage = 0;
+      tickCombat(s, 0.016, {
+        onHit: (tower, enemy, damage) => {
+          if (tower.id === attacker.id && enemy.id === commander.id) hitDamage = damage;
+        },
+        onMeleeSwing: () => {},
+        onProjectileFire: () => {},
+        onKill: () => {}
+      });
+      return hitDamage;
+    }
+
+    const baseline = commanderHitDamage(false);
+    const boosted = commanderHitDamage(true);
+    expect(baseline).toBeGreaterThan(0);
+    expect(boosted).toBeGreaterThan(baseline);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────

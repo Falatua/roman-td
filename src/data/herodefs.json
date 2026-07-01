@@ -171,14 +171,14 @@
     "id": "HERO_SCIPIO",
     "name": "Scipio Africanus",
     "title": "Conqueror of Carthage",
-    "specialty": "BOSS HUNTER",
-    "playerProblemSolved": "Bosses walk through my maze at 80% HP and eat my lives.",
-    "biography": "Scipio studied Carthage for years before he attacked — patient, methodical, without mercy. He has never lost to a boss and does not intend to start.",
+    "specialty": "BOSS / COMMANDER HUNTER",
+    "playerProblemSolved": "Bosses and commanders walk through my maze at 80% HP and eat my lives.",
+    "biography": "Scipio studied Carthage for years before he attacked — patient, methodical, without mercy. He has never lost to a boss or commander and does not intend to start.",
     "passive": {
       "kind": "GLOBAL_AURA",
       "filter": "VS_BOSS",
       "dmgBonusPercent": 33,
-      "description": "Every tower on the map deals +33% damage against Boss-type enemies. No radius limit."
+      "description": "Every tower on the map deals +33% damage against Bosses and Commanders. No radius limit."
     },
     "abilities": [
       {
@@ -187,8 +187,8 @@
         "name": "Cornu Charge",
         "cooldownSec": 6,
         "durationSec": 0,
-        "params": { "target": "HIGHEST_HP_BOSS", "dmgMultiplier": 5.0, "ignoreResistances": true },
-        "description": "Pierces the highest-HP boss for 500% of Scipio's basic-attack damage as TRUE damage — ignores every faction resistance, every shield, every boss damping. The reliable boss-burst Scipio brings to every fight.",
+        "params": { "target": "HIGHEST_HP_BOSS_OR_COMMANDER", "dmgMultiplier": 5.0, "ignoreResistances": true },
+        "description": "Pierces the highest-HP boss or commander for 500% of Scipio's basic-attack damage as TRUE damage — ignores every faction resistance, every shield, every boss damping. The reliable priority-target burst Scipio brings to every fight.",
         "vfxColor": "#ff8800",
         "vfxStyle": "RED_LANCE_ARC"
       },
@@ -198,8 +198,8 @@
         "name": "Scipio's Brand",
         "cooldownSec": 15,
         "durationSec": 6,
-        "params": { "targets": "ALL_BOSSES", "dmgTakenIncreasePercent": 30 },
-        "description": "Brands every boss on the field for 6s. Marked bosses take +30% damage from ALL sources (1.30×), stacking multiplicatively with Scipio's boss-hunting passive and any other MARK debuffs.",
+        "params": { "targets": "ALL_BOSSES_AND_COMMANDERS", "dmgTakenIncreasePercent": 30 },
+        "description": "Brands every boss and commander on the field for 6s. Marked targets take +30% damage from ALL sources (1.30×), stacking multiplicatively with Scipio's priority-hunting passive and any other MARK debuffs.",
         "vfxColor": "#ff4400",
         "vfxStyle": "RED_BANNER_BRAND"
       }
@@ -211,7 +211,7 @@
     "bannerCopy": [
       "Scipio takes the field. Carthage must fall.",
       "SCIPIO reached LEGATUS — Cornu Charge is ready.",
-      "SCIPIO reached CONSUL — Scipio's Brand marks every boss.",
+      "SCIPIO reached CONSUL — Scipio's Brand marks every boss and commander.",
       "SCIPIO reached IMPERATOR — the conqueror nears apex form.",
       "SCIPIO reached DIVUS — the conqueror at full power."
     ],

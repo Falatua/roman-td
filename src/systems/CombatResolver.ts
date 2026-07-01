@@ -26,7 +26,7 @@ import { spawnProjectile, spawnCosmeticProjectile } from './ProjectileSystem';
 import { enemyDamageMultiplier, statusEffectiveness } from './EnemyResistances';
 import { campaignRelicDamageMult } from './CampaignRelicSystem';
 import { bossTrophyDamageMult } from './BossTrophySystem';
-import { commanderDamageTakenMult } from './CommanderSystem';
+import { commanderDamageTakenMult, isCommanderType } from './CommanderSystem';
 import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 import { heroAuraScaleForTower } from './HeroScaling';
 import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from './BaseTowerAttackAnimation';
@@ -1158,12 +1158,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // deals +50% damage vs bosses. Stacks with the trophies above.
       if (target.isBoss && towerAuraTileKind(t) === 'RED') damage *= 1.50;
       // ── HERO PASSIVES + ABILITY WINDOWS (2026-05-19) ──────────────
-      // Scipio passive scales by rank: +25% boss damage at TIRO, up
-      // to +50% at DIVUS. Agricola mirrors that pattern for flyers at
+      // Scipio passive scales by rank and hits bosses/commanders. Agricola mirrors that pattern for flyers at
       // +15% → +30%, alongside his always-on anti-air targeting.
-      if (target.isBoss) damage *= scipioBossDamageMult;
+      const isScipioPriorityTarget = !!target.isBoss || !!(target as any).isCommander || isCommanderType((target as any).type);
+      if (isScipioPriorityTarget) damage *= scipioBossDamageMult;
       if (target.isFlyer) damage *= agricolaFlyerDamageMult;
-      if (marsVictorActive && target.isBoss) damage *= 1.25;   // Mars Victor fuses Scipio's vs-boss passive
+      if (marsVictorActive && isScipioPriorityTarget) damage *= 1.25;   // Mars Victor fuses Scipio's boss/commander passive
       // 2026-05-21 — Zama (Scipio tier-3) + Triumph (Marius tier-3)
       // damage windows removed alongside the tier-3 ability deletion.
       // The Scipio passive boss bonus above still fires; the per-

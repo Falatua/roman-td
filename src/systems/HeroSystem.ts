@@ -31,6 +31,7 @@ import { setTile } from './GridManager';
 import { buildGroundPath } from './PathFinder';
 import { HERO_IDS, HeroIdentityId, heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 import { heroBasicAttackScaleForTier, heroBasicAttackScaleForTower, heroTierForTower } from './HeroScaling';
+import { isCommanderType } from './CommanderSystem';
 
 // 6-hero pool (locked design). The draft surfaces ALL 6 every run
 // (shuffled for a fresh layout) — players choose freely from the full
@@ -677,19 +678,23 @@ function executeFRONTIER_WALL(state: GameStateShape, hero: Tower, params: any, a
 
 // ── SCIPIO ──
 
+function isScipioPriorityTarget(e: Enemy): boolean {
+  return !!e.isBoss || !!(e as any).isCommander || isCommanderType((e as any).type);
+}
+
 function executeCORNU_CHARGE(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
-  // Find boss with highest current HP.
-  let boss: Enemy | null = null;
+  // Find the boss or commander with highest current HP.
+  let priorityTarget: Enemy | null = null;
   for (const e of state.enemies.values()) {
-    if (!e.isBoss) continue;
-    if (!boss || e.hp > boss.hp) boss = e;
+    if (!isScipioPriorityTarget(e)) continue;
+    if (!priorityTarget || e.hp > priorityTarget.hp) priorityTarget = e;
   }
-  if (!boss) return;
+  if (!priorityTarget) return;
   const dmg = heroBasicAttackDamage(state, hero) * (params.dmgMultiplier ?? 5.0);
-  boss.hp = Math.max(0, boss.hp - dmg);   // ignoreResistances: write directly to HP
-  // Signature VFX: curved horn-blast wave + red arrow flying to boss.
+  priorityTarget.hp = Math.max(0, priorityTarget.hp - dmg);   // ignoreResistances: write directly to HP
+  // Signature VFX: curved horn-blast wave + red arrow flying to target.
   fireAbilityFx(hero, hooks, state.tick, ability, '#ff8800', 0.8, {
-    target: { x: boss.x, y: boss.y }
+    target: { x: priorityTarget.x, y: priorityTarget.y }
   });
 }
 
@@ -698,7 +703,7 @@ function executeSCIPIO_BRAND(state: GameStateShape, hero: Tower, params: any, ab
   // dealt 10% maxHP TRUE damage to every boss — an instant percent-of-
   // health chunk that read as an execute-flavored mechanic ("instantly
   // loses 10% maxHP, bypasses all resistances"). The replacement is a
-  // pure debuff: every boss on the field receives a MARK status for
+  // pure debuff: every boss/commander on the field receives a MARK status for
   // the ability's `durationSec` with magnitude `dmgTakenIncreasePercent`.
   // No direct damage, no resistance bypass, no execute energy. The mark
   // is read by CombatResolver.ts:809 on every direct hit and multiplies
@@ -706,17 +711,17 @@ function executeSCIPIO_BRAND(state: GameStateShape, hero: Tower, params: any, ab
   // (separate damage line) and with FREEZE/STUN amp (also separate).
   const dur = ability.durationSec ?? 6;
   const mag = (params.dmgTakenIncreasePercent ?? 30) / 100;
-  const bossPositions: Array<{ x: number; y: number }> = [];
+  const priorityPositions: Array<{ x: number; y: number }> = [];
   for (const e of state.enemies.values()) {
-    if (!e.isBoss) continue;
+    if (!isScipioPriorityTarget(e)) continue;
     pushStatus(e, StatusEffectKind.MARK, dur, mag, hero.qualityTier);
-    bossPositions.push({ x: e.x, y: e.y });
+    priorityPositions.push({ x: e.x, y: e.y });
   }
-  if (bossPositions.length > 0) {
-    // Signature VFX: red banner brand on each boss + Scipio-origin
+  if (priorityPositions.length > 0) {
+    // Signature VFX: red banner brand on each priority target + Scipio-origin
     // ring sweep. Re-uses the per-target `extras.target` payload the
     // CARTHAGO_DELENDA_EST renderer already drew across each boss.
-    for (const pos of bossPositions) {
+    for (const pos of priorityPositions) {
       fireAbilityFx(hero, hooks, state.tick, ability, '#ff4400', 0.8, { target: pos });
     }
     hooks?.triggerShake?.(2.5, 0.4);
