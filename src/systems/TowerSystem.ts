@@ -63,7 +63,7 @@ const APEX_COMBOS = new Set<string>([
   'LEGION_PRIME', 'CONSULAR_FATEBINDER'
 ]);
 const MELEE_ATTACK_SPEED_MULT = 1.06;
-const MELEE_MIN_RANGE_TILES = 1.5;
+const MELEE_MIN_RANGE_TILES = 2.0;
 
 function isMeleeClassTower(t: Tower): boolean {
   const def: any = (towersData as any)[t.type];

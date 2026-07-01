@@ -4135,7 +4135,7 @@ export class RenderEngine {
     const profile = state.weatherKey ? FACTION_WEATHER[state.weatherKey] : null;
     const inten = state.weatherIntensity ?? 1;
     if (profile && profile.rangePenalty > 0 && stats.range > 1.5) {
-      // Skip the visual range-cut indicator on melee towers (range 1.5) — they're immune.
+      // Skip the visual range-cut indicator on melee towers (minimum range 2.0) — they're immune.
       const reducedR = Math.max(1.5, stats.range - profile.rangePenalty * inten) * GRID.TILE;
       const segs = 36;
       this.rangeGfx.lineStyle(2.5, 0xff5555, 0.9);

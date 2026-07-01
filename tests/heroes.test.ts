@@ -889,8 +889,8 @@ describe('herodefs.json shape (single source of tuning)', () => {
 
     expect(starter.damageType).toBe(DamageType.PHYS_MELEE);
     expect(champion.damageType).toBe(DamageType.PHYS_MELEE);
-    expect(starter.range).toBeLessThanOrEqual(1.6);
-    expect(champion.range).toBeLessThanOrEqual(1.6);
+    expect(starter.range).toBe(2);
+    expect(champion.range).toBe(2);
     expect(starter.baseDps).toBeCloseTo(147.7 * 1.10, 4);
     expect(champion.baseDps).toBeCloseTo(162.5 * 1.10, 4);
     expect(getTowerProjectileProfile(TowerType.HERO_SCIPIO)).toBeNull();

@@ -193,7 +193,7 @@ const MELEE_TYPES = new Set<TowerType>([
   TowerType.BESTIARIUS,
   // 2026-05-17 — MURMILLO (T4 mid-game combo). Roman heavy gladiator
   // with scutum + gladius; Punic Hunter damage bonus + Scutum Bash stun-
-  // and-knockback every 4th swing. Pure melee, range 1.5.
+  // and-knockback every 4th swing. Pure melee, range 2.0.
   TowerType.MURMILLO,
   // 2026-06-30 — Sacred Band is authored as a DIVINE melee combo. It must
   // route through the melee branch for direct blade hits and AEGIS NOVA.
@@ -218,7 +218,7 @@ const MELEE_TYPES = new Set<TowerType>([
   // command-presence reach isn't tied to the sword's reach).
   TowerType.JULIUS_CAESAR,
   // 2026-05-19 — HERO_MARIUS is configured in towers.json as
-  // `damageType: PHYS_MELEE`, `melee: true`, range 1.5 — but the
+  // `damageType: PHYS_MELEE`, `melee: true`, range 2.0 — but the
   // combat resolver gates the melee swing path on MELEE_TYPES set
   // membership (not the def's `melee` flag). Without this entry his
   // attacks fell through to the ranged else-branch — no projectile
@@ -229,7 +229,7 @@ const MELEE_TYPES = new Set<TowerType>([
   // melee tower uses.
   TowerType.HERO_MARIUS,
   // 2026-05-19 v2 — HERO_CAESAR converted from ranged DIVINE to MELEE
-  // DIVINE at range 1.6 to mirror the JULIUS_CAESAR combo tower's
+  // DIVINE melee to mirror the JULIUS_CAESAR combo tower's
   // post-v9 melee identity. The previous ranged build shipped a
   // PROJ_IMPERIAL_ORB projectile but enemies didn't visibly take
   // damage from it under live play — the projectile path made
@@ -558,7 +558,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const nextStun = (t as any).__nextCaesarStunTick ?? 0;
       if (state.tick >= nextStun && !asleep) {
         (t as any).__nextCaesarStunTick = state.tick + 3.0;
-        // 2026-05 v9: Caesar is now a melee strike tower (range 1.5),
+        // 2026-05 v9: Caesar is now a melee strike tower,
         // but the magisterial stun pulse is the COMMAND PRESENCE — a
         // shockwave that should keep its original ~5.5-tile authority
         // regardless of the gladius reach. Hardcoded so making him
@@ -2460,7 +2460,7 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       // GOD_OF_WAR's DIVINE EXECUTE (~line 2049): bosses, ground, AND
       // flyers all eligible. The "only flyers with the item" constraint
       // the player asked for is enforced AUTOMATICALLY by the existing
-      // melee-vs-flyer targeting gate — Caesar is range 1.5 melee, so
+      // melee-vs-flyer targeting gate — Caesar is melee, so
       // he can ONLY land a hit on a flyer when AQUILA_TALONS is
       // equipped, the tower sits on the CYAN aura tile, or the Agricola
       // hero is active and extending CYAN map-wide. No flyer hit =

@@ -434,7 +434,7 @@ describe('Combo cost / gold debit', () => {
 // 7. Tower ability wiring — RETIARIUS keeps both its signatures post-rename
 // ───────────────────────────────────────────────────────────────────────
 describe('RETIARIUS ability wiring (post-rename)', () => {
-  it('RETIARIUS is in MELEE_TYPES (range-1.5 melee gate)', () => {
+  it('RETIARIUS is in MELEE_TYPES (melee gate)', () => {
     const cr = require('fs').readFileSync('src/systems/CombatResolver.ts', 'utf8');
     expect(cr.includes('TowerType.RETIARIUS, TowerType.CLIBANARIUS')).toBe(true);
   });

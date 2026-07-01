@@ -55,7 +55,7 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   [TowerType.LIBRITOR]:       { key: 'PROJ_HASTA',         arc: true,  speed: 430, splash: 0.65, embed: true },
   // T2 band
   // RETIARIUS (renamed from LANCEARIUS in 2026-05 v9) sits in MELEE_TYPES
-  // at range 1.5 — the gladiator stabs with his trident and snares with
+  // at melee range — the gladiator stabs with his trident and snares with
   // the net. The combat-resolver melee path applies damage instantly with
   // the slash VFX; no projectile entry needed.
   [TowerType.BALLISTARIUS]:   { key: 'PROJ_BALLISTA',      arc: false, speed: 760, splash: 1.1, embed: true },
