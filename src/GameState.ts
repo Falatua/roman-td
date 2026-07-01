@@ -61,6 +61,9 @@ export interface GameStateShape {
   // Lifetime traps purchased this run. Kept separate from inventory because
   // placed traps are consumable and should not erase quest progress.
   trapsPurchased?: number;
+  // Lifetime traps deployed this run. A trap counts as used when it is placed
+  // from inventory onto the map, even if it later expires at wave end.
+  trapsPlaced?: number;
   // Best effective DPS ever recorded by the pre-wave DPS Check dummy.
   bestDpsCheck?: number;
   placedTraps?: { id: string; type: string; x: number; y: number; col: number; row: number; born: number; color: number; spriteKey: string; pulse: boolean; nextReadyTick?: number }[];
@@ -287,6 +290,7 @@ export function createGameState(): GameStateShape {
     caveBActive: false,
     trapInventory: {},
     trapsPurchased: 0,
+    trapsPlaced: 0,
     placedTraps: [],
     selectedTrapType: null,
     flyerPath: [],

@@ -142,6 +142,7 @@ export function placeTrap(state: GameStateShape, id: string, col: number, row: n
     spriteKey: def.spriteKey,
     pulse: def.pulse,
   });
+  state.trapsPlaced = (state.trapsPlaced ?? 0) + 1;
   return true;
 }
 

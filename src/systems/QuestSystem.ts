@@ -103,6 +103,14 @@ export const QUESTS: QuestDef[] = [
     reward: { kind: 'GOLD', amount: 10 }
   },
   {
+    id: 'trap_initiate', tier: 'EARLY',
+    title: 'Trap Initiate',
+    blurb: 'Purchase any trap, then deploy one from your inventory.',
+    condition: s => (s.trapsPurchased ?? 0) >= 1 && (s.trapsPlaced ?? 0) >= 1 ? 1 : 0,
+    target: 1,
+    reward: { kind: 'GOLD', amount: 25 }
+  },
+  {
     id: 'first_forge', tier: 'EARLY',
     title: "Smith's First Forge",
     blurb: 'Build 3 different combo TYPES. Same combo three times does not count.',
@@ -287,6 +295,7 @@ export function ensureQuestState(s: GameStateShape) {
   if (!s.combosBuiltUniqueTypes) s.combosBuiltUniqueTypes = [];
   if (s.stonesPlaced === undefined) s.stonesPlaced = 0;
   if (s.trapsPurchased === undefined) s.trapsPurchased = 0;
+  if (s.trapsPlaced === undefined) s.trapsPlaced = 0;
   if (s.bestDpsCheck === undefined) s.bestDpsCheck = 0;
 }
 

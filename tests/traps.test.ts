@@ -62,12 +62,14 @@ describe('Trap inventory flow', () => {
     expect(placeTrap(s, id, 5, 4)).toBe(true);
     expect(trapOwned(s, id)).toBe(1);
     expect(s.trapsPurchased).toBe(3);
+    expect(s.trapsPlaced).toBe(2);
     expect(s.placedTraps).toHaveLength(2);
 
     expect(clearPlacedTrapsForWaveEnd(s)).toBe(2);
     expect(s.placedTraps).toHaveLength(0);
     expect(trapOwned(s, id)).toBe(1);
     expect(s.trapsPurchased).toBe(3);
+    expect(s.trapsPlaced).toBe(2);
     expect(s.selectedTrapType).toBe(id);
   });
 });

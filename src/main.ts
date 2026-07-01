@@ -5726,6 +5726,7 @@ async function boot() {
             ? `Placed ${TRAP_DEFS[selTrap].name}. ${left} left — click to drop more, or pick another trap.`
             : `Placed your last ${TRAP_DEFS[selTrap].name}. Buy more from the shop.`;
           if (left <= 0) state.selectedTrapType = null;
+          tickQuests();
           return;
         }
       }

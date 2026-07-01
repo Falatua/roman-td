@@ -23,10 +23,10 @@ function soloCampaignCumulative() {
 }
 
 describe('30-wave Solo quest pacing', () => {
-  it('keeps 23 unique quests distributed across the three campaign acts', () => {
-    expect(QUESTS).toHaveLength(23);
-    expect(new Set(QUESTS.map(q => q.id)).size).toBe(23);
-    expect(QUESTS.filter(q => q.tier === 'EARLY')).toHaveLength(6);
+  it('keeps 24 unique quests distributed across the three campaign acts', () => {
+    expect(QUESTS).toHaveLength(24);
+    expect(new Set(QUESTS.map(q => q.id)).size).toBe(24);
+    expect(QUESTS.filter(q => q.tier === 'EARLY')).toHaveLength(7);
     expect(QUESTS.filter(q => q.tier === 'MID')).toHaveLength(7);
     expect(QUESTS.filter(q => q.tier === 'LATE')).toHaveLength(10);
   });
@@ -39,6 +39,19 @@ describe('30-wave Solo quest pacing', () => {
     state.trapsPurchased = 8;
     expect(evaluateQuests(state).map(q => q.id)).toContain('field_engineer');
     expect(evaluateQuests(state).map(q => q.id)).not.toContain('field_engineer');
+  });
+
+  it('adds a beginner trap quest that requires buying and deploying a trap', () => {
+    const state = createGameState();
+    expect(quest('trap_initiate').tier).toBe('EARLY');
+    expect(quest('trap_initiate').reward).toEqual({ kind: 'GOLD', amount: 25 });
+
+    state.trapsPurchased = 1;
+    expect(evaluateQuests(state).map(q => q.id)).not.toContain('trap_initiate');
+
+    state.trapsPlaced = 1;
+    expect(evaluateQuests(state).map(q => q.id)).toContain('trap_initiate');
+    expect(evaluateQuests(state).map(q => q.id)).not.toContain('trap_initiate');
   });
 
   it('paces total-kill quests near waves 6, 14, and 23', () => {
