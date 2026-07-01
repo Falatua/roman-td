@@ -63,6 +63,19 @@ const APEX_COMBO_TYPES = new Set<string>([
   'TRIPLEX_ACIES','LEGION_PRIME','CONSULAR_FATEBINDER'
 ]);
 
+const SUPER_COMBO_TYPES = new Set<string>([
+  ...APEX_COMBO_TYPES,
+  'JULIUS_CAESAR','HANNIBALS_NIGHTMARE','GOD_OF_WAR',
+  'NEMESIS_ENGINE','TRIUMPHATOR','PONTIFEX_MAXIMUS',
+  'VANGUARD_WING','VULCAN_COLOSSUS',
+  'SKY_DOMINION','AUREATE_TRIBUNAL','GLACIAL_PALISADE','INFERNAL_COLOSSUS',
+  'MARS_VICTOR'
+]);
+
+const OMEGA_COMBO_TYPES = new Set<string>([
+  'ROMAN_TRANSFORMER'
+]);
+
 export const QUESTS: QuestDef[] = [
   // ─── EARLY (still hard — gateway feel, not freebies) ───────────────────
   {
@@ -200,6 +213,46 @@ export const QUESTS: QuestDef[] = [
     reward: { kind: 'GOLD', amount: 110 }
   },
   {
+    id: 'super_combo_commission', tier: 'LATE',
+    title: 'Super Combo Commission',
+    blurb: 'Forge any super-combo tower. Rome pays for real escalation.',
+    condition: s => {
+      const seen = s.combosBuiltUniqueTypes ?? [];
+      for (const k of seen) if (SUPER_COMBO_TYPES.has(k)) return 1;
+      return 0;
+    },
+    target: 1,
+    reward: { kind: 'GOLD', amount: 500 }
+  },
+  {
+    id: 'omega_foundry', tier: 'LATE',
+    title: 'Omega Foundry',
+    blurb: 'Forge an Omega Combo Tower. The treasury empties the vault for a miracle.',
+    condition: s => {
+      const seen = s.combosBuiltUniqueTypes ?? [];
+      for (const k of seen) if (OMEGA_COMBO_TYPES.has(k)) return 1;
+      return 0;
+    },
+    target: 1,
+    reward: { kind: 'GOLD', amount: 1000 }
+  },
+  {
+    id: 'combo_dynasty', tier: 'LATE',
+    title: 'Combo Dynasty',
+    blurb: 'Build 15 combo towers total across the run. Repeats count.',
+    condition: s => s.combosBuilt ?? 0,
+    target: 15,
+    reward: { kind: 'GOLD', amount: 1000 }
+  },
+  {
+    id: 'ten_million_dps', tier: 'LATE',
+    title: 'Ten Million DPS',
+    blurb: 'Use DPS Check and break 10,000,000 effective DPS.',
+    condition: s => s.bestDpsCheck ?? 0,
+    target: 10000000,
+    reward: { kind: 'GOLD', amount: 500 }
+  },
+  {
     id: 'imperial_standard', tier: 'LATE',
     title: 'Imperial Standard',
     blurb: 'Own 2 Tier 5 towers simultaneously on the field.',
@@ -234,6 +287,7 @@ export function ensureQuestState(s: GameStateShape) {
   if (!s.combosBuiltUniqueTypes) s.combosBuiltUniqueTypes = [];
   if (s.stonesPlaced === undefined) s.stonesPlaced = 0;
   if (s.trapsPurchased === undefined) s.trapsPurchased = 0;
+  if (s.bestDpsCheck === undefined) s.bestDpsCheck = 0;
 }
 
 // 2026-05-17 — Quest tier-completion bonuses.

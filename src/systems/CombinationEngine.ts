@@ -400,5 +400,11 @@ export function executeCombo(state: GameStateShape, combo: AvailableCombo, resul
     isSameTierMerge: !!combo.isSameTierMerge,
     resultTier: combo.resultTier
   });
+  if (!combo.isSameTierMerge) {
+    state.combosBuilt = (state.combosBuilt ?? 0) + 1;
+    if (!state.combosBuiltUniqueTypes) state.combosBuiltUniqueTypes = [];
+    const resultType = String(combo.result);
+    if (!state.combosBuiltUniqueTypes.includes(resultType)) state.combosBuiltUniqueTypes.push(resultType);
+  }
   return true;
 }

@@ -362,10 +362,12 @@ async function boot() {
     // frames, so the old `/60` divisor inflated the reported DPS by ~60×.
     const elapsed = Math.max(0.01, state.tick - dpsCheckStartTick);
     const dps = totalDmgDealt / elapsed;
+    state.bestDpsCheck = Math.max(state.bestDpsCheck ?? 0, dps);
     // Clear the active dummy so the button rearms.
     dpsCheckActiveId = null;
     (state as any).__dpsCheckActive = false;
     state.enemies.delete(e.id);
+    tickQuests();
     // Build popup
     document.getElementById('dps-check-summary')?.remove();
     const modal = document.createElement('div');
@@ -3657,12 +3659,6 @@ async function boot() {
         (state as any).__leftoverItemsFromCombo = [];
         if (returned > 0) state.hint = `Combined! ${returned} extra item${returned > 1 ? 's' : ''} returned to inventory.`;
       }
-      // Quest tracking: count combos built (cross-cutting) + unique combo
-      // result types so the "Diverse Legions" quest fires correctly.
-      state.combosBuilt = (state.combosBuilt ?? 0) + 1;
-      if (!state.combosBuiltUniqueTypes) state.combosBuiltUniqueTypes = [];
-      const resultType = String(target.result);
-      if (!state.combosBuiltUniqueTypes.includes(resultType)) state.combosBuiltUniqueTypes.push(resultType);
       // CRITICAL: rebuild the ground path BEFORE redrawing terrain. drawStatic
       // reads state.groundPath to decide where the dirt-path tiles render —
       // if we redraw before rebuilding, dirt sprites paint along the old

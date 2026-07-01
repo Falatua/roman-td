@@ -23,12 +23,12 @@ function soloCampaignCumulative() {
 }
 
 describe('30-wave Solo quest pacing', () => {
-  it('keeps 19 unique quests distributed across the three campaign acts', () => {
-    expect(QUESTS).toHaveLength(19);
-    expect(new Set(QUESTS.map(q => q.id)).size).toBe(19);
+  it('keeps 23 unique quests distributed across the three campaign acts', () => {
+    expect(QUESTS).toHaveLength(23);
+    expect(new Set(QUESTS.map(q => q.id)).size).toBe(23);
     expect(QUESTS.filter(q => q.tier === 'EARLY')).toHaveLength(6);
     expect(QUESTS.filter(q => q.tier === 'MID')).toHaveLength(7);
-    expect(QUESTS.filter(q => q.tier === 'LATE')).toHaveLength(6);
+    expect(QUESTS.filter(q => q.tier === 'LATE')).toHaveLength(10);
   });
 
   it('completes Field Engineer from cumulative purchases without repeating', () => {
@@ -68,6 +68,31 @@ describe('30-wave Solo quest pacing', () => {
     expect(quest('champion_tower').target).toBe(200);
     expect(quest('legend_tower').target).toBe(500);
     expect(quest('eternal_bulwark').target).toBe(27);
+  });
+
+  it('rewards super combo, omega combo, combo volume, and 10M DPS check milestones', () => {
+    expect(quest('super_combo_commission').reward).toEqual({ kind: 'GOLD', amount: 500 });
+    expect(quest('omega_foundry').reward).toEqual({ kind: 'GOLD', amount: 1000 });
+    expect(quest('combo_dynasty').target).toBe(15);
+    expect(quest('combo_dynasty').reward).toEqual({ kind: 'GOLD', amount: 1000 });
+    expect(quest('ten_million_dps').target).toBe(10000000);
+    expect(quest('ten_million_dps').reward).toEqual({ kind: 'GOLD', amount: 500 });
+
+    const superState = createGameState();
+    superState.combosBuiltUniqueTypes = ['HANNIBALS_NIGHTMARE'];
+    expect(evaluateQuests(superState).map(q => q.id)).toContain('super_combo_commission');
+
+    const omegaState = createGameState();
+    omegaState.combosBuiltUniqueTypes = ['ROMAN_TRANSFORMER'];
+    expect(evaluateQuests(omegaState).map(q => q.id)).toContain('omega_foundry');
+
+    const volumeState = createGameState();
+    volumeState.combosBuilt = 15;
+    expect(evaluateQuests(volumeState).map(q => q.id)).toContain('combo_dynasty');
+
+    const dpsState = createGameState();
+    dpsState.bestDpsCheck = 10000000;
+    expect(evaluateQuests(dpsState).map(q => q.id)).toContain('ten_million_dps');
   });
 
   it('completes new thresholds exactly once and preserves tier identity', () => {

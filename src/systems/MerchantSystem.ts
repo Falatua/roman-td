@@ -44,6 +44,10 @@ const GATE_UNCOMMON: string[] = [
   'AUGUR_SCROLL','CONSULAR_TOKEN'
 ];
 const GATE_RARE: string[] = [];
+const GATE_EPIC = [
+  'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE',
+  'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST'
+];
 const MERCATOR_RARE = [
   'HOURGLASS_OF_SATURN','STORM_JAVELIN','BATTLE_STANDARD','CENTURIONS_TRUMPET',
   'GOLD_PURSE'
@@ -244,11 +248,10 @@ export const MERCATOR_WAVES = [4, 9, 14, 19, 23, 27];
 // Mercator stops, not a meaningful loot rotation.
 // `ownedLegendaries` kept for back-compat with the call sites but
 // unused now that the legendary slot is removed.
-// 2026-05-19 — Gate shop now samples FROM the gate-exclusive pools.
-// Visit produces 3-4 Common offers + 1-2 Uncommon, all drawn from
-// the gate-only pools so Mercator stays exclusive. ownedLegendaries
-// kept for back-compat with the call sites but unused (gate doesn't
-// carry legendaries).
+// 2026-05-19 — Gate shop samples from gate-exclusive common/uncommon pools.
+// 2026-07-01 — It also carries a small Epic shelf so the base shop has
+// meaningful purple purchases between Mercator visits. ownedLegendaries kept
+// for back-compat with the call sites but unused (gate doesn't carry legendaries).
 export function buildGateShop(_refreshSeed = 0, _ownedLegendaries?: Set<string>): ShopState {
   const offers: ShopOffer[] = [];
   // Sample 4 commons. The pool only has 5, so the player sees 4-of-5
@@ -262,6 +265,10 @@ export function buildGateShop(_refreshSeed = 0, _ownedLegendaries?: Set<string>)
   const uncommons = sampleN(entries(GATE_UNCOMMON), Math.min(2, GATE_UNCOMMON.length));
   for (const [id, def] of uncommons) {
     offers.push({ itemId: id, rarity: 'UNCOMMON', price: itemBuyPrice(id), isConsumable: false });
+  }
+  const epics = sampleN(entries(GATE_EPIC), Math.min(2, GATE_EPIC.length));
+  for (const [id] of epics) {
+    offers.push({ itemId: id, rarity: 'EPIC', price: itemBuyPrice(id), isConsumable: false });
   }
   // 2026-06-28 — every item costs 10% less to buy from the gate shop.
   for (const o of offers) o.price = Math.max(1, Math.round(o.price * 0.9));

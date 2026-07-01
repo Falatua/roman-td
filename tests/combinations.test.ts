@@ -92,6 +92,19 @@ describe('Recipe combo detection', () => {
     expect(horseman).toBeTruthy();
   });
 
+  it('records recipe combo builds for quest progression from the engine', () => {
+    const s: any = bootstrapState();
+    const a = placeTower(s, TowerType.MILITES, 2, 1, 1);
+    placeTower(s, TowerType.MILITES, 2, 2, 1);
+    placeTower(s, TowerType.MILITES, 2, 3, 1);
+    const horseman = scanCombos(s).find(c => c.result === TowerType.HORSEMAN && !c.isSameTierMerge)!;
+
+    expect(executeCombo(s, horseman, a.id)).toBe(true);
+
+    expect(s.combosBuilt).toBe(1);
+    expect(s.combosBuiltUniqueTypes).toEqual([TowerType.HORSEMAN]);
+  });
+
   it('detects SCORPION_BOLT recipe (Scorpio T2 + Velites T2)', () => {
     const s = bootstrapState();
     placeTower(s, TowerType.SCORPIO, 2, 5, 5);

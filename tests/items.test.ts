@@ -214,26 +214,24 @@ describe('Item rarity economy', () => {
 });
 
 describe('Merchant — gate shop', () => {
-  it('produces 6 offers (4 commons + 2 uncommons, all gate-exclusive)', () => {
-    // 2026-05-19: gate shop expanded with 5 new gate-exclusive items
-    // (3 commons + 2 uncommons) on top of the existing 2 commons. A
-    // visit samples 4 commons from the 5-item common pool and both
-    // uncommons. Mercator pools remain fully exclusive — none of
-    // the 7 gate items appear at Mercator.
+  it('produces 8 offers (4 commons + 2 uncommons + 2 epics)', () => {
     const shop = buildGateShop();
     expect(shop.type).toBe('GATE');
-    expect(shop.offers.length).toBe(6);
+    expect(shop.offers.length).toBe(8);
     const commons = shop.offers.filter(o => o.rarity === 'COMMON');
     const uncommons = shop.offers.filter(o => o.rarity === 'UNCOMMON');
+    const epics = shop.offers.filter(o => o.rarity === 'EPIC');
     expect(commons.length).toBe(4);
     expect(uncommons.length).toBe(2);
-    // Every offered item must be drawn from the gate's exclusive pool.
-    const gateOnlyIds = new Set([
+    expect(epics.length).toBe(2);
+    const gateIds = new Set([
       'SHARPENED_BLADE','WATCHTOWER_LENS',
       'PRAETORIAN_COIN','BRONZE_GREAVES','RUSTED_HASTA',
-      'AUGUR_SCROLL','CONSULAR_TOKEN'
+      'AUGUR_SCROLL','CONSULAR_TOKEN',
+      'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE',
+      'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST'
     ]);
-    for (const o of shop.offers) expect(gateOnlyIds.has(o.itemId)).toBe(true);
+    for (const o of shop.offers) expect(gateIds.has(o.itemId)).toBe(true);
   });
 
   it('contains no duplicate offers within a single visit', () => {
