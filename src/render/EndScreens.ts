@@ -118,7 +118,7 @@ function buildDeathAnalysis(state: GameStateShape): string {
     RESISTANT: 'Diversify damage types — physical alone gets absorbed. Add DIVINE (Solar Priest ignores resists) or SIEGE.',
     BULKY: "Stack burst — Scorpio (every 5th hit ×3), Primus Pilus, Hannibal's Nightmare. Apply MARK for +damage from all sources.",
     ELITE: 'Kill druid/legate units FIRST — they aura-slow your towers. Speculator marks them for +damage.',
-    BOSS: 'Build a boss-killer lane — Scorpio (+40% bosses), Primus Pilus, War Chariot (+50% bosses), Julius Caesar (-50% boss armor), Pontifex Maximus (+200% bosses).'
+    BOSS: 'Build a boss-killer lane — Scorpio (+40% bosses), Primus Pilus, War Chariot (+50% bosses), Julius Caesar (-50% boss armor), Pontifex (+200% bosses).'
   };
   // ─── Cross-cutting "you missed this entirely" tips ────────────────────
   const tips: string[] = [];
@@ -126,7 +126,7 @@ function buildDeathAnalysis(state: GameStateShape): string {
     tips.push('⚠ <b>NO ANTI-AIR TOWERS</b> — every run will see flyer waves. Sagittarius, Aquila Venator (AA-only), Eques, or the Nemesis Engine combo cover the sky.');
   }
   if (!hasBossKiller && wave >= 5) {
-    tips.push('⚠ <b>NO BOSS-KILLER</b> — major bosses land at W5 / 10 / 20 / 24 / 30. Build at least one Scorpio / Primus Pilus / War Chariot / Pontifex Maximus before W10.');
+    tips.push('⚠ <b>NO BOSS-KILLER</b> — major bosses land at W5 / 10 / 20 / 24 / 30. Build at least one Scorpio / Primus Pilus / War Chariot / Pontifex before W10.');
   }
   if (combosBuilt < Math.floor(wave / 4) && wave >= 6) {
     tips.push(`⚠ <b>LOW COMBO COUNT</b> — only ${combosBuilt} combos built by wave ${wave}. Base towers fall off past W10; the recipes in the codex are how you keep up.`);

@@ -109,6 +109,49 @@ describe('Every authored recipe is discoverable + executable', () => {
 });
 
 // ───────────────────────────────────────────────────────────────────────
+// 2. Recipe display-name consistency
+// ───────────────────────────────────────────────────────────────────────
+describe('Tower recipe names stay player-facing', () => {
+  it('every recipe result and ingredient resolves to a tower display name', () => {
+    for (const recipe of comboData as any[]) {
+      const resultDef: any = (towersData as any)[recipe.result];
+      expect(resultDef?.name, `recipe result ${recipe.result} is missing a display name`).toBeTruthy();
+      for (const ing of recipe.ingredients) {
+        const ingDef: any = (towersData as any)[ing.type];
+        expect(ingDef?.name, `recipe ${recipe.result} ingredient ${ing.type} is missing a display name`).toBeTruthy();
+      }
+    }
+  });
+
+  it('tower ability copy does not leak raw recipe IDs', () => {
+    const recipeIds = new Set<string>();
+    for (const recipe of comboData as any[]) {
+      recipeIds.add(recipe.result);
+      for (const ing of recipe.ingredients) recipeIds.add(ing.type);
+    }
+    for (const [towerId, def] of Object.entries(towersData as any)) {
+      const ability = String((def as any).ability ?? '');
+      for (const recipeId of recipeIds) {
+        expect(
+          new RegExp(`\\b${recipeId}\\b`).test(ability),
+          `${towerId} ability text leaks raw tower id ${recipeId}; use the display name instead`
+        ).toBe(false);
+      }
+    }
+  });
+
+  it('known historical alias towers use the same display names recipes show', () => {
+    expect((towersData as any).AUXILIA.name).toBe('Skizzer');
+    expect((towersData as any).BALLISTARIUS.name).toBe('Turris');
+    expect((towersData as any).LIBRITOR.name).toBe('Librator');
+    expect((towersData as any).AQUILIFER_TITAN.name).toBe('Aquilifer');
+    expect((towersData as any).PONTIFEX_MAXIMUS.name).toBe('Pontifex');
+    expect((towersData as any).CONSULAR_FATEBINDER.name).toBe('Fatebinder');
+    expect((towersData as any).MIRMILLO_REAVER.name).toBe('Murmillo Reaver');
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────
 // 2. Tower roster integrity
 // ───────────────────────────────────────────────────────────────────────
 describe('Tower roster integrity', () => {

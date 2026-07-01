@@ -989,7 +989,7 @@
     "kind": "BASE",
     "melee": true,
     "tierBand": 1,
-    "ability": "BEAST-BANE: +200% damage vs animal-faction enemies (Feral / Rabid / Alpha Dog · Demon Hellhound · War Elephant · Undead War Elephant). Lightning-fast dual-blade slashes (2.8/s). Combo ingredient for MURMILLO — the heavy fish-helmet gladiator inherits the dimachaerus' speed training. Pure melee, range 1.5.",
+    "ability": "BEAST-BANE: +200% damage vs animal-faction enemies (Feral / Rabid / Alpha Dog · Demon Hellhound · War Elephant · Undead War Elephant). Lightning-fast dual-blade slashes (2.8/s). Combo ingredient for Murmillo — the heavy fish-helmet gladiator inherits the dimachaerus' speed training. Pure melee, range 1.5.",
     "critChance": 0.1,
     "critMult": 1.8
   },
@@ -1003,7 +1003,7 @@
     "melee": true,
     "tierBand": 2,
     "tierBandRange": "1-3",
-    "ability": "BEAST-BANE: +200% damage vs animal-faction enemies. Veteran Beast Hunter upgrade — heavier strike, still fast (2.6/s), better crit profile (15% / 2.0×). Combo ingredient for BESTIARIUS (gladiator beast-fury combo). Pure melee, range 1.5. Specialist answer to the W3 Alpha Dog, the W9-10 War Elephant pair, and the W14 Undead Elephant. <b>Rolls at T1-T3</b> in the prospect pool so a dog-heavy early wave can still hand you one on a fresh T1 draw.",
+    "ability": "BEAST-BANE: +200% damage vs animal-faction enemies. Veteran Beast Hunter upgrade — heavier strike, still fast (2.6/s), better crit profile (15% / 2.0×). Combo ingredient for Bestiarius (gladiator beast-fury combo). Pure melee, range 1.5. Specialist answer to the W3 Alpha Dog, the W9-10 War Elephant pair, and the W14 Undead Elephant. <b>Rolls at T1-T3</b> in the prospect pool so a dog-heavy early wave can still hand you one on a fresh T1 draw.",
     "critChance": 0.15,
     "critMult": 2.0
   },
@@ -1016,7 +1016,7 @@
     "kind": "COMBO",
     "melee": true,
     "tierBand": 4,
-    "ability": "MID-GAME COMBO MELEE — the Roman fish-helmet gladiator. PUNIC HUNTER: +75% damage vs CARTHAGE faction (W7-W10), +50% damage vs UNDEAD_CARTHAGE (W16-W18) — the heavy gladius hunts Hannibal's blood. SCUTUM BASH: every 4th swing is a heavy shield strike that STUNS non-bosses for 1.2s AND knocks the target back 0.8 tiles in one hit. Bosses are stun-immune, so they take the full 0.8-tile knockback only — no stun lock. Recipe = BEAST HUNTER (gladiator dual-blade) + BALLISTARIUS (heavy artillery) + ARCUBALLISTA (precision crossbow).",
+    "ability": "MID-GAME COMBO MELEE — the Roman fish-helmet gladiator. PUNIC HUNTER: +75% damage vs CARTHAGE faction (W7-W10), +50% damage vs UNDEAD_CARTHAGE (W16-W18) — the heavy gladius hunts Hannibal's blood. SCUTUM BASH: every 4th swing is a heavy shield strike that STUNS non-bosses for 1.2s AND knocks the target back 0.8 tiles in one hit. Bosses are stun-immune, so they take the full 0.8-tile knockback only — no stun lock. Recipe = Beast Hunter + Turris + Arcuballista.",
     "critChance": 0.18,
     "critMult": 2.3
   },
@@ -1234,7 +1234,7 @@
   "PRAETORIAN_EXECUTIONER": {"name": "Praetorian Executioner", "damageType": "PHYS_MELEE", "baseDps": 135.0, "attackSpeed": 1.5, "range": 1.8, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.15, "critMult": 2.4, "ability": "Heavy maul. EXECUTIONER'S RHYTHM: every 2nd strike STUNS 0.8s — and he deals +40% damage to any STUNNED, SLOWED, or FROZEN target, caving in everything his own lockdown leaves helpless."},
   "SACRED_BAND": {"name": "Sacred Band", "damageType": "DIVINE", "baseDps": 165.0, "attackSpeed": 1.3, "range": 1.6, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.18, "critMult": 2.6, "ability": "Holy blade — DIVINE melee that bypasses most resistances. AEGIS NOVA: every 4th strike erupts a 2-tile divine shockwave for 2.2× damage that STUNS everything caught (0.4s). Elite anti-armor + area lockdown."},
   "BEASTLORD_CHAMPION": {"name": "Beastlord Champion", "damageType": "PHYS_MELEE", "baseDps": 144.0, "attackSpeed": 1.7, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.2, "critMult": 2.2, "ability": "Eagle-spear hunter. Can strike FLYERS even as melee and deals +70% damage to them. HOOK SPEAR: flyer hits briefly Stun and mark for +20% damage taken. A melee anti-air specialist for chokepoints under air pressure."},
-  "MIRMILLO_REAVER": {"name": "Mirmillo Reaver", "damageType": "PHYS_MELEE", "baseDps": 125.0, "attackSpeed": 1.9, "range": 1.8, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.22, "critMult": 2.1, "ability": "Curved sica. Every hit applies stacking BLEED (DoT). Fast swings + bleed shred make him a sustained-damage grinder vs tanky ground."},
+  "MIRMILLO_REAVER": {"name": "Murmillo Reaver", "damageType": "PHYS_MELEE", "baseDps": 125.0, "attackSpeed": 1.9, "range": 1.8, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.22, "critMult": 2.1, "ability": "Curved sica. Every hit applies stacking BLEED (DoT). Fast swings + bleed shred make him a sustained-damage grinder vs tanky ground."},
   "TRIBUNE_AVENGER": {"name": "Tribune Avenger", "damageType": "DIVINE", "baseDps": 145.0, "attackSpeed": 1.2, "range": 1.8, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.15, "critMult": 2.3, "ability": "Consecrated scepter — DIVINE melee + POISON DoT on every strike. Magic damage that also rots resistant ground over time."},
   "CATAPHRACT_LANCER": {"name": "Cataphract Lancer", "damageType": "PHYS_MELEE", "baseDps": 150.0, "attackSpeed": 1.1, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.14, "critMult": 2.5, "ability": "POLEARM REACH (2.0). LANCE CHARGE: every 3rd couched thrust STUNS 1.0s AND knocks the target back ~0.5 tiles. Slow, devastating swings; a wall-anchor that pins AND shoves bosses back down the lane."},
   "STORM_BALLISTA": {"name": "Storm Ballista", "damageType": "SIEGE", "baseDps": 160.0, "attackSpeed": 0.648, "range": 6.0, "kind": "COMBO", "melee": false, "tierBand": 4, "critChance": 0.12, "critMult": 3.0, "ability": "Long-range SIEGE bolt-thrower with 1.4-tile splash. SHOCK BURST: every 3rd bolt discharges on impact and STUNS every enemy in the splash (0.6s) — AoE lockdown. Siege bypasses ranged resists."},

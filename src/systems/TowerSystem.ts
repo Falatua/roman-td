@@ -606,7 +606,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
         if (d <= 5 * GRID.TILE) spdMods.push({ source: 'Eagle Standard local', multiplier: 1.22 });
       }
       if (other.type === TowerType.AQUILIFER_TITAN) {
-        dmgMods.push({ source: `Aquilifer Titan T${oTier}`, multiplier: 1 + 0.35 * (1 + 0.05 * (oTier - 1)) });
+        dmgMods.push({ source: `Aquilifer T${oTier}`, multiplier: 1 + 0.35 * (1 + 0.05 * (oTier - 1)) });
       }
       if (other.type === TowerType.JULIUS_CAESAR) dmgMods.push({ source: 'Julius Caesar', multiplier: 1.55 });
       if (other.type === TowerType.TRIUMVIRATE) {
@@ -615,8 +615,8 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       }
       if (other.type === TowerType.IMPERIUM_ETERNUM) spdMods.push({ source: 'Imperium Eternum', multiplier: 1.25 });
       if (other.type === TowerType.CONSULAR_FATEBINDER) {
-        dmgMods.push({ source: 'Consular Fatebinder', multiplier: 1.30 });
-        spdMods.push({ source: 'Consular Fatebinder', multiplier: 1.30 });
+        dmgMods.push({ source: 'Fatebinder', multiplier: 1.30 });
+        spdMods.push({ source: 'Fatebinder', multiplier: 1.30 });
       }
       // 2026-05-24 audit fix — TRIARIUS +12% global damage aura.
       // Mirrors CombatResolver.ts:521-524. Previously applied in

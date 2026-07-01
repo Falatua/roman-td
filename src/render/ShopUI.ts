@@ -1,4 +1,4 @@
-import { ShopState, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds } from '../systems/MerchantSystem';
+import { ShopState, FORTUNA_APEX_BLOCKLIST, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds } from '../systems/MerchantSystem';
 import { TRAP_DEFS, TRAP_IDS, armTrapFromInventory, buyTraps, trapPrice } from '../systems/TrapSystem';
 import { GameStateShape } from '../GameState';
 import { INVENTORY_SIZE, ECONOMY } from '../constants';
@@ -48,6 +48,11 @@ function imgSrcFromTex(key: string): string | null {
   const res: any = t.baseTexture?.resource;
   return res?.src ?? res?.url ?? (t as any).__srcPath ?? null;
 }
+
+const recipeOnlyComboNames = () => Array.from(FORTUNA_APEX_BLOCKLIST)
+  .filter(id => !id.startsWith('CHAMPION_'))
+  .map(id => ((towersData as any)[id]?.name ?? id.replace(/_/g, ' ')))
+  .join(', ');
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
@@ -417,7 +422,7 @@ function renderMercatorShop(
     // 2026-05 v9 — disclaim apex super-combos are NOT in this pool.
     const towersNote = document.createElement('div');
     towersNote.style.cssText = `font-size:9.5px;color:#aa9a4a;line-height:1.35;margin:2px 0 8px;font-style:italic`;
-    towersNote.innerHTML = `Base + early/mid combo towers only. <b style="color:#cc6666">Apex super-combos are never sold</b> — craft Imperium Eternum, Carthage Scourge, Triumvirate, Legion Prime, and Consular Fatebinder through recipes.`;
+    towersNote.innerHTML = `Base + early/mid combo towers only. <b style="color:#cc6666">Recipe-only apex / omega combos are never sold</b> — ${recipeOnlyComboNames()} must be crafted.`;
     towersSection.appendChild(towersNote);
 
     const tList = document.createElement('div');
@@ -703,7 +708,7 @@ function renderMercatorShop(
       Pay <b style="color:#f0c040">${FORTUNA_GAMBLE_COST}g</b> for a <b>RANDOM EARLY/MID COMBO TOWER</b>. <b style="color:#ff5050">Higher tier = rarer</b> on a linear ramp:
     </div>
     <div style="font-size:9.5px;color:#aa9a4a;line-height:1.35;margin-top:3px;font-style:italic">
-      🚫 Apex super-combos (Imperium Eternum, Carthage Scourge, Triumvirate, Legion Prime, Consular Fatebinder) are <b style="color:#cc6666">never rolled</b> — those win-condition towers must be crafted through recipes, not bought.
+      🚫 Recipe-only apex / omega combos (${recipeOnlyComboNames()}) are <b style="color:#cc6666">never rolled</b> — those win-condition towers must be crafted through recipes, not bought.
     </div>
     <div style="margin-top:3px">${oddsChips}</div>
     ${winsLog}`;
@@ -1023,7 +1028,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
     contentRoot.appendChild(towerHeader);
     const tip = document.createElement('div');
     tip.style.cssText = `font-size:10px;color:#cdb98a;margin:4px 0 8px;line-height:1.4`;
-    tip.innerHTML = 'Buy a tower to fill a recipe gap. Tier offers scale with your wave. Random refresh next Mercator visit. <b style="color:#cc6666">Apex super-combos (Imperium Eternum, Carthage Scourge, Triumvirate, Legion Prime, Consular Fatebinder) are never offered — earn them through crafting.</b>';
+    tip.innerHTML = `Buy a tower to fill a recipe gap. Tier offers scale with your wave. Random refresh next Mercator visit. <b style="color:#cc6666">Recipe-only apex / omega combos (${recipeOnlyComboNames()}) are never offered — earn them through crafting.</b>`;
     contentRoot.appendChild(tip);
     const tList = document.createElement('div');
     tList.style.cssText = `display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;`;

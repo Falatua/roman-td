@@ -378,7 +378,7 @@ export const FORTUNA_GAMBLE_COST = 925;
 // through crafting, not bought. Buying-your-way-to-victory was hollowing
 // out the recipe meta. The pool keeps every other combo (early + mid
 // recipes) so gold still has a clear path to a strong placement.
-const FORTUNA_APEX_BLOCKLIST = new Set([
+export const FORTUNA_APEX_BLOCKLIST = new Set([
   'IMPERIUM_ETERNUM',
   'CARTHAGE_SCOURGE',
   'TRIUMVIRATE',
