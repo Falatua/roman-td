@@ -912,7 +912,7 @@
   "TRIPLEX_ACIES": {
     "name": "Triplex Acies",
     "damageType": "PHYS_MELEE",
-    "baseDps": 155.0,
+    "baseDps": 170.5,
     "attackSpeed": 1.76,
     "range": 2,
     "kind": "COMBO",
@@ -925,7 +925,7 @@
   "LEGION_PRIME": {
     "name": "Legion Prime",
     "damageType": "DIVINE",
-    "baseDps": 122.4,
+    "baseDps": 134.6,
     "attackSpeed": 0.417,
     "range": 5,
     "kind": "COMBO",
@@ -938,7 +938,7 @@
   "CONSULAR_FATEBINDER": {
     "name": "Fatebinder",
     "damageType": "PHYS_MELEE",
-    "baseDps": 228,
+    "baseDps": 250.8,
     "attackSpeed": 0.55,
     "range": 1.5,
     "kind": "COMBO",

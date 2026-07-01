@@ -180,7 +180,7 @@ describe('Recipe combo detection', () => {
     const expectedInvestmentDps: Partial<Record<TowerType, number>> = {
       [TowerType.PLAGUE_CART]: 42.0,
       [TowerType.NUMIDIAN_CAVALRY]: 255.0,
-      [TowerType.TRIPLEX_ACIES]: 155.0,
+      [TowerType.TRIPLEX_ACIES]: 170.5,
       [TowerType.SKYREAPER_BATTERY]: 190.0,
       [TowerType.VULCAN_COLOSSUS]: 275.0
     };
@@ -195,6 +195,13 @@ describe('Recipe combo detection', () => {
     expect(bestiarius.tierBand).toBe(4);
     expect(bestiarius.attackSpeed).toBe(2.2);
     expect(bestiarius.ability).toContain('rapid polearm strikes at 2.2/s');
+  });
+
+  it('boosts labeled supercombo towers by 10 percent without touching Hannibal Nightmare', () => {
+    expect((towersData as any)[TowerType.TRIPLEX_ACIES].baseDps).toBe(170.5);
+    expect((towersData as any)[TowerType.LEGION_PRIME].baseDps).toBe(134.6);
+    expect((towersData as any)[TowerType.CONSULAR_FATEBINDER].baseDps).toBe(250.8);
+    expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(235.0);
   });
 });
 
