@@ -622,6 +622,7 @@ async function boot() {
       source === 'quest'    ? 'QUEST REWARD' :
       source === 'bonus'    ? 'BONUS TOWER' :
       source === 'gift'     ? 'TOWER GIFT' :
+      source === 'relic'    ? 'CAMPAIGN RELIC' :
       'TOWER PLACEMENT';
     const b = document.createElement('div');
     b.id = 'purchased-place-confirm';
@@ -2642,7 +2643,7 @@ async function boot() {
   // their current flat price; quest
   // grants refund the wave's place cost as a fair stand-in (no purchase price
   // to recover). Tower types from `pendingPurchasedTowers` carry .source.
-  function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' }): number {
+  function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' }): number {
     // Mercator buys = flat 250g refund (matches purchase price). Everything
     // else (quest reward, Fortuna gamble win, bonus/gift) wasn't bought
     // with gold, so the refund falls back to the wave's place cost as a
@@ -2651,7 +2652,9 @@ async function boot() {
     // mercator-equivalent so refunds remain bounded.
     if (entry.source === 'mercator' || entry.source === 'fortuna') return 250;
     // 2026-05-19 — Hero placement is free and yields no refund.
-    if (entry.source === 'hero') return 0;
+    // 2026-07-01 — Relic towers are already paid for by the relic caveat
+    // (gold/lives/global drawback), so putting one back cannot mint gold.
+    if (entry.source === 'hero' || entry.source === 'relic') return 0;
     return (ECONOMY.TIER_PLACE_COST as Record<number, number>)[entry.tier] ?? 5;
   }
   // ─── Wave-preview chip (bottom-left) ────────────────────────────────

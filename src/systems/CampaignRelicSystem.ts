@@ -43,7 +43,17 @@ export const CAMPAIGN_RELIC_IDS = [
   'QUARTERMASTER_LEDGER',
   'FORTUNA_PURSE',
   'ARCHITECTS_PERMIT',
-  'FRONTIER_RECRUITS'
+  'FRONTIER_RECRUITS',
+  'LEGATE_CONTRACT',
+  'AGRICOLA_LEVY',
+  'EPIC_AUCTION',
+  'RELIQUARY_RANSOM',
+  'ONAGER_INDENTURE',
+  'PRAETORIAN_STIPEND',
+  'VESTAL_ORPHANS',
+  'DOUBLE_EPIC_FUNERAL',
+  'SKY_TOLL',
+  'SPECULATOR_BRIBE'
 ] as const;
 
 export type CampaignRelicId = typeof CAMPAIGN_RELIC_IDS[number];
@@ -418,6 +428,96 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     upside: 'Immediately gain one Tier-4 melee base tower and one Tier-4 ranged base tower.',
     caveat: 'Lose 18 lives immediately.',
     effects: ['Gain one Tier-4 MELEE BASE tower now.', 'Gain one Tier-4 RANGED BASE tower now.', 'Lose 18 lives now.']
+  },
+  {
+    id: 'LEGATE_CONTRACT',
+    name: 'Legate Contract',
+    eyebrow: 'GOLD FOR COMMAND',
+    blurb: 'A proven Legate sells his whole command staff to Rome. His invoice is aggressively unpatriotic.',
+    upside: 'Immediately gain a Tier-5 Legate to place.',
+    caveat: 'Lose 300 gold immediately.',
+    effects: ['Gain a Tier-5 LEGATE now.', 'Lose 300 gold now.']
+  },
+  {
+    id: 'AGRICOLA_LEVY',
+    name: "Agricola's Levy",
+    eyebrow: 'LIVES FOR A HERO',
+    blurb: 'Agricola arrives from the frontier with maps, scouts, and a hard look at the casualty rolls.',
+    upside: 'Immediately gain Champion Agricola to place.',
+    caveat: 'Lose 29 lives immediately.',
+    effects: ['Gain CHAMPION AGRICOLA now.', 'Lose 29 lives now.']
+  },
+  {
+    id: 'EPIC_AUCTION',
+    name: 'Epic Auction',
+    eyebrow: 'PUBLIC TREASURY SALE',
+    blurb: 'The auctioneer opens one velvet case. Every senator suddenly remembers your name.',
+    upside: 'Immediately gain a random Epic item.',
+    caveat: 'Lose 450 gold immediately.',
+    effects: ['Gain a random Epic item now.', 'Lose 450 gold now.']
+  },
+  {
+    id: 'RELIQUARY_RANSOM',
+    name: 'Reliquary Ransom',
+    eyebrow: 'GOLD FOR A LEGEND',
+    blurb: 'A temple guard looks away for one breath. The reliquary changes hands before anyone can pray.',
+    upside: 'Immediately gain a random Legendary item.',
+    caveat: 'Lose 650 gold immediately.',
+    effects: ['Gain a random Legendary item now.', 'Lose 650 gold now.']
+  },
+  {
+    id: 'ONAGER_INDENTURE',
+    name: 'Onager Indenture',
+    eyebrow: 'DEBT-FUNDED SIEGE',
+    blurb: 'A colossal engine is wheeled out under a contract with very small lettering.',
+    upside: 'Immediately gain a Tier-5 Colossus Onager to place.',
+    caveat: 'Lose 350 gold immediately.',
+    effects: ['Gain a Tier-5 COLOSSUS ONAGER now.', 'Lose 350 gold now.']
+  },
+  {
+    id: 'PRAETORIAN_STIPEND',
+    name: 'Praetorian Stipend',
+    eyebrow: 'ELITE PAYROLL',
+    blurb: 'The guard will stand for Rome. The guard will also be paid before standing for Rome.',
+    upside: 'Immediately gain a Tier-5 Imperator Guard to place.',
+    caveat: 'Lose 500 gold immediately.',
+    effects: ['Gain a Tier-5 IMPERATOR GUARD now.', 'Lose 500 gold now.']
+  },
+  {
+    id: 'VESTAL_ORPHANS',
+    name: 'Vestal Orphans',
+    eyebrow: 'LIVES FOR AN EPIC',
+    blurb: 'The Vestals release one sanctified weapon, and the city quietly empties another street.',
+    upside: 'Immediately gain a random Epic item.',
+    caveat: 'Lose 16 lives immediately.',
+    effects: ['Gain a random Epic item now.', 'Lose 16 lives now.']
+  },
+  {
+    id: 'DOUBLE_EPIC_FUNERAL',
+    name: 'Double Epic Funeral',
+    eyebrow: 'TWO CASES, ONE COST',
+    blurb: 'Two funeral wagons arrive covered in officer cloaks. The equipment inside is excellent. The silence is not.',
+    upside: 'Immediately gain two random Epic items.',
+    caveat: 'Lose 24 lives immediately.',
+    effects: ['Gain two random Epic items now.', 'Lose 24 lives now.']
+  },
+  {
+    id: 'SKY_TOLL',
+    name: 'Sky Toll',
+    eyebrow: 'ANTI-AIR PURCHASE',
+    blurb: 'Aquila hunters rent their talons to the highest bidder and leave no coin on the table.',
+    upside: 'Immediately gain a Tier-5 Aquila Venator to place.',
+    caveat: 'Lose 325 gold immediately.',
+    effects: ['Gain a Tier-5 AQUILA VENATOR now.', 'Lose 325 gold now.']
+  },
+  {
+    id: 'SPECULATOR_BRIBE',
+    name: 'Speculator Bribe',
+    eyebrow: 'SCOUTING PAYOFF',
+    blurb: 'A scout captain sells tomorrow morning early. Rome buys the information and the man carrying it.',
+    upside: 'Immediately gain a Tier-5 Speculator to place.',
+    caveat: 'Lose 225 gold immediately.',
+    effects: ['Gain a Tier-5 SPECULATOR now.', 'Lose 225 gold now.']
   }
 ];
 
@@ -508,7 +608,7 @@ function pickRelicTower(pool: readonly TowerType[]): TowerType {
 
 function queueRelicTower(state: GameStateShape, type: TowerType, tier: 1 | 2 | 3 | 4 | 5): void {
   if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
-  state.pendingPurchasedTowers.push({ type, tier, source: 'relic' as any });
+  state.pendingPurchasedTowers.push({ type, tier, source: 'relic' });
 }
 
 function queuePendingRelicItem(state: GameStateShape, rarity: 'RARE' | 'EPIC'): void {
@@ -520,6 +620,10 @@ function queuePendingRelicItem(state: GameStateShape, rarity: 'RARE' | 'EPIC'): 
 
 function sacrificeRelicLives(state: GameStateShape, amount: number): void {
   state.lives = Math.max(1, (state.lives ?? 0) - amount);
+}
+
+function sacrificeRelicGold(state: GameStateShape, amount: number): void {
+  state.gold = Math.max(0, (state.gold ?? 0) - amount);
 }
 
 export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): void {
@@ -548,7 +652,7 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   // sees this flag.
   if (id === 'TRIUMPHAL_SPOILS') {
     if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
-    state.pendingPurchasedTowers.push({ type: 'SCORPIO' as any, tier: 5, source: 'relic' as any });
+    state.pendingPurchasedTowers.push({ type: 'SCORPIO' as any, tier: 5, source: 'relic' });
   }
   if (id === 'SEALED_RELIQUARY') (state as any).__pendingRelicLegendary = true;
   if (id === 'CONSCRIPTS_WAGER') {
@@ -576,6 +680,47 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
     queueRelicTower(state, pickRelicTower(MELEE_BASE_TOWER_RELIC_POOL), 4);
     queueRelicTower(state, pickRelicTower(RANGED_BASE_TOWER_RELIC_POOL), 4);
     sacrificeRelicLives(state, 18);
+  }
+  if (id === 'LEGATE_CONTRACT') {
+    queueRelicTower(state, TowerType.LEGATE, 5);
+    sacrificeRelicGold(state, 300);
+  }
+  if (id === 'AGRICOLA_LEVY') {
+    queueRelicTower(state, TowerType.CHAMPION_AGRICOLA, 2);
+    sacrificeRelicLives(state, 29);
+  }
+  if (id === 'EPIC_AUCTION') {
+    queuePendingRelicItem(state, 'EPIC');
+    sacrificeRelicGold(state, 450);
+  }
+  if (id === 'RELIQUARY_RANSOM') {
+    (state as any).__pendingRelicLegendary = true;
+    sacrificeRelicGold(state, 650);
+  }
+  if (id === 'ONAGER_INDENTURE') {
+    queueRelicTower(state, TowerType.COLOSSUS_ONAGER, 5);
+    sacrificeRelicGold(state, 350);
+  }
+  if (id === 'PRAETORIAN_STIPEND') {
+    queueRelicTower(state, TowerType.IMPERATOR_GUARD, 5);
+    sacrificeRelicGold(state, 500);
+  }
+  if (id === 'VESTAL_ORPHANS') {
+    queuePendingRelicItem(state, 'EPIC');
+    sacrificeRelicLives(state, 16);
+  }
+  if (id === 'DOUBLE_EPIC_FUNERAL') {
+    queuePendingRelicItem(state, 'EPIC');
+    queuePendingRelicItem(state, 'EPIC');
+    sacrificeRelicLives(state, 24);
+  }
+  if (id === 'SKY_TOLL') {
+    queueRelicTower(state, TowerType.AQUILA_VENATOR, 5);
+    sacrificeRelicGold(state, 325);
+  }
+  if (id === 'SPECULATOR_BRIBE') {
+    queueRelicTower(state, TowerType.SPECULATOR, 5);
+    sacrificeRelicGold(state, 225);
   }
   state.hint = `${def.name} claimed. ${def.upside} Caveat: ${def.caveat}`;
 }

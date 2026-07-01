@@ -38,9 +38,9 @@ function bootstrapState() {
 }
 
 describe('Campaign relics', () => {
-  it('ships a full 40-relic randomized campaign pool', () => {
-    expect(CAMPAIGN_RELICS.length).toBe(40);
-    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(40);
+  it('ships a full 50-relic randomized campaign pool', () => {
+    expect(CAMPAIGN_RELICS.length).toBe(50);
+    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(50);
     for (const relic of CAMPAIGN_RELICS) {
       expect(relic.upside.length).toBeGreaterThan(5);
       expect(relic.caveat.length).toBeGreaterThan(5);
@@ -91,6 +91,8 @@ describe('Campaign relics', () => {
     expect(byId.SENATE_AUDIT.caveat).toContain('+80%');
     expect(byId.CONSCRIPTS_WAGER.upside).toContain('Tier-5');
     expect(byId.ARMORY_BARGAIN.caveat).toContain('10 lives');
+    expect(byId.LEGATE_CONTRACT.caveat).toContain('300 gold');
+    expect(byId.AGRICOLA_LEVY.upside).toContain('Champion Agricola');
   });
 
   it('Saturn debt grants the immediate 900g campaign bankroll', () => {
@@ -188,6 +190,64 @@ describe('Campaign relics', () => {
     expect(purseState.gold).toBe(280);
     expect(purseState.lives).toBe(8);
     expect((purseState as any).__pendingRelicItemRarities).toEqual(['RARE']);
+  });
+
+  it('adds specific gold-sacrifice tower relics', () => {
+    const legateState = bootstrapState();
+    legateState.gold = 1000;
+    applyCampaignRelic(legateState, 'LEGATE_CONTRACT');
+    expect(legateState.gold).toBe(700);
+    expect(legateState.pendingPurchasedTowers).toEqual([
+      { type: TowerType.LEGATE, tier: 5, source: 'relic' }
+    ]);
+
+    const onagerState = bootstrapState();
+    onagerState.gold = 1000;
+    applyCampaignRelic(onagerState, 'ONAGER_INDENTURE');
+    expect(onagerState.gold).toBe(650);
+    expect(onagerState.pendingPurchasedTowers?.[0]).toEqual({ type: TowerType.COLOSSUS_ONAGER, tier: 5, source: 'relic' });
+
+    const guardState = bootstrapState();
+    guardState.gold = 1000;
+    applyCampaignRelic(guardState, 'PRAETORIAN_STIPEND');
+    expect(guardState.gold).toBe(500);
+    expect(guardState.pendingPurchasedTowers?.[0]).toEqual({ type: TowerType.IMPERATOR_GUARD, tier: 5, source: 'relic' });
+  });
+
+  it('adds life-sacrifice hero and epic item relics', () => {
+    const agricolaState = bootstrapState();
+    agricolaState.lives = 40;
+    applyCampaignRelic(agricolaState, 'AGRICOLA_LEVY');
+    expect(agricolaState.lives).toBe(11);
+    expect(agricolaState.pendingPurchasedTowers).toEqual([
+      { type: TowerType.CHAMPION_AGRICOLA, tier: 2, source: 'relic' }
+    ]);
+
+    const epicState = bootstrapState();
+    epicState.lives = 30;
+    applyCampaignRelic(epicState, 'VESTAL_ORPHANS');
+    expect(epicState.lives).toBe(14);
+    expect((epicState as any).__pendingRelicItemRarities).toEqual(['EPIC']);
+
+    const doubleState = bootstrapState();
+    doubleState.lives = 12;
+    applyCampaignRelic(doubleState, 'DOUBLE_EPIC_FUNERAL');
+    expect(doubleState.lives).toBe(1);
+    expect((doubleState as any).__pendingRelicItemRarities).toEqual(['EPIC', 'EPIC']);
+  });
+
+  it('adds gold-sacrifice epic and legendary item relics without going negative', () => {
+    const auctionState = bootstrapState();
+    auctionState.gold = 600;
+    applyCampaignRelic(auctionState, 'EPIC_AUCTION');
+    expect(auctionState.gold).toBe(150);
+    expect((auctionState as any).__pendingRelicItemRarities).toEqual(['EPIC']);
+
+    const ransomState = bootstrapState();
+    ransomState.gold = 500;
+    applyCampaignRelic(ransomState, 'RELIQUARY_RANSOM');
+    expect(ransomState.gold).toBe(0);
+    expect((ransomState as any).__pendingRelicLegendary).toBe(true);
   });
 
   it('tower-stat relics read live game state for speed and range changes', () => {
