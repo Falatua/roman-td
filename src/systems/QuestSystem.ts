@@ -56,6 +56,25 @@ const countTowersAtTier = (s: GameStateShape, tier: number): number => {
   for (const t of s.towers.values()) if (t.qualityTier >= tier && !t.pending) n++;
   return n;
 };
+// Helper: count of DISTINCT tower types currently fielded (pending towers
+// and same-type duplicates don't add). Powers the roster-variety quests.
+const countDistinctTowerTypes = (s: GameStateShape): number => {
+  const seen = new Set<string>();
+  for (const t of s.towers.values()) if (!t.pending) seen.add(t.type);
+  return seen.size;
+};
+// Helper: count of DISTINCT damageTypes across fielded towers.
+const countDistinctDamageTypes = (s: GameStateShape): number => {
+  const seen = new Set<number>();
+  for (const t of s.towers.values()) if (!t.pending) seen.add(t.damageType);
+  return seen.size;
+};
+// Helper: most items equipped on any single tower.
+const bestSingleTowerItems = (s: GameStateShape): number => {
+  let best = 0;
+  for (const t of s.towers.values()) if (t.equippedItems.length > best) best = t.equippedItems.length;
+  return best;
+};
 // Cross/super-combo type ids — owning any of these completes the apex quest.
 const APEX_COMBO_TYPES = new Set<string>([
   'TURMA_LANCERS','AURORA_LEGION','STORM_VEXILLATION',
@@ -134,6 +153,32 @@ export const QUESTS: QuestDef[] = [
     target: 2,
     reward: { kind: 'GOLD', amount: 25 }
   },
+  // 2026-07-02 — playstyle-flavored quests (variety, gear, hero growth)
+  // so the early board isn't purely kill-count checkboxes.
+  {
+    id: 'recruiter', tier: 'EARLY',
+    title: 'The Recruiter',
+    blurb: 'Field 5 DIFFERENT tower types at the same time. Rome hires broadly.',
+    condition: countDistinctTowerTypes,
+    target: 5,
+    reward: { kind: 'GOLD', amount: 20 }
+  },
+  {
+    id: 'quartermaster', tier: 'EARLY',
+    title: 'Quartermaster',
+    blurb: 'Equip an item on any tower. Gear wins wars — here is a lens for your trouble.',
+    condition: s => Math.min(1, bestSingleTowerItems(s)),
+    target: 1,
+    reward: { kind: 'ITEM', item: 'WATCHTOWER_LENS' }
+  },
+  {
+    id: 'first_stripe', tier: 'EARLY',
+    title: 'First Stripe',
+    blurb: 'Your hero reaches Tier I. Blood the commander early.',
+    condition: s => s.heroTier ?? 0,
+    target: 1,
+    reward: { kind: 'GOLD', amount: 20 }
+  },
   // ─── MID (commitment-tier — meaningful run investment) ─────────────────
   {
     id: 'butcher', tier: 'MID',
@@ -190,6 +235,30 @@ export const QUESTS: QuestDef[] = [
     condition: s => s.bossesKilled ?? 0,
     target: 12,
     reward: { kind: 'TOWER', towerType: TowerType.CENTURION, towerTier: 4 }
+  },
+  {
+    id: 'full_spectrum', tier: 'MID',
+    title: 'Full Spectrum Doctrine',
+    blurb: 'Field towers of 4 different damage types at once — melee, ranged, siege, fire, or divine.',
+    condition: countDistinctDamageTypes,
+    target: 4,
+    reward: { kind: 'GOLD', amount: 60 }
+  },
+  {
+    id: 'kitted_veteran', tier: 'MID',
+    title: 'Kitted Veteran',
+    blurb: 'Load 3 items onto one tower. Build a named soldier, not a statue.',
+    condition: bestSingleTowerItems,
+    target: 3,
+    reward: { kind: 'GOLD', amount: 50 }
+  },
+  {
+    id: 'oathbound', tier: 'MID',
+    title: 'Oathbound',
+    blurb: 'Claim 2 campaign relics. Rome rewards those who bargain with fate.',
+    condition: s => (s.campaignRelicIds ?? []).length,
+    target: 2,
+    reward: { kind: 'GOLD', amount: 75 }
   },
   // ─── LATE (campaign-defining — only the prepared finish these) ─────────
   {
@@ -283,6 +352,34 @@ export const QUESTS: QuestDef[] = [
     condition: s => s.wave,
     target: 27,
     reward: { kind: 'GOLD', amount: 250 }
+  },
+  {
+    id: 'untouched_walls', tier: 'LATE',
+    title: 'Untouched Walls',
+    blurb: 'Reach wave 25 with 25+ lives — lose no more than 5 all campaign. Purchased lives do not launder the record.',
+    condition: s => (s.wave >= 25 && s.lives >= 25 && (s.livesBoughtThisRun ?? 0) === 0) ? 1 : 0,
+    target: 1,
+    reward: { kind: 'GOLD', amount: 300 }
+  },
+  {
+    id: 'legion_without_end', tier: 'LATE',
+    title: 'Legion Without End',
+    blurb: 'Field 20 towers at the same time. Wall-to-wall Rome.',
+    condition: s => {
+      let n = 0;
+      for (const t of s.towers.values()) if (!t.pending) n++;
+      return n;
+    },
+    target: 20,
+    reward: { kind: 'GOLD', amount: 150 }
+  },
+  {
+    id: 'croesus_of_rome', tier: 'LATE',
+    title: 'Croesus of Rome',
+    blurb: 'Hold 2,000 gold at one moment. The Senate audits — and applauds.',
+    condition: s => s.gold >= 2000 ? 1 : 0,
+    target: 1,
+    reward: { kind: 'LIFE', amount: 5 }
   }
 ];
 

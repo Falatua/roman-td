@@ -462,8 +462,27 @@ describe('RETIARIUS ability wiring (post-rename)', () => {
 describe('Item EQUIP_MODE gates', () => {
   it('MELEE-only items list is non-empty and includes core melee items', () => {
     const ir = require('fs').readFileSync('src/systems/ItemRules.ts', 'utf8');
-    for (const meleeItem of ['BARBED_GLADIUS', 'POISONED_BLADE', 'CELTIC_LONGSWORD']) {
+    // FALX_BLADE added 2026-07-02 — its effect text said "MELEE ONLY" but it
+    // was missing from EQUIP_MODE, so it equipped on ranged towers (bug).
+    for (const meleeItem of ['BARBED_GLADIUS', 'POISONED_BLADE', 'CELTIC_LONGSWORD', 'FALX_BLADE']) {
       expect(ir.includes(`${meleeItem}: 'MELEE'`), `${meleeItem} should be MELEE-gated`).toBe(true);
+    }
+  });
+  it('every item whose effect text says MELEE/RANGED ONLY is actually gated', () => {
+    // Data-consistency guard: scan all permanent item defs for restriction
+    // wording and assert the EQUIP_MODE map covers them, so a new item with
+    // "MELEE ONLY" copy can never silently default to ANY again.
+    const fs = require('fs');
+    const perm = JSON.parse(fs.readFileSync('src/data/items_permanent.json', 'utf8'));
+    const ir = fs.readFileSync('src/systems/ItemRules.ts', 'utf8');
+    for (const [id, def] of Object.entries<any>(perm)) {
+      const txt = `${def.effect ?? ''} ${def.description ?? ''}`;
+      if (/\bMELEE ONLY\b|\bMelee-only\b/i.test(txt)) {
+        expect(ir.includes(`${id}: 'MELEE'`), `${id} text says MELEE ONLY but is not gated`).toBe(true);
+      }
+      if (/\bRANGED ONLY\b|\bRanged-only\b/i.test(txt)) {
+        expect(ir.includes(`${id}: 'RANGED'`), `${id} text says RANGED ONLY but is not gated`).toBe(true);
+      }
     }
   });
   it('RANGED-only items list is non-empty and includes core ranged items', () => {

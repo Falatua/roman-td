@@ -23,12 +23,38 @@ function soloCampaignCumulative() {
 }
 
 describe('30-wave Solo quest pacing', () => {
-  it('keeps 24 unique quests distributed across the three campaign acts', () => {
-    expect(QUESTS).toHaveLength(24);
-    expect(new Set(QUESTS.map(q => q.id)).size).toBe(24);
-    expect(QUESTS.filter(q => q.tier === 'EARLY')).toHaveLength(7);
-    expect(QUESTS.filter(q => q.tier === 'MID')).toHaveLength(7);
-    expect(QUESTS.filter(q => q.tier === 'LATE')).toHaveLength(10);
+  it('keeps 33 unique quests distributed across the three campaign acts', () => {
+    expect(QUESTS).toHaveLength(33);
+    expect(new Set(QUESTS.map(q => q.id)).size).toBe(33);
+    expect(QUESTS.filter(q => q.tier === 'EARLY')).toHaveLength(10);
+    expect(QUESTS.filter(q => q.tier === 'MID')).toHaveLength(10);
+    expect(QUESTS.filter(q => q.tier === 'LATE')).toHaveLength(13);
+  });
+
+  it('adds playstyle quests: variety, gear, hero, relics, wealth, defense', () => {
+    // 2026-07-02 — fun/unique goals per act instead of pure kill counters.
+    expect(quest('recruiter').tier).toBe('EARLY');
+    expect(quest('quartermaster').reward.item).toBe('WATCHTOWER_LENS');
+    expect(quest('first_stripe').target).toBe(1);
+    expect(quest('full_spectrum').target).toBe(4);
+    expect(quest('kitted_veteran').target).toBe(3);
+    expect(quest('oathbound').tier).toBe('MID');
+    expect(quest('untouched_walls').tier).toBe('LATE');
+    expect(quest('legion_without_end').target).toBe(20);
+    expect(quest('croesus_of_rome').reward.kind).toBe('LIFE');
+
+    // Condition spot-checks against a synthetic state.
+    const s = createGameState();
+    s.gold = 2500;
+    expect(quest('croesus_of_rome').condition(s)).toBe(1);
+    s.wave = 25; s.lives = 26; s.livesBoughtThisRun = 0;
+    expect(quest('untouched_walls').condition(s)).toBe(1);
+    s.livesBoughtThisRun = 1;   // purchased lives disqualify the record
+    expect(quest('untouched_walls').condition(s)).toBe(0);
+    (s as any).campaignRelicIds = ['MARS_TAX', 'COPPER_TITHE'];
+    expect(quest('oathbound').condition(s)).toBe(2);
+    s.heroTier = 2;
+    expect(quest('first_stripe').condition(s)).toBe(2);
   });
 
   it('completes Field Engineer from cumulative purchases without repeating', () => {

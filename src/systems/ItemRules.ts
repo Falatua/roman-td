@@ -59,7 +59,11 @@ const EQUIP_MODE: Record<string, EquipMode> = {
   VENOM_TIPPED_ARROWS: 'RANGED',     // 2026-05 v9: ranged-poison Mercator stock
   AUXILIARY_SLING: 'RANGED',         // 2026-05-18: Epic ranged sling
   CONCUSSIVE_WARHEAD: 'RANGED',      // 2026 v2: legendary ranged splash
-  EXECUTIONERS_FALX: 'MELEE'         // 2026 v2: legendary melee cleave
+  EXECUTIONERS_FALX: 'MELEE',        // 2026 v2: legendary melee cleave
+  // 2026-07-02 — bug fix: FALX_BLADE's effect text has always read
+  // "MELEE ONLY: grants CLEAVE" but the item was never added to this
+  // map, so it defaulted to ANY and could be equipped on ranged towers.
+  FALX_BLADE: 'MELEE'
   // SERPENT_AMULET and WITCHS_VENOM omitted → default ANY (equip on any tower).
 };
 
