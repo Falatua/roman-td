@@ -40,7 +40,7 @@ export function showTestYourMightModal(
       </div>
     </div>
     <div style="margin:14px auto 0;max-width:620px;font-size:11px;color:#cdb98a;line-height:1.5;letter-spacing:1px">
-      If you accept, the wave does not start immediately. You get a prep window first, then press START when your maze, traps, heroes, and anti-air are ready. Expect a boss-rush gauntlet with flyer pressure, heavy ground shields, all commander auras, storm surges, death-pact healing, checkpoint heals, ranged blocks, and strong status resistance. This wave is rude on purpose.
+      If you accept, the wave does not start immediately. You get a prep window first, then press START when your maze, traps, heroes, and ground killers are ready. Expect a boss-rush gauntlet with heavy ground shields, elephant pressure, all commander auras, storm surges, death-pact healing, checkpoint heals, ranged blocks, and strong status resistance. This wave is rude on purpose.
     </div>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px">
       <button id="tym-accept" style="font-family:inherit;background:#7a120c;border:3px solid #ffcc44;color:#fff2b8;padding:12px 18px;cursor:pointer;font-size:13px;font-weight:bold;letter-spacing:3px;box-shadow:0 0 18px rgba(255,204,68,0.35)">YES, TEST ME</button>

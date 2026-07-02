@@ -84,37 +84,41 @@ describe('Test Your Might bonus wave', () => {
     expect(s.testYourMightActive).toBe(true);
     expect(s.spawnQueue.length).toBe(expectedCount);
     expect(s.weatherIntensity).toBeGreaterThan(1);
-    expect(s.weatherIntensity).toBeGreaterThanOrEqual(1.5);
+    expect(s.weatherIntensity).toBeGreaterThanOrEqual(1.4);
     expect(s.waveModifier).toBe('GROUP_MARCH');
     expect(s.endlessExtraModifiers).toEqual(['STORM_SURGE', 'DEATH_PACT']);
   });
 
-  it('is tuned as a brutal mixed gauntlet with bosses, flyers, ground, all commanders, and affixes', () => {
+  it('is tuned as a brutal ground gauntlet with bosses, commanders, no flyers, and affixes', () => {
     const byType = new Map(TEST_YOUR_MIGHT_SPAWNS.map(g => [g.type, g]));
     const types = TEST_YOUR_MIGHT_SPAWNS.map(g => g.type);
     const enemyDefs: any = enemiesData as any;
     const totalCount = TEST_YOUR_MIGHT_SPAWNS.reduce((sum, g) => sum + g.count, 0);
 
     expect(types.some(type => enemyDefs[type]?.isBoss === true)).toBe(true);
-    expect(types.some(type => enemyDefs[type]?.isFlyer === true)).toBe(true);
+    expect(types.some(type => enemyDefs[type]?.isFlyer === true)).toBe(false);
     expect(types.some(type => enemyDefs[type]?.isBoss !== true && enemyDefs[type]?.isFlyer !== true)).toBe(true);
-    expect(types).toContain('BOSS_FLYER_VULTURE');
+    expect(types).not.toContain('BOSS_FLYER_VULTURE');
+    expect(types).not.toContain('NUMIDIAN_RIDER');
+    expect(types).not.toContain('SPECTRAL_SCOUT');
+    expect(types).not.toContain('SHADOW_CAVALRY');
     expect(types).toContain('PATHFINDER_COMMANDER');
     expect(types).toContain('STANDARD_BEARER_COMMANDER');
     expect(types).toContain('SIEGE_CAPTAIN_COMMANDER');
     expect(types).toContain('ANUBIS_PRIEST_COMMANDER');
-    expect(totalCount).toBeGreaterThanOrEqual(90);
-    expect(totalCount).toBeLessThan(110);
+    expect(totalCount).toBe(40);
 
     expect(byType.get('HANNIBAL_BARCA')?.hpMult).toBeGreaterThanOrEqual(50);
     expect(byType.get('HANNIBAL_BARCA')?.majorReward).toBe(true);
     expect(TEST_YOUR_MIGHT_SPAWNS.filter(g => g.majorReward).map(g => g.type)).toEqual(['HANNIBAL_BARCA']);
-    expect(byType.get('CARTHAGE_SPEARMAN')?.hpMult).toBeGreaterThanOrEqual(300);
-    expect(byType.get('SPECTRAL_SCOUT')?.hpMult).toBeGreaterThanOrEqual(380);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.resistMult ?? 1) <= 0.76)).toBe(true);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.statusGuard ?? 1) <= 0.38)).toBe(true);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.rangedBlock ?? 0) >= 0.14)).toBe(true);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.checkpointHeal ?? 0) >= 0.08)).toBe(true);
+    expect(byType.get('CARTHAGE_SPEARMAN')?.count).toBe(18);
+    expect(byType.get('CARTHAGE_ELITE_GUARD')?.count).toBe(8);
+    expect(byType.get('IRON_PHALANX')?.count).toBe(5);
+    expect(byType.get('CARTHAGE_SPEARMAN')?.hpMult).toBeGreaterThanOrEqual(280);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.resistMult ?? 1) <= 0.80)).toBe(true);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.statusGuard ?? 1) <= 0.42)).toBe(true);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.rangedBlock ?? 0) >= 0.12)).toBe(true);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.checkpointHeal ?? 0) >= 0.06)).toBe(true);
   });
 
   it('routes tickSpawns through the bonus spawner and creates real enemies', () => {
@@ -125,7 +129,7 @@ describe('Test Your Might bonus wave', () => {
     expect(s.spawnQueue.length).toBe(0);
     expect(s.enemies.size).toBeGreaterThan(0);
     expect(Array.from(s.enemies.values()).some(e => e.isBoss)).toBe(true);
-    expect(Array.from(s.enemies.values()).some(e => e.isFlyer)).toBe(true);
+    expect(Array.from(s.enemies.values()).some(e => e.isFlyer)).toBe(false);
     expect(Array.from(s.enemies.values()).filter(e => e.isScheduledBoss).map(e => e.type)).toEqual(['HANNIBAL_BARCA']);
   });
 
@@ -139,14 +143,14 @@ describe('Test Your Might bonus wave', () => {
     const elite = enemies.find(e => e.type === 'CARTHAGE_ELITE_GUARD');
     const elephant = enemies.find(e => e.type === 'WAR_ELEPHANT');
 
-    expect(hannibal.__lateResistMult).toBeLessThan(0.8);
-    expect(hannibal.__lateStatusGuard).toBeLessThanOrEqual(0.38);
+    expect(hannibal.__lateResistMult).toBeLessThanOrEqual(0.82);
+    expect(hannibal.__lateStatusGuard).toBeLessThanOrEqual(0.42);
     expect(enemyDamageMultiplier(hannibal, DamageType.PHYS_RANGED)).toBeLessThan(0.5);
     expect(statusEffectiveness(hannibal, StatusEffectKind.SLOW)).toBeLessThan(0.2);
     expect(elite.mutation).toBe('WARDED');
-    expect(elite.__lateRangedBlock).toBeGreaterThanOrEqual(0.14);
-    expect(elite.outOfCombatRegen).toBeGreaterThanOrEqual(0.025);
-    expect(elephant.checkpointHealPct).toBeGreaterThanOrEqual(0.08);
+    expect(elite.__lateRangedBlock).toBeGreaterThanOrEqual(0.12);
+    expect(elite.outOfCombatRegen).toBeGreaterThanOrEqual(0.02);
+    expect(elephant.checkpointHealPct).toBeGreaterThanOrEqual(0.06);
   });
 
   it('also works through the normal WaveManager tickSpawns entrypoint', () => {
