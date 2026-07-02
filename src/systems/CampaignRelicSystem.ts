@@ -68,6 +68,13 @@ export interface CampaignRelicDef {
   effects: string[];
 }
 
+export interface CampaignRelicAffordability {
+  canAfford: boolean;
+  goldCost: number;
+  lifeCost: number;
+  reason?: string;
+}
+
 export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
   {
     id: 'JUPITERS_MANDATE',
@@ -523,8 +530,56 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
 
 const RELIC_BY_ID: Record<string, CampaignRelicDef> = Object.fromEntries(CAMPAIGN_RELICS.map(r => [r.id, r]));
 
+const CAMPAIGN_RELIC_GOLD_COSTS: Partial<Record<CampaignRelicId, number>> = {
+  LEGATE_CONTRACT: 225,
+  EPIC_AUCTION: 325,
+  RELIQUARY_RANSOM: 500,
+  ONAGER_INDENTURE: 250,
+  PRAETORIAN_STIPEND: 375,
+  SKY_TOLL: 240,
+  SPECULATOR_BRIBE: 160
+};
+
+const CAMPAIGN_RELIC_LIFE_COSTS: Partial<Record<CampaignRelicId, number>> = {
+  CONSCRIPTS_WAGER: 14,
+  ARMORY_BARGAIN: 7,
+  PATRICIAN_LOCKBOX: 10,
+  VETERAN_DRAFT: 8,
+  QUARTERMASTER_LEDGER: 5,
+  FORTUNA_PURSE: 8,
+  ARCHITECTS_PERMIT: 7,
+  FRONTIER_RECRUITS: 12,
+  AGRICOLA_LEVY: 20,
+  VESTAL_ORPHANS: 10,
+  DOUBLE_EPIC_FUNERAL: 16
+};
+
 export function campaignRelicById(id: CampaignRelicId | string | null | undefined): CampaignRelicDef | null {
   return id ? RELIC_BY_ID[id] ?? null : null;
+}
+
+export function campaignRelicAffordability(state: GameStateShape, id: CampaignRelicId): CampaignRelicAffordability {
+  const goldCost = CAMPAIGN_RELIC_GOLD_COSTS[id] ?? 0;
+  const lifeCost = CAMPAIGN_RELIC_LIFE_COSTS[id] ?? 0;
+  const gold = state.gold ?? 0;
+  const lives = state.lives ?? 0;
+  if (goldCost > 0 && gold < goldCost) {
+    return {
+      canAfford: false,
+      goldCost,
+      lifeCost,
+      reason: `Need ${goldCost} gold to claim this relic.`
+    };
+  }
+  if (lifeCost > 0 && lives <= lifeCost) {
+    return {
+      canAfford: false,
+      goldCost,
+      lifeCost,
+      reason: `Need at least ${lifeCost + 1} lives to survive this relic.`
+    };
+  }
+  return { canAfford: true, goldCost, lifeCost };
 }
 
 export function activeCampaignRelicIds(state: GameStateShape): CampaignRelicId[] {
@@ -619,16 +674,21 @@ function queuePendingRelicItem(state: GameStateShape, rarity: 'RARE' | 'EPIC'): 
 }
 
 function sacrificeRelicLives(state: GameStateShape, amount: number): void {
-  state.lives = Math.max(1, (state.lives ?? 0) - amount);
+  state.lives = (state.lives ?? 0) - amount;
 }
 
 function sacrificeRelicGold(state: GameStateShape, amount: number): void {
-  state.gold = Math.max(0, (state.gold ?? 0) - amount);
+  state.gold = (state.gold ?? 0) - amount;
 }
 
-export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): void {
+export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): boolean {
   const def = campaignRelicById(id);
-  if (!def) return;
+  if (!def) return false;
+  const affordability = campaignRelicAffordability(state, id);
+  if (!affordability.canAfford) {
+    state.hint = affordability.reason ?? `Cannot claim ${def.name}.`;
+    return false;
+  }
   if (!state.campaignRelicIds) state.campaignRelicIds = [];
   if (!state.campaignRelicIds.includes(id)) state.campaignRelicIds.push(id);
   state.campaignRelicId = id;
@@ -723,6 +783,7 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
     sacrificeRelicGold(state, 160);
   }
   state.hint = `${def.name} claimed. ${def.upside} Caveat: ${def.caveat}`;
+  return true;
 }
 
 export function campaignRelicTowerDpsMult(state: GameStateShape, tower: Tower, towerKind?: string): number {

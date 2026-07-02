@@ -8,6 +8,7 @@ import {
   CAMPAIGN_RELICS,
   activeCampaignRelicIds,
   applyCampaignRelic,
+  campaignRelicAffordability,
   campaignRelicDamageMult,
   campaignRelicEnemySpeedMult,
   campaignRelicOffersForWave,
@@ -153,10 +154,19 @@ describe('Campaign relics', () => {
     expect((epicState as any).__pendingRelicItemRarities).toEqual(['EPIC']);
   });
 
-  it('queues smaller draft relic rewards without letting the life cost kill the player', () => {
+  it('blocks draft relic rewards when the life cost would kill the player', () => {
+    const tooLowState = bootstrapState();
+    tooLowState.lives = 8;
+    expect(campaignRelicAffordability(tooLowState, 'VETERAN_DRAFT').canAfford).toBe(false);
+    expect(applyCampaignRelic(tooLowState, 'VETERAN_DRAFT')).toBe(false);
+    expect(tooLowState.lives).toBe(8);
+    expect(tooLowState.pendingPurchasedTowers ?? []).toHaveLength(0);
+    expect(activeCampaignRelicIds(tooLowState)).toEqual([]);
+
     const draftState = bootstrapState();
-    draftState.lives = 8;
-    applyCampaignRelic(draftState, 'VETERAN_DRAFT');
+    draftState.lives = 9;
+    expect(campaignRelicAffordability(draftState, 'VETERAN_DRAFT').canAfford).toBe(true);
+    expect(applyCampaignRelic(draftState, 'VETERAN_DRAFT')).toBe(true);
     expect(draftState.lives).toBe(1);
     expect(draftState.pendingPurchasedTowers).toHaveLength(2);
     expect(draftState.pendingPurchasedTowers?.every(t => t.tier === 3)).toBe(true);
@@ -230,22 +240,45 @@ describe('Campaign relics', () => {
     expect((epicState as any).__pendingRelicItemRarities).toEqual(['EPIC']);
 
     const doubleState = bootstrapState();
-    doubleState.lives = 12;
-    applyCampaignRelic(doubleState, 'DOUBLE_EPIC_FUNERAL');
+    doubleState.lives = 17;
+    expect(applyCampaignRelic(doubleState, 'DOUBLE_EPIC_FUNERAL')).toBe(true);
     expect(doubleState.lives).toBe(1);
     expect((doubleState as any).__pendingRelicItemRarities).toEqual(['EPIC', 'EPIC']);
   });
 
+  it('blocks life-sacrifice relics when the player cannot survive the cost', () => {
+    const agricolaState = bootstrapState();
+    agricolaState.lives = 20;
+    const affordability = campaignRelicAffordability(agricolaState, 'AGRICOLA_LEVY');
+    expect(affordability.canAfford).toBe(false);
+    expect(affordability.reason).toContain('21 lives');
+    expect(applyCampaignRelic(agricolaState, 'AGRICOLA_LEVY')).toBe(false);
+    expect(agricolaState.lives).toBe(20);
+    expect(agricolaState.pendingPurchasedTowers ?? []).toHaveLength(0);
+    expect(activeCampaignRelicIds(agricolaState)).toEqual([]);
+  });
+
   it('adds gold-sacrifice epic and legendary item relics without going negative', () => {
+    const shortAuctionState = bootstrapState();
+    shortAuctionState.gold = 324;
+    const affordability = campaignRelicAffordability(shortAuctionState, 'EPIC_AUCTION');
+    expect(affordability.canAfford).toBe(false);
+    expect(affordability.reason).toContain('325 gold');
+    expect(applyCampaignRelic(shortAuctionState, 'EPIC_AUCTION')).toBe(false);
+    expect(shortAuctionState.gold).toBe(324);
+    expect((shortAuctionState as any).__pendingRelicItemRarities).toBeUndefined();
+    expect(activeCampaignRelicIds(shortAuctionState)).toEqual([]);
+
     const auctionState = bootstrapState();
     auctionState.gold = 600;
-    applyCampaignRelic(auctionState, 'EPIC_AUCTION');
+    expect(applyCampaignRelic(auctionState, 'EPIC_AUCTION')).toBe(true);
     expect(auctionState.gold).toBe(275);
     expect((auctionState as any).__pendingRelicItemRarities).toEqual(['EPIC']);
 
     const ransomState = bootstrapState();
     ransomState.gold = 500;
-    applyCampaignRelic(ransomState, 'RELIQUARY_RANSOM');
+    expect(campaignRelicAffordability(ransomState, 'RELIQUARY_RANSOM').canAfford).toBe(true);
+    expect(applyCampaignRelic(ransomState, 'RELIQUARY_RANSOM')).toBe(true);
     expect(ransomState.gold).toBe(0);
     expect((ransomState as any).__pendingRelicLegendary).toBe(true);
   });

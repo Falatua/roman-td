@@ -2,6 +2,7 @@ import { GameStateShape } from '../GameState';
 import {
   CampaignRelicId,
   applyCampaignRelic,
+  campaignRelicAffordability,
   campaignRelicOffersForWave,
   markCampaignRelicOffered,
   skipCampaignRelic
@@ -45,7 +46,7 @@ export function showCampaignRelicModal(
 
   const row = panel.querySelector('#campaign-relic-cards') as HTMLElement;
   const closeWith = (id: CampaignRelicId) => {
-    applyCampaignRelic(state, id);
+    if (!applyCampaignRelic(state, id)) return;
     modal.remove();
     (state as any).__campaignRelicOpen = false;
     SFX.combo();
@@ -63,8 +64,15 @@ export function showCampaignRelicModal(
   }
 
   for (const relic of offers) {
+    const affordability = campaignRelicAffordability(state, relic.id);
     const card = document.createElement('button');
-    card.style.cssText = `display:flex;flex-direction:column;gap:8px;min-height:236px;padding:14px 12px;background:#0c0a08;border:2px solid #b8943d;color:#e8d6a8;cursor:pointer;font-family:inherit;text-align:left;transition:transform .08s,filter .1s,box-shadow .12s;`;
+    card.disabled = !affordability.canAfford;
+    card.style.cssText = `display:flex;flex-direction:column;gap:8px;min-height:236px;padding:14px 12px;background:#0c0a08;border:2px solid ${affordability.canAfford ? '#b8943d' : '#5b4030'};color:#e8d6a8;cursor:${affordability.canAfford ? 'pointer' : 'not-allowed'};font-family:inherit;text-align:left;transition:transform .08s,filter .1s,box-shadow .12s;opacity:${affordability.canAfford ? '1' : '0.58'};`;
+    const claimText = affordability.canAfford
+      ? 'CLAIM'
+      : affordability.goldCost > 0
+        ? `NEED ${affordability.goldCost} GOLD`
+        : `NEED ${affordability.lifeCost + 1} LIVES`;
     card.innerHTML = `
       <div style="font-size:9px;color:#d4af37;font-weight:bold;letter-spacing:2px;text-align:center">${relic.eyebrow}</div>
       <div style="font-size:16px;color:#ffd34d;font-weight:bold;letter-spacing:1px;line-height:1.15;text-align:center">${relic.name}</div>
@@ -72,19 +80,23 @@ export function showCampaignRelicModal(
       <div style="height:1px;background:#5a4a30;margin:2px 0"></div>
       <div style="font-size:10.5px;color:#bbffcc;line-height:1.35"><b>GAIN:</b> ${relic.upside}</div>
       <div style="font-size:10.5px;color:#ffb08a;line-height:1.35"><b>COST:</b> ${relic.caveat}</div>
-      <div style="margin-top:auto;text-align:center;font-size:10px;color:#0c0a08;background:#d4af37;padding:6px 8px;font-weight:bold;letter-spacing:2px">CLAIM</div>
+      <div style="margin-top:auto;text-align:center;font-size:10px;color:#0c0a08;background:${affordability.canAfford ? '#d4af37' : '#9b6d48'};padding:6px 8px;font-weight:bold;letter-spacing:2px">${claimText}</div>
     `;
     card.onmouseenter = () => {
+      if (!affordability.canAfford) return;
       card.style.filter = 'brightness(1.2)';
       card.style.boxShadow = '0 0 20px rgba(255,211,77,0.55)';
       card.style.transform = 'translateY(-2px)';
     };
     card.onmouseleave = () => {
+      if (!affordability.canAfford) return;
       card.style.filter = 'brightness(1)';
       card.style.boxShadow = '';
       card.style.transform = '';
     };
-    card.onclick = () => closeWith(relic.id);
+    card.onclick = () => {
+      if (campaignRelicAffordability(state, relic.id).canAfford) closeWith(relic.id);
+    };
     row.appendChild(card);
   }
 
