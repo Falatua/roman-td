@@ -1,0 +1,1225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      2026-05-22 M1 — Mobile viewport. Was width=1100 (desktop-locked,
+      mobile rendered a tiny pinch-to-zoom version). Now:
+      - device-width   → respect the actual phone screen
+      - initial/max=1  → no auto-zoom on input focus (iOS habit)
+      - user-scalable=no → game owns the pinch gesture, not the browser
+      - viewport-fit=cover → safe-area-inset env() works on iOS notch
+      Desktop is unaffected (it ignored width=1100 unless < 1100 anyway).
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <!-- iOS Safari: tells the OS this is a web app, hides the URL bar
+         when launched from Home Screen + uses our background color
+         for status-bar tint. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Roman TD" />
+    <meta name="theme-color" content="#0c0a08" />
+    <!-- 2026-05-22 M6 — PWA shell. manifest enables Add-to-Home-Screen
+         on iOS Safari + Chrome Android with the gold-Aquila icon.
+         apple-touch-icon is the explicit 180×180 iOS variant since iOS
+         doesn't always honor manifest icons for the home-screen icon. -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <title>Roman TD — Castrum Lunum</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        /* iOS notch / home indicator safe-area pad (0 on non-iOS). */
+        --safe-top:    env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-left:   env(safe-area-inset-left, 0px);
+        --safe-right:  env(safe-area-inset-right, 0px);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: radial-gradient(ellipse at center, #2a221a 0%, #0c0a08 80%); color: #e8d6a8; font-family: 'Courier New', monospace; touch-action: none; -webkit-tap-highlight-color: transparent; }
+      body { display: flex; align-items: center; justify-content: center; user-select: none; -webkit-user-select: none; padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); }
+      /* #app auto-scales to fit the viewport height — its intrinsic size is
+         the layout natural size (~1024×900) and the JS sets `--app-scale`
+         on resize. The pixel-art canvas stays sharp because of
+         image-rendering: pixelated; nothing is stretched. */
+      /* #app is a flex-ROW with THREE columns: LEFT panel (HUD + status),
+         CENTER stage (the canvas), RIGHT panel (buttons + actions).
+         Nothing overlays the play area; everything sits in margins. */
+      /* 2026-05-15 v8: layout tightened — gap 14→10px, HUD column max
+         shrunk 240→210px so the map gets more relative space within the
+         #app row. Combined with the now-uncapped --app-scale in main.ts,
+         the canvas (1216px wide) takes ~74% of the total layout width
+         (up from 70.5%) and the whole thing scales up to fill big
+         monitors.
+         2026-05-15 v10: CRITICAL FIX — panels are now height-capped to
+         the canvas height (832px) so a tall right panel (e.g. two
+         pinned recipes pushing the column past the canvas) can no
+         longer force the entire #app box taller, which used to make
+         fitStageToViewport shrink the whole game including the map.
+         Excess content now scrolls INSIDE the panel instead of
+         pushing the layout outwards. The canvas stays the boss. */
+      #app { display: flex; flex-direction: row; align-items: stretch; gap: 10px; padding: 0; transform: scale(var(--app-scale, 1)); transform-origin: center center; }
+      #left-panel  { display: flex; flex-direction: column; gap: 8px; min-width: 200px; max-width: 220px; max-height: 832px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #5a4a30 #1a1410; padding-right: 2px; }
+      #right-panel { display: flex; flex-direction: column; gap: 8px; min-width: 200px; max-width: 220px; max-height: 832px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #5a4a30 #1a1410; padding-right: 2px; }
+      /* Gold-tinted scrollbar so the overflow doesn't look out of place
+         next to the parchment HUD. WebKit needs explicit pseudo-elements
+         (Firefox already styled by scrollbar-color above). */
+      #left-panel::-webkit-scrollbar,
+      #right-panel::-webkit-scrollbar { width: 8px; }
+      #left-panel::-webkit-scrollbar-track,
+      #right-panel::-webkit-scrollbar-track { background: #1a1410; }
+      #left-panel::-webkit-scrollbar-thumb,
+      #right-panel::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #d4af37 0%, #5a4a30 100%); border: 1px solid #1a1410; }
+      #left-panel::-webkit-scrollbar-thumb:hover,
+      #right-panel::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #ffd34d 0%, #8a7a4a 100%); }
+      #buttons { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+      #buttons button { width: 100%; }
+      h1 { margin: 0; font-size: 22px; letter-spacing: 6px; color: #d4af37; text-shadow: 2px 2px 0 #000, 0 0 12px rgba(212,175,55,0.4); padding: 6px 18px; background: linear-gradient(180deg, #2a1f12, #1a1410); border: 2px solid #5a4a30; border-image: linear-gradient(180deg, #d4af37, #5a4a30) 1; }
+
+      /* Stone-frame layout: header bar / canvas / status bar */
+      #frame { width: 1000px; background: linear-gradient(180deg, #1a1410 0%, #0c0a08 100%); border: 3px solid #5a4a30; box-shadow: 0 0 0 2px #1a1410, 0 0 24px rgba(212,175,55,0.18); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+      /* HUD readability pass (2026-05): bigger text + icons so the left
+         column stats (WAVE / LIVES / GOLD / POOL / SCORE) punch from
+         across the room. Previously 12px font + 16px dots; bumped to
+         15px font + 22px dots with letter-spacing for that arcade feel. */
+      #hud-top { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: linear-gradient(180deg, #2a1f12, #1a1410); border: 1px solid #5a4a30; font-size: 15px; letter-spacing: 1.5px; gap: 18px; flex-wrap: wrap; font-weight: 900; }
+      #hud-top b { letter-spacing: 2px; }
+      #hud-top .hud-l, #hud-top .hud-r { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      #hud-top .hud-icon { display: inline-flex; align-items: center; gap: 7px; }
+      #hud-top .hud-icon .ic { width: 22px; height: 22px; display: inline-block; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.5), inset 0 0 4px rgba(255,255,255,0.15); border: 2px solid rgba(0,0,0,0.6); }
+      #hud-top .ic-wave { background: #aa3a3a; box-shadow: 0 0 6px #aa3a3a55; }
+      #hud-top .ic-life { background: #ee5555; }
+      #hud-top .ic-gold { background: #ffd34d; box-shadow: 0 0 6px #ffd34d55; }
+      #hud-top .ic-hero { background: #9be0ff; box-shadow: 0 0 6px #9be0ff44; }
+      #hud-top .ic-pool { background: #c0c0c0; }
+      #hud-top .ic-eff  { background: #ffaa55; }
+      #hud-top .ic-score{ background: #d4af37; }
+      #stage-wrap { position: relative; align-self: center; }
+      canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; box-shadow: 0 0 0 2px #1a1410, 0 0 0 4px #5a4a30, 0 6px 24px rgba(0,0,0,0.6); background: #1f4422; }
+      /* 2026-05 v11 (A2): chip is now clickable — opens the ComboPicker
+         directly so the player doesn't have to hunt for a glowing tower.
+         pointer-events: auto + cursor:pointer + hover lift for affordance. */
+      #combo-alert { position: absolute; top: 8px; right: 8px; padding: 7px 12px; background: rgba(170,30,30,0.9); color: #fff8e0; border: 2px solid #ffd34d; font-size: 11px; font-weight: bold; letter-spacing: 1px; display: none; box-shadow: 0 0 14px #ff333366; pointer-events: auto; cursor: pointer; transition: transform 0.08s ease-out, box-shadow 0.12s ease-out, filter 0.12s ease-out; user-select: none; font-family: 'Courier New', monospace; }
+      #combo-alert.active { display: block; animation: pulse 1.4s infinite; }
+      #combo-alert:hover { transform: scale(1.04); filter: brightness(1.15); box-shadow: 0 0 22px #ffd34daa; }
+      #combo-alert:active { transform: scale(0.98); }
+      @keyframes pulse { 0%, 100% { opacity: 0.92; } 50% { opacity: 1; box-shadow: 0 0 22px #ff5555cc; } }
+
+      /* ─── 1970s ARCADE CRT BOOT SCREEN ──────────────────────────────────
+         Full-viewport CRT cabinet: dark vignette, scanlines, screen
+         flicker, glowing pixel title. Mirrors the Hall-of-Glory aesthetic
+         so the run book-ends in the same look. */
+      #loading {
+        position: fixed; inset: 0;
+        background: radial-gradient(ellipse at center, #1a0808 0%, #0a0202 60%, #000 100%);
+        color: #ffd34d;
+        z-index: 200;
+        /* 2026-05-19 v2 — Hard "fit on any aspect ratio, never scroll"
+           pass. Previous version allowed `overflow: auto` because
+           vw-driven sizing pushed content past the bottom on short
+           viewports (1080p laptop maximized). The new sizing strategy
+           drives ALL vertical-sensitive clamps off `vh` so the cluster
+           reflows to the viewport HEIGHT, and the stage is locked to
+           100vh/100dvh so the bottom edge is the bottom edge — period.
+           overflow: hidden enforces the contract: if anything ever
+           overruns it WILL get clipped, which is now obvious in QA.
+           dvh is used alongside vh for mobile browsers that hide their
+           URL bar on scroll (vh is locked to the largest viewport on
+           those, dvh follows the actual visible area). */
+        overflow: hidden;
+        transition: opacity 0.45s, transform 0.45s;
+        font-family: 'Courier New', monospace;
+        transform-origin: center center;
+      }
+      #loading.hidden { opacity: 0; pointer-events: none; transform: scale(1); }
+      /* CRT scanlines + outer vignette */
+      #loading::before {
+        content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(0,0,0,0) 0px,
+          rgba(0,0,0,0) 2px,
+          rgba(0,0,0,0.40) 2px,
+          rgba(0,0,0,0.40) 3px
+        );
+        mix-blend-mode: multiply;
+      }
+      #loading::after {
+        content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 6;
+        background: radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.85) 100%);
+      }
+      /* Whole-screen subtle flicker so the CRT feels alive */
+      @keyframes loadingCrtFlicker {
+        0%, 96%, 100% { filter: brightness(1.00) saturate(1.0); }
+        97%           { filter: brightness(1.18) saturate(1.1); }
+        98%           { filter: brightness(0.78) saturate(0.9); }
+        99%           { filter: brightness(1.05); }
+      }
+      #loading { animation: loadingCrtFlicker 5.4s infinite; }
+      /* Screen-shake when the coin drops */
+      @keyframes loadingShake {
+        0%, 100% { transform: translate(0, 0) rotate(0); }
+        10% { transform: translate(-6px, 4px) rotate(-0.4deg); }
+        20% { transform: translate(7px, -3px) rotate(0.4deg); }
+        30% { transform: translate(-5px, -5px) rotate(-0.3deg); }
+        40% { transform: translate(6px, 5px) rotate(0.3deg); }
+        50% { transform: translate(-4px, 3px) rotate(-0.2deg); }
+        60% { transform: translate(5px, -2px) rotate(0.2deg); }
+        70% { transform: translate(-3px, -4px) rotate(-0.15deg); }
+        80% { transform: translate(3px, 4px) rotate(0.15deg); }
+        90% { transform: translate(-2px, 2px); }
+      }
+      #loading.shake { animation: loadingShake 520ms ease-in-out, loadingCrtFlicker 5.4s infinite; }
+      /* Warp/zoom-out transition */
+      @keyframes loadingWarp {
+        0%   { transform: scale(1.00); filter: brightness(1) blur(0); opacity: 1; }
+        60%  { transform: scale(1.45); filter: brightness(1.4) blur(0.5px); opacity: 1; }
+        100% { transform: scale(4.5);  filter: brightness(3.2) blur(4px); opacity: 0; }
+      }
+      #loading.warp { animation: loadingWarp 720ms cubic-bezier(0.55, 0, 0.85, 0.6) forwards, loadingCrtFlicker 5.4s infinite; }
+
+      /* Main content stack — locked to exactly viewport height with
+         vh-driven gap so the rhythm of stacked elements (version /
+         eagle / title / subtitle / copy / bar / coin slot + insert
+         label + leaderboard button / tip) compresses or expands to
+         fill exactly the available height.
+         2026-05-19 v2 — Now uses `height: 100vh` (was `min-height: 100%`)
+         and `justify-content: space-evenly` (was `flex-start` + heavy
+         padding). The previous version anchored content at the top and
+         let it overflow the bottom on short viewports; the new layout
+         distributes the cluster across the entire viewport height
+         which makes it impossible to overflow regardless of aspect
+         ratio. dvh shadow handles mobile URL-bar movement. */
+      #loading-stage {
+        position: relative; z-index: 4;
+        height: 100vh;
+        height: 100dvh;
+        width: 100%;
+        display: flex; flex-direction: column; align-items: center; justify-content: space-evenly;
+        padding: clamp(8px, 1.5vh, 20px) clamp(16px, 2vw, 48px);
+        box-sizing: border-box;
+        gap: clamp(4px, 1vh, 14px);
+        text-align: center;
+      }
+
+      /* Cabinet eagle banner above title.
+         2026-05-17 — path fix: '/assets/...' was an absolute path that
+         404'd on GitHub Pages (resolved to root domain). './assets/...'
+         resolves correctly under any deploy path. */
+      /* 2026-05-19 v2 — Eagle sized by viewport height so it never
+         crowds the title on a short viewport. min(vw, vh) keeps it
+         from blowing up on ultra-wide tall monitors where 8vh would
+         be huge. */
+      #loading-eagle {
+        width: clamp(40px, min(7vh, 8vw), 120px);
+        height: clamp(40px, min(7vh, 8vw), 120px);
+        background: url('./assets/sprites/i_aquila_standard.png') no-repeat center/contain;
+        image-rendering: pixelated;
+        filter: drop-shadow(0 0 12px rgba(255,170,51,0.5)) drop-shadow(2px 2px 0 #000);
+        opacity: 0.85;
+        flex-shrink: 0;
+      }
+
+      /* 2026-05-17 — Build version stamp ABOVE the eagle.
+         Subtle so it doesn't compete with the title, but visible enough
+         that players can read it at a glance to confirm they're on the
+         latest deploy. Format: "v0.1.0 · 2026-05-17" — semver from
+         package.json plus the build date. Injected by the vite-html-
+         version plugin at build time so the bytes are baked into the
+         HTML (no JS round-trip needed). */
+      #loading-version {
+        font-size: clamp(9px, min(1.2vh, 1vw), 16px);
+        letter-spacing: clamp(2px, 0.3vw, 5px);
+        color: #aa9a4a;
+        opacity: 0.7;
+        margin-bottom: 0;
+        text-shadow: 1px 1px 0 #000;
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+
+      /* Title */
+      @keyframes loadingTitleGlow {
+        0%, 100% { text-shadow: 0 0 14px #ffd34d, 0 0 28px #ffaa33, 4px 4px 0 #1a0808, -2px -2px 0 #5a0606; }
+        50%      { text-shadow: 0 0 22px #ffd34d, 0 0 44px #ffe082, 4px 4px 0 #1a0808, -2px -2px 0 #5a0606; }
+      }
+      @keyframes loadingTitleFlicker {
+        0%, 96%, 100% { opacity: 1; }
+        97%           { opacity: 0.6; }
+        98%           { opacity: 0.92; }
+        99%           { opacity: 0.4; }
+      }
+      @keyframes loadingTitleIn {
+        0%   { opacity: 0; transform: scale(0.65) translateY(-30px); }
+        60%  { transform: scale(1.08) translateY(5px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      /* 2026-05-19 v2 — Title sized by min(vh, vw) so it caps to the
+         smaller dimension. On a 1080p laptop maximized the previous
+         9vw clamp produced a 168px title that ate ~16% of the
+         vertical space alone; the new min(13vh, 8vw) tops out around
+         140px on 1080p and stays well clear of the bottom of the
+         viewport. Still scales BIG on 4K (where 13vh = 280, capped
+         at 160). */
+      #loading-title-main {
+        font-size: clamp(40px, min(13vh, 8vw), 160px);
+        letter-spacing: clamp(6px, 1vw, 20px);
+        font-weight: 900;
+        color: #ffd34d;
+        line-height: 0.95;
+        flex-shrink: 0;
+        animation:
+          loadingTitleIn 0.7s cubic-bezier(.2,1.4,.4,1) both,
+          loadingTitleGlow 3s ease-in-out 0.7s infinite,
+          loadingTitleFlicker 5.4s 0.7s infinite;
+      }
+      #loading-subtitle {
+        font-size: clamp(10px, min(1.8vh, 1.5vw), 24px);
+        letter-spacing: clamp(4px, 0.5vw, 9px);
+        color: #aa4a1a;
+        text-shadow: 1px 1px 0 #000, 0 0 8px rgba(170,74,26,0.6);
+        font-weight: 900;
+        flex-shrink: 0;
+      }
+
+      /* Rotating copy lines */
+      #loading-copy {
+        min-height: clamp(18px, 2.4vh, 32px);
+        font-size: clamp(11px, min(1.8vh, 1.5vw), 24px);
+        letter-spacing: clamp(2px, 0.3vw, 5px);
+        color: #ffd34d;
+        text-shadow: 0 0 8px #ffd34d, 1px 1px 0 #000;
+        font-weight: 900;
+        max-width: min(1100px, 80vw);
+        flex-shrink: 0;
+      }
+      #loading-copy.typing::after {
+        content: '_';
+        animation: copyCursorBlink 0.6s steps(1) infinite;
+        color: #ffaa33;
+      }
+      @keyframes copyCursorBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+      /* Progress bar — barebones CRT segmented look. Width scales up
+         on big monitors so the bar reads at-a-glance across the room. */
+      #loading-bar-wrap {
+        width: min(820px, 60vw);
+        height: clamp(12px, min(2vh, 1.4vw), 24px);
+        border: 2px solid #aa1a1a;
+        background: #1a0404;
+        box-shadow: inset 0 0 12px #000, 0 0 16px rgba(170,26,26,0.4);
+        padding: 2px;
+        flex-shrink: 0;
+      }
+      #loading-bar {
+        height: 100%; width: 0%;
+        background: repeating-linear-gradient(
+          90deg, #ffd34d 0 12px, transparent 12px 16px
+        );
+        background-color: #2a0808;
+        box-shadow: 0 0 10px rgba(255,211,77,0.85);
+        transition: width 0.2s linear;
+      }
+
+      /* Coin slot + insert-coin prompt */
+      #loading-coinslot-wrap {
+        display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vh, 12px);
+        margin-top: 0;
+        opacity: 0;
+        transition: opacity 0.5s;
+        flex-shrink: 0;
+      }
+      #loading-coinslot-wrap.ready { opacity: 1; }
+
+      /* 2026-05-19 — Loading-screen leaderboard preview button. Lets
+         players peek at the Hall of Glory before committing the coin.
+         Subtle (smaller than the COIN SLOT, dimmer color) so it
+         doesn't compete with the primary call-to-action. */
+      #loading-view-leaderboard {
+        margin-top: clamp(4px, 0.8vh, 14px);
+        background: transparent;
+        border: 1px solid #5a4a30;
+        color: #aa9a4a;
+        font-family: 'Courier New', monospace;
+        font-size: clamp(9px, min(1.3vh, 1vw), 14px);
+        letter-spacing: clamp(2px, 0.3vw, 4px);
+        font-weight: bold;
+        padding: clamp(5px, 0.9vh, 11px) clamp(12px, 1.5vw, 22px);
+        cursor: pointer;
+        transition: all 0.18s ease-out;
+        text-shadow: 1px 1px 0 #000;
+      }
+      #loading-view-leaderboard:hover {
+        background: rgba(212,175,55,0.10);
+        border-color: #d4af37;
+        color: #ffd34d;
+        box-shadow: 0 0 14px rgba(212,175,55,0.30);
+      }
+      #loading-view-leaderboard:active { transform: translateY(1px); }
+      /* SANDBOX: discreet dev-mode entry button. Smaller + dimmer than
+         the leaderboard preview so it doesn't compete with the
+         loading-screen flow. Hovered/focus styles match the leaderboard
+         button's accent color for consistency. */
+      #loading-sandbox-entry {
+        margin-top: clamp(2px, 0.4vh, 6px);
+        background: transparent;
+        border: 1px dashed #3a3025;
+        color: #5a4a30;
+        font-family: 'Courier New', monospace;
+        font-size: clamp(8px, min(1vh, 0.8vw), 11px);
+        letter-spacing: clamp(1px, 0.2vw, 3px);
+        font-weight: bold;
+        padding: clamp(3px, 0.6vh, 7px) clamp(8px, 1vw, 14px);
+        cursor: pointer;
+        transition: all 0.18s ease-out;
+        text-shadow: 1px 1px 0 #000;
+      }
+      #loading-sandbox-entry:hover {
+        background: rgba(255, 80, 200, 0.08);
+        border-color: #ff5cc8;
+        color: #ff5cc8;
+      }
+      #loading-sandbox-entry:active { transform: translateY(1px); }
+      /* CO-OP LEGION entry button — gold legion theme. */
+      #loading-coop-legion {
+        margin-top: clamp(4px, 0.7vh, 9px);
+        background: linear-gradient(180deg, rgba(212,175,55,0.10), rgba(0,0,0,0.2));
+        border: 1.5px solid #7a5a1a;
+        color: #d4af37;
+        font-family: 'Courier New', monospace;
+        font-size: clamp(9px, min(1.1vh, 0.9vw), 12px);
+        letter-spacing: clamp(1px, 0.25vw, 3px);
+        font-weight: bold;
+        padding: clamp(4px, 0.7vh, 8px) clamp(10px, 1.2vw, 18px);
+        cursor: pointer;
+        transition: all 0.18s ease-out;
+        text-shadow: 1px 1px 0 #000, 0 0 6px rgba(212,175,55,0.3);
+      }
+      #loading-coop-legion:hover {
+        background: rgba(212,175,55,0.18);
+        border-color: #ffd34d;
+        color: #ffe680;
+        box-shadow: 0 0 12px rgba(212,175,55,0.4);
+      }
+      #loading-coop-legion:active { transform: translateY(1px); }
+      /* 2026-05-19 v2 — Coin-slot sized by min(vh, vw) so it stays
+         readable on big monitors without crowding short viewports.
+         Width derives from height to keep the cabinet ratio constant. */
+      #loading-coinslot {
+        position: relative;
+        height: clamp(70px, min(13vh, 10vw), 140px);
+        width: clamp(108px, min(20vh, 15vw), 220px);
+        cursor: pointer;
+        transition: transform 0.12s;
+        flex-shrink: 0;
+      }
+      #loading-coinslot:hover { transform: translateY(-3px); }
+      #loading-coinslot:active { transform: translateY(2px); }
+      /* The slot housing: dark red plate with a horizontal slit */
+      #loading-coinslot-body {
+        position: absolute; inset: 12px 0 0 0;
+        background: linear-gradient(180deg, #2a0808 0%, #1a0404 100%);
+        border: 3px solid #aa1a1a;
+        border-radius: 4px;
+        box-shadow: 0 0 14px rgba(170,26,26,0.6), inset 0 0 10px rgba(0,0,0,0.7);
+      }
+      #loading-coinslot-slit {
+        position: absolute; left: 50%; top: 28px;
+        transform: translateX(-50%);
+        width: 86px; height: 8px;
+        background: #000;
+        box-shadow: inset 0 2px 4px rgba(255,170,51,0.45), 0 0 4px rgba(0,0,0,0.9);
+        border-radius: 2px;
+      }
+      #loading-coinslot-label {
+        position: absolute; left: 0; right: 0; bottom: 8px;
+        font-size: 10px; letter-spacing: 3px; color: #ffd34d; font-weight: 900;
+        text-shadow: 1px 1px 0 #000;
+      }
+      /* The dropping coin
+         2026-05-17 — Path was '/assets/sprites/u_badge_gold.png' (absolute,
+         resolves to the root domain). On GitHub Pages the game lives at
+         /roman-td/ so the absolute path 404'd and the coin was invisible.
+         Relative path resolves correctly under both dev (root) and Pages. */
+      #loading-coin-hint {
+        /* 2026-05-17 v2 — Coin now responds to the JAMMED COIN SLOT
+           mini-game. --coin-progress is updated by JS from 0..1 as the
+           player whacks the slot; the coin lerps DOWN with each whack
+           until it commits on click #10 and the existing .dropping
+           animation fires. transition makes the descent smooth. */
+        position: absolute; left: 50%; top: -56px;
+        --coin-progress: 0;
+        transform: translate(-50%, calc(var(--coin-progress) * 52px));
+        transition: transform 0.20s cubic-bezier(0.4, 0, 0.6, 1);
+        width: 48px; height: 48px;
+        background: url('./assets/sprites/u_badge_gold.png') no-repeat center/contain;
+        image-rendering: pixelated;
+        filter: drop-shadow(0 0 8px rgba(255,211,77,0.7)) drop-shadow(2px 2px 0 #000);
+        animation: coinHover 1.6s ease-in-out infinite;
+      }
+
+      /* 2026-05-17 — HARD-RESET TIP. New banner on the loading screen
+         that tells players how to clear browser cache so they get the
+         latest build. Caching is what causes the "I made a change but
+         my friends still see the old version" problem.
+         2026-05-19 v2 — Compacted to a single-line horizontal layout
+         so it occupies one row instead of four. Same information
+         density (no content removed), much smaller vertical footprint
+         so the rest of the cluster fits a 1080p laptop comfortably. */
+      #loading-tip {
+        margin-top: 0;
+        padding: clamp(4px, 0.8vh, 10px) clamp(10px, 1.4vw, 18px);
+        max-width: min(92vw, 1100px);
+        border: 1px dashed #aa7733;
+        background: linear-gradient(180deg, rgba(20, 10, 5, 0.85), rgba(34, 18, 9, 0.85));
+        color: #f0c089;
+        font-size: clamp(9px, min(1.3vh, 1vw), 13px);
+        line-height: 1.4;
+        text-align: center;
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 0 #000;
+        opacity: 0;
+        animation: tipFadeIn 0.6s ease-out 0.8s forwards;
+        flex-shrink: 0;
+        display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: clamp(6px, 1vw, 14px);
+      }
+      #loading-tip .tip-title {
+        font-weight: 900;
+        letter-spacing: 2px;
+        font-size: clamp(9px, min(1.3vh, 1vw), 13px);
+        color: #ffd34d;
+        margin-bottom: 0;
+        white-space: nowrap;
+      }
+      #loading-tip .tip-row {
+        display: inline-flex; align-items: center; gap: 4px;
+        white-space: nowrap;
+      }
+      #loading-tip kbd {
+        display: inline-block;
+        padding: 1px 6px;
+        margin: 0 1px;
+        background: #2a1f12;
+        border: 1px solid #5a4a30;
+        border-bottom-width: 2px;
+        border-radius: 3px;
+        color: #ffd34d;
+        font-family: 'Courier New', monospace;
+        font-size: clamp(9px, min(1.2vh, 1vw), 12px);
+        font-weight: bold;
+        text-shadow: none;
+        letter-spacing: 0;
+      }
+      @keyframes tipFadeIn { to { opacity: 1; } }
+      @keyframes coinHover {
+        /* Hover bob keys read --coin-progress so the coin still bobs
+           gently at whatever Y position the player has whacked it down to. */
+        0%, 100% { transform: translate(-50%, calc(var(--coin-progress) * 52px)); }
+        50%      { transform: translate(-50%, calc(var(--coin-progress) * 52px - 6px)); }
+      }
+      @keyframes coinDrop {
+        0%   { transform: translate(-50%, calc(var(--coin-progress, 0) * 52px)) rotate(0deg);   opacity: 1; }
+        70%  { transform: translate(-50%, 60px) rotate(540deg); opacity: 1; }
+        100% { transform: translate(-50%, 64px) rotate(720deg); opacity: 0; }
+      }
+      #loading-coin-hint.dropping { animation: coinDrop 460ms cubic-bezier(0.55, 0, 0.95, 0.55) forwards; }
+
+      /* 2026-05-17 — Cabinet jolt fired on every coin-slot whack in
+         the JAMMED-SLOT mini-game. Quick 140-ms shudder so the player
+         feels the impact without disrupting the rest of the screen. */
+      @keyframes loadingJolt {
+        0%, 100% { transform: translate(0, 0); }
+        25%      { transform: translate(-3px, 1px); }
+        50%      { transform: translate(2px, -1px); }
+        75%      { transform: translate(-1px, 2px); }
+      }
+      #loading.jolt #loading-stage { animation: loadingJolt 0.14s ease-out; }
+
+      #loading-insert {
+        font-size: clamp(11px, min(1.6vh, 1.3vw), 18px);
+        letter-spacing: clamp(3px, 0.4vw, 5px);
+        font-weight: 900;
+        color: #ffd34d;
+        text-shadow: 0 0 10px #ffd34d, 2px 2px 0 #000;
+        animation: insertBlink 1.0s steps(1) infinite;
+        flex-shrink: 0;
+      }
+      @keyframes insertBlink {
+        0%, 49% { opacity: 1; }
+        50%, 99% { opacity: 0.2; }
+      }
+
+      /* Hide stage panel until coin drops + we transition */
+      #loading-ready-stage { display: none; }
+      #loading-ready-stage.show { display: flex; }
+
+      /* Bottom action row */
+      #buttons { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px; background: linear-gradient(180deg, #1a1410, #0c0a08); border: 1px solid #3a3025; justify-content: center; }
+      #buttons button { font-size: 11px; padding: 6px 10px; }
+
+      /* Tip bar — context-aware tutorial line */
+      #tip-bar { padding: 8px 14px; background: linear-gradient(180deg, #1a1410, #221a12); border: 1px solid #5a4a30; color: #ff5050; font-size: 13px; font-weight: bold; letter-spacing: 1px; min-height: 22px; text-align: center; text-shadow: 1px 1px 0 #000; }
+      #tip-bar .tip-prefix { color: #ffa040; margin-right: 6px; }
+
+      /* Inventory at bottom */
+      #inv-strip { padding: 6px 8px !important; border: 1px solid #3a3025 !important; background: linear-gradient(180deg, #0c0a08, #1a1410) !important; }
+
+      .footer { font-size: 10px; opacity: 0.5; letter-spacing: 1px; }
+
+      /* ─────────────────────────────────────────────────────────────
+         2026-05-22 M1 — MOBILE LAYER
+         Everything below is mobile-specific. Desktop is unaffected
+         (queries gate on max-width / coarse pointer / portrait).
+         ───────────────────────────────────────────────────────────── */
+
+      /* ROTATE PROMPT — hidden by default on desktop + landscape. */
+      #mobile-rotate-prompt {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at center, #2a1f12 0%, #0a0606 80%);
+        padding: 24px;
+      }
+      #mobile-rotate-prompt .rotate-card {
+        text-align: center;
+        max-width: 320px;
+        padding: 28px 24px;
+        background: linear-gradient(180deg, #1a1410, #0c0a08);
+        border: 3px solid #d4af37;
+        box-shadow: 0 0 40px rgba(212, 175, 55, 0.35);
+        color: #ffd34d;
+      }
+      #mobile-rotate-prompt .rotate-icon {
+        font-size: 64px;
+        line-height: 1;
+        margin-bottom: 16px;
+        animation: rotateNudge 2.4s ease-in-out infinite;
+        transform-origin: center;
+      }
+      #mobile-rotate-prompt .rotate-title {
+        font-size: 22px;
+        letter-spacing: 4px;
+        font-weight: 900;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 0 #000;
+      }
+      #mobile-rotate-prompt .rotate-sub {
+        font-size: 13px;
+        letter-spacing: 1px;
+        line-height: 1.6;
+        color: #cdb98a;
+      }
+      @keyframes rotateNudge {
+        0%, 60%, 100% { transform: rotate(0deg); }
+        70%           { transform: rotate(-15deg); }
+        80%           { transform: rotate(80deg); }
+        90%           { transform: rotate(90deg); }
+      }
+
+      /* Show rotate prompt when EITHER:
+         - device has a coarse pointer (touch primary) AND is in portrait
+           AND ≤ 900px wide (real-phone path), OR
+         - html.mobile-mode (set by src/Mobile.ts when touch-capable;
+           also via ?forceMobile=1 for testing on desktop). The class
+           hook fires reliably even on DevTools / Chrome MCP where the
+           pointer media query reports `fine`. */
+      @media (orientation: portrait) and (pointer: coarse) and (max-width: 900px) {
+        #mobile-rotate-prompt { display: flex; }
+        #loading, #app { display: none !important; }
+      }
+      html.portrait-mode #mobile-rotate-prompt { display: flex; }
+      html.portrait-mode #loading,
+      html.portrait-mode #app { display: none !important; }
+
+      /* Mobile landscape — phones in landscape (≤ 950px wide, coarse pointer).
+         The desktop 3-column layout (left HUD + canvas + right buttons)
+         is too cramped at phone width; collapse the side panels and let
+         the canvas dominate. Full mobile-HUD repositioning lands in M4;
+         this is just the "don't crash visually" baseline so M1's commit
+         is shippable. */
+      @media (orientation: landscape) and (pointer: coarse) and (max-height: 500px) {
+        #app { gap: 4px !important; }
+        #left-panel, #right-panel {
+          min-width: 140px !important;
+          max-width: 160px !important;
+          max-height: 100dvh !important;
+          font-size: 11px !important;
+        }
+      }
+
+      /* Loading-screen safe-area pad so the COIN INSERT button isn't
+         under the iOS home-indicator. */
+      #loading {
+        padding-top: var(--safe-top);
+        padding-bottom: var(--safe-bottom);
+        padding-left: var(--safe-left);
+        padding-right: var(--safe-right);
+      }
+
+      /* ─────────────────────────────────────────────────────────────
+         2026-05-22 M4 — MOBILE TAP TARGETS + MODAL LAYOUT
+         Apple HIG: min 44×44pt tap target. Google Material: 48×48dp.
+         We use 44px floor across all primary interactive controls.
+         Scoped to mobile via the coarse-pointer media query so the
+         desktop layout is untouched.
+         ───────────────────────────────────────────────────────────── */
+      /* The same mobile-density rules below ALSO trip when html.mobile-mode
+         is set (touch detection from Mobile.ts OR ?forceMobile=1). The
+         coarse-pointer media query is the production-correct primary; the
+         class hook is the testing-friendly + Chrome-MCP fallback. */
+      html.mobile-mode button {
+        min-height: 44px !important;
+        padding: 10px 14px !important;
+        font-size: 14px !important;
+        letter-spacing: 1.5px !important;
+      }
+      html.mobile-mode [id$="-modal"] [style*="width: min(1180px"],
+      html.mobile-mode [id$="-modal"] [style*="width:min(1180px"],
+      html.mobile-mode #shop-modal [style*="width: min"],
+      html.mobile-mode #codex-modal [style*="width: min"] {
+        width: 96vw !important;
+        max-width: none !important;
+      }
+      html.mobile-mode #aura-tile-tooltip,
+      html.mobile-mode #tower-hover-preview,
+      html.mobile-mode #waypoint-tooltip {
+        font-size: 13px !important;
+        max-width: 80vw !important;
+        padding: 12px 16px !important;
+        line-height: 1.6 !important;
+      }
+      html.mobile-mode canvas,
+      html.mobile-mode button { touch-action: manipulation; }
+
+      @media (pointer: coarse) and (max-width: 1100px) {
+        /* Every button gets the tap-target floor. min-height + larger
+           padding. Buttons that already exceed are unaffected. */
+        button {
+          min-height: 44px !important;
+          padding: 10px 14px !important;
+          font-size: 14px !important;
+          letter-spacing: 1.5px !important;
+        }
+        /* Hero modal cards — keep card width but make the row scroll
+           friendlier on touch + the cards bigger to tap. */
+        #choose-hero-modal [style*="width: 320px"] {
+          width: 280px !important;
+        }
+        /* Shop / Codex / generic modal panels — wider on mobile so the
+           player isn't squinting at 12px text in a 320px box. */
+        [id$="-modal"] [style*="width: min(1180px"],
+        [id$="-modal"] [style*="width:min(1180px"],
+        #shop-modal [style*="width: min"],
+        #codex-modal [style*="width: min"] {
+          width: 96vw !important;
+          max-width: none !important;
+        }
+        /* Floating tooltip chips were sized for hover (12px text); a
+           touch user reads them from arm's length on a phone. Bump
+           font-size + max-width. */
+        #aura-tile-tooltip,
+        #tower-hover-preview,
+        #waypoint-tooltip {
+          font-size: 13px !important;
+          max-width: 80vw !important;
+          padding: 12px 16px !important;
+          line-height: 1.6 !important;
+        }
+        /* The HUD strips that anchor left/right column — these are the
+           buttons the player taps every wave (Start / Speed / Shop /
+           Mute / etc.). Bigger by default on mobile. */
+        #left-panel button, #right-panel button {
+          width: 100% !important;
+        }
+        /* Suppress the chrome 300ms tap-delay on the canvas + buttons
+           by making them touch-friendly elements. */
+        canvas, button { touch-action: manipulation; }
+
+        /* Banner buttons + confirmation strips (March to War, sandbox,
+           hero pick) — beef them up so they're thumb-sized. */
+        button[id*="march"], button[id*="confirm"], button[id*="continue"],
+        button[id*="okay"], button[id*="dismiss"] {
+          min-height: 52px !important;
+          font-size: 15px !important;
+        }
+      }
+
+      /* Mobile-LANDSCAPE-specific: the canvas is the boss. Side panels
+         collapse a little harder so the play area dominates. The full
+         3-column collapse to floating panels is a bigger refactor;
+         this is a clean transitional pass that ships without breaking. */
+      /* Mobile-landscape compact mode. Trips on:
+         (a) real mobile devices in landscape (pointer:coarse media query)
+         (b) html.mobile-mode + short viewport — covers Chrome MCP /
+             ?forceMobile=1 testing flows where pointer:fine is reported */
+      @media (orientation: landscape) and (pointer: coarse) and (max-height: 500px) {
+        #left-panel h2, #right-panel h2 { font-size: 13px !important; padding: 4px 8px !important; }
+        #left-panel h3, #right-panel h3 { font-size: 11px !important; }
+        #mobile-rotate-prompt { display: none !important; }
+        #loading-tip { display: none !important; }
+        #choose-hero-modal [style*="width: 320px"],
+        #choose-hero-modal [style*="flex: 0 0 320px"] {
+          width: 220px !important;
+          flex: 0 0 220px !important;
+          min-width: 220px !important;
+        }
+        #choose-hero-modal { align-items: flex-start !important; padding-top: 4px !important; }
+        #choose-hero-modal > div { max-height: 96dvh !important; }
+        #loading-title-main { font-size: 38px !important; margin-top: 4px !important; }
+        #loading-subtitle { font-size: 10px !important; margin-bottom: 8px !important; }
+        #loading-eagle { transform: scale(0.7); }
+        #loading-copy { font-size: 12px !important; margin: 4px 0 !important; }
+        #loading-bar-wrap { margin: 4px 0 !important; height: 14px !important; }
+        #loading-coinslot { transform: scale(0.85); }
+      }
+      /* Class-driven mirror (Chrome MCP / forceMobile testing path). */
+      html.mobile-mode #loading-tip { display: none !important; }
+      html.mobile-mode #left-panel h2,
+      html.mobile-mode #right-panel h2 { font-size: 13px !important; padding: 4px 8px !important; }
+      html.mobile-mode #left-panel h3,
+      html.mobile-mode #right-panel h3 { font-size: 11px !important; }
+      html.mobile-mode #choose-hero-modal [style*="width: 320px"],
+      html.mobile-mode #choose-hero-modal [style*="flex: 0 0 320px"] {
+        width: 220px !important;
+        flex: 0 0 220px !important;
+        min-width: 220px !important;
+      }
+      html.mobile-mode #choose-hero-modal { align-items: flex-start !important; padding-top: 4px !important; }
+      html.mobile-mode #choose-hero-modal > div { max-height: 96dvh !important; }
+      html.mobile-mode #loading-title-main { font-size: 38px !important; margin-top: 4px !important; }
+      html.mobile-mode #loading-subtitle { font-size: 10px !important; margin-bottom: 8px !important; }
+      html.mobile-mode #loading-eagle { transform: scale(0.7); }
+      html.mobile-mode #loading-copy { font-size: 12px !important; margin: 4px 0 !important; }
+      html.mobile-mode #loading-bar-wrap { margin: 4px 0 !important; height: 14px !important; }
+      html.mobile-mode #loading-coinslot { transform: scale(0.85); }
+
+      /* ─────────────────────────────────────────────────────────────
+         2026-05-22 — UX PASS 1–10 + HONORABLE MENTIONS
+         All scoped behind `html.mobile-mode` so desktop is untouched.
+         The class is set in src/Mobile.ts on real touch devices and
+         via ?forceMobile=1 for in-browser testing.
+         ───────────────────────────────────────────────────────────── */
+
+      /* UX1 — Sticky MARCH TO WAR. After a hero is selected the confirm
+         strip pins to the bottom of the scrollable panel so the button
+         is never offscreen, regardless of where the player is reading.
+         Backdrop blur keeps cards readable behind it. */
+      html.mobile-mode #choose-hero-confirm-strip {
+        position: sticky !important;
+        bottom: 0 !important;
+        z-index: 5 !important;
+        margin-top: 0 !important;
+        padding: 10px 14px !important;
+        background: linear-gradient(180deg, rgba(20,12,8,0.86), rgba(0,0,0,0.96)) !important;
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+        border-top: 2px solid #ffd34d !important;
+        border-bottom: none !important;
+      }
+
+      /* UX5 — Hide the keyboard hint row (1 2 3 4 5 6 keys / ENTER) on
+         mobile. Touch users can't trigger it. */
+      html.mobile-mode .chm-kbd-hint { display: none !important; }
+      html.mobile-mode .desktop-hotkey-hint { display: none !important; }
+
+      /* UX3 — Hero Inspect Panel and other tall #tower-menu modals can
+         exceed phone-landscape viewport height. Constrain the inner
+         panel to ~88dvh and let it scroll inside the modal frame. */
+      html.mobile-mode #tower-menu > div {
+        max-height: 88dvh !important;
+        overflow-y: auto !important;
+        scrollbar-width: thin;
+      }
+
+      /* UX1/UX3 — Collapse the ABILITIES ladder on each hero card on
+         mobile. The [data-card-expand] button replaces it; clicking
+         the button flips data-expanded="1" on the card which re-shows
+         the ladder. Desktop is unaffected because the button has
+         display:none in its inline style. */
+      html.mobile-mode #choose-hero-modal [data-hero-card] [data-card-abilities] {
+        display: none !important;
+      }
+      html.mobile-mode #choose-hero-modal [data-hero-card][data-expanded="1"] [data-card-abilities] {
+        display: block !important;
+      }
+      html.mobile-mode #choose-hero-modal [data-hero-card] [data-card-expand] {
+        display: block !important;
+      }
+
+      /* UX7 — Shrink the hero placement reminder banner on mobile so
+         it doesn't eat 15% of the playable canvas vertical. Top-anchored
+         toast, not bottom-centered. Hero name stays prominent. */
+      html.mobile-mode #hero-placement-banner {
+        bottom: auto !important;
+        top: 6px !important;
+        padding: 6px 12px !important;
+        font-size: 10px !important;
+        gap: 0 !important;
+        max-width: 70vw !important;
+      }
+      html.mobile-mode #hero-placement-banner > div:nth-child(2) {
+        font-size: 12px !important;
+      }
+      html.mobile-mode #hero-placement-banner > div:nth-child(3) {
+        display: none !important;   /* drop the title sub-line on phone */
+      }
+
+      /* HM — Bigger CLOSE buttons on mobile. The global button rule
+         already enforces min-height: 44px; this raises the tap target
+         even on close pills that override padding inline. */
+      html.mobile-mode button[id$="close-btn"],
+      html.mobile-mode button[id*="close"],
+      html.mobile-mode #shop-close,
+      html.mobile-mode #codex-close,
+      html.mobile-mode #quests-close,
+      html.mobile-mode #inventory-close,
+      html.mobile-mode #settings-close {
+        min-height: 48px !important;
+        min-width: 88px !important;
+        font-size: 14px !important;
+        padding: 12px 20px !important;
+      }
+
+      /* UX4 — Sidebar overflow menu on mobile. The .hud-overflow class
+         (added in UIManager.ts) groups DPS CHECK, TARGET ALL,
+         LEADERBOARD, SELL STONES, SETTINGS behind a single ⋯ MORE
+         button so the primary actions (START/SPEED/PAUSE/POOL/SHOP/
+         QUESTS/CODEX) dominate. The container is initially collapsed;
+         clicking ⋯ MORE toggles `.hud-overflow-open` on the root. */
+      html.mobile-mode #hud-overflow-toggle { display: block !important; }
+      html.mobile-mode #hud-overflow-group {
+        display: none !important;
+        flex-direction: column;
+        gap: 8px;
+      }
+      html.mobile-mode #right-panel.hud-overflow-open #hud-overflow-group {
+        display: flex !important;
+      }
+      /* Desktop: the toggle button is hidden, and the overflow group is
+         always visible inline. */
+      html:not(.mobile-mode) #hud-overflow-toggle { display: none !important; }
+
+      /* UX6 — HUD stat row gets cursor:pointer + a small underline on
+         tap-revealable items so the player learns they can be probed.
+         The actual popover renders via JS (main.ts). */
+      html.mobile-mode #hud-top .hud-icon[data-stat] {
+        cursor: pointer;
+        border-bottom: 1px dotted rgba(255,211,77,0.35);
+        padding-bottom: 1px;
+      }
+
+      /* UX10 — First-run onboarding overlay. The structural CSS is here;
+         JS injects + populates the actual cards. Three-step tutorial
+         shown the first time wave === 0 on mobile. */
+      #onboarding-overlay {
+        position: fixed; inset: 0;
+        display: none;
+        align-items: center; justify-content: center;
+        background: radial-gradient(ellipse at center, rgba(20,8,8,0.92) 0%, rgba(0,0,0,0.98) 80%);
+        z-index: 9998;
+        padding: 16px;
+        font-family: 'Courier New', monospace;
+        color: #e8d6a8;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+      #onboarding-overlay.active { display: flex; }
+      #onboarding-overlay .ob-card {
+        background: linear-gradient(180deg, rgba(34,25,18,0.96), rgba(10,6,4,0.96));
+        border: 3px solid #ffd34d;
+        box-shadow: 0 0 32px rgba(255,211,77,0.45), inset 0 0 24px rgba(255,211,77,0.10);
+        padding: 24px 28px;
+        max-width: 480px;
+        width: 100%;
+        text-align: center;
+      }
+      #onboarding-overlay .ob-step {
+        font-size: 11px; color: #aa6a1a; letter-spacing: 4px;
+        font-weight: 900; margin-bottom: 8px;
+      }
+      #onboarding-overlay .ob-title {
+        font-size: 22px; color: #ffd34d; letter-spacing: 3px;
+        font-weight: 900; line-height: 1.15;
+        text-shadow: 0 0 14px #ffd34d, 2px 2px 0 #1a0808;
+        margin-bottom: 12px;
+      }
+      #onboarding-overlay .ob-body {
+        font-size: 14px; color: #cdb98a; letter-spacing: 1px;
+        line-height: 1.55; margin-bottom: 20px;
+      }
+      #onboarding-overlay .ob-controls {
+        display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+      }
+      #onboarding-overlay .ob-controls button {
+        font-family: inherit;
+        font-size: 13px; letter-spacing: 2px; font-weight: 900;
+        padding: 12px 22px; min-height: 48px;
+        border: 2px solid #ffd34d;
+        background: linear-gradient(180deg, #5a3a16, #2a1a08);
+        color: #ffd34d; cursor: pointer;
+        text-shadow: 1px 1px 0 #000;
+      }
+      #onboarding-overlay .ob-controls button.ob-skip {
+        border-color: #5a4a30;
+        color: #cdb98a;
+        background: linear-gradient(180deg, #2a1f14, #1a1410);
+      }
+      #onboarding-overlay .ob-dots {
+        display: flex; gap: 6px; justify-content: center;
+        margin: 12px 0 18px;
+      }
+      #onboarding-overlay .ob-dot {
+        width: 10px; height: 10px; border-radius: 50%;
+        background: #3a2a1a; border: 1px solid #5a4a30;
+      }
+      #onboarding-overlay .ob-dot.active {
+        background: #ffd34d;
+        box-shadow: 0 0 8px rgba(255,211,77,0.7);
+      }
+
+      /* ─────────────────────────────────────────────────────────────
+         2026-05-22 — MOBILE LAYOUT REBUILD.
+         Replaces the transform-scale shrink-everything approach with
+         a layout where:
+           • #app does NOT scale (--app-scale is forced to 1 by JS).
+           • Side panels keep natural pixel width (88px), so buttons
+             stay finger-sized.
+           • The canvas is the ONLY element that scales (JS sets its
+             CSS width/height each frame to fit the middle column).
+           • The three-column flex is preserved so the existing DOM
+             structure works; only the CSS dimensions change.
+         Tap targets are now in true CSS pixels, not divided by
+         a 0.46x app-level transform.
+         ───────────────────────────────────────────────────────────── */
+      html.mobile-mode body {
+        padding: 0 !important;
+        align-items: stretch !important;
+        justify-content: stretch !important;
+        overflow: hidden;
+      }
+      html.mobile-mode #app {
+        width: 100vw !important;
+        height: 100dvh !important;
+        height: 100vh;
+        gap: 2px !important;
+        padding: 0 !important;
+        align-items: stretch !important;
+        transform-origin: top left !important;
+      }
+      html.mobile-mode #left-panel,
+      html.mobile-mode #right-panel {
+        min-width: 88px !important;
+        max-width: 88px !important;
+        max-height: 100dvh !important;
+        height: 100dvh !important;
+        height: 100vh;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        font-size: 10px !important;
+        letter-spacing: 0.5px !important;
+        padding: 2px !important;
+        gap: 4px !important;
+      }
+      html.mobile-mode #stage-wrap {
+        flex: 1 1 auto !important;
+        align-self: center !important;
+        height: 100dvh !important;
+        height: 100vh;
+        max-height: 100dvh;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden;
+      }
+      html.mobile-mode #stage-wrap canvas {
+        display: block;
+        /* Width/height set explicitly by JS fitStageToViewport.
+           These max-rules are a safety net so an unflushed style
+           never lets the canvas overflow its column. */
+        max-width: 100% !important;
+        max-height: 100% !important;
+      }
+      /* HUD top-strip: condensed font, tighter padding, single line. */
+      html.mobile-mode #hud-top {
+        padding: 4px 6px !important;
+        gap: 4px !important;
+        font-size: 9.5px !important;
+        letter-spacing: 0.3px !important;
+        flex-wrap: wrap !important;
+      }
+      html.mobile-mode #hud-top .ic {
+        width: 12px !important;
+        height: 12px !important;
+        border-width: 1px !important;
+      }
+      html.mobile-mode #hud-top .hud-icon {
+        gap: 3px !important;
+        font-size: 9.5px !important;
+      }
+      html.mobile-mode #hud-top .hud-l,
+      html.mobile-mode #hud-top .hud-r {
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+      }
+      /* Buttons: real tap target (40px) without the transform shrink. */
+      html.mobile-mode #buttons {
+        gap: 4px !important;
+      }
+      html.mobile-mode #buttons button,
+      html.mobile-mode #right-panel button {
+        min-height: 40px !important;
+        padding: 6px 4px !important;
+        font-size: 10px !important;
+        letter-spacing: 0.5px !important;
+        line-height: 1.1 !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+      }
+      /* The wave brief + placing prospects + pinned-recipe panels are
+         left-panel children that we shrink to fit the 88px column. */
+      html.mobile-mode #left-panel > div,
+      html.mobile-mode #right-panel > div {
+        font-size: 9.5px !important;
+        max-width: 84px !important;
+      }
+      /* Prospect cards inside the panel — shrink the 120×130 card to
+         fit the 84px column. */
+      html.mobile-mode #left-panel [style*="width:120px"],
+      html.mobile-mode #right-panel [style*="width:120px"] {
+        width: 78px !important;
+        height: auto !important;
+      }
+      html.mobile-mode #left-panel img,
+      html.mobile-mode #right-panel img {
+        max-width: 50px !important;
+        max-height: 50px !important;
+      }
+      /* Hide the rotate-prompt and prompt-style elements that don't
+         belong in the slim panels. */
+      html.mobile-mode #left-panel h1,
+      html.mobile-mode #right-panel h1 { display: none !important; }
+      /* The placement banner that V7 pinned to bottom-center can
+         conflict with the bottom of the canvas; the prior pass already
+         moved it to top; ensure it doesn't compete with the HUD. */
+      html.mobile-mode #hero-placement-banner {
+        z-index: 50 !important;
+      }
+
+      /* HM — Respect prefers-reduced-motion. Disables card hover/scale,
+         choose-hero pulse, chevron pulse, banner pulse, etc. */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+        }
+        .chm-kbd-hint,
+        #hero-placement-banner,
+        button {
+          animation: none !important;
+        }
+      }
+      /* Settings panel toggle for reduced motion — opt-in for players
+         who want it without using the OS-level preference. */
+      html.reduce-motion-opt-in *,
+      html.reduce-motion-opt-in *::before,
+      html.reduce-motion-opt-in *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+      html.reduce-motion-opt-in #hero-placement-banner,
+      html.reduce-motion-opt-in button { animation: none !important; }
+    </style>
+    <script type="module" crossorigin src="./assets/index-1SGOgNbI.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/pixi-CL0R3DCn.js">
+  </head>
+  <body>
+    <!-- Loading screen lives at body level — pulled OUT of #app so the
+         scale-to-fit transform on #app doesn't shrink it. Stays
+         position:fixed inset:0 covering the full viewport. -->
+    <div id="loading">
+      <div id="loading-stage">
+        <div id="loading-version">v0.7.0 · f1f320b · 2026-07-02</div>
+        <div id="loading-eagle"></div>
+        <div id="loading-title-main">ROMAN TD</div>
+        <div id="loading-subtitle">THE EMPIRE DEMANDS PERFECTION</div>
+        <div id="loading-copy">BOOTING CASTRUM LUNUM...</div>
+        <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
+        <div id="loading-coinslot-wrap">
+          <div id="loading-coinslot" title="Click to insert coin">
+            <div id="loading-coin-hint"></div>
+            <div id="loading-coinslot-body"></div>
+            <div id="loading-coinslot-slit"></div>
+            <div id="loading-coinslot-label">★ COIN SLOT ★</div>
+          </div>
+          <div id="loading-insert">▶ CLICK TO INSERT COIN ◀</div>
+          <button id="loading-view-leaderboard" type="button">🏛 VIEW HALL OF GLORY</button>
+          <!-- SANDBOX: dev-only entry. Password protected (see SandboxMode.ts).
+               Visually de-emphasized so it doesn't compete with the primary
+               coin-insert action. Delete this block + the password modal +
+               sandbox CSS when the sandbox feature is no longer wanted. -->
+          <button id="loading-sandbox-entry" type="button" title="Developer testing mode (password protected)">🧪 DEV SANDBOX</button>
+        </div>
+        <div id="loading-tip">
+          <span class="tip-title">⚡ HARD-REFRESH FOR THE LATEST BUILD</span>
+          <span class="tip-row"><b>Mac:</b> <kbd>⌘ Cmd</kbd>+<kbd>⇧ Shift</kbd>+<kbd>R</kbd></span>
+          <span class="tip-row"><b>Win / Linux:</b> <kbd>Ctrl</kbd>+<kbd>⇧ Shift</kbd>+<kbd>R</kbd> (or <kbd>Ctrl</kbd>+<kbd>F5</kbd>)</span>
+        </div>
+      </div>
+    </div>
+    <!-- /loading -->
+    <div id="app">
+      <!-- LEFT side panel: HUD (waves/gold/lives/score) + wave brief.
+           Populated at runtime by UIManager + main.ts -->
+      <div id="left-panel"></div>
+      <!-- CENTER: the play canvas + on-map overlays (boss HP bar,
+           prospect reminder, weather chip) -->
+      <div id="stage-wrap">
+        <div id="combo-alert">⚔ COMBINATION AVAILABLE &mdash; click COMBINE</div>
+      </div>
+      <!-- RIGHT side panel: action buttons (Start / Speed / Pool / Shop
+           / Quests / Codex / Mute) + prospect cards. Populated at runtime -->
+      <div id="right-panel"></div>
+    </div>
+    <!-- 2026-05-22 M1 — MOBILE ROTATE PROMPT. Full-screen overlay shown
+         when a mobile device is in portrait orientation. The game is
+         landscape-only on small screens because the playfield is
+         1216×832 (38:26 ≈ 1.46:1) and the HUD adds two side columns.
+         Hidden on desktop via the media query in <style>. Pure CSS;
+         no JS needed for visibility. -->
+    <div id="mobile-rotate-prompt">
+      <div class="rotate-card">
+        <div class="rotate-icon">📱</div>
+        <div class="rotate-title">ROTATE YOUR DEVICE</div>
+        <div class="rotate-sub">Roman TD plays in landscape — turn your phone sideways to defend Rome</div>
+      </div>
+    </div>
+    <!-- 2026-05-22 UX10 — FIRST-RUN MOBILE ONBOARDING. Inert DOM until
+         main.ts decides to fire it on the first mobile session. Three-
+         card walkthrough (place towers / 2-keep rule / 20-wave goal).
+         Persisted in localStorage so it never fires twice. -->
+    <div id="onboarding-overlay" aria-hidden="true">
+      <div class="ob-card" role="dialog" aria-modal="true" aria-labelledby="ob-title">
+        <div class="ob-step" id="ob-step">STEP 1 OF 3</div>
+        <div class="ob-title" id="ob-title">DEFEND ROME</div>
+        <div class="ob-body" id="ob-body">Tap an empty tile to spend 1 gold and roll a tower. Each round gives you 5 prospects — keep your best 2.</div>
+        <div class="ob-dots">
+          <span class="ob-dot active" id="ob-dot-0"></span>
+          <span class="ob-dot" id="ob-dot-1"></span>
+          <span class="ob-dot" id="ob-dot-2"></span>
+        </div>
+        <div class="ob-controls">
+          <button type="button" class="ob-skip" id="ob-skip">SKIP</button>
+          <button type="button" id="ob-next">NEXT ▶</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

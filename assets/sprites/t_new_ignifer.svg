@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges">
+  <rect width="64" height="64" fill="none"/>
+  <rect x="24" y="6" width="16" height="8" fill="#d66a22"/>
+  <rect x="20" y="14" width="24" height="12" fill="#ffd15a"/>
+  <rect x="24" y="18" width="16" height="8" fill="#231812" opacity="0.5"/>
+  <rect x="18" y="26" width="28" height="22" fill="#6b1e16"/>
+  <rect x="14" y="30" width="8" height="18" fill="#2a1711"/>
+  <rect x="42" y="30" width="8" height="18" fill="#2a1711"/>
+  <rect x="22" y="48" width="8" height="8" fill="#2a1711"/>
+  <rect x="34" y="48" width="8" height="8" fill="#2a1711"/>
+  <rect x="10" y="54" width="44" height="4" fill="#130f0c" opacity="0.5"/>
+  <rect x="28" y="28" width="8" height="14" fill="#d66a22"/>
+  <rect x="30" y="10" width="4" height="4" fill="#fff3c2" opacity="0.8"/>
+  <rect x="50" y="18" width="4" height="30" fill="#d66a22"/>
+  <rect x="50" y="14" width="10" height="4" fill="#ffd15a"/>
+  <title>t_new_ignifer.svg</title>
+</svg>
