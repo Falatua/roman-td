@@ -39,9 +39,9 @@ function bootstrapState() {
 }
 
 describe('Campaign relics', () => {
-  it('ships a full 50-relic randomized campaign pool', () => {
-    expect(CAMPAIGN_RELICS.length).toBe(50);
-    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(50);
+  it('ships a full 56-relic randomized campaign pool', () => {
+    expect(CAMPAIGN_RELICS.length).toBe(56);
+    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(56);
     for (const relic of CAMPAIGN_RELICS) {
       expect(relic.upside.length).toBeGreaterThan(5);
       expect(relic.caveat.length).toBeGreaterThan(5);
@@ -152,6 +152,52 @@ describe('Campaign relics', () => {
     applyCampaignRelic(epicState, 'PATRICIAN_LOCKBOX');
     expect(epicState.lives).toBe(20);
     expect((epicState as any).__pendingRelicItemRarities).toEqual(['EPIC']);
+  });
+
+  it('adds low-stakes relics: small trades with small punishments', () => {
+    // 2026-07-02 — JB: not every relic should be a run-defining gamble.
+    const pilusState = bootstrapState();
+    pilusState.lives = 30;
+    applyCampaignRelic(pilusState, 'PILUS_PLEDGE');
+    expect(pilusState.lives).toBe(25);
+    expect(pilusState.pendingPurchasedTowers).toHaveLength(1);
+    expect(pilusState.pendingPurchasedTowers?.[0].type).toBe(TowerType.PRIMUS_PILUS);
+    expect(pilusState.pendingPurchasedTowers?.[0].tier).toBe(3);
+
+    const loanState = bootstrapState();
+    loanState.gold = 500;
+    applyCampaignRelic(loanState, 'CENTURION_LOAN');
+    expect(loanState.gold).toBe(380);
+    expect(loanState.pendingPurchasedTowers?.[0].type).toBe(TowerType.CENTURION);
+    expect(loanState.pendingPurchasedTowers?.[0].tier).toBe(3);
+
+    const titheState = bootstrapState();
+    titheState.lives = 20;
+    const goldBefore = titheState.gold;
+    applyCampaignRelic(titheState, 'COPPER_TITHE');
+    expect(titheState.gold).toBe(goldBefore + 150);
+    expect(titheState.lives).toBe(17);
+
+    const watchState = bootstrapState();
+    watchState.gold = 500;
+    watchState.lives = 20;
+    applyCampaignRelic(watchState, 'WATCHMANS_DUE');
+    expect(watchState.gold).toBe(400);
+    expect(watchState.lives).toBe(24);
+
+    const scrapState = bootstrapState();
+    scrapState.gold = 500;
+    applyCampaignRelic(scrapState, 'SCRAP_REQUISITION');
+    expect(scrapState.gold).toBe(410);
+    expect((scrapState as any).__pendingRelicItemRarities).toEqual(['RARE']);
+
+    // Affordability gates hold for the small costs too.
+    const brokeState = bootstrapState();
+    brokeState.lives = 5;
+    expect(campaignRelicAffordability(brokeState, 'PILUS_PLEDGE').canAfford).toBe(false);
+    const poorState = bootstrapState();
+    poorState.gold = 80;
+    expect(campaignRelicAffordability(poorState, 'SCRAP_REQUISITION').canAfford).toBe(false);
   });
 
   it('blocks draft relic rewards when the life cost would kill the player', () => {

@@ -53,7 +53,13 @@ export const CAMPAIGN_RELIC_IDS = [
   'VESTAL_ORPHANS',
   'DOUBLE_EPIC_FUNERAL',
   'SKY_TOLL',
-  'SPECULATOR_BRIBE'
+  'SPECULATOR_BRIBE',
+  'PILUS_PLEDGE',
+  'CENTURION_LOAN',
+  'SAGITTARIUS_PACT',
+  'COPPER_TITHE',
+  'WATCHMANS_DUE',
+  'SCRAP_REQUISITION'
 ] as const;
 
 export type CampaignRelicId = typeof CAMPAIGN_RELIC_IDS[number];
@@ -525,6 +531,63 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     upside: 'Immediately gain a Tier-5 Speculator to place.',
     caveat: 'Lose 160 gold immediately.',
     effects: ['Gain a Tier-5 SPECULATOR now.', 'Lose 160 gold now.']
+  },
+  // 2026-07-02 — low-stakes relic family. Small, cheap bargains with modest
+  // upsides and modest punishments, so not every relic offer is a
+  // run-defining gamble. Same claim-time machinery as the bigger bargains.
+  {
+    id: 'PILUS_PLEDGE',
+    name: 'Pilus Pledge',
+    eyebrow: 'SMALL OATH',
+    blurb: 'A first spear signs on for one campaign. The gate roster gets five names shorter.',
+    upside: 'Immediately gain a Tier-3 Primus Pilus to place.',
+    caveat: 'Lose 5 lives immediately.',
+    effects: ['Gain a Tier-3 PRIMUS PILUS now.', 'Lose 5 lives now.']
+  },
+  {
+    id: 'CENTURION_LOAN',
+    name: 'Centurion Loan',
+    eyebrow: 'MODEST HIRE',
+    blurb: 'A steady centurion works for steady coin. Nothing dramatic. That is the point.',
+    upside: 'Immediately gain a Tier-3 Centurion to place.',
+    caveat: 'Lose 120 gold immediately.',
+    effects: ['Gain a Tier-3 CENTURION now.', 'Lose 120 gold now.']
+  },
+  {
+    id: 'SAGITTARIUS_PACT',
+    name: 'Sagittarius Pact',
+    eyebrow: 'SMALL SKY WATCH',
+    blurb: 'One archer takes the flyer watch, and one street stops answering the census.',
+    upside: 'Immediately gain a Tier-3 Sagittarius to place.',
+    caveat: 'Lose 5 lives immediately.',
+    effects: ['Gain a Tier-3 SAGITTARIUS now.', 'Lose 5 lives now.']
+  },
+  {
+    id: 'COPPER_TITHE',
+    name: 'Copper Tithe',
+    eyebrow: 'POCKET CHANGE',
+    blurb: 'A minor tax on a minor district. Rome barely notices. The district notices.',
+    upside: 'Gain 150 gold immediately.',
+    caveat: 'Lose 3 lives immediately.',
+    effects: ['Gain 150 gold now.', 'Lose 3 lives now.']
+  },
+  {
+    id: 'WATCHMANS_DUE',
+    name: "Watchman's Due",
+    eyebrow: 'PAID SENTRIES',
+    blurb: 'Four extra watchmen take the wall for honest pay. The treasury sighs and signs.',
+    upside: 'Gain 4 lives immediately.',
+    caveat: 'Lose 100 gold immediately.',
+    effects: ['Gain 4 lives now.', 'Lose 100 gold now.']
+  },
+  {
+    id: 'SCRAP_REQUISITION',
+    name: 'Scrap Requisition',
+    eyebrow: 'SURPLUS CRATE',
+    blurb: 'The armory sells last season\'s surplus. Serviceable, unglamorous, and priced accordingly.',
+    upside: 'Immediately gain a random Rare item.',
+    caveat: 'Lose 90 gold immediately.',
+    effects: ['Gain a random Rare item now.', 'Lose 90 gold now.']
   }
 ];
 
@@ -537,7 +600,10 @@ const CAMPAIGN_RELIC_GOLD_COSTS: Partial<Record<CampaignRelicId, number>> = {
   ONAGER_INDENTURE: 250,
   PRAETORIAN_STIPEND: 375,
   SKY_TOLL: 240,
-  SPECULATOR_BRIBE: 160
+  SPECULATOR_BRIBE: 160,
+  CENTURION_LOAN: 120,
+  WATCHMANS_DUE: 100,
+  SCRAP_REQUISITION: 90
 };
 
 const CAMPAIGN_RELIC_LIFE_COSTS: Partial<Record<CampaignRelicId, number>> = {
@@ -551,7 +617,10 @@ const CAMPAIGN_RELIC_LIFE_COSTS: Partial<Record<CampaignRelicId, number>> = {
   FRONTIER_RECRUITS: 12,
   AGRICOLA_LEVY: 20,
   VESTAL_ORPHANS: 10,
-  DOUBLE_EPIC_FUNERAL: 16
+  DOUBLE_EPIC_FUNERAL: 16,
+  PILUS_PLEDGE: 5,
+  SAGITTARIUS_PACT: 5,
+  COPPER_TITHE: 3
 };
 
 export function campaignRelicById(id: CampaignRelicId | string | null | undefined): CampaignRelicDef | null {
@@ -781,6 +850,31 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   if (id === 'SPECULATOR_BRIBE') {
     queueRelicTower(state, TowerType.SPECULATOR, 5);
     sacrificeRelicGold(state, 160);
+  }
+  // 2026-07-02 — low-stakes relic family: small trades, small costs.
+  if (id === 'PILUS_PLEDGE') {
+    queueRelicTower(state, TowerType.PRIMUS_PILUS, 3);
+    sacrificeRelicLives(state, 5);
+  }
+  if (id === 'CENTURION_LOAN') {
+    queueRelicTower(state, TowerType.CENTURION, 3);
+    sacrificeRelicGold(state, 120);
+  }
+  if (id === 'SAGITTARIUS_PACT') {
+    queueRelicTower(state, TowerType.SAGITTARIUS, 3);
+    sacrificeRelicLives(state, 5);
+  }
+  if (id === 'COPPER_TITHE') {
+    state.gold += 150;
+    sacrificeRelicLives(state, 3);
+  }
+  if (id === 'WATCHMANS_DUE') {
+    state.lives = (state.lives ?? 0) + 4;
+    sacrificeRelicGold(state, 100);
+  }
+  if (id === 'SCRAP_REQUISITION') {
+    queuePendingRelicItem(state, 'RARE');
+    sacrificeRelicGold(state, 90);
   }
   state.hint = `${def.name} claimed. ${def.upside} Caveat: ${def.caveat}`;
   return true;
