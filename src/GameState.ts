@@ -111,8 +111,8 @@ export interface GameStateShape {
   combosBuilt?: number;
   combosBuiltUniqueTypes?: string[];
   stonesPlaced?: number;
-  // Mercator persistent tower offers — when a Mercator visits, three random
-  // tower offers are generated. Player can buy one and a "purchasedTower"
+  // Mercator persistent tower offers — when a Mercator visits, eight random
+  // T5 base tower offers are generated. Player can buy one and a "purchasedTower"
   // gets queued for placement on the next empty-tile click.
   mercatorTowerOffers?: { type: string; tier: number; price: number }[];
   // QUEUE of towers waiting to be placed. Each empty-tile click pops the

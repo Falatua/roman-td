@@ -1020,7 +1020,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   livesRow.appendChild(buyLifeBtn);
   contentRoot.appendChild(livesRow);
 
-  // ─── Mercator: 3 random tower offers ────────────────────────────────────
+  // ─── Mercator: random T5 base tower offers ───────────────────────────────
   if (shop.type === 'MERCATOR' && shop.towerOffers && shop.towerOffers.length > 0) {
     const towerHeader = document.createElement('div');
     towerHeader.style.cssText = `margin-top:14px;padding-bottom:4px;border-bottom:1px solid #5a4a30;color:#d4af37;font-weight:bold;letter-spacing:2px`;
@@ -1028,7 +1028,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
     contentRoot.appendChild(towerHeader);
     const tip = document.createElement('div');
     tip.style.cssText = `font-size:10px;color:#cdb98a;margin:4px 0 8px;line-height:1.4`;
-    tip.innerHTML = `Buy a tower to fill a recipe gap. Tier offers scale with your wave. Random refresh next Mercator visit. <b style="color:#cc6666">Recipe-only apex / omega combos (${recipeOnlyComboNames()}) are never offered — earn them through crafting.</b>`;
+    tip.innerHTML = `Buy a T5 base tower to fill a recipe gap. Random refresh next Mercator visit. <b style="color:#cc6666">Recipe-only apex / omega combos (${recipeOnlyComboNames()}) are never offered — earn them through crafting.</b>`;
     contentRoot.appendChild(tip);
     const tList = document.createElement('div');
     tList.style.cssText = `display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;`;

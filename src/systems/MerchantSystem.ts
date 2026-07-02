@@ -136,7 +136,7 @@ export interface ShopState {
   livesPrice: number;
   livesMaxThisVisit: number;
   livesBoughtThisVisit: number;
-  // Mercator-only: 3 random tower offers, tier-weighted by wave.
+  // Mercator-only: random T5 base tower offers.
   towerOffers?: MercatorTowerOffer[];
   // Mercator-only: Fortuna's Wheel — 500g RNG roll on any combo tower
   // (T2-T5, all 34 combos are in the pool with uniform odds). Tracked
@@ -148,7 +148,7 @@ export interface ShopState {
 
 // Mercator tower offerings (2026-05): Mercator now ONLY stocks T5 towers
 // and every offer has a flat armory price. The player still gets variety in tower
-// TYPE (the pool below picks 3 distinct types per visit) — they just
+// TYPE (the pool below picks 8 distinct types per visit) — they just
 // always arrive at apex tier and at the same price tag.
 // 2026-06-23 — JB set T5 Mercator armory towers to 250g. Champions stay
 // at 500g because they feed the Mars Victor path.
@@ -217,8 +217,8 @@ export function buildMercatorTowerOffers(wave: number, count = 5, options: Merca
   // adds one to MERCATOR_TOWER_POOL, this filter blocks it from
   // reaching the player. Apex towers must be crafted, not bought.
   const eligible = MERCATOR_TOWER_POOL.filter(id => !FORTUNA_APEX_BLOCKLIST.has(id));
-  // Fill the rest with 3 random T5 towers (champions already took 6 slots).
-  const randomCount = 3;
+  // Fill the rest with 8 random T5 base towers (champions already took 6 slots).
+  const randomCount = 8;
   const targetCount = offers.length + randomCount;
   while (offers.length < targetCount && tries++ < 50) {
     const type = eligible[Math.floor(Math.random() * eligible.length)];

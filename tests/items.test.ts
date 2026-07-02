@@ -4,6 +4,7 @@ import { itemFamily, canEquipItemFamily } from '../src/systems/ItemRules';
 import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, rollCommanderDrop, isGuaranteedEpicDropEnemy, itemLootPoolCoverage } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
+import towersData from '../src/data/towers.json';
 import { LOOT_DROP_RATES } from '../src/constants';
 
 describe('Item families', () => {
@@ -278,8 +279,10 @@ describe('Merchant — Mercator stock', () => {
   it('prices Mercator T5 towers as campaign investments', () => {
     const towers = buildMercatorTowerOffers(10, 5);
     const armory = towers.filter(o => !o.type.startsWith('CHAMPION_'));
-    expect(armory).toHaveLength(3);
+    expect(armory).toHaveLength(8);
     expect(armory.every(o => o.tier === 5 && o.price === 250)).toBe(true);
+    expect(new Set(armory.map(o => o.type)).size).toBe(8);
+    expect(armory.every(o => (towersData as any)[o.type]?.kind === 'BASE')).toBe(true);
   });
 });
 
