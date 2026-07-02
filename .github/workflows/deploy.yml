@@ -30,6 +30,13 @@ permissions:
   pages: write
   id-token: write
 
+# 2026-07-02: GitHub-hosted runners are forcing some JavaScript actions to
+# Node 24 while the official Pages deploy action still warns from a Node 20
+# runtime path. This temporary opt-out keeps Pages deploys on the supported
+# runtime until GitHub finishes the action transition.
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
 # Cancel any in-flight deploy when a newer commit lands — only the latest
 # main commit should ever be live.
 concurrency:
