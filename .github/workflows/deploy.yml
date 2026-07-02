@@ -30,6 +30,14 @@ permissions:
   pages: write
   id-token: write
 
+# 2026-07-02: GitHub-hosted runners now force many JavaScript actions to
+# Node 24, while the official Pages deploy action still emits Node 20 runtime
+# deprecation warnings and can cancel deployments under the forced runtime.
+# GitHub's migration notice allows this temporary opt-out until the official
+# Pages actions finish their Node 24 transition.
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
 # Cancel any in-flight deploy when a newer commit lands — only the latest
 # main commit should ever be live.
 concurrency:
