@@ -60,10 +60,12 @@ const EQUIP_MODE: Record<string, EquipMode> = {
   AUXILIARY_SLING: 'RANGED',         // 2026-05-18: Epic ranged sling
   CONCUSSIVE_WARHEAD: 'RANGED',      // 2026 v2: legendary ranged splash
   EXECUTIONERS_FALX: 'MELEE',        // 2026 v2: legendary melee cleave
-  // 2026-07-02 — bug fix: FALX_BLADE's effect text has always read
-  // "MELEE ONLY: grants CLEAVE" but the item was never added to this
-  // map, so it defaulted to ANY and could be equipped on ranged towers.
-  FALX_BLADE: 'MELEE'
+  // 2026-07-02 — bug fix: these two items' effect text has always read
+  // "MELEE ONLY" / "RANGED ONLY" but they were never added to this map,
+  // so they defaulted to ANY and equipped on the wrong attack class.
+  // A feature_audit test now scans item text so this can't recur.
+  FALX_BLADE: 'MELEE',
+  VOLLEY_QUIVER: 'RANGED'
   // SERPENT_AMULET and WITCHS_VENOM omitted → default ANY (equip on any tower).
 };
 
