@@ -473,9 +473,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   }
 
   if (caesarAuraScale > 0) {
-    // 2026-06-25 — slight buff: global +10%→+13% dmg & speed (DIVUS +26%).
-    globalDmgBonus += 0.13 * caesarAuraScale;
-    globalSpeedMult *= 1 + 0.13 * caesarAuraScale;
+    // 2026-07-02 — buffed +13%→+20% dmg & speed (DIVUS +40%).
+    globalDmgBonus += 0.20 * caesarAuraScale;
+    globalSpeedMult *= 1 + 0.20 * caesarAuraScale;
   }
   // 2026-06-25 — slight buff: Scipio vs-boss +25%→+33% (DIVUS +66%).
   const scipioBossDamageMult = 1 + 0.33 * scipioAuraScale;
