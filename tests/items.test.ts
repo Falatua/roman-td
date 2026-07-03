@@ -284,6 +284,22 @@ describe('Merchant — Mercator stock', () => {
     expect(new Set(armory.map(o => o.type)).size).toBe(8);
     expect(armory.every(o => (towersData as any)[o.type]?.kind === 'BASE')).toBe(true);
   });
+
+  it('re-randomizes the T5 armory: excludeTypes bars last visit’s lineup', () => {
+    // 2026-07-03 — consecutive Mercator visits must not repeat T5 towers.
+    // main.ts passes the previous visit's 8 random types as excludeTypes.
+    const first = buildMercatorTowerOffers(9, 5)
+      .filter(o => !o.type.startsWith('CHAMPION_'))
+      .map(o => o.type);
+    expect(first).toHaveLength(8);
+    for (let i = 0; i < 10; i++) {
+      const second = buildMercatorTowerOffers(14, 5, { excludeTypes: first })
+        .filter(o => !o.type.startsWith('CHAMPION_'))
+        .map(o => o.type);
+      expect(second).toHaveLength(8);
+      for (const t of second) expect(first).not.toContain(t);
+    }
+  });
 });
 
 describe('Merchant — wave timing predicates', () => {

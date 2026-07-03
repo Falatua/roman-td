@@ -16,7 +16,7 @@ import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './s
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
 import { createInventory, maybeRollLootOnKill, premiumDropRoll, rollBossDrop, rollCommanderDrop, rollEpicDrop, rollRareDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
-import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState } from './systems/MerchantSystem';
+import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_TYPES } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
@@ -141,6 +141,18 @@ async function boot() {
   let gateShop: ShopState | null = null;
   let mercatorShop: ShopState | null = null;
   let mercatorActive = false;
+  // 2026-07-03 — single chokepoint for (re)stocking the Mercator. Passes the
+  // PREVIOUS visit's random T5 lineup as excludeTypes so each stop rolls a
+  // genuinely fresh armory (no back-to-back repeats), then remembers the new
+  // lineup on state (survives save/load) for the next visit's exclusion.
+  function restockMercator(): void {
+    mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
+    mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, {
+      activeHeroId: state.activeHeroId,
+      excludeTypes: (state.mercatorTowerOffers ?? []).map(o => o.type)
+    });
+    state.mercatorTowerOffers = mercatorShop.towerOffers.filter(o => !CHAMPION_TYPES.includes(o.type));
+  }
   let bossRuntime = createBossRuntime();
   let waveStartTick = 0;
   let bossLegendaryDropped = false;
@@ -4804,11 +4816,8 @@ async function boot() {
         showActionBlockedToast('The Mercator only trades between waves. Survive the current wave first.');
         return;
       }
-      if (!mercatorShop) {
-        mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
-        mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, { activeHeroId: state.activeHeroId });
-      }
-      renderShop(app, mercatorShop, state, inventory, {
+      if (!mercatorShop) restockMercator();
+      renderShop(app, mercatorShop!, state, inventory, {
         onClose: () => document.getElementById('shop-modal')?.remove()
       });
     },
@@ -6079,11 +6088,8 @@ async function boot() {
     else if (k === 'm') {
       // M: open the Mercator if he's in town. No-op otherwise.
       if (mercatorActive && state.phase === GamePhase.BUILD_PHASE) {
-        if (!mercatorShop) {
-          mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
-          mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, { activeHeroId: state.activeHeroId });
-        }
-        renderShop(app, mercatorShop, state, inventory, { onClose: () => document.getElementById('shop-modal')?.remove() });
+        if (!mercatorShop) restockMercator();
+        renderShop(app, mercatorShop!, state, inventory, { onClose: () => document.getElementById('shop-modal')?.remove() });
       }
     }
     // 2026-05-19 — SPACE start-wave hotkey removed. Players were
@@ -7441,19 +7447,15 @@ async function boot() {
         // next wave, handled at line ~1509).
         if (isMercatorWave(state.wave)) {
           mercatorActive = true;
-          mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
-          mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, { activeHeroId: state.activeHeroId });
+          restockMercator();
           ui.setMercatorAvailable(true);
           state.hint = `★ Mercator arrives — wave ${state.wave + 1} boss imminent. Click ★ MERCATOR for his stock, or hit SHOP for the gate. Both vendors are open this round.`;
           // Show the big floating banner so the player can't miss it.
           const stage = document.getElementById('stage-wrap');
           if (stage) showMercatorBanner(stage, state.wave, {
             onView: () => {
-              if (!mercatorShop) {
-                mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
-                mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, { activeHeroId: state.activeHeroId });
-              }
-              renderShop(app, mercatorShop, state, inventory, {
+              if (!mercatorShop) restockMercator();
+              renderShop(app, mercatorShop!, state, inventory, {
                 onClose: () => document.getElementById('shop-modal')?.remove()
               });
             }
