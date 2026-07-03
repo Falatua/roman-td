@@ -10,6 +10,7 @@ import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './sys
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
 import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards } from './systems/EnemySystem';
 import { tickTraps, placeTrap, trapOwned, TRAP_DEFS, clearPlacedTrapsForWaveEnd } from './systems/TrapSystem';
+import { placeRampart, rampartOwned, RAMPART_LENGTH } from './systems/RampartSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } from './systems/WaveManager';
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
@@ -5715,6 +5716,31 @@ async function boot() {
       }
     }
 
+    // 2026-07-02 — STONE RAMPART placement: when a rampart is armed, an
+    // empty-tile click drops 5 wall stones in a line centered on the click.
+    // Build-phase only (stones reshape the path); validated through the same
+    // buildGroundPath chokepoint as single stones so Rome can't be sealed.
+    {
+      const selRamp = state.selectedRampart;
+      if (selRamp && rampartOwned(state, selRamp) > 0 && tile === TileType.EMPTY) {
+        if (!isPreWavePhase()) {
+          state.hint = 'Ramparts can only be placed during the build phase.';
+          return;
+        }
+        if (placeRampart(state, col, row, selRamp)) {
+          renderer.drawStatic(state);
+          const left = rampartOwned(state, selRamp);
+          state.hint = left > 0
+            ? `Rampart raised — ${RAMPART_LENGTH} stones set. ${left} more armed; click to place again.`
+            : 'Rampart raised — 5 stones set. That was your last one of this orientation.';
+          if (left <= 0) state.selectedRampart = null;
+          tickQuests();
+        } else {
+          state.hint = 'No room — all 5 rampart tiles must be empty and the road must stay open.';
+        }
+        return;
+      }
+    }
     // 2026 v2 — TRAP placement takes precedence: when a trap is selected, the
     // next empty-tile click drops it (consuming 1). Traps don't block the path.
     {

@@ -68,6 +68,12 @@ export interface GameStateShape {
   bestDpsCheck?: number;
   placedTraps?: { id: string; type: string; x: number; y: number; col: number; row: number; born: number; color: number; spriteKey: string; pulse: boolean; nextReadyTick?: number }[];
   selectedTrapType?: string | null;
+  // 2026-07-02 — Stone Ramparts (RampartSystem): purchasable 5-tile stone
+  // barrier lines, hard-capped at 5 buys per run. Inventory keyed by
+  // orientation; selectedRampart arms placement like selectedTrapType.
+  rampartsPurchased?: number;
+  rampartInventory?: { H: number; V: number };
+  selectedRampart?: 'H' | 'V' | null;
   flyerPath: { x: number; y: number }[];
   // Game-over flag for animation
   gameOverAt: number;       // tick when lives reached 0
@@ -293,6 +299,9 @@ export function createGameState(): GameStateShape {
     trapsPlaced: 0,
     placedTraps: [],
     selectedTrapType: null,
+    rampartsPurchased: 0,
+    rampartInventory: { H: 0, V: 0 },
+    selectedRampart: null,
     flyerPath: [],
     gameOverAt: -1,
     victoryAt: -1,

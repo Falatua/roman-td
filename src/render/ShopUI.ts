@@ -1,5 +1,6 @@
 import { ShopState, FORTUNA_APEX_BLOCKLIST, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds } from '../systems/MerchantSystem';
 import { TRAP_DEFS, TRAP_IDS, armTrapFromInventory, buyTraps, trapPrice } from '../systems/TrapSystem';
+import { RAMPART_COST, RAMPART_MAX_PER_RUN, buyRampart, rampartOwned, rampartsRemainingThisRun } from '../systems/RampartSystem';
 import { GameStateShape } from '../GameState';
 import { INVENTORY_SIZE, ECONOMY } from '../constants';
 import { SFX } from './AudioManager';
@@ -580,6 +581,75 @@ function renderMercatorShop(
     }
     trapSection.appendChild(tg);
     body.appendChild(trapSection);
+  }
+
+  // ─── STONE RAMPARTS (2026-07-02) — 5-tile barrier lines for mazing ────
+  // Same buy → arm → place flow as traps. Placed tiles are ordinary wall
+  // stones (identical art + sell rules); hard cap 5 purchases per campaign.
+  {
+    const rampSection = document.createElement('div');
+    const rampTitle = document.createElement('div');
+    rampTitle.className = 'merc-section-title';
+    const left = rampartsRemainingThisRun(state);
+    rampTitle.innerHTML = `<span>▦ STONE RAMPARTS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">${left} of ${RAMPART_MAX_PER_RUN} left this campaign</span>`;
+    rampSection.appendChild(rampTitle);
+    const rNote = document.createElement('div');
+    rNote.className = 'merc-note';
+    rNote.innerHTML = `A straight line of <b style="color:#ffcc44">5 wall stones</b> placed in one click — pure architecture for your maze. No damage, blocks the path like any stone, sells back like any stone. Build phase only.`;
+    rampSection.appendChild(rNote);
+    const rg = document.createElement('div');
+    rg.style.cssText = `display:grid;grid-template-columns:1fr 1fr;gap:8px;`;
+    const rampCards: Array<{ orient: 'H' | 'V'; name: string; blocks: string }> = [
+      { orient: 'H', name: 'Horizontal Rampart', blocks: `<div style="display:flex;gap:2px">${'<div style="width:9px;height:9px;background:#8a8a92;border:1px solid #3a3a40"></div>'.repeat(5)}</div>` },
+      { orient: 'V', name: 'Vertical Rampart', blocks: `<div style="display:flex;flex-direction:column;gap:2px">${'<div style="width:9px;height:9px;background:#8a8a92;border:1px solid #3a3a40"></div>'.repeat(5)}</div>` }
+    ];
+    for (const rc of rampCards) {
+      const owned = rampartOwned(state, rc.orient);
+      const armed = state.selectedRampart === rc.orient;
+      const card = document.createElement('div');
+      card.style.cssText = `border:2px solid ${armed ? '#ffe066' : '#8a8a92'};padding:8px 6px;background:#0c0a08;display:flex;flex-direction:column;gap:4px;text-align:center;align-items:center;`;
+      card.innerHTML = `
+        <div style="width:54px;height:54px;border:1px solid #8a8a92;background:#1a1410;display:flex;align-items:center;justify-content:center">${rc.blocks}</div>
+        <div style="color:#fff8e0;font-size:11px;font-weight:bold;line-height:1.2">${rc.name}</div>
+        <div style="font-size:8.5px;color:#cdb98a;line-height:1.3">5 stones in a ${rc.orient === 'H' ? 'row' : 'column'}, centered on the tile you click.</div>
+        <div style="color:#f0c040;font-size:11px;font-weight:bold">${RAMPART_COST}g${owned > 0 ? ` · <span style="color:#88ff88">x${owned}</span>` : ''}</div>`;
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex;gap:4px;width:100%;margin-top:3px`;
+      const buyBtn = document.createElement('button');
+      buyBtn.className = 'merc-buy';
+      buyBtn.textContent = left <= 0 ? 'SOLD OUT' : 'BUY';
+      buyBtn.disabled = left <= 0;
+      buyBtn.style.cssText = `flex:1;background:${left <= 0 ? '#2a2420' : '#3a5520'};color:#e8d6a8;cursor:${left <= 0 ? 'not-allowed' : 'pointer'};font-size:10px`;
+      buyBtn.onclick = () => {
+        const spent = buyRampart(state, rc.orient);
+        if (spent <= 0) {
+          if (rampartsRemainingThisRun(state) <= 0) state.hint = 'Rampart quota exhausted — 5 per campaign.';
+          else (window as any).__showInsufficientGoldToast?.(RAMPART_COST);
+          return;
+        }
+        state.hint = `Bought ${rc.name}. Click PLACE to arm it, then click a tile.`;
+        SFX.buy();
+        refresh();
+      };
+      row.appendChild(buyBtn);
+      if (owned > 0) {
+        const armBtn = document.createElement('button');
+        armBtn.className = 'merc-buy';
+        armBtn.textContent = armed ? 'ARMED' : 'PLACE';
+        armBtn.style.cssText = `flex:1;background:${armed ? '#5a4a10' : '#4a3a24'};color:#ffe066;cursor:pointer;font-size:10px`;
+        armBtn.onclick = () => {
+          state.selectedRampart = rc.orient;
+          state.selectedTrapType = null;   // rampart placement supersedes armed traps
+          state.hint = `${rc.name} armed. Click an empty tile — 5 stones drop in a ${rc.orient === 'H' ? 'row' : 'column'} centered there.`;
+          hooks.onClose();
+        };
+        row.appendChild(armBtn);
+      }
+      card.appendChild(row);
+      rg.appendChild(card);
+    }
+    rampSection.appendChild(rg);
+    body.appendChild(rampSection);
   }
 
   // ─── SECTION 2: ITEMS (grouped by rarity bucket so player sees the
