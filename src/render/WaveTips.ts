@@ -77,6 +77,21 @@ const TIPS: WaveTip[] = [
     title: 'USE DPS CHECK',
     body: 'Right-side controls (under ⋯ MORE on mobile). Spawns a training dummy that walks the full path and tallies your maze\'s total damage output — risk-free, no cost. Spot weak spots BEFORE the real wave costs you lives.',
   },
+  // 2026-07-03 — W8 (Stone Ramparts) + W9 (Campaign Relics): one-time
+  // explainers for the two newest systems, timed to when they start
+  // mattering (ramparts once gold allows; relics before the W10 offer).
+  {
+    wave: 8,
+    icon: '▦',
+    title: 'STONE RAMPARTS',
+    body: 'The shop sells STONE RAMPARTS (20g, max 5 per campaign): a line of 5 wall stones placed in ONE click. Buy → hit PLACE to arm it → press R (or tap the ROTATE chip) to spin it horizontal, vertical, or diagonal both ways → click a tile. Diagonal walls block enemies just as hard as straight ones.',
+  },
+  {
+    wave: 9,
+    icon: '⚖',
+    title: 'BARGAIN WITH FATE',
+    body: 'After every 5th wave (W5/10/15/20/25) Rome offers 4 CAMPAIGN RELICS — permanent pacts with an upside AND a price. Some are run-defining gambles, some are small trades (a tower for a few lives). You can always REJECT all four. Claimed relics stack for the rest of the run.',
+  },
   {
     wave: 10,
     icon: '⚖',
