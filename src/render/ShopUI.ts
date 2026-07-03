@@ -1,6 +1,6 @@
 import { ShopState, FORTUNA_APEX_BLOCKLIST, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds } from '../systems/MerchantSystem';
 import { TRAP_DEFS, TRAP_IDS, armTrapFromInventory, buyTraps, trapPrice } from '../systems/TrapSystem';
-import { RAMPART_COST, RAMPART_MAX_PER_RUN, buyRampart, rampartOwned, rampartsRemainingThisRun } from '../systems/RampartSystem';
+import { RAMPART_COST, RAMPART_MAX_PER_RUN, buyRampart, rampartsOwned, rampartsRemainingThisRun } from '../systems/RampartSystem';
 import { GameStateShape } from '../GameState';
 import { INVENTORY_SIZE, ECONOMY } from '../constants';
 import { SFX } from './AudioManager';
@@ -351,67 +351,56 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
   rampSection.appendChild(rampTitle);
   const rNote = document.createElement('div');
   rNote.style.cssText = `font-size:10px;color:#cdb98a;line-height:1.4;margin-bottom:8px;`;
-  rNote.innerHTML = `A straight line of <b style="color:#ffcc44">5 wall stones</b> placed in one click — pure architecture for your maze. No damage, blocks the path like any stone, sells back like any stone. Build phase only.`;
+  rNote.innerHTML = `A straight line of <b style="color:#ffcc44">5 wall stones</b> placed in one click — pure architecture for your maze. While placing, press <b style="color:#ffe066">R</b> (or tap ROTATE) to spin it: horizontal — vertical | diagonal ↘ ↗. No damage, blocks the path like any stone, sells back like any stone. Build phase only.`;
   rampSection.appendChild(rNote);
-  const rg = document.createElement('div');
-  rg.style.cssText = `display:grid;grid-template-columns:1fr 1fr;gap:8px;`;
-  // Card portraits use the real RAMPART_STRIP sprite (Higgsfield i2i off
-  // m_stone_block.png) — rotated 90° via CSS for the vertical card. Falls
-  // back to simple CSS blocks if the texture hasn't loaded yet.
+  // Single generic card — orientation is chosen at placement time (2026-07-03).
+  // Portrait uses the real RAMPART_STRIP sprite (Higgsfield i2i off
+  // m_stone_block.png); falls back to CSS blocks pre-texture-load.
   const stripSrc = imgSrcFromTex('RAMPART_STRIP');
-  const stripImg = (rot: boolean) => stripSrc
-    ? `<img src="${stripSrc}" style="width:48px;height:10px;image-rendering:pixelated;${rot ? 'transform:rotate(90deg);' : ''}"/>`
-    : (rot
-      ? `<div style="display:flex;flex-direction:column;gap:2px">${'<div style="width:9px;height:9px;background:#8a8a92;border:1px solid #3a3a40"></div>'.repeat(5)}</div>`
-      : `<div style="display:flex;gap:2px">${'<div style="width:9px;height:9px;background:#8a8a92;border:1px solid #3a3a40"></div>'.repeat(5)}</div>`);
-  const rampCards: Array<{ orient: 'H' | 'V'; name: string; blocks: string }> = [
-    { orient: 'H', name: 'Horizontal Rampart', blocks: stripImg(false) },
-    { orient: 'V', name: 'Vertical Rampart', blocks: stripImg(true) }
-  ];
-  for (const rc of rampCards) {
-    const owned = rampartOwned(state, rc.orient);
-    const armed = state.selectedRampart === rc.orient;
-    const card = document.createElement('div');
-    card.style.cssText = `border:2px solid ${armed ? '#ffe066' : '#8a8a92'};padding:8px 6px;background:#0c0a08;display:flex;flex-direction:column;gap:4px;text-align:center;align-items:center;`;
-    card.innerHTML = `
-      <div style="width:54px;height:54px;border:1px solid #8a8a92;background:#1a1410;display:flex;align-items:center;justify-content:center">${rc.blocks}</div>
-      <div style="color:#fff8e0;font-size:11px;font-weight:bold;line-height:1.2">${rc.name}</div>
-      <div style="font-size:8.5px;color:#cdb98a;line-height:1.3">5 stones in a ${rc.orient === 'H' ? 'row' : 'column'}, centered on the tile you click.</div>
-      <div style="color:#f0c040;font-size:11px;font-weight:bold">${RAMPART_COST}g${owned > 0 ? ` · <span style="color:#88ff88">x${owned}</span>` : ''}</div>`;
-    const row = document.createElement('div');
-    row.style.cssText = `display:flex;gap:4px;width:100%;margin-top:3px`;
-    const buyBtn = document.createElement('button');
-    buyBtn.textContent = left <= 0 ? 'SOLD OUT' : 'BUY';
-    buyBtn.disabled = left <= 0;
-    buyBtn.style.cssText = `flex:1;background:${left <= 0 ? '#2a2420' : '#3a5520'};color:#e8d6a8;border:1px solid #1a1410;padding:4px 0;cursor:${left <= 0 ? 'not-allowed' : 'pointer'};font-size:10px;font-family:inherit`;
-    buyBtn.onclick = () => {
-      const spent = buyRampart(state, rc.orient);
-      if (spent <= 0) {
-        if (rampartsRemainingThisRun(state) <= 0) state.hint = 'Rampart quota exhausted — 5 per campaign.';
-        else (window as any).__showInsufficientGoldToast?.(RAMPART_COST);
-        return;
-      }
-      state.hint = `Bought ${rc.name}. Click PLACE to arm it, then click a tile.`;
-      SFX.buy();
-      refresh();
-    };
-    row.appendChild(buyBtn);
-    if (owned > 0) {
-      const armBtn = document.createElement('button');
-      armBtn.textContent = armed ? 'ARMED' : 'PLACE';
-      armBtn.style.cssText = `flex:1;background:${armed ? '#5a4a10' : '#4a3a24'};color:#ffe066;border:1px solid #1a1410;padding:4px 0;cursor:pointer;font-size:10px;font-family:inherit`;
-      armBtn.onclick = () => {
-        state.selectedRampart = rc.orient;
-        state.selectedTrapType = null;   // rampart placement supersedes armed traps
-        state.hint = `${rc.name} armed. Click an empty tile — 5 stones drop in a ${rc.orient === 'H' ? 'row' : 'column'} centered there.`;
-        onClose();
-      };
-      row.appendChild(armBtn);
+  const portrait = stripSrc
+    ? `<img src="${stripSrc}" style="width:48px;height:10px;image-rendering:pixelated;"/>`
+    : `<div style="display:flex;gap:2px">${'<div style="width:9px;height:9px;background:#8a8a92;border:1px solid #3a3a40"></div>'.repeat(5)}</div>`;
+  const owned = rampartsOwned(state);
+  const armed = !!state.selectedRampart;
+  const card = document.createElement('div');
+  card.style.cssText = `border:2px solid ${armed ? '#ffe066' : '#8a8a92'};padding:8px 6px;background:#0c0a08;display:flex;flex-direction:column;gap:4px;text-align:center;align-items:center;`;
+  card.innerHTML = `
+    <div style="width:54px;height:54px;border:1px solid #8a8a92;background:#1a1410;display:flex;align-items:center;justify-content:center">${portrait}</div>
+    <div style="color:#fff8e0;font-size:11px;font-weight:bold;line-height:1.2">Stone Rampart</div>
+    <div style="font-size:8.5px;color:#cdb98a;line-height:1.3">5 stones in a line, centered on the tile you click. Rotate while placing (R).</div>
+    <div style="color:#f0c040;font-size:11px;font-weight:bold">${RAMPART_COST}g${owned > 0 ? ` · <span style="color:#88ff88">x${owned}</span>` : ''}</div>`;
+  const row = document.createElement('div');
+  row.style.cssText = `display:flex;gap:4px;width:100%;margin-top:3px`;
+  const buyBtn = document.createElement('button');
+  buyBtn.textContent = left <= 0 ? 'SOLD OUT' : 'BUY';
+  buyBtn.disabled = left <= 0;
+  buyBtn.style.cssText = `flex:1;background:${left <= 0 ? '#2a2420' : '#3a5520'};color:#e8d6a8;border:1px solid #1a1410;padding:4px 0;cursor:${left <= 0 ? 'not-allowed' : 'pointer'};font-size:10px;font-family:inherit`;
+  buyBtn.onclick = () => {
+    const spent = buyRampart(state);
+    if (spent <= 0) {
+      if (rampartsRemainingThisRun(state) <= 0) state.hint = 'Rampart quota exhausted — 5 per campaign.';
+      else (window as any).__showInsufficientGoldToast?.(RAMPART_COST);
+      return;
     }
-    card.appendChild(row);
-    rg.appendChild(card);
+    state.hint = 'Bought a Stone Rampart. Click PLACE to arm it, then click a tile.';
+    SFX.buy();
+    refresh();
+  };
+  row.appendChild(buyBtn);
+  if (owned > 0) {
+    const armBtn = document.createElement('button');
+    armBtn.textContent = armed ? 'ARMED' : 'PLACE';
+    armBtn.style.cssText = `flex:1;background:${armed ? '#5a4a10' : '#4a3a24'};color:#ffe066;border:1px solid #1a1410;padding:4px 0;cursor:pointer;font-size:10px;font-family:inherit`;
+    armBtn.onclick = () => {
+      state.selectedRampart = state.selectedRampart ?? 'H';
+      state.selectedTrapType = null;   // rampart placement supersedes armed traps
+      state.hint = 'Rampart armed (HORIZONTAL —). Press R or tap ROTATE to spin it, then click an empty tile.';
+      onClose();
+    };
+    row.appendChild(armBtn);
   }
-  rampSection.appendChild(rg);
+  card.appendChild(row);
+  rampSection.appendChild(card);
   root.appendChild(rampSection);
 }
 

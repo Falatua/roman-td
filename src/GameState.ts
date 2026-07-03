@@ -69,16 +69,21 @@ export interface GameStateShape {
   placedTraps?: { id: string; type: string; x: number; y: number; col: number; row: number; born: number; color: number; spriteKey: string; pulse: boolean; nextReadyTick?: number }[];
   selectedTrapType?: string | null;
   // 2026-07-02 — Stone Ramparts (RampartSystem): purchasable 5-tile stone
-  // barrier lines, hard-capped at 5 buys per run. Inventory keyed by
-  // orientation; selectedRampart arms placement like selectedTrapType.
+  // barrier lines, hard-capped at 5 buys per run. 2026-07-03 v2: a single
+  // generic purchase — orientation (H / V / D1 ↘ / D2 ↗) is chosen at
+  // placement time via the R key / ROTATE chip. selectedRampart holds the
+  // armed orientation like selectedTrapType.
   rampartsPurchased?: number;
+  rampartsOwned?: number;
+  // Legacy pre-rotation inventory ({H,V} counts) — still read so old saves
+  // keep their purchases; new buys go to rampartsOwned.
   rampartInventory?: { H: number; V: number };
-  selectedRampart?: 'H' | 'V' | null;
+  selectedRampart?: 'H' | 'V' | 'D1' | 'D2' | null;
   // Center tile + orientation of every placed rampart. The renderer draws
   // the connected RAMPART_STRIP sprite over these instead of 5 loose stone
   // blocks — but only while ALL 5 tiles are still STONE (selling any block
   // breaks the strip back into individual stones).
-  placedRamparts?: { col: number; row: number; orient: 'H' | 'V' }[];
+  placedRamparts?: { col: number; row: number; orient: 'H' | 'V' | 'D1' | 'D2' }[];
   flyerPath: { x: number; y: number }[];
   // Game-over flag for animation
   gameOverAt: number;       // tick when lives reached 0
@@ -305,6 +310,7 @@ export function createGameState(): GameStateShape {
     placedTraps: [],
     selectedTrapType: null,
     rampartsPurchased: 0,
+    rampartsOwned: 0,
     rampartInventory: { H: 0, V: 0 },
     selectedRampart: null,
     placedRamparts: [],

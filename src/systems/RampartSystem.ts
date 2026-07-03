@@ -1,15 +1,23 @@
 // RampartSystem — 2026-07-02: purchasable 5-tile stone barrier lines.
 //
 // A rampart is a mazing aid sold at the shop (gate + Mercator): 20 gold buys
-// a straight run of FIVE wall stones, placed horizontally or vertically in
-// one click. The placed tiles are ordinary TileType.STONE — identical art,
-// identical sell/refund behavior, identical pathing rules to the stones the
-// player already gets from crystallized prospects. No damage, no stats;
-// purely architecture. Hard-capped at 5 purchases per campaign so it eases
-// early/mid mazing without trivializing the maze economy.
+// a straight run of FIVE wall stones placed in one click. The placed tiles
+// are ordinary TileType.STONE — identical art, identical sell/refund
+// behavior, identical pathing rules to the stones the player already gets
+// from crystallized prospects. No damage, no stats; purely architecture.
+// Hard-capped at 5 purchases per campaign so it eases early/mid mazing
+// without trivializing the maze economy.
 //
-// Flow mirrors traps: buy at shop → inventory → arm (pick H or V) → click a
-// tile to place. The clicked tile is the CENTER of the line. Placement is
+// 2026-07-03 v2 — ROTATABLE. Ramparts are now a single generic purchase;
+// while placing, the player rotates the armed rampart through all four
+// straight lines the tile grid supports: H (—), V (|), D1 (↘), D2 (↗).
+// The R key or the floating ROTATE chip cycles orientations. Because enemy
+// pathing is strictly 4-directional (PathFinder.aStar), a DIAGONAL line of
+// stones is just as solid a wall as an orthogonal one — enemies cannot
+// squeeze through the corner gap between two diagonally-adjacent stones.
+//
+// Flow mirrors traps: buy at shop → inventory → PLACE arms it → rotate →
+// click a tile. The clicked tile is the CENTER of the line. Placement is
 // build-phase-only (gated by the caller in main.ts) and validated through
 // the same buildGroundPath chokepoint canPlaceStone uses, so a rampart can
 // never seal Rome.
@@ -23,7 +31,28 @@ export const RAMPART_COST = 20;
 export const RAMPART_MAX_PER_RUN = 5;
 export const RAMPART_LENGTH = 5;
 
-export type RampartOrientation = 'H' | 'V';
+export type RampartOrientation = 'H' | 'V' | 'D1' | 'D2';
+
+// Rotation cycle for the R key / ROTATE chip, plus display labels.
+export const RAMPART_ORIENTATIONS: RampartOrientation[] = ['H', 'V', 'D1', 'D2'];
+export const RAMPART_ORIENT_LABEL: Record<RampartOrientation, string> = {
+  H: 'HORIZONTAL —', V: 'VERTICAL |', D1: 'DIAGONAL ↘', D2: 'DIAGONAL ↗'
+};
+
+export function nextRampartOrientation(o: RampartOrientation): RampartOrientation {
+  const i = RAMPART_ORIENTATIONS.indexOf(o);
+  return RAMPART_ORIENTATIONS[(i + 1) % RAMPART_ORIENTATIONS.length];
+}
+
+// Per-orientation unit step from the center tile.
+function orientStep(orient: RampartOrientation): { dc: number; dr: number } {
+  switch (orient) {
+    case 'H':  return { dc: 1, dr: 0 };
+    case 'V':  return { dc: 0, dr: 1 };
+    case 'D1': return { dc: 1, dr: 1 };   // ↘
+    case 'D2': return { dc: 1, dr: -1 };  // ↗
+  }
+}
 
 export function rampartsPurchased(state: GameStateShape): number {
   return state.rampartsPurchased ?? 0;
@@ -33,28 +62,39 @@ export function rampartsRemainingThisRun(state: GameStateShape): number {
   return Math.max(0, RAMPART_MAX_PER_RUN - rampartsPurchased(state));
 }
 
-export function rampartOwned(state: GameStateShape, orient: RampartOrientation): number {
-  return state.rampartInventory?.[orient] ?? 0;
+// Unplaced ramparts in inventory. Reads the legacy per-orientation
+// {H,V} inventory too so a save from the pre-rotation version keeps
+// its purchases.
+export function rampartsOwned(state: GameStateShape): number {
+  const legacy = (state.rampartInventory?.H ?? 0) + (state.rampartInventory?.V ?? 0);
+  return (state.rampartsOwned ?? 0) + legacy;
 }
 
-// Buy one rampart of the given orientation. Returns gold spent (0 = failed:
-// out of gold or the per-run cap is exhausted).
-export function buyRampart(state: GameStateShape, orient: RampartOrientation): number {
+function consumeRampart(state: GameStateShape): void {
+  // Drain legacy inventory first, then the generic count.
+  if ((state.rampartInventory?.H ?? 0) > 0) { state.rampartInventory!.H -= 1; return; }
+  if ((state.rampartInventory?.V ?? 0) > 0) { state.rampartInventory!.V -= 1; return; }
+  state.rampartsOwned = Math.max(0, (state.rampartsOwned ?? 0) - 1);
+}
+
+// Buy one rampart (orientation is chosen at placement time, not purchase).
+// Returns gold spent (0 = failed: out of gold or the per-run cap is done).
+export function buyRampart(state: GameStateShape): number {
   if (rampartsRemainingThisRun(state) <= 0) return 0;
   if ((state.gold ?? 0) < RAMPART_COST) return 0;
   state.gold -= RAMPART_COST;
   state.rampartsPurchased = rampartsPurchased(state) + 1;
-  if (!state.rampartInventory) state.rampartInventory = { H: 0, V: 0 };
-  state.rampartInventory[orient] = (state.rampartInventory[orient] ?? 0) + 1;
+  state.rampartsOwned = (state.rampartsOwned ?? 0) + 1;
   return RAMPART_COST;
 }
 
 // The 5 tile coordinates of a rampart centered on (col,row).
 export function rampartTiles(col: number, row: number, orient: RampartOrientation): { col: number; row: number }[] {
   const half = Math.floor(RAMPART_LENGTH / 2);
+  const { dc, dr } = orientStep(orient);
   const out: { col: number; row: number }[] = [];
   for (let i = -half; i <= half; i++) {
-    out.push(orient === 'H' ? { col: col + i, row } : { col, row: row + i });
+    out.push({ col: col + i * dc, row: row + i * dr });
   }
   return out;
 }
@@ -77,10 +117,10 @@ export function canPlaceRampart(state: GameStateShape, col: number, row: number,
 // quest progress), and rebuilds + resnaps the ground path. Returns false
 // without consuming anything if the spot is invalid or none are owned.
 export function placeRampart(state: GameStateShape, col: number, row: number, orient: RampartOrientation): boolean {
-  if (rampartOwned(state, orient) <= 0) return false;
+  if (rampartsOwned(state) <= 0) return false;
   if (!canPlaceRampart(state, col, row, orient)) return false;
   for (const t of rampartTiles(col, row, orient)) setTile(state, t.col, t.row, TileType.STONE);
-  state.rampartInventory![orient] -= 1;
+  consumeRampart(state);
   state.stonesPlaced = (state.stonesPlaced ?? 0) + RAMPART_LENGTH;
   // Remember the strip so the renderer can draw the connected rampart
   // sprite over these 5 tiles (instead of 5 loose stone blocks).

@@ -3311,11 +3311,16 @@ export class RenderEngine {
       // Selling any block of a rampart breaks the strip — those tiles fall
       // back to ordinary stone rendering automatically.
       const rampartCovered = new Set<number>();
-      const intactRamparts: { col: number; row: number; orient: 'H' | 'V' }[] = [];
+      const intactRamparts: { col: number; row: number; orient: 'H' | 'V' | 'D1' | 'D2' }[] = [];
+      // Per-orientation unit steps (must mirror RampartSystem.orientStep).
+      const RAMP_STEP: Record<string, { dc: number; dr: number }> = {
+        H: { dc: 1, dr: 0 }, V: { dc: 0, dr: 1 }, D1: { dc: 1, dr: 1 }, D2: { dc: 1, dr: -1 }
+      };
       for (const rp of state.placedRamparts ?? []) {
+        const step = RAMP_STEP[rp.orient] ?? RAMP_STEP.H;
         const tiles: { col: number; row: number }[] = [];
         for (let i = -2; i <= 2; i++) {
-          tiles.push(rp.orient === 'H' ? { col: rp.col + i, row: rp.row } : { col: rp.col, row: rp.row + i });
+          tiles.push({ col: rp.col + i * step.dc, row: rp.row + i * step.dr });
         }
         const intact = tiles.every(t => state.tiles[t.row]?.[t.col] === TileType.STONE);
         if (intact && tex('RAMPART_STRIP')) {
@@ -3329,9 +3334,17 @@ export class RenderEngine {
         sp.anchor.set(0.5);
         sp.x = rp.col * GRID.TILE + GRID.TILE / 2;
         sp.y = rp.row * GRID.TILE + GRID.TILE / 2;
-        if (rp.orient === 'V') sp.rotation = Math.PI / 2;
+        // Rotation per orientation; screen y grows downward, so D1 (↘) is
+        // +45° and D2 (↗) is -45°. Diagonal tile centers sit √2·TILE apart,
+        // so the diagonal strip stretches its long axis by √2 to keep each
+        // of the 5 blocks centered on its own tile.
+        const diag = rp.orient === 'D1' || rp.orient === 'D2';
+        sp.rotation = rp.orient === 'V' ? Math.PI / 2
+          : rp.orient === 'D1' ? Math.PI / 4
+          : rp.orient === 'D2' ? -Math.PI / 4
+          : 0;
         // width/height are pre-rotation local axes: long axis 5 tiles.
-        sp.width = GRID.TILE * 5;
+        sp.width = GRID.TILE * 5 * (diag ? Math.SQRT2 : 1);
         sp.height = GRID.TILE;
         this.layers.tiles.addChild(sp);
       }

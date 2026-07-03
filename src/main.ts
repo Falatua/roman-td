@@ -10,7 +10,7 @@ import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './sys
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
 import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards } from './systems/EnemySystem';
 import { tickTraps, placeTrap, trapOwned, TRAP_DEFS, clearPlacedTrapsForWaveEnd } from './systems/TrapSystem';
-import { placeRampart, rampartOwned, RAMPART_LENGTH } from './systems/RampartSystem';
+import { placeRampart, rampartsOwned, RAMPART_LENGTH, nextRampartOrientation, RAMPART_ORIENT_LABEL } from './systems/RampartSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } from './systems/WaveManager';
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
@@ -152,6 +152,33 @@ async function boot() {
       excludeTypes: (state.mercatorTowerOffers ?? []).map(o => o.type)
     });
     state.mercatorTowerOffers = mercatorShop.towerOffers.filter(o => !CHAMPION_TYPES.includes(o.type));
+  }
+  // 2026-07-03 — Stone Rampart rotation. One armed rampart rotates through
+  // every straight line the tile grid supports: H — V | D1 ↘ D2 ↗. Cycled
+  // by the R key or the floating ROTATE chip (mobile-friendly) that shows
+  // while a rampart is armed. The chip is synced by the UI refresh tick.
+  function rotateArmedRampart(): void {
+    if (!state.selectedRampart) return;
+    state.selectedRampart = nextRampartOrientation(state.selectedRampart);
+    state.hint = `Rampart rotated: ${RAMPART_ORIENT_LABEL[state.selectedRampart]}. Click an empty tile to place, R to rotate again.`;
+    syncRampartRotateChip();
+  }
+  function syncRampartRotateChip(): void {
+    const stage = document.getElementById('stage-wrap');
+    let chip = document.getElementById('rampart-rotate-chip') as HTMLButtonElement | null;
+    const shouldShow = !!state.selectedRampart && rampartsOwned(state) > 0;
+    if (!shouldShow) { chip?.remove(); return; }
+    if (!chip) {
+      chip = document.createElement('button');
+      chip.id = 'rampart-rotate-chip';
+      chip.style.cssText = `position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:40;` +
+        `background:linear-gradient(180deg,#3a2a14,#1a1208);border:2px solid #ffd34d;color:#ffe066;` +
+        `font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:1px;` +
+        `padding:8px 16px;cursor:pointer;box-shadow:0 0 14px rgba(255,211,77,0.35);`;
+      chip.onclick = () => rotateArmedRampart();
+      (stage ?? document.body).appendChild(chip);
+    }
+    chip.textContent = `⟳ ROTATE RAMPART · ${RAMPART_ORIENT_LABEL[state.selectedRampart!]} (R)`;
   }
   let bossRuntime = createBossRuntime();
   let waveStartTick = 0;
@@ -5731,17 +5758,17 @@ async function boot() {
     // buildGroundPath chokepoint as single stones so Rome can't be sealed.
     {
       const selRamp = state.selectedRampart;
-      if (selRamp && rampartOwned(state, selRamp) > 0 && tile === TileType.EMPTY) {
+      if (selRamp && rampartsOwned(state) > 0 && tile === TileType.EMPTY) {
         if (!isPreWavePhase()) {
           state.hint = 'Ramparts can only be placed during the build phase.';
           return;
         }
         if (placeRampart(state, col, row, selRamp)) {
           renderer.drawStatic(state);
-          const left = rampartOwned(state, selRamp);
+          const left = rampartsOwned(state);
           state.hint = left > 0
-            ? `Rampart raised — ${RAMPART_LENGTH} stones set. ${left} more armed; click to place again.`
-            : 'Rampart raised — 5 stones set. That was your last one of this orientation.';
+            ? `Rampart raised — ${RAMPART_LENGTH} stones set. ${left} more armed; click to place, R to rotate.`
+            : 'Rampart raised — 5 stones set. That was your last one.';
           if (left <= 0) state.selectedRampart = null;
           tickQuests();
         } else {
@@ -6091,6 +6118,10 @@ async function boot() {
         if (!mercatorShop) restockMercator();
         renderShop(app, mercatorShop!, state, inventory, { onClose: () => document.getElementById('shop-modal')?.remove() });
       }
+    }
+    else if (k === 'r') {
+      // R: rotate the armed Stone Rampart through H — V | D1 ↘ D2 ↗.
+      rotateArmedRampart();
     }
     // 2026-05-19 — SPACE start-wave hotkey removed. Players were
     // accidentally launching waves with stray taps during placement;
@@ -7856,6 +7887,8 @@ async function boot() {
       if (state.sandboxMode && sandboxBannerUpdater) sandboxBannerUpdater(state);
       renderInventoryButton(app, inventory, { onOpen: () => (ui as any).cb.onOpenInventory?.() });
       renderPinnedRecipeWidget(state);
+      // Stone Rampart: show/hide the floating ROTATE chip with armed state.
+      syncRampartRotateChip();
     }
   }
   // Configure logger to surface errors into the game's hint bar.
