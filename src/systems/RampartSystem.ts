@@ -82,6 +82,10 @@ export function placeRampart(state: GameStateShape, col: number, row: number, or
   for (const t of rampartTiles(col, row, orient)) setTile(state, t.col, t.row, TileType.STONE);
   state.rampartInventory![orient] -= 1;
   state.stonesPlaced = (state.stonesPlaced ?? 0) + RAMPART_LENGTH;
+  // Remember the strip so the renderer can draw the connected rampart
+  // sprite over these 5 tiles (instead of 5 loose stone blocks).
+  if (!state.placedRamparts) state.placedRamparts = [];
+  state.placedRamparts.push({ col, row, orient });
   const np = buildGroundPath(state);
   if (np) { state.groundPath = np; resnapEnemiesToPath(state, np); }
   return true;

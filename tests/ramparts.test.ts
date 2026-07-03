@@ -94,6 +94,9 @@ describe('Rampart placement', () => {
     expect(s.stonesPlaced).toBe(before + RAMPART_LENGTH);
     // Path survived the placement.
     expect(buildGroundPath(s)).not.toBeNull();
+    // Renderer bookkeeping: the strip is recorded so RAMPART_STRIP draws
+    // as one connected wall instead of 5 loose stone blocks.
+    expect(s.placedRamparts).toEqual([{ col: spot!.col, row: spot!.row, orient: 'H' }]);
   });
 
   it('refuses placement without inventory and does not mutate tiles', () => {

@@ -3304,11 +3304,43 @@ export class RenderEngine {
       //   - Eagle body diamond + spread V wings
       //   - Tiny red SPQR drip below as the Roman accent
       // No new sprite assets — pure Graphics so it always renders crisp.
+      //
+      // 2026-07-03 — STONE RAMPARTS: tiles covered by an INTACT rampart
+      // (all 5 tiles still STONE) skip the individual block + stamp and get
+      // the connected RAMPART_STRIP sprite instead (rotated for vertical).
+      // Selling any block of a rampart breaks the strip — those tiles fall
+      // back to ordinary stone rendering automatically.
+      const rampartCovered = new Set<number>();
+      const intactRamparts: { col: number; row: number; orient: 'H' | 'V' }[] = [];
+      for (const rp of state.placedRamparts ?? []) {
+        const tiles: { col: number; row: number }[] = [];
+        for (let i = -2; i <= 2; i++) {
+          tiles.push(rp.orient === 'H' ? { col: rp.col + i, row: rp.row } : { col: rp.col, row: rp.row + i });
+        }
+        const intact = tiles.every(t => state.tiles[t.row]?.[t.col] === TileType.STONE);
+        if (intact && tex('RAMPART_STRIP')) {
+          intactRamparts.push(rp);
+          for (const t of tiles) rampartCovered.add(t.row * GRID.COLS + t.col);
+        }
+      }
+      for (const rp of intactRamparts) {
+        const strip = tex('RAMPART_STRIP')!;
+        const sp = new Sprite(strip);
+        sp.anchor.set(0.5);
+        sp.x = rp.col * GRID.TILE + GRID.TILE / 2;
+        sp.y = rp.row * GRID.TILE + GRID.TILE / 2;
+        if (rp.orient === 'V') sp.rotation = Math.PI / 2;
+        // width/height are pre-rotation local axes: long axis 5 tiles.
+        sp.width = GRID.TILE * 5;
+        sp.height = GRID.TILE;
+        this.layers.tiles.addChild(sp);
+      }
       const stoneStamp = new Graphics();
       for (let r = 0; r < GRID.ROWS; r++) {
         for (let c = 0; c < GRID.COLS; c++) {
           const t = state.tiles[r][c];
           if (t === TileType.STONE) {
+            if (rampartCovered.has(r * GRID.COLS + c)) continue;
             const cx = c * GRID.TILE + GRID.TILE / 2;
             const cy = r * GRID.TILE + GRID.TILE / 2;
             const stone = tex('STONE_BLOCK');

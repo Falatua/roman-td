@@ -355,9 +355,18 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
   rampSection.appendChild(rNote);
   const rg = document.createElement('div');
   rg.style.cssText = `display:grid;grid-template-columns:1fr 1fr;gap:8px;`;
+  // Card portraits use the real RAMPART_STRIP sprite (Higgsfield i2i off
+  // m_stone_block.png) — rotated 90° via CSS for the vertical card. Falls
+  // back to simple CSS blocks if the texture hasn't loaded yet.
+  const stripSrc = imgSrcFromTex('RAMPART_STRIP');
+  const stripImg = (rot: boolean) => stripSrc
+    ? `<img src="${stripSrc}" style="width:48px;height:10px;image-rendering:pixelated;${rot ? 'transform:rotate(90deg);' : ''}"/>`
+    : (rot
+      ? `<div style="display:flex;flex-direction:column;gap:2px">${'<div style="width:9px;height:9px;background:#8a8a92;border:1px solid #3a3a40"></div>'.repeat(5)}</div>`
+      : `<div style="display:flex;gap:2px">${'<div style="width:9px;height:9px;background:#8a8a92;border:1px solid #3a3a40"></div>'.repeat(5)}</div>`);
   const rampCards: Array<{ orient: 'H' | 'V'; name: string; blocks: string }> = [
-    { orient: 'H', name: 'Horizontal Rampart', blocks: `<div style="display:flex;gap:2px">${'<div style="width:9px;height:9px;background:#8a8a92;border:1px solid #3a3a40"></div>'.repeat(5)}</div>` },
-    { orient: 'V', name: 'Vertical Rampart', blocks: `<div style="display:flex;flex-direction:column;gap:2px">${'<div style="width:9px;height:9px;background:#8a8a92;border:1px solid #3a3a40"></div>'.repeat(5)}</div>` }
+    { orient: 'H', name: 'Horizontal Rampart', blocks: stripImg(false) },
+    { orient: 'V', name: 'Vertical Rampart', blocks: stripImg(true) }
   ];
   for (const rc of rampCards) {
     const owned = rampartOwned(state, rc.orient);

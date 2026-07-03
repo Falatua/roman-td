@@ -162,6 +162,11 @@ const MANIFEST: Record<string, string> = {
   GK_DEADBUSH: 'm_gk_deadbush.png', GK_STUMP: 'm_gk_stump.png', GK_FENCE: 'm_gk_fence.png',
   GK_URN: 'm_gk_urn.png', GK_WHEEL: 'm_gk_wheel.png', GK_SLAB: 'm_gk_slab.png', GK_POND: 'm_gk_pond.png',
   STONE_BLOCK: 'm_stone_block.png', BORDER_TREE: 'm_border_tree.png', BORDER_BOULDER: 'm_border_boulder.png',
+  // 2026-07-03 — Stone Rampart strip: five STONE_BLOCK-style marble blocks
+  // joined into one continuous 5:1 wall segment (Higgsfield i2i off
+  // m_stone_block.png). Drawn over intact rampart placements; rotated 90°
+  // for vertical ramparts. m_ prefix keeps it on the critical load path.
+  RAMPART_STRIP: 'm_rampart_strip.png',
   DARK_CAVE: 'm_dark_cave.png', ROMAN_GATE: 'm_roman_gate.png', ROMAN_GATE_DESTROYED: 'm_roman_gate_destroyed.png',
   // 2026-05-21 — VISUAL OVERHAUL: late-biome decoration pack.
   // 17 Roman shrine variants cropped from the user's reference sheets

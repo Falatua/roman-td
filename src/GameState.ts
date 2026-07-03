@@ -74,6 +74,11 @@ export interface GameStateShape {
   rampartsPurchased?: number;
   rampartInventory?: { H: number; V: number };
   selectedRampart?: 'H' | 'V' | null;
+  // Center tile + orientation of every placed rampart. The renderer draws
+  // the connected RAMPART_STRIP sprite over these instead of 5 loose stone
+  // blocks — but only while ALL 5 tiles are still STONE (selling any block
+  // breaks the strip back into individual stones).
+  placedRamparts?: { col: number; row: number; orient: 'H' | 'V' }[];
   flyerPath: { x: number; y: number }[];
   // Game-over flag for animation
   gameOverAt: number;       // tick when lives reached 0
@@ -302,6 +307,7 @@ export function createGameState(): GameStateShape {
     rampartsPurchased: 0,
     rampartInventory: { H: 0, V: 0 },
     selectedRampart: null,
+    placedRamparts: [],
     flyerPath: [],
     gameOverAt: -1,
     victoryAt: -1,
