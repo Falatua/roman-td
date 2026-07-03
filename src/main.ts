@@ -72,7 +72,7 @@ import { showSurpriseRewardModal } from './render/SurpriseReward';
 import { showCampaignRelicModal } from './render/CampaignRelicModal';
 import { showBossTrophyModal } from './render/BossTrophyModal';
 import { showTestYourMightModal } from './render/TestYourMightModal';
-import { campaignRelicKillGoldBonus, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
+import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { shouldOfferBossTrophy, markBossTrophyOfferedForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
@@ -6498,7 +6498,12 @@ async function boot() {
           // that already credited everything via onKill don't double-pay.
           if (!(e as any).__heroXpAwarded) {
             state.totalKills = (state.totalKills ?? 0) + 1;
-            if (e.isBoss) state.bossesKilled = (state.bossesKilled ?? 0) + 1;
+            if (e.isBoss) {
+              state.bossesKilled = (state.bossesKilled ?? 0) + 1;
+              // COLOSSEUM_WAGER relic — +2 lives per boss kill (cap 30).
+              const wagerLives = campaignRelicBossKillLives(state);
+              if (wagerLives > 0) state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + wagerLives);
+            }
             if (state.activeHeroId) {
               heroAwardXp(state, !!e.isBoss, heroSystemHooks);
             }
@@ -6998,7 +7003,15 @@ async function boot() {
           if (t) t.killsThisWave += 1;
           // QUEST TRACKING — total kills + boss-kill counter for quest progress.
           state.totalKills = (state.totalKills ?? 0) + 1;
-          if (e.isBoss) state.bossesKilled = (state.bossesKilled ?? 0) + 1;
+          if (e.isBoss) {
+            state.bossesKilled = (state.bossesKilled ?? 0) + 1;
+            // COLOSSEUM_WAGER relic — +2 lives per boss kill (cap 30).
+            const wagerLives = campaignRelicBossKillLives(state);
+            if (wagerLives > 0) {
+              state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + wagerLives);
+              state.hint = `Colosseum Wager pays out — +${wagerLives} lives (now ${state.lives}/${ECONOMY.MAX_LIVES}).`;
+            }
+          }
           // ── HERO SYSTEM (2026-05-19) ────────────────────────────
           // Hero earns XP from EVERY kill on the field, not just kills
           // they personally landed. +1 non-boss, +20 boss. Hooks pass
@@ -7889,6 +7902,10 @@ async function boot() {
       renderPinnedRecipeWidget(state);
       // Stone Rampart: show/hide the floating ROTATE chip with armed state.
       syncRampartRotateChip();
+      // VESTAL_COVENANT relic — once-per-run rescue when lives dip below 6.
+      if (campaignRelicVestalRescue(state)) {
+        showBonusBossBanner('🔥 THE VESTALS INTERVENE — ROME RESTORED TO 12 LIVES 🔥');
+      }
     }
   }
   // Configure logger to surface errors into the game's hint bar.

@@ -59,7 +59,13 @@ export const CAMPAIGN_RELIC_IDS = [
   'SAGITTARIUS_PACT',
   'COPPER_TITHE',
   'WATCHMANS_DUE',
-  'SCRAP_REQUISITION'
+  'SCRAP_REQUISITION',
+  'MASONS_CHARTER',
+  'VULCANS_CACHE',
+  'PUBLICANS_CONTRACT',
+  'SATURNALIA_EDICT',
+  'COLOSSEUM_WAGER',
+  'VESTAL_COVENANT'
 ] as const;
 
 export type CampaignRelicId = typeof CAMPAIGN_RELIC_IDS[number];
@@ -588,6 +594,64 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     upside: 'Immediately gain a random Rare item.',
     caveat: 'Lose 90 gold immediately.',
     effects: ['Gain a random Rare item now.', 'Lose 90 gold now.']
+  },
+  // 2026-07-03 — mechanic-hook relics. Instead of plain stat trades, each
+  // of these six plugs into a distinct game system (ramparts, traps, kill
+  // economy, the Saturnalia inversion, boss bounties, a once-per-run
+  // rescue) so relic offers read as build-changing choices.
+  {
+    id: 'MASONS_CHARTER',
+    name: "Mason's Charter",
+    eyebrow: 'GUILD STONEWORK',
+    blurb: 'The masons\' guild donates two finished rampart sections. The workers are conscripted straight off the walls.',
+    upside: 'Immediately gain 2 free Stone Ramparts (they do NOT count against the 5-per-campaign shop quota).',
+    caveat: 'Lose 6 lives immediately.',
+    effects: ['Gain 2 Stone Ramparts now (quota-free).', 'Lose 6 lives now.']
+  },
+  {
+    id: 'VULCANS_CACHE',
+    name: "Vulcan's Cache",
+    eyebrow: 'FORGE SURPLUS',
+    blurb: 'Vulcan\'s apprentices clear the forge floor: spikes, fire, and frost, crated and ready.',
+    upside: 'Immediately gain 2 Iron Spike, 2 Tar Fire, and 2 Frost Snare traps.',
+    caveat: 'Lose 120 gold immediately.',
+    effects: ['Gain 2× Iron Spike + 2× Tar Fire + 2× Frost Snare traps now.', 'Lose 120 gold now.']
+  },
+  {
+    id: 'PUBLICANS_CONTRACT',
+    name: "Publican's Contract",
+    eyebrow: 'TAX FARMING',
+    blurb: 'A publican buys the right to tax every corpse. He pays per head and skims the war chest.',
+    upside: 'Every enemy kill pays +2 bonus gold for the rest of the run.',
+    caveat: 'Wave-clear gold reduced by 30%.',
+    effects: ['+2 gold on every kill.', 'Wave-clear gold −30%.']
+  },
+  {
+    id: 'SATURNALIA_EDICT',
+    name: 'Saturnalia Edict',
+    eyebrow: 'FESTIVAL LAW',
+    blurb: 'The festival slows the whole world — the enemy saunters, and your crews pour wine between shots.',
+    upside: 'All enemies move 12% slower for the rest of the run.',
+    caveat: 'All towers deal 10% less damage.',
+    effects: ['Enemies −12% speed all run.', 'Tower damage −10% all run.']
+  },
+  {
+    id: 'COLOSSEUM_WAGER',
+    name: 'Colosseum Wager',
+    eyebrow: 'BLOOD SPORT',
+    blurb: 'The crowd pays to watch giants fall. Every boss you drop, the editor returns bodies to the walls.',
+    upside: 'Every boss kill restores +2 lives (capped at 30).',
+    caveat: 'Non-boss enemies spawn with +12% HP.',
+    effects: ['+2 lives per boss kill.', 'Non-boss enemy HP +12%.']
+  },
+  {
+    id: 'VESTAL_COVENANT',
+    name: 'Vestal Covenant',
+    eyebrow: 'SACRED RESCUE',
+    blurb: 'The Vestals bank a miracle against Rome\'s darkest hour. Miracles are not cheap.',
+    upside: 'ONCE per run: the first time your lives fall below 6, the Vestals restore you to 12.',
+    caveat: 'Lose 250 gold immediately.',
+    effects: ['One-time rescue: lives < 6 → restored to 12.', 'Lose 250 gold now.']
   }
 ];
 
@@ -603,7 +667,9 @@ const CAMPAIGN_RELIC_GOLD_COSTS: Partial<Record<CampaignRelicId, number>> = {
   SPECULATOR_BRIBE: 160,
   CENTURION_LOAN: 120,
   WATCHMANS_DUE: 100,
-  SCRAP_REQUISITION: 90
+  SCRAP_REQUISITION: 90,
+  VULCANS_CACHE: 120,
+  VESTAL_COVENANT: 250
 };
 
 const CAMPAIGN_RELIC_LIFE_COSTS: Partial<Record<CampaignRelicId, number>> = {
@@ -620,7 +686,8 @@ const CAMPAIGN_RELIC_LIFE_COSTS: Partial<Record<CampaignRelicId, number>> = {
   DOUBLE_EPIC_FUNERAL: 16,
   PILUS_PLEDGE: 5,
   SAGITTARIUS_PACT: 5,
-  COPPER_TITHE: 3
+  COPPER_TITHE: 3,
+  MASONS_CHARTER: 6
 };
 
 export function campaignRelicById(id: CampaignRelicId | string | null | undefined): CampaignRelicDef | null {
@@ -876,6 +943,27 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
     queuePendingRelicItem(state, 'RARE');
     sacrificeRelicGold(state, 90);
   }
+  // 2026-07-03 — mechanic-hook relics.
+  if (id === 'MASONS_CHARTER') {
+    // Free ramparts land in inventory WITHOUT touching rampartsPurchased,
+    // so the shop's 5-per-campaign quota is unaffected.
+    state.rampartsOwned = (state.rampartsOwned ?? 0) + 2;
+    sacrificeRelicLives(state, 6);
+  }
+  if (id === 'VULCANS_CACHE') {
+    if (!state.trapInventory) state.trapInventory = {};
+    for (const tid of ['IRON_SPIKE_TRAP', 'TAR_FIRE_TRAP', 'FROST_SNARE']) {
+      state.trapInventory[tid] = (state.trapInventory[tid] ?? 0) + 2;
+    }
+    state.trapsPurchased = (state.trapsPurchased ?? 0) + 6;   // quest progress
+    sacrificeRelicGold(state, 120);
+  }
+  if (id === 'VESTAL_COVENANT') {
+    sacrificeRelicGold(state, 250);
+  }
+  // PUBLICANS_CONTRACT / SATURNALIA_EDICT / COLOSSEUM_WAGER are pure
+  // hook-based relics (kill gold, speed/damage mults, boss-kill lives) —
+  // no claim-time payload.
   state.hint = `${def.name} claimed. ${def.upside} Caveat: ${def.caveat}`;
   return true;
 }
@@ -892,6 +980,7 @@ export function campaignRelicTowerDpsMult(state: GameStateShape, tower: Tower, t
       case 'BLESSING_OF_MARS': if (tower.damageType === DamageType.DIVINE) mult *= 0.65; break;
       case 'FROST_TITHE': mult *= 0.65; break;
       case 'LAST_EAGLE': if ((state.wave ?? 1) >= 25) mult *= 1.70; break;
+      case 'SATURNALIA_EDICT': mult *= 0.90; break;
     }
   }
   return mult;
@@ -987,6 +1076,7 @@ export function campaignRelicEnemySpeedMult(state: GameStateShape, enemy?: any):
       case 'BLACK_OIL': if (enemy?.isFlyer) mult *= 1.60; break;
       case 'FROST_TITHE': mult *= 0.78; break;
       case 'TRIUMPHAL_SPOILS': mult *= 1.25; break;   // pays for the free T5 Scorpio
+      case 'SATURNALIA_EDICT': mult *= 0.88; break;   // festival slows the world
     }
   }
   return mult;
@@ -999,6 +1089,7 @@ export function campaignRelicEnemyHpMult(state: GameStateShape, enemyDef: any): 
   for (const id of activeCampaignRelicIds(state)) {
     switch (id) {
       case 'PLUTOS_PACT': if (!isBoss) mult *= 1.35; break;
+      case 'COLOSSEUM_WAGER': if (!isBoss) mult *= 1.12; break;
       case 'VESTAL_FLAME': mult *= 1.30; break;
       case 'AEGIS_WALL': mult *= 1.45; break;
       case 'LAUREL_CENSUS': if (isBoss) mult *= 1.70; break;
@@ -1046,6 +1137,7 @@ export function campaignRelicWaveGoldMult(state: GameStateShape): number {
     if (id === 'CERES_TITHE') mult *= 1.75;
     if (id === 'SENATE_AUDIT') mult *= 1.45;
     if (id === 'IMPERIAL_GRANARIES') mult *= 1.40;
+    if (id === 'PUBLICANS_CONTRACT') mult *= 0.70;   // the publican skims the chest
   }
   return mult;
 }
@@ -1054,5 +1146,29 @@ export function campaignRelicKillGoldBonus(state: GameStateShape): number {
   let bonus = 0;
   if (hasCampaignRelic(state, 'LAUREL_CENSUS')) bonus += 3;
   if (hasCampaignRelic(state, 'SENATE_AUDIT')) bonus += 2;
+  if (hasCampaignRelic(state, 'PUBLICANS_CONTRACT')) bonus += 2;
   return bonus;
+}
+
+// 2026-07-03 — COLOSSEUM_WAGER: lives restored on every boss kill. Caller
+// (main.ts boss-death paths) adds the return value, clamped to MAX_LIVES.
+export function campaignRelicBossKillLives(state: GameStateShape): number {
+  return hasCampaignRelic(state, 'COLOSSEUM_WAGER') ? 2 : 0;
+}
+
+// 2026-07-03 — VESTAL_COVENANT: once per run, the first time lives fall
+// below 6 (but Rome hasn't already fallen), restore to 12. Called from the
+// main loop's periodic tick; returns true on the frame the rescue fires so
+// the caller can banner it. Test Your Might's instant defeat (lives = 0 +
+// gameOverAt set) is deliberately NOT rescuable.
+export function campaignRelicVestalRescue(state: GameStateShape): boolean {
+  if (!hasCampaignRelic(state, 'VESTAL_COVENANT')) return false;
+  if ((state as any).__vestalCovenantUsed) return false;
+  if (state.gameOverAt >= 0) return false;
+  const lives = state.lives ?? 0;
+  if (lives <= 0 || lives >= 6) return false;
+  (state as any).__vestalCovenantUsed = true;
+  state.lives = 12;
+  state.hint = 'THE VESTALS INTERVENE — the sacred flame restores Rome to 12 lives. The covenant is spent.';
+  return true;
 }

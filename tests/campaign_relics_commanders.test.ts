@@ -9,9 +9,14 @@ import {
   activeCampaignRelicIds,
   applyCampaignRelic,
   campaignRelicAffordability,
+  campaignRelicBossKillLives,
   campaignRelicDamageMult,
+  campaignRelicEnemyHpMult,
   campaignRelicEnemySpeedMult,
+  campaignRelicKillGoldBonus,
   campaignRelicOffersForWave,
+  campaignRelicTowerDpsMult,
+  campaignRelicVestalRescue,
   campaignRelicWaveGoldMult,
   shouldOfferCampaignRelics,
   skipCampaignRelic
@@ -39,9 +44,9 @@ function bootstrapState() {
 }
 
 describe('Campaign relics', () => {
-  it('ships a full 56-relic randomized campaign pool', () => {
-    expect(CAMPAIGN_RELICS.length).toBe(56);
-    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(56);
+  it('ships a full 62-relic randomized campaign pool', () => {
+    expect(CAMPAIGN_RELICS.length).toBe(62);
+    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(62);
     for (const relic of CAMPAIGN_RELICS) {
       expect(relic.upside.length).toBeGreaterThan(5);
       expect(relic.caveat.length).toBeGreaterThan(5);
@@ -198,6 +203,65 @@ describe('Campaign relics', () => {
     const poorState = bootstrapState();
     poorState.gold = 80;
     expect(campaignRelicAffordability(poorState, 'SCRAP_REQUISITION').canAfford).toBe(false);
+  });
+
+  it('adds mechanic-hook relics: ramparts, traps, kill gold, Saturnalia, wager, rescue', () => {
+    // 2026-07-03 — six relics that plug into distinct game systems.
+    // MASONS_CHARTER — 2 free ramparts, quota untouched, −6 lives.
+    const mason = bootstrapState();
+    mason.lives = 30;
+    applyCampaignRelic(mason, 'MASONS_CHARTER');
+    expect(mason.rampartsOwned).toBe(2);
+    expect(mason.rampartsPurchased ?? 0).toBe(0);   // shop quota untouched
+    expect(mason.lives).toBe(24);
+
+    // VULCANS_CACHE — 6 traps for 120g.
+    const vulcan = bootstrapState();
+    vulcan.gold = 500;
+    applyCampaignRelic(vulcan, 'VULCANS_CACHE');
+    expect(vulcan.gold).toBe(380);
+    expect(vulcan.trapInventory?.IRON_SPIKE_TRAP).toBe(2);
+    expect(vulcan.trapInventory?.TAR_FIRE_TRAP).toBe(2);
+    expect(vulcan.trapInventory?.FROST_SNARE).toBe(2);
+
+    // PUBLICANS_CONTRACT — +2g/kill, wave gold ×0.70.
+    const publican = bootstrapState();
+    applyCampaignRelic(publican, 'PUBLICANS_CONTRACT');
+    expect(campaignRelicKillGoldBonus(publican)).toBe(2);
+    expect(campaignRelicWaveGoldMult(publican)).toBeCloseTo(0.70, 4);
+
+    // SATURNALIA_EDICT — enemies ×0.88 speed, towers ×0.90 damage.
+    const saturn = bootstrapState();
+    applyCampaignRelic(saturn, 'SATURNALIA_EDICT');
+    expect(campaignRelicEnemySpeedMult(saturn, {})).toBeCloseTo(0.88, 4);
+    const anyTower = createTower(TowerType.MILITES, 1, 1, 1, 1);
+    expect(campaignRelicTowerDpsMult(saturn, anyTower, 'BASE')).toBeCloseTo(0.90, 4);
+
+    // COLOSSEUM_WAGER — +2 lives per boss kill, non-boss HP ×1.12.
+    const wager = bootstrapState();
+    applyCampaignRelic(wager, 'COLOSSEUM_WAGER');
+    expect(campaignRelicBossKillLives(wager)).toBe(2);
+    expect(campaignRelicEnemyHpMult(wager, { isBoss: false })).toBeCloseTo(1.12, 4);
+    expect(campaignRelicEnemyHpMult(wager, { isBoss: true })).toBeCloseTo(1.0, 4);
+
+    // VESTAL_COVENANT — one-time rescue below 6 lives; never fires twice.
+    const vestal = bootstrapState();
+    vestal.gold = 500;
+    applyCampaignRelic(vestal, 'VESTAL_COVENANT');
+    expect(vestal.gold).toBe(250);
+    vestal.lives = 8;
+    expect(campaignRelicVestalRescue(vestal)).toBe(false);   // not low enough
+    vestal.lives = 4;
+    expect(campaignRelicVestalRescue(vestal)).toBe(true);
+    expect(vestal.lives).toBe(12);
+    vestal.lives = 3;
+    expect(campaignRelicVestalRescue(vestal)).toBe(false);   // covenant spent
+    expect(vestal.lives).toBe(3);
+    // Rescue never resurrects a dead run (Test Your Might sets lives = 0).
+    const dead = bootstrapState();
+    applyCampaignRelic(dead, 'VESTAL_COVENANT');
+    dead.lives = 0;
+    expect(campaignRelicVestalRescue(dead)).toBe(false);
   });
 
   it('blocks draft relic rewards when the life cost would kill the player', () => {
