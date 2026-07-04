@@ -117,14 +117,19 @@ describe('Loot drop rolling', () => {
     const randomSpy = vi.spyOn(Math, 'random');
     randomSpy.mockReturnValue(0.965);
     expect(rollDrop()?.rarity).toBe('RARE');
+    // 2026-07-03 — epic boundary moved 0.99 → 0.9925 (rare band widened).
+    randomSpy.mockReturnValue(0.992);
+    expect(rollDrop()?.rarity).toBe('RARE');
     randomSpy.mockReturnValue(0.995);
     expect(rollDrop()?.rarity).toBe('EPIC');
     randomSpy.mockRestore();
   });
 
   it('uses 30-wave drop rates and deterministic premium-roll boundaries', () => {
-    expect(LOOT_DROP_RATES.GROUND).toBe(0.0015);
-    expect(LOOT_DROP_RATES.FLYER).toBe(0.003);
+    // 2026-07-03 — slight loot buff: +33% per-kill rate; epic share inside
+    // rollDrop shrank 1%→0.75% so epic's absolute rate stayed constant.
+    expect(LOOT_DROP_RATES.GROUND).toBe(0.002);
+    expect(LOOT_DROP_RATES.FLYER).toBe(0.004);
     expect(premiumDropRoll(0.20, 0.1999)).toBe(true);
     expect(premiumDropRoll(0.20, 0.20)).toBe(false);
     expect(premiumDropRoll(0.10, 0.95)).toBe(false);

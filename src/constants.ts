@@ -129,9 +129,13 @@ export const KILL_BONUS_MAX_PCT = 0.10;
 // are the primary scaling lever; kill-XP is a backstop for very long runs.
 export const HERO_XP_THRESHOLDS: number[] = [120, 330, 660, 1140, 1800];
 
+// 2026-07-03 — slight loot buff: per-kill drop chance +~33% (0.15%→0.20%
+// ground, 0.30%→0.40% flyer). The EPIC share inside rollDrop shrank
+// 1%→0.75% at the same time so epic's ABSOLUTE rate is unchanged — only
+// Common / Uncommon / Rare drops got more frequent.
 export const LOOT_DROP_RATES = {
-  GROUND: 0.0015,
-  FLYER: 0.003
+  GROUND: 0.002,
+  FLYER: 0.004
 };
 
 export const DRAW = {

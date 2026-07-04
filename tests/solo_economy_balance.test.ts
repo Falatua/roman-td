@@ -77,8 +77,10 @@ describe('30-wave Solo economy envelope', () => {
         else ground += group.count;
       }
     }
+    // 2026-07-03 — drop rates +33% (0.0015/0.003 → 0.002/0.004), so the
+    // expected free-drop count per campaign rose from ~3.4 to ~4.5.
     const expected = ground * LOOT_DROP_RATES.GROUND + flyers * LOOT_DROP_RATES.FLYER;
-    expect(expected).toBeGreaterThan(3);
-    expect(expected).toBeLessThan(4);
+    expect(expected).toBeGreaterThan(4);
+    expect(expected).toBeLessThan(5.5);
   });
 });

@@ -134,10 +134,13 @@ export function rollDrop(): { itemId: ItemId; rarity: Rarity } | null {
   // are commanders, bosses, and special-event enemies. When a normal enemy
   // does hit the small drop chance, keep the payload mostly Common/Uncommon
   // with only a tiny Epic tail.
+  // 2026-07-03 — per-kill rate rose 0.15%→0.20% (constants.ts), so the
+  // EPIC tail shrinks 1%→0.75% here to hold epic's absolute drop rate
+  // constant; the extra frequency all flows to Common/Uncommon/Rare.
   const r = Math.random();
   if (r < 0.68) return rollFromPool('COMMON', COMMON_ITEMS) ?? fallbackDrop();
   if (r < 0.94) return rollFromPool('UNCOMMON', UNCOMMON_ITEMS) ?? fallbackDrop();
-  if (r < 0.99 || ORDINARY_EPIC_ITEMS.length === 0) return rollFromPool('RARE', RARE_ITEMS) ?? fallbackDrop();
+  if (r < 0.9925 || ORDINARY_EPIC_ITEMS.length === 0) return rollFromPool('RARE', RARE_ITEMS) ?? fallbackDrop();
   return rollFromPool('EPIC', ORDINARY_EPIC_ITEMS) ?? fallbackDrop();
 }
 
