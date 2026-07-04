@@ -492,3 +492,20 @@ describe('Item EQUIP_MODE gates', () => {
     }
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────
+// 9. Sample SFX wiring — critical UI stings stay present and preloaded
+// ───────────────────────────────────────────────────────────────────────
+describe('Sample SFX wiring', () => {
+  it('Test Your Might offer has its MP3 cue, playback hook, and preload entry', () => {
+    const fs = require('fs');
+    const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');
+    const modal = fs.readFileSync('src/render/TestYourMightModal.ts', 'utf8');
+    const cue = 'assets/sfx/test_your_might.mp3';
+
+    expect(fs.existsSync(`public/${cue}`), 'missing Test Your Might MP3 asset').toBe(true);
+    expect(audio.includes(`'${cue}'`), 'Test Your Might MP3 should be preloaded').toBe(true);
+    expect(audio.includes(`testYourMight:  () => playSample(sfx('${cue}')`), 'SFX.testYourMight should play the MP3').toBe(true);
+    expect(modal.includes('SFX.testYourMight();'), 'offer modal should fire the cue when it appears').toBe(true);
+  });
+});

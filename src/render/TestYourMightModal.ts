@@ -74,4 +74,5 @@ export function showTestYourMightModal(
   }
 
   parent.appendChild(modal);
+  SFX.testYourMight();
 }
