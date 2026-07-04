@@ -1,6 +1,6 @@
 import { ShopState, FORTUNA_APEX_BLOCKLIST, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds } from '../systems/MerchantSystem';
 import { TRAP_DEFS, TRAP_IDS, armTrapFromInventory, buyTraps, trapPrice } from '../systems/TrapSystem';
-import { RAMPART_COST, RAMPART_MAX_PER_RUN, buyRampart, rampartsOwned, rampartsRemainingThisRun } from '../systems/RampartSystem';
+import { RAMPART_COST, RAMPART_MAX_PER_RUN, RAMPART_ORIENT_LABEL, armRampartFromInventory, buyRampart, rampartsOwned, rampartsRemainingThisRun } from '../systems/RampartSystem';
 import { GameStateShape } from '../GameState';
 import { INVENTORY_SIZE, ECONOMY } from '../constants';
 import { SFX } from './AudioManager';
@@ -351,7 +351,7 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
   rampSection.appendChild(rampTitle);
   const rNote = document.createElement('div');
   rNote.style.cssText = `font-size:10px;color:#cdb98a;line-height:1.4;margin-bottom:8px;`;
-  rNote.innerHTML = `A straight line of <b style="color:#ffcc44">5 wall stones</b> placed in one click — pure architecture for your maze. While placing, press <b style="color:#ffe066">R</b> (or tap ROTATE) to spin it: horizontal — vertical | diagonal ↘ ↗. No damage, blocks the path like any stone, sells back like any stone. Build phase only.`;
+  rNote.innerHTML = `Buy one and it goes to your <b style="color:#ffd34d">Armarium inventory</b>. Click it there, or hit PLACE below, to arm a straight line of <b style="color:#ffcc44">5 wall stones</b>. While placing, press <b style="color:#ffe066">R</b> (or tap ROTATE) to spin it: horizontal — vertical | diagonal ↘ ↗. Build phase only.`;
   rampSection.appendChild(rNote);
   // Single generic card — orientation is chosen at placement time (2026-07-03).
   // Portrait uses the real RAMPART_STRIP sprite (Higgsfield i2i off
@@ -382,7 +382,7 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
       else (window as any).__showInsufficientGoldToast?.(RAMPART_COST);
       return;
     }
-    state.hint = 'Bought a Stone Rampart. Click PLACE to arm it, then click a tile.';
+    state.hint = 'Bought a Stone Rampart. It is in your Armarium inventory. Open inventory and click it, or hit PLACE here.';
     SFX.buy();
     refresh();
   };
@@ -392,9 +392,8 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
     armBtn.textContent = armed ? 'ARMED' : 'PLACE';
     armBtn.style.cssText = `flex:1;background:${armed ? '#5a4a10' : '#4a3a24'};color:#ffe066;border:1px solid #1a1410;padding:4px 0;cursor:pointer;font-size:10px;font-family:inherit`;
     armBtn.onclick = () => {
-      state.selectedRampart = state.selectedRampart ?? 'H';
-      state.selectedTrapType = null;   // rampart placement supersedes armed traps
-      state.hint = 'Rampart armed (HORIZONTAL —). Press R or tap ROTATE to spin it, then click an empty tile.';
+      armRampartFromInventory(state, state.selectedRampart ?? 'H');
+      state.hint = `Rampart armed (${RAMPART_ORIENT_LABEL[state.selectedRampart!]}). Press R or tap ROTATE to spin it, then click an empty tile.`;
       onClose();
     };
     row.appendChild(armBtn);
@@ -1188,7 +1187,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   parent.appendChild(modal);
 }
 
-export function renderInventoryButton(parent: HTMLElement, inv: InventoryState, hooks: { onOpen: () => void }) {
+export function renderInventoryButton(parent: HTMLElement, inv: InventoryState, hooks: { onOpen: () => void; rampartCount?: number }) {
   let btn = document.getElementById('inventory-button') as HTMLButtonElement | null;
   if (!btn) {
     btn = document.createElement('button');
@@ -1197,12 +1196,16 @@ export function renderInventoryButton(parent: HTMLElement, inv: InventoryState, 
     const buttons = document.getElementById('buttons');
     buttons?.appendChild(btn);
   }
+  const rampartCount = hooks.rampartCount ?? 0;
   const prev = Number(btn.dataset.count ?? inv.slots.length);
-  btn.textContent = `INVENTORY ${inv.slots.length}/${INVENTORY_SIZE}`;
-  btn.title = 'Open inventory';
+  const prevRamparts = Number(btn.dataset.ramparts ?? rampartCount);
+  btn.textContent = `INVENTORY ${inv.slots.length}/${INVENTORY_SIZE}${rampartCount > 0 ? ` · RAMPARTS ${rampartCount}` : ''}`;
+  btn.title = rampartCount > 0 ? `Open inventory. Stone Ramparts owned: ${rampartCount}` : 'Open inventory';
   btn.onclick = hooks.onOpen;
   if (inv.slots.length > prev) flashInventoryButton(btn, inv.slots[inv.slots.length - 1]);
+  if (rampartCount > prevRamparts) flashInventoryButton(btn);
   btn.dataset.count = String(inv.slots.length);
+  btn.dataset.ramparts = String(rampartCount);
 }
 
 // 2026-05 v10: sell price = half of purchase cost for EVERY item, whether
@@ -1247,13 +1250,50 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:58;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
   const panel = document.createElement('div');
   panel.style.cssText = `width:min(560px,94vw);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:14px;`;
+  const ownedRamparts = rampartsOwned(state);
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div><div style="font-size:18px;color:#d4af37;font-weight:bold;letter-spacing:3px">ARMARIUM</div><div style="font-size:11px;color:#aa9a4a;letter-spacing:1px">ITEM VAULT ${inv.slots.length}/${INVENTORY_SIZE}</div></div>
-    <div style="font-size:11px;color:#cdb98a;text-align:right;max-width:240px;line-height:1.4">Click an item to inspect it.<br/>Use the SELL button to convert it to Gold.</div>
+    <div><div style="font-size:18px;color:#d4af37;font-weight:bold;letter-spacing:3px">ARMARIUM</div><div style="font-size:11px;color:#aa9a4a;letter-spacing:1px">ITEM VAULT ${inv.slots.length}/${INVENTORY_SIZE}${ownedRamparts > 0 ? ` · RAMPARTS ${ownedRamparts}` : ''}</div></div>
+    <div style="font-size:11px;color:#cdb98a;text-align:right;max-width:240px;line-height:1.4">Click an item to inspect it.<br/>Click traps or ramparts to arm placement.</div>
   </div>`;
 
   // Selection state: which slot is currently selected.
   let selectedIdx = -1;
+
+  if (ownedRamparts > 0) {
+    const rampShelf = document.createElement('div');
+    rampShelf.style.cssText = `margin-bottom:12px;padding:10px;background:#100c09;border:2px solid #5a4a30;`;
+    const rampHead = document.createElement('div');
+    rampHead.style.cssText = `display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;`;
+    rampHead.innerHTML = `
+      <div style="font-size:12px;color:#d4af37;font-weight:bold;letter-spacing:2px">RAMPARTS</div>
+      <div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;text-align:right">CLICK TO ARM · R TO ROTATE · BUILD PHASE ONLY</div>
+    `;
+    rampShelf.appendChild(rampHead);
+    const selected = !!state.selectedRampart;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.style.cssText = `width:100%;min-height:64px;background:${selected ? 'linear-gradient(180deg,#3a2a14,#1a1208)' : 'linear-gradient(180deg,#1a1410,#100c09)'};border:${selected ? '3px solid #ffd34d' : '2px solid #8a8a92'};color:#e8d6a8;padding:8px;display:flex;align-items:center;gap:10px;cursor:pointer;font-family:inherit;text-align:left;box-shadow:${selected ? '0 0 14px rgba(255,211,77,0.45)' : 'inset 0 0 10px #000'};`;
+    const stripSrc = imgSrcFromTex('RAMPART_STRIP');
+    const icon = stripSrc
+      ? `<img src="${stripSrc}" style="width:54px;height:14px;image-rendering:pixelated;flex-shrink:0"/>`
+      : `<div style="display:flex;gap:2px;flex-shrink:0">${'<div style="width:9px;height:9px;background:#8a8a92;border:1px solid #3a3a40"></div>'.repeat(5)}</div>`;
+    btn.innerHTML = `
+      <div style="width:62px;height:42px;border:1px solid #8a8a92;background:#1a1410;display:flex;align-items:center;justify-content:center;flex-shrink:0">${icon}</div>
+      <div style="min-width:0;line-height:1.25;flex:1">
+        <div style="font-size:12px;color:#fff8e0;font-weight:bold">Stone Rampart</div>
+        <div style="font-size:10px;color:#cdb98a;margin-top:2px">Places 5 wall stones in one line. Click an empty tile after arming.</div>
+      </div>
+      <div style="font-size:13px;color:#88ff88;font-weight:bold;letter-spacing:1px">x${ownedRamparts}</div>
+    `;
+    btn.title = 'Stone Rampart\nClick to arm, then click an empty tile. Press R or tap ROTATE to change direction.';
+    btn.onclick = () => {
+      if (!armRampartFromInventory(state, state.selectedRampart ?? 'H')) return;
+      state.hint = `Rampart armed (${RAMPART_ORIENT_LABEL[state.selectedRampart!]}). Click an empty tile to place it. Press R or tap ROTATE to spin it.`;
+      hooks.onClose();
+    };
+    rampShelf.appendChild(btn);
+    panel.appendChild(rampShelf);
+  }
 
   const ownedTrapIds = TRAP_IDS.filter(tid => ((state.trapInventory ?? {})[tid] ?? 0) > 0);
   if (ownedTrapIds.length > 0) {

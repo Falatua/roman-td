@@ -70,6 +70,16 @@ export function rampartsOwned(state: GameStateShape): number {
   return (state.rampartsOwned ?? 0) + legacy;
 }
 
+// Arm a rampart from inventory so the next empty map click places one
+// rampart line. Buying ramparts deliberately does not auto-arm them.
+export function armRampartFromInventory(state: GameStateShape, orient: RampartOrientation = 'H'): boolean {
+  if (rampartsOwned(state) <= 0) return false;
+  state.selectedRampart = orient;
+  // Only one deployable can own empty-tile clicks at a time.
+  state.selectedTrapType = null;
+  return true;
+}
+
 function consumeRampart(state: GameStateShape): void {
   // Drain legacy inventory first, then the generic count.
   if ((state.rampartInventory?.H ?? 0) > 0) { state.rampartInventory!.H -= 1; return; }

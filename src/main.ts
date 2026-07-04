@@ -7906,7 +7906,7 @@ async function boot() {
       ui.update(state, info);
       // SANDBOX: keep the pinned banner's wave + phase tag fresh.
       if (state.sandboxMode && sandboxBannerUpdater) sandboxBannerUpdater(state);
-      renderInventoryButton(app, inventory, { onOpen: () => (ui as any).cb.onOpenInventory?.() });
+      renderInventoryButton(app, inventory, { onOpen: () => (ui as any).cb.onOpenInventory?.(), rampartCount: rampartsOwned(state) });
       renderPinnedRecipeWidget(state);
       // Stone Rampart: show/hide the floating ROTATE chip with armed state.
       syncRampartRotateChip();

@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   RAMPART_COST, RAMPART_MAX_PER_RUN, RAMPART_LENGTH, RAMPART_ORIENTATIONS,
-  buyRampart, rampartsOwned, rampartsRemainingThisRun, nextRampartOrientation,
+  armRampartFromInventory, buyRampart, rampartsOwned, rampartsRemainingThisRun, nextRampartOrientation,
   rampartTiles, canPlaceRampart, placeRampart, RampartOrientation
 } from '../src/systems/RampartSystem';
 import { createGameState } from '../src/GameState';
@@ -60,6 +60,19 @@ describe('Rampart purchasing', () => {
     const s = bootstrapState();
     s.rampartInventory = { H: 1, V: 2 };
     expect(rampartsOwned(s)).toBe(3);
+  });
+
+  it('arms ramparts from inventory and clears armed traps', () => {
+    const s = bootstrapState();
+    s.selectedTrapType = 'IRON_SPIKE_TRAP';
+    expect(armRampartFromInventory(s)).toBe(false);
+    expect(s.selectedRampart).toBeNull();
+
+    buyRampart(s);
+    expect(armRampartFromInventory(s)).toBe(true);
+    expect(s.selectedRampart).toBe('H');
+    expect(s.selectedTrapType).toBeNull();
+    expect(rampartsOwned(s)).toBe(1);
   });
 });
 
