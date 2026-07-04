@@ -121,6 +121,11 @@ export function buyTraps(state: GameStateShape, id: string, qty: number): number
 export function armTrapFromInventory(state: GameStateShape, id: string): boolean {
   if (!TRAP_DEFS[id] || trapOwned(state, id) <= 0) return false;
   state.selectedTrapType = id;
+  // 2026-07-03 QC fix — arming a trap disarms any armed Stone Rampart
+  // (ShopUI already does the reverse). Without this, the rampart handler
+  // runs first on tile clicks and steals the click the player meant for
+  // the trap they just armed (or blocks it entirely mid-wave).
+  state.selectedRampart = null;
   return true;
 }
 

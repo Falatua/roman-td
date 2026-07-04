@@ -166,7 +166,7 @@ async function boot() {
   function syncRampartRotateChip(): void {
     const stage = document.getElementById('stage-wrap');
     let chip = document.getElementById('rampart-rotate-chip') as HTMLButtonElement | null;
-    const shouldShow = !!state.selectedRampart && rampartsOwned(state) > 0;
+    const shouldShow = !!state.selectedRampart && rampartsOwned(state) > 0 && state.gameOverAt < 0 && state.victoryAt < 0;
     if (!shouldShow) { chip?.remove(); return; }
     if (!chip) {
       chip = document.createElement('button');
@@ -6122,6 +6122,14 @@ async function boot() {
     else if (k === 'r') {
       // R: rotate the armed Stone Rampart through H — V | D1 ↘ D2 ↗.
       rotateArmedRampart();
+    }
+    // 2026-07-03 QC — ESC also DISARMS an armed rampart/trap (in addition
+    // to closing modals below). Without this there was no way to cancel an
+    // armed rampart, and its handler owns every empty-tile click.
+    if (k === 'escape' && (state.selectedRampart || state.selectedTrapType)) {
+      state.selectedRampart = null;
+      state.selectedTrapType = null;
+      state.hint = 'Placement disarmed.';
     }
     // 2026-05-19 — SPACE start-wave hotkey removed. Players were
     // accidentally launching waves with stray taps during placement;
