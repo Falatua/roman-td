@@ -70,6 +70,24 @@ export function markBossTrophyOfferedForWave(state: GameStateShape): void {
   if (!state.bossTrophyWavesClaimed.includes(state.wave)) state.bossTrophyWavesClaimed.push(state.wave);
 }
 
+export function queueBossTrophyOfferForWave(state: GameStateShape, enemy: any, bossName: string): boolean {
+  if (!shouldOfferBossTrophy(state, enemy)) return false;
+  markBossTrophyOfferedForWave(state);
+  state.pendingBossTrophyOffer = { wave: state.wave, bossName };
+  return true;
+}
+
+export function consumePendingBossTrophyOffer(state: GameStateShape): { wave: number; bossName: string } | null {
+  const pending = state.pendingBossTrophyOffer ?? null;
+  if (!pending) return null;
+  if (pending.wave !== state.wave || !canReceiveRunReward(state) || unclaimedBossTrophies(state).length === 0) {
+    state.pendingBossTrophyOffer = null;
+    return null;
+  }
+  state.pendingBossTrophyOffer = null;
+  return pending;
+}
+
 export function bossTrophyDamageMult(state: GameStateShape, tower: Tower, target: any): number {
   let mult = 1;
   if (hasBossTrophy(state, 'EXECUTIONERS_LAUREL')) {

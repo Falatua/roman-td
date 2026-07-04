@@ -21,7 +21,15 @@ import {
   shouldOfferCampaignRelics,
   skipCampaignRelic
 } from '../src/systems/CampaignRelicSystem';
-import { applyBossTrophy, bossTrophyDamageMult, bossTrophyTrapDamageMult, bossTrophyTrapRadiusMult, shouldOfferBossTrophy } from '../src/systems/BossTrophySystem';
+import {
+  applyBossTrophy,
+  bossTrophyDamageMult,
+  bossTrophyTrapDamageMult,
+  bossTrophyTrapRadiusMult,
+  consumePendingBossTrophyOffer,
+  queueBossTrophyOfferForWave,
+  shouldOfferBossTrophy
+} from '../src/systems/BossTrophySystem';
 import { buyTraps, trapPrice, TRAP_DEFS } from '../src/systems/TrapSystem';
 import { bossEscortCommandersForWave, commanderDamageTakenMult, commanderSpeedMult, commanderTrapRadiusDisabled, isCommanderType } from '../src/systems/CommanderSystem';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
@@ -482,6 +490,32 @@ describe('Boss trophies', () => {
     expect(shouldOfferBossTrophy(s, { isBoss: true, isScheduledBoss: true, type: 'ANUBIS_KING' })).toBe(true);
     expect(shouldOfferBossTrophy(s, { isBoss: true, isScheduledBoss: true, type: 'UNDEAD_WAR_ELEPHANT' })).toBe(false);
     expect(shouldOfferBossTrophy(s, { isBoss: true, isScheduledBoss: false, type: 'ANUBIS_KING' })).toBe(false);
+  });
+
+  it('queues boss trophy choices until the wave-end reward flow consumes them', () => {
+    const s = bootstrapState();
+    s.wave = 24;
+    const boss = { isBoss: true, isScheduledBoss: true, type: 'ANUBIS_KING' };
+
+    expect(queueBossTrophyOfferForWave(s, boss, 'Anubis King')).toBe(true);
+    expect(s.pendingBossTrophyOffer).toEqual({ wave: 24, bossName: 'Anubis King' });
+    expect(s.bossTrophyWavesClaimed).toContain(24);
+    expect(shouldOfferBossTrophy(s, boss)).toBe(false);
+
+    const pending = consumePendingBossTrophyOffer(s);
+    expect(pending).toEqual({ wave: 24, bossName: 'Anubis King' });
+    expect(s.pendingBossTrophyOffer).toBeNull();
+  });
+
+  it('drops pending boss trophy choices if the run dies before the wave ends', () => {
+    const s = bootstrapState();
+    s.wave = 24;
+    expect(queueBossTrophyOfferForWave(s, { isBoss: true, isScheduledBoss: true, type: 'ANUBIS_KING' }, 'Anubis King')).toBe(true);
+
+    s.lives = 0;
+    s.gameOverAt = s.tick;
+    expect(consumePendingBossTrophyOffer(s)).toBeNull();
+    expect(s.pendingBossTrophyOffer).toBeNull();
   });
 
   it('suppresses every run reward once the player has died', () => {

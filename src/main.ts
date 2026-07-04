@@ -73,7 +73,7 @@ import { showCampaignRelicModal } from './render/CampaignRelicModal';
 import { showBossTrophyModal } from './render/BossTrophyModal';
 import { showTestYourMightModal } from './render/TestYourMightModal';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
-import { shouldOfferBossTrophy, markBossTrophyOfferedForWave } from './systems/BossTrophySystem';
+import { consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
 import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy } from './systems/RewardEligibility';
@@ -7148,15 +7148,7 @@ async function boot() {
             const drops = isScheduledBoss ? 32 : 18;
             const intensity = isScheduledBoss ? 1.15 : 0.9;
             renderer.triggerBloodRain(state.tick, drops, intensity);
-            if (shouldOfferBossTrophy(state, e)) {
-              markBossTrophyOfferedForWave(state);
-              const stage = document.getElementById('stage-wrap');
-              if (stage) {
-                showBossTrophyModal(stage, state, enemyName(e.type as string), () => {
-                  state.hint = 'Boss trophy claimed. The campaign remembers this kill.';
-                });
-              }
-            }
+            queueBossTrophyOfferForWave(state, e, enemyName(e.type as string));
           }
           else SFX.enemyDeath();
           // Hero XP / level-up
@@ -7561,26 +7553,51 @@ async function boot() {
             });
           }
         };
-        if (shouldOfferTestYourMight(state)) {
-          const stage = document.getElementById('stage-wrap');
-          if (stage) {
-            showTestYourMightModal(stage, state, (accepted) => {
-              if (accepted) {
-                // 2026-06-28 — make entering the bonus unmistakable: it is
-                // a distinct Wave 10.5, not the start of Wave 11. Accepting
-                // now arms the challenge and returns to prep; the next START
-                // launches it so the player can adjust towers/traps first.
-                showBonusBossBanner(`⚔ WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} ACCEPTED · PREP, THEN PRESS START ⚔`);
-              } else if (state.lives > 0) {
-                offerCampaignRelic();
-              }
-            });
+        const offerTestYourMightOrCampaignRelic = () => {
+          if (shouldOfferTestYourMight(state)) {
+            const stage = document.getElementById('stage-wrap');
+            if (stage) {
+              showTestYourMightModal(stage, state, (accepted) => {
+                if (accepted) {
+                  // 2026-06-28 — make entering the bonus unmistakable: it is
+                  // a distinct Wave 10.5, not the start of Wave 11. Accepting
+                  // now arms the challenge and returns to prep; the next START
+                  // launches it so the player can adjust towers/traps first.
+                  showBonusBossBanner(`⚔ WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} ACCEPTED · PREP, THEN PRESS START ⚔`);
+                } else if (state.lives > 0) {
+                  offerCampaignRelic();
+                }
+              });
+            } else {
+              offerCampaignRelic();
+            }
           } else {
             offerCampaignRelic();
           }
-        } else {
-          offerCampaignRelic();
-        }
+        };
+        const offerBossTrophyThenContinue = () => {
+          const pending = state.pendingBossTrophyOffer;
+          if (!pending || pending.wave !== state.wave) {
+            consumePendingBossTrophyOffer(state);
+            offerTestYourMightOrCampaignRelic();
+            return;
+          }
+          const stage = document.getElementById('stage-wrap');
+          if (!stage) {
+            offerTestYourMightOrCampaignRelic();
+            return;
+          }
+          const trophy = consumePendingBossTrophyOffer(state);
+          if (!trophy) {
+            offerTestYourMightOrCampaignRelic();
+            return;
+          }
+          showBossTrophyModal(stage, state, trophy.bossName, () => {
+            state.hint = 'Boss trophy claimed. The campaign remembers this kill.';
+            offerTestYourMightOrCampaignRelic();
+          });
+        };
+        offerBossTrophyThenContinue();
         // 20-WAVE CAMPAIGN VICTORY: clearing W20 with the gate intact
         // wins the main run. 2026-05 v10 — Endless mode freezes
         // state.wave at 20 by design (endlessWave is the counter that
