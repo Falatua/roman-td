@@ -65,7 +65,13 @@ export const CAMPAIGN_RELIC_IDS = [
   'PUBLICANS_CONTRACT',
   'SATURNALIA_EDICT',
   'COLOSSEUM_WAGER',
-  'VESTAL_COVENANT'
+  'VESTAL_COVENANT',
+  'SCOUTS_STIPEND',
+  'SLINGER_LEVY',
+  'BUILDER_CHIT',
+  'SMALL_RAMPART_GRANT',
+  'TRAPWRIGHTS_SAMPLE',
+  'CHAPEL_CANDLE'
 ] as const;
 
 export type CampaignRelicId = typeof CAMPAIGN_RELIC_IDS[number];
@@ -652,6 +658,62 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     upside: 'ONCE per run: the first time your lives fall below 6, the Vestals restore you to 12.',
     caveat: 'Lose 250 gold immediately.',
     effects: ['One-time rescue: lives < 6 → restored to 12.', 'Lose 250 gold now.']
+  },
+  // 2026-07-04 - more low-stakes relics. Quiet offers that feel useful
+  // without forcing a whole-run build pivot.
+  {
+    id: 'SCOUTS_STIPEND',
+    name: "Scout's Stipend",
+    eyebrow: 'FIELD REPORT',
+    blurb: 'A speculator brings a clean map and asks for an unheroic amount of pay.',
+    upside: 'Immediately gain a Tier-3 Speculator to place.',
+    caveat: 'Lose 95 gold immediately.',
+    effects: ['Gain a Tier-3 SPECULATOR now.', 'Lose 95 gold now.']
+  },
+  {
+    id: 'SLINGER_LEVY',
+    name: 'Slinger Levy',
+    eyebrow: 'SMALL LEVY',
+    blurb: 'A few sling crews answer the call. A few watchfires go dark.',
+    upside: 'Immediately gain a Tier-3 Fundibulus to place.',
+    caveat: 'Lose 4 lives immediately.',
+    effects: ['Gain a Tier-3 FUNDIBULUS now.', 'Lose 4 lives now.']
+  },
+  {
+    id: 'BUILDER_CHIT',
+    name: 'Builder Chit',
+    eyebrow: 'WORK ORDER',
+    blurb: 'One practical crew is sent wherever Rome needs hands most.',
+    upside: 'Immediately gain one random Tier-3 base tower to place.',
+    caveat: 'Lose 110 gold immediately.',
+    effects: ['Gain a random Tier-3 BASE tower now.', 'Lose 110 gold now.']
+  },
+  {
+    id: 'SMALL_RAMPART_GRANT',
+    name: 'Small Rampart Grant',
+    eyebrow: 'ONE WALL SECTION',
+    blurb: 'The masons spare one clean section of stone. The gate roster pays the bill.',
+    upside: 'Immediately gain 1 free Stone Rampart that does NOT count against the shop quota.',
+    caveat: 'Lose 3 lives immediately.',
+    effects: ['Gain 1 Stone Rampart now (quota-free).', 'Lose 3 lives now.']
+  },
+  {
+    id: 'TRAPWRIGHTS_SAMPLE',
+    name: "Trapwright's Sample",
+    eyebrow: 'SMALL CRATE',
+    blurb: 'A trapwright leaves two demonstration pieces and a very small invoice.',
+    upside: 'Immediately gain 1 Iron Spike and 1 Frost Snare trap.',
+    caveat: 'Lose 60 gold immediately.',
+    effects: ['Gain 1× Iron Spike + 1× Frost Snare trap now.', 'Lose 60 gold now.']
+  },
+  {
+    id: 'CHAPEL_CANDLE',
+    name: 'Chapel Candle',
+    eyebrow: 'QUIET PRAYER',
+    blurb: 'A small shrine keeps the wall steady for one more night.',
+    upside: 'Gain 3 lives immediately.',
+    caveat: 'Lose 70 gold immediately.',
+    effects: ['Gain 3 lives now.', 'Lose 70 gold now.']
   }
 ];
 
@@ -669,7 +731,11 @@ const CAMPAIGN_RELIC_GOLD_COSTS: Partial<Record<CampaignRelicId, number>> = {
   WATCHMANS_DUE: 100,
   SCRAP_REQUISITION: 90,
   VULCANS_CACHE: 120,
-  VESTAL_COVENANT: 250
+  VESTAL_COVENANT: 250,
+  SCOUTS_STIPEND: 95,
+  BUILDER_CHIT: 110,
+  TRAPWRIGHTS_SAMPLE: 60,
+  CHAPEL_CANDLE: 70
 };
 
 const CAMPAIGN_RELIC_LIFE_COSTS: Partial<Record<CampaignRelicId, number>> = {
@@ -687,7 +753,9 @@ const CAMPAIGN_RELIC_LIFE_COSTS: Partial<Record<CampaignRelicId, number>> = {
   PILUS_PLEDGE: 5,
   SAGITTARIUS_PACT: 5,
   COPPER_TITHE: 3,
-  MASONS_CHARTER: 6
+  MASONS_CHARTER: 6,
+  SLINGER_LEVY: 4,
+  SMALL_RAMPART_GRANT: 3
 };
 
 export function campaignRelicById(id: CampaignRelicId | string | null | undefined): CampaignRelicDef | null {
@@ -942,6 +1010,33 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   if (id === 'SCRAP_REQUISITION') {
     queuePendingRelicItem(state, 'RARE');
     sacrificeRelicGold(state, 90);
+  }
+  if (id === 'SCOUTS_STIPEND') {
+    queueRelicTower(state, TowerType.SPECULATOR, 3);
+    sacrificeRelicGold(state, 95);
+  }
+  if (id === 'SLINGER_LEVY') {
+    queueRelicTower(state, TowerType.FUNDIBULUS, 3);
+    sacrificeRelicLives(state, 4);
+  }
+  if (id === 'BUILDER_CHIT') {
+    queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 3);
+    sacrificeRelicGold(state, 110);
+  }
+  if (id === 'SMALL_RAMPART_GRANT') {
+    state.rampartsOwned = (state.rampartsOwned ?? 0) + 1;
+    sacrificeRelicLives(state, 3);
+  }
+  if (id === 'TRAPWRIGHTS_SAMPLE') {
+    if (!state.trapInventory) state.trapInventory = {};
+    state.trapInventory.IRON_SPIKE_TRAP = (state.trapInventory.IRON_SPIKE_TRAP ?? 0) + 1;
+    state.trapInventory.FROST_SNARE = (state.trapInventory.FROST_SNARE ?? 0) + 1;
+    state.trapsPurchased = (state.trapsPurchased ?? 0) + 2;
+    sacrificeRelicGold(state, 60);
+  }
+  if (id === 'CHAPEL_CANDLE') {
+    state.lives = (state.lives ?? 0) + 3;
+    sacrificeRelicGold(state, 70);
   }
   // 2026-07-03 — mechanic-hook relics.
   if (id === 'MASONS_CHARTER') {

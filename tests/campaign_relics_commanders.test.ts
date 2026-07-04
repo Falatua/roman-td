@@ -44,9 +44,9 @@ function bootstrapState() {
 }
 
 describe('Campaign relics', () => {
-  it('ships a full 62-relic randomized campaign pool', () => {
-    expect(CAMPAIGN_RELICS.length).toBe(62);
-    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(62);
+  it('ships a full 68-relic randomized campaign pool', () => {
+    expect(CAMPAIGN_RELICS.length).toBe(68);
+    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(68);
     for (const relic of CAMPAIGN_RELICS) {
       expect(relic.upside.length).toBeGreaterThan(5);
       expect(relic.caveat.length).toBeGreaterThan(5);
@@ -203,6 +203,63 @@ describe('Campaign relics', () => {
     const poorState = bootstrapState();
     poorState.gold = 80;
     expect(campaignRelicAffordability(poorState, 'SCRAP_REQUISITION').canAfford).toBe(false);
+  });
+
+  it('adds more low-stakes relics for quiet tactical choices', () => {
+    const scout = bootstrapState();
+    scout.gold = 500;
+    applyCampaignRelic(scout, 'SCOUTS_STIPEND');
+    expect(scout.gold).toBe(405);
+    expect(scout.pendingPurchasedTowers?.[0]).toEqual({ type: TowerType.SPECULATOR, tier: 3, source: 'relic' });
+
+    const slinger = bootstrapState();
+    slinger.lives = 20;
+    applyCampaignRelic(slinger, 'SLINGER_LEVY');
+    expect(slinger.lives).toBe(16);
+    expect(slinger.pendingPurchasedTowers?.[0]).toEqual({ type: TowerType.FUNDIBULUS, tier: 3, source: 'relic' });
+
+    const builder = bootstrapState();
+    builder.gold = 500;
+    applyCampaignRelic(builder, 'BUILDER_CHIT');
+    expect(builder.gold).toBe(390);
+    expect(builder.pendingPurchasedTowers).toHaveLength(1);
+    expect(builder.pendingPurchasedTowers?.[0].tier).toBe(3);
+    expect(builder.pendingPurchasedTowers?.[0].source).toBe('relic');
+
+    const rampart = bootstrapState();
+    rampart.lives = 20;
+    applyCampaignRelic(rampart, 'SMALL_RAMPART_GRANT');
+    expect(rampart.lives).toBe(17);
+    expect(rampart.rampartsOwned).toBe(1);
+    expect(rampart.rampartsPurchased ?? 0).toBe(0);
+
+    const traps = bootstrapState();
+    traps.gold = 500;
+    applyCampaignRelic(traps, 'TRAPWRIGHTS_SAMPLE');
+    expect(traps.gold).toBe(440);
+    expect(traps.trapInventory?.IRON_SPIKE_TRAP).toBe(1);
+    expect(traps.trapInventory?.FROST_SNARE).toBe(1);
+    expect(traps.trapsPurchased).toBe(2);
+
+    const chapel = bootstrapState();
+    chapel.gold = 500;
+    chapel.lives = 12;
+    applyCampaignRelic(chapel, 'CHAPEL_CANDLE');
+    expect(chapel.gold).toBe(430);
+    expect(chapel.lives).toBe(15);
+
+    const noGold = bootstrapState();
+    noGold.gold = 59;
+    expect(campaignRelicAffordability(noGold, 'TRAPWRIGHTS_SAMPLE').canAfford).toBe(false);
+    expect(applyCampaignRelic(noGold, 'TRAPWRIGHTS_SAMPLE')).toBe(false);
+    expect(noGold.trapInventory?.IRON_SPIKE_TRAP ?? 0).toBe(0);
+    expect(noGold.trapInventory?.FROST_SNARE ?? 0).toBe(0);
+
+    const noLives = bootstrapState();
+    noLives.lives = 3;
+    expect(campaignRelicAffordability(noLives, 'SMALL_RAMPART_GRANT').canAfford).toBe(false);
+    expect(applyCampaignRelic(noLives, 'SMALL_RAMPART_GRANT')).toBe(false);
+    expect(noLives.rampartsOwned ?? 0).toBe(0);
   });
 
   it('adds mechanic-hook relics: ramparts, traps, kill gold, Saturnalia, wager, rescue', () => {
