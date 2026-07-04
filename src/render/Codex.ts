@@ -270,7 +270,7 @@ function renderTab(tab: string): string {
       `)}
       ${foldSection('⚖ CAMPAIGN RELICS — BARGAINS WITH FATE', `
         <div style="font-size:11px;color:#cdb98a;line-height:1.6;margin-bottom:8px;background:#0c0a08;padding:10px 14px;border-left:3px solid #ffd34d">
-          After clearing <b style="color:#ffd34d">every 5th wave (W5 / W10 / W15 / W20 / W25)</b>, Rome offers <b>4 random Campaign Relics</b> from a 62-relic pool. Every relic is a pact: a real upside bound to a real price. Claim ONE per offer — or <b style="color:#88ddff">reject all four</b> and stay unbound. Claimed relics are <b>permanent for the rest of the run</b> and stack with each other; a claimed relic never re-appears in later offers.
+          After clearing <b style="color:#ffd34d">every 5th wave (W5 / W10 / W15 / W20 / W25)</b>, Rome offers <b>4 random Campaign Relics</b> from a 68-relic pool. Every relic is a pact: a real upside bound to a real price. Claim ONE per offer — or <b style="color:#88ddff">reject all four</b> and stay unbound. Claimed relics are <b>permanent for the rest of the run</b> and stack with each other; a claimed relic never re-appears in later offers.
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           ${noteCard('Two families of bargains', '<b style="color:#ff7733">Run-shapers</b> trade a big permanent buff for a big permanent cost (e.g. Divine towers +80% damage, but all enemies +25% speed — forever). <b style="color:#88ff88">Small trades</b> are immediate one-time swaps: a Tier-3 tower for 5 lives, +150 gold for 3 lives, +4 lives for 100 gold. Read the UPSIDE and the CAVEAT lines on each card — both always apply.')}
