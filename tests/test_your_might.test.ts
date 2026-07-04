@@ -84,7 +84,7 @@ describe('Test Your Might bonus wave', () => {
     expect(s.testYourMightActive).toBe(true);
     expect(s.spawnQueue.length).toBe(expectedCount);
     expect(s.weatherIntensity).toBeGreaterThan(1);
-    expect(s.weatherIntensity).toBeGreaterThanOrEqual(1.4);
+    expect(s.weatherIntensity).toBeGreaterThanOrEqual(1.3);
     expect(s.waveModifier).toBe('GROUP_MARCH');
     expect(s.endlessExtraModifiers).toEqual(['STORM_SURGE', 'DEATH_PACT']);
   });
@@ -114,11 +114,11 @@ describe('Test Your Might bonus wave', () => {
     expect(byType.get('CARTHAGE_SPEARMAN')?.count).toBe(18);
     expect(byType.get('CARTHAGE_ELITE_GUARD')?.count).toBe(8);
     expect(byType.get('IRON_PHALANX')?.count).toBe(5);
-    expect(byType.get('CARTHAGE_SPEARMAN')?.hpMult).toBeGreaterThanOrEqual(280);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.resistMult ?? 1) <= 0.80)).toBe(true);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.statusGuard ?? 1) <= 0.42)).toBe(true);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.rangedBlock ?? 0) >= 0.12)).toBe(true);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.checkpointHeal ?? 0) >= 0.06)).toBe(true);
+    expect(byType.get('CARTHAGE_SPEARMAN')?.hpMult).toBeGreaterThanOrEqual(265);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.resistMult ?? 1) <= 0.82)).toBe(true);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.statusGuard ?? 1) <= 0.46)).toBe(true);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.rangedBlock ?? 0) >= 0.10)).toBe(true);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.checkpointHeal ?? 0) >= 0.05)).toBe(true);
   });
 
   it('routes tickSpawns through the bonus spawner and creates real enemies', () => {
@@ -143,14 +143,14 @@ describe('Test Your Might bonus wave', () => {
     const elite = enemies.find(e => e.type === 'CARTHAGE_ELITE_GUARD');
     const elephant = enemies.find(e => e.type === 'WAR_ELEPHANT');
 
-    expect(hannibal.__lateResistMult).toBeLessThanOrEqual(0.82);
-    expect(hannibal.__lateStatusGuard).toBeLessThanOrEqual(0.42);
+    expect(hannibal.__lateResistMult).toBeLessThanOrEqual(0.84);
+    expect(hannibal.__lateStatusGuard).toBeLessThanOrEqual(0.46);
     expect(enemyDamageMultiplier(hannibal, DamageType.PHYS_RANGED)).toBeLessThan(0.5);
     expect(statusEffectiveness(hannibal, StatusEffectKind.SLOW)).toBeLessThan(0.2);
     expect(elite.mutation).toBe('WARDED');
-    expect(elite.__lateRangedBlock).toBeGreaterThanOrEqual(0.12);
-    expect(elite.outOfCombatRegen).toBeGreaterThanOrEqual(0.02);
-    expect(elephant.checkpointHealPct).toBeGreaterThanOrEqual(0.06);
+    expect(elite.__lateRangedBlock).toBeGreaterThanOrEqual(0.10);
+    expect(elite.outOfCombatRegen).toBeGreaterThanOrEqual(0.018);
+    expect(elephant.checkpointHealPct).toBeGreaterThanOrEqual(0.05);
   });
 
   it('also works through the normal WaveManager tickSpawns entrypoint', () => {

@@ -32,17 +32,17 @@ export const TEST_YOUR_MIGHT_SPAWNS: TestYourMightSpawn[] = [
   // but with a prep window after accepting. Only Hannibal is marked as the
   // scheduled reward boss so the run still pays exactly one randomized
   // Legendary item.
-  { type: 'HANNIBAL_BARCA', count: 1, gap: 0, start: 0.0, hpMult: 52, speedMult: 1.05, majorReward: true, resistMult: 0.82, statusGuard: 0.42, rangedBlock: 0.10, checkpointHeal: 0.04, outOfCombatRegen: 0.02 },
-  { type: 'UNDEAD_WAR_ELEPHANT', count: 1, gap: 3.4, start: 3.8, hpMult: 30, speedMult: 1.02, resistMult: 0.82, statusGuard: 0.44, rangedBlock: 0.10, checkpointHeal: 0.06, outOfCombatRegen: 0.02 },
-  { type: 'WAR_ELEPHANT', count: 2, gap: 3.0, start: 5.0, hpMult: 32, speedMult: 1.03, resistMult: 0.82, statusGuard: 0.46, rangedBlock: 0.10, checkpointHeal: 0.06, outOfCombatRegen: 0.02 },
-  { type: 'CARTHAGE_SPEARMAN', count: 18, gap: 0.40, start: 6.2, hpMult: 285, speedMult: 1.06, resistMult: 0.86, statusGuard: 0.60, rangedBlock: 0.07, checkpointHeal: 0.04 },
-  { type: 'CARTHAGE_ELITE_GUARD', count: 8, gap: 0.58, start: 10.2, hpMult: 300, speedMult: 1.05, resistMult: 0.84, statusGuard: 0.54, rangedBlock: 0.12, checkpointHeal: 0.05, outOfCombatRegen: 0.02, mutation: 'WARDED' },
-  { type: 'IRON_PHALANX', count: 5, gap: 0.92, start: 14.8, hpMult: 34, speedMult: 1.01, resistMult: 0.82, statusGuard: 0.46, checkpointHeal: 0.05, outOfCombatRegen: 0.015 },
-  { type: 'PATHFINDER_COMMANDER', count: 1, gap: 0, start: 8.4, hpMult: 220, speedMult: 1.05, resistMult: 0.84, statusGuard: 0.52, rangedBlock: 0.08, mutation: 'AURA_STAR' },
-  { type: 'STANDARD_BEARER_COMMANDER', count: 1, gap: 0, start: 12.4, hpMult: 210, speedMult: 1.02, resistMult: 0.82, statusGuard: 0.48, rangedBlock: 0.08, outOfCombatRegen: 0.015 },
-  { type: 'SIEGE_CAPTAIN_COMMANDER', count: 1, gap: 0, start: 16.4, hpMult: 205, speedMult: 1.01, resistMult: 0.82, statusGuard: 0.50, rangedBlock: 0.10, outOfCombatRegen: 0.015 },
-  { type: 'ANUBIS_PRIEST_COMMANDER', count: 1, gap: 0, start: 20.0, hpMult: 215, speedMult: 1.03, resistMult: 0.80, statusGuard: 0.46, rangedBlock: 0.08, outOfCombatRegen: 0.02 },
-  { type: 'ANUBIS_KING', count: 1, gap: 0, start: 29.0, hpMult: 21, speedMult: 1.04, resistMult: 0.80, statusGuard: 0.42, rangedBlock: 0.10, checkpointHeal: 0.04, outOfCombatRegen: 0.02 }
+  { type: 'HANNIBAL_BARCA', count: 1, gap: 0, start: 0.0, hpMult: 50, speedMult: 1.04, majorReward: true, resistMult: 0.84, statusGuard: 0.46, rangedBlock: 0.08, checkpointHeal: 0.035, outOfCombatRegen: 0.018 },
+  { type: 'UNDEAD_WAR_ELEPHANT', count: 1, gap: 3.4, start: 3.8, hpMult: 29, speedMult: 1.01, resistMult: 0.84, statusGuard: 0.48, rangedBlock: 0.08, checkpointHeal: 0.05, outOfCombatRegen: 0.018 },
+  { type: 'WAR_ELEPHANT', count: 2, gap: 3.0, start: 5.0, hpMult: 30, speedMult: 1.02, resistMult: 0.84, statusGuard: 0.50, rangedBlock: 0.08, checkpointHeal: 0.05, outOfCombatRegen: 0.018 },
+  { type: 'CARTHAGE_SPEARMAN', count: 18, gap: 0.40, start: 6.2, hpMult: 270, speedMult: 1.04, resistMult: 0.88, statusGuard: 0.64, rangedBlock: 0.05, checkpointHeal: 0.035 },
+  { type: 'CARTHAGE_ELITE_GUARD', count: 8, gap: 0.58, start: 10.2, hpMult: 285, speedMult: 1.03, resistMult: 0.86, statusGuard: 0.58, rangedBlock: 0.10, checkpointHeal: 0.04, outOfCombatRegen: 0.018, mutation: 'WARDED' },
+  { type: 'IRON_PHALANX', count: 5, gap: 0.92, start: 14.8, hpMult: 32, speedMult: 1.0, resistMult: 0.84, statusGuard: 0.50, checkpointHeal: 0.04, outOfCombatRegen: 0.012 },
+  { type: 'PATHFINDER_COMMANDER', count: 1, gap: 0, start: 8.4, hpMult: 210, speedMult: 1.04, resistMult: 0.86, statusGuard: 0.56, rangedBlock: 0.06, mutation: 'AURA_STAR' },
+  { type: 'STANDARD_BEARER_COMMANDER', count: 1, gap: 0, start: 12.4, hpMult: 200, speedMult: 1.01, resistMult: 0.84, statusGuard: 0.52, rangedBlock: 0.06, outOfCombatRegen: 0.012 },
+  { type: 'SIEGE_CAPTAIN_COMMANDER', count: 1, gap: 0, start: 16.4, hpMult: 195, speedMult: 1.0, resistMult: 0.84, statusGuard: 0.54, rangedBlock: 0.08, outOfCombatRegen: 0.012 },
+  { type: 'ANUBIS_PRIEST_COMMANDER', count: 1, gap: 0, start: 20.0, hpMult: 205, speedMult: 1.02, resistMult: 0.82, statusGuard: 0.50, rangedBlock: 0.06, outOfCombatRegen: 0.018 },
+  { type: 'ANUBIS_KING', count: 1, gap: 0, start: 29.0, hpMult: 20, speedMult: 1.03, resistMult: 0.82, statusGuard: 0.46, rangedBlock: 0.08, checkpointHeal: 0.035, outOfCombatRegen: 0.018 }
 ];
 
 export function shouldOfferTestYourMight(state: GameStateShape): boolean {
@@ -125,7 +125,7 @@ export function startTestYourMight(state: GameStateShape): void {
   (state as any).__waveStartTick = state.tick;
   state.phase = GamePhase.WAVE_PHASE;
   state.weatherKey = 'CARTHAGE';
-  state.weatherIntensity = 1.45;
+  state.weatherIntensity = 1.35;
   state.waveModifier = 'GROUP_MARCH';
   state.endlessExtraModifiers = ['STORM_SURGE', 'DEATH_PACT'];
   state.waveModifierTick = 0;
