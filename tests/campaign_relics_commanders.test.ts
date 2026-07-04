@@ -99,6 +99,7 @@ describe('Campaign relics', () => {
     expect(byId.ARMORY_BARGAIN.caveat).toContain('7 lives');
     expect(byId.LEGATE_CONTRACT.caveat).toContain('225 gold');
     expect(byId.AGRICOLA_LEVY.upside).toContain('Champion Agricola');
+    expect(byId.AGRICOLA_LEVY.caveat).toContain('29 lives');
   });
 
   it('Saturn debt grants the immediate 900g campaign bankroll', () => {
@@ -395,7 +396,7 @@ describe('Campaign relics', () => {
     const agricolaState = bootstrapState();
     agricolaState.lives = 40;
     applyCampaignRelic(agricolaState, 'AGRICOLA_LEVY');
-    expect(agricolaState.lives).toBe(20);
+    expect(agricolaState.lives).toBe(11);
     expect(agricolaState.pendingPurchasedTowers).toEqual([
       { type: TowerType.CHAMPION_AGRICOLA, tier: 2, source: 'relic' }
     ]);
@@ -415,14 +416,24 @@ describe('Campaign relics', () => {
 
   it('blocks life-sacrifice relics when the player cannot survive the cost', () => {
     const agricolaState = bootstrapState();
-    agricolaState.lives = 20;
+    agricolaState.lives = 29;
     const affordability = campaignRelicAffordability(agricolaState, 'AGRICOLA_LEVY');
     expect(affordability.canAfford).toBe(false);
-    expect(affordability.reason).toContain('21 lives');
+    expect(affordability.lifeCost).toBe(29);
+    expect(affordability.reason).toContain('30 lives');
     expect(applyCampaignRelic(agricolaState, 'AGRICOLA_LEVY')).toBe(false);
-    expect(agricolaState.lives).toBe(20);
+    expect(agricolaState.lives).toBe(29);
     expect(agricolaState.pendingPurchasedTowers ?? []).toHaveLength(0);
     expect(activeCampaignRelicIds(agricolaState)).toEqual([]);
+
+    const exactSurvivalState = bootstrapState();
+    exactSurvivalState.lives = 30;
+    expect(campaignRelicAffordability(exactSurvivalState, 'AGRICOLA_LEVY').canAfford).toBe(true);
+    expect(applyCampaignRelic(exactSurvivalState, 'AGRICOLA_LEVY')).toBe(true);
+    expect(exactSurvivalState.lives).toBe(1);
+    expect(exactSurvivalState.pendingPurchasedTowers).toEqual([
+      { type: TowerType.CHAMPION_AGRICOLA, tier: 2, source: 'relic' }
+    ]);
   });
 
   it('adds gold-sacrifice epic and legendary item relics without going negative', () => {

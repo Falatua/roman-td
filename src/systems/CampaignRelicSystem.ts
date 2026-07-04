@@ -469,8 +469,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'LIVES FOR A HERO',
     blurb: 'Agricola arrives from the frontier with maps, scouts, and a hard look at the casualty rolls.',
     upside: 'Immediately gain Champion Agricola to place.',
-    caveat: 'Lose 20 lives immediately.',
-    effects: ['Gain CHAMPION AGRICOLA now.', 'Lose 20 lives now.']
+    caveat: 'Lose 29 lives immediately.',
+    effects: ['Gain CHAMPION AGRICOLA now.', 'Lose 29 lives now.']
   },
   {
     id: 'EPIC_AUCTION',
@@ -747,7 +747,7 @@ const CAMPAIGN_RELIC_LIFE_COSTS: Partial<Record<CampaignRelicId, number>> = {
   FORTUNA_PURSE: 8,
   ARCHITECTS_PERMIT: 7,
   FRONTIER_RECRUITS: 12,
-  AGRICOLA_LEVY: 20,
+  AGRICOLA_LEVY: 29,
   VESTAL_ORPHANS: 10,
   DOUBLE_EPIC_FUNERAL: 16,
   PILUS_PLEDGE: 5,
@@ -885,6 +885,14 @@ function sacrificeRelicGold(state: GameStateShape, amount: number): void {
   state.gold = (state.gold ?? 0) - amount;
 }
 
+function payRelicLives(state: GameStateShape, id: CampaignRelicId): void {
+  sacrificeRelicLives(state, CAMPAIGN_RELIC_LIFE_COSTS[id] ?? 0);
+}
+
+function payRelicGold(state: GameStateShape, id: CampaignRelicId): void {
+  sacrificeRelicGold(state, CAMPAIGN_RELIC_GOLD_COSTS[id] ?? 0);
+}
+
 export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): boolean {
   const def = campaignRelicById(id);
   if (!def) return false;
@@ -904,12 +912,12 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   if (id === 'AEGIS_WALL') state.lives += 15;
   if (id === 'QUARTERMASTER_LEDGER') {
     state.gold += 300;
-    sacrificeRelicLives(state, 5);
+    payRelicLives(state, id);
   }
   if (id === 'FORTUNA_PURSE') {
     state.gold += 180;
     queuePendingRelicItem(state, 'RARE');
-    sacrificeRelicLives(state, 8);
+    payRelicLives(state, id);
   }
   // 2026-06-25 — concrete reward grants. T5 tower is self-contained; the
   // legendary item is granted by main.ts (inventory in scope there) when it
@@ -921,129 +929,129 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   if (id === 'SEALED_RELIQUARY') (state as any).__pendingRelicLegendary = true;
   if (id === 'CONSCRIPTS_WAGER') {
     queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 5);
-    sacrificeRelicLives(state, 14);
+    payRelicLives(state, id);
   }
   if (id === 'ARMORY_BARGAIN') {
     queuePendingRelicItem(state, 'RARE');
-    sacrificeRelicLives(state, 7);
+    payRelicLives(state, id);
   }
   if (id === 'PATRICIAN_LOCKBOX') {
     queuePendingRelicItem(state, 'EPIC');
-    sacrificeRelicLives(state, 10);
+    payRelicLives(state, id);
   }
   if (id === 'VETERAN_DRAFT') {
     queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 3);
     queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 3);
-    sacrificeRelicLives(state, 8);
+    payRelicLives(state, id);
   }
   if (id === 'ARCHITECTS_PERMIT') {
     queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 4);
-    sacrificeRelicLives(state, 7);
+    payRelicLives(state, id);
   }
   if (id === 'FRONTIER_RECRUITS') {
     queueRelicTower(state, pickRelicTower(MELEE_BASE_TOWER_RELIC_POOL), 4);
     queueRelicTower(state, pickRelicTower(RANGED_BASE_TOWER_RELIC_POOL), 4);
-    sacrificeRelicLives(state, 12);
+    payRelicLives(state, id);
   }
   if (id === 'LEGATE_CONTRACT') {
     queueRelicTower(state, TowerType.LEGATE, 5);
-    sacrificeRelicGold(state, 225);
+    payRelicGold(state, id);
   }
   if (id === 'AGRICOLA_LEVY') {
     queueRelicTower(state, TowerType.CHAMPION_AGRICOLA, 2);
-    sacrificeRelicLives(state, 20);
+    payRelicLives(state, id);
   }
   if (id === 'EPIC_AUCTION') {
     queuePendingRelicItem(state, 'EPIC');
-    sacrificeRelicGold(state, 325);
+    payRelicGold(state, id);
   }
   if (id === 'RELIQUARY_RANSOM') {
     (state as any).__pendingRelicLegendary = true;
-    sacrificeRelicGold(state, 500);
+    payRelicGold(state, id);
   }
   if (id === 'ONAGER_INDENTURE') {
     queueRelicTower(state, TowerType.COLOSSUS_ONAGER, 5);
-    sacrificeRelicGold(state, 250);
+    payRelicGold(state, id);
   }
   if (id === 'PRAETORIAN_STIPEND') {
     queueRelicTower(state, TowerType.IMPERATOR_GUARD, 5);
-    sacrificeRelicGold(state, 375);
+    payRelicGold(state, id);
   }
   if (id === 'VESTAL_ORPHANS') {
     queuePendingRelicItem(state, 'EPIC');
-    sacrificeRelicLives(state, 10);
+    payRelicLives(state, id);
   }
   if (id === 'DOUBLE_EPIC_FUNERAL') {
     queuePendingRelicItem(state, 'EPIC');
     queuePendingRelicItem(state, 'EPIC');
-    sacrificeRelicLives(state, 16);
+    payRelicLives(state, id);
   }
   if (id === 'SKY_TOLL') {
     queueRelicTower(state, TowerType.AQUILA_VENATOR, 5);
-    sacrificeRelicGold(state, 240);
+    payRelicGold(state, id);
   }
   if (id === 'SPECULATOR_BRIBE') {
     queueRelicTower(state, TowerType.SPECULATOR, 5);
-    sacrificeRelicGold(state, 160);
+    payRelicGold(state, id);
   }
   // 2026-07-02 — low-stakes relic family: small trades, small costs.
   if (id === 'PILUS_PLEDGE') {
     queueRelicTower(state, TowerType.PRIMUS_PILUS, 3);
-    sacrificeRelicLives(state, 5);
+    payRelicLives(state, id);
   }
   if (id === 'CENTURION_LOAN') {
     queueRelicTower(state, TowerType.CENTURION, 3);
-    sacrificeRelicGold(state, 120);
+    payRelicGold(state, id);
   }
   if (id === 'SAGITTARIUS_PACT') {
     queueRelicTower(state, TowerType.SAGITTARIUS, 3);
-    sacrificeRelicLives(state, 5);
+    payRelicLives(state, id);
   }
   if (id === 'COPPER_TITHE') {
     state.gold += 150;
-    sacrificeRelicLives(state, 3);
+    payRelicLives(state, id);
   }
   if (id === 'WATCHMANS_DUE') {
     state.lives = (state.lives ?? 0) + 4;
-    sacrificeRelicGold(state, 100);
+    payRelicGold(state, id);
   }
   if (id === 'SCRAP_REQUISITION') {
     queuePendingRelicItem(state, 'RARE');
-    sacrificeRelicGold(state, 90);
+    payRelicGold(state, id);
   }
   if (id === 'SCOUTS_STIPEND') {
     queueRelicTower(state, TowerType.SPECULATOR, 3);
-    sacrificeRelicGold(state, 95);
+    payRelicGold(state, id);
   }
   if (id === 'SLINGER_LEVY') {
     queueRelicTower(state, TowerType.FUNDIBULUS, 3);
-    sacrificeRelicLives(state, 4);
+    payRelicLives(state, id);
   }
   if (id === 'BUILDER_CHIT') {
     queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 3);
-    sacrificeRelicGold(state, 110);
+    payRelicGold(state, id);
   }
   if (id === 'SMALL_RAMPART_GRANT') {
     state.rampartsOwned = (state.rampartsOwned ?? 0) + 1;
-    sacrificeRelicLives(state, 3);
+    payRelicLives(state, id);
   }
   if (id === 'TRAPWRIGHTS_SAMPLE') {
     if (!state.trapInventory) state.trapInventory = {};
     state.trapInventory.IRON_SPIKE_TRAP = (state.trapInventory.IRON_SPIKE_TRAP ?? 0) + 1;
     state.trapInventory.FROST_SNARE = (state.trapInventory.FROST_SNARE ?? 0) + 1;
     state.trapsPurchased = (state.trapsPurchased ?? 0) + 2;
-    sacrificeRelicGold(state, 60);
+    payRelicGold(state, id);
   }
   if (id === 'CHAPEL_CANDLE') {
     state.lives = (state.lives ?? 0) + 3;
-    sacrificeRelicGold(state, 70);
+    payRelicGold(state, id);
   }
   // 2026-07-03 — mechanic-hook relics.
   if (id === 'MASONS_CHARTER') {
     // Free ramparts land in inventory WITHOUT touching rampartsPurchased,
     // so the shop's 5-per-campaign quota is unaffected.
     state.rampartsOwned = (state.rampartsOwned ?? 0) + 2;
-    sacrificeRelicLives(state, 6);
+    payRelicLives(state, id);
   }
   if (id === 'VULCANS_CACHE') {
     if (!state.trapInventory) state.trapInventory = {};
@@ -1051,10 +1059,10 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
       state.trapInventory[tid] = (state.trapInventory[tid] ?? 0) + 2;
     }
     state.trapsPurchased = (state.trapsPurchased ?? 0) + 6;   // quest progress
-    sacrificeRelicGold(state, 120);
+    payRelicGold(state, id);
   }
   if (id === 'VESTAL_COVENANT') {
-    sacrificeRelicGold(state, 250);
+    payRelicGold(state, id);
   }
   // PUBLICANS_CONTRACT / SATURNALIA_EDICT / COLOSSEUM_WAGER are pure
   // hook-based relics (kill gold, speed/damage mults, boss-kill lives) —
