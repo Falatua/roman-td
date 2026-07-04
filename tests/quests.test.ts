@@ -23,11 +23,11 @@ function soloCampaignCumulative() {
 }
 
 describe('30-wave Solo quest pacing', () => {
-  it('keeps 33 unique quests distributed across the three campaign acts', () => {
-    expect(QUESTS).toHaveLength(33);
-    expect(new Set(QUESTS.map(q => q.id)).size).toBe(33);
+  it('keeps 35 unique quests distributed across the three campaign acts', () => {
+    expect(QUESTS).toHaveLength(35);
+    expect(new Set(QUESTS.map(q => q.id)).size).toBe(35);
     expect(QUESTS.filter(q => q.tier === 'EARLY')).toHaveLength(10);
-    expect(QUESTS.filter(q => q.tier === 'MID')).toHaveLength(10);
+    expect(QUESTS.filter(q => q.tier === 'MID')).toHaveLength(12);
     expect(QUESTS.filter(q => q.tier === 'LATE')).toHaveLength(13);
   });
 
@@ -36,6 +36,8 @@ describe('30-wave Solo quest pacing', () => {
     expect(quest('recruiter').tier).toBe('EARLY');
     expect(quest('quartermaster').reward.item).toBe('WATCHTOWER_LENS');
     expect(quest('first_stripe').target).toBe(1);
+    expect(quest('rampart_mason').reward).toEqual({ kind: 'GOLD', amount: 55 });
+    expect(quest('battle_line').reward).toEqual({ kind: 'GOLD', amount: 80 });
     expect(quest('full_spectrum').target).toBe(4);
     expect(quest('kitted_veteran').target).toBe(3);
     expect(quest('oathbound').tier).toBe('MID');
@@ -55,6 +57,8 @@ describe('30-wave Solo quest pacing', () => {
     expect(quest('oathbound').condition(s)).toBe(2);
     s.heroTier = 2;
     expect(quest('first_stripe').condition(s)).toBe(2);
+    s.placedRamparts = [{ col: 5, row: 5, orient: 'H' }, { col: 9, row: 9, orient: 'D1' }];
+    expect(quest('rampart_mason').condition(s)).toBe(2);
   });
 
   it('completes Field Engineer from cumulative purchases without repeating', () => {
@@ -65,6 +69,23 @@ describe('30-wave Solo quest pacing', () => {
     state.trapsPurchased = 8;
     expect(evaluateQuests(state).map(q => q.id)).toContain('field_engineer');
     expect(evaluateQuests(state).map(q => q.id)).not.toContain('field_engineer');
+  });
+
+  it('adds two mid-game gold quests for ramparts and tower count', () => {
+    const rampartState = createGameState();
+    expect(quest('rampart_mason').tier).toBe('MID');
+    expect(quest('rampart_mason').reward.kind).toBe('GOLD');
+    rampartState.placedRamparts = [{ col: 7, row: 7, orient: 'V' }, { col: 11, row: 9, orient: 'D2' }];
+    expect(evaluateQuests(rampartState).map(q => q.id)).toContain('rampart_mason');
+    expect(evaluateQuests(rampartState).map(q => q.id)).not.toContain('rampart_mason');
+
+    const towerState = createGameState();
+    expect(quest('battle_line').tier).toBe('MID');
+    expect(quest('battle_line').target).toBe(12);
+    for (let i = 0; i < 12; i++) {
+      towerState.towers.set(`t${i}`, { pending: false } as any);
+    }
+    expect(quest('battle_line').condition(towerState)).toBe(12);
   });
 
   it('adds a beginner trap quest that requires buying and deploying a trap', () => {

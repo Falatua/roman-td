@@ -56,6 +56,12 @@ const countTowersAtTier = (s: GameStateShape, tier: number): number => {
   for (const t of s.towers.values()) if (t.qualityTier >= tier && !t.pending) n++;
   return n;
 };
+// Helper: count of all fielded, non-pending towers on the board.
+const countFieldedTowers = (s: GameStateShape): number => {
+  let n = 0;
+  for (const t of s.towers.values()) if (!t.pending) n++;
+  return n;
+};
 // Helper: count of DISTINCT tower types currently fielded (pending towers
 // and same-type duplicates don't add). Powers the roster-variety quests.
 const countDistinctTowerTypes = (s: GameStateShape): number => {
@@ -213,6 +219,14 @@ export const QUESTS: QuestDef[] = [
     reward: { kind: 'GOLD', amount: 60 }
   },
   {
+    id: 'rampart_mason', tier: 'MID',
+    title: 'Rampart Mason',
+    blurb: 'Place 2 Stone Ramparts. Turn purchased architecture into a real maze.',
+    condition: s => (s.placedRamparts ?? []).length,
+    target: 2,
+    reward: { kind: 'GOLD', amount: 55 }
+  },
+  {
     id: 'diverse_legions', tier: 'MID',
     title: 'Diverse Legions',
     blurb: 'Build 5 DIFFERENT combo types. Variety, not volume.',
@@ -227,6 +241,14 @@ export const QUESTS: QuestDef[] = [
     condition: s => countTowersAtTier(s, 4),
     target: 3,
     reward: { kind: 'GOLD', amount: 45 }
+  },
+  {
+    id: 'battle_line', tier: 'MID',
+    title: 'Battle Line',
+    blurb: 'Field 12 towers at the same time. A real legion needs depth, not one champion.',
+    condition: countFieldedTowers,
+    target: 12,
+    reward: { kind: 'GOLD', amount: 80 }
   },
   {
     id: 'boss_hunter', tier: 'MID',
@@ -365,11 +387,7 @@ export const QUESTS: QuestDef[] = [
     id: 'legion_without_end', tier: 'LATE',
     title: 'Legion Without End',
     blurb: 'Field 20 towers at the same time. Wall-to-wall Rome.',
-    condition: s => {
-      let n = 0;
-      for (const t of s.towers.values()) if (!t.pending) n++;
-      return n;
-    },
+    condition: countFieldedTowers,
     target: 20,
     reward: { kind: 'GOLD', amount: 150 }
   },
