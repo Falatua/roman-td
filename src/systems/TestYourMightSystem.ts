@@ -180,11 +180,14 @@ export function completeTestYourMight(state: GameStateShape): boolean {
   return true;
 }
 
-export function failTestYourMight(state: GameStateShape): void {
+export function failTestYourMight(state: GameStateShape, leakedEnemyName?: string): void {
   if (!state.testYourMightActive) return;
   state.testYourMightActive = false;
   state.testYourMightFailed = true;
   state.lives = 0;
   if (state.gameOverAt < 0) state.gameOverAt = state.tick;
-  state.hint = `WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} failed. One got through. The Senate has chosen screaming.`;
+  const culprit = leakedEnemyName?.trim()
+    ? `${leakedEnemyName.trim()} reached Rome.`
+    : 'One got through.';
+  state.hint = `WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} failed. ${culprit} One leak ends Test Your Might.`;
 }

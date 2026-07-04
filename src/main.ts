@@ -6434,14 +6434,19 @@ async function boot() {
             return;
           }
           if (state.testYourMightActive) {
+            const leakDef: any = (enemiesData as any)[e.type];
+            const leakedName = leakDef?.name ?? String(e.type).replace(/_/g, ' ');
             state.enemiesLeakedThisWave++;
             state.leaksByArchetype[e.archetype] = (state.leaksByArchetype[e.archetype] ?? 0) + 1;
             renderer.triggerGateImpact();
             renderer.triggerShake(e.isBoss ? 9 : 6, 1.0);
             SFX.gateBreach(true);
-            failTestYourMight(state);
+            showBossBanner(`☠ WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} FAILED — ${leakedName.toUpperCase()} REACHED ROME`, leakDef?.faction);
+            failTestYourMight(state, leakedName);
             return;
           }
+          const leakDef: any = (enemiesData as any)[e.type];
+          const leakedName = leakDef?.name ?? String(e.type).replace(/_/g, ' ');
           state.lives -= e.livesCost;
           state.enemiesLeakedThisWave++;
           state.leaksByArchetype[e.archetype] = (state.leaksByArchetype[e.archetype] ?? 0) + 1;
@@ -6463,6 +6468,9 @@ async function boot() {
             const factionKey = bossDef?.faction;
             showBossBanner(`☠ ${bossName.toUpperCase()} REACHED ROME — REBORN NEXT WAVE AT ${carryPct}% HP`, factionKey);
             state.hint = `☠ ${bossName} leaked at ${carryPct}% HP — he returns next wave with that HP.`;
+          } else if (state.lives <= 0) {
+            const costText = e.livesCost === 1 ? '1 life' : `${e.livesCost} lives`;
+            state.hint = `☠ ${leakedName} breached Rome for ${costText}. Rome has fallen.`;
           }
           // GHOST RIDER signature: on leak, also steal gold (5g + 1g per wave/10).
           // Punishes letting them through, adds to their thematic threat.

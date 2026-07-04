@@ -164,12 +164,14 @@ describe('Test Your Might bonus wave', () => {
   it('one leaked enemy immediately fails the entire run', () => {
     const s = bootstrapState();
     startTestYourMight(s);
-    failTestYourMight(s);
+    failTestYourMight(s, 'War Elephant');
     expect(displayWaveNumber(s)).toBe('10.5');
     expect(s.testYourMightActive).toBe(false);
     expect(s.testYourMightFailed).toBe(true);
     expect(s.lives).toBe(0);
     expect(s.gameOverAt).toBeGreaterThanOrEqual(0);
+    expect(s.hint).toContain('War Elephant reached Rome');
+    expect(s.hint).toContain('One leak ends Test Your Might');
   });
 
   it('a failed challenge cannot be converted into a wave-clear reward', () => {

@@ -13,12 +13,13 @@
 // cascade pushed the player to 0 lives without a fair shot.
 import { describe, it, expect } from 'vitest';
 import { maybeTriggerSurpriseEventForWave, SURPRISE_EVENT_SCHEDULE, spawnAtSurpriseEventPoint, surpriseEventHpMult } from '../src/systems/SurpriseEvents';
-import { SurpriseEventKind, TileType, TowerType } from '../src/types';
+import { EnemyType, SurpriseEventKind, TileType, TowerType } from '../src/types';
 import { createGameState } from '../src/GameState';
 import { GRID } from '../src/constants';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath } from '../src/systems/PathFinder';
 import { createTower } from '../src/systems/TowerSystem';
+import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
 import waypointsData from '../src/data/waypoints.json';
 
 function makeState() {
@@ -180,6 +181,32 @@ describe('Surprise event spawn redirect — flyer guard (2026-05-19)', () => {
     expect(s.tiles[midRow - 1][midCol]).toBe(TileType.STONE);
     expect(s.tiles[midRow][midCol + 1]).toBe(TileType.STONE);
     assertEventPointsAvoidPlayerTiles(s);
+  });
+
+  it('Wave 11 Dead Uprising redirects ground enemies to a fair path entry, not an instant leak', () => {
+    const s: any = makeEventState(11);
+    s.spawnQueue = Array.from({ length: 8 }, () => ({ type: EnemyType.UNDEAD_CELT, spawnAt: 0 }));
+
+    maybeTriggerSurpriseEventForWave(s);
+
+    const ev = s.activeSurpriseEvent;
+    expect(ev).toBeTruthy();
+    const maxSafeIndex = s.groundPath.length - 1 - 8;
+    for (const point of ev.spawnPoints) {
+      expect(point.pathIndex).toBeGreaterThanOrEqual(0);
+      expect(point.pathIndex).toBeLessThanOrEqual(maxSafeIndex);
+    }
+
+    for (let i = 0; i < ev.spawnPoints.length; i++) {
+      const e: any = spawnEnemy(s, EnemyType.UNDEAD_CELT, 1, false, false);
+      const ok = spawnAtSurpriseEventPoint(s, e, i);
+      expect(ok).toBe(true);
+      expect(e.pathIndex).toBeLessThanOrEqual(maxSafeIndex);
+    }
+
+    let leaks = 0;
+    tickEnemies(s, 0.016, () => { leaks++; }, () => {});
+    expect(leaks).toBe(0);
   });
 
   it('Invasion perimeter fires avoid towers and stones', () => {
