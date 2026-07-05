@@ -479,6 +479,14 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     expect(isBuildable(state, emerald.col, emerald.row)).toBe(true);
   });
 
+  it('Tyrant tile sits one tile up and two tiles left and remains buildable', () => {
+    const state = createGameState();
+    initializeGrid(state);
+    const tyrant = AURA_TILES.find(t => t.kind === 'RED')!;
+    expect(tyrant).toMatchObject({ col: 26, row: 9 });
+    expect(isBuildable(state, tyrant.col, tyrant.row)).toBe(true);
+  });
+
   it('the 6 spread tiles stay distinct and non-clustered (>=4 manhattan)', () => {
     // 2026-06-27 — the IVORY (divine) + AMBER (blast) tiles are
     // DELIBERATELY clustered on the WP3<->WP4 gauntlet (per user), so

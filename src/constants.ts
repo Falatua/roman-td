@@ -310,7 +310,7 @@ export interface AuraTile {
 export const AURA_TILES: AuraTile[] = [
   { col: 8,  row: 9,  kind: 'PURPLE'  },  // left            · +30% attack speed (tempo, moved right 2)
   { col: 15, row: 12, kind: 'BLUE'    },  // central         · +30% damage
-  { col: 28, row: 10, kind: 'RED'     },  // right-mid       · +50% damage vs bosses (tyrant, moved down 2)
+  { col: 26, row: 9,  kind: 'RED'     },  // right-mid       · +50% damage vs bosses (tyrant, moved up 1 + left 2)
   { col: 24, row: 19, kind: 'CYAN'    },  // bottom-mid      · melee can hit flyers
   { col: 15, row: 16, kind: 'GOLD'    },  // mid-left        · +2 gold per kill (treasury, moved up 3 + right 4)
   // 2026-07-05 — WATCHTOWER (emerald green). Moved from (20,4) to
