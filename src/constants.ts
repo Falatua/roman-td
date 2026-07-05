@@ -321,7 +321,7 @@ export const AURA_TILES: AuraTile[] = [
   // instead of stacked in a column. They scatter with the other six rather
   // than lining up, while still anchoring the right-side WP3↔WP4 lanes. Both
   // on open buildable terrain (clear of every waypoint + structure footprint).
-  { col: 32, row: 5,  kind: 'IVORY'   },  // upper-right pocket · near WP4 · tower strikes as DIVINE (moved up 2)
+  { col: 31, row: 5,  kind: 'IVORY'   },  // upper-right pocket · near WP4 · tower strikes as DIVINE (moved left 1)
   { col: 25, row: 15, kind: 'AMBER'   }   // centre-lower pocket · near WP3 · tower gains splash blast
 ];
 // Effect lookup table — used by stat math, combat hooks, and tooltips

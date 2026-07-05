@@ -487,6 +487,14 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     expect(isBuildable(state, tyrant.col, tyrant.row)).toBe(true);
   });
 
+  it('Divine tile sits one tile left and remains buildable', () => {
+    const state = createGameState();
+    initializeGrid(state);
+    const divine = AURA_TILES.find(t => t.kind === 'IVORY')!;
+    expect(divine).toMatchObject({ col: 31, row: 5 });
+    expect(isBuildable(state, divine.col, divine.row)).toBe(true);
+  });
+
   it('the 6 spread tiles stay distinct and non-clustered (>=4 manhattan)', () => {
     // 2026-06-27 — the IVORY (divine) + AMBER (blast) tiles are
     // DELIBERATELY clustered on the WP3<->WP4 gauntlet (per user), so
@@ -535,7 +543,7 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     expect(AURA_TILE_EFFECTS.IVORY?.divineDamage).toBe(true);
     expect(AURA_TILE_EFFECTS.IVORY?.label).toBe('DIVINE TILE');
     // The tile sits on open buildable terrain (clear of every waypoint).
-    expect(ivory.col).toBe(32);
+    expect(ivory.col).toBe(31);
   });
 
   it('AMBER tile declares a splash blast radius', () => {
