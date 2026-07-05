@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   RAMPART_COST, RAMPART_MAX_PER_RUN, RAMPART_LENGTH, RAMPART_ORIENTATIONS,
   armRampartFromInventory, buyRampart, rampartsOwned, rampartsRemainingThisRun, nextRampartOrientation,
-  rampartTiles, canPlaceRampart, placeRampart, RampartOrientation
+  rampartTiles, rampartPreviewTiles, canPlaceRampart, placeRampart, RampartOrientation
 } from '../src/systems/RampartSystem';
 import { createGameState } from '../src/GameState';
 import { initializeGrid, tileAt } from '../src/systems/GridManager';
@@ -223,6 +223,27 @@ describe('Rampart placement', () => {
     expect(placeRampart(s, spot.col, spot.row, 'H')).toBe(false);
     expect(rampartsOwned(s)).toBe(1);   // not consumed
     s.tiles[spot.row][spot.col + 2] = TileType.EMPTY;
+  });
+
+  it('refuses partial footprints at map edges without consuming', () => {
+    const s = bootstrapState();
+    s.gold = 9999;
+    for (let i = 0; i < 4; i++) buyRampart(s);
+
+    const edgeAttempts: Array<[number, number, RampartOrientation]> = [
+      [1, 10, 'H'],
+      [10, 1, 'V'],
+      [1, 1, 'D1'],
+      [1, 1, 'D2']
+    ];
+
+    for (const [col, row, orient] of edgeAttempts) {
+      expect(canPlaceRampart(s, col, row, orient), `${orient} should need all 5 tiles in bounds`).toBe(false);
+      expect(rampartPreviewTiles(s, col, row, orient).some(t => !t.valid), `${orient} preview should mark clipped tiles invalid`).toBe(true);
+      expect(placeRampart(s, col, row, orient), `${orient} placement should fail at edge`).toBe(false);
+    }
+
+    expect(rampartsOwned(s)).toBe(4);
   });
 
   it('canPlaceRampart leaves the board unchanged after simulation', () => {

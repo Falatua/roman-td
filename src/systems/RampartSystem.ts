@@ -24,6 +24,7 @@
 
 import { GameStateShape } from '../GameState';
 import { TileType } from '../types';
+import { GRID } from '../constants';
 import { isInsideStructureFootprint, tileAt, setTile } from './GridManager';
 import { buildGroundPath, resnapEnemiesToPath } from './PathFinder';
 
@@ -109,7 +110,12 @@ export function rampartTiles(col: number, row: number, orient: RampartOrientatio
   return out;
 }
 
+export function isRampartTileInBounds(col: number, row: number): boolean {
+  return col >= 0 && col < GRID.COLS && row >= 0 && row < GRID.ROWS;
+}
+
 export function isRampartTilePlaceable(state: GameStateShape, col: number, row: number): boolean {
+  if (!isRampartTileInBounds(col, row)) return false;
   if (isInsideStructureFootprint(col, row)) return false;
   if (tileAt(state, col, row) !== TileType.EMPTY) return false;
   for (const tower of state.towers.values()) {
@@ -128,10 +134,11 @@ export function rampartPreviewTiles(state: GameStateShape, col: number, row: num
   }));
 }
 
-// Validate: every tile of the line must be placeable. The visible road is the
-// computed route through EMPTY tiles, so ramparts may sit on roads/trails as
-// long as they do not cover checkpoints or other reserved/occupied tiles.
-// Simulating all five as STONE must still leave the ground path intact.
+// Validate: all five tiles must physically fit on the map and be placeable.
+// The visible road is the computed route through EMPTY tiles, so ramparts may
+// sit on roads/trails as long as they do not cover checkpoints or other
+// reserved/occupied tiles. Simulating all five as STONE must still leave the
+// ground path intact.
 export function canPlaceRampart(state: GameStateShape, col: number, row: number, orient: RampartOrientation): boolean {
   const tiles = rampartTiles(col, row, orient);
   for (const t of tiles) {

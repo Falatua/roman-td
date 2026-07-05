@@ -556,7 +556,7 @@ async function boot() {
       tickQuests();
       return true;
     }
-    state.hint = 'No room — the 5-tile rampart must avoid checkpoints, towers, stones, traps, and still leave the road open.';
+    state.hint = 'No room — all 5 rampart tiles must fit on the map, avoid blockers, and still leave the road open.';
     return false;
   }
 
@@ -5810,7 +5810,7 @@ async function boot() {
           return;
         }
         if (!canPlaceRampart(state, col, row, selRamp)) {
-          showBlockedAlert(col, row, 'Rampart blocked — roads/trails are allowed, but checkpoints, towers, stones, traps, cave/gate tiles, and sealed routes are not.');
+          showBlockedAlert(col, row, 'Rampart blocked — all 5 tiles must fit. Roads/trails are allowed, but checkpoints, towers, stones, traps, cave/gate tiles, map edges, and sealed routes are not.');
           return;
         }
         showRampartPlacementConfirm(col, row, selRamp);
