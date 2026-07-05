@@ -312,10 +312,6 @@
       {
         "type": "RORARIUS",
         "minTier": 2
-      },
-      {
-        "type": "VELITES",
-        "minTier": 2
       }
     ],
     "cost": 10

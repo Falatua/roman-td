@@ -233,6 +233,22 @@ describe('Recipe combo detection', () => {
     expect(bestiarius).toBeTruthy();
   });
 
+  it('keeps Scout Vexillum craftable without Velites', () => {
+    const recipe = comboData.find((r: any) => r.result === 'SCOUT_VEXILLUM') as any;
+    expect(recipe.ingredients).toEqual([
+      { type: 'FUNDIBULUS', minTier: 2 },
+      { type: 'RORARIUS', minTier: 2 }
+    ]);
+    expect(recipe.ingredients.map((ingredient: any) => ingredient.type)).not.toContain('VELITES');
+
+    const s = bootstrapState();
+    placeTower(s, TowerType.FUNDIBULUS, 2, 5, 5);
+    placeTower(s, TowerType.RORARIUS, 2, 5, 6);
+    const combos = scanCombos(s);
+    const scoutVexillum = combos.find(c => c.result === TowerType.SCOUT_VEXILLUM && !c.isSameTierMerge);
+    expect(scoutVexillum).toBeTruthy();
+  });
+
   it('rewards harder-to-assemble nested combos with higher DPS', () => {
     // 2026-06-29 — JB: combos whose recipes are rarer/harder (nested combo
     // ingredients, high min-tiers, big cost) should be stronger. DPS now
