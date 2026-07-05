@@ -1023,7 +1023,7 @@
   "HERO_MARIUS": {
     "name": "Gaius Marius",
     "damageType": "PHYS_MELEE",
-    "baseDps": 160.6,
+    "baseDps": 168.6,
     "attackSpeed": 1.65,
     "range": 2.5,
     "kind": "BASE",
@@ -1039,7 +1039,7 @@
   "HERO_AGRIPPA": {
     "name": "Marcus Agrippa",
     "damageType": "SIEGE",
-    "baseDps": 149.6,
+    "baseDps": 164.6,
     "attackSpeed": 1.1,
     "range": 10.0,
     "kind": "BASE",
@@ -1132,7 +1132,7 @@
   "CHAMPION_MARIUS": {
     "name": "Champion Marius",
     "damageType": "PHYS_MELEE",
-    "baseDps": 176.7,
+    "baseDps": 185.5,
     "attackSpeed": 1.65,
     "range": 2.5,
     "kind": "COMBO",
@@ -1149,7 +1149,7 @@
   "CHAMPION_AGRIPPA": {
     "name": "Champion Agrippa",
     "damageType": "SIEGE",
-    "baseDps": 164.6,
+    "baseDps": 181.1,
     "attackSpeed": 1.0,
     "range": 10.0,
     "kind": "COMBO",

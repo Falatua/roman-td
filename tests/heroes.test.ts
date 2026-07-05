@@ -38,6 +38,7 @@ import { buildMercatorTowerOffers, CHAMPION_TYPES } from '../src/systems/Merchan
 import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity';
 import { heroAuraScaleForTier, heroTierForTower } from '../src/systems/HeroScaling';
 import HERO_DEFS from '../src/data/herodefs.json';
+import TOWERS from '../src/data/towers.json';
 
 function freshState(): GameStateShape {
   const s = createGameState();
@@ -463,6 +464,19 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     const boosted = decurionHitDamage(true);
     expect(baseline).toBeGreaterThan(0);
     expect(boosted).toBeCloseTo(baseline * 1.35, 4);
+  });
+
+  it('Marius and Agrippa hero DPS buffs apply to starter and Champion forms', () => {
+    const defs: any = TOWERS;
+    expect(defs.HERO_MARIUS.baseDps).toBeCloseTo(168.6, 4);
+    expect(defs.CHAMPION_MARIUS.baseDps).toBeCloseTo(185.5, 4);
+    expect(defs.HERO_AGRIPPA.baseDps).toBeCloseTo(164.6, 4);
+    expect(defs.CHAMPION_AGRIPPA.baseDps).toBeCloseTo(181.1, 4);
+
+    expect(createTower(TowerType.HERO_MARIUS, 1, 1, 1, 1).baseDps).toBeCloseTo(168.6 * 1.10, 4);
+    expect(createTower(TowerType.CHAMPION_MARIUS, 1, 1, 1, 1).baseDps).toBeCloseTo(185.5 * 1.10, 4);
+    expect(createTower(TowerType.HERO_AGRIPPA, 1, 1, 1, 1).baseDps).toBeCloseTo(164.6 * 1.10, 4);
+    expect(createTower(TowerType.CHAMPION_AGRIPPA, 1, 1, 1, 1).baseDps).toBeCloseTo(181.1 * 1.10, 4);
   });
 
   it('Sulla Pyre Ward reaches towers 5.5 tiles away', () => {
