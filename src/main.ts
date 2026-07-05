@@ -1553,7 +1553,7 @@ async function boot() {
       // shouldn't have to keep dismissing it every wave.
       brief.addEventListener('click', (ev) => {
         const target = ev.target as HTMLElement;
-        if (!target.closest('#wave-brief-toggle')) return;
+        if (!target.closest('[data-wave-brief-toggle]')) return;
         ev.stopPropagation();
         const cur = localStorage.getItem('roman_td_wave_brief_collapsed') === '1';
         localStorage.setItem('roman_td_wave_brief_collapsed', cur ? '0' : '1');
@@ -1576,12 +1576,23 @@ async function boot() {
     const waveLabel = endlessCfg
       ? `⚔  ENDLESS ${state.endlessWave} BRIEF`
       : `⚔  WAVE ${displayWaveNumber(state)} BRIEF`;
-    const header = `<div style="display:flex;align-items:center;gap:8px;${collapsed ? '' : 'padding-bottom:7px;margin-bottom:8px;border-bottom:1px solid #5a4a30'}">
-      <span style="font-size:11px;letter-spacing:3px;color:${endlessCfg ? '#ff5050' : '#d4af37'};font-weight:bold;text-shadow:1px 1px 0 #000">${waveLabel}</span>
-      <span style="flex:1"></span>
-      <span style="font-size:10px;color:#aa9a4a;letter-spacing:1.5px">${headerRight}</span>
-      <button id="wave-brief-toggle" title="${toggleTitle}" style="background:#1a1410;border:1px solid #5a4a30;color:#d4af37;font-family:inherit;font-size:11px;font-weight:bold;padding:2px 8px;cursor:pointer;letter-spacing:1px;line-height:1">${toggleSymbol}</button>
-    </div>`;
+    const collapsedLabel = endlessCfg
+      ? `E${state.endlessWave ?? ''}`
+      : `W${displayWaveNumber(state)}`;
+    const collapsedCount = allLines.length > 0 ? String(allLines.length) : 'ARM';
+    const header = collapsed
+      ? `<div data-wave-brief-toggle title="${toggleTitle}" style="display:flex;align-items:center;gap:5px;padding:5px 7px;cursor:pointer;user-select:none;white-space:nowrap">
+          <button id="wave-brief-toggle" data-wave-brief-toggle title="${toggleTitle}" aria-label="Expand wave brief" style="background:#1a1410;border:1px solid #5a4a30;color:#d4af37;font-family:inherit;font-size:11px;font-weight:bold;width:22px;height:22px;padding:0;cursor:pointer;line-height:1">${toggleSymbol}</button>
+          <span style="font-size:10px;letter-spacing:1.5px;color:${endlessCfg ? '#ff5050' : '#d4af37'};font-weight:bold;text-shadow:1px 1px 0 #000">${collapsedLabel}</span>
+          <span style="font-size:9px;letter-spacing:1.5px;color:#cdb98a;font-weight:bold">BRIEF</span>
+          <span style="font-size:9px;letter-spacing:0;color:#9be0ff;border-left:1px solid #5a4a30;padding-left:5px">${collapsedCount}</span>
+        </div>`
+      : `<div data-wave-brief-toggle title="${toggleTitle}" style="display:flex;align-items:center;gap:8px;padding-bottom:7px;margin-bottom:8px;border-bottom:1px solid #5a4a30;cursor:pointer;user-select:none">
+          <span style="font-size:11px;letter-spacing:3px;color:${endlessCfg ? '#ff5050' : '#d4af37'};font-weight:bold;text-shadow:1px 1px 0 #000">${waveLabel}</span>
+          <span style="flex:1"></span>
+          <span style="font-size:10px;color:#aa9a4a;letter-spacing:1.5px">${headerRight}</span>
+          <button id="wave-brief-toggle" data-wave-brief-toggle title="${toggleTitle}" aria-label="Collapse wave brief" style="background:#1a1410;border:1px solid #5a4a30;color:#d4af37;font-family:inherit;font-size:11px;font-weight:bold;padding:2px 8px;cursor:pointer;letter-spacing:1px;line-height:1">${toggleSymbol}</button>
+        </div>`;
     // 2026-05-15 v9 ARMOR STRIP — compact one-row summary of the wave's
     // average armor per damage type. Helps the player pick which damage
     // family to lean into before the wave starts. Computed across every
@@ -1654,11 +1665,15 @@ async function boot() {
     }
     // Collapsed mode trims padding so the bar is even smaller.
     if (collapsed) {
-      brief.style.padding = '6px 10px';
-      brief.style.minWidth = '180px';
+      brief.style.padding = '0';
+      brief.style.minWidth = '0';
+      brief.style.maxWidth = '148px';
+      brief.style.opacity = '0.92';
     } else {
       brief.style.padding = '10px 12px 12px';
       brief.style.minWidth = '260px';
+      brief.style.maxWidth = '360px';
+      brief.style.opacity = '1';
     }
   }
   // 2026-05-17 — Modifier chip REDESIGNED. The old sprite-scroll background
