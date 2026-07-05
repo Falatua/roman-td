@@ -479,6 +479,59 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(createTower(TowerType.CHAMPION_AGRIPPA, 1, 1, 1, 1).baseDps).toBeCloseTo(181.1 * 1.10, 4);
   });
 
+  it('Caesar passive starts at +15% tower damage and +15% attack speed', () => {
+    const def: any = (HERO_DEFS as any).HERO_CAESAR;
+    expect(def.passive.dmgBonusPercent).toBe(15);
+    expect(def.passive.speedMultPercent).toBe(15);
+    expect(def.passive.description).toContain('+15% damage and +15% attack speed');
+
+    function decurionHit(withCaesar: boolean): { damage: number; cooldown: number } {
+      const s = freshState();
+      s.phase = GamePhase.WAVE_PHASE;
+      s.tick = 1;
+      s.wave = 4;
+      s.heroTier = 0;
+
+      const decurion = createTower(TowerType.DECURION, 1, 10, 5, 1);
+      decurion.attackCooldown = 0;
+      decurion.critChance = 0;
+      s.towers.set(decurion.id, decurion);
+
+      if (withCaesar) {
+        s.activeHeroId = 'HERO_CAESAR';
+        const caesar = createTower(TowerType.HERO_CAESAR, 1, 2, 2, 1);
+        caesar.attackCooldown = 999;
+        s.activeHeroTowerId = caesar.id;
+        s.towers.set(caesar.id, caesar);
+      }
+
+      const target = testEnemy('caesar-passive-target', {
+        hp: 100_000,
+        maxHp: 100_000,
+        x: 11 * 32 + 16,
+        y: 5 * 32 + 16
+      });
+      s.enemies.set(target.id, target);
+
+      let damage = 0;
+      tickCombat(s, 0.016, {
+        onHit: (tower, enemy, hitDamage) => {
+          if (tower.id === decurion.id && enemy.id === target.id) damage = hitDamage;
+        },
+        onMeleeSwing: () => {},
+        onProjectileFire: () => {},
+        onKill: () => {}
+      });
+      return { damage, cooldown: decurion.attackCooldown };
+    }
+
+    const baseline = decurionHit(false);
+    const boosted = decurionHit(true);
+    expect(baseline.damage).toBeGreaterThan(0);
+    expect(boosted.damage).toBeCloseTo(baseline.damage * 1.15, 4);
+    expect(boosted.cooldown).toBeCloseTo(baseline.cooldown / 1.15, 4);
+  });
+
   it('Sulla Pyre Ward reaches towers 5.5 tiles away', () => {
     const def: any = (HERO_DEFS as any).HERO_SULLA;
     expect(def.passive.radiusTiles).toBe(5.5);
