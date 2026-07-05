@@ -351,7 +351,7 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
   rampSection.appendChild(rampTitle);
   const rNote = document.createElement('div');
   rNote.style.cssText = `font-size:10px;color:#cdb98a;line-height:1.4;margin-bottom:8px;`;
-  rNote.innerHTML = `Buy one and it goes to your <b style="color:#ffd34d">Armarium inventory</b>. Click it there, or hit PLACE below, to arm a straight line of <b style="color:#ffcc44">5 wall stones</b>. While placing, press <b style="color:#ffe066">R</b> (or tap ROTATE) to spin it: horizontal — vertical | diagonal ↘ ↗. Build phase only.`;
+  rNote.innerHTML = `Buy one and it goes to your <b style="color:#ffd34d">Armarium inventory</b>. Click it there, or hit PLACE below, to arm a straight line of <b style="color:#ffcc44">5 wall stones</b>. While placing, a rotate tray appears: press <b style="color:#ffe066">R</b>, tap ROTATE, or choose horizontal / vertical / diagonal ↘ / diagonal ↗. Hover to preview before confirming. Build phase only.`;
   rampSection.appendChild(rNote);
   // Single generic card — orientation is chosen at placement time (2026-07-03).
   // Portrait uses the real RAMPART_STRIP sprite (Higgsfield i2i off
@@ -367,7 +367,7 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
   card.innerHTML = `
     <div style="width:54px;height:54px;border:1px solid #8a8a92;background:#1a1410;display:flex;align-items:center;justify-content:center">${portrait}</div>
     <div style="color:#fff8e0;font-size:11px;font-weight:bold;line-height:1.2">Stone Rampart</div>
-    <div style="font-size:8.5px;color:#cdb98a;line-height:1.3">5 stones in a line, centered on the tile you click. Rotate while placing (R).</div>
+    <div style="font-size:8.5px;color:#cdb98a;line-height:1.3">5 stones in a line, centered on the tile you click. Rotate while previewing.</div>
     <div style="color:#f0c040;font-size:11px;font-weight:bold">${RAMPART_COST}g${owned > 0 ? ` · <span style="color:#88ff88">x${owned}</span>` : ''}</div>`;
   const row = document.createElement('div');
   row.style.cssText = `display:flex;gap:4px;width:100%;margin-top:3px`;
@@ -390,10 +390,11 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
   if (owned > 0) {
     const armBtn = document.createElement('button');
     armBtn.textContent = armed ? 'ARMED' : 'PLACE';
+    armBtn.title = 'Arm rampart placement. A rotate tray will appear with horizontal, vertical, and both diagonal options.';
     armBtn.style.cssText = `flex:1;background:${armed ? '#5a4a10' : '#4a3a24'};color:#ffe066;border:1px solid #1a1410;padding:4px 0;cursor:pointer;font-size:10px;font-family:inherit`;
     armBtn.onclick = () => {
       armRampartFromInventory(state, state.selectedRampart ?? 'H');
-      state.hint = `Rampart armed (${RAMPART_ORIENT_LABEL[state.selectedRampart!]}). Press R or tap ROTATE to spin it, hover for preview, then click a valid tile or road to confirm.`;
+      state.hint = `Rampart armed (${RAMPART_ORIENT_LABEL[state.selectedRampart!]}). Use the rotate tray or R, hover for preview, then click a valid tile or road to confirm.`;
       onClose();
     };
     row.appendChild(armBtn);
@@ -1266,7 +1267,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
     rampHead.style.cssText = `display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;`;
     rampHead.innerHTML = `
       <div style="font-size:12px;color:#d4af37;font-weight:bold;letter-spacing:2px">RAMPARTS</div>
-      <div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;text-align:right">CLICK TO ARM · R TO ROTATE · BUILD PHASE ONLY</div>
+      <div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;text-align:right">CLICK TO ARM · ROTATE TRAY + R KEY · BUILD PHASE ONLY</div>
     `;
     rampShelf.appendChild(rampHead);
     const selected = !!state.selectedRampart;
@@ -1281,14 +1282,14 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
       <div style="width:62px;height:42px;border:1px solid #8a8a92;background:#1a1410;display:flex;align-items:center;justify-content:center;flex-shrink:0">${icon}</div>
       <div style="min-width:0;line-height:1.25;flex:1">
         <div style="font-size:12px;color:#fff8e0;font-weight:bold">Stone Rampart</div>
-        <div style="font-size:10px;color:#cdb98a;margin-top:2px">Places 5 wall stones in one line. Hover for preview, click to confirm.</div>
+        <div style="font-size:10px;color:#cdb98a;margin-top:2px">Places 5 wall stones in one line. Hover preview, rotate, click to confirm.</div>
       </div>
       <div style="font-size:13px;color:#88ff88;font-weight:bold;letter-spacing:1px">x${ownedRamparts}</div>
     `;
-    btn.title = 'Stone Rampart\nClick to arm, hover for a five-tile preview, then click a valid tile or road. Press R or tap ROTATE to change direction.';
+    btn.title = 'Stone Rampart\nClick to arm. A rotate tray appears with horizontal, vertical, diagonal down, and diagonal up. Hover for a five-tile preview, then click a valid tile or road.';
     btn.onclick = () => {
       if (!armRampartFromInventory(state, state.selectedRampart ?? 'H')) return;
-      state.hint = `Rampart armed (${RAMPART_ORIENT_LABEL[state.selectedRampart!]}). Hover for preview, click a valid tile or road to confirm. Press R or tap ROTATE to spin it.`;
+      state.hint = `Rampart armed (${RAMPART_ORIENT_LABEL[state.selectedRampart!]}). Use the rotate tray or R, hover for preview, then click a valid tile or road to confirm.`;
       hooks.onClose();
     };
     rampShelf.appendChild(btn);

@@ -10,7 +10,7 @@ import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './sys
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
 import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards } from './systems/EnemySystem';
 import { tickTraps, placeTrap, trapOwned, TRAP_DEFS, clearPlacedTrapsForWaveEnd } from './systems/TrapSystem';
-import { canPlaceRampart, placeRampart, rampartPreviewTiles, rampartTiles, rampartsOwned, RAMPART_LENGTH, nextRampartOrientation, RAMPART_ORIENT_LABEL, RampartOrientation } from './systems/RampartSystem';
+import { canPlaceRampart, placeRampart, rampartPreviewTiles, rampartTiles, rampartsOwned, RAMPART_LENGTH, RAMPART_ORIENTATIONS, nextRampartOrientation, RAMPART_ORIENT_LABEL, RampartOrientation } from './systems/RampartSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } from './systems/WaveManager';
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
@@ -161,25 +161,53 @@ async function boot() {
   function rotateArmedRampart(): void {
     if (!state.selectedRampart) return;
     state.selectedRampart = nextRampartOrientation(state.selectedRampart);
-    state.hint = `Rampart rotated: ${RAMPART_ORIENT_LABEL[state.selectedRampart]}. Hover to preview, click a valid tile or road to confirm, R to rotate again.`;
+    state.hint = `Rampart rotated: ${RAMPART_ORIENT_LABEL[state.selectedRampart]}. Hover to preview, use R or the orientation buttons to rotate, then click to confirm.`;
     syncRampartRotateChip();
   }
   function syncRampartRotateChip(): void {
     const stage = document.getElementById('stage-wrap');
-    let chip = document.getElementById('rampart-rotate-chip') as HTMLButtonElement | null;
+    let chip = document.getElementById('rampart-rotate-chip') as HTMLDivElement | null;
     const shouldShow = !!state.selectedRampart && rampartsOwned(state) > 0 && state.gameOverAt < 0 && state.victoryAt < 0;
     if (!shouldShow) { chip?.remove(); return; }
     if (!chip) {
-      chip = document.createElement('button');
+      chip = document.createElement('div');
       chip.id = 'rampart-rotate-chip';
-      chip.style.cssText = `position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:40;` +
-        `background:linear-gradient(180deg,#3a2a14,#1a1208);border:2px solid #ffd34d;color:#ffe066;` +
-        `font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:1px;` +
-        `padding:8px 16px;cursor:pointer;box-shadow:0 0 14px rgba(255,211,77,0.35);`;
-      chip.onclick = () => rotateArmedRampart();
+      chip.style.cssText = `position:absolute;bottom:86px;left:50%;transform:translateX(-50%);z-index:45;` +
+        `background:linear-gradient(180deg,#2a1e10,#0c0906);border:2px solid #ffd34d;color:#ffe066;` +
+        `font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:1px;` +
+        `padding:8px 10px;box-shadow:0 0 18px rgba(255,211,77,0.38), inset 0 0 18px rgba(0,0,0,0.6);` +
+        `display:flex;flex-direction:column;gap:6px;align-items:center;max-width:min(620px,94vw);`;
       (stage ?? document.body).appendChild(chip);
     }
-    chip.textContent = `⟳ ROTATE RAMPART · ${RAMPART_ORIENT_LABEL[state.selectedRampart!]} (R)`;
+    const current = state.selectedRampart!;
+    chip.title = 'Stone Rampart placement: hover the map to preview the five stones. Press R or click an orientation button to rotate. Click the map, then confirm to place.';
+    const orientButtons = RAMPART_ORIENTATIONS.map(o => {
+      const active = o === current;
+      const label = RAMPART_ORIENT_LABEL[o];
+      return `<button data-rampart-orient="${o}" title="Set orientation to ${label}" style="background:${active ? '#ffd34d' : '#1a1410'};color:${active ? '#1a1208' : '#ffe066'};border:1px solid ${active ? '#fff8e0' : '#7a5a1a'};padding:5px 8px;cursor:pointer;font-family:'Courier New',monospace;font-size:10px;font-weight:bold;letter-spacing:1px;min-width:112px">${active ? '◆' : '◇'} ${label}</button>`;
+    }).join('');
+    chip.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button id="rampart-cycle-btn" title="Cycle rampart orientation. Keyboard: R" style="background:#3a2a14;color:#fff8e0;border:2px solid #ffd34d;padding:7px 12px;cursor:pointer;font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:1px">⟳ ROTATE (R)</button>
+        <span style="color:#fff8e0;text-shadow:1px 1px 0 #000">CURRENT: <b style="color:#ffd34d">${RAMPART_ORIENT_LABEL[current]}</b></span>
+      </div>
+      <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap">${orientButtons}</div>
+      <div style="color:#cdb98a;font-size:10px;font-weight:normal;letter-spacing:0;line-height:1.3;text-align:center">Hover to preview like furniture placement. Click a valid tile or road, then confirm. ESC cancels.</div>
+    `;
+    chip.querySelector<HTMLButtonElement>('#rampart-cycle-btn')?.addEventListener('click', ev => {
+      ev.stopPropagation();
+      rotateArmedRampart();
+    });
+    chip.querySelectorAll<HTMLButtonElement>('button[data-rampart-orient]').forEach(btn => {
+      btn.addEventListener('click', ev => {
+        ev.stopPropagation();
+        const orient = btn.dataset.rampartOrient as RampartOrientation | undefined;
+        if (!orient) return;
+        state.selectedRampart = orient;
+        state.hint = `Rampart orientation set: ${RAMPART_ORIENT_LABEL[orient]}. Hover the map to preview the exact five stones before confirming.`;
+        syncRampartRotateChip();
+      });
+    });
   }
   let bossRuntime = createBossRuntime();
   let waveStartTick = 0;
@@ -548,6 +576,7 @@ async function boot() {
       </div>
       <div style="margin-top:12px;font-size:12px;color:#ffcc88;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(60,30,10,0.55);border:1px dashed #ff8844;padding:10px 14px">
         This spends <b style="color:#ffd34d">1 Stone Rampart</b> and turns the highlighted strip into wall stones.<br/>
+        Need another angle? Cancel, then press <b style="color:#ffd34d">R</b> or click an orientation button while previewing.<br/>
         Roads/trails are allowed. Checkpoints, towers, stones, traps, cave/gate anchors, and sealed-path placements are refused.
       </div>
       <div style="margin-top:16px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
