@@ -822,10 +822,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
       if (source.heroId === 'HERO_AGRIPPA'
           && t.damageType === DamageType.SIEGE
-          && dh <= 6 * GRID.TILE) {
-        // 2026-06-25 — slight buff: SIEGE aura +30%→+40% dmg (DIVUS +80%),
-        // radius 5→6 tiles.
-        dm *= 1 + 0.40 * source.auraScale;
+          && dh <= 5 * GRID.TILE) {
+        dm *= 1 + 0.30 * source.auraScale;
       }
       // 2026-05-22 — Agricola local +20% ranged-tower damage aura
       // removed per user feedback that it stacked too strongly with

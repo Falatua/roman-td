@@ -380,9 +380,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // 3 days. Bonus now correctly targets SIEGE towers, and the
     // magnitude is +1.0 tile (was +0.5) to match the felt-undertuned
     // user feedback that prompted the hero buff pass.
-    // 2026-05-22 (later) — Aura radius bumped 3 → 5 tiles to match the
-    // damage-aura radius change in CombatResolver.ts. A single Agrippa
-    // can now buff a whole siege lane instead of just neighbors.
+    // Keep the radius synced with Agrippa's damage aura in CombatResolver.ts.
     ((() => {
       const g: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
       const gs: any = g?.__game;
@@ -393,7 +391,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
         if (hero.id !== gs.activeHeroTowerId && !isMercatorChampionType(String(hero.type))) continue;
         const dx = (hero.tileX - t.tileX);
         const dy = (hero.tileY - t.tileY);
-        if (Math.hypot(dx, dy) <= 6) return 1.0 * heroAuraScaleForTower(gs, hero);  // 2026-06-25 radius 5→6 to match buffed SIEGE dmg aura
+        if (Math.hypot(dx, dy) <= 5) return 1.0 * heroAuraScaleForTower(gs, hero);
       }
       return 0;
     })()) +

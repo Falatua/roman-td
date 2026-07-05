@@ -479,6 +479,68 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(createTower(TowerType.CHAMPION_AGRIPPA, 1, 1, 1, 1).baseDps).toBeCloseTo(181.1 * 1.10, 4);
   });
 
+  it('Agrippa passive gives siege towers +30% damage and +1 range within 5 tiles', () => {
+    const def: any = (HERO_DEFS as any).HERO_AGRIPPA;
+    expect(def.passive.radiusTiles).toBe(5);
+    expect(def.passive.dmgBonusPercent).toBe(30);
+    expect(def.passive.description).toContain('within 5 tiles');
+    expect(def.passive.description).toContain('+30% damage');
+
+    function scorpioShotDamage(agrippaDistanceTiles: number | null): number {
+      const s = freshState();
+      s.phase = GamePhase.WAVE_PHASE;
+      s.wave = 1;
+      s.activeHeroId = 'HERO_AGRIPPA';
+      s.heroTier = 0;
+      const scorpio = createTower(TowerType.SCORPIO, 1, 10, 10, 1);
+      scorpio.attackCooldown = 0;
+      s.towers.set(scorpio.id, scorpio);
+      if (agrippaDistanceTiles !== null) {
+        const agrippa = createTower(TowerType.HERO_AGRIPPA, 1, 10 + agrippaDistanceTiles, 10, 1);
+        s.activeHeroTowerId = agrippa.id;
+        s.towers.set(agrippa.id, agrippa);
+      }
+      const target = testEnemy('agrippa-passive-target', {
+        hp: 100_000,
+        maxHp: 100_000,
+        x: 11 * 32 + 16,
+        y: 10 * 32 + 16
+      });
+      s.enemies.set(target.id, target);
+      let shotDamage = 0;
+      tickCombat(s, 0.016, {
+        onHit: () => {},
+        onMeleeSwing: () => {},
+        onProjectileFire: (tower, enemy, damage) => {
+          if (tower.id === scorpio.id && enemy.id === target.id) shotDamage = damage;
+        },
+        onKill: () => {}
+      });
+      return shotDamage;
+    }
+
+    const baseline = scorpioShotDamage(null);
+    expect(baseline).toBeGreaterThan(0);
+    expect(scorpioShotDamage(5)).toBeCloseTo(baseline * 1.30, 4);
+    expect(scorpioShotDamage(6)).toBeCloseTo(baseline, 4);
+
+    const s = freshState();
+    s.activeHeroId = 'HERO_AGRIPPA';
+    s.heroTier = 0;
+    const scorpio = createTower(TowerType.SCORPIO, 1, 10, 10, 1);
+    const agrippa = createTower(TowerType.HERO_AGRIPPA, 1, 15, 10, 1);
+    s.activeHeroTowerId = agrippa.id;
+    s.towers.set(scorpio.id, scorpio);
+    s.towers.set(agrippa.id, agrippa);
+    const g: any = globalThis as any;
+    const prevGame = g.__game;
+    g.__game = s;
+    expect(towerEffectiveStats(scorpio).range).toBeCloseTo(scorpio.range + 1, 5);
+    agrippa.tileX = 16;
+    expect(towerEffectiveStats(scorpio).range).toBeCloseTo(scorpio.range, 5);
+    g.__game = prevGame;
+  });
+
   it('Caesar passive starts at +15% tower damage and +15% attack speed', () => {
     const def: any = (HERO_DEFS as any).HERO_CAESAR;
     expect(def.passive.dmgBonusPercent).toBe(15);
