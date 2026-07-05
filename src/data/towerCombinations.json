@@ -623,10 +623,6 @@
       {
         "type": "AUXILIA",
         "minTier": 3
-      },
-      {
-        "type": "HASTATI",
-        "minTier": 3
       }
     ],
     "cost": 50

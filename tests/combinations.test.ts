@@ -217,6 +217,22 @@ describe('Recipe combo detection', () => {
     expect(triumphator).toBeTruthy();
   });
 
+  it('keeps Bestiarius craftable without Hastati', () => {
+    const recipe = comboData.find((r: any) => r.result === 'BESTIARIUS') as any;
+    expect(recipe.ingredients).toEqual([
+      { type: 'BEAST_SLAYER', minTier: 2 },
+      { type: 'AUXILIA', minTier: 3 }
+    ]);
+    expect(recipe.ingredients.map((ingredient: any) => ingredient.type)).not.toContain('HASTATI');
+
+    const s = bootstrapState();
+    placeTower(s, TowerType.BEAST_SLAYER, 2, 5, 5);
+    placeTower(s, TowerType.AUXILIA, 3, 5, 6);
+    const combos = scanCombos(s);
+    const bestiarius = combos.find(c => c.result === TowerType.BESTIARIUS && !c.isSameTierMerge);
+    expect(bestiarius).toBeTruthy();
+  });
+
   it('rewards harder-to-assemble nested combos with higher DPS', () => {
     // 2026-06-29 — JB: combos whose recipes are rarer/harder (nested combo
     // ingredients, high min-tiers, big cost) should be stronger. DPS now
