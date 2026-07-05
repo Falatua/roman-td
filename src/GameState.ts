@@ -131,6 +131,10 @@ export interface GameStateShape {
   // T5 base tower offers are generated. Player can buy one and a "purchasedTower"
   // gets queued for placement on the next empty-tile click.
   mercatorTowerOffers?: { type: string; tier: number; price: number }[];
+  // Mercator Champions bought this run. Once a Champion is purchased from
+  // Mercator, it leaves all future Mercator lineups so the player cannot
+  // recruit duplicates of the same hero.
+  mercatorPurchasedChampionTypes?: string[];
   // QUEUE of towers waiting to be placed. Each empty-tile click pops the
   // front of the queue. Both Mercator purchases and quest rewards append
   // here, so neither can overwrite the other.
@@ -327,6 +331,7 @@ export function createGameState(): GameStateShape {
     runStartedAt: Date.now(),
     bonusBossesKilled: 0,
     modifierWavesSurvived: 0,
+    mercatorPurchasedChampionTypes: [],
     // SANDBOX: defaults to false. Only the loading-screen sandbox
     // entry flips this on after the 1027 password is accepted.
     sandboxMode: false,

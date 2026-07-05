@@ -34,7 +34,7 @@ import { createGameState, GameStateShape } from '../src/GameState';
 import { DamageType, Enemy, EnemyFaction, EnemyType, GamePhase, StatusEffectKind, TowerType } from '../src/types';
 import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
 import { previewSpawnHp, startWave } from '../src/systems/WaveManager';
-import { buildMercatorTowerOffers } from '../src/systems/MerchantSystem';
+import { buildMercatorTowerOffers, CHAMPION_TYPES } from '../src/systems/MerchantSystem';
 import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity';
 import { heroAuraScaleForTier, heroTierForTower } from '../src/systems/HeroScaling';
 import HERO_DEFS from '../src/data/herodefs.json';
@@ -308,6 +308,29 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     const offers = buildMercatorTowerOffers(9, 5, { activeHeroId: 'HERO_CAESAR' });
     expect(offers.map(o => o.type)).not.toContain(championForHero('HERO_CAESAR'));
     expect(offers.map(o => o.type)).toContain('CHAMPION_MARIUS');
+  });
+
+  it('Mercator excludes Champions already purchased from Mercator this run', () => {
+    const offers = buildMercatorTowerOffers(14, 5, {
+      activeHeroId: 'HERO_CAESAR',
+      purchasedChampionTypes: ['CHAMPION_MARIUS', 'CHAMPION_SULLA']
+    });
+    const types = offers.map(o => o.type);
+    expect(types).not.toContain(championForHero('HERO_CAESAR'));
+    expect(types).not.toContain('CHAMPION_MARIUS');
+    expect(types).not.toContain('CHAMPION_SULLA');
+    expect(types).toContain('CHAMPION_AGRIPPA');
+    expect(types.filter(t => CHAMPION_TYPES.includes(t)).length).toBe(3);
+  });
+
+  it('Mercator keeps selling normal towers after every Champion has been bought', () => {
+    const offers = buildMercatorTowerOffers(23, 5, {
+      activeHeroId: null,
+      purchasedChampionTypes: [...CHAMPION_TYPES]
+    });
+    expect(offers.some(o => CHAMPION_TYPES.includes(o.type))).toBe(false);
+    expect(offers.length).toBeGreaterThan(0);
+    expect(offers.every(o => o.tier === 5)).toBe(true);
   });
 
   it('every Mercator Champion resolves to a full hero kit for shop details', () => {

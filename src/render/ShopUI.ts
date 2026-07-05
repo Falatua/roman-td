@@ -122,6 +122,13 @@ function championHeroDetailsHtml(type: string, towerDef: any, tint: string): str
     </div>`;
 }
 
+function recordMercatorChampionPurchase(state: GameStateShape, type: string): void {
+  if (!isMercatorChampionType(type)) return;
+  const purchased = new Set(state.mercatorPurchasedChampionTypes ?? []);
+  purchased.add(type);
+  state.mercatorPurchasedChampionTypes = Array.from(purchased);
+}
+
 // ─── HERO FORGE SECTION (2026-05-20 v2) ──────────────────────────────
 // Pay-to-upgrade hero system at the gate shop. The Forge is a run-wide
 // hero investment: starter heroes and Mercator Champions all read the
@@ -570,16 +577,15 @@ function renderMercatorShop(
         spendGold(state, offer.price);
         if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
         state.pendingPurchasedTowers.push({ type: offer.type, tier: offer.tier, source: 'mercator' });
+        recordMercatorChampionPurchase(state, offer.type);
         const qLen = state.pendingPurchasedTowers.length;
         state.hint = qLen > 1
           ? `Bought ${offer.type.replace(/_/g,' ')} T${offer.tier}. ${qLen} towers queued — click empty tiles to place.`
           : `Bought ${offer.type.replace(/_/g,' ')} T${offer.tier}. Click an empty tile to place it.`;
         SFX.itemPickup(tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
-        // 2026-06-25 — Champions are "always stocked" (the 6-Champion Mars
-        // Victor path). Keep them on the shelf after purchase so a player can
-        // recruit multiples or re-buy them; only one-off T5 towers are
-        // consumed on purchase.
-        if (shop.towerOffers && !isMercatorChampionType(offer.type)) {
+        // Mercator Champions are one recruit per run. Remove the bought
+        // offer immediately; restockMercator also excludes it forever after.
+        if (shop.towerOffers) {
           shop.towerOffers = shop.towerOffers.filter(o => o !== offer);
         }
         refresh();
@@ -1150,6 +1156,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
         spendGold(state, offer.price);
         if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
         state.pendingPurchasedTowers.push({ type: offer.type, tier: offer.tier, source: 'mercator' });
+        recordMercatorChampionPurchase(state, offer.type);
         const qLen = state.pendingPurchasedTowers.length;
         state.hint = qLen > 1
           ? `Bought ${offer.type.replace(/_/g,' ')} T${offer.tier}. ${qLen} towers queued — click empty tiles to place.`
@@ -1157,10 +1164,9 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
         // Tier-flavored purchase sound (T1=COMMON, T5=UNIQUE)
         const tierToRarity = ['COMMON','UNCOMMON','RARE','LEGENDARY','UNIQUE'];
         SFX.itemPickup(tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
-        // 2026-06-25 — Champions stay stocked after purchase (re-buyable);
-        // only one-off T5 towers are consumed. See note in the main shop
-        // render path above.
-        if (shop.towerOffers && !isMercatorChampionType(offer.type)) {
+        // Mercator Champions are one recruit per run. Remove the bought
+        // offer immediately; restockMercator also excludes it forever after.
+        if (shop.towerOffers) {
           shop.towerOffers = shop.towerOffers.filter(o => o !== offer);
         }
         refresh();

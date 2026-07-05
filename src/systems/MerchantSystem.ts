@@ -192,6 +192,7 @@ export const CHAMPION_PRICE = 500;
 export interface MercatorTowerOfferOptions {
   activeHeroId?: string | null;
   excludeTypes?: string[];
+  purchasedChampionTypes?: string[];
 }
 
 export function mercatorExcludedChampionForHero(activeHeroId?: string | null): string | null {
@@ -201,6 +202,9 @@ export function mercatorExcludedChampionForHero(activeHeroId?: string | null): s
 export function buildMercatorTowerOffers(wave: number, count = 5, options: MercatorTowerOfferOptions = {}): MercatorTowerOffer[] {
   const offers: MercatorTowerOffer[] = [];
   const excluded = new Set(options.excludeTypes ?? []);
+  for (const championType of options.purchasedChampionTypes ?? []) {
+    excluded.add(championType);
+  }
   const activeHeroChampion = mercatorExcludedChampionForHero(options.activeHeroId);
   if (activeHeroChampion) excluded.add(activeHeroChampion);
   // The 6 Champions always head the lineup at a flat 500g — the Mars Victor path.

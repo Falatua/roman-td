@@ -150,6 +150,7 @@ async function boot() {
     mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
     mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, {
       activeHeroId: state.activeHeroId,
+      purchasedChampionTypes: state.mercatorPurchasedChampionTypes ?? [],
       excludeTypes: (state.mercatorTowerOffers ?? []).map(o => o.type)
     });
     state.mercatorTowerOffers = mercatorShop.towerOffers.filter(o => !CHAMPION_TYPES.includes(o.type));
