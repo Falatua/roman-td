@@ -126,7 +126,9 @@ export function createTower(type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: numbe
     // build (or combo result) lands on FIRST — furthest-along enemy, closest
     // to leaking — so a new game always starts on FIRST and the player
     // adjusts from there via the tower menu or the TARGET ALL bulk picker.
-    targetingMode: TargetingMode.FIRST,
+    // Flyer-only towers are the exception: they stay on FLYERS so their
+    // inspect panel and bulk-targeting state match what combat can do.
+    targetingMode: def.antiAirOnly ? TargetingMode.FLYERS : TargetingMode.FIRST,
     killCount: 0,
     killBonusFlat: 0,
     hasBeenDowngraded: false,

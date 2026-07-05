@@ -5128,8 +5128,15 @@ async function boot() {
     // and heroes now participate in the same targeting controls as towers.
     onSetAllTargeting: (mode) => {
       let n = 0;
+      let flyerLocked = 0;
       for (const t of state.towers.values()) {
-        t.targetingMode = mode;
+        const def: any = (towersData as any)[t.type] ?? {};
+        if (def.antiAirOnly) {
+          t.targetingMode = TargetingMode.FLYERS;
+          flyerLocked++;
+        } else {
+          t.targetingMode = mode;
+        }
         n++;
       }
       if (n === 0) {
@@ -5137,7 +5144,10 @@ async function boot() {
         return;
       }
       const label = (TargetingMode as any)[mode] ?? String(mode);
-      state.hint = `🎯 Retargeted ${n} tower${n === 1 ? '' : 's'} → ${label}.`;
+      const lockedNote = flyerLocked > 0
+        ? ` ${flyerLocked} flyer-only tower${flyerLocked === 1 ? '' : 's'} stayed on FLYERS.`
+        : '';
+      state.hint = `🎯 Retargeted ${n} tower${n === 1 ? '' : 's'} → ${label}.${lockedNote}`;
     },
     // 2026-05-19 — Hero HUD chip click → open hero inspect panel.
     // Routes through inspectTower for the hero tower id; the panel

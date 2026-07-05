@@ -282,7 +282,7 @@ function renderTab(tab: string): string {
       ${foldSection('TOWER ROLES — KNOW WHO DOES WHAT', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           ${noteCard('Melee Swings At Air', 'Melee cannot reach flyers by default — plan ranged coverage before the flyer wave laughs at your sword wall. The lone exception is the legendary <b style="color:#ffd34d">Aquila Talons</b> item, which unlocks anti-air for one melee tower at a time.')}
-          ${noteCard('Anti-Air Specialists', 'Aquila Venator (T3) ONLY targets flyers. Dead weight on ground waves, devastating on flyer waves. Choose your slot.')}
+          ${noteCard('Anti-Air Specialists', 'Sagittarius and Aquila Venator ONLY target flyers. Dead weight on ground waves, devastating on flyer waves. Choose your slot.')}
           ${noteCard('🪙 Flyer Wave Payout Bonus', 'Surviving a flyer wave (W6 / W12 / W18) pays a <b style="color:#88ff88">+50% gold bonus</b> on top of the normal wave reward (rounded, min +5g). Flyers bypass your maze entirely, so dedicated anti-air investment (Storm Javelin, Flyer Bane, Aquila Talons, ranged pool depth) actually gets compensated. Plan to spend the bonus on the next round\'s build.')}
           ${noteCard('Tier Pips Do Not Lie', 'Every tower wears its tier — pip dots above, colored ring at its base. T5 = red ring. If you do not see red rings late game, that is the problem.')}
           ${noteCard('One Item Per Family (DoT exempt)', 'DAMAGE, SPEED, RANGE, AURA, ECONOMY, DEFENSE — one each per tower. SPECIAL trophies AND every DoT item (burn / poison / bleed / hellfire) stack freely. Build a dedicated DoT specialist tower with multiple DoTs ticking at once.')}
@@ -618,7 +618,7 @@ function renderTab(tab: string): string {
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           ${noteCard('Cleave Melee', 'Hits ALL enemies in melee range, secondaries take 70%. Towers: Hastati, Triarius, Cohort Guard, Praetorian Wall, Imperator Guard, Vexillation, Triumphator, Triplex Acies.')}
           ${noteCard('Multi-Shot Ranged', 'Multiple bolts per attack. Decurion (2), Carroballista (2), Eques (3), Hannibal\'s Nightmare (2), Scorpion Bolt (3), Aurora Legion (4 piercing), Carthage Scourge (6).')}
-          ${noteCard('Anti-Air Only', 'Aquila Venator ignores ground entirely. Dead weight on ground waves, devastating on flyers.')}
+          ${noteCard('Anti-Air Only', 'Sagittarius and Aquila Venator ignore ground entirely. Dead weight on ground waves, devastating on flyers.')}
           ${noteCard('Trident & Net (Retiarius)', 'First hit on a new target = 2× damage. Armor Shred every strike.')}
           ${noteCard('Brutal Opener (Accensus)', '+75% damage above 85% HP. Front-load damage on fresh enemies.')}
           ${noteCard('Backstab (Pugio Assassin)', '+50% vs Runner archetype.')}

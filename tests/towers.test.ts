@@ -5,7 +5,7 @@ import { createTower, towerEffectiveStats, towerPerAttackDamageBase, placeCost, 
 import { applyDamageAndStatus, tickCombat } from '../src/systems/CombatResolver';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { spawnProjectile } from '../src/systems/ProjectileSystem';
-import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind } from '../src/types';
+import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind, TargetingMode } from '../src/types';
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS, GRID } from '../src/constants';
 import { createGameState } from '../src/GameState';
 import { initializeGrid, isBuildable } from '../src/systems/GridManager';
@@ -151,6 +151,13 @@ describe('Tower effective stats', () => {
       expect((towersData as any)[type].baseDps).toBe(expectedDps);
     }
     expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(235.0);
+  });
+
+  it('marks Sagittarius and Aquila Venator as flyer-only targeting towers', () => {
+    for (const type of [TowerType.SAGITTARIUS, TowerType.AQUILA_VENATOR]) {
+      expect((towersData as any)[type].antiAirOnly).toBe(true);
+      expect(createTower(type, type === TowerType.AQUILA_VENATOR ? 3 : 1, 0, 0, 1).targetingMode).toBe(TargetingMode.FLYERS);
+    }
   });
 
   it('applies a linear tier damage ramp (T5 hits 2.5x T1)', () => {

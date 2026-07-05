@@ -181,6 +181,30 @@ describe('Tower targeting modes', () => {
     expect(picked?.id).toBe('C');
   });
 
+  it('Sagittarius and Aquila Venator can only target flyers in every targeting mode', () => {
+    const { state, enemies } = setup();
+    const groundOnly = enemies.filter(e => !e.isFlyer);
+    const flyer = enemies.find(e => e.isFlyer)!;
+    const modes = [
+      TargetingMode.FIRST,
+      TargetingMode.LAST,
+      TargetingMode.STRONG,
+      TargetingMode.WEAKEST,
+      TargetingMode.FAST,
+      TargetingMode.CLOSE,
+      TargetingMode.FLYERS,
+    ];
+
+    for (const type of [TowerType.SAGITTARIUS, TowerType.AQUILA_VENATOR]) {
+      const tower = createTower(type, type === TowerType.AQUILA_VENATOR ? 3 : 1, 5, 5, 1);
+      for (const mode of modes) {
+        tower.targetingMode = mode;
+        expect(pickTarget(state, tower, enemies, 10)?.id, `${type} ${mode} should pick the flyer`).toBe(flyer.id);
+        expect(pickTarget(state, tower, groundOnly, 10), `${type} ${mode} should ignore ground enemies`).toBeNull();
+      }
+    }
+  });
+
   it('returns null when no enemy is in range', () => {
     const { state, tower } = setup();
     // Move all enemies way out of range.

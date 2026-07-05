@@ -52,8 +52,8 @@
     "melee": false,
     "spriteSheet": 1,
     "spriteCell": 3,
-    "antiAirOnly": false,
-    "ability": "Hits BOTH ground and flyers. WING CLIP: flyer hits Slow by 35% for a short window. Heavy damage, long range, +45% damage vs Flyers — the early-game answer to fast air leaks.",
+    "antiAirOnly": true,
+    "ability": "Targets flyers only. WING CLIP: flyer hits Slow by 35% for a short window. Heavy damage, long range, +45% damage vs Flyers — the early-game answer to fast air leaks.",
     "critChance": 0.22,
     "critMult": 2.5
   },
@@ -478,8 +478,8 @@
     "kind": "BASE",
     "melee": false,
     "tierBand": 3,
-    "antiAirOnly": false,
-    "ability": "Tier III sky hunter. Hits BOTH ground and flyers. EAGLE SNARE: flyer hits Slow by 45% and mark for +25% damage taken. Two-shot attacks and devastating crits make it the mid-game air-control anchor.",
+    "antiAirOnly": true,
+    "ability": "Tier III sky hunter. Targets flyers only. EAGLE SNARE: flyer hits Slow by 45% and mark for +25% damage taken. Two-shot attacks and devastating crits make it the mid-game air-control anchor.",
     "critChance": 0.28,
     "critMult": 3.0
   },

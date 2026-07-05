@@ -252,13 +252,12 @@ const MELEE_TYPES = new Set<TowerType>([
 ]);
 
 // Towers that ONLY hit flyers — useless on ground waves, devastating on air ones.
-// 2026 v2 — ANTI-AIR-ONLY RETIRED. Per design feedback, no tower is locked to
-// air-only: any tower that CAN hit flyers also hits ground (the Scorpio model).
-// Sagittarius / Aquila Venator / Numidian Cavalry keep their large +vs-flyer
-// damage bonuses (applied per-tower in the damage block) but now also engage
-// ground targets. The set is kept empty so the two gate checks that read it
-// (target acquisition in pickTarget + the per-tick damage loop) never fire.
-export const ANTI_AIR_ONLY_TYPES = new Set<TowerType>([]);
+// Driven from tower data so Codex/menu badges and combat targeting cannot drift.
+export const ANTI_AIR_ONLY_TYPES = new Set<TowerType>(
+  Object.entries(towersData as Record<string, any>)
+    .filter(([, def]) => !!def?.antiAirOnly)
+    .map(([type]) => type as TowerType)
+);
 
 // Cleave melee — these towers hit ALL enemies in their melee range per swing,
 // not just one. Cleave damage on secondary targets is reduced to 70%.
@@ -1339,17 +1338,14 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Eques crits = 3× per spec (2026-05 v11: rate 15% → 25%).
       // NUMIDIAN_CAVALRY signature crit (2026-05-15 v2 buff): 25%→30%.
       if (t.type === TowerType.NUMIDIAN_CAVALRY && Math.random() < 0.30) damage *= 3;
-      // NUMIDIAN_CAVALRY ("Eques") rider — 2026-05-19 v3 converted to
-      // FLYER-ONLY (membership in ANTI_AIR_ONLY_TYPES gates ground
-      // targets out at the inRange filter). vs-Flyer bonus bumped
+      // NUMIDIAN_CAVALRY ("Eques") rider — vs-Flyer bonus bumped
       // 1.40 → 1.75 (2026-05-19), then 1.75 → 2.10 (2026-05-25 per
       // user direction "make Eques 20% stronger against flyers" —
       // multiplicative on the existing rider, so +75% → +110% flat).
-      // Anti-boss rider removed because the tower can't shoot ground
-      // bosses anymore — only the rare flying-boss case would have
-      // benefited, and the +110% vs flyers already amplifies those.
+      // Anti-boss rider removed so the tower's late identity stays cleanly
+      // weighted toward sky packs instead of becoming generic boss DPS.
       // baseDps was simultaneously bumped 34 → 85 in towers.json to
-      // pay for losing every ground target.
+      // make its flyer control feel meaningful.
       if (t.type === TowerType.NUMIDIAN_CAVALRY && target.isFlyer) {
         damage *= 2.10;
       }

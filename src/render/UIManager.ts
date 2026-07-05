@@ -202,7 +202,7 @@ export class UIManager {
     // overlay, dismisses on selection or on a re-click of the button.
     const targetAllBtn = mkBtn('🎯 TARGET ALL', '#3a1a2a');
     targetAllBtn.id = 'target-all-btn';
-    targetAllBtn.title = 'Bulk-retarget EVERY placed tower at once. Click to open the mode picker (FIRST / LAST / STRONG / WEAKEST / CLOSE / FLYERS / FAST), pick a mode, and every tower on the map switches to it. Saves you from opening each tower individually.';
+    targetAllBtn.title = 'Bulk-retarget EVERY placed tower at once. Click to open the mode picker (FIRST / LAST / STRONG / WEAKEST / CLOSE / FLYERS / FAST), pick a mode, and every eligible tower on the map switches to it. Flyer-only towers stay on FLYERS. Saves you from opening each tower individually.';
     targetAllBtn.style.color = '#ffb3d9';
     targetAllBtn.style.border = '2px solid #ffb3d9';
     targetAllBtn.style.fontWeight = 'bold';
@@ -219,7 +219,7 @@ export class UIManager {
       { mode: TargetingMode.STRONG,  label: 'STRONG',  tip: 'Highest HP — bosses get priority' },
       { mode: TargetingMode.WEAKEST, label: 'WEAKEST', tip: 'Lowest HP grunt — finisher mode' },
       { mode: TargetingMode.CLOSE,   label: 'CLOSE',   tip: 'Physically closest enemy' },
-      { mode: TargetingMode.FLYERS,  label: 'FLYERS',  tip: 'Flyers first, then ground' },
+      { mode: TargetingMode.FLYERS,  label: 'FLYERS',  tip: 'Flyers first, then ground when allowed' },
       { mode: TargetingMode.FAST,    label: 'FAST',    tip: 'Highest current speed — catch sprinters' },
     ];
     // 2026-05-25 — restyle each picker button to support an "ACTIVE"
