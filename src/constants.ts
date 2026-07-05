@@ -313,15 +313,10 @@ export const AURA_TILES: AuraTile[] = [
   { col: 28, row: 10, kind: 'RED'     },  // right-mid       · +50% damage vs bosses (tyrant, moved down 2)
   { col: 24, row: 19, kind: 'CYAN'    },  // bottom-mid      · melee can hit flyers
   { col: 15, row: 16, kind: 'GOLD'    },  // mid-left        · +2 gold per kill (treasury, moved up 3 + right 4)
-  // 2026-05-19 — 6th aura tile. WATCHTOWER (emerald green). Moved
-  // from the bottom-left corner (2, 22) → upper-middle (20, 5) →
-  // (20, 4). The previous (20, 5) sat exactly on waypoint 5
-  // (JUPITER) per waypoints.json — the tile was overlapping the
-  // checkpoint instead of being placeable terrain. Shifted up one
-  // row so it sits directly ABOVE the checkpoint instead. Still
-  // satisfies the ≥11 manhattan rule vs every other aura:
-  // PURPLE 19 / BLUE 13 / RED 12 / CYAN 19 / GOLD 24.
-  { col: 20, row: 4,  kind: 'EMERALD' },  // upper-middle · above WP5 · +2 tile range
+  // 2026-07-05 — WATCHTOWER (emerald green). Moved from (20,4) to
+  // (17,7), three tiles left and three tiles down, while staying on
+  // open buildable terrain near the upper-middle approach.
+  { col: 17, row: 7,  kind: 'EMERALD' },  // upper-middle · +2 tile range
   // 2026-06-28 — DIVINE (ivory) + BLAST (amber) tiles, dispersed organically
   // instead of stacked in a column. They scatter with the other six rather
   // than lining up, while still anchoring the right-side WP3↔WP4 lanes. Both
