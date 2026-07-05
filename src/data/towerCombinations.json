@@ -580,15 +580,15 @@
     "ingredients": [
       {
         "type": "PRAEFECTUS",
-        "minTier": 5
+        "minTier": 4
       },
       {
         "type": "VULCAN_ENGINEER",
-        "minTier": 5
+        "minTier": 4
       },
       {
         "type": "SOLAR_PRIEST",
-        "minTier": 5
+        "minTier": 4
       }
     ],
     "cost": 250

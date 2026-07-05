@@ -183,6 +183,23 @@ describe('Recipe combo detection', () => {
     expect(caesar).toBeTruthy();
   });
 
+  it('keeps Fatebinder craftable with T4 apex ingredients', () => {
+    const recipe = comboData.find((r: any) => r.result === 'CONSULAR_FATEBINDER') as any;
+    expect(recipe.ingredients).toEqual([
+      { type: 'PRAEFECTUS', minTier: 4 },
+      { type: 'VULCAN_ENGINEER', minTier: 4 },
+      { type: 'SOLAR_PRIEST', minTier: 4 }
+    ]);
+
+    const s = bootstrapState();
+    placeTower(s, TowerType.PRAEFECTUS, 4, 5, 5);
+    placeTower(s, TowerType.VULCAN_ENGINEER, 4, 5, 6);
+    placeTower(s, TowerType.SOLAR_PRIEST, 4, 5, 7);
+    const combos = scanCombos(s);
+    const fatebinder = combos.find(c => c.result === TowerType.CONSULAR_FATEBINDER && !c.isSameTierMerge);
+    expect(fatebinder).toBeTruthy();
+  });
+
   it('rewards harder-to-assemble nested combos with higher DPS', () => {
     // 2026-06-29 — JB: combos whose recipes are rarer/harder (nested combo
     // ingredients, high min-tiers, big cost) should be stronger. DPS now

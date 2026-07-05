@@ -675,7 +675,7 @@ function renderTab(tab: string): string {
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           ${noteCard('TRIPLEX ACIES (early, 30g)', 'Cleaves 2-tile radius melee. +25% atk-speed aura to towers within 3 tiles. Recipe: Milites + Hastati + Triarius + Centurion + Skizzer (all T2+).')}
           ${noteCard('LEGION PRIME (mid, 100g)', 'Heavy AoE divine. Slow + Armor Shred on every hit. +25% damage aura within 3 tiles. Recipe: Ignifer + Flamen + Carroballista (all T3+).')}
-          ${noteCard('FATEBINDER (apex, 250g)', 'Every strike echoes onto EVERY enemy on the map at 60% splash. TRUE damage. +30% global damage + atk speed aura. Recipe: Praefectus + Vulcan Engineer + Solar Priest (all T5+).')}
+          ${noteCard('FATEBINDER (apex, 250g)', 'Every strike echoes onto EVERY enemy on the map at 60% splash. TRUE damage. +30% global damage + atk speed aura. Recipe: Praefectus + Vulcan Engineer + Solar Priest (all T4+).')}
         </div>
       `)}
       ${foldSection('CROSS-COMBOS (combos-of-combos)', `
