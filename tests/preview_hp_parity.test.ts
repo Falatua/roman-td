@@ -22,13 +22,14 @@ beforeAll(() => {
   (globalThis as any).window.__renderer = { triggerSpawnPuff: () => {} };
 });
 import { createGameState } from '../src/GameState';
-import { GamePhase } from '../src/types';
+import { EnemyType, GamePhase } from '../src/types';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath, buildFlyerPath } from '../src/systems/PathFinder';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
-import { WAVE } from '../src/constants';
+import { ENEMY_BALANCE, WAVE } from '../src/constants';
 import { surpriseEventHpMult } from '../src/systems/SurpriseEvents';
+import { spawnEnemy } from '../src/systems/EnemySystem';
 
 function bootstrapState() {
   const s = createGameState();
@@ -119,6 +120,25 @@ describe('previewSpawnHp formula spot-checks', () => {
   it('W1 pins every enemy to 300 HP regardless of baseHp (no hero drafted)', () => {
     const dog: any = (enemiesData as any).FERAL_DOG;
     expect(previewSpawnHp(dog, 1, 'G', 1.0)).toBe(300);
+  });
+
+  it('applies the global +10% flyer health bump to spawned and preview HP', () => {
+    const state = bootstrapState();
+    state.wave = 12;
+    const def: any = (enemiesData as any).SPECTRAL_SCOUT;
+    const spawned = spawnEnemy(state, EnemyType.SPECTRAL_SCOUT, 2.0);
+    const expectedSpawnHp = def.baseHp * 2.0 * 1.70 * ENEMY_BALANCE.FLYER_HEALTH_MULT;
+
+    expect(spawned.maxHp).toBeCloseTo(expectedSpawnHp, 4);
+    expect(previewSpawnHp(def, 12, 'F', 2.0)).toBe(
+      Math.round(
+        def.baseHp *
+        effectiveWaveHpMult(12, 2.0, false) *
+        lateGameLayerMult(12, false, true) *
+        1.70 *
+        ENEMY_BALANCE.FLYER_HEALTH_MULT
+      )
+    );
   });
 
   it('W15 Undead Warlord = baseHp × hpMult × aggressive linear pressure × 2.0 solo × W10+1.25 × W11+1.40 boss layers', () => {

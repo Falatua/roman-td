@@ -14,7 +14,7 @@
 
 import { GamePhase, EnemyType } from '../types';
 import { GameStateShape } from '../GameState';
-import { WAVE, WAVE_MODIFIERS } from '../constants';
+import { ENEMY_BALANCE, WAVE, WAVE_MODIFIERS } from '../constants';
 import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
 import { spawnEnemy } from './EnemySystem';
@@ -167,7 +167,8 @@ export function previewSpawnHp(def: any, waveNumber: number, wType: 'B' | 'M' | 
   const layer    = lateGameLayerMult(waveNumber, isBoss, isFlyer);
   const basicBuff = isBoss ? 1.0 : 1.70;
   const heroComp = heroActive ? 1.15 : 1.00;
-  return Math.round(def.baseHp * waveMult * soloBuff * layer * basicBuff * heroComp);
+  const flyerHpMult = isFlyer ? ENEMY_BALANCE.FLYER_HEALTH_MULT : 1.0;
+  return Math.round(def.baseHp * waveMult * soloBuff * layer * basicBuff * heroComp * flyerHpMult);
 }
 
 export function startWave(state: GameStateShape) {

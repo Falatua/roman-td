@@ -16,7 +16,7 @@
 //      - Fire onLeak / onDeath callbacks for the game-loop to handle.
 
 import { Enemy, EnemyType, EnemyFaction, StatusEffectKind } from '../types';
-import { GRID, RENDER_LIMITS } from '../constants';
+import { ENEMY_BALANCE, GRID, RENDER_LIMITS } from '../constants';
 import { GameStateShape, isWaveModifierActive } from '../GameState';
 import enemiesData from '../data/enemies.json';
 import waypointsData from '../data/waypoints.json';
@@ -129,7 +129,8 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   // his roster pick so a uniform bump is the right call.
   const heroComp = state.activeHeroId ? 1.15 : 1.00;
   const relicHpMult = campaignRelicEnemyHpMult(state, def);
-  const finalHp = def.baseHp * hpMult * moonBoost * basicHpBuff * heroComp * relicHpMult;
+  const flyerHpMult = flyer ? ENEMY_BALANCE.FLYER_HEALTH_MULT : 1.0;
+  const finalHp = def.baseHp * hpMult * moonBoost * basicHpBuff * heroComp * relicHpMult * flyerHpMult;
   const e: Enemy = {
     id: newId(),
     type,

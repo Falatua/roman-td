@@ -84,6 +84,10 @@ export const WAVE = {
   DECADE_HP_MULT: 1.0
 } as const;
 
+export const ENEMY_BALANCE = {
+  FLYER_HEALTH_MULT: 1.10
+} as const;
+
 // Tier multipliers (2026-05 — 20-WAVE CAMPAIGN). Re-introduces a damage
 // ladder so rolling a T5 actually feels meaningfully stronger than the
 // same tower at T1 — linear-leaning ramp with a big T1→T5 gap (2.5×).
