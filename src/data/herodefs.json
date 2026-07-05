@@ -288,10 +288,10 @@
     "biography": "Sulla was famously lucky — he said so himself, and Rome believed him. On this field his luck translates into pyres and divine wrath: every nearby attack becomes flame, and on command every tower's strike becomes pure DIVINE.",
     "passive": {
       "kind": "DAMAGE_TYPE_CONVERSION",
-      "radiusTiles": 4,
+      "radiusTiles": 5.5,
       "convertTo": "ELEMENTAL_FIRE",
       "dmgBonusPercent": 22,
-      "description": "Every tower within 4 tiles converts to FIRE damage and gains +22% damage."
+      "description": "Every tower within 5.5 tiles converts to FIRE damage and gains +22% damage."
     },
     "abilities": [
       {

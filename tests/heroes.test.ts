@@ -414,6 +414,56 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(getTowerProjectileProfile(TowerType.CHAMPION_SULLA)?.key).toBe('PROJ_SULLA_METEOR');
   });
 
+  it('Sulla Pyre Ward reaches towers 5.5 tiles away', () => {
+    const def: any = (HERO_DEFS as any).HERO_SULLA;
+    expect(def.passive.radiusTiles).toBe(5.5);
+    expect(def.passive.description).toContain('5.5 tiles');
+
+    function decurionHitDamage(attackerCol: number): number {
+      const s = freshState();
+      s.phase = GamePhase.WAVE_PHASE;
+      s.tick = 1;
+      s.wave = 11;
+      s.activeHeroId = 'HERO_SULLA';
+      s.heroTier = 0;
+
+      const sulla = createTower(TowerType.HERO_SULLA, 1, 5, 5, 1);
+      sulla.attackCooldown = 999;
+      s.activeHeroTowerId = sulla.id;
+      s.towers.set(sulla.id, sulla);
+
+      const decurion = createTower(TowerType.DECURION, 1, attackerCol, 5, 1);
+      decurion.attackCooldown = 0;
+      decurion.critChance = 0;
+      s.towers.set(decurion.id, decurion);
+
+      const target = testEnemy('undead-target', {
+        faction: EnemyFaction.UNDEAD_CELTS,
+        hp: 100_000,
+        maxHp: 100_000,
+        x: (attackerCol + 1) * 32 + 16,
+        y: 5 * 32 + 16
+      });
+      s.enemies.set(target.id, target);
+
+      let hitDamage = 0;
+      tickCombat(s, 0.016, {
+        onHit: (tower, enemy, damage) => {
+          if (tower.id === decurion.id && enemy.id === target.id) hitDamage = damage;
+        },
+        onMeleeSwing: () => {},
+        onProjectileFire: () => {},
+        onKill: () => {}
+      });
+      return hitDamage;
+    }
+
+    const withinFiveTiles = decurionHitDamage(10);
+    const outsideFivePointFiveTiles = decurionHitDamage(11);
+    expect(outsideFivePointFiveTiles).toBeGreaterThan(0);
+    expect(withinFiveTiles).toBeGreaterThan(outsideFivePointFiveTiles * 1.45);
+  });
+
   it('SPQR Decree spreads a large board volley instead of zeroing every cooldown together', () => {
     const s = freshState();
     s.phase = GamePhase.WAVE_PHASE;
@@ -887,8 +937,8 @@ describe('herodefs.json shape (single source of tuning)', () => {
       const def: any = (HERO_DEFS as any)[id];
       // Marius/Agrippa use top-level filter; Scipio uses VS_BOSS
       // (no damage-type filter); Caesar is unfiltered global; Sulla
-      // uses convertTo (DAMAGE_TYPE_CONVERSION passive — towers
-      // within 3 tiles get their damage type overridden to convertTo).
+      // uses convertTo (DAMAGE_TYPE_CONVERSION passive — nearby towers
+      // get their damage type overridden to convertTo).
       // 2026-05-22 — Agricola's passive simplified to a single
       // GLOBAL effect (melee-can-hit-flyers) with NO damage filter
       // and NO local aura. He no longer contributes a PHYS_RANGED

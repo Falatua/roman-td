@@ -64,6 +64,7 @@ function burnPatchLife(towerType: TowerType): number {
 const activeTowerScratch: Tower[] = [];
 const enemySnapshotScratch: Enemy[] = [];
 const targetCandidateScratch: Enemy[] = [];
+const SULLA_PASSIVE_RADIUS_TILES = 5.5;
 
 // BURNING GROUND — fire-themed towers stamp a 3-second patch at the impact
 // point. Any enemy within the patch radius takes burn DoT each frame.
@@ -833,22 +834,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // "melee can hit flyers" global effect, no per-tower damage
       // multiplier. Kept the surrounding `if heroTowerForAura` scaffold
       // intact for Marius/Agrippa/Sulla which still use local auras.
-      // 2026-05-22 V19 — SULLA PASSIVE BALANCE ADJUSTMENT. Original
-      // V92 rework dropped the damage rider entirely (TYPE-only), which
-      // left Sulla as the only hero whose passive contributed zero
-      // damage value to its aura targets. The balance audit (V19) put
-      // him as the weakest of the 6 by a wide margin. Restored as a
-      // smaller +15% rider on top of the FIRE conversion (not the old
-      // +35%) and bumped the radius 2 → 3 tiles for parity with the
-      // other local-aura heroes at that time. 2026-05-24 audit note —
-      // Marius + Agrippa were since rebumped to 5 tiles (task #222) and
-      // Agricola is GLOBAL (no local aura at all); Sulla still sits at
-      // 3 tiles by design (his FIRE-conversion is more impactful than
-      // a flat damage rider, so the smaller radius is the balance lever).
-      // Type conversion still happens at the per-attack site below.
-      if (source.heroId === 'HERO_SULLA' && dh <= 4 * GRID.TILE) {
-        // 2026-06-25 — slight buff: FIRE aura +15%→+22% dmg (DIVUS +44%),
-        // radius 3→4 tiles.
+      // Sulla's Pyre Ward: nearby towers convert to FIRE and gain a
+      // damage rider. Type conversion happens at the per-attack site below.
+      if (source.heroId === 'HERO_SULLA' && dh <= SULLA_PASSIVE_RADIUS_TILES * GRID.TILE) {
         dm *= 1 + 0.22 * source.auraScale;
       }
     }
@@ -984,14 +972,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // 2026-05-19 — Proscription (Sulla Tier 2) overrides this attack's
       // damage type to DIVINE for the duration.
       let effectiveDmgType = t.damageType;
-      // 2026-05-22 V19 — SULLA PASSIVE: any tower within 3 tiles of the
-      // active Sulla hero converts its damage type to ELEMENTAL_FIRE
-      // for this attack (bumped from 2 → 3 for cohort parity). The +15%
+      // Sulla passive: nearby towers convert their attack to FIRE. The
       // damage rider is applied earlier in the aura loop, so this block
       // only handles the type override. Applied BEFORE Proscription so
-      // the ult's DIVINE override still wins during its window. Skips
-      // the hero tower itself (Sulla is already FIRE; no-op). Skipped
-      // when Sulla isn't the active hero or his tower isn't placed yet.
+      // the ult's DIVINE override still wins during its window.
       let hasSullaSource = false;
       for (const h of heroAuraSources) {
         if (h.heroId === 'HERO_SULLA' && h.tower.id !== t.id) { hasSullaSource = true; break; }
@@ -1000,7 +984,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         const tcx2 = tilePxX(t), tcy2 = tilePxY(t);
         for (const h of heroAuraSources) {
           if (h.heroId !== 'HERO_SULLA' || h.tower.id === t.id) continue;
-          if (Math.hypot(tilePxX(h.tower) - tcx2, tilePxY(h.tower) - tcy2) <= 4 * GRID.TILE) {
+          if (Math.hypot(tilePxX(h.tower) - tcx2, tilePxY(h.tower) - tcy2) <= SULLA_PASSIVE_RADIUS_TILES * GRID.TILE) {
             effectiveDmgType = DamageType.ELEMENTAL_FIRE;
             break;
           }
