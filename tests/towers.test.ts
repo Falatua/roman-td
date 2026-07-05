@@ -1,7 +1,7 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
-import { createTower, towerEffectiveStats, towerPerAttackDamageBase, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
+import { createTower, towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
 import { applyDamageAndStatus, tickCombat } from '../src/systems/CombatResolver';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { spawnProjectile } from '../src/systems/ProjectileSystem';
@@ -55,6 +55,11 @@ function towerCenter(tower: { tileX: number; tileY: number }) {
     x: tower.tileX * GRID.TILE + GRID.TILE / 2,
     y: tower.tileY * GRID.TILE + GRID.TILE / 2
   };
+}
+
+function displayedDpsFromBreakdown(tower: ReturnType<typeof createTower>, state: ReturnType<typeof createGameState>) {
+  const breakdown = towerStatBreakdown(tower, state);
+  return breakdown.damageFinal * (breakdown.speedFinal / Math.max(0.05, breakdown.speedBase));
 }
 
 function singleSwingDamage(opts: {
@@ -192,6 +197,24 @@ describe('Tower effective stats', () => {
     t.equippedItems.push('MERCURY_FEATHER');
     const after = towerEffectiveStats(t).attackSpeed;
     expect(after).toBeCloseTo(before * 1.25, 4);
+  });
+
+  it('includes attack-speed items in the displayed DPS calculation', () => {
+    const state = createGameState();
+    const tower = createTower(TowerType.SAGITTARIUS, 1, 0, 0, 0);
+    const baseDisplayedDps = displayedDpsFromBreakdown(tower, state);
+    tower.equippedItems.push('TRAINING_SCROLL');
+
+    expect(displayedDpsFromBreakdown(tower, state)).toBeCloseTo(baseDisplayedDps * 1.10, 4);
+  });
+
+  it('includes unconditional late-combat item damage in displayed DPS', () => {
+    const state = createGameState();
+    const tower = createTower(TowerType.SAGITTARIUS, 1, 0, 0, 0);
+    const baseDisplayedDps = displayedDpsFromBreakdown(tower, state);
+    tower.equippedItems.push('PERIMETER_TORCH');
+
+    expect(displayedDpsFromBreakdown(tower, state)).toBeCloseTo(baseDisplayedDps * 1.50 * 1.50, 4);
   });
 
   it('gives melee towers a small baseline attack-speed lift', () => {
@@ -601,6 +624,32 @@ describe('Aura mechanics and visibility', () => {
 
     expect(capped.damage / base.damage).toBeCloseTo(2.0, 4);
     expect(base.cooldown / capped.cooldown).toBeCloseTo(2.0, 4);
+  });
+
+  it('shows capped live aura stacks in the tower stat breakdown', () => {
+    const state = createGameState();
+    const attacker = createTower(TowerType.DECURION, 1, 10, 10, 0);
+    state.towers.set(attacker.id, attacker);
+    for (const [index, type] of [
+      TowerType.EAGLE_STANDARD,
+      TowerType.JULIUS_CAESAR,
+      TowerType.CONSULAR_FATEBINDER,
+      TowerType.MARS_VICTOR,
+      TowerType.IMPERIUM_ETERNUM,
+      TowerType.AUREATE_TRIBUNAL
+    ].entries()) {
+      const support = createTower(type, 5, index + 1, 1, 0);
+      state.towers.set(support.id, support);
+    }
+
+    const breakdown = towerStatBreakdown(attacker, state);
+    const damageAura = breakdown.damageMods.find(m => m.source.startsWith('Aura stack'));
+    const speedAura = breakdown.speedMods.find(m => m.source.startsWith('Aura stack'));
+
+    expect(damageAura?.multiplier).toBeCloseTo(2.0, 4);
+    expect(speedAura?.multiplier).toBeCloseTo(2.0, 4);
+    expect(damageAura?.source).toContain('capped');
+    expect(speedAura?.source).toContain('capped');
   });
 
   it('applies local ally item auras to damage and attack speed', () => {

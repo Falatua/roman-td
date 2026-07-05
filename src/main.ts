@@ -20,7 +20,7 @@ import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercator
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
-import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAuraTileKind, towerEffectiveStats } from './systems/TowerSystem';
+import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAuraTileKind, towerStatBreakdown } from './systems/TowerSystem';
 import { scanCombos, realizableCombos, executeCombo } from './systems/CombinationEngine';
 // SANDBOX: dev-mode imports. Delete this line + every line tagged
 // `// SANDBOX:` to remove sandbox mode entirely.
@@ -5428,7 +5428,8 @@ async function boot() {
     if (!t) { tip?.remove(); return; }
     const def: any = (towersData as any)[t.type] ?? {};
     const tierCol = ['#aaaaaa','#aaaaaa','#b87333','#c0c0c0','#ffd34d','#ff5050'][t.qualityTier] ?? '#aaaaaa';
-    const stats = towerEffectiveStats(t);
+    const breakdown = towerStatBreakdown(t, state);
+    const liveDps = breakdown.damageFinal * (breakdown.speedFinal / Math.max(0.05, breakdown.speedBase));
     const pendingTag = t.pending ? '<span style="color:#ff9933;font-weight:bold">PENDING — keep to activate</span>' : '';
     const auraKind = towerAuraTileKind(t);
     const auraTag = auraKind
@@ -5451,9 +5452,9 @@ async function boot() {
       </div>
       ${pendingTag ? `<div style="margin-bottom:4px">${pendingTag}</div>` : ''}
       <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:11px">
-        <span style="color:#aa9a4a">DPS</span><b style="color:#fff8e0">${Math.round(stats.dps).toLocaleString()}</b>
-        <span style="color:#aa9a4a">Range</span><b style="color:#fff8e0">${stats.range.toFixed(1)} tiles</b>
-        <span style="color:#aa9a4a">Atk Speed</span><b style="color:#fff8e0">${stats.attackSpeed.toFixed(2)}/sec</b>
+        <span style="color:#aa9a4a">DPS</span><b style="color:#fff8e0">${Math.round(liveDps).toLocaleString()}</b>
+        <span style="color:#aa9a4a">Range</span><b style="color:#fff8e0">${breakdown.rangeFinal.toFixed(1)} tiles</b>
+        <span style="color:#aa9a4a">Atk Speed</span><b style="color:#fff8e0">${breakdown.speedFinal.toFixed(2)}/sec</b>
         <span style="color:#aa9a4a">Items</span><b style="color:#fff8e0">${items} equipped</b>
         <span style="color:#aa9a4a">Kills</span><b style="color:#88ff88">${t.killCount ?? 0}</b>
       </div>

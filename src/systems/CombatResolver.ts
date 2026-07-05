@@ -1164,9 +1164,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES.
       //
       // INVASION rewards:
-      //   • VANGUARD_PILUM: +35% damage (range +1 is applied in stats)
+      //   • VANGUARD_PILUM: +75% damage (range +2 is applied in stats)
       //   • AQUILA_RAMPART: +50% damage vs enemies above 70% HP
-      //   • PERIMETER_TORCH: +25% damage (atk speed in stats)
+      //   • PERIMETER_TORCH: +50% damage (atk speed in stats)
       if (t.equippedItems.includes('VANGUARD_PILUM')) damage *= 1.75;
       if (t.equippedItems.includes('AQUILA_RAMPART') && (target.hp / target.maxHp) > 0.70) damage *= 2.00;
       if (t.equippedItems.includes('PERIMETER_TORCH')) damage *= 1.50;
@@ -1188,7 +1188,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
       //
       // GATES OF HELL rewards:
-      //   • HELLGATE_BRAND: +50% damage (atk speed in stats, silence imm in flag)
+      //   • HELLGATE_BRAND: +80% damage (atk speed in stats, silence imm in flag)
       //   • DEMONSWORN_CROWN: +100% vs demons, +50% vs bosses (stacks)
       //   • INFERNO_STANDARD: aura applied separately
       if (t.equippedItems.includes('HELLGATE_BRAND')) damage *= 1.80;

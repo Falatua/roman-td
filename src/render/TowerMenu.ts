@@ -219,10 +219,8 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   // with its contribution. Player can see exactly why their tower is
   // hitting harder than the raw def number.
   const breakdown = towerStatBreakdown(t, state);
-  // Per-attack damage = baseDps × all_dmg_mults / (attackSpeed × all_spd_mults)
-  // The breakdown shows just the per-hit damage contributions for clarity.
-  // Final per-hit ≈ damageFinal / speedFinal.
-  const finalPerHit = breakdown.damageFinal / Math.max(0.05, breakdown.speedFinal);
+  const finalDpsValue = breakdown.damageFinal * (breakdown.speedFinal / Math.max(0.05, breakdown.speedBase));
+  const finalPerHit = finalDpsValue / Math.max(0.05, breakdown.speedFinal);
   const basePerHit = breakdown.damageBase / Math.max(0.05, breakdown.speedBase);
   // Format a list of modifiers as compact "+X% src, +Y% src" lines.
   const fmtMods = (mods: StatModifier[]): string => {
@@ -260,16 +258,11 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
         <span style="color:#88ff88;font-size:11px">→</span>
         <span style="color:#e8d6a8;font-size:14px;font-weight:bold">${breakdown.rangeFinal} tiles</span>
       </div>${fmtMods(mods)}`;
-  const dmgBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px;grid-column:span 2"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Damage / hit</div>${dmgFinalDisplay(breakdown.damageMods.concat(breakdown.speedMods.length > 0 ? breakdown.speedMods : []))}</div>`;
-  // Note above: per-hit damage includes both damage mods (which raise it)
-  // AND speed mods (which raise it indirectly via DPS = perHit × speed).
-  // We don't double-list speed mods under damage, but we DO want them
-  // shown in the Atk Speed box. So filter the dmg box to dmg mods only.
   const dmgBoxClean = `<div style="background:#1a1410;padding:8px 10px;font-size:11px;grid-column:span 2"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Damage / hit</div>${dmgFinalDisplay(breakdown.damageMods)}</div>`;
   const spdBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Atk Speed</div>${spdFinalDisplay(breakdown.speedMods)}</div>`;
   const rngBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Range</div>${rngFinalDisplay(breakdown.rangeMods)}</div>`;
-  const dpsFinal = (finalPerHit * breakdown.speedFinal).toFixed(1);
-  const dpsBaseCalc = (basePerHit * breakdown.speedBase).toFixed(1);
+  const dpsFinal = finalDpsValue.toFixed(1);
+  const dpsBaseCalc = breakdown.damageBase.toFixed(1);
   const dpsHasBoost = breakdown.damageMods.length + breakdown.speedMods.length > 0;
   const dpsBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Effective DPS</div>${
     dpsHasBoost
@@ -314,19 +307,20 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     itemImpact.style.cssText = 'padding:10px 12px;background:#0c0a08;border-top:1px solid #3a3025;border-bottom:1px solid #3a3025';
     // Sum item-source damage and speed contributions vs base.
     let itemDmgFactor = 1.0;
+    const nonItemSource = /aura|Aura|Pool|Tier|Balance|Endless|Relic|Hero|Forge|Melee tempo|Marian Formation|stack/i;
     for (const m of breakdown.damageMods) {
-      // Filter to item sources (skip tier, pool, aura-from-other-tower).
-      if (/aura|Pool|Tier/.test(m.source)) continue;
+      if (nonItemSource.test(m.source)) continue;
       itemDmgFactor *= (m.multiplier ?? 1);
     }
     let itemSpdFactor = 1.0;
     for (const m of breakdown.speedMods) {
-      if (/aura|Pool|Tier/.test(m.source)) continue;
+      if (nonItemSource.test(m.source)) continue;
       itemSpdFactor *= (m.multiplier ?? 1);
     }
     let itemRngFlat = 0;
     for (const m of breakdown.rangeMods) {
-      if (/Watchtower|Shield|Gilded|Druid Staff/.test(m.source)) itemRngFlat += (m.flat ?? 0);
+      if (nonItemSource.test(m.source)) continue;
+      itemRngFlat += (m.flat ?? 0);
     }
     const dmgPct  = (itemDmgFactor - 1) * 100;
     const spdPct  = (itemSpdFactor - 1) * 100;
@@ -988,7 +982,8 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   // highlighting up front).
   const statsGrid = document.createElement('div');
   statsGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#3a3025;border-top:1px solid #3a3025;border-bottom:1px solid #3a3025';
-  const finalPerHit = breakdown.damageFinal / Math.max(0.05, breakdown.speedFinal);
+  const finalDpsValue = breakdown.damageFinal * (breakdown.speedFinal / Math.max(0.05, breakdown.speedBase));
+  const finalPerHit = finalDpsValue / Math.max(0.05, breakdown.speedFinal);
   const basePerHit = breakdown.damageBase / Math.max(0.05, breakdown.speedBase);
   const fmtMods = (mods: StatModifier[]): string => {
     if (mods.length === 0) return '';
@@ -1028,8 +1023,8 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
           <span style="color:#e8d6a8;font-size:14px;font-weight:bold">${breakdown.rangeFinal} tiles</span>
         </div>${fmtMods(breakdown.rangeMods)}`
   }</div>`;
-  const dpsFinal = (finalPerHit * breakdown.speedFinal).toFixed(1);
-  const dpsBaseCalc = (basePerHit * breakdown.speedBase).toFixed(1);
+  const dpsFinal = finalDpsValue.toFixed(1);
+  const dpsBaseCalc = breakdown.damageBase.toFixed(1);
   const dpsHasBoost = breakdown.damageMods.length + breakdown.speedMods.length > 0;
   const dpsBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Effective DPS</div>${
     dpsHasBoost

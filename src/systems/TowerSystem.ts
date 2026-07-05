@@ -8,6 +8,7 @@ import { hasBossTrophy } from './BossTrophySystem';
 import { campaignRelicTowerDpsMult, campaignRelicTowerRangeBonus, campaignRelicTowerSpeedMult } from './CampaignRelicSystem';
 import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 import { heroAuraScaleForTower, heroBasicAttackScaleForTower } from './HeroScaling';
+import enemiesData from '../data/enemies.json';
 
 // 2026-05-19 — AURA TILE LOOKUP. Returns the kind of aura tile the
 // tower sits on, or null. Used by stat math + combat hooks so every
@@ -64,6 +65,8 @@ const APEX_COMBOS = new Set<string>([
 ]);
 const MELEE_ATTACK_SPEED_MULT = 1.06;
 const MELEE_MIN_RANGE_TILES = 2.0;
+const AURA_STACK_CAP = 2.00;
+const SULLA_PASSIVE_RADIUS_TILES = 5.5;
 
 function isMeleeClassTower(t: Tower): boolean {
   const def: any = (towersData as any)[t.type];
@@ -338,16 +341,16 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   // 2026-05-19 — GATE-EXCLUSIVE COMMONS/UNCOMMONS. Five new items
   // that live only at the gate shop:
   //   • RUSTED_HASTA: +10% damage
-  //   • AUGUR_SCROLL: +20% attack speed (gate-exclusive Uncommon)
-  //   • CONSULAR_TOKEN: +8% damage, +0.5 range (range below)
+  //   • AUGUR_SCROLL: +25% attack speed (gate-exclusive Uncommon)
+  //   • CONSULAR_TOKEN: +15% damage, +0.75 range (range below)
   //   • PRAETORIAN_COIN: +1 gold per kill (wired in main.ts kill hook)
   //   • BRONZE_GREAVES: +0.5 tile range (below in extraRange)
   if (t.equippedItems.includes('RUSTED_HASTA')) itemDmgMult *= 1.10;
   if (t.equippedItems.includes('AUGUR_SCROLL')) itemSpeedMult *= 1.25;
   if (t.equippedItems.includes('CONSULAR_TOKEN')) itemDmgMult *= 1.15;
   // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES (atk-speed half).
-  // PERIMETER_TORCH (invasion):    +25% atk speed (damage in CombatResolver)
-  // HELLGATE_BRAND   (gates):      +25% atk speed (damage in CombatResolver)
+  // PERIMETER_TORCH (invasion):    +50% atk speed (damage in CombatResolver)
+  // HELLGATE_BRAND   (gates):      +40% atk speed (damage in CombatResolver)
   if (t.equippedItems.includes('PERIMETER_TORCH')) itemSpeedMult *= 1.50;
   if (t.equippedItems.includes('HELLGATE_BRAND')) itemSpeedMult *= 1.40;
   // CURSED_TORC, LICH_GENERALS_SEAL, BARCA_WAR_HORN all converted to
@@ -357,8 +360,8 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     (t.equippedItems.includes('WATCHTOWER_LENS') ? 0.75 : 0) +
     (t.equippedItems.includes('DRUID_STAFF_FRAGMENT') ? 3 : 0) +
     (t.equippedItems.includes('GILDED_SCALE_ARMOR') ? 3 : 0) +
-    // 2026-05-18 — INVASION-exclusive VANGUARD_PILUM: +1 tile range
-    // alongside its +35% damage (applied in CombatResolver).
+    // 2026-05-18 — INVASION-exclusive VANGUARD_PILUM: +2 tile range
+    // alongside its +75% damage (applied in CombatResolver).
     (t.equippedItems.includes('VANGUARD_PILUM') ? 2 : 0) +
     // 2026-05-18 — EPIC LICTOR_FASCES: +1 tile range alongside its
     // +40% damage (applied above in itemDmgMult).
@@ -571,7 +574,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
   }
   // DRUIDS_TORC is an AURA — buff appears via aura pass below.
   // GALLIC_SHIELD_BOSS is a control proc, not a stat modifier.
-  if (items.includes('GILDED_SCALE_ARMOR')) { dmgMods.push({ source: 'Gilded Scale Armor', multiplier: 1.55 }); rngMods.push({ source: 'Gilded Scale Armor', flat: 3 }); }
+  if (items.includes('GILDED_SCALE_ARMOR')) { dmgMods.push({ source: 'Gilded Scale Armor', multiplier: 1.60 }); rngMods.push({ source: 'Gilded Scale Armor', flat: 3 }); }
   // CURSED_TORC / LICH_GENERALS_SEAL / BARCA_WAR_HORN are AURAS — they
   // buff nearby allies (or debuff nearby enemies), not the wearer.
   if (items.includes('DRUID_STAFF_FRAGMENT')) rngMods.push({ source: 'Druid Staff Fragment', flat: 3 });
@@ -580,103 +583,200 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
   if (items.includes('FALCONERS_WATCHPOST')) { spdMods.push({ source: "Falconer's Watchpost", multiplier: 1.40 }); rngMods.push({ source: "Falconer's Watchpost", flat: 3 }); }
   if (items.includes('AUGUR_SCROLL')) spdMods.push({ source: "Augur's Scroll", multiplier: 1.25 });
   if (items.includes('CONSULAR_TOKEN')) { dmgMods.push({ source: 'Consular Token', multiplier: 1.15 }); rngMods.push({ source: 'Consular Token', flat: 0.75 }); }
-  if (items.includes('SPEAR_OF_MARS')) { dmgMods.push({ source: 'Spear of Mars', multiplier: 1.35 }); rngMods.push({ source: 'Spear of Mars', flat: 7 }); }
+  if (items.includes('RUSTED_HASTA')) dmgMods.push({ source: 'Rusted Hasta', multiplier: 1.10 });
+  if (items.includes('SPEAR_OF_MARS')) { dmgMods.push({ source: 'Spear of Mars', multiplier: 1.60 }); rngMods.push({ source: 'Spear of Mars', flat: 7 }); }
+  if (items.includes('VANGUARD_PILUM')) { dmgMods.push({ source: 'Vanguard Pilum', multiplier: 1.75 }); rngMods.push({ source: 'Vanguard Pilum', flat: 2 }); }
+  if (items.includes('PERIMETER_TORCH')) {
+    dmgMods.push({ source: 'Perimeter Torch', multiplier: 1.50 });
+    spdMods.push({ source: 'Perimeter Torch', multiplier: 1.50 });
+  }
+  if (items.includes('HELLGATE_BRAND')) {
+    dmgMods.push({ source: 'Hellgate Brand', multiplier: 1.80 });
+    spdMods.push({ source: 'Hellgate Brand', multiplier: 1.40 });
+  }
+  if (items.includes('BRONZE_GREAVES')) rngMods.push({ source: 'Bronze Greaves', flat: 0.5 });
+  if (items.includes('STORM_AQUILA_TALONS')) rngMods.push({ source: 'Storm Aquila Talons', flat: 2 });
 
-  // ── Pool level (additive global damage) ───────────────────────────────
-  // Pool damage bonus kicks in starting at L2 (L0 and L1 = no bonus).
-  const poolLevel = state?.poolLevel ?? 0;
-  const poolBonus = 0.03 * Math.max(0, poolLevel - 1);
-  if (poolBonus > 0) dmgMods.push({ source: `Pool L${poolLevel}`, multiplier: 1 + poolBonus });
-
-  // ── Live aura sources from other towers ───────────────────────────────
+  // ── Live support aura stack ───────────────────────────────────────────
+  // Mirrors CombatResolver: global damage sources add together, local
+  // auras multiply, and the final support stack is capped at 2x.
   if (state?.towers) {
+    const pctLabel = (pct: number) => `${pct >= 0 ? '+' : ''}${Math.round(pct * 100)}%`;
+    const multLabel = (mult: number) => pctLabel(mult - 1);
+    const auraDmgParts: string[] = [];
+    const auraSpdParts: string[] = [];
+    let globalDmgBonus = 0;
+    let globalSpeedMult = 1;
+    let localDmgMult = 1;
+    let localSpeedMult = 1;
     const cx = t.tileX * GRID.TILE + GRID.TILE / 2;
     const cy = t.tileY * GRID.TILE + GRID.TILE / 2;
-    for (const other of state.towers.values()) {
-      if (other.id === t.id || other.pending) continue;
+    const tick = state.tick ?? 0;
+    const nullifiers: Array<{ x: number; y: number }> = [];
+    for (const e of state.enemies?.values?.() ?? []) {
+      if (e.hp <= 0) continue;
+      const enemyDef: any = (enemiesData as any)[e.type];
+      if (enemyDef?.auraNullifier) nullifiers.push({ x: e.x, y: e.y });
+    }
+    const isAuraOff = (other: Tower): boolean => {
+      if (((other as any).asleepUntil ?? 0) > tick) return true;
+      if (nullifiers.length === 0) return false;
       const ox = other.tileX * GRID.TILE + GRID.TILE / 2;
       const oy = other.tileY * GRID.TILE + GRID.TILE / 2;
-      const d = Math.hypot(ox - cx, oy - cy);
+      for (const n of nullifiers) {
+        if (Math.hypot(n.x - ox, n.y - oy) <= 2 * GRID.TILE) return true;
+      }
+      return false;
+    };
+    const addGlobalDmg = (label: string, pct: number) => {
+      if (pct === 0) return;
+      globalDmgBonus += pct;
+      auraDmgParts.push(`${label} ${pctLabel(pct)}`);
+    };
+    const addGlobalSpeed = (label: string, mult: number) => {
+      if (mult === 1) return;
+      globalSpeedMult *= mult;
+      auraSpdParts.push(`${label} ${multLabel(mult)}`);
+    };
+    const addLocalDmg = (label: string, pct: number) => {
+      if (pct === 0) return;
+      localDmgMult *= 1 + pct;
+      auraDmgParts.push(`${label} ${pctLabel(pct)}`);
+    };
+    const addLocalSpeed = (label: string, pct: number) => {
+      if (pct === 0) return;
+      localSpeedMult *= 1 + pct;
+      auraSpdParts.push(`${label} ${pctLabel(pct)}`);
+    };
+    const within = (other: Tower, radiusTiles: number): boolean => {
+      const ox = other.tileX * GRID.TILE + GRID.TILE / 2;
+      const oy = other.tileY * GRID.TILE + GRID.TILE / 2;
+      return Math.hypot(ox - cx, oy - cy) <= radiusTiles * GRID.TILE;
+    };
+
+    const poolLevel = state.poolLevel ?? 0;
+    addGlobalDmg(`Pool L${poolLevel}`, 0.03 * Math.max(0, poolLevel - 1));
+
+    const heroAuraSources: Array<{ heroId: string; tower: Tower; auraScale: number }> = [];
+    for (const other of state.towers.values() as Iterable<Tower>) {
+      if (other.pending) continue;
+      const heroId = heroIdForTowerType(String(other.type));
+      if (!heroId) continue;
+      if (other.id === state.activeHeroTowerId || isMercatorChampionType(String(other.type))) {
+        heroAuraSources.push({ heroId, tower: other, auraScale: heroAuraScaleForTower(state, other) });
+      }
+    }
+    let caesarAuraScale = 0;
+    for (const h of heroAuraSources) {
+      if (h.heroId === 'HERO_CAESAR' && h.auraScale > caesarAuraScale) caesarAuraScale = h.auraScale;
+    }
+    if (caesarAuraScale > 0) {
+      addGlobalDmg('Hero Caesar', 0.15 * caesarAuraScale);
+      addGlobalSpeed('Hero Caesar', 1 + 0.15 * caesarAuraScale);
+    }
+
+    for (const other of state.towers.values() as Iterable<Tower>) {
+      if (other.pending || isAuraOff(other)) continue;
       const oTier = other.qualityTier;
-      // Global auras (apply regardless of distance)
       if (other.type === TowerType.EAGLE_STANDARD) {
-        // Sync to CombatResolver: Eagle Standard is pure support, so its
-        // payoff needs to show clearly in the stat panel.
-        dmgMods.push({ source: `Eagle Standard T${oTier}`, multiplier: 1 + 0.18 * (1 + 0.05 * (oTier - 1)) });
-        if (d <= 5 * GRID.TILE) spdMods.push({ source: 'Eagle Standard local', multiplier: 1.22 });
+        addGlobalDmg(`Eagle Standard T${oTier}`, 0.18 * (1 + 0.05 * (oTier - 1)));
+        if (within(other, 5)) addLocalSpeed('Eagle Standard local', 0.22);
       }
       if (other.type === TowerType.AQUILIFER_TITAN) {
-        dmgMods.push({ source: `Aquilifer T${oTier}`, multiplier: 1 + 0.35 * (1 + 0.05 * (oTier - 1)) });
+        addGlobalDmg(`Aquilifer Titan T${oTier}`, 0.35 * (1 + 0.05 * (oTier - 1)));
       }
-      if (other.type === TowerType.JULIUS_CAESAR) dmgMods.push({ source: 'Julius Caesar', multiplier: 1.55 });
+      if (other.type === TowerType.MARS_VICTOR) {
+        addGlobalDmg('Mars Victor', 0.35);
+        addGlobalSpeed('Mars Victor', 1.20);
+      }
+      if (other.type === TowerType.JULIUS_CAESAR) addGlobalDmg('Julius Caesar', 0.55);
       if (other.type === TowerType.TRIUMVIRATE) {
-        dmgMods.push({ source: 'Triumvirate', multiplier: 1.40 });
-        spdMods.push({ source: 'Triumvirate', multiplier: 1.30 });
+        addGlobalDmg('Triumvirate', 0.40);
+        addGlobalSpeed('Triumvirate', 1.30);
       }
-      if (other.type === TowerType.IMPERIUM_ETERNUM) spdMods.push({ source: 'Imperium Eternum', multiplier: 1.25 });
+      if (other.type === TowerType.AUREATE_TRIBUNAL) {
+        addGlobalDmg('Aureate Tribunal', 0.55);
+        addGlobalSpeed('Aureate Tribunal', 1.40);
+      }
+      if (other.type === TowerType.IMPERIUM_ETERNUM) addGlobalSpeed('Imperium Eternum', 1.25);
+      if (other.type === TowerType.TRIARIUS) addGlobalDmg('Triarius global', 0.12);
       if (other.type === TowerType.CONSULAR_FATEBINDER) {
-        dmgMods.push({ source: 'Fatebinder', multiplier: 1.30 });
-        spdMods.push({ source: 'Fatebinder', multiplier: 1.30 });
+        addGlobalDmg('Fatebinder', 0.30);
+        addGlobalSpeed('Fatebinder', 1.30);
       }
-      // 2026-05-24 audit fix — TRIARIUS +12% global damage aura.
-      // Mirrors CombatResolver.ts:521-524. Previously applied in
-      // combat but missing from the tower-info breakdown panel, so
-      // the player couldn't see WHY a tower hit harder than its base
-      // stats.
-      if (other.type === TowerType.TRIARIUS) {
-        dmgMods.push({ source: 'Triarius global', multiplier: 1.12 });
+      if (other.type === TowerType.COHORT_GUARD && within(other, 3)) addLocalDmg('Cohort Guard local', 0.15);
+      if (other.type === TowerType.TRIPLEX_ACIES && within(other, 3)) addLocalSpeed('Triplex Acies', 0.25);
+      if (other.type === TowerType.LEGION_PRIME && within(other, 3)) addLocalDmg('Legion Prime', 0.25);
+      if (other.type === TowerType.GLACIAL_PALISADE && within(other, 3)) addLocalDmg('Glacial Palisade', 0.20);
+
+      const otherItems = other.equippedItems ?? [];
+      if (otherItems.includes('CENTURIONS_TRUMPET') && within(other, 2.5)) addLocalSpeed("Centurion's Trumpet aura", 0.18);
+      if (otherItems.includes('BATTLE_STANDARD') && within(other, 2.5)) addLocalDmg('Battle Standard aura', 0.18);
+      if (otherItems.includes('WAR_HOUND_COLLAR') && within(other, 3)) addLocalSpeed('War-Hound Collar aura', 0.28);
+      if (otherItems.includes('DRUIDS_TORC') && within(other, 3)) addLocalDmg("Druid's Torc aura", 0.28);
+      if (otherItems.includes('BARCA_WAR_HORN') && within(other, 3.5)) {
+        addLocalDmg('Barca War Horn aura', 0.30);
+        addLocalSpeed('Barca War Horn aura', 0.20);
       }
-      // Local auras (range-gated)
-      if (other.type === TowerType.TRIPLEX_ACIES && d <= 3 * GRID.TILE) {
-        spdMods.push({ source: 'Triplex Acies', multiplier: 1.25 });
+      if (otherItems.includes('LICH_GENERALS_SEAL') && within(other, 3.5)) {
+        addLocalDmg("Lich General's Seal aura", 0.30);
+        addLocalSpeed("Lich General's Seal aura", 0.30);
       }
-      if (other.type === TowerType.LEGION_PRIME && d <= 3 * GRID.TILE) {
-        dmgMods.push({ source: 'Legion Prime', multiplier: 1.25 });
+      if (otherItems.includes('AQUILIFER_BANNER') && within(other, 3)) {
+        addLocalDmg("Aquilifer's Banner aura", 0.20);
+        addLocalSpeed("Aquilifer's Banner aura", 0.15);
       }
-      // 2026-05-24 audit fix — COHORT_GUARD +15% local 3-tile damage
-      // aura. Mirrors CombatResolver.ts:525-528.
-      if (other.type === TowerType.COHORT_GUARD && d <= 3 * GRID.TILE) {
-        dmgMods.push({ source: 'Cohort Guard local', multiplier: 1.15 });
+      if (otherItems.includes('OPTIO_WHISTLE') && within(other, 3)) addLocalSpeed("Optio's Whistle aura", 0.28);
+      if (otherItems.includes('INFERNO_STANDARD') && within(other, 3.5)) addLocalDmg('Inferno Standard aura', 0.40);
+    }
+
+    for (const h of heroAuraSources) {
+      if (h.tower.id === t.id) continue;
+      const dh = Math.hypot(
+        (h.tower.tileX - t.tileX) * GRID.TILE,
+        (h.tower.tileY - t.tileY) * GRID.TILE
+      );
+      if (h.heroId === 'HERO_MARIUS' && t.damageType === DamageType.PHYS_MELEE && dh <= 5 * GRID.TILE) {
+        addLocalDmg('Hero Marius melee aura', 0.35 * h.auraScale);
       }
-      if (other.equippedItems.includes('CENTURIONS_TRUMPET') && d <= 2.5 * GRID.TILE) {
-        spdMods.push({ source: "Centurion's Trumpet aura", multiplier: 1.18 });
+      if (h.heroId === 'HERO_AGRIPPA' && t.damageType === DamageType.SIEGE && dh <= 5 * GRID.TILE) {
+        addLocalDmg('Hero Agrippa siege aura', 0.30 * h.auraScale);
+        rngMods.push({ source: 'Hero Agrippa range aura', flat: 1 * h.auraScale });
       }
-      if (other.equippedItems.includes('BATTLE_STANDARD') && d <= 2.5 * GRID.TILE) {
-        dmgMods.push({ source: 'Battle Standard aura', multiplier: 1.18 });
+      if (h.heroId === 'HERO_SULLA' && dh <= SULLA_PASSIVE_RADIUS_TILES * GRID.TILE) {
+        addLocalDmg('Hero Sulla pyre aura', 0.22 * h.auraScale);
       }
-      // 2026-05 aura expansion — five legendaries that used to be
-      // single-tower self-buffs now project to nearby allies.
-      if (other.equippedItems.includes('WAR_HOUND_COLLAR') && d <= 3 * GRID.TILE) {
-        spdMods.push({ source: 'War-Hound Collar aura', multiplier: 1.28 });
+    }
+
+    const marianUntil = (t as any).__marianFormationUntilTick ?? 0;
+    if (tick < marianUntil) {
+      const sMult = (t as any).__marianSpeedMult ?? 1.0;
+      const dMult = (t as any).__marianDmgMult ?? 1.0;
+      if (dMult !== 1) {
+        localDmgMult *= dMult;
+        auraDmgParts.push(`Marian Formation ${multLabel(dMult)}`);
       }
-      if (other.equippedItems.includes('DRUIDS_TORC') && d <= 3 * GRID.TILE) {
-        dmgMods.push({ source: "Druid's Torc aura", multiplier: 1.28 });
+      if (sMult !== 1) {
+        localSpeedMult *= sMult;
+        auraSpdParts.push(`Marian Formation ${multLabel(sMult)}`);
       }
-      if (other.equippedItems.includes('BARCA_WAR_HORN') && d <= 3.5 * GRID.TILE) {
-        dmgMods.push({ source: 'Barca War Horn aura', multiplier: 1.25 });
-        spdMods.push({ source: 'Barca War Horn aura', multiplier: 1.20 });
-      }
-      if (other.equippedItems.includes('LICH_GENERALS_SEAL') && d <= 3.5 * GRID.TILE) {
-        dmgMods.push({ source: "Lich General's Seal aura", multiplier: 1.30 });
-        spdMods.push({ source: "Lich General's Seal aura", multiplier: 1.30 });
-      }
-      // 2026-05-24 audit fix — three more item auras missing from the
-      // breakdown panel. All apply in combat at CombatResolver.ts:612-636.
-      if (other.equippedItems.includes('AQUILIFER_BANNER') && d <= 3 * GRID.TILE) {
-        dmgMods.push({ source: "Aquilifer's Banner aura", multiplier: 1.20 });
-        spdMods.push({ source: "Aquilifer's Banner aura", multiplier: 1.15 });
-      }
-      if (other.equippedItems.includes('OPTIO_WHISTLE') && d <= 3 * GRID.TILE) {
-        spdMods.push({ source: "Optio's Whistle aura", multiplier: 1.28 });
-      }
-      if (other.equippedItems.includes('INFERNO_STANDARD') && d <= 3 * GRID.TILE) {
-        dmgMods.push({ source: 'Inferno Standard aura', multiplier: 1.25 });
-      }
-      // CURSED_TORC and NECROMANCERS_LANTERN are ENEMY-DEBUFF auras
-      // (enemy-taken multipliers), not ally buffs. CombatResolver applies
-      // them via the enemyTakenAuras array per-hit, so they don't show
-      // up here in the wearer's-neighbor breakdown — they affect damage
-      // OUTPUT through a different code path.
+    }
+
+    const rawAuraDmg = (1 + globalDmgBonus) * localDmgMult;
+    const rawAuraSpeed = globalSpeedMult * localSpeedMult;
+    const cappedAuraDmg = Math.min(AURA_STACK_CAP, rawAuraDmg);
+    const cappedAuraSpeed = Math.min(AURA_STACK_CAP, rawAuraSpeed);
+    if (cappedAuraDmg !== 1) {
+      dmgMods.push({
+        source: `Aura stack${rawAuraDmg > AURA_STACK_CAP ? ' (capped)' : ''}: ${auraDmgParts.join(' · ')}`,
+        multiplier: cappedAuraDmg
+      });
+    }
+    if (cappedAuraSpeed !== 1) {
+      spdMods.push({
+        source: `Aura stack${rawAuraSpeed > AURA_STACK_CAP ? ' (capped)' : ''}: ${auraSpdParts.join(' · ')}`,
+        multiplier: cappedAuraSpeed
+      });
     }
   }
 
