@@ -2775,8 +2775,8 @@ async function boot() {
     // Mercator buys = flat 250g refund (matches purchase price). Everything
     // else (quest reward, Fortuna gamble win, bonus/gift) wasn't bought
     // with gold, so the refund falls back to the wave's place cost as a
-    // fair stand-in. Fortuna spins cost 500g but the player took a
-    // gamble — they don't get the full 500g back, just the 250g
+    // fair stand-in. Fortuna spins cost 925g but the player took a
+    // gamble — they don't get the full spin cost back, just the 250g
     // mercator-equivalent so refunds remain bounded.
     if (entry.source === 'mercator' || entry.source === 'fortuna') return 250;
     // 2026-05-19 — Hero placement is free and yields no refund.

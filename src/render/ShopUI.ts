@@ -740,12 +740,10 @@ function renderMercatorShop(
     body.appendChild(itemsSection);
   }
 
-  // ─── SECTION 2.5: FORTUNA'S WHEEL — 500g combo-tower gamble ───────
-  // Pure RNG. 500g per spin. Random pick from all 34 COMBO towers in
-  // the game (T2-T5 mixed pool, uniform odds). Designed as a "splurge"
-  // option — the player pays a hefty premium for the lottery thrill of
-  // possibly landing an apex T5 they couldn't have built from their
-  // current prospect line. No cap on spins.
+  // ─── SECTION 2.5: FORTUNA'S WHEEL — regular combo-tower gamble ─────
+  // Pure RNG. Random pick from regular COMBO towers only. Supercombo,
+  // Omega, Champion, and recipe-chain combo-of-combo results remain
+  // crafted rewards.
   ensureFortunaStyles();
   const fortunaSection = document.createElement('div');
   const fortunaTitle = document.createElement('div');
@@ -785,10 +783,10 @@ function renderMercatorShop(
   fortunaBody.innerHTML = `
     <div style="color:#d4af37;font-weight:bold;font-size:14px;letter-spacing:2px;text-shadow:0 0 4px #d4af3766">💰 FORTUNA SMILES ON THE BOLD</div>
     <div style="font-size:10.5px;color:#cdb98a;line-height:1.4">
-      Pay <b style="color:#f0c040">${FORTUNA_GAMBLE_COST}g</b> for a <b>RANDOM EARLY/MID COMBO TOWER</b>. <b style="color:#ff5050">Higher tier = rarer</b> on a linear ramp:
+      Pay <b style="color:#f0c040">${FORTUNA_GAMBLE_COST}g</b> for a <b>RANDOM REGULAR COMBO TOWER</b>. <b style="color:#ff5050">Higher tier = rarer</b> on a linear ramp:
     </div>
     <div style="font-size:9.5px;color:#aa9a4a;line-height:1.35;margin-top:3px;font-style:italic">
-      🚫 Recipe-only apex / omega combos (${recipeOnlyComboNames()}) are <b style="color:#cc6666">never rolled</b> — those win-condition towers must be crafted through recipes, not bought.
+      🚫 Supercombo, Omega, Champion, and combo-of-combo towers are <b style="color:#cc6666">never rolled</b> — those win-condition towers must be crafted through recipes, not bought.
     </div>
     <div style="margin-top:3px">${oddsChips}</div>
     ${winsLog}`;

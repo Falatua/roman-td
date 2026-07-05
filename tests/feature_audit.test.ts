@@ -22,6 +22,7 @@ import { initializeGrid, setTile } from '../src/systems/GridManager';
 import { buildGroundPath, buildFlyerPath } from '../src/systems/PathFinder';
 import {
   FORTUNA_GAMBLE_POOL,
+  isFortunaRegularCombo,
   rollFortunaCombo
 } from '../src/systems/MerchantSystem';
 import { ASSET_KEYS, BASE_TOWER_ATTACK_TYPES } from '../src/render/Assets';
@@ -321,21 +322,17 @@ describe('Merchant pools reference only real towers', () => {
     }
   });
 
-  it('Fortuna pool size matches count of NON-APEX COMBO-kind towers', () => {
-    // 2026-05 v9 + v2 Ch9: apex super-combos (6 cross-combos incl. Mars Victor)
-    // are blocked from Fortuna so they have to be crafted, not bought. Test
-    // asserts the pool equals (total combos − 6 blocked apex), no duplicates.
-    const APEX = new Set(['IMPERIUM_ETERNUM','CARTHAGE_SCOURGE','TRIUMVIRATE','LEGION_PRIME','CONSULAR_FATEBINDER','MARS_VICTOR',
-      'SKY_DOMINION','AUREATE_TRIBUNAL','GLACIAL_PALISADE','INFERNAL_COLOSSUS','ROMAN_TRANSFORMER',
-      // 2026 v2 Ch8 — Champions are COMBO-kind but Mercator-only, blocked from Fortuna.
-      'CHAMPION_MARIUS','CHAMPION_AGRIPPA','CHAMPION_AGRICOLA','CHAMPION_SCIPIO','CHAMPION_CAESAR','CHAMPION_SULLA']);
+  it('Fortuna pool size matches count of regular COMBO-kind towers', () => {
+    // Fortuna may roll ordinary combo towers only. Supercombo, Omega, Champion,
+    // and recipe-chain combo-of-combo results must remain crafted rewards.
     const eligibleCombos = Object.entries(towersData as any)
-      .filter(([id, d]: any) => d.kind === 'COMBO' && !APEX.has(id))
+      .filter(([id, d]: any) => isFortunaRegularCombo(id, d))
       .map(([id]) => id);
     expect(FORTUNA_GAMBLE_POOL.length).toBe(eligibleCombos.length);
     expect(new Set(FORTUNA_GAMBLE_POOL).size).toBe(eligibleCombos.length);   // no dupes
-    // Also verify no apex slipped through.
-    for (const apex of APEX) expect(FORTUNA_GAMBLE_POOL).not.toContain(apex);
+    for (const superCombo of ['ROMAN_TRANSFORMER','JULIUS_CAESAR','HANNIBALS_NIGHTMARE','TRIPLEX_ACIES','LEGION_PRIME']) {
+      expect(FORTUNA_GAMBLE_POOL).not.toContain(superCombo);
+    }
   });
 });
 

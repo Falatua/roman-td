@@ -138,8 +138,8 @@ export interface ShopState {
   livesBoughtThisVisit: number;
   // Mercator-only: random T5 base tower offers.
   towerOffers?: MercatorTowerOffer[];
-  // Mercator-only: Fortuna's Wheel — 500g RNG roll on any combo tower
-  // (T2-T5, all 34 combos are in the pool with uniform odds). Tracked
+  // Mercator-only: Fortuna's Wheel — 925g RNG roll on a regular combo tower
+  // (T2-T5, Supercombo/Omega/recipe-chain results excluded). Tracked
   // per-visit so the player can see how many times they've gambled this
   // round. No cap — pure RNG, by design.
   gambleSpinsThisVisit?: number;
@@ -369,23 +369,24 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   return { type: 'MERCATOR', offers, livesPrice: 83, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };
 }
 
-// ─── Fortuna's Wheel — 500g RNG combo-tower gamble ─────────────────────
-// Pure-RNG mechanic added 2026-05 v9. The pool is every authored COMBO
-// tower in towers.json (currently 34 across T2/T3/T4/T5). Every spin
-// rolls a TIER first (linearly weighted so apex towers stay rare) and
-// then uniformly picks a tower within that tier. No pity, no per-visit
-// cap. The player decides when to stop chasing.
+// ─── Fortuna's Wheel — 925g RNG regular-combo gamble ───────────────────
+// Pure-RNG mechanic added 2026-05 v9. The pool is every regular authored
+// COMBO tower in towers.json across T2/T3/T4/T5. Supercombo, Omega, Champion,
+// and recipe-chain combo-of-combo results are excluded so Fortuna stays a
+// shortcut into combo play, not a way to buy out the super/omega crafting
+// ladder. Every spin rolls a TIER first, then uniformly picks within tier.
+// No pity, no per-visit cap. The player decides when to stop chasing.
 //
 // TIER ODDS (2026-05 v10, refined from the original uniform-pool roll):
 //   T2 weight 4 → 40% per spin (every T2 individually ~10%)
 //   T3 weight 3 → 30% per spin (every T3 individually ~10%)
 //   T4 weight 2 → 20% per spin (every T4 individually ~5%)
-//   T5 weight 1 → 10% per spin (every T5 individually ~0.43%)
+//   T5 weight 1 → 10% per spin
 // A linear 4/3/2/1 ramp: each step up the tier ladder cuts the per-spin
-// hit chance by 10 percentage points. T5 "feels earned" — average ~10
-// spins (5,000g) to land any T5; getting a SPECIFIC T5 averages ~230
-// spins (115,000g). T2/T3 stay common so 500g still has a clear floor.
+// hit chance by 10 percentage points. T5 "feels earned"; T2/T3 stay common
+// so 925g still has a clear floor.
 import towersJson from '../data/towers.json';
+import towerCombinationsJson from '../data/towerCombinations.json';
 // 2026-06-23 — 500 → 925 (~1.85x) to match the ~1.86x gold income from the
 // doubled enemy counts.
 export const FORTUNA_GAMBLE_COST = 925;
@@ -412,8 +413,35 @@ export const FORTUNA_APEX_BLOCKLIST = new Set([
   'CHAMPION_MARIUS', 'CHAMPION_AGRIPPA', 'CHAMPION_AGRICOLA',
   'CHAMPION_SCIPIO', 'CHAMPION_CAESAR', 'CHAMPION_SULLA'
 ]);
+
+const FORTUNA_SUPER_MARKERS = ['SUPER COMBO', 'SUPERCOMBO', 'OMEGA', 'COMBO-OF-COMBO'];
+const COMBO_KIND_IDS = new Set(
+  Object.entries(towersJson as any)
+    .filter(([, def]: any) => def?.kind === 'COMBO')
+    .map(([id]) => id)
+);
+const COMBO_RECIPE_BY_RESULT = new Map<string, any>(
+  (towerCombinationsJson as any[]).map(recipe => [String(recipe.result), recipe])
+);
+
+function recipeConsumesComboTower(resultId: string): boolean {
+  const recipe = COMBO_RECIPE_BY_RESULT.get(resultId);
+  return (recipe?.ingredients ?? []).some((ing: any) => COMBO_KIND_IDS.has(String(ing.type)));
+}
+
+export function isFortunaRegularCombo(id: string, def: any = (towersJson as any)[id]): boolean {
+  if (!def || def.kind !== 'COMBO') return false;
+  if (id.startsWith('CHAMPION_')) return false;
+  if (def.omega === true) return false;
+  if (FORTUNA_APEX_BLOCKLIST.has(id)) return false;
+  if (recipeConsumesComboTower(id)) return false;
+
+  const ability = String(def.ability ?? '').toUpperCase();
+  return !FORTUNA_SUPER_MARKERS.some(marker => ability.includes(marker));
+}
+
 export const FORTUNA_GAMBLE_POOL: string[] = Object.entries(towersJson as any)
-  .filter(([id, def]: any) => def.kind === 'COMBO' && !FORTUNA_APEX_BLOCKLIST.has(id))
+  .filter(([id, def]: any) => isFortunaRegularCombo(id, def))
   .map(([id]) => id);
 
 // Linear-descending tier weights. T2 = weight 4 (most common), T5 = 1.

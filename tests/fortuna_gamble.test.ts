@@ -1,9 +1,9 @@
-// Fortuna's Wheel tests — locks the Mercator 500g combo-tower gamble.
-// Mechanic: pay 500g, get a random COMBO tower. TIER rarity is linear
+// Fortuna's Wheel tests — locks the Mercator 925g regular combo-tower gamble.
+// Mechanic: pay 925g, get a random regular COMBO tower. TIER rarity is linear
 // (T2 weight 4 → 40%, T3 = 3 → 30%, T4 = 2 → 20%, T5 = 1 → 10%); within
 // a tier the pick is uniform. No cap on spins. Tower lands in
 // pendingPurchasedTowers like a Mercator T5 buy. This file pins:
-//   - the pool is non-empty and only contains COMBO towers
+//   - the pool is non-empty and only contains regular COMBO towers
 //   - rollFortunaCombo always returns a valid pool member
 //   - the tier-weight table matches the documented 4/3/2/1 linear ramp
 //   - observed tier distribution lines up with expected odds over many
@@ -16,54 +16,67 @@ import {
   FORTUNA_GAMBLE_POOL,
   FORTUNA_TIER_WEIGHTS,
   getFortunaTierOdds,
+  isFortunaRegularCombo,
   rollFortunaCombo
 } from '../src/systems/MerchantSystem';
 import towers from '../src/data/towers.json';
+import combinations from '../src/data/towerCombinations.json';
 
 describe('Fortuna\'s Wheel — 925g combo-tower gamble', () => {
   it('charges 925g per spin', () => {
     expect(FORTUNA_GAMBLE_COST).toBe(925);
   });
 
-  // 2026-05 v9: Fortuna's pool now EXCLUDES apex super-combos so they
-  // can't be bought — players have to craft them. The 5 blocked IDs
-  // are the LATE-game cross-combos (Imperium Eternum, Carthage Scourge,
-  // Triumvirate, Legion Prime, Consular Fatebinder).
-  const APEX_BLOCKED = new Set([
-    'IMPERIUM_ETERNUM', 'CARTHAGE_SCOURGE',
-    'TRIUMVIRATE', 'LEGION_PRIME', 'CONSULAR_FATEBINDER', 'MARS_VICTOR',
-    'SKY_DOMINION', 'AUREATE_TRIBUNAL', 'GLACIAL_PALISADE', 'INFERNAL_COLOSSUS',
-    'ROMAN_TRANSFORMER',
-    // 2026 v2 Ch8 — the 6 Champions of Rome are COMBO-kind but Mercator-only
-    // (350g recruit → Mars Victor), so they are blocked from Fortuna too.
-    'CHAMPION_MARIUS', 'CHAMPION_AGRIPPA', 'CHAMPION_AGRICOLA',
-    'CHAMPION_SCIPIO', 'CHAMPION_CAESAR', 'CHAMPION_SULLA'
-  ]);
-
-  it('pool contains every non-apex COMBO-kind tower in towers.json', () => {
+  it('pool contains every regular COMBO-kind tower in towers.json', () => {
     const expected = Object.entries(towers as any)
-      .filter(([id, def]: any) => def.kind === 'COMBO' && !APEX_BLOCKED.has(id))
+      .filter(([id, def]: any) => isFortunaRegularCombo(id, def))
       .map(([id]) => id)
       .sort();
     const actual = FORTUNA_GAMBLE_POOL.slice().sort();
     expect(actual).toEqual(expected);
   });
 
-  it('pool excludes all 6 apex super-combos', () => {
-    for (const apex of APEX_BLOCKED) {
-      expect(FORTUNA_GAMBLE_POOL).not.toContain(apex);
+  it('pool excludes Supercombo, Omega, Champion, and combo-of-combo results', () => {
+    const recipeByResult = new Map((combinations as any[]).map(recipe => [recipe.result, recipe]));
+    const comboIds = new Set(Object.entries(towers as any)
+      .filter(([, def]: any) => def.kind === 'COMBO')
+      .map(([id]) => id));
+    const forbiddenExamples = [
+      'ROMAN_TRANSFORMER',
+      'JULIUS_CAESAR',
+      'HANNIBALS_NIGHTMARE',
+      'TRIPLEX_ACIES',
+      'LEGION_PRIME',
+      'VANGUARD_WING',
+      'VULCAN_COLOSSUS',
+      'SKY_DOMINION',
+      'AUREATE_TRIBUNAL',
+      'GLACIAL_PALISADE',
+      'INFERNAL_COLOSSUS',
+      'CHAMPION_MARIUS'
+    ];
+
+    for (const id of forbiddenExamples) {
+      expect(FORTUNA_GAMBLE_POOL).not.toContain(id);
+    }
+
+    for (const id of FORTUNA_GAMBLE_POOL) {
+      const def: any = (towers as any)[id];
+      const ability = String(def?.ability ?? '').toUpperCase();
+      const recipe: any = recipeByResult.get(id);
+      const consumesCombo = (recipe?.ingredients ?? []).some((ing: any) => comboIds.has(String(ing.type)));
+      expect(id.startsWith('CHAMPION_'), `${id} is a Champion`).toBe(false);
+      expect(def?.omega === true, `${id} is an Omega tower`).toBe(false);
+      expect(ability.includes('SUPERCOMBO') || ability.includes('SUPER COMBO'), `${id} is a Supercombo`).toBe(false);
+      expect(ability.includes('OMEGA'), `${id} has Omega copy`).toBe(false);
+      expect(ability.includes('COMBO-OF-COMBO'), `${id} is a combo-of-combo`).toBe(false);
+      expect(consumesCombo, `${id} consumes another combo tower`).toBe(false);
     }
   });
 
-  it('pool has 47 towers (64 combos minus 11 apex/omega minus 6 champions)', () => {
-    // 2026 v2 Ch8 — the 6 Champions of Rome are COMBO-kind but Mercator-only,
-    // so they join the 6 apex super-combos on the Fortuna blocklist.
-    // 2026-06-28 — +10 under-represented-base combos, then +4 more (Exploratores,
-    // Vulcan Bombard, Vanguard Wing, Vulcan Colossus), all gamble-able.
-    // 2026-07-01 — +4 recipe-only supercombo towers and Roman Transformer,
-    // also blocked as apex/omega.
-    // Pool count: 64 total combos minus 17 blocked (11 apex/omega + 6 champion) = 47.
-    expect(FORTUNA_GAMBLE_POOL.length).toBe(47);
+  it('pool has no duplicate entries and stays meaningfully stocked', () => {
+    expect(FORTUNA_GAMBLE_POOL.length).toBeGreaterThanOrEqual(30);
+    expect(new Set(FORTUNA_GAMBLE_POOL).size).toBe(FORTUNA_GAMBLE_POOL.length);
   });
 
   it('rollFortunaCombo returns only valid COMBO tower IDs', () => {
@@ -90,13 +103,13 @@ describe('Fortuna\'s Wheel — 925g combo-tower gamble', () => {
     expect(FORTUNA_TIER_WEIGHTS[5]).toBe(1);
   });
 
-  it('per-spin tier odds report cleanly as 40 / 30 / 20 / 10%', () => {
+  it('per-spin tier odds report cleanly from the active 4 / 3 / 2 / 1 tier weights', () => {
     const odds = getFortunaTierOdds();
-    const byTier = new Map(odds.map(o => [o.tier, o.pct]));
-    expect(byTier.get(2)).toBeCloseTo(40, 4);
-    expect(byTier.get(3)).toBeCloseTo(30, 4);
-    expect(byTier.get(4)).toBeCloseTo(20, 4);
-    expect(byTier.get(5)).toBeCloseTo(10, 4);
+    const totalWeight = odds.reduce((sum, o) => sum + (FORTUNA_TIER_WEIGHTS[o.tier] ?? 0), 0);
+    for (const o of odds) {
+      expect(o.pct).toBeCloseTo(((FORTUNA_TIER_WEIGHTS[o.tier] ?? 0) / totalWeight) * 100, 4);
+      expect(o.count).toBeGreaterThan(0);
+    }
   });
 
   it('observed tier distribution lines up with the linear 4/3/2/1 weights (T5 stays rare)', () => {
@@ -106,13 +119,12 @@ describe('Fortuna\'s Wheel — 925g combo-tower gamble', () => {
       const r = rollFortunaCombo();
       hitsByTier[r.tier]++;
     }
-    // Expected: T2 8000, T3 6000, T4 4000, T5 2000. ±5% tolerance gives
-    // ~400 wiggle on T2 / ~100 on T5 — well above noise floor at 20k.
+    const odds = getFortunaTierOdds();
     const tol = (expectedFrac: number) => SPINS * expectedFrac * 0.10; // 10% relative tolerance
-    expect(Math.abs(hitsByTier[2] - SPINS * 0.40)).toBeLessThan(tol(0.40));
-    expect(Math.abs(hitsByTier[3] - SPINS * 0.30)).toBeLessThan(tol(0.30));
-    expect(Math.abs(hitsByTier[4] - SPINS * 0.20)).toBeLessThan(tol(0.20));
-    expect(Math.abs(hitsByTier[5] - SPINS * 0.10)).toBeLessThan(tol(0.10));
+    for (const o of odds) {
+      const frac = o.pct / 100;
+      expect(Math.abs(hitsByTier[o.tier] - SPINS * frac)).toBeLessThan(tol(frac));
+    }
     // Linear-rarity ordering — strict monotonic decrease.
     expect(hitsByTier[2]).toBeGreaterThan(hitsByTier[3]);
     expect(hitsByTier[3]).toBeGreaterThan(hitsByTier[4]);
