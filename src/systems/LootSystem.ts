@@ -155,10 +155,31 @@ export function premiumDropRoll(chance: number, randomValue = Math.random()): bo
 
 function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
-// Faction-specific boss legendary tables. Updated 2026-05: every faction
-// (including SUPER_DEMONS) has a real legendary drop table now, and the
-// drop site in main.ts no longer gates by wave type / first-kill — every
-// boss enemy that falls drops a guaranteed legendary.
+// Boss-specific signature legendaries. Each boss tries to drop its exact
+// trophy first, then falls back to the broader faction table only if the
+// signature is already claimed by inventory/equipment/a pending loot orb.
+export const BOSS_SIGNATURE_LEGENDARIES: Readonly<Record<string, ItemId>> = Object.freeze({
+  ALPHA_DOG: 'ALPHA_PACK_FANG',
+  CELTIC_WARLORD: 'WARLORDS_WAR_PAINT',
+  WAR_ELEPHANT: 'ELEPHANT_TUSK',
+  HANNIBAL_BARCA: 'HANNIBALS_STRATEGY_SCROLL',
+  UNDEAD_WARLORD: 'CURSED_TORC',
+  UNDEAD_WAR_ELEPHANT: 'UNDEAD_ELEPHANT_BONE',
+  BOSS_FLYER_VULTURE: 'STORM_AQUILA_TALONS',
+  KHAN_RIDER: 'SPEAR_OF_MARS',
+  ANUBIS_KING: 'LICH_GENERALS_SEAL',
+  DAEMON_IMPERATOR: 'SIGIL_OF_SOL_INVICTUS'
+});
+
+export function signatureLegendaryForBoss(enemyType: string | null | undefined): ItemId | null {
+  if (!enemyType) return null;
+  const id = BOSS_SIGNATURE_LEGENDARIES[enemyType];
+  return id && (items as any)[id]?.rarity === 'LEGENDARY' ? id : null;
+}
+
+// Faction-specific fallback tables. Updated 2026-07: exact boss trophies
+// live above, while these pools preserve the legendary no-duplicate rule
+// when a repeated boss type dies after its signature is already claimed.
 const BOSS_LEGENDARIES: Record<string, ItemId[]> = {
   // Dogs: brutal melee themes. Spear of Mars fits the savage-charge
   // identity (Alpha Dog's pack chasing flyers fits AQUILA TALONS too).
@@ -183,7 +204,9 @@ const BOSS_LEGENDARIES: Record<string, ItemId[]> = {
   // (sun-god relic dropped by the demon vanguard) and gives the player
   // a way to seed the anti-demon item via W19 boss kill, in addition
   // to the W3 Alpha-Dog opener.
-  SUPER_DEMONS: ['UNDEAD_ELEPHANT_BONE', 'LICH_GENERALS_SEAL', 'CURSED_TORC', 'WARLORDS_WAR_PAINT', 'ELEPHANT_TUSK', 'JUPITERS_WRATH', 'AQUILA_TALONS', 'SPEAR_OF_MARS', 'SIGIL_OF_SOL_INVICTUS']
+  SUPER_DEMONS: ['UNDEAD_ELEPHANT_BONE', 'LICH_GENERALS_SEAL', 'CURSED_TORC', 'WARLORDS_WAR_PAINT', 'ELEPHANT_TUSK', 'JUPITERS_WRATH', 'AQUILA_TALONS', 'SPEAR_OF_MARS', 'SIGIL_OF_SOL_INVICTUS'],
+  EGYPTIANS: ['STORM_AQUILA_TALONS', 'JUPITERS_SKYFIRE', 'LICH_GENERALS_SEAL', 'JUPITERS_WRATH', 'CURSED_TORC'],
+  MONGOLS: ['SPEAR_OF_MARS', 'NUMIDIAN_SADDLE', 'EXECUTIONERS_FALX', 'DAMNATIO_MEMORIAE', 'FALCATA_BLADE']
 };
 
 // Fallback table for any faction that somehow isn't in the map above.
@@ -192,11 +215,11 @@ const BOSS_LEGENDARIES: Record<string, ItemId[]> = {
 const FALLBACK_LEGENDARIES: readonly ItemId[] = GLOBAL_NON_EVENT_LEGENDARY_ITEMS;
 
 // LEGENDARY UNIQUENESS (2026-05): the player can only HOLD one of each
-// legendary at a time. We walk the live inventory + every tower's
-// equippedItems and build a Set of legendary IDs that are currently
-// claimed. The drop site and Mercator pool then filter this set out
-// before picking. Selling a legendary frees it up again — this is "no
-// duplicates," not "one per run."
+// legendary at a time. We walk the live inventory, pending loot orbs, and
+// every tower's equippedItems and build a Set of legendary IDs that are
+// currently claimed. The drop site and Mercator pool then filter this set
+// out before picking. Selling a legendary frees it up again — this is
+// "no duplicates," not "one per run."
 export function currentlyOwnedLegendarySet(
   state: GameStateShape | null | undefined,
   inv: InventoryState | null | undefined
@@ -205,6 +228,12 @@ export function currentlyOwnedLegendarySet(
   if (inv) {
     for (const s of inv.slots) {
       if (s.rarity === 'LEGENDARY') owned.add(s.itemId);
+    }
+  }
+  if (state) {
+    for (const o of state.lootOrbs ?? []) {
+      const def: any = (items as any)[o.itemId];
+      if (def?.rarity === 'LEGENDARY') owned.add(o.itemId);
     }
   }
   if (state) {
@@ -252,13 +281,21 @@ export function isGuaranteedEpicDropEnemy(enemy: Partial<Enemy> | any): boolean 
 export function rollBossDrop(
   faction: string,
   state?: GameStateShape | null,
-  inv?: InventoryState | null
+  inv?: InventoryState | null,
+  bossType?: string | null
 ): { itemId: ItemId; rarity: Rarity } | null {
+  const owned = currentlyOwnedLegendarySet(state, inv);
+  const signature = signatureLegendaryForBoss(bossType);
+  if (signature && !owned.has(signature)) {
+    return { itemId: signature, rarity: 'LEGENDARY' };
+  }
   const table = BOSS_LEGENDARIES[faction];
-  const basePool = (table && table.length > 0) ? table : FALLBACK_LEGENDARIES;
+  const basePool = Array.from(new Set([
+    ...(signature ? [signature] : []),
+    ...((table && table.length > 0) ? table : FALLBACK_LEGENDARIES)
+  ])) as ItemId[];
   const legendaryPool = basePool.filter(id => (items as any)[id]?.rarity === 'LEGENDARY');
   // Filter out already-owned legendaries so the player can't stack duplicates.
-  const owned = currentlyOwnedLegendarySet(state, inv);
   let pool = legendaryPool.filter(id => !owned.has(id));
   // If the boss-specific table is exhausted, widen to the full legendary set
   // before giving up — most runs won't get past the boss-table here, but the

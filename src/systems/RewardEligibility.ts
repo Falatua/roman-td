@@ -11,7 +11,5 @@ export function isMajorBossRewardEnemy(enemy: any): boolean {
 }
 
 export function isLegendaryBossDropEnemy(enemy: any): boolean {
-  if (!enemy?.isBoss || enemy?.isBonusBoss) return false;
-  if (enemy.type === 'WAR_ELEPHANT' || enemy.type === 'UNDEAD_WAR_ELEPHANT') return false;
-  return enemy.isScheduledBoss === true || enemy.type === 'ALPHA_DOG';
+  return !!enemy?.isBoss;
 }

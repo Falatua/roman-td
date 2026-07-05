@@ -33,6 +33,7 @@ import { heroIdForTowerType, isMercatorChampionType } from './systems/HeroIdenti
 import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
 import itemsData from './data/items_permanent.json';
+import enemiesData from './data/enemies.json';
 // 2026-05-19 — Hero defs for the bottom-of-screen "place your hero"
 // banner. Used by updateHeroPlacementBanner() to fetch the hero's
 // name + title + tint when a HERO_* entry sits at the front of
@@ -7245,23 +7246,14 @@ async function boot() {
           // Jupiter's Wrath). User confirmed expected behavior.
           const w = wavesData[state.wave - 1];
           const orbsBefore = state.lootOrbs.length;
-          // 2026-05-24 — War Elephants (living + undead) are tagged
-          // `isBoss: true` in enemies.json so they get full boss HP and
-          // count as boss-add encounters, but per user direction they
-          // should drop EPIC (not LEGENDARY). The previous branch fell
-          // through to the boss-drop path before reaching the elephant
-          // case. Now we check elephants first and short-circuit to
-          // rollEpicDrop. Scheduled bosses (Brennus, Hannibal, Undead
-          // Warlord, Daemon Imperator, Alpha Dog) still drop LEGENDARY
-          // via rollBossDrop.
-          const ELEPHANT_TYPES = new Set(['WAR_ELEPHANT', 'UNDEAD_WAR_ELEPHANT']);
-          if (ELEPHANT_TYPES.has(e.type as string)) {
-            if (premiumDropRoll(0.20)) {
-              const drop = rollEpicDrop(state, inventory);
-              if (drop) spawnLootAt(state, e, drop);
-            }
-          } else if (isLegendaryBossDropEnemy(e)) {
-            const drop = rollBossDrop(w.faction, state, inventory);
+          // 2026-07-05 — every boss-class enemy now routes through a
+          // boss-type signature legendary table. If the exact signature is
+          // already in inventory/equipped/pending as a loot orb, the roll
+          // rotates to that boss faction's next unclaimed legendary so the
+          // no-duplicate rule still holds during multi-elephant waves.
+          if (isLegendaryBossDropEnemy(e)) {
+            const bossFaction = (enemiesData as any)[e.type]?.faction ?? w.faction;
+            const drop = rollBossDrop(String(bossFaction), state, inventory, e.type as string);
             if (drop) {
               spawnLootAt(state, e, drop);
               bossLegendaryDropped = true;

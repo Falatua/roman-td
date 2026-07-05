@@ -17,7 +17,7 @@ import { markScrollable } from './ScrollCues';
 import { togglePinnedRecipe, getPinnedRecipes } from './PinnedRecipe';
 import { damageTypeLabel, factionName, pretty } from '../format';
 import { previewSpawnHp } from '../systems/WaveManager';
-import { itemBuyPrice } from '../systems/LootSystem';
+import { itemBuyPrice, signatureLegendaryForBoss } from '../systems/LootSystem';
 import { FORTUNA_GAMBLE_COST } from '../systems/MerchantSystem';
 
 function spriteImg(key: string, size = 28): string {
@@ -1505,7 +1505,7 @@ function noteCard(title: string, body: string): string {
 // the edits here.
 const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
   ALPHA_DOG: [
-    'CHAMPION — boss-tier HP, drops a legendary on kill',
+    'CHAMPION — boss-tier HP',
     'FRENZY — at 30% HP, permanently doubles speed for the rest of the fight (no slow immunity, no timer)',
     'PACK HOWL — every 8s, gives nearby Feral Dogs +50% speed for 3s',
     'DEATH SPAWNS 3 FERAL DOGS at the boss\'s tile'
@@ -1593,7 +1593,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
     `<span><span style="color:#aa9a4a;font-size:9px;letter-spacing:1px">SPEED</span> <b>${def.speed.toFixed(1)}t/s</b></span>`,
     `<span><span style="color:#aa9a4a;font-size:9px;letter-spacing:1px">LEAK</span> <b style="color:#ee5555">${def.livesCost ?? 1} ${(def.livesCost ?? 1) === 1 ? 'life' : 'lives'}</b></span>`,
     def.isBoss ? `<span><span style="color:#aa9a4a;font-size:9px;letter-spacing:1px">BOUNTY</span> <b style="color:#ffd34d">scales with wave</b></span>` : '',
-    def.guaranteesLegendary ? `<span style="color:#ff9933;font-size:10px;font-weight:bold">★ CHAMPION (guaranteed legendary drop)</span>` : ''
+    signatureLegendaryForBoss(id) ? `<span style="color:#ff9933;font-size:10px;font-weight:bold">★ SIGNATURE LEGENDARY DROP</span>` : ''
   ].filter(Boolean).join('<span style="color:#3a3025;margin:0 6px">|</span>');
 
   // Trait list — exact mirror of EnemyInspect's traits[] construction.
@@ -1677,7 +1677,12 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   // Gold theft
   if (id === 'GHOST_RIDER') traits.push('GOLD THEFT — on leak, steals 5g + floor(wave/10)g from your treasury');
   // Boss mechanics
-  const bossLines = BOSS_SCRIPTS_FOR_CODEX[id] ?? [];
+  const signature = signatureLegendaryForBoss(id);
+  const signatureName = signature ? ((permItems as any)[signature]?.name ?? pretty(signature)) : null;
+  const bossLines = [
+    ...(signatureName ? [`SIGNATURE LEGENDARY — drops ${signatureName} on kill. If already claimed, rotates to another unowned legendary.`] : []),
+    ...(BOSS_SCRIPTS_FOR_CODEX[id] ?? [])
+  ];
   // Build the card.
   const armorHtml = renderArmorChips(id);
   const specificResHtml = renderSpecificRes(id);

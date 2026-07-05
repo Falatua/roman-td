@@ -12,6 +12,8 @@ import { closeGameModals } from './ModalManager';
 import { pretty } from '../format';
 import { previewSpawnHp } from '../systems/WaveManager';
 import { markScrollable } from './ScrollCues';
+import itemsData from '../data/items_permanent.json';
+import { signatureLegendaryForBoss } from '../systems/LootSystem';
 
 const FACTION_KEY: Record<number, string> = {
   [EnemyFaction.DOGS]: 'DOGS',
@@ -336,22 +338,20 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // -- Boss script behaviors (per BossScripts.ts cases) --
   const bossScripts: Record<string, string[]> = {
     ALPHA_DOG: [
-      'CHAMPION — boss-tier HP, drops a legendary on kill',
+      'CHAMPION — boss-tier HP',
       'FRENZY — at 30% HP, permanently doubles speed for the rest of the fight (no slow immunity, no timer)',
       'PACK HOWL — every 8s, gives nearby Feral Dogs +50% speed for 3s',
       'DEATH SPAWNS 3 FERAL DOGS at the boss\'s tile'
     ],
     CELTIC_WARLORD: [
-      'WAR CRY — at 70% HP, gives all Celts +30% speed for 8s',
-      'GUARANTEED LEGENDARY drop on kill — the first scheduled marquee boss reward of the run'
+      'WAR CRY — at 70% HP, gives all Celts +30% speed for 8s'
     ],
     WAR_ELEPHANT: [
       'STAMPEDE — at 50% HP, status-immune + +75% speed for 4s; strips slow/freeze/stun',
       'IMMUNE TO SLOW & FREEZE (data flags)',
       'TUSK QUAKE — every 6s, silences every tower within 2 tiles for 0.6s (dust-brown ring + screen shake)',
       'DUST-SHIELD AURA — 4-tile dome protects nearby ground allies from ranged attacks while alive (see SPECIAL TRAITS above)',
-      'HEAVY HIDE: higher HP, light sustain, and only +25% damage from SIEGE',
-      'GUARANTEED EPIC drop on kill'
+      'HEAVY HIDE: higher HP, light sustain, and only +25% damage from SIEGE'
     ],
     UNDEAD_WAR_ELEPHANT: [
       'STAMPEDE at 50% HP (status-immune + 75% speed for 4s)',
@@ -359,8 +359,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'IMMUNE TO SLOW & FREEZE',
       'TUSK QUAKE every 6s — silences nearby towers for 0.6s (25% stronger tower-slow aura than the living elephant)',
       'DUST-SHIELD AURA — 4-tile dome protects nearby ground allies from ranged attacks while alive',
-      'DENSE BONE HIDE: higher HP and only +5% damage from SIEGE; fire still helps',
-      'GUARANTEED EPIC drop on kill'
+      'DENSE BONE HIDE: higher HP and only +5% damage from SIEGE; fire still helps'
     ],
     HANNIBAL_BARCA: [
       'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit by DIRECT damage in 1.0s, heals 0.4% maxHP/sec (active DoT softens to 0.2%/sec, was 0%)',
@@ -382,7 +381,12 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'W20 FINAL BOSS — any leak ends the run instantly (Rome falls)'
     ]
   };
-  const scriptLines = bossScripts[e.type] ?? [];
+  const signature = signatureLegendaryForBoss(e.type);
+  const signatureName = signature ? ((itemsData as any)[signature]?.name ?? pretty(signature)) : null;
+  const scriptLines = [
+    ...(signatureName ? [`SIGNATURE LEGENDARY — drops ${signatureName} on kill. If already claimed, rotates to another unowned legendary.`] : []),
+    ...(bossScripts[e.type] ?? [])
+  ];
   if (traits.length > 0) {
     const tBox = document.createElement('div');
     tBox.style.cssText = 'padding:10px 12px;border-bottom:1px solid #3a3025;background:#1a0e08';

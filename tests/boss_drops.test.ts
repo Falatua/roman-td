@@ -11,7 +11,7 @@
 //   - rollBossDrop returns a non-null result for every boss-wave
 //     faction on a fresh inventory.
 import { describe, it, expect } from 'vitest';
-import { rollBossDrop } from '../src/systems/LootSystem';
+import { BOSS_SIGNATURE_LEGENDARIES, rollBossDrop, signatureLegendaryForBoss } from '../src/systems/LootSystem';
 import { createInventory } from '../src/systems/LootSystem';
 import { createGameState } from '../src/GameState';
 import wavesData from '../src/data/waves.json';
@@ -50,32 +50,42 @@ describe('Boss drop guarantee (2026-05-19)', () => {
     expect((enemiesData as any).CELTIC_WARLORD.isBoss).toBe(true);
   });
 
-  it('rollBossDrop returns a legendary for every boss-wave faction (fresh inventory)', () => {
-    // Every scheduled-boss wave must produce a drop on a fresh inventory.
-    // If a faction's BOSS_LEGENDARIES table is missing or empty,
-    // rollBossDrop falls back to the global legendary pool; in either
-    // case the result must be non-null for a fresh inventory.
-    const state = freshState();
-    const inv = createInventory();
-    for (const w of SCHEDULED_BOSS_WAVES) {
-      const drop = rollBossDrop(w.faction, state, inv);
-      expect(drop, `boss drop missing for W${w.wave} (${w.faction})`).not.toBeNull();
-      expect(drop!.rarity).toBe('LEGENDARY');
-      expect((itemsData as any)[drop!.itemId]?.rarity).toBe('LEGENDARY');
+  it('every boss enemy has a valid signature legendary', () => {
+    for (const [type, def] of Object.entries(enemiesData as any)) {
+      if (!def.isBoss) continue;
+      const signature = signatureLegendaryForBoss(type);
+      expect(signature, `${type} signature`).toBeTruthy();
+      expect((itemsData as any)[signature!]?.rarity, `${type} signature rarity`).toBe('LEGENDARY');
     }
   });
 
-  it('W5 specifically drops a Celtic-themed legendary on first kill', () => {
+  it('rollBossDrop returns each scheduled boss signature on fresh inventory', () => {
+    // Every scheduled-boss wave must produce the specific boss trophy
+    // first, before falling back to broader faction pools for no-duplicate
+    // repeated kills.
+    const state = freshState();
+    const inv = createInventory();
+    for (const w of SCHEDULED_BOSS_WAVES) {
+      const bossSpawn = w.spawns.find((s: any) => (enemiesData as any)[s.type]?.isBoss);
+      expect(bossSpawn, `W${w.wave} boss spawn`).toBeTruthy();
+      const drop = rollBossDrop(w.faction, state, inv, bossSpawn!.type);
+      expect(drop, `boss drop missing for W${w.wave} (${bossSpawn!.type})`).not.toBeNull();
+      expect(drop!.rarity).toBe('LEGENDARY');
+      expect((itemsData as any)[drop!.itemId]?.rarity).toBe('LEGENDARY');
+      expect(drop!.itemId).toBe(BOSS_SIGNATURE_LEGENDARIES[bossSpawn!.type]);
+    }
+  });
+
+  it('W5 specifically drops Brennus signature legendary on first kill', () => {
     // Locks in the specific case the player called out: kill Brennus
-    // on W5, get a legendary. Repeats 30× to defeat unlucky RNG paths
-    // (since CELTS table has 7 items, no single roll should ever be
-    // null on a fresh inventory).
+    // on W5, get Warlord's War Paint.
     const state = freshState();
     const inv = createInventory();
     for (let i = 0; i < 30; i++) {
-      const drop = rollBossDrop('CELTS', state, inv);
+      const drop = rollBossDrop('CELTS', state, inv, 'CELTIC_WARLORD');
       expect(drop).not.toBeNull();
       expect(drop!.rarity).toBe('LEGENDARY');
+      expect(drop!.itemId).toBe('WARLORDS_WAR_PAINT');
     }
   });
 
@@ -86,31 +96,29 @@ describe('Boss drop guarantee (2026-05-19)', () => {
 
     const state = freshState();
     const inv = createInventory();
-    const drop = rollBossDrop('DOGS', state, inv);
+    const drop = rollBossDrop('DOGS', state, inv, 'ALPHA_DOG');
     expect(drop).not.toBeNull();
     expect(drop!.rarity).toBe('LEGENDARY');
+    expect(drop!.itemId).toBe('ALPHA_PACK_FANG');
     expect((itemsData as any)[drop!.itemId]?.rarity).toBe('LEGENDARY');
   });
 
-  it('War Elephants keep their non-legendary boss-add item path', () => {
+  it('War Elephants now use the boss signature legendary path', () => {
     const elephant = { type: 'WAR_ELEPHANT', isBoss: true, isScheduledBoss: false, isBonusBoss: false };
     const undeadElephant = { type: 'UNDEAD_WAR_ELEPHANT', isBoss: true, isScheduledBoss: true, isBonusBoss: false };
-    expect(isLegendaryBossDropEnemy(elephant)).toBe(false);
-    expect(isLegendaryBossDropEnemy(undeadElephant)).toBe(false);
+    expect(isLegendaryBossDropEnemy(elephant)).toBe(true);
+    expect(isLegendaryBossDropEnemy(undeadElephant)).toBe(true);
+    expect(rollBossDrop('CARTHAGE', freshState(), createInventory(), 'WAR_ELEPHANT')?.itemId).toBe('ELEPHANT_TUSK');
+    expect(rollBossDrop('UNDEAD_CARTHAGE', freshState(), createInventory(), 'UNDEAD_WAR_ELEPHANT')?.itemId).toBe('UNDEAD_ELEPHANT_BONE');
   });
 
-  it('rollBossDrop avoids legendaries the player already owns (no-dup rule)', () => {
-    // Stuff every CELTS-table legendary into the inventory, then ask
-    // for a CELTS drop — it should fall back to the global pool and
-    // still return something rather than null.
+  it('rollBossDrop avoids owned or pending signature legendaries (no-dup rule)', () => {
     const state = freshState();
     const inv = createInventory();
-    const CELTS_POOL = ['WARLORDS_WAR_PAINT', 'SPEAR_OF_MARS', 'JUPITERS_WRATH'];
-    for (const id of CELTS_POOL) {
-      inv.slots.push({ itemId: id as any, rarity: 'LEGENDARY', consumable: false });
-    }
-    const drop = rollBossDrop('CELTS', state, inv);
+    state.lootOrbs.push({ id: 'pending-signature', itemId: 'WARLORDS_WAR_PAINT' as any, rarity: 'LEGENDARY', x: 0, y: 0 });
+    const drop = rollBossDrop('CELTS', state, inv, 'CELTIC_WARLORD');
     expect(drop).not.toBeNull();
-    expect(CELTS_POOL).not.toContain(drop!.itemId);    // never duplicate
+    expect(drop!.itemId).not.toBe('WARLORDS_WAR_PAINT');
+    expect(drop!.rarity).toBe('LEGENDARY');
   });
 });
