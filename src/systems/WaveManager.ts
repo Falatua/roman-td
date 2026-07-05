@@ -23,7 +23,7 @@ import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, cle
 import { injectBossEscortCommanders, injectCampaignCommanders, isCommanderType } from './CommanderSystem';
 import { campaignRelicWaveGoldMult } from './CampaignRelicSystem';
 import { prepareHeroAbilitiesForWave } from './HeroSystem';
-import { completeTestYourMight, startTestYourMight, tickTestYourMightSpawns } from './TestYourMightSystem';
+import { completeTestYourMight, startTestYourMight, TEST_YOUR_MIGHT_MAX_SPAWN_DT, tickTestYourMightSpawns } from './TestYourMightSystem';
 import { campaignPressureHpMult } from './CampaignDifficulty';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
@@ -316,7 +316,11 @@ export function startWave(state: GameStateShape) {
 
 export function tickSpawns(state: GameStateShape, dt: number) {
   if (state.phase !== GamePhase.WAVE_PHASE) return;
-  state.spawnElapsed += dt;
+  // Wave 10.5 is a short scripted gauntlet. At 4x speed, or after any
+  // unusually chunky frame, the old shared spawn clock could compress the
+  // whole challenge into a tiny burst and look like it ended on its own.
+  const spawnDt = state.testYourMightActive ? Math.min(dt, TEST_YOUR_MIGHT_MAX_SPAWN_DT) : dt;
+  state.spawnElapsed += spawnDt;
   if (tickTestYourMightSpawns(state)) return;
   // 2026-05 v10 — ENDLESS MODE: route to a dedicated tick handler that
   // uses the procedurally-generated cfg's hpMult/speedMult/resistBoost.

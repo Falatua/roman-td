@@ -12,6 +12,7 @@ import {
   startTestYourMight,
   TEST_YOUR_MIGHT_AFTER_WAVE,
   TEST_YOUR_MIGHT_DISPLAY_WAVE,
+  TEST_YOUR_MIGHT_MAX_SPAWN_DT,
   TEST_YOUR_MIGHT_REWARD_GOLD,
   TEST_YOUR_MIGHT_SPAWNS,
   tickTestYourMightSpawns
@@ -153,11 +154,12 @@ describe('Test Your Might bonus wave', () => {
     expect(elephant.checkpointHealPct).toBeGreaterThanOrEqual(0.05);
   });
 
-  it('also works through the normal WaveManager tickSpawns entrypoint', () => {
+  it('caps bonus-wave spawn pacing through the normal WaveManager entrypoint', () => {
     const s = bootstrapState();
     startTestYourMight(s);
     tickSpawns(s, 999);
-    expect(s.spawnQueue.length).toBe(0);
+    expect(s.spawnElapsed).toBeCloseTo(TEST_YOUR_MIGHT_MAX_SPAWN_DT);
+    expect(s.spawnQueue.length).toBeGreaterThan(0);
     expect(s.enemies.size).toBeGreaterThan(0);
   });
 

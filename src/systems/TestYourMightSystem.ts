@@ -6,6 +6,7 @@ import { TEST_YOUR_MIGHT_AFTER_WAVE, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './Test
 
 export const TEST_YOUR_MIGHT_REWARD_GOLD = 3000;
 export const TEST_YOUR_MIGHT_REWARD_RARITY = 'LEGENDARY' as const;
+export const TEST_YOUR_MIGHT_MAX_SPAWN_DT = 1 / 30;
 export { displayWaveNumber, TEST_YOUR_MIGHT_AFTER_WAVE, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './TestYourMightLabels';
 
 type TestYourMightMutation = 'WARDED' | 'AURA_STAR';
