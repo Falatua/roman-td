@@ -37,6 +37,7 @@ import { TowerType, Tower, TileType, GamePhase } from '../types';
 import { ECONOMY, GRID, TIER_MULTS, WAVE } from '../constants';
 import { createTower } from './TowerSystem';
 import towersData from '../data/towers.json';
+import { TEST_YOUR_MIGHT_AFTER_WAVE } from './TestYourMightLabels';
 
 // SANDBOX: Password gate. Plaintext string compared at the loading
 // screen entry. See file-level comment for the security honesty.
@@ -168,6 +169,14 @@ export function sandboxResetForWave(state: GameStateShape, targetWave: number): 
   state.weatherKey = null;
   state.weatherIntensity = 1;
   state.waveModifier = null;
+  state.testYourMightOffered = false;
+  state.testYourMightDeclined = false;
+  state.testYourMightAccepted = false;
+  state.testYourMightActive = false;
+  state.testYourMightCleared = false;
+  state.testYourMightFailed = false;
+  (state as any).__testYourMightOpen = false;
+  (state as any).__testYourMightRewardPaid = false;
   state.bossRespawnQueue = [];
   state.bossesKilled = 0;
   state.bonusBossesKilled = 0;
@@ -182,6 +191,29 @@ export function sandboxResetForWave(state: GameStateShape, targetWave: number): 
     t.attackCooldown = 0;
   }
   void TIER_MULTS;     // import preserved for future tier-related logic
+}
+
+// SANDBOX: Arms the optional Test Your Might bonus wave directly.
+// It uses the real accepted-challenge path, so the tester still gets
+// build/trap/rampart prep time and then clicks START WAVE to launch
+// W10.5 exactly like a normal campaign run.
+export function sandboxArmTestYourMight(state: GameStateShape): void {
+  if (!state.sandboxMode) return;
+  sandboxResetForWave(state, TEST_YOUR_MIGHT_AFTER_WAVE);
+  state.wave = TEST_YOUR_MIGHT_AFTER_WAVE;
+  state.phase = GamePhase.BUILD_PHASE;
+  state.endlessMode = false;
+  state.testYourMightOffered = true;
+  state.testYourMightDeclined = false;
+  state.testYourMightAccepted = true;
+  state.testYourMightActive = false;
+  state.testYourMightCleared = false;
+  state.testYourMightFailed = false;
+  state.spawnQueue.length = 0;
+  state.spawnElapsed = 0;
+  state.enemies.clear();
+  state.projectiles.length = 0;
+  state.hint = '🧪 SANDBOX → Test Your Might armed. Prep, then click START WAVE for W10.5.';
 }
 
 // SANDBOX: Wipe every tower + reset the tile grid to its empty

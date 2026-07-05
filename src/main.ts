@@ -24,7 +24,7 @@ import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAur
 import { scanCombos, realizableCombos, executeCombo } from './systems/CombinationEngine';
 // SANDBOX: dev-mode imports. Delete this line + every line tagged
 // `// SANDBOX:` to remove sandbox mode entirely.
-import { activateSandbox, sandboxAddGold, sandboxAllTowerOptions, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, sandboxWipeAllTowers, SANDBOX_PASSWORD } from './systems/SandboxMode';
+import { activateSandbox, sandboxAddGold, sandboxAllTowerOptions, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, sandboxWipeAllTowers, sandboxArmTestYourMight, SANDBOX_PASSWORD } from './systems/SandboxMode';
 // HERO SYSTEM (2026-05-19). Imports for the 6-hero / 3-card-draft
 // feature. awardHeroXp hooks into the kill handler; tickHeroAbilities
 // runs once per WAVE_PHASE frame.
@@ -5300,7 +5300,7 @@ async function boot() {
             state.hint = '🧪 SANDBOX → ENDLESS mode. Click START WAVE.';
           } else {
             sandboxResetForWave(state, wave);
-            state.hint = `🧪 SANDBOX → W${wave}. Tile grid + towers cleared. Click START WAVE.`;
+            state.hint = `🧪 SANDBOX → W${wave}. Towers and maze preserved. Click START WAVE.`;
           }
           // Rebuild the ground path since the tile reset may have
           // pruned tower-blocked tiles. The PathFinder picks the
@@ -5315,6 +5315,12 @@ async function boot() {
           // handler knows this is free (no gold cost).
           (state as any).__sandboxPendingTower = { type, tier };
           state.hint = `🧪 SANDBOX → click any empty tile to drop ${type} T${tier} (free).`;
+        },
+        onTestYourMight: () => {
+          sandboxArmTestYourMight(state);
+          const p = buildGroundPath(state);
+          if (p) { state.groundPath = p; resnapEnemiesToPath(state, p); }
+          state.hint = '🧪 SANDBOX → Test Your Might W10.5 is armed. Prep first, then click START WAVE.';
         },
         onAddGold: () => {
           sandboxAddGold(state, 1000);

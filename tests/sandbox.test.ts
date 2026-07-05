@@ -4,11 +4,13 @@
 // real-game state (leaderboard, quests, save data). These tests
 // pin that contract so future refactors can't quietly break it.
 import { describe, it, expect } from 'vitest';
-import { activateSandbox, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, sandboxAddGold, sandboxAllTowerOptions, sandboxWipeAllTowers, SANDBOX_PASSWORD } from '../src/systems/SandboxMode';
+import { activateSandbox, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, sandboxAddGold, sandboxAllTowerOptions, sandboxWipeAllTowers, sandboxArmTestYourMight, SANDBOX_PASSWORD } from '../src/systems/SandboxMode';
 import { createGameState } from '../src/GameState';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath } from '../src/systems/PathFinder';
 import { TowerType, GamePhase, TileType } from '../src/types';
+import { startWave } from '../src/systems/WaveManager';
+import { displayWaveNumber } from '../src/systems/TestYourMightSystem';
 
 function bootstrapState() {
   const s = createGameState();
@@ -150,6 +152,59 @@ describe('Sandbox wave reset', () => {
     expect(s.endlessMode).toBe(true);
     expect(s.wave).toBe(20);
     expect(s.endlessWave).toBe(0);  // generator increments to 1 on first START WAVE
+  });
+
+  it('clears stale Test Your Might flags on normal wave jumps', () => {
+    const s = bootstrapState();
+    activateSandbox(s);
+    s.testYourMightOffered = true;
+    s.testYourMightDeclined = true;
+    s.testYourMightAccepted = true;
+    s.testYourMightActive = true;
+    s.testYourMightCleared = true;
+    s.testYourMightFailed = true;
+    (s as any).__testYourMightOpen = true;
+    (s as any).__testYourMightRewardPaid = true;
+
+    sandboxResetForWave(s, 12);
+
+    expect(s.testYourMightOffered).toBe(false);
+    expect(s.testYourMightDeclined).toBe(false);
+    expect(s.testYourMightAccepted).toBe(false);
+    expect(s.testYourMightActive).toBe(false);
+    expect(s.testYourMightCleared).toBe(false);
+    expect(s.testYourMightFailed).toBe(false);
+    expect((s as any).__testYourMightOpen).toBe(false);
+    expect((s as any).__testYourMightRewardPaid).toBe(false);
+  });
+});
+
+describe('Sandbox Test Your Might helper', () => {
+  it('arms W10.5 directly while preserving prep until START WAVE', () => {
+    const s = bootstrapState();
+    activateSandbox(s);
+    sandboxSpawnTowerDirect(s, TowerType.MILITES, 1, 5, 5);
+
+    sandboxArmTestYourMight(s);
+
+    expect(s.wave).toBe(10);
+    expect(s.phase).toBe(GamePhase.BUILD_PHASE);
+    expect(s.testYourMightOffered).toBe(true);
+    expect(s.testYourMightAccepted).toBe(true);
+    expect(s.testYourMightActive).toBe(false);
+    expect(s.spawnQueue.length).toBe(0);
+    expect(s.towers.size).toBe(1);
+    expect(s.tiles[5][5]).toBe(TileType.TOWER);
+    expect(displayWaveNumber(s)).toBe('10');
+
+    startWave(s);
+
+    expect(s.wave).toBe(10);
+    expect(s.phase).toBe(GamePhase.WAVE_PHASE);
+    expect(s.testYourMightAccepted).toBe(false);
+    expect(s.testYourMightActive).toBe(true);
+    expect(displayWaveNumber(s)).toBe('10.5');
+    expect(s.spawnQueue.length).toBeGreaterThan(0);
   });
 });
 

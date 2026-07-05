@@ -25,6 +25,9 @@ export interface SandboxPanelHooks {
   // Loads the picked tower+tier into a placement queue; the
   // next empty-tile click in main.ts drops it.
   onPickTower: (type: TowerType, tier: 1 | 2 | 3 | 4 | 5) => void;
+  // Arms the optional W10.5 Test Your Might bonus wave for direct testing.
+  // The tester still gets prep time and clicks START WAVE to launch it.
+  onTestYourMight: () => void;
   // Called when the player clicks the +1000g button.
   onAddGold: () => void;
   // SANDBOX 2026-05-19: full tower wipe. Wave jumps preserve towers
@@ -80,6 +83,8 @@ export function mountSandboxPanel(state: GameStateShape, hooks: SandboxPanelHook
     `Hard-reset to any wave 1-${WAVE.TOTAL} or jump into Endless mode. Clears enemies, projectiles, loot, and surprise-event state. Towers and the maze are PRESERVED (use WIPE TOWERS for a clean slate).`));
   panel.appendChild(mkSbBtn('+ SPAWN TOWER', () => showTowerPicker(hooks),
     'Direct tower spawn — pick any tower at any tier (T1-T5, base or combo). Bypasses the prospect / recipe flow entirely. Click an empty tile to drop. Free.'));
+  panel.appendChild(mkSbBtn('⚔ TEST 10.5', () => hooks.onTestYourMight(),
+    'Arm Test Your Might / W10.5 directly. Your maze is preserved; prep first, then click START WAVE. One leak still ends the run.'));
   panel.appendChild(mkSbBtn('2 HERO STRESS', () => hooks.onSpawnHeroStress('PAIR'),
     'Build a deterministic W9 board with starter Marius, Champion Caesar, and 18 regular towers. Click START WAVE to reproduce the two-hero case.'));
   panel.appendChild(mkSbBtn('6 HERO STRESS', () => hooks.onSpawnHeroStress('COUNCIL'),
@@ -124,9 +129,20 @@ export function updateSandboxBanner(state: GameStateShape): void {
   // current wave, so no offset is needed.
   const isPreWave = state.phase === 0 || state.phase === 4 || state.phase === 5;
   const displayWaveNum = isPreWave ? Math.min(WAVE.TOTAL, (state.wave || 0) + 1) : (state.wave || 1);
+  const testYourMightPrimed = state.wave === 10
+    && !!state.testYourMightAccepted
+    && !state.testYourMightActive
+    && !state.testYourMightCleared
+    && !state.testYourMightFailed;
+  const testYourMightShowing = state.wave === 10
+    && (!!state.testYourMightActive || !!state.testYourMightCleared || !!state.testYourMightFailed);
   const wave = (state as any).endlessMode
     ? `ENDLESS W${(state as any).endlessWave ?? 1}`
-    : `W${displayWaveNum}`;
+    : testYourMightPrimed
+      ? 'W10.5 READY'
+      : testYourMightShowing
+        ? 'W10.5'
+        : `W${displayWaveNum}`;
   const phaseTag = state.phase === 1 ? ' · IN COMBAT'
     : state.phase === 0 ? ' · BUILD'
     : state.phase === 4 ? ' · PLACING PROSPECTS'
@@ -153,7 +169,7 @@ function showWavePicker(hooks: SandboxPanelHooks): void {
   panel.style.cssText = 'width:min(520px,94vw);padding:18px 22px;background:linear-gradient(180deg,#1a0820,#0c0410);border:3px solid #ff5cc8;color:#ffb3d9;box-shadow:0 0 32px rgba(255,92,200,0.5);max-height:92vh;overflow:auto';
   panel.innerHTML = `
     <div style="font-size:14px;letter-spacing:3px;font-weight:bold;color:#ff5cc8;margin-bottom:4px">▶ JUMP TO WAVE</div>
-    <div style="font-size:10px;color:#aa6090;margin-bottom:14px;letter-spacing:1px">Hard reset: clears towers, enemies, projectiles. Fresh wave spawn.</div>`;
+    <div style="font-size:10px;color:#aa6090;margin-bottom:14px;letter-spacing:1px">Soft reset: preserves towers and maze; clears enemies, loot, projectiles, and event state.</div>`;
   const grid = document.createElement('div');
   grid.style.cssText = 'display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px';
   for (let w = 1; w <= WAVE.TOTAL; w++) {
