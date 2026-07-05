@@ -8,6 +8,7 @@ import { EnemyType, GamePhase, SurpriseEventKind } from '../src/types';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath, buildGroundPathB, buildFlyerPath } from '../src/systems/PathFinder';
 import { enemyResistanceProfile } from '../src/systems/EnemyResistances';
+import { isLegendaryBossDropEnemy, isRareOnlyBossDropEnemy } from '../src/systems/RewardEligibility';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
 import { GRID } from '../src/constants';
@@ -391,6 +392,8 @@ describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () =
     expect(elephant).toBeDefined();
     expect(elephant!.isBoss).toBe(true);
     expect(elephant!.checkpointHealPct).toBe(0.15);
+    expect(isRareOnlyBossDropEnemy(elephant)).toBe(true);
+    expect(isLegendaryBossDropEnemy(elephant)).toBe(false);
 
     elephant!.hp = elephant!.maxHp * 0.50;
     const before = elephant!.hp;

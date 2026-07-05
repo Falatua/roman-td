@@ -10,6 +10,11 @@ export function isMajorBossRewardEnemy(enemy: any): boolean {
   return enemy.type !== 'WAR_ELEPHANT' && enemy.type !== 'UNDEAD_WAR_ELEPHANT';
 }
 
+export function isRareOnlyBossDropEnemy(enemy: any): boolean {
+  return !!enemy?.rareDropOnly;
+}
+
 export function isLegendaryBossDropEnemy(enemy: any): boolean {
+  if (isRareOnlyBossDropEnemy(enemy)) return false;
   return !!enemy?.isBoss;
 }

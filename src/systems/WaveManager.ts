@@ -378,6 +378,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // later elephant variants do not inherit the sustain spike.
     if (state.wave === 9 && item.type === EnemyType.WAR_ELEPHANT) {
       e.checkpointHealPct = 0.15;
+      e.rareDropOnly = true;
     }
     // 2026-05-17 — Surprise event waveOverride: redirect this enemy to
     // spawn at a perimeter fire (Invasion) or center urn (Uprising)

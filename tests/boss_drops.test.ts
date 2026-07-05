@@ -17,7 +17,7 @@ import { createGameState } from '../src/GameState';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
 import itemsData from '../src/data/items_permanent.json';
-import { isLegendaryBossDropEnemy, isMajorBossRewardEnemy } from '../src/systems/RewardEligibility';
+import { isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy } from '../src/systems/RewardEligibility';
 
 function freshState() {
   return createGameState();
@@ -110,6 +110,12 @@ describe('Boss drop guarantee (2026-05-19)', () => {
     expect(isLegendaryBossDropEnemy(undeadElephant)).toBe(true);
     expect(rollBossDrop('CARTHAGE', freshState(), createInventory(), 'WAR_ELEPHANT')?.itemId).toBe('ELEPHANT_TUSK');
     expect(rollBossDrop('UNDEAD_CARTHAGE', freshState(), createInventory(), 'UNDEAD_WAR_ELEPHANT')?.itemId).toBe('UNDEAD_ELEPHANT_BONE');
+  });
+
+  it('Wave 9 teaching elephants bypass legendary boss drops for Rare loot', () => {
+    const wave9Elephant = { type: 'WAR_ELEPHANT', isBoss: true, isScheduledBoss: false, isBonusBoss: false, rareDropOnly: true };
+    expect(isRareOnlyBossDropEnemy(wave9Elephant)).toBe(true);
+    expect(isLegendaryBossDropEnemy(wave9Elephant)).toBe(false);
   });
 
   it('rollBossDrop avoids owned or pending signature legendaries (no-dup rule)', () => {

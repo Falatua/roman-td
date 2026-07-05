@@ -77,7 +77,7 @@ import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVe
 import { consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
-import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy } from './systems/RewardEligibility';
+import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy } from './systems/RewardEligibility';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -7332,7 +7332,10 @@ async function boot() {
           // already in inventory/equipped/pending as a loot orb, the roll
           // rotates to that boss faction's next unclaimed legendary so the
           // no-duplicate rule still holds during multi-elephant waves.
-          if (isLegendaryBossDropEnemy(e)) {
+          if (isRareOnlyBossDropEnemy(e)) {
+            const drop = rollRareDrop();
+            if (drop) spawnLootAt(state, e, drop);
+          } else if (isLegendaryBossDropEnemy(e)) {
             const bossFaction = (enemiesData as any)[e.type]?.faction ?? w.faction;
             const drop = rollBossDrop(String(bossFaction), state, inventory, e.type as string);
             if (drop) {
