@@ -249,6 +249,21 @@ describe('Recipe combo detection', () => {
     expect(scoutVexillum).toBeTruthy();
   });
 
+  it('keeps Plague Cart craftable with only Velites and Hastati', () => {
+    const recipe = comboData.find((r: any) => r.result === 'PLAGUE_CART') as any;
+    expect(recipe.ingredients).toEqual([
+      { type: 'VELITES', minTier: 3 },
+      { type: 'HASTATI', minTier: 2 }
+    ]);
+
+    const s = bootstrapState();
+    placeTower(s, TowerType.VELITES, 3, 5, 5);
+    placeTower(s, TowerType.HASTATI, 2, 5, 6);
+    const combos = scanCombos(s);
+    const plagueCart = combos.find(c => c.result === TowerType.PLAGUE_CART && !c.isSameTierMerge);
+    expect(plagueCart).toBeTruthy();
+  });
+
   it('rewards harder-to-assemble nested combos with higher DPS', () => {
     // 2026-06-29 — JB: combos whose recipes are rarer/harder (nested combo
     // ingredients, high min-tiers, big cost) should be stronger. DPS now

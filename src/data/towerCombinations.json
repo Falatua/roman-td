@@ -89,10 +89,6 @@
       {
         "type": "HASTATI",
         "minTier": 2
-      },
-      {
-        "type": "VELITES",
-        "minTier": 3
       }
     ],
     "cost": 10
