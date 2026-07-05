@@ -2,7 +2,7 @@
 // The old formula let a slow early-death run out-score a deep run — a
 // W10 LOSS hit a 54K sanity cap and ranked #1 above a legit W19 run at
 // 43.7K. The new formula is purely additive: waves + combos + quests +
-// win bump, so progression always dominates.
+// W30 win bump, so progression is the main lever.
 import { describe, it, expect } from 'vitest';
 import {
   computeScore,
@@ -10,6 +10,8 @@ import {
   SCORE_PER_COMBO,
   SCORE_PER_QUEST,
   SCORE_WIN_BONUS,
+  INVALIDATED_GLOBAL_SCORE_IDS,
+  isScoringVictory,
 } from '../src/render/Leaderboard';
 
 describe('Simplified scoring — computeScore', () => {
@@ -21,12 +23,20 @@ describe('Simplified scoring — computeScore', () => {
     expect(score).toBe(22400);
   });
 
-  it('scores a win as all waves cleared + combos + quests + win bump', () => {
-    // W20 WIN, 20 combos, 17 quests.
+  it('keeps legacy W20 wins as cleared waves but removes the old win bump', () => {
+    // W20 used to be a win; now it is historical credit only because the
+    // campaign ends on W30. The W badge can stay, but the win factor is gone.
     const score = computeScore({ wave: 20, won: true, combos: 20, quests: 17 });
-    // 20 × 2000 + 20 × 500 + 17 × 400 + 40,000 = 40,000 + 10,000 + 6,800 + 40,000
-    expect(score).toBe(20 * SCORE_PER_WAVE + 20 * SCORE_PER_COMBO + 17 * SCORE_PER_QUEST + SCORE_WIN_BONUS);
-    expect(score).toBe(96800);
+    expect(score).toBe(20 * SCORE_PER_WAVE + 20 * SCORE_PER_COMBO + 17 * SCORE_PER_QUEST);
+    expect(score).toBe(56800);
+    expect(isScoringVictory({ wave: 20, won: true })).toBe(false);
+  });
+
+  it('scores a true W30 campaign win as all waves cleared + combos + quests + win bump', () => {
+    const score = computeScore({ wave: 30, won: true, combos: 20, quests: 17 });
+    expect(score).toBe(30 * SCORE_PER_WAVE + 20 * SCORE_PER_COMBO + 17 * SCORE_PER_QUEST + SCORE_WIN_BONUS);
+    expect(score).toBe(116800);
+    expect(isScoringVictory({ wave: 30, won: true })).toBe(true);
   });
 
   it('FIXES THE BUG: a deep W19 loss out-scores a shallow W10 loss', () => {
@@ -40,11 +50,11 @@ describe('Simplified scoring — computeScore', () => {
     expect(nickctom).toBe(22400);
   });
 
-  it('a winner always out-scores any non-winner', () => {
-    // Worst-case winner: barely cleared W20 with zero side-objectives.
-    const minWinner = computeScore({ wave: 20, won: true, combos: 0, quests: 0 });
-    // Best-case loser: died on W20 with max combos + quests.
-    const maxLoser  = computeScore({ wave: 20, won: false, combos: 30, quests: 20 });
+  it('a true W30 winner always out-scores any non-winner', () => {
+    // Worst-case true winner: barely cleared W30 with zero side-objectives.
+    const minWinner = computeScore({ wave: 30, won: true, combos: 0, quests: 0 });
+    // Best-case pre-victory run: died on W30 with strong side objectives.
+    const maxLoser  = computeScore({ wave: 30, won: false, combos: 30, quests: 20 });
     expect(minWinner).toBeGreaterThan(maxLoser);
   });
 
@@ -70,5 +80,12 @@ describe('Simplified scoring — computeScore', () => {
   it('a wave-0 loss (never started a wave) scores zero waves', () => {
     const score = computeScore({ wave: 0, won: false, combos: 0, quests: 0 });
     expect(score).toBe(0);
+  });
+
+  it('keeps the pre-balance W30 global rows invalidated from display', () => {
+    expect(INVALIDATED_GLOBAL_SCORE_IDS.size).toBe(3);
+    expect(INVALIDATED_GLOBAL_SCORE_IDS.has('59674466-f16b-4022-bcc5-731d2c827a9a')).toBe(true);
+    expect(INVALIDATED_GLOBAL_SCORE_IDS.has('0f32dab9-abcb-4cd0-843b-fb216ddffaf4')).toBe(true);
+    expect(INVALIDATED_GLOBAL_SCORE_IDS.has('7ae16acf-e27c-4485-9118-e6baaa23c20f')).toBe(true);
   });
 });

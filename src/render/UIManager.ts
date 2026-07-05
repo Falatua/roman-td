@@ -10,6 +10,7 @@ import { previewSpawnHp } from '../systems/WaveManager';
 import { displayWaveNumber } from '../systems/TestYourMightLabels';
 import { factionName, enemyName, damageTypeLabel } from '../format';
 import towersData from '../data/towers.json';
+import { computeLeaderboardScoreForState } from './Leaderboard';
 
 export interface UICallbacks {
   onCardSelected: (idx: number) => void;
@@ -386,6 +387,8 @@ export class UIManager {
     // tap-to-reveal popover (wired below) can match it to a friendly
     // explanation. Desktop hover-title strings stay as the fallback.
     const waveNum = displayWaveNumber(state);
+    const currentWaveCleared = state.phase !== GamePhase.WAVE_PHASE && state.phase !== GamePhase.GAME_OVER;
+    const campaignLeaderboardScore = computeLeaderboardScoreForState(state, currentWaveCleared);
     const waveDisplay = state.endlessMode
       ? `<span class="hud-icon" data-stat="endless" style="color:#ff5050"><span class="ic ic-wave"></span><b>ENDLESS</b> E${state.endlessWave ?? 0}</span>
          <span class="hud-icon" data-stat="score" title="Cumulative endless score" style="color:#ff5050"><b>SCORE</b> ${(state.endlessScore ?? 0).toLocaleString()}</span>`
@@ -406,7 +409,7 @@ export class UIManager {
     right.innerHTML = `
       <span class="hud-icon" data-stat="pool"><span class="ic ic-pool"></span><b>POOL</b> ${state.poolLevel}/${ECONOMY.POOL_MAX_LEVEL}</span>
       <span class="hud-icon" data-stat="probs" title="Tier roll probabilities at the current effective pool. Click 📖 CODEX → POOL for full table.">${probStrip}</span>
-      <span class="hud-icon" data-stat="score"><span class="ic ic-score"></span><b>SCORE</b> ${state.score}</span>
+      <span class="hud-icon" data-stat="score"><span class="ic ic-score"></span><b>SCORE</b> ${campaignLeaderboardScore.toLocaleString()}</span>
       <span class="hud-icon" data-stat="phase" style="color:#9be0ff;font-weight:900;font-size:14px;letter-spacing:2px;text-shadow:1px 1px 0 #000">${phaseStr}</span>
     `;
     this.hud.append(left, right);
@@ -421,7 +424,7 @@ export class UIManager {
       gold:    { title: 'GOLD',     body: 'Spent on placing prospects (1 g per roll), buying items in the SHOP, and upgrading your draw POOL. Earned from kills and quests.' },
       pool:    { title: 'POOL',     body: 'Draw-pool level. Higher levels skew prospect rolls toward rarer, stronger towers. Upgrade with the UPGRADE POOL button between waves.' },
       probs:   { title: 'TIER ODDS', body: 'Chance of rolling each tier when you spend 1 g on an empty tile. Reading left to right: T1 · T2 · T3 · T4 · T5. CODEX → POOL has the full curve.' },
-      score:   { title: 'SCORE',    body: 'Run score. Earned from kills, quest completion, and surviving waves intact. Buying extra lives reduces final score. Endless score stacks on top of campaign score.' },
+      score:   { title: 'SCORE',    body: 'Leaderboard score estimate. It uses waves cleared, combo towers forged, quests completed, and the W30 victory bonus. Kill/event points are no longer shown as the campaign score.' },
       phase:   { title: 'PHASE',    body: 'BUILD = place towers, you have time. PLACING PROSPECTS = roll any leftover prospects. WAVE = combat is live. Use ⏸ PAUSE any time.' }
     };
     const showHudPopover = (anchor: HTMLElement, key: string) => {

@@ -46,7 +46,7 @@ export interface ScoreBreakdown {
   waveBonus: number;       // waves completed × SCORE_PER_WAVE
   comboBonus: number;      // towers combined × SCORE_PER_COMBO
   questBonus: number;      // quests completed × SCORE_PER_QUEST
-  winBonus: number;        // SCORE_WIN_BONUS if the run beat W20
+  winBonus: number;        // SCORE_WIN_BONUS only if the run beat W30
   final: number;
   // 2026-05-25 — Legacy breakdown fields. The simplified formula no
   // longer uses kills / time-survived / tower-efficiency / RNG-event /
@@ -66,34 +66,48 @@ export interface ScoreBreakdown {
 // legit W19 run at 43.7K). Root cause: unbounded kills/time/efficiency
 // components rewarded farming + idling instead of progression.
 //
-// New model — three additive parts plus a win bump, nothing else:
+// New model — three additive parts plus a true-campaign win bump, nothing else:
 //   • flat points for each wave you COMPLETE
 //   • points per combo tower you build
 //   • points per quest you finish
-//   • a big flat bonus for beating the game (clearing W20)
+//   • a big flat bonus for beating the current 30-wave campaign
 //
 // Progression dominates: 1 extra wave (2,000) outweighs 4 combos or
-// 5 quests, so reaching a deeper wave always beats a shallow run with
-// more side-objectives. Beating the game (40,000 + 20×2,000 = 80,000
-// floor) clears any loss (max realistic W19 loss ≈ 51K), so a victory
-// always tops a non-victory.
+// 5 quests, so reaching a deeper wave is the main lever. Legacy W20 rows
+// may keep their W badge, but no longer receive the victory bump now that
+// the campaign ends on W30.
 export const SCORE_PER_WAVE = 2000;
 export const SCORE_PER_COMBO = 500;
 export const SCORE_PER_QUEST = 400;
 export const SCORE_WIN_BONUS = 40000;
+
+export function isScoringVictory(opts: { wave: number; won: boolean }): boolean {
+  return !!opts.won && opts.wave >= WAVE.TOTAL;
+}
 
 // Single source of truth for the score formula. Takes raw run
 // components so it can score BOTH a live run (end screen) AND a stored
 // leaderboard entry (recompute-on-render, healing old-formula scores).
 export function computeScore(opts: { wave: number; won: boolean; combos: number; quests: number }): number {
   // A loss at wave N means N-1 waves were cleared (died during wave N).
-  // A win means all `wave` waves cleared.
+  // A W/L badge win means all `wave` waves cleared; only W30 also earns the
+  // victory bonus. This lets old W20 rows keep their W badge while losing
+  // the old 20-wave win factor.
   const wavesCompleted = opts.won ? opts.wave : Math.max(0, opts.wave - 1);
   const waveBonus = wavesCompleted * SCORE_PER_WAVE;
   const comboBonus = Math.max(0, opts.combos) * SCORE_PER_COMBO;
   const questBonus = Math.max(0, opts.quests) * SCORE_PER_QUEST;
-  const winBonus = opts.won ? SCORE_WIN_BONUS : 0;
+  const winBonus = isScoringVictory(opts) ? SCORE_WIN_BONUS : 0;
   return waveBonus + comboBonus + questBonus + winBonus;
+}
+
+export function computeLeaderboardScoreForState(state: GameStateShape, currentWaveCleared: boolean): number {
+  return computeScore({
+    wave: state.wave,
+    won: currentWaveCleared,
+    combos: state.combosBuilt ?? 0,
+    quests: (state.completedQuests ?? []).length
+  });
 }
 
 export interface LeaderboardEntry {
@@ -117,6 +131,15 @@ const STORAGE_KEY = 'roman_td_leaderboard_v2';
 // access can throw in incognito/strict-storage contexts.
 try { localStorage.removeItem('roman_td_leaderboard_v1'); } catch { /* ignore */ }
 const MAX_ENTRIES = 20;
+
+// June 29 pre-balance W30 rows were produced before the late campaign was
+// correctly tuned. Keep them out of the displayed global Hall of Glory without
+// relying on public clients having DELETE rights against Supabase.
+export const INVALIDATED_GLOBAL_SCORE_IDS = new Set([
+  '59674466-f16b-4022-bcc5-731d2c827a9a',
+  '0f32dab9-abcb-4cd0-843b-fb216ddffaf4',
+  '7ae16acf-e27c-4485-9118-e6baaa23c20f'
+]);
 
 // Profanity / vulgarity blocklist. Conservative — substring matched
 // case-insensitively. Players who hit the filter are asked for a clean name.
@@ -142,7 +165,7 @@ export function sanitizeName(input: string): string {
 
 export function computeFinalScoreBreakdown(state: GameStateShape, won: boolean): ScoreBreakdown {
   // 2026-05-25 — SIMPLIFIED. See computeScore() above for the model.
-  // Just waves + combos + quests + win bump. No kills, no time-survived,
+  // Just waves + combos + quests + W30 win bump. No kills, no time-survived,
   // no tower-efficiency, no RNG-event bonus, no lives penalty, no sanity
   // cap — the formula is bounded by design so it can't be gamed by slow
   // play, and a deeper run always out-scores a shallow one.
@@ -153,7 +176,7 @@ export function computeFinalScoreBreakdown(state: GameStateShape, won: boolean):
   const waveBonus  = wavesCompleted * SCORE_PER_WAVE;
   const comboBonus = Math.max(0, combos) * SCORE_PER_COMBO;
   const questBonus = Math.max(0, quests) * SCORE_PER_QUEST;
-  const winBonus   = won ? SCORE_WIN_BONUS : 0;
+  const winBonus   = isScoringVictory({ wave: state.wave, won }) ? SCORE_WIN_BONUS : 0;
   const final      = waveBonus + comboBonus + questBonus + winBonus;
 
   return {
@@ -400,7 +423,7 @@ export function showEndSummary(parent: HTMLElement, state: GameStateShape, won: 
       <div id="end-score-num" style="font-size:54px;letter-spacing:6px;color:#ffd34d;font-weight:900;text-shadow:0 0 18px #ffd34d,3px 3px 0 #000">0</div>
       <!-- 2026-05-25 — Score breakdown rewritten to mirror the
            simplified formula EXACTLY so the player can see how their
-           score was built: waves + combos + quests + win bump. The
+           score was built: waves + combos + quests + W30 win bump. The
            old grid mixed in stats that no longer affect score (kills,
            time, towers), which was misleading. -->
       <div style="margin-top:16px;padding:12px 16px;background:rgba(0,0,0,0.35);border:1px solid #5a4a30;text-align:left;font-size:13px;color:#fff8e0;font-weight:900;text-shadow:1px 1px 0 #000">
@@ -408,7 +431,7 @@ export function showEndSummary(parent: HTMLElement, state: GameStateShape, won: 
         <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Waves cleared (${won ? state.wave : Math.max(0, state.wave - 1)} × ${SCORE_PER_WAVE.toLocaleString()})</span><span style="color:${accent}">+${breakdown.waveBonus.toLocaleString()}</span></div>
         <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Combos forged (${state.combosBuilt ?? 0} × ${SCORE_PER_COMBO})</span><span style="color:${accent}">+${breakdown.comboBonus.toLocaleString()}</span></div>
         <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Quests cleared (${(state.completedQuests ?? []).length} × ${SCORE_PER_QUEST})</span><span style="color:${accent}">+${breakdown.questBonus.toLocaleString()}</span></div>
-        ${won ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#88ff88"><span>★ ROMA AETERNA — game beaten!</span><span>+${breakdown.winBonus.toLocaleString()}</span></div>` : ''}
+        ${breakdown.winBonus > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#88ff88"><span>★ ROMA AETERNA — W30 campaign beaten!</span><span>+${breakdown.winBonus.toLocaleString()}</span></div>` : ''}
         <div style="display:flex;justify-content:space-between;border-top:1px solid #5a4a30;margin-top:6px;padding-top:6px;font-size:14px"><span>TOTAL</span><span style="color:#ffd34d">${breakdown.final.toLocaleString()}</span></div>
       </div>
       <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:11px;color:#cdb98a;text-align:left;font-weight:700">
@@ -637,12 +660,8 @@ export function showLeaderboard(
              <button id="hog-back-to-loading" type="button" style="background:transparent;border:1px solid #5a4a30;color:#aa9a4a;font-family:'Courier New',monospace;font-size:clamp(10px,0.9vw,14px);letter-spacing:clamp(2px,0.3vw,4px);font-weight:bold;padding:clamp(7px,0.8vw,11px) clamp(14px,1.5vw,22px);cursor:pointer;text-shadow:1px 1px 0 #000">← BACK TO COIN SLOT</button>
            </div>`
         : onEndlessJoin
-          // 2026-05-20 — W20 VICTORY VIEW. Two actions side-by-side:
-          // a big purple "JOIN ENDLESS" button for the brave, and a
-          // smaller "PLAY AGAIN" prompt for players who want to
-          // restart the campaign. Enter still binds to PLAY AGAIN
-          // so muscle-memory works; Endless requires an explicit
-          // click (it's a one-way ticket — no path back to W20).
+          // 2026-05-20 legacy Endless view. Solo no longer wires this,
+          // but old call sites can still provide onEndlessJoin.
           // 2026-05-22 — Mobile swap: prompts say "Tap" instead of "Press ENTER".
           ? `<div style="display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1vw,14px);margin-top:clamp(6px,0.8vw,12px)">
                <button id="hog-join-endless" type="button" style="background:linear-gradient(180deg,#5a1a8a,#3a0a5a);color:#ff66ff;border:3px solid #aa55ff;font-family:'Courier New',monospace;font-size:clamp(14px,1.6vw,22px);letter-spacing:clamp(4px,0.6vw,10px);font-weight:900;padding:clamp(10px,1.2vw,18px) clamp(24px,3vw,48px);cursor:pointer;box-shadow:0 0 22px rgba(170,85,255,0.55);text-shadow:0 0 8px #aa55ff,2px 2px 0 #000">⚔ JOIN ENDLESS MODE ⚔</button>
@@ -747,8 +766,9 @@ export function showLeaderboard(
       // top 25 for display. Heals every old-formula entry (e.g. a W10
       // LOSS stored at 54K drops to ~22K and sorts below a W19 run).
       const rows = rawRows === null ? null : rawRows
+        .filter(r => !r.id || !INVALIDATED_GLOBAL_SCORE_IDS.has(r.id))
         .map(r => ({ ...r, score: computeScore({ wave: r.wave, won: r.won, combos: r.towers_combined, quests: r.quests_completed }) }))
-        .sort((a, b) => b.score - a.score)
+        .sort((a, b) => b.score - a.score || new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())
         .slice(0, 25);
       // If the player has switched tabs while we were fetching, don't
       // overwrite their current view.
@@ -997,9 +1017,7 @@ export function showLeaderboard(
     if (ev.key === 'Enter') restart();
   };
   document.addEventListener('keydown', onKey);
-  // 2026-05-20 — Wire the W20-victory JOIN ENDLESS button. Only
-  // rendered when onEndlessJoin is provided. Clears the Hall and
-  // fires the callback (which kicks off Endless in main.ts).
+  // Legacy JOIN ENDLESS button. Only rendered when onEndlessJoin is provided.
   const endlessBtn = wrap.querySelector('#hog-join-endless') as HTMLButtonElement | null;
   if (endlessBtn && onEndlessJoin) {
     endlessBtn.onclick = () => {
@@ -1027,24 +1045,17 @@ export function showLeaderboard(
 }
 
 // ─── Convenience: full end-of-game flow (summary → name → leaderboard) ─
-// 2026-05 v10: on a victory, after the player commits their name and the
-// W20 entry is saved, fire `onPostVictory(name)` instead of dropping
-// them into the static leaderboard. Used to chain into Endless mode —
-// the leaderboard view is still available via main-menu navigation but
-// is NOT the prompt the player sees the moment they beat W20.
+// 2026-05 v10 legacy: on victory, callers could chain into Endless instead
+// of showing the static leaderboard. Solo no longer wires Endless, but the
+// optional callback stays for compatibility.
 export function runEndOfGameFlow(
   parent: HTMLElement,
   state: GameStateShape,
   won: boolean,
   onRestart: () => void,
   onPostVictory?: (name: string) => void,
-  // 2026-05-20 — New 6th parameter. When the player WINS W20 and
-  // onEndlessJoin is wired, the Hall of Glory still mounts (player
-  // sees their score on the local + global board) AND a "▶ JOIN
-  // ENDLESS" button appears underneath. Clicking that button fires
-  // onEndlessJoin(name) instead of restarting. If onEndlessJoin is
-  // undefined the Hall acts normally. Distinct from onPostVictory
-  // which (legacy) bypasses the Hall entirely.
+  // 2026-05-20 legacy 6th parameter. If onEndlessJoin is wired, the Hall
+  // can render a "JOIN ENDLESS" button; Solo campaign leaves it undefined.
   onEndlessJoin?: (name: string) => void
 ) {
   showEndSummary(parent, state, won, (finalScore) => {
@@ -1111,7 +1122,7 @@ export function runEndOfGameFlow(
       document.body.appendChild(overlay);
       // SANDBOX: never submit dev-test scores to the global leaderboard.
       // The whole point of sandbox mode is risk-free testing — a score
-      // earned by jumping to W20 with 999k gold and free T5 towers
+      // earned by jumping to a late wave with 999k gold and free T5 towers
       // would pollute the Hall of Glory. The local insertEntry above
       // also gets reverted below so even the local board stays clean.
       const sandbox = !!(state as any).sandboxMode;
