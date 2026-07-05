@@ -99,7 +99,7 @@ export class UIManager {
     rightPanel.appendChild(buttons);
 
     this.startBtn = mkBtn('START WAVE', '#7a1a1a');
-    this.startBtn.title = 'Begin the next wave. Builds and item-purchases lock in until the wave ends.';
+    this.startBtn.title = 'Begin the next wave. If prospect cards are still unplaced, Rome will warn you first.';
     this.startBtn.onclick = () => cb.onConfirmCard();
     this.upgradeBtn = mkBtn('UPGRADE POOL', '#1a4a7a');
     this.upgradeBtn.title = 'Improve your tower-draw pool. Higher pool levels raise the odds of rolling rarer, stronger towers when you reveal a prospect.';
@@ -718,7 +718,7 @@ export class UIManager {
         ? `⚔ FINAL HOUR — wave ${WAVE.TOTAL} is one fight against the Daemon Imperator. Combine, shop, top off lives. There is no wave ${WAVE.TOTAL + 1}. Glory or the column.`
         : state.phase === GamePhase.PROSPECT_PLACEMENT
           ? (prospectsLeft > 0
-              ? `Click any empty grass tile to roll a prospect (1g each). ${prospectsLeft} roll${prospectsLeft === 1 ? '' : 's'} left this round. Press START WAVE when done — unkept prospects cement into walls.`
+              ? `Click any empty grass tile to roll a prospect (1g each). ${prospectsLeft} roll${prospectsLeft === 1 ? '' : 's'} left this round. START WAVE warns you if prospect cards are still unplaced.`
               : `Roll cap reached (10/10). Press START WAVE to pick your 2 keepers.`)
           : state.phase === GamePhase.PICK_KEEPER
             ? 'Click a glowing prospect tower to KEEP it (2 keeps per round). Press START WAVE to lock in your picks; everything unkept cements into walls.'

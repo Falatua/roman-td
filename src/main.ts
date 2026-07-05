@@ -3552,6 +3552,50 @@ async function boot() {
     }, 0);
   }
 
+  // PROSPECT QUEUE WARNING — catches the common "I hit START WAVE but
+  // forgot to place the rest of my prospect cards" mistake. This is a soft
+  // confirmation: players can intentionally skip the remaining prospects,
+  // but the wave/keeper flow will not advance until they choose.
+  function showUnplacedProspectsWarning(count: number) {
+    document.getElementById('unplaced-prospects-warning')?.remove();
+    const b = document.createElement('div');
+    b.id = 'unplaced-prospects-warning';
+    b.innerHTML = `
+      <div style="font-size:11px;letter-spacing:5px;color:#ffd34d;font-weight:bold;text-shadow:0 0 8px #ffaa00">⚠ PROSPECTS STILL WAITING ⚠</div>
+      <div style="margin-top:8px;font-size:22px;font-weight:bold;letter-spacing:4px;color:#fff8e0;text-shadow:2px 2px 0 #000,0 0 14px #ffaa00cc">PLACE YOUR PROSPECTS?</div>
+      <div style="margin-top:14px;font-size:13px;font-weight:bold;color:#fff8e0;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(0,0,0,0.45);border-left:3px solid #ffd34d;padding:10px 14px">
+        You still have <b style="color:#ffd34d">${count}</b> unplaced prospect card${count === 1 ? '' : 's'} in the queue.<br/>
+        If you start now, you give up those extra tower rolls for this round.
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:#cdb98a;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(40,40,40,0.45);border:1px dashed #5a4a30;padding:10px 14px">
+        Click empty grass tiles to reveal more prospects for <b style="color:#ffd34d">1g each</b>.<br/>
+        After you are done placing, press <b style="color:#ffd34d">START WAVE</b> again to pick keepers or begin the wave.
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button id="upw-place" style="background:#3a5520;color:#e8d6a8;border:2px solid #88ff88;padding:8px 18px;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:2px">PLACE MORE</button>
+        <button id="upw-continue" style="background:#3a2010;color:#cdb98a;border:2px solid #7a5a1a;padding:8px 18px;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:2px">CONTINUE ANYWAY</button>
+      </div>`;
+    b.style.cssText = `width:min(560px,90%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #ffd34d;box-shadow:0 0 36px rgba(255,170,0,0.55),inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;`;
+    pushBanner(b, 0, { modal: true, clickDismiss: false });
+    state.hint = `${count} prospect card${count === 1 ? '' : 's'} still unplaced. Place more, or continue anyway.`;
+    setTimeout(() => {
+      const placeBtn = document.getElementById('upw-place');
+      const continueBtn = document.getElementById('upw-continue');
+      if (placeBtn) placeBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        dismissActiveBanner();
+        state.hint = `Place the remaining ${count} prospect card${count === 1 ? '' : 's'} on empty grass, then press START WAVE again.`;
+      };
+      if (continueBtn) continueBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        (state as any).__skipUnplacedProspectWarningOnce = true;
+        dismissActiveBanner();
+        const startBtn = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent?.includes('START WAVE')) as HTMLButtonElement | undefined;
+        startBtn?.click();
+      };
+    }, 0);
+  }
+
   function snapshotBuildPhase() {
     buildPhaseSnapshot = {
       tiles: state.tiles.map(row => row.slice()),
@@ -4540,6 +4584,13 @@ async function boot() {
   const ui = new UIManager(app, {
     onCardSelected: (idx) => { state.selectedCard = idx; },
     onConfirmCard: () => {
+      if (state.phase === GamePhase.PROSPECT_PLACEMENT && state.prospectQueue.length > 0) {
+        if (!(state as any).__skipUnplacedProspectWarningOnce) {
+          showUnplacedProspectsWarning(state.prospectQueue.length);
+          return;
+        }
+        (state as any).__skipUnplacedProspectWarningOnce = false;
+      }
       // Empty-round bonus: if the player took ZERO actions this build phase
       // (no prospects revealed, no stones placed, no items bought, no pool
       // upgrades, no combos), reward +8g for strategic patience. (Was +5g
