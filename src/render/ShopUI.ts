@@ -934,7 +934,7 @@ function renderMercatorShop(
   const footerHint = document.createElement('div');
   footerHint.style.cssText = `font-size:10px;color:#aa9a4a;letter-spacing:1px;font-style:italic`;
   footerHint.textContent = 'Mercator visits next at W' + (() => {
-    const next = [4, 9, 14, 19].find(w => w > state.wave);
+    const next = [4, 9, 14, 19, 23, 27].find(w => w > state.wave);
     return next ?? '— (final visit)';
   })();
   const closeBtn = document.createElement('button');
@@ -1007,7 +1007,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
     // of parent (#app) and lets the inner content overflow:auto.
     panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:14px;width:min(520px,94vw);max-height:96%;overflow:auto;font-family:'Courier New',monospace;`;
     panel.innerHTML = `<h2 style="margin:0 0 10px;color:#d4af37">GATE SHOP</h2>
-      <div style="font-size:12px;margin-bottom:10px;opacity:0.8">Refreshes every 4 waves (W4 / W8 / W12 / W16 / W20).</div>`;
+      <div style="font-size:12px;margin-bottom:10px;opacity:0.8">Refreshes every 4 waves (W4 / W8 / W12 / W16 / W20 / W24 / W28).</div>`;
   }
   // Where new content (offer list, lives row, tower offers, close btn)
   // appends. For Mercator we use the inner content div; for Gate it's

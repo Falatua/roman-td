@@ -247,6 +247,19 @@ describe('Merchant — gate shop', () => {
       expect(new Set(ids).size).toBe(ids.length);
     }
   });
+
+  it('rerolls the item lineup when refreshed', () => {
+    const randomSpy = vi.spyOn(Math, 'random');
+    try {
+      randomSpy.mockReturnValue(0);
+      const first = buildGateShop().offers.map(o => o.itemId).sort();
+      randomSpy.mockReturnValue(0.999);
+      const second = buildGateShop().offers.map(o => o.itemId).sort();
+      expect(second).not.toEqual(first);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
 });
 
 describe('Merchant — Mercator stock', () => {
@@ -281,6 +294,21 @@ describe('Merchant — Mercator stock', () => {
     expect(merc.livesPrice).toBe(83);
   });
 
+  it('rerolls Mercator item stock when each visit resets', () => {
+    const randomSpy = vi.spyOn(Math, 'random');
+    try {
+      randomSpy.mockReturnValue(0);
+      const first = buildMercatorStock().offers.map(o => o.itemId).sort();
+      randomSpy.mockReturnValue(0.999);
+      const second = buildMercatorStock().offers.map(o => o.itemId).sort();
+      expect(second).not.toEqual(first);
+      expect(first).toContain('TRUESIGHT_LENS');
+      expect(second).toContain('TRUESIGHT_LENS');
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
   it('prices Mercator T5 towers as campaign investments', () => {
     const towers = buildMercatorTowerOffers(10, 5);
     const armory = towers.filter(o => !o.type.startsWith('CHAMPION_'));
@@ -308,21 +336,22 @@ describe('Merchant — Mercator stock', () => {
 });
 
 describe('Merchant — wave timing predicates', () => {
-  it('isMercatorWave flags the 20-wave campaign waves (W4/9/14/19)', () => {
-    expect(isMercatorWave(4)).toBe(true);
-    expect(isMercatorWave(9)).toBe(true);
-    expect(isMercatorWave(14)).toBe(true);
-    expect(isMercatorWave(19)).toBe(true);
+  it('isMercatorWave flags the 30-wave campaign visits', () => {
+    for (const wave of [4, 9, 14, 19, 23, 27]) {
+      expect(isMercatorWave(wave), `W${wave}`).toBe(true);
+    }
     expect(isMercatorWave(8)).toBe(false);
     expect(isMercatorWave(10)).toBe(false);
+    expect(isMercatorWave(24)).toBe(false);
   });
 
   it('gateShopRefreshDue triggers every 4 waves (excluding wave 0)', () => {
     expect(gateShopRefreshDue(0)).toBe(false);
-    expect(gateShopRefreshDue(4)).toBe(true);
-    expect(gateShopRefreshDue(8)).toBe(true);
-    expect(gateShopRefreshDue(12)).toBe(true);
+    for (const wave of [4, 8, 12, 16, 20, 24, 28]) {
+      expect(gateShopRefreshDue(wave), `W${wave}`).toBe(true);
+    }
     expect(gateShopRefreshDue(7)).toBe(false);
+    expect(gateShopRefreshDue(27)).toBe(false);
   });
 });
 

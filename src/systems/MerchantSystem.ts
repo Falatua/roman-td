@@ -281,6 +281,9 @@ export function buildGateShop(_refreshSeed = 0, _ownedLegendaries?: Set<string>)
   for (const [id] of epics) {
     offers.push({ itemId: id, rarity: 'EPIC', price: itemBuyPrice(id), isConsumable: false });
   }
+  // Final presentation shuffle: the stock contents are already sampled per
+  // rarity, but the card order should also feel freshly rolled each refresh.
+  shuffleInPlace(offers);
   // 2026-06-28 — every item costs 10% less to buy from the gate shop.
   for (const o of offers) o.price = Math.max(1, Math.round(o.price * 0.9));
   return { type: 'GATE', offers, livesPrice: 55, livesMaxThisVisit: 5, livesBoughtThisVisit: 0 };
@@ -365,6 +368,9 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   }
 
   // 2026-06-28 — every item costs 10% less to buy from the Mercator (premiums included).
+  // Shuffle after the guaranteed Truesight slot is added so Mercator's item
+  // shelf does not always read as the same tier-bucket layout.
+  shuffleInPlace(offers);
   for (const o of offers) o.price = Math.max(1, Math.round(o.price * 0.9));
   return { type: 'MERCATOR', offers, livesPrice: 83, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };
 }
@@ -496,11 +502,16 @@ function entries(ids: string[]): [string, any][] {
 // Fisher-Yates shuffle, take first N. Guarantees distinct picks within a single visit.
 function sampleN<T>(arr: [string, T][], n: number): [string, T][] {
   const a = arr.slice();
+  shuffleInPlace(a);
+  return a.slice(0, Math.min(n, a.length));
+}
+
+function shuffleInPlace<T>(a: T[]): T[] {
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
-  return a.slice(0, Math.min(n, a.length));
+  return a;
 }
 
 export function isMercatorWave(wave: number): boolean { return MERCATOR_WAVES.includes(wave); }
