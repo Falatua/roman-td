@@ -819,7 +819,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (source.heroId === 'HERO_MARIUS'
           && t.damageType === DamageType.PHYS_MELEE
           && dh <= 5 * GRID.TILE) {
-        dm *= 1 + 0.30 * source.auraScale;
+        dm *= 1 + 0.35 * source.auraScale;
       }
       if (source.heroId === 'HERO_AGRIPPA'
           && t.damageType === DamageType.SIEGE

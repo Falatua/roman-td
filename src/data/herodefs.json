@@ -10,8 +10,8 @@
       "kind": "LOCAL_AURA",
       "radiusTiles": 5,
       "filter": "PHYS_MELEE",
-      "dmgBonusPercent": 30,
-      "description": "Every MELEE tower within 5 tiles gains +30% damage."
+      "dmgBonusPercent": 35,
+      "description": "Every MELEE tower within 5 tiles gains +35% damage."
     },
     "abilities": [
       {

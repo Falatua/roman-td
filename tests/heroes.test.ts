@@ -414,6 +414,57 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(getTowerProjectileProfile(TowerType.CHAMPION_SULLA)?.key).toBe('PROJ_SULLA_METEOR');
   });
 
+  it('Marius passive starts at +35% melee tower damage', () => {
+    const def: any = (HERO_DEFS as any).HERO_MARIUS;
+    expect(def.passive.dmgBonusPercent).toBe(35);
+    expect(def.passive.description).toContain('+35% damage');
+
+    function decurionHitDamage(withMarius: boolean): number {
+      const s = freshState();
+      s.phase = GamePhase.WAVE_PHASE;
+      s.tick = 1;
+      s.wave = 4;
+      s.heroTier = 0;
+
+      const decurion = createTower(TowerType.DECURION, 1, 10, 5, 1);
+      decurion.attackCooldown = 0;
+      decurion.critChance = 0;
+      s.towers.set(decurion.id, decurion);
+
+      if (withMarius) {
+        s.activeHeroId = 'HERO_MARIUS';
+        const marius = createTower(TowerType.HERO_MARIUS, 1, 5, 5, 1);
+        marius.attackCooldown = 999;
+        s.activeHeroTowerId = marius.id;
+        s.towers.set(marius.id, marius);
+      }
+
+      const target = testEnemy('marius-passive-target', {
+        hp: 100_000,
+        maxHp: 100_000,
+        x: 11 * 32 + 16,
+        y: 5 * 32 + 16
+      });
+      s.enemies.set(target.id, target);
+
+      let hitDamage = 0;
+      tickCombat(s, 0.016, {
+        onHit: (tower, enemy, damage) => {
+          if (tower.id === decurion.id && enemy.id === target.id) hitDamage = damage;
+        },
+        onMeleeSwing: () => {},
+        onProjectileFire: () => {},
+        onKill: () => {}
+      });
+      return hitDamage;
+    }
+
+    const baseline = decurionHitDamage(false);
+    const boosted = decurionHitDamage(true);
+    expect(baseline).toBeGreaterThan(0);
+    expect(boosted).toBeCloseTo(baseline * 1.35, 4);
+  });
+
   it('Sulla Pyre Ward reaches towers 5.5 tiles away', () => {
     const def: any = (HERO_DEFS as any).HERO_SULLA;
     expect(def.passive.radiusTiles).toBe(5.5);
