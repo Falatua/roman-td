@@ -374,10 +374,14 @@ export function tickSpawns(state: GameStateShape, dt: number) {
       }
     }
     // 2026-06-23 — W9 war elephants teach checkpoint healing before the
-    // Hannibal boss wave. Keep it wave-scoped so W10 escort elephants and
-    // later elephant variants do not inherit the sustain spike.
+    // Hannibal boss wave. Keep that sustain wave-scoped.
+    //
+    // 2026-07-05 — W9/W10 escort elephants are boss-class combat threats,
+    // but not legendary trophy bosses. Hannibal is the W10 legendary drop.
     if (state.wave === 9 && item.type === EnemyType.WAR_ELEPHANT) {
       e.checkpointHealPct = 0.15;
+    }
+    if ((state.wave === 9 || state.wave === 10) && item.type === EnemyType.WAR_ELEPHANT) {
       e.rareDropOnly = true;
     }
     // 2026-05-17 — Surprise event waveOverride: redirect this enemy to

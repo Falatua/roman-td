@@ -453,6 +453,7 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
             we.x = e.x; we.y = e.y;
             we.pathIndex = Math.max(0, e.pathIndex - 1);
             we.pathProgress = 0;
+            if (state.wave === 10) we.rareDropOnly = true;
           }
           state.hint = '⚔ HANNIBAL RETURNS! +60% speed, status-immune, 2 War Elephants summoned!';
         }

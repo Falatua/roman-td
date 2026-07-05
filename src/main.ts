@@ -7311,8 +7311,8 @@ async function boot() {
           //     Warlord (W5), Hannibal Barca (W10), Undead Warlord ×5
           //     (W15), Daemon Imperator (W20).
           //   • Twin / ambush / surprise bosses sharing those waves.
-          //   • Champion adds (Undead War Elephant W14, Architectus W17,
-          //     Hannibal's escort elephants W9-10, etc).
+          //   • Champion adds and special boss-class threats that are not
+          //     explicitly tagged rare-only.
           // The only path that can still produce "no drop" is if the
           // player already owns every legendary in the game — in which
           // case rollBossDrop returns null cleanly. The

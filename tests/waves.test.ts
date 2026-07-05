@@ -404,6 +404,31 @@ describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () =
     expect(elephant!.hp).toBeGreaterThan(before);
     expect(elephant!.healedCheckpoints).toContain(1);
   });
+
+  it('wave 10 makes only Hannibal eligible for legendary boss loot', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.BUILD_PHASE;
+    s.wave = 9;
+    startWave(s);
+    tickSpawns(s, 999);
+
+    const enemies = Array.from(s.enemies.values());
+    const hannibal = enemies.find(e => e.type === EnemyType.HANNIBAL_BARCA);
+    const elephants = enemies.filter(e => e.type === EnemyType.WAR_ELEPHANT);
+
+    expect(hannibal).toBeDefined();
+    expect(hannibal!.isBoss).toBe(true);
+    expect(hannibal!.isScheduledBoss).toBe(true);
+    expect(isRareOnlyBossDropEnemy(hannibal)).toBe(false);
+    expect(isLegendaryBossDropEnemy(hannibal)).toBe(true);
+
+    expect(elephants.length).toBeGreaterThan(0);
+    for (const elephant of elephants) {
+      expect(elephant.isBoss).toBe(true);
+      expect(isRareOnlyBossDropEnemy(elephant)).toBe(true);
+      expect(isLegendaryBossDropEnemy(elephant)).toBe(false);
+    }
+  });
 });
 
 describe('Per-wave resistance relief (resistReduction field)', () => {
