@@ -24,7 +24,7 @@
 
 import { GameStateShape } from '../GameState';
 import { TileType } from '../types';
-import { tileAt, setTile } from './GridManager';
+import { isInsideStructureFootprint, tileAt, setTile } from './GridManager';
 import { buildGroundPath, resnapEnemiesToPath } from './PathFinder';
 
 export const RAMPART_COST = 20;
@@ -109,12 +109,33 @@ export function rampartTiles(col: number, row: number, orient: RampartOrientatio
   return out;
 }
 
-// Validate: every tile of the line must be EMPTY, and simulating all five as
-// STONE must leave the ground path intact (same chokepoint as canPlaceStone).
+export function isRampartTilePlaceable(state: GameStateShape, col: number, row: number): boolean {
+  if (isInsideStructureFootprint(col, row)) return false;
+  if (tileAt(state, col, row) !== TileType.EMPTY) return false;
+  for (const tower of state.towers.values()) {
+    if (tower.tileX === col && tower.tileY === row) return false;
+  }
+  for (const trap of state.placedTraps ?? []) {
+    if (trap.col === col && trap.row === row) return false;
+  }
+  return true;
+}
+
+export function rampartPreviewTiles(state: GameStateShape, col: number, row: number, orient: RampartOrientation): Array<{ col: number; row: number; valid: boolean }> {
+  return rampartTiles(col, row, orient).map(t => ({
+    ...t,
+    valid: isRampartTilePlaceable(state, t.col, t.row)
+  }));
+}
+
+// Validate: every tile of the line must be placeable. The visible road is the
+// computed route through EMPTY tiles, so ramparts may sit on roads/trails as
+// long as they do not cover checkpoints or other reserved/occupied tiles.
+// Simulating all five as STONE must still leave the ground path intact.
 export function canPlaceRampart(state: GameStateShape, col: number, row: number, orient: RampartOrientation): boolean {
   const tiles = rampartTiles(col, row, orient);
   for (const t of tiles) {
-    if (tileAt(state, t.col, t.row) !== TileType.EMPTY) return false;
+    if (!isRampartTilePlaceable(state, t.col, t.row)) return false;
   }
   for (const t of tiles) state.tiles[t.row][t.col] = TileType.STONE;
   const ok = buildGroundPath(state) !== null;
@@ -131,6 +152,7 @@ export function placeRampart(state: GameStateShape, col: number, row: number, or
   if (!canPlaceRampart(state, col, row, orient)) return false;
   for (const t of rampartTiles(col, row, orient)) setTile(state, t.col, t.row, TileType.STONE);
   consumeRampart(state);
+  if (rampartsOwned(state) <= 0) state.selectedRampart = null;
   state.stonesPlaced = (state.stonesPlaced ?? 0) + RAMPART_LENGTH;
   // Remember the strip so the renderer can draw the connected rampart
   // sprite over these 5 tiles (instead of 5 loose stone blocks).

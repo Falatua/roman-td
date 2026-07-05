@@ -4251,6 +4251,37 @@ export class RenderEngine {
     }
   }
 
+  drawRampartPreview(tiles: Array<{ col: number; row: number; valid: boolean }>, canCommit: boolean) {
+    this.overlayGfx.clear();
+    if (!tiles.length) return;
+    const color = canCommit ? 0xffd34d : 0xff5555;
+    for (const t of tiles) {
+      const x = t.col * GRID.TILE;
+      const y = t.row * GRID.TILE;
+      const tileColor = t.valid ? color : 0xff3030;
+      const alpha = t.valid ? 0.28 : 0.36;
+      this.overlayGfx.lineStyle(2, tileColor, 0.95);
+      this.overlayGfx.beginFill(tileColor, alpha);
+      this.overlayGfx.drawRect(x + 2, y + 2, GRID.TILE - 4, GRID.TILE - 4);
+      this.overlayGfx.endFill();
+      this.overlayGfx.lineStyle(1, 0x1a1006, 0.75);
+      this.overlayGfx.moveTo(x + 7, y + GRID.TILE / 2);
+      this.overlayGfx.lineTo(x + GRID.TILE - 7, y + GRID.TILE / 2);
+      this.overlayGfx.moveTo(x + GRID.TILE / 2, y + 7);
+      this.overlayGfx.lineTo(x + GRID.TILE / 2, y + GRID.TILE - 7);
+    }
+    const first = tiles[0];
+    const last = tiles[tiles.length - 1];
+    const x1 = first.col * GRID.TILE + GRID.TILE / 2;
+    const y1 = first.row * GRID.TILE + GRID.TILE / 2;
+    const x2 = last.col * GRID.TILE + GRID.TILE / 2;
+    const y2 = last.row * GRID.TILE + GRID.TILE / 2;
+    this.overlayGfx.lineStyle(4, canCommit ? 0xffe066 : 0xff3030, 0.85);
+    this.overlayGfx.moveTo(x1, y1);
+    this.overlayGfx.lineTo(x2, y2);
+    this.overlayGfx.lineStyle(0);
+  }
+
   // Draw thin connecting lines between ingredients of an available combo,
   // ending at a glowing centroid where the result will appear.
   drawComboLinks(combos: any[], state: GameStateShape, tick: number) {

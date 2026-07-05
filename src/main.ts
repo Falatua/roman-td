@@ -10,7 +10,7 @@ import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './sys
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
 import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards } from './systems/EnemySystem';
 import { tickTraps, placeTrap, trapOwned, TRAP_DEFS, clearPlacedTrapsForWaveEnd } from './systems/TrapSystem';
-import { placeRampart, rampartsOwned, RAMPART_LENGTH, nextRampartOrientation, RAMPART_ORIENT_LABEL } from './systems/RampartSystem';
+import { canPlaceRampart, placeRampart, rampartPreviewTiles, rampartTiles, rampartsOwned, RAMPART_LENGTH, nextRampartOrientation, RAMPART_ORIENT_LABEL, RampartOrientation } from './systems/RampartSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } from './systems/WaveManager';
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
@@ -160,7 +160,7 @@ async function boot() {
   function rotateArmedRampart(): void {
     if (!state.selectedRampart) return;
     state.selectedRampart = nextRampartOrientation(state.selectedRampart);
-    state.hint = `Rampart rotated: ${RAMPART_ORIENT_LABEL[state.selectedRampart]}. Click an empty tile to place, R to rotate again.`;
+    state.hint = `Rampart rotated: ${RAMPART_ORIENT_LABEL[state.selectedRampart]}. Hover to preview, click a valid tile or road to confirm, R to rotate again.`;
     syncRampartRotateChip();
   }
   function syncRampartRotateChip(): void {
@@ -514,6 +514,61 @@ async function boot() {
     }
     stage.appendChild(toast);
     setTimeout(() => toast.remove(), 1900);
+  }
+
+  function commitRampartPlacement(col: number, row: number, orient: RampartOrientation): boolean {
+    if (placeRampart(state, col, row, orient)) {
+      renderer.drawStatic(state);
+      const left = rampartsOwned(state);
+      state.hint = left > 0
+        ? `Rampart raised — ${RAMPART_LENGTH} stones set. ${left} more ready; click a tile to preview, R to rotate.`
+        : 'Rampart raised — 5 stones set. That was your last one. Prospect placement is still ready.';
+      if (left <= 0) state.selectedRampart = null;
+      tickQuests();
+      return true;
+    }
+    state.hint = 'No room — the 5-tile rampart must avoid checkpoints, towers, stones, traps, and still leave the road open.';
+    return false;
+  }
+
+  function showRampartPlacementConfirm(col: number, row: number, orient: RampartOrientation): void {
+    const tiles = rampartTiles(col, row, orient);
+    const coordText = tiles.map(t => `(${t.col + 1},${t.row + 1})`).join(' ');
+    const label = RAMPART_ORIENT_LABEL[orient];
+    const b = document.createElement('div');
+    b.id = 'rampart-place-confirm';
+    b.innerHTML = `
+      <div style="font-size:11px;letter-spacing:6px;color:#ffd34d;font-weight:bold;text-shadow:0 0 8px #ffd34d88">▦ STONE RAMPART ▦</div>
+      <div style="margin-top:8px;font-size:22px;font-weight:bold;letter-spacing:4px;color:#fff8e0;text-shadow:2px 2px 0 #000,0 0 14px #ffd34dcc">RAISE THIS RAMPART?</div>
+      <div style="margin-top:14px;font-size:13px;font-weight:bold;color:#fff8e0;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(0,0,0,0.45);border-left:3px solid #ffd34d;padding:10px 14px">
+        <b style="color:#ffd34d">${label}</b><br/>
+        Center: <b style="color:#ffd34d">column ${col + 1}, row ${row + 1}</b><br/>
+        Tiles: <span style="color:#cdb98a">${coordText}</span>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:#ffcc88;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(60,30,10,0.55);border:1px dashed #ff8844;padding:10px 14px">
+        This spends <b style="color:#ffd34d">1 Stone Rampart</b> and turns the highlighted strip into wall stones.<br/>
+        Roads/trails are allowed. Checkpoints, towers, stones, traps, cave/gate anchors, and sealed-path placements are refused.
+      </div>
+      <div style="margin-top:16px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button id="rpc-confirm" style="background:#3a5520;color:#fff8e0;border:2px solid #88ff88;padding:10px 22px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">▦ CONFIRM RAMPART</button>
+        <button id="rpc-cancel" style="background:#3a2010;color:#cdb98a;border:2px solid #7a5a1a;padding:10px 22px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">✕ CHOOSE ANOTHER TILE</button>
+      </div>`;
+    b.style.cssText = `width:min(580px,92%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #ffd34d;box-shadow:0 0 36px #ffd34d88,inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;`;
+    pushBanner(b, 0, { modal: true, clickDismiss: false });
+    setTimeout(() => {
+      const confirmBtn = document.getElementById('rpc-confirm');
+      const cancelBtn = document.getElementById('rpc-cancel');
+      if (confirmBtn) confirmBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        dismissActiveBanner();
+        commitRampartPlacement(col, row, orient);
+      };
+      if (cancelBtn) cancelBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        dismissActiveBanner();
+        state.hint = `Rampart still armed (${RAMPART_ORIENT_LABEL[state.selectedRampart ?? orient]}). Move the cursor for preview, R to rotate, then click another tile.`;
+      };
+    }, 0);
   }
 
   // ─── HERO PLACEMENT CONFIRMATION (2026-05-19 v2) ─────────────────────
@@ -5202,13 +5257,19 @@ async function boot() {
     hoverCol = t.col; hoverRow = t.row;
     let valid = false;
     let rangePreview = 0;
-    if (state.selectedCard !== null) {
+    if (state.selectedRampart && rampartsOwned(state) > 0) {
+      const preview = rampartPreviewTiles(state, t.col, t.row, state.selectedRampart);
+      valid = preview.every(p => p.valid) && canPlaceRampart(state, t.col, t.row, state.selectedRampart);
+      renderer.drawRampartPreview(preview, valid);
+    } else {
+      if (state.selectedCard !== null) {
       valid = isBuildable(state, t.col, t.row);
       const card = state.draw[state.selectedCard];
       const def: any = (towersData as any)[card.type];
       rangePreview = def?.range ?? 0;
+      }
+      renderer.drawHover(t.col, t.row, valid, rangePreview);
     }
-    renderer.drawHover(t.col, t.row, valid, rangePreview);
     // 2026-05 v11 (B3 Hover Range): map mouse to tile → find any tower
     // sitting on it (pending OR kept) → mark it as the hovered tower so
     // the renderer draws a dim copper range circle for it. Clears when
@@ -5707,6 +5768,26 @@ async function boot() {
       return;
     }
 
+    // 2026-07-04 — STONE RAMPART placement preview + confirmation.
+    // When armed, ramparts own the next map click before tower/stone/prospect
+    // handling. The visible preview is drawn on hover; the click opens a
+    // confirmation modal and only commits/consumes inventory after CONFIRM.
+    {
+      const selRamp = state.selectedRampart;
+      if (selRamp && rampartsOwned(state) > 0) {
+        if (!isPreWavePhase()) {
+          state.hint = 'Ramparts can only be placed before a wave starts.';
+          return;
+        }
+        if (!canPlaceRampart(state, col, row, selRamp)) {
+          showBlockedAlert(col, row, 'Rampart blocked — roads/trails are allowed, but checkpoints, towers, stones, traps, cave/gate tiles, and sealed routes are not.');
+          return;
+        }
+        showRampartPlacementConfirm(col, row, selRamp);
+        return;
+      }
+    }
+
     // During all pre-wave placement states, every existing tower/stone is inspectable.
     if (isPreWavePhase() && tile === TileType.TOWER) {
       const tw = Array.from(state.towers.values()).find(t => t.tileX === col && t.tileY === row);
@@ -5752,31 +5833,6 @@ async function boot() {
       }
     }
 
-    // 2026-07-02 — STONE RAMPART placement: when a rampart is armed, an
-    // empty-tile click drops 5 wall stones in a line centered on the click.
-    // Build-phase only (stones reshape the path); validated through the same
-    // buildGroundPath chokepoint as single stones so Rome can't be sealed.
-    {
-      const selRamp = state.selectedRampart;
-      if (selRamp && rampartsOwned(state) > 0 && tile === TileType.EMPTY) {
-        if (!isPreWavePhase()) {
-          state.hint = 'Ramparts can only be placed during the build phase.';
-          return;
-        }
-        if (placeRampart(state, col, row, selRamp)) {
-          renderer.drawStatic(state);
-          const left = rampartsOwned(state);
-          state.hint = left > 0
-            ? `Rampart raised — ${RAMPART_LENGTH} stones set. ${left} more armed; click to place, R to rotate.`
-            : 'Rampart raised — 5 stones set. That was your last one.';
-          if (left <= 0) state.selectedRampart = null;
-          tickQuests();
-        } else {
-          state.hint = 'No room — all 5 rampart tiles must be empty and the road must stay open.';
-        }
-        return;
-      }
-    }
     // 2026 v2 — TRAP placement takes precedence: when a trap is selected, the
     // next empty-tile click drops it (consuming 1). Traps don't block the path.
     {
@@ -6125,7 +6181,7 @@ async function boot() {
     }
     // 2026-07-03 QC — ESC also DISARMS an armed rampart/trap (in addition
     // to closing modals below). Without this there was no way to cancel an
-    // armed rampart, and its handler owns every empty-tile click.
+    // armed rampart, and its handler owns map clicks until confirmed/cancelled.
     if (k === 'escape' && (state.selectedRampart || state.selectedTrapType)) {
       state.selectedRampart = null;
       state.selectedTrapType = null;

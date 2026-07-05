@@ -8,7 +8,9 @@ import {
 import { createGameState } from '../src/GameState';
 import { initializeGrid, tileAt } from '../src/systems/GridManager';
 import { buildGroundPath } from '../src/systems/PathFinder';
-import { TileType } from '../src/types';
+import { GamePhase, TileType, TowerType } from '../src/types';
+import { createTower } from '../src/systems/TowerSystem';
+import waypointsData from '../src/data/waypoints.json';
 
 function bootstrapState() {
   const s = createGameState();
@@ -25,6 +27,14 @@ function findOpenSpot(s: any, orient: RampartOrientation): { col: number; row: n
     for (let col = 3; col < 35; col++) {
       if (canPlaceRampart(s, col, row, orient)) return { col, row };
     }
+  }
+  return null;
+}
+
+function findRoadSpot(s: any, orient: RampartOrientation): { col: number; row: number } | null {
+  for (const p of s.groundPath ?? []) {
+    if (tileAt(s, p.col, p.row) !== TileType.EMPTY) continue;
+    if (canPlaceRampart(s, p.col, p.row, orient)) return { col: p.col, row: p.row };
   }
   return null;
 }
@@ -123,6 +133,56 @@ describe('Rampart placement', () => {
     // Renderer bookkeeping: the strip is recorded so RAMPART_STRIP draws
     // as one connected wall instead of 5 loose stone blocks.
     expect(s.placedRamparts).toEqual([{ col: spot!.col, row: spot!.row, orient: 'H' }]);
+  });
+
+  it('allows placement on road/trail tiles as long as checkpoints stay clear', () => {
+    const s = bootstrapState();
+    buyRampart(s);
+    const roadSpot = findRoadSpot(s, 'H');
+    expect(roadSpot).toBeTruthy();
+    expect(s.groundPath.some((p: any) => p.col === roadSpot!.col && p.row === roadSpot!.row)).toBe(true);
+    expect(placeRampart(s, roadSpot!.col, roadSpot!.row, 'H')).toBe(true);
+    expect(buildGroundPath(s)).not.toBeNull();
+  });
+
+  it('refuses checkpoint, tower, trap, and structure footprint overlap without consuming', () => {
+    const s = bootstrapState();
+    s.gold = 9999;
+    buyRampart(s);
+    const wp = (waypointsData as any).waypoints[0].topLeft;
+    expect(canPlaceRampart(s, wp.col, wp.row, 'H')).toBe(false);
+
+    const towerSpot = findOpenSpot(s, 'H')!;
+    const tower = createTower(TowerType.MILITES, 1, towerSpot.col, towerSpot.row, s.wave);
+    s.towers.set(tower.id, tower);
+    s.tiles[towerSpot.row][towerSpot.col] = TileType.TOWER;
+    expect(canPlaceRampart(s, towerSpot.col, towerSpot.row, 'H')).toBe(false);
+    s.towers.delete(tower.id);
+    s.tiles[towerSpot.row][towerSpot.col] = TileType.EMPTY;
+
+    const trapSpot = findOpenSpot(s, 'H')!;
+    s.placedTraps = [{ col: trapSpot.col, row: trapSpot.row } as any];
+    expect(canPlaceRampart(s, trapSpot.col, trapSpot.row, 'H')).toBe(false);
+    s.placedTraps = [];
+
+    expect(canPlaceRampart(s, (waypointsData as any).spawn.col + 1, (waypointsData as any).spawn.row, 'H')).toBe(false);
+    expect(rampartsOwned(s)).toBe(1);
+  });
+
+  it('clears the armed tool after the last rampart so prospect placement can continue', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.PROSPECT_PLACEMENT;
+    s.prospectQueue = [{ type: TowerType.MILITES, tier: 1 } as any];
+    buyRampart(s);
+    s.selectedRampart = 'H';
+    const spot = findOpenSpot(s, 'H')!;
+
+    expect(placeRampart(s, spot.col, spot.row, 'H')).toBe(true);
+
+    expect(rampartsOwned(s)).toBe(0);
+    expect(s.selectedRampart).toBeNull();
+    expect(s.phase).toBe(GamePhase.PROSPECT_PLACEMENT);
+    expect(s.prospectQueue).toHaveLength(1);
   });
 
   it('places DIAGONAL ramparts too (both ways) and keeps the road open', () => {

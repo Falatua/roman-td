@@ -393,7 +393,7 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
     armBtn.style.cssText = `flex:1;background:${armed ? '#5a4a10' : '#4a3a24'};color:#ffe066;border:1px solid #1a1410;padding:4px 0;cursor:pointer;font-size:10px;font-family:inherit`;
     armBtn.onclick = () => {
       armRampartFromInventory(state, state.selectedRampart ?? 'H');
-      state.hint = `Rampart armed (${RAMPART_ORIENT_LABEL[state.selectedRampart!]}). Press R or tap ROTATE to spin it, then click an empty tile.`;
+      state.hint = `Rampart armed (${RAMPART_ORIENT_LABEL[state.selectedRampart!]}). Press R or tap ROTATE to spin it, hover for preview, then click a valid tile or road to confirm.`;
       onClose();
     };
     row.appendChild(armBtn);
@@ -1281,14 +1281,14 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
       <div style="width:62px;height:42px;border:1px solid #8a8a92;background:#1a1410;display:flex;align-items:center;justify-content:center;flex-shrink:0">${icon}</div>
       <div style="min-width:0;line-height:1.25;flex:1">
         <div style="font-size:12px;color:#fff8e0;font-weight:bold">Stone Rampart</div>
-        <div style="font-size:10px;color:#cdb98a;margin-top:2px">Places 5 wall stones in one line. Click an empty tile after arming.</div>
+        <div style="font-size:10px;color:#cdb98a;margin-top:2px">Places 5 wall stones in one line. Hover for preview, click to confirm.</div>
       </div>
       <div style="font-size:13px;color:#88ff88;font-weight:bold;letter-spacing:1px">x${ownedRamparts}</div>
     `;
-    btn.title = 'Stone Rampart\nClick to arm, then click an empty tile. Press R or tap ROTATE to change direction.';
+    btn.title = 'Stone Rampart\nClick to arm, hover for a five-tile preview, then click a valid tile or road. Press R or tap ROTATE to change direction.';
     btn.onclick = () => {
       if (!armRampartFromInventory(state, state.selectedRampart ?? 'H')) return;
-      state.hint = `Rampart armed (${RAMPART_ORIENT_LABEL[state.selectedRampart!]}). Click an empty tile to place it. Press R or tap ROTATE to spin it.`;
+      state.hint = `Rampart armed (${RAMPART_ORIENT_LABEL[state.selectedRampart!]}). Hover for preview, click a valid tile or road to confirm. Press R or tap ROTATE to spin it.`;
       hooks.onClose();
     };
     rampShelf.appendChild(btn);
