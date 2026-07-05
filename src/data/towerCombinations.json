@@ -220,11 +220,11 @@
     "ingredients": [
       {
         "type": "LEGATE",
-        "minTier": 5
+        "minTier": 4
       },
       {
         "type": "PRIMUS_PILUS",
-        "minTier": 5
+        "minTier": 4
       },
       {
         "type": "EAGLE_STANDARD",

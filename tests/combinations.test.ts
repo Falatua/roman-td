@@ -166,6 +166,23 @@ describe('Recipe combo detection', () => {
     expect(siege).toBeTruthy();
   });
 
+  it('keeps Julius Caesar craftable with T4 Legate and T4 Primus Pilus', () => {
+    const recipe = comboData.find((r: any) => r.result === 'JULIUS_CAESAR') as any;
+    expect(recipe.ingredients).toEqual([
+      { type: 'LEGATE', minTier: 4 },
+      { type: 'PRIMUS_PILUS', minTier: 4 },
+      { type: 'EAGLE_STANDARD', minTier: 4 }
+    ]);
+
+    const s = bootstrapState();
+    placeTower(s, TowerType.LEGATE, 4, 5, 5);
+    placeTower(s, TowerType.PRIMUS_PILUS, 4, 5, 6);
+    placeTower(s, TowerType.EAGLE_STANDARD, 4, 5, 7);
+    const combos = scanCombos(s);
+    const caesar = combos.find(c => c.result === TowerType.JULIUS_CAESAR && !c.isSameTierMerge);
+    expect(caesar).toBeTruthy();
+  });
+
   it('rewards harder-to-assemble nested combos with higher DPS', () => {
     // 2026-06-29 — JB: combos whose recipes are rarer/harder (nested combo
     // ingredients, high min-tiers, big cost) should be stronger. DPS now
