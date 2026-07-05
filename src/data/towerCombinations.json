@@ -402,7 +402,7 @@
       },
       {
         "type": "IMPERATOR_GUARD",
-        "minTier": 5
+        "minTier": 4
       },
       {
         "type": "PRAEFECTUS",

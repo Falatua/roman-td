@@ -200,6 +200,23 @@ describe('Recipe combo detection', () => {
     expect(fatebinder).toBeTruthy();
   });
 
+  it('keeps Triumphator craftable with a T4 Imperator Guard', () => {
+    const recipe = comboData.find((r: any) => r.result === 'TRIUMPHATOR') as any;
+    expect(recipe.ingredients).toEqual([
+      { type: 'EVOCATUS', minTier: 4 },
+      { type: 'IMPERATOR_GUARD', minTier: 4 },
+      { type: 'PRAEFECTUS', minTier: 4 }
+    ]);
+
+    const s = bootstrapState();
+    placeTower(s, TowerType.EVOCATUS, 4, 5, 5);
+    placeTower(s, TowerType.IMPERATOR_GUARD, 4, 5, 6);
+    placeTower(s, TowerType.PRAEFECTUS, 4, 5, 7);
+    const combos = scanCombos(s);
+    const triumphator = combos.find(c => c.result === TowerType.TRIUMPHATOR && !c.isSameTierMerge);
+    expect(triumphator).toBeTruthy();
+  });
+
   it('rewards harder-to-assemble nested combos with higher DPS', () => {
     // 2026-06-29 — JB: combos whose recipes are rarer/harder (nested combo
     // ingredients, high min-tiers, big cost) should be stronger. DPS now
