@@ -86,12 +86,41 @@ describe('Tower targeting modes', () => {
     expect(picked?.id).toBe('A');
   });
 
-  it('STRONG picks the enemy with the highest remaining HP', () => {
+  it('STRONG picks the enemy with the highest remaining HP when no priority targets are present', () => {
     const { state, tower, enemies } = setup();
     tower.targetingMode = TargetingMode.STRONG;
     const picked = pickTarget(state, tower, enemies, 10);
     // B has the highest HP (2000).
     expect(picked?.id).toBe('B');
+  });
+
+  it('STRONG prioritizes bosses over commanders and stronger regular enemies', () => {
+    const { state, tower, enemies } = setup();
+    const boss = enemies.find(e => e.id === 'D')!;
+    boss.isBoss = true;
+    boss.hp = 100;
+    const commander = enemies.find(e => e.id === 'E')!;
+    commander.type = EnemyType.STANDARD_BEARER_COMMANDER;
+    commander.hp = 1500;
+    const brute = enemies.find(e => e.id === 'B')!;
+    brute.hp = 5000;
+
+    tower.targetingMode = TargetingMode.STRONG;
+    const picked = pickTarget(state, tower, enemies, 10);
+    expect(picked?.id).toBe('D');
+  });
+
+  it('STRONG prioritizes commanders when no bosses are in range', () => {
+    const { state, tower, enemies } = setup();
+    const commander = enemies.find(e => e.id === 'D')!;
+    commander.type = EnemyType.STANDARD_BEARER_COMMANDER;
+    commander.hp = 100;
+    const brute = enemies.find(e => e.id === 'B')!;
+    brute.hp = 5000;
+
+    tower.targetingMode = TargetingMode.STRONG;
+    const picked = pickTarget(state, tower, enemies, 10);
+    expect(picked?.id).toBe('D');
   });
 
   it('WEAKEST picks the enemy with the lowest remaining HP', () => {

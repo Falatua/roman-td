@@ -2052,20 +2052,23 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
       return best;
     }
     case TargetingMode.STRONG: {
-      // 2026-05-19 — Bosses get priority. If ANY boss is in range,
+      // 2026-07-05 — Priority threats get priority. If ANY boss is in range,
       // pick the highest-HP boss (locks the tower onto the most
-      // dangerous threat regardless of incidental grunts). Only if
-      // no boss is present do we fall back to the raw highest-HP
-      // enemy. Without this, a chip-damaged boss whose HP dropped
-      // below a fresh War Elephant minion would lose the tower's
-      // attention mid-fight — confusing and bad for boss DPS.
+      // dangerous threat regardless of incidental grunts). Only if no boss
+      // is present do commanders get the next lane; only after that do we
+      // fall back to the raw highest-HP enemy.
       let bestBoss: Enemy | null = null; let bestBossHp = -1;
+      let bestCommander: Enemy | null = null; let bestCommanderHp = -1;
       let bestAny:  Enemy | null = null; let bestAnyHp  = -1;
       for (const e of inRange) {
         if (e.isBoss && e.hp > bestBossHp) { bestBossHp = e.hp; bestBoss = e; }
+        if (!e.isBoss && (((e as any).isCommander) || isCommanderType((e as any).type)) && e.hp > bestCommanderHp) {
+          bestCommanderHp = e.hp;
+          bestCommander = e;
+        }
         if (e.hp > bestAnyHp)              { bestAnyHp  = e.hp; bestAny  = e; }
       }
-      return bestBoss ?? bestAny;
+      return bestBoss ?? bestCommander ?? bestAny;
     }
     case TargetingMode.WEAKEST: {
       // 2026-05-19 — Mirror of STRONG. Picks the LOWEST-current-HP
