@@ -225,7 +225,8 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
     siege: 1.25          // +25% — siege also useful, but divine is the cleanest answer
   },
 
-  // Iron Phalanx — totally immune to melee. Ranged armor tightened too.
+  // Iron Phalanx — totally immune to melee and siege. Fire/burn is the
+  // intended answer, so artillery cannot bypass the shield-wall puzzle.
   // 2026-05-19 v4 — IRON_PHALANX fire/burn pushed to 2.00× per user
   // direction. The "iron melts" lore beats the conservative +35%
   // tuning: this is the heaviest-armored unit on the field and the
@@ -237,13 +238,13 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // fire-vulnerable enemy in the game (Undead Spearman + Ghost Rider
   // sit at 1.82× from the UNDEAD_CARTHAGE faction × 1.40 per-enemy
   // stack). Fire/burn is decisively THE counter to the W17 phalanx.
-  [EnemyType.IRON_PHALANX]: { melee: 0, ranged: 0.5, slow: 0.55, bleed: 0.45, poison: 0.55, fire: 2.00, burn: 2.00 },
+  [EnemyType.IRON_PHALANX]: { melee: 0, siege: 0, ranged: 0.5, slow: 0.55, bleed: 0.45, poison: 0.55, fire: 2.00, burn: 2.00 },
   // Architectus — heavy plate, shrugs off ranged hits until the shield is
   // broken. Bleed-immune as an undead minion.
   // 2026-05-18 v2 — Architectus is an UNDEAD_CARTHAGE engineer. By the
   // "all undead are bleed/poison-immune AND fire-vulnerable" rule:
   // poison 0.5 → 0 (immune), burn 0.6 → 1.20 (vulnerable).
-  [EnemyType.ARCHITECTUS]: { melee: 0.65, ranged: 0.45, slow: 0.35, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
+  [EnemyType.ARCHITECTUS]: { melee: 0.65, siege: 0, ranged: 0.45, slow: 0.35, fire: 1.20, burn: 1.20, poison: 0, bleed: 0 },
   // NECROMANCY-RISEN UNDEAD — they came back wrong. Bone bodies shrug
   // off poison AND bleed (no flesh to rot), drink fire (dry kindling),
   // and are slowed less than the living. Skeleton/zombie variants still
@@ -291,7 +292,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // stack on the ROMAN_MYTH faction row (tough vs steel/fire, weak to DIVINE).
   [EnemyType.CHIMERA]:     { burn: 0.6, poison: 0.70, bleed: 0.90 },
   [EnemyType.CERBERUS]:    { burn: 0.5, poison: 0.3, bleed: 1.20 },
-  [EnemyType.TYPHON]:      { slow: 0.6, ranged: 0.3, burn: 0.65, poison: 0.55, bleed: 0.45 },
+  [EnemyType.TYPHON]:      { slow: 0.6, ranged: 0.3, siege: 0, burn: 0.65, poison: 0.55, bleed: 0.45 },
   [EnemyType.GIANT_GIGAS]: { slow: 0.7, melee: 0.3, burn: 0.80, poison: 0.35, bleed: 0.30 },
   [EnemyType.CYCLOPS]:     { melee: 0.3, slow: 0.4, burn: 0.85, poison: 0.60, bleed: 0.50 },
   // Colossus Gigas — the fused Super-Giant: very tough all-round.
@@ -304,9 +305,9 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.STANDARD_BEARER_COMMANDER]: { melee: 0.55, ranged: 0.5, slow: 0.35, burn: 0.75, poison: 0.65, bleed: 0.60, divine: 1.25 },
   [EnemyType.PATHFINDER_COMMANDER]:      { ranged: 0.65, slow: 0.25, burn: 0.90, poison: 0.75, bleed: 0.65 },
   [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { ranged: 0.5, slow: 0.3, burn: 0.70, poison: 0, bleed: 0.50, divine: 1.30 },
-  [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0.7, burn: 0, poison: 1.15, bleed: 1.10, divine: 1.20 },
+  [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0, burn: 0, poison: 1.15, bleed: 1.10, divine: 1.20 },
   [EnemyType.SKY_STANDARD_COMMANDER]:     { melee: 0.7, ranged: 0.55, slow: 0.35, siege: 1.2, burn: 0.8, poison: 0.65, bleed: 0.6, divine: 1.2 },
-  [EnemyType.SKY_PATHFINDER_COMMANDER]:   { ranged: 0.7, slow: 0.3, siege: 1.25, burn: 0.85, poison: 0.75, bleed: 0.75 },
+  [EnemyType.SKY_PATHFINDER_COMMANDER]:   { ranged: 0.7, slow: 0.3, siege: 0, burn: 0.85, poison: 0.75, bleed: 0.75 },
   [EnemyType.SKY_ANUBIS_COMMANDER]:       { ranged: 0.55, slow: 0.35, siege: 1.15, burn: 0.75, poison: 0, bleed: 0.55, divine: 1.25 },
   // 2026-06-26 variety roster.
   // Siege Wagon: heavily plated transport — shrugs melee/ranged, weak to siege.

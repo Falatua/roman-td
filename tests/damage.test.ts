@@ -156,4 +156,29 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(statusEffectiveness(undead, StatusEffectKind.POISON)).toBe(0);
     expect(statusEffectiveness(undead, StatusEffectKind.BLEED)).toBe(0);
   });
+
+  it('gives selected enemies and commanders true siege immunity', () => {
+    const immuneTypes = [
+      EnemyType.IRON_PHALANX,
+      EnemyType.ARCHITECTUS,
+      EnemyType.TYPHON,
+      EnemyType.SIEGE_CAPTAIN_COMMANDER,
+      EnemyType.SKY_PATHFINDER_COMMANDER
+    ];
+
+    for (const type of immuneTypes) {
+      const enemy = makeEnemy(type, (enemiesData as any)[type].faction as EnemyFaction);
+      enemy.isFlyer = !!(enemiesData as any)[type].isFlyer;
+      expect(enemyDamageMultiplier(enemy, DamageType.SIEGE), `${type} siege damage`).toBe(0);
+    }
+  });
+
+  it('keeps other commanders vulnerable or resistant instead of making all commanders siege-immune', () => {
+    const standard = makeEnemy(EnemyType.STANDARD_BEARER_COMMANDER, EnemyFaction.EGYPTIANS);
+    const skyStandard = makeEnemy(EnemyType.SKY_STANDARD_COMMANDER, EnemyFaction.EGYPTIANS);
+    skyStandard.isFlyer = true;
+
+    expect(enemyDamageMultiplier(standard, DamageType.SIEGE)).toBeGreaterThan(0);
+    expect(enemyDamageMultiplier(skyStandard, DamageType.SIEGE)).toBeGreaterThan(0);
+  });
 });

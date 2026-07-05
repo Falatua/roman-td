@@ -113,8 +113,9 @@ describe('Late-wave DoT profile coverage', () => {
     expect(enemyResistanceProfile(EnemyType.STONE_JUGGERNAUT).poison).toBeLessThan(0.5);
     expect(enemyResistanceProfile(EnemyType.DUNE_STALKER).bleed).toBeGreaterThan(1);
     expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).burn).toBe(0);
+    expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).siege).toBe(0);
     expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).bleed).toBeGreaterThan(1);
-    expect(enemyResistanceProfile(EnemyType.SKY_PATHFINDER_COMMANDER).siege).toBeGreaterThan(1);
+    expect(enemyResistanceProfile(EnemyType.SKY_PATHFINDER_COMMANDER).siege).toBe(0);
     expect(enemyResistanceProfile(EnemyType.SKY_ANUBIS_COMMANDER).poison).toBe(0);
   });
 });
