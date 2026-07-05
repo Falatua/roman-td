@@ -46,6 +46,20 @@ describe('late-campaign variety roster', () => {
     });
   });
 
+  it('keeps leak costs readable by threat tier: bosses 10, elites and commanders 5', () => {
+    for (const [type, def] of Object.entries(enemiesData as any)) {
+      if (def.isBoss) {
+        expect(def.livesCost, `${type} boss leak cost`).toBe(10);
+        continue;
+      }
+      const isCommander = type.includes('COMMANDER');
+      const isEliteThreat = def.isElite === true || type === 'FIRE_GIANT';
+      if (isCommander || isEliteThreat) {
+        expect(def.livesCost, `${type} elite/commander leak cost`).toBe(5);
+      }
+    }
+  });
+
   it('keeps Hun minions visually in the normal enemy size band', () => {
     const expectedScales: Record<string, number> = {
       MONGOL_HORSE_ARCHER: 0.86,
