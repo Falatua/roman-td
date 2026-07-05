@@ -8,6 +8,7 @@ import { spawnProjectile } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind } from '../src/types';
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS, GRID } from '../src/constants';
 import { createGameState } from '../src/GameState';
+import { initializeGrid, isBuildable } from '../src/systems/GridManager';
 import towersData from '../src/data/towers.json';
 
 function testEnemy(id: string, x = 160, y = 160): Enemy {
@@ -470,21 +471,29 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     expect(onRange - offRange).toBeCloseTo(2.0, 4);
   });
 
-  it('the 6 spread tiles stay distinct and non-clustered (>=6 manhattan)', () => {
+  it('the 6 spread tiles stay distinct and non-clustered (>=4 manhattan)', () => {
     // 2026-06-27 — the IVORY (divine) + AMBER (blast) tiles are
     // DELIBERATELY clustered on the WP3<->WP4 gauntlet (per user), so
     // they're exempt from the spacing rule that keeps the original six
     // anchors spread across the map.
-    // 2026-06-28 — user hand-moved tempo/tyrant/treasury; tightest pair is
-    // now Treasury<->War at manhattan 6, so the dispersal floor is 6.
+    // 2026-07-05 — Treasury was moved two tiles right to (15,16), making
+    // Treasury<->War the tightest pair at manhattan 4.
     const spread = AURA_TILES.filter(t => t.kind !== 'IVORY' && t.kind !== 'AMBER');
     expect(spread.length).toBe(6);
     for (let i = 0; i < spread.length; i++) {
       for (let j = i + 1; j < spread.length; j++) {
         const d = Math.abs(spread[i].col - spread[j].col) + Math.abs(spread[i].row - spread[j].row);
-        expect(d).toBeGreaterThanOrEqual(6);
+        expect(d).toBeGreaterThanOrEqual(4);
       }
     }
+  });
+
+  it('Treasury tile sits two tiles farther right and remains buildable', () => {
+    const state = createGameState();
+    initializeGrid(state);
+    const treasury = AURA_TILES.find(t => t.kind === 'GOLD')!;
+    expect(treasury).toMatchObject({ col: 15, row: 16 });
+    expect(isBuildable(state, treasury.col, treasury.row)).toBe(true);
   });
 
   it('no two aura tiles share the same cell', () => {

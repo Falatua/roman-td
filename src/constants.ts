@@ -312,7 +312,7 @@ export const AURA_TILES: AuraTile[] = [
   { col: 15, row: 12, kind: 'BLUE'    },  // central         · +30% damage
   { col: 28, row: 10, kind: 'RED'     },  // right-mid       · +50% damage vs bosses (tyrant, moved down 2)
   { col: 24, row: 19, kind: 'CYAN'    },  // bottom-mid      · melee can hit flyers
-  { col: 13, row: 16, kind: 'GOLD'    },  // mid-left        · +2 gold per kill (treasury, moved up 3 + right 2)
+  { col: 15, row: 16, kind: 'GOLD'    },  // mid-left        · +2 gold per kill (treasury, moved up 3 + right 4)
   // 2026-05-19 — 6th aura tile. WATCHTOWER (emerald green). Moved
   // from the bottom-left corner (2, 22) → upper-middle (20, 5) →
   // (20, 4). The previous (20, 5) sat exactly on waypoint 5
