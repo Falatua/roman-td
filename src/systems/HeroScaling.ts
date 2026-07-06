@@ -37,6 +37,11 @@ export function heroAuraScaleForTier(tier: number): number {
   return HERO_AURA_SCALE_PER_TIER[clampHeroTier(tier)] ?? 1;
 }
 
+function heroForgeMagnitudeScale(state: GameStateShape | any): number {
+  const stacks = Math.max(0, Math.min(5, Math.floor(state?.heroForgeStacks?.aura ?? 0)));
+  return 1 + 0.05 * stacks;
+}
+
 export function heroAuraScaleForTower(state: GameStateShape | any, tower: Tower): number {
-  return heroAuraScaleForTier(heroTierForTower(state, tower));
+  return heroAuraScaleForTier(heroTierForTower(state, tower)) * heroForgeMagnitudeScale(state);
 }

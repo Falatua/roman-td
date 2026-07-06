@@ -1400,7 +1400,7 @@ function renderTab(tab: string): string {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
         <div style="padding:10px 12px;background:#1a0e0a;border:2px solid #ff5a4a">
           <div style="font-size:13px;color:#ff5a4a;font-weight:bold;letter-spacing:2px;margin-bottom:4px">⚔ SHARPEN</div>
-          <div style="font-size:10.5px;color:#cdb98a;line-height:1.5">+6% basic-attack damage per tap. 5 taps = +30% hero DPS. The path for hitter-style heroes (Caesar, Scipio, Marius) — turn the hero's basic strikes into the main carry.</div>
+          <div style="font-size:10.5px;color:#cdb98a;line-height:1.5">+6% basic-attack damage per tap. 5 taps = +30% hero DPS. Applies to starter heroes and Mercator Champions, including abilities that deal a percent of hero basic damage.</div>
         </div>
         <div style="padding:10px 12px;background:#0a0e1a;border:2px solid #5a9fff">
           <div style="font-size:13px;color:#5a9fff;font-weight:bold;letter-spacing:2px;margin-bottom:4px">⏱ HASTEN</div>
@@ -1408,11 +1408,11 @@ function renderTab(tab: string): string {
         </div>
         <div style="padding:10px 12px;background:#1a1410;border:2px solid #ffd34d">
           <div style="font-size:13px;color:#ffd34d;font-weight:bold;letter-spacing:2px;margin-bottom:4px">✨ EMPOWER</div>
-          <div style="font-size:10.5px;color:#cdb98a;line-height:1.5">+5% to every numeric magnitude inside every ability per tap. 5 taps = +25%. Damage multipliers, slow %, stun durations, mark debuff strength, splash radius — all scale. Counts (javelin/shell numbers) and binary flags don't change.</div>
+          <div style="font-size:10.5px;color:#cdb98a;line-height:1.5">+5% to every numeric magnitude inside every hero ability or passive aura per tap. 5 taps = +25%. Damage multipliers, slow %, stun durations, mark strength, splash radius, and hero aura strength all scale. Counts (javelin/shell numbers) and binary flags don't change.</div>
         </div>
       </div>
       <div style="font-size:11px;color:#cdb98a;line-height:1.55;background:#0c0a08;border-left:3px solid #d4af37;padding:8px 12px;margin-bottom:8px">
-        <b style="color:#d4af37">Cost ramp (per path):</b> 30g → 60g → 120g → 240g → 480g per tap (doubles each step). A single path maxed = <b style="color:#88ff88">930g</b>. All three paths maxed = <b style="color:#88ff88">2,790g</b>. Cheap to sample, steep to max — the first tap on any path is still under one wave's gold, so trying out a new path is never a big commitment.
+        <b style="color:#d4af37">Cost ramp (per path):</b> 40g → 80g → 160g → 320g → 640g per tap (doubles each step). A single path maxed = <b style="color:#88ff88">1,240g</b>. All three paths maxed = <b style="color:#88ff88">3,720g</b>. Cheap to sample, steep to max — the first tap on any path is still under one wave's gold, so trying out a new path is never a big commitment.
       </div>
       <div style="font-size:11px;color:#cdb98a;line-height:1.55;background:#0c0a08;border-left:3px solid #ff7733;padding:8px 12px">
         <b style="color:#ff7733">Persistence + refund:</b> Forge stacks reset to 0/0/0 when you draft a fresh hero (after destruction). You get <b style="color:#88ff88">50% of the gold spent</b> refunded on the re-draft so the investment isn't a total loss. Forge progression does <b>not</b> affect XP, tier, or natural ability unlocks — it's a separate axis on top.

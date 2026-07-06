@@ -135,9 +135,9 @@ function recordMercatorChampionPurchase(state: GameStateShape, type: string): vo
 // same stacks. Renders a 3-button row:
 //   ⚔ SHARPEN  — +6% basic-attack damage / tap (5 cap)
 //   ⏱ HASTEN   — −5% ability cooldown / tap  (5 cap)
-//   ✨ EMPOWER  — +5% to all numeric ability magnitudes / tap (5 cap)
-// Each path has its own cost ramp (V25: 30/60/120/240/480g —
-// doubling from 30g) and own stack counter; the three paths don't share
+//   ✨ EMPOWER  — +5% to all numeric ability/passive magnitudes / tap (5 cap)
+// Each path has its own cost ramp (40/80/160/320/640g —
+// doubling from 40g) and own stack counter; the three paths don't share
 // resources or interact. The section frame tints to the active
 // hero's color from towers.json so the forge feels personalized.
 // 2026-05-20 v3 — Richer per-path metadata for the hover tooltip.
@@ -172,9 +172,9 @@ const FORGE_PATHS: Array<{
   },
   {
     key: 'aura', label: 'EMPOWER', icon: '✨', tint: '#ffd34d',
-    headline: 'ABILITY STRENGTH',
-    effect: '+5% to every numeric magnitude inside every deployed hero ability per tap (damage multipliers, slow %, stun durations, execute thresholds, heal amounts).',
-    maxedAt5: '5/5 stacks → +25% to all hero ability magnitudes.',
+    headline: 'ABILITY + PASSIVE STRENGTH',
+    effect: '+5% to every numeric magnitude inside every deployed hero ability and passive aura per tap (damage multipliers, slow %, stun durations, aura strength).',
+    maxedAt5: '5/5 stacks → +25% to all hero ability magnitudes and passive aura strength.',
     bestFor: 'Best for balanced heroes where the abilities themselves are the value — Agricola, Agrippa.',
     notes: 'Skips integer COUNTS (javelin/eagle/shell numbers stay the same) and binary triggers. bossSpeedMultiplier scales INVERSE — higher EMPOWER slows bosses MORE.'
   }
@@ -201,7 +201,7 @@ function showForgeTooltip(btn: HTMLElement, path: typeof FORGE_PATHS[number]): v
     <div style="margin-top:4px"><b style="color:#88ff88">AT MAX:</b> ${path.maxedAt5}</div>
     <div style="margin-top:4px;color:#cdb98a;font-style:italic">${path.bestFor}</div>
     ${path.notes ? `<div style="margin-top:6px;padding-top:4px;border-top:1px dashed ${path.tint}44;font-size:10px;color:#aa9a4a">${path.notes}</div>` : ''}
-    <div style="margin-top:6px;padding-top:4px;border-top:1px solid #3a3025;color:#aa9a4a;font-size:10px;letter-spacing:1px">Cost ramp: 30g · 60g · 120g · 240g · 480g · MAXED</div>`;
+    <div style="margin-top:6px;padding-top:4px;border-top:1px solid #3a3025;color:#aa9a4a;font-size:10px;letter-spacing:1px">Cost ramp: 40g · 80g · 160g · 320g · 640g · MAXED</div>`;
   document.body.appendChild(tip);
   const rect = btn.getBoundingClientRect();
   const tw = 320, th = 200;

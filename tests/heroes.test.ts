@@ -36,7 +36,7 @@ import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
 import { previewSpawnHp, startWave } from '../src/systems/WaveManager';
 import { buildMercatorTowerOffers, CHAMPION_PRICE, CHAMPION_TYPES } from '../src/systems/MerchantSystem';
 import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity';
-import { heroAuraScaleForTier, heroTierForTower } from '../src/systems/HeroScaling';
+import { heroAuraScaleForTier, heroAuraScaleForTower, heroTierForTower } from '../src/systems/HeroScaling';
 import HERO_DEFS from '../src/data/herodefs.json';
 import TOWERS from '../src/data/towers.json';
 
@@ -827,7 +827,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     s.tick = 10;
     s.activeHeroId = 'HERO_MARIUS';
     s.heroTier = 0;
-    s.heroForgeStacks = { dmg: 5, cd: 5, aura: 0 };
+    s.heroForgeStacks = { dmg: 5, cd: 5, aura: 5 };
 
     const champion = createTower(TowerType.CHAMPION_CAESAR, 2, 5, 5, 9);
     (champion as any).__championAbilityWakeupDone = true;
@@ -840,15 +840,49 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     const withForge = towerEffectiveStats(champion).dps;
     s.heroForgeStacks = { dmg: 0, cd: 0, aura: 0 };
     const withoutForge = towerEffectiveStats(champion).dps;
-    s.heroForgeStacks = { dmg: 5, cd: 5, aura: 0 };
+    s.heroForgeStacks = { dmg: 5, cd: 5, aura: 5 };
     g.__game = prevGame;
 
     expect(heroTierForTower(s, champion)).toBe(1);
     expect(withForge / withoutForge).toBeCloseTo(1.30, 2);
+    expect(heroAuraScaleForTower(s, champion)).toBeCloseTo(heroAuraScaleForTier(1) * heroForgeMagnitudeMult(s), 6);
 
     tickHeroAbilities(s);
     const spqr = (HERO_DEFS as any).HERO_CAESAR.abilities.find((a: any) => a.id === 'SPQR_DECREE');
     expect(champion.__heroCooldowns?.SPQR_DECREE).toBeCloseTo(10 + spqr.cooldownSec * heroForgeCooldownMult(s), 6);
+  });
+
+  it('Hero Forge damage upgrades carry into newly purchased Champion basic-damage abilities', () => {
+    function scipioCornuDamage(dmgStacks: number): number {
+      const s = freshState();
+      s.phase = GamePhase.WAVE_PHASE;
+      s.tick = 25;
+      s.activeHeroId = 'HERO_MARIUS';
+      s.heroTier = 4;
+      s.heroForgeStacks = { dmg: dmgStacks, cd: 0, aura: 0 };
+
+      const champion = createTower(TowerType.CHAMPION_SCIPIO, 5, 5, 5, 12);
+      (champion as any).__championAbilityWakeupDone = true;
+      champion.__heroCooldowns = { CORNU_CHARGE: 0, SCIPIO_BRAND: 999 };
+      s.towers.set(champion.id, champion);
+
+      const boss = testEnemy('cornu-target', {
+        hp: 100_000,
+        maxHp: 100_000,
+        isBoss: true,
+        x: 8 * 32 + 16,
+        y: 5 * 32 + 16
+      });
+      s.enemies.set(boss.id, boss);
+
+      tickHeroAbilities(s);
+      return 100_000 - boss.hp;
+    }
+
+    const withoutForge = scipioCornuDamage(0);
+    const withForge = scipioCornuDamage(5);
+    expect(withoutForge).toBeGreaterThan(0);
+    expect(withForge / withoutForge).toBeCloseTo(1.30, 2);
   });
 
   it('starter plus five Mercator Champions coexist with abilities, passives, damage, and targeting intact', () => {
@@ -1295,11 +1329,11 @@ describe('Hero Forge — pay-gold upgrade system', () => {
     expect(HERO_FORGE_CAP).toBe(5);
   });
 
-  it('heroForgeNextCost doubles from 30g: 30/60/120/240/480 then MAXED', () => {
-    // 2026-05-22 V25 — ramp bumped 1.5× to slow late-game hero power.
+  it('heroForgeNextCost doubles from 40g: 40/80/160/320/640 then MAXED', () => {
+    // 2026-06-23 — ramp bumped again to match the larger 30-wave economy.
     // Was 20/40/80/160/320 (V3, 2026-05-20). The post-V25 first tap is
-    // 30g (still cheap enough to sample any new path in 1-2 waves)
-    // but the L4 → L5 tap costs 480g, a real commitment.
+    // 40g (still cheap enough to sample any new path in 1-2 waves)
+    // but the L4 → L5 tap costs 640g, a real commitment.
     expect(heroForgeNextCost(0)).toBe(40);
     expect(heroForgeNextCost(1)).toBe(80);
     expect(heroForgeNextCost(2)).toBe(160);
@@ -1374,14 +1408,14 @@ describe('Hero Forge — pay-gold upgrade system', () => {
     const s = freshState();
     s.gold = 100;
     pickHero(s, 'HERO_CAESAR');
-    // Simulate fully-maxed SHARPEN under the v3 doubling ramp
-    // (20 + 40 + 80 + 160 + 320 = 620g).
+    // Simulate fully-maxed SHARPEN under the current doubling ramp
+    // (40 + 80 + 160 + 320 + 640 = 1240g).
     s.heroForgeStacks = { dmg: 5, cd: 0, aura: 0 };
-    s.heroForgeGoldSpent = 620;
+    s.heroForgeGoldSpent = 1240;
     const goldBeforeRePick = s.gold;
     pickHero(s, 'HERO_MARIUS');
-    // 50% of 620 = 310g refunded
-    expect(s.gold).toBe(goldBeforeRePick + 310);
+    // 50% of 1240 = 620g refunded
+    expect(s.gold).toBe(goldBeforeRePick + 620);
     expect(s.heroForgeStacks).toEqual({ dmg: 0, cd: 0, aura: 0 });
     expect(s.heroForgeGoldSpent).toBe(0);
     expect(s.activeHeroId).toBe('HERO_MARIUS');

@@ -70,7 +70,7 @@ export interface HeroHooks {
 
 // ─── HERO FORGE (2026-05-20 v2) ──────────────────────────────────────
 // Pay-to-upgrade hero system. Three independent paths tapped at the
-// gate shop, each cap-5 with a doubling cost ramp starting at 20g.
+// gate shop, each cap-5 with a doubling cost ramp starting at 40g.
 // Runs entirely independent of the XP/tier ladder — natural
 // progression is untouched. Stacks live on state.heroForgeStacks;
 // 50% gold refund on hero re-pick handled inside pickHero further
@@ -79,15 +79,14 @@ export interface HeroHooks {
 // 2026-05-20 v3 — cost ramp lowered from linear-steep (100/200/300/
 // 400/500, 1500g per path maxed) to doubling-from-20g (20/40/80/160/
 // 320, 620g per path maxed).
-// 2026-05-22 V25 — cost ramp bumped 1.5× (30/60/120/240/480 per tap,
-// 930g per path maxed, 2,790g for all three) after the difficulty
+// 2026-05-22 V25 — cost ramp bumped after the difficulty
 // audit. The previous 620g/path ceiling was reachable by W10-W12 on
 // most successful runs, which let the hero's Path A + C compound
 // damage stack hit ~1.625× by mid-game — a big swing the enemy HP
 // scaling didn't track. Steepening the curve slows late-game power
 // growth without erasing the "sample cheaply" feel: the first tap
-// is still 30g (under one wave's gold), but the L4 → L5 tap costs
-// 480g, a meaningful commitment late in the run.
+// is still 40g, but the L4 → L5 tap costs 640g, a meaningful
+// commitment late in the run.
 export const HERO_FORGE_CAP = 5;
 
 /** Returns the cost of the NEXT tap on this path, or null when MAXED. */
@@ -427,9 +426,9 @@ function heroBasicAttackDamage(state: GameStateShape, hero: Tower): number {
   const scale = ctx?.tier !== undefined
     ? heroBasicAttackScaleForTier(heroId, ctx.tier)
     : heroBasicAttackScaleForTower(state, hero);
-  // Per-tier damage scale × baseDps. attackSpeed not factored in — Cornu
-  // Charge is a single-shot ability, not a damage-per-second slot.
-  return hero.baseDps * scale;
+  // Per-tier damage scale × Forge Sharpen × baseDps. attackSpeed is not
+  // factored in; these are single-shot or per-throw ability packets, not DPS.
+  return hero.baseDps * scale * heroForgeDmgMult(state);
 }
 
 // ─── Ability executors ──────────────────────────────────────────────
