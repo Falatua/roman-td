@@ -8,7 +8,7 @@ import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA
 import { createGameState, isWaveModifierActive } from './GameState';
 import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
-import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards } from './systems/EnemySystem';
+import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards, triggerEnemyDeathBurst } from './systems/EnemySystem';
 import { tickTraps, placeTrap, trapOwned, TRAP_DEFS, clearPlacedTrapsForWaveEnd } from './systems/TrapSystem';
 import { canPlaceRampart, placeRampart, rampartPreviewTiles, rampartTiles, rampartsOwned, RAMPART_LENGTH, RAMPART_ORIENTATIONS, nextRampartOrientation, RAMPART_ORIENT_LABEL, RampartOrientation } from './systems/RampartSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } from './systems/WaveManager';
@@ -7150,6 +7150,11 @@ async function boot() {
         },
         onKill: (t: any, e: any) => {
           awardKillBonus(t);
+          // Transport payloads must fire in the combat kill path before
+          // the killed carrier is deleted from state.enemies. Otherwise
+          // Siege Wagons / Sky Barges killed by towers vanish without
+          // releasing their passengers.
+          triggerEnemyDeathBurst(state, e);
           // 2026-05-16 — surprise-event resolution. If this kill was an
           // event-spawned enemy and it was the last one alive, the helper
           // sets state.pendingSurpriseReward → next tick opens the modal.

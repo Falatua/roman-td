@@ -350,6 +350,94 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   return e;
 }
 
+function groundPathPixels(state: GameStateShape, caveB = false): { x: number; y: number }[] {
+  const tiles = caveB ? state.groundPathB : state.groundPath;
+  return tiles.map(t => ({ x: t.col * GRID.TILE + GRID.TILE / 2, y: t.row * GRID.TILE + GRID.TILE / 2 }));
+}
+
+function anchorDeathBurstChildOnPath(state: GameStateShape, parent: Enemy, child: Enemy, minRunwayTiles = 8): { x: number; y: number } {
+  if (!!(parent as any).__caveB) {
+    const gpB = buildGroundPathB(state);
+    if (gpB) state.groundPathB = gpB;
+  }
+  const useCaveB = !!(parent as any).__caveB && state.groundPathB.length > 0;
+  const path = groundPathPixels(state, useCaveB);
+  if (useCaveB) (child as any).__caveB = true;
+  if (path.length === 0) {
+    child.pathIndex = Math.max(0, parent.pathIndex ?? 0);
+    child.pathProgress = Math.max(0, Math.min(0.99, parent.pathProgress ?? 0));
+    return { x: parent.x, y: parent.y };
+  }
+
+  const inheritedIndex = Math.max(0, Math.min(parent.pathIndex ?? 0, path.length - 1));
+  const inheritedProgress = Math.max(0, Math.min(0.99, parent.pathProgress ?? 0));
+  const maxSafeIndex = Math.max(0, path.length - 1 - minRunwayTiles);
+  const tooCloseToGate = inheritedIndex > maxSafeIndex || (inheritedIndex === maxSafeIndex && inheritedProgress > 0.65);
+  child.pathIndex = tooCloseToGate ? maxSafeIndex : inheritedIndex;
+  child.pathProgress = tooCloseToGate ? 0 : inheritedProgress;
+
+  const a = path[child.pathIndex] ?? path[0] ?? { x: parent.x, y: parent.y };
+  const b = path[Math.min(child.pathIndex + 1, path.length - 1)] ?? a;
+  const t = child.pathProgress;
+  return {
+    x: a.x + (b.x - a.x) * t,
+    y: a.y + (b.y - a.y) * t
+  };
+}
+
+function anchorFlyerCargoBurstOnGroundPath(state: GameStateShape, parent: Enemy, child: Enemy): { x: number; y: number } {
+  const path = groundPathPixels(state);
+  if (path.length < 2 || state.flyerPath.length < 2) {
+    child.pathIndex = Math.max(0, parent.pathIndex ?? 0);
+    child.pathProgress = Math.max(0, Math.min(0.99, parent.pathProgress ?? 0));
+    return { x: parent.x, y: parent.y };
+  }
+  const flyerTotal = Math.max(1, state.flyerPath.length - 1);
+  const flyerPos = Math.max(0, Math.min(flyerTotal - 0.001, (parent.pathIndex ?? 0) + (parent.pathProgress ?? 0)));
+  const routeRatio = flyerPos / flyerTotal;
+  const groundTotal = Math.max(1, path.length - 1);
+  const groundPos = Math.max(0, Math.min(groundTotal - 0.001, routeRatio * groundTotal));
+  child.pathIndex = Math.max(0, Math.min(path.length - 2, Math.floor(groundPos)));
+  child.pathProgress = Math.max(0, Math.min(0.99, groundPos - child.pathIndex));
+  const a = path[child.pathIndex] ?? path[0] ?? { x: parent.x, y: parent.y };
+  const b = path[Math.min(child.pathIndex + 1, path.length - 1)] ?? a;
+  return {
+    x: a.x + (b.x - a.x) * child.pathProgress,
+    y: a.y + (b.y - a.y) * child.pathProgress
+  };
+}
+
+export function triggerEnemyDeathBurst(state: GameStateShape, e: Enemy): number {
+  const deathBurst = (enemiesData as any)[e.type]?.deathBurst;
+  const burstTypes = deathBurst
+    ? (Array.isArray(deathBurst.types) ? deathBurst.types : deathBurst.type ? [deathBurst.type] : [])
+    : [];
+  if (!deathBurst || burstTypes.length === 0 || (deathBurst.count | 0) <= 0) return 0;
+  if (e.__reanimated || (e as any).__deathBurstTriggered) return 0;
+
+  (e as any).__deathBurstTriggered = true;
+  const bCount = Math.min(60, deathBurst.count | 0);
+  const bHpFrac = typeof deathBurst.hpFrac === 'number' ? deathBurst.hpFrac : 0.5;
+  const isAirDrop = !!deathBurst.groundFromFlyer && e.isFlyer;
+  for (let i = 0; i < bCount; i++) {
+    const childType = burstTypes[i % burstTypes.length] as EnemyType;
+    const child = spawnEnemy(state, childType, bHpFrac, /*derived=*/true);
+    const anchor = isAirDrop ? anchorFlyerCargoBurstOnGroundPath(state, e, child) : anchorDeathBurstChildOnPath(state, e, child);
+    const ang = (i / bCount) * Math.PI * 2 + Math.random() * 0.5;
+    const dist = i === 0 ? 0 : (isAirDrop ? 4 + Math.random() * 10 : 6 + Math.random() * 14);
+    child.x = anchor.x + Math.cos(ang) * dist;
+    child.y = anchor.y + Math.sin(ang) * dist;
+    child.prevX = child.x;
+    child.prevY = child.y;
+    child.__reanimated = true;
+    child.risingUntil = state.tick + 0.2 + Math.min(0.45, i * 0.015);
+  }
+  state.hint = isAirDrop
+    ? `SKY BARGE DOWN - ${bCount} melee passengers crash onto the road!`
+    : `THE SIEGE WAGON SHATTERS - ${bCount} skirmishers pour out!`;
+  return bCount;
+}
+
 function factionFromString(s: string): EnemyFaction {
   switch (s) {
     case 'DOGS': return EnemyFaction.DOGS;
@@ -1157,34 +1245,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
         }
         state.hint = '💀 THE WARLORD\'S CURSE — 20 undead rise from the corpse!';
       }
-      // ─── DEATH BURST: data-driven transport payload.
-      // Supports classic ground carriers (`type`) and air transports
-      // (`types` + groundFromFlyer) whose passengers inherit route progress
-      // on the ground maze instead of restarting at the cave.
-      const deathBurst = (enemiesData as any)[e.type]?.deathBurst;
-      const burstTypes = deathBurst
-        ? (Array.isArray(deathBurst.types) ? deathBurst.types : deathBurst.type ? [deathBurst.type] : [])
-        : [];
-      if (deathBurst && burstTypes.length > 0 && (deathBurst.count | 0) > 0 && !e.__reanimated) {
-        const bCount = Math.min(60, deathBurst.count | 0);   // hard perf cap
-        const bHpFrac = typeof deathBurst.hpFrac === 'number' ? deathBurst.hpFrac : 0.5;
-        const isAirDrop = !!deathBurst.groundFromFlyer && e.isFlyer;
-        for (let i = 0; i < bCount; i++) {
-          const childType = burstTypes[i % burstTypes.length] as EnemyType;
-          const child = spawnEnemy(state, childType, bHpFrac, /*derived=*/true);
-          const anchor = isAirDrop ? anchorFlyerCargoOnGroundPath(e, child) : anchorDeathChildOnPath(e, child);
-          const ang = (i / bCount) * Math.PI * 2 + Math.random() * 0.5;
-          const dist = i === 0 ? 0 : (isAirDrop ? 4 + Math.random() * 10 : 6 + Math.random() * 14);
-          child.x = anchor.x + Math.cos(ang) * dist;
-          child.y = anchor.y + Math.sin(ang) * dist;
-          child.prevX = child.x;
-          child.prevY = child.y;
-          child.__reanimated = true;
-        }
-        state.hint = isAirDrop
-          ? `🪽 SKY BARGE DOWN — ${bCount} melee passengers crash onto the road!`
-          : `⚔ THE SIEGE WAGON SHATTERS — ${bCount} skirmishers pour out!`;
-      }
+      triggerEnemyDeathBurst(state, e);
       onDeath(e);
       state.enemies.delete(e.id);
       continue;

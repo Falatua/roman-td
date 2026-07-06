@@ -6,7 +6,7 @@ import { createGameState } from '../src/GameState';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildFlyerPath, buildGroundPath, buildGroundPathB } from '../src/systems/PathFinder';
 import { enemyDamageMultiplier, statusEffectiveness } from '../src/systems/EnemyResistances';
-import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
+import { spawnEnemy, tickEnemies, triggerEnemyDeathBurst } from '../src/systems/EnemySystem';
 import { DamageType, EnemyType, StatusEffectKind } from '../src/types';
 
 function bootstrapState() {
@@ -164,5 +164,24 @@ describe('late-campaign variety roster', () => {
     expect(stalkers.every(e => e.__reanimated)).toBe(true);
     expect(stalkers.every(e => e.pathIndex === 3 && e.pathProgress === 0.4)).toBe(true);
     expect(state.hint).toContain('30 skirmishers');
+  });
+
+  it('cracks Siege Wagons in the direct combat kill path before deletion', () => {
+    const state = bootstrapState();
+    const wagon = spawnEnemy(state, EnemyType.SIEGE_WAGON, 1);
+    wagon.pathIndex = 3;
+    wagon.pathProgress = 0.4;
+
+    const spawned = triggerEnemyDeathBurst(state, wagon);
+    state.enemies.delete(wagon.id);
+
+    const stalkers = Array.from(state.enemies.values()).filter(e => e.type === EnemyType.DUNE_STALKER);
+    expect(spawned).toBe(30);
+    expect(stalkers).toHaveLength(30);
+    expect(stalkers.every(e => e.__reanimated)).toBe(true);
+    expect(stalkers.every(e => e.risingUntil && e.risingUntil > state.tick)).toBe(true);
+    expect(stalkers.every(e => e.pathIndex === 3 && e.pathProgress === 0.4)).toBe(true);
+    expect(state.hint).toContain('30 skirmishers');
+    expect(triggerEnemyDeathBurst(state, wagon), 'death burst should be one-shot even if another death path sees the same corpse').toBe(0);
   });
 });
