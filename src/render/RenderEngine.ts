@@ -2693,15 +2693,25 @@ export class RenderEngine {
             edgeDist = radius;
           }
           const centerDepth = Math.max(0, Math.min(1, edgeDist / 3));
-          const keyPool = centerDepth > 0.65 ? waterDeepKeys : centerDepth > 0.25 ? waterMidKeys : waterShallowKeys;
+          const localC = c - WATER_ZONE.col;
+          const localR = r - WATER_ZONE.row;
+          const leftEdgeDepth = 1 - Math.min(1, localC / Math.max(1, WATER_ZONE.width - 1));
+          const bottomEdgeDepth = Math.min(1, localR / Math.max(1, WATER_ZONE.height - 1));
+          const cornerDepth = Math.sqrt(leftEdgeDepth * bottomEdgeDepth);
+          const visualDepth = Math.max(centerDepth * 0.58, cornerDepth);
+          const keyPool = visualDepth > 0.65 ? waterDeepKeys : visualDepth > 0.30 ? waterMidKeys : waterShallowKeys;
           const waterKey = keyPool[(h >>> 3) % keyPool.length];
           if (!addTileSprite(oceanLayer, waterKey, x, y)) {
-            const palette = centerDepth > 0.65
+            const palette = visualDepth > 0.65
               ? [0x0b2540, 0x0f3150, 0x123b5a]
-              : centerDepth > 0.25
+              : visualDepth > 0.30
                 ? [0x123e5d, 0x15506e, 0x1a5d7a]
                 : [0x236b7a, 0x2d7e86, 0x3f8b86];
             waterGfx.beginFill(palette[h % palette.length], 1).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
+          }
+          if (visualDepth > 0.36) {
+            const darkAlpha = 0.06 + Math.min(0.24, (visualDepth - 0.36) * 0.36);
+            waterGfx.beginFill(0x03101e, darkAlpha).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
           }
           const north = state.tiles[r - 1]?.[c] !== TileType.WATER;
           const east = state.tiles[r]?.[c + 1] !== TileType.WATER;
