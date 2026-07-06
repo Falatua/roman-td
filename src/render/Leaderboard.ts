@@ -21,6 +21,7 @@ import { displayWaveNumber } from '../systems/TestYourMightLabels';
 import { isMobile as isMobileDevice } from '../Mobile';
 import { fetchTopScores, submitScore, toRemoteRow, hasRemoteLeaderboard, getLastFetchMeta, getLeaderboardDiagnostics, setLeaderboardProxyOverride, generateRowId, submissionSignature, hasBeenSubmitted, markSubmitted, type SubmitResult } from '../services/SupabaseLeaderboard';
 import HERO_DEFS_FOR_LB from '../data/herodefs.json';
+import { towerName } from '../format';
 
 // 2026-05-19 — Hero suffix helper. Reads the run's heroId off the
 // row, looks up the display name from herodefs.json, and renders a
@@ -123,6 +124,76 @@ export interface LeaderboardEntry {
   // stored before this build land as undefined, which the Hall of
   // Glory render treats as "no suffix" so legacy rows look the same.
   heroId?: string | null;
+  // 2026-07-06 — Post-game leaderboard stat: the tower type that dealt
+  // the most direct damage over the run, grouped across sold/combined copies.
+  primaryDamageTowerType?: string | null;
+  primaryDamageTowerName?: string | null;
+  primaryDamageDealt?: number;
+}
+
+export interface PrimaryDamageTower {
+  type: string;
+  name: string;
+  damage: number;
+}
+
+export function primaryDamageTowerForState(state: GameStateShape): PrimaryDamageTower | null {
+  const byType = state.towerDamageByType ?? {};
+  let bestType = '';
+  let bestDamage = 0;
+  for (const [type, rawDamage] of Object.entries(byType)) {
+    const damage = Number(rawDamage) || 0;
+    if (damage > bestDamage) {
+      bestType = type;
+      bestDamage = damage;
+    }
+  }
+  // Backward-compatible fallback for saves/runs started before the aggregate
+  // existed: use surviving tower counters if no grouped damage was recorded.
+  if (bestDamage <= 0) {
+    for (const tw of state.towers.values()) {
+      if (tw.pending) continue;
+      const damage = Number(tw.totalDamageDealt) || 0;
+      if (damage > bestDamage) {
+        bestType = String(tw.type);
+        bestDamage = damage;
+      }
+    }
+  }
+  if (!bestType || bestDamage <= 0) return null;
+  return { type: bestType, name: towerName(bestType), damage: bestDamage };
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatDamageShort(value: number | undefined | null): string {
+  const n = Math.max(0, Math.round(Number(value) || 0));
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
+  if (n >= 10_000) return `${Math.round(n / 1000)}K`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return n > 0 ? n.toLocaleString() : '—';
+}
+
+function renderPrimaryDamageTower(
+  type?: string | null,
+  name?: string | null,
+  damage?: number | null
+): string {
+  const cleanType = String(type ?? '').trim();
+  const cleanName = String(name ?? '').trim() || (cleanType ? towerName(cleanType) : '');
+  const amount = Math.max(0, Math.round(Number(damage) || 0));
+  if (!cleanName || amount <= 0) return '<span style="color:#5a4a30">—</span>';
+  return `<span title="${escapeHtml(cleanName)} dealt ${amount.toLocaleString()} damage" style="display:inline-flex;flex-direction:column;gap:1px;line-height:1.05;max-width:170px">
+    <span style="color:#fff8e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(cleanName)}</span>
+    <span style="color:#88ddff;font-size:0.74em;letter-spacing:1px">${formatDamageShort(amount)} dmg</span>
+  </span>`;
 }
 
 const STORAGE_KEY = 'roman_td_leaderboard_v2';
@@ -646,6 +717,7 @@ export function showLeaderboard(
               <th>WAVE</th>
               <th class="num">COMBOS</th>
               <th class="num">QUESTS</th>
+              <th>TOP DMG</th>
               <th>W/L</th>
               <th>DATE</th>
             </tr>
@@ -687,7 +759,7 @@ export function showLeaderboard(
   function paintLocalRows() {
     subtitle.textContent = `TOP ${Math.min(entries.length, 20)} LEGIONS OF ROMA · LOCAL`;
     if (entries.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— THE HALL AWAITS ITS FIRST CHAMPION —</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— THE HALL AWAITS ITS FIRST CHAMPION —</td></tr>`;
       return;
     }
     tbody.innerHTML = '';
@@ -722,6 +794,7 @@ export function showLeaderboard(
         <td class="${rankClass}">Wave ${e.wave}</td>
         <td class="num ${rankClass}">${e.towersCombined}</td>
         <td class="num ${rankClass}">${e.questsCompleted}</td>
+        <td class="${rankClass}">${renderPrimaryDamageTower(e.primaryDamageTowerType, e.primaryDamageTowerName, e.primaryDamageDealt)}</td>
         <td class="${rankClass}">${wlBadge}</td>
         <td class="${rankClass}">${formatDateShort(e.date)}</td>`;
       tbody.appendChild(tr);
@@ -745,7 +818,7 @@ export function showLeaderboard(
     remotePaintInFlight = true;
     try {
       subtitle.textContent = '🌐 FETCHING GLOBAL LEADERBOARD…';
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— LOADING —</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— LOADING —</td></tr>`;
       // 2026-05-20 v3 — Bumped fetch limit 10 → 25. Player feedback:
       // wave 8-10 runs felt like they "should" make the leaderboard
       // but never appeared because the top 10 was saturated with
@@ -790,7 +863,7 @@ export function showLeaderboard(
         subtitle.textContent = '🌐 GLOBAL LEADERBOARD · OFFLINE FOR NOW';
         const reason = meta?.errorReason ?? 'Cannot reach the global leaderboard right now.';
         const detail = meta?.errorDetail ? `<div style="font-size:10px;color:#5a8a8a;margin-top:6px;letter-spacing:0;font-family:'Courier New',monospace;background:#0c1010;padding:6px 8px;border:1px solid #1a2424">${meta.errorDetail.replace(/</g, '&lt;')}</div>` : '';
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:left;padding:24px 32px;color:#aa9a4a;letter-spacing:0.5px;line-height:1.7">
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:left;padding:24px 32px;color:#aa9a4a;letter-spacing:0.5px;line-height:1.7">
           <div style="font-size:13px;color:#ffd34d;letter-spacing:2px;text-align:center;margin-bottom:10px;font-weight:bold">⚠ GLOBAL LEADERBOARD UNREACHABLE</div>
           <div style="font-size:12px;color:#cdb98a;margin-bottom:8px">${reason}</div>
           ${detail}
@@ -803,7 +876,7 @@ export function showLeaderboard(
       }
     if (rows.length === 0) {
       subtitle.textContent = '🌐 GLOBAL LEADERBOARD · WAITING FOR THE FIRST CONQUEROR';
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#88ff88;letter-spacing:1px;line-height:1.7"><div style="font-size:14px;color:#88ff88;letter-spacing:3px;font-weight:bold;margin-bottom:8px">🏛 NO NAMES IN THE MARBLE YET 🏛</div><div style="font-size:11px;color:#cdb98a">Survive a wave — even one — and your name will be the first the Empire records.</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:#88ff88;letter-spacing:1px;line-height:1.7"><div style="font-size:14px;color:#88ff88;letter-spacing:3px;font-weight:bold;margin-bottom:8px">🏛 NO NAMES IN THE MARBLE YET 🏛</div><div style="font-size:11px;color:#cdb98a">Survive a wave — even one — and your name will be the first the Empire records.</div></td></tr>`;
       return;
     }
     // Cached fallback path — show the data we have, but mark it.
@@ -847,6 +920,7 @@ export function showLeaderboard(
         <td class="${rankClass}">Wave ${e.wave}</td>
         <td class="num ${rankClass}">${e.towers_combined}</td>
         <td class="num ${rankClass}">${e.quests_completed}</td>
+        <td class="${rankClass}">${renderPrimaryDamageTower(e.primary_damage_tower_type, e.primary_damage_tower_name, e.primary_damage_dealt)}</td>
         <td class="${rankClass}">${wlBadge}</td>
         <td class="${rankClass}">${formatDateShort(e.date_str)}</td>`;
       tbody.appendChild(tr);
@@ -1077,6 +1151,7 @@ export function runEndOfGameFlow(
     // either succeeded (player visible immediately) or its 3 retries
     // have exhausted (the offline diagnostic kicks in instead).
     const finalize = async (name: string) => {
+      const primaryDamageTower = primaryDamageTowerForState(state);
       const entry: LeaderboardEntry = {
         name: name || 'UNKNOWN',
         score: finalScore,
@@ -1090,7 +1165,10 @@ export function runEndOfGameFlow(
         // LOCAL tab of the Hall of Glory renders the same "⚔ HeroName"
         // suffix as the GLOBAL tab. Null on pre-hero runs (and on any
         // run where the player somehow skipped the draft).
-        heroId: ((state as any).activeHeroId as string | null | undefined) ?? null
+        heroId: ((state as any).activeHeroId as string | null | undefined) ?? null,
+        primaryDamageTowerType: primaryDamageTower?.type ?? null,
+        primaryDamageTowerName: primaryDamageTower?.name ?? null,
+        primaryDamageDealt: primaryDamageTower ? Math.round(primaryDamageTower.damage) : 0
       };
       // 2026-05-22 — DUPLICATE-SUBMIT FIX. Pre-compute a stable UUID
       // for this row and stash it on the entry. Every submitScore

@@ -94,6 +94,11 @@ export interface RemoteScoreRow {
   // backward compat with pre-hero rows. Hall of Glory renders a
   // "⚔ HeroName" suffix in the NAME column when non-null.
   hero_id?: string | null;
+  // 2026-07-06 — Primary damage dealer for the run. Nullable for older
+  // rows and schema-missing fallbacks.
+  primary_damage_tower_type?: string | null;
+  primary_damage_tower_name?: string | null;
+  primary_damage_dealt?: number | null;
 }
 
 // ─── PUBLIC API ─────────────────────────────────────────────────────
@@ -295,6 +300,8 @@ export async function submitScore(
   // when convenient; this fallback bridges the gap until then.
   let payload: any = { ...row };
   let droppedColumns: string[] = [];
+  const droppedColumnWarning = () =>
+    `Saved — but the live Supabase 'scores' table is missing column(s) ${droppedColumns.join(', ')}, so some leaderboard details were not recorded. Run the latest ALTER TABLE statements in supabase/schema.sql to enable the full row.`;
   const body = () => JSON.stringify(payload);
   const MAX_ATTEMPTS = 5;
   const TIMEOUT_MS = 10_000;
@@ -314,7 +321,7 @@ export async function submitScore(
         return {
           ok: true, attempts: attempt, url, endpoint: kind, status: r.status,
           errorReason: droppedColumns.length > 0
-            ? `Saved — but the live Supabase 'scores' table is missing column(s) ${droppedColumns.join(', ')}, so hero info wasn't recorded. Run the ALTER TABLE in supabase/schema.sql to enable full hero tracking.`
+            ? droppedColumnWarning()
             : undefined
         };
       }
@@ -343,7 +350,7 @@ export async function submitScore(
         return {
           ok: true, attempts: attempt, url, endpoint: kind, status: r.status,
           errorReason: droppedColumns.length > 0
-            ? `Saved — but the live Supabase 'scores' table is missing column(s) ${droppedColumns.join(', ')}, so hero info wasn't recorded. Run the ALTER TABLE in supabase/schema.sql to enable full hero tracking.`
+            ? droppedColumnWarning()
             : 'Row already recorded — duplicate-submit detected and absorbed by the server.'
         };
       }
@@ -412,7 +419,13 @@ export async function submitScore(
 // once per entry and stashes it on the entry object so subsequent
 // re-submits reuse it.
 export function toRemoteRow(
-  entry: { name: string; score: number; wave: number; won: boolean; questsCompleted: number; towersCombined: number; date: string },
+  entry: {
+    name: string; score: number; wave: number; won: boolean;
+    questsCompleted: number; towersCombined: number; date: string;
+    primaryDamageTowerType?: string | null;
+    primaryDamageTowerName?: string | null;
+    primaryDamageDealt?: number | null;
+  },
   mode: LeaderboardMode = 'campaign',
   heroId: string | null = null,
   id?: string | null
@@ -426,7 +439,10 @@ export function toRemoteRow(
     towers_combined: Math.max(0, entry.towersCombined),
     date_str: entry.date,
     mode,
-    hero_id: heroId
+    hero_id: heroId,
+    primary_damage_tower_type: entry.primaryDamageTowerType ?? null,
+    primary_damage_tower_name: entry.primaryDamageTowerName ?? null,
+    primary_damage_dealt: Math.max(0, Math.round(Number(entry.primaryDamageDealt) || 0))
   };
   if (id) row.id = id;
   return row;

@@ -12,7 +12,11 @@ import {
   SCORE_WIN_BONUS,
   INVALIDATED_GLOBAL_SCORE_IDS,
   isScoringVictory,
+  primaryDamageTowerForState,
 } from '../src/render/Leaderboard';
+import { createGameState } from '../src/GameState';
+import { createTower } from '../src/systems/TowerSystem';
+import { TowerType } from '../src/types';
 
 describe('Simplified scoring — computeScore', () => {
   it('scores a loss as (wave-1) waves cleared + combos + quests, no win bump', () => {
@@ -87,5 +91,38 @@ describe('Simplified scoring — computeScore', () => {
     expect(INVALIDATED_GLOBAL_SCORE_IDS.has('59674466-f16b-4022-bcc5-731d2c827a9a')).toBe(true);
     expect(INVALIDATED_GLOBAL_SCORE_IDS.has('0f32dab9-abcb-4cd0-843b-fb216ddffaf4')).toBe(true);
     expect(INVALIDATED_GLOBAL_SCORE_IDS.has('7ae16acf-e27c-4485-9118-e6baaa23c20f')).toBe(true);
+  });
+});
+
+describe('Primary damage dealer leaderboard stat', () => {
+  it('picks the highest lifetime tower type from the run aggregate', () => {
+    const state = createGameState();
+    state.towerDamageByType = {
+      [TowerType.MILITES]: 1200,
+      [TowerType.SCORPIO]: 9600,
+      [TowerType.LEGATE]: 2000
+    };
+    const top = primaryDamageTowerForState(state);
+    expect(top).toEqual({ type: TowerType.SCORPIO, name: 'Scorpio', damage: 9600 });
+  });
+
+  it('falls back to surviving tower counters for older saves', () => {
+    const state = createGameState();
+    state.towerDamageByType = {};
+    const milites = createTower(TowerType.MILITES, 3, 2, 2, 1);
+    const legate = createTower(TowerType.LEGATE, 5, 3, 3, 1);
+    milites.totalDamageDealt = 5000;
+    legate.totalDamageDealt = 7000;
+    state.towers.set(milites.id, milites);
+    state.towers.set(legate.id, legate);
+    const top = primaryDamageTowerForState(state);
+    expect(top?.type).toBe(TowerType.LEGATE);
+    expect(top?.name).toBe('Legate');
+    expect(top?.damage).toBe(7000);
+  });
+
+  it('returns null when no tower dealt damage', () => {
+    const state = createGameState();
+    expect(primaryDamageTowerForState(state)).toBeNull();
   });
 });

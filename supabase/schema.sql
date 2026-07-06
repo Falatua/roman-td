@@ -70,6 +70,15 @@ create policy "Public insert"
 alter table public.scores
   add column if not exists hero_id text null;
 
+-- 2026-07-06 — Primary damage dealer. The client records the tower type
+-- that dealt the most direct damage over the run, grouped across copies so
+-- combined/sold towers still get credit in the post-game Hall of Glory.
+alter table public.scores
+  add column if not exists primary_damage_tower_type text null,
+  add column if not exists primary_damage_tower_name text null,
+  add column if not exists primary_damage_dealt integer not null default 0
+    check (primary_damage_dealt >= 0);
+
 -- ─── HOUSEKEEPING (optional) ─────────────────────────────────────────
 -- Trim the table to the top 500 per mode periodically. Not strictly
 -- required (Supabase free tier handles tens of millions of rows) but

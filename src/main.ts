@@ -6939,9 +6939,12 @@ async function boot() {
             if (renderer?.triggerShake) renderer.triggerShake(2.5, 0.12);
           }
           if (t) {
-            t.totalDamageDealt += d;
-            t.damageThisWave += d;
-            if (e.isBoss) t.bossDamageDealt += d;
+            const dealt = Math.max(0, d);
+            t.totalDamageDealt += dealt;
+            t.damageThisWave += dealt;
+            state.towerDamageByType = state.towerDamageByType ?? {};
+            state.towerDamageByType[t.type] = (state.towerDamageByType[t.type] ?? 0) + dealt;
+            if (e.isBoss) t.bossDamageDealt += dealt;
           }
         },
         onMeleeSwing: (t: any, e: any, _d: number) => {

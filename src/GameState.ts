@@ -126,6 +126,10 @@ export interface GameStateShape {
   bossesKilled?: number;
   combosBuilt?: number;
   combosBuiltUniqueTypes?: string[];
+  // Lifetime direct damage grouped by tower type. Unlike per-tower counters,
+  // this survives selling/combining so the post-game leaderboard can show
+  // the run's true primary damage dealer.
+  towerDamageByType?: Record<string, number>;
   stonesPlaced?: number;
   // Mercator persistent tower offers — when a Mercator visits, eight random
   // T5 base tower offers are generated. Player can buy one and a "purchasedTower"
@@ -357,6 +361,7 @@ export function createGameState(): GameStateShape {
     bossTrophies: [],
     bossTrophyWavesClaimed: [],
     pendingBossTrophyOffer: null,
+    towerDamageByType: {},
     testYourMightOffered: false,
     testYourMightDeclined: false,
     testYourMightActive: false,

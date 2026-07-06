@@ -142,6 +142,25 @@ describe('leaderboard duplicate-submit dedupe', () => {
       expect(row.id).toBe('abcd1234-5678-4abc-9def-1234567890ab');
     });
 
+    it('threads primary damage dealer fields when present', () => {
+      const row = toRemoteRow({
+        ...baseEntry,
+        primaryDamageTowerType: 'SCORPIO',
+        primaryDamageTowerName: 'Scorpio',
+        primaryDamageDealt: 98765.4,
+      }, 'campaign', null, 'abcd1234-5678-4abc-9def-1234567890ab');
+      expect(row.primary_damage_tower_type).toBe('SCORPIO');
+      expect(row.primary_damage_tower_name).toBe('Scorpio');
+      expect(row.primary_damage_dealt).toBe(98765);
+    });
+
+    it('defaults primary damage dealer fields for older entries', () => {
+      const row = toRemoteRow(baseEntry, 'campaign', null);
+      expect(row.primary_damage_tower_type).toBeNull();
+      expect(row.primary_damage_tower_name).toBeNull();
+      expect(row.primary_damage_dealt).toBe(0);
+    });
+
     it('still clamps score and wave to safe ranges', () => {
       const row = toRemoteRow({ ...baseEntry, score: 99999999, wave: 99999 }, 'campaign', null);
       expect(row.score).toBe(9999999);
