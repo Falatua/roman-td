@@ -474,11 +474,15 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(defs.CHAMPION_MARIUS.baseDps).toBeCloseTo(185.5, 4);
     expect(defs.HERO_AGRIPPA.baseDps).toBeCloseTo(164.6, 4);
     expect(defs.CHAMPION_AGRIPPA.baseDps).toBeCloseTo(181.1, 4);
+    expect(defs.HERO_AGRIPPA.attackSpeed).toBeCloseTo(1.1 * 0.85, 5);
+    expect(defs.CHAMPION_AGRIPPA.attackSpeed).toBeCloseTo(1.0 * 0.85, 5);
 
     expect(createTower(TowerType.HERO_MARIUS, 1, 1, 1, 1).baseDps).toBeCloseTo(168.6 * 1.10, 4);
     expect(createTower(TowerType.CHAMPION_MARIUS, 1, 1, 1, 1).baseDps).toBeCloseTo(185.5 * 1.10, 4);
     expect(createTower(TowerType.HERO_AGRIPPA, 1, 1, 1, 1).baseDps).toBeCloseTo(164.6 * 1.10, 4);
     expect(createTower(TowerType.CHAMPION_AGRIPPA, 1, 1, 1, 1).baseDps).toBeCloseTo(181.1 * 1.10, 4);
+    expect(createTower(TowerType.HERO_AGRIPPA, 1, 1, 1, 1).attackSpeed).toBeCloseTo(0.935, 5);
+    expect(createTower(TowerType.CHAMPION_AGRIPPA, 1, 1, 1, 1).attackSpeed).toBeCloseTo(0.85, 5);
   });
 
   it('Agrippa passive gives siege towers +30% damage and +1 range within 5 tiles', () => {
