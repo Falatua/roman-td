@@ -1150,13 +1150,15 @@ describe('herodefs.json shape (single source of tuning)', () => {
     expect(getTowerProjectileProfile(TowerType.CHAMPION_SCIPIO)).toBeNull();
   });
 
-  it('Sulla has 6-tile basic attack range in starter and Champion form', () => {
+  it('Sulla has 6-tile range and 25 percent faster basic attacks in starter and Champion form', () => {
     const starter = createTower(TowerType.HERO_SULLA, 5, 5, 5, 1);
     const champion = createTower(TowerType.CHAMPION_SULLA, 5, 6, 5, 1);
     const passive: any = (HERO_DEFS as any).HERO_SULLA.passive;
 
     expect(starter.range).toBe(6);
     expect(champion.range).toBe(6);
+    expect(starter.attackSpeed).toBeCloseTo(0.99 * 1.25, 5);
+    expect(champion.attackSpeed).toBeCloseTo(0.9 * 1.25, 5);
     expect(passive.radiusTiles).toBe(5.5);
   });
 });
