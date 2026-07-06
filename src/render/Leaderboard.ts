@@ -717,7 +717,6 @@ export function showLeaderboard(
               <th>WAVE</th>
               <th class="num">COMBOS</th>
               <th class="num">QUESTS</th>
-              <th>TOP DMG</th>
               <th>W/L</th>
               <th>DATE</th>
             </tr>
@@ -759,7 +758,7 @@ export function showLeaderboard(
   function paintLocalRows() {
     subtitle.textContent = `TOP ${Math.min(entries.length, 20)} LEGIONS OF ROMA · LOCAL`;
     if (entries.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— THE HALL AWAITS ITS FIRST CHAMPION —</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— THE HALL AWAITS ITS FIRST CHAMPION —</td></tr>`;
       return;
     }
     tbody.innerHTML = '';
@@ -794,7 +793,6 @@ export function showLeaderboard(
         <td class="${rankClass}">Wave ${e.wave}</td>
         <td class="num ${rankClass}">${e.towersCombined}</td>
         <td class="num ${rankClass}">${e.questsCompleted}</td>
-        <td class="${rankClass}">${renderPrimaryDamageTower(e.primaryDamageTowerType, e.primaryDamageTowerName, e.primaryDamageDealt)}</td>
         <td class="${rankClass}">${wlBadge}</td>
         <td class="${rankClass}">${formatDateShort(e.date)}</td>`;
       tbody.appendChild(tr);
@@ -818,7 +816,7 @@ export function showLeaderboard(
     remotePaintInFlight = true;
     try {
       subtitle.textContent = '🌐 FETCHING GLOBAL LEADERBOARD…';
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— LOADING —</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#aa6a1a;letter-spacing:3px">— LOADING —</td></tr>`;
       // 2026-05-20 v3 — Bumped fetch limit 10 → 25. Player feedback:
       // wave 8-10 runs felt like they "should" make the leaderboard
       // but never appeared because the top 10 was saturated with
@@ -863,7 +861,7 @@ export function showLeaderboard(
         subtitle.textContent = '🌐 GLOBAL LEADERBOARD · OFFLINE FOR NOW';
         const reason = meta?.errorReason ?? 'Cannot reach the global leaderboard right now.';
         const detail = meta?.errorDetail ? `<div style="font-size:10px;color:#5a8a8a;margin-top:6px;letter-spacing:0;font-family:'Courier New',monospace;background:#0c1010;padding:6px 8px;border:1px solid #1a2424">${meta.errorDetail.replace(/</g, '&lt;')}</div>` : '';
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:left;padding:24px 32px;color:#aa9a4a;letter-spacing:0.5px;line-height:1.7">
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:left;padding:24px 32px;color:#aa9a4a;letter-spacing:0.5px;line-height:1.7">
           <div style="font-size:13px;color:#ffd34d;letter-spacing:2px;text-align:center;margin-bottom:10px;font-weight:bold">⚠ GLOBAL LEADERBOARD UNREACHABLE</div>
           <div style="font-size:12px;color:#cdb98a;margin-bottom:8px">${reason}</div>
           ${detail}
@@ -876,7 +874,7 @@ export function showLeaderboard(
       }
     if (rows.length === 0) {
       subtitle.textContent = '🌐 GLOBAL LEADERBOARD · WAITING FOR THE FIRST CONQUEROR';
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:#88ff88;letter-spacing:1px;line-height:1.7"><div style="font-size:14px;color:#88ff88;letter-spacing:3px;font-weight:bold;margin-bottom:8px">🏛 NO NAMES IN THE MARBLE YET 🏛</div><div style="font-size:11px;color:#cdb98a">Survive a wave — even one — and your name will be the first the Empire records.</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#88ff88;letter-spacing:1px;line-height:1.7"><div style="font-size:14px;color:#88ff88;letter-spacing:3px;font-weight:bold;margin-bottom:8px">🏛 NO NAMES IN THE MARBLE YET 🏛</div><div style="font-size:11px;color:#cdb98a">Survive a wave — even one — and your name will be the first the Empire records.</div></td></tr>`;
       return;
     }
     // Cached fallback path — show the data we have, but mark it.
@@ -920,7 +918,6 @@ export function showLeaderboard(
         <td class="${rankClass}">Wave ${e.wave}</td>
         <td class="num ${rankClass}">${e.towers_combined}</td>
         <td class="num ${rankClass}">${e.quests_completed}</td>
-        <td class="${rankClass}">${renderPrimaryDamageTower(e.primary_damage_tower_type, e.primary_damage_tower_name, e.primary_damage_dealt)}</td>
         <td class="${rankClass}">${wlBadge}</td>
         <td class="${rankClass}">${formatDateShort(e.date_str)}</td>`;
       tbody.appendChild(tr);
