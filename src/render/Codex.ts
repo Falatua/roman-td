@@ -14,7 +14,7 @@ import { closeGameModals } from './ModalManager';
 import { itemFamily } from '../systems/ItemRules';
 import { resistanceSummary, armorProfile, armorDamageTypeShortLabel } from '../systems/EnemyResistances';
 import { markScrollable } from './ScrollCues';
-import { togglePinnedRecipe, getPinnedRecipes } from './PinnedRecipe';
+import { togglePinnedRecipe, getPinnedRecipes, MAX_PINNED_RECIPES } from './PinnedRecipe';
 import { damageTypeLabel, factionName, pretty } from '../format';
 import { previewSpawnHp } from '../systems/WaveManager';
 import { itemBuyPrice, signatureLegendaryForBoss } from '../systems/LootSystem';
@@ -154,8 +154,8 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   // long codex sections never feel like dead ends.
   markScrollable(panel);
   // 2026-05 v11 (Pin Recipe QoL): delegated click handler for the PIN
-  // buttons on every combo card. 2026-05-15 v6 — two-pin support: each
-  // click toggles this recipe in/out of the array (cap 2, FIFO eviction).
+  // buttons on every combo card. Each click toggles this recipe in/out of
+  // the capped array with FIFO eviction.
   // Re-renders the current tab so every PIN button reflects new state.
   bodyEl.addEventListener('click', (ev) => {
     const target = ev.target as HTMLElement;
@@ -1979,15 +1979,14 @@ function renderComboCard(c: any, cs?: { state: 'ready'|'prospect'|'partial'|'non
     </div>`;
   }).join('');
   // 2026-05 v11 (Pin Recipe QoL): every combo card carries a PIN button
-  // that pins this recipe to the HUD. 2026-05-15 v6 — TWO pin slots now;
-  // the button toggles in/out of the array (cap 2, FIFO eviction).
+  // that pins this recipe to the HUD. The button toggles in/out of the
+  // array (capped with FIFO eviction).
   // Reads the array on render so the currently-pinned cards show an
-  // active state (gold border + "📌 PINNED" label). When two recipes
-  // are already pinned, the third PIN click drops the oldest — the label
-  // signals "PIN (FULL)" so the player knows an eviction will happen.
+  // active state (gold border + "📌 PINNED" label). When all slots are
+  // already pinned, the next PIN click drops the oldest recipe.
   const pinnedArr = getPinnedRecipes();
   const pinnedNow = pinnedArr.includes(c.result);
-  const pinFull = !pinnedNow && pinnedArr.length >= 2;
+  const pinFull = !pinnedNow && pinnedArr.length >= MAX_PINNED_RECIPES;
   const pinLabel = pinnedNow ? 'PINNED' : (pinFull ? 'PIN (REPLACES OLDEST)' : 'PIN');
   const pinBtnHtml = `<button class="codex-pin-btn" data-pin-result="${c.result}"
     style="background:${pinnedNow ? '#5a3a14' : '#1a1410'};border:2px solid ${pinnedNow ? '#ffd34d' : '#5a4a30'};color:${pinnedNow ? '#ffd34d' : '#cdb98a'};font-family:'Courier New',monospace;font-size:10px;font-weight:bold;padding:4px 10px;cursor:pointer;letter-spacing:1.5px;margin-top:6px;transition:background 0.1s,border-color 0.1s,color 0.1s"

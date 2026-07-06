@@ -1,13 +1,14 @@
-// PinnedRecipe — 2026-05 v11 QoL feature, expanded 2026-05-15 to TWO pins.
+// PinnedRecipe — 2026-05 v11 QoL feature, expanded 2026-05-15 to two pins,
+// then 2026-07-06 to three.
 //
-// Lets the player pin up to TWO combination recipes from the Codex so they
+// Lets the player pin up to three combination recipes from the Codex so they
 // float below the INVENTORY button at all times. Ingredients update live:
 //   GREEN  — already-kept tower of the right type/tier on the field
 //   ORANGE — pending prospect that would satisfy the slot if KEPT
 //   GRAY   — not yet present anywhere
 //
 // Persists across sessions via localStorage. The widget container is
-// scrollable (max-height capped) so two chips never overflow the HUD column.
+// scrolls with the right HUD column if the chips exceed the available height.
 
 import towersData from '../data/towers.json';
 import comboData from '../data/towerCombinations.json';
@@ -21,10 +22,9 @@ const LS_KEY = 'roman_td_pinned_recipe_v1';
 // starter, just swap this constant.
 const DEFAULT_PINNED_RECIPE = 'SCORPION_BOLT';
 
-// 2026-05-15 v6: hard cap on simultaneous pins. Two chips fit cleanly in
-// the right HUD column with the scrollable container; three+ would push
-// the speed/mute/inventory buttons offscreen on smaller laptops.
-const MAX_PINS = 2;
+// Hard cap on simultaneous pins. The right HUD panel owns overflow, so three
+// chips keep the existing format without pushing lower controls offscreen.
+export const MAX_PINNED_RECIPES = 3;
 
 // 2026-05-15 v6: storage now holds a JSON array of result IDs. Read side
 // still handles the v5 single-string format so existing saves don't break.
@@ -40,7 +40,7 @@ function readStored(): string[] {
       for (const id of parsed) {
         if (typeof id === 'string' && id.length > 0 && !out.includes(id)) {
           out.push(id);
-          if (out.length >= MAX_PINS) break;
+          if (out.length >= MAX_PINNED_RECIPES) break;
         }
       }
       return out;
@@ -52,7 +52,9 @@ function readStored(): string[] {
 
 function writeStored(ids: string[]) {
   try {
-    const clean = ids.filter((id, i) => typeof id === 'string' && id.length > 0 && ids.indexOf(id) === i).slice(0, MAX_PINS);
+    const clean = ids
+      .filter((id, i) => typeof id === 'string' && id.length > 0 && ids.indexOf(id) === i)
+      .slice(0, MAX_PINNED_RECIPES);
     if (clean.length === 0) localStorage.removeItem(LS_KEY);
     else localStorage.setItem(LS_KEY, JSON.stringify(clean));
   } catch { /* private mode / quota — ignore */ }
@@ -89,8 +91,8 @@ export function setPinnedRecipe(resultId: string | null) {
 }
 
 // Toggle a recipe in/out of the pinned set. Returns true if pinned after
-// the toggle, false if unpinned. FIFO eviction: pinning a third recipe
-// drops the oldest entry so the cap stays at MAX_PINS.
+// the toggle, false if unpinned. FIFO eviction: pinning beyond the cap
+// drops the oldest entry so the cap stays at MAX_PINNED_RECIPES.
 export function togglePinnedRecipe(resultId: string): boolean {
   const current = readStored();
   const idx = current.indexOf(resultId);
@@ -100,7 +102,7 @@ export function togglePinnedRecipe(resultId: string): boolean {
     return false;
   }
   current.push(resultId);
-  while (current.length > MAX_PINS) current.shift();
+  while (current.length > MAX_PINNED_RECIPES) current.shift();
   writeStored(current);
   return true;
 }
@@ -229,7 +231,7 @@ function buildChipHtml(pinnedId: string, state: any): { html: string; sig: strin
 }
 
 // Render (or hide) the pinned-recipe widget below the INVENTORY button.
-// 2026-05-15 v6: container holds up to MAX_PINS chips, scrolls if needed,
+// 2026-05-15 v6: container holds up to the pin cap, scrolls if needed,
 // and uses event delegation on the outer wrapper so per-chip UNPIN clicks
 // survive the per-frame innerHTML rewrites that update ingredient state.
 export function renderPinnedRecipeWidget(state: any, buttonsEl?: HTMLElement | null) {
