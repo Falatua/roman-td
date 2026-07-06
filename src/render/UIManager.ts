@@ -217,7 +217,7 @@ export class UIManager {
       { mode: TargetingMode.FIRST,   label: 'FIRST',   tip: 'Furthest along the path (closest to leaking)' },
       { mode: TargetingMode.LAST,    label: 'LAST',    tip: 'Earliest in the path (newest spawn)' },
       { mode: TargetingMode.STRONG,  label: 'STRONG',  tip: 'Bosses first, then commanders, then highest HP' },
-      { mode: TargetingMode.WEAKEST, label: 'WEAKEST', tip: 'Lowest HP grunt — finisher mode' },
+      { mode: TargetingMode.WEAKEST, label: 'WEAKEST', tip: 'Lowest current HP enemy — finisher mode' },
       { mode: TargetingMode.CLOSE,   label: 'CLOSE',   tip: 'Physically closest enemy' },
       { mode: TargetingMode.FLYERS,  label: 'FLYERS',  tip: 'Flyers first, then ground when allowed' },
       { mode: TargetingMode.FAST,    label: 'FAST',    tip: 'Highest current speed — catch sprinters' },

@@ -127,21 +127,30 @@ describe('Tower targeting modes', () => {
     const { state, tower, enemies } = setup();
     tower.targetingMode = TargetingMode.WEAKEST;
     const picked = pickTarget(state, tower, enemies, 10);
-    // D has the lowest HP (100) and is not a boss → finisher pick.
+    // D has the lowest current HP (100) → finisher pick.
     expect(picked?.id).toBe('D');
   });
 
-  it('WEAKEST skips bosses and picks the lowest-HP grunt', () => {
+  it('WEAKEST can pick a boss when it has the lowest current HP', () => {
     const { state, tower, enemies } = setup();
-    // Promote B to a boss with 50 HP — even though it has the lowest
-    // HP overall, the WEAKEST tower should pick D (the lowest-HP
-    // non-boss) so it doesn't get pulled off grunt-clearing duty.
+    // Promote B to a boss with 50 HP. WEAKEST is literal now: the lowest
+    // current HP enemy wins, even when that enemy is a boss.
     const boss = enemies.find(e => e.id === 'B')!;
     (boss as any).isBoss = true;
     boss.hp = 50;
     tower.targetingMode = TargetingMode.WEAKEST;
     const picked = pickTarget(state, tower, enemies, 10);
-    expect(picked?.id).toBe('D');
+    expect(picked?.id).toBe('B');
+  });
+
+  it('WEAKEST can pick a commander when it has the lowest current HP', () => {
+    const { state, tower, enemies } = setup();
+    const commander = enemies.find(e => e.id === 'B')!;
+    commander.type = EnemyType.STANDARD_BEARER_COMMANDER;
+    commander.hp = 50;
+    tower.targetingMode = TargetingMode.WEAKEST;
+    const picked = pickTarget(state, tower, enemies, 10);
+    expect(picked?.id).toBe('B');
   });
 
   it('WEAKEST falls back to a boss when nothing else is in range', () => {

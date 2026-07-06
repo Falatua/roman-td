@@ -2194,22 +2194,13 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
       return bestBoss ?? bestCommander ?? bestAny;
     }
     case TargetingMode.WEAKEST: {
-      // 2026-05-19 — Mirror of STRONG. Picks the LOWEST-current-HP
-      // enemy in range — the finisher mode. Useful for high-fire-rate
-      // low-damage towers to maximize kill count (XP / gold), and
-      // pairs cleanly with the DAMNATIO_MEMORIAE legendary that
-      // executes non-Boss enemies under 25% HP. Bosses are
-      // deliberately EXCLUDED from WEAKEST consideration unless
-      // they're the only thing in range — a boss with chip damage
-      // shouldn't pull every "finisher" tower off its actual job
-      // of mopping up grunts.
-      let bestGrunt: Enemy | null = null; let bestGruntHp = Infinity;
-      let bestAny:   Enemy | null = null; let bestAnyHp   = Infinity;
+      // Lowest current HP in range, regardless of enemy class. This makes
+      // WEAKEST a literal finisher mode for grunts, commanders, and bosses.
+      let bestAny: Enemy | null = null; let bestAnyHp = Infinity;
       for (const e of inRange) {
-        if (!e.isBoss && e.hp < bestGruntHp) { bestGruntHp = e.hp; bestGrunt = e; }
-        if (e.hp < bestAnyHp)                { bestAnyHp   = e.hp; bestAny   = e; }
+        if (e.hp < bestAnyHp) { bestAnyHp = e.hp; bestAny = e; }
       }
-      return bestGrunt ?? bestAny;
+      return bestAny;
     }
     case TargetingMode.FAST: {
       // 2026-05-19 — Pick the enemy whose CURRENT speed is highest

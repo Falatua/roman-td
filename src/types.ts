@@ -368,9 +368,9 @@ export interface SurpriseEventState {
 
 export enum TowerMode { MELEE, RANGED }
 // 2026-05-19 — WEAKEST and FAST appended (kept at the end so existing
-// enum values 0..4 don't shift). WEAKEST locks onto the lowest-HP
-// enemy in range (cleaner finisher mode, pairs naturally with STRONG
-// and synergizes with DAMNATIO_MEMORIAE's <25% HP execute). FAST
+// enum values 0..4 don't shift). WEAKEST locks onto the lowest-current-HP
+// enemy in range, including bosses and commanders (cleaner finisher mode,
+// pairs naturally with STRONG). FAST
 // picks the highest-currentSpeed enemy in range — catches sprinters
 // (Spectral Scouts, Wolves, fast Druids) before they leak.
 export enum TargetingMode { FIRST, LAST, STRONG, CLOSE, FLYERS, WEAKEST, FAST }
