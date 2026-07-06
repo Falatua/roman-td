@@ -470,6 +470,11 @@ export interface Tower {
   // exactly 3 item slots regardless of tier, and is excluded from
   // combine recipe lookups.
   isHero?: boolean;
+  // Starter heroes use GameState.heroXp/heroTier. Mercator Champions keep
+  // their own progression so a bought hero starts fresh and levels from
+  // future kills instead of inheriting the starter's current rank.
+  heroXp?: number;
+  heroTier?: 0 | 1 | 2 | 3 | 4;
   // 2026-05-19 — Per-hero ability cooldown scratchpad. Keys are
   // ability ids from herodefs.json; values are the tick at which the
   // ability is next allowed to fire. Same idiom as the existing

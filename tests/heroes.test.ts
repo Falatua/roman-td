@@ -69,6 +69,13 @@ function testEnemy(id: string, opts: Partial<Enemy> = {}): Enemy {
   };
 }
 
+const HERO_XP_BY_TIER = [0, 75, 280, 650, 1300] as const;
+function setHeroTowerTier<T extends { heroXp?: number; heroTier?: 0 | 1 | 2 | 3 | 4 }>(tower: T, tier: 0 | 1 | 2 | 3 | 4): T {
+  tower.heroTier = tier;
+  tower.heroXp = HERO_XP_BY_TIER[tier];
+  return tower;
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // DRAFT
 // ─────────────────────────────────────────────────────────────────────
@@ -339,7 +346,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     const championOffers = offers.filter(o => String(o.type).startsWith('CHAMPION_'));
     expect(championOffers.length).toBe(6);
     for (const offer of championOffers) {
-      expect(offer.tier).toBe(2);
+      expect(offer.tier).toBe(1);
       expect(offer.price).toBe(CHAMPION_PRICE);
       expect(offer.price).toBe(1000);
       const heroId = heroIdForTowerType(offer.type);
@@ -356,9 +363,11 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     s.phase = GamePhase.WAVE_PHASE;
     s.tick = 10;
     s.activeHeroId = 'HERO_MARIUS';
-    // Champions keep a T2 floor, then share any higher run tier.
+    // Champions use the same hero kit without overwriting the starter, but
+    // their own hero rank must be leveled before abilities unlock.
     s.heroTier = 4;
     const champion = createTower(TowerType.CHAMPION_CAESAR, 5, 5, 5, 9);
+    setHeroTowerTier(champion, 4);
     const milites = createTower(TowerType.MILITES, 1, 7, 5, 9);
     milites.attackCooldown = 5;
     s.towers.set(champion.id, champion);
@@ -380,6 +389,43 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(milites.attackCooldown).toBeGreaterThan(0);
     expect(milites.attackCooldown).toBeLessThan(0.2);
     expect(champion.__heroCooldowns?.SPQR_DECREE).toBeGreaterThan(s.tick);
+  });
+
+  it('Mercator Champions start level 0 and level from future hero XP', () => {
+    const s = freshState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 10;
+    s.activeHeroId = 'HERO_MARIUS';
+    s.heroTier = 4;
+    s.heroXp = 1300;
+
+    const champion = createTower(TowerType.CHAMPION_CAESAR, 1, 5, 5, 9);
+    champion.__heroCooldowns = { SPQR_DECREE: 0 };
+    s.towers.set(champion.id, champion);
+    const milites = createTower(TowerType.MILITES, 1, 7, 5, 9);
+    milites.attackCooldown = 5;
+    s.towers.set(milites.id, milites);
+
+    expect(champion.qualityTier).toBe(1);
+    expect(heroTierForTower(s, champion)).toBe(0);
+    expect(heroAuraScaleForTower(s, champion)).toBeCloseTo(heroAuraScaleForTier(0), 6);
+
+    tickHeroAbilities(s);
+    expect(milites.attackCooldown).toBe(5);
+
+    awardHeroXp(s, true);
+    awardHeroXp(s, true);
+    awardHeroXp(s, true);
+    awardHeroXp(s, true);
+
+    expect(champion.heroXp).toBe(80);
+    expect(heroTierForTower(s, champion)).toBe(1);
+
+    s.tick = 20;
+    tickHeroAbilities(s);
+    const spqr = (HERO_DEFS as any).HERO_CAESAR.abilities.find((a: any) => a.id === 'SPQR_DECREE');
+    expect(milites.attackCooldown).toBeLessThan(0.2);
+    expect(champion.__heroCooldowns?.SPQR_DECREE).toBeCloseTo(20 + spqr.cooldownSec, 6);
   });
 
   it('Sulla Meteor Slam splashes and burns nearby enemies', () => {
@@ -724,8 +770,9 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     s.phase = GamePhase.WAVE_PHASE;
     s.tick = 10;
     s.activeHeroId = 'HERO_MARIUS';
-    s.heroTier = 4;  // champions share the run tier; max it so SPQR Decree is online
+    s.heroTier = 4;
     const caesar = createTower(TowerType.CHAMPION_CAESAR, 5, 5, 5, 9);
+    setHeroTowerTier(caesar, 4);
     s.towers.set(caesar.id, caesar);
     const commanded = Array.from({ length: 60 }, (_, idx) => {
       const tower = createTower(TowerType.MILITES, 1, 6 + (idx % 20), 7 + Math.floor(idx / 20), 9);
@@ -750,7 +797,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     s.phase = GamePhase.WAVE_PHASE;
     s.tick = 10;
     s.activeHeroId = 'HERO_CAESAR';
-    s.heroTier = 4;  // champions share the run tier; max it so the full kit is online
+    s.heroTier = 4;
     const champions = [
       TowerType.CHAMPION_MARIUS,
       TowerType.CHAMPION_AGRIPPA,
@@ -761,6 +808,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     ];
     champions.forEach((type, idx) => {
       const tw = createTower(type, 5, 4 + idx, 6, 9);
+      setHeroTowerTier(tw, 4);
       s.towers.set(tw.id, tw);
     });
     let fxCount = 0;
@@ -790,6 +838,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
       TowerType.CHAMPION_CAESAR,
       TowerType.CHAMPION_SULLA
     ].map((type, idx) => createTower(type, 5, 8 + idx, 6, 8));
+    champions.forEach(champion => setHeroTowerTier(champion, 4));
     s.activeHeroTowerId = starter.id;
 
     for (const hero of [starter, ...champions]) {
@@ -830,6 +879,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     s.heroForgeStacks = { dmg: 5, cd: 5, aura: 5 };
 
     const champion = createTower(TowerType.CHAMPION_CAESAR, 2, 5, 5, 9);
+    setHeroTowerTier(champion, 1);
     (champion as any).__championAbilityWakeupDone = true;
     champion.__heroCooldowns = { SPQR_DECREE: 0 };
     s.towers.set(champion.id, champion);
@@ -862,6 +912,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
       s.heroForgeStacks = { dmg: dmgStacks, cd: 0, aura: 0 };
 
       const champion = createTower(TowerType.CHAMPION_SCIPIO, 5, 5, 5, 12);
+      setHeroTowerTier(champion, 4);
       (champion as any).__championAbilityWakeupDone = true;
       champion.__heroCooldowns = { CORNU_CHARGE: 0, SCIPIO_BRAND: 999 };
       s.towers.set(champion.id, champion);
@@ -903,6 +954,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
       TowerType.CHAMPION_SULLA
     ];
     const champions = championTypes.map((type, idx) => createTower(type, 5, 14 + idx * 2, 12, 12));
+    champions.forEach(champion => setHeroTowerTier(champion, 4));
     const melee = createTower(TowerType.MILITES, 1, 11, 12, 12);
     const siege = createTower(TowerType.SCORPIO, 1, 15, 12, 12);
     const flyerTargeter = createTower(TowerType.HASTATI, 1, 15, 14, 12);

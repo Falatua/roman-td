@@ -53,6 +53,8 @@ function scenario(starterType: TowerType, championTypes: TowerType[]): GameState
   state.towers.set(starter.id, starter);
   championTypes.forEach((type, idx) => {
     const champion = createTower(type, 5, 17 + idx, 10, 8);
+    champion.heroTier = 4;
+    champion.heroXp = 1300;
     state.towers.set(champion.id, champion);
   });
   const fillers = [TowerType.MILITES, TowerType.SAGITTARIUS, TowerType.SCORPIO, TowerType.VELITES];

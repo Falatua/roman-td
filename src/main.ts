@@ -7300,10 +7300,10 @@ async function boot() {
             }
           }
           // ── HERO SYSTEM (2026-05-19) ────────────────────────────
-          // Hero earns XP from EVERY kill on the field, not just kills
-          // they personally landed. +1 non-boss, +20 boss. Hooks pass
-          // tier-up banner + ring-burst back to the renderer; defined
-          // once near the top of main.ts.
+          // Heroes earn XP from EVERY kill on the field, not just kills
+          // they personally landed. +1 non-boss, +20 boss. The starter
+          // updates GameState hero XP; placed Mercator Champions keep
+          // their own XP/rank and level from future kills.
           //
           // 2026-05-19 (bugfix) — Stamp a dedupe flag so the secondary
           // award path in the tickEnemies onDeath callback (which

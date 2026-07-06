@@ -571,8 +571,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // ── HERO PASSIVE AURAS ────────────────────────────────────────────
   // Hero rank now matters to passives, not only to ability unlocks.
   // Starter heroes scale from 1.0× aura strength at TIRO to 2.0× at
-  // DIVUS. Mercator Champions count as DIVUS recruits for their passive
-  // math without touching the starter hero's XP ladder.
+  // DIVUS. Mercator Champions use their own hero rank, starting fresh
+  // at level 0 and scaling as they earn future kill XP.
   const heroAuraSources: Array<{ heroId: string; tower: Tower; auraScale: number }> = [];
   for (const t of towers) {
     const heroId = heroIdForTowerType(String(t.type));

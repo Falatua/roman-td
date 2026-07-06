@@ -196,9 +196,14 @@ export function pickHero(state: GameStateShape, heroId: HeroId): void {
 
 /** Award XP for a kill. +1 non-boss, +20 boss. Triggers tier-up if crossed. */
 export function awardHeroXp(state: GameStateShape, isBoss: boolean, hooks?: HeroHooks): void {
+  const xpGain = isBoss ? 20 : 1;
   if (!state.activeHeroId) return;
-  state.heroXp = (state.heroXp ?? 0) + (isBoss ? 20 : 1);
+  state.heroXp = (state.heroXp ?? 0) + xpGain;
   updateHeroTier(state, hooks);
+  for (const tower of state.towers.values()) {
+    if (!isMercatorChampionType(String(tower.type))) continue;
+    awardChampionHeroXp(state, tower, xpGain, hooks);
+  }
 }
 
 /** Current hero tier (0..4). Cached on state. */
@@ -212,11 +217,7 @@ function updateHeroTier(state: GameStateShape, hooks?: HeroHooks): void {
   const def: any = (HERO_DEFS as any)[state.activeHeroId];
   if (!def) return;
   const xp = state.heroXp ?? 0;
-  const thresholds: number[] = def.xpThresholds ?? [0, 75, 280, 650, 1300];
-  let newTier: 0 | 1 | 2 | 3 | 4 = 0;
-  for (let i = thresholds.length - 1; i >= 0; i--) {
-    if (xp >= thresholds[i]) { newTier = i as 0 | 1 | 2 | 3 | 4; break; }
-  }
+  const newTier = heroTierFromXp(def, xp);
   const oldTier = (state.heroTier ?? 0) as 0 | 1 | 2 | 3 | 4;
   if (newTier > oldTier) {
     state.heroTier = newTier;
@@ -235,6 +236,37 @@ function updateHeroTier(state: GameStateShape, hooks?: HeroHooks): void {
   }
 }
 
+function heroTierFromXp(def: any, xp: number): 0 | 1 | 2 | 3 | 4 {
+  const thresholds: number[] = def?.xpThresholds ?? [0, 75, 280, 650, 1300];
+  for (let i = thresholds.length - 1; i >= 0; i--) {
+    if (xp >= thresholds[i]) return i as 0 | 1 | 2 | 3 | 4;
+  }
+  return 0;
+}
+
+function awardChampionHeroXp(state: GameStateShape, tower: Tower, xpGain: number, hooks?: HeroHooks): void {
+  const heroId = heroIdForTowerType(String(tower.type));
+  if (!heroId) return;
+  const def: any = (HERO_DEFS as any)[heroId];
+  if (!def) return;
+  const oldTier = (tower.heroTier ?? 0) as 0 | 1 | 2 | 3 | 4;
+  tower.heroXp = Math.max(0, (tower.heroXp ?? 0) + xpGain);
+  const newTier = heroTierFromXp(def, tower.heroXp);
+  if (newTier <= oldTier) return;
+  tower.heroTier = newTier;
+  const banners: string[] = def.bannerCopy ?? [];
+  if (hooks?.pushTierUpBanner && banners[newTier]) {
+    const towerDef: any = (towersData as any)[tower.type];
+    hooks.pushTierUpBanner(`${towerDef?.name ?? def.name ?? 'Champion'}: ${banners[newTier]}`);
+  }
+  if (hooks?.triggerImpactRing) {
+    const cx = tower.tileX * GRID.TILE + GRID.TILE / 2;
+    const cy = tower.tileY * GRID.TILE + GRID.TILE / 2;
+    const color = hexToInt(def.visual?.tierUpColor ?? '#ffd34d');
+    hooks.triggerImpactRing(cx, cy, state.tick, 56, color);
+  }
+}
+
 /** Per-frame ability dispatcher. Called once per WAVE_PHASE tick. */
 export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): void {
   if (state.phase !== GamePhase.WAVE_PHASE) return;
@@ -248,8 +280,8 @@ export function tickHeroAbilities(state: GameStateShape, hooks?: HeroHooks): voi
     if (!isStarterHero && !isMercatorChampion) continue;
     const def: any = (HERO_DEFS as any)[heroId];
     if (!def?.abilities) continue;
-    // Purchased Champions start with a T2 floor while still sharing any
-    // higher run tier earned by the starter. The starter uses the run tier.
+    // Mercator Champions use their own hero rank. They start fresh at level 0
+    // and level from future kills instead of inheriting the starter's rank.
     const tier = heroTierForTower(state, hero);
     // Initialize cooldown scratchpad on first access.
     if (!hero.__heroCooldowns) hero.__heroCooldowns = {};
@@ -314,8 +346,8 @@ export function prepareHeroAbilitiesForWave(state: GameStateShape): void {
     if (!isStarterHero && !isMercatorChampion) continue;
 
     const def: any = (HERO_DEFS as any)[heroId];
-    // Purchased Champions start with a T2 floor while still sharing any
-    // higher run tier earned by the starter. The starter uses the run tier.
+    // Mercator Champions use their own hero rank. They start fresh at level 0
+    // and level from future kills instead of inheriting the starter's rank.
     const tier = heroTierForTower(state, hero);
     const abilities = (def?.abilities ?? []).filter((ability: any) => tier >= ability.level);
     if (abilities.length === 0) continue;

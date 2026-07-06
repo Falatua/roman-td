@@ -1,6 +1,6 @@
-// Mercator Champions are real hero kits, but bought heroes now begin as T2
-// recruits rather than fully maxed or fresh T1 starters. Internally the hero
-// ladder is zero-based, so player-facing T2 is tier index 1.
+// Mercator Champions are real hero kits, but bought heroes begin as fresh
+// level-0 recruits. They level from future kill XP instead of inheriting the
+// starter hero's current rank.
 import { describe, it, expect } from 'vitest';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
@@ -24,20 +24,23 @@ function makeState(heroId: string, tier: number) {
   return { s, starter, champion };
 }
 
-describe('Mercator Champion === starter hero strength', () => {
-  it('a freshly recruited champion starts at player-facing T2, not base tier or max tier', () => {
+describe('Mercator Champion progression', () => {
+  it('a freshly recruited champion starts at level 0 even when the starter is higher rank', () => {
     const { s, champion } = makeState('HERO_CAESAR', 0);
-    expect(heroTierForTower(s, champion)).toBe(1);
-    expect(heroAuraScaleForTower(s, champion)).toBeCloseTo(heroAuraScaleForTier(1), 5);
+    s.heroTier = 4;
+    expect(heroTierForTower(s, champion)).toBe(0);
+    expect(heroBasicAttackScaleForTower(s, champion)).toBeCloseTo(heroBasicAttackScaleForTower({ ...s, heroTier: 0 }, champion), 5);
+    expect(heroAuraScaleForTower(s, champion)).toBeCloseTo(heroAuraScaleForTier(0), 5);
   });
 
-  it('champions keep their T2 floor, then match the starter once the run tier passes it', () => {
+  it('champion damage and aura scaling follow the champion tower rank, not the starter rank', () => {
     for (let tier = 0; tier <= 4; tier++) {
       const { s, starter, champion } = makeState('HERO_CAESAR', tier);
-      expect(heroTierForTower(s, champion), `tier ${tier}`).toBe(Math.max(1, heroTierForTower(s, starter)));
-      expect(heroBasicAttackScaleForTower(s, champion), `tier ${tier}`).toBeGreaterThanOrEqual(heroBasicAttackScaleForTower(s, starter));
+      champion.heroTier = tier as 0 | 1 | 2 | 3 | 4;
+      expect(heroTierForTower(s, champion), `tier ${tier}`).toBe(tier);
+      expect(heroBasicAttackScaleForTower(s, champion), `tier ${tier}`).toBeCloseTo(heroBasicAttackScaleForTower(s, starter), 5);
       expect(heroAuraScaleForTower(s, champion), `tier ${tier}`)
-        .toBeCloseTo(heroAuraScaleForTier(Math.max(1, tier)), 5);
+        .toBeCloseTo(heroAuraScaleForTier(tier), 5);
     }
   });
 });

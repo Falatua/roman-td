@@ -24,7 +24,8 @@ import { tex } from './Assets';
 import { closeGameModals } from './ModalManager';
 import { itemIconSvg } from './ItemIcon';
 import { comboPreviewBlockHtml } from './ComboPreview';
-import { heroIdForTowerType, isMercatorChampionType } from '../systems/HeroIdentity';
+import { heroIdForTowerType } from '../systems/HeroIdentity';
+import { heroTierForTower, heroXpForTower } from '../systems/HeroScaling';
 
 const RAR: Record<string, string> = { COMMON:'#cccccc', UNCOMMON:'#5cd05c', RARE:'#5ca0ff', EPIC:'#a060ff', LEGENDARY:'#ff9933', UNIQUE:'#ffd34d' };
 
@@ -888,9 +889,8 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   const heroDef: any = (HERO_DEFS_FOR_INSPECT as any)[heroId] ?? {};
   const towerDef: any = (towersData as any)[t.type] ?? {};
   const tint = heroDef.visual?.tierUpColor ?? '#ffd34d';
-  const mercatorChampion = isMercatorChampionType(String(t.type));
-  const tier = mercatorChampion ? 4 : (state.heroTier ?? 0);
-  const xp = mercatorChampion ? Number.POSITIVE_INFINITY : (state.heroXp ?? 0);
+  const tier = heroTierForTower(state, t);
+  const xp = heroXpForTower(state, t);
   const thresholds: number[] = heroDef.xpThresholds ?? [0, 75, 280, 650, 1300];
   const tierTitles: string[] = heroDef.tierTitles ?? ['TIRO','LEGATUS','CONSUL','IMPERATOR','DIVUS'];
   const curTh = thresholds[tier] ?? 0;

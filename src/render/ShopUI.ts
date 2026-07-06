@@ -117,7 +117,7 @@ function championHeroDetailsHtml(type: string, towerDef: any, tint: string): str
         `).join('')}
       </div>
       <div style="margin-top:7px;padding-top:5px;border-top:1px solid ${tint}33;color:#aa9a4a;font-size:9px">
-        Basic attack scales ${scales.length ? scales.map(n => `${Number(n).toFixed(1)}x`).join(' → ') : 'with hero tier'} across hero ranks. A Mercator Champion is identical to starting the run with that hero — it shares your hero tier and unlocks these same passives and abilities at the same ranks.
+        Basic attack scales ${scales.length ? scales.map(n => `${Number(n).toFixed(1)}x`).join(' → ') : 'with hero tier'} across hero ranks. A Mercator Champion starts as a fresh level-0 recruit, then earns future kill XP to unlock these same passives, abilities, and rank damage.
       </div>
     </div>`;
 }

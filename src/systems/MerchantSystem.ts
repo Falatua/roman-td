@@ -210,9 +210,9 @@ export function buildMercatorTowerOffers(wave: number, count = 5, options: Merca
   if (activeHeroChampion) excluded.add(activeHeroChampion);
   // The 6 Champions always head the lineup at a flat 1000g — the Mars Victor path.
   for (const ct of CHAMPION_TYPES) {
-    // 2026-06-23 — Purchased Champions arrive as T2 recruits: stronger
-    // than a fresh starter, but not full apex heroes.
-    if (!excluded.has(ct)) offers.push({ type: ct, tier: 2, price: CHAMPION_PRICE });
+    // Purchased Champions arrive as fresh T1 / level-0 heroes. They must
+    // earn their own future kill XP before unlocking abilities and rank damage.
+    if (!excluded.has(ct)) offers.push({ type: ct, tier: 1, price: CHAMPION_PRICE });
   }
   const used = new Set<string>(CHAMPION_TYPES);
   let tries = 0;

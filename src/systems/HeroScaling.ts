@@ -12,13 +12,15 @@ function clampHeroTier(tier: number | undefined | null): 0 | 1 | 2 | 3 | 4 {
 export function heroTierForTower(state: GameStateShape | any, tower: Tower): 0 | 1 | 2 | 3 | 4 {
   const heroId = heroIdForTowerType(String(tower.type));
   if (!heroId) return 0;
-  const runTier = clampHeroTier(state?.heroTier);
-  // 2026-06-23 — Purchased Champions start as T2 recruits. Internally the
-  // hero ladder is zero-based, so a player-facing T2 floor is tier index 1.
-  // They still continue to benefit from the shared run tier if the starter
-  // has leveled beyond that.
-  if (isMercatorChampionType(String(tower.type))) return clampHeroTier(Math.max(runTier, 1));
-  return runTier;
+  if (isMercatorChampionType(String(tower.type))) return clampHeroTier(tower.heroTier ?? 0);
+  return clampHeroTier(state?.heroTier);
+}
+
+export function heroXpForTower(state: GameStateShape | any, tower: Tower): number {
+  const heroId = heroIdForTowerType(String(tower.type));
+  if (!heroId) return 0;
+  if (isMercatorChampionType(String(tower.type))) return Math.max(0, Math.floor(tower.heroXp ?? 0));
+  return Math.max(0, Math.floor(state?.heroXp ?? 0));
 }
 
 export function heroBasicAttackScaleForTier(heroId: HeroIdentityId | string | undefined, tier: number): number {
