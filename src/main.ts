@@ -78,6 +78,7 @@ import { consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './sy
 import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
 import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy } from './systems/RewardEligibility';
+import { isFinalBossBreach } from './systems/LeakRules';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -1430,7 +1431,7 @@ async function boot() {
     // DEMONS — lesser take ~2.4× divine (1.20× per-enemy × +100% faction);
     // Daemon Imperator's per-enemy 0.70 damper drops the boss to ~1.40×
     // final. DoT resists: Daemon takes only 30% poison/bleed.
-    if (enemiesInWave.has('DEMON_HELLHOUND') || enemiesInWave.has('CELTIC_FIRE_DEMON') || enemiesInWave.has('SHADOW_CAVALRY') || enemiesInWave.has('DEMON_LEGATE') || enemiesInWave.has('DAEMON_IMPERATOR')) enemyCallouts.push({ text: '✨ DEMONS — DIVINE WEAKNESS · lesser demons take ~2.4× damage from divine sources (Flamen / Augur / Haruspex / Solar Priest / Pontifex). Fire deals 0 damage. Bleed and poison hit lesser demons hard, but the W20 Daemon Imperator boss takes only ~1.40× divine (per-enemy damper) and resists poison + bleed to 30%.', cat: 'ENEMY' });
+    if (enemiesInWave.has('DEMON_HELLHOUND') || enemiesInWave.has('CELTIC_FIRE_DEMON') || enemiesInWave.has('SHADOW_CAVALRY') || enemiesInWave.has('DEMON_LEGATE') || enemiesInWave.has('DAEMON_IMPERATOR')) enemyCallouts.push({ text: '✨ DEMONS — DIVINE WEAKNESS · lesser demons take ~2.4× damage from divine sources (Flamen / Augur / Haruspex / Solar Priest / Pontifex). Fire deals 0 damage. Bleed and poison hit lesser demons hard, but the W30 Daemon Imperator boss takes only ~1.40× divine (per-enemy damper) and resists poison + bleed to 30%.', cat: 'ENEMY' });
     // ELEPHANTS — siege weakness. 2026-06-25 heavy-hide pass: living
     // now take +25% siege, undead only +5%. Siege remains the best
     // answer, but neither variant should be trivial to burn down.
@@ -2133,7 +2134,7 @@ async function boot() {
     // placing the first prospect.
     if (hasDemons) tips.push({
       headline: '✨ DEMONS — DIVINE IS YOUR ANSWER',
-      body: `Wave <b>${nextWave}</b> brings demons. Lesser demons take <b style="color:#ffd34d">~2.4× damage from DIVINE sources</b> (1.20× per-enemy × +100% faction). Park a <b style="color:#ffd34d">Solar Priest</b>, <b style="color:#ffd34d">Flamen</b>, <b style="color:#ffd34d">Augur</b>, <b style="color:#ffd34d">Haruspex</b>, <b style="color:#ffd34d">Pontifex</b>, or any divine combo on the path. <b style="color:#ff5050">FIRE deals ZERO damage</b> — leave Igniferas, Inferno Carts, and fire-oil flasks at home. Poison and bleed hit lesser demons hard. The <b style="color:#ffaaaa">W20 Daemon Imperator boss is the exception</b> — per-enemy 0.70 damper drops him to ~1.40× divine; he resists poison + bleed to 30%. Bring sustained direct damage for the final fight.`,
+      body: `Wave <b>${nextWave}</b> brings demons. Lesser demons take <b style="color:#ffd34d">~2.4× damage from DIVINE sources</b> (1.20× per-enemy × +100% faction). Park a <b style="color:#ffd34d">Solar Priest</b>, <b style="color:#ffd34d">Flamen</b>, <b style="color:#ffd34d">Augur</b>, <b style="color:#ffd34d">Haruspex</b>, <b style="color:#ffd34d">Pontifex</b>, or any divine combo on the path. <b style="color:#ff5050">FIRE deals ZERO damage</b> — leave Igniferas, Inferno Carts, and fire-oil flasks at home. Poison and bleed hit lesser demons hard. The <b style="color:#ffaaaa">W30 Daemon Imperator boss is the exception</b> — per-enemy 0.70 damper drops him to ~1.40× divine; he resists poison + bleed to 30%. Bring sustained direct damage for the final fight.`,
       color: '#ffd34d'
     });
     // 2026-05 v10 — ELEPHANT WAVE TIPS. Combines the dust shield warning
@@ -3276,7 +3277,7 @@ async function boot() {
       <div style="margin-top:14px;padding:12px 14px;background:rgba(80,0,0,0.45);border:1px solid #ff5050;text-align:left">
         <div style="font-size:11px;letter-spacing:3px;color:#ff5050;font-weight:bold;margin-bottom:6px">⚔ WHAT WALKS ONTO THE FIELD</div>
         <div style="font-size:12px;color:#fff8e0;line-height:1.55;text-shadow:1px 1px 0 #000">
-          <b style="color:#ff5050">Daemon Imperator</b> · TRUE solo arrival — no mobs, no escort, just the boss. 6× HP, base speed 0.85, 10 lives per leak, and a single leak ends the run (W30 LOCKDOWN).<br/>
+          <b style="color:#ff5050">Daemon Imperator</b> · final boss with elite escorts, anti-air pressure, and mythic bruisers. If the Daemon himself breaches Rome, the run ends; escorts use normal leak costs (bosses 10, elites/commanders 5, basics 1).<br/>
           <b style="color:#ffaa55">HELLSCAPE</b> every 12s stuns towers within ~5 tiles for 1.5s. <b style="color:#88ff88">No rebirth — sustained burst sticks.</b> Out-of-combat regen 2.8%/sec — keep the pressure on.<br/>
           <span style="color:#ff7766">Hellscape weather is already shortening your status durations 20%. There is no wave 31.</span>
         </div>
@@ -6583,25 +6584,22 @@ async function boot() {
             showDpsCheckSummary(e, /*killed=*/false);
             return;
           }
-          // FINAL-WAVE LOCKDOWN: the final wave does not allow ANY leaks.
-          // A single enemy reaching Rome on WAVE.TOTAL zeros lives and ends the run
-          // immediately — Rome falls if you can't hold the gate.
+          // FINAL-BOSS LOCKDOWN: the Daemon Imperator cannot be allowed to
+          // breach Rome, but W30 escorts use the normal per-leak life costs.
           //
-          // 2026-05-22 BUGFIX: previously this fired on `state.wave === 20`
-          // alone. In Endless mode the campaign counter STAYS at 20 (the
-          // endlessWave counter is what increments), so any leak in E2,
-          // E3, … instantly zeroed lives and ended the run. The user
-          // reported a phantom W2-Endless death with no obvious cause;
-          // this was it. Gate the final-wave lockdown to non-endless only so
-          // Endless mode obeys the normal per-leak life-cost rules.
-          if (state.wave === WAVE.TOTAL && !state.endlessMode) {
+          // 2026-05-22 BUGFIX: previously this fired on the final campaign
+          // number alone. In Endless mode the campaign counter stayed there
+          // while endlessWave incremented, so later leaks could instantly
+          // zero lives. This stays non-endless and now applies only to the
+          // actual final boss.
+          if (isFinalBossBreach(state, e)) {
             state.lives = 0;
             state.enemiesLeakedThisWave++;
             state.leaksByArchetype[e.archetype] = (state.leaksByArchetype[e.archetype] ?? 0) + 1;
             renderer.triggerGateImpact();
             renderer.triggerShake(8, 1.0);
             SFX.gateBreach(true);
-            state.hint = `☠ ROME HAS FALLEN — W${WAVE.TOTAL} admits no leaks.`;
+            state.hint = `☠ DAEMON IMPERATOR BREACHED ROME — the final boss cannot leak.`;
             if (state.gameOverAt < 0) state.gameOverAt = state.tick;
             return;
           }

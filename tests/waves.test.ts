@@ -9,6 +9,7 @@ import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath, buildGroundPathB, buildFlyerPath } from '../src/systems/PathFinder';
 import { enemyResistanceProfile } from '../src/systems/EnemyResistances';
 import { isLegendaryBossDropEnemy, isRareOnlyBossDropEnemy } from '../src/systems/RewardEligibility';
+import { isFinalBossBreach } from '../src/systems/LeakRules';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
 import { GRID } from '../src/constants';
@@ -334,6 +335,26 @@ describe('Win/Loss conditions', () => {
     const s = bootstrapState();
     s.lives = 0;
     expect(s.lives).toBe(0);    // sanity assertion
+  });
+
+  it('only the Daemon Imperator, not W30 escorts, triggers final-boss instant defeat', () => {
+    const s: any = bootstrapState();
+    s.wave = 30;
+    s.endlessMode = false;
+
+    expect(isFinalBossBreach(s, { type: EnemyType.DAEMON_IMPERATOR } as any)).toBe(true);
+    expect(isFinalBossBreach(s, { type: EnemyType.SHADOW_CAVALRY } as any)).toBe(false);
+    expect(isFinalBossBreach(s, { type: EnemyType.CHIMERA } as any)).toBe(false);
+    expect(isFinalBossBreach(s, { type: EnemyType.PATHFINDER_COMMANDER } as any)).toBe(false);
+    expect(isFinalBossBreach(s, { type: EnemyType.UNDEAD_WAR_ELEPHANT } as any)).toBe(false);
+  });
+
+  it('does not use final-boss lockdown in Endless mode', () => {
+    const s: any = bootstrapState();
+    s.wave = 30;
+    s.endlessMode = true;
+
+    expect(isFinalBossBreach(s, { type: EnemyType.DAEMON_IMPERATOR } as any)).toBe(false);
   });
 });
 

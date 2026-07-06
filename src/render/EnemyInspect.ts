@@ -378,7 +378,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~5 tiles for 1.5s',
       'OUT-OF-COMBAT REGEN — 2.8% maxHP/sec while not taking DIRECT damage (active DoT halves to 1.4%/sec)',
       'DOT-RESISTANT — poison/bleed tick at 30% effectiveness, fire fully immune. Direct damage + DIVINE (~1.40× final after faction × per-enemy 0.70 damper) carry the fight, not chip ticks.',
-      'W20 FINAL BOSS — any leak ends the run instantly (Rome falls)'
+      'W30 FINAL BOSS — Daemon breach ends the run; escorts use normal leak costs'
     ]
   };
   const signature = signatureLegendaryForBoss(e.type);

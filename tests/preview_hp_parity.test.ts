@@ -150,10 +150,10 @@ describe('previewSpawnHp formula spot-checks', () => {
     expect(previewSpawnHp(def, 15, 'B', 8.0)).toBeGreaterThan(150_000);
   });
 
-  it('W20 Daemon Imperator (100M baseHp) scales to billions at endgame', () => {
+  it('W30 Daemon Imperator (100M baseHp) scales to billions at endgame', () => {
     const def: any = (enemiesData as any).DAEMON_IMPERATOR;
-    const hp = previewSpawnHp(def, 20, 'B', 6.0);
-    // 100M baseHp × (6.0 × linear stack) × 2.0 solo × boss layers × 1.20 post-W15
+    const hp = previewSpawnHp(def, 30, 'B', 16.0);
+    // 100M baseHp × (16.0 × linear stack) × boss layers × 1.20 post-W15
     // Confirms the new HP target is in the billions, not millions.
     expect(hp).toBeGreaterThan(1_000_000_000);
   });
