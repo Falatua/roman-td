@@ -76,6 +76,7 @@ function isMeleeClassTower(t: Tower): boolean {
 function classBalanceScalar(t: Tower): number {
   const def: any = (towersData as any)[t.type];
   if (!def) return 1;
+  if (t.type === TowerType.MARS_VICTOR) return 1;
   // 2026-05 v10 — ENDLESS MODE: nerfs are LIFTED. Endless explicitly
   // exaggerates tower behavior to fight back the exponential enemy
   // scaling, so apex combos, ranged combos, and T5 base towers fire at
@@ -538,7 +539,10 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
   ]);
   const def: any = (towersData as any)[t.type];
   if (def) {
-    if (APEX.has(t.type)) dmgMods.push({ source: 'Apex Balance', multiplier: 0.88 });
+    if (t.type === TowerType.MARS_VICTOR) {
+      // Mars Victor is a 6000g six-hero fusion and should not inherit the
+      // generic ranged-combo dampener meant for ordinary ranged combos.
+    } else if (APEX.has(t.type)) dmgMods.push({ source: 'Apex Balance', multiplier: 0.88 });
     else if (def.kind === 'COMBO' && def.melee === false) dmgMods.push({ source: 'Ranged Combo Balance', multiplier: 0.92 });
     else if (def.kind === 'BASE' && def.tierBand === 5) dmgMods.push({ source: 'T5 Base Balance', multiplier: 0.90 });
   }

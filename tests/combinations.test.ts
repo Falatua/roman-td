@@ -125,6 +125,36 @@ describe('Recipe combo detection', () => {
     expect(s.combosBuiltUniqueTypes).toEqual([TowerType.HORSEMAN]);
   });
 
+  it('lets the starter hero plus five Mercator Champions form Mars Victor', () => {
+    const s = bootstrapState();
+    s.activeHeroId = 'HERO_MARIUS';
+    const starter = placeTower(s, TowerType.HERO_MARIUS, 5, 1, 5);
+    placeTower(s, TowerType.CHAMPION_AGRIPPA, 2, 2, 5);
+    placeTower(s, TowerType.CHAMPION_AGRICOLA, 2, 3, 5);
+    placeTower(s, TowerType.CHAMPION_SCIPIO, 2, 4, 5);
+    placeTower(s, TowerType.CHAMPION_CAESAR, 2, 5, 5);
+    placeTower(s, TowerType.CHAMPION_SULLA, 2, 6, 5);
+    s.activeHeroTowerId = starter.id;
+
+    const mars = scanCombos(s).find(c => c.result === TowerType.MARS_VICTOR);
+    expect(mars, 'starter hero should satisfy the matching Champion slot').toBeTruthy();
+    expect(mars!.ingredients.map(t => t.type)).toEqual(expect.arrayContaining([
+      TowerType.HERO_MARIUS,
+      TowerType.CHAMPION_AGRIPPA,
+      TowerType.CHAMPION_AGRICOLA,
+      TowerType.CHAMPION_SCIPIO,
+      TowerType.CHAMPION_CAESAR,
+      TowerType.CHAMPION_SULLA
+    ]));
+    expect(comboResultLocationChoices(s, mars!).map(t => t.id)).toContain(starter.id);
+
+    expect(executeCombo(s, mars!, starter.id)).toBe(true);
+    const result = Array.from(s.towers.values()).find(t => t.type === TowerType.MARS_VICTOR);
+    expect(result?.tileX).toBe(starter.tileX);
+    expect(result?.tileY).toBe(starter.tileY);
+    expect(s.combosBuiltUniqueTypes).toContain(TowerType.MARS_VICTOR);
+  });
+
   it('detects SCORPION_BOLT recipe (Scorpio T2 + Velites T2)', () => {
     const s = bootstrapState();
     placeTower(s, TowerType.SCORPIO, 2, 5, 5);
@@ -324,7 +354,7 @@ describe('Recipe combo detection', () => {
       [TowerType.IMPERIUM_ETERNUM]: 380.0,
       [TowerType.CARTHAGE_SCOURGE]: 390.0,
       [TowerType.HANNIBALS_NIGHTMARE]: 235.0,
-      [TowerType.MARS_VICTOR]: 1718.8
+      [TowerType.MARS_VICTOR]: 2400.0
     };
     for (const [type, expectedDps] of Object.entries(expectedBoosted)) {
       expect((towersData as any)[type].baseDps).toBe(expectedDps);

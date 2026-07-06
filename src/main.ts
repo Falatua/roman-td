@@ -606,7 +606,8 @@ async function boot() {
   // ─── HERO PLACEMENT CONFIRMATION (2026-05-19 v2) ─────────────────────
   // Binary Yes/No modal that fires the first time the player clicks an
   // empty tile while a hero token sits at the front of the placement
-  // queue. Spells out the consequences (no move / no sell / no combine)
+  // queue. Spells out the consequences (no move / no sell / no ordinary
+  // combine; the Mars Victor six-hero apex is the one exception)
   // and previews which hero is about to be planted on which tile, so a
   // misclick during the pressure of W1 can't cost the player their
   // whole-run hero identity. Clicking CONFIRM sets the per-state
@@ -629,7 +630,8 @@ async function boot() {
       <div style="margin-top:12px;font-size:12px;color:#ffcc88;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(60,30,10,0.55);border:1px dashed #ff8844;padding:10px 14px">
         <b style="color:#ff8844">⚠ THIS IS PERMANENT.</b><br/>
         ★ Heroes <b>cannot be moved</b> once placed.<br/>
-        ★ Heroes <b>cannot be sold, combined, or downgraded</b>.<br/>
+        ★ Heroes <b>cannot be sold, moved, or downgraded</b>.<br/>
+        ★ The only hero combination is <b style="color:#ffd34d">MARS VICTOR</b> after all six heroes stand together.<br/>
         ★ If your hero is destroyed, XP and tier reset to zero.<br/>
         Pick a tile that covers your path well — your hero stays here for the whole run.
       </div>
@@ -3856,6 +3858,36 @@ async function boot() {
       renderer.drawStatic(state);
     }
   }
+  function offerMarsVictorIfReady(parent: HTMLElement | null = document.getElementById('stage-wrap')) {
+    maybeOfferMarsVictor(
+      parent,
+      state,
+      Array.from(state.towers.values()).some(t => t.type === TowerType.MARS_VICTOR),
+      () => {
+        const mv = realizableCombos(state).find(cb =>
+          cb.result === TowerType.MARS_VICTOR && !cb.ingredients.some(t => t.pending)
+        );
+        if (!mv) {
+          state.hint = 'Mars Victor needs all six heroes placed, none pending, and a clear path.';
+          return;
+        }
+        const anchor = mv.ingredients.find(t => t.id === state.activeHeroTowerId) ?? mv.ingredients[0];
+        const sx = anchor.tileX * 32 + 16;
+        const sy = anchor.tileY * 32 + 16;
+        if (executeCombo(state, mv, anchor.id)) {
+          SFX.comboMade();
+          if (renderer?.triggerImpactRing) {
+            renderer.triggerImpactRing(sx, sy, state.tick, 42, 0xffd34d);
+            renderer.triggerImpactRing(sx, sy, state.tick + 0.1, 72, 0xffe88c);
+          }
+          const np = buildGroundPath(state);
+          if (np) { state.groundPath = np; resnapEnemiesToPath(state, np); }
+          renderer.drawStatic(state);
+          state.hint = 'MARS VICTOR rises — the god of war takes the field.';
+        }
+      }
+    );
+  }
   function inspectTower(tw: any) {
     selectedTowerId = tw.id;
     renderer.selectedTowerId = tw.id;
@@ -6059,31 +6091,11 @@ async function boot() {
           try { localStorage.setItem('roman_td_seen_hero_tip', '1'); } catch { /* ignore */ }
         }
       }
-      // 2026-06-25 — Mars Victor readiness. If this placement completes the
-      // six-hero set (starter + five recruited Champions, matched by hero
-      // IDENTITY in CombinationEngine), celebrate and offer a one-click fuse.
-      maybeOfferMarsVictor(
-        document.getElementById('stage-wrap'),
-        state,
-        Array.from(state.towers.values()).some(t => t.type === TowerType.MARS_VICTOR),
-        () => {
-          const mv = realizableCombos(state).find(cb =>
-            cb.result === TowerType.MARS_VICTOR && !cb.ingredients.some(t => t.pending)
-          );
-          if (!mv) { state.hint = 'Mars Victor needs all six heroes placed (none pending) and a clear path.'; return; }
-          // Land Mars Victor on the starter hero's tile when present.
-          const anchor = mv.ingredients.find(t => t.id === state.activeHeroTowerId) ?? mv.ingredients[0];
-          const sx = anchor.tileX * 32 + 16, sy = anchor.tileY * 32 + 16;
-          if (executeCombo(state, mv, anchor.id)) {
-            SFX.comboMade();
-            if (renderer?.triggerImpactRing) {
-              renderer.triggerImpactRing(sx, sy, state.tick, 42, 0xffd34d);
-              renderer.triggerImpactRing(sx, sy, state.tick + 0.1, 72, 0xffe88c);
-            }
-            state.hint = 'MARS VICTOR rises — the god of war takes the field.';
-          }
-        }
-      );
+      // 2026-06-25 / 2026-07-05 — Mars Victor readiness. If this placement
+      // completes the six-hero set (starter + five recruited Champions,
+      // matched by hero IDENTITY in CombinationEngine), celebrate and offer
+      // a one-click fuse.
+      offerMarsVictorIfReady(document.getElementById('stage-wrap'));
       const remaining = queue.length;
       state.hint = remaining > 0
         ? `Placed ${popped.type.replace(/_/g,' ')} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
@@ -8041,6 +8053,9 @@ async function boot() {
         !cb.ingredients.some(t => t.pending)
       );
       comboCount = combos.length;
+      if (combos.some(cb => cb.result === TowerType.MARS_VICTOR)) {
+        offerMarsVictorIfReady(stageWrap);
+      }
       const eligibleIds = new Set<string>();
       for (const cb of combos) for (const ing of cb.ingredients) eligibleIds.add(ing.id);
       renderer.drawComboGlow(eligibleIds, state, state.tick);

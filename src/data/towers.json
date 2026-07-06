@@ -1119,13 +1119,13 @@
   "MARS_VICTOR": {
     "name": "Mars Victor",
     "damageType": "DIVINE",
-    "baseDps": 1718.8,
+    "baseDps": 2400.0,
     "attackSpeed": 0.45,
     "range": 9.0,
     "kind": "COMBO",
     "melee": false,
     "tierBand": 5,
-    "ability": "THE WAR-GOD INCARNATE, forged from all 6 Champions of Rome. 1375 DPS, strikes as BOTH Siege and Divine. Fuses every hero passive into one army-wide aura: +35% damage and +20% attack speed to EVERY tower, all towers may strike flyers, and +25% damage vs bosses and commanders. TRIUMPH OF MARS: every 3rd hit unleashes a divine shockwave that smites all enemies within 3.5 tiles for TRIPLE damage. Worth far more than the six heroes combined.",
+    "ability": "THE WAR-GOD INCARNATE, forged from all 6 Champions of Rome. 2400 DPS, strikes as BOTH Siege and Divine. Fuses every hero passive into one army-wide aura: +35% damage and +20% attack speed to EVERY tower, all towers may strike flyers, and +25% damage vs bosses and commanders. TRIUMPH OF MARS: every 3rd hit unleashes a divine shockwave that smites all enemies within 3.5 tiles for TRIPLE damage. Worth far more than the six heroes combined after a 6000g recruitment path.",
     "critChance": 0.35,
     "critMult": 3.6
   },

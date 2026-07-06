@@ -1227,7 +1227,8 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   // players go specifically for lore, but clutter in the mid-run
   // tower inspect. Codex HEROES tab still surfaces full biographies.
 
-  // Close button only — no sell, no combine, no downgrade for heroes
+  // Close button only — no sell/move/downgrade for heroes. Mars Victor
+  // fusion is surfaced by the global readiness prompt, not this panel.
   const closeRow = document.createElement('div');
   closeRow.style.cssText = 'padding:10px;display:flex;justify-content:center;background:linear-gradient(180deg,#1a1410,#0c0a08)';
   const closeBtn = document.createElement('button');
