@@ -38,6 +38,7 @@ import { ECONOMY, GRID, TIER_MULTS, WAVE } from '../constants';
 import { createTower } from './TowerSystem';
 import towersData from '../data/towers.json';
 import { TEST_YOUR_MIGHT_AFTER_WAVE } from './TestYourMightLabels';
+import { isWaterPlacementRestrictedTile } from './GridManager';
 
 // SANDBOX: Password gate. Plaintext string compared at the loading
 // screen entry. See file-level comment for the security honesty.
@@ -100,6 +101,7 @@ export function sandboxSpawnTowerDirect(
   if (!state.sandboxMode) return null;        // defensive
   if (tileY < 0 || tileY >= GRID.ROWS) return null;
   if (tileX < 0 || tileX >= GRID.COLS) return null;
+  if (isWaterPlacementRestrictedTile(tileX, tileY)) return null;
   if (state.tiles[tileY][tileX] !== TileType.EMPTY) return null;
   const def: any = (towersData as any)[type];
   if (!def) return null;

@@ -6,7 +6,7 @@ import { GamePhase, TileType, TowerType, TargetingMode, DrawCard, DamageType } f
 import { isMobile as isMobileDevice } from './Mobile';
 import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, TIER_COLORS, WAVE } from './constants';
 import { createGameState, isWaveModifierActive } from './GameState';
-import { initializeGrid, isBuildable, pixelToTile, setTile, tileAt } from './systems/GridManager';
+import { initializeGrid, isBuildable, isWaterPlacementRestrictedTile, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
 import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards, triggerEnemyDeathBurst } from './systems/EnemySystem';
 import { tickTraps, placeTrap, trapOwned, TRAP_DEFS, clearPlacedTrapsForWaveEnd } from './systems/TrapSystem';
@@ -749,6 +749,11 @@ async function boot() {
           (state as any).__heroPlacementConfirmed = false;
           return;
         }
+        if (!isBuildable(state, col, row)) {
+          showBlockedAlert(col, row, 'That shoreline is locked. Keep one tile of land clear around water so enemies cannot be boxed against it.');
+          (state as any).__heroPlacementConfirmed = false;
+          return;
+        }
         // Same path-validate + place logic as the canvas handler.
         setTile(state, col, row, TileType.TOWER);
         const np = buildGroundPath(state);
@@ -880,6 +885,11 @@ async function boot() {
         }
         const head = queue[0];
         if (head.type !== towerType || head.tier !== tier) {
+          (state as any).__purchasedPlacementConfirmed = false;
+          return;
+        }
+        if (!isBuildable(state, col, row)) {
+          showBlockedAlert(col, row, 'That shoreline is locked. Keep one tile of land clear around water so enemies cannot be boxed against it.');
           (state as any).__purchasedPlacementConfirmed = false;
           return;
         }
@@ -6068,7 +6078,7 @@ async function boot() {
           return;
         }
         if (!canPlaceRampart(state, col, row, selRamp)) {
-          showBlockedAlert(col, row, 'Rampart blocked — all 5 tiles must fit. Roads/trails are allowed, but checkpoints, towers, stones, traps, cave/gate tiles, map edges, and sealed routes are not.');
+          showBlockedAlert(col, row, 'Rampart blocked — all 5 tiles must fit. Roads/trails are allowed, but checkpoints, towers, stones, traps, cave/gate tiles, water shorelines, map edges, and sealed routes are not.');
           return;
         }
         showRampartPlacementConfirm(col, row, selRamp);
@@ -6126,6 +6136,10 @@ async function boot() {
     {
       const selTrap = state.selectedTrapType;
       if (selTrap && trapOwned(state, selTrap) > 0 && tile === TileType.EMPTY) {
+        if (isWaterPlacementRestrictedTile(col, row)) {
+          showBlockedAlert(col, row, 'Traps cannot be placed on water or its shoreline buffer.');
+          return;
+        }
         if (placeTrap(state, selTrap, col, row)) {
           const left = trapOwned(state, selTrap);
           state.hint = left > 0
@@ -6144,6 +6158,10 @@ async function boot() {
     // sandbox tower can't seal Rome.
     const sbPending = (state as any).__sandboxPendingTower as { type: TowerType; tier: 1|2|3|4|5 } | undefined;
     if (state.sandboxMode && sbPending && tile === TileType.EMPTY) {
+      if (isWaterPlacementRestrictedTile(col, row)) {
+        showBlockedAlert(col, row, '🧪 SANDBOX — water and its shoreline buffer are locked.');
+        return;
+      }
       const dropped = sandboxSpawnTowerDirect(state, sbPending.type, sbPending.tier, col, row);
       if (dropped) {
         // Verify path remains valid (sandbox towers can still block the gate).
@@ -6172,6 +6190,10 @@ async function boot() {
     const queue = state.pendingPurchasedTowers ?? [];
     if (queue.length > 0 && tile === TileType.EMPTY) {
       const head = queue[0];
+      if (!isBuildable(state, col, row)) {
+        showBlockedAlert(col, row, 'That shoreline is locked. Keep one tile of land clear around water so enemies cannot be boxed against it.');
+        return;
+      }
       // 2026-05-19 v2 — HERO PLACEMENT CONFIRMATION. Hero placement is
       // permanent: the hero can't be moved, sold, combined, or
       // downgraded once placed. That's a much heavier commitment than
@@ -6261,7 +6283,10 @@ async function boot() {
     // START WAVE (or click tile-less area / shop) when done; unkept
     // prospects convert to walls.
     if (state.phase === GamePhase.PROSPECT_PLACEMENT) {
-      if (tile !== TileType.EMPTY) { state.hint = 'Empty grass only. The other tiles are spoken for.'; return; }
+      if (tile !== TileType.EMPTY || !isBuildable(state, col, row)) {
+        state.hint = 'Empty grass only. Water and the one-tile shoreline buffer are off-limits.';
+        return;
+      }
       if (state.prospectsPlaced >= 10) {
         state.hint = 'Ten prospects is the Senate-approved limit. Press START WAVE and let them prove themselves.';
         // 2026-05 v10 — once per round, fire the Smash Bros
@@ -6393,7 +6418,7 @@ async function boot() {
       // so players who tried to drop on cave / path / waypoint tiles got
       // no visible feedback and thought the game was bugged. Pop the
       // existing red BLOCKED toast anchored to the tile they clicked.
-      showBlockedAlert(col, row, 'That tile won\'t hold a tower — cave / path / checkpoint / water / border tiles are off-limits. Click an empty grass tile.');
+      showBlockedAlert(col, row, 'That tile won\'t hold a tower — cave / path / checkpoint / water / shoreline buffer / border tiles are off-limits. Click an empty grass tile.');
       return;
     }
     // path validation

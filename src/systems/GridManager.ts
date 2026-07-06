@@ -1,4 +1,4 @@
-import { GRID, COIN_FOOTPRINT_TILES, WATER_ZONE } from '../constants';
+import { GRID, COIN_FOOTPRINT_TILES, WATER_ZONE, WATER_BUILD_BUFFER_TILES } from '../constants';
 import { TileType } from '../types';
 import { GameStateShape } from '../GameState';
 import waypointsData from '../data/waypoints.json';
@@ -54,6 +54,18 @@ export function isWaterZoneTile(col: number, row: number): boolean {
     && row < WATER_ZONE.row + WATER_ZONE.height;
 }
 
+export function isWaterPlacementBufferTile(col: number, row: number): boolean {
+  if (isWaterZoneTile(col, row)) return false;
+  return col >= WATER_ZONE.col - WATER_BUILD_BUFFER_TILES
+    && col < WATER_ZONE.col + WATER_ZONE.width + WATER_BUILD_BUFFER_TILES
+    && row >= WATER_ZONE.row - WATER_BUILD_BUFFER_TILES
+    && row < WATER_ZONE.row + WATER_ZONE.height + WATER_BUILD_BUFFER_TILES;
+}
+
+export function isWaterPlacementRestrictedTile(col: number, row: number): boolean {
+  return isWaterZoneTile(col, row) || isWaterPlacementBufferTile(col, row);
+}
+
 export function canBuildWaterTowerAt(state: GameStateShape, col: number, row: number): boolean {
   return tileAt(state, col, row) === TileType.WATER && isWaterZoneTile(col, row);
 }
@@ -91,6 +103,7 @@ export function isInsideStructureFootprint(col: number, row: number): boolean {
 
 export function isBuildable(state: GameStateShape, col: number, row: number): boolean {
   if (tileAt(state, col, row) !== TileType.EMPTY) return false;
+  if (isWaterPlacementBufferTile(col, row)) return false;
   if (isInsideStructureFootprint(col, row)) return false;
   return true;
 }

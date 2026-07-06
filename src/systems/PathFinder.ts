@@ -1,15 +1,16 @@
 import { GRID } from '../constants';
 import { TileType } from '../types';
 import { GameStateShape } from '../GameState';
-import { tileAt, tileToPixel } from './GridManager';
+import { isWaterPlacementBufferTile, tileAt, tileToPixel } from './GridManager';
 import waypointsData from '../data/waypoints.json';
 
 interface Node { col: number; row: number; }
 
-// A* on the map grid. Walkable: EMPTY, SPAWN, GATE, WAYPOINT, TRAP. Blocked: STONE, TOWER, BORDER.
+// A* on the map grid. Walkable: EMPTY, SPAWN, GATE, WAYPOINT, TRAP.
+// Blocked: STONE, TOWER, BORDER, WATER.
 function isWalkable(state: GameStateShape, col: number, row: number, allowOccupied = false): boolean {
   const t = tileAt(state, col, row);
-  if (allowOccupied) return t !== TileType.BORDER;
+  if (allowOccupied) return t !== TileType.BORDER && t !== TileType.WATER;
   return t === TileType.EMPTY || t === TileType.SPAWN || t === TileType.GATE
       || t === TileType.WAYPOINT || t === TileType.TRAP;
 }
@@ -205,6 +206,7 @@ export function resnapEnemiesToPath(state: GameStateShape, newPath: { col: numbe
 // Validate that placing a stone/tower at (col,row) does not block any waypoint reachability.
 export function canPlaceStone(state: GameStateShape, col: number, row: number): boolean {
   if (tileAt(state, col, row) !== TileType.EMPTY) return false;
+  if (isWaterPlacementBufferTile(col, row)) return false;
   // simulate
   state.tiles[row][col] = TileType.STONE;
   const ok = buildGroundPath(state) !== null;

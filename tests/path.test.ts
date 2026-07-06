@@ -1,8 +1,16 @@
 // Tests for grid + pathfinding behavior.
 import { describe, it, expect } from 'vitest';
 import { createGameState } from '../src/GameState';
-import { canBuildWaterTowerAt, initializeGrid, isBuildable, setTile, tileAt } from '../src/systems/GridManager';
-import { buildGroundPath, canPlaceStone } from '../src/systems/PathFinder';
+import {
+  canBuildWaterTowerAt,
+  initializeGrid,
+  isBuildable,
+  isWaterPlacementBufferTile,
+  isWaterPlacementRestrictedTile,
+  setTile,
+  tileAt
+} from '../src/systems/GridManager';
+import { aStar, buildGroundPath, canPlaceStone } from '../src/systems/PathFinder';
 import { TileType } from '../src/types';
 import { WATER_ZONE } from '../src/constants';
 
@@ -87,6 +95,23 @@ describe('Grid initialization', () => {
     expect(canBuildWaterTowerAt(s, WATER_ZONE.col + WATER_ZONE.width, WATER_ZONE.row)).toBe(false);
   });
 
+  it('keeps a one-tile shoreline buffer unbuildable without turning it into water', () => {
+    const s = createGameState();
+    initializeGrid(s);
+    const bufferTiles = [
+      { col: WATER_ZONE.col + WATER_ZONE.width, row: WATER_ZONE.row },
+      { col: WATER_ZONE.col + 4, row: WATER_ZONE.row - 1 },
+      { col: WATER_ZONE.col + WATER_ZONE.width, row: WATER_ZONE.row - 1 }
+    ];
+    for (const t of bufferTiles) {
+      expect(tileAt(s, t.col, t.row), `buffer ${t.col},${t.row} stays land`).toBe(TileType.EMPTY);
+      expect(isWaterPlacementBufferTile(t.col, t.row), `buffer ${t.col},${t.row}`).toBe(true);
+      expect(isWaterPlacementRestrictedTile(t.col, t.row), `restricted ${t.col},${t.row}`).toBe(true);
+      expect(isBuildable(s, t.col, t.row), `not buildable ${t.col},${t.row}`).toBe(false);
+      expect(canPlaceStone(s, t.col, t.row), `stone blocked ${t.col},${t.row}`).toBe(false);
+    }
+  });
+
   it('does not let generic tile writes erase water reserves', () => {
     const s = createGameState();
     initializeGrid(s);
@@ -102,6 +127,15 @@ describe('Pathfinding — A* through checkpoints', () => {
     const path = buildGroundPath(s);
     expect(path).not.toBeNull();
     expect(path!.length).toBeGreaterThan(0);
+    expect(path!.some(t => tileAt(s, t.col, t.row) === TileType.WATER)).toBe(false);
+  });
+
+  it('does not allow A* to use water as an occupied endpoint', () => {
+    const s = createGameState();
+    initializeGrid(s);
+    const waterGoal = { col: WATER_ZONE.col + 3, row: WATER_ZONE.row + 3 };
+    const path = aStar(s, { col: WATER_ZONE.col + WATER_ZONE.width + 1, row: WATER_ZONE.row + 3 }, waterGoal);
+    expect(path).toBeNull();
   });
 
   it('canPlaceStone returns true for an interior empty tile that does not block path', () => {

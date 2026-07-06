@@ -11,6 +11,7 @@ import { buildGroundPath } from '../src/systems/PathFinder';
 import { TowerType, GamePhase, TileType } from '../src/types';
 import { startWave } from '../src/systems/WaveManager';
 import { displayWaveNumber } from '../src/systems/TestYourMightSystem';
+import { WATER_ZONE } from '../src/constants';
 
 function bootstrapState() {
   const s = createGameState();
@@ -205,6 +206,17 @@ describe('Sandbox Test Your Might helper', () => {
     expect(s.testYourMightActive).toBe(true);
     expect(displayWaveNumber(s)).toBe('10.5');
     expect(s.spawnQueue.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Sandbox water restrictions', () => {
+  it('does not allow direct tower spawns on water or its shoreline buffer', () => {
+    const s = bootstrapState();
+    activateSandbox(s);
+
+    expect(sandboxSpawnTowerDirect(s, TowerType.MILITES, 1, WATER_ZONE.col + 1, WATER_ZONE.row + 1)).toBeNull();
+    expect(sandboxSpawnTowerDirect(s, TowerType.MILITES, 1, WATER_ZONE.col + WATER_ZONE.width, WATER_ZONE.row + 1)).toBeNull();
+    expect(s.towers.size).toBe(0);
   });
 });
 

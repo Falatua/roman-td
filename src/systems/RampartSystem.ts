@@ -25,7 +25,7 @@
 import { GameStateShape } from '../GameState';
 import { TileType } from '../types';
 import { GRID } from '../constants';
-import { isInsideStructureFootprint, tileAt, setTile } from './GridManager';
+import { isInsideStructureFootprint, isWaterPlacementBufferTile, tileAt, setTile } from './GridManager';
 import { buildGroundPath, resnapEnemiesToPath } from './PathFinder';
 
 export const RAMPART_COST = 20;
@@ -117,6 +117,7 @@ export function isRampartTileInBounds(col: number, row: number): boolean {
 export function isRampartTilePlaceable(state: GameStateShape, col: number, row: number): boolean {
   if (!isRampartTileInBounds(col, row)) return false;
   if (isInsideStructureFootprint(col, row)) return false;
+  if (isWaterPlacementBufferTile(col, row)) return false;
   if (tileAt(state, col, row) !== TileType.EMPTY) return false;
   for (const tower of state.towers.values()) {
     if (tower.tileX === col && tower.tileY === row) return false;

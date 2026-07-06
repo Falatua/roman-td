@@ -11,6 +11,7 @@ import { buildGroundPath } from '../src/systems/PathFinder';
 import { GamePhase, TileType, TowerType } from '../src/types';
 import { createTower } from '../src/systems/TowerSystem';
 import waypointsData from '../src/data/waypoints.json';
+import { WATER_ZONE } from '../src/constants';
 
 function bootstrapState() {
   const s = createGameState();
@@ -70,6 +71,17 @@ describe('Rampart purchasing', () => {
     const s = bootstrapState();
     s.rampartInventory = { H: 1, V: 2 };
     expect(rampartsOwned(s)).toBe(3);
+  });
+
+  it('refuses ramparts touching the water shoreline buffer', () => {
+    const s = bootstrapState();
+    buyRampart(s);
+    const shoreline = { col: WATER_ZONE.col + WATER_ZONE.width, row: WATER_ZONE.row + 3 };
+    expect(tileAt(s, shoreline.col, shoreline.row)).toBe(TileType.EMPTY);
+    expect(rampartPreviewTiles(s, shoreline.col, shoreline.row, 'V').some(t => !t.valid)).toBe(true);
+    expect(canPlaceRampart(s, shoreline.col, shoreline.row, 'V')).toBe(false);
+    expect(placeRampart(s, shoreline.col, shoreline.row, 'V')).toBe(false);
+    expect(rampartsOwned(s)).toBe(1);
   });
 
   it('arms ramparts from inventory and clears armed traps', () => {

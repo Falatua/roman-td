@@ -21,6 +21,10 @@ export const WATER_ZONE = {
   height: 10
 } as const;
 
+// Keep one land tile around water free of player-built blockers. This stops
+// shoreline mazing exploits from treating the pond edge as a legal wall.
+export const WATER_BUILD_BUFFER_TILES = 1;
+
 // 2026-05-17 — WORLD ZOOM. The outer 1-tile BORDER ring (trees/boulders)
 // is no longer drawn; we use that freed real estate to zoom the play area
 // in. Pixi stage is scaled + center-offset at init; mouse coords inverse-

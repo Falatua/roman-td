@@ -17,6 +17,7 @@ import { pushStatus } from './CombatResolver';
 import { campaignRelicTrapDamageMult, campaignRelicTrapPriceMult, campaignRelicTrapRadiusMult } from './CampaignRelicSystem';
 import { bossTrophyTrapDamageMult, bossTrophyTrapRadiusMult } from './BossTrophySystem';
 import { commanderTrapRadiusDisabled } from './CommanderSystem';
+import { isWaterPlacementRestrictedTile } from './GridManager';
 
 export type TrapEffect = 'DAMAGE' | 'POISON' | 'BURN' | 'SLOW' | 'BOSS' | 'FLYER';
 
@@ -134,6 +135,7 @@ export function armTrapFromInventory(state: GameStateShape, id: string): boolean
 export function placeTrap(state: GameStateShape, id: string, col: number, row: number): boolean {
   const def = TRAP_DEFS[id];
   if (!def || trapOwned(state, id) <= 0) return false;
+  if (isWaterPlacementRestrictedTile(col, row)) return false;
   state.trapInventory![id] -= 1;
   if (!state.placedTraps) state.placedTraps = [];
   state.placedTraps.push({

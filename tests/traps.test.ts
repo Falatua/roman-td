@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createGameState } from '../src/GameState';
+import { WATER_ZONE } from '../src/constants';
+import { initializeGrid } from '../src/systems/GridManager';
 import {
   TRAP_DEFS,
   armTrapFromInventory,
@@ -71,5 +73,18 @@ describe('Trap inventory flow', () => {
     expect(s.trapsPurchased).toBe(3);
     expect(s.trapsPlaced).toBe(2);
     expect(s.selectedTrapType).toBe(id);
+  });
+
+  it('refuses traps on water and the one-tile shoreline buffer', () => {
+    const s = createGameState();
+    initializeGrid(s);
+    const id = 'IRON_SPIKE_TRAP';
+    s.gold = 999;
+    buyTraps(s, id, 2);
+
+    expect(placeTrap(s, id, WATER_ZONE.col + 2, WATER_ZONE.row + 2)).toBe(false);
+    expect(placeTrap(s, id, WATER_ZONE.col + WATER_ZONE.width, WATER_ZONE.row + 2)).toBe(false);
+    expect(trapOwned(s, id)).toBe(2);
+    expect(s.placedTraps ?? []).toHaveLength(0);
   });
 });
