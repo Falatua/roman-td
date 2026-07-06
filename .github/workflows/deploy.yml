@@ -30,13 +30,6 @@ permissions:
   pages: write
   id-token: write
 
-# 2026-07-02: GitHub-hosted runners are forcing some JavaScript actions to
-# Node 24 while the official Pages deploy action still warns from a Node 20
-# runtime path. This temporary opt-out keeps Pages deploys on the supported
-# runtime until GitHub finishes the action transition.
-env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-
 # Cancel any in-flight deploy when a newer commit lands — only the latest
 # main commit should ever be live.
 concurrency:
@@ -48,10 +41,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: '20'
           cache: 'npm'
@@ -89,7 +82,7 @@ jobs:
         run: npm run build
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -104,4 +97,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
