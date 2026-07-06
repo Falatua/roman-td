@@ -206,8 +206,10 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(byWave.get(6).comboAntiAirArmorPct).toBeUndefined();
     expect(byWave.get(12).comboAntiAirArmorPct).toBeGreaterThan(0);
     expect(byWave.get(18).comboAntiAirArmorPct).toBeGreaterThan(byWave.get(12).comboAntiAirArmorPct);
-    expect(byWave.get(27).comboAntiAirArmorPct).toBeGreaterThanOrEqual(0.38);
-    expect(byWave.get(30).comboAntiAirArmorPct).toBeGreaterThanOrEqual(0.4);
+    expect(byWave.get(18).comboAntiAirArmorPct).toBeGreaterThanOrEqual(0.45);
+    expect(byWave.get(22).comboAntiAirArmorPct).toBeGreaterThanOrEqual(0.5);
+    expect(byWave.get(27).comboAntiAirArmorPct).toBeGreaterThanOrEqual(0.62);
+    expect(byWave.get(30).comboAntiAirArmorPct).toBeGreaterThanOrEqual(0.65);
 
     const flyerPressureWaves = (wavesData as any[])
       .filter(w => w.wave >= 12)
@@ -215,6 +217,9 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(flyerPressureWaves.length).toBeGreaterThan(0);
     for (const wave of flyerPressureWaves) {
       expect(wave.comboAntiAirArmorPct, `W${wave.wave} should warn and pressure combo anti-air`).toBeGreaterThan(0);
+      if (wave.wave > 15) {
+        expect(wave.comboAntiAirArmorPct, `W${wave.wave} should make combo anti-air the primary flyer answer`).toBeGreaterThanOrEqual(0.45);
+      }
     }
   });
 

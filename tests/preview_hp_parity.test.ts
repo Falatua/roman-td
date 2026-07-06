@@ -179,11 +179,16 @@ describe('previewSpawnHp formula spot-checks', () => {
   });
 
   it('Post-W15 layer escalates every class on top of the W11+ creative buff', () => {
-    // 2026-06-28 — softened post-W15 bridge: ground 1.00+late*0.05, boss 1.05+late*0.06.
+    // 2026-07-05 — ground/bosses keep the softened bridge; flyers climb harder
+    // so W16+ air waves demand combo anti-air.
     // W16 ground: W7 1.30 × W10 ground 1.50 × W11 ground 1.30 × W16 bridge layer 1.05
     expect(lateGameLayerMult(16, false, false)).toBeCloseTo(1.30 * 1.50 * 1.30 * 1.05, 4);
     // W16 boss: W10 boss 1.25 × W11 boss 1.40 × W16 bridge layer 1.11
     expect(lateGameLayerMult(16, true, false)).toBeCloseTo(1.25 * 1.40 * 1.11, 4);
+    // W16 flyer: W10 flyer 1.20 × W16 flyer bridge layer 1.17.
+    expect(lateGameLayerMult(16, false, true)).toBeCloseTo(1.20 * 1.17, 4);
+    // Endgame flyers continue climbing instead of staying a soft ranged-only check.
+    expect(lateGameLayerMult(30, false, true)).toBeCloseTo(1.20 * 2.15 * 1.10 * 1.12, 4);
   });
 
   it('effectiveWaveHpMult linear curve includes the W11+ aggressive +15%/wave step', () => {

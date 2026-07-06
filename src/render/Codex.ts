@@ -373,7 +373,7 @@ function renderTab(tab: string): string {
           ${noteCard('CHECK RESISTANCES', 'Read the enemy tab before placing. Wrong damage type = enemies walk past unbothered.')}
           ${noteCard('DOT HALVES REGEN', 'Burn / poison / bleed / hellfire counts as damage. Any DoT on a Hannibal / Daemon Imperator / hellhound cuts its heal in HALF (not zero — they still trickle back ~50% of base rate). Net rule: DoT + direct damage breaks regen bosses; DoT alone no longer does.')}
           ${noteCard('DOWNGRADE FOR RECIPES', 'A T4 → T3 for 2g slots into the recipe you were hoarding for. Pride loses runs.')}
-          ${noteCard('FLYERS ARRIVE W6 / W12 / W18', 'W6 teaches air. W12+ starts adding COMBO-AA plating, so base anti-air helps but combo anti-air becomes the clean answer.')}
+          ${noteCard('FLYERS ARRIVE W6 / W12 / W18', 'W6 teaches air. W12-W14 warns with light COMBO-AA plating. After W15, flyers get heavy plating and extra HP, so combo anti-air becomes the primary answer.')}
           ${noteCard('BOSSES REBORN ON LEAK', '10 lives per leak. Boss returns next wave at the HP he had at the gate. Chip damage carries.')}
           ${noteCard('POOL L2 = FIRST DAMAGE', 'L1 only shifts probabilities. +3% damage / level starts at L2 and stacks. Get there fast.')}
           ${noteCard('EMPTY ROUND = +12g', 'Press START WAVE with nothing placed → +12g for strategic patience.')}
@@ -619,7 +619,7 @@ function renderTab(tab: string): string {
           ${noteCard('Cleave Melee', 'Hits ALL enemies in melee range, secondaries take 70%. Towers: Hastati, Triarius, Cohort Guard, Praetorian Wall, Imperator Guard, Vexillation, Triumphator, Triplex Acies.')}
           ${noteCard('Multi-Shot Ranged', 'Multiple bolts per attack. Decurion (2), Carroballista (2), Eques (3), Hannibal\'s Nightmare (2), Scorpion Bolt (3), Aurora Legion (4 piercing), Carthage Scourge (6).')}
           ${noteCard('Anti-Air Only', 'Sagittarius and Aquila Venator ignore ground entirely. Dead weight on ground waves, devastating on flyers.')}
-          ${noteCard('Aerial Plating (W12+)', 'Later flyer waves can carry <b style="color:#88ddff">COMBO-AA</b> plating. Non-combo towers deal reduced direct damage to flyers on those waves. Combo anti-air pierces it: Scorpion Bolt, Eques, Nemesis Engine, Beastlord Champion, Storm Ballista, Skyreaper Battery, Sky Dominion, and higher apex towers.')}
+          ${noteCard('Aerial Plating (W12+)', 'Later flyer waves can carry <b style="color:#88ddff">COMBO-AA</b> plating. W12-W14 is the warning. W18+ is the wall: non-combo towers lose heavy direct damage into flyers, while combo anti-air pierces it: Scorpion Bolt, Eques, Nemesis Engine, Beastlord Champion, Storm Ballista, Skyreaper Battery, Sky Dominion, and higher apex towers.')}
           ${noteCard('Trident & Net (Retiarius)', 'First hit on a new target = 2× damage. Armor Shred every strike.')}
           ${noteCard('Brutal Opener (Accensus)', '+75% damage above 85% HP. Front-load damage on fresh enemies.')}
           ${noteCard('Backstab (Pugio Assassin)', '+50% vs Runner archetype.')}

@@ -129,14 +129,14 @@ export function lateGameLayerMult(waveNumber: number, isBoss: boolean, isFlyer: 
     if (isBoss) m *= 1.40;
     else if (!isFlyer) m *= 1.30;
   }
-  // 2026-06-28 — post-W15 difficulty scaling SOFTENED. W16 felt a touch too
-  // hard and the old linear/slope projection ran away by W25-30. Lower base
-  // + slope on the W>15 bridge and trim the W21/W25/W30 step multipliers.
-  // Net: W16 ~-10%, W20 ~-18%, W25 ~-37%, W30 ~-40% vs the prior curve.
+  // 2026-07-05 — W16+ flyers are the dedicated combo anti-air check.
+  // Ground/bosses keep the softened campaign bridge, but flyers climb harder
+  // so W18+ air waves reward Scorpion Bolt, Storm Ballista, Skyreaper Battery,
+  // Sky Dominion, and other combo anti-air instead of plain archer stacking.
   if (waveNumber > 15) {
     const late = waveNumber - 15;
     if (isBoss) m *= 1.05 + late * 0.06;
-    else if (isFlyer) m *= 1.00 + late * 0.04;
+    else if (isFlyer) m *= 1.10 + late * 0.07;
     else m *= 1.00 + late * 0.05;
   }
   if (waveNumber >= 21) {
