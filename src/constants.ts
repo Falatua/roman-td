@@ -17,9 +17,26 @@ export const GRID = {
 export const WATER_ZONE = {
   col: 1,
   row: GRID.ROWS - 11,
-  width: 10,
+  width: 11,
   height: 10
 } as const;
+
+// Irregular coastal footprint inside WATER_ZONE. Each local row says which
+// local columns are actual deep water; the remaining nearby land becomes beach.
+export const WATER_ROW_SPANS = [
+  { start: 0, end: 4 },
+  { start: 0, end: 6 },
+  { start: 0, end: 8 },
+  { start: 0, end: 9 },
+  { start: 0, end: 10 },
+  { start: 0, end: 10 },
+  { start: 0, end: 9 },
+  { start: 0, end: 10 },
+  { start: 0, end: 10 },
+  { start: 0, end: 8 }
+] as const;
+
+export const WATER_TILE_COUNT = WATER_ROW_SPANS.reduce((sum, span) => sum + (span.end - span.start + 1), 0);
 
 // Keep one land tile around water free of player-built blockers. This stops
 // shoreline mazing exploits from treating the pond edge as a legal wall.

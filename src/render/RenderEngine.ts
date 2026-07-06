@@ -19,6 +19,7 @@ import { surpriseEventTintRGBA, VFX_TIMING, getAllActiveSurpriseEvents } from '.
 import { SurpriseEventKind } from '../types';
 import { heroIdForTowerType } from '../systems/HeroIdentity';
 import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from '../systems/BaseTowerAttackAnimation';
+import { isWaterPlacementBufferTile } from '../systems/GridManager';
 
 // 2026-05-20 v2 — Per-hero halo ring assignment. Each ring style was
 // hand-picked to match the hero's color tint + thematic identity:
@@ -2645,6 +2646,7 @@ export class RenderEngine {
     }
     const terrainLayer = new Container();
     const decorLayer = new Container();
+    const beachGfx = new Graphics();
     const waterGfx = new Graphics();
 
     for (let r = 0; r < GRID.ROWS; r++) {
@@ -2662,10 +2664,18 @@ export class RenderEngine {
         // from the biome's weight table via pickGrassTile() below.
         const h = hash(c, r);
         if (t === TileType.WATER) {
-          const localC = c - WATER_ZONE.col;
-          const localR = r - WATER_ZONE.row;
-          const edgeDist = Math.min(localC, localR, WATER_ZONE.width - 1 - localC, WATER_ZONE.height - 1 - localR);
-          const centerDepth = Math.max(0, Math.min(1, edgeDist / 4));
+          let edgeDist = 0;
+          for (let radius = 1; radius <= 4; radius++) {
+            let allWater = true;
+            for (let dr = -radius; dr <= radius && allWater; dr++) {
+              for (let dc = -radius; dc <= radius && allWater; dc++) {
+                if (state.tiles[r + dr]?.[c + dc] !== TileType.WATER) allWater = false;
+              }
+            }
+            if (!allWater) break;
+            edgeDist = radius;
+          }
+          const centerDepth = Math.max(0, Math.min(1, edgeDist / 3));
           const palette = centerDepth > 0.65
             ? [0x0b2540, 0x0f3150, 0x123b5a]
             : centerDepth > 0.25
@@ -2693,15 +2703,38 @@ export class RenderEngine {
           const south = state.tiles[r + 1]?.[c] !== TileType.WATER;
           const west = state.tiles[r]?.[c - 1] !== TileType.WATER;
           if (north) {
-            waterGfx.beginFill(0x7c6a3c, 0.92).drawRect(x, y, GRID.TILE, 3).endFill();
-            waterGfx.beginFill(0xd8c27a, 0.55).drawRect(x + 2, y + 3, GRID.TILE - 4, 1).endFill();
+            waterGfx.beginFill(0xd8f7ee, 0.44).drawRect(x + 2, y, GRID.TILE - 4, 2).endFill();
+            waterGfx.beginFill(0x7c6a3c, 0.36).drawRect(x, y, GRID.TILE, 1).endFill();
           }
           if (east) {
-            waterGfx.beginFill(0x7c6a3c, 0.92).drawRect(x + GRID.TILE - 3, y, 3, GRID.TILE).endFill();
-            waterGfx.beginFill(0xd8c27a, 0.45).drawRect(x + GRID.TILE - 4, y + 2, 1, GRID.TILE - 4).endFill();
+            waterGfx.beginFill(0xd8f7ee, 0.34).drawRect(x + GRID.TILE - 2, y + 2, 2, GRID.TILE - 4).endFill();
+            waterGfx.beginFill(0x7c6a3c, 0.28).drawRect(x + GRID.TILE - 1, y, 1, GRID.TILE).endFill();
           }
-          if (south) waterGfx.beginFill(0x061a2c, 0.35).drawRect(x, y + GRID.TILE - 2, GRID.TILE, 2).endFill();
-          if (west) waterGfx.beginFill(0x061a2c, 0.35).drawRect(x, y, 2, GRID.TILE).endFill();
+          if (south) waterGfx.beginFill(0xd8f7ee, 0.28).drawRect(x + 2, y + GRID.TILE - 2, GRID.TILE - 4, 2).endFill();
+          if (west) waterGfx.beginFill(0xd8f7ee, 0.24).drawRect(x, y + 2, 2, GRID.TILE - 4).endFill();
+          continue;
+        }
+        if (t === TileType.EMPTY && isWaterPlacementBufferTile(c, r)) {
+          const sandPalette = [0xbfa76a, 0xd0bb79, 0xa98f58, 0xe0cb8e];
+          beachGfx.beginFill(sandPalette[h % sandPalette.length], 1).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
+          for (let py = 0; py < 4; py++) {
+            for (let px = 0; px < 4; px++) {
+              const ph = hash(c * 5 + px, r * 5 + py, 907);
+              const shade = sandPalette[(ph >>> 5) % sandPalette.length];
+              beachGfx.beginFill(shade, 0.25).drawRect(x + px * 8, y + py * 8, 8, 8).endFill();
+            }
+          }
+          const waterN = state.tiles[r - 1]?.[c] === TileType.WATER;
+          const waterE = state.tiles[r]?.[c + 1] === TileType.WATER;
+          const waterS = state.tiles[r + 1]?.[c] === TileType.WATER;
+          const waterW = state.tiles[r]?.[c - 1] === TileType.WATER;
+          if (waterN) beachGfx.beginFill(0xf2e6b0, 0.55).drawRect(x + 2, y, GRID.TILE - 4, 2).endFill();
+          if (waterE) beachGfx.beginFill(0xf2e6b0, 0.45).drawRect(x + GRID.TILE - 2, y + 2, 2, GRID.TILE - 4).endFill();
+          if (waterS) beachGfx.beginFill(0xf2e6b0, 0.38).drawRect(x + 2, y + GRID.TILE - 2, GRID.TILE - 4, 2).endFill();
+          if (waterW) beachGfx.beginFill(0xf2e6b0, 0.32).drawRect(x, y + 2, 2, GRID.TILE - 4).endFill();
+          if ((h % 11) === 0) {
+            beachGfx.beginFill(0x6b5a35, 0.45).drawRect(x + 8 + ((h >>> 5) % 12), y + 9 + ((h >>> 9) % 12), 2, 1).endFill();
+          }
           continue;
         }
         let key: string;
@@ -2807,6 +2840,7 @@ export class RenderEngine {
       }
     }
     this.layers.bg.addChild(terrainLayer);
+    this.layers.bg.addChild(beachGfx);
     // Pixel-water dressing in the bottom-left reserve. Drawn above terrain
     // and below all gameplay layers, so it replaces grass without hiding towers.
     const waterDetail = [
@@ -2819,6 +2853,7 @@ export class RenderEngine {
     for (const d of waterDetail) {
       const x = d.col * GRID.TILE;
       const y = d.row * GRID.TILE;
+      if (state.tiles[d.row]?.[d.col] !== TileType.WATER) continue;
       if (d.kind === 'rock') {
         waterGfx.beginFill(0x26384a, 0.95).drawRect(x + 9, y + 18, 14, 7).endFill();
         waterGfx.beginFill(0x5c7180, 0.65).drawRect(x + 11, y + 17, 8, 2).endFill();

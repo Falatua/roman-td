@@ -83,7 +83,7 @@ describe('Trap inventory flow', () => {
     buyTraps(s, id, 2);
 
     expect(placeTrap(s, id, WATER_ZONE.col + 2, WATER_ZONE.row + 2)).toBe(false);
-    expect(placeTrap(s, id, WATER_ZONE.col + WATER_ZONE.width, WATER_ZONE.row + 2)).toBe(false);
+    expect(placeTrap(s, id, WATER_ZONE.col + 5, WATER_ZONE.row)).toBe(false);
     expect(trapOwned(s, id)).toBe(2);
     expect(s.placedTraps ?? []).toHaveLength(0);
   });

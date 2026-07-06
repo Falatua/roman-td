@@ -1,4 +1,4 @@
-import { GRID, COIN_FOOTPRINT_TILES, WATER_ZONE, WATER_BUILD_BUFFER_TILES } from '../constants';
+import { GRID, COIN_FOOTPRINT_TILES, WATER_ZONE, WATER_BUILD_BUFFER_TILES, WATER_ROW_SPANS } from '../constants';
 import { TileType } from '../types';
 import { GameStateShape } from '../GameState';
 import waypointsData from '../data/waypoints.json';
@@ -13,12 +13,12 @@ export function initializeGrid(state: GameStateShape) {
     state.tiles[r][0] = TileType.BORDER;
     state.tiles[r][GRID.COLS - 1] = TileType.BORDER;
   }
-  // Bottom-left water reserve: a 10x10 future-water-tower zone that
+  // Bottom-left organic water reserve: a future-water-tower zone that
   // visually replaces the old grass/decor and blocks every normal placement.
   for (let r = WATER_ZONE.row; r < WATER_ZONE.row + WATER_ZONE.height; r++) {
     for (let c = WATER_ZONE.col; c < WATER_ZONE.col + WATER_ZONE.width; c++) {
       if (r <= 0 || r >= GRID.ROWS - 1 || c <= 0 || c >= GRID.COLS - 1) continue;
-      state.tiles[r][c] = TileType.WATER;
+      if (isWaterZoneTile(c, r)) state.tiles[r][c] = TileType.WATER;
     }
   }
   // Spawn marker from map data. Cave art can be larger, but only this tile is reserved.
@@ -48,18 +48,23 @@ export function tileAt(state: GameStateShape, col: number, row: number): TileTyp
 }
 
 export function isWaterZoneTile(col: number, row: number): boolean {
-  return col >= WATER_ZONE.col
-    && col < WATER_ZONE.col + WATER_ZONE.width
-    && row >= WATER_ZONE.row
-    && row < WATER_ZONE.row + WATER_ZONE.height;
+  const localC = col - WATER_ZONE.col;
+  const localR = row - WATER_ZONE.row;
+  if (localR < 0 || localR >= WATER_ROW_SPANS.length) return false;
+  if (localC < 0 || localC >= WATER_ZONE.width) return false;
+  const span = WATER_ROW_SPANS[localR];
+  return localC >= span.start && localC <= span.end;
 }
 
 export function isWaterPlacementBufferTile(col: number, row: number): boolean {
   if (isWaterZoneTile(col, row)) return false;
-  return col >= WATER_ZONE.col - WATER_BUILD_BUFFER_TILES
-    && col < WATER_ZONE.col + WATER_ZONE.width + WATER_BUILD_BUFFER_TILES
-    && row >= WATER_ZONE.row - WATER_BUILD_BUFFER_TILES
-    && row < WATER_ZONE.row + WATER_ZONE.height + WATER_BUILD_BUFFER_TILES;
+  for (let dr = -WATER_BUILD_BUFFER_TILES; dr <= WATER_BUILD_BUFFER_TILES; dr++) {
+    for (let dc = -WATER_BUILD_BUFFER_TILES; dc <= WATER_BUILD_BUFFER_TILES; dc++) {
+      if (dc === 0 && dr === 0) continue;
+      if (isWaterZoneTile(col + dc, row + dr)) return true;
+    }
+  }
+  return false;
 }
 
 export function isWaterPlacementRestrictedTile(col: number, row: number): boolean {

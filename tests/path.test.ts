@@ -12,7 +12,7 @@ import {
 } from '../src/systems/GridManager';
 import { aStar, buildGroundPath, canPlaceStone } from '../src/systems/PathFinder';
 import { TileType } from '../src/types';
-import { WATER_ZONE } from '../src/constants';
+import { WATER_ROW_SPANS, WATER_TILE_COUNT, WATER_ZONE } from '../src/constants';
 
 describe('Grid initialization', () => {
   it('creates a grid with border tiles around the perimeter', () => {
@@ -79,19 +79,28 @@ describe('Grid initialization', () => {
     expect(isBuildable(s, 4, 13)).toBe(true);
   });
 
-  it('reserves the bottom-left 10x10 water zone for future water towers only', () => {
+  it('reserves the organic bottom-left water zone for future water towers only', () => {
     const s = createGameState();
     initializeGrid(s);
     let waterTiles = 0;
     for (let r = WATER_ZONE.row; r < WATER_ZONE.row + WATER_ZONE.height; r++) {
       for (let c = WATER_ZONE.col; c < WATER_ZONE.col + WATER_ZONE.width; c++) {
-        expect(tileAt(s, c, r), `water tile ${c},${r}`).toBe(TileType.WATER);
-        expect(isBuildable(s, c, r), `normal build blocked on ${c},${r}`).toBe(false);
-        expect(canBuildWaterTowerAt(s, c, r), `future water tower hook allows ${c},${r}`).toBe(true);
-        waterTiles++;
+        const localR = r - WATER_ZONE.row;
+        const localC = c - WATER_ZONE.col;
+        const span = WATER_ROW_SPANS[localR];
+        const isWater = localC >= span.start && localC <= span.end;
+        if (isWater) {
+          expect(tileAt(s, c, r), `water tile ${c},${r}`).toBe(TileType.WATER);
+          expect(isBuildable(s, c, r), `normal build blocked on ${c},${r}`).toBe(false);
+          expect(canBuildWaterTowerAt(s, c, r), `future water tower hook allows ${c},${r}`).toBe(true);
+          waterTiles++;
+        } else {
+          expect(tileAt(s, c, r), `organic non-water tile ${c},${r}`).toBe(TileType.EMPTY);
+          expect(canBuildWaterTowerAt(s, c, r), `future water tower blocked on beach ${c},${r}`).toBe(false);
+        }
       }
     }
-    expect(waterTiles).toBe(100);
+    expect(waterTiles).toBe(WATER_TILE_COUNT);
     expect(canBuildWaterTowerAt(s, WATER_ZONE.col + WATER_ZONE.width, WATER_ZONE.row)).toBe(false);
   });
 
@@ -99,9 +108,9 @@ describe('Grid initialization', () => {
     const s = createGameState();
     initializeGrid(s);
     const bufferTiles = [
-      { col: WATER_ZONE.col + WATER_ZONE.width, row: WATER_ZONE.row },
+      { col: WATER_ZONE.col + 5, row: WATER_ZONE.row },
       { col: WATER_ZONE.col + 4, row: WATER_ZONE.row - 1 },
-      { col: WATER_ZONE.col + WATER_ZONE.width, row: WATER_ZONE.row - 1 }
+      { col: WATER_ZONE.col + 10, row: WATER_ZONE.row + 3 }
     ];
     for (const t of bufferTiles) {
       expect(tileAt(s, t.col, t.row), `buffer ${t.col},${t.row} stays land`).toBe(TileType.EMPTY);

@@ -215,7 +215,7 @@ describe('Sandbox water restrictions', () => {
     activateSandbox(s);
 
     expect(sandboxSpawnTowerDirect(s, TowerType.MILITES, 1, WATER_ZONE.col + 1, WATER_ZONE.row + 1)).toBeNull();
-    expect(sandboxSpawnTowerDirect(s, TowerType.MILITES, 1, WATER_ZONE.col + WATER_ZONE.width, WATER_ZONE.row + 1)).toBeNull();
+    expect(sandboxSpawnTowerDirect(s, TowerType.MILITES, 1, WATER_ZONE.col + 5, WATER_ZONE.row)).toBeNull();
     expect(s.towers.size).toBe(0);
   });
 });
