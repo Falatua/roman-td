@@ -582,8 +582,21 @@ describe('Enemy commanders', () => {
       s.wave = Number(waveText) - 1;
       startWave(s);
       const commanders = s.spawnQueue.filter(q => isCommanderType(q.type as any));
-      expect(commanders.length, `W${waveText} commander escort size`).toBe(expectedCount);
+      const mainGateCommanders = commanders.filter(q => !q.caveB);
+      const caveBGroundCommanders = commanders.filter(q => q.caveB);
+      expect(mainGateCommanders.length, `W${waveText} main-gate commander escort size`).toBe(expectedCount);
       expect(bossEscortCommandersForWave(Number(waveText)).length).toBe(expectedCount);
+      if (Number(waveText) >= 21) {
+        for (const commander of mainGateCommanders) {
+          const def = (enemiesData as any)[commander.type] ?? {};
+          if (def.isFlyer) continue;
+          const mirrored = caveBGroundCommanders.filter(q => q.type === commander.type);
+          const mainSameType = mainGateCommanders.filter(q => q.type === commander.type);
+          expect(mirrored.length, `W${waveText} ${commander.type} mirrored commander`).toBe(mainSameType.length);
+        }
+      } else {
+        expect(caveBGroundCommanders.length, `W${waveText} should not use Cave B escorts`).toBe(0);
+      }
     }
   });
 

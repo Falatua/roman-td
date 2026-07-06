@@ -21,7 +21,8 @@ describe('30-wave Solo economy envelope', () => {
       perfectGold += perfectWaveGoldBonus(wave.wave);
       for (const group of wave.spawns) {
         const def = (enemiesData as any)[group.type] ?? {};
-        kills += group.count;
+        const lateSecondGateMirror = wave.wave >= 21 && !def.isBoss && !def.isFlyer;
+        kills += lateSecondGateMirror ? group.count * 2 : group.count;
         if (wave.type === 'B' && def.isBoss && !ADD_BOSS_TYPES.has(group.type)) {
           bossBounties += group.count * (22 + Math.round(wave.wave * 3.5));
         }
@@ -53,7 +54,8 @@ describe('30-wave Solo economy envelope', () => {
       for (const group of wave.spawns) {
         const def = (enemiesData as any)[group.type] ?? {};
         if (wave.type === 'B' && wave.wave <= 15 && !def.isBoss) continue;
-        kills += group.count;
+        const lateSecondGateMirror = wave.wave >= 21 && !def.isBoss && !def.isFlyer;
+        kills += lateSecondGateMirror ? group.count * 2 : group.count;
         if (wave.type === 'B' && def.isBoss && !ADD_BOSS_TYPES.has(group.type)) {
           majorBossBounties += group.count * (22 + Math.round(wave.wave * 3.5));
         }
@@ -61,9 +63,9 @@ describe('30-wave Solo economy envelope', () => {
     }
 
     const guaranteed = ECONOMY.STARTING_GOLD + kills + waveGold + majorBossBounties;
-    expect(kills).toBe(2275);
-    expect(guaranteed).toBe(3399);
-    expect(guaranteed).toBeLessThan(3400);
+    expect(kills).toBe(2831);
+    expect(guaranteed).toBe(3955);
+    expect(guaranteed).toBeLessThan(4000);
   });
 
   it('keeps ordinary random drops rare outside bosses, commanders, and events', () => {
@@ -74,13 +76,13 @@ describe('30-wave Solo economy envelope', () => {
         const def = (enemiesData as any)[group.type] ?? {};
         if (wave.type === 'B' && wave.wave <= 15 && !def.isBoss) continue;
         if (def.isFlyer) flyers += group.count;
-        else ground += group.count;
+        else ground += wave.wave >= 21 && !def.isBoss ? group.count * 2 : group.count;
       }
     }
-    // 2026-07-03 — drop rates +33% (0.0015/0.003 → 0.002/0.004), so the
-    // expected free-drop count per campaign rose from ~3.4 to ~4.5.
+    // 2026-07-05 — Cave B now mirrors every W21+ ground non-boss spawn, so
+    // the expected ordinary free-drop count rises with the doubled late lanes.
     const expected = ground * LOOT_DROP_RATES.GROUND + flyers * LOOT_DROP_RATES.FLYER;
-    expect(expected).toBeGreaterThan(4);
-    expect(expected).toBeLessThan(5.5);
+    expect(expected).toBeGreaterThan(5);
+    expect(expected).toBeLessThan(6.5);
   });
 });

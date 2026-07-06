@@ -36,6 +36,31 @@ const FACTION_BOSS: Record<string, string> = {
   SUPER_DEMONS: 'DAEMON_IMPERATOR'
 };
 
+type SpawnQueueItem = GameStateShape['spawnQueue'][number];
+
+function sortSpawnQueue(queue: SpawnQueueItem[]): void {
+  queue.sort((a, b) => (a.spawnAt - b.spawnAt) || (Number(!!a.caveB) - Number(!!b.caveB)));
+}
+
+function shouldMirrorToCaveB(state: GameStateShape, type: string): boolean {
+  if (state.wave < 21 || state.groundPathB.length === 0) return false;
+  const def = (enemiesData as any)[type];
+  if (!def || def.isBoss || def.isFlyer) return false;
+  return true;
+}
+
+function mirrorGroundSpawnsToCaveB(state: GameStateShape): void {
+  if (state.wave < 21 || state.groundPathB.length === 0) return;
+  const mirrors: SpawnQueueItem[] = [];
+  for (const item of state.spawnQueue) {
+    if (item.caveB || !shouldMirrorToCaveB(state, item.type)) continue;
+    mirrors.push({ ...item, caveB: true });
+  }
+  if (mirrors.length === 0) return;
+  state.spawnQueue.push(...mirrors);
+  sortSpawnQueue(state.spawnQueue);
+}
+
 export function effectiveWaveHpMult(waveNumber: number, baseHpMult: number, isBoss = false): number {
   // 20-WAVE CAMPAIGN (2026-05 v5): the curve splits by enemy class.
   //
@@ -237,7 +262,7 @@ export function startWave(state: GameStateShape) {
       t += isFlyerGrp ? Math.max(WAVE.SPAWN_INTERVAL, 1.0) : WAVE.SPAWN_INTERVAL;
     }
   }
-  state.spawnQueue.sort((a, b) => a.spawnAt - b.spawnAt);
+  sortSpawnQueue(state.spawnQueue);
   // 20-WAVE CAMPAIGN: Iron Phalanx now has a single dedicated appearance at
   // W17 (the wave's spawns already list the phalanx group in waves.json so
   // we no longer append a separate tail here — wave 17 is type 'M' and the
@@ -283,6 +308,10 @@ export function startWave(state: GameStateShape) {
   }
   if (isBossWave) injectBossEscortCommanders(state, state.spawnQueue);
   injectCampaignCommanders(state, state.spawnQueue);
+  // 2026-07-05 — Cave B is now a true second ground gate. Once it opens,
+  // every authored ground non-boss spawn is mirrored so Gate A and Gate B
+  // each emit the same count. Bosses and flyers keep their special routes.
+  mirrorGroundSpawnsToCaveB(state);
   state.enemiesKilledThisWave = 0;
   state.enemiesLeakedThisWave = 0;
   (state as any).carriedEnemiesThisWave = state.enemies.size;
@@ -355,18 +384,13 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     const spawnHpMult = (isBossSpawn
       ? effectiveWaveHpMult(state.wave, w.hpMult, true) * bossWaveSoloBuff
       : basicHpMult) * layerMult;
-    // 2026 v2 spec Ch7 — Cave B: from W21 on, a share of GROUND enemies pour
-    // from the second cave (W21-24 ~33%, W25-30 ~50%). Deterministic
-    // round-robin (no RNG); bosses + flyers always use the main cave.
-    let fromCaveB = false;
-    if (state.wave >= 21 && !isBossSpawn && !isFlyerSpawn && state.groundPathB.length > 0) {
-      const cbIdx = (state as any).__caveBSpawnIdx ?? 0;
-      (state as any).__caveBSpawnIdx = cbIdx + 1;
-      fromCaveB = (cbIdx % (state.wave >= 25 ? 2 : 3)) === 0;
-      // Reveal the second cave the instant its first enemy actually emerges
-      // (the renderer reads this to un-hide the archway + fire the eruption).
-      if (fromCaveB) state.caveBActive = true;
-    }
+    // 2026-07-05 — Cave B route is now explicit on the queue item. W21+
+    // ground non-boss groups are mirrored at wave start so both gates emit
+    // equal counts instead of splitting one shared count.
+    const fromCaveB = !!item.caveB && !isBossSpawn && !isFlyerSpawn && state.groundPathB.length > 0;
+    // Reveal the second cave the instant its first enemy actually emerges
+    // (the renderer reads this to un-hide the archway + fire the eruption).
+    if (fromCaveB) state.caveBActive = true;
     const e = spawnEnemy(state, item.type as EnemyType, spawnHpMult, false, fromCaveB);
     if (item.bossEscort) {
       (e as any).__bossEscortCommander = true;

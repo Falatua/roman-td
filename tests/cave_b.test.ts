@@ -6,12 +6,40 @@
 import { describe, it, expect } from 'vitest';
 import { createGameState } from '../src/GameState';
 import { initializeGrid, setTile } from '../src/systems/GridManager';
-import { buildGroundPath, buildGroundPathB } from '../src/systems/PathFinder';
-import { TileType } from '../src/types';
+import { buildFlyerPath, buildGroundPath, buildGroundPathB } from '../src/systems/PathFinder';
+import { GamePhase, TileType } from '../src/types';
+import { startWave, tickSpawns } from '../src/systems/WaveManager';
+import enemiesData from '../src/data/enemies.json';
+import wavesData from '../src/data/waves.json';
 import waypoints from '../src/data/waypoints.json';
 
 const CB = (waypoints as any).caveB;
 function grid() { const s = createGameState(); initializeGrid(s); return s; }
+function waveReadyState() {
+  const s = grid();
+  const path = buildGroundPath(s);
+  const pathB = buildGroundPathB(s);
+  expect(path).not.toBeNull();
+  expect(pathB).not.toBeNull();
+  s.groundPath = path!;
+  s.groundPathB = pathB!;
+  s.flyerPath = buildFlyerPath();
+  return s;
+}
+
+function authoredCountsForWave(wave: number) {
+  const w: any = (wavesData as any[]).find(row => row.wave === wave);
+  let groundNonBoss = 0;
+  let boss = 0;
+  let flyer = 0;
+  for (const group of w.spawns) {
+    const def = (enemiesData as any)[group.type] ?? {};
+    if (def.isBoss) boss += group.count;
+    else if (def.isFlyer) flyer += group.count;
+    else groundNonBoss += group.count;
+  }
+  return { groundNonBoss, boss, flyer };
+}
 
 describe('Cave B dual-lane (2026 v2 spec Ch7)', () => {
   it('waypoints.json defines a caveB spawn', () => {
@@ -58,5 +86,45 @@ describe('Cave B dual-lane (2026 v2 spec Ch7)', () => {
     const s = grid();
     setTile(s, 33, 3, TileType.TOWER);
     expect(buildGroundPath(s)).not.toBeNull();
+  });
+
+  it('mirrors W21+ ground non-boss spawns so both gates get the same count', () => {
+    const s = waveReadyState();
+    s.phase = GamePhase.BUILD_PHASE;
+    s.wave = 20;
+    startWave(s);
+
+    const authored = authoredCountsForWave(21);
+    const mainGround = s.spawnQueue.filter(item => {
+      const def = (enemiesData as any)[item.type] ?? {};
+      return !item.caveB && !def.isBoss && !def.isFlyer;
+    });
+    const caveBGround = s.spawnQueue.filter(item => {
+      const def = (enemiesData as any)[item.type] ?? {};
+      return item.caveB && !def.isBoss && !def.isFlyer;
+    });
+
+    expect(s.wave).toBe(21);
+    expect(mainGround.length).toBeGreaterThanOrEqual(authored.groundNonBoss);
+    expect(caveBGround.length).toBe(mainGround.length);
+    for (const item of mainGround) {
+      const sameTypeFromCaveB = caveBGround.filter(other => other.type === item.type);
+      const sameTypeFromMain = mainGround.filter(other => other.type === item.type);
+      expect(sameTypeFromCaveB.length, `${item.type} mirrored to Cave B`).toBe(sameTypeFromMain.length);
+    }
+  });
+
+  it('spawns equal live ground counts from the main gate and Cave B', () => {
+    const s = waveReadyState();
+    s.phase = GamePhase.BUILD_PHASE;
+    s.wave = 20;
+    startWave(s);
+    tickSpawns(s, 999);
+
+    const mainGround = [...s.enemies.values()].filter(e => !e.isBoss && !e.isFlyer && !(e as any).__caveB);
+    const caveBGround = [...s.enemies.values()].filter(e => !e.isBoss && !e.isFlyer && (e as any).__caveB);
+    expect(mainGround.length).toBeGreaterThan(0);
+    expect(caveBGround.length).toBe(mainGround.length);
+    expect(s.caveBActive).toBe(true);
   });
 });

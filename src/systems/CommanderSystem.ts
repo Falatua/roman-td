@@ -50,7 +50,7 @@ export function bossEscortCommandersForWave(wave: number): CommanderType[] {
   return BOSS_ESCORT_COMMANDERS[wave] ? [...BOSS_ESCORT_COMMANDERS[wave]] : [];
 }
 
-export function injectBossEscortCommanders(state: GameStateShape, queue: { type: string; spawnAt: number; bossEscort?: boolean }[]): void {
+export function injectBossEscortCommanders(state: GameStateShape, queue: { type: string; spawnAt: number; bossEscort?: boolean; caveB?: boolean }[]): void {
   if (state.endlessMode) return;
   const escort = bossEscortCommandersForWave(state.wave);
   if (escort.length === 0) return;
@@ -69,7 +69,7 @@ export function injectBossEscortCommanders(state: GameStateShape, queue: { type:
   queue.sort((a, b) => a.spawnAt - b.spawnAt);
 }
 
-export function injectCampaignCommanders(state: GameStateShape, queue: { type: string; spawnAt: number; bossEscort?: boolean }[]): void {
+export function injectCampaignCommanders(state: GameStateShape, queue: { type: string; spawnAt: number; bossEscort?: boolean; caveB?: boolean }[]): void {
   if (state.endlessMode) return;
   const commander = CAMPAIGN_COMMANDERS[state.wave];
   if (!commander) return;
