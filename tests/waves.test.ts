@@ -170,6 +170,12 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(w25.comboAntiAirArmorPct).toBeGreaterThan(w24.comboAntiAirArmorPct);
   });
 
+  it('spawns two undead war elephants on Wave 14', () => {
+    const wave14 = (wavesData as any[]).find(w => w.wave === 14);
+    const elephants = (wave14.spawns ?? []).find((spawn: any) => spawn.type === 'UNDEAD_WAR_ELEPHANT');
+    expect(elephants?.count).toBe(2);
+  });
+
   it('turns W26-W30 into the final apex-tower gauntlet', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     const expected = new Map<number, { hp: number; dr: number; aa: number; dot: number; regen: number }>([

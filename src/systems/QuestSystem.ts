@@ -362,9 +362,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'boss_slayer_supreme', tier: 'LATE',
     title: 'Boss Slayer Supreme',
-    blurb: 'Kill 19 boss-class enemies across the full campaign.',
+    blurb: 'Kill 20 boss-class enemies across the full campaign.',
     condition: s => s.bossesKilled ?? 0,
-    target: 19,
+    target: 20,
     reward: { kind: 'GOLD', amount: 200 }
   },
   {

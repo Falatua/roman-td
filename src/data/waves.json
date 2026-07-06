@@ -241,7 +241,7 @@
     "spawns": [
       {
         "type": "UNDEAD_WAR_ELEPHANT",
-        "count": 1
+        "count": 2
       },
       {
         "type": "UNDEAD_CELT",
