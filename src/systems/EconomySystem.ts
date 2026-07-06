@@ -1,5 +1,6 @@
 import { ECONOMY, HERO_XP_THRESHOLDS, POOL_PROBABILITIES } from '../constants';
 import { GameStateShape } from '../GameState';
+import { applySenateBailoutTax } from './SecretEventsSystem';
 
 export function canAfford(state: GameStateShape, cost: number): boolean {
   return state.gold >= cost;
@@ -11,8 +12,15 @@ export function spendGold(state: GameStateShape, cost: number): boolean {
   return true;
 }
 
-export function earnGold(state: GameStateShape, amount: number) {
-  state.gold += amount;
+export function earnGold(state: GameStateShape, amount: number, opts?: { taxable?: boolean }): number {
+  const gross = Math.round(amount);
+  if (gross <= 0) {
+    state.gold += gross;
+    return gross;
+  }
+  const awarded = opts?.taxable ? applySenateBailoutTax(state, gross).net : gross;
+  state.gold += awarded;
+  return awarded;
 }
 
 export function perfectWaveGoldBonus(wave: number): number {

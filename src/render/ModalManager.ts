@@ -15,7 +15,9 @@ const GAME_MODAL_IDS = [
   'dps-check-summary',
   'campaign-relic-modal',
   'boss-trophy-modal',
-  'test-your-might-modal'
+  'test-your-might-modal',
+  'mercator-backroom-modal',
+  'senate-bailout-modal'
 ];
 
 export function closeGameModals() {

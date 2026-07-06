@@ -75,6 +75,7 @@ import { showCampaignRelicModal } from './render/CampaignRelicModal';
 import { showBossTrophyModal } from './render/BossTrophyModal';
 import { showTestYourMightModal } from './render/TestYourMightModal';
 import { showLastStandTrove } from './render/LastStandTrove';
+import { showMercatorBackRoomModal, showSenateBailoutModal } from './render/SecretEvents';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
@@ -82,6 +83,13 @@ import { displayWaveNumber } from './systems/TestYourMightLabels';
 import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy } from './systems/RewardEligibility';
 import { isFinalBossBreach } from './systems/LeakRules';
 import { claimLastStandTroveTower, markLastStandTroveOffered, shouldOfferLastStandTrove } from './systems/LastStandTroveSystem';
+import {
+  finishSenateBailoutTaxWave,
+  markMercatorBackRoomOffered,
+  markSenateBailoutOffered,
+  shouldOfferMercatorBackRoom,
+  shouldOfferSenateBailout
+} from './systems/SecretEventsSystem';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -180,6 +188,56 @@ async function boot() {
       const waiting = state.pendingPurchasedTowers?.length ?? 0;
       state.hint = `LAST-LIFE TROVE CLAIMED — ${name} T5 is queued. Click an empty tile to place it${waiting > 1 ? ` (${waiting} rewards waiting)` : ''}.`;
       try { SFX.combo?.(); } catch { /* audio is optional */ }
+    });
+  }
+  function anySecretEventModalOpen(): boolean {
+    return !!document.getElementById('last-stand-trove-modal')
+      || !!document.getElementById('mercator-backroom-modal')
+      || !!document.getElementById('senate-bailout-modal')
+      || !!document.getElementById('shop-modal')
+      || !!document.getElementById('campaign-relic-modal')
+      || !!document.getElementById('boss-trophy-modal')
+      || !!document.getElementById('test-your-might-modal');
+  }
+  function maybeOpenMercatorBackRoom(): void {
+    if (anySecretEventModalOpen()) return;
+    if (!shouldOfferMercatorBackRoom(state)) return;
+    markMercatorBackRoomOffered(state);
+    (state as any).__mercatorBackRoomOpen = true;
+    state.hint = 'MERCATOR HAS OPENED THE BACK ROOM — choose one private bargain.';
+    try { SFX.comboAvailable?.(); } catch { /* optional */ }
+    showBossBanner('MERCATOR HAS OPENED THE BACK ROOM — ONE PRIVATE BARGAIN', 'ROMAN');
+    showMercatorBackRoomModal(state, inventory, {
+      onClaim: (offer) => {
+        (state as any).__mercatorBackRoomOpen = false;
+        state.hint = offer.kind === 'TOWER'
+          ? `Mercator back-room deal claimed — ${offer.title} is queued. Click an empty tile to place it.`
+          : `Mercator back-room deal claimed — ${offer.title} added to your war chest.`;
+        try { SFX.buy(); } catch { /* optional */ }
+      },
+      onClose: () => {
+        (state as any).__mercatorBackRoomOpen = false;
+      }
+    });
+  }
+  function maybeOpenSenateBailout(): void {
+    if (anySecretEventModalOpen()) return;
+    if (!shouldOfferSenateBailout(state)) return;
+    markSenateBailoutOffered(state);
+    (state as any).__senateBailoutOpen = true;
+    state.hint = 'THE SENATE OFFERS AN EMERGENCY BAILOUT — gold now, taxes later.';
+    try { SFX.comboAvailable?.(); } catch { /* optional */ }
+    showBossBanner('EMERGENCY SENATE SESSION — BAILOUT OFFERED', 'ROMAN');
+    showSenateBailoutModal(state, {
+      onAccept: () => {
+        (state as any).__senateBailoutOpen = false;
+        state.hint = 'Senate Bailout accepted — +450g now. Future combat income is taxed for 3 cleared campaign waves.';
+        try { SFX.buy(); } catch { /* optional */ }
+      },
+      onDecline: () => {
+        (state as any).__senateBailoutOpen = false;
+        state.hint = 'Senate Bailout refused. The senators look relieved, which is concerning.';
+      }
     });
   }
   // 2026-07-03 — Stone Rampart rotation. One armed rampart rotates through
@@ -781,6 +839,7 @@ async function boot() {
       source === 'gift'     ? 'TOWER GIFT' :
       source === 'relic'    ? 'CAMPAIGN RELIC' :
       source === 'laststand' ? 'LAST-LIFE TROVE' :
+      source === 'backroom' ? 'MERCATOR BACK ROOM' :
       'TOWER PLACEMENT';
     const b = document.createElement('div');
     b.id = 'purchased-place-confirm';
@@ -2816,7 +2875,7 @@ async function boot() {
   // their current flat price; quest
   // grants refund the wave's place cost as a fair stand-in (no purchase price
   // to recover). Tower types from `pendingPurchasedTowers` carry .source.
-  function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' | 'laststand' }): number {
+  function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' | 'laststand' | 'backroom' }): number {
     // Mercator buys = flat 250g refund (matches purchase price). Everything
     // else (quest reward, Fortuna gamble win, bonus/gift) wasn't bought
     // with gold, so the refund falls back to the wave's place cost as a
@@ -2824,6 +2883,7 @@ async function boot() {
     // gamble — they don't get the full spin cost back, just the 250g
     // mercator-equivalent so refunds remain bounded.
     if (entry.source === 'mercator' || entry.source === 'fortuna') return 250;
+    if (entry.source === 'backroom') return 125;
     // 2026-05-19 — Hero placement is free and yields no refund.
     // 2026-07-01 — Relic towers are already paid for by the relic caveat
     // (gold/lives/global drawback), so putting one back cannot mint gold.
@@ -6500,7 +6560,9 @@ async function boot() {
       || !!(state as any).__campaignRelicOpen
       || !!(state as any).__bossTrophyOpen
       || !!(state as any).__testYourMightOpen
-      || !!(state as any).__lastStandTroveOpen;
+      || !!(state as any).__lastStandTroveOpen
+      || !!(state as any).__mercatorBackRoomOpen
+      || !!(state as any).__senateBailoutOpen;
     if (paused || autoPaused || rewardModalOpen) {
       dt = 0;
     } else {
@@ -6518,6 +6580,8 @@ async function boot() {
     }
     state.tick += dt;
     maybeOpenLastStandTrove();
+    maybeOpenMercatorBackRoom();
+    maybeOpenSenateBailout();
     // 2026-05-17 — REWARD MODAL TRIGGER (relocated). Fires the instant
     // pendingSurpriseReward is set, regardless of game phase. Previous
     // placement was inside the WAVE_PHASE conditional, but WaveManager's
@@ -6555,11 +6619,11 @@ async function boot() {
         GATES_OF_HELL: 50,
       };
       const bonus = SURVIVAL_GOLD[kind] ?? 30;
-      earnGold(state, bonus);
+      const netBonus = earnGold(state, bonus, { taxable: true });
       const eventName = kind === 'INVASION' ? 'Invasion'
                       : kind === 'UPRISING' ? 'Uprising'
                       : 'Gates of Hell';
-      state.hint = `⚔ ${eventName} survived. +${bonus}g bonus banked. Pick your Legendary reward.`;
+      state.hint = `⚔ ${eventName} survived. +${netBonus}g bonus banked. Pick your Legendary reward.`;
       showSurpriseRewardModal(app, kind, inventory, state, () => {
         (state as any).__surpriseRewardModalShown = false;
         // 2026-05-18 — Stacked-event handling. If the player resolved
@@ -7218,25 +7282,24 @@ async function boot() {
           // GOLD_PURSE, HANNIBALS_STRATEGY_SCROLL, PRAETORIAN_COIN,
           // GOLD aura tile). Boss kills still get their separate scaled
           // bounty below — this baseline is flat.
-          earnGold(state, ECONOMY.BASE_GOLD_PER_KILL);
-          goldEarnedHere += ECONOMY.BASE_GOLD_PER_KILL;
+          goldEarnedHere += earnGold(state, ECONOMY.BASE_GOLD_PER_KILL, { taxable: true });
           const relicKillGold = campaignRelicKillGoldBonus(state);
-          if (relicKillGold > 0) { earnGold(state, relicKillGold); goldEarnedHere += relicKillGold; }
-          if (t.isAerarium) { earnGold(state, ECONOMY.AERARIUM_BONUS); goldEarnedHere += ECONOMY.AERARIUM_BONUS; }
+          if (relicKillGold > 0) { goldEarnedHere += earnGold(state, relicKillGold, { taxable: true }); }
+          if (t.isAerarium) { goldEarnedHere += earnGold(state, ECONOMY.AERARIUM_BONUS, { taxable: true }); }
           // GOLD-PER-KILL TROPHIES — linear rarity ladder (2026-05-19
           // rebalance): Common +1 → Rare +2 → Legendary +3. Stack
           // additively if multiple are equipped (rare in practice — same
           // ECONOMY family, so only one fits per tower slot anyway).
-          if (t.equippedItems?.includes('GOLD_PURSE'))                  { earnGold(state, 2); goldEarnedHere += 2; }
-          if (t.equippedItems?.includes('HANNIBALS_STRATEGY_SCROLL'))   { earnGold(state, 5); goldEarnedHere += 5; }
+          if (t.equippedItems?.includes('GOLD_PURSE'))                  { goldEarnedHere += earnGold(state, 2, { taxable: true }); }
+          if (t.equippedItems?.includes('HANNIBALS_STRATEGY_SCROLL'))   { goldEarnedHere += earnGold(state, 5, { taxable: true }); }
           // Gate-exclusive PRAETORIAN_COIN (Common): +1g per kill.
           // Cheaper than the Rare GOLD_PURSE (+2); same ECONOMY family
           // so they can't both be equipped on the same tower.
-          if (t.equippedItems?.includes('PRAETORIAN_COIN'))              { earnGold(state, 1); goldEarnedHere += 1; }
+          if (t.equippedItems?.includes('PRAETORIAN_COIN'))              { goldEarnedHere += earnGold(state, 1, { taxable: true }); }
           // 2026-05-19 — TREASURY TILE (GOLD aura tile): +2g per kill.
           // Stacks with PRAETORIAN_COIN / GOLD_PURSE / Aerarium — all
           // independent gold-on-kill sources.
-          if (towerAuraTileKind(t) === 'GOLD')                            { earnGold(state, 2); goldEarnedHere += 2; }
+          if (towerAuraTileKind(t) === 'GOLD')                            { goldEarnedHere += earnGold(state, 2, { taxable: true }); }
           if (goldEarnedHere > 0 && t) {
             const tcx = t.tileX * 32 + 16;
             const tcy = t.tileY * 32 + 16;
@@ -7636,11 +7699,11 @@ async function boot() {
       }
       tickGore(gore, dt);
       checkWaveEnd(state, (gold) => {
-        if (gold > 0) earnGold(state, gold);
+        if (gold > 0) earnGold(state, gold, { taxable: true });
         const clearedTestYourMight = state.testYourMightCleared === true && (state as any).__testYourMightRewardPaid !== true;
         if (clearedTestYourMight) {
           (state as any).__testYourMightRewardPaid = true;
-          earnGold(state, TEST_YOUR_MIGHT_REWARD_GOLD);
+          earnGold(state, TEST_YOUR_MIGHT_REWARD_GOLD, { taxable: true });
           state.score += 5000;
           // 2026-06-25 — reward is gold + a free Tier-5 Scorpio to place.
           if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
@@ -7681,8 +7744,8 @@ async function boot() {
         if (state.enemiesLeakedThisWave === 0 && !clearedTestYourMight) {
           const perfectBonus = perfectWaveGoldBonus(state.wave);
           state.score += 200;
-          earnGold(state, perfectBonus);
-          if (!clearedTestYourMight) state.hint = `✨ PERFECT WAVE — +${perfectBonus}g bonus on top of the +${gold}g wave reward.`;
+          const netPerfectBonus = earnGold(state, perfectBonus, { taxable: true });
+          if (!clearedTestYourMight) state.hint = `✨ PERFECT WAVE — +${netPerfectBonus}g bonus on top of the +${gold}g wave reward.`;
           if (renderer?.triggerImpactRing) {
             // Gold celebration ring at the gate location (middle-right of map).
             renderer.triggerImpactRing(GRID.COLS * GRID.TILE - 64, GRID.ROWS * GRID.TILE / 2, state.tick, 48, 0xffd34d);
@@ -7724,6 +7787,14 @@ async function boot() {
           const mvpDef: any = (towersData as any)[mvp.type] ?? {};
           const mvpName = mvpDef.name ?? String(mvp.type).replace(/_/g, ' ');
           showMvpBanner(`★ MVP — ${mvpName} T${mvp.qualityTier}: ${mvp.killsThisWave} kills, ${Math.round(mvp.damageThisWave)} dmg ★`, mvp.tileX, mvp.tileY, mvp.type);
+        }
+        if (!clearedTestYourMight) {
+          const wasTaxed = (state.senateBailoutTaxWavesRemaining ?? 0) > 0;
+          const remainingTaxWaves = finishSenateBailoutTaxWave(state);
+          if (wasTaxed && remainingTaxWaves === 0) {
+            const lost = state.senateBailoutTaxGoldLost ?? 0;
+            showBonusBossBanner(`SENATE TAX PAID OFF — ${lost}g SKIMMED, ROME CALLS IT PATRIOTISM`);
+          }
         }
         state.draw = [];
         state.selectedCard = null;

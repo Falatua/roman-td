@@ -18,6 +18,7 @@ import { itemFamily } from '../systems/ItemRules';
 import { markScrollable } from './ScrollCues';
 import { HERO_FORGE_CAP, heroForgeNextCost } from '../systems/HeroSystem';
 import { heroIdForTowerType, isMercatorChampionType } from '../systems/HeroIdentity';
+import { recordMercatorBackRoomPurchase } from '../systems/SecretEventsSystem';
 
 // Inject the recipe-ready pulse keyframes once. Mirrors the green glow used on
 // pending prospects whose `id` lands in scanCombos's ingredient set, so the
@@ -575,6 +576,7 @@ function renderMercatorShop(
           return;
         }
         spendGold(state, offer.price);
+        recordMercatorBackRoomPurchase(state, offer.price);
         if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
         state.pendingPurchasedTowers.push({ type: offer.type, tier: offer.tier, source: 'mercator' });
         recordMercatorChampionPurchase(state, offer.type);
@@ -637,6 +639,7 @@ function renderMercatorShop(
         b.onclick = () => {
           const spent = buyTraps(state, tid, n);
           if (spent <= 0) { (window as any).__showInsufficientGoldToast?.(price * n); return; }
+          recordMercatorBackRoomPurchase(state, spent);
           state.hint = `Bought ${n}x ${def.name}. Open inventory and click it to arm placement.`;
           SFX.buy();
           refresh();
@@ -725,6 +728,7 @@ function renderMercatorShop(
           return;
         }
         spendGold(state, offer.price);
+        recordMercatorBackRoomPurchase(state, offer.price);
         inventoryAdd(inv, offer.itemId, offer.rarity, offer.isConsumable, offer.price);
         state.hint = `Bought ${def?.name ?? offer.itemId}.`;
         SFX.itemPickup(offer.rarity);
@@ -815,6 +819,7 @@ function renderMercatorShop(
       return;
     }
     spendGold(state, FORTUNA_GAMBLE_COST);
+    recordMercatorBackRoomPurchase(state, FORTUNA_GAMBLE_COST);
     shop.gambleSpinsThisVisit = (shop.gambleSpinsThisVisit ?? 0) + 1;
     const result = rollFortunaCombo();
     fortunaBtn.disabled = true;
@@ -913,6 +918,7 @@ function renderMercatorShop(
     }
     if (state.lives >= ECONOMY.MAX_LIVES) { state.hint = `Lives capped at ${ECONOMY.MAX_LIVES}.`; return; }
     spendGold(state, shop.livesPrice);
+    recordMercatorBackRoomPurchase(state, shop.livesPrice);
     state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + 1);
     shop.livesBoughtThisVisit += 1;
     // 2026-05-22 V33 — Track total lives purchased this run for the

@@ -147,7 +147,7 @@ export interface GameStateShape {
   // "T5 purchased at the Mercator vendor" specifically). The placement-
   // confirm modal reads this to label what's being placed accurately
   // (MERCATOR PURCHASE vs FORTUNA WIN vs QUEST REWARD vs TOWER GIFT).
-  pendingPurchasedTowers?: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' | 'laststand' }[];
+  pendingPurchasedTowers?: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' | 'laststand' | 'backroom' }[];
   // Legacy single-slot — kept for back-compat reads but new code uses the
   // queue. Set to null on every place; queue is the source of truth.
   pendingPurchasedTower?: { type: string; tier: number } | null;
@@ -283,6 +283,22 @@ export interface GameStateShape {
   // they may choose one free Tier 5 base tower to queue for placement.
   lastStandTroveOffered?: boolean;
   lastStandTroveClaimed?: boolean;
+  // Hidden Mercator loyalty event. Tracked separately from the regular
+  // Mercator visit so this stays a surprise back-room bargain, not Codex stock.
+  mercatorPurchaseCount?: number;
+  mercatorGoldSpent?: number;
+  mercatorPurchaseWaves?: number[];
+  mercatorBackRoomOffered?: boolean;
+  mercatorBackRoomClaimed?: boolean;
+  mercatorBackRoomDeclined?: boolean;
+  mercatorBackRoomOffers?: any[];
+  // Hidden desperation bargain. The Senate can front gold to a struggling
+  // player, then skim future combat income for a few cleared campaign waves.
+  senateBailoutOffered?: boolean;
+  senateBailoutClaimed?: boolean;
+  senateBailoutDeclined?: boolean;
+  senateBailoutTaxWavesRemaining?: number;
+  senateBailoutTaxGoldLost?: number;
 }
 
 export function createGameState(): GameStateShape {
@@ -368,7 +384,19 @@ export function createGameState(): GameStateShape {
     testYourMightCleared: false,
     testYourMightFailed: false,
     lastStandTroveOffered: false,
-    lastStandTroveClaimed: false
+    lastStandTroveClaimed: false,
+    mercatorPurchaseCount: 0,
+    mercatorGoldSpent: 0,
+    mercatorPurchaseWaves: [],
+    mercatorBackRoomOffered: false,
+    mercatorBackRoomClaimed: false,
+    mercatorBackRoomDeclined: false,
+    mercatorBackRoomOffers: [],
+    senateBailoutOffered: false,
+    senateBailoutClaimed: false,
+    senateBailoutDeclined: false,
+    senateBailoutTaxWavesRemaining: 0,
+    senateBailoutTaxGoldLost: 0
   };
 }
 
