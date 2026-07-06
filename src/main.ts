@@ -3720,16 +3720,17 @@ async function boot() {
     // 2026-05 v11: user-supplied keep bumper SFX (replaces the synth chime).
     SFX.prospectKeep();
 
-    if (state.keepsRemainingThisRound > 0 && hasPendingTowers()) {
-      // More keeps remaining. Important: if the player still has cards in
-      // the prospect queue (i.e. they kept mid-placement before clicking
-      // out all 10 tiles), stay in PROSPECT_PLACEMENT so they can keep
-      // placing. Only switch to PICK_KEEPER when the queue is fully
-      // drained — that's the natural "pick from what's on the field" phase.
-      const hasMoreCardsToPlace = state.prospectQueue.length > 0;
-      state.phase = hasMoreCardsToPlace ? GamePhase.PROSPECT_PLACEMENT : GamePhase.PICK_KEEPER;
-      state.hint = hasMoreCardsToPlace
-        ? `Kept ${towerName(keeper.type)} T${keeper.qualityTier}. Keep placing — ${state.prospectQueue.length} card${state.prospectQueue.length === 1 ? '' : 's'} left, ${state.keepsRemainingThisRound} more keep${state.keepsRemainingThisRound === 1 ? '' : 's'} available.`
+    const canPlaceMoreProspects = state.prospectsPlaced < 10;
+    if (state.keepsRemainingThisRound > 0 && (hasPendingTowers() || canPlaceMoreProspects)) {
+      // More keeps remaining. Important: if the player kept the only
+      // revealed prospect early, there may be no pending towers on the
+      // field, but the round is NOT over. Stay in PROSPECT_PLACEMENT while
+      // the 10-prospect cap still has room so empty grass clicks continue
+      // to roll new candidates.
+      state.phase = canPlaceMoreProspects ? GamePhase.PROSPECT_PLACEMENT : GamePhase.PICK_KEEPER;
+      const rollsLeft = Math.max(0, 10 - state.prospectsPlaced);
+      state.hint = canPlaceMoreProspects
+        ? `Kept ${towerName(keeper.type)} T${keeper.qualityTier}. Keep placing - ${rollsLeft} roll${rollsLeft === 1 ? '' : 's'} left, ${state.keepsRemainingThisRound} more keep${state.keepsRemainingThisRound === 1 ? '' : 's'} available.`
         : `Kept ${towerName(keeper.type)} T${keeper.qualityTier}. Pick ${state.keepsRemainingThisRound} more (or START WAVE to skip).`;
       const np = buildGroundPath(state);
       if (np) { state.groundPath = np; resnapEnemiesToPath(state, np); }
@@ -3743,6 +3744,7 @@ async function boot() {
         setTile(state, t.tileX, t.tileY, TileType.STONE);
       }
     }
+    state.prospectQueue = [];
     state.hint = `Kept ${towerName(keeper.type)} T${keeper.qualityTier}. The rejected prospects are now load-bearing.`;
     state.phase = GamePhase.BUILD_PHASE;
     const np = buildGroundPath(state);
