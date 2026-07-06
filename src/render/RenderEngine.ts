@@ -2651,6 +2651,7 @@ export class RenderEngine {
     const coastalDetailLayer = new Container();
     const beachGfx = new Graphics();
     const waterGfx = new Graphics();
+    const oceanCurrentGfx = new Graphics();
     const waterDeepKeys = ['OCEAN_DEEP_A', 'OCEAN_DEEP_B'];
     const waterMidKeys = ['OCEAN_MID_A', 'OCEAN_MID_B'];
     const waterShallowKeys = ['OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B'];
@@ -2833,11 +2834,44 @@ export class RenderEngine {
         }
       }
     }
+    for (let r = 0; r < GRID.ROWS; r++) {
+      let c = 0;
+      while (c < GRID.COLS) {
+        while (c < GRID.COLS && state.tiles[r]?.[c] !== TileType.WATER) c++;
+        const start = c;
+        while (c < GRID.COLS && state.tiles[r]?.[c] === TileType.WATER) c++;
+        const end = c - 1;
+        if (end - start < 1) continue;
+        for (let pass = 0; pass < 2; pass++) {
+          const baseY = r * GRID.TILE + 7 + ((r * 7 + pass * 11) % 18);
+          const x0 = start * GRID.TILE + 3 + ((r * 5 + pass * 9) % 11);
+          const x1 = (end + 1) * GRID.TILE - 5;
+          const bright = pass === 0;
+          for (let x = x0; x < x1; x += bright ? 11 : 14) {
+            const col = Math.floor(x / GRID.TILE);
+            if (state.tiles[r]?.[col] !== TileType.WATER) continue;
+            const yy = baseY + Math.round(Math.sin((x + r * 13 + pass * 19) * 0.12) * 1.4);
+            const len = bright ? 7 : 10;
+            oceanCurrentGfx
+              .beginFill(bright ? 0xdffff7 : 0x062238, bright ? 0.28 : 0.18)
+              .drawRect(Math.round(x), yy, len, 1)
+              .endFill();
+            if (bright && ((x + r + pass) % 3 === 0)) {
+              oceanCurrentGfx
+                .beginFill(0x7fd8e2, 0.18)
+                .drawRect(Math.round(x + 3), yy + 2, Math.max(3, len - 4), 1)
+                .endFill();
+            }
+          }
+        }
+      }
+    }
     this.layers.bg.addChild(terrainLayer);
     this.layers.bg.addChild(oceanLayer);
     this.layers.bg.addChild(shoreLayer);
     this.layers.bg.addChild(beachGfx);
     this.layers.bg.addChild(waterGfx);
+    this.layers.bg.addChild(oceanCurrentGfx);
     // Sprite-water dressing in the bottom-left reserve. Drawn above terrain
     // and below all gameplay layers, so the cove gains life without hiding towers.
     const waterDetail = [

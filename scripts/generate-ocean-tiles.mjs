@@ -72,6 +72,28 @@ function line(data, x0, y0, x1, y1, color, alpha = 255) {
   }
 }
 
+function cluster(data, x, y, points, color, alpha = 255) {
+  for (const [dx, dy] of points) setPx(data, x + dx, y + dy, color, alpha);
+}
+
+function waveCrest(data, x, y, len, color, alpha = 210, salt = 0) {
+  for (let i = 0; i < len; i++) {
+    const yy = y + Math.round(Math.sin((i + salt) * 0.72) * 1.15);
+    const fade = i < 2 || i > len - 3 ? 0.55 : 1;
+    setPx(data, x + i, yy, color, Math.round(alpha * fade));
+    if (i % 3 === 1) setPx(data, x + i, yy + 1, 0x90dce8, Math.round(alpha * 0.36 * fade));
+    if (i % 5 === 2) setPx(data, x + i, yy - 1, 0xffffff, Math.round(alpha * 0.42 * fade));
+  }
+}
+
+function trough(data, x, y, len, color, alpha = 130, salt = 0) {
+  for (let i = 0; i < len; i++) {
+    const yy = y + Math.round(Math.sin((i + salt) * 0.55) * 1.0);
+    setPx(data, x + i, yy, color, alpha);
+    if (i % 2 === 0) setPx(data, x + i, yy + 1, color, Math.round(alpha * 0.55));
+  }
+}
+
 async function save(name, data) {
   await sharp(data, { raw: { width: SIZE, height: SIZE, channels: 4 } })
     .png({ compressionLevel: 9 })
@@ -87,8 +109,10 @@ function waterTile({ name, top, bottom, accent, deep, salt }) {
   for (let y = 0; y < SIZE; y++) {
     const base = mix(topRgb, bottomRgb, y / (SIZE - 1));
     for (let x = 0; x < SIZE; x++) {
-      const n = hash(x >> 1, y >> 1, salt);
-      const shift = ((n & 15) - 7) * 1.6;
+      const lane = Math.sin((x + salt * 0.37) * 0.38 + y * 0.55) * 9;
+      const swell = Math.sin((x - y + salt) * 0.18) * 5;
+      const n = hash(x >> 2, y >> 1, salt);
+      const shift = lane + swell + ((n & 7) - 3) * 1.25;
       setPx(data, x, y, [
         Math.max(0, Math.min(255, base[0] + shift)),
         Math.max(0, Math.min(255, base[1] + shift)),
@@ -96,19 +120,24 @@ function waterTile({ name, top, bottom, accent, deep, salt }) {
       ]);
     }
   }
-  for (let i = 0; i < 18; i++) {
-    const hx = (hash(i, salt, 11) % 27) + 2;
-    const hy = (hash(i, salt, 29) % 24) + 3;
-    const len = 3 + (hash(i, salt, 47) % 8);
-    const bright = hash(i, salt, 61) % 3 !== 0;
-    rect(data, hx, hy, len, 1, bright ? accentRgb : deepRgb, bright ? 92 : 80);
-    if (len > 5 && bright) rect(data, hx + 2, hy + 2, Math.max(2, len - 4), 1, 0xd6fff6, 52);
-  }
-  for (let i = 0; i < 9; i++) {
-    const x = hash(i, salt, 71) % 31;
-    const y = hash(i, salt, 83) % 31;
-    setPx(data, x, y, accentRgb, 96);
-    if (hash(i, salt, 97) % 2 === 0) setPx(data, x + 1, y, 0xffffff, 68);
+  const bandYs = [5, 12, 19, 27];
+  bandYs.forEach((y, idx) => {
+    const offset = (hash(idx, salt, 17) % 10) - 5;
+    trough(data, -3 + offset, y + (idx % 2), 19, deepRgb, 108, salt + idx);
+    trough(data, 15 + offset, y - 1, 21, deepRgb, 94, salt + idx + 9);
+  });
+  const crestRows = [4, 10, 16, 23, 29];
+  crestRows.forEach((y, idx) => {
+    const x = -4 + (hash(idx, salt, 31) % 13);
+    const len = 11 + (hash(idx, salt, 43) % 11);
+    waveCrest(data, x, y, len, accentRgb, 175, salt + idx);
+    if (idx % 2 === 0) waveCrest(data, x + 15, y + 2, 13, 0xdffff7, 128, salt + idx + 5);
+  });
+  for (let i = 0; i < 7; i++) {
+    const x = 3 + (hash(i, salt, 71) % 25);
+    const y = 3 + (hash(i, salt, 83) % 25);
+    const c = i % 3 === 0 ? 0xf2fff8 : accentRgb;
+    cluster(data, x, y, [[0, 0], [1, 0], [2, 1], [4, 1]], c, i % 3 === 0 ? 115 : 92);
   }
   return save(name, data);
 }
@@ -151,17 +180,17 @@ function foamEdge(name, side) {
   const drawShadow = (x, y, w, h) => rect(data, x, y, w, h, 0x6eb8b4, 88);
   if (side === 'n' || side === 's') {
     const y = side === 'n' ? 0 : 28;
-    draw(2, y + 1, 10, 2);
-    draw(15, y, 13, 2, 165);
-    draw(6, y + 5, 7, 1, 128);
-    draw(19, y + 4, 8, 1, 118);
+    waveCrest(data, 1, y + 2, 14, 0xf2fff8, 220, side === 'n' ? 1 : 5);
+    waveCrest(data, 15, y + 1, 15, 0xdffff7, 188, side === 'n' ? 3 : 7);
+    draw(5, y + 6, 7, 1, 118);
+    draw(18, y + 5, 9, 1, 110);
     drawShadow(0, side === 'n' ? 4 : 27, 32, 1);
   } else {
     const x = side === 'w' ? 0 : 28;
-    draw(x + 1, 2, 2, 11);
-    draw(x, 17, 2, 10, 165);
-    draw(x + 5, 6, 1, 7, 128);
-    draw(x + 4, 20, 1, 7, 118);
+    for (let yy = 2; yy < 15; yy++) setPx(data, x + 1 + Math.round(Math.sin(yy * 0.8) * 1), yy, 0xf2fff8, 205);
+    for (let yy = 17; yy < 29; yy++) setPx(data, x + Math.round(Math.sin(yy * 0.75) * 1), yy, 0xdffff7, 172);
+    draw(x + 5, 6, 1, 8, 118);
+    draw(x + 4, 20, 1, 7, 108);
     drawShadow(side === 'w' ? 4 : 27, 0, 1, 32);
   }
   return save(name, data);
