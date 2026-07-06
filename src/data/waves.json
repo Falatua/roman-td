@@ -616,7 +616,7 @@
     "wave": 24,
     "type": "B",
     "faction": "EGYPTIANS",
-    "hpMult": 44,
+    "hpMult": 50,
     "gold": 17,
     "spawns": [
       {
@@ -656,9 +656,10 @@
         "count": 1
       }
     ],
-    "enemyDamageReductPct": 0.08,
-    "enemyDotResistPct": 0.25,
-    "enemyRegenPctPerSec": 0.006
+    "enemySpeedBoostPct": 0.08,
+    "enemyDamageReductPct": 0.1,
+    "enemyDotResistPct": 0.3,
+    "enemyRegenPctPerSec": 0.007
   },
   {
     "wave": 25,

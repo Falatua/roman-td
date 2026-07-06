@@ -19,7 +19,7 @@ import HERO_DEFS_FOR_INSPECT from '../data/herodefs.json';
 import comboData from '../data/towerCombinations.json';
 import { canEquipItemFamily, canEquipItemOnDamageType, itemEquipMode, itemFamily } from '../systems/ItemRules';
 import { markScrollable } from './ScrollCues';
-import { scanCombos } from '../systems/CombinationEngine';
+import { scanCombos, resolveComboChoice } from '../systems/CombinationEngine';
 import { tex } from './Assets';
 import { closeGameModals } from './ModalManager';
 import { itemIconSvg } from './ItemIcon';
@@ -561,7 +561,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   if (t.pending && hooks.onCombine) {
     // Check whether ANY combo exists that USES this prospect as an ingredient,
     // so we can give actionable hint ("KEEP this to unlock X combos").
-    const usable = scanCombos(state).filter(cb => cb.ingredients.some(ing => ing.id === t.id));
+    const usable = scanCombos(state).filter(cb => !!resolveComboChoice(state, cb, t.id));
     const row = document.createElement('div');
     row.style.cssText = 'padding:10px 12px;border-bottom:1px solid #3a3025;background:#2a1d0a';
     const recipeBlurb = usable.length > 0
@@ -580,16 +580,17 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   // tower as an ingredient. Clicking one executes the combo with this tower's tile
   // as the result location; the other ingredient tiles convert to wall stones.
   if (!t.pending && hooks.onCombine) {
-    const combos = scanCombos(state).filter(cb => cb.ingredients.some(ing => ing.id === t.id));
+    const combos = scanCombos(state).filter(cb => !!resolveComboChoice(state, cb, t.id));
     if (combos.length > 0) {
       const row = document.createElement('div');
       row.style.cssText = 'padding:10px;border-bottom:1px solid #3a3025;background:#1a1208';
       row.innerHTML = `<div style="font-size:10px;color:#ffd34d;letter-spacing:1px;margin-bottom:6px">⚔ COMBINATIONS READY (LANDS HERE)</div>`;
       for (const cb of combos) {
-        const resultDef: any = (towersData as any)[cb.result];
-        const tierColor = tierColorHex(cb.resultTier);
+        const resolved = resolveComboChoice(state, cb, t.id) ?? cb;
+        const resultDef: any = (towersData as any)[resolved.result];
+        const tierColor = tierColorHex(resolved.resultTier);
         const card = document.createElement('div');
-        const canAfford = state.gold >= cb.cost;
+        const canAfford = state.gold >= resolved.cost;
         card.style.cssText = `padding:8px 10px;background:#0c0a08;margin-bottom:4px;border:2px solid ${tierColor};display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:${canAfford ? 'pointer' : 'not-allowed'};${canAfford ? '' : 'opacity:0.45;'}`;
         // Each ingredient gets BOTH a color tag and an explicit role tag so
         // the player can instantly tell which slot is which:
@@ -598,7 +599,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
         //   • PENDING        (another pending prospect still on the field — orange)
         // The yellow underline marks the tower in your hand so you don't
         // confuse "this is what I'm placing" with "this is what I've got."
-        const ingredientsList = cb.ingredients.map(ing => {
+        const ingredientsList = resolved.ingredients.map(ing => {
           const idef: any = (towersData as any)[ing.type];
           const live = state.towers.get(ing.id);
           const isPending = !!live?.pending;
@@ -606,7 +607,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
           let color: string;
           let role: string;
           if (isThis) {
-            color = '#ffd34d'; role = 'THIS PROSPECT';
+            color = '#ffd34d'; role = 'THIS TILE';
           } else if (isPending) {
             color = '#ff9933'; role = 'PENDING — KEEP IT';
           } else {
@@ -615,11 +616,11 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
           const underline = isThis ? 'border-bottom:2px solid #ffd34d;' : '';
           return `<span style="color:${color};${underline}font-weight:600">${idef?.name ?? ing.type} T${ing.qualityTier}<span style="font-size:8.5px;letter-spacing:1px;margin-left:4px;opacity:0.85">(${role})</span></span>`;
         }).join(' <span style="color:#cdb98a">+</span> ');
-        const headLabel = cb.isSameTierMerge ? `MERGE → ${resultDef?.name ?? cb.result} T${cb.resultTier}` : `${resultDef?.name ?? cb.result} T${cb.resultTier}`;
+        const headLabel = resolved.isSameTierMerge ? `MERGE → ${resultDef?.name ?? resolved.result} T${resolved.resultTier}` : `${resultDef?.name ?? resolved.result} T${resolved.resultTier}`;
         // Legend line under the combo header — makes the role tags
         // self-explanatory without forcing the player to remember.
         const legendHtml = `<div style="font-size:8.5px;color:#7a7060;letter-spacing:1px;margin-top:3px">
-          <span style="color:#ffd34d">■ this prospect</span> ·
+          <span style="color:#ffd34d">■ this result tile</span> ·
           <span style="color:#88ff88">■ already-kept tower</span> ·
           <span style="color:#ff9933">■ pending prospect (must KEEP)</span>
         </div>`;
@@ -630,8 +631,8 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
             ${legendHtml}
           </div>
           <div style="text-align:right">
-            <div style="color:#f0c040;font-size:12px;font-weight:bold">${cb.cost}g</div>
-            ${canAfford ? '<div style="color:#66cc55;font-size:10px;letter-spacing:1px">▶ COMBINE</div>' : `<div style="color:#cc6666;font-size:9px">NEED ${cb.cost - state.gold}g</div>`}
+            <div style="color:#f0c040;font-size:12px;font-weight:bold">${resolved.cost}g</div>
+            ${canAfford ? '<div style="color:#66cc55;font-size:10px;letter-spacing:1px">▶ COMBINE</div>' : `<div style="color:#cc6666;font-size:9px">NEED ${resolved.cost - state.gold}g</div>`}
           </div>`;
         card.onmouseenter = () => { if (canAfford) card.style.background = '#1d1714'; };
         card.onmouseleave = () => { card.style.background = '#0c0a08'; };

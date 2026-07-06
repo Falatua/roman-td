@@ -55,6 +55,89 @@ export interface AvailableCombo {
   isSameTierMerge?: boolean;
 }
 
+function sortedComboCandidates(state: GameStateShape): Tower[] {
+  return Array.from(state.towers.values()).sort((a, b) => {
+    if (!!a.pending !== !!b.pending) return a.pending ? 1 : -1;
+    return (b.qualityTier ?? 0) - (a.qualityTier ?? 0);
+  });
+}
+
+function inheritedRecipeTier(recipe: any, picked: Tower[]): number {
+  const maxIngTier = picked.reduce((m, p) => Math.max(m, p.qualityTier ?? 1), 1);
+  return Math.min(5, Math.max(recipe.tier, maxIngTier));
+}
+
+export function resolveComboChoice(state: GameStateShape, combo: AvailableCombo, resultTileTowerId: string): AvailableCombo | null {
+  const chosen = state.towers.get(resultTileTowerId);
+  if (!chosen) return null;
+
+  if (combo.isSameTierMerge) {
+    const sourceTier = combo.resultTier - 1;
+    if (chosen.type !== combo.result || chosen.qualityTier !== sourceTier) return null;
+    const others = sortedComboCandidates(state).filter(t =>
+      t.id !== chosen.id &&
+      t.type === chosen.type &&
+      t.qualityTier === chosen.qualityTier
+    );
+    if (others.length < 2) return null;
+    return {
+      ...combo,
+      ingredients: [chosen, ...others.slice(0, 2)],
+      resultTier: chosen.qualityTier + 1
+    };
+  }
+
+  const recipe: any = (comboData as any[])[combo.recipeIndex];
+  if (!recipe) return combo.ingredients.some(t => t.id === resultTileTowerId) ? combo : null;
+
+  for (let chosenSlot = 0; chosenSlot < recipe.ingredients.length; chosenSlot++) {
+    const slot = recipe.ingredients[chosenSlot];
+    if (!ingTypeMatches(String(chosen.type), String(slot.type))) continue;
+    if (chosen.qualityTier < slot.minTier) continue;
+
+    const picked: Tower[] = [];
+    const localUsed = new Set<string>([chosen.id]);
+    let ok = true;
+    for (let i = 0; i < recipe.ingredients.length; i++) {
+      if (i === chosenSlot) {
+        picked.push(chosen);
+        continue;
+      }
+      const ing = recipe.ingredients[i];
+      const found = sortedComboCandidates(state).find(t =>
+        !localUsed.has(t.id)
+        && ingTypeMatches(String(t.type), String(ing.type))
+        && t.qualityTier >= ing.minTier
+      );
+      if (!found) { ok = false; break; }
+      picked.push(found);
+      localUsed.add(found.id);
+    }
+    if (ok && picked.length === recipe.ingredients.length) {
+      return {
+        ...combo,
+        ingredients: picked,
+        resultTier: inheritedRecipeTier(recipe, picked)
+      };
+    }
+  }
+
+  return null;
+}
+
+export function comboResultLocationChoices(state: GameStateShape, combo: AvailableCombo): Tower[] {
+  const seen = new Set<string>();
+  const out: Tower[] = [];
+  for (const tower of sortedComboCandidates(state)) {
+    if (seen.has(tower.id)) continue;
+    if (resolveComboChoice(state, combo, tower.id)) {
+      seen.add(tower.id);
+      out.push(tower);
+    }
+  }
+  return out;
+}
+
 // Find all recipes whose ingredients are present on the map.
 // Greedy: a tower is consumed by at most one suggested recipe per scan.
 // Includes BOTH cross-unit recipes AND same-tier 3-of-a-kind merges.
@@ -104,10 +187,7 @@ export function scanCombos(state: GameStateShape): AvailableCombo[] {
   // tier descending so the highest-quality available is chosen first.
   // The greedy `find` below walks this order, so cross-unit recipes prefer
   // kept-tower matches before pulling in any prospects.
-  const sortedTowers = towers.slice().sort((a, b) => {
-    if (!!a.pending !== !!b.pending) return a.pending ? 1 : -1;
-    return (b.qualityTier ?? 0) - (a.qualityTier ?? 0);
-  });
+  const sortedTowers = sortedComboCandidates(state);
 
   comboData.forEach((recipe, idx) => {
     const picked: Tower[] = [];
@@ -136,8 +216,7 @@ export function scanCombos(state: GameStateShape): AvailableCombo[] {
       // too. Falls back to the recipe's static tier when all ingredients
       // are at or below the recipe's default. Capped at T5 since that's
       // the apex of the tier ladder.
-      const maxIngTier = picked.reduce((m, p) => Math.max(m, p.qualityTier ?? 1), 1);
-      const inheritedTier = Math.min(5, Math.max(recipe.tier, maxIngTier));
+      const inheritedTier = inheritedRecipeTier(recipe, picked);
       out.push({
         recipeIndex: idx,
         result: recipe.result as TowerType,
@@ -240,6 +319,12 @@ export function purchaseCompletesRecipe(state: GameStateShape, type: TowerType |
 }
 
 export function executeCombo(state: GameStateShape, combo: AvailableCombo, resultTileTowerId: string): boolean {
+  const chosenCombo = resolveComboChoice(state, combo, resultTileTowerId);
+  if (!chosenCombo) {
+    state.hint = 'That tower cannot anchor this combination. Pick a valid ingredient tile.';
+    return false;
+  }
+  combo = chosenCombo;
   // 2026-05-15 v7: combine is now ALLOWED during all pre-wave phases —
   // PROSPECT_PLACEMENT, PICK_KEEPER, AND BUILD_PHASE. Mid-wave is
   // still blocked — no transactions while the legion is dying.

@@ -1,4 +1,4 @@
-import { AvailableCombo } from '../systems/CombinationEngine';
+import { AvailableCombo, comboResultLocationChoices } from '../systems/CombinationEngine';
 import { GameStateShape } from '../GameState';
 import towersData from '../data/towers.json';
 import { TIER_COLORS } from '../constants';
@@ -27,7 +27,7 @@ export function showComboPicker(parent: HTMLElement, combos: AvailableCombo[], s
     <h2 style="margin:0;color:#d4af37;letter-spacing:2px">⚔ COMBINATIONS AVAILABLE</h2>
     <button id="combo-close" style="background:#3a1a1a;color:#e8d6a8;border:1px solid #5a3a30;padding:4px 10px;cursor:pointer;font-family:inherit">CLOSE</button>
   </div>
-  <div style="font-size:11px;opacity:0.75;margin-bottom:10px">Pick a recipe, then click the ingredient tile where the new tower should land. The other ingredient tiles become wall stones (your maze stays intact).</div>`;
+  <div style="font-size:11px;opacity:0.75;margin-bottom:10px">Pick a recipe, then choose which valid ingredient tile becomes the new tower. The other required ingredient tiles become wall stones (your maze stays intact).</div>`;
 
   const list = document.createElement('div');
   list.style.cssText = `display:flex;flex-direction:column;gap:8px;`;
@@ -66,12 +66,14 @@ export function showComboPicker(parent: HTMLElement, combos: AvailableCombo[], s
 
     const ingredientsHint = document.createElement('div');
     ingredientsHint.style.cssText = `font-size:10px;opacity:0.7;margin-top:2px;color:#cdb887`;
-    ingredientsHint.textContent = `Result location — click the ingredient tile where the new tower should land:`;
+    ingredientsHint.textContent = `Result location — choose which valid ingredient tile becomes the new tower:`;
     card.appendChild(ingredientsHint);
 
     const ingredients = document.createElement('div');
     ingredients.style.cssText = `display:flex;flex-wrap:wrap;gap:4px;margin-top:4px`;
-    for (const ing of cb.ingredients) {
+    const locationChoices = comboResultLocationChoices(state, cb).filter(t => !t.pending);
+    const chips = locationChoices.length > 0 ? locationChoices : cb.ingredients;
+    for (const ing of chips) {
       const def: any = (towersData as any)[ing.type];
       const chip = document.createElement('button');
       const ingTierColor = '#' + ((TIER_COLORS[ing.qualityTier] ?? 0xffffff)).toString(16).padStart(6, '0');

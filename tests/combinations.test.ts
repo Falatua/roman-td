@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { scanCombos, realizableCombos, executeCombo } from '../src/systems/CombinationEngine';
+import { scanCombos, realizableCombos, executeCombo, comboResultLocationChoices } from '../src/systems/CombinationEngine';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
 import { TowerType, GamePhase, TileType } from '../src/types';
@@ -39,6 +39,26 @@ describe('Same-tier merge detection', () => {
     expect(merges.length).toBeGreaterThan(0);
     expect(merges[0].result).toBe(TowerType.MILITES);
     expect(merges[0].resultTier).toBe(2);
+  });
+
+  it('lets the player choose a fourth matching tower as the same-tier merge result location', () => {
+    const s = bootstrapState();
+    placeTower(s, TowerType.MILITES, 1, 5, 5);
+    placeTower(s, TowerType.MILITES, 1, 5, 6);
+    placeTower(s, TowerType.MILITES, 1, 5, 7);
+    const chosen = placeTower(s, TowerType.MILITES, 1, 8, 8);
+
+    const merge = scanCombos(s).find(c => c.isSameTierMerge && c.result === TowerType.MILITES);
+    expect(merge).toBeTruthy();
+    expect(merge!.ingredients.map(t => t.id)).not.toContain(chosen.id);
+    expect(comboResultLocationChoices(s, merge!).map(t => t.id)).toContain(chosen.id);
+
+    const ok = executeCombo(s, merge!, chosen.id);
+    expect(ok).toBe(true);
+    const result = Array.from(s.towers.values()).find(t => t.type === TowerType.MILITES && t.qualityTier === 2);
+    expect(result?.tileX).toBe(8);
+    expect(result?.tileY).toBe(8);
+    expect(s.towers.size).toBe(2);
   });
 
   it('does NOT trigger merge with only 2 of a kind', () => {
@@ -112,6 +132,29 @@ describe('Recipe combo detection', () => {
     const combos = scanCombos(s);
     const sb = combos.find(c => c.result === TowerType.SCORPION_BOLT);
     expect(sb).toBeTruthy();
+  });
+
+  it('lets the player anchor a recipe combo on an alternate duplicate ingredient tower', () => {
+    const s = bootstrapState();
+    const firstScorpio = placeTower(s, TowerType.SCORPIO, 2, 5, 5);
+    const chosenScorpio = placeTower(s, TowerType.SCORPIO, 2, 8, 8);
+    const velites = placeTower(s, TowerType.VELITES, 2, 6, 5);
+
+    const combo = scanCombos(s).find(c => c.result === TowerType.SCORPION_BOLT);
+    expect(combo).toBeTruthy();
+    expect(combo!.ingredients.map(t => t.id)).toContain(firstScorpio.id);
+    expect(combo!.ingredients.map(t => t.id)).not.toContain(chosenScorpio.id);
+    expect(comboResultLocationChoices(s, combo!).map(t => t.id)).toEqual(
+      expect.arrayContaining([firstScorpio.id, chosenScorpio.id, velites.id])
+    );
+
+    const ok = executeCombo(s, combo!, chosenScorpio.id);
+    expect(ok).toBe(true);
+    const result = Array.from(s.towers.values()).find(t => t.type === TowerType.SCORPION_BOLT);
+    expect(result?.tileX).toBe(8);
+    expect(result?.tileY).toBe(8);
+    expect(s.towers.has(firstScorpio.id)).toBe(true);
+    expect(s.towers.has(velites.id)).toBe(false);
   });
 
   it('does NOT detect a recipe when ingredients are below minTier', () => {

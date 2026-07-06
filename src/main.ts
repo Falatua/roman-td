@@ -21,7 +21,7 @@ import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } 
 import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
 import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAuraTileKind, towerStatBreakdown } from './systems/TowerSystem';
-import { scanCombos, realizableCombos, executeCombo } from './systems/CombinationEngine';
+import { scanCombos, realizableCombos, executeCombo, resolveComboChoice } from './systems/CombinationEngine';
 // SANDBOX: dev-mode imports. Delete this line + every line tagged
 // `// SANDBOX:` to remove sandbox mode entirely.
 import { activateSandbox, sandboxAddGold, sandboxAllTowerOptions, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, sandboxWipeAllTowers, sandboxArmTestYourMight, SANDBOX_PASSWORD } from './systems/SandboxMode';
@@ -3771,23 +3771,24 @@ async function boot() {
     const combos = scanCombos(state);
     const target = combos.find(cb =>
       (isSameTierMerge ? !!cb.isSameTierMerge : cb.recipeIndex === recipeIndex)
-      && cb.ingredients.some(ing => ing.id === resultTileTowerId)
+      && !!resolveComboChoice(state, cb, resultTileTowerId)
     );
     if (!target) { state.hint = 'That combination slipped away. The pieces moved.'; return; }
+    const resolvedTarget = resolveComboChoice(state, target, resultTileTowerId) ?? target;
     // Snapshot ingredient IDs BEFORE executing so we can scrub stale
     // undo/placement metadata after the towers are deleted. Without this
     // scrub, `placementUndo` held dead IDs that referenced towers no
     // longer in `state.towers`, and the older `undoStack` closures
     // could try to restore them — producing the "random things break
     // and change later in the game" symptom.
-    const ingredientIds = target.ingredients.map(i => i.id);
+    const ingredientIds = resolvedTarget.ingredients.map(i => i.id);
     // Snapshot the result tile coords BEFORE executeCombo mutates ingredient
     // state — we need them for the tier-up shimmer below if this is a merge.
-    const resultIngr = target.ingredients.find(i => i.id === resultTileTowerId) ?? target.ingredients[0];
+    const resultIngr = resolvedTarget.ingredients.find(i => i.id === resultTileTowerId) ?? resolvedTarget.ingredients[0];
     const shimmerX = resultIngr.tileX * 32 + 16;
     const shimmerY = resultIngr.tileY * 32 + 16;
-    const isMergeShimmer = !!target.isSameTierMerge;
-    const ok = executeCombo(state, target, resultTileTowerId);
+    const isMergeShimmer = !!resolvedTarget.isSameTierMerge;
+    const ok = executeCombo(state, resolvedTarget, resultTileTowerId);
     if (ok) {
       // TIER-UP SHIMMER (2026-05 v6 polish): on a same-tier 3-of-a-kind
       // merge, fire a 2-pulse golden ring at the result tile so the
@@ -4903,11 +4904,12 @@ async function boot() {
         onPick: (combo, resultTileTowerId) => {
           // Snapshot result tile coords + merge flag BEFORE executeCombo for
           // the tier-up shimmer below. Same pattern as executeCombineFromMenu.
-          const pickerResultIng = combo.ingredients.find(i => i.id === resultTileTowerId) ?? combo.ingredients[0];
+          const pickerResolved = resolveComboChoice(state, combo, resultTileTowerId) ?? combo;
+          const pickerResultIng = pickerResolved.ingredients.find(i => i.id === resultTileTowerId) ?? pickerResolved.ingredients[0];
           const sx = pickerResultIng.tileX * 32 + 16;
           const sy = pickerResultIng.tileY * 32 + 16;
-          const pickerIsMerge = !!combo.isSameTierMerge;
-          const ok = executeCombo(state, combo, resultTileTowerId);
+          const pickerIsMerge = !!pickerResolved.isSameTierMerge;
+          const ok = executeCombo(state, pickerResolved, resultTileTowerId);
           if (ok) {
             // 2026-05 v11: user-supplied combo SFX (replaces the synth fanfare).
             SFX.comboMade();

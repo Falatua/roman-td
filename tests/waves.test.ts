@@ -134,6 +134,25 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     }
   });
 
+  it('keeps Wave 24 as a real pressure step after Wave 23', () => {
+    const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
+    const w23 = byWave.get(23);
+    const w24 = byWave.get(24);
+    const count = (wave: any, type: string) => (wave.spawns ?? []).find((s: any) => s.type === type)?.count ?? 0;
+    const authoredHp = (wave: any) => (wave.spawns ?? []).reduce(
+      (sum: number, spawn: any) => sum + ((enemiesData as any)[spawn.type]?.baseHp ?? 0) * spawn.count * (wave.hpMult ?? 1),
+      0
+    );
+
+    expect(w24.enemySpeedBoostPct).toBeGreaterThan(w23.enemySpeedBoostPct);
+    expect(w24.enemyDamageReductPct).toBeGreaterThan(w23.enemyDamageReductPct);
+    expect(w24.enemyDotResistPct).toBeGreaterThanOrEqual(w23.enemyDotResistPct);
+    expect(w24.enemyRegenPctPerSec).toBeGreaterThan(w23.enemyRegenPctPerSec);
+    expect(count(w24, 'SIEGE_WAGON')).toBe(count(w23, 'SIEGE_WAGON'));
+    expect(count(w24, 'SPHINX')).toBe(4);
+    expect(authoredHp(w24)).toBeGreaterThan(authoredHp(w23) * 3.5);
+  });
+
   it('mixes wave roles so late waves ask for different tower answers', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     expect(byWave.get(21).spawns.some((s: any) => s.type === 'MONGOL_SCOUT')).toBe(true);
