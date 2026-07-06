@@ -169,14 +169,14 @@ async function boot() {
     state.mercatorTowerOffers = mercatorShop.towerOffers.filter(o => !CHAMPION_TYPES.includes(o.type));
   }
   function maybeOpenLastStandTrove(): void {
+    if (anySecretEventModalOpen()) return;
     if (!shouldOfferLastStandTrove(state)) return;
-    if (document.getElementById('last-stand-trove-modal')) return;
     markLastStandTroveOffered(state);
     (state as any).__lastStandTroveOpen = true;
     state.hint = 'THE LAST-LIFE TROVE HAS BEEN FOUND — choose one free Tier V base tower.';
     try { SFX.comboAvailable?.(); } catch { /* audio is optional */ }
     showBossBanner('THE LAST-LIFE TROVE HAS BEEN FOUND — ONE FREE TIER V BASE TOWER', 'ROMAN');
-    showLastStandTrove((towerType) => {
+    showLastStandTrove(state, (towerType) => {
       const ok = claimLastStandTroveTower(state, towerType);
       (state as any).__lastStandTroveOpen = false;
       if (!ok) {

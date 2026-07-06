@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { createGameState } from '../src/GameState';
 import { GamePhase, TowerType } from '../src/types';
 import towersData from '../src/data/towers.json';
+import { createTower } from '../src/systems/TowerSystem';
 import {
   claimLastStandTroveTower,
   lastStandTroveChoices,
+  lastStandTroveRecipeHints,
   LAST_STAND_TROVE_SOURCE,
   LAST_STAND_TROVE_TIER,
   markLastStandTroveOffered,
@@ -21,6 +23,10 @@ describe('Last-Life Trove hidden event', () => {
     state.lives = 1;
     expect(shouldOfferLastStandTrove(state)).toBe(true);
 
+    state.phase = GamePhase.WAVE_PHASE;
+    expect(shouldOfferLastStandTrove(state)).toBe(false);
+
+    state.phase = GamePhase.BUILD_PHASE;
     state.lives = 0;
     expect(shouldOfferLastStandTrove(state)).toBe(false);
 
@@ -61,6 +67,25 @@ describe('Last-Life Trove hidden event', () => {
       expect(def, `${type} has tower data`).toBeTruthy();
       expect(def.kind ?? 'BASE', `${type} is a base tower`).toBe('BASE');
     }
+  });
+
+  it('shows recipe hints when a Trove pick would complete a recipe', () => {
+    const state = createGameState();
+    const velites = createTower(TowerType.VELITES, 2, 4, 4, 1);
+    state.towers.set(velites.id, velites);
+
+    const hints = lastStandTroveRecipeHints(state, TowerType.SCORPIO);
+    expect(hints.map(hint => hint.result)).toContain(TowerType.SCORPION_BOLT);
+    expect(hints.map(hint => hint.name)).toContain('Scorpion Bolt');
+  });
+
+  it('does not count unkept pending prospects for recipe hints', () => {
+    const state = createGameState();
+    const pendingVelites = createTower(TowerType.VELITES, 2, 4, 4, 1, true);
+    state.towers.set(pendingVelites.id, pendingVelites);
+
+    const hints = lastStandTroveRecipeHints(state, TowerType.SCORPIO);
+    expect(hints.map(hint => hint.result)).not.toContain(TowerType.SCORPION_BOLT);
   });
 
   it('queues exactly one free Tier 5 tower for normal placement', () => {
