@@ -631,6 +631,14 @@ async function boot() {
     setTimeout(() => toast.remove(), 1900);
   }
 
+  function showOceanTowerOnlyAlert(col: number, row: number) {
+    showBlockedAlert(
+      col,
+      row,
+      'Ocean tiles can only hold ocean-based towers. Those are coming later; for now, place land towers, prospects, traps, heroes, and ramparts on grass.'
+    );
+  }
+
   function commitRampartPlacement(col: number, row: number, orient: RampartOrientation): boolean {
     if (placeRampart(state, col, row, orient)) {
       renderer.drawStatic(state);
@@ -750,7 +758,7 @@ async function boot() {
           return;
         }
         if (!isBuildable(state, col, row)) {
-          showBlockedAlert(col, row, 'That tile is locked. Cave, path, checkpoint, water, and border tiles cannot hold heroes.');
+          showBlockedAlert(col, row, 'That tile is locked. Cave, path, checkpoint, ocean tiles, and border tiles cannot hold heroes.');
           (state as any).__heroPlacementConfirmed = false;
           return;
         }
@@ -889,7 +897,7 @@ async function boot() {
           return;
         }
         if (!isBuildable(state, col, row)) {
-          showBlockedAlert(col, row, 'That tile is locked. Cave, path, checkpoint, water, and border tiles cannot hold towers.');
+          showBlockedAlert(col, row, 'That tile is locked. Cave, path, checkpoint, ocean tiles, and border tiles cannot hold towers.');
           (state as any).__purchasedPlacementConfirmed = false;
           return;
         }
@@ -6028,9 +6036,14 @@ async function boot() {
     // (selected card OR a queued purchased-tower placement) — in those
     // modes the empty tile is the desired target, and snapping would
     // misroute the click to the neighbor tower's inspect panel.
+    const sbPending = (state as any).__sandboxPendingTower as { type: TowerType; tier: 1|2|3|4|5 } | undefined;
     const hasPlacementIntent =
       state.selectedCard !== null ||
-      ((state.pendingPurchasedTowers ?? []).length > 0);
+      ((state.pendingPurchasedTowers ?? []).length > 0) ||
+      state.phase === GamePhase.PROSPECT_PLACEMENT ||
+      !!state.selectedTrapType ||
+      !!state.selectedRampart ||
+      (state.sandboxMode && !!sbPending);
     if (tile === TileType.EMPTY && !hasPlacementIntent) {
       const snapR = GRID.TILE * 0.75;       // 24px — covers full sprite halo
       let best: { tw: any; d: number } | null = null;
@@ -6053,6 +6066,11 @@ async function boot() {
           tile = TileType.TOWER;
         }
       }
+    }
+
+    if (tile === TileType.WATER && hasPlacementIntent) {
+      showOceanTowerOnlyAlert(col, row);
+      return;
     }
 
     // Click on the Roman GATE tile (or its immediate footprint) opens the Gate Shop.
@@ -6078,7 +6096,11 @@ async function boot() {
           return;
         }
         if (!canPlaceRampart(state, col, row, selRamp)) {
-          showBlockedAlert(col, row, 'Rampart blocked — all 5 tiles must fit. Roads/trails are allowed, but checkpoints, towers, stones, traps, cave/gate tiles, water, map edges, and sealed routes are not.');
+          if (isWaterPlacementRestrictedTile(col, row)) {
+            showOceanTowerOnlyAlert(col, row);
+          } else {
+            showBlockedAlert(col, row, 'Rampart blocked — all 5 tiles must fit. Roads/trails are allowed, but checkpoints, towers, stones, traps, cave/gate tiles, ocean tiles, map edges, and sealed routes are not.');
+          }
           return;
         }
         showRampartPlacementConfirm(col, row, selRamp);
@@ -6137,7 +6159,7 @@ async function boot() {
       const selTrap = state.selectedTrapType;
       if (selTrap && trapOwned(state, selTrap) > 0 && tile === TileType.EMPTY) {
         if (isWaterPlacementRestrictedTile(col, row)) {
-          showBlockedAlert(col, row, 'Traps cannot be placed on water.');
+          showOceanTowerOnlyAlert(col, row);
           return;
         }
         if (placeTrap(state, selTrap, col, row)) {
@@ -6156,10 +6178,9 @@ async function boot() {
     // and the next empty-tile click drops it. No gold, no prospects,
     // no combo. Path is rebuilt + verified before commit so a
     // sandbox tower can't seal Rome.
-    const sbPending = (state as any).__sandboxPendingTower as { type: TowerType; tier: 1|2|3|4|5 } | undefined;
     if (state.sandboxMode && sbPending && tile === TileType.EMPTY) {
       if (isWaterPlacementRestrictedTile(col, row)) {
-        showBlockedAlert(col, row, '🧪 SANDBOX — water is locked.');
+        showOceanTowerOnlyAlert(col, row);
         return;
       }
       const dropped = sandboxSpawnTowerDirect(state, sbPending.type, sbPending.tier, col, row);
@@ -6191,7 +6212,11 @@ async function boot() {
     if (queue.length > 0 && tile === TileType.EMPTY) {
       const head = queue[0];
       if (!isBuildable(state, col, row)) {
-        showBlockedAlert(col, row, 'That tile is locked. Cave, path, checkpoint, water, and border tiles cannot hold towers.');
+        if (isWaterPlacementRestrictedTile(col, row)) {
+          showOceanTowerOnlyAlert(col, row);
+        } else {
+          showBlockedAlert(col, row, 'That tile is locked. Cave, path, checkpoint, ocean tiles, and border tiles cannot hold towers.');
+        }
         return;
       }
       // 2026-05-19 v2 — HERO PLACEMENT CONFIRMATION. Hero placement is
@@ -6284,7 +6309,11 @@ async function boot() {
     // prospects convert to walls.
     if (state.phase === GamePhase.PROSPECT_PLACEMENT) {
       if (tile !== TileType.EMPTY || !isBuildable(state, col, row)) {
-        state.hint = 'Empty grass only. Water, checkpoints, paths, cave/gate tiles, and borders are off-limits.';
+        if (isWaterPlacementRestrictedTile(col, row)) {
+          showOceanTowerOnlyAlert(col, row);
+        } else {
+          state.hint = 'Empty grass only. Ocean tiles, checkpoints, paths, cave/gate tiles, and borders are off-limits.';
+        }
         return;
       }
       if (state.prospectsPlaced >= 10) {
@@ -6418,7 +6447,11 @@ async function boot() {
       // so players who tried to drop on cave / path / waypoint tiles got
       // no visible feedback and thought the game was bugged. Pop the
       // existing red BLOCKED toast anchored to the tile they clicked.
-      showBlockedAlert(col, row, 'That tile won\'t hold a tower — cave / path / checkpoint / water / border tiles are off-limits. Click an empty grass tile.');
+      if (isWaterPlacementRestrictedTile(col, row)) {
+        showOceanTowerOnlyAlert(col, row);
+      } else {
+        showBlockedAlert(col, row, 'That tile won\'t hold a tower — cave / path / checkpoint / ocean tiles / border tiles are off-limits. Click an empty grass tile.');
+      }
       return;
     }
     // path validation
