@@ -74,12 +74,14 @@ import { showSurpriseRewardModal } from './render/SurpriseReward';
 import { showCampaignRelicModal } from './render/CampaignRelicModal';
 import { showBossTrophyModal } from './render/BossTrophyModal';
 import { showTestYourMightModal } from './render/TestYourMightModal';
+import { showLastStandTrove } from './render/LastStandTrove';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
 import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy } from './systems/RewardEligibility';
 import { isFinalBossBreach } from './systems/LeakRules';
+import { claimLastStandTroveTower, markLastStandTroveOffered, shouldOfferLastStandTrove } from './systems/LastStandTroveSystem';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -157,6 +159,28 @@ async function boot() {
       excludeTypes: (state.mercatorTowerOffers ?? []).map(o => o.type)
     });
     state.mercatorTowerOffers = mercatorShop.towerOffers.filter(o => !CHAMPION_TYPES.includes(o.type));
+  }
+  function maybeOpenLastStandTrove(): void {
+    if (!shouldOfferLastStandTrove(state)) return;
+    if (document.getElementById('last-stand-trove-modal')) return;
+    markLastStandTroveOffered(state);
+    (state as any).__lastStandTroveOpen = true;
+    state.hint = 'THE LAST-LIFE TROVE HAS BEEN FOUND — choose one free Tier V base tower.';
+    try { SFX.comboAvailable?.(); } catch { /* audio is optional */ }
+    showBossBanner('THE LAST-LIFE TROVE HAS BEEN FOUND — ONE FREE TIER V BASE TOWER', 'ROMAN');
+    showLastStandTrove((towerType) => {
+      const ok = claimLastStandTroveTower(state, towerType);
+      (state as any).__lastStandTroveOpen = false;
+      if (!ok) {
+        state.hint = 'The Last-Life Trove sputtered out. No duplicate emergency gifts this run.';
+        return;
+      }
+      const def: any = (towersData as any)[towerType] ?? {};
+      const name = def.name ?? String(towerType).replace(/_/g, ' ');
+      const waiting = state.pendingPurchasedTowers?.length ?? 0;
+      state.hint = `LAST-LIFE TROVE CLAIMED — ${name} T5 is queued. Click an empty tile to place it${waiting > 1 ? ` (${waiting} rewards waiting)` : ''}.`;
+      try { SFX.combo?.(); } catch { /* audio is optional */ }
+    });
   }
   // 2026-07-03 — Stone Rampart rotation. One armed rampart rotates through
   // every straight line the tile grid supports: H — V | D1 ↘ D2 ↗. Cycled
@@ -756,6 +780,7 @@ async function boot() {
       source === 'bonus'    ? 'BONUS TOWER' :
       source === 'gift'     ? 'TOWER GIFT' :
       source === 'relic'    ? 'CAMPAIGN RELIC' :
+      source === 'laststand' ? 'LAST-LIFE TROVE' :
       'TOWER PLACEMENT';
     const b = document.createElement('div');
     b.id = 'purchased-place-confirm';
@@ -2738,7 +2763,7 @@ async function boot() {
     }
     const head = queue[0];
     const headPrice = purchasedTowerPrice(head);
-    const headIsHero = head.source === 'hero';
+    const headIsNonRefundableGift = head.source === 'hero' || head.source === 'laststand';
     const moreLine = queue.length > 1 ? `<div style="font-size:9px;color:#cdb98a;margin-top:2px">+${queue.length - 1} more queued</div>` : '';
     const toggleBtn = `<button id="tower-queue-toggle" title="${collapsed ? 'Expand' : 'Collapse'}" style="position:absolute;top:2px;right:4px;background:transparent;border:none;color:#88ff88;font-size:13px;line-height:1;cursor:pointer;padding:2px 4px;font-weight:bold">${collapsed ? '▸' : '▾'}</button>`;
     if (collapsed) {
@@ -2758,7 +2783,7 @@ async function boot() {
       // Mercator shop) and are free / non-refundable; showing
       // "PUT BACK (refund 0g)" is misleading and tempts players to
       // click a button that won't actually let them un-pick a hero.
-      const putBackBtn = headIsHero
+      const putBackBtn = headIsNonRefundableGift
         ? ''
         : `<button id="tower-queue-putback" style="margin-top:6px;width:100%;background:#3a1a1a;color:#e8d6a8;border:1px solid #a04040;padding:3px 6px;font-family:inherit;font-size:10px;letter-spacing:1px;cursor:pointer">PUT BACK (refund ${headPrice}g)</button>`;
       chip.innerHTML = `
@@ -2791,7 +2816,7 @@ async function boot() {
   // their current flat price; quest
   // grants refund the wave's place cost as a fair stand-in (no purchase price
   // to recover). Tower types from `pendingPurchasedTowers` carry .source.
-  function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' }): number {
+  function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' | 'laststand' }): number {
     // Mercator buys = flat 250g refund (matches purchase price). Everything
     // else (quest reward, Fortuna gamble win, bonus/gift) wasn't bought
     // with gold, so the refund falls back to the wave's place cost as a
@@ -2802,7 +2827,8 @@ async function boot() {
     // 2026-05-19 — Hero placement is free and yields no refund.
     // 2026-07-01 — Relic towers are already paid for by the relic caveat
     // (gold/lives/global drawback), so putting one back cannot mint gold.
-    if (entry.source === 'hero' || entry.source === 'relic') return 0;
+    // 2026-07-06 — Last-Life Trove towers are free emergency gifts; no refund.
+    if (entry.source === 'hero' || entry.source === 'relic' || entry.source === 'laststand') return 0;
     return (ECONOMY.TIER_PLACE_COST as Record<number, number>)[entry.tier] ?? 5;
   }
   // ─── Wave-preview chip (bottom-left) ────────────────────────────────
@@ -6473,7 +6499,8 @@ async function boot() {
     const rewardModalOpen = !!(state as any).__surpriseRewardOpen
       || !!(state as any).__campaignRelicOpen
       || !!(state as any).__bossTrophyOpen
-      || !!(state as any).__testYourMightOpen;
+      || !!(state as any).__testYourMightOpen
+      || !!(state as any).__lastStandTroveOpen;
     if (paused || autoPaused || rewardModalOpen) {
       dt = 0;
     } else {
@@ -6490,6 +6517,7 @@ async function boot() {
       if (dt > 0.2) dt = 0.2;
     }
     state.tick += dt;
+    maybeOpenLastStandTrove();
     // 2026-05-17 — REWARD MODAL TRIGGER (relocated). Fires the instant
     // pendingSurpriseReward is set, regardless of game phase. Previous
     // placement was inside the WAVE_PHASE conditional, but WaveManager's
@@ -7937,10 +7965,12 @@ async function boot() {
       (state as any).__campaignRelicOpen = false;
       (state as any).__bossTrophyOpen = false;
       (state as any).__testYourMightOpen = false;
+      (state as any).__lastStandTroveOpen = false;
       document.getElementById('surprise-reward-modal')?.remove();
       document.getElementById('campaign-relic-modal')?.remove();
       document.getElementById('boss-trophy-modal')?.remove();
       document.getElementById('test-your-might-modal')?.remove();
+      document.getElementById('last-stand-trove-modal')?.remove();
       // Brief delay so the death animation can be seen, then snap to GAME_OVER.
       if (state.tick - state.gameOverAt > 1.0) state.phase = GamePhase.GAME_OVER;
     }

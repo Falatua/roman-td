@@ -143,7 +143,7 @@ export interface GameStateShape {
   // "T5 purchased at the Mercator vendor" specifically). The placement-
   // confirm modal reads this to label what's being placed accurately
   // (MERCATOR PURCHASE vs FORTUNA WIN vs QUEST REWARD vs TOWER GIFT).
-  pendingPurchasedTowers?: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' }[];
+  pendingPurchasedTowers?: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' | 'laststand' }[];
   // Legacy single-slot — kept for back-compat reads but new code uses the
   // queue. Set to null on every place; queue is the source of truth.
   pendingPurchasedTower?: { type: string; tier: number } | null;
@@ -275,6 +275,10 @@ export interface GameStateShape {
   testYourMightActive?: boolean;
   testYourMightCleared?: boolean;
   testYourMightFailed?: boolean;
+  // Hidden one-shot mercy event. When a player falls to exactly one life,
+  // they may choose one free Tier 5 base tower to queue for placement.
+  lastStandTroveOffered?: boolean;
+  lastStandTroveClaimed?: boolean;
 }
 
 export function createGameState(): GameStateShape {
@@ -357,7 +361,9 @@ export function createGameState(): GameStateShape {
     testYourMightDeclined: false,
     testYourMightActive: false,
     testYourMightCleared: false,
-    testYourMightFailed: false
+    testYourMightFailed: false,
+    lastStandTroveOffered: false,
+    lastStandTroveClaimed: false
   };
 }
 
