@@ -285,13 +285,13 @@
     "title": "The Fortunate",
     "specialty": "FIRE / LIFESAVER",
     "playerProblemSolved": "Enemies keep resisting my damage types and I need a way to punch through.",
-    "biography": "Sulla was famously lucky — he said so himself, and Rome believed him. On this field his luck translates into pyres and divine wrath: every nearby attack becomes flame, and on command every tower's strike becomes pure DIVINE.",
+    "biography": "Sulla was famously lucky — he said so himself, and Rome believed him. On this field his luck translates into pyres and divine wrath: every nearby attack carries added flame, and on command every tower's strike becomes pure DIVINE.",
     "passive": {
-      "kind": "DAMAGE_TYPE_CONVERSION",
+      "kind": "DAMAGE_TYPE_RIDER",
       "radiusTiles": 5.5,
-      "convertTo": "ELEMENTAL_FIRE",
-      "dmgBonusPercent": 22,
-      "description": "Every tower within 5.5 tiles converts to FIRE damage and gains +22% damage."
+      "addDamageType": "ELEMENTAL_FIRE",
+      "addedDamagePercent": 22,
+      "description": "Every tower within 5.5 tiles keeps its own damage type and adds +22% FIRE damage on each hit."
     },
     "abilities": [
       {

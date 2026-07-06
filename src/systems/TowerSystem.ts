@@ -755,7 +755,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
         rngMods.push({ source: 'Hero Agrippa range aura', flat: 1 * h.auraScale });
       }
       if (h.heroId === 'HERO_SULLA' && dh <= SULLA_PASSIVE_RADIUS_TILES * GRID.TILE) {
-        addLocalDmg('Hero Sulla pyre aura', 0.22 * h.auraScale);
+        addLocalDmg('Hero Sulla fire rider', 0.22 * h.auraScale);
       }
     }
 

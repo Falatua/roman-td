@@ -65,6 +65,7 @@ const activeTowerScratch: Tower[] = [];
 const enemySnapshotScratch: Enemy[] = [];
 const targetCandidateScratch: Enemy[] = [];
 const SULLA_PASSIVE_RADIUS_TILES = 5.5;
+const SULLA_FIRE_RIDER_PCT = 0.22;
 
 const COMBO_ANTI_AIR_TYPES = new Set<TowerType>([
   TowerType.SCORPION_BOLT,
@@ -86,6 +87,30 @@ function comboAntiAirArmorMult(state: GameStateShape, tower: Tower, target: Enem
   const armor = Math.max(0, Math.min(0.75, waveDef?.comboAntiAirArmorPct ?? 0));
   if (armor <= 0 || COMBO_ANTI_AIR_TYPES.has(tower.type)) return 1;
   return 1 - armor;
+}
+
+function applyWaveResistRelief(state: GameStateShape, resMod: number): number {
+  const waveResistReduction = RESIST_REDUCTION_BY_WAVE.get(state.wave ?? 1);
+  if (waveResistReduction && resMod < 1) {
+    return 1 - (1 - resMod) * (1 - waveResistReduction);
+  }
+  return resMod;
+}
+
+function sullaFireRiderPctForTower(
+  tower: Tower,
+  heroAuraSources: Array<{ heroId: string; tower: Tower; auraScale: number }>
+): number {
+  const tcx = tilePxX(tower);
+  const tcy = tilePxY(tower);
+  let pct = 0;
+  for (const h of heroAuraSources) {
+    if (h.heroId !== 'HERO_SULLA' || h.tower.id === tower.id) continue;
+    if (Math.hypot(tilePxX(h.tower) - tcx, tilePxY(h.tower) - tcy) <= SULLA_PASSIVE_RADIUS_TILES * GRID.TILE) {
+      pct += SULLA_FIRE_RIDER_PCT * h.auraScale;
+    }
+  }
+  return pct;
 }
 
 // BURNING GROUND — fire-themed towers stamp a 3-second patch at the impact
@@ -852,11 +877,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // "melee can hit flyers" global effect, no per-tower damage
       // multiplier. Kept the surrounding `if heroTowerForAura` scaffold
       // intact for Marius/Agrippa/Sulla which still use local auras.
-      // Sulla's Pyre Ward: nearby towers convert to FIRE and gain a
-      // damage rider. Type conversion happens at the per-attack site below.
-      if (source.heroId === 'HERO_SULLA' && dh <= SULLA_PASSIVE_RADIUS_TILES * GRID.TILE) {
-        dm *= 1 + 0.22 * source.auraScale;
-      }
+      // Sulla's Pyre Ward is applied as a separate FIRE rider at the
+      // per-hit damage site below, not as a generic aura multiplier.
     }
     // Marian Formation per-tower stamp: N nearest melee get +X% speed,
     // +Y% damage, and shared-crit access during the window. Crit comes
@@ -988,30 +1010,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const perAttackBase = towerPerAttackDamageBase(t);
       const armorShred = target.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED);
       // 2026-05-19 — Proscription (Sulla Tier 2) overrides this attack's
-      // damage type to DIVINE for the duration.
+      // base damage type to DIVINE for the duration.
       let effectiveDmgType = t.damageType;
-      // Sulla passive: nearby towers convert their attack to FIRE. The
-      // damage rider is applied earlier in the aura loop, so this block
-      // only handles the type override. Applied BEFORE Proscription so
-      // the ult's DIVINE override still wins during its window.
-      let hasSullaSource = false;
-      for (const h of heroAuraSources) {
-        if (h.heroId === 'HERO_SULLA' && h.tower.id !== t.id) { hasSullaSource = true; break; }
-      }
-      if (hasSullaSource) {
-        const tcx2 = tilePxX(t), tcy2 = tilePxY(t);
-        for (const h of heroAuraSources) {
-          if (h.heroId !== 'HERO_SULLA' || h.tower.id === t.id) continue;
-          if (Math.hypot(tilePxX(h.tower) - tcx2, tilePxY(h.tower) - tcy2) <= SULLA_PASSIVE_RADIUS_TILES * GRID.TILE) {
-            effectiveDmgType = DamageType.ELEMENTAL_FIRE;
-            break;
-          }
-        }
-      }
       // 2026-06-27 — DIVINE TILE (IVORY). A tower standing on the divine
       // tile resolves this attack as DIVINE damage, keeping all of its own
-      // stats + abilities. Overrides the Sulla FIRE conversion above (a
-      // deliberate placement beats a walk-by aura). Mars Victor ignores
+      // stats + abilities. Mars Victor ignores
       // effectiveDmgType entirely (it resolves Siege+Divine), so no clash.
       if (towerAuraTileKind(t) === 'IVORY') effectiveDmgType = DamageType.DIVINE;
       const proscriptionUntil = (state as any).__proscriptionUntilTick ?? 0;
@@ -1051,10 +1054,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // other resistance layer so it captures the stack: faction
       // table × per-enemy modifier × Actium bypass × post-W7 +25%
       // ranged shield × IRON_TIP shred. Wave 8 currently uses 0.15.
-      const waveResistReduction = RESIST_REDUCTION_BY_WAVE.get(state.wave ?? 1);
-      if (waveResistReduction && resMod < 1) {
-        resMod = 1 - (1 - resMod) * (1 - waveResistReduction);
-      }
+      resMod = applyWaveResistRelief(state, resMod);
       // Aquilifer Titan vulnerability: +25% taken if enemy is near the Titan
       let takenMult = 1;
       for (const a of enemyTakenAuras) {
@@ -1067,7 +1067,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // towers stay relevant through the final wave.
       const bossesCleared = Math.max(0, Math.floor(((state.wave ?? 1) - 1) / 5));
       const lateWaveDmgScale = Math.pow(1.50, bossesCleared);
-      let damage = (perAttackBase * resMod * supportDmg * takenMult * lateWaveDmgScale) + t.killBonusFlat;
+      const preResDamage = perAttackBase * supportDmg * takenMult * lateWaveDmgScale;
+      let damage = (preResDamage * resMod) + t.killBonusFlat;
+      const sullaFireRiderPct = sullaFireRiderPctForTower(t, heroAuraSources);
+      if (sullaFireRiderPct > 0) {
+        const fireResMod = applyWaveResistRelief(
+          state,
+          resistanceModifier(target.faction, DamageType.ELEMENTAL_FIRE, armorShred)
+            * enemyDamageMultiplier(target, DamageType.ELEMENTAL_FIRE)
+        );
+        damage += preResDamage * sullaFireRiderPct * fireResMod;
+      }
       damage *= campaignRelicDamageMult(state, t, target) * bossTrophyDamageMult(state, t, target) * commanderDamageTakenMult(state, target);
       // MARK debuff: marked targets take +mag% damage from ANY tower.
       const markS = target.statusEffects.find(s => s.kind === StatusEffectKind.MARK);

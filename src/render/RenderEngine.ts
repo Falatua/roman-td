@@ -11,7 +11,7 @@ import enemiesData from '../data/enemies.json';
 // 2026-05-19 — Hero sprite tinting reads off towers.json `tint` field.
 import towersData from '../data/towers.json';
 // 2026-05-22 — Hero passive aura range rings read from herodefs. Each
-// hero with a LOCAL_AURA / DUAL.local / DAMAGE_TYPE_CONVERSION passive
+// hero with a LOCAL_AURA / DUAL.local / DAMAGE_TYPE_RIDER passive
 // gets a radius-sized ring on the map. GLOBAL_AURA heroes (Caesar /
 // Scipio) get no ring because the effect has no spatial extent.
 import HERO_DEFS_FOR_AURA from '../data/herodefs.json';
@@ -4334,7 +4334,7 @@ export class RenderEngine {
 
       // ── HERO PASSIVE AURA RINGS (2026-05-22) ──────────────────────
       // Heroes with a spatial passive (LOCAL_AURA, DUAL.local,
-      // DAMAGE_TYPE_CONVERSION) need their range surfaced so the player
+      // DAMAGE_TYPE_RIDER) need their range surfaced so the player
       // can see which towers fall inside the buff radius. The ring is
       // tinted with the hero's own particle color (matches the hero's
       // halo ring + tier-up flash) so each hero reads as a distinct
@@ -4349,7 +4349,7 @@ export class RenderEngine {
         const passive = hd?.passive;
         if (passive) {
           // Pull radiusTiles from either top-level (LOCAL_AURA /
-          // DAMAGE_TYPE_CONVERSION) or the DUAL.local sub-object.
+          // DAMAGE_TYPE_RIDER) or the DUAL.local sub-object.
           const radius: number | undefined =
             (typeof passive.radiusTiles === 'number') ? passive.radiusTiles :
             (typeof passive.local?.radiusTiles === 'number') ? passive.local.radiusTiles :

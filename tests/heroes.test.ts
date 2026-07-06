@@ -11,7 +11,7 @@
 // exercised via the manual smoke pass in the implementation
 // plan. The unit tests cover the pure-logic surface in
 // HeroSystem, TowerSystem hero guards, and toRemoteRow.
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   draftHeroChoices,
   pickHero,
@@ -597,22 +597,25 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
   });
 
   it('Sulla Pyre Ward reaches towers 5.5 tiles away', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
     const def: any = (HERO_DEFS as any).HERO_SULLA;
     expect(def.passive.radiusTiles).toBe(5.5);
     expect(def.passive.description).toContain('5.5 tiles');
 
-    function decurionHitDamage(attackerCol: number): number {
+    function decurionHitDamage(attackerCol: number, withSulla = true): number {
       const s = freshState();
       s.phase = GamePhase.WAVE_PHASE;
       s.tick = 1;
       s.wave = 11;
-      s.activeHeroId = 'HERO_SULLA';
+      s.activeHeroId = withSulla ? 'HERO_SULLA' : null;
       s.heroTier = 0;
 
-      const sulla = createTower(TowerType.HERO_SULLA, 1, 5, 5, 1);
-      sulla.attackCooldown = 999;
-      s.activeHeroTowerId = sulla.id;
-      s.towers.set(sulla.id, sulla);
+      if (withSulla) {
+        const sulla = createTower(TowerType.HERO_SULLA, 1, 5, 5, 1);
+        sulla.attackCooldown = 999;
+        s.activeHeroTowerId = sulla.id;
+        s.towers.set(sulla.id, sulla);
+      }
 
       const decurion = createTower(TowerType.DECURION, 1, attackerCol, 5, 1);
       decurion.attackCooldown = 0;
@@ -640,10 +643,76 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
       return hitDamage;
     }
 
-    const withinFiveTiles = decurionHitDamage(10);
-    const outsideFivePointFiveTiles = decurionHitDamage(11);
-    expect(outsideFivePointFiveTiles).toBeGreaterThan(0);
-    expect(withinFiveTiles).toBeGreaterThan(outsideFivePointFiveTiles * 1.45);
+    try {
+      const nativeAtSameTile = decurionHitDamage(10, false);
+      const withinFiveTiles = decurionHitDamage(10, true);
+      const outsideWithSulla = decurionHitDamage(11, true);
+      const outsideWithoutSulla = decurionHitDamage(11, false);
+      expect(nativeAtSameTile).toBeGreaterThan(0);
+      expect(withinFiveTiles).toBeGreaterThan(nativeAtSameTile);
+      expect(outsideWithSulla).toBeCloseTo(outsideWithoutSulla, 4);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it('Sulla Pyre Ward adds fire damage without replacing the tower native damage type', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    function sacredBandHit(withSulla: boolean): number {
+      const s = freshState();
+      s.phase = GamePhase.WAVE_PHASE;
+      s.tick = 1;
+      s.wave = 16;
+      s.activeHeroId = withSulla ? 'HERO_SULLA' : null;
+      s.heroTier = 0;
+
+      if (withSulla) {
+        const sulla = createTower(TowerType.HERO_SULLA, 1, 5, 5, 1);
+        sulla.attackCooldown = 999;
+        s.activeHeroTowerId = sulla.id;
+        s.towers.set(sulla.id, sulla);
+      }
+
+      const sacredBand = createTower(TowerType.SACRED_BAND, 1, 7, 5, 1);
+      sacredBand.attackCooldown = 0;
+      sacredBand.critChance = 0;
+      s.towers.set(sacredBand.id, sacredBand);
+
+      const fireImmuneDemon = testEnemy('fire-immune-demon', {
+        type: EnemyType.DEMON_HELLHOUND,
+        faction: EnemyFaction.SUPER_DEMONS,
+        hp: 100_000,
+        maxHp: 100_000,
+        x: 8 * 32 + 16,
+        y: 5 * 32 + 16
+      });
+      s.enemies.set(fireImmuneDemon.id, fireImmuneDemon);
+
+      let hitDamage = 0;
+      tickCombat(s, 0.016, {
+        onHit: (tower, enemy, damage) => {
+          if (tower.id === sacredBand.id && enemy.id === fireImmuneDemon.id) hitDamage = damage;
+        },
+        onMeleeSwing: () => {},
+        onProjectileFire: () => {},
+        onKill: () => {}
+      });
+      return hitDamage;
+    }
+
+    try {
+      const nativeDivineOnly = sacredBandHit(false);
+      const nativeDivinePlusFireRider = sacredBandHit(true);
+      expect(nativeDivineOnly).toBeGreaterThan(0);
+      expect(nativeDivinePlusFireRider).toBeCloseTo(nativeDivineOnly, 4);
+    } finally {
+      randomSpy.mockRestore();
+    }
+
+    const passive: any = (HERO_DEFS as any).HERO_SULLA.passive;
+    expect(passive.kind).toBe('DAMAGE_TYPE_RIDER');
+    expect(passive.addDamageType).toBe('ELEMENTAL_FIRE');
+    expect(Object.prototype.hasOwnProperty.call(passive, 'convert' + 'To')).toBe(false);
   });
 
   it('SPQR Decree spreads a large board volley instead of zeroing every cooldown together', () => {
@@ -1105,34 +1174,19 @@ describe('herodefs.json shape (single source of tuning)', () => {
     }
   });
 
-  // 2026-05-19 — Passive coverage test. The roster's passive hooks still
-  // cover melee, siege, fire conversion, and boss hunting even as individual
-  // hero basic-attack classes get retuned.
-  //
-  // 2026-05-20 v2 — Sulla's passive was reworked from a +35% damage
-  // aura on FIRE towers (which used the legacy `filter:
-  // "ELEMENTAL_FIRE"` shape) to a DAMAGE_TYPE_CONVERSION passive that
-  // overrides nearby towers' damage type to FIRE. The fire "coverage"
-  // moves from a `filter` to a `convertTo` field. Test reads both.
+  // Passive coverage test. The roster's passive hooks still cover melee,
+  // siege, added fire damage, and boss hunting even as individual hero
+  // basic-attack classes get retuned.
   it('aura filters cover the expected damage-type slots', () => {
     const filters = HERO_POOL.map(id => {
       const def: any = (HERO_DEFS as any)[id];
-      // Marius/Agrippa use top-level filter; Scipio uses VS_BOSS
-      // (no damage-type filter); Caesar is unfiltered global; Sulla
-      // uses convertTo (DAMAGE_TYPE_CONVERSION passive — nearby towers
-      // get their damage type overridden to convertTo).
-      // 2026-05-22 — Agricola's passive simplified to a single
-      // GLOBAL effect (melee-can-hit-flyers) with NO damage filter
-      // and NO local aura. He no longer contributes a PHYS_RANGED
-      // entry to this set; coverage is intentional (his basic-attack
-      // damage type is still PHYS_RANGED, just not the passive).
       return def.passive?.filter
-        ?? def.passive?.convertTo
+        ?? def.passive?.addDamageType
         ?? null;
     });
     expect(filters).toContain('PHYS_MELEE');         // Marius local aura
     expect(filters).toContain('SIEGE');              // Agrippa local aura
-    expect(filters).toContain('ELEMENTAL_FIRE');     // Sulla's convertTo target
+    expect(filters).toContain('ELEMENTAL_FIRE');     // Sulla's added fire rider
     // VS_BOSS is the Scipio filter; Caesar carries no filter at all;
     // Agricola carries no filter at all (global anti-air effect only).
     expect(filters).toContain('VS_BOSS');

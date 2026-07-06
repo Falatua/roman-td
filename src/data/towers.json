@@ -1110,7 +1110,7 @@
     "melee": false,
     "spriteSheet": 1,
     "spriteCell": 3,
-    "ability": "The Fortunate. PYRE WARD: every tower within 5.5 tiles converts to FIRE damage and gains bonus damage. Meteor Slam calls down a burning meteor every 7s, splashing and burning enemies on impact. Proscription temporarily overrides every tower's damage to DIVINE, bypassing all faction resistances. Heroic crit profile (50% × 2.0).",
+    "ability": "The Fortunate. PYRE WARD: every tower within 5.5 tiles keeps its own damage type and adds bonus FIRE damage on each hit. Meteor Slam calls down a burning meteor every 7s, splashing and burning enemies on impact. Proscription temporarily overrides every tower's base damage to DIVINE, bypassing all faction resistances. Heroic crit profile (50% × 2.0).",
     "critChance": 0.5,
     "critMult": 2.0,
     "isHero": true,
