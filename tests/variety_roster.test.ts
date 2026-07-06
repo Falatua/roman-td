@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import enemiesData from '../src/data/enemies.json';
 import { createGameState } from '../src/GameState';
@@ -19,6 +19,34 @@ function bootstrapState() {
   state.flyerPath = buildFlyerPath();
   state.wave = 23;
   return state;
+}
+
+function enemyAssetMap(): Record<string, string> {
+  const source = readFileSync(path.join(process.cwd(), 'src/render/Assets.ts'), 'utf8');
+  const out: Record<string, string> = {};
+  for (const match of source.matchAll(/\b([A-Z0-9_]+):\s*'([^']+\.png)'/g)) {
+    out[match[1]] = match[2];
+  }
+  return out;
+}
+
+function alphaBounds(data: Buffer, width: number, height: number) {
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const alpha = data[((y * width + x) * 4) + 3];
+      if (alpha > 8) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  return { minX, minY, maxX, maxY, width: Math.max(0, maxX - minX + 1), height: Math.max(0, maxY - minY + 1) };
 }
 
 describe('late-campaign variety roster', () => {
@@ -44,6 +72,37 @@ describe('late-campaign variety roster', () => {
       count: 30,
       hpFrac: 0.4
     });
+  });
+
+  it('maps every authored enemy to a real sprite file', () => {
+    const assets = enemyAssetMap();
+    for (const type of Object.keys(enemiesData as any)) {
+      const file = assets[type];
+      expect(file, `${type} is missing an Assets.ts sprite mapping`).toBeTruthy();
+      expect(existsSync(path.join(process.cwd(), 'public/assets/sprites', file)), `${type} -> ${file}`).toBe(true);
+    }
+  });
+
+  it('keeps Cyclops as an uncropped full-body enemy sprite', async () => {
+    const sharp = (await import('sharp')).default;
+    const file = path.join(process.cwd(), 'public/assets/sprites/e3_cyclops.png');
+    const meta = await sharp(file).metadata();
+    const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const bounds = alphaBounds(data, info.width, info.height);
+    const corners = [
+      data[3],
+      data[((info.width - 1) * 4) + 3],
+      data[(((info.height - 1) * info.width) * 4) + 3],
+      data[(((info.height * info.width) - 1) * 4) + 3]
+    ];
+
+    expect(meta.hasAlpha, 'Cyclops should keep transparent sprite corners').toBe(true);
+    expect(Math.max(...corners), 'Cyclops corners should stay transparent').toBeLessThanOrEqual(8);
+    expect(bounds.minX, 'Cyclops should have left padding, not a side-cropped bust').toBeGreaterThan(4);
+    expect(bounds.minY, 'Cyclops should have top padding, not a top-cropped bust').toBeGreaterThan(4);
+    expect(bounds.maxX, 'Cyclops should have right padding, not a side-cropped bust').toBeLessThan(info.width - 5);
+    expect(bounds.maxY, 'Cyclops should have bottom padding for visible feet').toBeLessThan(info.height - 5);
+    expect(bounds.height / info.height, 'Cyclops should read as a tall full-body giant').toBeGreaterThan(0.82);
   });
 
   it('keeps leak costs readable by threat tier: bosses 10, elites and commanders 5', () => {
