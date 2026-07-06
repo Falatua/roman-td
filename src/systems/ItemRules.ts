@@ -200,6 +200,16 @@ export function itemFamily(itemId: ItemId): ItemFamily {
   return FAMILY[itemId] ?? 'SPECIAL';
 }
 
+export const AURA_ITEM_RANDOM_WEIGHT = 0.25;
+
+export function isAuraItem(itemId: ItemId | string): boolean {
+  return itemFamily(itemId as ItemId) === 'AURA';
+}
+
+export function itemRandomSelectionWeight(itemId: ItemId | string): number {
+  return isAuraItem(itemId) ? AURA_ITEM_RANDOM_WEIGHT : 1;
+}
+
 export function canEquipItemFamily(equipped: ItemId[], itemId: ItemId): { ok: boolean; family: ItemFamily } {
   const family = itemFamily(itemId);
   if (family === 'SPECIAL') return { ok: true, family };

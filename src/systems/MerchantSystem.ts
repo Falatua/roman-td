@@ -2,6 +2,7 @@ import { ItemId } from '../types';
 import items from '../data/items_permanent.json';
 import { itemBuyPrice, Rarity } from './LootSystem';
 import { championForHero } from './HeroIdentity';
+import { itemRandomSelectionWeight } from './ItemRules';
 
 export interface ShopOffer {
   itemId: ItemId;
@@ -277,7 +278,7 @@ export function buildGateShop(_refreshSeed = 0, _ownedLegendaries?: Set<string>)
   for (const [id, def] of uncommons) {
     offers.push({ itemId: id, rarity: 'UNCOMMON', price: itemBuyPrice(id), isConsumable: false });
   }
-  const epics = sampleN(entries(GATE_EPIC), Math.min(2, GATE_EPIC.length));
+  const epics = sampleNWeightedItems(entries(GATE_EPIC), Math.min(2, GATE_EPIC.length));
   for (const [id] of epics) {
     offers.push({ itemId: id, rarity: 'EPIC', price: itemBuyPrice(id), isConsumable: false });
   }
@@ -308,13 +309,13 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   // 2026-05 v6: bumped 2 → 4 legendary slots so each Mercator visit
   // actually feels like a trophy haul. Still filtered against owned
   // legendaries so no duplicates land in the stock.
-  const legs = sampleN(entries(filteredLegendaryIds), 4);
+  const legs = sampleNWeightedItems(entries(filteredLegendaryIds), 4);
   for (const [id] of legs) {
     offers.push({ itemId: id, rarity: 'LEGENDARY', price: itemBuyPrice(id), isConsumable: false });
   }
 
   // 1 guaranteed Rare with a steep markup.
-  const rares = sampleN(entries(MERCATOR_RARE), 1);
+  const rares = sampleNWeightedItems(entries(MERCATOR_RARE), 1);
   if (rares.length > 0) {
     const [rId, rDef] = rares[0];
     offers.push({ itemId: rId, rarity: 'RARE', price: itemBuyPrice(rId) + 28, isConsumable: false });
@@ -324,7 +325,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   // Aquilifer's Banner, or Punic Ledger). These never appear in the gate
   // shop, so the player has a reason to actually visit the Mercator beyond
   // the legendary slots.
-  const excl = sampleN(entries(MERCATOR_EXCLUSIVE_RARE), 1);
+  const excl = sampleNWeightedItems(entries(MERCATOR_EXCLUSIVE_RARE), 1);
   if (excl.length > 0) {
     const [eId, eDef] = excl[0];
     offers.push({ itemId: eId, rarity: 'RARE', price: itemBuyPrice(eId), isConsumable: false });
@@ -335,7 +336,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   // size remains stable.
 
   // 3 mid items (was 2 + 1 consumable), all marked up.
-  const mids = sampleN(entries(MERCATOR_MID), 3);
+  const mids = sampleNWeightedItems(entries(MERCATOR_MID), 3);
   for (const [id, def] of mids) {
     if (!def) continue;
     offers.push({ itemId: id, rarity: asRarity(def.rarity), price: itemBuyPrice(id) + 18, isConsumable: false });
@@ -345,7 +346,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   // tier (3 demoted melee legendaries + 3 new Epics). Price is the
   // flat 60g baseline from items_permanent.json, no markup — the
   // user set the Epic price specifically.
-  const epics = sampleN(entries(MERCATOR_EPIC), 2);
+  const epics = sampleNWeightedItems(entries(MERCATOR_EPIC), 2);
   for (const [id, def] of epics) {
     if (!def) continue;
     offers.push({ itemId: id, rarity: 'EPIC' as Rarity, price: itemBuyPrice(id), isConsumable: false });
@@ -504,6 +505,29 @@ function sampleN<T>(arr: [string, T][], n: number): [string, T][] {
   const a = arr.slice();
   shuffleInPlace(a);
   return a.slice(0, Math.min(n, a.length));
+}
+
+function sampleNWeightedItems<T>(arr: [string, T][], n: number): [string, T][] {
+  const pool = arr.slice();
+  const out: [string, T][] = [];
+  const target = Math.min(n, pool.length);
+  while (out.length < target && pool.length > 0) {
+    let total = 0;
+    for (const [id] of pool) total += Math.max(0, itemRandomSelectionWeight(id));
+    if (total <= 0) {
+      shuffleInPlace(pool);
+      out.push(...pool.splice(0, target - out.length));
+      break;
+    }
+    let r = Math.random() * total;
+    let idx = pool.length - 1;
+    for (let i = 0; i < pool.length; i++) {
+      r -= Math.max(0, itemRandomSelectionWeight(pool[i][0]));
+      if (r < 0) { idx = i; break; }
+    }
+    out.push(pool.splice(idx, 1)[0]);
+  }
+  return out;
 }
 
 function shuffleInPlace<T>(a: T[]): T[] {

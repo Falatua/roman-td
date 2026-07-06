@@ -2,7 +2,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
-import { itemFamily, canEquipItemFamily } from '../src/systems/ItemRules';
+import { AURA_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, itemRandomSelectionWeight } from '../src/systems/ItemRules';
 import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, rollCommanderDrop, isGuaranteedEpicDropEnemy, itemLootPoolCoverage } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
@@ -162,6 +162,18 @@ describe('Item permanence classification', () => {
 });
 
 describe('Loot drop rolling', () => {
+  it('downweights aura-family items in random drops and shop rolls while keeping them possible', () => {
+    expect(AURA_ITEM_RANDOM_WEIGHT).toBe(0.25);
+    for (const id of ['CENTURIONS_TRUMPET', 'BATTLE_STANDARD', 'AQUILIFER_BANNER', 'WAR_HOUND_COLLAR', 'DRUIDS_TORC', 'OPTIO_WHISTLE', 'BARCA_WAR_HORN', 'CURSED_TORC', 'LICH_GENERALS_SEAL']) {
+      expect(isAuraItem(id), id).toBe(true);
+      expect(itemRandomSelectionWeight(id), id).toBe(AURA_ITEM_RANDOM_WEIGHT);
+    }
+    for (const id of ['SHARPENED_BLADE', 'LICTOR_FASCES', 'SKYPIERCER_BOLTS', 'JUPITERS_SKYFIRE']) {
+      expect(isAuraItem(id), id).toBe(false);
+      expect(itemRandomSelectionWeight(id), id).toBe(1);
+    }
+  });
+
   it('always returns a valid drop with rarity and itemId', () => {
     for (let i = 0; i < 100; i++) {
       const drop = rollDrop();

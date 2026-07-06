@@ -3,6 +3,7 @@ import { Enemy, ItemId, LootOrb } from '../types';
 import { GRID, INVENTORY_SIZE, LOOT_DROP_RATES } from '../constants';
 import items from '../data/items_permanent.json';
 import consumables from '../data/items_consumable.json';
+import { itemRandomSelectionWeight } from './ItemRules';
 
 // 2026-05-18 — EPIC tier inserted between RARE and LEGENDARY. Visual
 // color is purple (#a060ff). Standard buy price is 60g — sits cleanly
@@ -118,7 +119,7 @@ const GLOBAL_NON_EVENT_LEGENDARY_ITEMS: readonly ItemId[] = LEGENDARY_DROP_ITEM_
 
 function rollFromPool(rarity: Rarity, pool: readonly ItemId[]): { itemId: ItemId; rarity: Rarity } | null {
   if (pool.length === 0) return null;
-  return { itemId: pick(pool), rarity };
+  return { itemId: pickWeightedItem(pool), rarity };
 }
 
 function fallbackDrop(): { itemId: ItemId; rarity: Rarity } | null {
@@ -154,6 +155,18 @@ export function premiumDropRoll(chance: number, randomValue = Math.random()): bo
 }
 
 function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function pickWeightedItem(pool: readonly ItemId[]): ItemId {
+  let total = 0;
+  for (const id of pool) total += Math.max(0, itemRandomSelectionWeight(id));
+  if (total <= 0) return pick(pool);
+  let r = Math.random() * total;
+  for (const id of pool) {
+    r -= Math.max(0, itemRandomSelectionWeight(id));
+    if (r < 0) return id;
+  }
+  return pool[pool.length - 1];
+}
 
 // Boss-specific signature legendaries. Each boss tries to drop its exact
 // trophy first, then falls back to the broader faction table only if the
