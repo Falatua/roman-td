@@ -312,6 +312,8 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // 2026-06-26 variety roster.
   // Siege Wagon: heavily plated transport — shrugs melee/ranged, weak to siege.
   [EnemyType.SIEGE_WAGON]:      { melee: 0.65, ranged: 0.6, slow: 0.5, burn: 0.55, poison: 0.35, bleed: 0.25, siege: 1.75 },
+  // Sky Barge: heavy flyer. Ranged/anti-air must do the work; divine and siege help crack the hull.
+  [EnemyType.SKY_BARGE]:        { melee: 0.35, ranged: 0.55, slow: 0.3, burn: 0.7, poison: 0.55, bleed: 0.55, siege: 1.15, divine: 1.2 },
   // Dune Stalker: lightly-wrapped fast skirmisher — little armor, slippery to slows.
   [EnemyType.DUNE_STALKER]:     { slow: 0.6, burn: 1.10, poison: 0.85, bleed: 1.10 },
   // Stone Juggernaut: living granite — resists physical + DoT, cracked by siege/divine.

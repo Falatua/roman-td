@@ -83,7 +83,7 @@ const ARCHETYPE: Record<string, Enemy['archetype']> = {
   SKY_PATHFINDER_COMMANDER: 'RUNNER',
   SKY_ANUBIS_COMMANDER: 'ELITE',
   // 2026-06-26 variety roster
-  SIEGE_WAGON: 'BULKY', DUNE_STALKER: 'RUNNER', STONE_JUGGERNAUT: 'ARMORED'
+  SIEGE_WAGON: 'BULKY', SKY_BARGE: 'BULKY', DUNE_STALKER: 'RUNNER', STONE_JUGGERNAUT: 'ARMORED'
 };
 
 // 2026 v2 spec — TIMED tower attack-speed debuff (Dive Bomb / Ground Slam /
@@ -925,6 +925,26 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       y: a.y + (b.y - a.y) * t
     };
   };
+  const anchorFlyerCargoOnGroundPath = (parent: Enemy, child: Enemy) => {
+    if (groundPathPx.length < 2 || state.flyerPath.length < 2) {
+      child.pathIndex = Math.max(0, parent.pathIndex ?? 0);
+      child.pathProgress = Math.max(0, Math.min(0.99, parent.pathProgress ?? 0));
+      return { x: parent.x, y: parent.y };
+    }
+    const flyerTotal = Math.max(1, state.flyerPath.length - 1);
+    const flyerPos = Math.max(0, Math.min(flyerTotal - 0.001, (parent.pathIndex ?? 0) + (parent.pathProgress ?? 0)));
+    const routeRatio = flyerPos / flyerTotal;
+    const groundTotal = Math.max(1, groundPathPx.length - 1);
+    const groundPos = Math.max(0, Math.min(groundTotal - 0.001, routeRatio * groundTotal));
+    child.pathIndex = Math.max(0, Math.min(groundPathPx.length - 2, Math.floor(groundPos)));
+    child.pathProgress = Math.max(0, Math.min(0.99, groundPos - child.pathIndex));
+    const a = groundPathPx[child.pathIndex] ?? groundPathPx[0] ?? { x: parent.x, y: parent.y };
+    const b = groundPathPx[Math.min(child.pathIndex + 1, groundPathPx.length - 1)] ?? a;
+    return {
+      x: a.x + (b.x - a.x) * child.pathProgress,
+      y: a.y + (b.y - a.y) * child.pathProgress
+    };
+  };
   for (const e of Array.from(state.enemies.values())) {
     if (e.hp <= 0) {
       // SPLIT-ON-DEATH (2026-05): some enemies (Demon Hellhound, Fire
@@ -1137,30 +1157,33 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
         }
         state.hint = '💀 THE WARLORD\'S CURSE — 20 undead rise from the corpse!';
       }
-      // ─── DEATH BURST (2026-06-26): data-driven "siege carrier" payload.
-      //   An enemy with `deathBurst { type, count, hpFrac }` detonates on
-      //   death and spits out `count` minions clustered at the death tile,
-      //   scattering outward so they read as "bursting out." Headline case:
-      //   the slow, tanky Siege Wagon that cracks open into 30 fast Dune
-      //   Stalkers. Children carry __reanimated so their own death effects
-      //   (reanimate / burst) can't chain and stall the wave.
+      // ─── DEATH BURST: data-driven transport payload.
+      // Supports classic ground carriers (`type`) and air transports
+      // (`types` + groundFromFlyer) whose passengers inherit route progress
+      // on the ground maze instead of restarting at the cave.
       const deathBurst = (enemiesData as any)[e.type]?.deathBurst;
-      if (deathBurst && deathBurst.type && (deathBurst.count | 0) > 0 && !e.__reanimated) {
+      const burstTypes = deathBurst
+        ? (Array.isArray(deathBurst.types) ? deathBurst.types : deathBurst.type ? [deathBurst.type] : [])
+        : [];
+      if (deathBurst && burstTypes.length > 0 && (deathBurst.count | 0) > 0 && !e.__reanimated) {
         const bCount = Math.min(60, deathBurst.count | 0);   // hard perf cap
         const bHpFrac = typeof deathBurst.hpFrac === 'number' ? deathBurst.hpFrac : 0.5;
+        const isAirDrop = !!deathBurst.groundFromFlyer && e.isFlyer;
         for (let i = 0; i < bCount; i++) {
-          const child = spawnEnemy(state, deathBurst.type as EnemyType, bHpFrac, /*derived=*/true);
+          const childType = burstTypes[i % burstTypes.length] as EnemyType;
+          const child = spawnEnemy(state, childType, bHpFrac, /*derived=*/true);
+          const anchor = isAirDrop ? anchorFlyerCargoOnGroundPath(e, child) : anchorDeathChildOnPath(e, child);
           const ang = (i / bCount) * Math.PI * 2 + Math.random() * 0.5;
-          const dist = i === 0 ? 0 : (6 + Math.random() * 14);
-          child.x = e.x + Math.cos(ang) * dist;
-          child.y = e.y + Math.sin(ang) * dist;
+          const dist = i === 0 ? 0 : (isAirDrop ? 4 + Math.random() * 10 : 6 + Math.random() * 14);
+          child.x = anchor.x + Math.cos(ang) * dist;
+          child.y = anchor.y + Math.sin(ang) * dist;
           child.prevX = child.x;
           child.prevY = child.y;
-          child.pathIndex = e.pathIndex;
-          child.pathProgress = e.pathProgress;
           child.__reanimated = true;
         }
-        state.hint = `⚔ THE SIEGE WAGON SHATTERS — ${bCount} skirmishers pour out!`;
+        state.hint = isAirDrop
+          ? `🪽 SKY BARGE DOWN — ${bCount} melee passengers crash onto the road!`
+          : `⚔ THE SIEGE WAGON SHATTERS — ${bCount} skirmishers pour out!`;
       }
       onDeath(e);
       state.enemies.delete(e.id);

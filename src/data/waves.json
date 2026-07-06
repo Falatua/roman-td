@@ -338,7 +338,7 @@
     "type": "M",
     "faction": "EGYPTIANS",
     "hpMult": 11,
-    "gold": 15,
+    "gold": 14,
     "spawns": [
       {
         "type": "EGYPTIAN_SPEARMAN",
@@ -370,6 +370,10 @@
       },
       {
         "type": "SKY_STANDARD_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "SKY_BARGE",
         "count": 1
       },
       {
@@ -463,7 +467,7 @@
     "type": "B",
     "faction": "MONGOLS",
     "hpMult": 14,
-    "gold": 16,
+    "gold": 15,
     "spawns": [
       {
         "type": "KHAN_RIDER",
@@ -544,6 +548,10 @@
       {
         "type": "SKY_PATHFINDER_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "SKY_BARGE",
+        "count": 1
       }
     ],
     "enemySpeedBoostPct": 0.12,
@@ -617,7 +625,7 @@
     "type": "B",
     "faction": "EGYPTIANS",
     "hpMult": 50,
-    "gold": 17,
+    "gold": 16,
     "spawns": [
       {
         "type": "ANUBIS_KING",
@@ -645,6 +653,10 @@
       },
       {
         "type": "SIEGE_WAGON",
+        "count": 1
+      },
+      {
+        "type": "SKY_BARGE",
         "count": 1
       },
       {
@@ -758,7 +770,7 @@
     "type": "G",
     "faction": "ROMAN_MYTH",
     "hpMult": 22,
-    "gold": 16,
+    "gold": 15,
     "fixedCount": true,
     "spawns": [
       {
@@ -791,6 +803,10 @@
       },
       {
         "type": "PATHFINDER_COMMANDER",
+        "count": 1
+      },
+      {
+        "type": "SKY_BARGE",
         "count": 1
       }
     ],
@@ -850,7 +866,7 @@
     "type": "G",
     "faction": "ROMAN_MYTH",
     "hpMult": 27,
-    "gold": 17,
+    "gold": 16,
     "fixedCount": true,
     "spawns": [
       {
@@ -888,6 +904,10 @@
       {
         "type": "SHADOW_CAVALRY",
         "count": 8
+      },
+      {
+        "type": "SKY_BARGE",
+        "count": 1
       }
     ],
     "enemySpeedBoostPct": 0.08,

@@ -1657,9 +1657,14 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   }
   if (def.deathBurst) {
     const b = def.deathBurst;
-    const burstDef: any = (enemies as any)[b.type];
-    const burstName = burstDef?.name ?? String(b.type).replace(/_/g, ' ');
-    traits.push(`SIEGE CARRIER — when destroyed, cracks open and pours out ${b.count} × ${burstName} at ${Math.round((b.hpFrac ?? 0.5) * 100)}% HP, scattering from the death tile (the burst can't chain)`);
+    const burstTypes = Array.isArray(b.types) ? b.types : b.type ? [b.type] : [];
+    const burstName = burstTypes.map((type: string) => {
+      const burstDef: any = (enemies as any)[type];
+      return burstDef?.name ?? String(type).replace(/_/g, ' ');
+    }).join(' / ');
+    const label = b.groundFromFlyer ? 'AIR TRANSPORT' : 'SIEGE CARRIER';
+    const landing = b.groundFromFlyer ? 'onto the road at matching route progress' : 'from the death tile';
+    traits.push(`${label} — when destroyed, pours out ${b.count} × ${burstName} at ${Math.round((b.hpFrac ?? 0.5) * 100)}% HP, scattering ${landing} (the burst can't chain)`);
   }
   if (def.reanimateAs) {
     const reanimDef: any = (enemies as any)[def.reanimateAs];

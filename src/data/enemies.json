@@ -914,6 +914,25 @@
     "immuneStun": true,
     "deathBurst": { "type": "DUNE_STALKER", "count": 30, "hpFrac": 0.4 }
   },
+  "SKY_BARGE": {
+    "name": "Sky Barge",
+    "faction": "EGYPTIANS",
+    "baseHp": 5600,
+    "speed": 0.52,
+    "isFlyer": true,
+    "isBoss": false,
+    "livesCost": 5,
+    "isElite": true,
+    "renderScale": 1.32,
+    "shieldBlockChance": 0.12,
+    "immuneStun": true,
+    "deathBurst": {
+      "types": ["EGYPTIAN_SPEARMAN", "MEDJAY_SOLDIER", "MUMMY_WARRIOR", "SOBEK_WARRIOR"],
+      "count": 12,
+      "hpFrac": 0.42,
+      "groundFromFlyer": true
+    }
+  },
   "DUNE_STALKER": {
     "name": "Dune Stalker",
     "faction": "EGYPTIANS",

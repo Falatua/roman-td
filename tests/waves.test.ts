@@ -117,6 +117,7 @@ describe('Late-wave DoT profile coverage', () => {
     expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).bleed).toBeGreaterThan(1);
     expect(enemyResistanceProfile(EnemyType.SKY_PATHFINDER_COMMANDER).siege).toBe(0);
     expect(enemyResistanceProfile(EnemyType.SKY_ANUBIS_COMMANDER).poison).toBe(0);
+    expect(enemyResistanceProfile(EnemyType.SKY_BARGE).bleed).toBeLessThan(1);
   });
 });
 
@@ -158,6 +159,9 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(byWave.get(21).spawns.some((s: any) => s.type === 'MONGOL_SCOUT')).toBe(true);
     expect(byWave.get(23).spawns.some((s: any) => s.type === 'DUNE_STALKER')).toBe(true);
     expect(byWave.get(24).spawns.some((s: any) => s.type === 'SIEGE_WAGON')).toBe(true);
+    for (const wave of [18, 22, 24, 27, 29]) {
+      expect(byWave.get(wave).spawns.some((s: any) => s.type === 'SKY_BARGE'), `W${wave} should field a Sky Barge air transport`).toBe(true);
+    }
     expect(byWave.get(25).spawns.some((s: any) => s.type === 'DEMON_HELLHOUND')).toBe(true);
     expect(byWave.get(28).spawns.some((s: any) => s.type === 'SIEGE_CAPTAIN_COMMANDER')).toBe(true);
     expect(byWave.get(28).spawns.some((s: any) => s.type === 'SKY_PATHFINDER_COMMANDER')).toBe(true);
@@ -179,6 +183,27 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     }
     expect((enemiesData as any).CHIMERA.isFlyer).toBe(true);
     expect((enemiesData as any).CHIMERA.phaseHits).toBeGreaterThanOrEqual(3);
+  });
+
+  it('lets Sky Barges drop melee cargo at matching ground-route progress', () => {
+    const state: any = bootstrapState();
+    state.wave = 22;
+    state.phase = GamePhase.WAVE_PHASE;
+    const barge = spawnEnemy(state, EnemyType.SKY_BARGE, 1);
+    const flyerTotal = state.flyerPath.length - 1;
+    barge.pathIndex = Math.max(0, Math.floor(flyerTotal * 0.55));
+    barge.pathProgress = 0.25;
+    barge.hp = 0;
+
+    tickEnemies(state, 0.016, () => {}, () => {});
+
+    const burst = (enemiesData as any).SKY_BARGE.deathBurst;
+    const children = [...state.enemies.values()].filter((e: any) => e.__reanimated);
+    const expectedGroundIndex = Math.floor(((barge.pathIndex + barge.pathProgress) / flyerTotal) * (state.groundPath.length - 1));
+    expect(children).toHaveLength(burst.count);
+    expect(children.every((e: any) => !e.isFlyer)).toBe(true);
+    expect(new Set(children.map((e: any) => e.type))).toEqual(new Set(burst.types));
+    expect(children.every((e: any) => Math.abs(e.pathIndex - expectedGroundIndex) <= 1)).toBe(true);
   });
 });
 

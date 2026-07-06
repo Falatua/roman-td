@@ -274,6 +274,7 @@ export enum EnemyType {
   MEDJAY_SOLDIER = 'MEDJAY_SOLDIER',
   // ─── VARIETY ROSTER (2026-06-26) — speed/tank/stealth/burst dynamics ──
   SIEGE_WAGON = 'SIEGE_WAGON',            // slow, tanky transport; bursts 30 Dune Stalkers on death
+  SKY_BARGE = 'SKY_BARGE',                // slow air transport; drops melee passengers onto the road on death
   DUNE_STALKER = 'DUNE_STALKER',          // fast, low-HP skirmisher with periodic stealth
   STONE_JUGGERNAUT = 'STONE_JUGGERNAUT',  // very slow super-tank; shrugs slows + stuns
   // Campaign commanders — rare non-boss support enemies that
