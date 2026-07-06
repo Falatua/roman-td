@@ -60,6 +60,7 @@ import { showMercatorBanner, dismissMercatorVisit } from './render/MercatorBanne
 // localStorage.
 import { updateWaveTip, hideWaveTip } from './render/WaveTips';
 import { showSettingsPanel } from './render/SettingsPanel';
+import { startLiveUpdateWatcher } from './render/UpdateNotice';
 import { renderPinnedRecipeWidget, ensurePinnedRecipeDefault } from './render/PinnedRecipe';
 import { comboPreviewBlockHtml, showComboInfoModal } from './render/ComboPreview';
 import { markScrollable } from './render/ScrollCues';
@@ -123,6 +124,7 @@ async function boot() {
   const state = createGameState();
   const gore = createGoreState();
   const inventory = createInventory();
+  startLiveUpdateWatcher();
   // 2026-05 v10: starting inventory bonus — Cavalry Spur (UNCOMMON melee
   // item, MELEE-ONLY gate). Gives the player a real T1 build option right
   // out of the gate: equip on a Milites/Hastati/Centurion for +30% atk
