@@ -2819,7 +2819,41 @@ async function boot() {
   // registered. We now cache the last-rendered signature (wave + phase)
   // and skip the rebuild when nothing changed. The cells stay alive,
   // their click handlers fire normally.
+  const WAVE_PREVIEW_COLLAPSED_KEY = 'roman_td_wave_preview_collapsed';
   let __wavePreviewLastSig = '';
+  let __wavePreviewCollapsed: boolean | null = null;
+  function isWavePreviewCollapsed(): boolean {
+    if (__wavePreviewCollapsed === null) {
+      try {
+        __wavePreviewCollapsed = typeof localStorage !== 'undefined'
+          && localStorage.getItem(WAVE_PREVIEW_COLLAPSED_KEY) === '1';
+      } catch {
+        __wavePreviewCollapsed = false;
+      }
+    }
+    return __wavePreviewCollapsed;
+  }
+  function setWavePreviewCollapsed(collapsed: boolean) {
+    __wavePreviewCollapsed = collapsed;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(WAVE_PREVIEW_COLLAPSED_KEY, collapsed ? '1' : '0');
+      }
+    } catch {
+      // Storage can be unavailable in private browsing; the in-memory state
+      // still keeps the panel collapsed for the current page session.
+    }
+  }
+  function attachWavePreviewToggle(chip: HTMLElement, collapsed: boolean) {
+    chip.querySelectorAll<HTMLElement>('[data-wave-preview-toggle]').forEach(toggle => {
+      toggle.onclick = (ev) => {
+        ev.stopPropagation();
+        setWavePreviewCollapsed(!collapsed);
+        __wavePreviewLastSig = '';
+        updateWavePreviewChip();
+      };
+    });
+  }
   function updateWavePreviewChip() {
     const inBuild = state.phase === GamePhase.BUILD_PHASE
                  || state.phase === GamePhase.PROSPECT_PLACEMENT
@@ -2837,7 +2871,8 @@ async function boot() {
     }
     // Signature for diffing — if unchanged, skip the rebuild so the
     // existing DOM (and its click handlers) stay intact.
-    const sig = `${nextWaveIdx}|${state.phase}|${w.spawns.map((s: any) => `${s.type}x${s.count}`).join(',')}`;
+    const collapsed = isWavePreviewCollapsed();
+    const sig = `${nextWaveIdx}|${state.phase}|${collapsed ? 'collapsed' : 'open'}|${w.spawns.map((s: any) => `${s.type}x${s.count}`).join(',')}`;
     if (chip && sig === __wavePreviewLastSig) return;
     __wavePreviewLastSig = sig;
     // Build the chip lazily.
@@ -2850,9 +2885,11 @@ async function boot() {
       // z-index 40 keeps the chip above the canvas but BELOW every modal
       // (codex 60, boss banner 65, enemy-inspect 55, shop 50) so opening
       // the inspect modal via clicking a sprite isn't covered by the chip.
-      chip.style.cssText = `position:absolute;left:8px;bottom:90px;max-width:340px;padding:8px 10px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid #d4af37;color:#fff8e0;font-family:'Courier New',monospace;font-size:11px;z-index:40;box-shadow:0 0 14px rgba(212,175,55,0.32);`;
       document.getElementById('stage-wrap')?.appendChild(chip);
     }
+    chip.style.cssText = collapsed
+      ? `position:absolute;left:8px;bottom:90px;max-width:210px;min-width:0;padding:5px 7px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid #d4af37;color:#fff8e0;font-family:'Courier New',monospace;font-size:10px;z-index:40;box-shadow:0 0 10px rgba(212,175,55,0.26);`
+      : `position:absolute;left:8px;bottom:90px;max-width:340px;padding:8px 10px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid #d4af37;color:#fff8e0;font-family:'Courier New',monospace;font-size:11px;z-index:40;box-shadow:0 0 14px rgba(212,175,55,0.32);`;
     // Header line
     const isBoss = w.type === 'B';
     const isFlyer = w.type === 'F';
@@ -2863,9 +2900,20 @@ async function boot() {
                     :          '<span style="color:#cdb98a">GROUND</span>';
     const necroTag = w.necromancy ? ' <span style="color:#aa55ff;font-weight:bold;font-size:9px">💀 NECRO</span>' : '';
     const factionLabel = String(w.faction).replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+    if (collapsed) {
+      chip.innerHTML = `
+        <button data-wave-preview-toggle aria-label="Expand next wave preview" title="Expand next wave preview" style="appearance:none;border:1px solid #5a4a30;background:#21170f;color:#ffd34d;width:20px;height:20px;margin-right:6px;font-family:'Courier New',monospace;font-weight:bold;cursor:pointer">+</button>
+        <button data-wave-preview-toggle aria-label="Expand next wave preview" title="Expand next wave preview" style="appearance:none;border:0;background:transparent;color:#fff8e0;font-family:'Courier New',monospace;cursor:pointer;padding:0;text-align:left">
+          <span style="font-size:10px;letter-spacing:2px;color:#9be0ff">NEXT — W${nextWaveIdx + 1}</span>
+          <span style="margin-left:8px">${typeBadge}</span>
+        </button>`;
+      attachWavePreviewToggle(chip, collapsed);
+      return;
+    }
     const headerHtml = `
       <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #5a4a30;padding-bottom:4px;margin-bottom:5px">
-        <span style="font-size:10px;letter-spacing:2px;color:#9be0ff">NEXT — W${nextWaveIdx + 1}</span>
+        <button data-wave-preview-toggle aria-label="Collapse next wave preview" title="Collapse next wave preview so build tiles are reachable" style="appearance:none;border:1px solid #5a4a30;background:#21170f;color:#ffd34d;width:20px;height:20px;margin-right:7px;font-family:'Courier New',monospace;font-weight:bold;cursor:pointer">-</button>
+        <span style="font-size:10px;letter-spacing:2px;color:#9be0ff;flex:1">NEXT — W${nextWaveIdx + 1}</span>
         <span>${typeBadge}${necroTag}</span>
       </div>
       <div style="font-size:10px;color:#cdb98a;margin-bottom:5px">${factionLabel}</div>`;
@@ -2891,6 +2939,7 @@ async function boot() {
     }
     chip.innerHTML = headerHtml + `<div style="display:flex;flex-wrap:wrap;gap:5px">${rows.join('')}</div>
       <div style="font-size:9px;color:#aa9a4a;letter-spacing:1px;margin-top:5px;text-align:center">CLICK A SPRITE FOR STATS</div>`;
+    attachWavePreviewToggle(chip, collapsed);
     chip.querySelectorAll<HTMLElement>('.wpv-cell').forEach(cell => {
       const type = cell.dataset.enemyType;
       if (!type) return;

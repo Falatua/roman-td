@@ -18,3 +18,20 @@ describe('Wave brief HUD ergonomics', () => {
     expect(mainSource).toContain('BRIEF');
   });
 });
+
+describe('Next-wave preview chip ergonomics', () => {
+  const mainSource = fs.readFileSync('src/main.ts', 'utf8');
+
+  it('lets players collapse the sprite preview away from build tiles', () => {
+    expect(mainSource).toContain("localStorage.getItem(WAVE_PREVIEW_COLLAPSED_KEY)");
+    expect(mainSource).toContain('data-wave-preview-toggle');
+    expect(mainSource).toContain('aria-label="Collapse next wave preview"');
+    expect(mainSource).toContain('aria-label="Expand next wave preview"');
+  });
+
+  it('shrinks the collapsed next-wave preview into a compact tab', () => {
+    expect(mainSource).toContain('max-width:210px;min-width:0;padding:5px 7px');
+    expect(mainSource).toContain('Collapse next wave preview so build tiles are reachable');
+    expect(mainSource).toContain("setWavePreviewCollapsed(!collapsed)");
+  });
+});
