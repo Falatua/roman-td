@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { createTower, towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, tickCombat } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, SIEGE_FLYER_MISS_CHANCE, tickCombat } from '../src/systems/CombatResolver';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { spawnProjectile } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind, TargetingMode } from '../src/types';
@@ -331,7 +331,13 @@ describe('Anti-air tower signatures', () => {
     const tower = createTower(type, 3, 4, 4, 0);
     const target = flyerEnemy(`${type}-flyer`);
     state.enemies.set(target.id, target);
-    applyDamageAndStatus(state, tower, target, 1, noopCombatHooks());
+    const originalRandom = Math.random;
+    Math.random = () => 0.99;
+    try {
+      applyDamageAndStatus(state, tower, target, 1, noopCombatHooks());
+    } finally {
+      Math.random = originalRandom;
+    }
     return target;
   }
 
@@ -399,9 +405,15 @@ describe('Anti-air tower signatures', () => {
     const comboTarget = flyerEnemy('plated-combo');
     const stormTarget = flyerEnemy('plated-storm');
 
-    applyDamageAndStatus(state, plain, plainTarget, 100, noopCombatHooks());
-    applyDamageAndStatus(state, combo, comboTarget, 100, noopCombatHooks());
-    applyDamageAndStatus(state, storm, stormTarget, 100, noopCombatHooks());
+    const originalRandom = Math.random;
+    Math.random = () => 0.99;
+    try {
+      applyDamageAndStatus(state, plain, plainTarget, 100, noopCombatHooks());
+      applyDamageAndStatus(state, combo, comboTarget, 100, noopCombatHooks());
+      applyDamageAndStatus(state, storm, stormTarget, 100, noopCombatHooks());
+    } finally {
+      Math.random = originalRandom;
+    }
 
     expect(1000 - plainTarget.hp).toBeCloseTo(100 * (1 - armor), 4);
     expect(1000 - comboTarget.hp).toBeCloseTo(100, 4);
@@ -418,6 +430,58 @@ describe('Anti-air tower signatures', () => {
 
     expect((wavesData as any[])[5].comboAntiAirArmorPct).toBeUndefined();
     expect(1000 - target.hp).toBeCloseTo(100, 4);
+  });
+
+  it('gives siege attacks a separate miss chance against flyers only', () => {
+    expect(SIEGE_FLYER_MISS_CHANCE).toBeCloseTo(0.20, 4);
+    const originalRandom = Math.random;
+    Math.random = () => 0;
+    try {
+      const state = createGameState();
+      const siegeFlyer = flyerEnemy('siege-flyer-miss');
+      const siegeGround = testEnemy('siege-ground-hit');
+      const rangedFlyer = flyerEnemy('ranged-flyer-hit');
+      const siegeTower = createTower(TowerType.SCORPIO, 3, 0, 0, 0);
+      const rangedTower = createTower(TowerType.SAGITTARIUS, 3, 0, 0, 0);
+
+      applyDamageAndStatus(state, siegeTower, siegeFlyer, 100, noopCombatHooks());
+      applyDamageAndStatus(state, siegeTower, siegeGround, 100, noopCombatHooks());
+      applyDamageAndStatus(state, rangedTower, rangedFlyer, 100, noopCombatHooks());
+
+      expect(siegeFlyer.hp).toBe(1000);
+      expect((siegeFlyer as any).__weatherMissTick).toBe(state.tick);
+      expect(siegeGround.hp).toBe(900);
+      expect(rangedFlyer.hp).toBe(900);
+    } finally {
+      Math.random = originalRandom;
+    }
+  });
+
+  it('zeros the fired projectile payload when a primary siege shot misses a flyer', () => {
+    const originalRandom = Math.random;
+    Math.random = () => 0;
+    try {
+      const state = createGameState();
+      (globalThis as any).__lastState = state;
+      const tower = createTower(TowerType.SCORPIO, 3, 4, 4, 0);
+      tower.attackCooldown = 0;
+      tower.critChance = 0;
+      state.towers.set(tower.id, tower);
+      const center = towerCenter(tower);
+      const target = flyerEnemy('primary-siege-flyer-miss', center.x + GRID.TILE * 2, center.y);
+      state.enemies.set(target.id, target);
+      let firedDamage: number | null = null;
+
+      tickCombat(state, 0.016, {
+        ...noopCombatHooks(),
+        onProjectileFire: (_tower, _enemy, damage) => { firedDamage = damage; }
+      });
+
+      expect(firedDamage).toBe(0);
+      expect((target as any).__weatherMissTick).toBe(state.tick);
+    } finally {
+      Math.random = originalRandom;
+    }
   });
 });
 

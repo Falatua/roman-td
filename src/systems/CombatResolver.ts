@@ -66,6 +66,7 @@ const enemySnapshotScratch: Enemy[] = [];
 const targetCandidateScratch: Enemy[] = [];
 const SULLA_PASSIVE_RADIUS_TILES = 5.5;
 const SULLA_FIRE_RIDER_PCT = 0.22;
+export const SIEGE_FLYER_MISS_CHANCE = 0.20;
 
 const COMBO_ANTI_AIR_TYPES = new Set<TowerType>([
   TowerType.SCORPION_BOLT,
@@ -382,6 +383,11 @@ function sigilOfSolMult(t: Tower, target: Enemy): number {
 function secondaryHitBlocked(t: Tower, target: Enemy, state: GameStateShape): boolean {
   if (target.hp <= 0) return false;
   const isRangedClass = t.damageType === DamageType.PHYS_RANGED || t.damageType === DamageType.SIEGE;
+  // Siege engines are brutal when they connect, but leading a flying
+  // target with a heavy bolt/stone is clumsy compared with arrows or
+  // divine strikes. This is an accuracy penalty, not a damage-resist
+  // layer, so landed siege shots still keep their flyer-control identity.
+  if (t.damageType === DamageType.SIEGE && target.isFlyer && Math.random() < SIEGE_FLYER_MISS_CHANCE) return true;
   // Per-enemy permanent dodge (Numidian Rider, Shadow Cavalry) — ranged only.
   const dodgeChance: number = (enemiesData as any)[target.type]?.dodgeChance ?? 0;
   if (dodgeChance > 0 && isRangedClass && Math.random() < dodgeChance) return true;
@@ -1439,12 +1445,20 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         // Mark the target so the on-hit hook can render a "MISS!" floater.
         (target as any).__weatherMissTick = state.tick;
       }
+      const siegeFlyerMissed = !missed &&
+                               t.damageType === DamageType.SIEGE &&
+                               target.isFlyer &&
+                               Math.random() < SIEGE_FLYER_MISS_CHANCE;
+      if (siegeFlyerMissed) {
+        damage = 0;
+        (target as any).__weatherMissTick = state.tick;
+      }
       // ENEMY DODGE (2026-05): Numidian Riders / Shadow Cavalry have a
       // dodgeChance flag. RANGED attacks only — melee can't be dodged.
       // Sets damage to 0 and flashes a "DODGED" floater color via the same
       // weather-miss path so the renderer treats it identically.
       const targetDodge: number = (enemiesData as any)[target.type]?.dodgeChance ?? 0;
-      const dodged = !missed && targetDodge > 0 &&
+      const dodged = !missed && !siegeFlyerMissed && targetDodge > 0 &&
                      (t.damageType === DamageType.PHYS_RANGED || t.damageType === DamageType.SIEGE) &&
                      Math.random() < targetDodge;
       if (dodged) {
@@ -1458,7 +1472,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // `shieldBlockChance` rolls below, so a Numidian Rider on W8
       // effectively whiffs ~32% of incoming ranged.
       const w8Block: number = (target as any).__w8RangedBlock ?? 0;
-      const w8Blocked = !missed && !dodged && w8Block > 0 &&
+      const w8Blocked = !missed && !siegeFlyerMissed && !dodged && w8Block > 0 &&
                         (t.damageType === DamageType.PHYS_RANGED || t.damageType === DamageType.SIEGE) &&
                         Math.random() < w8Block;
       if (w8Blocked) {
@@ -1466,7 +1480,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         (target as any).__weatherMissTick = state.tick;
       }
       const lateRangedBlock: number = (target as any).__lateRangedBlock ?? 0;
-      const lateBlocked = !missed && !dodged && !w8Blocked && lateRangedBlock > 0 &&
+      const lateBlocked = !missed && !siegeFlyerMissed && !dodged && !w8Blocked && lateRangedBlock > 0 &&
                           (t.damageType === DamageType.PHYS_RANGED || t.damageType === DamageType.SIEGE) &&
                           Math.random() < lateRangedBlock;
       if (lateBlocked) {
@@ -1481,7 +1495,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // with melee, then volley". Different from dodge: shield block is
       // conditional on the shield, dodge is a permanent trait.
       const shieldBlockChance: number = (enemiesData as any)[target.type]?.shieldBlockChance ?? 0;
-      const shieldBlocked = !missed && !dodged && !w8Blocked && !lateBlocked && shieldBlockChance > 0 && !target.shieldBroken &&
+      const shieldBlocked = !missed && !siegeFlyerMissed && !dodged && !w8Blocked && !lateBlocked && shieldBlockChance > 0 && !target.shieldBroken &&
                             (t.damageType === DamageType.PHYS_RANGED || t.damageType === DamageType.SIEGE) &&
                             Math.random() < shieldBlockChance;
       if (shieldBlocked) {
@@ -1497,7 +1511,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // block / shield-block rolls above. Per user: "Undead Spearmen and
       // Iron Flanks have a 20% chance to block all attacks."
       const allBlockChance: number = (enemiesData as any)[target.type]?.allAttackBlockChance ?? 0;
-      const allBlocked = !missed && !dodged && !w8Blocked && !shieldBlocked && allBlockChance > 0 &&
+      const allBlocked = !missed && !siegeFlyerMissed && !dodged && !w8Blocked && !shieldBlocked && allBlockChance > 0 &&
                          Math.random() < allBlockChance;
       if (allBlocked) {
         damage = 0;
