@@ -34,7 +34,7 @@ import { createGameState, GameStateShape } from '../src/GameState';
 import { DamageType, Enemy, EnemyFaction, EnemyType, GamePhase, StatusEffectKind, TowerType } from '../src/types';
 import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
 import { previewSpawnHp, startWave } from '../src/systems/WaveManager';
-import { buildMercatorTowerOffers, CHAMPION_TYPES } from '../src/systems/MerchantSystem';
+import { buildMercatorTowerOffers, CHAMPION_PRICE, CHAMPION_TYPES } from '../src/systems/MerchantSystem';
 import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity';
 import { heroAuraScaleForTier, heroTierForTower } from '../src/systems/HeroScaling';
 import HERO_DEFS from '../src/data/herodefs.json';
@@ -340,6 +340,8 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(championOffers.length).toBe(6);
     for (const offer of championOffers) {
       expect(offer.tier).toBe(2);
+      expect(offer.price).toBe(CHAMPION_PRICE);
+      expect(offer.price).toBe(1000);
       const heroId = heroIdForTowerType(offer.type);
       expect(heroId, `${offer.type} should map back to a HERO_* identity`).toBeTruthy();
       const def: any = heroId ? (HERO_DEFS as any)[heroId] : null;

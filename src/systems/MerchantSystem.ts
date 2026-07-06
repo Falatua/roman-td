@@ -150,8 +150,8 @@ export interface ShopState {
 // and every offer has a flat armory price. The player still gets variety in tower
 // TYPE (the pool below picks 8 distinct types per visit) — they just
 // always arrive at apex tier and at the same price tag.
-// 2026-06-23 — JB set T5 Mercator armory towers to 250g. Champions stay
-// at 500g because they feed the Mars Victor path.
+// 2026-06-23 — JB set T5 Mercator armory towers to 250g. Champions are
+// premium 1000g recruits because they feed the Mars Victor path.
 const MERCATOR_TOWER_PRICE: Record<number, number> = {
   1: 250, 2: 250, 3: 250, 4: 250, 5: 250
 };
@@ -179,7 +179,7 @@ function rollTier(_wave: number): number {
   return 5;
 }
 
-// 2026 v2 Ch8 — the 6 Champions of Rome. Always stocked at Mercator (500g
+// 2026 v2 Ch8 — the 6 Champions of Rome. Always stocked at Mercator (1000g
 // each) so the player can recruit them across visits and combine all six
 // into MARS VICTOR. They reuse the hero portraits in the shop + the hero
 // board sprites once placed.
@@ -187,7 +187,7 @@ export const CHAMPION_TYPES = [
   'CHAMPION_MARIUS', 'CHAMPION_AGRIPPA', 'CHAMPION_AGRICOLA',
   'CHAMPION_SCIPIO', 'CHAMPION_CAESAR', 'CHAMPION_SULLA'
 ];
-export const CHAMPION_PRICE = 500;
+export const CHAMPION_PRICE = 1000;
 
 export interface MercatorTowerOfferOptions {
   activeHeroId?: string | null;
@@ -207,7 +207,7 @@ export function buildMercatorTowerOffers(wave: number, count = 5, options: Merca
   }
   const activeHeroChampion = mercatorExcludedChampionForHero(options.activeHeroId);
   if (activeHeroChampion) excluded.add(activeHeroChampion);
-  // The 6 Champions always head the lineup at a flat 500g — the Mars Victor path.
+  // The 6 Champions always head the lineup at a flat 1000g — the Mars Victor path.
   for (const ct of CHAMPION_TYPES) {
     // 2026-06-23 — Purchased Champions arrive as T2 recruits: stronger
     // than a fresh starter, but not full apex heroes.
@@ -246,7 +246,7 @@ function asRarity(s: string): Rarity { return s as Rarity; }
 // 20-WAVE CAMPAIGN: Mercator visits land on the wave BEFORE each scheduled
 // boss (W5/W10/W15/W20). Visits: W4, W9, W14, W19.
 // 2026 v2 — 30-wave campaign. Mercator now also visits in the late game so
-// the Champions of Rome (500g each, ~3000g for all six) are reachable before
+// the Champions of Rome (1000g each, ~6000g for all six) are reachable before
 // the W24 Anubis King and the W30 Daemon finale.
 export const MERCATOR_WAVES = [4, 9, 14, 19, 23, 27];
 
@@ -415,7 +415,7 @@ export const FORTUNA_APEX_BLOCKLIST = new Set([
   'INFERNAL_COLOSSUS',
   'ROMAN_TRANSFORMER',
   'MARS_VICTOR',   // 2026 v2 Ch9 — DIVINE apex; recipe-only, never gambled/bought
-  // 2026 v2 Ch8 — Champions are a deliberate 500g Mercator buy, never gambled.
+  // 2026 v2 Ch8 — Champions are a deliberate 1000g Mercator buy, never gambled.
   'CHAMPION_MARIUS', 'CHAMPION_AGRIPPA', 'CHAMPION_AGRICOLA',
   'CHAMPION_SCIPIO', 'CHAMPION_CAESAR', 'CHAMPION_SULLA'
 ]);

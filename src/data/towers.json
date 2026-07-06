@@ -1144,7 +1144,7 @@
     "isHero": true,
     "critChance": 0.5,
     "critMult": 2.0,
-    "ability": "Champion of Rome, recruited at Mercator for 500g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
+    "ability": "Champion of Rome, recruited at Mercator for 1000g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "CHAMPION_AGRIPPA": {
     "name": "Champion Agrippa",
@@ -1161,7 +1161,7 @@
     "isHero": true,
     "critChance": 0.5,
     "critMult": 2.0,
-    "ability": "Champion of Rome, recruited at Mercator for 500g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
+    "ability": "Champion of Rome, recruited at Mercator for 1000g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "CHAMPION_AGRICOLA": {
     "name": "Champion Agricola",
@@ -1178,7 +1178,7 @@
     "isHero": true,
     "critChance": 0.5,
     "critMult": 2.0,
-    "ability": "Champion of Rome, recruited at Mercator for 500g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
+    "ability": "Champion of Rome, recruited at Mercator for 1000g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "CHAMPION_SCIPIO": {
     "name": "Champion Scipio",
@@ -1195,7 +1195,7 @@
     "isHero": true,
     "critChance": 0.5,
     "critMult": 2.0,
-    "ability": "Champion of Rome, recruited at Mercator for 500g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
+    "ability": "Champion of Rome, recruited at Mercator for 1000g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "CHAMPION_CAESAR": {
     "name": "Champion Caesar",
@@ -1212,7 +1212,7 @@
     "isHero": true,
     "critChance": 0.5,
     "critMult": 2.0,
-    "ability": "Champion of Rome, recruited at Mercator for 500g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
+    "ability": "Champion of Rome, recruited at Mercator for 1000g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "CHAMPION_SULLA": {
     "name": "Champion Sulla",
@@ -1229,7 +1229,7 @@
     "isHero": true,
     "critChance": 0.5,
     "critMult": 2.0,
-    "ability": "Champion of Rome, recruited at Mercator for 500g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
+    "ability": "Champion of Rome, recruited at Mercator for 1000g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "PRAETORIAN_EXECUTIONER": {"name": "Praetorian Executioner", "damageType": "PHYS_MELEE", "baseDps": 135.0, "attackSpeed": 1.5, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.15, "critMult": 2.4, "ability": "Heavy maul. EXECUTIONER'S RHYTHM: every 2nd strike STUNS 0.8s — and he deals +40% damage to any STUNNED, SLOWED, or FROZEN target, caving in everything his own lockdown leaves helpless."},
   "SACRED_BAND": {"name": "Sacred Band", "damageType": "DIVINE", "baseDps": 165.0, "attackSpeed": 1.3, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.18, "critMult": 2.6, "ability": "Holy blade — DIVINE melee that bypasses most resistances. AEGIS NOVA: every 4th strike erupts a 2-tile divine shockwave for 2.2× damage that STUNS everything caught (0.4s). Elite anti-armor + area lockdown."},
