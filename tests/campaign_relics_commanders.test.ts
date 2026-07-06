@@ -52,9 +52,9 @@ function bootstrapState() {
 }
 
 describe('Campaign relics', () => {
-  it('ships a full 68-relic randomized campaign pool', () => {
-    expect(CAMPAIGN_RELICS.length).toBe(68);
-    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(68);
+  it('ships a full 69-relic randomized campaign pool', () => {
+    expect(CAMPAIGN_RELICS.length).toBe(69);
+    expect(new Set(CAMPAIGN_RELICS.map(r => r.id)).size).toBe(69);
     for (const relic of CAMPAIGN_RELICS) {
       expect(relic.upside.length).toBeGreaterThan(5);
       expect(relic.caveat.length).toBeGreaterThan(5);
@@ -108,6 +108,8 @@ describe('Campaign relics', () => {
     expect(byId.LEGATE_CONTRACT.caveat).toContain('225 gold');
     expect(byId.AGRICOLA_LEVY.upside).toContain('Champion Agricola');
     expect(byId.AGRICOLA_LEVY.caveat).toContain('29 lives');
+    expect(byId.RANK_AND_FILE_EDICT.upside).toContain('+20%');
+    expect(byId.RANK_AND_FILE_EDICT.caveat).toContain('20% less');
   });
 
   it('Saturn debt grants the immediate 900g campaign bankroll', () => {
@@ -126,6 +128,17 @@ describe('Campaign relics', () => {
     tower.damageType = DamageType.DIVINE;
     const target = { isCommander: true, type: 'STANDARD_BEARER_COMMANDER' };
     expect(campaignRelicDamageMult(s, tower, target)).toBeCloseTo(1.8 * 1.5, 4);
+  });
+
+  it('Rank-and-File Edict boosts base enemies but weakens boss and commander damage', () => {
+    const s = bootstrapState();
+    applyCampaignRelic(s, 'RANK_AND_FILE_EDICT');
+    const tower = createTower(TowerType.MILITES, 3, 1, 1, 1);
+
+    expect(campaignRelicDamageMult(s, tower, { type: 'CELTIC_FOOTMAN', archetype: 'BASIC' })).toBeCloseTo(1.20, 4);
+    expect(campaignRelicDamageMult(s, tower, { type: 'WAR_ELEPHANT', archetype: 'ELITE' })).toBeCloseTo(1.00, 4);
+    expect(campaignRelicDamageMult(s, tower, { type: 'CELTIC_WARLORD', isBoss: true })).toBeCloseTo(0.80, 4);
+    expect(campaignRelicDamageMult(s, tower, { type: 'STANDARD_BEARER_COMMANDER', isCommander: true })).toBeCloseTo(0.80, 4);
   });
 
   it('Mars Tax discounts trap prices and raises enemy speed', () => {

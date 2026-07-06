@@ -71,7 +71,8 @@ export const CAMPAIGN_RELIC_IDS = [
   'BUILDER_CHIT',
   'SMALL_RAMPART_GRANT',
   'TRAPWRIGHTS_SAMPLE',
-  'CHAPEL_CANDLE'
+  'CHAPEL_CANDLE',
+  'RANK_AND_FILE_EDICT'
 ] as const;
 
 export type CampaignRelicId = typeof CAMPAIGN_RELIC_IDS[number];
@@ -714,6 +715,15 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     upside: 'Gain 3 lives immediately.',
     caveat: 'Lose 70 gold immediately.',
     effects: ['Gain 3 lives now.', 'Lose 70 gold now.']
+  },
+  {
+    id: 'RANK_AND_FILE_EDICT',
+    name: 'Rank-and-File Edict',
+    eyebrow: 'MINION CLEARANCE',
+    blurb: 'Rome drills for the common crush of bodies. The famous monsters and officers learn how to duck.',
+    upside: 'Base enemies take +20% damage from towers.',
+    caveat: 'Bosses and commanders take 20% less tower damage.',
+    effects: ['Base enemies take +20% tower damage.', 'Bosses and commanders take -20% tower damage.']
   }
 ];
 
@@ -1158,6 +1168,13 @@ export function campaignRelicDamageMult(state: GameStateShape, tower: Tower, tar
         break;
       case 'BLESSING_OF_MARS':
         if (tower.damageType === DamageType.PHYS_MELEE || tower.damageType === DamageType.SIEGE) mult *= 1.55;
+        break;
+      case 'RANK_AND_FILE_EDICT':
+        if (target?.isBoss || target?.isCommander || String(target?.type ?? '').includes('COMMANDER')) {
+          mult *= 0.80;
+        } else if (target?.archetype !== 'ELITE') {
+          mult *= 1.20;
+        }
         break;
     }
   }
