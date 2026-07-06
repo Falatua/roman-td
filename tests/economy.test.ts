@@ -72,6 +72,10 @@ describe('Economy — pool upgrade cost progression', () => {
     expect(c.length).toBe(8);
     for (let i = 1; i < c.length; i++) expect(c[i]).toBeGreaterThan(c[i - 1]);
   });
+
+  it('pins the +10 percent pool-upgrade price bump', () => {
+    expect(ECONOMY.POOL_UPGRADE_COSTS).toEqual([13, 28, 56, 97, 153, 233, 353, 543]);
+  });
 });
 
 describe('Economy — hero level XP', () => {
