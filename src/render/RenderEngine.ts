@@ -2646,8 +2646,25 @@ export class RenderEngine {
     }
     const terrainLayer = new Container();
     const decorLayer = new Container();
+    const oceanLayer = new Container();
+    const shoreLayer = new Container();
+    const coastalDetailLayer = new Container();
     const beachGfx = new Graphics();
     const waterGfx = new Graphics();
+    const waterDeepKeys = ['OCEAN_DEEP_A', 'OCEAN_DEEP_B'];
+    const waterMidKeys = ['OCEAN_MID_A', 'OCEAN_MID_B'];
+    const waterShallowKeys = ['OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B'];
+    const beachKeys = ['BEACH_SAND_A', 'BEACH_SAND_B', 'BEACH_SAND_C'];
+    const addTileSprite = (layer: Container, key: string, x: number, y: number, alpha = 1) => {
+      const t0 = tex(key);
+      if (!t0) return false;
+      const sp = new Sprite(t0);
+      sp.x = x; sp.y = y;
+      sp.width = GRID.TILE; sp.height = GRID.TILE;
+      sp.alpha = alpha;
+      layer.addChild(sp);
+      return true;
+    };
 
     for (let r = 0; r < GRID.ROWS; r++) {
       for (let c = 0; c < GRID.COLS; c++) {
@@ -2676,65 +2693,42 @@ export class RenderEngine {
             edgeDist = radius;
           }
           const centerDepth = Math.max(0, Math.min(1, edgeDist / 3));
-          const palette = centerDepth > 0.65
-            ? [0x0b2540, 0x0f3150, 0x123b5a]
-            : centerDepth > 0.25
-              ? [0x123e5d, 0x15506e, 0x1a5d7a]
-              : [0x236b7a, 0x2d7e86, 0x3f8b86];
-          waterGfx.beginFill(palette[h % palette.length], 1).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
-          for (let py = 0; py < 4; py++) {
-            for (let px = 0; px < 4; px++) {
-              const ph = hash(c * 4 + px, r * 4 + py, 44);
-              const shade = palette[(ph >>> 4) % palette.length];
-              waterGfx.beginFill(shade, 0.32).drawRect(x + px * 8, y + py * 8, 8, 8).endFill();
-            }
-          }
-          if ((h % 7) === 0) {
-            const yy = y + 8 + ((h >>> 6) % 15);
-            waterGfx.beginFill(0x9ce6f0, 0.42).drawRect(x + 5, yy, 16, 1).endFill();
-            waterGfx.beginFill(0xd9fff9, 0.26).drawRect(x + 9, yy + 2, 9, 1).endFill();
-          }
-          if ((h % 19) === 0) {
-            waterGfx.beginFill(0xb8fff4, 0.30).drawRect(x + 21, y + 9, 2, 2).endFill();
-            waterGfx.beginFill(0xb8fff4, 0.22).drawRect(x + 25, y + 14, 1, 1).endFill();
+          const keyPool = centerDepth > 0.65 ? waterDeepKeys : centerDepth > 0.25 ? waterMidKeys : waterShallowKeys;
+          const waterKey = keyPool[(h >>> 3) % keyPool.length];
+          if (!addTileSprite(oceanLayer, waterKey, x, y)) {
+            const palette = centerDepth > 0.65
+              ? [0x0b2540, 0x0f3150, 0x123b5a]
+              : centerDepth > 0.25
+                ? [0x123e5d, 0x15506e, 0x1a5d7a]
+                : [0x236b7a, 0x2d7e86, 0x3f8b86];
+            waterGfx.beginFill(palette[h % palette.length], 1).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
           }
           const north = state.tiles[r - 1]?.[c] !== TileType.WATER;
           const east = state.tiles[r]?.[c + 1] !== TileType.WATER;
           const south = state.tiles[r + 1]?.[c] !== TileType.WATER;
           const west = state.tiles[r]?.[c - 1] !== TileType.WATER;
-          if (north) {
-            waterGfx.beginFill(0xd8f7ee, 0.44).drawRect(x + 2, y, GRID.TILE - 4, 2).endFill();
-            waterGfx.beginFill(0x7c6a3c, 0.36).drawRect(x, y, GRID.TILE, 1).endFill();
-          }
-          if (east) {
-            waterGfx.beginFill(0xd8f7ee, 0.34).drawRect(x + GRID.TILE - 2, y + 2, 2, GRID.TILE - 4).endFill();
-            waterGfx.beginFill(0x7c6a3c, 0.28).drawRect(x + GRID.TILE - 1, y, 1, GRID.TILE).endFill();
-          }
-          if (south) waterGfx.beginFill(0xd8f7ee, 0.28).drawRect(x + 2, y + GRID.TILE - 2, GRID.TILE - 4, 2).endFill();
-          if (west) waterGfx.beginFill(0xd8f7ee, 0.24).drawRect(x, y + 2, 2, GRID.TILE - 4).endFill();
+          if (north) addTileSprite(shoreLayer, 'OCEAN_FOAM_N', x, y, 0.95);
+          if (east) addTileSprite(shoreLayer, 'OCEAN_FOAM_E', x, y, 0.86);
+          if (south) addTileSprite(shoreLayer, 'OCEAN_FOAM_S', x, y, 0.76);
+          if (west) addTileSprite(shoreLayer, 'OCEAN_FOAM_W', x, y, 0.74);
           continue;
         }
         if (t === TileType.EMPTY && isWaterPlacementBufferTile(c, r)) {
-          const sandPalette = [0xbfa76a, 0xd0bb79, 0xa98f58, 0xe0cb8e];
-          beachGfx.beginFill(sandPalette[h % sandPalette.length], 1).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
-          for (let py = 0; py < 4; py++) {
-            for (let px = 0; px < 4; px++) {
-              const ph = hash(c * 5 + px, r * 5 + py, 907);
-              const shade = sandPalette[(ph >>> 5) % sandPalette.length];
-              beachGfx.beginFill(shade, 0.25).drawRect(x + px * 8, y + py * 8, 8, 8).endFill();
-            }
+          const beachKey = beachKeys[(h >>> 4) % beachKeys.length];
+          if (!addTileSprite(shoreLayer, beachKey, x, y)) {
+            const sandPalette = [0xbfa76a, 0xd0bb79, 0xa98f58, 0xe0cb8e];
+            beachGfx.beginFill(sandPalette[h % sandPalette.length], 1).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
           }
           const waterN = state.tiles[r - 1]?.[c] === TileType.WATER;
           const waterE = state.tiles[r]?.[c + 1] === TileType.WATER;
           const waterS = state.tiles[r + 1]?.[c] === TileType.WATER;
           const waterW = state.tiles[r]?.[c - 1] === TileType.WATER;
-          if (waterN) beachGfx.beginFill(0xf2e6b0, 0.55).drawRect(x + 2, y, GRID.TILE - 4, 2).endFill();
-          if (waterE) beachGfx.beginFill(0xf2e6b0, 0.45).drawRect(x + GRID.TILE - 2, y + 2, 2, GRID.TILE - 4).endFill();
-          if (waterS) beachGfx.beginFill(0xf2e6b0, 0.38).drawRect(x + 2, y + GRID.TILE - 2, GRID.TILE - 4, 2).endFill();
-          if (waterW) beachGfx.beginFill(0xf2e6b0, 0.32).drawRect(x, y + 2, 2, GRID.TILE - 4).endFill();
-          if ((h % 11) === 0) {
-            beachGfx.beginFill(0x6b5a35, 0.45).drawRect(x + 8 + ((h >>> 5) % 12), y + 9 + ((h >>> 9) % 12), 2, 1).endFill();
-          }
+          if (waterN) addTileSprite(shoreLayer, 'OCEAN_FOAM_N', x, y, 0.38);
+          if (waterE) addTileSprite(shoreLayer, 'OCEAN_FOAM_E', x, y, 0.34);
+          if (waterS) addTileSprite(shoreLayer, 'OCEAN_FOAM_S', x, y, 0.28);
+          if (waterW) addTileSprite(shoreLayer, 'OCEAN_FOAM_W', x, y, 0.26);
+          if ((h % 17) === 0) addTileSprite(coastalDetailLayer, 'BEACH_SHELLS', x, y, 0.92);
+          if ((h % 37) === 0) addTileSprite(coastalDetailLayer, 'BEACH_STARFISH', x, y, 0.90);
           continue;
         }
         let key: string;
@@ -2840,40 +2834,30 @@ export class RenderEngine {
       }
     }
     this.layers.bg.addChild(terrainLayer);
+    this.layers.bg.addChild(oceanLayer);
+    this.layers.bg.addChild(shoreLayer);
     this.layers.bg.addChild(beachGfx);
-    // Pixel-water dressing in the bottom-left reserve. Drawn above terrain
-    // and below all gameplay layers, so it replaces grass without hiding towers.
+    this.layers.bg.addChild(waterGfx);
+    // Sprite-water dressing in the bottom-left reserve. Drawn above terrain
+    // and below all gameplay layers, so the cove gains life without hiding towers.
     const waterDetail = [
-      { col: WATER_ZONE.col + 1, row: WATER_ZONE.row + 8, kind: 'rock' },
-      { col: WATER_ZONE.col + 3, row: WATER_ZONE.row + 9, kind: 'foam' },
-      { col: WATER_ZONE.col + 7, row: WATER_ZONE.row + 2, kind: 'lilypad' },
-      { col: WATER_ZONE.col + 9, row: WATER_ZONE.row + 1, kind: 'reeds' },
-      { col: WATER_ZONE.col + 5, row: WATER_ZONE.row + 6, kind: 'depth' }
+      { col: WATER_ZONE.col + 1, row: WATER_ZONE.row + 8, key: 'OCEAN_ROCK', terrain: 'water' },
+      { col: WATER_ZONE.col + 5, row: WATER_ZONE.row + 6, key: 'OCEAN_CORAL', terrain: 'water' },
+      { col: WATER_ZONE.col + 7, row: WATER_ZONE.row + 2, key: 'OCEAN_KELP', terrain: 'water' },
+      { col: WATER_ZONE.col + 9, row: WATER_ZONE.row + 4, key: 'OCEAN_FISH', terrain: 'water' },
+      { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 1, key: 'OCEAN_FISH', terrain: 'water' },
+      { col: WATER_ZONE.col + 8, row: WATER_ZONE.row + 1, key: 'BEACH_SHELLS', terrain: 'beach' },
+      { col: WATER_ZONE.col + 10, row: WATER_ZONE.row + 0, key: 'BEACH_STARFISH', terrain: 'beach' }
     ];
     for (const d of waterDetail) {
       const x = d.col * GRID.TILE;
       const y = d.row * GRID.TILE;
-      if (state.tiles[d.row]?.[d.col] !== TileType.WATER) continue;
-      if (d.kind === 'rock') {
-        waterGfx.beginFill(0x26384a, 0.95).drawRect(x + 9, y + 18, 14, 7).endFill();
-        waterGfx.beginFill(0x5c7180, 0.65).drawRect(x + 11, y + 17, 8, 2).endFill();
-      } else if (d.kind === 'foam') {
-        waterGfx.beginFill(0xcffff7, 0.42).drawRect(x + 5, y + 18, 18, 1).endFill();
-        waterGfx.beginFill(0xcffff7, 0.35).drawRect(x + 12, y + 21, 13, 1).endFill();
-      } else if (d.kind === 'lilypad') {
-        waterGfx.beginFill(0x2c7d4a, 0.92).drawRect(x + 9, y + 10, 13, 7).endFill();
-        waterGfx.beginFill(0x5fbf6a, 0.72).drawRect(x + 11, y + 9, 8, 2).endFill();
-        waterGfx.beginFill(0x0f3150, 0.95).drawRect(x + 18, y + 13, 5, 2).endFill();
-      } else if (d.kind === 'reeds') {
-        waterGfx.beginFill(0x6f8a38, 0.95).drawRect(x + 21, y + 8, 2, 17).endFill();
-        waterGfx.beginFill(0x8baa42, 0.95).drawRect(x + 25, y + 12, 2, 13).endFill();
-        waterGfx.beginFill(0x4b5c22, 0.9).drawRect(x + 18, y + 15, 2, 10).endFill();
-      } else {
-        waterGfx.beginFill(0x05172a, 0.24).drawRect(x + 4, y + 4, 24, 24).endFill();
-        waterGfx.beginFill(0x2d8fad, 0.18).drawRect(x + 8, y + 9, 16, 2).endFill();
-      }
+      const tile = state.tiles[d.row]?.[d.col];
+      if (d.terrain === 'water' && tile !== TileType.WATER) continue;
+      if (d.terrain === 'beach' && (tile !== TileType.EMPTY || !isWaterPlacementBufferTile(d.col, d.row))) continue;
+      addTileSprite(coastalDetailLayer, d.key, x, y, d.key === 'OCEAN_FISH' ? 0.78 : 0.95);
     }
-    this.layers.bg.addChild(waterGfx);
+    this.layers.bg.addChild(coastalDetailLayer);
 
     // 2026-05-21 — PROCEDURAL COBBLESTONE OVERLAY (visual overhaul
     // phase V7). The biggest "high-fidelity map" lever — draws

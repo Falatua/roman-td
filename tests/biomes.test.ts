@@ -31,6 +31,11 @@ const MANIFEST_KEYS = new Set<string>(
   Array.from(ASSETS_TS.matchAll(/\b([A-Z][A-Z0-9_]+):\s*'[^']+\.(png|jpg|jpeg|webp)'/g)).map(m => m[1])
 );
 
+function assetFileFor(key: string): string | null {
+  const match = new RegExp(`\\b${key}:\\s*'([^']+)'`).exec(ASSETS_TS);
+  return match?.[1] ?? null;
+}
+
 describe('biomeForWave — campaign wave bands', () => {
   it('W1 returns BIOME_GRASSLAND', () => {
     expect(biomeForWave(1)).toBe('BIOME_GRASSLAND');
@@ -209,5 +214,43 @@ describe('Map overhaul sprite manifest — registered keys exist on disk', () =>
       if (!fs.existsSync(full)) missing.push(file);
     }
     expect(missing, `Missing files: ${missing.join(', ')}`).toEqual([]);
+  });
+});
+
+describe('Ocean reserve sprite manifest — cove tiles are real pixel assets', () => {
+  const oceanKeys = [
+    'OCEAN_DEEP_A', 'OCEAN_DEEP_B', 'OCEAN_MID_A', 'OCEAN_MID_B', 'OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B',
+    'BEACH_SAND_A', 'BEACH_SAND_B', 'BEACH_SAND_C',
+    'OCEAN_FOAM_N', 'OCEAN_FOAM_E', 'OCEAN_FOAM_S', 'OCEAN_FOAM_W',
+    'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK', 'BEACH_SHELLS', 'BEACH_STARFISH'
+  ];
+
+  it('registers every ocean and beach tile used by RenderEngine', () => {
+    const missing = oceanKeys.filter(key => !MANIFEST_KEYS.has(key));
+    expect(missing, `Missing ocean manifest keys: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it('ships 32x32 sprite files, with transparent detail overlays', async () => {
+    const sharp = require('sharp');
+    const transparentOverlayKeys = oceanKeys.filter(key =>
+      key.includes('FOAM') || key.includes('KELP') || key.includes('CORAL') || key.includes('FISH') ||
+      key.includes('ROCK') || key.includes('SHELLS') || key.includes('STARFISH')
+    );
+    for (const key of oceanKeys) {
+      const file = assetFileFor(key);
+      expect(file, `${key} missing asset filename`).toBeTruthy();
+      const full = path.join(__dirname, '../public/assets/sprites', file!);
+      expect(fs.existsSync(full), `${key} -> ${file}`).toBe(true);
+      const img = sharp(full);
+      const meta = await img.metadata();
+      expect(meta.width, `${key} width`).toBe(32);
+      expect(meta.height, `${key} height`).toBe(32);
+      if (transparentOverlayKeys.includes(key)) {
+        const raw = await img.ensureAlpha().raw().toBuffer();
+        let transparent = 0;
+        for (let i = 3; i < raw.length; i += 4) if (raw[i] < 8) transparent++;
+        expect(transparent, `${key} should have transparent pixels`).toBeGreaterThan(32 * 32 * 0.35);
+      }
+    }
   });
 });
