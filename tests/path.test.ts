@@ -95,7 +95,13 @@ describe('Grid initialization', () => {
           expect(canBuildWaterTowerAt(s, c, r), `future water tower hook allows ${c},${r}`).toBe(true);
           waterTiles++;
         } else {
-          expect(tileAt(s, c, r), `organic non-water tile ${c},${r}`).toBe(TileType.EMPTY);
+          const tile = tileAt(s, c, r);
+          if (tile !== TileType.EMPTY) {
+            expect([TileType.SPAWN, TileType.WAYPOINT, TileType.GATE], `map anchor preserved inside ocean envelope ${c},${r}`).toContain(tile);
+            expect(isBuildable(s, c, r), `anchor remains blocked ${c},${r}`).toBe(false);
+            expect(canBuildWaterTowerAt(s, c, r), `future water tower blocked on anchor ${c},${r}`).toBe(false);
+            continue;
+          }
           expect(isBuildable(s, c, r), `organic non-water grass buildable ${c},${r}`).toBe(true);
           expect(canBuildWaterTowerAt(s, c, r), `future water tower blocked on grass ${c},${r}`).toBe(false);
         }
@@ -109,9 +115,9 @@ describe('Grid initialization', () => {
     const s = createGameState();
     initializeGrid(s);
     const bufferTiles = [
-      { col: WATER_ZONE.col + 5, row: WATER_ZONE.row },
-      { col: WATER_ZONE.col + 4, row: WATER_ZONE.row - 1 },
-      { col: WATER_ZONE.col + 10, row: WATER_ZONE.row + 3 }
+      { col: WATER_ZONE.col + 1, row: WATER_ZONE.row },
+      { col: WATER_ZONE.col, row: WATER_ZONE.row - 1 },
+      { col: WATER_ZONE.col + 12, row: WATER_ZONE.row + 4 }
     ];
     for (const t of bufferTiles) {
       expect(tileAt(s, t.col, t.row), `shore grass ${t.col},${t.row} stays land`).toBe(TileType.EMPTY);

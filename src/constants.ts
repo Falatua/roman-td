@@ -16,24 +16,26 @@ export const GRID = {
 // Future water towers can use this rectangle as their placement surface.
 export const WATER_ZONE = {
   col: 1,
-  row: GRID.ROWS - 11,
-  width: 11,
-  height: 10
+  row: GRID.ROWS - 13,
+  width: 14,
+  height: 12
 } as const;
 
 // Irregular coastal footprint inside WATER_ZONE. Each local row says which
 // local columns are actual deep water; the remaining nearby land stays grass.
 export const WATER_ROW_SPANS = [
-  { start: 0, end: 4 },
+  { start: 0, end: 0 },
+  { start: 0, end: 3 },
   { start: 0, end: 6 },
-  { start: 0, end: 8 },
   { start: 0, end: 9 },
-  { start: 0, end: 10 },
-  { start: 0, end: 10 },
-  { start: 0, end: 9 },
-  { start: 0, end: 10 },
-  { start: 0, end: 10 },
-  { start: 0, end: 8 }
+  { start: 0, end: 11 },
+  { start: 0, end: 13 },
+  { start: 0, end: 13 },
+  { start: 0, end: 12 },
+  { start: 0, end: 13 },
+  { start: 0, end: 13 },
+  { start: 0, end: 12 },
+  { start: 0, end: 10 }
 ] as const;
 
 export const WATER_TILE_COUNT = WATER_ROW_SPANS.reduce((sum, span) => sum + (span.end - span.start + 1), 0);
