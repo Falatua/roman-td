@@ -737,7 +737,7 @@
     "wave": 26,
     "type": "M",
     "faction": "ROMAN_MYTH",
-    "hpMult": 19,
+    "hpMult": 21,
     "gold": 14,
     "fixedCount": true,
     "spawns": [
@@ -774,17 +774,17 @@
         "count": 1
       }
     ],
-    "enemySpeedBoostPct": 0.08,
-    "enemyDamageReductPct": 0.07,
-    "comboAntiAirArmorPct": 0.57,
-    "enemyDotResistPct": 0.15,
-    "enemyRegenPctPerSec": 0.005
+    "enemySpeedBoostPct": 0.1,
+    "enemyDamageReductPct": 0.12,
+    "comboAntiAirArmorPct": 0.62,
+    "enemyDotResistPct": 0.25,
+    "enemyRegenPctPerSec": 0.007
   },
   {
     "wave": 27,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 22,
+    "hpMult": 24,
     "gold": 15,
     "fixedCount": true,
     "spawns": [
@@ -825,17 +825,17 @@
         "count": 1
       }
     ],
-    "enemySpeedBoostPct": 0.07,
-    "enemyDamageReductPct": 0.08,
-    "comboAntiAirArmorPct": 0.62,
-    "enemyDotResistPct": 0.2,
-    "enemyRegenPctPerSec": 0.006
+    "enemySpeedBoostPct": 0.1,
+    "enemyDamageReductPct": 0.14,
+    "comboAntiAirArmorPct": 0.66,
+    "enemyDotResistPct": 0.28,
+    "enemyRegenPctPerSec": 0.008
   },
   {
     "wave": 28,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 24,
+    "hpMult": 27,
     "gold": 15,
     "fixedCount": true,
     "superGiantActive": true,
@@ -873,16 +873,17 @@
         "count": 8
       }
     ],
-    "enemyDamageReductPct": 0.09,
-    "comboAntiAirArmorPct": 0.62,
-    "enemyDotResistPct": 0.25,
-    "enemyRegenPctPerSec": 0.006
+    "enemySpeedBoostPct": 0.09,
+    "enemyDamageReductPct": 0.16,
+    "comboAntiAirArmorPct": 0.68,
+    "enemyDotResistPct": 0.3,
+    "enemyRegenPctPerSec": 0.009
   },
   {
     "wave": 29,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 27,
+    "hpMult": 30,
     "gold": 16,
     "fixedCount": true,
     "spawns": [
@@ -927,17 +928,17 @@
         "count": 1
       }
     ],
-    "enemySpeedBoostPct": 0.08,
-    "enemyDamageReductPct": 0.1,
-    "comboAntiAirArmorPct": 0.65,
-    "enemyDotResistPct": 0.25,
-    "enemyRegenPctPerSec": 0.007
+    "enemySpeedBoostPct": 0.11,
+    "enemyDamageReductPct": 0.18,
+    "comboAntiAirArmorPct": 0.7,
+    "enemyDotResistPct": 0.32,
+    "enemyRegenPctPerSec": 0.01
   },
   {
     "wave": 30,
     "type": "B",
     "faction": "SUPER_DEMONS",
-    "hpMult": 16,
+    "hpMult": 18,
     "gold": 0,
     "spawns": [
       {
@@ -981,10 +982,10 @@
         "count": 10
       }
     ],
-    "enemySpeedBoostPct": 0.05,
-    "enemyDamageReductPct": 0.1,
-    "comboAntiAirArmorPct": 0.66,
-    "enemyDotResistPct": 0.3,
-    "enemyRegenPctPerSec": 0.008
+    "enemySpeedBoostPct": 0.08,
+    "enemyDamageReductPct": 0.2,
+    "comboAntiAirArmorPct": 0.72,
+    "enemyDotResistPct": 0.35,
+    "enemyRegenPctPerSec": 0.012
   }
 ]

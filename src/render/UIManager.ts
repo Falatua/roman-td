@@ -675,6 +675,7 @@ export class UIManager {
           return false;
         };
         if (w.type === 'B') tags.push({ txt: 'BOSS', color: '#ee5555' });
+        if (idx + 1 >= 26)                                tags.push({ txt: 'APEX CHECK', color: '#ffd34d' });
         if (seen(d => d.isFlyer))                          tags.push({ txt: 'FLYERS',   color: '#66ccff' });
         if ((w as any).comboAntiAirArmorPct)                tags.push({ txt: 'COMBO-AA', color: '#88ddff' });
         if (seen(d => d.requiresMeleeBreak))               tags.push({ txt: 'SHIELDED', color: '#aabbdd' });

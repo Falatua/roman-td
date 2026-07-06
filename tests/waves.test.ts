@@ -170,6 +170,35 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(w25.comboAntiAirArmorPct).toBeGreaterThan(w24.comboAntiAirArmorPct);
   });
 
+  it('turns W26-W30 into the final apex-tower gauntlet', () => {
+    const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
+    const expected = new Map<number, { hp: number; dr: number; aa: number; dot: number; regen: number }>([
+      [26, { hp: 21, dr: 0.12, aa: 0.62, dot: 0.25, regen: 0.007 }],
+      [27, { hp: 24, dr: 0.14, aa: 0.66, dot: 0.28, regen: 0.008 }],
+      [28, { hp: 27, dr: 0.16, aa: 0.68, dot: 0.30, regen: 0.009 }],
+      [29, { hp: 30, dr: 0.18, aa: 0.70, dot: 0.32, regen: 0.010 }],
+      [30, { hp: 18, dr: 0.20, aa: 0.72, dot: 0.35, regen: 0.012 }]
+    ]);
+
+    for (const [waveNumber, values] of expected) {
+      const wave = byWave.get(waveNumber);
+      expect(wave.hpMult, `W${waveNumber} authored HP should sit on the final-gauntlet line`).toBe(values.hp);
+      expect(wave.enemyDamageReductPct, `W${waveNumber} should dampen non-apex direct damage`).toBeCloseTo(values.dr, 4);
+      expect(wave.comboAntiAirArmorPct, `W${waveNumber} should force combo anti-air into late flyers`).toBeCloseTo(values.aa, 4);
+      expect(wave.enemyDotResistPct, `W${waveNumber} should resist one-answer DoT clearing`).toBeCloseTo(values.dot, 4);
+      expect(wave.enemyRegenPctPerSec, `W${waveNumber} should punish low burst DPS`).toBeCloseTo(values.regen, 4);
+    }
+
+    for (const waveNumber of [27, 28, 29, 30]) {
+      const prev = byWave.get(waveNumber - 1);
+      const cur = byWave.get(waveNumber);
+      expect(cur.enemyDamageReductPct).toBeGreaterThan(prev.enemyDamageReductPct);
+      expect(cur.comboAntiAirArmorPct).toBeGreaterThan(prev.comboAntiAirArmorPct);
+      expect(cur.enemyDotResistPct).toBeGreaterThan(prev.enemyDotResistPct);
+      expect(cur.enemyRegenPctPerSec).toBeGreaterThan(prev.enemyRegenPctPerSec);
+    }
+  });
+
   it('mixes wave roles so late waves ask for different tower answers', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     expect(byWave.get(21).spawns.some((s: any) => s.type === 'MONGOL_SCOUT')).toBe(true);

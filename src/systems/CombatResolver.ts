@@ -68,6 +68,60 @@ const SULLA_PASSIVE_RADIUS_TILES = 5.5;
 const SULLA_FIRE_RIDER_PCT = 0.22;
 export const SIEGE_FLYER_MISS_CHANCE = 0.20;
 
+export const FINAL_FIVE_APEX_WAVE = 26;
+
+const SUPER_COMBO_CLASS_TYPES = new Set<TowerType>([
+  TowerType.JULIUS_CAESAR,
+  TowerType.HANNIBALS_NIGHTMARE,
+  TowerType.GOD_OF_WAR,
+  TowerType.TURMA_LANCERS,
+  TowerType.AURORA_LEGION,
+  TowerType.STORM_VEXILLATION,
+  TowerType.IMPERIUM_ETERNUM,
+  TowerType.CARTHAGE_SCOURGE,
+  TowerType.TRIUMVIRATE,
+  TowerType.TRIPLEX_ACIES,
+  TowerType.LEGION_PRIME,
+  TowerType.CONSULAR_FATEBINDER,
+  TowerType.VANGUARD_WING,
+  TowerType.VULCAN_COLOSSUS,
+  TowerType.SKY_DOMINION,
+  TowerType.AUREATE_TRIBUNAL,
+  TowerType.GLACIAL_PALISADE,
+  TowerType.INFERNAL_COLOSSUS,
+  TowerType.MARS_VICTOR
+]);
+
+function towerAbilityText(towerType: TowerType): string {
+  return String((towersData as any)[towerType]?.ability ?? '').toUpperCase();
+}
+
+function isOmegaTower(towerType: TowerType): boolean {
+  return !!(towersData as any)[towerType]?.omega || towerType === TowerType.ROMAN_TRANSFORMER;
+}
+
+function isSuperComboClassTower(towerType: TowerType): boolean {
+  if (isOmegaTower(towerType)) return true;
+  if (SUPER_COMBO_CLASS_TYPES.has(towerType)) return true;
+  if (towerType === TowerType.MARS_VICTOR) return true;
+  const ability = towerAbilityText(towerType);
+  return ability.includes('SUPERCOMBO') ||
+         ability.includes('SUPER COMBO') ||
+         ability.includes('COMBO-OF-COMBO') ||
+         ability.includes('COMBOS-OF-COMBOS');
+}
+
+export function finalFiveApexDamageMult(state: GameStateShape, tower: Tower): number {
+  const wave = state.wave ?? 1;
+  if (wave < FINAL_FIVE_APEX_WAVE) return 1;
+  const step = Math.max(0, Math.min(4, wave - FINAL_FIVE_APEX_WAVE));
+  if (isOmegaTower(tower.type)) return 1.10;
+  if (isSuperComboClassTower(tower.type)) return 1.00;
+  const def: any = (towersData as any)[tower.type];
+  if (def?.kind === 'COMBO') return Math.max(0.45, 0.65 - step * 0.05);
+  return Math.max(0.30, 0.50 - step * 0.05);
+}
+
 const COMBO_ANTI_AIR_TYPES = new Set<TowerType>([
   TowerType.SCORPION_BOLT,
   TowerType.NUMIDIAN_CAVALRY,
@@ -88,6 +142,12 @@ function comboAntiAirArmorMult(state: GameStateShape, tower: Tower, target: Enem
   const armor = Math.max(0, Math.min(0.75, waveDef?.comboAntiAirArmorPct ?? 0));
   if (armor <= 0 || COMBO_ANTI_AIR_TYPES.has(tower.type)) return 1;
   return 1 - armor;
+}
+
+function waveDirectDamageMult(state: GameStateShape): number {
+  const waveDef: any = (wavesData as any[])[(state.wave ?? 1) - 1];
+  const reduct = Math.max(0, Math.min(0.9, waveDef?.enemyDamageReductPct ?? 0));
+  return 1 - reduct;
 }
 
 function applyWaveResistRelief(state: GameStateShape, resMod: number): number {
@@ -1644,7 +1704,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
               damage *= (1 + 0.25 * dmm.stacks);
             }
           }
-          damage *= comboAntiAirArmorMult(state, t, target);
+          damage *= comboAntiAirArmorMult(state, t, target) *
+                    finalFiveApexDamageMult(state, t) *
+                    waveDirectDamageMult(state);
           target.hp -= damage;
           target.hpFlashTimer = 0.16;
           target.lastDamagedTick = state.tick;
@@ -2227,7 +2289,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
       damage *= (1 + 0.25 * dm.stacks);
     }
   }
-  damage *= comboAntiAirArmorMult(state, t, target);
+  damage *= comboAntiAirArmorMult(state, t, target) * finalFiveApexDamageMult(state, t);
   // 2026-05-22 — WAVE-LEVEL DAMAGE REDUCTION. Wave defs with
   // `enemyDamageReductPct` reduce direct damage taken by every spawn
   // on that wave by that fraction. Used by W12/W16/W17 to add a
@@ -2235,11 +2297,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   // doesn't just feel like a numbers-up grind. Applies AFTER all
   // other amps (DRAGON_MARK, FREEZE/STUN amp, etc.) so the resist
   // is the final word.
-  const _curWaveDef: any = (wavesData as any[])[(state.wave ?? 1) - 1];
-  const waveDmgReduct = _curWaveDef?.enemyDamageReductPct ?? 0;
-  if (waveDmgReduct > 0 && damage > 0) {
-    damage *= (1 - waveDmgReduct);
-  }
+  if (damage > 0) damage *= waveDirectDamageMult(state);
   damage *= campaignRelicDamageMult(state, t, target) * bossTrophyDamageMult(state, t, target) * commanderDamageTakenMult(state, target);
   target.hp -= damage;
   target.hpFlashTimer = 0.16;

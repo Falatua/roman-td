@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { createTower, towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, SIEGE_FLYER_MISS_CHANCE, tickCombat } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, SIEGE_FLYER_MISS_CHANCE, tickCombat } from '../src/systems/CombatResolver';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { spawnProjectile } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind, TargetingMode } from '../src/types';
@@ -430,6 +430,52 @@ describe('Anti-air tower signatures', () => {
 
     expect((wavesData as any[])[5].comboAntiAirArmorPct).toBeUndefined();
     expect(1000 - target.hp).toBeCloseTo(100, 4);
+  });
+
+  it('makes W26-W30 an apex craft check instead of a regular-tower DPS race', () => {
+    const state = createGameState();
+    state.wave = FINAL_FIVE_APEX_WAVE;
+    const base = createTower(TowerType.SCORPIO, 5, 0, 0, 0);
+    const combo = createTower(TowerType.SCORPION_BOLT, 5, 0, 0, 0);
+    const superCombo = createTower(TowerType.JULIUS_CAESAR, 5, 0, 0, 0);
+    const omega = createTower(TowerType.ROMAN_TRANSFORMER, 5, 0, 0, 0);
+
+    expect(finalFiveApexDamageMult(state, base)).toBeCloseTo(0.50, 4);
+    expect(finalFiveApexDamageMult(state, combo)).toBeCloseTo(0.65, 4);
+    expect(finalFiveApexDamageMult(state, superCombo)).toBeCloseTo(1.00, 4);
+    expect(finalFiveApexDamageMult(state, omega)).toBeCloseTo(1.10, 4);
+
+    state.wave = 30;
+    expect(finalFiveApexDamageMult(state, base)).toBeCloseTo(0.30, 4);
+    expect(finalFiveApexDamageMult(state, combo)).toBeCloseTo(0.45, 4);
+    expect(finalFiveApexDamageMult(state, superCombo)).toBeCloseTo(1.00, 4);
+    expect(finalFiveApexDamageMult(state, omega)).toBeCloseTo(1.10, 4);
+  });
+
+  it('applies final-five apex pressure to direct projectile damage', () => {
+    const state = createGameState();
+    state.wave = 30;
+    const waveDmgReduct = ((wavesData as any[]).find(w => w.wave === 30) as any).enemyDamageReductPct;
+    const base = createTower(TowerType.SCORPIO, 5, 0, 0, 0);
+    const superCombo = createTower(TowerType.JULIUS_CAESAR, 5, 0, 0, 0);
+    const omega = createTower(TowerType.ROMAN_TRANSFORMER, 5, 0, 0, 0);
+    const baseTarget = testEnemy('w30-base');
+    const superTarget = testEnemy('w30-super');
+    const omegaTarget = testEnemy('w30-omega');
+
+    const originalRandom = Math.random;
+    Math.random = () => 0.99;
+    try {
+      applyDamageAndStatus(state, base, baseTarget, 100, noopCombatHooks());
+      applyDamageAndStatus(state, superCombo, superTarget, 100, noopCombatHooks());
+      applyDamageAndStatus(state, omega, omegaTarget, 100, noopCombatHooks());
+    } finally {
+      Math.random = originalRandom;
+    }
+
+    expect(1000 - baseTarget.hp).toBeCloseTo(100 * 0.30 * (1 - waveDmgReduct), 4);
+    expect(1000 - superTarget.hp).toBeCloseTo(100 * 1.00 * (1 - waveDmgReduct), 4);
+    expect(1000 - omegaTarget.hp).toBeCloseTo(100 * 1.10 * (1 - waveDmgReduct), 4);
   });
 
   it('gives siege attacks a separate miss chance against flyers only', () => {
