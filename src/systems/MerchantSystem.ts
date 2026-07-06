@@ -222,13 +222,13 @@ export function buildMercatorTowerOffers(wave: number, count = 5, options: Merca
   // adds one to MERCATOR_TOWER_POOL, this filter blocks it from
   // reaching the player. Apex towers must be crafted, not bought.
   const eligible = MERCATOR_TOWER_POOL.filter(id => !FORTUNA_APEX_BLOCKLIST.has(id));
-  // Fill the rest with 8 random T5 base towers (champions already took 6 slots).
+  // Fill the rest with 10 random T5 base towers (champions already took 6 slots).
   // 2026-07-03 — options.excludeTypes now applies to these random slots too
   // (previously it only gated champions). main.ts passes the PREVIOUS visit's
   // random lineup here, so consecutive Mercator visits never repeat a tower
   // and the T5 armory is properly re-randomized each stop. Safety: if the
   // exclusions would starve the pool below the draw count, ignore them.
-  const randomCount = 8;
+  const randomCount = 10;
   let pool = eligible.filter(id => !excluded.has(id));
   if (pool.length < randomCount) pool = eligible;
   const targetCount = offers.length + randomCount;
