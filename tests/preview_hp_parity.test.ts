@@ -122,7 +122,7 @@ describe('previewSpawnHp formula spot-checks', () => {
     expect(previewSpawnHp(dog, 1, 'G', 1.0)).toBe(300);
   });
 
-  it('applies the global +10% flyer health bump to spawned and preview HP', () => {
+  it('applies the global +18% flyer health bump to spawned and preview HP', () => {
     const state = bootstrapState();
     state.wave = 12;
     const def: any = (enemiesData as any).SPECTRAL_SCOUT;
