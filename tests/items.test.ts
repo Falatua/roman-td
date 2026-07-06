@@ -1,4 +1,6 @@
 // Tests for item rules, inventory operations, and shop pool sampling.
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { itemFamily, canEquipItemFamily } from '../src/systems/ItemRules';
 import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, rollCommanderDrop, isGuaranteedEpicDropEnemy, itemLootPoolCoverage } from '../src/systems/LootSystem';
@@ -6,6 +8,15 @@ import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercator
 import itemsData from '../src/data/items_permanent.json';
 import towersData from '../src/data/towers.json';
 import { LOOT_DROP_RATES } from '../src/constants';
+
+function itemAssetMap(): Record<string, string> {
+  const source = readFileSync(path.join(process.cwd(), 'src/render/Assets.ts'), 'utf8');
+  const out: Record<string, string> = {};
+  for (const match of source.matchAll(/\b(ITEM_[A-Z0-9_]+)\s*:\s*'([^']+)'/g)) {
+    out[match[1].replace(/^ITEM_/, '')] = match[2];
+  }
+  return out;
+}
 
 describe('Item families', () => {
   it('classifies items into the correct family', () => {
@@ -25,6 +36,54 @@ describe('Item families', () => {
 
   it('unknown items default to SPECIAL', () => {
     expect(itemFamily('UNKNOWN_ITEM')).toBe('SPECIAL');
+  });
+});
+
+describe('Item icon assets', () => {
+  it('maps every current item to a transparent PNG icon', async () => {
+    const sharp = (await import('sharp')).default;
+    const assets = itemAssetMap();
+
+    for (const id of Object.keys(itemsData as any)) {
+      const file = assets[id];
+      expect(file, `${id} item icon mapping`).toBeTruthy();
+      const fullPath = path.join(process.cwd(), 'public/assets/sprites', file);
+      expect(existsSync(fullPath), `${id} -> ${file}`).toBe(true);
+    }
+
+    const uniqueFiles = [...new Set(Object.keys(itemsData as any).map(id => assets[id]))];
+    for (const file of uniqueFiles) {
+      const fullPath = path.join(process.cwd(), 'public/assets/sprites', file);
+      const meta = await sharp(fullPath).metadata();
+      const { data, info } = await sharp(fullPath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      const corners = [
+        data[3],
+        data[((info.width - 1) * 4) + 3],
+        data[(((info.height - 1) * info.width) * 4) + 3],
+        data[(((info.height * info.width) - 1) * 4) + 3]
+      ];
+
+      let visible = 0;
+      let edgeVisible = 0;
+      let edgePixels = 0;
+      for (let y = 0; y < info.height; y++) {
+        for (let x = 0; x < info.width; x++) {
+          const alpha = data[((y * info.width + x) * 4) + 3];
+          if (alpha > 8) visible++;
+          if (x === 0 || y === 0 || x === info.width - 1 || y === info.height - 1) {
+            edgePixels++;
+            if (alpha > 8) edgeVisible++;
+          }
+        }
+      }
+
+      const transparentPct = 1 - visible / (info.width * info.height);
+      const edgeVisiblePct = edgeVisible / edgePixels;
+      expect(meta.hasAlpha, `${file} should have alpha`).toBe(true);
+      expect(Math.max(...corners), `${file} transparent corners`).toBeLessThanOrEqual(8);
+      expect(transparentPct, `${file} should not be a filled square`).toBeGreaterThan(0.08);
+      expect(edgeVisiblePct, `${file} should not press into the inventory frame`).toBeLessThan(0.35);
+    }
   });
 });
 
