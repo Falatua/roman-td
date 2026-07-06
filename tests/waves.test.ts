@@ -154,6 +154,21 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(authoredHp(w24)).toBeGreaterThan(authoredHp(w23) * 3.5);
   });
 
+  it('makes Wave 25 escalate after Wave 24 instead of dipping', () => {
+    const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
+    const w24 = byWave.get(24);
+    const w25 = byWave.get(25);
+    const authoredHp = (wave: any) => (wave.spawns ?? []).reduce(
+      (sum: number, spawn: any) => sum + ((enemiesData as any)[spawn.type]?.baseHp ?? 0) * spawn.count * (wave.hpMult ?? 1),
+      0
+    );
+
+    expect(authoredHp(w25)).toBeGreaterThan(authoredHp(w24));
+    expect(w25.enemySpeedBoostPct).toBeGreaterThan(w24.enemySpeedBoostPct);
+    expect(w25.enemyDamageReductPct).toBeGreaterThan(w24.enemyDamageReductPct);
+    expect(w25.comboAntiAirArmorPct).toBeGreaterThan(w24.comboAntiAirArmorPct);
+  });
+
   it('mixes wave roles so late waves ask for different tower answers', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     expect(byWave.get(21).spawns.some((s: any) => s.type === 'MONGOL_SCOUT')).toBe(true);

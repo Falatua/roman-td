@@ -308,8 +308,8 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   if ((t.equippedItems.includes('NECROTIC_LONGSWORD')) && (t.damageType === DamageType.PHYS_MELEE || t.damageType === DamageType.PHYS_RANGED)) itemDmgMult *= 1.55;
   if (t.equippedItems.includes('STORM_JAVELIN') && t.damageType === DamageType.PHYS_RANGED) itemDmgMult *= 1.40;
   let itemSpeedMult = 1;
-  if (t.equippedItems.includes('TRAINING_SCROLL')) itemSpeedMult *= 1.10;
-  if (t.equippedItems.includes('QUICKDRAW_GLOVES')) itemSpeedMult *= 1.12;
+  if (t.equippedItems.includes('TRAINING_SCROLL')) { itemDmgMult *= 1.05; itemSpeedMult *= 1.08; }
+  if (t.equippedItems.includes('QUICKDRAW_GLOVES') && !isMeleeClassTower(t)) itemSpeedMult *= 1.22;
   if (t.equippedItems.includes('MERCURY_FEATHER')) itemSpeedMult *= 1.25;
   if (t.equippedItems.includes('HOURGLASS_OF_SATURN')) itemSpeedMult *= 1.40;
   if (t.equippedItems.includes('FALCONERS_WATCHPOST')) itemSpeedMult *= 1.40;
@@ -372,6 +372,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // 2026 v2 — anti-air items add reach to catch fliers.
     (t.equippedItems.includes('FALCONERS_WATCHPOST') ? 3 : 0) +
     (t.equippedItems.includes('STORM_AQUILA_TALONS') ? 2 : 0) +
+    (t.equippedItems.includes('QUICKDRAW_GLOVES') && !isMeleeClassTower(t) ? 0.5 : 0) +
     // 2026-05-22 — Agrippa hero passive: +1.0 tile range to every
     // SIEGE tower within 5 tiles of Agrippa's tile. Read off the
     // global state ref (set by main.ts in renderer mode); test env
@@ -556,8 +557,14 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
   if (items.includes('STORM_JAVELIN') && t.damageType === DamageType.PHYS_RANGED) {
     dmgMods.push({ source: 'Storm Javelin', multiplier: 1.40 });
   }
-  if (items.includes('TRAINING_SCROLL')) spdMods.push({ source: 'Training Scroll', multiplier: 1.10 });
-  if (items.includes('QUICKDRAW_GLOVES')) spdMods.push({ source: 'Quickdraw Gloves', multiplier: 1.12 });
+  if (items.includes('TRAINING_SCROLL')) {
+    dmgMods.push({ source: 'Training Scroll', multiplier: 1.05 });
+    spdMods.push({ source: 'Training Scroll', multiplier: 1.08 });
+  }
+  if (items.includes('QUICKDRAW_GLOVES') && !isMeleeClassTower(t)) {
+    spdMods.push({ source: 'Quickdraw Gloves (ranged)', multiplier: 1.22 });
+    rngMods.push({ source: 'Quickdraw Gloves (ranged)', flat: 0.5 });
+  }
   if (items.includes('MERCURY_FEATHER')) spdMods.push({ source: 'Mercury Feather', multiplier: 1.25 });
   if (items.includes('HOURGLASS_OF_SATURN')) spdMods.push({ source: 'Hourglass of Saturn', multiplier: 1.40 });
   if (items.includes('CAVALRY_SPUR') && t.damageType === DamageType.PHYS_MELEE) spdMods.push({ source: 'Cavalry Spur (melee)', multiplier: 1.25 });
@@ -701,8 +708,8 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       if (other.type === TowerType.IMPERIUM_ETERNUM) addGlobalSpeed('Imperium Eternum', 1.25);
       if (other.type === TowerType.TRIARIUS) addGlobalDmg('Triarius global', 0.12);
       if (other.type === TowerType.CONSULAR_FATEBINDER) {
-        addGlobalDmg('Fatebinder', 0.30);
-        addGlobalSpeed('Fatebinder', 1.30);
+        addGlobalDmg('Fatebinder', 0.22);
+        addGlobalSpeed('Fatebinder', 1.22);
       }
       if (other.type === TowerType.COHORT_GUARD && within(other, 3)) addLocalDmg('Cohort Guard local', 0.15);
       if (other.type === TowerType.TRIPLEX_ACIES && within(other, 3)) addLocalSpeed('Triplex Acies', 0.25);

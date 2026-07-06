@@ -686,7 +686,7 @@
     "wave": 25,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 18,
+    "hpMult": 47,
     "gold": 14,
     "fixedCount": true,
     "spawns": [
@@ -696,14 +696,18 @@
       },
       {
         "type": "GIANT_GIGAS",
-        "count": 8
-      },
-      {
-        "type": "CHIMERA",
         "count": 4
       },
       {
+        "type": "CHIMERA",
+        "count": 6
+      },
+      {
         "type": "STONE_JUGGERNAUT",
+        "count": 4
+      },
+      {
+        "type": "CYCLOPS",
         "count": 3
       },
       {
@@ -712,22 +716,22 @@
       },
       {
         "type": "CERBERUS",
-        "count": 2
+        "count": 3
       },
       {
         "type": "DEMON_HELLHOUND",
-        "count": 8
+        "count": 5
       },
       {
         "type": "PATHFINDER_COMMANDER",
         "count": 1
       }
     ],
-    "enemySpeedBoostPct": 0.05,
-    "enemyDamageReductPct": 0.06,
-    "comboAntiAirArmorPct": 0.34,
-    "enemyDotResistPct": 0.2,
-    "enemyRegenPctPerSec": 0.004
+    "enemySpeedBoostPct": 0.09,
+    "enemyDamageReductPct": 0.11,
+    "comboAntiAirArmorPct": 0.36,
+    "enemyDotResistPct": 0.25,
+    "enemyRegenPctPerSec": 0.006
   },
   {
     "wave": 26,

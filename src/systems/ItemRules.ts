@@ -53,6 +53,7 @@ const EQUIP_MODE: Record<string, EquipMode> = {
   DAMNATIO_MEMORIAE: 'MELEE',
   // RANGED-only — projectile / saddle / shot themed items
   STORM_JAVELIN: 'RANGED',
+  QUICKDRAW_GLOVES: 'RANGED',
   FLYER_BANE: 'RANGED',
   FIRE_OIL_FLASK: 'RANGED',
   NUMIDIAN_SADDLE: 'RANGED',         // Numidian skirmisher — ranged identity

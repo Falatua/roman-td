@@ -322,7 +322,7 @@ describe('Recipe combo detection', () => {
       [TowerType.AURORA_LEGION]: 168.0,
       [TowerType.STORM_VEXILLATION]: 172.0,
       [TowerType.IMPERIUM_ETERNUM]: 380.0,
-      [TowerType.CARTHAGE_SCOURGE]: 335.0,
+      [TowerType.CARTHAGE_SCOURGE]: 390.0,
       [TowerType.HANNIBALS_NIGHTMARE]: 235.0,
       [TowerType.MARS_VICTOR]: 1718.8
     };
@@ -335,7 +335,7 @@ describe('Recipe combo detection', () => {
   it('keeps previously underpaying combo investments on the new payoff line', () => {
     const expectedInvestmentDps: Partial<Record<TowerType, number>> = {
       [TowerType.PLAGUE_CART]: 42.0,
-      [TowerType.NUMIDIAN_CAVALRY]: 255.0,
+      [TowerType.NUMIDIAN_CAVALRY]: 285.0,
       [TowerType.TRIPLEX_ACIES]: 170.5,
       [TowerType.SKYREAPER_BATTERY]: 190.0,
       [TowerType.VULCAN_COLOSSUS]: 275.0
@@ -356,8 +356,22 @@ describe('Recipe combo detection', () => {
   it('boosts labeled supercombo towers by 10 percent without touching Hannibal Nightmare', () => {
     expect((towersData as any)[TowerType.TRIPLEX_ACIES].baseDps).toBe(170.5);
     expect((towersData as any)[TowerType.LEGION_PRIME].baseDps).toBe(134.6);
-    expect((towersData as any)[TowerType.CONSULAR_FATEBINDER].baseDps).toBe(250.8);
+    expect((towersData as any)[TowerType.CONSULAR_FATEBINDER].baseDps).toBe(225.0);
     expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(235.0);
+  });
+
+  it('prices formerly cheap recipe outliers as real investment choices', () => {
+    const byResult = (result: TowerType) => comboData.find((r: any) => r.result === result) as any;
+
+    expect(byResult(TowerType.NEMESIS_ENGINE).cost).toBe(90);
+
+    for (const result of [TowerType.AUGURS_WRATH, TowerType.EXPLORATORES, TowerType.VULCAN_BOMBARD]) {
+      const recipe = byResult(result);
+      expect(recipe.cost).toBeGreaterThanOrEqual(35);
+      for (const ingredient of recipe.ingredients) {
+        expect(ingredient.minTier).toBeGreaterThanOrEqual(3);
+      }
+    }
   });
 
   it('adds four new recipe-only supercombo towers from previously unused combo ingredients', () => {

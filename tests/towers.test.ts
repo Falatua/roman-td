@@ -148,8 +148,8 @@ describe('Tower effective stats', () => {
       [TowerType.VENATOR]: 15.9,
       [TowerType.AQUILA_VENATOR]: 154.2,
       [TowerType.SCORPION_BOLT]: 100.6,
-      [TowerType.NUMIDIAN_CAVALRY]: 255.0,
-      [TowerType.NEMESIS_ENGINE]: 268.3,
+      [TowerType.NUMIDIAN_CAVALRY]: 285.0,
+      [TowerType.NEMESIS_ENGINE]: 235.0,
       [TowerType.BEASTLORD_CHAMPION]: 144.0,
       [TowerType.SKYREAPER_BATTERY]: 190.0
     };
@@ -200,13 +200,13 @@ describe('Tower effective stats', () => {
     expect(after).toBeCloseTo(before * 1.25, 4);
   });
 
-  it('includes attack-speed items in the displayed DPS calculation', () => {
+  it('includes mixed damage and speed items in the displayed DPS calculation', () => {
     const state = createGameState();
     const tower = createTower(TowerType.SAGITTARIUS, 1, 0, 0, 0);
     const baseDisplayedDps = displayedDpsFromBreakdown(tower, state);
     tower.equippedItems.push('TRAINING_SCROLL');
 
-    expect(displayedDpsFromBreakdown(tower, state)).toBeCloseTo(baseDisplayedDps * 1.10, 4);
+    expect(displayedDpsFromBreakdown(tower, state)).toBeCloseTo(baseDisplayedDps * 1.05 * 1.08, 4);
   });
 
   it('includes unconditional late-combat item damage in displayed DPS', () => {
@@ -266,11 +266,29 @@ describe('Tower effective stats', () => {
       tower.equippedItems.push(item as any);
       return towerEffectiveStats(tower).attackSpeed / before;
     };
-    expect(multiplier('TRAINING_SCROLL')).toBeCloseTo(1.10, 4);
+    expect(multiplier('TRAINING_SCROLL')).toBeCloseTo(1.08, 4);
+    expect(multiplier('QUICKDRAW_GLOVES')).toBeCloseTo(1.22, 4);
     expect(multiplier('MERCURY_FEATHER')).toBeCloseTo(1.25, 4);
     expect(multiplier('HOURGLASS_OF_SATURN')).toBeCloseTo(1.40, 4);
     expect(multiplier('FALCONERS_WATCHPOST')).toBeCloseTo(1.40, 4);
     expect(multiplier('NUMIDIAN_SADDLE')).toBeCloseTo(1.60, 4);
+  });
+
+  it('makes Quickdraw Gloves a ranged-only tempo and reach item', () => {
+    const ranged = createTower(TowerType.SAGITTARIUS, 1, 0, 0, 0);
+    const melee = createTower(TowerType.MILITES, 1, 0, 0, 0);
+    const rangedBefore = towerEffectiveStats(ranged);
+    const meleeBefore = towerEffectiveStats(melee);
+
+    ranged.equippedItems.push('QUICKDRAW_GLOVES');
+    melee.equippedItems.push('QUICKDRAW_GLOVES');
+
+    const rangedAfter = towerEffectiveStats(ranged);
+    const meleeAfter = towerEffectiveStats(melee);
+    expect(rangedAfter.attackSpeed).toBeCloseTo(rangedBefore.attackSpeed * 1.22, 4);
+    expect(rangedAfter.range).toBeCloseTo(rangedBefore.range + 0.5, 4);
+    expect(meleeAfter.attackSpeed).toBeCloseTo(meleeBefore.attackSpeed, 4);
+    expect(meleeAfter.range).toBeCloseTo(meleeBefore.range, 4);
   });
 
   it('Gallic Shield Boss no longer duplicates Lictor damage/range stats', () => {
@@ -354,7 +372,7 @@ describe('Anti-air tower signatures', () => {
     const nemesis = hitFlyer(TowerType.NEMESIS_ENGINE);
 
     expect(numidian.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.45)).toBe(true);
-    expect(numidian.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.20)).toBe(true);
+    expect(numidian.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.25)).toBe(true);
     expect(beastlord.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
     expect(beastlord.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.20)).toBe(true);
     expect(skyreaper.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.55)).toBe(true);
@@ -363,7 +381,7 @@ describe('Anti-air tower signatures', () => {
     expect(dominion.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.20)).toBe(true);
     expect(dominion.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
-    expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.40)).toBe(true);
+    expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.35)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
   });
 

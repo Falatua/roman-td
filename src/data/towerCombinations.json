@@ -382,7 +382,7 @@
         "minTier": 4
       }
     ],
-    "cost": 50
+    "cost": 90
   },
   {
     "result": "TRIUMPHATOR",
@@ -858,24 +858,24 @@
   {
     "result": "AUGURS_WRATH",
     "tier": 5,
-    "cost": 10,
+    "cost": 50,
     "ingredients": [
       {
         "type": "HARUSPEX",
-        "minTier": 2
+        "minTier": 3
       },
       {
         "type": "SOLAR_PRIEST",
-        "minTier": 2
+        "minTier": 3
       },
       {
         "type": "AUGUR",
-        "minTier": 2
+        "minTier": 3
       }
     ]
   },
-  { "result": "EXPLORATORES", "tier": 3, "cost": 12, "ingredients": [ { "type": "SPECULATOR", "minTier": 2 }, { "type": "VENATOR", "minTier": 2 } ] },
-  { "result": "VULCAN_BOMBARD", "tier": 3, "cost": 12, "ingredients": [ { "type": "COLOSSUS_ONAGER", "minTier": 2 }, { "type": "VULCAN_ENGINEER", "minTier": 2 } ] },
+  { "result": "EXPLORATORES", "tier": 3, "cost": 35, "ingredients": [ { "type": "SPECULATOR", "minTier": 3 }, { "type": "VENATOR", "minTier": 3 } ] },
+  { "result": "VULCAN_BOMBARD", "tier": 3, "cost": 35, "ingredients": [ { "type": "COLOSSUS_ONAGER", "minTier": 3 }, { "type": "VULCAN_ENGINEER", "minTier": 3 } ] },
   { "result": "VANGUARD_WING", "tier": 4, "cost": 55, "ingredients": [ { "type": "EXPLORATORES", "minTier": 3 }, { "type": "TESSERARIUS", "minTier": 2 } ] },
   { "result": "VULCAN_COLOSSUS", "tier": 5, "cost": 90, "ingredients": [ { "type": "VULCAN_BOMBARD", "minTier": 3 }, { "type": "STORM_BALLISTA", "minTier": 4 } ] },
   { "result": "SKY_DOMINION", "tier": 5, "cost": 150, "ingredients": [ { "type": "SKYREAPER_BATTERY", "minTier": 4 }, { "type": "NUMIDIAN_CAVALRY", "minTier": 4 }, { "type": "VANGUARD_WING", "minTier": 4 } ] },

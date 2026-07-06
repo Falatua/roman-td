@@ -224,7 +224,7 @@ const MELEE_TYPES = new Set<TowerType>([
   TowerType.GLACIAL_PALISADE,
   TowerType.ROMAN_TRANSFORMER,
   // 2026-05 v9: Consular Fatebinder converted from ranged DIVINE to a
-  // melee strike (still keeps TRUE-damage primary + map-wide 60% splash
+  // melee strike (still keeps TRUE-damage primary + map-wide 40% splash
   // + global aura). The melee identity matches its character art (consul
   // brandishing the gladius) and makes positioning matter: it has to sit
   // on the lane to deliver the primary, but the splash still nukes
@@ -687,11 +687,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         }
       }
     }
-    // CARTHAGE_SCOURGE — periodic AoE freeze every 6s.
+    // CARTHAGE_SCOURGE — periodic AoE freeze every 5s.
     if (t.type === TowerType.CARTHAGE_SCOURGE) {
       const next = (t as any).__nextScourgeFreezeTick ?? 0;
       if (state.tick >= next && !asleep) {
-        (t as any).__nextScourgeFreezeTick = state.tick + 6.0;
+        (t as any).__nextScourgeFreezeTick = state.tick + 5.0;
         const r = (t.range ?? 7) * GRID.TILE;
         for (const e of state.enemies.values()) {
           if (e.hp <= 0) continue;
@@ -729,9 +729,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.25 });
     }
     if (t.type === TowerType.CONSULAR_FATEBINDER && !auraOff) {
-      // APEX OF APEXES: +30% global atk speed, +30% global damage.
-      globalSpeedMult *= 1.30;
-      globalDmgBonus += 0.30;
+      // APEX SUPPORT: strong global help without eclipsing every other apex.
+      globalSpeedMult *= 1.22;
+      globalDmgBonus += 0.22;
     }
     if (t.type === TowerType.GLACIAL_PALISADE && !auraOff) {
       localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.20 });
@@ -1219,17 +1219,17 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (DEMON_TYPES.has(target.type as string)) damage *= 2.50;
         if (target.isBoss) damage *= 2.00;
       }
-      if (t.type === TowerType.PRAEFECTUS && (target.archetype === 'ELITE' || target.archetype === 'BOSS')) damage *= 1.25;
+      if (t.type === TowerType.PRAEFECTUS && (target.archetype === 'ELITE' || target.archetype === 'BOSS')) damage *= 1.45;
       // ─── NEW COMBOS: identity damage multipliers ─────────────────────
-      if (t.type === TowerType.NEMESIS_ENGINE && target.isFlyer) damage *= 3.0;          // SKY-RIPPER: +200% vs flyers
+      if (t.type === TowerType.NEMESIS_ENGINE && target.isFlyer) damage *= 2.6;          // SKY-RIPPER: +160% vs flyers
       if (t.type === TowerType.PONTIFEX_MAXIMUS && target.isBoss) damage *= 3.0;         // RITE OF DOOM: +200% vs bosses
       if (t.type === TowerType.AURORA_LEGION && target.archetype === 'ELITE') damage *= 1.50;   // 2026-05 v11: 1.30 → 1.50
       if (t.type === TowerType.EXPLORATORES && target.archetype === 'RUNNER') damage *= 1.50;   // RECON: +50% vs runners
       if (t.type === TowerType.VANGUARD_WING && target.archetype === 'ELITE') damage *= 1.40;   // EAGLE-EYE: +40% vs elites
-      if (t.type === TowerType.SKY_DOMINION && target.archetype === 'ELITE') damage *= 1.50;     // +50% vs elites
+      if (t.type === TowerType.SKY_DOMINION && target.archetype === 'ELITE') damage *= 1.60;     // +60% vs elites
       if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 2.00;                 // CITY-BREAKER: +100% vs bosses
-      if (t.type === TowerType.INFERNAL_COLOSSUS && target.isBoss) damage *= 2.50;                // +150% vs bosses
-      if (t.type === TowerType.CARTHAGE_SCOURGE && target.isBoss) damage *= 4.0;         // +300% vs bosses
+      if (t.type === TowerType.INFERNAL_COLOSSUS && target.isBoss) damage *= 3.00;                // +200% vs bosses
+      if (t.type === TowerType.CARTHAGE_SCOURGE && target.isBoss) damage *= 4.2;         // +320% vs bosses
       if (t.type === TowerType.TURMA_LANCERS && !target.isFlyer) damage *= 1.45;         // +45% vs ground
       // ─── 2026-05 AUDIT: damage modifiers claimed by tower UI ─────────
       if (t.type === TowerType.SCORPIO && target.isBoss) damage *= 1.40;                 // +40% vs Bosses
@@ -1755,17 +1755,16 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             if (r3?.triggerImpactRing) r3.triggerImpactRing(target.x, target.y, state.tick, 26, 0x66bbff);
           }
         }
-        // 2026-06-28 — VULCAN BOMBARD · MAGMA BARRAGE: every blast stamps
-        // ARMOR SHRED (3s) on every enemy in the 3.0-tile crater and STUNS
-        // the primary (0.6s). AoE softener for the rest of your towers.
+        // VULCAN BOMBARD · MAGMA BARRAGE: every blast stamps ARMOR SHRED
+        // in the 2.6-tile crater and briefly stuns the primary.
         if (t.type === TowerType.VULCAN_BOMBARD) {
-          const crater = 3.0 * GRID.TILE;
+          const crater = 2.6 * GRID.TILE;
           for (const e of state.enemies.values()) {
             if (e.hp <= 0) continue;
             if (Math.hypot(e.x - target.x, e.y - target.y) > crater) continue;
             pushStatus(e, StatusEffectKind.ARMOR_SHRED, 3, 0, t.qualityTier);
           }
-          pushStatus(target, StatusEffectKind.STUN, 0.6, 0, t.qualityTier);
+          pushStatus(target, StatusEffectKind.STUN, 0.45, 0, t.qualityTier);
         }
         // 2026-06-28 — VULCAN COLOSSUS · CITY-BREAKER: every blast stamps
         // ARMOR SHRED + a 0.8s AoE STUN across the 3.5-tile splash. Every 3rd
@@ -1806,7 +1805,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
               if (e.hp <= 0 || !e.isFlyer) continue;
               if (Math.hypot(e.x - tcx, e.y - tcy) > r) continue;
               pushStatus(e, StatusEffectKind.STUN, 0.9, 0, t.qualityTier);
-              pushStatus(e, StatusEffectKind.MARK, 4, 0.30, t.qualityTier);
+              pushStatus(e, StatusEffectKind.MARK, 4, 0.35, t.qualityTier);
             }
             const r5: any = globalRef?.__renderer;
             if (r5?.triggerImpactRing) r5.triggerImpactRing(tcx, tcy, state.tick, 54, 0x88ddff);
@@ -1842,7 +1841,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             pushStatus(e, StatusEffectKind.ARMOR_SHRED, 4, 0, t.qualityTier);
             pushStatus(e, StatusEffectKind.HELLFIRE, 999, 0.012, t.qualityTier);
             if (doom) {
-              const bonus = damage * 1.2;
+              const bonus = damage * 1.5;
               e.hp -= bonus; e.hpFlashTimer = 0.22; e.lastDamagedTick = state.tick;
               pushStatus(e, StatusEffectKind.STUN, 1.0, 0, t.qualityTier);
               hooks.onHit(t, e, bonus, resMod);
@@ -2237,10 +2236,10 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   applyOnHitEffects(t, target);
   if (target.hp <= 0 && !checkRebirth(state, target, state.tick)) hooks.onKill(t, target);
   // CONSULAR_FATEBINDER — every shot strikes EVERY enemy on the map. The
-  // initial target gets the full hit; every other enemy alive takes 60% of
+  // initial target gets the full hit; every other enemy alive takes 40% of
   // the damage as a parallel strike. Counts toward kills/credit normally.
   if (t.type === TowerType.CONSULAR_FATEBINDER) {
-    const splash = damage * 0.6;
+    const splash = damage * 0.4;
     for (const e of state.enemies.values()) {
       if (e.id === target.id || e.hp <= 0) continue;
       e.hp -= splash;
@@ -2611,7 +2610,7 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
     case TowerType.NUMIDIAN_CAVALRY:
       if (target.isFlyer) {
         pushStatus(target, StatusEffectKind.SLOW, dur(2), 0.45, tier);
-        pushStatus(target, StatusEffectKind.MARK, dur(3), 0.20, tier);
+        pushStatus(target, StatusEffectKind.MARK, dur(3), 0.25, tier);
       }
       break;
     case TowerType.TURMA_LANCERS:
@@ -2624,10 +2623,10 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       pushStatus(target, StatusEffectKind.SLOW, dur(2.5), 0.40, tier);
       break;
     case TowerType.EXPLORATORES:
-      // RECON VOLLEY: every hit MARKS the target (+20% taken). The stealth
+      // RECON VOLLEY: every hit MARKS the target (+15% taken). The stealth
       // reveal + the +50%-vs-Runner rider live in the truesight scan and the
       // damage-multiplier pass respectively.
-      pushStatus(target, StatusEffectKind.MARK, dur(3), 0.20, tier);
+      pushStatus(target, StatusEffectKind.MARK, dur(3), 0.15, tier);
       break;
     case TowerType.VANGUARD_WING:
       // EAGLE-EYE BARRAGE: every hit MARKS and SHREDS armor. The reveal,
@@ -2670,10 +2669,10 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       pushStatus(target, StatusEffectKind.SLOW, dur(2.5), 0.60, tier);
       break;
     case TowerType.NEMESIS_ENGINE:
-      // SKY-RIPPER: whole-map flyer control, not just huge damage.
+      // SKY-RIPPER: long-range flyer control, not map-wide cleanup.
       if (target.isFlyer) {
         pushStatus(target, StatusEffectKind.STUN, dur(1.0), 0, tier);
-        pushStatus(target, StatusEffectKind.MARK, dur(4), 0.40, tier);
+        pushStatus(target, StatusEffectKind.MARK, dur(4), 0.35, tier);
         pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
       }
       break;
@@ -2722,7 +2721,7 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       pushStatus(target, StatusEffectKind.MARK, dur(3), 0.20, tier);
       break;
     case TowerType.INFERNAL_COLOSSUS:
-      pushStatus(target, StatusEffectKind.HELLFIRE, 999, 0.012, tier);
+      pushStatus(target, StatusEffectKind.HELLFIRE, 999, 0.015, tier);
       pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
       break;
     case TowerType.ROMAN_TRANSFORMER:

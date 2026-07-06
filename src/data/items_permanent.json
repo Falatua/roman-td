@@ -18,14 +18,14 @@
     "rarity": "COMMON",
     "buy": 8,
     "sell": 3,
-    "effect": "+10% attack speed"
+    "effect": "Basic drill: +5% damage and +8% attack speed."
   },
   "QUICKDRAW_GLOVES": {
     "name": "Quickdraw Gloves",
     "rarity": "COMMON",
     "buy": 10,
     "sell": 3,
-    "effect": "+12% attack speed"
+    "effect": "RANGED ONLY: +22% attack speed and +0.5 tile range."
   },
   "WATCHTOWER_LENS": {
     "name": "Watchtower Lens",
