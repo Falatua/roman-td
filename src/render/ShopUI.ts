@@ -1252,9 +1252,9 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   // can be tall (25-slot inventory + filter chips + headline + sort
   // controls); flex-start + outer overflow:auto guarantees the close
   // button at the top stays reachable on any viewport.
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:58;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
+  modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:100000;pointer-events:auto;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
   const panel = document.createElement('div');
-  panel.style.cssText = `width:min(560px,94vw);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:14px;`;
+  panel.style.cssText = `position:relative;z-index:1;width:min(560px,94vw);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:14px;`;
   const ownedRamparts = rampartsOwned(state);
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div><div style="font-size:18px;color:#d4af37;font-weight:bold;letter-spacing:3px">ARMARIUM</div><div style="font-size:11px;color:#aa9a4a;letter-spacing:1px">ITEM VAULT ${inv.slots.length}/${INVENTORY_SIZE}${ownedRamparts > 0 ? ` · RAMPARTS ${ownedRamparts}` : ''}</div></div>
@@ -1553,7 +1553,9 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
     if (ev.target === modal) hooks.onClose();
   });
   panel.addEventListener('click', (ev) => ev.stopPropagation());
-  parent.appendChild(modal);
+  // Mount at body level so the transformed stage wrapper can never sit
+  // above the inventory and swallow item clicks.
+  (document.body ?? parent).appendChild(modal);
 }
 
 function flashInventoryButton(btn: HTMLButtonElement, itm?: { itemId: string; rarity: string }) {

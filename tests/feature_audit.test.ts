@@ -506,3 +506,52 @@ describe('Sample SFX wiring', () => {
     expect(modal.includes('SFX.testYourMight();'), 'offer modal should fire the cue when it appears').toBe(true);
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────
+// 10. Hero picker copy — keep hidden scaling math out of player cards
+// ───────────────────────────────────────────────────────────────────────
+describe('Hero picker copy hygiene', () => {
+  it('does not expose hidden hero level-scaling math in the choose-hero cards', () => {
+    const fs = require('fs');
+    const source = fs.readFileSync('src/render/ChooseHeroModal.ts', 'utf8');
+    expect(source).not.toContain('Scales 1.0');
+    expect(source).not.toContain('XP rises');
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────
+// 11. Inventory modal layering — item cards must win pointer clicks
+// ───────────────────────────────────────────────────────────────────────
+describe('Inventory modal interaction layer', () => {
+  it('keeps the Armarium above stage/build overlays so item cards are clickable', () => {
+    const fs = require('fs');
+    const source = fs.readFileSync('src/render/ShopUI.ts', 'utf8');
+    expect(source).toContain("modal.id = 'inventory-modal'");
+    expect(source).toContain('position:fixed;inset:0');
+    expect(source).toContain('z-index:100000;pointer-events:auto');
+    expect(source).toContain('position:relative;z-index:1;width:min(560px,94vw)');
+    expect(source).toContain('(document.body ?? parent).appendChild(modal)');
+  });
+});
+
+describe('Quest modal interaction layer', () => {
+  it('keeps the quest close button above queued banner overlays', () => {
+    const fs = require('fs');
+    const source = fs.readFileSync('src/main.ts', 'utf8');
+    expect(source).toContain("modal.id = 'quests-modal'");
+    expect(source).toContain('position:fixed;inset:0');
+    expect(source).toContain('z-index:100000;pointer-events:auto');
+    expect(source).toContain('document.body.appendChild(modal)');
+  });
+});
+
+describe('Codex modal interaction layer', () => {
+  it('keeps codex tabs and close buttons above reminders and stage overlays', () => {
+    const fs = require('fs');
+    const source = fs.readFileSync('src/render/Codex.ts', 'utf8');
+    expect(source).toContain("modal.id = 'codex-modal'");
+    expect(source).toContain('position:fixed;inset:0');
+    expect(source).toContain('z-index:100000;pointer-events:auto');
+    expect(source).toContain('(document.body ?? parent).appendChild(modal)');
+  });
+});

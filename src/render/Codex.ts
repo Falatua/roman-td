@@ -80,7 +80,7 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   // edge; overflow:auto on the modal lets the user scroll the
   // whole modal if the panel is taller than the viewport — even
   // when the panel itself has overflow set.
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.6);z-index:60;padding:16px 8px;box-sizing:border-box;overflow:auto;`;
+  modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.6);z-index:100000;pointer-events:auto;padding:16px 8px;box-sizing:border-box;overflow:auto;`;
   const panel = document.createElement('div');
   // 2026-05-18 — Codex window enlarged so the dense per-tab tables
   // (Items, Enemies, Combinations) have more horizontal breathing room
@@ -101,7 +101,7 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
     <button id="codex-close-bottom" style="background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:8px 18px;cursor:pointer;font-family:inherit;letter-spacing:2px">CLOSE</button>
   </div>`;
   modal.appendChild(panel);
-  parent.appendChild(modal);
+  (document.body ?? parent).appendChild(modal);
 
   // 2026-05-17 — WAVES tab removed per design feedback. The per-wave
   // spawn table duplicated info already in the pre-wave brief + ENEMIES

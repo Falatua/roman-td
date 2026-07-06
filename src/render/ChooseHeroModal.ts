@@ -595,7 +595,6 @@ function renderHeroCard(heroId: string, def: any, isLastPick: boolean, slot: num
       ${statBox('CRIT',         critPct + '%' + (critPct > 0 ? ' × ' + critMult.toFixed(1) : ''))}
       ${statBox('TYPE',         dmgTypeLbl, tint)}
     </div>
-    <div style="font-size:9px;color:#5a8a5a;letter-spacing:1px;margin-top:-10px;margin-bottom:clamp(10px,1.6vh,16px);font-style:italic">↑ Scales 1.0× → 2.4× across the 5 tiers as XP rises.</div>
   `;
 
   // 2026-05-20 — "BUILT FOR" block removed per design ask. The pitch

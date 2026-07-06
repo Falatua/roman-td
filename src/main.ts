@@ -3047,7 +3047,7 @@ async function boot() {
       : '';
     const modal = document.createElement('div');
     modal.id = 'quests-modal';
-    modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);z-index:62;font-family:'Courier New',monospace;`;
+    modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);z-index:100000;pointer-events:auto;font-family:'Courier New',monospace;`;
     const panel = document.createElement('div');
     panel.style.cssText = `background:#1a1410;border:3px solid #88ff88;color:#e8d6a8;width:560px;max-height:84vh;overflow:auto;padding:14px 16px;box-shadow:0 0 28px rgba(136,255,136,0.35);`;
     panel.innerHTML = `
@@ -3059,7 +3059,7 @@ async function boot() {
       ${completedHtml}`;
     modal.appendChild(panel);
     modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
-    document.getElementById('stage-wrap')?.appendChild(modal);
+    document.body.appendChild(modal);
     panel.querySelector('#quests-close')?.addEventListener('click', () => modal.remove());
   }
   // ─── Quest dispatch ────────────────────────────────────────────────────
