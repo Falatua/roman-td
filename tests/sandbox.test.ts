@@ -210,13 +210,13 @@ describe('Sandbox Test Your Might helper', () => {
 });
 
 describe('Sandbox water restrictions', () => {
-  it('does not allow direct tower spawns on water or its shoreline buffer', () => {
+  it('does not allow direct tower spawns on water but allows shoreline grass', () => {
     const s = bootstrapState();
     activateSandbox(s);
 
     expect(sandboxSpawnTowerDirect(s, TowerType.MILITES, 1, WATER_ZONE.col + 1, WATER_ZONE.row + 1)).toBeNull();
-    expect(sandboxSpawnTowerDirect(s, TowerType.MILITES, 1, WATER_ZONE.col + 5, WATER_ZONE.row)).toBeNull();
-    expect(s.towers.size).toBe(0);
+    expect(sandboxSpawnTowerDirect(s, TowerType.MILITES, 1, WATER_ZONE.col + 5, WATER_ZONE.row)).not.toBeNull();
+    expect(s.towers.size).toBe(1);
   });
 });
 

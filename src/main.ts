@@ -750,7 +750,7 @@ async function boot() {
           return;
         }
         if (!isBuildable(state, col, row)) {
-          showBlockedAlert(col, row, 'That shoreline is locked. Keep one tile of land clear around water so enemies cannot be boxed against it.');
+          showBlockedAlert(col, row, 'That tile is locked. Cave, path, checkpoint, water, and border tiles cannot hold heroes.');
           (state as any).__heroPlacementConfirmed = false;
           return;
         }
@@ -889,7 +889,7 @@ async function boot() {
           return;
         }
         if (!isBuildable(state, col, row)) {
-          showBlockedAlert(col, row, 'That shoreline is locked. Keep one tile of land clear around water so enemies cannot be boxed against it.');
+          showBlockedAlert(col, row, 'That tile is locked. Cave, path, checkpoint, water, and border tiles cannot hold towers.');
           (state as any).__purchasedPlacementConfirmed = false;
           return;
         }
@@ -6078,7 +6078,7 @@ async function boot() {
           return;
         }
         if (!canPlaceRampart(state, col, row, selRamp)) {
-          showBlockedAlert(col, row, 'Rampart blocked — all 5 tiles must fit. Roads/trails are allowed, but checkpoints, towers, stones, traps, cave/gate tiles, water shorelines, map edges, and sealed routes are not.');
+          showBlockedAlert(col, row, 'Rampart blocked — all 5 tiles must fit. Roads/trails are allowed, but checkpoints, towers, stones, traps, cave/gate tiles, water, map edges, and sealed routes are not.');
           return;
         }
         showRampartPlacementConfirm(col, row, selRamp);
@@ -6137,7 +6137,7 @@ async function boot() {
       const selTrap = state.selectedTrapType;
       if (selTrap && trapOwned(state, selTrap) > 0 && tile === TileType.EMPTY) {
         if (isWaterPlacementRestrictedTile(col, row)) {
-          showBlockedAlert(col, row, 'Traps cannot be placed on water or its shoreline buffer.');
+          showBlockedAlert(col, row, 'Traps cannot be placed on water.');
           return;
         }
         if (placeTrap(state, selTrap, col, row)) {
@@ -6159,7 +6159,7 @@ async function boot() {
     const sbPending = (state as any).__sandboxPendingTower as { type: TowerType; tier: 1|2|3|4|5 } | undefined;
     if (state.sandboxMode && sbPending && tile === TileType.EMPTY) {
       if (isWaterPlacementRestrictedTile(col, row)) {
-        showBlockedAlert(col, row, '🧪 SANDBOX — water and its shoreline buffer are locked.');
+        showBlockedAlert(col, row, '🧪 SANDBOX — water is locked.');
         return;
       }
       const dropped = sandboxSpawnTowerDirect(state, sbPending.type, sbPending.tier, col, row);
@@ -6191,7 +6191,7 @@ async function boot() {
     if (queue.length > 0 && tile === TileType.EMPTY) {
       const head = queue[0];
       if (!isBuildable(state, col, row)) {
-        showBlockedAlert(col, row, 'That shoreline is locked. Keep one tile of land clear around water so enemies cannot be boxed against it.');
+        showBlockedAlert(col, row, 'That tile is locked. Cave, path, checkpoint, water, and border tiles cannot hold towers.');
         return;
       }
       // 2026-05-19 v2 — HERO PLACEMENT CONFIRMATION. Hero placement is
@@ -6284,7 +6284,7 @@ async function boot() {
     // prospects convert to walls.
     if (state.phase === GamePhase.PROSPECT_PLACEMENT) {
       if (tile !== TileType.EMPTY || !isBuildable(state, col, row)) {
-        state.hint = 'Empty grass only. Water and the one-tile shoreline buffer are off-limits.';
+        state.hint = 'Empty grass only. Water, checkpoints, paths, cave/gate tiles, and borders are off-limits.';
         return;
       }
       if (state.prospectsPlaced >= 10) {
@@ -6418,7 +6418,7 @@ async function boot() {
       // so players who tried to drop on cave / path / waypoint tiles got
       // no visible feedback and thought the game was bugged. Pop the
       // existing red BLOCKED toast anchored to the tile they clicked.
-      showBlockedAlert(col, row, 'That tile won\'t hold a tower — cave / path / checkpoint / water / shoreline buffer / border tiles are off-limits. Click an empty grass tile.');
+      showBlockedAlert(col, row, 'That tile won\'t hold a tower — cave / path / checkpoint / water / border tiles are off-limits. Click an empty grass tile.');
       return;
     }
     // path validation

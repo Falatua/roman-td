@@ -96,7 +96,8 @@ describe('Grid initialization', () => {
           waterTiles++;
         } else {
           expect(tileAt(s, c, r), `organic non-water tile ${c},${r}`).toBe(TileType.EMPTY);
-          expect(canBuildWaterTowerAt(s, c, r), `future water tower blocked on beach ${c},${r}`).toBe(false);
+          expect(isBuildable(s, c, r), `organic non-water grass buildable ${c},${r}`).toBe(true);
+          expect(canBuildWaterTowerAt(s, c, r), `future water tower blocked on grass ${c},${r}`).toBe(false);
         }
       }
     }
@@ -104,7 +105,7 @@ describe('Grid initialization', () => {
     expect(canBuildWaterTowerAt(s, WATER_ZONE.col + WATER_ZONE.width, WATER_ZONE.row)).toBe(false);
   });
 
-  it('keeps a one-tile shoreline buffer unbuildable without turning it into water', () => {
+  it('keeps actual water restricted while nearby shoreline grass stays buildable', () => {
     const s = createGameState();
     initializeGrid(s);
     const bufferTiles = [
@@ -113,12 +114,14 @@ describe('Grid initialization', () => {
       { col: WATER_ZONE.col + 10, row: WATER_ZONE.row + 3 }
     ];
     for (const t of bufferTiles) {
-      expect(tileAt(s, t.col, t.row), `buffer ${t.col},${t.row} stays land`).toBe(TileType.EMPTY);
-      expect(isWaterPlacementBufferTile(t.col, t.row), `buffer ${t.col},${t.row}`).toBe(true);
-      expect(isWaterPlacementRestrictedTile(t.col, t.row), `restricted ${t.col},${t.row}`).toBe(true);
-      expect(isBuildable(s, t.col, t.row), `not buildable ${t.col},${t.row}`).toBe(false);
-      expect(canPlaceStone(s, t.col, t.row), `stone blocked ${t.col},${t.row}`).toBe(false);
+      expect(tileAt(s, t.col, t.row), `shore grass ${t.col},${t.row} stays land`).toBe(TileType.EMPTY);
+      expect(isWaterPlacementBufferTile(t.col, t.row), `visual trim helper ${t.col},${t.row}`).toBe(true);
+      expect(isWaterPlacementRestrictedTile(t.col, t.row), `not restricted ${t.col},${t.row}`).toBe(false);
+      expect(isBuildable(s, t.col, t.row), `buildable ${t.col},${t.row}`).toBe(true);
+      expect(canPlaceStone(s, t.col, t.row), `stone allowed if path stays open ${t.col},${t.row}`).toBe(true);
     }
+    expect(isWaterPlacementRestrictedTile(WATER_ZONE.col + 2, WATER_ZONE.row + 2)).toBe(true);
+    expect(isBuildable(s, WATER_ZONE.col + 2, WATER_ZONE.row + 2)).toBe(false);
   });
 
   it('does not let generic tile writes erase water reserves', () => {

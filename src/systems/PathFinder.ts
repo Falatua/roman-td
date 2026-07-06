@@ -1,7 +1,7 @@
 import { GRID } from '../constants';
 import { TileType } from '../types';
 import { GameStateShape } from '../GameState';
-import { isWaterPlacementBufferTile, tileAt, tileToPixel } from './GridManager';
+import { tileAt, tileToPixel } from './GridManager';
 import waypointsData from '../data/waypoints.json';
 
 interface Node { col: number; row: number; }
@@ -206,7 +206,6 @@ export function resnapEnemiesToPath(state: GameStateShape, newPath: { col: numbe
 // Validate that placing a stone/tower at (col,row) does not block any waypoint reachability.
 export function canPlaceStone(state: GameStateShape, col: number, row: number): boolean {
   if (tileAt(state, col, row) !== TileType.EMPTY) return false;
-  if (isWaterPlacementBufferTile(col, row)) return false;
   // simulate
   state.tiles[row][col] = TileType.STONE;
   const ok = buildGroundPath(state) !== null;

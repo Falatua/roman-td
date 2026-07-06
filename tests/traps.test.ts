@@ -75,7 +75,7 @@ describe('Trap inventory flow', () => {
     expect(s.selectedTrapType).toBe(id);
   });
 
-  it('refuses traps on water and the one-tile shoreline buffer', () => {
+  it('refuses traps on water but allows shoreline grass', () => {
     const s = createGameState();
     initializeGrid(s);
     const id = 'IRON_SPIKE_TRAP';
@@ -83,8 +83,8 @@ describe('Trap inventory flow', () => {
     buyTraps(s, id, 2);
 
     expect(placeTrap(s, id, WATER_ZONE.col + 2, WATER_ZONE.row + 2)).toBe(false);
-    expect(placeTrap(s, id, WATER_ZONE.col + 5, WATER_ZONE.row)).toBe(false);
-    expect(trapOwned(s, id)).toBe(2);
-    expect(s.placedTraps ?? []).toHaveLength(0);
+    expect(placeTrap(s, id, WATER_ZONE.col + 5, WATER_ZONE.row)).toBe(true);
+    expect(trapOwned(s, id)).toBe(1);
+    expect(s.placedTraps ?? []).toHaveLength(1);
   });
 });

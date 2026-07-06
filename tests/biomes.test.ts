@@ -217,15 +217,14 @@ describe('Map overhaul sprite manifest — registered keys exist on disk', () =>
   });
 });
 
-describe('Ocean reserve sprite manifest — cove tiles are real pixel assets', () => {
+describe('Ocean reserve sprite manifest — cove water tiles are real pixel assets', () => {
   const oceanKeys = [
     'OCEAN_DEEP_A', 'OCEAN_DEEP_B', 'OCEAN_MID_A', 'OCEAN_MID_B', 'OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B',
-    'BEACH_SAND_A', 'BEACH_SAND_B', 'BEACH_SAND_C',
     'OCEAN_FOAM_N', 'OCEAN_FOAM_E', 'OCEAN_FOAM_S', 'OCEAN_FOAM_W',
-    'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK', 'BEACH_SHELLS', 'BEACH_STARFISH'
+    'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK'
   ];
 
-  it('registers every ocean and beach tile used by RenderEngine', () => {
+  it('registers every ocean tile used by RenderEngine', () => {
     const missing = oceanKeys.filter(key => !MANIFEST_KEYS.has(key));
     expect(missing, `Missing ocean manifest keys: ${missing.join(', ')}`).toEqual([]);
   });

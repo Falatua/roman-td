@@ -73,15 +73,18 @@ describe('Rampart purchasing', () => {
     expect(rampartsOwned(s)).toBe(3);
   });
 
-  it('refuses ramparts touching the water shoreline buffer', () => {
+  it('allows ramparts on shoreline grass but still refuses actual water', () => {
     const s = bootstrapState();
     buyRampart(s);
     const shoreline = { col: WATER_ZONE.col + 5, row: WATER_ZONE.row - 1 };
     expect(tileAt(s, shoreline.col, shoreline.row)).toBe(TileType.EMPTY);
-    expect(rampartPreviewTiles(s, shoreline.col, shoreline.row, 'H').some(t => !t.valid)).toBe(true);
-    expect(canPlaceRampart(s, shoreline.col, shoreline.row, 'H')).toBe(false);
-    expect(placeRampart(s, shoreline.col, shoreline.row, 'H')).toBe(false);
-    expect(rampartsOwned(s)).toBe(1);
+    expect(rampartPreviewTiles(s, shoreline.col, shoreline.row, 'H').every(t => t.valid)).toBe(true);
+    expect(canPlaceRampart(s, shoreline.col, shoreline.row, 'H')).toBe(true);
+    expect(placeRampart(s, shoreline.col, shoreline.row, 'H')).toBe(true);
+    expect(rampartsOwned(s)).toBe(0);
+
+    buyRampart(s);
+    expect(canPlaceRampart(s, WATER_ZONE.col + 1, WATER_ZONE.row + 1, 'H')).toBe(false);
   });
 
   it('arms ramparts from inventory and clears armed traps', () => {

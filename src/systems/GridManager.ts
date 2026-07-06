@@ -14,7 +14,8 @@ export function initializeGrid(state: GameStateShape) {
     state.tiles[r][GRID.COLS - 1] = TileType.BORDER;
   }
   // Bottom-left organic water reserve: a future-water-tower zone that
-  // visually replaces the old grass/decor and blocks every normal placement.
+  // visually replaces the old grass/decor and blocks every normal placement
+  // on actual water. Nearby shoreline land remains normal grass.
   for (let r = WATER_ZONE.row; r < WATER_ZONE.row + WATER_ZONE.height; r++) {
     for (let c = WATER_ZONE.col; c < WATER_ZONE.col + WATER_ZONE.width; c++) {
       if (r <= 0 || r >= GRID.ROWS - 1 || c <= 0 || c >= GRID.COLS - 1) continue;
@@ -68,7 +69,7 @@ export function isWaterPlacementBufferTile(col: number, row: number): boolean {
 }
 
 export function isWaterPlacementRestrictedTile(col: number, row: number): boolean {
-  return isWaterZoneTile(col, row) || isWaterPlacementBufferTile(col, row);
+  return isWaterZoneTile(col, row);
 }
 
 export function canBuildWaterTowerAt(state: GameStateShape, col: number, row: number): boolean {
@@ -108,7 +109,6 @@ export function isInsideStructureFootprint(col: number, row: number): boolean {
 
 export function isBuildable(state: GameStateShape, col: number, row: number): boolean {
   if (tileAt(state, col, row) !== TileType.EMPTY) return false;
-  if (isWaterPlacementBufferTile(col, row)) return false;
   if (isInsideStructureFootprint(col, row)) return false;
   return true;
 }

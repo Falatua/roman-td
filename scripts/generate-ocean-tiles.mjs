@@ -232,9 +232,6 @@ await Promise.all([
   waterTile({ name: 'm_ocean_mid_b.png', top: 0x1a5a70, bottom: 0x11415a, accent: 0x9de9e8, deep: 0x092a43, salt: 40 }),
   waterTile({ name: 'm_ocean_shallow_a.png', top: 0x2a7d84, bottom: 0x1b6070, accent: 0xc2fff0, deep: 0x0b3a53, salt: 50 }),
   waterTile({ name: 'm_ocean_shallow_b.png', top: 0x3b8f87, bottom: 0x226c78, accent: 0xd7fff4, deep: 0x124b5d, salt: 60 }),
-  sandTile({ name: 'm_beach_sand_a.png', top: 0xd8c07c, bottom: 0xa98d54, pebble: 0x7b663d, salt: 70 }),
-  sandTile({ name: 'm_beach_sand_b.png', top: 0xe3cf94, bottom: 0xb89b60, pebble: 0x806b45, salt: 80 }),
-  sandTile({ name: 'm_beach_sand_c.png', top: 0xc5ad6e, bottom: 0x927743, pebble: 0x6f5a35, salt: 90 }),
   foamEdge('m_ocean_foam_n.png', 'n'),
   foamEdge('m_ocean_foam_e.png', 'e'),
   foamEdge('m_ocean_foam_s.png', 's'),
@@ -242,9 +239,7 @@ await Promise.all([
   overlay('m_ocean_kelp.png', 'kelp'),
   overlay('m_ocean_coral.png', 'coral'),
   overlay('m_ocean_fish.png', 'fish'),
-  overlay('m_ocean_rock.png', 'rock'),
-  overlay('m_beach_shells.png', 'shells'),
-  overlay('m_beach_starfish.png', 'starfish')
+  overlay('m_ocean_rock.png', 'rock')
 ]);
 
 console.log('Generated ocean terrain tiles in', OUT_DIR);

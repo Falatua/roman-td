@@ -580,9 +580,6 @@ const MANIFEST: Record<string, string> = {
   OCEAN_MID_B: 'm_ocean_mid_b.png',
   OCEAN_SHALLOW_A: 'm_ocean_shallow_a.png',
   OCEAN_SHALLOW_B: 'm_ocean_shallow_b.png',
-  BEACH_SAND_A: 'm_beach_sand_a.png',
-  BEACH_SAND_B: 'm_beach_sand_b.png',
-  BEACH_SAND_C: 'm_beach_sand_c.png',
   OCEAN_FOAM_N: 'm_ocean_foam_n.png',
   OCEAN_FOAM_E: 'm_ocean_foam_e.png',
   OCEAN_FOAM_S: 'm_ocean_foam_s.png',
@@ -591,8 +588,6 @@ const MANIFEST: Record<string, string> = {
   OCEAN_CORAL: 'm_ocean_coral.png',
   OCEAN_FISH: 'm_ocean_fish.png',
   OCEAN_ROCK: 'm_ocean_rock.png',
-  BEACH_SHELLS: 'm_beach_shells.png',
-  BEACH_STARFISH: 'm_beach_starfish.png',
   // Decorative props — sprinkled atop grass tiles
   DP_MILESTONE: 'dp_milestone.png',
   DP_URN: 'dp_urn.png',

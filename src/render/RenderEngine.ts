@@ -2649,13 +2649,12 @@ export class RenderEngine {
     const oceanLayer = new Container();
     const shoreLayer = new Container();
     const coastalDetailLayer = new Container();
-    const beachGfx = new Graphics();
+    const shoreTrimGfx = new Graphics();
     const waterGfx = new Graphics();
     const oceanCurrentGfx = new Graphics();
     const waterDeepKeys = ['OCEAN_DEEP_A', 'OCEAN_DEEP_B'];
     const waterMidKeys = ['OCEAN_MID_A', 'OCEAN_MID_B'];
     const waterShallowKeys = ['OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B'];
-    const beachKeys = ['BEACH_SAND_A', 'BEACH_SAND_B', 'BEACH_SAND_C'];
     const addTileSprite = (layer: Container, key: string, x: number, y: number, alpha = 1) => {
       const t0 = tex(key);
       if (!t0) return false;
@@ -2715,22 +2714,14 @@ export class RenderEngine {
           continue;
         }
         if (t === TileType.EMPTY && isWaterPlacementBufferTile(c, r)) {
-          const beachKey = beachKeys[(h >>> 4) % beachKeys.length];
-          if (!addTileSprite(shoreLayer, beachKey, x, y)) {
-            const sandPalette = [0xbfa76a, 0xd0bb79, 0xa98f58, 0xe0cb8e];
-            beachGfx.beginFill(sandPalette[h % sandPalette.length], 1).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
-          }
           const waterN = state.tiles[r - 1]?.[c] === TileType.WATER;
           const waterE = state.tiles[r]?.[c + 1] === TileType.WATER;
           const waterS = state.tiles[r + 1]?.[c] === TileType.WATER;
           const waterW = state.tiles[r]?.[c - 1] === TileType.WATER;
-          if (waterN) addTileSprite(shoreLayer, 'OCEAN_FOAM_N', x, y, 0.38);
-          if (waterE) addTileSprite(shoreLayer, 'OCEAN_FOAM_E', x, y, 0.34);
-          if (waterS) addTileSprite(shoreLayer, 'OCEAN_FOAM_S', x, y, 0.28);
-          if (waterW) addTileSprite(shoreLayer, 'OCEAN_FOAM_W', x, y, 0.26);
-          if ((h % 17) === 0) addTileSprite(coastalDetailLayer, 'BEACH_SHELLS', x, y, 0.92);
-          if ((h % 37) === 0) addTileSprite(coastalDetailLayer, 'BEACH_STARFISH', x, y, 0.90);
-          continue;
+          if (waterN) shoreTrimGfx.beginFill(0xf2d072, 0.82).drawRect(x + 3, y, GRID.TILE - 6, 3).endFill();
+          if (waterE) shoreTrimGfx.beginFill(0xf2d072, 0.72).drawRect(x + GRID.TILE - 3, y + 3, 3, GRID.TILE - 6).endFill();
+          if (waterS) shoreTrimGfx.beginFill(0xf2d072, 0.58).drawRect(x + 3, y + GRID.TILE - 3, GRID.TILE - 6, 3).endFill();
+          if (waterW) shoreTrimGfx.beginFill(0xf2d072, 0.50).drawRect(x, y + 3, 3, GRID.TILE - 6).endFill();
         }
         let key: string;
         if (isPath) {
@@ -2869,7 +2860,7 @@ export class RenderEngine {
     this.layers.bg.addChild(terrainLayer);
     this.layers.bg.addChild(oceanLayer);
     this.layers.bg.addChild(shoreLayer);
-    this.layers.bg.addChild(beachGfx);
+    this.layers.bg.addChild(shoreTrimGfx);
     this.layers.bg.addChild(waterGfx);
     this.layers.bg.addChild(oceanCurrentGfx);
     // Sprite-water dressing in the bottom-left reserve. Drawn above terrain
@@ -2879,16 +2870,13 @@ export class RenderEngine {
       { col: WATER_ZONE.col + 5, row: WATER_ZONE.row + 6, key: 'OCEAN_CORAL', terrain: 'water' },
       { col: WATER_ZONE.col + 7, row: WATER_ZONE.row + 2, key: 'OCEAN_KELP', terrain: 'water' },
       { col: WATER_ZONE.col + 9, row: WATER_ZONE.row + 4, key: 'OCEAN_FISH', terrain: 'water' },
-      { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 1, key: 'OCEAN_FISH', terrain: 'water' },
-      { col: WATER_ZONE.col + 8, row: WATER_ZONE.row + 1, key: 'BEACH_SHELLS', terrain: 'beach' },
-      { col: WATER_ZONE.col + 10, row: WATER_ZONE.row + 0, key: 'BEACH_STARFISH', terrain: 'beach' }
+      { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 1, key: 'OCEAN_FISH', terrain: 'water' }
     ];
     for (const d of waterDetail) {
       const x = d.col * GRID.TILE;
       const y = d.row * GRID.TILE;
       const tile = state.tiles[d.row]?.[d.col];
       if (d.terrain === 'water' && tile !== TileType.WATER) continue;
-      if (d.terrain === 'beach' && (tile !== TileType.EMPTY || !isWaterPlacementBufferTile(d.col, d.row))) continue;
       addTileSprite(coastalDetailLayer, d.key, x, y, d.key === 'OCEAN_FISH' ? 0.78 : 0.95);
     }
     this.layers.bg.addChild(coastalDetailLayer);

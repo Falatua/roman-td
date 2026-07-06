@@ -22,7 +22,7 @@ export const WATER_ZONE = {
 } as const;
 
 // Irregular coastal footprint inside WATER_ZONE. Each local row says which
-// local columns are actual deep water; the remaining nearby land becomes beach.
+// local columns are actual deep water; the remaining nearby land stays grass.
 export const WATER_ROW_SPANS = [
   { start: 0, end: 4 },
   { start: 0, end: 6 },
@@ -38,8 +38,8 @@ export const WATER_ROW_SPANS = [
 
 export const WATER_TILE_COUNT = WATER_ROW_SPANS.reduce((sum, span) => sum + (span.end - span.start + 1), 0);
 
-// Keep one land tile around water free of player-built blockers. This stops
-// shoreline mazing exploits from treating the pond edge as a legal wall.
+// Visual trim radius only: nearby land stays normal buildable grass, while
+// RenderEngine can use this to draw a thin shore accent around water.
 export const WATER_BUILD_BUFFER_TILES = 1;
 
 // 2026-05-17 — WORLD ZOOM. The outer 1-tile BORDER ring (trees/boulders)
