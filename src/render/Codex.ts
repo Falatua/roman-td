@@ -373,7 +373,7 @@ function renderTab(tab: string): string {
           ${noteCard('CHECK RESISTANCES', 'Read the enemy tab before placing. Wrong damage type = enemies walk past unbothered.')}
           ${noteCard('DOT HALVES REGEN', 'Burn / poison / bleed / hellfire counts as damage. Any DoT on a Hannibal / Daemon Imperator / hellhound cuts its heal in HALF (not zero — they still trickle back ~50% of base rate). Net rule: DoT + direct damage breaks regen bosses; DoT alone no longer does.')}
           ${noteCard('DOWNGRADE FOR RECIPES', 'A T4 → T3 for 2g slots into the recipe you were hoarding for. Pride loses runs.')}
-          ${noteCard('FLYERS ARRIVE W6 / W12 / W18', 'Every 6 waves. No ranged tower on your last leg = sponsored parade.')}
+          ${noteCard('FLYERS ARRIVE W6 / W12 / W18', 'W6 teaches air. W12+ starts adding COMBO-AA plating, so base anti-air helps but combo anti-air becomes the clean answer.')}
           ${noteCard('BOSSES REBORN ON LEAK', '10 lives per leak. Boss returns next wave at the HP he had at the gate. Chip damage carries.')}
           ${noteCard('POOL L2 = FIRST DAMAGE', 'L1 only shifts probabilities. +3% damage / level starts at L2 and stacks. Get there fast.')}
           ${noteCard('EMPTY ROUND = +12g', 'Press START WAVE with nothing placed → +12g for strategic patience.')}
@@ -619,6 +619,7 @@ function renderTab(tab: string): string {
           ${noteCard('Cleave Melee', 'Hits ALL enemies in melee range, secondaries take 70%. Towers: Hastati, Triarius, Cohort Guard, Praetorian Wall, Imperator Guard, Vexillation, Triumphator, Triplex Acies.')}
           ${noteCard('Multi-Shot Ranged', 'Multiple bolts per attack. Decurion (2), Carroballista (2), Eques (3), Hannibal\'s Nightmare (2), Scorpion Bolt (3), Aurora Legion (4 piercing), Carthage Scourge (6).')}
           ${noteCard('Anti-Air Only', 'Sagittarius and Aquila Venator ignore ground entirely. Dead weight on ground waves, devastating on flyers.')}
+          ${noteCard('Aerial Plating (W12+)', 'Later flyer waves can carry <b style="color:#88ddff">COMBO-AA</b> plating. Non-combo towers deal reduced direct damage to flyers on those waves. Combo anti-air pierces it: Scorpion Bolt, Eques, Nemesis Engine, Beastlord Champion, Storm Ballista, Skyreaper Battery, Sky Dominion, and higher apex towers.')}
           ${noteCard('Trident & Net (Retiarius)', 'First hit on a new target = 2× damage. Armor Shred every strike.')}
           ${noteCard('Brutal Opener (Accensus)', '+75% damage above 85% HP. Front-load damage on fresh enemies.')}
           ${noteCard('Backstab (Pugio Assassin)', '+50% vs Runner archetype.')}
@@ -631,7 +632,7 @@ function renderTab(tab: string): string {
           ${noteCard('Siege Kickback (Turris)', 'Every 3rd shot knocks target back.')}
           ${noteCard('Charge + Venom (Horseman)', 'Every hit MARKS (+20%) AND applies POISON (5% maxHp/sec, 4s).')}
           ${noteCard('Trample (War Chariot)', 'Every 4th attack stuns + knocks back ground. +50% vs bosses.')}
-          ${noteCard('Damage-Type vs Archetype', '<b>Bosses:</b> Scorpio +40, Pontifex +200, Carthage Scourge +300. <b>Flyers:</b> Sagittarius / Venator +45, Aquila Venator +75, Nemesis Engine +200. <b>Ground:</b> Horseman +20, Turma Lancers +45. <b>Elephants:</b> Hannibal\'s Nightmare +200, Beast Hunter/Slayer +200. All values % bonus damage.')}
+          ${noteCard('Damage-Type vs Archetype', '<b>Bosses:</b> Scorpio +40, Pontifex +200, Carthage Scourge +300. <b>Flyers:</b> Sagittarius / Venator +45, Aquila Venator +75, Scorpion Bolt +65, Storm Ballista +70, Beastlord +100, Eques +110, Skyreaper +140, Nemesis +200, Sky Dominion +220. <b>Ground:</b> Horseman +20, Turma Lancers +45. <b>Elephants:</b> Hannibal\'s Nightmare +200, Beast Hunter/Slayer +200. All values % bonus damage.')}
           ${noteCard('Native Auras', 'Triarius +12% global · Cohort Guard 3-tile +15% local · Eagle Standard / Praetorian Wall / Aquilifer / Vestalis / Triplex Acies / Legion Prime / Fatebinder all draw violet rings — stand inside.')}
           ${noteCard('Frozen Legion (deep dive)', 'Two layered freeze mechanics: <b style="color:#88ddff">(1)</b> every attack freezes its target for 2.5s — locked in place, no movement, no knockback displacement · <b style="color:#88ddff">(2)</b> every 10 seconds, a <b>GLACIAL PULSE</b> freezes EVERY enemy on the map (no range cap) for 2.5s. The pulse turns each 10s window into a battlefield-wide hard-stop window so your damage towers can finish kills uncontested.')}
           ${noteCard('Periodic AoE Freeze', '<b style="color:#88ddff">Frozen Legion</b> — every 10s, freezes EVERY enemy on the map (no range cap) for 2.5s. <b>Hannibal\'s Nightmare</b> — every 10s, freezes everything in its 6.5-tile range for 1.5s. <b>Carthage Scourge</b> — every 6s, freezes everything in its 7-tile range for 1.8s.')}
@@ -1445,6 +1446,7 @@ function renderTab(tab: string): string {
         : '';
       const speed = (w as any).enemySpeedBoostPct;
       const dmgReduct = (w as any).enemyDamageReductPct;
+      const comboAir = (w as any).comboAntiAirArmorPct;
       const dotReduct = (w as any).enemyDotResistPct;
       const regen = (w as any).enemyRegenPctPerSec;
       const speedTag = (typeof speed === 'number' && speed > 0)
@@ -1452,6 +1454,9 @@ function renderTab(tab: string): string {
         : '';
       const dmgTag = (typeof dmgReduct === 'number' && dmgReduct > 0)
         ? ` <span style="color:#ff7777;font-weight:bold;font-size:10px;letter-spacing:1px;background:#1a0707;border:1px solid #cc5555;padding:1px 4px" title="Direct tower hits are reduced ${Math.round(dmgReduct * 100)}% on this wave.">🛡 −${Math.round(dmgReduct * 100)}% HIT</span>`
+        : '';
+      const comboAirTag = (typeof comboAir === 'number' && comboAir > 0)
+        ? ` <span style="color:#88ddff;font-weight:bold;font-size:10px;letter-spacing:1px;background:#06141a;border:1px solid #55bbdd;padding:1px 4px" title="Flyers reduce non-combo tower direct damage ${Math.round(comboAir * 100)}%. Combo anti-air towers pierce this plating.">COMBO-AA</span>`
         : '';
       const dotTag = (typeof dotReduct === 'number' && dotReduct > 0)
         ? ` <span style="color:#bb88ff;font-weight:bold;font-size:10px;letter-spacing:1px;background:#10071a;border:1px solid #8855cc;padding:1px 4px" title="Damage-over-time ticks are reduced ${Math.round(dotReduct * 100)}% on this wave.">☠ −${Math.round(dotReduct * 100)}% DOT</span>`
@@ -1463,7 +1468,7 @@ function renderTab(tab: string): string {
       // factor (1.0×, 2.5×, etc.) that confused players. Final on-spawn
       // HP for each enemy lives in the ENEMIES tab where it's surfaced
       // as a concrete number per wave.
-      return `<tr><td style="color:#d4af37;font-weight:bold">${w.wave}</td><td>${flag}${necroTag}${reliefTag}${healDisabledTag}${speedTag}${dmgTag}${dotTag}${regenTag}</td><td style="color:#9be0ff">${w.faction}</td><td>${w.gold}g</td><td style="opacity:0.85">${spawns}</td></tr>`;
+      return `<tr><td style="color:#d4af37;font-weight:bold">${w.wave}</td><td>${flag}${necroTag}${reliefTag}${healDisabledTag}${speedTag}${dmgTag}${comboAirTag}${dotTag}${regenTag}</td><td style="color:#9be0ff">${w.faction}</td><td>${w.gold}g</td><td style="opacity:0.85">${spawns}</td></tr>`;
     }).join('');
     return `${section('WAVE SCOUTING', '<div style="font-size:11px;color:#cdb98a">Use this table to plan flyer coverage, boss-killer investment, and item purchases before the warning banner appears. Rows tagged <span style="color:#aa55ff">💀 NECRO</span> reanimate slain grunts as undead — budget for roughly 2× the usual kills. <b style="color:#88ddff">For actual enemy HP at each wave, see the ENEMIES tab.</b></div>')}
       <table style="width:100%;border-collapse:collapse;font-size:11px">

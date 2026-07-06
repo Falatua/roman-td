@@ -198,6 +198,7 @@
     "hpMult": 5.4,
     "gold": 14,
     "enemyDamageReductPct": 0.15,
+    "comboAntiAirArmorPct": 0.18,
     "spawns": [
       {
         "type": "SPECTRAL_SCOUT",
@@ -213,6 +214,7 @@
     "gold": 16,
     "necromancy": true,
     "enemyDotResistPct": 0.3,
+    "comboAntiAirArmorPct": 0.12,
     "spawns": [
       {
         "type": "UNDEAD_BERSERKER",
@@ -235,6 +237,7 @@
     "hpMult": 9,
     "gold": 19,
     "enemySpeedBoostPct": 0.15,
+    "comboAntiAirArmorPct": 0.14,
     "spawns": [
       {
         "type": "UNDEAD_WAR_ELEPHANT",
@@ -382,6 +385,7 @@
       }
     ],
     "enemySpeedBoostPct": 0.08,
+    "comboAntiAirArmorPct": 0.26,
     "enemyDotResistPct": 0.2,
     "enemyRegenPctPerSec": 0.004
   },
@@ -431,6 +435,7 @@
     ],
     "enemySpeedBoostPct": 0.06,
     "enemyDamageReductPct": 0.05,
+    "comboAntiAirArmorPct": 0.28,
     "enemyDotResistPct": 0.25,
     "enemyRegenPctPerSec": 0.004
   },
@@ -459,6 +464,7 @@
       }
     ],
     "enemyDamageReductPct": 0.06,
+    "comboAntiAirArmorPct": 0.3,
     "enemyDotResistPct": 0.2,
     "enemyRegenPctPerSec": 0.004
   },
@@ -556,6 +562,7 @@
     ],
     "enemySpeedBoostPct": 0.12,
     "enemyDamageReductPct": 0.06,
+    "comboAntiAirArmorPct": 0.32,
     "enemyDotResistPct": 0.15,
     "enemyRegenPctPerSec": 0.004
   },
@@ -617,6 +624,7 @@
     ],
     "enemySpeedBoostPct": 0.06,
     "enemyDamageReductPct": 0.07,
+    "comboAntiAirArmorPct": 0.3,
     "enemyDotResistPct": 0.3,
     "enemyRegenPctPerSec": 0.006
   },
@@ -670,6 +678,7 @@
     ],
     "enemySpeedBoostPct": 0.08,
     "enemyDamageReductPct": 0.1,
+    "comboAntiAirArmorPct": 0.34,
     "enemyDotResistPct": 0.3,
     "enemyRegenPctPerSec": 0.007
   },
@@ -716,6 +725,7 @@
     ],
     "enemySpeedBoostPct": 0.05,
     "enemyDamageReductPct": 0.06,
+    "comboAntiAirArmorPct": 0.34,
     "enemyDotResistPct": 0.2,
     "enemyRegenPctPerSec": 0.004
   },
@@ -762,6 +772,7 @@
     ],
     "enemySpeedBoostPct": 0.08,
     "enemyDamageReductPct": 0.07,
+    "comboAntiAirArmorPct": 0.35,
     "enemyDotResistPct": 0.15,
     "enemyRegenPctPerSec": 0.005
   },
@@ -812,6 +823,7 @@
     ],
     "enemySpeedBoostPct": 0.07,
     "enemyDamageReductPct": 0.08,
+    "comboAntiAirArmorPct": 0.38,
     "enemyDotResistPct": 0.2,
     "enemyRegenPctPerSec": 0.006
   },
@@ -858,6 +870,7 @@
       }
     ],
     "enemyDamageReductPct": 0.09,
+    "comboAntiAirArmorPct": 0.38,
     "enemyDotResistPct": 0.25,
     "enemyRegenPctPerSec": 0.006
   },
@@ -912,6 +925,7 @@
     ],
     "enemySpeedBoostPct": 0.08,
     "enemyDamageReductPct": 0.1,
+    "comboAntiAirArmorPct": 0.4,
     "enemyDotResistPct": 0.25,
     "enemyRegenPctPerSec": 0.007
   },
@@ -965,6 +979,7 @@
     ],
     "enemySpeedBoostPct": 0.05,
     "enemyDamageReductPct": 0.1,
+    "comboAntiAirArmorPct": 0.4,
     "enemyDotResistPct": 0.3,
     "enemyRegenPctPerSec": 0.008
   }

@@ -185,6 +185,23 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect((enemiesData as any).CHIMERA.phaseHits).toBeGreaterThanOrEqual(3);
   });
 
+  it('turns W12+ flyer pressure into combo anti-air checks while leaving W6 fair', () => {
+    const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
+    expect(byWave.get(6).comboAntiAirArmorPct).toBeUndefined();
+    expect(byWave.get(12).comboAntiAirArmorPct).toBeGreaterThan(0);
+    expect(byWave.get(18).comboAntiAirArmorPct).toBeGreaterThan(byWave.get(12).comboAntiAirArmorPct);
+    expect(byWave.get(27).comboAntiAirArmorPct).toBeGreaterThanOrEqual(0.38);
+    expect(byWave.get(30).comboAntiAirArmorPct).toBeGreaterThanOrEqual(0.4);
+
+    const flyerPressureWaves = (wavesData as any[])
+      .filter(w => w.wave >= 12)
+      .filter(w => (w.spawns ?? []).some((spawn: any) => (enemiesData as any)[spawn.type]?.isFlyer));
+    expect(flyerPressureWaves.length).toBeGreaterThan(0);
+    for (const wave of flyerPressureWaves) {
+      expect(wave.comboAntiAirArmorPct, `W${wave.wave} should warn and pressure combo anti-air`).toBeGreaterThan(0);
+    }
+  });
+
   it('lets Sky Barges drop melee cargo at matching ground-route progress', () => {
     const state: any = bootstrapState();
     state.wave = 22;

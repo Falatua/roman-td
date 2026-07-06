@@ -676,6 +676,7 @@ export class UIManager {
         };
         if (w.type === 'B') tags.push({ txt: 'BOSS', color: '#ee5555' });
         if (seen(d => d.isFlyer))                          tags.push({ txt: 'FLYERS',   color: '#66ccff' });
+        if ((w as any).comboAntiAirArmorPct)                tags.push({ txt: 'COMBO-AA', color: '#88ddff' });
         if (seen(d => d.requiresMeleeBreak))               tags.push({ txt: 'SHIELDED', color: '#aabbdd' });
         if (seen(d => d.outOfCombatRegen || d.regenPctPerSec)) tags.push({ txt: 'REGEN',    color: '#88dd88' });
         if (seen(d => d.checkpointHealPct))                tags.push({ txt: 'WAYPOINT-HEAL', color: '#66ff88' });

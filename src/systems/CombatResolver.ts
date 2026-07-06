@@ -66,6 +66,28 @@ const enemySnapshotScratch: Enemy[] = [];
 const targetCandidateScratch: Enemy[] = [];
 const SULLA_PASSIVE_RADIUS_TILES = 5.5;
 
+const COMBO_ANTI_AIR_TYPES = new Set<TowerType>([
+  TowerType.SCORPION_BOLT,
+  TowerType.NUMIDIAN_CAVALRY,
+  TowerType.NEMESIS_ENGINE,
+  TowerType.HANNIBALS_NIGHTMARE,
+  TowerType.BEASTLORD_CHAMPION,
+  TowerType.STORM_BALLISTA,
+  TowerType.SKYREAPER_BATTERY,
+  TowerType.SKY_DOMINION,
+  TowerType.VANGUARD_WING,
+  TowerType.MARS_VICTOR,
+  TowerType.ROMAN_TRANSFORMER
+]);
+
+function comboAntiAirArmorMult(state: GameStateShape, tower: Tower, target: Enemy): number {
+  if (!target.isFlyer) return 1;
+  const waveDef: any = (wavesData as any[])[(state.wave ?? 1) - 1];
+  const armor = Math.max(0, Math.min(0.75, waveDef?.comboAntiAirArmorPct ?? 0));
+  if (armor <= 0 || COMBO_ANTI_AIR_TYPES.has(tower.type)) return 1;
+  return 1 - armor;
+}
+
 // BURNING GROUND — fire-themed towers stamp a 3-second patch at the impact
 // point. Any enemy within the patch radius takes burn DoT each frame.
 // Patches stack additively but each patch decays independently.
@@ -1069,9 +1091,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.RORARIUS && target.archetype === 'RUNNER') damage *= 1.35;
       if ((t.type === TowerType.SAGITTARIUS || t.type === TowerType.VENATOR) && target.isFlyer) damage *= 1.45;
       // 2026-06-28 — new anti-flyer combos.
-      if (t.type === TowerType.SKYREAPER_BATTERY && target.isFlyer) damage *= 2.10;   // +110% vs flyers
-      if (t.type === TowerType.SKY_DOMINION && target.isFlyer) damage *= 2.80;         // +180% vs flyers
-      if (t.type === TowerType.BEASTLORD_CHAMPION && target.isFlyer) damage *= 1.70;  // +70% vs flyers
+      if (t.type === TowerType.SKYREAPER_BATTERY && target.isFlyer) damage *= 2.40;   // +140% vs flyers
+      if (t.type === TowerType.SKY_DOMINION && target.isFlyer) damage *= 3.20;         // +220% vs flyers
+      if (t.type === TowerType.BEASTLORD_CHAMPION && target.isFlyer) damage *= 2.00;  // +100% vs flyers
+      if (t.type === TowerType.STORM_BALLISTA && target.isFlyer) damage *= 1.70;       // +70% vs plated flyers
       // PRAETORIAN EXECUTIONER — +40% vs disabled targets (stun/slow/freeze).
       if (t.type === TowerType.PRAETORIAN_EXECUTIONER && target.statusEffects.some(s =>
         (s.kind === StatusEffectKind.STUN || s.kind === StatusEffectKind.SLOW || s.kind === StatusEffectKind.FREEZE) && s.remaining > 0)) damage *= 1.40;
@@ -1237,15 +1260,15 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         damage *= bossMult;
       }
       // SCORPION_BOLT — split into TWO distinct multipliers (2026-05-15 buff):
-      // +35% vs Flyers + +50% vs Bosses, multiplicative. A flying boss
-      // takes the full +102.5% stack (1.35 × 1.50 = 2.025×). Earlier
+      // +65% vs Flyers + +50% vs Bosses, multiplicative. A flying boss
+      // takes the full +147.5% stack (1.65 × 1.50 = 2.475×). Earlier
       // history: the +30% combined was trimmed to +12% in May 2026 v5
       // (too dominant on every flyer + boss wave). This pass restores
       // the specialist identity at higher per-archetype numbers but
       // keeps the multiplicative split so anti-Flyer and anti-Boss
       // contributions are independently auditable.
       if (t.type === TowerType.SCORPION_BOLT) {
-        if (target.isFlyer) damage *= 1.35;
+        if (target.isFlyer) damage *= 1.65;
         if (target.isBoss)  damage *= 1.50;
       }
       if (t.type === TowerType.WAR_CHARIOT && target.isBoss) damage *= 1.75;             // +75% vs Bosses
@@ -1597,6 +1620,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
               damage *= (1 + 0.25 * dmm.stacks);
             }
           }
+          damage *= comboAntiAirArmorMult(state, t, target);
           target.hp -= damage;
           target.hpFlashTimer = 0.16;
           target.lastDamagedTick = state.tick;
@@ -2180,6 +2204,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
       damage *= (1 + 0.25 * dm.stacks);
     }
   }
+  damage *= comboAntiAirArmorMult(state, t, target);
   // 2026-05-22 — WAVE-LEVEL DAMAGE REDUCTION. Wave defs with
   // `enemyDamageReductPct` reduce direct damage taken by every spawn
   // on that wave by that fraction. Used by W12/W16/W17 to add a

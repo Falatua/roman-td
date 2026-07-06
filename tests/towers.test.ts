@@ -10,6 +10,7 @@ import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS, GRID } from '../src
 import { createGameState } from '../src/GameState';
 import { initializeGrid, isBuildable } from '../src/systems/GridManager';
 import towersData from '../src/data/towers.json';
+import wavesData from '../src/data/waves.json';
 
 function testEnemy(id: string, x = 160, y = 160): Enemy {
   return {
@@ -364,6 +365,41 @@ describe('Anti-air tower signatures', () => {
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.40)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+  });
+
+  it('late aerial plating punishes plain anti-air but lets combo anti-air pierce', () => {
+    const state = createGameState();
+    state.wave = 18;
+    const armor = (wavesData as any[])[17].comboAntiAirArmorPct;
+    expect(armor).toBeGreaterThan(0);
+
+    const plain = createTower(TowerType.SAGITTARIUS, 5, 0, 0, 0);
+    const combo = createTower(TowerType.SCORPION_BOLT, 4, 0, 0, 0);
+    const storm = createTower(TowerType.STORM_BALLISTA, 4, 0, 0, 0);
+
+    const plainTarget = flyerEnemy('plated-plain');
+    const comboTarget = flyerEnemy('plated-combo');
+    const stormTarget = flyerEnemy('plated-storm');
+
+    applyDamageAndStatus(state, plain, plainTarget, 100, noopCombatHooks());
+    applyDamageAndStatus(state, combo, comboTarget, 100, noopCombatHooks());
+    applyDamageAndStatus(state, storm, stormTarget, 100, noopCombatHooks());
+
+    expect(1000 - plainTarget.hp).toBeCloseTo(100 * (1 - armor), 4);
+    expect(1000 - comboTarget.hp).toBeCloseTo(100, 4);
+    expect(1000 - stormTarget.hp).toBeCloseTo(100, 4);
+  });
+
+  it('early flyer teaching waves do not carry combo anti-air plating', () => {
+    const state = createGameState();
+    state.wave = 6;
+    const tower = createTower(TowerType.SAGITTARIUS, 3, 0, 0, 0);
+    const target = flyerEnemy('unplated-w6');
+
+    applyDamageAndStatus(state, tower, target, 100, noopCombatHooks());
+
+    expect((wavesData as any[])[5].comboAntiAirArmorPct).toBeUndefined();
+    expect(1000 - target.hp).toBeCloseTo(100, 4);
   });
 });
 
