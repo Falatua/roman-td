@@ -32,6 +32,7 @@ describe('Item families', () => {
     expect(itemFamily('CENTURIONS_TRUMPET')).toBe('AURA');
     expect(itemFamily('GOLD_PURSE')).toBe('ECONOMY');
     expect(itemFamily('GALLIC_SHIELD_BOSS')).toBe('DEFENSE');
+    expect(itemFamily('CAPITOLINE_AEGIS')).toBe('SPECIAL');
   });
 
   it('unknown items default to SPECIAL', () => {
@@ -231,6 +232,7 @@ describe('Loot drop rolling', () => {
     expect(coverage.legendary).toContain('TYRANTS_LAUREL');
     expect(coverage.legendary).toContain('JUPITERS_SKYFIRE');
     expect(coverage.legendary).toContain('CONCUSSIVE_WARHEAD');
+    expect(coverage.legendary).toContain('CAPITOLINE_AEGIS');
   });
 
   it('keeps event-exclusive items out of ordinary and boss RNG while still tracking them by event', () => {
@@ -363,6 +365,17 @@ describe('Merchant — Mercator stock', () => {
     expect(new Set(legPrices)).toEqual(new Set([666]));
     expect(merc.offers.filter(o => o.rarity === 'EPIC').every(o => o.price === 351)).toBe(true);
     expect(merc.livesPrice).toBe(83);
+  });
+
+  it('can roll Capitoline Aegis in Mercator legendary stock', () => {
+    const randomSpy = vi.spyOn(Math, 'random');
+    try {
+      randomSpy.mockReturnValue(0.999);
+      const merc = buildMercatorStock();
+      expect(merc.offers.some(o => o.itemId === 'CAPITOLINE_AEGIS' && o.rarity === 'LEGENDARY')).toBe(true);
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
   it('rerolls Mercator item stock when each visit resets', () => {

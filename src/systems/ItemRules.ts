@@ -140,6 +140,7 @@ const FAMILY: Record<string, ItemFamily> = {
   AQUILA_TALONS: 'SPECIAL',
   SPEAR_OF_MARS: 'RANGE',
   JUPITERS_WRATH: 'SPECIAL',
+  CAPITOLINE_AEGIS: 'SPECIAL',
   // 2026-05-15 — three new items. All SPECIAL so they stack freely with
   // damage / speed / range / DOT / aura items on the same tower (the
   // SPECIAL family always passes canEquipItemFamily). Effects are

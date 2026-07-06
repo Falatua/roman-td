@@ -2,8 +2,9 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { createTower, towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, SIEGE_FLYER_MISS_CHANCE, tickCombat } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, SIEGE_FLYER_MISS_CHANCE, tickCombat } from '../src/systems/CombatResolver';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
+import { itemFamily } from '../src/systems/ItemRules';
 import { spawnProjectile } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind, TargetingMode } from '../src/types';
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS, GRID } from '../src/constants';
@@ -216,6 +217,18 @@ describe('Tower effective stats', () => {
     tower.equippedItems.push('PERIMETER_TORCH');
 
     expect(displayedDpsFromBreakdown(tower, state)).toBeCloseTo(baseDisplayedDps * 1.50 * 1.50, 4);
+  });
+
+  it('shows Capitoline Aegis as an additive divine damage rider', () => {
+    const state = createGameState();
+    const tower = createTower(TowerType.SAGITTARIUS, 1, 0, 0, 0);
+    const baseDisplayedDps = displayedDpsFromBreakdown(tower, state);
+    tower.equippedItems.push('CAPITOLINE_AEGIS');
+    const breakdown = towerStatBreakdown(tower, state);
+
+    expect(itemFamily('CAPITOLINE_AEGIS')).toBe('SPECIAL');
+    expect(breakdown.damageMods.some(m => m.source === 'Capitoline Aegis divine rider')).toBe(true);
+    expect(displayedDpsFromBreakdown(tower, state)).toBeCloseTo(baseDisplayedDps * 1.35, 4);
   });
 
   it('gives melee towers a small baseline attack-speed lift', () => {
@@ -827,6 +840,32 @@ describe('Aura mechanics and visibility', () => {
 
     expect(withBattleStandard.damage / base.damage).toBeCloseTo(1.18, 4);
     expect(base.cooldown / withTrumpet.cooldown).toBeCloseTo(1.18, 4);
+  });
+
+  it('Capitoline Aegis adds divine damage without replacing native damage', () => {
+    const state = createGameState();
+    const attacker = createTower(TowerType.DECURION, 1, 10, 10, 0);
+    attacker.attackCooldown = 0;
+    attacker.equippedItems.push('CAPITOLINE_AEGIS');
+    state.towers.set(attacker.id, attacker);
+    const c = towerCenter(attacker);
+    const target = testEnemy('capitoline-target', c.x + GRID.TILE, c.y);
+    target.faction = EnemyFaction.CARTHAGE;
+    target.hp = 100000;
+    target.maxHp = 100000;
+    state.enemies.set(target.id, target);
+    let hitDamage = 0;
+
+    tickCombat(state, 0.016, {
+      ...noopCombatHooks(),
+      onHit: (_tower, _enemy, damage) => { hitDamage = damage; }
+    });
+
+    const nativeResist = 0.70;
+    const expected = towerPerAttackDamageBase(attacker) * (nativeResist + CAPITOLINE_AEGIS_DIVINE_RIDER_PCT);
+    expect(attacker.damageType).toBe(DamageType.PHYS_MELEE);
+    expect(hitDamage).toBeCloseTo(expected, 4);
+    expect(100000 - target.hp).toBeCloseTo(expected, 4);
   });
 
   it('applies enemy vulnerability item auras to enemies inside the ring', () => {

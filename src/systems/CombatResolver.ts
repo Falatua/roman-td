@@ -66,6 +66,7 @@ const enemySnapshotScratch: Enemy[] = [];
 const targetCandidateScratch: Enemy[] = [];
 const SULLA_PASSIVE_RADIUS_TILES = 5.5;
 const SULLA_FIRE_RIDER_PCT = 0.22;
+export const CAPITOLINE_AEGIS_DIVINE_RIDER_PCT = 0.35;
 export const SIEGE_FLYER_MISS_CHANCE = 0.20;
 
 export const FINAL_FIVE_APEX_WAVE = 26;
@@ -172,6 +173,10 @@ function sullaFireRiderPctForTower(
     }
   }
   return pct;
+}
+
+function divineDamageRiderPctForTower(tower: Tower): number {
+  return tower.equippedItems.includes('CAPITOLINE_AEGIS') ? CAPITOLINE_AEGIS_DIVINE_RIDER_PCT : 0;
 }
 
 // BURNING GROUND — fire-themed towers stamp a 3-second patch at the impact
@@ -1143,6 +1148,15 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             * enemyDamageMultiplier(target, DamageType.ELEMENTAL_FIRE)
         );
         damage += preResDamage * sullaFireRiderPct * fireResMod;
+      }
+      const divineRiderPct = divineDamageRiderPctForTower(t);
+      if (divineRiderPct > 0) {
+        const divineResMod = applyWaveResistRelief(
+          state,
+          resistanceModifier(target.faction, DamageType.DIVINE, armorShred)
+            * enemyDamageMultiplier(target, DamageType.DIVINE)
+        );
+        damage += preResDamage * divineRiderPct * divineResMod;
       }
       damage *= campaignRelicDamageMult(state, t, target) * bossTrophyDamageMult(state, t, target) * commanderDamageTakenMult(state, target);
       // MARK debuff: marked targets take +mag% damage from ANY tower.

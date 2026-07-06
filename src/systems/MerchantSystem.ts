@@ -105,7 +105,7 @@ const MERCATOR_LEGENDARY = [
   // 2026-05 build-defining legendaries — anti-air enabler, spear-throw
   // melee, chain lightning. All rotated through the same per-run
   // uniqueness filter so the player never sees a duplicate.
-  'AQUILA_TALONS','SPEAR_OF_MARS','JUPITERS_WRATH',
+  'AQUILA_TALONS','SPEAR_OF_MARS','JUPITERS_WRATH','CAPITOLINE_AEGIS',
   // 2026-05-19 — DAMNATIO MEMORIAE execute item joins the Mercator
   // legendary pool so the player can buy it directly between waves
   // rather than relying on a random boss drop.

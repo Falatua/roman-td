@@ -596,6 +596,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
   if (items.includes('CONSULAR_TOKEN')) { dmgMods.push({ source: 'Consular Token', multiplier: 1.15 }); rngMods.push({ source: 'Consular Token', flat: 0.75 }); }
   if (items.includes('RUSTED_HASTA')) dmgMods.push({ source: 'Rusted Hasta', multiplier: 1.10 });
   if (items.includes('SPEAR_OF_MARS')) { dmgMods.push({ source: 'Spear of Mars', multiplier: 1.60 }); rngMods.push({ source: 'Spear of Mars', flat: 7 }); }
+  if (items.includes('CAPITOLINE_AEGIS')) dmgMods.push({ source: 'Capitoline Aegis divine rider', multiplier: 1.35 });
   if (items.includes('VANGUARD_PILUM')) { dmgMods.push({ source: 'Vanguard Pilum', multiplier: 1.75 }); rngMods.push({ source: 'Vanguard Pilum', flat: 2 }); }
   if (items.includes('PERIMETER_TORCH')) {
     dmgMods.push({ source: 'Perimeter Torch', multiplier: 1.50 });

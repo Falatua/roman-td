@@ -381,6 +381,7 @@ const MANIFEST: Record<string, string> = {
   TRAP_SKY_NET: 'trap_sky_net.png',
   ITEM_STORM_JAVELIN: 'inew_storm_javelin.png',
   ITEM_JUPITERS_WRATH: 'inew_jupiters_wrath.png',
+  ITEM_CAPITOLINE_AEGIS: 'inew_capitoline_aegis.png',
   ITEM_IRON_TIP: 'inew_iron_tip.png',
   ITEM_AUXILIARY_SLING: 'inew_auxiliary_sling.png',
   ITEM_VOLLEY_QUIVER: 'inew_volley_quiver.png',
