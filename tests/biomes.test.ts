@@ -221,7 +221,7 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
   const oceanKeys = [
     'OCEAN_DEEP_A', 'OCEAN_DEEP_B', 'OCEAN_MID_A', 'OCEAN_MID_B', 'OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B',
     'OCEAN_FOAM_N', 'OCEAN_FOAM_E', 'OCEAN_FOAM_S', 'OCEAN_FOAM_W',
-    'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK'
+    'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK', 'OCEAN_SHIPWRECK'
   ];
 
   it('registers every ocean tile used by RenderEngine', () => {
@@ -233,7 +233,7 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     const sharp = require('sharp');
     const transparentOverlayKeys = oceanKeys.filter(key =>
       key.includes('FOAM') || key.includes('KELP') || key.includes('CORAL') || key.includes('FISH') ||
-      key.includes('ROCK') || key.includes('SHELLS') || key.includes('STARFISH')
+      key.includes('ROCK') || key.includes('SHIPWRECK')
     );
     for (const key of oceanKeys) {
       const file = assetFileFor(key);
@@ -242,8 +242,13 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
       expect(fs.existsSync(full), `${key} -> ${file}`).toBe(true);
       const img = sharp(full);
       const meta = await img.metadata();
-      expect(meta.width, `${key} width`).toBe(32);
-      expect(meta.height, `${key} height`).toBe(32);
+      if (key === 'OCEAN_SHIPWRECK') {
+        expect(meta.width, `${key} width`).toBe(160);
+        expect(meta.height, `${key} height`).toBe(120);
+      } else {
+        expect(meta.width, `${key} width`).toBe(32);
+        expect(meta.height, `${key} height`).toBe(32);
+      }
       if (transparentOverlayKeys.includes(key)) {
         const raw = await img.ensureAlpha().raw().toBuffer();
         let transparent = 0;

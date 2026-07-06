@@ -2863,6 +2863,16 @@ export class RenderEngine {
     this.layers.bg.addChild(shoreTrimGfx);
     this.layers.bg.addChild(waterGfx);
     this.layers.bg.addChild(oceanCurrentGfx);
+    const shipwreckTex = tex('OCEAN_SHIPWRECK');
+    if (shipwreckTex) {
+      const shipwreck = new Sprite(shipwreckTex);
+      shipwreck.x = WATER_ZONE.col * GRID.TILE + 4;
+      shipwreck.y = (WATER_ZONE.row + WATER_ZONE.height - 3.45) * GRID.TILE;
+      shipwreck.width = GRID.TILE * 4.5;
+      shipwreck.height = GRID.TILE * 3.375;
+      shipwreck.alpha = 0.96;
+      coastalDetailLayer.addChild(shipwreck);
+    }
     // Sprite-water dressing in the bottom-left reserve. Drawn above terrain
     // and below all gameplay layers, so the cove gains life without hiding towers.
     const waterDetail = [
