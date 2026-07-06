@@ -411,6 +411,8 @@ export class RenderEngine {
   // Cheap (just modulates Graphics each frame), keeps the world feeling alive (Visual §3.1, §8.1, §8.2, §8.5).
   private ambientGfx?: Graphics;
   private grassWindGfx?: Graphics;
+  private oceanAmbientGfx?: Graphics;
+  private oceanLivingSprites: { sp: Sprite; baseX: number; baseY: number; baseAlpha: number; phase: number; ampX: number; ampY: number }[] = [];
   drawAmbient(tick: number, wave: number = 0, isBossWave: boolean = false, caveBActive: boolean = false) {
     // 2026 v2 spec Ch7 — Cave B stays HIDDEN until its first enemy emerges
     // (caveBActive, set in the spawn loop). The frame it activates, the
@@ -443,10 +445,18 @@ export class RenderEngine {
       this.grassWindGfx = new Graphics();
       this.layers.bg.addChild(this.grassWindGfx);
     }
+    if (!this.grassWindGfx.parent) this.layers.bg.addChild(this.grassWindGfx);
+    if (!this.oceanAmbientGfx) {
+      this.oceanAmbientGfx = new Graphics();
+      this.layers.bg.addChild(this.oceanAmbientGfx);
+    }
+    if (!this.oceanAmbientGfx.parent) this.layers.bg.addChild(this.oceanAmbientGfx);
     const a = this.ambientGfx;
     const g = this.grassWindGfx;
+    const ocean = this.oceanAmbientGfx;
     a.clear();
     g.clear();
+    ocean.clear();
 
     // GRASS WIND TUFTS — sparse animated grass tufts drift in a sine wave (§8.1)
     // Performance: only render on a 2-tile-spaced subgrid + skip path/border/etc tiles.
@@ -461,6 +471,40 @@ export class RenderEngine {
         g.beginFill(0x4f8a3a, 0.55).drawRect(x, y, 1.5, 4).endFill();
         g.beginFill(0x6cab5a, 0.35).drawRect(x + 2, y + 1, 1.5, 3).endFill();
       }
+    }
+
+    // OCEAN LIVING MOTION — a few low-alpha wave glints and tiny detail
+    // bobs so the cove breathes without redrawing tile sprites every frame.
+    const tileRef = (this as any).__lastTileRef as TileType[][] | undefined;
+    if (tileRef) {
+      const reduced = !!(window as any).__reduceMotion;
+      const waveSpeed = reduced ? 0.22 : 0.72;
+      for (let r = WATER_ZONE.row; r < WATER_ZONE.row + WATER_ZONE.height; r++) {
+        for (let pass = 0; pass < 2; pass++) {
+          const y = r * GRID.TILE + 8 + ((r * 5 + pass * 13) % 16);
+          const phase = tick * waveSpeed + r * 0.41 + pass * 1.7;
+          for (let c = WATER_ZONE.col; c < WATER_ZONE.col + WATER_ZONE.width; c += 2) {
+            if (tileRef[r]?.[c] !== TileType.WATER) continue;
+            const neighborWater = tileRef[r]?.[c + 1] === TileType.WATER;
+            const x = c * GRID.TILE + 5 + Math.sin(phase + c * 0.52) * 2.4;
+            const len = neighborWater ? 17 : 9;
+            const pulse = 0.52 + 0.48 * Math.sin(phase * 1.35 + c * 0.8);
+            const alpha = (pass === 0 ? 0.115 : 0.075) * pulse;
+            ocean.beginFill(0xd8fff6, alpha).drawRect(Math.round(x), Math.round(y), len, 1).endFill();
+            if ((c + r + pass) % 4 === 0) {
+              ocean.beginFill(0x0a3148, 0.055 + 0.035 * pulse).drawRect(Math.round(x + 4), Math.round(y + 3), Math.max(4, len - 6), 1).endFill();
+            }
+          }
+        }
+      }
+    }
+    for (const entry of this.oceanLivingSprites) {
+      const breath = Math.sin(tick * 0.9 + entry.phase);
+      const drift = Math.sin(tick * 0.45 + entry.phase * 1.7);
+      entry.sp.x = entry.baseX + drift * entry.ampX;
+      entry.sp.y = entry.baseY + breath * entry.ampY;
+      entry.sp.alpha = entry.baseAlpha * (0.88 + 0.12 * Math.sin(tick * 0.65 + entry.phase));
+      entry.sp.rotation = Math.sin(tick * 0.35 + entry.phase) * 0.018;
     }
 
     // 2026-05-21 — BIOME TINT OVERLAY (visual overhaul phase V3).
@@ -2652,6 +2696,8 @@ export class RenderEngine {
     const shoreTrimGfx = new Graphics();
     const waterGfx = new Graphics();
     const oceanCurrentGfx = new Graphics();
+    if (!this.oceanAmbientGfx) this.oceanAmbientGfx = new Graphics();
+    this.oceanLivingSprites = [];
     const waterDeepKeys = ['OCEAN_DEEP_A', 'OCEAN_DEEP_B'];
     const waterMidKeys = ['OCEAN_MID_A', 'OCEAN_MID_B'];
     const waterShallowKeys = ['OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B'];
@@ -2873,6 +2919,8 @@ export class RenderEngine {
     this.layers.bg.addChild(shoreTrimGfx);
     this.layers.bg.addChild(waterGfx);
     this.layers.bg.addChild(oceanCurrentGfx);
+    this.oceanAmbientGfx.clear();
+    this.layers.bg.addChild(this.oceanAmbientGfx);
     const shipwreckTex = tex('OCEAN_SHIPWRECK');
     if (shipwreckTex) {
       const shipwreck = new Sprite(shipwreckTex);
@@ -2897,7 +2945,24 @@ export class RenderEngine {
       const y = d.row * GRID.TILE;
       const tile = state.tiles[d.row]?.[d.col];
       if (d.terrain === 'water' && tile !== TileType.WATER) continue;
-      addTileSprite(coastalDetailLayer, d.key, x, y, d.key === 'OCEAN_FISH' ? 0.78 : 0.95);
+      const detailTex = tex(d.key);
+      if (!detailTex) continue;
+      const sp = new Sprite(detailTex);
+      sp.x = x; sp.y = y;
+      sp.width = GRID.TILE; sp.height = GRID.TILE;
+      sp.alpha = d.key === 'OCEAN_FISH' ? 0.78 : 0.95;
+      coastalDetailLayer.addChild(sp);
+      if (d.key === 'OCEAN_FISH' || d.key === 'OCEAN_KELP' || d.key === 'OCEAN_CORAL') {
+        this.oceanLivingSprites.push({
+          sp,
+          baseX: x,
+          baseY: y,
+          baseAlpha: sp.alpha,
+          phase: (d.col * 0.73 + d.row * 1.11) % 6.28,
+          ampX: d.key === 'OCEAN_FISH' ? 1.6 : 0.6,
+          ampY: d.key === 'OCEAN_FISH' ? 1.0 : 0.45
+        });
+      }
     }
     this.layers.bg.addChild(coastalDetailLayer);
 
