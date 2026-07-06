@@ -8,7 +8,8 @@ export enum TileType {
   SPAWN,
   GATE,
   TRAP,
-  BORDER
+  BORDER,
+  WATER
 }
 
 export enum DamageType {

@@ -6393,7 +6393,7 @@ async function boot() {
       // so players who tried to drop on cave / path / waypoint tiles got
       // no visible feedback and thought the game was bugged. Pop the
       // existing red BLOCKED toast anchored to the tile they clicked.
-      showBlockedAlert(col, row, 'That tile won\'t hold a tower — cave / path / checkpoint / border tiles are off-limits. Click an empty grass tile.');
+      showBlockedAlert(col, row, 'That tile won\'t hold a tower — cave / path / checkpoint / water / border tiles are off-limits. Click an empty grass tile.');
       return;
     }
     // path validation

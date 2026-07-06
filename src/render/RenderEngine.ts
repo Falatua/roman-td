@@ -1,5 +1,5 @@
 import { Application, Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
-import { GRID, TIER_COLORS, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS } from '../constants';
+import { GRID, TIER_COLORS, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, WATER_ZONE } from '../constants';
 import { TileType, GamePhase, TowerType, DamageType } from '../types';
 import { GameStateShape, isWaveModifierActive } from '../GameState';
 import { GoreState } from '../systems/GoreSystem';
@@ -2645,6 +2645,7 @@ export class RenderEngine {
     }
     const terrainLayer = new Container();
     const decorLayer = new Container();
+    const waterGfx = new Graphics();
 
     for (let r = 0; r < GRID.ROWS; r++) {
       for (let c = 0; c < GRID.COLS; c++) {
@@ -2660,6 +2661,49 @@ export class RenderEngine {
         // Path tiles slightly bias toward the basic dirt; grass picks
         // from the biome's weight table via pickGrassTile() below.
         const h = hash(c, r);
+        if (t === TileType.WATER) {
+          const localC = c - WATER_ZONE.col;
+          const localR = r - WATER_ZONE.row;
+          const edgeDist = Math.min(localC, localR, WATER_ZONE.width - 1 - localC, WATER_ZONE.height - 1 - localR);
+          const centerDepth = Math.max(0, Math.min(1, edgeDist / 4));
+          const palette = centerDepth > 0.65
+            ? [0x0b2540, 0x0f3150, 0x123b5a]
+            : centerDepth > 0.25
+              ? [0x123e5d, 0x15506e, 0x1a5d7a]
+              : [0x236b7a, 0x2d7e86, 0x3f8b86];
+          waterGfx.beginFill(palette[h % palette.length], 1).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
+          for (let py = 0; py < 4; py++) {
+            for (let px = 0; px < 4; px++) {
+              const ph = hash(c * 4 + px, r * 4 + py, 44);
+              const shade = palette[(ph >>> 4) % palette.length];
+              waterGfx.beginFill(shade, 0.32).drawRect(x + px * 8, y + py * 8, 8, 8).endFill();
+            }
+          }
+          if ((h % 7) === 0) {
+            const yy = y + 8 + ((h >>> 6) % 15);
+            waterGfx.beginFill(0x9ce6f0, 0.42).drawRect(x + 5, yy, 16, 1).endFill();
+            waterGfx.beginFill(0xd9fff9, 0.26).drawRect(x + 9, yy + 2, 9, 1).endFill();
+          }
+          if ((h % 19) === 0) {
+            waterGfx.beginFill(0xb8fff4, 0.30).drawRect(x + 21, y + 9, 2, 2).endFill();
+            waterGfx.beginFill(0xb8fff4, 0.22).drawRect(x + 25, y + 14, 1, 1).endFill();
+          }
+          const north = state.tiles[r - 1]?.[c] !== TileType.WATER;
+          const east = state.tiles[r]?.[c + 1] !== TileType.WATER;
+          const south = state.tiles[r + 1]?.[c] !== TileType.WATER;
+          const west = state.tiles[r]?.[c - 1] !== TileType.WATER;
+          if (north) {
+            waterGfx.beginFill(0x7c6a3c, 0.92).drawRect(x, y, GRID.TILE, 3).endFill();
+            waterGfx.beginFill(0xd8c27a, 0.55).drawRect(x + 2, y + 3, GRID.TILE - 4, 1).endFill();
+          }
+          if (east) {
+            waterGfx.beginFill(0x7c6a3c, 0.92).drawRect(x + GRID.TILE - 3, y, 3, GRID.TILE).endFill();
+            waterGfx.beginFill(0xd8c27a, 0.45).drawRect(x + GRID.TILE - 4, y + 2, 1, GRID.TILE - 4).endFill();
+          }
+          if (south) waterGfx.beginFill(0x061a2c, 0.35).drawRect(x, y + GRID.TILE - 2, GRID.TILE, 2).endFill();
+          if (west) waterGfx.beginFill(0x061a2c, 0.35).drawRect(x, y, 2, GRID.TILE).endFill();
+          continue;
+        }
         let key: string;
         if (isPath) {
           // 70% basic dirt, 15% ruts, 15% footprints. Path-tileset
@@ -2763,6 +2807,38 @@ export class RenderEngine {
       }
     }
     this.layers.bg.addChild(terrainLayer);
+    // Pixel-water dressing in the bottom-left reserve. Drawn above terrain
+    // and below all gameplay layers, so it replaces grass without hiding towers.
+    const waterDetail = [
+      { col: WATER_ZONE.col + 1, row: WATER_ZONE.row + 8, kind: 'rock' },
+      { col: WATER_ZONE.col + 3, row: WATER_ZONE.row + 9, kind: 'foam' },
+      { col: WATER_ZONE.col + 7, row: WATER_ZONE.row + 2, kind: 'lilypad' },
+      { col: WATER_ZONE.col + 9, row: WATER_ZONE.row + 1, kind: 'reeds' },
+      { col: WATER_ZONE.col + 5, row: WATER_ZONE.row + 6, kind: 'depth' }
+    ];
+    for (const d of waterDetail) {
+      const x = d.col * GRID.TILE;
+      const y = d.row * GRID.TILE;
+      if (d.kind === 'rock') {
+        waterGfx.beginFill(0x26384a, 0.95).drawRect(x + 9, y + 18, 14, 7).endFill();
+        waterGfx.beginFill(0x5c7180, 0.65).drawRect(x + 11, y + 17, 8, 2).endFill();
+      } else if (d.kind === 'foam') {
+        waterGfx.beginFill(0xcffff7, 0.42).drawRect(x + 5, y + 18, 18, 1).endFill();
+        waterGfx.beginFill(0xcffff7, 0.35).drawRect(x + 12, y + 21, 13, 1).endFill();
+      } else if (d.kind === 'lilypad') {
+        waterGfx.beginFill(0x2c7d4a, 0.92).drawRect(x + 9, y + 10, 13, 7).endFill();
+        waterGfx.beginFill(0x5fbf6a, 0.72).drawRect(x + 11, y + 9, 8, 2).endFill();
+        waterGfx.beginFill(0x0f3150, 0.95).drawRect(x + 18, y + 13, 5, 2).endFill();
+      } else if (d.kind === 'reeds') {
+        waterGfx.beginFill(0x6f8a38, 0.95).drawRect(x + 21, y + 8, 2, 17).endFill();
+        waterGfx.beginFill(0x8baa42, 0.95).drawRect(x + 25, y + 12, 2, 13).endFill();
+        waterGfx.beginFill(0x4b5c22, 0.9).drawRect(x + 18, y + 15, 2, 10).endFill();
+      } else {
+        waterGfx.beginFill(0x05172a, 0.24).drawRect(x + 4, y + 4, 24, 24).endFill();
+        waterGfx.beginFill(0x2d8fad, 0.18).drawRect(x + 8, y + 9, 16, 2).endFill();
+      }
+    }
+    this.layers.bg.addChild(waterGfx);
 
     // 2026-05-21 — PROCEDURAL COBBLESTONE OVERLAY (visual overhaul
     // phase V7). The biggest "high-fidelity map" lever — draws
@@ -2960,12 +3036,7 @@ export class RenderEngine {
       { col: 33, row: 2,  key: 'MAP_CORNER_SHRINE_A4', scale: 1.4 },     // ornate column
       { col: 36, row: 3,  key: 'MAP_CORNER_SHRINE_A6', scale: 1.3 },     // SPQR banner column
       { col: 34, row: 4,  key: 'MAP_CORNER_SHRINE_B1', scale: 1.3 },     // ruined arch
-      { col: 36, row: 0,  key: 'MAP_CORNER_SHRINE_A2', scale: 1.2 },     // small column
-      // Bottom-left corner (rows 22-25, cols 0-4)
-      { col: 1,  row: 23, key: 'MAP_CORNER_SHRINE_B2', scale: 1.7 },     // SPQR banner skull pole
-      { col: 3,  row: 24, key: 'MAP_CORNER_SHRINE_A9', scale: 1.3 },     // ornate column variant
-      { col: 4,  row: 22, key: 'MAP_CORNER_SHRINE_B5', scale: 1.4 },     // ruin doorway
-      { col: 0,  row: 21, key: 'MAP_CORNER_SHRINE_A11', scale: 1.2 }     // small ruin
+      { col: 36, row: 0,  key: 'MAP_CORNER_SHRINE_A2', scale: 1.2 }      // small column
     ];
     for (const anchor of CORNERS) {
       const cTex = tex(anchor.key);

@@ -1,9 +1,10 @@
 // Tests for grid + pathfinding behavior.
 import { describe, it, expect } from 'vitest';
 import { createGameState } from '../src/GameState';
-import { initializeGrid, isBuildable, setTile, tileAt } from '../src/systems/GridManager';
+import { canBuildWaterTowerAt, initializeGrid, isBuildable, setTile, tileAt } from '../src/systems/GridManager';
 import { buildGroundPath, canPlaceStone } from '../src/systems/PathFinder';
 import { TileType } from '../src/types';
+import { WATER_ZONE } from '../src/constants';
 
 describe('Grid initialization', () => {
   it('creates a grid with border tiles around the perimeter', () => {
@@ -68,6 +69,29 @@ describe('Grid initialization', () => {
     expect(isBuildable(s, 3, 13)).toBe(false); // Cave B spawn anchor.
     expect(tileAt(s, 3, 13)).toBe(TileType.SPAWN);
     expect(isBuildable(s, 4, 13)).toBe(true);
+  });
+
+  it('reserves the bottom-left 10x10 water zone for future water towers only', () => {
+    const s = createGameState();
+    initializeGrid(s);
+    let waterTiles = 0;
+    for (let r = WATER_ZONE.row; r < WATER_ZONE.row + WATER_ZONE.height; r++) {
+      for (let c = WATER_ZONE.col; c < WATER_ZONE.col + WATER_ZONE.width; c++) {
+        expect(tileAt(s, c, r), `water tile ${c},${r}`).toBe(TileType.WATER);
+        expect(isBuildable(s, c, r), `normal build blocked on ${c},${r}`).toBe(false);
+        expect(canBuildWaterTowerAt(s, c, r), `future water tower hook allows ${c},${r}`).toBe(true);
+        waterTiles++;
+      }
+    }
+    expect(waterTiles).toBe(100);
+    expect(canBuildWaterTowerAt(s, WATER_ZONE.col + WATER_ZONE.width, WATER_ZONE.row)).toBe(false);
+  });
+
+  it('does not let generic tile writes erase water reserves', () => {
+    const s = createGameState();
+    initializeGrid(s);
+    setTile(s, WATER_ZONE.col + 2, WATER_ZONE.row + 2, TileType.TOWER);
+    expect(tileAt(s, WATER_ZONE.col + 2, WATER_ZONE.row + 2)).toBe(TileType.WATER);
   });
 });
 

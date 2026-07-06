@@ -11,6 +11,16 @@ export const GRID = {
   CANVAS_H: 26 * 32  // 832
 } as const;
 
+// Bottom-left ocean/pond reserve. This is a true map tile zone, not only
+// paint: normal towers, traps, ramparts, and event props treat it as blocked.
+// Future water towers can use this rectangle as their placement surface.
+export const WATER_ZONE = {
+  col: 1,
+  row: GRID.ROWS - 11,
+  width: 10,
+  height: 10
+} as const;
+
 // 2026-05-17 — WORLD ZOOM. The outer 1-tile BORDER ring (trees/boulders)
 // is no longer drawn; we use that freed real estate to zoom the play area
 // in. Pixi stage is scaled + center-offset at init; mouse coords inverse-

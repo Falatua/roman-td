@@ -1,4 +1,4 @@
-import { GRID, COIN_FOOTPRINT_TILES } from '../constants';
+import { GRID, COIN_FOOTPRINT_TILES, WATER_ZONE } from '../constants';
 import { TileType } from '../types';
 import { GameStateShape } from '../GameState';
 import waypointsData from '../data/waypoints.json';
@@ -12,6 +12,14 @@ export function initializeGrid(state: GameStateShape) {
   for (let r = 0; r < GRID.ROWS; r++) {
     state.tiles[r][0] = TileType.BORDER;
     state.tiles[r][GRID.COLS - 1] = TileType.BORDER;
+  }
+  // Bottom-left water reserve: a 10x10 future-water-tower zone that
+  // visually replaces the old grass/decor and blocks every normal placement.
+  for (let r = WATER_ZONE.row; r < WATER_ZONE.row + WATER_ZONE.height; r++) {
+    for (let c = WATER_ZONE.col; c < WATER_ZONE.col + WATER_ZONE.width; c++) {
+      if (r <= 0 || r >= GRID.ROWS - 1 || c <= 0 || c >= GRID.COLS - 1) continue;
+      state.tiles[r][c] = TileType.WATER;
+    }
   }
   // Spawn marker from map data. Cave art can be larger, but only this tile is reserved.
   state.tiles[waypointsData.spawn.row][waypointsData.spawn.col] = TileType.SPAWN;
@@ -37,6 +45,17 @@ export function initializeGrid(state: GameStateShape) {
 export function tileAt(state: GameStateShape, col: number, row: number): TileType {
   if (col < 0 || col >= GRID.COLS || row < 0 || row >= GRID.ROWS) return TileType.BORDER;
   return state.tiles[row][col] as TileType;
+}
+
+export function isWaterZoneTile(col: number, row: number): boolean {
+  return col >= WATER_ZONE.col
+    && col < WATER_ZONE.col + WATER_ZONE.width
+    && row >= WATER_ZONE.row
+    && row < WATER_ZONE.row + WATER_ZONE.height;
+}
+
+export function canBuildWaterTowerAt(state: GameStateShape, col: number, row: number): boolean {
+  return tileAt(state, col, row) === TileType.WATER && isWaterZoneTile(col, row);
 }
 
 // 2026-05-22 V20 — Cave + gate are rendered at 128×128 with their
@@ -78,12 +97,12 @@ export function isBuildable(state: GameStateShape, col: number, row: number): bo
 
 export function setTile(state: GameStateShape, col: number, row: number, t: TileType) {
   // DEFENSE-IN-DEPTH: never let placement / combine / restoration code
-  // overwrite a SPAWN, GATE, or WAYPOINT tile. Those tiles are the
-  // immutable anchors of the path. Caller code already gates on
+  // overwrite a SPAWN, GATE, WAYPOINT, or WATER tile. Those tiles are
+  // immutable map anchors. Caller code already gates on
   // `tile === EMPTY`, but if something slips through, this is the
   // backstop that prevents enemies from being stranded.
   const cur = state.tiles[row]?.[col];
-  if (cur === TileType.SPAWN || cur === TileType.GATE || cur === TileType.WAYPOINT) {
+  if (cur === TileType.SPAWN || cur === TileType.GATE || cur === TileType.WAYPOINT || cur === TileType.WATER) {
     return;     // silently refuse — preserves the anchor tile.
   }
   state.tiles[row][col] = t;
