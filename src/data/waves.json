@@ -207,7 +207,7 @@
     "spawns": [
       {
         "type": "SEA_GIANT",
-        "count": 1,
+        "count": 2,
         "ocean": true
       },
       {
@@ -808,7 +808,7 @@
       },
       {
         "type": "SEA_GIANT_WARBRINGER",
-        "count": 4,
+        "count": 6,
         "ocean": true
       },
       {
@@ -912,7 +912,7 @@
       },
       {
         "type": "NETHER_AMPHIBIOUS_GIANT",
-        "count": 2,
+        "count": 4,
         "ocean": true
       },
       {
