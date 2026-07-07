@@ -300,8 +300,6 @@ export async function submitScore(
   // when convenient; this fallback bridges the gap until then.
   let payload: any = { ...row };
   let droppedColumns: string[] = [];
-  const droppedColumnWarning = () =>
-    `Saved — but the live Supabase 'scores' table is missing column(s) ${droppedColumns.join(', ')}, so some leaderboard details were not recorded. Run the latest ALTER TABLE statements in supabase/schema.sql to enable the full row.`;
   const body = () => JSON.stringify(payload);
   const MAX_ATTEMPTS = 5;
   const TIMEOUT_MS = 10_000;
@@ -320,9 +318,7 @@ export async function submitScore(
       if (r.ok) {
         return {
           ok: true, attempts: attempt, url, endpoint: kind, status: r.status,
-          errorReason: droppedColumns.length > 0
-            ? droppedColumnWarning()
-            : undefined
+          errorReason: undefined
         };
       }
       lastStatus = r.status;
@@ -349,9 +345,7 @@ export async function submitScore(
         console.warn(`[leaderboard] INSERT attempt ${attempt}/${MAX_ATTEMPTS} → ${r.status} duplicate-key — treating as success (row already in table).`);
         return {
           ok: true, attempts: attempt, url, endpoint: kind, status: r.status,
-          errorReason: droppedColumns.length > 0
-            ? droppedColumnWarning()
-            : 'Row already recorded — duplicate-submit detected and absorbed by the server.'
+          errorReason: 'Row already recorded — duplicate-submit detected and absorbed by the server.'
         };
       }
       // PGRST204 = "Could not find the 'X' column of 'Y' in the schema cache."

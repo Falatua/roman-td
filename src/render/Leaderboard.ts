@@ -641,19 +641,9 @@ export function showLeaderboard(
   const submitStatus = currentEntry ? (currentEntry as any).__submitStatus : null;
   const submitDetail: SubmitResult | null = currentEntry ? ((currentEntry as any).__submitDetail ?? null) : null;
   if (submitStatus === 'success') {
-    // 2026-05-20 — Success-with-warning case. submitScore now auto-
-    // strips schema-missing columns (PGRST204 fallback) so the run
-    // saves anyway, just without the dropped field (typically
-    // hero_id). The errorReason carries the warning text in this
-    // case — surface it under the green banner so the maintainer
-    // knows to run the migration when convenient.
-    const warning = submitDetail?.errorReason ?? '';
-    const warningRow = warning
-      ? `<div style="background:#2a1f08;border:1px dashed #d4af37;color:#cdb98a;font-size:10px;letter-spacing:0.5px;padding:6px 12px;margin-top:4px;text-align:left;line-height:1.45"><b style="color:#ffd34d">⚠ NOTE:</b> ${warning}</div>`
-      : '';
     submitBannerHtml = `<div style="background:linear-gradient(180deg,#0a2a0a,#061806);border:2px solid #66ff88;padding:6px 12px;margin:4px 0;text-align:center;color:#88ff88;font-family:'Courier New',monospace;font-size:12px;letter-spacing:2px;font-weight:bold;box-shadow:0 0 12px rgba(102,255,136,0.35)">
       ✓ SCORE SUBMITTED TO THE EMPIRE
-    </div>${warningRow}`;
+    </div>`;
   } else if (submitStatus === 'failed') {
     // 2026-05-20 v4 — Real diagnostics in the failure banner. Surfaces
     // the actual HTTP status, the endpoint kind, and the URL hit so
