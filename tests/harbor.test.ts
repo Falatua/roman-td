@@ -105,6 +105,25 @@ describe('Harbor naval tower system', () => {
     expect(boosted.range).toBeGreaterThanOrEqual(plain.range + 1.75);
   });
 
+  it('keeps new Harbor towers inside the intended balance band', () => {
+    const charybdis = createTower(TowerType.CHARYBDIS_VORTEX, 4, 2, 20, 12);
+    const nereid = createTower(TowerType.NEREID_ORACLE, 4, 3, 20, 12);
+    const oracle = createTower(TowerType.ORACLE_LIGHTHOUSE, 5, 4, 20, 12);
+    oracle.placedOnWater = true;
+    const leviathan = createTower(TowerType.NEPTUNES_LEVIATHAN, 5, 5, 20, 12);
+    leviathan.placedOnWater = true;
+    const transformer = createTower(TowerType.ROMAN_TRANSFORMER, 5, 6, 20, 12);
+    const fleet = createTower(TowerType.PRAETORIAN_FLEET, 5, 7, 20, 12);
+    fleet.placedOnWater = true;
+
+    expect(towerEffectiveStats(charybdis).dps).toBeGreaterThan(155);
+    expect(towerEffectiveStats(nereid).dps).toBeGreaterThan(145);
+    expect(towerEffectiveStats(oracle).dps).toBeGreaterThan(470);
+    expect(towerEffectiveStats(oracle).dps).toBeLessThan(towerEffectiveStats(fleet).dps);
+    expect(towerEffectiveStats(leviathan).dps).toBeGreaterThan(3000);
+    expect(towerEffectiveStats(leviathan).dps).toBeLessThan(towerEffectiveStats(transformer).dps);
+  });
+
   it('Tidecaller commanders protect and heal ocean-spawned allies until killed', () => {
     const s: any = readyState();
     s.wave = 27;
