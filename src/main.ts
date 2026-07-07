@@ -4216,21 +4216,23 @@ async function boot() {
   // Typewriter-effect each line in, hold ~2.4s, then move on. The list
   // loops until assets finish AND the player clicks the coin slot.
   const LOADING_COPY = [
-    'LOADING YOUR INEVITABLE DEFEAT...',
+    'MUSTERING LEGIONS FOR THE 30-WAVE CAMPAIGN...',
     'WARNING: THIS GAME HAS HUMBLED GENERALS',
-    'ROME WAS NOT BUILT IN A DAY. YOUR DEFENSE WILL FALL FASTER.',
-    'PREPARING 20 WAVES OF PAIN',
+    'ROME WAS NOT BUILT IN A DAY. YOUR MAZE WILL BE JUDGED FASTER.',
+    'CHARTING SHIPWRECK TIDES AND CAVE ROADS',
     'SHARPENING ENEMY SWORDS... PLEASE WAIT',
-    'NO REFUNDS. NO MERCY. NO EASY MODE.',
-    'CALCULATING HOW BADLY YOU WILL LOSE',
-    'THE LEGION IS COMING. ARE YOU READY? (HINT: YOU ARE NOT)',
-    'LOADING COMPLEXITY YOU DID NOT ASK FOR',
-    'STRATEGY REQUIRED. LUCK WILL NOT SAVE YOU.',
+    'NO REFUNDS. NO MERCY. NO UNGUARDED CHECKPOINTS.',
+    'CALCULATING SEA GIANT IMPACT ANGLES',
+    'THE LEGION IS COMING. THE TIDE IS TOO.',
+    'LOADING COMBO RECIPES YOU WILL SWEAR YOU REMEMBERED',
+    'STRATEGY REQUIRED. A LUCKY PROSPECT WILL NOT SAVE YOU.',
     'BRIBING THE PATHFINDER... PLEASE WAIT',
     'TEACHING THE BARBARIANS TO READ YOUR MAZE',
-    'IMPORTING 27 RECIPES YOU WILL FORGET',
+    'IMPORTING RECIPES, RELICS, TROPHIES, AND BAD IDEAS',
     'THE CODEX IS LONGER THAN YOUR PATIENCE',
-    'POLISHING THE GATE YOU WILL FAIL TO HOLD'
+    'POLISHING THE GATE. ROME HAS OPINIONS.',
+    'REMINDING MERCATOR THAT HEROES COST REAL GOLD',
+    'LISTENING FOR TROUBLE UNDER THE SHIPWRECK'
   ];
   const copyEl  = document.getElementById('loading-copy') as HTMLElement | null;
   const barEl   = document.getElementById('loading-bar') as HTMLElement | null;
@@ -4301,10 +4303,10 @@ async function boot() {
   // taunt — a curated arc from polite-explanation to mock-glory so
   // the cabinet feels alive over the shortened sequence.
   const JAM_TAUNTS = [
-    'The coin slot is JAMMED. Whack it, soldier.',
-    'The Senate has not fixed this cabinet since the Punic Wars. Keep hitting.',
-    'Smack it like you mean it, citizen.',
-    'One last whack. The coin can smell glory. So can you.'
+    'The war chest is stuck. Persuade it, soldier.',
+    'The Senate approved the budget, then lost the key. Keep hitting.',
+    'Strike it like a siege engine, citizen.',
+    'One last hit. Rome can smell glory. So can you.'
   ];
   // 2026-05-22 UX2 — Mobile / touch devices get a single-tap commit
   // instead of the 5-tap "jammed slot" arcade mini-game. On a phone
