@@ -221,6 +221,32 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(oceanWarbringers.every(item => item.ocean && !item.caveB)).toBe(true);
   });
 
+  it('plays the ocean emergence cue only once per ocean wave', () => {
+    const s = bootstrapState();
+    let cueCount = 0;
+    const prevRenderer = (globalThis as any).__renderer;
+    const prevOceanCue = (globalThis as any).__oceanEmergenceSfx;
+    (globalThis as any).__renderer = { triggerSpawnPuff: () => {}, triggerImpactRing: () => {}, triggerShake: () => {} };
+    (globalThis as any).__oceanEmergenceSfx = () => { cueCount += 1; };
+    try {
+      s.wave = 2;
+      startWave(s);
+      tickSpawns(s, 0.01);
+      tickSpawns(s, 6);
+      expect(cueCount).toBe(1);
+
+      s.enemies.clear();
+      s.phase = GamePhase.BUILD_PHASE;
+      s.wave = 11;
+      startWave(s);
+      tickSpawns(s, 0.01);
+      expect(cueCount).toBe(2);
+    } finally {
+      (globalThis as any).__renderer = prevRenderer;
+      (globalThis as any).__oceanEmergenceSfx = prevOceanCue;
+    }
+  });
+
   it('turns W26-W30 into the final apex-tower gauntlet', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     const expected = new Map<number, { hp: number; dr: number; aa: number; dot: number; regen: number }>([

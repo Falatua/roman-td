@@ -4564,6 +4564,7 @@ async function boot() {
   // Renderer
   const renderer = new RenderEngine();
   (window as any).__renderer = renderer;
+  (globalThis as any).__oceanEmergenceSfx = () => SFX.oceanEmerge();
   // 2026-05-19 — Expose state on globalThis.__game so the
   // TowerSystem.extraRange computation (and other globalState
   // helpers) can read the live hero/tower set. Set BEFORE first

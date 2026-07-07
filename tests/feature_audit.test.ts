@@ -505,6 +505,20 @@ describe('Sample SFX wiring', () => {
     expect(audio.includes(`testYourMight:  () => playSample(sfx('${cue}')`), 'SFX.testYourMight should play the MP3').toBe(true);
     expect(modal.includes('SFX.testYourMight();'), 'offer modal should fire the cue when it appears').toBe(true);
   });
+
+  it('ocean enemy emergence has its MP3 cue, preload entry, and wave-start hook', () => {
+    const fs = require('fs');
+    const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');
+    const main = fs.readFileSync('src/main.ts', 'utf8');
+    const waveManager = fs.readFileSync('src/systems/WaveManager.ts', 'utf8');
+    const cue = 'assets/sfx/ocean_emerge.mp3';
+
+    expect(fs.existsSync(`public/${cue}`), 'missing ocean emergence MP3 asset').toBe(true);
+    expect(audio.includes(`'${cue}'`), 'ocean emergence MP3 should be preloaded').toBe(true);
+    expect(audio.includes(`oceanEmerge:    () => playSample(sfx('${cue}')`), 'SFX.oceanEmerge should play the MP3').toBe(true);
+    expect(main.includes('__oceanEmergenceSfx'), 'main should expose the ocean emergence audio hook').toBe(true);
+    expect(waveManager.includes('__oceanEmergenceSfxWave'), 'WaveManager should guard the cue to once per wave').toBe(true);
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────
