@@ -313,6 +313,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.SKY_STANDARD_COMMANDER]:     { melee: 0.7, ranged: 0.55, slow: 0.35, siege: 1.2, burn: 0.8, poison: 0.65, bleed: 0.6, divine: 1.2 },
   [EnemyType.SKY_PATHFINDER_COMMANDER]:   { ranged: 0.7, slow: 0.3, siege: 0, burn: 0.85, poison: 0.75, bleed: 0.75 },
   [EnemyType.SKY_ANUBIS_COMMANDER]:       { ranged: 0.55, slow: 0.35, siege: 1.15, burn: 0.75, poison: 0, bleed: 0.55, divine: 1.25 },
+  [EnemyType.TIDECALLER_COMMANDER]:        { melee: 0.55, ranged: 0.50, siege: 1.20, fire: 0, divine: 1.30, slow: 0.30, burn: 0, poison: 0.45, bleed: 0.45 },
   // 2026-06-26 variety roster.
   // Siege Wagon: heavily plated transport — shrugs melee/ranged, weak to siege.
   [EnemyType.SIEGE_WAGON]:      { melee: 0.65, ranged: 0.6, slow: 0.5, burn: 0.55, poison: 0.35, bleed: 0.25, siege: 1.75 },

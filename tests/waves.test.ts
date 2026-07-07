@@ -181,8 +181,11 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     expect(byWave.get(3).spawns).toContainEqual({ type: 'OCEAN_FISHLING', count: 6, ocean: true });
     expect(byWave.get(12).spawns).toContainEqual({ type: 'SEA_GIANT', count: 2, ocean: true });
+    expect(byWave.get(12).spawns).toContainEqual({ type: 'TIDECALLER_COMMANDER', count: 1, ocean: true });
     expect(byWave.get(27).spawns).toContainEqual({ type: 'SEA_GIANT_WARBRINGER', count: 6, ocean: true });
+    expect(byWave.get(27).spawns).toContainEqual({ type: 'TIDECALLER_COMMANDER', count: 2, ocean: true });
     expect(byWave.get(29).spawns).toContainEqual({ type: 'NETHER_AMPHIBIOUS_GIANT', count: 4, ocean: true });
+    expect(byWave.get(29).spawns).toContainEqual({ type: 'TIDECALLER_COMMANDER', count: 2, ocean: true });
   });
 
   it('routes ocean spawns from the shipwreck to the post-checkpoint-2 ground path', () => {
@@ -219,6 +222,9 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     const oceanWarbringers = s.spawnQueue.filter(item => item.type === 'SEA_GIANT_WARBRINGER');
     expect(oceanWarbringers).toHaveLength(6);
     expect(oceanWarbringers.every(item => item.ocean && !item.caveB)).toBe(true);
+    const tidecallers = s.spawnQueue.filter(item => item.type === 'TIDECALLER_COMMANDER');
+    expect(tidecallers).toHaveLength(2);
+    expect(tidecallers.every(item => item.ocean && !item.caveB)).toBe(true);
   });
 
   it('plays the ocean emergence cue only once per ocean wave', () => {
@@ -348,6 +354,26 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(children.every((e: any) => !e.isFlyer)).toBe(true);
     expect(new Set(children.map((e: any) => e.type))).toEqual(new Set(burst.types));
     expect(children.every((e: any) => Math.abs(e.pathIndex - expectedGroundIndex) <= 1)).toBe(true);
+  });
+
+  it('lets Sea Giants burst into brine minions that keep ocean-spawn identity', () => {
+    const state: any = bootstrapState();
+    state.wave = 12;
+    state.phase = GamePhase.WAVE_PHASE;
+    const giant = spawnEnemy(state, EnemyType.SEA_GIANT, 1);
+    giant.__oceanSpawn = true;
+    giant.pathIndex = 12;
+    giant.pathProgress = 0.4;
+    giant.hp = 0;
+
+    tickEnemies(state, 0.016, () => {}, () => {});
+
+    const burst = (enemiesData as any).SEA_GIANT.deathBurst;
+    const children = [...state.enemies.values()].filter((e: any) => e.__reanimated);
+    expect(children).toHaveLength(burst.count);
+    expect(children.every((e: any) => e.type === EnemyType.OCEAN_FISHLING)).toBe(true);
+    expect(children.every((e: any) => e.__oceanSpawn)).toBe(true);
+    expect(children.every((e: any) => Math.abs(e.pathIndex - giant.pathIndex) <= 1)).toBe(true);
   });
 });
 

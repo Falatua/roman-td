@@ -82,6 +82,7 @@ const ARCHETYPE: Record<string, Enemy['archetype']> = {
   SKY_STANDARD_COMMANDER: 'ELITE',
   SKY_PATHFINDER_COMMANDER: 'RUNNER',
   SKY_ANUBIS_COMMANDER: 'ELITE',
+  TIDECALLER_COMMANDER: 'ELITE',
   SEA_GIANT: 'BULKY',
   SEA_GIANT_WARBRINGER: 'BULKY',
   NETHER_AMPHIBIOUS_GIANT: 'RESISTANT',
@@ -433,11 +434,14 @@ export function triggerEnemyDeathBurst(state: GameStateShape, e: Enemy): number 
     child.prevX = child.x;
     child.prevY = child.y;
     child.__reanimated = true;
+    if ((deathBurst as any).oceanSpawn || (e as any).__oceanSpawn) (child as any).__oceanSpawn = true;
     child.risingUntil = state.tick + 0.2 + Math.min(0.45, i * 0.015);
   }
-  state.hint = isAirDrop
-    ? `SKY BARGE DOWN - ${bCount} melee passengers crash onto the road!`
-    : `THE SIEGE WAGON SHATTERS - ${bCount} skirmishers pour out!`;
+  state.hint = typeof deathBurst.message === 'string'
+    ? deathBurst.message.replace('{count}', String(bCount))
+    : isAirDrop
+      ? `SKY BARGE DOWN - ${bCount} melee passengers crash onto the road!`
+      : `THE SIEGE WAGON SHATTERS - ${bCount} skirmishers pour out!`;
   return bCount;
 }
 

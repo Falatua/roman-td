@@ -537,5 +537,26 @@
     "buy": 150,
     "sell": 48,
     "effect": "RANGED ONLY: every shot detonates in a 1.6-tile blast, dealing SPLASH damage to all enemies caught in it."
+  },
+  "BRINEHOOK_ROPE": {
+    "name": "Brinehook Rope",
+    "rarity": "RARE",
+    "buy": 34,
+    "sell": 12,
+    "effect": "Any tower: +30% damage vs ocean-spawn enemies and commanders."
+  },
+  "AEGEAN_PEARL": {
+    "name": "Aegean Pearl",
+    "rarity": "EPIC",
+    "buy": 70,
+    "sell": 23,
+    "effect": "Harbor towers: +35% damage and +0.75 range. Non-Harbor towers: +45% damage vs ocean-spawn enemies."
+  },
+  "NEPTUNES_TRIDENT": {
+    "name": "Neptune's Trident",
+    "rarity": "LEGENDARY",
+    "buy": 170,
+    "sell": 55,
+    "effect": "Harbor towers: +60% damage, +20% attack speed, +1 range. Other towers: +55% damage vs ocean-spawn enemies."
   }
 }

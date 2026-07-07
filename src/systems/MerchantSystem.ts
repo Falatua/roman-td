@@ -81,7 +81,9 @@ const MERCATOR_EXCLUSIVE_RARE = [
   // 2026-05 v9: heavy poison option in the RARE bucket. Higher rarity =
   // higher chance of seeing it across the run since the Mercator
   // guarantees an exclusive-rare per visit.
-  'WITCHS_VENOM'
+  'WITCHS_VENOM',
+  // Harbor tech: gives non-Harbor builds a way to answer ocean waves.
+  'BRINEHOOK_ROPE'
 ];
 // 2026-05-18 — NEW EPIC TIER. Six items live here: 3 demoted legendary
 // melee items (Berserker's Muzzle, Celtic Longsword, Necrotic Longsword)
@@ -91,7 +93,8 @@ const MERCATOR_EPIC = [
   'BERSERKERS_MUZZLE','CELTIC_LONGSWORD','NECROTIC_LONGSWORD',
   'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE',
   // 2026 v2 — anti-air EPIC options.
-  'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST'
+  'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST',
+  'AEGEAN_PEARL'
 ];
 // Premium Mercator stock — Legendary trophies that the Gate Shop never carries.
 // These cost 3-5× a normal item but offer build-defining effects.
@@ -111,7 +114,10 @@ const MERCATOR_LEGENDARY = [
   // rather than relying on a random boss drop.
   'DAMNATIO_MEMORIAE',
   // 2026 v2 — legendary AoE items: full cleave (melee) + splash (ranged).
-  'EXECUTIONERS_FALX', 'CONCUSSIVE_WARHEAD'
+  'EXECUTIONERS_FALX', 'CONCUSSIVE_WARHEAD',
+  // Harbor apex item: strongest on naval/Tideforged towers, still useful
+  // for land towers against shipwreck-origin threats.
+  'NEPTUNES_TRIDENT'
   // CELTIC_LONGSWORD + NECROTIC_LONGSWORD removed from this list — they
   // are now EPIC (see MERCATOR_EPIC).
 ];

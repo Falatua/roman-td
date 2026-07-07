@@ -33,6 +33,9 @@ describe('Item families', () => {
     expect(itemFamily('GOLD_PURSE')).toBe('ECONOMY');
     expect(itemFamily('GALLIC_SHIELD_BOSS')).toBe('DEFENSE');
     expect(itemFamily('CAPITOLINE_AEGIS')).toBe('SPECIAL');
+    expect(itemFamily('BRINEHOOK_ROPE')).toBe('SPECIAL');
+    expect(itemFamily('AEGEAN_PEARL')).toBe('SPECIAL');
+    expect(itemFamily('NEPTUNES_TRIDENT')).toBe('SPECIAL');
   });
 
   it('unknown items default to SPECIAL', () => {
@@ -367,12 +370,12 @@ describe('Merchant — Mercator stock', () => {
     expect(merc.livesPrice).toBe(83);
   });
 
-  it('can roll Capitoline Aegis in Mercator legendary stock', () => {
+  it('can roll Neptune\'s Trident in Mercator legendary stock', () => {
     const randomSpy = vi.spyOn(Math, 'random');
     try {
       randomSpy.mockReturnValue(0.999);
       const merc = buildMercatorStock();
-      expect(merc.offers.some(o => o.itemId === 'CAPITOLINE_AEGIS' && o.rarity === 'LEGENDARY')).toBe(true);
+      expect(merc.offers.some(o => o.itemId === 'NEPTUNES_TRIDENT' && o.rarity === 'LEGENDARY')).toBe(true);
     } finally {
       randomSpy.mockRestore();
     }

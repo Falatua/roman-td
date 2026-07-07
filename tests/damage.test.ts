@@ -182,6 +182,14 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(enemyDamageMultiplier(skyStandard, DamageType.SIEGE)).toBeGreaterThan(0);
   });
 
+  it('gives the Tidecaller commander a naval-counter resistance profile', () => {
+    const tidecaller = makeEnemy(EnemyType.TIDECALLER_COMMANDER, EnemyFaction.ROMAN_MYTH);
+    expect(enemyDamageMultiplier(tidecaller, DamageType.ELEMENTAL_FIRE)).toBe(0);
+    expect(statusEffectiveness(tidecaller, StatusEffectKind.BURN)).toBe(0);
+    expect(enemyDamageMultiplier(tidecaller, DamageType.SIEGE)).toBeGreaterThan(1);
+    expect(enemyDamageMultiplier(tidecaller, DamageType.DIVINE)).toBeGreaterThan(1);
+  });
+
   it('makes ocean giants immune to fire, burn, and hellfire', () => {
     const oceanTypes = [
       EnemyType.SEA_GIANT,

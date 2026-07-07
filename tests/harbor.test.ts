@@ -4,8 +4,9 @@ import { createGameState } from '../src/GameState';
 import { WATER_ZONE } from '../src/constants';
 import { initializeGrid, setTowerTile, tileAt } from '../src/systems/GridManager';
 import { buildGroundPath } from '../src/systems/PathFinder';
-import { createTower } from '../src/systems/TowerSystem';
+import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { executeCombo, scanCombos } from '../src/systems/CombinationEngine';
+import { commanderDamageTakenMult, commanderSpeedMult, isCommanderType, tickCommanderSupport } from '../src/systems/CommanderSystem';
 import {
   buildHarborDraftOffers,
   harborDraftTierForWave,
@@ -83,5 +84,50 @@ describe('Harbor naval tower system', () => {
     expect(tileAt(s, water.col, water.row)).toBe(TileType.TOWER);
     const oldLandIngredientTile = tileAt(s, 12, 7);
     expect(oldLandIngredientTile).toBe(TileType.STONE);
+  });
+
+  it('naval items give Harbor towers real stat growth', () => {
+    const base = createTower(TowerType.TRIREME_BALLISTA, 3, 2, 20, 12);
+    const plain = towerEffectiveStats(base);
+    base.equippedItems.push('AEGEAN_PEARL', 'NEPTUNES_TRIDENT');
+    const boosted = towerEffectiveStats(base);
+    expect(boosted.dps).toBeGreaterThan(plain.dps * 2.0);
+    expect(boosted.attackSpeed).toBeGreaterThan(plain.attackSpeed);
+    expect(boosted.range).toBeGreaterThanOrEqual(plain.range + 1.75);
+  });
+
+  it('Tidecaller commanders protect and heal ocean-spawned allies until killed', () => {
+    const s: any = readyState();
+    s.wave = 27;
+    const tidecaller: any = {
+      id: 'tidecaller',
+      type: EnemyType.TIDECALLER_COMMANDER,
+      hp: 100,
+      maxHp: 100,
+      x: 10 * 32,
+      y: 10 * 32,
+      isBoss: false,
+      isFlyer: false,
+      isCommander: true
+    };
+    const fishling: any = {
+      id: 'fishling',
+      type: EnemyType.OCEAN_FISHLING,
+      hp: 40,
+      maxHp: 100,
+      x: 11 * 32,
+      y: 10 * 32,
+      isBoss: false,
+      isFlyer: false,
+      __oceanSpawn: true
+    };
+    s.enemies.set(tidecaller.id, tidecaller);
+    s.enemies.set(fishling.id, fishling);
+
+    expect(isCommanderType(EnemyType.TIDECALLER_COMMANDER)).toBe(true);
+    expect(commanderDamageTakenMult(s, fishling)).toBeLessThan(1);
+    expect(commanderSpeedMult(s, fishling)).toBeGreaterThan(1);
+    tickCommanderSupport(s, 0.1);
+    expect(fishling.hp).toBeGreaterThan(40);
   });
 });

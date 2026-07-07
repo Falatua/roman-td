@@ -340,6 +340,13 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   //                localAuras pass below, no self-buff here.
   if (t.equippedItems.includes('LICTOR_FASCES')) itemDmgMult *= 1.40;
   if (t.equippedItems.includes('AUXILIARY_SLING') && (t.damageType === DamageType.PHYS_RANGED)) itemDmgMult *= 1.55;
+  const itemHarborDef: any = (towersData as any)[t.type];
+  const isHarborOrTideforged = !!(itemHarborDef?.waterOnly || itemHarborDef?.amphibious);
+  if (isHarborOrTideforged && t.equippedItems.includes('AEGEAN_PEARL')) itemDmgMult *= 1.35;
+  if (isHarborOrTideforged && t.equippedItems.includes('NEPTUNES_TRIDENT')) {
+    itemDmgMult *= 1.60;
+    itemSpeedMult *= 1.20;
+  }
   // 2026-05-19 — GATE-EXCLUSIVE COMMONS/UNCOMMONS. Five new items
   // that live only at the gate shop:
   //   • RUSTED_HASTA: +10% damage
@@ -371,6 +378,8 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     // 2026-05-19 — Gate-exclusive range items.
     (t.equippedItems.includes('BRONZE_GREAVES') ? 0.5 : 0) +
     (t.equippedItems.includes('CONSULAR_TOKEN') ? 0.75 : 0) +
+    (isHarborOrTideforged && t.equippedItems.includes('AEGEAN_PEARL') ? 0.75 : 0) +
+    (isHarborOrTideforged && t.equippedItems.includes('NEPTUNES_TRIDENT') ? 1.0 : 0) +
     // 2026 v2 — anti-air items add reach to catch fliers.
     (t.equippedItems.includes('FALCONERS_WATCHPOST') ? 3 : 0) +
     (t.equippedItems.includes('STORM_AQUILA_TALONS') ? 2 : 0) +

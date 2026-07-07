@@ -9,7 +9,8 @@ export type CommanderType =
   | 'SIEGE_CAPTAIN_COMMANDER'
   | 'SKY_STANDARD_COMMANDER'
   | 'SKY_PATHFINDER_COMMANDER'
-  | 'SKY_ANUBIS_COMMANDER';
+  | 'SKY_ANUBIS_COMMANDER'
+  | 'TIDECALLER_COMMANDER';
 
 export const COMMANDER_TYPES = new Set<string>([
   'STANDARD_BEARER_COMMANDER',
@@ -18,7 +19,8 @@ export const COMMANDER_TYPES = new Set<string>([
   'SIEGE_CAPTAIN_COMMANDER',
   'SKY_STANDARD_COMMANDER',
   'SKY_PATHFINDER_COMMANDER',
-  'SKY_ANUBIS_COMMANDER'
+  'SKY_ANUBIS_COMMANDER',
+  'TIDECALLER_COMMANDER'
 ]);
 
 const CAMPAIGN_COMMANDERS: Record<number, CommanderType> = {
@@ -102,6 +104,12 @@ export function commanderDamageTakenMult(state: GameStateShape, target: any): nu
       mult = Math.min(mult, target.isFlyer ? 0.82 : 0.92);
     }
   }
+  for (const commander of activeCommanders(state, 'TIDECALLER_COMMANDER')) {
+    if (!(target as any).__oceanSpawn) continue;
+    if (Math.hypot(commander.x - target.x, commander.y - target.y) <= 5 * GRID.TILE) {
+      mult = Math.min(mult, (state.wave ?? 1) >= 25 ? 0.80 : 0.88);
+    }
+  }
   return mult;
 }
 
@@ -113,6 +121,9 @@ export function commanderSpeedMult(state: GameStateShape, enemy: any): number {
   }
   if (enemy.isFlyer && activeCommanders(state, 'SKY_PATHFINDER_COMMANDER').length > 0) {
     mult *= (state.wave ?? 1) >= 21 ? 1.13 : 1.08;
+  }
+  if ((enemy as any).__oceanSpawn && activeCommanders(state, 'TIDECALLER_COMMANDER').length > 0) {
+    mult *= (state.wave ?? 1) >= 25 ? 1.14 : 1.09;
   }
   return mult;
 }
@@ -141,6 +152,20 @@ export function tickCommanderSupport(state: GameStateShape, dt: number): void {
       const healPct = sky ? ((state.wave ?? 1) >= 21 ? 0.07 : 0.045) : ((state.wave ?? 1) >= 21 ? 0.08 : 0.06);
       e.hp = Math.min(e.maxHp, e.hp + e.maxHp * healPct);
       (e as any).__commanderHealedUntil = state.tick + 0.35;
+    }
+  }
+  for (const commander of activeCommanders(state, 'TIDECALLER_COMMANDER')) {
+    const next = (commander as any).__tidePulseAt ?? 0;
+    if (state.tick < next) continue;
+    (commander as any).__tidePulseAt = state.tick + 3.25;
+    for (const e of state.enemies.values()) {
+      if (e.hp <= 0 || e.isBoss || isCommanderType(e.type as any)) continue;
+      if (!(e as any).__oceanSpawn) continue;
+      if (Math.hypot(e.x - commander.x, e.y - commander.y) > 5 * GRID.TILE) continue;
+      const healPct = (state.wave ?? 1) >= 25 ? 0.075 : 0.055;
+      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * healPct);
+      (e as any).__commanderHealedUntil = state.tick + 0.35;
+      (e as any).__tidecalledUntil = state.tick + 0.55;
     }
   }
 }

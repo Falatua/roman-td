@@ -211,6 +211,11 @@
         "ocean": true
       },
       {
+        "type": "TIDECALLER_COMMANDER",
+        "count": 1,
+        "ocean": true
+      },
+      {
         "type": "SPECTRAL_SCOUT",
         "count": 39
       }
@@ -812,6 +817,11 @@
         "ocean": true
       },
       {
+        "type": "TIDECALLER_COMMANDER",
+        "count": 2,
+        "ocean": true
+      },
+      {
         "type": "CYCLOPS",
         "count": 5
       },
@@ -913,6 +923,11 @@
       {
         "type": "NETHER_AMPHIBIOUS_GIANT",
         "count": 4,
+        "ocean": true
+      },
+      {
+        "type": "TIDECALLER_COMMANDER",
+        "count": 2,
         "ocean": true
       },
       {

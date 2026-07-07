@@ -434,6 +434,23 @@ function sigilOfSolMult(t: Tower, target: Enemy): number {
   return DEMON_TYPES.has(target.type as string) ? 2.50 : 1;
 }
 
+const OCEAN_THREAT_TYPES = new Set<string>([
+  'OCEAN_FISHLING',
+  'SEA_GIANT',
+  'SEA_GIANT_WARBRINGER',
+  'NETHER_AMPHIBIOUS_GIANT',
+  'TIDECALLER_COMMANDER'
+]);
+
+function isOceanThreat(target: Enemy): boolean {
+  return !!(target as any).__oceanSpawn || OCEAN_THREAT_TYPES.has(String(target.type));
+}
+
+function isHarborCarrier(t: Tower): boolean {
+  const def: any = (towersData as any)[t.type];
+  return !!(def?.waterOnly || def?.amphibious);
+}
+
 // 2026-05-23 — SECONDARY HIT BLOCK ROLL. Re-runs the dodge / W8-block /
 // shield-block / all-attack-block rolls for damage paths that bypass
 // tickCombat's primary block-roll: cleave secondaries, splash, cone
@@ -1200,6 +1217,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.equippedItems.includes('JUPITERS_SKYFIRE') && target.isFlyer) damage *= 2.40;
       if (t.equippedItems.includes('STORM_AQUILA_TALONS') && target.isFlyer) damage *= 1.90;
       if (t.equippedItems.includes('AQUILA_TALONS') && target.isFlyer) damage *= 1.90;  // 2026-06-23 LEG 1.60→1.90: beat EPIC Skypiercer (+85%)
+      const oceanThreat = isOceanThreat(target);
+      if (t.equippedItems.includes('BRINEHOOK_ROPE') && (oceanThreat || (target as any).isCommander || isCommanderType((target as any).type))) {
+        damage *= 1.30;
+      }
+      if (t.equippedItems.includes('AEGEAN_PEARL') && oceanThreat && !isHarborCarrier(t)) damage *= 1.45;
+      if (t.equippedItems.includes('NEPTUNES_TRIDENT') && oceanThreat) damage *= isHarborCarrier(t) ? 1.20 : 1.55;
       // 2026-05-17 — BEAST-BANE. Beast Hunter (T1) + Beast Slayer (T2)
       // deal +200% damage (×3 total) to animal-faction enemies: dogs
       // (Feral / Rabid / Alpha), Demon Hellhound, and both elephant

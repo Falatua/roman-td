@@ -186,6 +186,9 @@ const FAMILY: Record<string, ItemFamily> = {
   LICTOR_FASCES: 'DAMAGE',
   AUXILIARY_SLING: 'DAMAGE',
   OPTIO_WHISTLE: 'AURA',
+  BRINEHOOK_ROPE: 'SPECIAL',
+  AEGEAN_PEARL: 'SPECIAL',
+  NEPTUNES_TRIDENT: 'SPECIAL',
   // 2026-05-19 — GATE-EXCLUSIVE STARTER ITEMS. Five new items only
   // sold at the gate shop. Family assignments keep them slotted with
   // the existing exclusivity rules so they conflict appropriately
