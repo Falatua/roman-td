@@ -323,6 +323,7 @@ export function startWave(state: GameStateShape) {
   state.spawnQueue = [];
   state.spawnElapsed = 0;
   let t = 0;
+  let oceanT = 0;
   let oceanSpawnIndex = 0;
   // BOSS-SOLO RULE: early authored boss waves strip the mob horde so the
   // boss arrives as a clean teaching encounter. After W15, boss waves keep
@@ -331,6 +332,7 @@ export function startWave(state: GameStateShape) {
   const isBossWave = w.type === 'B';
   const soloBossWave = isBossWave && state.wave <= 15;
   let commanderSpawnAt = 4.5;
+  let oceanCommanderSpawnAt = 4.5;
   for (const grp of w.spawns) {
     const isBossGrp = !!(enemiesData as any)[grp.type]?.isBoss;
     if (soloBossWave && !isBossGrp) continue;       // skip mobs on early boss waves
@@ -340,14 +342,22 @@ export function startWave(state: GameStateShape) {
     for (let i = 0; i < grp.count; i++) {
       const commander = isCommanderType(grp.type);
       const ocean = !!(grp as any).ocean;
+      const spacing = isFlyerGrp ? Math.max(WAVE.SPAWN_INTERVAL, 1.0) : WAVE.SPAWN_INTERVAL;
+      const spawnAt = ocean
+        ? (commander ? Math.max(oceanT, oceanCommanderSpawnAt) : oceanT)
+        : (commander ? commanderSpawnAt : t);
       state.spawnQueue.push({
         type: grp.type,
-        spawnAt: commander ? commanderSpawnAt : t,
+        spawnAt,
         ocean,
         oceanIndex: ocean ? oceanSpawnIndex++ : undefined
       });
-      if (commander) commanderSpawnAt += 1.3;
-      t += isFlyerGrp ? Math.max(WAVE.SPAWN_INTERVAL, 1.0) : WAVE.SPAWN_INTERVAL;
+      if (commander) {
+        if (ocean) oceanCommanderSpawnAt += 1.3;
+        else commanderSpawnAt += 1.3;
+      }
+      if (ocean) oceanT += spacing;
+      else t += spacing;
     }
   }
   sortSpawnQueue(state.spawnQueue);

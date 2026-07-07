@@ -206,6 +206,26 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(byWave.get(29).spawns).toContainEqual({ type: 'TIDECALLER_COMMANDER', count: 2, ocean: true });
   });
 
+  it('starts ocean enemies alongside the normal cave wave instead of after it', () => {
+    for (const wave of [3, 12, 27, 29]) {
+      const s = bootstrapState();
+      s.wave = wave - 1;
+      startWave(s);
+      const caveSpawns = s.spawnQueue.filter(item => !item.ocean && !item.caveB);
+      const oceanSpawns = s.spawnQueue.filter(item => item.ocean);
+      expect(caveSpawns.length, `W${wave} should have cave spawns`).toBeGreaterThan(0);
+      expect(oceanSpawns.length, `W${wave} should have ocean spawns`).toBeGreaterThan(0);
+
+      const firstCave = Math.min(...caveSpawns.map(item => item.spawnAt));
+      const firstOcean = Math.min(...oceanSpawns.map(item => item.spawnAt));
+      const lastCave = Math.max(...caveSpawns.map(item => item.spawnAt));
+      expect(firstOcean, `W${wave} ocean lane should open with Cave A`).toBe(firstCave);
+      if (lastCave > firstCave) {
+        expect(firstOcean, `W${wave} ocean lane should not be appended after Cave A`).toBeLessThan(lastCave);
+      }
+    }
+  });
+
   it('routes ocean spawns from the shipwreck to the post-checkpoint-2 ground path', () => {
     const s = bootstrapState();
     s.wave = 2;
