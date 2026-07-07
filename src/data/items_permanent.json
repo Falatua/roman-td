@@ -545,12 +545,26 @@
     "sell": 12,
     "effect": "Any tower: +30% damage vs ocean-spawn enemies and commanders."
   },
+  "TIDEPIERCER_HARPOON": {
+    "name": "Tidepiercer Harpoon",
+    "rarity": "RARE",
+    "buy": 38,
+    "sell": 13,
+    "effect": "RANGED ONLY: +70% damage vs ocean-spawn enemies, sea giants, and Tidecallers."
+  },
   "AEGEAN_PEARL": {
     "name": "Aegean Pearl",
     "rarity": "EPIC",
     "buy": 70,
     "sell": 23,
     "effect": "Harbor towers: +35% damage and +0.75 range. Non-Harbor towers: +45% damage vs ocean-spawn enemies."
+  },
+  "STORMGLASS_AMPHORA": {
+    "name": "Stormglass Amphora",
+    "rarity": "EPIC",
+    "buy": 78,
+    "sell": 26,
+    "effect": "Any tower: +55% damage vs ocean-spawn enemies. Harbor and Tideforged towers also gain +20% attack speed."
   },
   "NEPTUNES_TRIDENT": {
     "name": "Neptune's Trident",

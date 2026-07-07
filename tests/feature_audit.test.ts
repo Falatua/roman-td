@@ -334,7 +334,9 @@ describe('Tower roster integrity', () => {
       'MARS_TIDAL_BASTION',
       'NEPTUNES_LEVIATHAN',
       'ITEM_BRINEHOOK_ROPE',
+      'ITEM_TIDEPIERCER_HARPOON',
       'ITEM_AEGEAN_PEARL',
+      'ITEM_STORMGLASS_AMPHORA',
       'ITEM_NEPTUNES_TRIDENT'
     ];
     for (const key of keys) {

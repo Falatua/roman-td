@@ -92,6 +92,10 @@ const UNCOMMON_ITEMS: readonly ItemId[] = ORDINARY_DROP_ITEMS_BY_RARITY.UNCOMMON
 const RARE_ITEMS: readonly ItemId[] = ORDINARY_DROP_ITEMS_BY_RARITY.RARE;
 const ORDINARY_EPIC_ITEMS: readonly ItemId[] = ORDINARY_DROP_ITEMS_BY_RARITY.EPIC;
 const EPIC_ITEM_POOL: readonly ItemId[] = ORDINARY_DROP_ITEMS_BY_RARITY.EPIC;
+const OCEAN_SPECIALIST_RARE_ITEMS: readonly ItemId[] = ['BRINEHOOK_ROPE', 'TIDEPIERCER_HARPOON']
+  .filter(id => (items as any)[id]?.rarity === 'RARE') as ItemId[];
+const OCEAN_SPECIALIST_EPIC_ITEMS: readonly ItemId[] = ['AEGEAN_PEARL', 'STORMGLASS_AMPHORA']
+  .filter(id => (items as any)[id]?.rarity === 'EPIC') as ItemId[];
 
 export const EVENT_EXCLUSIVE_ITEMS_BY_EVENT: Readonly<Record<string, readonly ItemId[]>> = Object.freeze(
   Object.keys(items).reduce((acc, id) => {
@@ -152,6 +156,32 @@ export function rollRareDrop(): { itemId: ItemId; rarity: Rarity } | null {
 
 export function premiumDropRoll(chance: number, randomValue = Math.random()): boolean {
   return randomValue < Math.max(0, Math.min(1, chance));
+}
+
+export function oceanSpecialistDropChance(enemy: Partial<Enemy> | any): number {
+  switch (String(enemy?.type ?? '')) {
+    case 'SEA_GIANT':
+      return 0.18;
+    case 'SEA_GIANT_WARBRINGER':
+    case 'NETHER_AMPHIBIOUS_GIANT':
+      return 0.38;
+    case 'TIDECALLER_COMMANDER':
+      return 0.45;
+    default:
+      return 0;
+  }
+}
+
+export function rollOceanSpecialistDrop(enemy: Partial<Enemy> | any): { itemId: ItemId; rarity: Rarity } | null {
+  const type = String(enemy?.type ?? '');
+  const epicChance =
+    type === 'SEA_GIANT_WARBRINGER' || type === 'NETHER_AMPHIBIOUS_GIANT' || type === 'TIDECALLER_COMMANDER'
+      ? 0.35
+      : 0.10;
+  if (premiumDropRoll(epicChance)) {
+    return rollFromPool('EPIC', OCEAN_SPECIALIST_EPIC_ITEMS) ?? rollFromPool('RARE', OCEAN_SPECIALIST_RARE_ITEMS);
+  }
+  return rollFromPool('RARE', OCEAN_SPECIALIST_RARE_ITEMS) ?? rollFromPool('EPIC', OCEAN_SPECIALIST_EPIC_ITEMS);
 }
 
 function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }

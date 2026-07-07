@@ -98,7 +98,7 @@ describe('Harbor naval tower system', () => {
   it('naval items give Harbor towers real stat growth', () => {
     const base = createTower(TowerType.TRIREME_BALLISTA, 3, 2, 20, 12);
     const plain = towerEffectiveStats(base);
-    base.equippedItems.push('AEGEAN_PEARL', 'NEPTUNES_TRIDENT');
+    base.equippedItems.push('AEGEAN_PEARL', 'STORMGLASS_AMPHORA', 'NEPTUNES_TRIDENT');
     const boosted = towerEffectiveStats(base);
     expect(boosted.dps).toBeGreaterThan(plain.dps * 2.0);
     expect(boosted.attackSpeed).toBeGreaterThan(plain.attackSpeed);

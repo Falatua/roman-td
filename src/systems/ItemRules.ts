@@ -66,7 +66,9 @@ const EQUIP_MODE: Record<string, EquipMode> = {
   // so they defaulted to ANY and equipped on the wrong attack class.
   // A feature_audit test now scans item text so this can't recur.
   FALX_BLADE: 'MELEE',
-  VOLLEY_QUIVER: 'RANGED'
+  VOLLEY_QUIVER: 'RANGED',
+  // Sea-giant hunter gear: a heavy thrown/fired harpoon belongs on ranged towers.
+  TIDEPIERCER_HARPOON: 'RANGED'
   // SERPENT_AMULET and WITCHS_VENOM omitted → default ANY (equip on any tower).
 };
 
@@ -187,7 +189,9 @@ const FAMILY: Record<string, ItemFamily> = {
   AUXILIARY_SLING: 'DAMAGE',
   OPTIO_WHISTLE: 'AURA',
   BRINEHOOK_ROPE: 'SPECIAL',
+  TIDEPIERCER_HARPOON: 'SPECIAL',
   AEGEAN_PEARL: 'SPECIAL',
+  STORMGLASS_AMPHORA: 'SPECIAL',
   NEPTUNES_TRIDENT: 'SPECIAL',
   // 2026-05-19 — GATE-EXCLUSIVE STARTER ITEMS. Five new items only
   // sold at the gate shop. Family assignments keep them slotted with
@@ -205,13 +209,29 @@ export function itemFamily(itemId: ItemId): ItemFamily {
 }
 
 export const AURA_ITEM_RANDOM_WEIGHT = 0.25;
+export const OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT = 0.62;
+
+const OCEAN_SPECIALIST_ITEMS = new Set<string>([
+  'BRINEHOOK_ROPE',
+  'TIDEPIERCER_HARPOON',
+  'AEGEAN_PEARL',
+  'STORMGLASS_AMPHORA',
+  'NEPTUNES_TRIDENT'
+]);
 
 export function isAuraItem(itemId: ItemId | string): boolean {
   return itemFamily(itemId as ItemId) === 'AURA';
 }
 
+export function isOceanSpecialistItem(itemId: ItemId | string): boolean {
+  return OCEAN_SPECIALIST_ITEMS.has(String(itemId));
+}
+
 export function itemRandomSelectionWeight(itemId: ItemId | string): number {
-  return isAuraItem(itemId) ? AURA_ITEM_RANDOM_WEIGHT : 1;
+  let weight = 1;
+  if (isAuraItem(itemId)) weight *= AURA_ITEM_RANDOM_WEIGHT;
+  if (isOceanSpecialistItem(itemId)) weight *= OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT;
+  return weight;
 }
 
 export function canEquipItemFamily(equipped: ItemId[], itemId: ItemId): { ok: boolean; family: ItemFamily } {

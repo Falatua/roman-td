@@ -2,8 +2,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
-import { AURA_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, itemRandomSelectionWeight } from '../src/systems/ItemRules';
-import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, rollCommanderDrop, isGuaranteedEpicDropEnemy, itemLootPoolCoverage } from '../src/systems/LootSystem';
+import { AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, itemRandomSelectionWeight } from '../src/systems/ItemRules';
+import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, rollCommanderDrop, isGuaranteedEpicDropEnemy, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
 import towersData from '../src/data/towers.json';
@@ -34,7 +34,9 @@ describe('Item families', () => {
     expect(itemFamily('GALLIC_SHIELD_BOSS')).toBe('DEFENSE');
     expect(itemFamily('CAPITOLINE_AEGIS')).toBe('SPECIAL');
     expect(itemFamily('BRINEHOOK_ROPE')).toBe('SPECIAL');
+    expect(itemFamily('TIDEPIERCER_HARPOON')).toBe('SPECIAL');
     expect(itemFamily('AEGEAN_PEARL')).toBe('SPECIAL');
+    expect(itemFamily('STORMGLASS_AMPHORA')).toBe('SPECIAL');
     expect(itemFamily('NEPTUNES_TRIDENT')).toBe('SPECIAL');
   });
 
@@ -176,6 +178,11 @@ describe('Loot drop rolling', () => {
       expect(isAuraItem(id), id).toBe(false);
       expect(itemRandomSelectionWeight(id), id).toBe(1);
     }
+    expect(OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT).toBe(0.62);
+    for (const id of ['BRINEHOOK_ROPE', 'TIDEPIERCER_HARPOON', 'AEGEAN_PEARL', 'STORMGLASS_AMPHORA', 'NEPTUNES_TRIDENT']) {
+      expect(isOceanSpecialistItem(id), id).toBe(true);
+      expect(itemRandomSelectionWeight(id), id).toBe(OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT);
+    }
   });
 
   it('always returns a valid drop with rarity and itemId', () => {
@@ -208,6 +215,28 @@ describe('Loot drop rolling', () => {
     expect(premiumDropRoll(0.20, 0.1999)).toBe(true);
     expect(premiumDropRoll(0.20, 0.20)).toBe(false);
     expect(premiumDropRoll(0.10, 0.95)).toBe(false);
+  });
+
+  it('lets meaningful ocean enemies rarely drop anti-water specialist gear', () => {
+    expect(oceanSpecialistDropChance({ type: 'OCEAN_FISHLING' })).toBe(0);
+    expect(oceanSpecialistDropChance({ type: 'SEA_GIANT' })).toBe(0.18);
+    expect(oceanSpecialistDropChance({ type: 'SEA_GIANT_WARBRINGER' })).toBe(0.38);
+    expect(oceanSpecialistDropChance({ type: 'TIDECALLER_COMMANDER' })).toBe(0.45);
+
+    const randomSpy = vi.spyOn(Math, 'random');
+    try {
+      randomSpy.mockReturnValue(0.99);
+      const rare = rollOceanSpecialistDrop({ type: 'SEA_GIANT' });
+      expect(rare?.rarity).toBe('RARE');
+      expect(['BRINEHOOK_ROPE', 'TIDEPIERCER_HARPOON']).toContain(rare?.itemId);
+
+      randomSpy.mockReturnValue(0.01);
+      const epic = rollOceanSpecialistDrop({ type: 'SEA_GIANT_WARBRINGER' });
+      expect(epic?.rarity).toBe('EPIC');
+      expect(['AEGEAN_PEARL', 'STORMGLASS_AMPHORA']).toContain(epic?.itemId);
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
   it('uses every non-event item in the correct ordinary rarity pool', () => {

@@ -343,6 +343,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   const itemHarborDef: any = (towersData as any)[t.type];
   const isHarborOrTideforged = !!(itemHarborDef?.waterOnly || itemHarborDef?.amphibious);
   if (isHarborOrTideforged && t.equippedItems.includes('AEGEAN_PEARL')) itemDmgMult *= 1.35;
+  if (isHarborOrTideforged && t.equippedItems.includes('STORMGLASS_AMPHORA')) itemSpeedMult *= 1.20;
   if (isHarborOrTideforged && t.equippedItems.includes('NEPTUNES_TRIDENT')) {
     itemDmgMult *= 1.60;
     itemSpeedMult *= 1.20;

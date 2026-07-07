@@ -83,7 +83,8 @@ const MERCATOR_EXCLUSIVE_RARE = [
   // guarantees an exclusive-rare per visit.
   'WITCHS_VENOM',
   // Harbor tech: gives non-Harbor builds a way to answer ocean waves.
-  'BRINEHOOK_ROPE'
+  'BRINEHOOK_ROPE',
+  'TIDEPIERCER_HARPOON'
 ];
 // 2026-05-18 — NEW EPIC TIER. Six items live here: 3 demoted legendary
 // melee items (Berserker's Muzzle, Celtic Longsword, Necrotic Longsword)
@@ -94,7 +95,7 @@ const MERCATOR_EPIC = [
   'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE',
   // 2026 v2 — anti-air EPIC options.
   'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST',
-  'AEGEAN_PEARL'
+  'AEGEAN_PEARL','STORMGLASS_AMPHORA'
 ];
 // Premium Mercator stock — Legendary trophies that the Gate Shop never carries.
 // These cost 3-5× a normal item but offer build-defining effects.

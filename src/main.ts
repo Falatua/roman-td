@@ -16,7 +16,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, premiumDropRoll, rollBossDrop, rollCommanderDrop, rollEpicDrop, rollRareDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, rollBossDrop, rollCommanderDrop, rollEpicDrop, rollRareDrop, rollOceanSpecialistDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_TYPES } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
@@ -7679,6 +7679,13 @@ async function boot() {
               spawnLootAt(state, e, drop);
               bossLegendaryDropped = true;
             }
+          } else if (premiumDropRoll(oceanSpecialistDropChance(e))) {
+            // Sea-giant-class kills can occasionally drop the dedicated
+            // anti-ocean tools. Fishlings are intentionally excluded by
+            // oceanSpecialistDropChance so early showpiece waves do not
+            // flood the board with rare loot.
+            const drop = rollOceanSpecialistDrop(e);
+            if (drop) spawnLootAt(state, e, drop);
           } else if ((e as any).isCommander) {
             // Commanders are premium support kills now. Regular commanders
             // drop EPIC; boss-wave escort commanders drop RARE so the player

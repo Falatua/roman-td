@@ -1277,7 +1277,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.equippedItems.includes('BRINEHOOK_ROPE') && (oceanThreat || (target as any).isCommander || isCommanderType((target as any).type))) {
         damage *= 1.30;
       }
+      if (t.equippedItems.includes('TIDEPIERCER_HARPOON') && oceanThreat) damage *= 1.70;
       if (t.equippedItems.includes('AEGEAN_PEARL') && oceanThreat && !isHarborCarrier(t)) damage *= 1.45;
+      if (t.equippedItems.includes('STORMGLASS_AMPHORA') && oceanThreat) damage *= 1.55;
       if (t.equippedItems.includes('NEPTUNES_TRIDENT') && oceanThreat) damage *= isHarborCarrier(t) ? 1.20 : 1.55;
       // 2026-05-17 — BEAST-BANE. Beast Hunter (T1) + Beast Slayer (T2)
       // deal +200% damage (×3 total) to animal-faction enemies: dogs
