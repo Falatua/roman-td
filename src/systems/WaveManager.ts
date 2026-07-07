@@ -108,6 +108,7 @@ function playOceanEmergenceCueOnce(state: GameStateShape): void {
   const scratch = state as any;
   if (scratch.__oceanEmergenceSfxWave === state.wave) return;
   scratch.__oceanEmergenceSfxWave = state.wave;
+  scratch.__oceanSurgeUntil = Math.max(scratch.__oceanSurgeUntil ?? 0, state.tick + 6.0);
   const hook = (globalThis as any).__oceanEmergenceSfx;
   if (typeof hook === 'function') hook();
 }
@@ -399,6 +400,10 @@ export function startWave(state: GameStateShape) {
   // every authored ground non-boss spawn is mirrored so Gate A and Gate B
   // each emit the same count. Bosses and flyers keep their special routes.
   mirrorGroundSpawnsToCaveB(state);
+  if (state.spawnQueue.some(item => item.ocean)) {
+    (state as any).__oceanWarningWave = state.wave;
+    (state as any).__oceanWarningUntil = state.tick + 7.5;
+  }
   state.enemiesKilledThisWave = 0;
   state.enemiesLeakedThisWave = 0;
   (state as any).carriedEnemiesThisWave = state.enemies.size;

@@ -6,7 +6,7 @@ import { GamePhase, TileType, TowerType, TargetingMode, DrawCard, DamageType } f
 import { isMobile as isMobileDevice } from './Mobile';
 import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, TIER_COLORS, WAVE } from './constants';
 import { createGameState, isWaveModifierActive } from './GameState';
-import { initializeGrid, isBuildable, isWaterPlacementRestrictedTile, pixelToTile, setTile, tileAt } from './systems/GridManager';
+import { initializeGrid, isBuildable, isWaterPlacementRestrictedTile, isWaterZoneTile, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
 import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards, triggerEnemyDeathBurst } from './systems/EnemySystem';
 import { tickTraps, placeTrap, trapOwned, TRAP_DEFS, clearPlacedTrapsForWaveEnd } from './systems/TrapSystem';
@@ -76,6 +76,7 @@ import { showBossTrophyModal } from './render/BossTrophyModal';
 import { showTestYourMightModal } from './render/TestYourMightModal';
 import { showLastStandTrove } from './render/LastStandTrove';
 import { showMercatorBackRoomModal, showSenateBailoutModal } from './render/SecretEvents';
+import { showHarborDraftModal, showHarborUnlockModal } from './render/HarborDraftModal';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
@@ -90,6 +91,15 @@ import {
   shouldOfferMercatorBackRoom,
   shouldOfferSenateBailout
 } from './systems/SecretEventsSystem';
+import {
+  buildHarborDraftOffers,
+  harborTowerCanUseTile,
+  isHarborTowerType,
+  markHarborUnlocked,
+  placeTowerTileForType,
+  restoreTowerTileForType,
+  shouldUnlockHarborFromKill
+} from './systems/HarborSystem';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -635,8 +645,26 @@ async function boot() {
     showBlockedAlert(
       col,
       row,
-      'Ocean tiles can only hold ocean-based towers. Those are coming later; for now, place land towers, prospects, traps, heroes, and ramparts on grass.'
+      (state as any).harborUnlocked
+        ? 'Ocean tiles can only hold Harbor towers. Click the ocean with no placement armed to open the Harbor Draft, or place a purchased naval contract here.'
+        : 'Ocean tiles are stirring, but the Harbor is still locked. Defeat a Sea Giant to unlock ocean-based towers.'
     );
+  }
+
+  function canPlaceQueuedTowerAt(type: TowerType | string, col: number, row: number): boolean {
+    return harborTowerCanUseTile(state, type, col, row);
+  }
+
+  function commitQueuedTowerTile(type: TowerType | string, col: number, row: number): boolean {
+    return placeTowerTileForType(state, type, col, row);
+  }
+
+  function rollbackQueuedTowerTile(type: TowerType | string, col: number, row: number): void {
+    restoreTowerTileForType(state, col, row);
+  }
+
+  function stampTowerPlacementMode(tw: any, col: number, row: number): void {
+    tw.placedOnWater = isHarborTowerType(tw.type) && (state.tiles[row]?.[col] === TileType.TOWER) && isWaterZoneTile(col, row);
   }
 
   function commitRampartPlacement(col: number, row: number, orient: RampartOrientation): boolean {
@@ -757,16 +785,16 @@ async function boot() {
           (state as any).__heroPlacementConfirmed = false;
           return;
         }
-        if (!isBuildable(state, col, row)) {
+        if (!canPlaceQueuedTowerAt(queue[0].type, col, row)) {
           showBlockedAlert(col, row, 'That tile is locked. Cave, path, checkpoint, ocean tiles, and border tiles cannot hold heroes.');
           (state as any).__heroPlacementConfirmed = false;
           return;
         }
         // Same path-validate + place logic as the canvas handler.
-        setTile(state, col, row, TileType.TOWER);
+        commitQueuedTowerTile(queue[0].type, col, row);
         const np = buildGroundPath(state);
         if (!np) {
-          setTile(state, col, row, TileType.EMPTY);
+          rollbackQueuedTowerTile(queue[0].type, col, row);
           showBlockedAlert(col, row, 'That tile would seal the path — enemies couldn\'t reach Rome. Try one tile over.');
           (state as any).__heroPlacementConfirmed = false;
           return;
@@ -775,6 +803,7 @@ async function boot() {
         resnapEnemiesToPath(state, np);
         const popped = queue.shift()!;
         const tw = createTower(popped.type as TowerType, popped.tier as 1|2|3|4|5, col, row, state.wave);
+        stampTowerPlacementMode(tw, col, row);
         state.towers.set(tw.id, tw);
         state.pendingPurchasedTowers = queue;
         state.pendingPurchasedTower = null;
@@ -896,15 +925,15 @@ async function boot() {
           (state as any).__purchasedPlacementConfirmed = false;
           return;
         }
-        if (!isBuildable(state, col, row)) {
+        if (!canPlaceQueuedTowerAt(head.type, col, row)) {
           showBlockedAlert(col, row, 'That tile is locked. Cave, path, checkpoint, ocean tiles, and border tiles cannot hold towers.');
           (state as any).__purchasedPlacementConfirmed = false;
           return;
         }
-        setTile(state, col, row, TileType.TOWER);
+        commitQueuedTowerTile(head.type, col, row);
         const np = buildGroundPath(state);
         if (!np) {
-          setTile(state, col, row, TileType.EMPTY);
+          rollbackQueuedTowerTile(head.type, col, row);
           showBlockedAlert(col, row, 'That tile would seal the path — enemies couldn\'t reach Rome. Try one tile over.');
           (state as any).__purchasedPlacementConfirmed = false;
           return;
@@ -913,6 +942,7 @@ async function boot() {
         resnapEnemiesToPath(state, np);
         const popped = queue.shift()!;
         const tw = createTower(popped.type as TowerType, popped.tier as 1|2|3|4|5, col, row, state.wave);
+        stampTowerPlacementMode(tw, col, row);
         state.towers.set(tw.id, tw);
         state.pendingPurchasedTowers = queue;
         state.pendingPurchasedTower = null;
@@ -2893,7 +2923,7 @@ async function boot() {
   // their current flat price; quest
   // grants refund the wave's place cost as a fair stand-in (no purchase price
   // to recover). Tower types from `pendingPurchasedTowers` carry .source.
-  function purchasedTowerPrice(entry: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' | 'laststand' | 'backroom' }): number {
+  function purchasedTowerPrice(entry: NonNullable<typeof state.pendingPurchasedTowers>[number]): number {
     // Mercator buys = flat 250g refund (matches purchase price). Everything
     // else (quest reward, Fortuna gamble win, bonus/gift) wasn't bought
     // with gold, so the refund falls back to the wave's place cost as a
@@ -6070,6 +6100,28 @@ async function boot() {
     }
 
     if (tile === TileType.WATER && hasPlacementIntent) {
+      const head = state.pendingPurchasedTowers?.[0];
+      if (head && isHarborTowerType(head.type)) {
+        // Let the purchased-tower placement block below handle confirmation
+        // and final path validation for Harbor towers.
+      } else {
+        showOceanTowerOnlyAlert(col, row);
+        return;
+      }
+    } else if (tile === TileType.WATER && !hasPlacementIntent) {
+      if ((state as any).harborUnlocked) {
+        if (!isPreWavePhase()) {
+          state.hint = 'The Harbor Draft opens between waves. Finish the fight, then click the ocean.';
+          return;
+        }
+        showHarborDraftModal(state, buildHarborDraftOffers(state), () => updateHeroPlacementBanner());
+      } else {
+        showOceanTowerOnlyAlert(col, row);
+      }
+      return;
+    }
+
+    if (tile === TileType.WATER && hasPlacementIntent && !(state.pendingPurchasedTowers?.[0] && isHarborTowerType(state.pendingPurchasedTowers[0].type))) {
       showOceanTowerOnlyAlert(col, row);
       return;
     }
@@ -6210,9 +6262,9 @@ async function boot() {
     // PURCHASED-TOWER PLACEMENT: pops the FRONT of the queue. Both Mercator
     // purchases and quest rewards append here so they never collide.
     const queue = state.pendingPurchasedTowers ?? [];
-    if (queue.length > 0 && tile === TileType.EMPTY) {
+    if (queue.length > 0 && (tile === TileType.EMPTY || (tile === TileType.WATER && isHarborTowerType(queue[0].type)))) {
       const head = queue[0];
-      if (!isBuildable(state, col, row)) {
+      if (!canPlaceQueuedTowerAt(head.type, col, row)) {
         if (isWaterPlacementRestrictedTile(col, row)) {
           showOceanTowerOnlyAlert(col, row);
         } else {
@@ -6249,10 +6301,10 @@ async function boot() {
       // Path-validate the drop. If the chosen tile would seal Rome,
       // bounce with a clear message and keep the hero token in the
       // queue so the player can try a different tile.
-      setTile(state, col, row, TileType.TOWER);
+      commitQueuedTowerTile(head.type, col, row);
       const np = buildGroundPath(state);
       if (!np) {
-        setTile(state, col, row, TileType.EMPTY);
+        rollbackQueuedTowerTile(head.type, col, row);
         showBlockedAlert(col, row, 'That tile would seal the path — enemies couldn\'t reach Rome. Try one tile over.');
         // Clear the confirmation flag so a different tile re-prompts.
         (state as any).__heroPlacementConfirmed = false;
@@ -6262,6 +6314,7 @@ async function boot() {
       resnapEnemiesToPath(state, np);
       const popped = queue.shift()!;
       const tw = createTower(popped.type as TowerType, popped.tier as 1|2|3|4|5, col, row, state.wave);
+      stampTowerPlacementMode(tw, col, row);
       state.towers.set(tw.id, tw);
       state.pendingPurchasedTowers = queue;
       state.pendingPurchasedTower = null;
@@ -7311,6 +7364,14 @@ async function boot() {
           // Siege Wagons / Sky Barges killed by towers vanish without
           // releasing their passengers.
           triggerEnemyDeathBurst(state, e);
+          if (shouldUnlockHarborFromKill(state, e.type) && markHarborUnlocked(state)) {
+            showHarborUnlockModal(state);
+            try {
+              renderer?.triggerImpactRing?.(e.x, e.y, state.tick, 76, 0x5fe6ff);
+              renderer?.triggerImpactRing?.(e.x, e.y, state.tick + 0.08, 116, 0xb9f7ff);
+              renderer?.triggerShake?.(4, 0.42);
+            } catch { /* renderer optional */ }
+          }
           // 2026-05-16 — surprise-event resolution. If this kill was an
           // event-spawned enemy and it was the last one alive, the helper
           // sets state.pendingSurpriseReward → next tick opens the modal.

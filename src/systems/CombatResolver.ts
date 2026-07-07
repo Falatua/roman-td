@@ -530,7 +530,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   let truesightCount = 0;
   for (const tw of towers) {
     // 2026-06-28 — Exploratores + Vanguard Wing have INNATE truesight (scout reveal).
-    if (tw.equippedItems.includes('TRUESIGHT_LENS') || tw.type === TowerType.EXPLORATORES || tw.type === TowerType.VANGUARD_WING || tw.type === TowerType.SKY_DOMINION) {
+    if (tw.equippedItems.includes('TRUESIGHT_LENS')
+        || tw.type === TowerType.EXPLORATORES
+        || tw.type === TowerType.VANGUARD_WING
+        || tw.type === TowerType.SKY_DOMINION
+        || tw.type === TowerType.NEREID_ORACLE
+        || tw.type === TowerType.ORACLE_LIGHTHOUSE) {
       truesightCount++;
       const stats = towerEffectiveStats(tw);
       const tx = tw.tileX * GRID.TILE + GRID.TILE / 2;
@@ -1319,6 +1324,14 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.SKY_DOMINION && target.archetype === 'ELITE') damage *= 1.60;     // +60% vs elites
       if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 2.00;                 // CITY-BREAKER: +100% vs bosses
       if (t.type === TowerType.INFERNAL_COLOSSUS && target.isBoss) damage *= 3.00;                // +200% vs bosses
+      if ((t.type === TowerType.TRIREME_BALLISTA || t.type === TowerType.PRAETORIAN_FLEET)
+          && (target.archetype === 'ELITE' || target.isBoss || isCommanderType((target as any).type))) {
+        damage *= (t as any).placedOnWater ? 1.45 : 1.25;
+      }
+      if (t.type === TowerType.RAMMING_QUINQUEREME && (target.archetype === 'ELITE' || target.isBoss)) damage *= 1.50;
+      if (t.type === TowerType.MARS_TIDAL_BASTION && (target.archetype === 'ELITE' || target.isBoss)) damage *= (t as any).placedOnWater ? 1.65 : 1.35;
+      if ((t.type === TowerType.HYDRA_OF_LERNA || t.type === TowerType.HYDRA_BEAST_PIT) && (target.archetype === 'ELITE' || BEAST_ENEMY_TYPES.has(target.type))) damage *= 1.35;
+      if (t.type === TowerType.HYDRA_BEAST_PIT && (t as any).placedOnWater && (target as any).__oceanSpawn) damage *= 1.40;
       if (t.type === TowerType.CARTHAGE_SCOURGE && target.isBoss) damage *= 4.2;         // +320% vs bosses
       if (t.type === TowerType.TURMA_LANCERS && !target.isFlyer) damage *= 1.45;         // +45% vs ground
       // ─── 2026-05 AUDIT: damage modifiers claimed by tower UI ─────────
@@ -2541,6 +2554,59 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
     case TowerType.AUGURS_WRATH:
       // Radiant omen-fire — BURN DoT on the struck cluster.
       pushStatus(target, StatusEffectKind.BURN, dur(2), 0.05, tier);
+      break;
+    case TowerType.TRIREME_BALLISTA:
+      pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur((t as any).placedOnWater ? 4.5 : 3.0), 0, tier);
+      if (target.archetype === 'ELITE' || target.isBoss || isCommanderType((target as any).type)) {
+        pushStatus(target, StatusEffectKind.MARK, dur(2.5), 0.12, tier);
+      }
+      break;
+    case TowerType.PRAETORIAN_FLEET:
+      pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur((t as any).placedOnWater ? 5.0 : 3.4), 0, tier);
+      pushStatus(target, StatusEffectKind.MARK, dur(3.0), (t as any).placedOnWater ? 0.18 : 0.10, tier);
+      break;
+    case TowerType.CORVUS_BOARDING_SHIP:
+      if (!target.isFlyer) {
+        pushStatus(target, StatusEffectKind.STUN, dur(0.35), 0, tier);
+        pushStatus(target, StatusEffectKind.MARK, dur(2.5), 0.16, tier);
+      }
+      break;
+    case TowerType.CORVUS_LEGION_DOCK:
+      if (!target.isFlyer) {
+        pushStatus(target, StatusEffectKind.STUN, dur((t as any).placedOnWater ? 0.55 : 0.35), 0, tier);
+        pushStatus(target, StatusEffectKind.MARK, dur(3.5), (t as any).placedOnWater ? 0.24 : 0.18, tier);
+      }
+      break;
+    case TowerType.RAMMING_QUINQUEREME:
+      pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.45, tier);
+      if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.45), 0, tier);
+      break;
+    case TowerType.MARS_TIDAL_BASTION:
+      pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, (t as any).placedOnWater ? 0.65 : 0.35, tier);
+      pushStatus(target, StatusEffectKind.MARK, dur(3.0), 0.16, tier);
+      if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.65), 0, tier);
+      break;
+    case TowerType.CHARYBDIS_VORTEX:
+      pushStatus(target, StatusEffectKind.SLOW, dur(3.5), 0.48, tier);
+      pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.18, tier);
+      if (target.isBoss || isCommanderType((target as any).type)) pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(3.5), 0, tier);
+      break;
+    case TowerType.ABYSSAL_ONAGER:
+      pushStatus(target, StatusEffectKind.SLOW, dur((t as any).placedOnWater ? 4.0 : 2.6), (t as any).placedOnWater ? 0.55 : 0.32, tier);
+      pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
+      if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.6), 0, tier);
+      break;
+    case TowerType.NEREID_ORACLE:
+      (target as any).__truesightRevealed = true;
+      pushStatus(target, StatusEffectKind.MARK, dur(4.0), 0.20, tier);
+      break;
+    case TowerType.ORACLE_LIGHTHOUSE:
+      (target as any).__truesightRevealed = true;
+      pushStatus(target, StatusEffectKind.MARK, dur((t as any).placedOnWater ? 5.5 : 4.0), (t as any).placedOnWater ? 0.28 : 0.36, tier);
+      break;
+    case TowerType.HYDRA_OF_LERNA:
+    case TowerType.HYDRA_BEAST_PIT:
+      if ((((t as any).__hitCount ?? 0) % 4) === 0) pushStatus(target, StatusEffectKind.BLEED, 5.5, 0.015, tier);
       break;
     case TowerType.JULIUS_CAESAR:
       // 0.5s stun on every primary strike — matches the divine-priest

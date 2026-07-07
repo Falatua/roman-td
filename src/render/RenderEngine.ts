@@ -479,22 +479,42 @@ export class RenderEngine {
     if (tileRef) {
       const reduced = !!(window as any).__reduceMotion;
       const waveSpeed = reduced ? 0.22 : 0.72;
+      const gameState: any = (globalThis as any).__lastState ?? (globalThis as any).__game ?? null;
+      const surgeT = Math.max(0, Math.min(1, (((gameState as any)?.__oceanSurgeUntil ?? 0) - tick) / 6.0));
+      const warnT = Math.max(0, Math.min(1, (((gameState as any)?.__oceanWarningUntil ?? 0) - tick) / 7.5));
+      const harborAwake = !!(gameState as any)?.harborUnlocked;
       for (let r = WATER_ZONE.row; r < WATER_ZONE.row + WATER_ZONE.height; r++) {
         for (let pass = 0; pass < 2; pass++) {
           const y = r * GRID.TILE + 8 + ((r * 5 + pass * 13) % 16);
-          const phase = tick * waveSpeed + r * 0.41 + pass * 1.7;
+          const phase = tick * waveSpeed * (1 + surgeT * 2.2 + warnT * 0.8) + r * 0.41 + pass * 1.7;
           for (let c = WATER_ZONE.col; c < WATER_ZONE.col + WATER_ZONE.width; c += 2) {
             if (tileRef[r]?.[c] !== TileType.WATER) continue;
             const neighborWater = tileRef[r]?.[c + 1] === TileType.WATER;
-            const x = c * GRID.TILE + 5 + Math.sin(phase + c * 0.52) * 2.4;
+            const x = c * GRID.TILE + 5 + Math.sin(phase + c * 0.52) * (2.4 + surgeT * 3.6);
             const len = neighborWater ? 17 : 9;
             const pulse = 0.52 + 0.48 * Math.sin(phase * 1.35 + c * 0.8);
-            const alpha = (pass === 0 ? 0.115 : 0.075) * pulse;
-            ocean.beginFill(0xd8fff6, alpha).drawRect(Math.round(x), Math.round(y), len, 1).endFill();
+            const alpha = (pass === 0 ? 0.115 : 0.075) * pulse + warnT * 0.035 + surgeT * 0.075;
+            const color = surgeT > 0.05 ? 0xb9f7ff : warnT > 0.05 ? 0x76e3ff : 0xd8fff6;
+            ocean.beginFill(color, alpha).drawRect(Math.round(x), Math.round(y), len + Math.round(surgeT * 8), 1).endFill();
             if ((c + r + pass) % 4 === 0) {
               ocean.beginFill(0x0a3148, 0.055 + 0.035 * pulse).drawRect(Math.round(x + 4), Math.round(y + 3), Math.max(4, len - 6), 1).endFill();
             }
           }
+        }
+      }
+      if (warnT > 0 || surgeT > 0 || harborAwake) {
+        const x = WATER_ZONE.col * GRID.TILE + 8;
+        const y = (WATER_ZONE.row + WATER_ZONE.height - 3.35) * GRID.TILE;
+        const glow = Math.max(harborAwake ? 0.16 : 0, warnT * 0.28, surgeT * 0.48);
+        ocean.beginFill(surgeT > 0.05 ? 0xb9f7ff : 0x5fe6ff, glow)
+          .drawEllipse(x + GRID.TILE * 2.25, y + GRID.TILE * 1.65, GRID.TILE * (2.5 + surgeT), GRID.TILE * (0.85 + surgeT * 0.45))
+          .endFill();
+        if (surgeT > 0.05) {
+          const foamY = y + GRID.TILE * 1.55 + Math.sin(tick * 9) * 3;
+          ocean.lineStyle(3, 0xdffff7, 0.35 * surgeT);
+          ocean.moveTo(x + 8, foamY);
+          ocean.bezierCurveTo(x + 42, foamY - 14, x + 86, foamY + 14, x + 132, foamY - 4);
+          ocean.lineStyle(0);
         }
       }
     }
@@ -2701,6 +2721,12 @@ export class RenderEngine {
     const waterDeepKeys = ['OCEAN_DEEP_A', 'OCEAN_DEEP_B'];
     const waterMidKeys = ['OCEAN_MID_A', 'OCEAN_MID_B'];
     const waterShallowKeys = ['OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B'];
+    const waterTowerTiles = new Set<string>();
+    for (const tw of state.towers.values()) {
+      if ((tw as any).placedOnWater) waterTowerTiles.add(`${tw.tileX},${tw.tileY}`);
+    }
+    const visuallyWater = (col: number, row: number) =>
+      state.tiles[row]?.[col] === TileType.WATER || waterTowerTiles.has(`${col},${row}`);
     const immediateShoreGroundKeys = ['OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_PEBBLES', 'OCEAN_SHORE_FOAM_BITS', 'OCEAN_SHORE_WET_ROCKS'];
     const outerShoreGroundKeys = ['OCEAN_SHORE_PEBBLES', 'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH'];
     const addTileSprite = (layer: Container, key: string, x: number, y: number, alpha = 1) => {
@@ -2720,7 +2746,7 @@ export class RenderEngine {
           if (dc === 0 && dr === 0) continue;
           const d = Math.max(Math.abs(dc), Math.abs(dr));
           if (d > maxTiles || d >= best) continue;
-          if (state.tiles[row + dr]?.[col + dc] === TileType.WATER) best = d;
+          if (visuallyWater(col + dc, row + dr)) best = d;
         }
       }
       return best === Infinity ? 0 : best;
@@ -2740,13 +2766,13 @@ export class RenderEngine {
         // Path tiles slightly bias toward the basic dirt; grass picks
         // from the biome's weight table via pickGrassTile() below.
         const h = hash(c, r);
-        if (t === TileType.WATER) {
+        if (t === TileType.WATER || waterTowerTiles.has(`${c},${r}`)) {
           let edgeDist = 0;
           for (let radius = 1; radius <= 4; radius++) {
             let allWater = true;
             for (let dr = -radius; dr <= radius && allWater; dr++) {
               for (let dc = -radius; dc <= radius && allWater; dc++) {
-                if (state.tiles[r + dr]?.[c + dc] !== TileType.WATER) allWater = false;
+                if (!visuallyWater(c + dc, r + dr)) allWater = false;
               }
             }
             if (!allWater) break;
@@ -2773,10 +2799,10 @@ export class RenderEngine {
             const darkAlpha = 0.06 + Math.min(0.24, (visualDepth - 0.36) * 0.36);
             waterGfx.beginFill(0x03101e, darkAlpha).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
           }
-          const north = state.tiles[r - 1]?.[c] !== TileType.WATER;
-          const east = state.tiles[r]?.[c + 1] !== TileType.WATER;
-          const south = state.tiles[r + 1]?.[c] !== TileType.WATER;
-          const west = state.tiles[r]?.[c - 1] !== TileType.WATER;
+          const north = !visuallyWater(c, r - 1);
+          const east = !visuallyWater(c + 1, r);
+          const south = !visuallyWater(c, r + 1);
+          const west = !visuallyWater(c - 1, r);
           if (north) addTileSprite(shoreLayer, 'OCEAN_FOAM_N', x, y, 0.95);
           if (east) addTileSprite(shoreLayer, 'OCEAN_FOAM_E', x, y, 0.86);
           if (south) addTileSprite(shoreLayer, 'OCEAN_FOAM_S', x, y, 0.76);
@@ -2784,10 +2810,10 @@ export class RenderEngine {
           continue;
         }
         if (t === TileType.EMPTY && isWaterPlacementBufferTile(c, r)) {
-          const waterN = state.tiles[r - 1]?.[c] === TileType.WATER;
-          const waterE = state.tiles[r]?.[c + 1] === TileType.WATER;
-          const waterS = state.tiles[r + 1]?.[c] === TileType.WATER;
-          const waterW = state.tiles[r]?.[c - 1] === TileType.WATER;
+          const waterN = visuallyWater(c, r - 1);
+          const waterE = visuallyWater(c + 1, r);
+          const waterS = visuallyWater(c, r + 1);
+          const waterW = visuallyWater(c - 1, r);
           if (waterN) shoreTrimGfx.beginFill(0xf2d072, 0.82).drawRect(x + 3, y, GRID.TILE - 6, 3).endFill();
           if (waterE) shoreTrimGfx.beginFill(0xf2d072, 0.72).drawRect(x + GRID.TILE - 3, y + 3, 3, GRID.TILE - 6).endFill();
           if (waterS) shoreTrimGfx.beginFill(0xf2d072, 0.58).drawRect(x + 3, y + GRID.TILE - 3, GRID.TILE - 6, 3).endFill();

@@ -145,6 +145,20 @@ export enum TowerType {
   GLACIAL_PALISADE = 'GLACIAL_PALISADE',
   INFERNAL_COLOSSUS = 'INFERNAL_COLOSSUS',
   ROMAN_TRANSFORMER = 'ROMAN_TRANSFORMER',
+  // 2026-07-07 — Harbor / naval tower line. These unlock from the first
+  // Sea Giant kill and live primarily in the ocean reserve.
+  TRIREME_BALLISTA = 'TRIREME_BALLISTA',
+  CORVUS_BOARDING_SHIP = 'CORVUS_BOARDING_SHIP',
+  RAMMING_QUINQUEREME = 'RAMMING_QUINQUEREME',
+  CHARYBDIS_VORTEX = 'CHARYBDIS_VORTEX',
+  NEREID_ORACLE = 'NEREID_ORACLE',
+  HYDRA_OF_LERNA = 'HYDRA_OF_LERNA',
+  PRAETORIAN_FLEET = 'PRAETORIAN_FLEET',
+  CORVUS_LEGION_DOCK = 'CORVUS_LEGION_DOCK',
+  ORACLE_LIGHTHOUSE = 'ORACLE_LIGHTHOUSE',
+  ABYSSAL_ONAGER = 'ABYSSAL_ONAGER',
+  HYDRA_BEAST_PIT = 'HYDRA_BEAST_PIT',
+  MARS_TIDAL_BASTION = 'MARS_TIDAL_BASTION',
   // 2026 v2 spec Ch9 — Mars Victor: DIVINE apex super-tower (fusion of
   // Imperium Eternum + Legion Prime). Engine-faithful read of the spec's
   // "6-hero combo" — activeHeroId is singular, so 6 literal heroes can't be
@@ -486,6 +500,10 @@ export interface Tower {
   // __nextCaesarStunTick / __nextHannibalFreezeTick scratchpad
   // patterns used throughout CombatResolver.
   __heroCooldowns?: Record<string, number>;
+  // Harbor towers remember whether they were placed over water. Tideforged
+  // hybrid towers can work on land or sea, so combat/rendering uses this
+  // stamp to switch their mode without relying on the tile underneath.
+  placedOnWater?: boolean;
 }
 
 export interface Enemy {

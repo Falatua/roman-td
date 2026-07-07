@@ -440,6 +440,23 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   const relicDpsMult = gs ? campaignRelicTowerDpsMult(gs, t, defForRelic?.kind) : 1;
   const relicSpeedMult = gs ? campaignRelicTowerSpeedMult(gs, t, defForRelic?.kind) : 1;
   const relicRangeBonus = gs ? campaignRelicTowerRangeBonus(gs, t) : 0;
+  const harborDef: any = (towersData as any)[t.type];
+  let harborDmgMult = 1;
+  let harborSpeedMult = 1;
+  let harborRangeBonus = 0;
+  if (t.type === TowerType.HYDRA_OF_LERNA || t.type === TowerType.HYDRA_BEAST_PIT) {
+    const headStacks = Math.min(t.type === TowerType.HYDRA_BEAST_PIT ? 8 : 5, Math.floor((t.killCount ?? 0) / 6));
+    harborDmgMult *= 1 + headStacks * (t.type === TowerType.HYDRA_BEAST_PIT ? 0.09 : 0.08);
+    harborSpeedMult *= 1 + headStacks * 0.035;
+  }
+  if (harborDef?.amphibious) {
+    if ((t as any).placedOnWater) {
+      harborRangeBonus += 0.5;
+      harborDmgMult *= 1.08;
+    } else {
+      harborSpeedMult *= 1.08;
+    }
+  }
   // 2026-05-19 — AURA TILE BUFFS. If the tower sits on one of the 5
   // fixed aura tiles, apply that tile's damage / attack-speed
   // multiplier here. Stacks multiplicatively with items and the
@@ -478,9 +495,9 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     if (n > 0) forgeDmgMult = 1 + 0.06 * n;
   }
   return {
-    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult * heroLevelDmgMult * forgeDmgMult * relicDpsMult,
-    attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult * relicSpeedMult * (isMeleeClassTower(t) ? MELEE_ATTACK_SPEED_MULT : 1),
-    range: Math.max(isMeleeClassTower(t) ? MELEE_MIN_RANGE_TILES : 1, t.range + extraRange + endlessRangeBoost + auraRangeBonus + relicRangeBonus)
+    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult * heroLevelDmgMult * forgeDmgMult * relicDpsMult * harborDmgMult,
+    attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult * relicSpeedMult * harborSpeedMult * (isMeleeClassTower(t) ? MELEE_ATTACK_SPEED_MULT : 1),
+    range: Math.max(isMeleeClassTower(t) ? MELEE_MIN_RANGE_TILES : 1, t.range + extraRange + endlessRangeBoost + auraRangeBonus + relicRangeBonus + harborRangeBonus)
   };
 }
 

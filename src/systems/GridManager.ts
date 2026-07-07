@@ -126,6 +126,19 @@ export function setTile(state: GameStateShape, col: number, row: number, t: Tile
   state.tiles[row][col] = t;
 }
 
+export function setTowerTile(state: GameStateShape, col: number, row: number): boolean {
+  if (col < 0 || row < 0 || col >= GRID.COLS || row >= GRID.ROWS) return false;
+  const cur = state.tiles[row][col];
+  if (cur !== TileType.EMPTY && cur !== TileType.WATER) return false;
+  state.tiles[row][col] = TileType.TOWER;
+  return true;
+}
+
+export function restoreNaturalBuildTile(state: GameStateShape, col: number, row: number): void {
+  if (col < 0 || row < 0 || col >= GRID.COLS || row >= GRID.ROWS) return;
+  state.tiles[row][col] = isWaterZoneTile(col, row) ? TileType.WATER : TileType.EMPTY;
+}
+
 export function tileToPixel(col: number, row: number): { x: number; y: number } {
   return { x: col * GRID.TILE + GRID.TILE / 2, y: row * GRID.TILE + GRID.TILE / 2 };
 }

@@ -68,6 +68,18 @@ const MANIFEST: Record<string, string> = {
   SKY_DOMINION: 'ts_sky_dominion.png', AUREATE_TRIBUNAL: 'ts_aureate_tribunal.png',
   GLACIAL_PALISADE: 'ts_glacial_palisade.png', INFERNAL_COLOSSUS: 'ts_infernal_colossus.png',
   ROMAN_TRANSFORMER: 'ts_roman_transformer.png',
+  TRIREME_BALLISTA: 'naval/t_naval_trireme_ballista.png',
+  CORVUS_BOARDING_SHIP: 'naval/t_naval_corvus_boarding_ship.png',
+  RAMMING_QUINQUEREME: 'naval/t_naval_ramming_quinquereme.png',
+  CHARYBDIS_VORTEX: 'naval/t_naval_charybdis_vortex.png',
+  NEREID_ORACLE: 'naval/t_naval_nereid_oracle.png',
+  HYDRA_OF_LERNA: 'naval/t_naval_hydra_of_lerna.png',
+  PRAETORIAN_FLEET: 'naval/t_tideforged_praetorian_fleet.png',
+  CORVUS_LEGION_DOCK: 'naval/t_tideforged_corvus_legion_dock.png',
+  ORACLE_LIGHTHOUSE: 'naval/t_tideforged_oracle_lighthouse.png',
+  ABYSSAL_ONAGER: 'naval/t_tideforged_abyssal_onager.png',
+  HYDRA_BEAST_PIT: 'naval/t_tideforged_hydra_beast_pit.png',
+  MARS_TIDAL_BASTION: 'naval/t_tideforged_mars_tidal_bastion.png',
   // 2026-05-17 — MURMILLO (T4 mid-game combo). Heavy Roman gladiator with
   // fish-helmet + scutum + gladius. Sliced from the user-supplied gladiator
   // roster sheet (top-left cell); chroma-keyed via the standard pipeline.

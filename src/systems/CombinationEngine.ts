@@ -19,7 +19,7 @@ import { GameStateShape } from '../GameState';
 import { ECONOMY, TIER_MULTS } from '../constants';
 import { createTower } from './TowerSystem';
 import { spendGold } from './EconomySystem';
-import { setTile } from './GridManager';
+import { isWaterZoneTile, restoreNaturalBuildTile, setTile, setTowerTile } from './GridManager';
 import { TileType } from '../types';
 import { buildGroundPath } from './PathFinder';
 import comboData from '../data/towerCombinations.json';
@@ -382,7 +382,10 @@ export function executeCombo(state: GameStateShape, combo: AvailableCombo, resul
   const prevTiles: { col: number; row: number; tile: TileType }[] = [];
   for (const t of combo.ingredients) {
     prevTiles.push({ col: t.tileX, row: t.tileY, tile: state.tiles[t.tileY][t.tileX] });
-    state.tiles[t.tileY][t.tileX] = (t.id === resultIngr.id) ? TileType.TOWER : TileType.STONE;
+    const wasWaterTower = isWaterZoneTile(t.tileX, t.tileY) || !!(t as any).placedOnWater;
+    state.tiles[t.tileY][t.tileX] = (t.id === resultIngr.id)
+      ? TileType.TOWER
+      : (wasWaterTower ? TileType.WATER : TileType.STONE);
   }
   // Fixed-path modes (e.g. the Green Circle co-op map) have an immutable
   // spiral that build-tile towers can never block, and no 38x26 spawn/gate
@@ -409,22 +412,27 @@ export function executeCombo(state: GameStateShape, combo: AvailableCombo, resul
       for (const item of t.equippedItems) carriedItems.push(item);
     }
   }
-  // Consumed ingredient tiles convert to STONE walls (not EMPTY) so the maze
-  // shape the player built is preserved. The chosen result tile becomes the
-  // new tower; every other ingredient leaves a wall behind.
+  // Consumed land ingredient tiles convert to STONE walls so the maze shape
+  // is preserved. Consumed ocean ingredient tiles restore to WATER; otherwise
+  // water recipes would accidentally pave the ocean into walls.
   // BUGFIX: decrement Aerarium count for any consumed Aerarium so the global
   // cap (max 3 on the map) stays accurate after merges.
   for (const t of combo.ingredients) {
     if (t.isAerarium && state.goldTowerCount > 0) state.goldTowerCount -= 1;
     state.towers.delete(t.id);
     if (t.id === resultIngr.id) {
-      setTile(state, t.tileX, t.tileY, TileType.EMPTY);
+      restoreNaturalBuildTile(state, t.tileX, t.tileY);
     } else {
-      setTile(state, t.tileX, t.tileY, TileType.STONE);
+      if (isWaterZoneTile(t.tileX, t.tileY) || !!(t as any).placedOnWater) {
+        restoreNaturalBuildTile(state, t.tileX, t.tileY);
+      } else {
+        setTile(state, t.tileX, t.tileY, TileType.STONE);
+      }
     }
   }
   const newTower = createTower(combo.result, combo.resultTier as 1 | 2 | 3 | 4 | 5,
     resultIngr.tileX, resultIngr.tileY, state.wave);
+  newTower.placedOnWater = isWaterZoneTile(resultIngr.tileX, resultIngr.tileY) || !!(resultIngr as any).placedOnWater;
   newTower.killCount = killSum;
   newTower.killBonusFlat = killBonusSum;
   newTower.builtFrom = combo.ingredients.map(i => i.type);
@@ -469,7 +477,7 @@ export function executeCombo(state: GameStateShape, combo: AvailableCombo, resul
   const ingredientCostSum = combo.ingredients.reduce((s, i) => s + (i.costPaid ?? 0), 0);
   newTower.costPaid = combo.cost + Math.floor(ingredientCostSum * 0.5);
   state.towers.set(newTower.id, newTower);
-  setTile(state, newTower.tileX, newTower.tileY, TileType.TOWER);
+  setTowerTile(state, newTower.tileX, newTower.tileY);
   if (newTower.isAerarium) state.goldTowerCount += 1;
   const resultDef: any = (towersData as any)[combo.result];
   const resultDisplay = resultDef?.name ?? combo.result.split('_').map((w: string) => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');

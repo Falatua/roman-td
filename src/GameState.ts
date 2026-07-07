@@ -147,7 +147,7 @@ export interface GameStateShape {
   // "T5 purchased at the Mercator vendor" specifically). The placement-
   // confirm modal reads this to label what's being placed accurately
   // (MERCATOR PURCHASE vs FORTUNA WIN vs QUEST REWARD vs TOWER GIFT).
-  pendingPurchasedTowers?: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' | 'laststand' | 'backroom' }[];
+  pendingPurchasedTowers?: { type: string; tier: number; source: 'mercator' | 'quest' | 'hero' | 'fortuna' | 'bonus' | 'gift' | 'relic' | 'laststand' | 'backroom' | 'harbor' | 'naval' }[];
   // Legacy single-slot — kept for back-compat reads but new code uses the
   // queue. Set to null on every place; queue is the source of truth.
   pendingPurchasedTower?: { type: string; tier: number } | null;
