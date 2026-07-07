@@ -41,35 +41,36 @@ export interface TrapDef {
 }
 
 // Six traps covering damage / poison / burn / slow + a BOSS specialist and a
-// FLYER specialist. Prices are cheap-ish since they are one-shot consumables.
+// FLYER specialist. Prices reflect whole-wave deployment now that placed
+// traps re-arm until wave end.
 export const TRAP_DEFS: Record<string, TrapDef> = {
   IRON_SPIKE_TRAP: {
-    name: 'Iron Spike Trap', price: 40, color: 0xc0c0c0, spriteKey: 'TRAP_IRON_SPIKE',
+    name: 'Iron Spike Trap', price: 50, color: 0xc0c0c0, spriteKey: 'TRAP_IRON_SPIKE',
     effect: 'DAMAGE', blurb: 'Bursts for heavy physical damage to everything nearby.',
     pulse: false, triggerTiles: 0.7, radiusTiles: 1.1, damage: 1300,
   },
   VENOM_TRAP: {
-    name: 'Venom Trap', price: 50, color: 0x66dd44, spriteKey: 'TRAP_VENOM',
+    name: 'Venom Trap', price: 60, color: 0x66dd44, spriteKey: 'TRAP_VENOM',
     effect: 'POISON', blurb: 'A toxic cloud: a hit plus lingering POISON over 5s.',
     pulse: true, triggerTiles: 0.8, radiusTiles: 1.4, damage: 450, dotDuration: 5, dotMag: 0.05,
   },
   TAR_FIRE_TRAP: {
-    name: 'Tar Fire Trap', price: 50, color: 0xff7722, spriteKey: 'TRAP_TAR_FIRE',
+    name: 'Tar Fire Trap', price: 60, color: 0xff7722, spriteKey: 'TRAP_TAR_FIRE',
     effect: 'BURN', blurb: 'Ignites tar: a hit plus lingering BURN over 5s.',
     pulse: true, triggerTiles: 0.8, radiusTiles: 1.4, damage: 450, dotDuration: 5, dotMag: 0.05,
   },
   FROST_SNARE: {
-    name: 'Frost Snare', price: 45, color: 0x88ddff, spriteKey: 'TRAP_FROST',
+    name: 'Frost Snare', price: 55, color: 0x88ddff, spriteKey: 'TRAP_FROST',
     effect: 'SLOW', blurb: 'Chills a wide area, SLOWING enemies 50% for 3.5s.',
     pulse: true, triggerTiles: 0.8, radiusTiles: 1.6, damage: 200, slowDuration: 3.5, slowMag: 0.5,
   },
   BALLISTA_SNARE: {
-    name: 'Ballista Snare', price: 100, color: 0xffcc44, spriteKey: 'TRAP_BALLISTA',
+    name: 'Ballista Snare', price: 120, color: 0xffcc44, spriteKey: 'TRAP_BALLISTA',
     effect: 'BOSS', blurb: 'BOSS SPECIALIST: a massive bolt that hits 4x as hard against bosses.',
     pulse: true, triggerTiles: 0.7, radiusTiles: 0.9, damage: 5500, bossMult: 4.0,
   },
   SKY_NET: {
-    name: 'Sky Net', price: 85, color: 0xcfe0ff, spriteKey: 'TRAP_SKY_NET',
+    name: 'Sky Net', price: 100, color: 0xcfe0ff, spriteKey: 'TRAP_SKY_NET',
     effect: 'FLYER', blurb: 'FLYER SPECIALIST: only fliers trigger it — a big hit plus a heavy SLOW.',
     pulse: true, triggerTiles: 1.0, radiusTiles: 1.4, damage: 3200, slowDuration: 3, slowMag: 0.6, flyerOnly: true,
   },

@@ -461,8 +461,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'GOLD FOR COMMAND',
     blurb: 'A proven Legate sells his whole command staff to Rome. His invoice is aggressively unpatriotic.',
     upside: 'Immediately gain a Tier-5 Legate to place.',
-    caveat: 'Lose 225 gold immediately.',
-    effects: ['Gain a Tier-5 LEGATE now.', 'Lose 225 gold now.']
+    caveat: 'Lose 300 gold immediately.',
+    effects: ['Gain a Tier-5 LEGATE now.', 'Lose 300 gold now.']
   },
   {
     id: 'AGRICOLA_LEVY',
@@ -479,8 +479,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'PUBLIC TREASURY SALE',
     blurb: 'The auctioneer opens one velvet case. Every senator suddenly remembers your name.',
     upside: 'Immediately gain a random Epic item.',
-    caveat: 'Lose 325 gold immediately.',
-    effects: ['Gain a random Epic item now.', 'Lose 325 gold now.']
+    caveat: 'Lose 425 gold immediately.',
+    effects: ['Gain a random Epic item now.', 'Lose 425 gold now.']
   },
   {
     id: 'RELIQUARY_RANSOM',
@@ -488,8 +488,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'GOLD FOR A LEGEND',
     blurb: 'A temple guard looks away for one breath. The reliquary changes hands before anyone can pray.',
     upside: 'Immediately gain a random Legendary item.',
-    caveat: 'Lose 500 gold immediately.',
-    effects: ['Gain a random Legendary item now.', 'Lose 500 gold now.']
+    caveat: 'Lose 650 gold immediately.',
+    effects: ['Gain a random Legendary item now.', 'Lose 650 gold now.']
   },
   {
     id: 'ONAGER_INDENTURE',
@@ -497,8 +497,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'DEBT-FUNDED SIEGE',
     blurb: 'A colossal engine is wheeled out under a contract with very small lettering.',
     upside: 'Immediately gain a Tier-5 Colossus Onager to place.',
-    caveat: 'Lose 250 gold immediately.',
-    effects: ['Gain a Tier-5 COLOSSUS ONAGER now.', 'Lose 250 gold now.']
+    caveat: 'Lose 325 gold immediately.',
+    effects: ['Gain a Tier-5 COLOSSUS ONAGER now.', 'Lose 325 gold now.']
   },
   {
     id: 'PRAETORIAN_STIPEND',
@@ -506,8 +506,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'ELITE PAYROLL',
     blurb: 'The guard will stand for Rome. The guard will also be paid before standing for Rome.',
     upside: 'Immediately gain a Tier-5 Imperator Guard to place.',
-    caveat: 'Lose 375 gold immediately.',
-    effects: ['Gain a Tier-5 IMPERATOR GUARD now.', 'Lose 375 gold now.']
+    caveat: 'Lose 450 gold immediately.',
+    effects: ['Gain a Tier-5 IMPERATOR GUARD now.', 'Lose 450 gold now.']
   },
   {
     id: 'VESTAL_ORPHANS',
@@ -533,8 +533,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'ANTI-AIR PURCHASE',
     blurb: 'Aquila hunters rent their talons to the highest bidder and leave no coin on the table.',
     upside: 'Immediately gain a Tier-5 Aquila Venator to place.',
-    caveat: 'Lose 240 gold immediately.',
-    effects: ['Gain a Tier-5 AQUILA VENATOR now.', 'Lose 240 gold now.']
+    caveat: 'Lose 325 gold immediately.',
+    effects: ['Gain a Tier-5 AQUILA VENATOR now.', 'Lose 325 gold now.']
   },
   {
     id: 'SPECULATOR_BRIBE',
@@ -542,8 +542,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SCOUTING PAYOFF',
     blurb: 'A scout captain sells tomorrow morning early. Rome buys the information and the man carrying it.',
     upside: 'Immediately gain a Tier-5 Speculator to place.',
-    caveat: 'Lose 160 gold immediately.',
-    effects: ['Gain a Tier-5 SPECULATOR now.', 'Lose 160 gold now.']
+    caveat: 'Lose 250 gold immediately.',
+    effects: ['Gain a Tier-5 SPECULATOR now.', 'Lose 250 gold now.']
   },
   // 2026-07-02 — low-stakes relic family. Small, cheap bargains with modest
   // upsides and modest punishments, so not every relic offer is a
@@ -563,8 +563,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'MODEST HIRE',
     blurb: 'A steady centurion works for steady coin. Nothing dramatic. That is the point.',
     upside: 'Immediately gain a Tier-3 Centurion to place.',
-    caveat: 'Lose 120 gold immediately.',
-    effects: ['Gain a Tier-3 CENTURION now.', 'Lose 120 gold now.']
+    caveat: 'Lose 150 gold immediately.',
+    effects: ['Gain a Tier-3 CENTURION now.', 'Lose 150 gold now.']
   },
   {
     id: 'SAGITTARIUS_PACT',
@@ -590,8 +590,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'PAID SENTRIES',
     blurb: 'Four extra watchmen take the wall for honest pay. The treasury sighs and signs.',
     upside: 'Gain 4 lives immediately.',
-    caveat: 'Lose 100 gold immediately.',
-    effects: ['Gain 4 lives now.', 'Lose 100 gold now.']
+    caveat: 'Lose 125 gold immediately.',
+    effects: ['Gain 4 lives now.', 'Lose 125 gold now.']
   },
   {
     id: 'SCRAP_REQUISITION',
@@ -599,8 +599,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SURPLUS CRATE',
     blurb: 'The armory sells last season\'s surplus. Serviceable, unglamorous, and priced accordingly.',
     upside: 'Immediately gain a random Rare item.',
-    caveat: 'Lose 90 gold immediately.',
-    effects: ['Gain a random Rare item now.', 'Lose 90 gold now.']
+    caveat: 'Lose 140 gold immediately.',
+    effects: ['Gain a random Rare item now.', 'Lose 140 gold now.']
   },
   // 2026-07-03 — mechanic-hook relics. Instead of plain stat trades, each
   // of these six plugs into a distinct game system (ramparts, traps, kill
@@ -621,8 +621,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'FORGE SURPLUS',
     blurb: 'Vulcan\'s apprentices clear the forge floor: spikes, fire, and frost, crated and ready.',
     upside: 'Immediately gain 2 Iron Spike, 2 Tar Fire, and 2 Frost Snare traps.',
-    caveat: 'Lose 120 gold immediately.',
-    effects: ['Gain 2× Iron Spike + 2× Tar Fire + 2× Frost Snare traps now.', 'Lose 120 gold now.']
+    caveat: 'Lose 180 gold immediately.',
+    effects: ['Gain 2× Iron Spike + 2× Tar Fire + 2× Frost Snare traps now.', 'Lose 180 gold now.']
   },
   {
     id: 'PUBLICANS_CONTRACT',
@@ -657,8 +657,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SACRED RESCUE',
     blurb: 'The Vestals bank a miracle against Rome\'s darkest hour. Miracles are not cheap.',
     upside: 'ONCE per run: the first time your lives fall below 6, the Vestals restore you to 12.',
-    caveat: 'Lose 250 gold immediately.',
-    effects: ['One-time rescue: lives < 6 → restored to 12.', 'Lose 250 gold now.']
+    caveat: 'Lose 300 gold immediately.',
+    effects: ['One-time rescue: lives < 6 → restored to 12.', 'Lose 300 gold now.']
   },
   // 2026-07-04 - more low-stakes relics. Quiet offers that feel useful
   // without forcing a whole-run build pivot.
@@ -668,8 +668,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'FIELD REPORT',
     blurb: 'A speculator brings a clean map and asks for an unheroic amount of pay.',
     upside: 'Immediately gain a Tier-3 Speculator to place.',
-    caveat: 'Lose 95 gold immediately.',
-    effects: ['Gain a Tier-3 SPECULATOR now.', 'Lose 95 gold now.']
+    caveat: 'Lose 125 gold immediately.',
+    effects: ['Gain a Tier-3 SPECULATOR now.', 'Lose 125 gold now.']
   },
   {
     id: 'SLINGER_LEVY',
@@ -686,8 +686,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'WORK ORDER',
     blurb: 'One practical crew is sent wherever Rome needs hands most.',
     upside: 'Immediately gain one random Tier-3 base tower to place.',
-    caveat: 'Lose 110 gold immediately.',
-    effects: ['Gain a random Tier-3 BASE tower now.', 'Lose 110 gold now.']
+    caveat: 'Lose 140 gold immediately.',
+    effects: ['Gain a random Tier-3 BASE tower now.', 'Lose 140 gold now.']
   },
   {
     id: 'SMALL_RAMPART_GRANT',
@@ -704,8 +704,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'SMALL CRATE',
     blurb: 'A trapwright leaves two demonstration pieces and a very small invoice.',
     upside: 'Immediately gain 1 Iron Spike and 1 Frost Snare trap.',
-    caveat: 'Lose 60 gold immediately.',
-    effects: ['Gain 1× Iron Spike + 1× Frost Snare trap now.', 'Lose 60 gold now.']
+    caveat: 'Lose 95 gold immediately.',
+    effects: ['Gain 1× Iron Spike + 1× Frost Snare trap now.', 'Lose 95 gold now.']
   },
   {
     id: 'CHAPEL_CANDLE',
@@ -713,8 +713,8 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     eyebrow: 'QUIET PRAYER',
     blurb: 'A small shrine keeps the wall steady for one more night.',
     upside: 'Gain 3 lives immediately.',
-    caveat: 'Lose 70 gold immediately.',
-    effects: ['Gain 3 lives now.', 'Lose 70 gold now.']
+    caveat: 'Lose 90 gold immediately.',
+    effects: ['Gain 3 lives now.', 'Lose 90 gold now.']
   },
   {
     id: 'RANK_AND_FILE_EDICT',
@@ -730,22 +730,22 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
 const RELIC_BY_ID: Record<string, CampaignRelicDef> = Object.fromEntries(CAMPAIGN_RELICS.map(r => [r.id, r]));
 
 const CAMPAIGN_RELIC_GOLD_COSTS: Partial<Record<CampaignRelicId, number>> = {
-  LEGATE_CONTRACT: 225,
-  EPIC_AUCTION: 325,
-  RELIQUARY_RANSOM: 500,
-  ONAGER_INDENTURE: 250,
-  PRAETORIAN_STIPEND: 375,
-  SKY_TOLL: 240,
-  SPECULATOR_BRIBE: 160,
-  CENTURION_LOAN: 120,
-  WATCHMANS_DUE: 100,
-  SCRAP_REQUISITION: 90,
-  VULCANS_CACHE: 120,
-  VESTAL_COVENANT: 250,
-  SCOUTS_STIPEND: 95,
-  BUILDER_CHIT: 110,
-  TRAPWRIGHTS_SAMPLE: 60,
-  CHAPEL_CANDLE: 70
+  LEGATE_CONTRACT: 300,
+  EPIC_AUCTION: 425,
+  RELIQUARY_RANSOM: 650,
+  ONAGER_INDENTURE: 325,
+  PRAETORIAN_STIPEND: 450,
+  SKY_TOLL: 325,
+  SPECULATOR_BRIBE: 250,
+  CENTURION_LOAN: 150,
+  WATCHMANS_DUE: 125,
+  SCRAP_REQUISITION: 140,
+  VULCANS_CACHE: 180,
+  VESTAL_COVENANT: 300,
+  SCOUTS_STIPEND: 125,
+  BUILDER_CHIT: 140,
+  TRAPWRIGHTS_SAMPLE: 95,
+  CHAPEL_CANDLE: 90
 };
 
 const CAMPAIGN_RELIC_LIFE_COSTS: Partial<Record<CampaignRelicId, number>> = {

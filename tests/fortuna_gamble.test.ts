@@ -1,5 +1,5 @@
-// Fortuna's Wheel tests — locks the Mercator 925g regular combo-tower gamble.
-// Mechanic: pay 925g, get a random regular COMBO tower. TIER rarity is linear
+// Fortuna's Wheel tests — locks the Mercator 1050g regular combo-tower gamble.
+// Mechanic: pay 1050g, get a random regular COMBO tower. TIER rarity is linear
 // (T2 weight 4 → 40%, T3 = 3 → 30%, T4 = 2 → 20%, T5 = 1 → 10%); within
 // a tier the pick is uniform. No cap on spins. Tower lands in
 // pendingPurchasedTowers like a Mercator T5 buy. This file pins:
@@ -22,9 +22,9 @@ import {
 import towers from '../src/data/towers.json';
 import combinations from '../src/data/towerCombinations.json';
 
-describe('Fortuna\'s Wheel — 925g combo-tower gamble', () => {
-  it('charges 925g per spin', () => {
-    expect(FORTUNA_GAMBLE_COST).toBe(925);
+describe('Fortuna\'s Wheel — 1050g combo-tower gamble', () => {
+  it('charges 1050g per spin', () => {
+    expect(FORTUNA_GAMBLE_COST).toBe(1050);
   });
 
   it('pool contains every regular COMBO-kind tower in towers.json', () => {

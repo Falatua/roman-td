@@ -2924,14 +2924,14 @@ async function boot() {
   // grants refund the wave's place cost as a fair stand-in (no purchase price
   // to recover). Tower types from `pendingPurchasedTowers` carry .source.
   function purchasedTowerPrice(entry: NonNullable<typeof state.pendingPurchasedTowers>[number]): number {
-    // Mercator buys = flat 250g refund (matches purchase price). Everything
+    // Mercator buys = flat 325g refund (matches purchase price). Everything
     // else (quest reward, Fortuna gamble win, bonus/gift) wasn't bought
     // with gold, so the refund falls back to the wave's place cost as a
-    // fair stand-in. Fortuna spins cost 925g but the player took a
-    // gamble — they don't get the full spin cost back, just the 250g
+    // fair stand-in. Fortuna spins cost 1050g but the player took a
+    // gamble — they don't get the full spin cost back, just the 325g
     // mercator-equivalent so refunds remain bounded.
-    if (entry.source === 'mercator' || entry.source === 'fortuna') return 250;
-    if (entry.source === 'backroom') return 125;
+    if (entry.source === 'mercator' || entry.source === 'fortuna') return 325;
+    if (entry.source === 'backroom') return 225;
     // 2026-05-19 — Hero placement is free and yields no refund.
     // 2026-07-01 — Relic towers are already paid for by the relic caveat
     // (gold/lives/global drawback), so putting one back cannot mint gold.

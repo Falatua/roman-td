@@ -145,7 +145,7 @@ export interface ShopState {
   livesBoughtThisVisit: number;
   // Mercator-only: random T5 base tower offers.
   towerOffers?: MercatorTowerOffer[];
-  // Mercator-only: Fortuna's Wheel — 925g RNG roll on a regular combo tower
+  // Mercator-only: Fortuna's Wheel — RNG roll on a regular combo tower
   // (T2-T5, Supercombo/Omega/recipe-chain results excluded). Tracked
   // per-visit so the player can see how many times they've gambled this
   // round. No cap — pure RNG, by design.
@@ -157,10 +157,11 @@ export interface ShopState {
 // and every offer has a flat armory price. The player still gets variety in tower
 // TYPE (the pool below picks 8 distinct types per visit) — they just
 // always arrive at apex tier and at the same price tag.
-// 2026-06-23 — JB set T5 Mercator armory towers to 250g. Champions are
-// premium 1000g recruits because they feed the Mars Victor path.
+// 2026-07-07 — T5 Mercator armory towers lifted to 325g after the ocean /
+// late-wave enemy count expansion. Still a bargain, but no longer cheaper
+// than most mid-game strategic purchases.
 const MERCATOR_TOWER_PRICE: Record<number, number> = {
-  1: 250, 2: 250, 3: 250, 4: 250, 5: 250
+  1: 325, 2: 325, 3: 325, 4: 325, 5: 325
 };
 
 // Buyable tower pool — base & low-tier combo towers only. Specifically
@@ -382,7 +383,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   return { type: 'MERCATOR', offers, livesPrice: 83, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };
 }
 
-// ─── Fortuna's Wheel — 925g RNG regular-combo gamble ───────────────────
+// ─── Fortuna's Wheel — 1050g RNG regular-combo gamble ──────────────────
 // Pure-RNG mechanic added 2026-05 v9. The pool is every regular authored
 // COMBO tower in towers.json across T2/T3/T4/T5. Supercombo, Omega, Champion,
 // and recipe-chain combo-of-combo results are excluded so Fortuna stays a
@@ -397,12 +398,12 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
 //   T5 weight 1 → 10% per spin
 // A linear 4/3/2/1 ramp: each step up the tier ladder cuts the per-spin
 // hit chance by 10 percentage points. T5 "feels earned"; T2/T3 stay common
-// so 925g still has a clear floor.
+// so 1050g still has a clear floor.
 import towersJson from '../data/towers.json';
 import towerCombinationsJson from '../data/towerCombinations.json';
-// 2026-06-23 — 500 → 925 (~1.85x) to match the ~1.86x gold income from the
-// doubled enemy counts.
-export const FORTUNA_GAMBLE_COST = 925;
+// 2026-07-07 — raised again after ocean spawns / larger late waves made
+// buyable combo shortcuts too easy to spam.
+export const FORTUNA_GAMBLE_COST = 1050;
 // 2026-05 v9: APEX super-combos are no longer rollable from Fortuna or
 // offered in the Mercator tower lineup. The 6 LATE-game cross-combos
 // (Imperium Eternum, Carthage Scourge, Triumvirate, Legion Prime,

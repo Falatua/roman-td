@@ -105,7 +105,7 @@ describe('Campaign relics', () => {
     expect(byId.SENATE_AUDIT.caveat).toContain('+55%');
     expect(byId.CONSCRIPTS_WAGER.upside).toContain('Tier-5');
     expect(byId.ARMORY_BARGAIN.caveat).toContain('7 lives');
-    expect(byId.LEGATE_CONTRACT.caveat).toContain('225 gold');
+    expect(byId.LEGATE_CONTRACT.caveat).toContain('300 gold');
     expect(byId.AGRICOLA_LEVY.upside).toContain('Champion Agricola');
     expect(byId.AGRICOLA_LEVY.caveat).toContain('29 lives');
     expect(byId.RANK_AND_FILE_EDICT.upside).toContain('+20%');
@@ -194,7 +194,7 @@ describe('Campaign relics', () => {
     const loanState = bootstrapState();
     loanState.gold = 500;
     applyCampaignRelic(loanState, 'CENTURION_LOAN');
-    expect(loanState.gold).toBe(380);
+    expect(loanState.gold).toBe(350);
     expect(loanState.pendingPurchasedTowers?.[0].type).toBe(TowerType.CENTURION);
     expect(loanState.pendingPurchasedTowers?.[0].tier).toBe(3);
 
@@ -209,13 +209,13 @@ describe('Campaign relics', () => {
     watchState.gold = 500;
     watchState.lives = 20;
     applyCampaignRelic(watchState, 'WATCHMANS_DUE');
-    expect(watchState.gold).toBe(400);
+    expect(watchState.gold).toBe(375);
     expect(watchState.lives).toBe(24);
 
     const scrapState = bootstrapState();
     scrapState.gold = 500;
     applyCampaignRelic(scrapState, 'SCRAP_REQUISITION');
-    expect(scrapState.gold).toBe(410);
+    expect(scrapState.gold).toBe(360);
     expect((scrapState as any).__pendingRelicItemRarities).toEqual(['RARE']);
 
     // Affordability gates hold for the small costs too.
@@ -231,7 +231,7 @@ describe('Campaign relics', () => {
     const scout = bootstrapState();
     scout.gold = 500;
     applyCampaignRelic(scout, 'SCOUTS_STIPEND');
-    expect(scout.gold).toBe(405);
+    expect(scout.gold).toBe(375);
     expect(scout.pendingPurchasedTowers?.[0]).toEqual({ type: TowerType.SPECULATOR, tier: 3, source: 'relic' });
 
     const slinger = bootstrapState();
@@ -243,7 +243,7 @@ describe('Campaign relics', () => {
     const builder = bootstrapState();
     builder.gold = 500;
     applyCampaignRelic(builder, 'BUILDER_CHIT');
-    expect(builder.gold).toBe(390);
+    expect(builder.gold).toBe(360);
     expect(builder.pendingPurchasedTowers).toHaveLength(1);
     expect(builder.pendingPurchasedTowers?.[0].tier).toBe(3);
     expect(builder.pendingPurchasedTowers?.[0].source).toBe('relic');
@@ -258,7 +258,7 @@ describe('Campaign relics', () => {
     const traps = bootstrapState();
     traps.gold = 500;
     applyCampaignRelic(traps, 'TRAPWRIGHTS_SAMPLE');
-    expect(traps.gold).toBe(440);
+    expect(traps.gold).toBe(405);
     expect(traps.trapInventory?.IRON_SPIKE_TRAP).toBe(1);
     expect(traps.trapInventory?.FROST_SNARE).toBe(1);
     expect(traps.trapsPurchased).toBe(2);
@@ -267,11 +267,11 @@ describe('Campaign relics', () => {
     chapel.gold = 500;
     chapel.lives = 12;
     applyCampaignRelic(chapel, 'CHAPEL_CANDLE');
-    expect(chapel.gold).toBe(430);
+    expect(chapel.gold).toBe(410);
     expect(chapel.lives).toBe(15);
 
     const noGold = bootstrapState();
-    noGold.gold = 59;
+    noGold.gold = 94;
     expect(campaignRelicAffordability(noGold, 'TRAPWRIGHTS_SAMPLE').canAfford).toBe(false);
     expect(applyCampaignRelic(noGold, 'TRAPWRIGHTS_SAMPLE')).toBe(false);
     expect(noGold.trapInventory?.IRON_SPIKE_TRAP ?? 0).toBe(0);
@@ -294,11 +294,11 @@ describe('Campaign relics', () => {
     expect(mason.rampartsPurchased ?? 0).toBe(0);   // shop quota untouched
     expect(mason.lives).toBe(24);
 
-    // VULCANS_CACHE — 6 traps for 120g.
+    // VULCANS_CACHE — 6 traps for 180g.
     const vulcan = bootstrapState();
     vulcan.gold = 500;
     applyCampaignRelic(vulcan, 'VULCANS_CACHE');
-    expect(vulcan.gold).toBe(380);
+    expect(vulcan.gold).toBe(320);
     expect(vulcan.trapInventory?.IRON_SPIKE_TRAP).toBe(2);
     expect(vulcan.trapInventory?.TAR_FIRE_TRAP).toBe(2);
     expect(vulcan.trapInventory?.FROST_SNARE).toBe(2);
@@ -327,7 +327,7 @@ describe('Campaign relics', () => {
     const vestal = bootstrapState();
     vestal.gold = 500;
     applyCampaignRelic(vestal, 'VESTAL_COVENANT');
-    expect(vestal.gold).toBe(250);
+    expect(vestal.gold).toBe(200);
     vestal.lives = 8;
     expect(campaignRelicVestalRescue(vestal)).toBe(false);   // not low enough
     vestal.lives = 4;
@@ -395,7 +395,7 @@ describe('Campaign relics', () => {
     const legateState = bootstrapState();
     legateState.gold = 1000;
     applyCampaignRelic(legateState, 'LEGATE_CONTRACT');
-    expect(legateState.gold).toBe(775);
+    expect(legateState.gold).toBe(700);
     expect(legateState.pendingPurchasedTowers).toEqual([
       { type: TowerType.LEGATE, tier: 5, source: 'relic' }
     ]);
@@ -403,13 +403,13 @@ describe('Campaign relics', () => {
     const onagerState = bootstrapState();
     onagerState.gold = 1000;
     applyCampaignRelic(onagerState, 'ONAGER_INDENTURE');
-    expect(onagerState.gold).toBe(750);
+    expect(onagerState.gold).toBe(675);
     expect(onagerState.pendingPurchasedTowers?.[0]).toEqual({ type: TowerType.COLOSSUS_ONAGER, tier: 5, source: 'relic' });
 
     const guardState = bootstrapState();
     guardState.gold = 1000;
     applyCampaignRelic(guardState, 'PRAETORIAN_STIPEND');
-    expect(guardState.gold).toBe(625);
+    expect(guardState.gold).toBe(550);
     expect(guardState.pendingPurchasedTowers?.[0]).toEqual({ type: TowerType.IMPERATOR_GUARD, tier: 5, source: 'relic' });
   });
 
@@ -459,23 +459,23 @@ describe('Campaign relics', () => {
 
   it('adds gold-sacrifice epic and legendary item relics without going negative', () => {
     const shortAuctionState = bootstrapState();
-    shortAuctionState.gold = 324;
+    shortAuctionState.gold = 424;
     const affordability = campaignRelicAffordability(shortAuctionState, 'EPIC_AUCTION');
     expect(affordability.canAfford).toBe(false);
-    expect(affordability.reason).toContain('325 gold');
+    expect(affordability.reason).toContain('425 gold');
     expect(applyCampaignRelic(shortAuctionState, 'EPIC_AUCTION')).toBe(false);
-    expect(shortAuctionState.gold).toBe(324);
+    expect(shortAuctionState.gold).toBe(424);
     expect((shortAuctionState as any).__pendingRelicItemRarities).toBeUndefined();
     expect(activeCampaignRelicIds(shortAuctionState)).toEqual([]);
 
     const auctionState = bootstrapState();
     auctionState.gold = 600;
     expect(applyCampaignRelic(auctionState, 'EPIC_AUCTION')).toBe(true);
-    expect(auctionState.gold).toBe(275);
+    expect(auctionState.gold).toBe(175);
     expect((auctionState as any).__pendingRelicItemRarities).toEqual(['EPIC']);
 
     const ransomState = bootstrapState();
-    ransomState.gold = 500;
+    ransomState.gold = 650;
     expect(campaignRelicAffordability(ransomState, 'RELIQUARY_RANSOM').canAfford).toBe(true);
     expect(applyCampaignRelic(ransomState, 'RELIQUARY_RANSOM')).toBe(true);
     expect(ransomState.gold).toBe(0);

@@ -41,7 +41,7 @@ function findRoadSpot(s: any, orient: RampartOrientation): { col: number; row: n
 }
 
 describe('Rampart purchasing', () => {
-  it('costs 20 gold; orientation is chosen at placement, not purchase', () => {
+  it('costs the current rampart price; orientation is chosen at placement, not purchase', () => {
     const s = bootstrapState();
     const spent = buyRampart(s);
     expect(spent).toBe(RAMPART_COST);

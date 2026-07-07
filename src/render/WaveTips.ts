@@ -84,7 +84,7 @@ const TIPS: WaveTip[] = [
     wave: 8,
     icon: '▦',
     title: 'STONE RAMPARTS',
-    body: 'The shop sells STONE RAMPARTS (20g, max 5 per campaign): a line of 5 wall stones placed after preview + confirmation. Buy one and it goes to your Armarium inventory. Open inventory, click the Stone Rampart to arm it, then use the rotate tray like object placement: press R, tap ROTATE, or pick horizontal, vertical, diagonal down, or diagonal up. Hover to preview the exact five tiles, then click a valid tile or road to confirm. Checkpoints stay protected. Diagonal walls block enemies just as hard as straight ones.',
+    body: 'The shop sells STONE RAMPARTS (30g, max 5 per campaign): a line of 5 wall stones placed after preview + confirmation. Buy one and it goes to your Armarium inventory. Open inventory, click the Stone Rampart to arm it, then use the rotate tray like object placement: press R, tap ROTATE, or pick horizontal, vertical, diagonal down, or diagonal up. Hover to preview the exact five tiles, then click a valid tile or road to confirm. Checkpoints stay protected. Diagonal walls block enemies just as hard as straight ones.',
   },
   {
     wave: 9,

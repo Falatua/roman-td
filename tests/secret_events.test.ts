@@ -78,13 +78,13 @@ describe('Mercator Back Room hidden event', () => {
       title: 'Scorpio T5',
       eyebrow: 'STAMPED ARMORY CHIT',
       description: 'test',
-      price: 125,
+      price: 225,
       towerType: TowerType.SCORPIO,
       tier: 5
     }];
     const result = claimMercatorBackRoomOffer(s, 'armory-chit-t5');
     expect(result.ok).toBe(true);
-    expect(s.gold).toBe(375);
+    expect(s.gold).toBe(275);
     expect(s.mercatorBackRoomClaimed).toBe(true);
     expect(s.pendingPurchasedTowers).toEqual([{ type: TowerType.SCORPIO, tier: 5, source: 'backroom' }]);
     expect(claimMercatorBackRoomOffer(s, 'armory-chit-t5').ok).toBe(false);
@@ -109,6 +109,33 @@ describe('Mercator Back Room hidden event', () => {
     expect(result).toEqual({ ok: false, reason: 'inventory_full' });
     expect(s.gold).toBe(500);
     expect(s.mercatorBackRoomClaimed).toBeFalsy();
+  });
+
+  it('claims a supply cache with the real usable trap ids', () => {
+    const s = createGameState();
+    s.gold = 500;
+    s.mercatorBackRoomOffers = [{
+      id: 'quartermaster-cache',
+      kind: 'SUPPLIES',
+      title: 'Quartermaster Cache',
+      eyebrow: 'DUSTY SUPPLY CRATE',
+      description: 'test',
+      price: 160,
+      trapBundle: {
+        IRON_SPIKE_TRAP: 2,
+        BALLISTA_SNARE: 1,
+        SKY_NET: 1
+      },
+      ramparts: 1
+    }];
+    const result = claimMercatorBackRoomOffer(s, 'quartermaster-cache');
+    expect(result.ok).toBe(true);
+    expect(s.gold).toBe(340);
+    expect(s.trapInventory?.IRON_SPIKE_TRAP).toBe(2);
+    expect(s.trapInventory?.IRON_SPIKE).toBeUndefined();
+    expect(s.trapInventory?.BALLISTA_SNARE).toBe(1);
+    expect(s.trapInventory?.SKY_NET).toBe(1);
+    expect(s.rampartsOwned).toBe(1);
   });
 });
 

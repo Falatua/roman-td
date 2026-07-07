@@ -111,7 +111,7 @@ export function buildMercatorBackRoomOffers(state: GameStateShape): MercatorBack
     return state.mercatorBackRoomOffers as MercatorBackRoomOffer[];
   }
   const legendary = pick(BACKROOM_LEGENDARIES);
-  const legendaryPrice = Math.max(1, Math.round(itemBuyPrice(legendary) * 0.55));
+  const legendaryPrice = Math.max(1, Math.round(itemBuyPrice(legendary) * 0.65));
   const tower = pick(BASE_TOWER_TYPES.filter(type => {
     const def: any = (towersData as any)[type];
     return !!def && (def.kind ?? 'BASE') === 'BASE';
@@ -135,7 +135,7 @@ export function buildMercatorBackRoomOffers(state: GameStateShape): MercatorBack
       title: `${towerName} T5`,
       eyebrow: 'STAMPED ARMORY CHIT',
       description: `A secret stamped chit for one Tier V ${towerName}. Cheaper than the front counter, because the front counter has witnesses.`,
-      price: 125,
+      price: 225,
       towerType: tower,
       tier: 5
     },
@@ -145,9 +145,9 @@ export function buildMercatorBackRoomOffers(state: GameStateShape): MercatorBack
       title: 'Quartermaster Cache',
       eyebrow: 'DUSTY SUPPLY CRATE',
       description: 'Two Iron Spikes, one Ballista Snare, one Sky Net, and one Stone Rampart. A compact emergency kit for a very rude future wave.',
-      price: 110,
+      price: 160,
       trapBundle: {
-        IRON_SPIKE: 2,
+        IRON_SPIKE_TRAP: 2,
         BALLISTA_SNARE: 1,
         SKY_NET: 1
       },

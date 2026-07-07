@@ -400,7 +400,7 @@ describe('Merchant — Mercator stock', () => {
     const towers = buildMercatorTowerOffers(10, 5);
     const armory = towers.filter(o => !o.type.startsWith('CHAMPION_'));
     expect(armory).toHaveLength(10);
-    expect(armory.every(o => o.tier === 5 && o.price === 250)).toBe(true);
+    expect(armory.every(o => o.tier === 5 && o.price === 325)).toBe(true);
     expect(new Set(armory.map(o => o.type)).size).toBe(10);
     expect(armory.every(o => (towersData as any)[o.type]?.kind === 'BASE')).toBe(true);
   });

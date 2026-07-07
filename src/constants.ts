@@ -81,9 +81,10 @@ export const ECONOMY = {
   // 2026-06-23 — prices ~1.85x to match the ~1.86x gold income from the
   // doubled enemy counts (1g/kill). Restores pre-doubling gold pressure.
   // 2026-06-28 — every pool-upgrade tier cut 10% cheaper (×0.9, rounded).
-  // 2026-07-05 — JB requested a +10% pool-upgrade price bump to slow the
-  // prospect-power ramp after recent economy and tower-payoff changes.
-  POOL_UPGRADE_COSTS: [13, 28, 56, 97, 153, 233, 353, 543] as const,
+  // 2026-07-07 — economy audit after ocean spawns / larger late waves:
+  // +15% on the pool curve keeps full-pool timing meaningful without
+  // touching kill gold or making the opener feel stingy.
+  POOL_UPGRADE_COSTS: [15, 32, 64, 112, 176, 268, 406, 624] as const,
   POOL_MAX_LEVEL: 8,
   AERARIUM_BONUS: 4,
   AERARIUM_MAX_COUNT: 3,
