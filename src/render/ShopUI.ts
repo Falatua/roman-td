@@ -345,7 +345,7 @@ export interface ShopHooks {
 //   • Hover lift + disabled-state BUY buttons (gold below price greys it
 //     out instead of letting the player click through to a hint).
 // ─── STONE RAMPARTS section (2026-07-02) — 5-tile barrier lines for
-// mazing. Rendered at BOTH the gate shop and Mercator (shared helper).
+// mazing. Rendered by the gate shop and inventory placement flow.
 // Buy → PLACE arms it → click a tile; placed tiles are ordinary wall
 // stones (identical art + sell rules); hard cap 5 purchases per campaign.
 // Styles are fully inline so the section renders correctly in the gate
@@ -673,12 +673,6 @@ function renderMercatorShop(
     towersSection.appendChild(tList);
     body.appendChild(towersSection);
   }
-
-  renderTrapSection(body, state, refresh);
-
-  // ─── STONE RAMPARTS (2026-07-02) — shared section, also on the gate
-  // shop (see renderShop) so the mazing aid is buyable from wave 1.
-  renderRampartSection(body, state, refresh, hooks.onClose);
 
   // ─── SECTION 2: ITEMS (grouped by rarity bucket so player sees the
   // Legendary tier first — that's the Mercator's other unique draw) ───
@@ -1088,9 +1082,8 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   }
   contentRoot.appendChild(list);
   renderTrapSection(contentRoot, state, refresh);
-  // STONE RAMPARTS (2026-07-02) — shared section, also rendered at the
-  // Mercator. Gate shop placement = right below the item offers so the
-  // mazing aid is visible from the very first shop visit.
+  // STONE RAMPARTS (2026-07-02) — gate shop placement = right below the
+  // item offers so the mazing aid is visible from the very first shop visit.
   renderRampartSection(contentRoot, state, refresh, hooks.onClose);
   // Lives purchase
   const livesRow = document.createElement('div');

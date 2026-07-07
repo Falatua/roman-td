@@ -14,6 +14,7 @@
 // Every assertion has an explanation so failures point to the broken
 // invariant, not just "expected X to be Y".
 import { describe, it, expect, beforeAll } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { scanCombos, executeCombo } from '../src/systems/CombinationEngine';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
@@ -438,6 +439,22 @@ describe('Merchant pools reference only real towers', () => {
     for (const superCombo of ['ROMAN_TRANSFORMER','JULIUS_CAESAR','HANNIBALS_NIGHTMARE','TRIPLEX_ACIES','LEGION_PRIME']) {
       expect(FORTUNA_GAMBLE_POOL).not.toContain(superCombo);
     }
+  });
+
+  it('Mercator shop renderer does not sell traps or stone ramparts', () => {
+    const source = readFileSync('src/render/ShopUI.ts', 'utf8');
+    const mercStart = source.indexOf('function renderMercatorShop');
+    const mercEnd = source.indexOf('export function renderShop', mercStart);
+    expect(mercStart, 'renderMercatorShop should exist').toBeGreaterThanOrEqual(0);
+    expect(mercEnd, 'renderShop should follow renderMercatorShop').toBeGreaterThan(mercStart);
+
+    const mercatorRenderer = source.slice(mercStart, mercEnd);
+    expect(mercatorRenderer).not.toContain('renderTrapSection(');
+    expect(mercatorRenderer).not.toContain('renderRampartSection(');
+
+    const gateRenderer = source.slice(mercEnd);
+    expect(gateRenderer).toContain('renderTrapSection(contentRoot');
+    expect(gateRenderer).toContain('renderRampartSection(contentRoot');
   });
 });
 
