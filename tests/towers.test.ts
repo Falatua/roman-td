@@ -9,7 +9,7 @@ import { spawnProjectile } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind, TargetingMode } from '../src/types';
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS, GRID } from '../src/constants';
 import { createGameState } from '../src/GameState';
-import { initializeGrid, isBuildable, isWaterZoneTile } from '../src/systems/GridManager';
+import { initializeGrid, isBuildable, isWaterZoneTile, canBuildWaterTowerAt } from '../src/systems/GridManager';
 import towersData from '../src/data/towers.json';
 import wavesData from '../src/data/waves.json';
 
@@ -792,8 +792,8 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     // anchors spread across the map.
     // 2026-07-05 — Treasury was moved two tiles right to (15,16), making
     // Treasury<->War the tightest pair at manhattan 4.
-    // 2026-07-07 — TIDE is deliberately anchored to the ocean edge, so it
-    // joins the later special-position tiles rather than the original six.
+    // 2026-07-07 — TIDE is deliberately anchored in the ocean below WP2,
+    // so it joins the later special-position tiles rather than the original six.
     const spread = AURA_TILES.filter(t => t.kind !== 'IVORY' && t.kind !== 'AMBER' && t.kind !== 'TIDE');
     expect(spread.length).toBe(6);
     for (let i = 0; i < spread.length; i++) {
@@ -844,13 +844,14 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     expect(AURA_TILE_EFFECTS.AMBER?.label).toBe('BLAST TILE');
   });
 
-  it('TIDE tile sits on buildable ocean-edge land and declares a 30% hit slow', () => {
+  it('TIDE tile sits in the ocean below checkpoint 2 and declares a 30% hit slow', () => {
     const state = createGameState();
     initializeGrid(state);
     const tide = AURA_TILES.find(t => t.kind === 'TIDE')!;
-    expect(tide).toMatchObject({ col: 14, row: 20 });
-    expect(isBuildable(state, tide.col, tide.row)).toBe(true);
-    expect(isWaterZoneTile(tide.col - 1, tide.row)).toBe(true);
+    expect(tide).toMatchObject({ col: 10, row: 16 });
+    expect(isWaterZoneTile(tide.col, tide.row)).toBe(true);
+    expect(isBuildable(state, tide.col, tide.row)).toBe(false);
+    expect(canBuildWaterTowerAt(state, tide.col, tide.row)).toBe(true);
     expect(AURA_TILE_EFFECTS.TIDE?.hitSlowPct).toBeCloseTo(0.30, 4);
     expect(AURA_TILE_EFFECTS.TIDE?.label).toBe('TIDE TILE');
   });
