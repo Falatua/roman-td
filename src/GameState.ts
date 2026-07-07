@@ -126,6 +126,9 @@ export interface GameStateShape {
   bossesKilled?: number;
   combosBuilt?: number;
   combosBuiltUniqueTypes?: string[];
+  // Lifetime kills of enemies that emerged from the ocean/shipwreck lane.
+  // Keeps naval quests tied to the water concept instead of generic kills.
+  oceanEnemiesKilled?: number;
   // Lifetime direct damage grouped by tower type. Unlike per-tower counters,
   // this survives selling/combining so the post-game leaderboard can show
   // the run's true primary damage dealer.

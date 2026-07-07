@@ -14,6 +14,7 @@ describe('30-wave Solo economy envelope', () => {
     let bossBounties = 0;
     let questGold = 0;
     let perfectGold = 0;
+    let oceanKills = 0;
     const completedQuests = new Set<string>();
 
     for (const wave of (wavesData as any[]).filter(w => w.wave <= 4)) {
@@ -23,6 +24,7 @@ describe('30-wave Solo economy envelope', () => {
         const def = (enemiesData as any)[group.type] ?? {};
         const lateSecondGateMirror = wave.wave >= 21 && !def.isBoss && !def.isFlyer;
         kills += lateSecondGateMirror ? group.count * 2 : group.count;
+        if ((group as any).ocean) oceanKills += group.count;
         if (wave.type === 'B' && def.isBoss && !ADD_BOSS_TYPES.has(group.type)) {
           bossBounties += group.count * (22 + Math.round(wave.wave * 3.5));
         }
@@ -31,6 +33,7 @@ describe('30-wave Solo economy envelope', () => {
         if (completedQuests.has(quest.id) || quest.reward.kind !== 'GOLD') continue;
         const progress = quest.id === 'first_blood' ? Math.min(1, kills)
           : quest.id === 'bloodline' ? kills
+          : quest.id === 'shipwreck_omen' ? oceanKills
           : 0;
         if (progress >= quest.target) {
           completedQuests.add(quest.id);

@@ -95,6 +95,7 @@ import {
   buildHarborDraftOffers,
   harborTowerCanUseTile,
   isHarborTowerType,
+  isOceanThreatEnemy,
   markHarborUnlocked,
   placeTowerTileForType,
   restoreTowerTileForType,
@@ -7359,6 +7360,7 @@ async function boot() {
         },
         onKill: (t: any, e: any) => {
           awardKillBonus(t);
+          if (isOceanThreatEnemy(e)) state.oceanEnemiesKilled = (state.oceanEnemiesKilled ?? 0) + 1;
           // Transport payloads must fire in the combat kill path before
           // the killed carrier is deleted from state.enemies. Otherwise
           // Siege Wagons / Sky Barges killed by towers vanish without

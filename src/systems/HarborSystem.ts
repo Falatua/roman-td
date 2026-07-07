@@ -41,6 +41,22 @@ export function isHarborTowerType(type: TowerType | string): boolean {
   return isNavalTowerType(type) || isTideforgedTowerType(type);
 }
 
+const OCEAN_THREAT_ENEMY_TYPES = new Set<string>([
+  EnemyType.OCEAN_FISHLING,
+  EnemyType.SEA_GIANT,
+  EnemyType.SEA_GIANT_WARBRINGER,
+  EnemyType.NETHER_AMPHIBIOUS_GIANT,
+  EnemyType.TIDECALLER_COMMANDER
+]);
+
+export function isOceanThreatEnemy(enemyOrType: EnemyType | string | { type?: EnemyType | string; __oceanSpawn?: boolean } | null | undefined): boolean {
+  if (!enemyOrType) return false;
+  if (typeof enemyOrType === 'object') {
+    return !!enemyOrType.__oceanSpawn || OCEAN_THREAT_ENEMY_TYPES.has(String(enemyOrType.type ?? ''));
+  }
+  return OCEAN_THREAT_ENEMY_TYPES.has(String(enemyOrType));
+}
+
 export function harborTowerCanUseTile(state: GameStateShape, type: TowerType | string, col: number, row: number): boolean {
   const tile = state.tiles[row]?.[col];
   if (isNavalTowerType(type)) return tile === TileType.WATER && canBuildWaterTowerAt(state, col, row);

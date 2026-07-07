@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createGameState } from '../src/GameState';
-import { GamePhase } from '../src/types';
+import { GamePhase, TowerType } from '../src/types';
 import enemiesData from '../src/data/enemies.json';
 import wavesData from '../src/data/waves.json';
 import { evaluateQuests, QUESTS } from '../src/systems/QuestSystem';
@@ -23,12 +23,12 @@ function soloCampaignCumulative() {
 }
 
 describe('30-wave Solo quest pacing', () => {
-  it('keeps 35 unique quests distributed across the three campaign acts', () => {
-    expect(QUESTS).toHaveLength(35);
-    expect(new Set(QUESTS.map(q => q.id)).size).toBe(35);
-    expect(QUESTS.filter(q => q.tier === 'EARLY')).toHaveLength(10);
-    expect(QUESTS.filter(q => q.tier === 'MID')).toHaveLength(12);
-    expect(QUESTS.filter(q => q.tier === 'LATE')).toHaveLength(13);
+  it('keeps 40 unique quests distributed across the three campaign acts', () => {
+    expect(QUESTS).toHaveLength(40);
+    expect(new Set(QUESTS.map(q => q.id)).size).toBe(40);
+    expect(QUESTS.filter(q => q.tier === 'EARLY')).toHaveLength(11);
+    expect(QUESTS.filter(q => q.tier === 'MID')).toHaveLength(14);
+    expect(QUESTS.filter(q => q.tier === 'LATE')).toHaveLength(15);
   });
 
   it('adds playstyle quests: variety, gear, hero, relics, wealth, defense', () => {
@@ -99,6 +99,35 @@ describe('30-wave Solo quest pacing', () => {
     state.trapsPlaced = 1;
     expect(evaluateQuests(state).map(q => q.id)).toContain('trap_initiate');
     expect(evaluateQuests(state).map(q => q.id)).not.toContain('trap_initiate');
+  });
+
+  it('adds water-economy quests for ocean threats, Harbor adoption, and naval combos', () => {
+    expect(quest('shipwreck_omen').reward).toEqual({ kind: 'GOLD', amount: 20 });
+    expect(quest('harbor_charter').reward).toEqual({ kind: 'GOLD', amount: 50 });
+    expect(quest('dockside_battery').reward).toEqual({ kind: 'GOLD', amount: 85 });
+    expect(quest('tideforged_doctrine').reward).toEqual({ kind: 'GOLD', amount: 150 });
+    expect(quest('leviathan_pact').reward).toEqual({ kind: 'GOLD', amount: 220 });
+
+    const oceanKills = createGameState();
+    oceanKills.oceanEnemiesKilled = 6;
+    expect(evaluateQuests(oceanKills).map(q => q.id)).toContain('shipwreck_omen');
+
+    const harbor = createGameState();
+    (harbor as any).harborUnlocked = true;
+    expect(evaluateQuests(harbor).map(q => q.id)).toContain('harbor_charter');
+
+    const dock = createGameState();
+    dock.towers.set('h1', { type: TowerType.TRIREME_BALLISTA, pending: false, placedOnWater: true } as any);
+    dock.towers.set('h2', { type: TowerType.CORVUS_BOARDING_SHIP, pending: false, placedOnWater: true } as any);
+    expect(evaluateQuests(dock).map(q => q.id)).toContain('dockside_battery');
+
+    const tideforged = createGameState();
+    tideforged.towers.set('tf1', { type: TowerType.PRAETORIAN_FLEET, pending: false, placedOnWater: true } as any);
+    expect(evaluateQuests(tideforged).map(q => q.id)).toContain('tideforged_doctrine');
+
+    const leviathan = createGameState();
+    leviathan.combosBuiltUniqueTypes = ['NEPTUNES_LEVIATHAN'];
+    expect(evaluateQuests(leviathan).map(q => q.id)).toContain('leviathan_pact');
   });
 
   it('paces total-kill quests near waves 6, 14, and 23', () => {

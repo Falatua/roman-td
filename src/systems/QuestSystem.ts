@@ -16,6 +16,7 @@
 
 import { GameStateShape } from '../GameState';
 import { TowerType } from '../types';
+import { isHarborTowerType, isTideforgedTowerType } from './HarborSystem';
 
 export type QuestTier = 'EARLY' | 'MID' | 'LATE';
 export type QuestRewardKind = 'GOLD' | 'ITEM' | 'TOWER' | 'LIFE';
@@ -78,8 +79,28 @@ const countDistinctDamageTypes = (s: GameStateShape): number => {
 // Helper: most items equipped on any single tower.
 const bestSingleTowerItems = (s: GameStateShape): number => {
   let best = 0;
-  for (const t of s.towers.values()) if (t.equippedItems.length > best) best = t.equippedItems.length;
+  for (const t of s.towers.values()) {
+    const itemCount = Array.isArray(t.equippedItems) ? t.equippedItems.length : 0;
+    if (itemCount > best) best = itemCount;
+  }
   return best;
+};
+// Helper: Harbor-family towers currently committed to ocean tiles.
+const countHarborTowersOnWater = (s: GameStateShape): number => {
+  let n = 0;
+  for (const t of s.towers.values()) if (!t.pending && (t as any).placedOnWater && isHarborTowerType(t.type)) n++;
+  return n;
+};
+// Helper: Tideforged combo towers built on ocean tiles.
+const countTideforgedTowersOnWater = (s: GameStateShape): number => {
+  let n = 0;
+  for (const t of s.towers.values()) if (!t.pending && (t as any).placedOnWater && isTideforgedTowerType(t.type)) n++;
+  return n;
+};
+const hasNeptunesLeviathan = (s: GameStateShape): number => {
+  if ((s.combosBuiltUniqueTypes ?? []).includes('NEPTUNES_LEVIATHAN')) return 1;
+  for (const t of s.towers.values()) if (!t.pending && t.type === TowerType.NEPTUNES_LEVIATHAN) return 1;
+  return 0;
 };
 // Cross/super-combo type ids — owning any of these completes the apex quest.
 const APEX_COMBO_TYPES = new Set<string>([
@@ -135,6 +156,14 @@ export const QUESTS: QuestDef[] = [
     condition: s => (s.trapsPurchased ?? 0) >= 1 && (s.trapsPlaced ?? 0) >= 1 ? 1 : 0,
     target: 1,
     reward: { kind: 'GOLD', amount: 25 }
+  },
+  {
+    id: 'shipwreck_omen', tier: 'EARLY',
+    title: 'Shipwreck Omen',
+    blurb: 'Kill 6 ocean-born enemies. The wreck is not just scenery.',
+    condition: s => s.oceanEnemiesKilled ?? 0,
+    target: 6,
+    reward: { kind: 'GOLD', amount: 20 }
   },
   {
     id: 'first_forge', tier: 'EARLY',
@@ -283,6 +312,22 @@ export const QUESTS: QuestDef[] = [
     target: 2,
     reward: { kind: 'GOLD', amount: 75 }
   },
+  {
+    id: 'harbor_charter', tier: 'MID',
+    title: 'Harbor Charter',
+    blurb: 'Kill a Sea Giant and unlock the Harbor. Rome opens the docks.',
+    condition: s => (s as any).harborUnlocked ? 1 : 0,
+    target: 1,
+    reward: { kind: 'GOLD', amount: 50 }
+  },
+  {
+    id: 'dockside_battery', tier: 'MID',
+    title: 'Dockside Battery',
+    blurb: 'Place 2 Harbor towers on ocean tiles. Turn the cove into artillery.',
+    condition: countHarborTowersOnWater,
+    target: 2,
+    reward: { kind: 'GOLD', amount: 85 }
+  },
   // ─── LATE (campaign-defining — only the prepared finish these) ─────────
   {
     id: 'destroyer', tier: 'LATE',
@@ -335,6 +380,22 @@ export const QUESTS: QuestDef[] = [
     },
     target: 1,
     reward: { kind: 'GOLD', amount: 1000 }
+  },
+  {
+    id: 'tideforged_doctrine', tier: 'LATE',
+    title: 'Tideforged Doctrine',
+    blurb: 'Forge any Tideforged combo tower on an ocean tile. Land and sea agree to be violent.',
+    condition: countTideforgedTowersOnWater,
+    target: 1,
+    reward: { kind: 'GOLD', amount: 150 }
+  },
+  {
+    id: 'leviathan_pact', tier: 'LATE',
+    title: "Leviathan's Pact",
+    blurb: "Forge Neptune's Leviathan. The sea signs Rome's final contract.",
+    condition: hasNeptunesLeviathan,
+    target: 1,
+    reward: { kind: 'GOLD', amount: 220 }
   },
   {
     id: 'combo_dynasty', tier: 'LATE',
@@ -409,6 +470,7 @@ export function ensureQuestState(s: GameStateShape) {
   if (s.bossesKilled === undefined) s.bossesKilled = 0;
   if (s.combosBuilt === undefined) s.combosBuilt = 0;
   if (!s.combosBuiltUniqueTypes) s.combosBuiltUniqueTypes = [];
+  if (s.oceanEnemiesKilled === undefined) s.oceanEnemiesKilled = 0;
   if (s.stonesPlaced === undefined) s.stonesPlaced = 0;
   if (s.trapsPurchased === undefined) s.trapsPurchased = 0;
   if (s.trapsPlaced === undefined) s.trapsPlaced = 0;

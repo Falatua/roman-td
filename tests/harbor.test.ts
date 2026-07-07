@@ -12,6 +12,7 @@ import {
   harborDraftTierForWave,
   harborTowerCanUseTile,
   isHarborTowerType,
+  isOceanThreatEnemy,
   markHarborUnlocked,
   queueHarborDraftPurchase,
   shouldUnlockHarborFromKill
@@ -54,6 +55,14 @@ describe('Harbor naval tower system', () => {
       expect(offer.tier).toBe(2);
       expect(offer.price).toBeGreaterThan(0);
     }
+  });
+
+  it('identifies ocean threats for naval quests and item bonuses', () => {
+    expect(isOceanThreatEnemy(EnemyType.OCEAN_FISHLING)).toBe(true);
+    expect(isOceanThreatEnemy(EnemyType.SEA_GIANT_WARBRINGER)).toBe(true);
+    expect(isOceanThreatEnemy(EnemyType.TIDECALLER_COMMANDER)).toBe(true);
+    expect(isOceanThreatEnemy({ type: EnemyType.FERAL_DOG, __oceanSpawn: true })).toBe(true);
+    expect(isOceanThreatEnemy(EnemyType.FERAL_DOG)).toBe(false);
   });
 
   it('queues Harbor purchases and only lets naval towers use water tiles', () => {
