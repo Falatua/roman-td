@@ -1,0 +1,216 @@
+import { markScrollable } from './ScrollCues';
+
+type ModalAction = 'collapse' | 'move' | 'escape';
+
+export interface ModalErgonomicsOptions {
+  bodySelector?: string;
+  footerSelector?: string;
+  collapseButtonId?: string;
+  moveButtonId?: string;
+  closeOnEscape?: boolean;
+  onEscape?: () => void;
+  storageKey?: string;
+  title?: string;
+  toolRightPx?: number;
+}
+
+const STYLE_ID = 'rtd-modal-ergonomics-style';
+
+export function ensureModalErgonomicsStyle(): void {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById(STYLE_ID)) return;
+  const st = document.createElement('style');
+  st.id = STYLE_ID;
+  st.textContent = `
+    .rtd-modal-panel {
+      position: relative;
+      max-height: min(88vh, 820px);
+    }
+    .rtd-modal-tools {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      z-index: 8;
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      pointer-events: auto;
+    }
+    .rtd-modal-tool {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      background: linear-gradient(180deg,#2a1a0e,#0c0a08);
+      color: #ffd34d;
+      border: 1px solid #7a5a1a;
+      box-shadow: 0 0 8px rgba(0,0,0,0.45);
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 900;
+    }
+    .rtd-modal-tool:hover { filter: brightness(1.18); border-color: #ffd34d; }
+    .rtd-modal-tool:focus-visible { outline: 3px solid #88ddff; outline-offset: 2px; }
+    .rtd-modal-panel.is-rtd-collapsed {
+      width: min(360px, 84vw) !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+    .rtd-modal-panel.is-rtd-collapsed [data-rtd-collapsible="true"] {
+      display: none !important;
+    }
+    .rtd-modal-panel.is-rtd-dragging {
+      user-select: none;
+      cursor: grabbing;
+    }
+    @media (max-width: 760px) {
+      .rtd-modal-tools { right: 6px; top: 6px; }
+      .rtd-modal-tool { width: 30px; height: 30px; }
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function setCollapsed(panel: HTMLElement, collapseBtn: HTMLButtonElement | null, collapsed: boolean, storageKey?: string): void {
+  panel.classList.toggle('is-rtd-collapsed', collapsed);
+  if (collapseBtn) {
+    collapseBtn.textContent = collapsed ? '▸' : '▾';
+    collapseBtn.title = collapsed ? 'Expand this panel' : 'Collapse this panel so the map is easier to see';
+    collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  }
+  if (storageKey) {
+    try { localStorage.setItem(storageKey, collapsed ? '1' : '0'); } catch { /* ignore */ }
+  }
+}
+
+export function makePanelDraggable(root: HTMLElement, panel: HTMLElement, handle: HTMLElement): void {
+  let dragging = false;
+  let startX = 0;
+  let startY = 0;
+  let startLeft = 0;
+  let startTop = 0;
+
+  const begin = (ev: PointerEvent) => {
+    if (ev.button !== 0) return;
+    const target = ev.target as HTMLElement | null;
+    if (target !== handle && target?.closest('button,input,select,textarea,a')) return;
+    ev.preventDefault();
+    const rect = panel.getBoundingClientRect();
+    panel.style.left = `${rect.left}px`;
+    panel.style.top = `${rect.top}px`;
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    panel.style.transform = 'none';
+    panel.style.position = 'fixed';
+    dragging = true;
+    startX = ev.clientX;
+    startY = ev.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+    panel.classList.add('is-rtd-dragging');
+    try { handle.setPointerCapture(ev.pointerId); } catch { /* ignore */ }
+  };
+
+  const move = (ev: PointerEvent) => {
+    if (!dragging) return;
+    const rect = panel.getBoundingClientRect();
+    const maxLeft = Math.max(8, window.innerWidth - rect.width - 8);
+    const maxTop = Math.max(8, window.innerHeight - rect.height - 8);
+    const nextLeft = Math.max(8, Math.min(maxLeft, startLeft + ev.clientX - startX));
+    const nextTop = Math.max(8, Math.min(maxTop, startTop + ev.clientY - startY));
+    panel.style.left = `${nextLeft}px`;
+    panel.style.top = `${nextTop}px`;
+  };
+
+  const end = (ev: PointerEvent) => {
+    if (!dragging) return;
+    dragging = false;
+    panel.classList.remove('is-rtd-dragging');
+    try { handle.releasePointerCapture(ev.pointerId); } catch { /* ignore */ }
+  };
+
+  handle.addEventListener('pointerdown', begin);
+  handle.addEventListener('pointermove', move);
+  handle.addEventListener('pointerup', end);
+  handle.addEventListener('pointercancel', end);
+  root.addEventListener('rtd:modal-force-close', () => {
+    dragging = false;
+    panel.classList.remove('is-rtd-dragging');
+  });
+}
+
+export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, opts: ModalErgonomicsOptions = {}): void {
+  ensureModalErgonomicsStyle();
+  panel.classList.add('rtd-modal-panel');
+  if (opts.title) panel.setAttribute('aria-label', opts.title);
+
+  const collapsibles: HTMLElement[] = [];
+  for (const selector of [opts.bodySelector, opts.footerSelector]) {
+    if (!selector) continue;
+    panel.querySelectorAll<HTMLElement>(selector).forEach(el => collapsibles.push(el));
+  }
+  collapsibles.forEach(el => el.setAttribute('data-rtd-collapsible', 'true'));
+  collapsibles.forEach(el => {
+    markScrollable(el);
+  });
+
+  const tools = document.createElement('div');
+  tools.className = 'rtd-modal-tools';
+  tools.setAttribute('aria-label', 'Panel controls');
+  if (opts.toolRightPx != null) tools.style.right = `${opts.toolRightPx}px`;
+
+  const actions: ModalAction[] = [];
+  if (collapsibles.length > 0) actions.push('collapse');
+  actions.push('move');
+  if (opts.closeOnEscape) actions.push('escape');
+
+  let collapseBtn: HTMLButtonElement | null = null;
+  for (const action of actions) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rtd-modal-tool';
+    if (action === 'collapse') {
+      btn.id = opts.collapseButtonId ?? '';
+      btn.textContent = '▾';
+      btn.title = 'Collapse this panel so the map is easier to see';
+      btn.setAttribute('aria-expanded', 'true');
+      collapseBtn = btn;
+      btn.addEventListener('click', ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        setCollapsed(panel, collapseBtn, !panel.classList.contains('is-rtd-collapsed'), opts.storageKey);
+      });
+    } else if (action === 'move') {
+      btn.id = opts.moveButtonId ?? '';
+      btn.textContent = '↔';
+      btn.title = 'Drag this handle to move the panel';
+      makePanelDraggable(root, panel, btn);
+    } else {
+      btn.textContent = 'Esc';
+      btn.title = 'Press Escape to close when available';
+      btn.disabled = true;
+      btn.style.opacity = '0.65';
+    }
+    tools.appendChild(btn);
+  }
+  panel.appendChild(tools);
+
+  const startCollapsed = opts.storageKey ? (() => {
+    try { return localStorage.getItem(opts.storageKey) === '1'; } catch { return false; }
+  })() : false;
+  if (collapsibles.length > 0) setCollapsed(panel, collapseBtn, startCollapsed, opts.storageKey);
+
+  if (opts.closeOnEscape && opts.onEscape) {
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key !== 'Escape') return;
+      ev.preventDefault();
+      opts.onEscape?.();
+      document.removeEventListener('keydown', onKey);
+    };
+    document.addEventListener('keydown', onKey);
+    root.addEventListener('rtd:modal-force-close', () => document.removeEventListener('keydown', onKey), { once: true });
+  }
+}

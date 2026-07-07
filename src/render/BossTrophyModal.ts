@@ -3,6 +3,7 @@ import { applyBossTrophy, BossTrophyId, bossTrophyOffers } from '../systems/Boss
 import { closeGameModals } from './ModalManager';
 import { SFX } from './AudioManager';
 import { canReceiveRunReward } from '../systems/RewardEligibility';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 
 export function showBossTrophyModal(
   parent: HTMLElement,
@@ -24,16 +25,23 @@ export function showBossTrophyModal(
   });
 
   const panel = document.createElement('div');
-  panel.style.cssText = `width:min(720px,95vw);background:linear-gradient(180deg,#25120e,#090706);border:3px solid #ff9c3d;color:#e8d6a8;box-shadow:0 0 38px rgba(255,120,42,0.45);padding:22px;`;
+  panel.style.cssText = `width:min(820px,95vw);background:linear-gradient(180deg,#25120e,#090706);border:3px solid #ff9c3d;color:#e8d6a8;box-shadow:0 0 38px rgba(255,120,42,0.45);padding:22px;`;
   panel.innerHTML = `
-    <div style="text-align:center;margin-bottom:16px">
+    <div style="text-align:center;margin-bottom:16px;padding-right:76px">
       <div style="font-size:11px;font-weight:bold;letter-spacing:5px;color:#ff9c3d;text-shadow:1px 1px 0 #000">BOSS TROPHY</div>
       <div style="font-size:22px;font-weight:bold;letter-spacing:4px;color:#ffd0a0;text-shadow:2px 2px 0 #000;margin-top:6px">${bossName.toUpperCase()} HAS FALLEN</div>
-      <div style="font-size:12px;color:#cdb98a;line-height:1.45;margin-top:8px;letter-spacing:1px">Take one trophy. It modifies the rest of the run.</div>
+      <div style="font-size:12px;color:#cdb98a;line-height:1.45;margin-top:8px;letter-spacing:1px">Take one trophy. Collapse or move this panel if you want to see the field first.</div>
     </div>
-    <div id="boss-trophy-cards" style="display:grid;grid-template-columns:repeat(${offers.length},1fr);gap:10px"></div>
+    <div id="boss-trophy-body" style="overflow:auto;min-height:0">
+      <div id="boss-trophy-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px"></div>
+    </div>
   `;
   modal.appendChild(panel);
+  enhanceModalErgonomics(modal, panel, {
+    bodySelector: '#boss-trophy-body',
+    storageKey: 'roman_td_boss_trophy_collapsed',
+    title: 'Boss trophy choice'
+  });
 
   const row = panel.querySelector('#boss-trophy-cards') as HTMLElement;
   const closeWith = (id: BossTrophyId) => {

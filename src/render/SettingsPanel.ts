@@ -12,6 +12,7 @@ import {
   SFX,
 } from './AudioManager';
 import { closeGameModals } from './ModalManager';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 // 2026-05-22 UX HM — Mobile + accessibility preference toggles. Stored
 // in localStorage via the helpers in Mobile.ts so they persist across
 // sessions and can be read from anywhere (RenderEngine, main.ts) via
@@ -77,6 +78,12 @@ export function showSettingsPanel(parent: HTMLElement) {
   panel.appendChild(footer);
 
   modal.appendChild(panel);
+  enhanceModalErgonomics(modal, panel, {
+    bodySelector: 'div:nth-child(3)',
+    footerSelector: 'div:nth-child(4)',
+    storageKey: 'roman_td_settings_collapsed',
+    title: 'Settings'
+  });
 
   const closeModal = () => {
     modal.remove();

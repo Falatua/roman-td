@@ -3,6 +3,7 @@ import { TowerType } from '../types';
 import { GameStateShape } from '../GameState';
 import { texUrl } from './Assets';
 import { closeGameModals } from './ModalManager';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 import {
   lastStandTroveChoices,
   lastStandTroveRecipeHints,
@@ -99,7 +100,7 @@ export function showLastStandTrove(state: GameStateShape, onChoose: (towerType: 
   const choices = lastStandTroveChoices();
   root.innerHTML = `
     <div id="last-stand-trove-panel" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,92vw);max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#2a1708,#0c0805 44%,#080604);border:4px double #ffd34d;box-shadow:0 0 54px rgba(255,211,77,0.45),inset 0 0 28px rgba(0,0,0,0.8);animation:lastStandDrop 0.22s ease-out;">
-      <div style="padding:18px 22px 14px;border-bottom:2px solid #7a5a1a;background:linear-gradient(90deg,#120905,#3a210d,#120905);text-align:center">
+      <div style="padding:18px 98px 14px 22px;border-bottom:2px solid #7a5a1a;background:linear-gradient(90deg,#120905,#3a210d,#120905);text-align:center">
         <div style="font-size:11px;letter-spacing:5px;color:#ffcc66;font-weight:bold">CLASSIFIED SENATE NONSENSE</div>
         <div style="margin-top:6px;font-size:25px;line-height:1.15;font-weight:bold;letter-spacing:3px;color:#fff8e0;text-shadow:2px 2px 0 #000,0 0 16px #ffd34d">THE LAST-LIFE TROVE HAS BEEN FOUND</div>
         <div style="margin:10px auto 0;max-width:760px;color:#d8c79a;font-size:12px;line-height:1.55">
@@ -107,16 +108,25 @@ export function showLastStandTrove(state: GameStateShape, onChoose: (towerType: 
           Choose <b style="color:#ffd34d">one free Tier V base tower</b>. It will enter your placement queue. No receipt. No witnesses.
         </div>
       </div>
-      <div style="padding:14px 18px;overflow:auto;min-height:0">
+      <div id="last-stand-trove-body" style="padding:14px 18px;overflow:auto;min-height:0">
         <div id="last-stand-trove-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
           ${choices.map(choice => towerCardHtml(state, choice)).join('')}
         </div>
       </div>
-      <div style="padding:10px 16px;border-top:1px solid #5a3a14;color:#aa9a4a;font-size:10px;line-height:1.45;text-align:center;background:#080604">
+      <div id="last-stand-trove-footer" style="padding:10px 16px;border-top:1px solid #5a3a14;color:#aa9a4a;font-size:10px;line-height:1.45;text-align:center;background:#080604">
         Pick carefully: this hidden mercy happens once per run, then the closet returns to pretending it never existed.
       </div>
     </div>`;
   document.body.appendChild(root);
+  const panel = root.querySelector<HTMLElement>('#last-stand-trove-panel');
+  if (panel) {
+    enhanceModalErgonomics(root, panel, {
+      bodySelector: '#last-stand-trove-body',
+      footerSelector: '#last-stand-trove-footer',
+      storageKey: 'roman_td_last_stand_trove_collapsed',
+      title: 'Last-life tower trove'
+    });
+  }
   root.querySelectorAll<HTMLButtonElement>('.last-stand-choice').forEach(btn => {
     btn.addEventListener('click', ev => {
       ev.preventDefault();

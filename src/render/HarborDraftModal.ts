@@ -1,6 +1,7 @@
 import { GameStateShape } from '../GameState';
 import { HarborDraftOffer, queueHarborDraftPurchase } from '../systems/HarborSystem';
 import towersData from '../data/towers.json';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 
 function towerLabel(type: string): string {
   return (towersData as any)[type]?.name ?? type.replace(/_/g, ' ');
@@ -22,7 +23,7 @@ export function showHarborUnlockModal(state: GameStateShape): void {
   const wrap = document.createElement('div');
   wrap.id = 'harbor-unlock-modal';
   wrap.innerHTML = `
-    <div style="width:min(620px,92vw);padding:24px 28px;background:linear-gradient(180deg,#102532,#080c12);border:3px solid #5fe6ff;box-shadow:0 0 38px #25bfff88,inset 0 0 24px #000;color:#fff8e0;font-family:'Courier New',monospace;text-align:center">
+    <div id="harbor-unlock-panel" style="width:min(620px,92vw);padding:24px 28px;background:linear-gradient(180deg,#102532,#080c12);border:3px solid #5fe6ff;box-shadow:0 0 38px #25bfff88,inset 0 0 24px #000;color:#fff8e0;font-family:'Courier New',monospace;text-align:center">
       <div style="font-size:11px;letter-spacing:6px;color:#88f7ff;font-weight:bold">THE SHIPWRECK STIRS</div>
       <div style="margin-top:8px;font-size:26px;letter-spacing:4px;color:#ffd34d;text-shadow:2px 2px 0 #000">THE HARBOR AWAKENS</div>
       <div style="margin-top:14px;font-size:13px;line-height:1.65;text-align:left;background:rgba(0,0,0,0.38);border-left:3px solid #5fe6ff;padding:12px 14px">
@@ -33,6 +34,8 @@ export function showHarborUnlockModal(state: GameStateShape): void {
     </div>`;
   wrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:130;pointer-events:auto';
   document.getElementById('stage-wrap')?.appendChild(wrap);
+  const panel = wrap.querySelector<HTMLElement>('#harbor-unlock-panel');
+  if (panel) enhanceModalErgonomics(wrap, panel, { title: 'Harbor unlock notice' });
   wrap.querySelector<HTMLButtonElement>('#harbor-unlock-close')!.onclick = () => wrap.remove();
   state.hint = 'The Harbor is awake. Click ocean tiles between waves to draft naval towers.';
 }
@@ -55,7 +58,7 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
       </div>`;
   }).join('');
   wrap.innerHTML = `
-    <div style="width:min(760px,94vw);padding:20px 22px;background:linear-gradient(180deg,#102532,#070b10);border:3px solid #5fe6ff;box-shadow:0 0 38px #25bfff88,inset 0 0 24px #000;color:#fff8e0;font-family:'Courier New',monospace;text-align:center">
+    <div id="harbor-draft-panel" style="width:min(760px,94vw);padding:20px 22px;background:linear-gradient(180deg,#102532,#070b10);border:3px solid #5fe6ff;box-shadow:0 0 38px #25bfff88,inset 0 0 24px #000;color:#fff8e0;font-family:'Courier New',monospace;text-align:center">
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
         <div style="text-align:left">
           <div style="font-size:11px;letter-spacing:5px;color:#88f7ff;font-weight:bold">HARBOR DRAFT</div>
@@ -63,11 +66,22 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
         </div>
         <button id="harbor-close" aria-label="Close Harbor Draft" style="background:#241810;color:#ffd34d;border:2px solid #7a5a1a;width:34px;height:34px;cursor:pointer;font-family:'Courier New',monospace;font-weight:bold">X</button>
       </div>
-      <div style="margin-top:10px;font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Choose one contract, then click an ocean tile to place it. Draft refreshes every three waves or after purchases.</div>
-      <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap">${cards}</div>
+      <div id="harbor-draft-body">
+        <div style="margin-top:10px;font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Choose one contract, then click an ocean tile to place it. Draft refreshes every three waves or after purchases.</div>
+        <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap">${cards}</div>
+      </div>
     </div>`;
   wrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:125;pointer-events:auto';
   document.getElementById('stage-wrap')?.appendChild(wrap);
+  const panel = wrap.querySelector<HTMLElement>('#harbor-draft-panel');
+  if (panel) {
+    enhanceModalErgonomics(wrap, panel, {
+      bodySelector: '#harbor-draft-body',
+      storageKey: 'roman_td_harbor_draft_collapsed',
+      title: 'Harbor Draft',
+      toolRightPx: 52
+    });
+  }
   wrap.querySelector<HTMLButtonElement>('#harbor-close')!.onclick = () => wrap.remove();
   wrap.querySelectorAll<HTMLButtonElement>('[data-harbor-buy]').forEach(btn => {
     btn.onclick = () => {

@@ -691,3 +691,46 @@ describe('Codex modal interaction layer', () => {
     expect(source).toContain('(document.body ?? parent).appendChild(modal)');
   });
 });
+
+describe('Modal ergonomics and popup stacking', () => {
+  it('ships one shared collapse and drag helper for major player-facing panels', () => {
+    const helper = readFileSync('src/render/ModalErgonomics.ts', 'utf8');
+    expect(helper).toContain('export function enhanceModalErgonomics');
+    expect(helper).toContain('export function makePanelDraggable');
+    expect(helper).toContain('is-rtd-collapsed');
+    expect(helper).toContain('Drag this handle to move the panel');
+  });
+
+  it('applies collapsible or movable ergonomics to the largest recurring choice panels', () => {
+    const files = [
+      'src/render/CampaignRelicModal.ts',
+      'src/render/BossTrophyModal.ts',
+      'src/render/TestYourMightModal.ts',
+      'src/render/HarborDraftModal.ts',
+      'src/render/LastStandTrove.ts',
+      'src/render/SecretEvents.ts',
+      'src/render/SettingsPanel.ts',
+      'src/main.ts'
+    ];
+    for (const file of files) {
+      const source = readFileSync(file, 'utf8');
+      expect(source, `${file} should use shared modal ergonomics`).toContain('enhanceModalErgonomics');
+    }
+  });
+
+  it('registers recent popup surfaces in the central modal cleanup list', () => {
+    const source = readFileSync('src/render/ModalManager.ts', 'utf8');
+    for (const id of [
+      'quests-modal',
+      'combo-info-modal',
+      'last-stand-trove-modal',
+      'harbor-unlock-modal',
+      'harbor-draft-modal',
+      'surprise-reward-modal',
+      'sandbox-wave-picker',
+      'sandbox-tower-picker'
+    ]) {
+      expect(source, `ModalManager should close stale ${id}`).toContain(`'${id}'`);
+    }
+  });
+});

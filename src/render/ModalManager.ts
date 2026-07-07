@@ -6,7 +6,9 @@ const GAME_MODAL_IDS = [
   'stone-menu',
   'enemy-inspect',
   'combo-picker',
+  'combo-info-modal',
   'tower-leaderboard',
+  'quests-modal',
   // 2026-05-15: settings + DPS summary were added recently but weren't
   // tracked here, so opening another modal while either was visible left
   // them stacked. Register both so closeGameModals() sweeps them out
@@ -17,7 +19,14 @@ const GAME_MODAL_IDS = [
   'boss-trophy-modal',
   'test-your-might-modal',
   'mercator-backroom-modal',
-  'senate-bailout-modal'
+  'senate-bailout-modal',
+  'last-stand-trove-modal',
+  'harbor-unlock-modal',
+  'harbor-draft-modal',
+  'surprise-reward-modal',
+  'sandbox-wave-picker',
+  'sandbox-tower-picker',
+  'sandbox-password-modal'
 ];
 
 export function closeGameModals() {

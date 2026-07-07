@@ -65,6 +65,7 @@ import { startLiveUpdateWatcher } from './render/UpdateNotice';
 import { renderPinnedRecipeWidget, ensurePinnedRecipeDefault } from './render/PinnedRecipe';
 import { comboPreviewBlockHtml, showComboInfoModal } from './render/ComboPreview';
 import { markScrollable } from './render/ScrollCues';
+import { enhanceModalErgonomics } from './render/ModalErgonomics';
 import { Logger } from './Logger';
 import { towerName, enemyName, factionName, pretty } from './format';
 import { showEnemyInspect, showEnemyInspectByType } from './render/EnemyInspect';
@@ -606,7 +607,7 @@ async function boot() {
       ? 'Your maze killed the dummy before it reached Rome.'
       : 'The unkillable dummy walked the entire path — pure damage measurement.';
     modal.innerHTML = `
-      <div style="width:min(520px,92%);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid ${tierBorder};box-shadow:0 0 28px ${tierBorder}55;padding:18px 22px;color:#e8d6a8">
+      <div id="dps-summary-panel" style="width:min(520px,92%);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid ${tierBorder};box-shadow:0 0 28px ${tierBorder}55;padding:18px 22px;color:#e8d6a8">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
           <div>
             <div style="font-size:18px;font-weight:bold;letter-spacing:3px;color:${tierBorder}">${headline}</div>
@@ -614,6 +615,7 @@ async function boot() {
           </div>
           <button id="dps-summary-close" style="background:#3a1606;color:#ffd34d;border:2px solid #d4af37;padding:5px 10px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:bold">✕</button>
         </div>
+        <div id="dps-summary-body">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0">
           <div style="background:#120c08;border:1px solid #5a4a30;padding:10px"><div style="font-size:10px;color:#aa9a4a;letter-spacing:2px">TOTAL DAMAGE</div><div style="color:#ff7733;font-size:20px;font-weight:bold">${fmt(totalDmgDealt)}</div></div>
           <div style="background:#120c08;border:1px solid #5a4a30;padding:10px"><div style="font-size:10px;color:#aa9a4a;letter-spacing:2px">TIME ON FIELD</div><div style="color:#9be0ff;font-size:20px;font-weight:bold">${elapsed.toFixed(1)}s</div></div>
@@ -623,13 +625,24 @@ async function boot() {
         <div style="font-size:11px;color:#cdb98a;line-height:1.5;padding:8px 0;border-top:1px dashed #3a3025;margin-top:8px">
           Use this to gauge maze throughput before the next wave. The dummy moves at standard speed, takes damage like a real enemy, and pays <b style="color:#88ff88">zero penalty</b> for reaching Rome. Click <b style="color:#88ddff">LEADERBOARD</b> below to see per-tower contribution to this run.
         </div>
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px">
+        </div>
+        <div id="dps-summary-footer" style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px">
           <button id="dps-open-leaderboard" style="background:linear-gradient(180deg,#10243a,#0a1825);color:#9be0ff;border:2px solid #9be0ff;padding:8px 14px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:bold;letter-spacing:2px">⚔ LEADERBOARD</button>
           <button id="dps-dismiss" style="background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:8px 14px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:2px">DISMISS</button>
         </div>
       </div>
     `;
     app.appendChild(modal);
+    const dpsPanel = modal.querySelector<HTMLElement>('#dps-summary-panel');
+    if (dpsPanel) {
+      enhanceModalErgonomics(modal, dpsPanel, {
+        bodySelector: '#dps-summary-body',
+        footerSelector: '#dps-summary-footer',
+        storageKey: 'roman_td_dps_summary_collapsed',
+        title: 'DPS check summary',
+        toolRightPx: 54
+      });
+    }
     const dismiss = () => modal.remove();
     modal.addEventListener('click', (ev) => { if (ev.target === modal) dismiss(); });
     (modal.querySelector('#dps-summary-close') as HTMLButtonElement).onclick = dismiss;
@@ -3264,17 +3277,26 @@ async function boot() {
     modal.id = 'quests-modal';
     modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);z-index:100000;pointer-events:auto;font-family:'Courier New',monospace;`;
     const panel = document.createElement('div');
-    panel.style.cssText = `background:#1a1410;border:3px solid #88ff88;color:#e8d6a8;width:560px;max-height:84vh;overflow:auto;padding:14px 16px;box-shadow:0 0 28px rgba(136,255,136,0.35);`;
+    panel.id = 'quests-panel';
+    panel.style.cssText = `background:#1a1410;border:3px solid #88ff88;color:#e8d6a8;width:min(560px,94vw);max-height:84vh;display:flex;flex-direction:column;padding:14px 16px;box-shadow:0 0 28px rgba(136,255,136,0.35);`;
     panel.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #5a4a30">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 90px 8px 0;border-bottom:1px solid #5a4a30;flex-shrink:0">
         <div style="font-size:18px;font-weight:bold;letter-spacing:3px;color:#88ff88;text-shadow:1px 1px 0 #000">📜 QUESTS</div>
         <button id="quests-close" style="background:#3a3025;color:#e8d6a8;border:1px solid #5a4a30;padding:6px 12px;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:1px">CLOSE</button>
       </div>
+      <div id="quests-body" style="overflow:auto;min-height:0">
       ${list}
-      ${completedHtml}`;
+      ${completedHtml}
+      </div>`;
     modal.appendChild(panel);
     modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
     document.body.appendChild(modal);
+    enhanceModalErgonomics(modal, panel, {
+      bodySelector: '#quests-body',
+      storageKey: 'roman_td_quests_collapsed',
+      title: 'Quest list',
+      toolRightPx: 72
+    });
     panel.querySelector('#quests-close')?.addEventListener('click', () => modal.remove());
   }
   // ─── Quest dispatch ────────────────────────────────────────────────────

@@ -16,6 +16,7 @@ import itemsData from '../data/items_permanent.json';
 import { itemIconSvg } from './ItemIcon';
 import { texUrl } from './Assets';
 import { closeGameModals } from './ModalManager';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
@@ -123,7 +124,6 @@ export function showMercatorBackRoomModal(
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-start">
-          <button class="secret-event-btn" id="mercator-backroom-collapse" type="button" title="Collapse this secret offer">MIN</button>
           <button class="secret-event-btn" id="mercator-backroom-x" type="button" title="Decline and close">X</button>
         </div>
       </div>
@@ -151,24 +151,23 @@ export function showMercatorBackRoomModal(
     </div>`;
 
   document.body.appendChild(root);
-  const body = root.querySelector<HTMLElement>('#mercator-backroom-body');
-  const footer = root.querySelector<HTMLElement>('#mercator-backroom-footer');
+  const panel = root.querySelector<HTMLElement>('#mercator-backroom-panel');
+  if (panel) {
+    enhanceModalErgonomics(root, panel, {
+      bodySelector: '#mercator-backroom-body',
+      footerSelector: '#mercator-backroom-footer',
+      storageKey: 'roman_td_mercator_backroom_collapsed',
+      title: 'Mercator Back Room',
+      toolRightPx: 58
+    });
+  }
   const msg = root.querySelector<HTMLElement>('#mercator-backroom-message');
-  let collapsed = false;
   const closeDecline = () => {
     declineMercatorBackRoom(state);
     root.remove();
     hooks.onClose?.();
   };
   root.querySelector<HTMLButtonElement>('#mercator-backroom-x')?.addEventListener('click', closeDecline);
-  root.querySelector<HTMLButtonElement>('#mercator-backroom-collapse')?.addEventListener('click', ev => {
-    ev.stopPropagation();
-    collapsed = !collapsed;
-    if (body) body.style.display = collapsed ? 'none' : 'block';
-    if (footer) footer.style.display = collapsed ? 'none' : 'block';
-    const btn = ev.currentTarget as HTMLButtonElement;
-    btn.textContent = collapsed ? 'OPEN' : 'MIN';
-  });
   root.querySelectorAll<HTMLButtonElement>('button[data-backroom-buy]').forEach(btn => {
     btn.addEventListener('click', ev => {
       ev.preventDefault();
@@ -222,7 +221,6 @@ export function showSenateBailoutModal(
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-start">
-          <button class="secret-event-btn" id="senate-bailout-collapse" type="button" title="Collapse this offer">MIN</button>
           <button class="secret-event-btn" id="senate-bailout-x" type="button" title="Refuse bailout">X</button>
         </div>
       </div>
@@ -249,9 +247,16 @@ export function showSenateBailoutModal(
       </div>
     </div>`;
   document.body.appendChild(root);
-  const body = root.querySelector<HTMLElement>('#senate-bailout-body');
-  const footer = root.querySelector<HTMLElement>('#senate-bailout-footer');
-  let collapsed = false;
+  const panel = root.querySelector<HTMLElement>('#senate-bailout-panel');
+  if (panel) {
+    enhanceModalErgonomics(root, panel, {
+      bodySelector: '#senate-bailout-body',
+      footerSelector: '#senate-bailout-footer',
+      storageKey: 'roman_td_senate_bailout_collapsed',
+      title: 'Senate Bailout',
+      toolRightPx: 58
+    });
+  }
   const decline = () => {
     declineSenateBailout(state);
     root.remove();
@@ -259,14 +264,6 @@ export function showSenateBailoutModal(
   };
   root.querySelector<HTMLButtonElement>('#senate-bailout-x')?.addEventListener('click', decline);
   root.querySelector<HTMLButtonElement>('#senate-bailout-no')?.addEventListener('click', decline);
-  root.querySelector<HTMLButtonElement>('#senate-bailout-collapse')?.addEventListener('click', ev => {
-    ev.stopPropagation();
-    collapsed = !collapsed;
-    if (body) body.style.display = collapsed ? 'none' : 'block';
-    if (footer) footer.style.display = collapsed ? 'none' : 'flex';
-    const btn = ev.currentTarget as HTMLButtonElement;
-    btn.textContent = collapsed ? 'OPEN' : 'MIN';
-  });
   root.querySelector<HTMLButtonElement>('#senate-bailout-yes')?.addEventListener('click', ev => {
     ev.preventDefault();
     ev.stopPropagation();
