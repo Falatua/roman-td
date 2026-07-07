@@ -12,7 +12,8 @@ import { isLegendaryBossDropEnemy, isRareOnlyBossDropEnemy } from '../src/system
 import { isFinalBossBreach } from '../src/systems/LeakRules';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
-import { GRID } from '../src/constants';
+import waypointsData from '../src/data/waypoints.json';
+import { GRID, WATER_ZONE } from '../src/constants';
 
 function bootstrapState() {
   const s = createGameState();
@@ -176,26 +177,39 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(elephants?.count).toBe(2);
   });
 
-  it('adds ocean-emergent sea giants on Waves 12, 27, and 29', () => {
+  it('adds shipwreck ocean spawns on Waves 3, 12, 27, and 29', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
+    expect(byWave.get(3).spawns).toContainEqual({ type: 'OCEAN_FISHLING', count: 6, ocean: true });
     expect(byWave.get(12).spawns).toContainEqual({ type: 'SEA_GIANT', count: 1, ocean: true });
     expect(byWave.get(27).spawns).toContainEqual({ type: 'SEA_GIANT_WARBRINGER', count: 4, ocean: true });
     expect(byWave.get(29).spawns).toContainEqual({ type: 'NETHER_AMPHIBIOUS_GIANT', count: 2, ocean: true });
   });
 
-  it('routes ocean spawns from the water into the normal ground path', () => {
+  it('routes ocean spawns from the shipwreck to the post-checkpoint-2 ground path', () => {
     const s = bootstrapState();
-    s.wave = 11;
+    s.wave = 2;
     startWave(s);
-    expect(s.spawnQueue[0]).toMatchObject({ type: 'SEA_GIANT', ocean: true });
+    expect(s.spawnQueue[0]).toMatchObject({ type: 'OCEAN_FISHLING', ocean: true });
     tickSpawns(s, 0.01);
-    const sea = Array.from(s.enemies.values()).find(e => e.type === EnemyType.SEA_GIANT) as any;
+    const sea = Array.from(s.enemies.values()).find(e => e.type === EnemyType.OCEAN_FISHLING) as any;
     expect(sea).toBeTruthy();
     expect(sea.__oceanSpawn).toBe(true);
     expect(sea.__approachActive).toBe(true);
-    expect(sea.pathIndex).toBeGreaterThan(0);
-    expect(sea.x).not.toBe(s.groundPath[0].col * GRID.TILE + GRID.TILE / 2);
-    expect(sea.y).not.toBe(s.groundPath[0].row * GRID.TILE + GRID.TILE / 2);
+    const wp2 = (waypointsData as any).waypoints[1].topLeft;
+    let wp2PathIdx = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < s.groundPath.length; i++) {
+      const p = s.groundPath[i];
+      const d = Math.abs(p.col - wp2.col) + Math.abs(p.row - wp2.row);
+      if (d < bestD) { bestD = d; wp2PathIdx = i; }
+    }
+    expect(sea.pathIndex).toBeGreaterThan(wp2PathIdx);
+    const wreckX = WATER_ZONE.col * GRID.TILE + 4;
+    const wreckY = (WATER_ZONE.row + WATER_ZONE.height - 3.45) * GRID.TILE;
+    expect(sea.x).toBeGreaterThanOrEqual(wreckX);
+    expect(sea.x).toBeLessThanOrEqual(wreckX + GRID.TILE * 4.5);
+    expect(sea.y).toBeGreaterThanOrEqual(wreckY);
+    expect(sea.y).toBeLessThanOrEqual(wreckY + GRID.TILE * 3.375);
   });
 
   it('does not mirror ocean spawns to Cave B on late waves', () => {

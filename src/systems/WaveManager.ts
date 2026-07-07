@@ -17,6 +17,7 @@ import { GameStateShape } from '../GameState';
 import { ENEMY_BALANCE, GRID, WATER_ZONE, WAVE, WAVE_MODIFIERS } from '../constants';
 import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
+import waypointsData from '../data/waypoints.json';
 import { spawnEnemy } from './EnemySystem';
 import { generateEndlessWave, EndlessWaveConfig, endlessClearScore } from './EndlessMode';
 import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, clearSurpriseEventsForWaveEnd, spawnAtSurpriseEventPoint, notifySurpriseEventWaveEnded } from './SurpriseEvents';
@@ -76,21 +77,38 @@ function nearestPathIndexForTile(state: GameStateShape, col: number, row: number
   return bestIdx;
 }
 
+function oceanShipwreckSpawnPoint(oceanIndex = 0): { x: number; y: number } {
+  const wreckX = WATER_ZONE.col * GRID.TILE + 4;
+  const wreckY = (WATER_ZONE.row + WATER_ZONE.height - 3.45) * GRID.TILE;
+  const offsets = [
+    { x: 0, y: 0 },
+    { x: -18, y: 10 },
+    { x: 20, y: 8 },
+    { x: -8, y: -12 },
+    { x: 14, y: -10 },
+    { x: -26, y: -2 },
+    { x: 28, y: -4 },
+    { x: 4, y: 18 }
+  ];
+  const offset = offsets[Math.abs(oceanIndex) % offsets.length];
+  return {
+    x: wreckX + GRID.TILE * 2.35 + offset.x,
+    y: wreckY + GRID.TILE * 1.95 + offset.y
+  };
+}
+
+function oceanJoinPathIndex(state: GameStateShape): number {
+  const wp2 = (waypointsData as any).waypoints?.[1]?.topLeft;
+  if (!wp2) return nearestPathIndexForTile(state, WATER_ZONE.col + WATER_ZONE.width, WATER_ZONE.row);
+  const wp2Idx = nearestPathIndexForTile(state, wp2.col, wp2.row);
+  return Math.min(state.groundPath.length - 1, wp2Idx + 1);
+}
+
 function routeOceanSpawnToPath(state: GameStateShape, enemy: any, oceanIndex = 0): boolean {
   if (!enemy || enemy.isFlyer || state.groundPath.length === 0) return false;
-  const localSpawns = [
-    { col: WATER_ZONE.width - 1, row: 5 },
-    { col: WATER_ZONE.width - 2, row: 8 },
-    { col: WATER_ZONE.width - 5, row: 10 },
-    { col: WATER_ZONE.width - 8, row: 9 }
-  ];
-  const spawn = localSpawns[Math.abs(oceanIndex) % localSpawns.length];
-  const spawnCol = WATER_ZONE.col + spawn.col;
-  const spawnRow = WATER_ZONE.row + spawn.row;
-  const joinIdx = nearestPathIndexForTile(state, WATER_ZONE.col + WATER_ZONE.width, WATER_ZONE.row);
+  const joinIdx = oceanJoinPathIndex(state);
   const join = state.groundPath[joinIdx] ?? state.groundPath[0];
-  const spawnX = spawnCol * GRID.TILE + GRID.TILE / 2;
-  const spawnY = spawnRow * GRID.TILE + GRID.TILE / 2;
+  const { x: spawnX, y: spawnY } = oceanShipwreckSpawnPoint(oceanIndex);
   const targetX = join.col * GRID.TILE + GRID.TILE / 2;
   const targetY = join.row * GRID.TILE + GRID.TILE / 2;
   enemy.x = spawnX;
@@ -105,7 +123,12 @@ function routeOceanSpawnToPath(state: GameStateShape, enemy: any, oceanIndex = 0
   enemy.__approachTargetY = targetY;
   const renderer = (globalThis as any).__renderer;
   if (renderer?.triggerSpawnPuff) renderer.triggerSpawnPuff(spawnX, spawnY, state.tick);
-  if (renderer?.triggerImpactRing) renderer.triggerImpactRing(spawnX, spawnY, state.tick, 36, 0x4bd8ff);
+  if (renderer?.triggerImpactRing) {
+    renderer.triggerImpactRing(spawnX, spawnY, state.tick, 42, 0x4bd8ff);
+    renderer.triggerImpactRing(spawnX, spawnY, state.tick + 0.08, 70, 0xb9f7ff);
+    renderer.triggerImpactRing(spawnX, spawnY, state.tick + 0.16, 98, 0x1a72c8);
+  }
+  if (renderer?.triggerShake) renderer.triggerShake(2.5, 0.24);
   return true;
 }
 

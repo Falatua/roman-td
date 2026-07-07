@@ -37,6 +37,11 @@
     "gold": 16,
     "spawns": [
       {
+        "type": "OCEAN_FISHLING",
+        "count": 6,
+        "ocean": true
+      },
+      {
         "type": "ALPHA_DOG",
         "count": 1
       },

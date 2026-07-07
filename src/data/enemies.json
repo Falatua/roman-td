@@ -786,6 +786,16 @@
     "immuneFreeze": true,
     "regenPctPerSec": 0.012
   },
+  "OCEAN_FISHLING": {
+    "name": "Shipwreck Fishling",
+    "faction": "DOGS",
+    "baseHp": 120,
+    "speed": 1.35,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 1,
+    "renderScale": 0.7
+  },
   "SEA_GIANT": {
     "name": "Sea Giant",
     "faction": "ROMAN_MYTH",
