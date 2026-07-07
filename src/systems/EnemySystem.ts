@@ -612,6 +612,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
   //   targeting filter already reads). Phase offset by enemy id so the
   //   whole pack doesn't blink simultaneously.
   for (const e of state.enemies.values()) {
+    if ((e as any).__testYourMightNoStealth) { (e as any).__veiled = false; continue; }
     const stealth = (enemiesData as any)[e.type]?.stealthInterval;
     if (!stealth) continue;
     const period = stealth.period ?? 8;
@@ -642,6 +643,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
   const waveStart = (state as any).__waveStartTick ?? state.tick;
   const waveElapsed = state.tick - waveStart;
   for (const e of state.enemies.values()) {
+    if ((e as any).__testYourMightNoStealth) { (e as any).__veiled = false; continue; }
     const def = (enemiesData as any)[e.type];
     if (!def?.ambushStealth) continue;
     const ambushSec = def.ambushStealthSec ?? 10;
@@ -660,6 +662,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     const veil = waveElapsed < flyerStealthSec;
     for (const e of state.enemies.values()) {
       if (!e.isFlyer) continue;
+      if ((e as any).__testYourMightNoStealth) { (e as any).__veiled = false; continue; }
       (e as any).__veiled = veil;
     }
   }

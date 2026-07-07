@@ -36,7 +36,7 @@ export const TEST_YOUR_MIGHT_SPAWNS: TestYourMightSpawn[] = [
   { type: 'HANNIBAL_BARCA', count: 1, gap: 0, start: 0.0, hpMult: 50, speedMult: 1.04, majorReward: true, resistMult: 0.84, statusGuard: 0.46, rangedBlock: 0.08, checkpointHeal: 0.035, outOfCombatRegen: 0.018 },
   { type: 'UNDEAD_WAR_ELEPHANT', count: 1, gap: 3.4, start: 3.8, hpMult: 29, speedMult: 1.01, resistMult: 0.84, statusGuard: 0.48, rangedBlock: 0.08, checkpointHeal: 0.05, outOfCombatRegen: 0.018 },
   { type: 'WAR_ELEPHANT', count: 2, gap: 3.0, start: 5.0, hpMult: 30, speedMult: 1.02, resistMult: 0.84, statusGuard: 0.50, rangedBlock: 0.08, checkpointHeal: 0.05, outOfCombatRegen: 0.018 },
-  { type: 'CARTHAGE_SPEARMAN', count: 18, gap: 0.40, start: 6.2, hpMult: 270, speedMult: 1.04, resistMult: 0.88, statusGuard: 0.64, rangedBlock: 0.05, checkpointHeal: 0.035 },
+  { type: 'CELTIC_BERSERKER', count: 18, gap: 0.40, start: 6.2, hpMult: 270, speedMult: 1.04, resistMult: 0.88, statusGuard: 0.64, rangedBlock: 0.05, checkpointHeal: 0.035 },
   { type: 'CARTHAGE_ELITE_GUARD', count: 8, gap: 0.58, start: 10.2, hpMult: 285, speedMult: 1.03, resistMult: 0.86, statusGuard: 0.58, rangedBlock: 0.10, checkpointHeal: 0.04, outOfCombatRegen: 0.018, mutation: 'WARDED' },
   { type: 'IRON_PHALANX', count: 5, gap: 0.92, start: 14.8, hpMult: 32, speedMult: 1.0, resistMult: 0.84, statusGuard: 0.50, checkpointHeal: 0.04, outOfCombatRegen: 0.012 },
   { type: 'PATHFINDER_COMMANDER', count: 1, gap: 0, start: 8.4, hpMult: 210, speedMult: 1.04, resistMult: 0.86, statusGuard: 0.56, rangedBlock: 0.06, mutation: 'AURA_STAR' },
@@ -97,11 +97,21 @@ export function startTestYourMight(state: GameStateShape): void {
   state.testYourMightActive = true;
   state.testYourMightCleared = false;
   state.testYourMightFailed = false;
+  // W10.5 must be a clean, opt-in challenge. If any stale enemy, projectile,
+  // or surprise-event route survived the W10 end flow, it must not be able to
+  // leak and fail the bonus before the authored gauntlet begins.
+  state.enemies.clear();
+  state.projectiles.length = 0;
+  state.activeSurpriseEvent = null;
+  state.extraSurpriseEvents = [];
+  state.surpriseEventScars = [];
+  state.pendingSurpriseReward = null;
+  (state as any).__surpriseSpawnRoundIdx = 0;
   state.spawnQueue = [];
   state.spawnElapsed = 0;
   state.enemiesKilledThisWave = 0;
   state.enemiesLeakedThisWave = 0;
-  (state as any).carriedEnemiesThisWave = state.enemies.size;
+  (state as any).carriedEnemiesThisWave = 0;
 
   for (const group of TEST_YOUR_MIGHT_SPAWNS) {
     const start = group.start ?? 0;
@@ -128,7 +138,7 @@ export function startTestYourMight(state: GameStateShape): void {
   state.weatherKey = 'CARTHAGE';
   state.weatherIntensity = 1.35;
   state.waveModifier = 'GROUP_MARCH';
-  state.endlessExtraModifiers = ['STORM_SURGE', 'DEATH_PACT'];
+  state.endlessExtraModifiers = ['STORM_SURGE'];
   state.waveModifierTick = 0;
   state.hint = `WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} — TEST YOUR MIGHT! One leak ends the run. Perfect clear pays 3000g, a free Tier-5 Scorpio, and the boss Legendary.`;
   prepareHeroAbilitiesForWave(state);
@@ -144,6 +154,9 @@ export function tickTestYourMightSpawns(state: GameStateShape): boolean {
     e.currentSpeed = e.baseSpeed;
     if (e.isBoss) e.isScheduledBoss = item.__testYourMightMajorReward === true;
     (e as any).__testYourMightEnemy = true;
+    (e as any).__testYourMightNoStealth = true;
+    (e as any).__veiled = false;
+    (e as any).__truesightRevealed = true;
     if (typeof item.__testYourMightResistMult === 'number') {
       (e as any).__lateResistMult = ((e as any).__lateResistMult ?? 1) * item.__testYourMightResistMult;
     }
@@ -164,6 +177,10 @@ export function tickTestYourMightSpawns(state: GameStateShape): boolean {
     }
   }
   return true;
+}
+
+export function isTestYourMightLeakEnemy(enemy: any): boolean {
+  return !!enemy?.__testYourMightEnemy;
 }
 
 export function completeTestYourMight(state: GameStateShape): boolean {

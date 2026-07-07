@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { createGameState } from '../src/GameState';
 import { GamePhase } from '../src/types';
 import { DamageType, StatusEffectKind } from '../src/types';
@@ -9,6 +9,7 @@ import {
   displayWaveNumber,
   failTestYourMight,
   shouldOfferTestYourMight,
+  isTestYourMightLeakEnemy,
   startTestYourMight,
   TEST_YOUR_MIGHT_AFTER_WAVE,
   TEST_YOUR_MIGHT_DISPLAY_WAVE,
@@ -18,10 +19,16 @@ import {
   tickTestYourMightSpawns
 } from '../src/systems/TestYourMightSystem';
 import { checkWaveEnd, startWave, tickSpawns } from '../src/systems/WaveManager';
+import { tickEnemies } from '../src/systems/EnemySystem';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildFlyerPath, buildGroundPath } from '../src/systems/PathFinder';
 import { enemyDamageMultiplier, statusEffectiveness } from '../src/systems/EnemyResistances';
 import enemiesData from '../src/data/enemies.json';
+
+beforeAll(() => {
+  (globalThis as any).window = (globalThis as any).window ?? {};
+  (globalThis as any).window.__renderer = (globalThis as any).window.__renderer ?? { triggerImpactRing: () => {} };
+});
 
 function bootstrapState() {
   const s = createGameState();
@@ -87,7 +94,7 @@ describe('Test Your Might bonus wave', () => {
     expect(s.weatherIntensity).toBeGreaterThan(1);
     expect(s.weatherIntensity).toBeGreaterThanOrEqual(1.3);
     expect(s.waveModifier).toBe('GROUP_MARCH');
-    expect(s.endlessExtraModifiers).toEqual(['STORM_SURGE', 'DEATH_PACT']);
+    expect(s.endlessExtraModifiers).toEqual(['STORM_SURGE']);
   });
 
   it('is tuned as a brutal ground gauntlet with bosses, commanders, no flyers, and affixes', () => {
@@ -103,19 +110,25 @@ describe('Test Your Might bonus wave', () => {
     expect(types).not.toContain('NUMIDIAN_RIDER');
     expect(types).not.toContain('SPECTRAL_SCOUT');
     expect(types).not.toContain('SHADOW_CAVALRY');
+    expect(types).not.toContain('CARTHAGE_SPEARMAN');
     expect(types).toContain('PATHFINDER_COMMANDER');
     expect(types).toContain('STANDARD_BEARER_COMMANDER');
     expect(types).toContain('SIEGE_CAPTAIN_COMMANDER');
     expect(types).toContain('ANUBIS_PRIEST_COMMANDER');
+    expect(types).toContain('CELTIC_BERSERKER');
     expect(totalCount).toBe(40);
+    for (const type of types) {
+      expect(enemyDefs[type]?.ambushStealth, `${type} should not ambush-stealth in W10.5`).not.toBe(true);
+      expect(enemyDefs[type]?.stealthInterval, `${type} should not stealth-cycle in W10.5`).toBeUndefined();
+    }
 
     expect(byType.get('HANNIBAL_BARCA')?.hpMult).toBeGreaterThanOrEqual(50);
     expect(byType.get('HANNIBAL_BARCA')?.majorReward).toBe(true);
     expect(TEST_YOUR_MIGHT_SPAWNS.filter(g => g.majorReward).map(g => g.type)).toEqual(['HANNIBAL_BARCA']);
-    expect(byType.get('CARTHAGE_SPEARMAN')?.count).toBe(18);
+    expect(byType.get('CELTIC_BERSERKER')?.count).toBe(18);
     expect(byType.get('CARTHAGE_ELITE_GUARD')?.count).toBe(8);
     expect(byType.get('IRON_PHALANX')?.count).toBe(5);
-    expect(byType.get('CARTHAGE_SPEARMAN')?.hpMult).toBeGreaterThanOrEqual(265);
+    expect(byType.get('CELTIC_BERSERKER')?.hpMult).toBeGreaterThanOrEqual(265);
     expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.resistMult ?? 1) <= 0.82)).toBe(true);
     expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.statusGuard ?? 1) <= 0.46)).toBe(true);
     expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.rangedBlock ?? 0) >= 0.10)).toBe(true);
@@ -132,6 +145,77 @@ describe('Test Your Might bonus wave', () => {
     expect(Array.from(s.enemies.values()).some(e => e.isBoss)).toBe(true);
     expect(Array.from(s.enemies.values()).some(e => e.isFlyer)).toBe(false);
     expect(Array.from(s.enemies.values()).filter(e => e.isScheduledBoss).map(e => e.type)).toEqual(['HANNIBAL_BARCA']);
+    expect(Array.from(s.enemies.values()).every(e => isTestYourMightLeakEnemy(e))).toBe(true);
+    expect(Array.from(s.enemies.values()).every(e => (e as any).__testYourMightNoStealth === true)).toBe(true);
+    expect(Array.from(s.enemies.values()).every(e => (e as any).__veiled !== true)).toBe(true);
+  });
+
+  it('does not auto-fail during the opening seconds unless an actual bonus enemy leaks', () => {
+    const s = bootstrapState();
+    startTestYourMight(s);
+    let leaked = 0;
+    for (let i = 0; i < 120; i++) {
+      s.tick += 1 / 60;
+      tickSpawns(s, 1 / 60);
+      tickEnemies(s, 1 / 60, () => { leaked++; }, e => s.enemies.delete(e.id));
+    }
+    expect(leaked).toBe(0);
+    expect(s.testYourMightActive).toBe(true);
+    expect(s.testYourMightFailed).toBe(false);
+    expect(s.lives).toBeGreaterThan(0);
+    expect(s.gameOverAt).toBe(-1);
+  });
+
+  it('clears stale enemies and surprise runtime before launching W10.5', () => {
+    const s = bootstrapState();
+    s.enemies.set('stale', {
+      id: 'stale',
+      type: 'FERAL_DOG',
+      faction: 0,
+      hp: 1,
+      maxHp: 1,
+      baseSpeed: 1,
+      currentSpeed: 1,
+      isFlyer: false,
+      x: 0,
+      y: 0,
+      prevX: 0,
+      prevY: 0,
+      dirX: 1,
+      dirY: 0,
+      pathIndex: 999,
+      pathProgress: 0,
+      statusEffects: [],
+      hasFeared: false,
+      livesCost: 1,
+      isBoss: false,
+      reward: 0,
+      archetype: 'SWARM',
+      hpFlashTimer: 0,
+      healedCheckpoints: []
+    } as any);
+    (s as any).activeSurpriseEvent = { kind: 'UPRISING' };
+    (s as any).extraSurpriseEvents = [{ kind: 'INVASION' }];
+    (s as any).pendingSurpriseReward = { kind: 'UPRISING' };
+    startTestYourMight(s);
+    expect(s.enemies.size).toBe(0);
+    expect(s.activeSurpriseEvent).toBeNull();
+    expect(s.extraSurpriseEvents).toEqual([]);
+    expect(s.pendingSurpriseReward).toBeNull();
+    expect((s as any).carriedEnemiesThisWave).toBe(0);
+  });
+
+  it('keeps Test Your Might enemies visible through the opening seconds', () => {
+    const s = bootstrapState();
+    startTestYourMight(s);
+    s.spawnElapsed = 999;
+    tickTestYourMightSpawns(s);
+    s.tick = ((s as any).__waveStartTick ?? 0) + 2;
+    tickEnemies(s, 0, () => {}, () => {});
+    const enemies = Array.from(s.enemies.values()) as any[];
+    expect(enemies.length).toBeGreaterThan(0);
+    expect(enemies.every(e => e.__testYourMightNoStealth === true)).toBe(true);
+    expect(enemies.every(e => e.__veiled !== true)).toBe(true);
   });
 
   it('stamps challenge-only resistance, status, block, regen, and checkpoint mechanics onto spawned enemies', () => {

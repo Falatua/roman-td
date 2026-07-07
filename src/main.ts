@@ -80,7 +80,7 @@ import { showMercatorBackRoomModal, showSenateBailoutModal } from './render/Secr
 import { showHarborDraftModal, showHarborUnlockModal } from './render/HarborDraftModal';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { bossTrophyKillGoldBonus, consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
-import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
+import { failTestYourMight, isTestYourMightLeakEnemy, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
 import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy, shouldDropRareOnlyBossLoot } from './systems/RewardEligibility';
 import { isFinalBossBreach } from './systems/LeakRules';
@@ -6969,6 +6969,12 @@ async function boot() {
           if (state.testYourMightActive) {
             const leakDef: any = (enemiesData as any)[e.type];
             const leakedName = leakDef?.name ?? String(e.type).replace(/_/g, ' ');
+            if (!isTestYourMightLeakEnemy(e)) {
+              state.enemiesLeakedThisWave++;
+              state.leaksByArchetype[e.archetype] = (state.leaksByArchetype[e.archetype] ?? 0) + 1;
+              state.hint = `Ignored stale pre-challenge ${leakedName} during WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE}. Only Test Your Might enemies can fail the bonus.`;
+              return;
+            }
             state.enemiesLeakedThisWave++;
             state.leaksByArchetype[e.archetype] = (state.leaksByArchetype[e.archetype] ?? 0) + 1;
             renderer.triggerGateImpact();
