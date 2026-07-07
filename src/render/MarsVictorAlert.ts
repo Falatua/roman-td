@@ -10,6 +10,7 @@
 import { SFX } from './AudioManager';
 import { heroIdForTowerType } from '../systems/HeroIdentity';
 import type { GameStateShape } from '../GameState';
+import { GamePhase } from '../types';
 
 const HERO_SLUGS = ['marius', 'agrippa', 'agricola', 'scipio', 'caesar', 'sulla'];
 
@@ -35,10 +36,22 @@ export function maybeOfferMarsVictor(
   onFuse: () => void
 ): void {
   const complete = distinctHeroIdentities(state) >= 6;
-  if (!complete) { (state as any).__marsVictorOffered = false; return; }
-  if (hasMarsVictor) return;
-  if ((state as any).__marsVictorOffered) return;
+  if (!complete) {
+    (state as any).__marsVictorOffered = false;
+    (state as any).__marsVictorPromptDeferred = false;
+    return;
+  }
+  if (hasMarsVictor) {
+    (state as any).__marsVictorPromptDeferred = false;
+    return;
+  }
+  if (state.phase === GamePhase.WAVE_PHASE) {
+    (state as any).__marsVictorPromptDeferred = true;
+    return;
+  }
+  if ((state as any).__marsVictorOffered && !(state as any).__marsVictorPromptDeferred) return;
   (state as any).__marsVictorOffered = true;
+  (state as any).__marsVictorPromptDeferred = false;
   if (parent) showMarsVictorReady(parent, onFuse);
 }
 

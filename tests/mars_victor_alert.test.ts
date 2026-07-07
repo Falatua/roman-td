@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createGameState } from '../src/GameState';
 import { createTower } from '../src/systems/TowerSystem';
-import { TowerType } from '../src/types';
+import { GamePhase, TowerType } from '../src/types';
 import { distinctHeroIdentities, maybeOfferMarsVictor } from '../src/render/MarsVictorAlert';
 
 function addTower(state: any, type: TowerType, pending = false) {
@@ -53,5 +53,25 @@ describe('Mars Victor readiness alert', () => {
     s.towers.delete(sulla.id);
     maybeOfferMarsVictor(null, s, false, () => {});
     expect(s.__marsVictorOffered).toBe(false);
+  });
+
+  it('defers the Mars Victor prompt during active combat and offers it afterward', () => {
+    const s: any = createGameState();
+    addTower(s, TowerType.HERO_MARIUS);
+    addTower(s, TowerType.CHAMPION_AGRIPPA);
+    addTower(s, TowerType.CHAMPION_AGRICOLA);
+    addTower(s, TowerType.CHAMPION_SCIPIO);
+    addTower(s, TowerType.CHAMPION_CAESAR);
+    addTower(s, TowerType.CHAMPION_SULLA);
+
+    s.phase = GamePhase.WAVE_PHASE;
+    maybeOfferMarsVictor(null, s, false, () => {});
+    expect(s.__marsVictorOffered).not.toBe(true);
+    expect(s.__marsVictorPromptDeferred).toBe(true);
+
+    s.phase = GamePhase.BUILD_PHASE;
+    maybeOfferMarsVictor(null, s, false, () => {});
+    expect(s.__marsVictorOffered).toBe(true);
+    expect(s.__marsVictorPromptDeferred).toBe(false);
   });
 });

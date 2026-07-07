@@ -130,7 +130,11 @@ function meleeSlashTintFor(towerType: TowerType | string): number | undefined {
 }
 
 async function boot() {
-  fetch('https://ntfy.sh/roman-td-jb-a8f2k9', { method: 'POST', body: 'play' }).catch(() => {});
+  try {
+    const host = window.location.hostname;
+    const localHost = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
+    if (!localHost) fetch('https://ntfy.sh/roman-td-jb-a8f2k9', { method: 'POST', body: 'play' }).catch(() => {});
+  } catch { /* optional notification only */ }
   const wrap = document.getElementById('stage-wrap')!;
   const loadingEl = document.getElementById('loading')!;
   const app = document.getElementById('app')!;
@@ -4917,6 +4921,12 @@ async function boot() {
       // verification flow can fire it as the FINAL callback after the
       // player accepts their fate.
       const launchWave = () => {
+        const marsPrompt = document.getElementById('mars-victor-ready');
+        if (marsPrompt) {
+          marsPrompt.remove();
+          (state as any).__marsVictorOffered = false;
+          (state as any).__marsVictorPromptDeferred = true;
+        }
         // 2026-05-15: if a DPS check dummy is still walking when the
         // player launches the next wave, retire it cleanly so its half-
         // measured stats don't bleed into the real wave or trigger a
