@@ -298,9 +298,9 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // Colossus Gigas — the fused Super-Giant: very tough all-round.
   [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0.3, slow: 0.8, burn: 0.65, poison: 0.25, bleed: 0.20 },
   [EnemyType.OCEAN_FISHLING]: { fire: 1.15, burn: 1.15, poison: 0.8, slow: 0.7 },
-  [EnemyType.SEA_GIANT]: { melee: 0.55, ranged: 0.55, siege: 1.25, fire: 0, divine: 1.20, slow: 0.35, burn: 0, poison: 0.40, bleed: 0.35 },
-  [EnemyType.SEA_GIANT_WARBRINGER]: { melee: 0.40, ranged: 0.45, siege: 1.10, fire: 0, divine: 1.25, slow: 0.25, burn: 0, poison: 0.30, bleed: 0.30 },
-  [EnemyType.NETHER_AMPHIBIOUS_GIANT]: { melee: 0.30, ranged: 0.35, siege: 0.65, fire: 0, divine: 1.50, slow: 0.20, burn: 0, poison: 0.20, bleed: 0.25 },
+  [EnemyType.SEA_GIANT]: { melee: 0.50, ranged: 0.50, siege: 1.05, fire: 0, divine: 1.10, slow: 0.30, burn: 0, poison: 0.34, bleed: 0.30 },
+  [EnemyType.SEA_GIANT_WARBRINGER]: { melee: 0.35, ranged: 0.40, siege: 0.95, fire: 0, divine: 1.15, slow: 0.22, burn: 0, poison: 0.25, bleed: 0.25 },
+  [EnemyType.NETHER_AMPHIBIOUS_GIANT]: { melee: 0.25, ranged: 0.30, siege: 0.55, fire: 0, divine: 1.35, slow: 0.18, burn: 0, poison: 0.16, bleed: 0.20 },
   // 2026 v2 spec Ch14 — Egyptian roster expansion.
   [EnemyType.PLAGUE_BEARER]:  { ranged: 0.2, poison: 0.8, bleed: 0.65, burn: 0.3 },
   [EnemyType.MEDJAY_SOLDIER]: { melee: 0.5, ranged: 0.3, slow: 0.3, burn: 0.80, poison: 0.85, bleed: 0.65 },

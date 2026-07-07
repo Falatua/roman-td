@@ -799,7 +799,7 @@
   "SEA_GIANT": {
     "name": "Sea Giant",
     "faction": "ROMAN_MYTH",
-    "baseHp": 1800,
+    "baseHp": 2400,
     "speed": 0.58,
     "isFlyer": false,
     "isBoss": false,
@@ -822,7 +822,7 @@
   "SEA_GIANT_WARBRINGER": {
     "name": "Sea Giant Warbringer",
     "faction": "ROMAN_MYTH",
-    "baseHp": 6800,
+    "baseHp": 8800,
     "speed": 0.62,
     "isFlyer": false,
     "isBoss": false,
@@ -848,7 +848,7 @@
     "nullifyAuraRadiusTiles": 2,
     "name": "Nether Amphibious Giant",
     "faction": "ROMAN_MYTH",
-    "baseHp": 11000,
+    "baseHp": 14500,
     "speed": 0.72,
     "isFlyer": false,
     "isBoss": false,

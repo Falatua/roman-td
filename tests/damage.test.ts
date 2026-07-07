@@ -204,4 +204,21 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       expect(isHellfireImmune(enemy), `${type} hellfire`).toBe(true);
     }
   });
+
+  it('keeps all sea giants tanky while preserving divine as their main counter', () => {
+    const expectations = [
+      { type: EnemyType.SEA_GIANT, hp: 2400, meleeMax: 0.50, siegeMax: 1.05, divineMin: 1.10 },
+      { type: EnemyType.SEA_GIANT_WARBRINGER, hp: 8800, meleeMax: 0.35, siegeMax: 0.95, divineMin: 1.15 },
+      { type: EnemyType.NETHER_AMPHIBIOUS_GIANT, hp: 14500, meleeMax: 0.25, siegeMax: 0.55, divineMin: 1.35 }
+    ];
+
+    for (const spec of expectations) {
+      const def: any = (enemiesData as any)[spec.type];
+      const enemy = makeEnemy(spec.type, EnemyFaction.ROMAN_MYTH);
+      expect(def.baseHp, `${spec.type} base HP`).toBe(spec.hp);
+      expect(enemyDamageMultiplier(enemy, DamageType.PHYS_MELEE), `${spec.type} melee`).toBeLessThanOrEqual(spec.meleeMax);
+      expect(enemyDamageMultiplier(enemy, DamageType.SIEGE), `${spec.type} siege`).toBeLessThanOrEqual(spec.siegeMax);
+      expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${spec.type} divine`).toBeGreaterThanOrEqual(spec.divineMin);
+    }
+  });
 });
