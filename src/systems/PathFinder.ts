@@ -206,6 +206,7 @@ export function resnapEnemiesToPath(state: GameStateShape, newPath: { col: numbe
 // Validate that placing a stone/tower at (col,row) does not block any waypoint reachability.
 export function canPlaceStone(state: GameStateShape, col: number, row: number): boolean {
   if (tileAt(state, col, row) !== TileType.EMPTY) return false;
+  if ((state.placedTraps ?? []).some(trap => trap.col === col && trap.row === row)) return false;
   // simulate
   state.tiles[row][col] = TileType.STONE;
   const ok = buildGroundPath(state) !== null;

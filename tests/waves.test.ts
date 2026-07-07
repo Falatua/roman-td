@@ -197,7 +197,7 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
 
   it('adds shipwreck ocean spawns on Waves 3, 12, 27, and 29', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
-    expect(byWave.get(3).spawns).toContainEqual({ type: 'OCEAN_FISHLING', count: 6, ocean: true });
+    expect(byWave.get(3).spawns).toContainEqual({ type: 'OCEAN_FISHLING', count: 25, ocean: true });
     expect(byWave.get(12).spawns).toContainEqual({ type: 'SEA_GIANT', count: 2, ocean: true });
     expect(byWave.get(12).spawns).toContainEqual({ type: 'TIDECALLER_COMMANDER', count: 1, ocean: true });
     expect(byWave.get(27).spawns).toContainEqual({ type: 'SEA_GIANT_WARBRINGER', count: 6, ocean: true });

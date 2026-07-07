@@ -34,11 +34,11 @@
     "type": "M",
     "faction": "DOGS",
     "hpMult": 1.7,
-    "gold": 16,
+    "gold": 7,
     "spawns": [
       {
         "type": "OCEAN_FISHLING",
-        "count": 6,
+        "count": 25,
         "ocean": true
       },
       {
@@ -56,7 +56,7 @@
     "type": "G",
     "faction": "CELTS",
     "hpMult": 1.8,
-    "gold": 14,
+    "gold": 4,
     "enemySpeedBoostPct": 0.1,
     "spawns": [
       {

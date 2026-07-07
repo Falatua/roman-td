@@ -11,6 +11,7 @@ import { initializeGrid, setTile } from '../src/systems/GridManager';
 import { buildGroundPath } from '../src/systems/PathFinder';
 import comboData from '../src/data/towerCombinations.json';
 import towersData from '../src/data/towers.json';
+import { buyTraps, placeTrap } from '../src/systems/TrapSystem';
 
 function bootstrapState() {
   const s = createGameState();
@@ -124,6 +125,25 @@ describe('Recipe combo detection', () => {
 
     expect(s.combosBuilt).toBe(1);
     expect(s.combosBuiltUniqueTypes).toEqual([TowerType.HORSEMAN]);
+  });
+
+  it('does not clear deployed traps when a combo tower is forged', () => {
+    const s: any = bootstrapState();
+    const trapId = 'IRON_SPIKE_TRAP';
+    s.gold = 5000;
+    buyTraps(s, trapId, 5);
+    for (let i = 0; i < 5; i++) {
+      expect(placeTrap(s, trapId, 10 + i, 10)).toBe(true);
+    }
+    const trapIdsBefore = (s.placedTraps ?? []).map((trap: any) => trap.id);
+
+    const a = placeTower(s, TowerType.MILITES, 2, 1, 1);
+    placeTower(s, TowerType.MILITES, 2, 2, 1);
+    placeTower(s, TowerType.MILITES, 2, 3, 1);
+    const horseman = scanCombos(s).find(c => c.result === TowerType.HORSEMAN && !c.isSameTierMerge)!;
+
+    expect(executeCombo(s, horseman, a.id)).toBe(true);
+    expect((s.placedTraps ?? []).map((trap: any) => trap.id)).toEqual(trapIdsBefore);
   });
 
   it('lets the starter hero plus five Mercator Champions form Mars Victor', () => {

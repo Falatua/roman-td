@@ -76,6 +76,10 @@ export function canBuildWaterTowerAt(state: GameStateShape, col: number, row: nu
   return tileAt(state, col, row) === TileType.WATER && isWaterZoneTile(col, row);
 }
 
+export function hasPlacedTrapAt(state: GameStateShape, col: number, row: number): boolean {
+  return (state.placedTraps ?? []).some(trap => trap.col === col && trap.row === row);
+}
+
 // 2026-05-22 V20 — Cave + gate are rendered at 128×128 with their
 // procedural stone frame (RenderEngine.ts:2235-2330) which spans a
 // FULL 5×5 tile footprint centered on the spawn / gate anchors. The
@@ -109,6 +113,7 @@ export function isInsideStructureFootprint(col: number, row: number): boolean {
 
 export function isBuildable(state: GameStateShape, col: number, row: number): boolean {
   if (tileAt(state, col, row) !== TileType.EMPTY) return false;
+  if (hasPlacedTrapAt(state, col, row)) return false;
   if (isInsideStructureFootprint(col, row)) return false;
   return true;
 }

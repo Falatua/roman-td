@@ -136,9 +136,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'bloodline', tier: 'EARLY',
     title: 'Bloodline',
-    blurb: 'Total 300 enemy kills across the field. Hold through the first campaign act.',
+    blurb: 'Total 340 enemy kills across the field. Hold through the first campaign act.',
     condition: s => s.totalKills,
-    target: 300,
+    target: 340,
     reward: { kind: 'GOLD', amount: 25 }
   },
   {
@@ -219,9 +219,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'butcher', tier: 'MID',
     title: 'Butcher of Rome',
-    blurb: 'Total 850 enemy kills. Break the campaign midpoint.',
+    blurb: 'Total 900 enemy kills. Break the campaign midpoint.',
     condition: s => s.totalKills,
-    target: 850,
+    target: 900,
     reward: { kind: 'GOLD', amount: 75 }
   },
   {

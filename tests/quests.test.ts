@@ -133,8 +133,8 @@ describe('30-wave Solo quest pacing', () => {
   it('paces total-kill quests near waves 6, 14, and 23', () => {
     const campaign = soloCampaignCumulative();
     const completionWave = (target: number) => campaign.find(row => row.kills >= target)?.wave;
-    expect(quest('bloodline').target).toBe(300);
-    expect(quest('butcher').target).toBe(850);
+    expect(quest('bloodline').target).toBe(340);
+    expect(quest('butcher').target).toBe(900);
     expect(quest('destroyer').target).toBe(1900);
     expect(completionWave(quest('bloodline').target)).toBe(6);
     expect(completionWave(quest('butcher').target)).toBe(14);

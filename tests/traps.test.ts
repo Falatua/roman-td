@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createGameState } from '../src/GameState';
 import { WATER_ZONE } from '../src/constants';
-import { initializeGrid } from '../src/systems/GridManager';
+import { initializeGrid, isBuildable, setTile } from '../src/systems/GridManager';
+import { canPlaceStone } from '../src/systems/PathFinder';
+import { TileType } from '../src/types';
 import {
   TRAP_DEFS,
   armTrapFromInventory,
@@ -60,8 +62,8 @@ describe('Trap inventory flow', () => {
     buyTraps(s, id, 3);
     armTrapFromInventory(s, id);
 
-    expect(placeTrap(s, id, 4, 4)).toBe(true);
-    expect(placeTrap(s, id, 5, 4)).toBe(true);
+    expect(placeTrap(s, id, 10, 10)).toBe(true);
+    expect(placeTrap(s, id, 11, 10)).toBe(true);
     expect(trapOwned(s, id)).toBe(1);
     expect(s.trapsPurchased).toBe(3);
     expect(s.trapsPlaced).toBe(2);
@@ -86,5 +88,24 @@ describe('Trap inventory flow', () => {
     expect(placeTrap(s, id, WATER_ZONE.col + 5, WATER_ZONE.row)).toBe(true);
     expect(trapOwned(s, id)).toBe(1);
     expect(s.placedTraps ?? []).toHaveLength(1);
+  });
+
+  it('reserves placed trap tiles from future towers, stones, and duplicate traps', () => {
+    const s = createGameState();
+    initializeGrid(s);
+    const id = 'IRON_SPIKE_TRAP';
+    s.gold = 999;
+    buyTraps(s, id, 2);
+
+    expect(placeTrap(s, id, 10, 10)).toBe(true);
+    expect(isBuildable(s, 10, 10)).toBe(false);
+    expect(canPlaceStone(s, 10, 10)).toBe(false);
+    expect(placeTrap(s, id, 10, 10)).toBe(false);
+    expect(trapOwned(s, id)).toBe(1);
+    expect(s.placedTraps ?? []).toHaveLength(1);
+
+    setTile(s, 11, 10, TileType.STONE);
+    expect(placeTrap(s, id, 11, 10)).toBe(false);
+    expect(trapOwned(s, id)).toBe(1);
   });
 });
