@@ -2701,6 +2701,8 @@ export class RenderEngine {
     const waterDeepKeys = ['OCEAN_DEEP_A', 'OCEAN_DEEP_B'];
     const waterMidKeys = ['OCEAN_MID_A', 'OCEAN_MID_B'];
     const waterShallowKeys = ['OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B'];
+    const immediateShoreGroundKeys = ['OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_PEBBLES', 'OCEAN_SHORE_FOAM_BITS', 'OCEAN_SHORE_WET_ROCKS'];
+    const outerShoreGroundKeys = ['OCEAN_SHORE_PEBBLES', 'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH'];
     const addTileSprite = (layer: Container, key: string, x: number, y: number, alpha = 1) => {
       const t0 = tex(key);
       if (!t0) return false;
@@ -2710,6 +2712,18 @@ export class RenderEngine {
       sp.alpha = alpha;
       layer.addChild(sp);
       return true;
+    };
+    const waterProximity = (col: number, row: number, maxTiles = 2): number => {
+      let best = Infinity;
+      for (let dr = -maxTiles; dr <= maxTiles; dr++) {
+        for (let dc = -maxTiles; dc <= maxTiles; dc++) {
+          if (dc === 0 && dr === 0) continue;
+          const d = Math.max(Math.abs(dc), Math.abs(dr));
+          if (d > maxTiles || d >= best) continue;
+          if (state.tiles[row + dr]?.[col + dc] === TileType.WATER) best = d;
+        }
+      }
+      return best === Infinity ? 0 : best;
     };
 
     for (let r = 0; r < GRID.ROWS; r++) {
@@ -2804,6 +2818,38 @@ export class RenderEngine {
           // Fallback to colored rect if texture missing (non-fatal)
           const fill = isPath ? 0x886533 : 0x426f31;
           g.beginFill(fill).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
+        }
+        if (!isPath && t === TileType.EMPTY) {
+          const shoreDist = waterProximity(c, r, 2);
+          if (shoreDist > 0) {
+            const directWater = shoreDist === 1;
+            const shoreRoll = hash(c, r, 51511) % 100;
+            const detailChance = directWater ? 86 : 48;
+            if (shoreRoll < detailChance) {
+              const shoreKeys = directWater ? immediateShoreGroundKeys : outerShoreGroundKeys;
+              const detailKey = shoreKeys[hash(c, r, 77137) % shoreKeys.length];
+              const detailTex = tex(detailKey);
+              if (detailTex) {
+                const sd = new Sprite(detailTex);
+                sd.anchor.set(0.5);
+                sd.x = x + GRID.TILE / 2 + ((hash(c, r, 9109) % 7) - 3);
+                sd.y = y + GRID.TILE / 2 + ((hash(c, r, 9110) % 7) - 3);
+                const sz = GRID.TILE * (directWater ? 1.0 : 0.82);
+                sd.width = sz; sd.height = sz;
+                sd.alpha = directWater ? 0.92 : 0.66;
+                if ((hash(c, r, 9111) % 2) === 1) sd.scale.x *= -1;
+                coastalDetailLayer.addChild(sd);
+              }
+            }
+            const tintAlpha = directWater ? 0.10 : 0.045;
+            const wetColor = directWater ? 0xd6e3a0 : 0xb6d18a;
+            const wetCount = directWater ? 3 : 2;
+            for (let i = 0; i < wetCount; i++) {
+              const hx = x + 4 + (hash(c, r, 62000 + i) % 23);
+              const hy = y + 5 + (hash(c, r, 63000 + i) % 21);
+              shoreTrimGfx.beginFill(wetColor, tintAlpha).drawRect(hx, hy, directWater ? 5 : 4, 1).endFill();
+            }
+          }
         }
         // 2026-05-21 — HEAVY DECOR (visual overhaul phase V2). Density
         // bumped 0.06 → 0.40 with edge-weighting + path-corridor

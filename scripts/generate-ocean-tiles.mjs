@@ -214,13 +214,32 @@ function overlay(name, kind) {
     rect(data, 8, 19, 16, 7, 0x253346, 250); rect(data, 10, 17, 11, 3, 0x5d7081, 210); rect(data, 14, 15, 6, 2, 0x8798a3, 170);
     rect(data, 5, 25, 22, 2, 0xdffff7, 68);
   } else if (kind === 'shells') {
-    rect(data, 6, 16, 5, 3, 0xf3dcc2, 230); rect(data, 8, 15, 2, 1, 0xffffff, 180);
-    rect(data, 20, 21, 4, 3, 0xd9a88f, 220); rect(data, 23, 17, 2, 2, 0x7d6545, 170);
-    rect(data, 13, 24, 2, 1, 0xf4e6b7, 220);
+    rect(data, 6, 16, 5, 3, 0xf3dcc2, 235); rect(data, 8, 15, 2, 1, 0xffffff, 190);
+    rect(data, 20, 21, 4, 3, 0xd9a88f, 225); rect(data, 23, 17, 2, 2, 0x7d6545, 175);
+    rect(data, 13, 24, 2, 1, 0xf4e6b7, 225); rect(data, 4, 23, 3, 2, 0xc9e7e1, 190);
   } else if (kind === 'starfish') {
     rect(data, 15, 14, 3, 8, 0xe77945, 235); rect(data, 12, 17, 9, 3, 0xe77945, 235);
     line(data, 13, 15, 19, 21, 0xf0a05e, 230); line(data, 20, 15, 13, 21, 0xc9553a, 220);
     setPx(data, 16, 18, 0xffd08a, 190);
+  } else if (kind === 'pebbles') {
+    rect(data, 5, 18, 4, 3, 0x617264, 210); rect(data, 6, 17, 2, 1, 0x9bad8e, 150);
+    rect(data, 14, 23, 5, 3, 0x4f5e54, 215); rect(data, 16, 22, 2, 1, 0x899a83, 150);
+    rect(data, 24, 15, 3, 3, 0x7f846e, 190); rect(data, 25, 14, 1, 1, 0xb6b292, 130);
+    rect(data, 10, 10, 2, 2, 0x55706a, 155); rect(data, 21, 26, 2, 1, 0xe8d58d, 130);
+  } else if (kind === 'driftwood') {
+    line(data, 6, 20, 24, 14, 0x684b2f, 225);
+    line(data, 7, 21, 25, 15, 0x2f2419, 105);
+    line(data, 14, 17, 10, 12, 0x8b6b43, 190);
+    line(data, 18, 16, 23, 20, 0x4a3523, 190);
+    rect(data, 6, 22, 20, 2, 0x0b2e32, 45);
+  } else if (kind === 'foam_bits') {
+    rect(data, 4, 24, 9, 1, 0xf2fff8, 150); rect(data, 7, 22, 5, 1, 0xd7fff4, 118);
+    rect(data, 18, 18, 8, 1, 0xf2fff8, 130); rect(data, 21, 20, 5, 1, 0xc9f5ea, 105);
+    rect(data, 10, 9, 6, 1, 0xffffff, 105); rect(data, 25, 27, 3, 1, 0xdffff7, 105);
+  } else if (kind === 'wet_rocks') {
+    rect(data, 7, 18, 9, 5, 0x334848, 225); rect(data, 9, 16, 5, 2, 0x6e8a83, 160);
+    rect(data, 19, 21, 8, 4, 0x26343b, 230); rect(data, 21, 19, 4, 2, 0x5f7780, 155);
+    rect(data, 6, 24, 22, 1, 0xdffff7, 66); rect(data, 11, 23, 6, 1, 0x9de9e8, 85);
   }
   return save(name, data);
 }
@@ -239,7 +258,13 @@ await Promise.all([
   overlay('m_ocean_kelp.png', 'kelp'),
   overlay('m_ocean_coral.png', 'coral'),
   overlay('m_ocean_fish.png', 'fish'),
-  overlay('m_ocean_rock.png', 'rock')
+  overlay('m_ocean_rock.png', 'rock'),
+  overlay('m_ocean_shore_shells.png', 'shells'),
+  overlay('m_ocean_shore_starfish.png', 'starfish'),
+  overlay('m_ocean_shore_pebbles.png', 'pebbles'),
+  overlay('m_ocean_shore_driftwood.png', 'driftwood'),
+  overlay('m_ocean_shore_foam_bits.png', 'foam_bits'),
+  overlay('m_ocean_shore_wet_rocks.png', 'wet_rocks')
 ]);
 
 console.log('Generated ocean terrain tiles in', OUT_DIR);

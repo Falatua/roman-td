@@ -221,7 +221,10 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
   const oceanKeys = [
     'OCEAN_DEEP_A', 'OCEAN_DEEP_B', 'OCEAN_MID_A', 'OCEAN_MID_B', 'OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B',
     'OCEAN_FOAM_N', 'OCEAN_FOAM_E', 'OCEAN_FOAM_S', 'OCEAN_FOAM_W',
-    'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK', 'OCEAN_SHIPWRECK'
+    'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK',
+    'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH', 'OCEAN_SHORE_PEBBLES',
+    'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_FOAM_BITS', 'OCEAN_SHORE_WET_ROCKS',
+    'OCEAN_SHIPWRECK'
   ];
 
   it('registers every ocean tile used by RenderEngine', () => {
@@ -233,7 +236,7 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     const sharp = require('sharp');
     const transparentOverlayKeys = oceanKeys.filter(key =>
       key.includes('FOAM') || key.includes('KELP') || key.includes('CORAL') || key.includes('FISH') ||
-      key.includes('ROCK') || key.includes('SHIPWRECK')
+      key.includes('ROCK') || key.includes('SHORE') || key.includes('SHIPWRECK')
     );
     for (const key of oceanKeys) {
       const file = assetFileFor(key);
@@ -256,5 +259,14 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
         expect(transparent, `${key} should have transparent pixels`).toBeGreaterThan(32 * 32 * 0.35);
       }
     }
+  });
+
+  it('renders coastal ground detail on grass near the ocean without changing gameplay tiles', () => {
+    const fs = require('fs');
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain('immediateShoreGroundKeys');
+    expect(source).toContain('outerShoreGroundKeys');
+    expect(source).toContain('waterProximity(c, r, 2)');
+    expect(source).toContain('t === TileType.EMPTY');
   });
 });
