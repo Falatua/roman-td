@@ -617,6 +617,9 @@ const MANIFEST: Record<string, string> = {
   OCEAN_SHORE_DRIFTWOOD: 'm_ocean_shore_driftwood.png',
   OCEAN_SHORE_FOAM_BITS: 'm_ocean_shore_foam_bits.png',
   OCEAN_SHORE_WET_ROCKS: 'm_ocean_shore_wet_rocks.png',
+  OCEAN_SHORE_ITALY_ROCKS_A: 'm_ocean_shore_italy_rocks_a.png',
+  OCEAN_SHORE_ITALY_ROCKS_B: 'm_ocean_shore_italy_rocks_b.png',
+  OCEAN_SHORE_ITALY_ROCKS_C: 'm_ocean_shore_italy_rocks_c.png',
   OCEAN_SHIPWRECK: 'm_ocean_shipwreck.png',
   // Decorative props — sprinkled atop grass tiles
   DP_MILESTONE: 'dp_milestone.png',

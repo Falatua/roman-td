@@ -2730,6 +2730,7 @@ export class RenderEngine {
       state.tiles[row]?.[col] === TileType.WATER || waterTowerTiles.has(`${col},${row}`);
     const immediateShoreGroundKeys = ['OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_PEBBLES', 'OCEAN_SHORE_FOAM_BITS', 'OCEAN_SHORE_WET_ROCKS'];
     const outerShoreGroundKeys = ['OCEAN_SHORE_PEBBLES', 'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH'];
+    const italyShoreRockKeys = ['OCEAN_SHORE_ITALY_ROCKS_A', 'OCEAN_SHORE_ITALY_ROCKS_B', 'OCEAN_SHORE_ITALY_ROCKS_C'];
     const addTileSprite = (layer: Container, key: string, x: number, y: number, alpha = 1) => {
       const t0 = tex(key);
       if (!t0) return false;
@@ -2815,10 +2816,31 @@ export class RenderEngine {
           const waterE = visuallyWater(c + 1, r);
           const waterS = visuallyWater(c, r + 1);
           const waterW = visuallyWater(c - 1, r);
+          const checkpointFacingSouthShore = waterS;
+          const checkpointFacingWestShore = waterW;
+          const checkpointFacingShore = checkpointFacingSouthShore || checkpointFacingWestShore;
           if (waterN) shoreTrimGfx.beginFill(0xf2d072, 0.82).drawRect(x + 3, y, GRID.TILE - 6, 3).endFill();
           if (waterE) shoreTrimGfx.beginFill(0xf2d072, 0.72).drawRect(x + GRID.TILE - 3, y + 3, 3, GRID.TILE - 6).endFill();
-          if (waterS) shoreTrimGfx.beginFill(0xf2d072, 0.58).drawRect(x + 3, y + GRID.TILE - 3, GRID.TILE - 6, 3).endFill();
-          if (waterW) shoreTrimGfx.beginFill(0xf2d072, 0.50).drawRect(x, y + 3, 3, GRID.TILE - 6).endFill();
+          if (checkpointFacingShore) {
+            const rockTex = tex(italyShoreRockKeys[hash(c, r, 92173) % italyShoreRockKeys.length]);
+            if (rockTex) {
+              const rock = new Sprite(rockTex);
+              rock.anchor.set(0.5);
+              rock.x = waterW
+                ? x + 3 + ((hash(c, r, 92174) % 5) - 2)
+                : x + GRID.TILE / 2 + ((hash(c, r, 92175) % 7) - 3);
+              rock.y = waterS
+                ? y + GRID.TILE - 4 + ((hash(c, r, 92176) % 3) - 1)
+                : y + GRID.TILE / 2 + ((hash(c, r, 92177) % 7) - 3);
+              const rockScale = waterW ? 0.72 : 0.78;
+              rock.width = GRID.TILE * rockScale;
+              rock.height = GRID.TILE * rockScale;
+              rock.alpha = 0.94;
+              if (waterW) rock.rotation = -Math.PI / 2;
+              if ((hash(c, r, 92178) % 2) === 1) rock.scale.x *= -1;
+              coastalDetailLayer.addChild(rock);
+            }
+          }
         }
         let key: string;
         if (isPath) {

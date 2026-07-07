@@ -224,6 +224,7 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK',
     'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH', 'OCEAN_SHORE_PEBBLES',
     'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_FOAM_BITS', 'OCEAN_SHORE_WET_ROCKS',
+    'OCEAN_SHORE_ITALY_ROCKS_A', 'OCEAN_SHORE_ITALY_ROCKS_B', 'OCEAN_SHORE_ITALY_ROCKS_C',
     'OCEAN_SHIPWRECK'
   ];
 
@@ -266,6 +267,8 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
     expect(source).toContain('immediateShoreGroundKeys');
     expect(source).toContain('outerShoreGroundKeys');
+    expect(source).toContain('italyShoreRockKeys');
+    expect(source).toContain('checkpointFacingShore');
     expect(source).toContain('waterProximity(c, r, 2)');
     expect(source).toContain('t === TileType.EMPTY');
   });
