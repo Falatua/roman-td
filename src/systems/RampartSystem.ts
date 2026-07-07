@@ -1,6 +1,6 @@
 // RampartSystem — 2026-07-02: purchasable 5-tile stone barrier lines.
 //
-// A rampart is a mazing aid sold at the shop (gate + Mercator): 30 gold buys
+// A rampart is a mazing aid sold at the Gate Shop: 30 gold buys
 // a straight run of FIVE wall stones placed in one click. The placed tiles
 // are ordinary TileType.STONE — identical art, identical sell/refund
 // behavior, identical pathing rules to the stones the player already gets

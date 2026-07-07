@@ -2,9 +2,9 @@ import { GameStateShape } from '../GameState';
 import { GamePhase, ItemId, TowerType } from '../types';
 import towersData from '../data/towers.json';
 import itemsData from '../data/items_permanent.json';
+import { ECONOMY } from '../constants';
 import { BASE_TOWER_TYPES } from './TowerSystem';
 import { itemBuyPrice, Rarity } from './LootSystem';
-import { grantTrapInventory } from './TrapInventorySystem';
 
 export const MERCATOR_BACKROOM_MIN_WAVE = 9;
 export const MERCATOR_BACKROOM_PURCHASE_TRIGGER = 3;
@@ -28,8 +28,7 @@ export interface MercatorBackRoomOffer {
   rarity?: Rarity;
   towerType?: TowerType;
   tier?: 1 | 2 | 3 | 4 | 5;
-  trapBundle?: Record<string, number>;
-  ramparts?: number;
+  lifeBonus?: number;
 }
 
 export type MercatorBackRoomClaimResult =
@@ -141,18 +140,13 @@ export function buildMercatorBackRoomOffers(state: GameStateShape): MercatorBack
       tier: 5
     },
     {
-      id: 'quartermaster-cache',
+      id: 'vestal-ration-chits',
       kind: 'SUPPLIES',
-      title: 'Quartermaster Cache',
-      eyebrow: 'DUSTY SUPPLY CRATE',
-      description: 'Two Iron Spikes, one Ballista Snare, one Sky Net, and one Stone Rampart. A compact emergency kit for a very rude future wave.',
+      title: 'Vestal Ration Chits',
+      eyebrow: 'SEALED MERCY TOKENS',
+      description: 'Three emergency life chits from a temple ledger Mercator absolutely did not forge. No traps, no ramparts, just breathing room.',
       price: 160,
-      trapBundle: {
-        IRON_SPIKE_TRAP: 2,
-        BALLISTA_SNARE: 1,
-        SKY_NET: 1
-      },
-      ramparts: 1
+      lifeBonus: 3
     }
   ];
   state.mercatorBackRoomOffers = offers;
@@ -188,10 +182,7 @@ export function claimMercatorBackRoomOffer(
       source: 'backroom'
     });
   } else if (offer.kind === 'SUPPLIES') {
-    for (const [trapId, count] of Object.entries(offer.trapBundle ?? {})) {
-      grantTrapInventory(state, trapId, count);
-    }
-    state.rampartsOwned = (state.rampartsOwned ?? 0) + Math.max(0, Math.floor(offer.ramparts ?? 0));
+    state.lives = Math.min(ECONOMY.MAX_LIVES, (state.lives ?? 0) + Math.max(0, Math.floor(offer.lifeBonus ?? 0)));
   }
 
   state.mercatorBackRoomClaimed = true;

@@ -91,7 +91,7 @@ function offerMetaHtml(offer: MercatorBackRoomOffer): string {
       <span style="background:#120d08;border:1px solid #3a3025;padding:4px;text-align:center"><b style="color:#ffd34d">SPD</b><br/>${Number(def.attackSpeed ?? 0).toFixed(2)}/s</span>
     </div>`;
   }
-  return `<div style="font-size:9.5px;color:#cdb98a;line-height:1.35">Adds traps to inventory and one rampart to your placement stockpile.</div>`;
+  return `<div style="font-size:9.5px;color:#cdb98a;line-height:1.35">Adds emergency lives immediately, capped by Rome's normal life limit.</div>`;
 }
 
 export function showMercatorBackRoomModal(

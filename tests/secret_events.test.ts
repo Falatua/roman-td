@@ -111,31 +111,34 @@ describe('Mercator Back Room hidden event', () => {
     expect(s.mercatorBackRoomClaimed).toBeFalsy();
   });
 
-  it('claims a supply cache with the real usable trap ids', () => {
+  it('claims a support cache without selling traps or ramparts', () => {
     const s = createGameState();
+    s.lives = 10;
     s.gold = 500;
     s.mercatorBackRoomOffers = [{
-      id: 'quartermaster-cache',
+      id: 'vestal-ration-chits',
       kind: 'SUPPLIES',
-      title: 'Quartermaster Cache',
-      eyebrow: 'DUSTY SUPPLY CRATE',
+      title: 'Vestal Ration Chits',
+      eyebrow: 'SEALED MERCY TOKENS',
       description: 'test',
       price: 160,
-      trapBundle: {
-        IRON_SPIKE_TRAP: 2,
-        BALLISTA_SNARE: 1,
-        SKY_NET: 1
-      },
-      ramparts: 1
+      lifeBonus: 3
     }];
-    const result = claimMercatorBackRoomOffer(s, 'quartermaster-cache');
+    const result = claimMercatorBackRoomOffer(s, 'vestal-ration-chits');
     expect(result.ok).toBe(true);
     expect(s.gold).toBe(340);
-    expect(s.trapInventory?.IRON_SPIKE_TRAP).toBe(2);
-    expect(s.trapInventory?.IRON_SPIKE).toBeUndefined();
-    expect(s.trapInventory?.BALLISTA_SNARE).toBe(1);
-    expect(s.trapInventory?.SKY_NET).toBe(1);
-    expect(s.rampartsOwned).toBe(1);
+    expect(s.lives).toBe(13);
+    expect(Object.keys(s.trapInventory ?? {})).toHaveLength(0);
+    expect(s.rampartsOwned ?? 0).toBe(0);
+  });
+
+  it('does not build Back Room offers with trap or rampart payloads', () => {
+    const s = createGameState();
+    const offers = buildMercatorBackRoomOffers(s);
+    for (const offer of offers) {
+      expect((offer as any).trapBundle, `${offer.id} should not sell traps through Mercator Back Room`).toBeUndefined();
+      expect((offer as any).ramparts, `${offer.id} should not sell Stone Ramparts through Mercator Back Room`).toBeUndefined();
+    }
   });
 });
 

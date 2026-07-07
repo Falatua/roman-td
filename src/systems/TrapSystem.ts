@@ -1,6 +1,6 @@
 // TrapSystem — consumable, purchasable ground traps (2026 v2).
 //
-// Flow: buy from the shop/Mercator into state.trapInventory; arm one from the
+// Flow: buy from the Gate Shop into state.trapInventory; arm one from the
 // inventory UI (state.selectedTrapType); click a tile to place it (consumes 1, pushes a
 // placedTraps entry); when an enemy comes within trigger range the trap fires
 // applies its effect to a small AoE, then re-arms after a short cooldown.
