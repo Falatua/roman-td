@@ -297,6 +297,9 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.CYCLOPS]:     { melee: 0.3, slow: 0.4, burn: 0.85, poison: 0.60, bleed: 0.50 },
   // Colossus Gigas — the fused Super-Giant: very tough all-round.
   [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0.3, slow: 0.8, burn: 0.65, poison: 0.25, bleed: 0.20 },
+  [EnemyType.SEA_GIANT]: { melee: 0.55, ranged: 0.55, siege: 1.25, fire: 0, divine: 1.20, slow: 0.35, burn: 0, poison: 0.40, bleed: 0.35 },
+  [EnemyType.SEA_GIANT_WARBRINGER]: { melee: 0.40, ranged: 0.45, siege: 1.10, fire: 0, divine: 1.25, slow: 0.25, burn: 0, poison: 0.30, bleed: 0.30 },
+  [EnemyType.NETHER_AMPHIBIOUS_GIANT]: { melee: 0.30, ranged: 0.35, siege: 0.65, fire: 0, divine: 1.50, slow: 0.20, burn: 0, poison: 0.20, bleed: 0.25 },
   // 2026 v2 spec Ch14 — Egyptian roster expansion.
   [EnemyType.PLAGUE_BEARER]:  { ranged: 0.2, poison: 0.8, bleed: 0.65, burn: 0.3 },
   [EnemyType.MEDJAY_SOLDIER]: { melee: 0.5, ranged: 0.3, slow: 0.3, burn: 0.80, poison: 0.85, bleed: 0.65 },
@@ -322,6 +325,11 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
   return RESIST[type] ?? {};
+}
+
+export function isHellfireImmune(enemy: Enemy): boolean {
+  const def: any = (enemiesData as any)[enemy.type];
+  return !!def?.immuneHellfire;
 }
 
 export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): number {

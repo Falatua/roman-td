@@ -201,6 +201,11 @@
     "comboAntiAirArmorPct": 0.18,
     "spawns": [
       {
+        "type": "SEA_GIANT",
+        "count": 1,
+        "ocean": true
+      },
+      {
         "type": "SPECTRAL_SCOUT",
         "count": 39
       }
@@ -797,6 +802,11 @@
         "count": 6
       },
       {
+        "type": "SEA_GIANT_WARBRINGER",
+        "count": 4,
+        "ocean": true
+      },
+      {
         "type": "CYCLOPS",
         "count": 5
       },
@@ -894,6 +904,11 @@
       {
         "type": "SUPER_GIANT_COLOSSUS",
         "count": 2
+      },
+      {
+        "type": "NETHER_AMPHIBIOUS_GIANT",
+        "count": 2,
+        "ocean": true
       },
       {
         "type": "CYCLOPS",

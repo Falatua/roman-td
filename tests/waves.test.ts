@@ -176,6 +176,37 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(elephants?.count).toBe(2);
   });
 
+  it('adds ocean-emergent sea giants on Waves 12, 27, and 29', () => {
+    const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
+    expect(byWave.get(12).spawns).toContainEqual({ type: 'SEA_GIANT', count: 1, ocean: true });
+    expect(byWave.get(27).spawns).toContainEqual({ type: 'SEA_GIANT_WARBRINGER', count: 4, ocean: true });
+    expect(byWave.get(29).spawns).toContainEqual({ type: 'NETHER_AMPHIBIOUS_GIANT', count: 2, ocean: true });
+  });
+
+  it('routes ocean spawns from the water into the normal ground path', () => {
+    const s = bootstrapState();
+    s.wave = 11;
+    startWave(s);
+    expect(s.spawnQueue[0]).toMatchObject({ type: 'SEA_GIANT', ocean: true });
+    tickSpawns(s, 0.01);
+    const sea = Array.from(s.enemies.values()).find(e => e.type === EnemyType.SEA_GIANT) as any;
+    expect(sea).toBeTruthy();
+    expect(sea.__oceanSpawn).toBe(true);
+    expect(sea.__approachActive).toBe(true);
+    expect(sea.pathIndex).toBeGreaterThan(0);
+    expect(sea.x).not.toBe(s.groundPath[0].col * GRID.TILE + GRID.TILE / 2);
+    expect(sea.y).not.toBe(s.groundPath[0].row * GRID.TILE + GRID.TILE / 2);
+  });
+
+  it('does not mirror ocean spawns to Cave B on late waves', () => {
+    const s = bootstrapState();
+    s.wave = 26;
+    startWave(s);
+    const oceanWarbringers = s.spawnQueue.filter(item => item.type === 'SEA_GIANT_WARBRINGER');
+    expect(oceanWarbringers).toHaveLength(4);
+    expect(oceanWarbringers.every(item => item.ocean && !item.caveB)).toBe(true);
+  });
+
   it('turns W26-W30 into the final apex-tower gauntlet', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     const expected = new Map<number, { hp: number; dr: number; aa: number; dot: number; regen: number }>([

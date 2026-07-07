@@ -63,8 +63,8 @@ describe('30-wave Solo economy envelope', () => {
     }
 
     const guaranteed = ECONOMY.STARTING_GOLD + kills + waveGold + majorBossBounties;
-    expect(kills).toBe(2832);
-    expect(guaranteed).toBe(3956);
+    expect(kills).toBe(2845);
+    expect(guaranteed).toBe(3969);
     expect(guaranteed).toBeLessThan(4000);
   });
 

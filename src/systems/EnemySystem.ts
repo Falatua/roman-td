@@ -21,7 +21,7 @@ import { GameStateShape, isWaveModifierActive } from '../GameState';
 import enemiesData from '../data/enemies.json';
 import waypointsData from '../data/waypoints.json';
 import wavesData from '../data/waves.json';
-import { statusEffectiveness } from './EnemyResistances';
+import { isHellfireImmune, statusEffectiveness } from './EnemyResistances';
 import { buildGroundPathB } from './PathFinder';
 import { campaignRelicEnemyHpMult, campaignRelicEnemySpeedMult } from './CampaignRelicSystem';
 import { commanderSpeedMult, isCommanderType, tickCommanderSupport } from './CommanderSystem';
@@ -82,6 +82,9 @@ const ARCHETYPE: Record<string, Enemy['archetype']> = {
   SKY_STANDARD_COMMANDER: 'ELITE',
   SKY_PATHFINDER_COMMANDER: 'RUNNER',
   SKY_ANUBIS_COMMANDER: 'ELITE',
+  SEA_GIANT: 'BULKY',
+  SEA_GIANT_WARBRINGER: 'BULKY',
+  NETHER_AMPHIBIOUS_GIANT: 'RESISTANT',
   // 2026-06-26 variety roster
   SIEGE_WAGON: 'BULKY', SKY_BARGE: 'BULKY', DUNE_STALKER: 'RUNNER', STONE_JUGGERNAUT: 'ARMORED'
 };
@@ -1307,7 +1310,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       // HELLFIRE: previously hardcoded to 4% maxHP/sec. Now reads
       // s.magnitude so the per-tower setting drives the bite (God of War
       // = 1%/sec post-v10). Fall-back default 0.01 if magnitude unset.
-      if (s.kind === StatusEffectKind.HELLFIRE) { const v = e.maxHp * (s.magnitude || 0.01) * dotBossMod; dotDps += v; dotByKind.HELLFIRE += v; }
+      if (s.kind === StatusEffectKind.HELLFIRE && !isHellfireImmune(e)) { const v = e.maxHp * (s.magnitude || 0.01) * dotBossMod; dotDps += v; dotByKind.HELLFIRE += v; }
       // KNOCKBACK is a one-shot impulse: take its magnitude as path-
       // reversal then expire the status. Bosses are cut to 25% so they
       // aren't trolled. Per-enemy lifetime cap: max 5 knockbacks each.

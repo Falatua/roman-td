@@ -14,7 +14,7 @@
 
 import { GamePhase, EnemyType } from '../types';
 import { GameStateShape } from '../GameState';
-import { ENEMY_BALANCE, WAVE, WAVE_MODIFIERS } from '../constants';
+import { ENEMY_BALANCE, GRID, WATER_ZONE, WAVE, WAVE_MODIFIERS } from '../constants';
 import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
 import { spawnEnemy } from './EnemySystem';
@@ -53,12 +53,60 @@ function mirrorGroundSpawnsToCaveB(state: GameStateShape): void {
   if (state.wave < 21 || state.groundPathB.length === 0) return;
   const mirrors: SpawnQueueItem[] = [];
   for (const item of state.spawnQueue) {
+    if (item.ocean) continue;
     if (item.caveB || !shouldMirrorToCaveB(state, item.type)) continue;
     mirrors.push({ ...item, caveB: true });
   }
   if (mirrors.length === 0) return;
   state.spawnQueue.push(...mirrors);
   sortSpawnQueue(state.spawnQueue);
+}
+
+function nearestPathIndexForTile(state: GameStateShape, col: number, row: number): number {
+  let bestIdx = 0;
+  let bestD = Infinity;
+  for (let i = 0; i < state.groundPath.length; i++) {
+    const p = state.groundPath[i];
+    const d = Math.abs(p.col - col) + Math.abs(p.row - row);
+    if (d < bestD) {
+      bestD = d;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+function routeOceanSpawnToPath(state: GameStateShape, enemy: any, oceanIndex = 0): boolean {
+  if (!enemy || enemy.isFlyer || state.groundPath.length === 0) return false;
+  const localSpawns = [
+    { col: WATER_ZONE.width - 1, row: 5 },
+    { col: WATER_ZONE.width - 2, row: 8 },
+    { col: WATER_ZONE.width - 5, row: 10 },
+    { col: WATER_ZONE.width - 8, row: 9 }
+  ];
+  const spawn = localSpawns[Math.abs(oceanIndex) % localSpawns.length];
+  const spawnCol = WATER_ZONE.col + spawn.col;
+  const spawnRow = WATER_ZONE.row + spawn.row;
+  const joinIdx = nearestPathIndexForTile(state, WATER_ZONE.col + WATER_ZONE.width, WATER_ZONE.row);
+  const join = state.groundPath[joinIdx] ?? state.groundPath[0];
+  const spawnX = spawnCol * GRID.TILE + GRID.TILE / 2;
+  const spawnY = spawnRow * GRID.TILE + GRID.TILE / 2;
+  const targetX = join.col * GRID.TILE + GRID.TILE / 2;
+  const targetY = join.row * GRID.TILE + GRID.TILE / 2;
+  enemy.x = spawnX;
+  enemy.y = spawnY;
+  enemy.prevX = spawnX;
+  enemy.prevY = spawnY;
+  enemy.pathIndex = joinIdx;
+  enemy.pathProgress = 0;
+  enemy.__oceanSpawn = true;
+  enemy.__approachActive = true;
+  enemy.__approachTargetX = targetX;
+  enemy.__approachTargetY = targetY;
+  const renderer = (globalThis as any).__renderer;
+  if (renderer?.triggerSpawnPuff) renderer.triggerSpawnPuff(spawnX, spawnY, state.tick);
+  if (renderer?.triggerImpactRing) renderer.triggerImpactRing(spawnX, spawnY, state.tick, 36, 0x4bd8ff);
+  return true;
 }
 
 export function effectiveWaveHpMult(waveNumber: number, baseHpMult: number, isBoss = false): number {
@@ -242,6 +290,7 @@ export function startWave(state: GameStateShape) {
   state.spawnQueue = [];
   state.spawnElapsed = 0;
   let t = 0;
+  let oceanSpawnIndex = 0;
   // BOSS-SOLO RULE: early authored boss waves strip the mob horde so the
   // boss arrives as a clean teaching encounter. After W15, boss waves keep
   // their authored escort groups so the 30-wave campaign ramps smoothly
@@ -257,7 +306,13 @@ export function startWave(state: GameStateShape) {
     const isFlyerGrp = !!(enemiesData as any)[grp.type]?.isFlyer && !isBossGrp;
     for (let i = 0; i < grp.count; i++) {
       const commander = isCommanderType(grp.type);
-      state.spawnQueue.push({ type: grp.type, spawnAt: commander ? commanderSpawnAt : t });
+      const ocean = !!(grp as any).ocean;
+      state.spawnQueue.push({
+        type: grp.type,
+        spawnAt: commander ? commanderSpawnAt : t,
+        ocean,
+        oceanIndex: ocean ? oceanSpawnIndex++ : undefined
+      });
       if (commander) commanderSpawnAt += 1.3;
       t += isFlyerGrp ? Math.max(WAVE.SPAWN_INTERVAL, 1.0) : WAVE.SPAWN_INTERVAL;
     }
@@ -392,6 +447,8 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // (the renderer reads this to un-hide the archway + fire the eruption).
     if (fromCaveB) state.caveBActive = true;
     const e = spawnEnemy(state, item.type as EnemyType, spawnHpMult, false, fromCaveB);
+    const fromOcean = !!item.ocean && !isBossSpawn && !isFlyerSpawn;
+    if (fromOcean) routeOceanSpawnToPath(state, e, item.oceanIndex ?? 0);
     if (item.bossEscort) {
       (e as any).__bossEscortCommander = true;
       // W5 introduces boss-escort commanders early. Keep them present as
@@ -428,7 +485,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // produced the auto-death this guard fixes. Flyers now always
     // spawn from the normal flyer cave entry regardless of any active
     // surprise event.
-    if (!isBossSpawn && !isFlyerSpawn && !fromCaveB) {
+    if (!isBossSpawn && !isFlyerSpawn && !fromCaveB && !fromOcean) {
       spawnAtSurpriseEventPoint(state, e, surpriseSpawnIdx);
       surpriseSpawnIdx++;
     }

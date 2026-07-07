@@ -1,7 +1,7 @@
 // Tests for damage type math: faction resistance matrix + status effectiveness.
 import { describe, it, expect } from 'vitest';
 import { resistanceModifier, damageTypeFromString } from '../src/systems/DamageTypeSystem';
-import { enemyDamageMultiplier, statusEffectiveness } from '../src/systems/EnemyResistances';
+import { enemyDamageMultiplier, isHellfireImmune, statusEffectiveness } from '../src/systems/EnemyResistances';
 import { DamageType, EnemyFaction, EnemyType, StatusEffectKind, Enemy } from '../src/types';
 import enemiesData from '../src/data/enemies.json';
 
@@ -180,5 +180,20 @@ describe('Enemy resistances — per-enemy multipliers', () => {
 
     expect(enemyDamageMultiplier(standard, DamageType.SIEGE)).toBeGreaterThan(0);
     expect(enemyDamageMultiplier(skyStandard, DamageType.SIEGE)).toBeGreaterThan(0);
+  });
+
+  it('makes ocean giants immune to fire, burn, and hellfire', () => {
+    const oceanTypes = [
+      EnemyType.SEA_GIANT,
+      EnemyType.SEA_GIANT_WARBRINGER,
+      EnemyType.NETHER_AMPHIBIOUS_GIANT
+    ];
+
+    for (const type of oceanTypes) {
+      const enemy = makeEnemy(type, EnemyFaction.ROMAN_MYTH);
+      expect(enemyDamageMultiplier(enemy, DamageType.ELEMENTAL_FIRE), `${type} fire`).toBe(0);
+      expect(statusEffectiveness(enemy, StatusEffectKind.BURN), `${type} burn`).toBe(0);
+      expect(isHellfireImmune(enemy), `${type} hellfire`).toBe(true);
+    }
   });
 });

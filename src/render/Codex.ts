@@ -1614,7 +1614,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.immuneFreeze) traits.push('IMMUNE TO FREEZE');
   if (def.immuneStun) traits.push('IMMUNE TO STUN');
   if (def.immunePoison) traits.push('IMMUNE TO POISON');
-  if (def.immuneFire) traits.push('IMMUNE TO FIRE — direct fire and BURN DoT both 0 (HELLFIRE divine-fire still applies)');
+  if (def.immuneFire) traits.push(def.immuneHellfire ? 'IMMUNE TO FIRE + HELLFIRE — direct fire, BURN, and HELLFIRE all deal 0' : 'IMMUNE TO FIRE — direct fire and BURN DoT both 0 (HELLFIRE divine-fire still applies)');
   // Healing / regen
   if (def.regenPctPerSec) traits.push(`REGEN — ${(def.regenPctPerSec*100).toFixed(2)}% maxHP/sec always-on (reduced 50% by any active DoT, was 100% block pre-2026-05-21)`);
   if (def.outOfCombatRegen) traits.push(`OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 1.0s without DIRECT damage (active DoT softens to ${(def.outOfCombatRegen*50).toFixed(2)}%/sec, was full block pre-2026-05-21)`);

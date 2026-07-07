@@ -246,8 +246,9 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   if (def?.immunePoison) traits.push({ label: 'IMMUNE TO POISON' });
   // 2026-05-17 — fire immunity for undead types (bone bodies don't
   // smolder). Covers direct ELEMENTAL_FIRE damage AND the BURN DoT
-  // tick. HELLFIRE divine-fire is separate and still applies.
-  if (def?.immuneFire) traits.push({ label: 'IMMUNE TO FIRE — direct fire damage and BURN DoT both deal 0 (HELLFIRE divine-fire still applies)', color: '#ee5555' });
+  // tick. HELLFIRE divine-fire is separate unless a rare unit declares
+  // immuneHellfire as an explicit exception.
+  if (def?.immuneFire) traits.push({ label: def?.immuneHellfire ? 'IMMUNE TO FIRE + HELLFIRE — direct fire, BURN, and HELLFIRE all deal 0' : 'IMMUNE TO FIRE — direct fire damage and BURN DoT both deal 0 (HELLFIRE divine-fire still applies)', color: '#ee5555' });
   // -- Healing / regen --
   if (def?.regenPctPerSec) traits.push({ label: `REGEN — ${(def.regenPctPerSec*100).toFixed(2)}% maxHP/sec always-on (reduced 50% by any active DoT, was 100% block pre-2026-05-21)`, color: '#88ff88' });
   if (def?.outOfCombatRegen) traits.push({ label: `OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 1.0s without DIRECT damage (DoT ticks no longer refresh the quiet-window; active DoT halves the regen rate to ~${(def.outOfCombatRegen*50).toFixed(2)}%/sec)`, color: '#88ff88' });
