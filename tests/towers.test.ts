@@ -641,6 +641,54 @@ describe('Roman Transformer omega combat wiring', () => {
   });
 });
 
+describe('Neptune\'s Leviathan omega combat wiring', () => {
+  it('applies its water-only omega on-hit pressure package', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    const tower = createTower(TowerType.NEPTUNES_LEVIATHAN, 5, 4, 4, 0);
+    tower.placedOnWater = true;
+    const target = testEnemy('neptunes-leviathan-target');
+    state.enemies.set(target.id, target);
+
+    applyDamageAndStatus(state, tower, target, 1, noopCombatHooks());
+
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.30)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.50)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.POISON && s.magnitude === 0.05)).toBe(true);
+  });
+
+  it('churns nearby enemies with undertow and judges only enemies in its short coastal radius', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    state.wave = 24;
+    state.tick = 35;
+    const tower = createTower(TowerType.NEPTUNES_LEVIATHAN, 5, 4, 4, 0);
+    tower.placedOnWater = true;
+    tower.attackCooldown = 999;
+    (tower as any).__leviathanWave = 24;
+    (tower as any).__nextAbyssalJudgmentTick = 35;
+    state.towers.set(tower.id, tower);
+    const near = testEnemy('leviathan-near', 150, 150);
+    near.hp = 900; near.maxHp = 1000;
+    const far = testEnemy('leviathan-far', 900, 700);
+    far.hp = 900; far.maxHp = 1000;
+    state.enemies.set(near.id, near);
+    state.enemies.set(far.id, far);
+
+    tickCombat(state, 0.016, noopCombatHooks());
+
+    expect(near.hp).toBeCloseTo(738, 4);
+    expect(far.hp).toBeCloseTo(900, 4);
+    expect(near.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.35)).toBe(true);
+    expect(near.statusEffects.some(s => s.kind === StatusEffectKind.POISON && s.magnitude === 0.012)).toBe(true);
+    expect(near.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.28)).toBe(true);
+    expect(far.statusEffects.length).toBe(0);
+    expect((tower as any).__nextAbyssalJudgmentTick).toBe(70);
+  });
+});
+
 describe('Aura tiles (EMERALD watchtower +2 range)', () => {
   // 2026-05-19 — 6th aura tile. EMERALD WATCHTOWER at (2, 22) grants
   // any tower placed on it +2 tiles of range. Stacks additively with
@@ -910,6 +958,7 @@ describe('Aura mechanics and visibility', () => {
       'AUREATE_TRIBUNAL',
       'GLACIAL_PALISADE',
       'ROMAN_TRANSFORMER',
+      'NEPTUNES_LEVIATHAN',
       'CENTURIONS_TRUMPET',
       'BATTLE_STANDARD',
       'WAR_HOUND_COLLAR',

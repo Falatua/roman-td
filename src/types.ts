@@ -145,6 +145,7 @@ export enum TowerType {
   GLACIAL_PALISADE = 'GLACIAL_PALISADE',
   INFERNAL_COLOSSUS = 'INFERNAL_COLOSSUS',
   ROMAN_TRANSFORMER = 'ROMAN_TRANSFORMER',
+  NEPTUNES_LEVIATHAN = 'NEPTUNES_LEVIATHAN',
   // 2026-07-07 — Harbor / naval tower line. These unlock from the first
   // Sea Giant kill and live primarily in the ocean reserve.
   TRIREME_BALLISTA = 'TRIREME_BALLISTA',

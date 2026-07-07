@@ -68,6 +68,7 @@ const MANIFEST: Record<string, string> = {
   SKY_DOMINION: 'ts_sky_dominion.png', AUREATE_TRIBUNAL: 'ts_aureate_tribunal.png',
   GLACIAL_PALISADE: 'ts_glacial_palisade.png', INFERNAL_COLOSSUS: 'ts_infernal_colossus.png',
   ROMAN_TRANSFORMER: 'ts_roman_transformer.png',
+  NEPTUNES_LEVIATHAN: 'naval/t_omega_neptunes_leviathan.png',
   TRIREME_BALLISTA: 'naval/t_naval_trireme_ballista.png',
   CORVUS_BOARDING_SHIP: 'naval/t_naval_corvus_boarding_ship.png',
   RAMMING_QUINQUEREME: 'naval/t_naval_ramming_quinquereme.png',

@@ -4681,6 +4681,11 @@ export class RenderEngine {
         this.drawAuraRing(cx, cy, 6 * GRID.TILE, ENEMY, pulse * 0.9, true);
         this.drawAuraRing(cx, cy, 1.5 * GRID.TILE, 0xff6633, pulse * 0.85, true);
       }
+      // Neptune's Leviathan — water-only Omega undertow kill zone.
+      if (tw.type === TowerType.NEPTUNES_LEVIATHAN) {
+        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, 0x35d4ff, pulse * 0.95, true);
+        this.drawAuraRing(cx, cy, 2.5 * GRID.TILE, ENEMY, pulse * 0.75, true);
+      }
 
       // ── AURA ITEMS ───────────────────────────────────────────────
       // Item rings re-derive their radius from the same constants used

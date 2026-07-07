@@ -377,6 +377,12 @@ export function executeCombo(state: GameStateShape, combo: AvailableCombo, resul
   }
   const resultIngr = combo.ingredients.find(t => t.id === resultTileTowerId)
     ?? combo.ingredients[0];
+  const resultDefForPlacement: any = (towersData as any)[combo.result] ?? {};
+  if (resultDefForPlacement.waterOnly && !isWaterZoneTile(resultIngr.tileX, resultIngr.tileY) && !(resultIngr as any).placedOnWater) {
+    const resultDisplay = resultDefForPlacement?.name ?? String(combo.result);
+    state.hint = `${resultDisplay} is water-only. Choose an ocean-placed ingredient as the result tile.`;
+    return false;
+  }
   // Pre-check: simulate the tile changes (TOWER on result tile, STONE on others)
   // and confirm a path-to-gate still exists. Roll back the simulation either way.
   const prevTiles: { col: number; row: number; tile: TileType }[] = [];

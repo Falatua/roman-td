@@ -18,6 +18,7 @@ import { scanCombos, executeCombo } from '../src/systems/CombinationEngine';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
 import { TowerType, GamePhase, TileType } from '../src/types';
+import { WATER_ZONE } from '../src/constants';
 import { initializeGrid, setTile } from '../src/systems/GridManager';
 import { buildGroundPath, buildFlyerPath } from '../src/systems/PathFinder';
 import {
@@ -53,6 +54,18 @@ function place(state: any, type: string, tier: 1|2|3|4|5, x: number, y: number) 
   return t;
 }
 
+function placeRecipeIngredient(state: any, recipe: any, ing: any, index: number, col: number) {
+  const minTier = (ing.minTier ?? 2) as 1|2|3|4|5;
+  const resultDef: any = (towersData as any)[recipe.result] ?? {};
+  if (resultDef.waterOnly && index === 0) {
+    const t = createTower(ing.type as TowerType, minTier, WATER_ZONE.col + 1, WATER_ZONE.row + WATER_ZONE.height - 2, state.wave);
+    t.placedOnWater = true;
+    state.towers.set(t.id, t);
+    return t;
+  }
+  return place(state, ing.type, minTier, col, 5);
+}
+
 // Some recipes have a minTier > 2 — feed the highest minTier across the
 // ingredient list so scanCombos won't reject for under-tier inputs.
 function minTierFor(recipe: any, ingType: string): number {
@@ -69,9 +82,9 @@ describe('Every authored recipe is discoverable + executable', () => {
       const s = bootstrap();
       let col = 1;
       const placed: any[] = [];
-      for (const ing of recipe.ingredients) {
-        const minTier = (ing.minTier ?? 2) as 1|2|3|4|5;
-        placed.push(place(s, ing.type, minTier, col++, 5));
+      for (let index = 0; index < recipe.ingredients.length; index++) {
+        const ing = recipe.ingredients[index];
+        placed.push(placeRecipeIngredient(s, recipe, ing, index, col++));
       }
       const combos = scanCombos(s);
       const match = combos.find(c => c.result === recipe.result);
@@ -82,9 +95,9 @@ describe('Every authored recipe is discoverable + executable', () => {
       const s = bootstrap();
       let col = 1;
       const placed: any[] = [];
-      for (const ing of recipe.ingredients) {
-        const minTier = (ing.minTier ?? 2) as 1|2|3|4|5;
-        placed.push(place(s, ing.type, minTier, col++, 5));
+      for (let index = 0; index < recipe.ingredients.length; index++) {
+        const ing = recipe.ingredients[index];
+        placed.push(placeRecipeIngredient(s, recipe, ing, index, col++));
       }
       const combos = scanCombos(s);
       const match = combos.find(c => c.result === recipe.result);
@@ -319,6 +332,7 @@ describe('Tower roster integrity', () => {
       'ABYSSAL_ONAGER',
       'HYDRA_BEAST_PIT',
       'MARS_TIDAL_BASTION',
+      'NEPTUNES_LEVIATHAN',
       'ITEM_BRINEHOOK_ROPE',
       'ITEM_AEGEAN_PEARL',
       'ITEM_NEPTUNES_TRIDENT'

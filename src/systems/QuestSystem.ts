@@ -98,7 +98,8 @@ const SUPER_COMBO_TYPES = new Set<string>([
 ]);
 
 const OMEGA_COMBO_TYPES = new Set<string>([
-  'ROMAN_TRANSFORMER'
+  'ROMAN_TRANSFORMER',
+  'NEPTUNES_LEVIATHAN'
 ]);
 
 export const QUESTS: QuestDef[] = [

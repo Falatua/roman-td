@@ -25,7 +25,8 @@ export const TIDEFORGED_TOWER_TYPES: TowerType[] = [
   TowerType.ORACLE_LIGHTHOUSE,
   TowerType.ABYSSAL_ONAGER,
   TowerType.HYDRA_BEAST_PIT,
-  TowerType.MARS_TIDAL_BASTION
+  TowerType.MARS_TIDAL_BASTION,
+  TowerType.NEPTUNES_LEVIATHAN
 ];
 
 export function isNavalTowerType(type: TowerType | string): boolean {

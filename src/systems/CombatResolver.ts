@@ -90,6 +90,7 @@ const SUPER_COMBO_CLASS_TYPES = new Set<TowerType>([
   TowerType.AUREATE_TRIBUNAL,
   TowerType.GLACIAL_PALISADE,
   TowerType.INFERNAL_COLOSSUS,
+  TowerType.NEPTUNES_LEVIATHAN,
   TowerType.MARS_VICTOR
 ]);
 
@@ -134,7 +135,8 @@ const COMBO_ANTI_AIR_TYPES = new Set<TowerType>([
   TowerType.SKY_DOMINION,
   TowerType.VANGUARD_WING,
   TowerType.MARS_VICTOR,
-  TowerType.ROMAN_TRANSFORMER
+  TowerType.ROMAN_TRANSFORMER,
+  TowerType.NEPTUNES_LEVIATHAN
 ]);
 
 function comboAntiAirArmorMult(state: GameStateShape, tower: Tower, target: Enemy): number {
@@ -314,6 +316,7 @@ const MELEE_TYPES = new Set<TowerType>([
   TowerType.SACRED_BAND,
   TowerType.GLACIAL_PALISADE,
   TowerType.ROMAN_TRANSFORMER,
+  TowerType.NEPTUNES_LEVIATHAN,
   // 2026-05 v9: Consular Fatebinder converted from ranged DIVINE to a
   // melee strike (still keeps TRUE-damage primary + map-wide 40% splash
   // + global aura). The melee identity matches its character art (consul
@@ -378,7 +381,8 @@ const CLEAVE_MELEE = new Set<TowerType>([
   TowerType.HASTATI, TowerType.TRIARIUS, TowerType.COHORT_GUARD,
   TowerType.PRAETORIAN_WALL, TowerType.IMPERATOR_GUARD,
   TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
-  TowerType.PONTIFEX_MAXIMUS, TowerType.GLACIAL_PALISADE, TowerType.ROMAN_TRANSFORMER
+  TowerType.PONTIFEX_MAXIMUS, TowerType.GLACIAL_PALISADE, TowerType.ROMAN_TRANSFORMER,
+  TowerType.NEPTUNES_LEVIATHAN
 ]);
 
 // 2026-05-15 cleave/multi-shot item helpers. The FALX_BLADE item adds
@@ -775,6 +779,47 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           state.hint = `Roman Transformer unleashed Omega Decree on ${hitCount} enemies.`;
           const renderer: any = globalRef?.__renderer;
           if (renderer?.triggerImpactRing) renderer.triggerImpactRing(cx, cy, state.tick, 120, 0xffd86b);
+        }
+      }
+    }
+    if (t.type === TowerType.NEPTUNES_LEVIATHAN) {
+      const undertowR = 2.5 * GRID.TILE;
+      const lastUndertow = (t as any).__lastLeviathanUndertowTick ?? -999;
+      if (state.tick - lastUndertow >= 0.5 && !asleep) {
+        (t as any).__lastLeviathanUndertowTick = state.tick;
+        for (const e of state.enemies.values()) {
+          if (e.hp <= 0) continue;
+          if (Math.hypot(e.x - cx, e.y - cy) > undertowR) continue;
+          pushStatus(e, StatusEffectKind.SLOW, 1.5, 0.35, t.qualityTier);
+          pushStatus(e, StatusEffectKind.POISON, 1.5, 0.012, t.qualityTier);
+        }
+      }
+
+      if ((t as any).__leviathanWave !== state.wave) {
+        (t as any).__leviathanWave = state.wave;
+        (t as any).__nextAbyssalJudgmentTick = state.tick + 35.0;
+      }
+      const nextJudgment = (t as any).__nextAbyssalJudgmentTick ?? (state.tick + 35.0);
+      if (state.tick >= nextJudgment && !asleep) {
+        (t as any).__nextAbyssalJudgmentTick = state.tick + 35.0;
+        let hitCount = 0;
+        for (const e of state.enemies.values()) {
+          if (e.hp <= 0) continue;
+          if (Math.hypot(e.x - cx, e.y - cy) > undertowR) continue;
+          const rip = Math.max(1, e.hp * 0.18);
+          e.hp -= rip;
+          e.hpFlashTimer = 0.35;
+          e.lastDamagedTick = state.tick;
+          pushStatus(e, StatusEffectKind.MARK, 5, 0.28, t.qualityTier);
+          pushStatus(e, StatusEffectKind.ARMOR_SHRED, 5, 0, t.qualityTier);
+          hooks.onHit(t, e, rip, 1);
+          hitCount++;
+          if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
+        }
+        if (hitCount > 0) {
+          state.hint = `Neptune's Leviathan dragged ${hitCount} enemies into Abyssal Judgment.`;
+          const renderer: any = globalRef?.__renderer;
+          if (renderer?.triggerImpactRing) renderer.triggerImpactRing(cx, cy, state.tick, 90, 0x35d4ff);
         }
       }
     }
@@ -1355,6 +1400,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.MARS_TIDAL_BASTION && (target.archetype === 'ELITE' || target.isBoss)) damage *= (t as any).placedOnWater ? 1.65 : 1.35;
       if ((t.type === TowerType.HYDRA_OF_LERNA || t.type === TowerType.HYDRA_BEAST_PIT) && (target.archetype === 'ELITE' || BEAST_ENEMY_TYPES.has(target.type))) damage *= 1.35;
       if (t.type === TowerType.HYDRA_BEAST_PIT && (t as any).placedOnWater && (target as any).__oceanSpawn) damage *= 1.40;
+      if (t.type === TowerType.NEPTUNES_LEVIATHAN) {
+        if (target.archetype === 'ELITE' || target.isBoss || isCommanderType((target as any).type)) damage *= 1.35;
+        if ((target as any).__oceanSpawn) damage *= 1.30;
+      }
       if (t.type === TowerType.CARTHAGE_SCOURGE && target.isBoss) damage *= 4.2;         // +320% vs bosses
       if (t.type === TowerType.TURMA_LANCERS && !target.isFlyer) damage *= 1.45;         // +45% vs ground
       // ─── 2026-05 AUDIT: damage modifiers claimed by tower UI ─────────
@@ -1648,6 +1697,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         (state as any).__marsVictorActive ||
         t.type === TowerType.BEASTLORD_CHAMPION ||   // 2026-06-28 — melee anti-air combo
         t.type === TowerType.ROMAN_TRANSFORMER ||     // OMEGA blades reach the sky lane too
+        t.type === TowerType.NEPTUNES_LEVIATHAN ||    // mythic tide tendrils can swat low flyers
         t.equippedItems.includes('AQUILA_TALONS') ||
         t.equippedItems.includes('STORM_AQUILA_TALONS') ||
         towerAuraTileKind(t) === 'CYAN'
@@ -2155,6 +2205,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
     agricolaEnablesAirAt(state, tx, ty) ||   // scoped to 10 tiles of an Agricola hero (was global)
     (state as any).__marsVictorActive ||   // Mars Victor fuses Agricola's all-towers-strike-flyers passive
     t.type === TowerType.ROMAN_TRANSFORMER ||
+    t.type === TowerType.NEPTUNES_LEVIATHAN ||
     t.equippedItems.includes('AQUILA_TALONS') ||
     t.equippedItems.includes('STORM_AQUILA_TALONS') ||   // 2026 v2 — legendary grants ANY tower anti-air
     towerAuraTileKind(t) === 'CYAN'
@@ -2906,6 +2957,13 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       pushStatus(target, StatusEffectKind.STUN, dur(0.35), 0, tier);
       pushStatus(target, StatusEffectKind.BURN, dur(3), 0.08, tier);
       pushStatus(target, StatusEffectKind.HELLFIRE, 999, 0.012, tier);
+      break;
+    case TowerType.NEPTUNES_LEVIATHAN:
+      pushStatus(target, StatusEffectKind.MARK, dur(4.5), 0.30, tier);
+      pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4.5), 0, tier);
+      pushStatus(target, StatusEffectKind.SLOW, dur(2.8), 0.50, tier);
+      pushStatus(target, StatusEffectKind.STUN, dur(0.28), 0, tier);
+      pushStatus(target, StatusEffectKind.POISON, dur(4), 0.05, tier);
       break;
     case TowerType.CONSULAR_FATEBINDER:
       // APEX SUPER: stun on hit (doesn't matter much, every enemy is hit anyway).

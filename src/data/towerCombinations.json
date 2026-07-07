@@ -883,6 +883,7 @@
   { "result": "GLACIAL_PALISADE", "tier": 5, "cost": 150, "ingredients": [ { "type": "FROZEN_LEGION", "minTier": 4 }, { "type": "SACRED_BAND", "minTier": 4 }, { "type": "CATAPHRACT_LANCER", "minTier": 4 } ] },
   { "result": "INFERNAL_COLOSSUS", "tier": 5, "cost": 180, "ingredients": [ { "type": "VULCAN_COLOSSUS", "minTier": 5 }, { "type": "GOD_OF_WAR", "minTier": 5 }, { "type": "TRIUMPHATOR", "minTier": 5 } ] },
   { "result": "ROMAN_TRANSFORMER", "tier": 5, "cost": 300, "ingredients": [ { "type": "HANNIBALS_NIGHTMARE", "minTier": 5 }, { "type": "JULIUS_CAESAR", "minTier": 5 } ] },
+  { "result": "NEPTUNES_LEVIATHAN", "tier": 5, "cost": 300, "ingredients": [ { "type": "ABYSSAL_ONAGER", "minTier": 5 }, { "type": "HYDRA_BEAST_PIT", "minTier": 5 } ] },
   { "result": "PRAETORIAN_FLEET", "tier": 5, "cost": 90, "ingredients": [ { "type": "TRIREME_BALLISTA", "minTier": 3 }, { "type": "SCORPIO", "minTier": 4 } ] },
   { "result": "CORVUS_LEGION_DOCK", "tier": 5, "cost": 90, "ingredients": [ { "type": "CORVUS_BOARDING_SHIP", "minTier": 3 }, { "type": "COHORT_GUARD", "minTier": 3 } ] },
   { "result": "ORACLE_LIGHTHOUSE", "tier": 5, "cost": 95, "ingredients": [ { "type": "NEREID_ORACLE", "minTier": 3 }, { "type": "SPECULATOR", "minTier": 4 } ] },

@@ -6,6 +6,7 @@ import { scanCombos, realizableCombos, executeCombo, comboResultLocationChoices 
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
 import { TowerType, GamePhase, TileType } from '../src/types';
+import { WATER_ZONE } from '../src/constants';
 import { initializeGrid, setTile } from '../src/systems/GridManager';
 import { buildGroundPath } from '../src/systems/PathFinder';
 import comboData from '../src/data/towerCombinations.json';
@@ -453,8 +454,29 @@ describe('Recipe combo detection', () => {
     expect(def?.ability).toContain('OMEGA COMBO');
   });
 
+  it('adds Neptune\'s Leviathan as a water-only Harbor Omega combo', () => {
+    const recipe = comboData.find((r: any) => r.result === 'NEPTUNES_LEVIATHAN') as any;
+    expect(recipe).toBeTruthy();
+    expect(recipe.tier).toBe(5);
+    expect(recipe.cost).toBe(300);
+    expect(recipe.ingredients).toEqual([
+      { type: 'ABYSSAL_ONAGER', minTier: 5 },
+      { type: 'HYDRA_BEAST_PIT', minTier: 5 }
+    ]);
+
+    const def = (towersData as any)[TowerType.NEPTUNES_LEVIATHAN];
+    expect(def?.kind).toBe('COMBO');
+    expect(def?.omega).toBe(true);
+    expect(def?.waterOnly).toBe(true);
+    expect(def?.damageType).toBe('DIVINE');
+    expect(def?.melee).toBe(true);
+    expect(def?.range).toBe(2.5);
+    expect(def?.baseDps).toBeGreaterThanOrEqual(1200);
+    expect(def?.ability).toContain('WATER-ONLY OMEGA');
+  });
+
   it('ships transparent sprite assets for the new supercombo towers', () => {
-    for (const file of ['ts_sky_dominion.png', 'ts_aureate_tribunal.png', 'ts_glacial_palisade.png', 'ts_infernal_colossus.png', 'ts_roman_transformer.png']) {
+    for (const file of ['ts_sky_dominion.png', 'ts_aureate_tribunal.png', 'ts_glacial_palisade.png', 'ts_infernal_colossus.png', 'ts_roman_transformer.png', 'naval/t_omega_neptunes_leviathan.png']) {
       expect(existsSync(path.join(process.cwd(), 'public/assets/sprites', file)), file).toBe(true);
     }
   });
@@ -473,6 +495,29 @@ describe('Combo execution', () => {
     // result tower should be at tier 2 with kept tile = a's tile
     const newTower = Array.from(s.towers.values()).find(t => t.qualityTier === 2);
     expect(newTower).toBeTruthy();
+  });
+
+  it('requires water-only combo results to anchor on an ocean ingredient', () => {
+    const s: any = bootstrapState();
+    const landAbyssal = placeTower(s, TowerType.ABYSSAL_ONAGER, 5, 8, 8);
+    const landHydra = placeTower(s, TowerType.HYDRA_BEAST_PIT, 5, 9, 8);
+    const combo = scanCombos(s).find(c => c.result === TowerType.NEPTUNES_LEVIATHAN);
+    expect(combo).toBeTruthy();
+    expect(executeCombo(s, combo!, landAbyssal.id)).toBe(false);
+    expect(s.hint).toContain('water-only');
+    expect(s.towers.has(landAbyssal.id)).toBe(true);
+    expect(s.towers.has(landHydra.id)).toBe(true);
+
+    const ocean = { x: WATER_ZONE.col + 1, y: WATER_ZONE.row + WATER_ZONE.height - 2 };
+    const waterAbyssal = placeTower(s, TowerType.ABYSSAL_ONAGER, 5, ocean.x, ocean.y);
+    waterAbyssal.placedOnWater = true;
+    const waterCombo = scanCombos(s).find(c => c.result === TowerType.NEPTUNES_LEVIATHAN);
+    expect(waterCombo).toBeTruthy();
+    expect(executeCombo(s, waterCombo!, waterAbyssal.id)).toBe(true);
+    const result = Array.from(s.towers.values()).find((t: any) => t.type === TowerType.NEPTUNES_LEVIATHAN) as any;
+    expect(result?.tileX).toBe(ocean.x);
+    expect(result?.tileY).toBe(ocean.y);
+    expect(result?.placedOnWater).toBe(true);
   });
 
   it('refunds gold to player when combo cost exceeds available gold', () => {
