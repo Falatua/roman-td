@@ -14,6 +14,12 @@ export function isRareOnlyBossDropEnemy(enemy: any): boolean {
   return !!enemy?.rareDropOnly;
 }
 
+export const RARE_ONLY_BOSS_DROP_CHANCE = 0.80;
+
+export function shouldDropRareOnlyBossLoot(enemy: any, randomValue = Math.random()): boolean {
+  return isRareOnlyBossDropEnemy(enemy) && randomValue < RARE_ONLY_BOSS_DROP_CHANCE;
+}
+
 export function isLegendaryBossDropEnemy(enemy: any): boolean {
   if (isRareOnlyBossDropEnemy(enemy)) return false;
   return !!enemy?.isBoss;

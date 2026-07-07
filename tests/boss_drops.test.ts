@@ -17,7 +17,7 @@ import { createGameState } from '../src/GameState';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
 import itemsData from '../src/data/items_permanent.json';
-import { isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy } from '../src/systems/RewardEligibility';
+import { isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy, RARE_ONLY_BOSS_DROP_CHANCE, shouldDropRareOnlyBossLoot } from '../src/systems/RewardEligibility';
 
 function freshState() {
   return createGameState();
@@ -112,17 +112,21 @@ describe('Boss drop guarantee (2026-05-19)', () => {
     expect(rollBossDrop('UNDEAD_CARTHAGE', freshState(), createInventory(), 'UNDEAD_WAR_ELEPHANT')?.itemId).toBe('UNDEAD_ELEPHANT_BONE');
   });
 
-  it('Wave 9 teaching elephants bypass legendary boss drops for Rare loot', () => {
+  it('Wave 9 teaching elephants bypass legendary boss drops for high-chance Rare loot', () => {
     const wave9Elephant = { type: 'WAR_ELEPHANT', isBoss: true, isScheduledBoss: false, isBonusBoss: false, rareDropOnly: true };
     expect(isRareOnlyBossDropEnemy(wave9Elephant)).toBe(true);
     expect(isLegendaryBossDropEnemy(wave9Elephant)).toBe(false);
+    expect(RARE_ONLY_BOSS_DROP_CHANCE).toBe(0.80);
+    expect(shouldDropRareOnlyBossLoot(wave9Elephant, 0.79)).toBe(true);
+    expect(shouldDropRareOnlyBossLoot(wave9Elephant, 0.80)).toBe(false);
   });
 
-  it('Wave 10 keeps Hannibal legendary while escort elephants are Rare-only', () => {
+  it('Wave 10 keeps Hannibal legendary while escort elephants use the Rare-only table', () => {
     const hannibal = { type: 'HANNIBAL_BARCA', isBoss: true, isScheduledBoss: true, isBonusBoss: false };
     const escortElephant = { type: 'WAR_ELEPHANT', isBoss: true, isScheduledBoss: false, isBonusBoss: false, rareDropOnly: true };
     expect(isLegendaryBossDropEnemy(hannibal)).toBe(true);
     expect(isRareOnlyBossDropEnemy(hannibal)).toBe(false);
+    expect(shouldDropRareOnlyBossLoot(hannibal, 0)).toBe(false);
     expect(isLegendaryBossDropEnemy(escortElephant)).toBe(false);
     expect(isRareOnlyBossDropEnemy(escortElephant)).toBe(true);
   });

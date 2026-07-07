@@ -80,7 +80,7 @@ import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVe
 import { consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
-import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy } from './systems/RewardEligibility';
+import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy, shouldDropRareOnlyBossLoot } from './systems/RewardEligibility';
 import { isFinalBossBreach } from './systems/LeakRules';
 import { claimLastStandTroveTower, markLastStandTroveOffered, shouldOfferLastStandTrove } from './systems/LastStandTroveSystem';
 import {
@@ -7568,11 +7568,12 @@ async function boot() {
           //   • Twin / ambush / surprise bosses sharing those waves.
           //   • Champion adds and special boss-class threats that are not
           //     explicitly tagged rare-only.
-          // The only path that can still produce "no drop" is if the
-          // player already owns every legendary in the game — in which
-          // case rollBossDrop returns null cleanly. The
-          // `bossLegendaryDropped` flag is retained for analytics but
-          // no longer gates anything.
+          // Rare-only elephant escorts are intentionally not guaranteed
+          // every kill anymore; they use a high rare chance to keep W9/W10
+          // rewarding without flooding the board with blue loot. Legendary
+          // bosses can still return no drop if the player owns every
+          // legendary in the game. The `bossLegendaryDropped` flag is
+          // retained for analytics but no longer gates anything.
           //
           // 2026-05-23 — Re-verified: Brennus (CELTIC_WARLORD on W5)
           // is `isBoss: true` in enemies.json + `faction: "CELTS"`,
@@ -7588,8 +7589,10 @@ async function boot() {
           // rotates to that boss faction's next unclaimed legendary so the
           // no-duplicate rule still holds during multi-elephant waves.
           if (isRareOnlyBossDropEnemy(e)) {
-            const drop = rollRareDrop();
-            if (drop) spawnLootAt(state, e, drop);
+            if (shouldDropRareOnlyBossLoot(e)) {
+              const drop = rollRareDrop();
+              if (drop) spawnLootAt(state, e, drop);
+            }
           } else if (isLegendaryBossDropEnemy(e)) {
             const bossFaction = (enemiesData as any)[e.type]?.faction ?? w.faction;
             const drop = rollBossDrop(String(bossFaction), state, inventory, e.type as string);
