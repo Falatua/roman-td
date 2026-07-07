@@ -35,3 +35,34 @@ describe('Next-wave preview chip ergonomics', () => {
     expect(mainSource).toContain("setWavePreviewCollapsed(!collapsed)");
   });
 });
+
+describe('Build overlay ergonomics', () => {
+  const mainSource = fs.readFileSync('src/main.ts', 'utf8');
+
+  it('lets players collapse the Stone Rampart placement tray away from build tiles', () => {
+    expect(mainSource).toContain("const RAMPART_TRAY_COLLAPSED_KEY = 'roman_td_rampart_tray_collapsed'");
+    expect(mainSource).toContain('aria-label="Collapse rampart controls"');
+    expect(mainSource).toContain('aria-label="Expand rampart controls"');
+    expect(mainSource).toContain('Collapse this tray if it covers a build tile.');
+    expect(mainSource).toContain('right:8px;bottom:86px');
+    expect(mainSource).toContain('setRampartTrayCollapsed(true)');
+    expect(mainSource).toContain('setRampartTrayCollapsed(false)');
+  });
+
+  it('keeps transient placement text boxes from stealing map clicks', () => {
+    expect(mainSource).toContain("toast.id = 'block-alert'");
+    expect(mainSource).toContain('z-index:80;pointer-events:none;animation:blockAlertFade');
+    expect(mainSource).toContain("toast.id = 'insuff-gold-toast'");
+    expect(mainSource).toContain('z-index:80;pointer-events:none;animation:insuffGoldFade');
+    expect(mainSource).toContain("bar.id = 'hero-placement-banner'");
+    expect(mainSource).toContain('pointer-events:none;');
+  });
+
+  it('lets players collapse persistent weather text while keeping the control clickable', () => {
+    expect(mainSource).toContain("const collapseKey = 'roman_td_weather_chip_collapsed'");
+    expect(mainSource).toContain('aria-label="Collapse weather effects"');
+    expect(mainSource).toContain('aria-label="Expand weather effects"');
+    expect(mainSource).toContain('Collapse weather effects so build tiles are reachable');
+    expect(mainSource).toContain("chip.querySelector<HTMLButtonElement>('#weather-chip-toggle')");
+  });
+});

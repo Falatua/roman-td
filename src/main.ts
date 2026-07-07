@@ -266,6 +266,29 @@ async function boot() {
     state.hint = `Rampart rotated: ${RAMPART_ORIENT_LABEL[state.selectedRampart]}. Hover to preview, use R or the orientation buttons to rotate, then click to confirm.`;
     syncRampartRotateChip();
   }
+  const RAMPART_TRAY_COLLAPSED_KEY = 'roman_td_rampart_tray_collapsed';
+  let __rampartTrayCollapsed: boolean | null = null;
+  function isRampartTrayCollapsed(): boolean {
+    if (__rampartTrayCollapsed === null) {
+      try {
+        __rampartTrayCollapsed = typeof localStorage !== 'undefined'
+          && localStorage.getItem(RAMPART_TRAY_COLLAPSED_KEY) === '1';
+      } catch {
+        __rampartTrayCollapsed = false;
+      }
+    }
+    return __rampartTrayCollapsed;
+  }
+  function setRampartTrayCollapsed(collapsed: boolean): void {
+    __rampartTrayCollapsed = collapsed;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(RAMPART_TRAY_COLLAPSED_KEY, collapsed ? '1' : '0');
+      }
+    } catch {
+      // Storage can be blocked; keep the in-memory state for this page.
+    }
+  }
   function syncRampartRotateChip(): void {
     const stage = document.getElementById('stage-wrap');
     let chip = document.getElementById('rampart-rotate-chip') as HTMLDivElement | null;
@@ -274,28 +297,56 @@ async function boot() {
     if (!chip) {
       chip = document.createElement('div');
       chip.id = 'rampart-rotate-chip';
-      chip.style.cssText = `position:absolute;bottom:86px;left:50%;transform:translateX(-50%);z-index:45;` +
-        `background:linear-gradient(180deg,#2a1e10,#0c0906);border:2px solid #ffd34d;color:#ffe066;` +
-        `font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:1px;` +
-        `padding:8px 10px;box-shadow:0 0 18px rgba(255,211,77,0.38), inset 0 0 18px rgba(0,0,0,0.6);` +
-        `display:flex;flex-direction:column;gap:6px;align-items:center;max-width:min(620px,94vw);`;
       (stage ?? document.body).appendChild(chip);
     }
     const current = state.selectedRampart!;
+    const collapsed = isRampartTrayCollapsed();
     chip.title = 'Stone Rampart placement: hover the map to preview the five stones. Press R or click an orientation button to rotate. Click the map, then confirm to place.';
+    if (collapsed) {
+      chip.style.cssText = `position:absolute;right:8px;bottom:86px;z-index:45;` +
+        `background:linear-gradient(180deg,#2a1e10,#0c0906);border:2px solid #ffd34d;color:#ffe066;` +
+        `font-family:'Courier New',monospace;font-size:10px;font-weight:bold;letter-spacing:1px;` +
+        `padding:5px 7px;box-shadow:0 0 12px rgba(255,211,77,0.32), inset 0 0 12px rgba(0,0,0,0.55);` +
+        `display:flex;align-items:center;gap:6px;max-width:250px;`;
+      chip.innerHTML = `
+        <button id="rampart-tray-expand" aria-label="Expand rampart controls" title="Expand rampart controls" style="background:#1a1410;color:#ffd34d;border:1px solid #7a5a1a;width:22px;height:22px;padding:0;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;line-height:1">▸</button>
+        <button id="rampart-cycle-btn" title="Rotate rampart. Keyboard: R" style="background:#3a2a14;color:#fff8e0;border:1px solid #ffd34d;padding:4px 7px;cursor:pointer;font-family:'Courier New',monospace;font-size:10px;font-weight:bold;letter-spacing:1px">⟳</button>
+        <span title="${RAMPART_ORIENT_LABEL[current]}" style="color:#fff8e0;white-space:nowrap">RAMPART <b style="color:#ffd34d">${current}</b></span>`;
+      chip.querySelector<HTMLButtonElement>('#rampart-tray-expand')?.addEventListener('click', ev => {
+        ev.stopPropagation();
+        setRampartTrayCollapsed(false);
+        syncRampartRotateChip();
+      });
+      chip.querySelector<HTMLButtonElement>('#rampart-cycle-btn')?.addEventListener('click', ev => {
+        ev.stopPropagation();
+        rotateArmedRampart();
+      });
+      return;
+    }
+    chip.style.cssText = `position:absolute;bottom:86px;left:50%;transform:translateX(-50%);z-index:45;` +
+      `background:linear-gradient(180deg,#2a1e10,#0c0906);border:2px solid #ffd34d;color:#ffe066;` +
+      `font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:1px;` +
+      `padding:8px 34px 8px 10px;box-shadow:0 0 18px rgba(255,211,77,0.38), inset 0 0 18px rgba(0,0,0,0.6);` +
+      `display:flex;flex-direction:column;gap:6px;align-items:center;max-width:min(620px,94vw);`;
     const orientButtons = RAMPART_ORIENTATIONS.map(o => {
       const active = o === current;
       const label = RAMPART_ORIENT_LABEL[o];
       return `<button data-rampart-orient="${o}" title="Set orientation to ${label}" style="background:${active ? '#ffd34d' : '#1a1410'};color:${active ? '#1a1208' : '#ffe066'};border:1px solid ${active ? '#fff8e0' : '#7a5a1a'};padding:5px 8px;cursor:pointer;font-family:'Courier New',monospace;font-size:10px;font-weight:bold;letter-spacing:1px;min-width:112px">${active ? '◆' : '◇'} ${label}</button>`;
     }).join('');
     chip.innerHTML = `
+      <button id="rampart-tray-collapse" aria-label="Collapse rampart controls" title="Collapse rampart controls so build tiles are reachable" style="position:absolute;right:7px;top:7px;background:#1a1410;color:#ffd34d;border:1px solid #7a5a1a;width:22px;height:22px;padding:0;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;line-height:1">▾</button>
       <div style="display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap">
         <button id="rampart-cycle-btn" title="Cycle rampart orientation. Keyboard: R" style="background:#3a2a14;color:#fff8e0;border:2px solid #ffd34d;padding:7px 12px;cursor:pointer;font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:1px">⟳ ROTATE (R)</button>
         <span style="color:#fff8e0;text-shadow:1px 1px 0 #000">CURRENT: <b style="color:#ffd34d">${RAMPART_ORIENT_LABEL[current]}</b></span>
       </div>
       <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap">${orientButtons}</div>
-      <div style="color:#cdb98a;font-size:10px;font-weight:normal;letter-spacing:0;line-height:1.3;text-align:center">Hover to preview like furniture placement. Click a valid tile or road, then confirm. ESC cancels.</div>
+      <div style="color:#cdb98a;font-size:10px;font-weight:normal;letter-spacing:0;line-height:1.3;text-align:center">Hover to preview like furniture placement. Click a valid tile or road, then confirm. ESC cancels. Collapse this tray if it covers a build tile.</div>
     `;
+    chip.querySelector<HTMLButtonElement>('#rampart-tray-collapse')?.addEventListener('click', ev => {
+      ev.stopPropagation();
+      setRampartTrayCollapsed(true);
+      syncRampartRotateChip();
+    });
     chip.querySelector<HTMLButtonElement>('#rampart-cycle-btn')?.addEventListener('click', ev => {
       ev.stopPropagation();
       rotateArmedRampart();
@@ -1375,6 +1426,9 @@ async function boot() {
       return;
     }
     const colorHex = '#' + profile.color.toString(16).padStart(6, '0');
+    const collapseKey = 'roman_td_weather_chip_collapsed';
+    let collapsed = false;
+    try { collapsed = localStorage.getItem(collapseKey) === '1'; } catch { /* ignore */ }
     // Compose penalty bullets that are ACTIVE
     const penalties: string[] = [];
     const inten = state.weatherIntensity ?? 1;
@@ -1389,6 +1443,16 @@ async function boot() {
     if (!chip) {
       chip = document.createElement('div');
       chip.id = 'weather-chip';
+      document.getElementById('stage-wrap')?.appendChild(chip);
+    }
+    let nextStyle = '';
+    let nextHtml = '';
+    if (collapsed) {
+      nextStyle = `position:absolute;top:8px;left:8px;padding:5px 7px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid ${colorHex};color:#fff8e0;font-family:'Courier New',monospace;font-size:10px;letter-spacing:1px;z-index:60;pointer-events:auto;max-width:190px;box-shadow:0 0 12px ${colorHex}66;font-weight:900;display:flex;align-items:center;gap:6px;`;
+      nextHtml = `
+        <button id="weather-chip-toggle" aria-label="Expand weather effects" title="Expand weather effects" style="background:#1a1410;border:1px solid #5a4a30;color:${colorHex};font-family:inherit;font-size:12px;font-weight:bold;width:22px;height:22px;padding:0;cursor:pointer;line-height:1">▸</button>
+        <span style="font-size:10px;letter-spacing:1.5px;color:${colorHex};font-weight:bold">WEATHER</span>`;
+    } else {
       const parchmentSrc = imgSrc('CB_PARCHMENT_WIDE');
       const baseStyle = parchmentSrc
         ? `background-image:url('${parchmentSrc}');background-size:100% 100%;background-repeat:no-repeat;`
@@ -1399,13 +1463,24 @@ async function boot() {
       // NO text-shadow, on the parchment background. The scroll outer glow
       // (box-shadow) remains for the chip itself; the text inside stays
       // flat ink. Future scrolls follow this rule.
-      chip.style.cssText = `position:absolute;top:8px;left:8px;padding:14px 20px;${baseStyle}color:#000;font-family:'Courier New',monospace;font-size:13px;letter-spacing:1px;z-index:60;pointer-events:none;max-width:320px;box-shadow:0 0 16px ${colorHex}66;font-weight:900;`;
-      document.getElementById('stage-wrap')?.appendChild(chip);
-    } else {
-      chip.style.boxShadow = `0 0 16px ${colorHex}66`;
+      nextStyle = `position:absolute;top:8px;left:8px;padding:14px 42px 14px 20px;${baseStyle}color:#000;font-family:'Courier New',monospace;font-size:13px;letter-spacing:1px;z-index:60;pointer-events:auto;max-width:320px;box-shadow:0 0 16px ${colorHex}66;font-weight:900;`;
+      nextHtml = `
+        <button id="weather-chip-toggle" aria-label="Collapse weather effects" title="Collapse weather effects so build tiles are reachable" style="position:absolute;right:14px;top:12px;background:#f1d190;border:1px solid #5a4a30;color:#1a1410;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;width:22px;height:22px;padding:0;cursor:pointer;line-height:1">▾</button>
+        <div style="font-weight:900;font-size:14px;letter-spacing:2px;margin-bottom:5px">🌫 ${profile.name.toUpperCase()}${intensityTag}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;font-weight:900">${penalties.join(' · ') || 'cosmetic only'}</div>`;
     }
-    chip.innerHTML = `<div style="font-weight:900;font-size:14px;letter-spacing:2px;margin-bottom:5px">🌫 ${profile.name.toUpperCase()}${intensityTag}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;font-weight:900">${penalties.join(' · ') || 'cosmetic only'}</div>`;
+    const sig = `${collapsed ? '1' : '0'}|${colorHex}|${profile.name}|${intensityTag}|${penalties.join('|')}|${nextHtml.length}`;
+    if ((chip as any).__weatherSig !== sig) {
+      (chip as any).__weatherSig = sig;
+      chip.style.cssText = nextStyle;
+      chip.innerHTML = nextHtml;
+    }
+    const toggleBtn = chip.querySelector<HTMLButtonElement>('#weather-chip-toggle');
+    if (toggleBtn) toggleBtn.onclick = ev => {
+      ev.stopPropagation();
+      try { localStorage.setItem(collapseKey, collapsed ? '0' : '1'); } catch { /* ignore */ }
+      updateWeatherChip();
+    };
   }
   function showModifierBanner(modifier: { name: string; blurb: string; color: number }) {
     document.getElementById('modifier-banner')?.remove();
