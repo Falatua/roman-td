@@ -4,7 +4,7 @@ import { TIER_MULTS, ECONOMY, POOL_PROBABILITIES, GRID, AURA_TILES, AURA_TILE_EF
 import towersData from '../data/towers.json';
 import { damageTypeFromString } from './DamageTypeSystem';
 import { isInsideStructureFootprint } from './GridManager';
-import { hasBossTrophy } from './BossTrophySystem';
+import { bossTrophyTowerDpsMult, bossTrophyTowerRangeBonus, bossTrophyTowerSpeedMult, hasBossTrophy } from './BossTrophySystem';
 import { campaignRelicTowerDpsMult, campaignRelicTowerRangeBonus, campaignRelicTowerSpeedMult } from './CampaignRelicSystem';
 import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 import { heroAuraScaleForTower, heroBasicAttackScaleForTower } from './HeroScaling';
@@ -446,6 +446,9 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     const def: any = (towersData as any)[t.type];
     if (def?.kind === 'BASE') itemSpeedMult *= 1.10;
   }
+  const trophyDpsMult = gs ? bossTrophyTowerDpsMult(gs, t) : 1;
+  const trophySpeedMult = gs ? bossTrophyTowerSpeedMult(gs, t) : 1;
+  const trophyRangeBonus = gs ? bossTrophyTowerRangeBonus(gs, t) : 0;
   const defForRelic: any = (towersData as any)[t.type];
   const relicDpsMult = gs ? campaignRelicTowerDpsMult(gs, t, defForRelic?.kind) : 1;
   const relicSpeedMult = gs ? campaignRelicTowerSpeedMult(gs, t, defForRelic?.kind) : 1;
@@ -505,9 +508,9 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     if (n > 0) forgeDmgMult = 1 + 0.06 * n;
   }
   return {
-    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult * heroLevelDmgMult * forgeDmgMult * relicDpsMult * harborDmgMult,
-    attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult * relicSpeedMult * harborSpeedMult * (isMeleeClassTower(t) ? MELEE_ATTACK_SPEED_MULT : 1),
-    range: Math.max(isMeleeClassTower(t) ? MELEE_MIN_RANGE_TILES : 1, t.range + extraRange + endlessRangeBoost + auraRangeBonus + relicRangeBonus + harborRangeBonus)
+    dps: t.baseDps * dmgMult * itemDmgMult * classScalar * endlessDmgBoost * auraDmgMult * heroLevelDmgMult * forgeDmgMult * relicDpsMult * trophyDpsMult * harborDmgMult,
+    attackSpeed: t.attackSpeed * spdMult * itemSpeedMult * endlessSpdBoost * auraSpdMult * relicSpeedMult * trophySpeedMult * harborSpeedMult * (isMeleeClassTower(t) ? MELEE_ATTACK_SPEED_MULT : 1),
+    range: Math.max(isMeleeClassTower(t) ? MELEE_MIN_RANGE_TILES : 1, t.range + extraRange + endlessRangeBoost + auraRangeBonus + relicRangeBonus + trophyRangeBonus + harborRangeBonus)
   };
 }
 

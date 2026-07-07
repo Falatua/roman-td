@@ -1,5 +1,5 @@
 import { GameStateShape } from '../GameState';
-import { applyBossTrophy, BossTrophyId, unclaimedBossTrophies } from '../systems/BossTrophySystem';
+import { applyBossTrophy, BossTrophyId, bossTrophyOffers } from '../systems/BossTrophySystem';
 import { closeGameModals } from './ModalManager';
 import { SFX } from './AudioManager';
 import { canReceiveRunReward } from '../systems/RewardEligibility';
@@ -11,7 +11,7 @@ export function showBossTrophyModal(
   onChoose: (id: BossTrophyId) => void
 ): void {
   if (!canReceiveRunReward(state)) return;
-  const offers = unclaimedBossTrophies(state).slice(0, 3);
+  const offers = bossTrophyOffers(state, 3);
   if (offers.length === 0) return;
   closeGameModals();
   (state as any).__bossTrophyOpen = true;

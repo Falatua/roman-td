@@ -79,7 +79,7 @@ import { showLastStandTrove } from './render/LastStandTrove';
 import { showMercatorBackRoomModal, showSenateBailoutModal } from './render/SecretEvents';
 import { showHarborDraftModal, showHarborUnlockModal } from './render/HarborDraftModal';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
-import { consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
+import { bossTrophyKillGoldBonus, consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
 import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy, shouldDropRareOnlyBossLoot } from './systems/RewardEligibility';
@@ -7500,6 +7500,8 @@ async function boot() {
           goldEarnedHere += earnGold(state, ECONOMY.BASE_GOLD_PER_KILL, { taxable: true });
           const relicKillGold = campaignRelicKillGoldBonus(state);
           if (relicKillGold > 0) { goldEarnedHere += earnGold(state, relicKillGold, { taxable: true }); }
+          const trophyKillGold = bossTrophyKillGoldBonus(state, e);
+          if (trophyKillGold > 0) { goldEarnedHere += earnGold(state, trophyKillGold, { taxable: true }); }
           if (t.isAerarium) { goldEarnedHere += earnGold(state, ECONOMY.AERARIUM_BONUS, { taxable: true }); }
           // GOLD-PER-KILL TROPHIES — linear rarity ladder (2026-05-19
           // rebalance): Common +1 → Rare +2 → Legendary +3. Stack

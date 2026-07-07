@@ -22,8 +22,14 @@ import {
   skipCampaignRelic
 } from '../src/systems/CampaignRelicSystem';
 import {
+  BOSS_TROPHIES,
   applyBossTrophy,
   bossTrophyDamageMult,
+  bossTrophyKillGoldBonus,
+  bossTrophyOffers,
+  bossTrophyTowerDpsMult,
+  bossTrophyTowerRangeBonus,
+  bossTrophyTowerSpeedMult,
   bossTrophyTrapDamageMult,
   bossTrophyTrapRadiusMult,
   consumePendingBossTrophyOffer,
@@ -506,6 +512,22 @@ describe('Campaign relics', () => {
 });
 
 describe('Boss trophies', () => {
+  it('ships a varied boss trophy pool and randomizes the three-card offer', () => {
+    const s = bootstrapState();
+    expect(BOSS_TROPHIES.length).toBe(10);
+    expect(new Set(BOSS_TROPHIES.map(t => t.id)).size).toBe(10);
+    for (const trophy of BOSS_TROPHIES) {
+      expect(trophy.blurb.length).toBeGreaterThan(12);
+      expect(trophy.effects.length).toBeGreaterThanOrEqual(2);
+    }
+
+    const lowRolls = bossTrophyOffers(s, 3, () => 0).map(t => t.id);
+    const highRolls = bossTrophyOffers(s, 3, () => 0.99).map(t => t.id);
+    expect(lowRolls).toHaveLength(3);
+    expect(highRolls).toHaveLength(3);
+    expect(lowRolls).not.toEqual(highRolls);
+  });
+
   it('only offers a trophy for scheduled major bosses and never elephants', () => {
     const s = bootstrapState();
     s.wave = 24;
@@ -564,6 +586,43 @@ describe('Boss trophies', () => {
     applyBossTrophy(s, 'FIELD_ENGINEERS');
     expect(bossTrophyTrapDamageMult(s)).toBeCloseTo(1.25, 4);
     expect(bossTrophyTrapRadiusMult(s)).toBeCloseTo(1.15, 4);
+  });
+
+  it('applies new boss trophy build hooks across air, siege, naval, combo, sacred, economy, and range strategies', () => {
+    const s = bootstrapState();
+    const ranged = createTower(TowerType.VELITES, 1, 1, 1, 30);
+    const siege = createTower(TowerType.SCORPIO, 1, 1, 1, 31);
+    const harbor = createTower(TowerType.TRIREME_BALLISTA, 1, 1, 1, 32);
+    const combo = createTower(TowerType.SCORPION_BOLT, 1, 1, 1, 33);
+    const divine = createTower(TowerType.FLAMEN, 1, 1, 1, 34);
+
+    applyBossTrophy(s, 'SKYWARD_AQUILA');
+    expect(bossTrophyDamageMult(s, ranged, { isFlyer: true })).toBeCloseTo(1.22, 4);
+    expect(bossTrophyTowerRangeBonus(s, ranged)).toBeCloseTo(0.35, 4);
+
+    applyBossTrophy(s, 'SIEGEBREAKER_TABLETS');
+    expect(bossTrophyDamageMult(s, siege, { archetype: 'ELITE' })).toBeCloseTo(1.18, 4);
+    expect(bossTrophyTowerSpeedMult(s, siege)).toBeCloseTo(1.06, 4);
+
+    applyBossTrophy(s, 'HARBOR_CHARTS');
+    expect(bossTrophyTowerDpsMult(s, harbor)).toBeCloseTo(1.12, 4);
+    expect(bossTrophyTowerRangeBonus(s, harbor)).toBeCloseTo(0.85, 4);
+    expect(bossTrophyDamageMult(s, harbor, { __oceanSpawn: true, type: 'SEA_GIANT' })).toBeCloseTo(1.18 * 1.25, 4);
+
+    applyBossTrophy(s, 'COHORT_STANDARD');
+    expect(bossTrophyDamageMult(s, combo, { type: 'FERAL_DOG' })).toBeCloseTo(1.10, 4);
+
+    applyBossTrophy(s, 'VESTAL_INCENSE');
+    expect(bossTrophyTowerSpeedMult(s, divine)).toBeCloseTo(1.08, 4);
+    expect(bossTrophyDamageMult(s, divine, { type: 'UNDEAD_CELT' })).toBeCloseTo(1.12, 4);
+
+    applyBossTrophy(s, 'PAYMASTER_SIGIL');
+    expect(bossTrophyKillGoldBonus(s, { isBoss: true })).toBe(8);
+    expect(bossTrophyKillGoldBonus(s, { type: 'FERAL_DOG' })).toBe(0);
+
+    applyBossTrophy(s, 'WATCHTOWER_SURVEYORS');
+    expect(bossTrophyTowerRangeBonus(s, ranged)).toBeCloseTo(0.85, 4);
+    expect(bossTrophyDamageMult(s, ranged, { isCommander: true })).toBeCloseTo(1.06, 4);
   });
 });
 
