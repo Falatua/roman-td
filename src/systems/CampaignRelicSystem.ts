@@ -2,6 +2,7 @@ import { DamageType, Tower, TowerType } from '../types';
 import { GameStateShape } from '../GameState';
 import { WAVE } from '../constants';
 import { canReceiveRunReward } from './RewardEligibility';
+import { grantTrapInventory } from './TrapInventorySystem';
 
 export const CAMPAIGN_RELIC_IDS = [
   'JUPITERS_MANDATE',
@@ -1046,10 +1047,8 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
     payRelicLives(state, id);
   }
   if (id === 'TRAPWRIGHTS_SAMPLE') {
-    if (!state.trapInventory) state.trapInventory = {};
-    state.trapInventory.IRON_SPIKE_TRAP = (state.trapInventory.IRON_SPIKE_TRAP ?? 0) + 1;
-    state.trapInventory.FROST_SNARE = (state.trapInventory.FROST_SNARE ?? 0) + 1;
-    state.trapsPurchased = (state.trapsPurchased ?? 0) + 2;
+    grantTrapInventory(state, 'IRON_SPIKE_TRAP', 1);
+    grantTrapInventory(state, 'FROST_SNARE', 1);
     payRelicGold(state, id);
   }
   if (id === 'CHAPEL_CANDLE') {
@@ -1064,11 +1063,9 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
     payRelicLives(state, id);
   }
   if (id === 'VULCANS_CACHE') {
-    if (!state.trapInventory) state.trapInventory = {};
     for (const tid of ['IRON_SPIKE_TRAP', 'TAR_FIRE_TRAP', 'FROST_SNARE']) {
-      state.trapInventory[tid] = (state.trapInventory[tid] ?? 0) + 2;
+      grantTrapInventory(state, tid, 2);
     }
-    state.trapsPurchased = (state.trapsPurchased ?? 0) + 6;   // quest progress
     payRelicGold(state, id);
   }
   if (id === 'VESTAL_COVENANT') {

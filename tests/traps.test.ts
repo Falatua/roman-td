@@ -13,6 +13,13 @@ import {
   trapOwned,
   trapPrice,
 } from '../src/systems/TrapSystem';
+import {
+  TRAP_PURCHASE_CAP_PER_TYPE,
+  grantTrapInventory,
+  recordTrapDamage,
+  trapPurchasesRemaining,
+  trapsPurchasedByType,
+} from '../src/systems/TrapInventorySystem';
 
 describe('Trap inventory flow', () => {
   it('buying traps stocks inventory without arming placement', () => {
@@ -40,6 +47,35 @@ describe('Trap inventory flow', () => {
     s.gold = trapPrice(s, id) * 2;
     expect(buyTraps(s, id, 2)).toBeGreaterThan(0);
     expect(s.trapsPurchased).toBe(2);
+  });
+
+  it('caps every trap type at five acquired stock per campaign', () => {
+    const s = createGameState();
+    const id = 'BALLISTA_SNARE';
+    s.gold = trapPrice(s, id) * 10;
+
+    expect(buyTraps(s, id, 7)).toBe(trapPrice(s, id) * TRAP_PURCHASE_CAP_PER_TYPE);
+    expect(trapOwned(s, id)).toBe(TRAP_PURCHASE_CAP_PER_TYPE);
+    expect(trapsPurchasedByType(s, id)).toBe(TRAP_PURCHASE_CAP_PER_TYPE);
+    expect(trapPurchasesRemaining(s, id)).toBe(0);
+    expect(buyTraps(s, id, 1)).toBe(0);
+    expect(grantTrapInventory(s, id, 3)).toBe(0);
+    expect(trapOwned(s, id)).toBe(TRAP_PURCHASE_CAP_PER_TYPE);
+  });
+
+  it('records damage traps for the in-wave leaderboard counters', () => {
+    const s = createGameState();
+
+    recordTrapDamage(s, 'IRON_SPIKE_TRAP', 250);
+    recordTrapDamage(s, 'IRON_SPIKE_TRAP', 75);
+    recordTrapDamage(s, 'SKY_NET', 500);
+    recordTrapDamage(s, 'SKY_NET', -10);
+
+    expect(s.trapDamageByType?.IRON_SPIKE_TRAP).toBe(325);
+    expect(s.trapDamageThisWaveByType?.IRON_SPIKE_TRAP).toBe(325);
+    expect(s.trapHitsThisWaveByType?.IRON_SPIKE_TRAP).toBe(2);
+    expect(s.trapDamageByType?.SKY_NET).toBe(500);
+    expect(s.trapHitsThisWaveByType?.SKY_NET).toBe(1);
   });
 
   it('only arms traps when the player selects an owned trap from inventory', () => {

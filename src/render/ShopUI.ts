@@ -1,5 +1,6 @@
 import { ShopState, FORTUNA_APEX_BLOCKLIST, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds } from '../systems/MerchantSystem';
 import { TRAP_DEFS, TRAP_IDS, armTrapFromInventory, buyTraps, trapPrice } from '../systems/TrapSystem';
+import { TRAP_PURCHASE_CAP_PER_TYPE, trapPurchasesRemaining, trapsPurchasedByType } from '../systems/TrapInventorySystem';
 import { RAMPART_COST, RAMPART_MAX_PER_RUN, RAMPART_ORIENT_LABEL, armRampartFromInventory, buyRampart, rampartsOwned, rampartsRemainingThisRun } from '../systems/RampartSystem';
 import { GameStateShape } from '../GameState';
 import { INVENTORY_SIZE, ECONOMY } from '../constants';
@@ -412,6 +413,80 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
   root.appendChild(rampSection);
 }
 
+function renderTrapSection(root: HTMLElement, state: GameStateShape, refresh: () => void): void {
+  const trapSection = document.createElement('div');
+  trapSection.style.cssText = `margin-top:14px;`;
+  const trapTitle = document.createElement('div');
+  trapTitle.className = 'merc-section-title';
+  trapTitle.style.cssText = `display:flex;justify-content:space-between;align-items:center;color:#d4af37;font-weight:bold;letter-spacing:2px;font-size:13px;border-bottom:1px solid #4a3a24;padding-bottom:4px;margin-bottom:6px;`;
+  trapTitle.innerHTML = `<span>☠ CONSUMABLE TRAPS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">buy → inventory → arm → place · wave-only · 5 each</span>`;
+  trapSection.appendChild(trapTitle);
+  const tNote = document.createElement('div');
+  tNote.style.cssText = `font-size:9.5px;color:#aa9a4a;line-height:1.35;margin:2px 0 8px;font-style:italic`;
+  tNote.innerHTML = `Stockpile traps, then open inventory and click one to arm it. Each type is capped at <b style="color:#ffd34d">5 per campaign</b>. Deployed traps re-arm during the wave, then expire when the wave ends. <b style="color:#ffcc44">Ballista Snare</b> shreds bosses; <b style="color:#88ddff">Sky Net</b> is the only trap that catches fliers.`;
+  trapSection.appendChild(tNote);
+  const tg = document.createElement('div');
+  tg.style.cssText = `display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px;`;
+  for (const tid of TRAP_IDS) {
+    const def = TRAP_DEFS[tid];
+    const price = trapPrice(state, tid);
+    const colHex = '#' + def.color.toString(16).padStart(6, '0');
+    const selected = state.selectedTrapType === tid;
+    const owned = (state.trapInventory ?? {})[tid] ?? 0;
+    const purchased = trapsPurchasedByType(state, tid);
+    const remaining = trapPurchasesRemaining(state, tid);
+    const card = document.createElement('div');
+    card.style.cssText = `border:2px solid ${selected ? '#ffe066' : remaining <= 0 ? '#5a4a30' : colHex};padding:8px 6px;background:#0c0a08;display:flex;flex-direction:column;gap:3px;text-align:center;align-items:center;opacity:${remaining <= 0 ? '0.68' : '1'};`;
+    const src = imgSrcFromTex(def.spriteKey);
+    const portrait = src
+      ? `<div style="width:54px;height:54px;border:1px solid ${colHex};background:#1a1410;display:flex;align-items:center;justify-content:center"><img src="${src}" style="width:48px;height:48px;image-rendering:pixelated"/></div>`
+      : `<div style="width:54px;height:54px;border:1px solid ${colHex};color:#cdb98a;font-size:8px;display:flex;align-items:center;justify-content:center">NO IMG</div>`;
+    card.innerHTML = `
+      ${portrait}
+      <div style="color:#fff8e0;font-size:11px;font-weight:bold;line-height:1.2">${def.name}</div>
+      <div style="font-size:8.5px;color:#cdb98a;line-height:1.3;min-height:30px">${def.blurb.replace(/"/g, "'")}</div>
+      <div style="color:#f0c040;font-size:11px;font-weight:bold">${price}g${owned > 0 ? ` · <span style="color:#88ff88">x${owned}</span>` : ''}</div>
+      <div style="font-size:8.5px;color:${remaining <= 0 ? '#ff7777' : '#aa9a4a'};letter-spacing:1px">BOUGHT ${purchased}/${TRAP_PURCHASE_CAP_PER_TYPE}</div>`;
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex;gap:4px;width:100%;margin-top:3px`;
+    const mkBuy = (n: number) => {
+      const b = document.createElement('button');
+      b.className = 'merc-buy';
+      const buyQty = Math.min(n, remaining);
+      b.textContent = remaining <= 0 ? 'MAX' : `BUY ${buyQty}`;
+      b.disabled = remaining <= 0;
+      b.style.cssText = `flex:1;background:${remaining <= 0 ? '#2a241c' : '#3a5520'};color:${remaining <= 0 ? '#776b55' : '#e8d6a8'};cursor:${remaining <= 0 ? 'not-allowed' : 'pointer'};font-size:10px`;
+      b.onclick = () => {
+        if (remaining <= 0) {
+          state.hint = `${def.name} is capped at ${TRAP_PURCHASE_CAP_PER_TYPE} per campaign.`;
+          refresh();
+          return;
+        }
+        const spent = buyTraps(state, tid, buyQty);
+        if (spent <= 0) { (window as any).__showInsufficientGoldToast?.(price * buyQty); return; }
+        recordMercatorBackRoomPurchase(state, spent);
+        state.hint = `Bought ${buyQty}x ${def.name}. Open inventory and click it to arm placement.`;
+        SFX.buy();
+        refresh();
+      };
+      return b;
+    };
+    row.appendChild(mkBuy(1));
+    row.appendChild(mkBuy(5));
+    card.appendChild(row);
+    card.onclick = (ev) => {
+      if ((ev.target as HTMLElement).tagName === 'BUTTON') return;
+      if (((state.trapInventory ?? {})[tid] ?? 0) > 0) {
+        state.hint = `Open inventory and click ${def.name} to arm it.`;
+        refresh();
+      }
+    };
+    tg.appendChild(card);
+  }
+  trapSection.appendChild(tg);
+  root.appendChild(trapSection);
+}
+
 function renderMercatorShop(
   parent: HTMLElement, shop: ShopState, state: GameStateShape,
   inv: InventoryState, hooks: ShopHooks, refresh: () => void
@@ -599,67 +674,7 @@ function renderMercatorShop(
     body.appendChild(towersSection);
   }
 
-  // ─── CONSUMABLE TRAPS (shown at BOTH the gate shop and Mercator) ─────
-  {
-    const trapSection = document.createElement('div');
-    const trapTitle = document.createElement('div');
-    trapTitle.className = 'merc-section-title';
-    trapTitle.innerHTML = `<span>☠ CONSUMABLE TRAPS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">buy → inventory → arm → place · wave-only</span>`;
-    trapSection.appendChild(trapTitle);
-    const tNote = document.createElement('div');
-    tNote.style.cssText = `font-size:9.5px;color:#aa9a4a;line-height:1.35;margin:2px 0 8px;font-style:italic`;
-    tNote.innerHTML = `Stockpile traps, then open inventory and click one to arm it. Deployed traps expire when the wave ends. <b style="color:#ffcc44">Ballista Snare</b> shreds bosses; <b style="color:#88ddff">Sky Net</b> is the only trap that catches fliers.`;
-    trapSection.appendChild(tNote);
-    const tg = document.createElement('div');
-    tg.style.cssText = `display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;`;
-    for (const tid of TRAP_IDS) {
-      const def = TRAP_DEFS[tid];
-      const price = trapPrice(state, tid);
-      const colHex = '#' + def.color.toString(16).padStart(6, '0');
-      const selected = state.selectedTrapType === tid;
-      const owned = (state.trapInventory ?? {})[tid] ?? 0;
-      const card = document.createElement('div');
-      card.style.cssText = `border:2px solid ${selected ? '#ffe066' : colHex};padding:8px 6px;background:#0c0a08;display:flex;flex-direction:column;gap:3px;text-align:center;align-items:center;`;
-      const src = imgSrcFromTex(def.spriteKey);
-      const portrait = src
-        ? `<div style="width:54px;height:54px;border:1px solid ${colHex};background:#1a1410;display:flex;align-items:center;justify-content:center"><img src="${src}" style="width:48px;height:48px;image-rendering:pixelated"/></div>`
-        : `<div style="width:54px;height:54px;border:1px solid ${colHex};color:#cdb98a;font-size:8px;display:flex;align-items:center;justify-content:center">NO IMG</div>`;
-      card.innerHTML = `
-        ${portrait}
-        <div style="color:#fff8e0;font-size:11px;font-weight:bold;line-height:1.2">${def.name}</div>
-        <div style="font-size:8.5px;color:#cdb98a;line-height:1.3;min-height:30px">${def.blurb.replace(/"/g, "'")}</div>
-        <div style="color:#f0c040;font-size:11px;font-weight:bold">${price}g${owned > 0 ? ` · <span style="color:#88ff88">x${owned}</span>` : ''}</div>`;
-      const row = document.createElement('div');
-      row.style.cssText = `display:flex;gap:4px;width:100%;margin-top:3px`;
-      const mkBuy = (n: number) => {
-        const b = document.createElement('button');
-        b.className = 'merc-buy';
-        b.textContent = `BUY ${n}`;
-        b.style.cssText = `flex:1;background:#3a5520;color:#e8d6a8;cursor:pointer;font-size:10px`;
-        b.onclick = () => {
-          const spent = buyTraps(state, tid, n);
-          if (spent <= 0) { (window as any).__showInsufficientGoldToast?.(price * n); return; }
-          recordMercatorBackRoomPurchase(state, spent);
-          state.hint = `Bought ${n}x ${def.name}. Open inventory and click it to arm placement.`;
-          SFX.buy();
-          refresh();
-        };
-        return b;
-      };
-      row.appendChild(mkBuy(1)); row.appendChild(mkBuy(5));
-      card.appendChild(row);
-      card.onclick = (ev) => {
-        if ((ev.target as HTMLElement).tagName === 'BUTTON') return;
-        if (((state.trapInventory ?? {})[tid] ?? 0) > 0) {
-          state.hint = `Open inventory and click ${def.name} to arm it.`;
-          refresh();
-        }
-      };
-      tg.appendChild(card);
-    }
-    trapSection.appendChild(tg);
-    body.appendChild(trapSection);
-  }
+  renderTrapSection(body, state, refresh);
 
   // ─── STONE RAMPARTS (2026-07-02) — shared section, also on the gate
   // shop (see renderShop) so the mazing aid is buyable from wave 1.
@@ -1072,6 +1087,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
     list.appendChild(card);
   }
   contentRoot.appendChild(list);
+  renderTrapSection(contentRoot, state, refresh);
   // STONE RAMPARTS (2026-07-02) — shared section, also rendered at the
   // Mercator. Gate shop placement = right below the item offers so the
   // mazing aid is visible from the very first shop visit.

@@ -10,6 +10,7 @@ import { initializeGrid, isBuildable, isWaterPlacementRestrictedTile, isWaterZon
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
 import { tickEnemies, spawnEnemy, tickBurnPatches, tickBossHazards, triggerEnemyDeathBurst } from './systems/EnemySystem';
 import { tickTraps, placeTrap, trapOwned, TRAP_DEFS, clearPlacedTrapsForWaveEnd } from './systems/TrapSystem';
+import { recordTrapDamage } from './systems/TrapInventorySystem';
 import { canPlaceRampart, placeRampart, rampartPreviewTiles, rampartTiles, rampartsOwned, RAMPART_LENGTH, RAMPART_ORIENTATIONS, nextRampartOrientation, RAMPART_ORIENT_LABEL, RampartOrientation } from './systems/RampartSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } from './systems/WaveManager';
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
@@ -4946,6 +4947,8 @@ async function boot() {
           // accumulator. Same lifecycle as killsThisWave / damageThisWave.
           (tw as any).__triumphalWreath = 0;
         }
+        state.trapDamageThisWaveByType = {};
+        state.trapHitsThisWaveByType = {};
         bossRuntime = createBossRuntime();
         bossLegendaryDropped = false;
         waveStartTick = state.tick;
@@ -6828,7 +6831,10 @@ async function boot() {
       tickBossHazards(state, dt);
       // 2026 v2 — consumable traps fire on contact, flash a ring + pop damage numbers.
       { const __tfx = tickTraps(state, Array.from(state.enemies.values()), dt,
-          (x, y, dmg, color) => emitFloatingNumber(gore, x, y, dmg, color),
+          (x, y, dmg, color, trapType) => {
+            emitFloatingNumber(gore, x, y, dmg, color);
+            recordTrapDamage(state, trapType, dmg);
+          },
           (x, y, kind) => emitStatusImpact(gore, x, y, kind));
         for (const f of __tfx) renderer.triggerImpactRing(f.x, f.y, state.tick, f.radius, f.color); }
       // 2026-05 v10 — BOSS LOW-HP CUE. Per-frame scan: if ANY boss on

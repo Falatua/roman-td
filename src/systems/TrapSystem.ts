@@ -3,8 +3,8 @@
 // Flow: buy from the shop/Mercator into state.trapInventory; arm one from the
 // inventory UI (state.selectedTrapType); click a tile to place it (consumes 1, pushes a
 // placedTraps entry); when an enemy comes within trigger range the trap fires
-// once, applies its effect to a small AoE, then is removed. Unfired deployed
-// traps are also removed at wave end. Reuses the
+// applies its effect to a small AoE, then re-arms after a short cooldown.
+// Deployed traps are removed at wave end. Reuses the
 // burn-patch ground-hazard model + the exported pushStatus status system.
 //
 // Traps DO pop a damage number when they hit (via the onDamage callback), are
@@ -18,6 +18,7 @@ import { campaignRelicTrapDamageMult, campaignRelicTrapPriceMult, campaignRelicT
 import { bossTrophyTrapDamageMult, bossTrophyTrapRadiusMult } from './BossTrophySystem';
 import { commanderTrapRadiusDisabled } from './CommanderSystem';
 import { isBuildable, isWaterPlacementRestrictedTile } from './GridManager';
+import { grantTrapInventory } from './TrapInventorySystem';
 
 export type TrapEffect = 'DAMAGE' | 'POISON' | 'BURN' | 'SLOW' | 'BOSS' | 'FLYER';
 
@@ -47,32 +48,32 @@ export const TRAP_DEFS: Record<string, TrapDef> = {
   IRON_SPIKE_TRAP: {
     name: 'Iron Spike Trap', price: 50, color: 0xc0c0c0, spriteKey: 'TRAP_IRON_SPIKE',
     effect: 'DAMAGE', blurb: 'Bursts for heavy physical damage to everything nearby.',
-    pulse: false, triggerTiles: 0.7, radiusTiles: 1.1, damage: 1300,
+    pulse: false, triggerTiles: 0.7, radiusTiles: 1.1, damage: 1050,
   },
   VENOM_TRAP: {
     name: 'Venom Trap', price: 60, color: 0x66dd44, spriteKey: 'TRAP_VENOM',
     effect: 'POISON', blurb: 'A toxic cloud: a hit plus lingering POISON over 5s.',
-    pulse: true, triggerTiles: 0.8, radiusTiles: 1.4, damage: 450, dotDuration: 5, dotMag: 0.05,
+    pulse: true, triggerTiles: 0.8, radiusTiles: 1.4, damage: 360, dotDuration: 5, dotMag: 0.05,
   },
   TAR_FIRE_TRAP: {
     name: 'Tar Fire Trap', price: 60, color: 0xff7722, spriteKey: 'TRAP_TAR_FIRE',
     effect: 'BURN', blurb: 'Ignites tar: a hit plus lingering BURN over 5s.',
-    pulse: true, triggerTiles: 0.8, radiusTiles: 1.4, damage: 450, dotDuration: 5, dotMag: 0.05,
+    pulse: true, triggerTiles: 0.8, radiusTiles: 1.4, damage: 360, dotDuration: 5, dotMag: 0.05,
   },
   FROST_SNARE: {
     name: 'Frost Snare', price: 55, color: 0x88ddff, spriteKey: 'TRAP_FROST',
     effect: 'SLOW', blurb: 'Chills a wide area, SLOWING enemies 50% for 3.5s.',
-    pulse: true, triggerTiles: 0.8, radiusTiles: 1.6, damage: 200, slowDuration: 3.5, slowMag: 0.5,
+    pulse: true, triggerTiles: 0.8, radiusTiles: 1.6, damage: 150, slowDuration: 3.5, slowMag: 0.5,
   },
   BALLISTA_SNARE: {
-    name: 'Ballista Snare', price: 120, color: 0xffcc44, spriteKey: 'TRAP_BALLISTA',
-    effect: 'BOSS', blurb: 'BOSS SPECIALIST: a massive bolt that hits 4x as hard against bosses.',
-    pulse: true, triggerTiles: 0.7, radiusTiles: 0.9, damage: 5500, bossMult: 4.0,
+    name: 'Ballista Snare', price: 180, color: 0xffcc44, spriteKey: 'TRAP_BALLISTA',
+    effect: 'BOSS', blurb: 'BOSS SPECIALIST: a massive bolt that hits 3.5x as hard against bosses.',
+    pulse: true, triggerTiles: 0.7, radiusTiles: 0.9, damage: 4200, bossMult: 3.5,
   },
   SKY_NET: {
-    name: 'Sky Net', price: 100, color: 0xcfe0ff, spriteKey: 'TRAP_SKY_NET',
+    name: 'Sky Net', price: 135, color: 0xcfe0ff, spriteKey: 'TRAP_SKY_NET',
     effect: 'FLYER', blurb: 'FLYER SPECIALIST: only fliers trigger it — a big hit plus a heavy SLOW.',
-    pulse: true, triggerTiles: 1.0, radiusTiles: 1.4, damage: 3200, slowDuration: 3, slowMag: 0.6, flyerOnly: true,
+    pulse: true, triggerTiles: 1.0, radiusTiles: 1.4, damage: 2500, slowDuration: 3, slowMag: 0.6, flyerOnly: true,
   },
 };
 
@@ -109,12 +110,15 @@ export function trapPrice(state: GameStateShape, id: string): number {
 export function buyTraps(state: GameStateShape, id: string, qty: number): number {
   const def = TRAP_DEFS[id];
   if (!def || qty <= 0) return 0;
-  const cost = trapPrice(state, id) * qty;
+  const buyQty = Math.min(Math.max(0, Math.floor(qty)), 5);
+  const price = trapPrice(state, id);
+  const affordableQty = Math.min(buyQty, Math.floor((state.gold ?? 0) / price));
+  if (affordableQty <= 0) return 0;
+  const granted = grantTrapInventory(state, id, affordableQty);
+  if (granted <= 0) return 0;
+  const cost = price * granted;
   if ((state.gold ?? 0) < cost) return 0;
   state.gold -= cost;
-  if (!state.trapInventory) state.trapInventory = {};
-  state.trapInventory[id] = (state.trapInventory[id] ?? 0) + qty;
-  state.trapsPurchased = (state.trapsPurchased ?? 0) + qty;
   return cost;
 }
 
@@ -163,14 +167,14 @@ export function clearPlacedTrapsForWaveEnd(state: GameStateShape): number {
   return count;
 }
 
-// Per-frame: detect enemies on traps, fire the effect, remove spent traps.
+// Per-frame: detect enemies on traps, fire the effect, and re-arm them.
 // Returns the world positions + colors of traps that fired this tick so the
 // renderer can flash an impact ring (no damage-number floaters by design).
 export function tickTraps(
   state: GameStateShape,
   enemies: any[],
   _dt: number,
-  onDamage?: (x: number, y: number, dmg: number, color: number) => void,
+  onDamage?: (x: number, y: number, dmg: number, color: number, trapType: string) => void,
   onStatus?: (x: number, y: number, kind: string) => void,
 ): Array<{ x: number; y: number; color: number; radius: number }> {
   const fired: Array<{ x: number; y: number; color: number; radius: number }> = [];
@@ -207,7 +211,7 @@ export function tickTraps(
         let dmg = def.damage * damageMult;
         if (def.bossMult && e.isBoss) dmg *= def.bossMult;
         e.hp -= dmg;
-        onDamage?.(e.x, e.y, dmg, def.color);          // show the damage-number popup
+        onDamage?.(e.x, e.y, dmg, def.color, trap.type);          // show the damage-number popup
       }
       if (def.effect === 'POISON' && def.dotDuration) { pushStatus(e, StatusEffectKind.POISON, def.dotDuration, def.dotMag ?? 0.05, 3); onStatus?.(e.x, e.y, 'POISON'); }
       if (def.effect === 'BURN' && def.dotDuration)   { pushStatus(e, StatusEffectKind.BURN, def.dotDuration, def.dotMag ?? 0.05, 3); onStatus?.(e.x, e.y, 'BURN'); }

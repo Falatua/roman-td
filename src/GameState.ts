@@ -58,6 +58,9 @@ export interface GameStateShape {
   // 2026 v2 — consumable TRAPS (TrapSystem): owned counts per type, placed
   // traps on the map, and the trap currently selected for placement.
   trapInventory?: Record<string, number>;
+  // Lifetime trap stock acquired by trap type. Shops, relics, and secret
+  // bundles all use this so the 5-per-type campaign cap has no back doors.
+  trapPurchasesByType?: Record<string, number>;
   // Lifetime traps purchased this run. Kept separate from inventory because
   // placed traps are consumable and should not erase quest progress.
   trapsPurchased?: number;
@@ -68,6 +71,11 @@ export interface GameStateShape {
   bestDpsCheck?: number;
   placedTraps?: { id: string; type: string; x: number; y: number; col: number; row: number; born: number; color: number; spriteKey: string; pulse: boolean; nextReadyTick?: number }[];
   selectedTrapType?: string | null;
+  // Damage-trap leaderboard accounting. Lifetime survives wave resets;
+  // per-wave counters reset at wave start like tower damageThisWave.
+  trapDamageByType?: Record<string, number>;
+  trapDamageThisWaveByType?: Record<string, number>;
+  trapHitsThisWaveByType?: Record<string, number>;
   // 2026-07-02 — Stone Ramparts (RampartSystem): purchasable 5-tile stone
   // barrier lines, hard-capped at 5 buys per run. 2026-07-03 v2: a single
   // generic purchase — orientation (H / V / D1 ↘ / D2 ↗) is chosen at
@@ -337,10 +345,14 @@ export function createGameState(): GameStateShape {
     groundPathB: [],
     caveBActive: false,
     trapInventory: {},
+    trapPurchasesByType: {},
     trapsPurchased: 0,
     trapsPlaced: 0,
     placedTraps: [],
     selectedTrapType: null,
+    trapDamageByType: {},
+    trapDamageThisWaveByType: {},
+    trapHitsThisWaveByType: {},
     rampartsPurchased: 0,
     rampartsOwned: 0,
     rampartInventory: { H: 0, V: 0 },

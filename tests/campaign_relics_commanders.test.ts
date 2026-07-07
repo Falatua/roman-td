@@ -31,6 +31,7 @@ import {
   shouldOfferBossTrophy
 } from '../src/systems/BossTrophySystem';
 import { buyTraps, trapPrice, TRAP_DEFS } from '../src/systems/TrapSystem';
+import { grantTrapInventory } from '../src/systems/TrapInventorySystem';
 import { bossEscortCommandersForWave, commanderDamageTakenMult, commanderSpeedMult, commanderTrapRadiusDisabled, isCommanderType } from '../src/systems/CommanderSystem';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { canReceiveRunReward } from '../src/systems/RewardEligibility';
@@ -262,6 +263,14 @@ describe('Campaign relics', () => {
     expect(traps.trapInventory?.IRON_SPIKE_TRAP).toBe(1);
     expect(traps.trapInventory?.FROST_SNARE).toBe(1);
     expect(traps.trapsPurchased).toBe(2);
+
+    const cappedTraps = bootstrapState();
+    cappedTraps.gold = 500;
+    grantTrapInventory(cappedTraps, 'IRON_SPIKE_TRAP', 5);
+    applyCampaignRelic(cappedTraps, 'TRAPWRIGHTS_SAMPLE');
+    expect(cappedTraps.trapInventory?.IRON_SPIKE_TRAP).toBe(5);
+    expect(cappedTraps.trapInventory?.FROST_SNARE).toBe(1);
+    expect(cappedTraps.trapsPurchased).toBe(6);
 
     const chapel = bootstrapState();
     chapel.gold = 500;

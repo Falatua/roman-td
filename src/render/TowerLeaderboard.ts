@@ -19,9 +19,17 @@ import { damageTypeLabel } from '../format';
 import towersData from '../data/towers.json';
 import { TIER_COLORS } from '../constants';
 import { displayWaveNumber } from '../systems/TestYourMightLabels';
+import { TRAP_DEFS } from '../systems/TrapSystem';
 
 function spriteSrc(towerType: string): string | null {
   const t = tex(towerType);
+  if (!t) return null;
+  const res: any = t.baseTexture?.resource;
+  return res?.src ?? res?.url ?? (t as any).__srcPath ?? null;
+}
+
+function textureSrc(textureKey: string): string | null {
+  const t = tex(textureKey);
   if (!t) return null;
   const res: any = t.baseTexture?.resource;
   return res?.src ?? res?.url ?? (t as any).__srcPath ?? null;
@@ -60,7 +68,7 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
   header.innerHTML = `
     <div>
       <div style="font-size:18px;font-weight:bold;letter-spacing:4px;color:#ffd34d;text-shadow:2px 2px 0 #000">⚔ WAVE BREAKDOWN — <span style="color:#9be0ff">${waveDisplay}</span></div>
-      <div style="font-size:11px;color:#cdb98a;letter-spacing:1px;margin-top:2px">Per-tower contribution to this wave only — totals reset between waves. Click any row to inspect the tower.</div>
+      <div style="font-size:11px;color:#cdb98a;letter-spacing:1px;margin-top:2px">Per-tower and damage-trap contribution to this wave only — totals reset between waves. Click tower rows to inspect.</div>
     </div>`;
   const closeBtn = document.createElement('button');
   closeBtn.textContent = '✕';
@@ -82,7 +90,7 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
     colHeader.innerHTML = `
       ${colHTML('#', null)}
       ${colHTML('SPRITE', null)}
-      ${colHTML('TOWER', null)}
+      ${colHTML('SOURCE', null)}
       ${colHTML('WAVE DMG', 'waveDmg', true)}
       ${colHTML('% OF WAVE', 'sharePct', true)}
       ${colHTML('KILLS', 'waveKills', true)}
@@ -118,52 +126,99 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
 
   function paintRows() {
     const towers = Array.from(state.towers.values()).filter((t) => !t.pending);
-    const waveDmgSum = towers.reduce((s, t) => s + (t.damageThisWave ?? 0), 0);
-    const waveKillSum = towers.reduce((s, t) => s + (t.killsThisWave ?? 0), 0);
-    const lifetimeDmgSum = towers.reduce((s, t) => s + (t.totalDamageDealt ?? 0), 0);
+    type LeaderboardRow = {
+      kind: 'tower' | 'trap';
+      id: string;
+      name: string;
+      waveDmg: number;
+      waveKills: number;
+      lifetimeDmg: number;
+      lifetimeKills: number;
+      tier: number;
+      color: string;
+      src: string | null;
+      subtitle: string;
+      tower?: Tower;
+    };
+    const towerRows: LeaderboardRow[] = towers.map((tw) => {
+      const def: any = (towersData as any)[tw.type] ?? {};
+      const tierCol = '#' + (TIER_COLORS[tw.qualityTier] ?? 0xaaaaaa).toString(16).padStart(6, '0');
+      const isCombo = def.kind === 'COMBO';
+      return {
+        kind: 'tower',
+        id: tw.id,
+        name: def.name ?? tw.type.replace(/_/g, ' '),
+        waveDmg: tw.damageThisWave ?? 0,
+        waveKills: tw.killsThisWave ?? 0,
+        lifetimeDmg: tw.totalDamageDealt ?? 0,
+        lifetimeKills: tw.killCount ?? 0,
+        tier: tw.qualityTier ?? 0,
+        color: tierCol,
+        src: spriteSrc(tw.type),
+        subtitle: `${isCombo ? '<span style="color:#ffd34d">COMBO</span> · ' : ''}${damageTypeLabel(def.damageType)} · ${def.melee ? 'Melee' : 'Ranged'}`,
+        tower: tw,
+      };
+    });
+    const trapRows: LeaderboardRow[] = Object.entries(TRAP_DEFS)
+      .filter(([, def]) => (def.damage ?? 0) > 0)
+      .map(([id, def]) => {
+        const waveDmg = (state.trapDamageThisWaveByType ?? {})[id] ?? 0;
+        const lifetimeDmg = (state.trapDamageByType ?? {})[id] ?? 0;
+        return {
+          kind: 'trap' as const,
+          id,
+          name: def.name,
+          waveDmg,
+          waveKills: 0,
+          lifetimeDmg,
+          lifetimeKills: (state.trapHitsThisWaveByType ?? {})[id] ?? 0,
+          tier: 0,
+          color: '#' + def.color.toString(16).padStart(6, '0'),
+          src: textureSrc(def.spriteKey),
+          subtitle: `<span style="color:#ffcc44">TRAP</span> · ${def.effect} · wave-only`,
+        };
+      })
+      .filter(row => row.waveDmg > 0 || row.lifetimeDmg > 0);
+    const rows = [...towerRows, ...trapRows];
+    const waveDmgSum = rows.reduce((s, row) => s + row.waveDmg, 0);
+    const waveKillSum = towerRows.reduce((s, row) => s + row.waveKills, 0);
+    const trapHitSum = trapRows.reduce((s, row) => s + row.lifetimeKills, 0);
+    const lifetimeDmgSum = rows.reduce((s, row) => s + row.lifetimeDmg, 0);
 
-    // Compute share% per tower (against current wave's total damage).
-    const share = (t: Tower): number =>
-      waveDmgSum > 0 ? ((t.damageThisWave ?? 0) / waveDmgSum) * 100 : 0;
+    const share = (row: LeaderboardRow): number =>
+      waveDmgSum > 0 ? (row.waveDmg / waveDmgSum) * 100 : 0;
 
-    const sortVal = (t: Tower): number => {
+    const sortVal = (row: LeaderboardRow): number => {
       switch (sortKey) {
-        case 'waveDmg':   return t.damageThisWave ?? 0;
-        case 'sharePct':  return share(t);
-        case 'waveKills': return t.killsThisWave ?? 0;
-        case 'tier':      return t.qualityTier ?? 0;
+        case 'waveDmg':   return row.waveDmg;
+        case 'sharePct':  return share(row);
+        case 'waveKills': return row.kind === 'trap' ? row.lifetimeKills : row.waveKills;
+        case 'tier':      return row.tier;
       }
     };
 
-    const sorted = towers.slice().sort((a, b) => sortVal(b) - sortVal(a));
+    const sorted = rows.slice().sort((a, b) => sortVal(b) - sortVal(a));
 
     if (sorted.length === 0) {
-      rowsWrap.innerHTML = `<div style="padding:40px 20px;text-align:center;color:#aa9a4a;font-size:13px;letter-spacing:1px">No committed towers yet. Place and KEEP some prospects, then come back to see the wave breakdown.</div>`;
-      footer.innerHTML = `<span>0 towers · 0 wave damage · 0 wave kills</span>`;
+      rowsWrap.innerHTML = `<div style="padding:40px 20px;text-align:center;color:#aa9a4a;font-size:13px;letter-spacing:1px">No committed towers or damage-trap hits yet. Place towers, deploy traps, then come back to see the wave breakdown.</div>`;
+      footer.innerHTML = `<span>0 sources · 0 wave damage · 0 wave kills</span>`;
       return;
     }
 
     // Footer aggregates + MVP callout
-    const mvpTower = sorted[0];
-    const mvpDef: any = (towersData as any)[mvpTower.type] ?? {};
-    const mvpName = mvpDef.name ?? mvpTower.type.replace(/_/g, ' ');
-    const mvpShare = waveDmgSum > 0 ? ((mvpTower.damageThisWave ?? 0) / waveDmgSum * 100).toFixed(1) : '0.0';
+    const mvpRow = sorted[0];
+    const mvpShare = waveDmgSum > 0 ? (mvpRow.waveDmg / waveDmgSum * 100).toFixed(1) : '0.0';
     footer.innerHTML = `
-      <span><b style="color:#fff8e0">${sorted.length}</b> tower${sorted.length === 1 ? '' : 's'} · <b style="color:#ff7733">${fmtNum(waveDmgSum)}</b> wave dmg · <b style="color:#88ff88">${waveKillSum}</b> wave kills · <span style="color:#aa9a4a">(${fmtNum(lifetimeDmgSum)} lifetime)</span></span>
-      <span style="color:#ffd34d">★ WAVE MVP: <b>${mvpName} T${mvpTower.qualityTier}</b> — ${mvpShare}% of wave damage</span>`;
+      <span><b style="color:#fff8e0">${towerRows.length}</b> tower${towerRows.length === 1 ? '' : 's'} · <b style="color:#fff8e0">${trapRows.length}</b> trap source${trapRows.length === 1 ? '' : 's'} · <b style="color:#ff7733">${fmtNum(waveDmgSum)}</b> wave dmg · <b style="color:#88ff88">${waveKillSum}</b> wave kills · <b style="color:#9be0ff">${trapHitSum}</b> trap hits · <span style="color:#aa9a4a">(${fmtNum(lifetimeDmgSum)} lifetime)</span></span>
+      <span style="color:#ffd34d">★ WAVE MVP: <b>${mvpRow.name}${mvpRow.kind === 'tower' ? ` T${mvpRow.tier}` : ' TRAP'}</b> — ${mvpShare}% of wave damage</span>`;
 
     rowsWrap.innerHTML = '';
-    sorted.forEach((tw, idx) => {
-      const def: any = (towersData as any)[tw.type] ?? {};
-      const tierCol = '#' + (TIER_COLORS[tw.qualityTier] ?? 0xaaaaaa).toString(16).padStart(6, '0');
-      const src = spriteSrc(tw.type);
-      const portrait = src
-        ? `<img src="${src}" style="width:44px;height:44px;image-rendering:pixelated;display:block">`
-        : `<div style="width:44px;height:44px;background:#1a1410;color:${tierCol};font-size:11px;letter-spacing:1px;display:flex;align-items:center;justify-content:center">${tw.type.slice(0, 3)}</div>`;
-      const niceName = def.name ?? tw.type.replace(/_/g, ' ');
-      const isCombo = def.kind === 'COMBO';
-      const isMvp   = (tw.mvpAwards ?? 0) > 0;
-      const sharePct = share(tw);
+    sorted.forEach((rowData, idx) => {
+      const portrait = rowData.src
+        ? `<img src="${rowData.src}" style="width:44px;height:44px;image-rendering:pixelated;display:block">`
+        : `<div style="width:44px;height:44px;background:#1a1410;color:${rowData.color};font-size:11px;letter-spacing:1px;display:flex;align-items:center;justify-content:center">${rowData.name.slice(0, 3).toUpperCase()}</div>`;
+      const isMvp = rowData.kind === 'tower' && ((rowData.tower as any)?.mvpAwards ?? 0) > 0;
+      const sharePct = share(rowData);
 
       // Color the share bar by dominance — green if carrying the wave,
       // amber if pulling weight, red-ish if low contribution.
@@ -173,13 +228,13 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
                                          : '#aa6666';
 
       // Lifetime mini-summary: total dmg + lifetime kills, smaller font
-      const lifetimeMini = `<div style="text-align:right;font-size:10px;color:#aa9a4a;line-height:1.3">${fmtNum(tw.totalDamageDealt ?? 0)}<br/><span style="color:#5a4a30">${tw.killCount ?? 0} k</span></div>`;
+      const lifetimeMini = `<div style="text-align:right;font-size:10px;color:#aa9a4a;line-height:1.3">${fmtNum(rowData.lifetimeDmg)}<br/><span style="color:#5a4a30">${rowData.kind === 'trap' ? `${rowData.lifetimeKills} hit` : `${rowData.lifetimeKills} k`}</span></div>`;
 
       const row = document.createElement('div');
-      row.style.cssText = `display:grid;grid-template-columns:42px 56px 1fr 100px 80px 70px 110px 50px;gap:10px;padding:9px 10px;background:${idx % 2 === 0 ? '#100c09' : '#0c0a08'};border-left:3px solid ${tierCol};margin-bottom:2px;align-items:center;cursor:pointer;transition:background 0.12s`;
+      row.style.cssText = `display:grid;grid-template-columns:42px 56px 1fr 100px 80px 70px 110px 50px;gap:10px;padding:9px 10px;background:${idx % 2 === 0 ? '#100c09' : '#0c0a08'};border-left:3px solid ${rowData.color};margin-bottom:2px;align-items:center;cursor:${rowData.kind === 'tower' ? 'pointer' : 'default'};transition:background 0.12s`;
       row.onmouseenter = () => { row.style.background = '#2a1f12'; };
       row.onmouseleave = () => { row.style.background = idx % 2 === 0 ? '#100c09' : '#0c0a08'; };
-      row.onclick = () => hooks.onSelectTower(tw);
+      row.onclick = () => { if (rowData.tower) hooks.onSelectTower(rowData.tower); };
 
       const rankBadge = idx < 3
         ? `<span style="color:${idx === 0 ? '#ffd34d' : idx === 1 ? '#c0c0c0' : '#b87333'};font-weight:bold">${idx + 1}</span>`
@@ -187,18 +242,18 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
 
       row.innerHTML = `
         <div style="text-align:center;font-size:14px;letter-spacing:1px">${rankBadge}</div>
-        <div style="width:48px;height:48px;border:1px solid ${tierCol};background:#0c0a08;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 6px ${tierCol}55">${portrait}</div>
+        <div style="width:48px;height:48px;border:1px solid ${rowData.color};background:#0c0a08;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 6px ${rowData.color}55">${portrait}</div>
         <div style="min-width:0">
-          <div style="color:${tierCol};font-weight:bold;font-size:13px;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${niceName}${isMvp ? ' <span style="color:#ffd34d;font-size:10px">★</span>' : ''}</div>
+          <div style="color:${rowData.color};font-weight:bold;font-size:13px;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rowData.name}${isMvp ? ' <span style="color:#ffd34d;font-size:10px">★</span>' : ''}</div>
           <div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;margin-top:2px">
-            ${isCombo ? '<span style="color:#ffd34d">COMBO</span> · ' : ''}${damageTypeLabel(def.damageType)} · ${def.melee ? 'Melee' : 'Ranged'}
+            ${rowData.subtitle}
           </div>
         </div>
-        <div style="text-align:right;color:#ff7733;font-weight:bold;font-size:14px">${fmtNum(tw.damageThisWave ?? 0)}</div>
+        <div style="text-align:right;color:#ff7733;font-weight:bold;font-size:14px">${fmtNum(rowData.waveDmg)}</div>
         <div style="text-align:right;color:${shareColor};font-weight:bold;font-size:13px">${sharePct.toFixed(1)}%</div>
-        <div style="text-align:right;color:#fff8e0;font-size:13px">${tw.killsThisWave ?? 0}</div>
+        <div style="text-align:right;color:#fff8e0;font-size:13px">${rowData.kind === 'trap' ? rowData.lifetimeKills : rowData.waveKills}</div>
         ${lifetimeMini}
-        <div style="text-align:right;color:${tierCol};font-weight:bold;font-size:13px">T${tw.qualityTier}</div>`;
+        <div style="text-align:right;color:${rowData.color};font-weight:bold;font-size:13px">${rowData.kind === 'trap' ? 'TRAP' : `T${rowData.tier}`}</div>`;
 
       rowsWrap.appendChild(row);
     });

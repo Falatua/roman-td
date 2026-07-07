@@ -4,6 +4,7 @@ import towersData from '../data/towers.json';
 import itemsData from '../data/items_permanent.json';
 import { BASE_TOWER_TYPES } from './TowerSystem';
 import { itemBuyPrice, Rarity } from './LootSystem';
+import { grantTrapInventory } from './TrapInventorySystem';
 
 export const MERCATOR_BACKROOM_MIN_WAVE = 9;
 export const MERCATOR_BACKROOM_PURCHASE_TRIGGER = 3;
@@ -187,9 +188,8 @@ export function claimMercatorBackRoomOffer(
       source: 'backroom'
     });
   } else if (offer.kind === 'SUPPLIES') {
-    state.trapInventory = state.trapInventory ?? {};
     for (const [trapId, count] of Object.entries(offer.trapBundle ?? {})) {
-      state.trapInventory[trapId] = (state.trapInventory[trapId] ?? 0) + Math.max(0, Math.floor(count));
+      grantTrapInventory(state, trapId, count);
     }
     state.rampartsOwned = (state.rampartsOwned ?? 0) + Math.max(0, Math.floor(offer.ramparts ?? 0));
   }
