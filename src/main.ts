@@ -80,7 +80,7 @@ import { showMercatorBackRoomModal, showSenateBailoutModal } from './render/Secr
 import { showHarborDraftModal, showHarborUnlockModal } from './render/HarborDraftModal';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { bossTrophyKillGoldBonus, consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
-import { failTestYourMight, isTestYourMightLeakEnemy, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
+import { failTestYourMight, isTestYourMightLeakEnemy, shouldDeferSurpriseRewardForTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
 import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy, shouldDropRareOnlyBossLoot } from './systems/RewardEligibility';
 import { isFinalBossBreach } from './systems/LeakRules';
@@ -6806,6 +6806,7 @@ async function boot() {
     // back-to-back during the post-wave BUILD_PHASE.
     if (canReceiveRunReward(state)
         && state.pendingSurpriseReward && !(state as any).__surpriseRewardModalShown
+        && !shouldDeferSurpriseRewardForTestYourMight(state)
         && state.phase !== GamePhase.WAVE_PHASE) {
       (state as any).__surpriseRewardModalShown = true;
       const kind = state.pendingSurpriseReward.kind;

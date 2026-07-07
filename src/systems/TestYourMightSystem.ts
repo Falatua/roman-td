@@ -105,7 +105,6 @@ export function startTestYourMight(state: GameStateShape): void {
   state.activeSurpriseEvent = null;
   state.extraSurpriseEvents = [];
   state.surpriseEventScars = [];
-  state.pendingSurpriseReward = null;
   (state as any).__surpriseSpawnRoundIdx = 0;
   state.spawnQueue = [];
   state.spawnElapsed = 0;
@@ -181,6 +180,14 @@ export function tickTestYourMightSpawns(state: GameStateShape): boolean {
 
 export function isTestYourMightLeakEnemy(enemy: any): boolean {
   return !!enemy?.__testYourMightEnemy;
+}
+
+export function shouldDeferSurpriseRewardForTestYourMight(state: GameStateShape): boolean {
+  if (state.wave !== TEST_YOUR_MIGHT_AFTER_WAVE) return false;
+  if (state.testYourMightDeclined || state.testYourMightCleared || state.testYourMightFailed) return false;
+  return !!(state as any).__testYourMightOpen
+    || !!state.testYourMightAccepted
+    || !!state.testYourMightActive;
 }
 
 export function completeTestYourMight(state: GameStateShape): boolean {

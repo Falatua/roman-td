@@ -10,6 +10,7 @@ import {
   failTestYourMight,
   shouldOfferTestYourMight,
   isTestYourMightLeakEnemy,
+  shouldDeferSurpriseRewardForTestYourMight,
   startTestYourMight,
   TEST_YOUR_MIGHT_AFTER_WAVE,
   TEST_YOUR_MIGHT_DISPLAY_WAVE,
@@ -79,6 +80,34 @@ describe('Test Your Might bonus wave', () => {
     expect(s.testYourMightAccepted).toBe(false);
     expect(s.testYourMightActive).toBe(true);
     expect(displayWaveNumber(s)).toBe('10.5');
+  });
+
+  it('defers surprise reward modals while the W10.5 offer or challenge is in the way', () => {
+    const s = bootstrapState();
+    (s as any).pendingSurpriseReward = { kind: 'UPRISING' };
+
+    (s as any).__testYourMightOpen = true;
+    expect(shouldDeferSurpriseRewardForTestYourMight(s)).toBe(true);
+
+    (s as any).__testYourMightOpen = false;
+    acceptTestYourMight(s);
+    expect(shouldDeferSurpriseRewardForTestYourMight(s)).toBe(true);
+
+    startWave(s);
+    expect(s.testYourMightActive).toBe(true);
+    expect(shouldDeferSurpriseRewardForTestYourMight(s)).toBe(true);
+
+    completeTestYourMight(s);
+    expect(shouldDeferSurpriseRewardForTestYourMight(s)).toBe(false);
+    expect(s.pendingSurpriseReward).toEqual({ kind: 'UPRISING' });
+  });
+
+  it('allows the surprise reward if Test Your Might is declined', () => {
+    const s = bootstrapState();
+    (s as any).pendingSurpriseReward = { kind: 'UPRISING' };
+    declineTestYourMight(s);
+    expect(shouldDeferSurpriseRewardForTestYourMight(s)).toBe(false);
+    expect(s.pendingSurpriseReward).toEqual({ kind: 'UPRISING' });
   });
 
   it('starts a special spawn queue without advancing the campaign wave', () => {
@@ -166,7 +195,7 @@ describe('Test Your Might bonus wave', () => {
     expect(s.gameOverAt).toBe(-1);
   });
 
-  it('clears stale enemies and surprise runtime before launching W10.5', () => {
+  it('clears stale enemies and surprise runtime before launching W10.5 without deleting earned surprise rewards', () => {
     const s = bootstrapState();
     s.enemies.set('stale', {
       id: 'stale',
@@ -197,11 +226,13 @@ describe('Test Your Might bonus wave', () => {
     (s as any).activeSurpriseEvent = { kind: 'UPRISING' };
     (s as any).extraSurpriseEvents = [{ kind: 'INVASION' }];
     (s as any).pendingSurpriseReward = { kind: 'UPRISING' };
+    (s as any).queuedSurpriseRewards = [{ kind: 'GATES_OF_HELL' }];
     startTestYourMight(s);
     expect(s.enemies.size).toBe(0);
     expect(s.activeSurpriseEvent).toBeNull();
     expect(s.extraSurpriseEvents).toEqual([]);
-    expect(s.pendingSurpriseReward).toBeNull();
+    expect(s.pendingSurpriseReward).toEqual({ kind: 'UPRISING' });
+    expect(s.queuedSurpriseRewards).toEqual([{ kind: 'GATES_OF_HELL' }]);
     expect((s as any).carriedEnemiesThisWave).toBe(0);
   });
 
