@@ -160,10 +160,11 @@ describe('Tower effective stats', () => {
     expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(235.0);
   });
 
-  it('marks Sagittarius and Aquila Venator as flyer-only targeting towers', () => {
-    for (const type of [TowerType.SAGITTARIUS, TowerType.AQUILA_VENATOR]) {
+  it('marks Sagittarius, Aquila Venator, and Skyreaper Battery as flyer-only targeting towers', () => {
+    for (const type of [TowerType.SAGITTARIUS, TowerType.AQUILA_VENATOR, TowerType.SKYREAPER_BATTERY]) {
       expect((towersData as any)[type].antiAirOnly).toBe(true);
-      expect(createTower(type, type === TowerType.AQUILA_VENATOR ? 3 : 1, 0, 0, 1).targetingMode).toBe(TargetingMode.FLYERS);
+      const tier = type === TowerType.AQUILA_VENATOR ? 3 : type === TowerType.SKYREAPER_BATTERY ? 4 : 1;
+      expect(createTower(type, tier, 0, 0, 1).targetingMode).toBe(TargetingMode.FLYERS);
     }
   });
 

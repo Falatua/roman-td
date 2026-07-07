@@ -219,7 +219,7 @@ describe('Tower targeting modes', () => {
     expect(picked?.id).toBe('C');
   });
 
-  it('Sagittarius and Aquila Venator can only target flyers in every targeting mode', () => {
+  it('Sagittarius, Aquila Venator, and Skyreaper Battery can only target flyers in every targeting mode', () => {
     const { state, enemies } = setup();
     const groundOnly = enemies.filter(e => !e.isFlyer);
     const flyer = enemies.find(e => e.isFlyer)!;
@@ -233,8 +233,9 @@ describe('Tower targeting modes', () => {
       TargetingMode.FLYERS,
     ];
 
-    for (const type of [TowerType.SAGITTARIUS, TowerType.AQUILA_VENATOR]) {
-      const tower = createTower(type, type === TowerType.AQUILA_VENATOR ? 3 : 1, 5, 5, 1);
+    for (const type of [TowerType.SAGITTARIUS, TowerType.AQUILA_VENATOR, TowerType.SKYREAPER_BATTERY]) {
+      const tier = type === TowerType.AQUILA_VENATOR ? 3 : type === TowerType.SKYREAPER_BATTERY ? 4 : 1;
+      const tower = createTower(type, tier, 5, 5, 1);
       for (const mode of modes) {
         tower.targetingMode = mode;
         expect(pickTarget(state, tower, enemies, 10)?.id, `${type} ${mode} should pick the flyer`).toBe(flyer.id);
