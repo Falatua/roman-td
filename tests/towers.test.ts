@@ -9,7 +9,7 @@ import { spawnProjectile } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind, TargetingMode } from '../src/types';
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS, GRID } from '../src/constants';
 import { createGameState } from '../src/GameState';
-import { initializeGrid, isBuildable } from '../src/systems/GridManager';
+import { initializeGrid, isBuildable, isWaterZoneTile } from '../src/systems/GridManager';
 import towersData from '../src/data/towers.json';
 import wavesData from '../src/data/waves.json';
 
@@ -792,7 +792,9 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     // anchors spread across the map.
     // 2026-07-05 — Treasury was moved two tiles right to (15,16), making
     // Treasury<->War the tightest pair at manhattan 4.
-    const spread = AURA_TILES.filter(t => t.kind !== 'IVORY' && t.kind !== 'AMBER');
+    // 2026-07-07 — TIDE is deliberately anchored to the ocean edge, so it
+    // joins the later special-position tiles rather than the original six.
+    const spread = AURA_TILES.filter(t => t.kind !== 'IVORY' && t.kind !== 'AMBER' && t.kind !== 'TIDE');
     expect(spread.length).toBe(6);
     for (let i = 0; i < spread.length; i++) {
       for (let j = i + 1; j < spread.length; j++) {
@@ -819,13 +821,14 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     }
   });
 
-  it('exactly 8 aura tiles on the map (one of each kind)', () => {
-    expect(AURA_TILES.length).toBe(8);
+  it('exactly 9 aura tiles on the map (one of each kind)', () => {
+    expect(AURA_TILES.length).toBe(9);
     const kinds = new Set(AURA_TILES.map(t => t.kind));
-    expect(kinds.size).toBe(8);  // all distinct
+    expect(kinds.size).toBe(9);  // all distinct
     expect(kinds.has('EMERALD')).toBe(true);
     expect(kinds.has('IVORY')).toBe(true);
     expect(kinds.has('AMBER')).toBe(true);
+    expect(kinds.has('TIDE')).toBe(true);
   });
 
   it('IVORY tile converts a tower\'s damage type to DIVINE', () => {
@@ -839,6 +842,36 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
   it('AMBER tile declares a splash blast radius', () => {
     expect(AURA_TILE_EFFECTS.AMBER?.splashBonus).toBeGreaterThan(0);
     expect(AURA_TILE_EFFECTS.AMBER?.label).toBe('BLAST TILE');
+  });
+
+  it('TIDE tile sits on buildable ocean-edge land and declares a 30% hit slow', () => {
+    const state = createGameState();
+    initializeGrid(state);
+    const tide = AURA_TILES.find(t => t.kind === 'TIDE')!;
+    expect(tide).toMatchObject({ col: 14, row: 20 });
+    expect(isBuildable(state, tide.col, tide.row)).toBe(true);
+    expect(isWaterZoneTile(tide.col - 1, tide.row)).toBe(true);
+    expect(AURA_TILE_EFFECTS.TIDE?.hitSlowPct).toBeCloseTo(0.30, 4);
+    expect(AURA_TILE_EFFECTS.TIDE?.label).toBe('TIDE TILE');
+  });
+
+  it('tower on TIDE tile slows only enemies it damages', () => {
+    const state = createGameState();
+    initializeGrid(state);
+    const tide = AURA_TILES.find(t => t.kind === 'TIDE')!;
+    const tower = createTower(TowerType.DECURION, 3, tide.col, tide.row, 0);
+    tower.attackCooldown = 0;
+    state.towers.set(tower.id, tower);
+    const center = towerCenter(tower);
+    const hit = testEnemy('hit', center.x + GRID.TILE, center.y);
+    const untouched = testEnemy('untouched', 900, 700);
+    state.enemies.set(hit.id, hit);
+    state.enemies.set(untouched.id, untouched);
+
+    tickCombat(state, 0.016, noopCombatHooks());
+
+    expect(hit.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.30)).toBe(true);
+    expect(untouched.statusEffects.some(s => s.kind === StatusEffectKind.SLOW)).toBe(false);
   });
 
   it('all siege projectiles get at least a baseline splash radius', () => {

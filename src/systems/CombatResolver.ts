@@ -18,7 +18,7 @@
 
 import { Tower, Enemy, TargetingMode, DamageType, StatusEffectKind, EntityType, TowerType, EnemyType, EnemyFaction } from '../types';
 import { GameStateShape } from '../GameState';
-import { GRID, KILL_BONUS_RATE, KILL_BONUS_MAX_PCT, FACTION_WEATHER } from '../constants';
+import { GRID, KILL_BONUS_RATE, KILL_BONUS_MAX_PCT, FACTION_WEATHER, AURA_TILE_EFFECTS } from '../constants';
 import { towerEffectiveStats, towerPerAttackDamageBase, towerAuraTileKind } from './TowerSystem';
 import { resistanceModifier } from './DamageTypeSystem';
 import { spawnPhoenixMinions } from './EnemySystem';
@@ -111,6 +111,16 @@ function isSuperComboClassTower(towerType: TowerType): boolean {
          ability.includes('SUPER COMBO') ||
          ability.includes('COMBO-OF-COMBO') ||
          ability.includes('COMBOS-OF-COMBOS');
+}
+
+function applyAuraTileHitEffects(tower: Tower, target: Enemy, damage: number): void {
+  if (damage <= 0 || target.hp <= 0) return;
+  const auraKind = towerAuraTileKind(tower);
+  if (!auraKind) return;
+  const eff = AURA_TILE_EFFECTS[auraKind];
+  if (eff.hitSlowPct) {
+    pushStatus(target, StatusEffectKind.SLOW, eff.hitSlowDuration ?? 2.5, eff.hitSlowPct, tower.qualityTier);
+  }
 }
 
 export function finalFiveApexDamageMult(state: GameStateShape, tower: Tower): number {
@@ -1812,6 +1822,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           target.hp -= damage;
           target.hpFlashTimer = 0.16;
           target.lastDamagedTick = state.tick;
+          applyAuraTileHitEffects(t, target, damage);
           // 2026-05-19 — DAMNATIO MEMORIAE execute: after damage lands,
           // any non-boss enemy that's now below 35% maxHp is instantly
           // killed by this tower's attacks. Bosses are immune. MELEE
@@ -2396,6 +2407,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   target.hp -= damage;
   target.hpFlashTimer = 0.16;
   target.lastDamagedTick = state.tick;
+  applyAuraTileHitEffects(t, target, damage);
   // 2026-05-19 — DAMNATIO MEMORIAE execute (see line ~1055 for the
   // primary hit-site copy). Bosses immune. MELEE only.
   if (target.hp > 0 && !target.isBoss && t.equippedItems.includes('DAMNATIO_MEMORIAE') && t.damageType === DamageType.PHYS_MELEE) {

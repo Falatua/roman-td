@@ -843,6 +843,7 @@ export class RenderEngine {
         RED: 'MAP_AURA_RED', CYAN: 'MAP_AURA_CYAN',
         GOLD: 'MAP_AURA_GOLD', EMERALD: 'MAP_AURA_EMERALD',
         IVORY: 'MAP_AURA_IVORY', AMBER: 'MAP_AURA_AMBER',
+        TIDE: 'MAP_AURA_TIDE',
       };
       let allLoaded = true;
       for (const a of AURA_TILES) {

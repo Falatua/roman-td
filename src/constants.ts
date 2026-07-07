@@ -345,7 +345,7 @@ export const COIN_FOOTPRINT_TILES = 1; // 1x1 waypoint coin footprint (smaller, 
 export interface AuraTile {
   col: number;
   row: number;
-  kind: 'PURPLE' | 'BLUE' | 'RED' | 'CYAN' | 'GOLD' | 'EMERALD' | 'IVORY' | 'AMBER';
+  kind: 'PURPLE' | 'BLUE' | 'RED' | 'CYAN' | 'GOLD' | 'EMERALD' | 'IVORY' | 'AMBER' | 'TIDE';
 }
 export const AURA_TILES: AuraTile[] = [
   { col: 8,  row: 9,  kind: 'PURPLE'  },  // left            · +30% attack speed (tempo, moved right 2)
@@ -362,7 +362,8 @@ export const AURA_TILES: AuraTile[] = [
   // than lining up, while still anchoring the right-side WP3↔WP4 lanes. Both
   // on open buildable terrain (clear of every waypoint + structure footprint).
   { col: 31, row: 5,  kind: 'IVORY'   },  // upper-right pocket · near WP4 · tower strikes as DIVINE (moved left 1)
-  { col: 25, row: 15, kind: 'AMBER'   }   // centre-lower pocket · near WP3 · tower gains splash blast
+  { col: 25, row: 15, kind: 'AMBER'   },  // centre-lower pocket · near WP3 · tower gains splash blast
+  { col: 14, row: 20, kind: 'TIDE'    }   // ocean edge        · damaged enemies are slowed 30%
 ];
 // Effect lookup table — used by stat math, combat hooks, and tooltips
 // so the same numbers come out of one source. Multipliers are applied
@@ -380,6 +381,8 @@ export const AURA_TILE_EFFECTS: Record<AuraTile['kind'], {
   rangeBonus?: number;    // optional flat range bonus in tiles
   divineDamage?: boolean; // optional — tower's attacks resolve as DIVINE damage
   splashBonus?: number;   // optional — minimum splash (AoE) radius in tiles
+  hitSlowPct?: number;    // optional — direct-damaged enemies receive SLOW
+  hitSlowDuration?: number;
 }> = {
   PURPLE:  { color: 0xa060ff, label: 'TEMPO TILE',      description: 'Tower on this tile attacks +30% faster.',                                     spdMult: 1.30 },
   BLUE:    { color: 0x66aaff, label: 'WAR TILE',        description: 'Tower on this tile deals +30% damage.',                                       dmgMult: 1.30 },
@@ -397,6 +400,9 @@ export const AURA_TILE_EFFECTS: Record<AuraTile['kind'], {
   // IVORY converts the attack's damage type to DIVINE (pierces most
   // resistances). AMBER grants a splash blast (applied as a minimum
   // projectile splash radius in ProjectileSystem.spawnProjectile).
+  // TIDE is a coastline control tile: it keeps the tower's own identity,
+  // but any enemy actually damaged by that tower is slowed.
   IVORY:   { color: 0xfff2cc, label: 'DIVINE TILE',     description: 'Any tower on this tile strikes as DIVINE damage — bypasses most resistances.', divineDamage: true },
-  AMBER:   { color: 0xff8a3c, label: 'BLAST TILE',      description: 'Tower on this tile gains a splash blast — every hit also damages enemies within 1.2 tiles.', splashBonus: 1.2 }
+  AMBER:   { color: 0xff8a3c, label: 'BLAST TILE',      description: 'Tower on this tile gains a splash blast — every hit also damages enemies within 1.2 tiles.', splashBonus: 1.2 },
+  TIDE:    { color: 0x26f6e2, label: 'TIDE TILE',       description: 'Tower on this ocean-edge tile keeps its normal attacks, and any enemy it damages is slowed 30%.', hitSlowPct: 0.30, hitSlowDuration: 2.5 }
 };

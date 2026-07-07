@@ -301,6 +301,7 @@ const MANIFEST: Record<string, string> = {
   //   CYAN/Aether   → winged feather + wave crests (anti-flyer)
   //   GOLD/Treasury → Roman emperor profile + laurel wreath + coins
   //   EMERALD/Tower → all-seeing eye + watchtower silhouettes (range)
+  //   TIDE/Ocean    → shell + wave sigil + teal gem (slow on hit)
   MAP_AURA_PURPLE:  'map_overhaul/m_aura_purple.png',
   MAP_AURA_BLUE:    'map_overhaul/m_aura_blue.png',
   MAP_AURA_RED:     'map_overhaul/m_aura_red.png',
@@ -309,6 +310,7 @@ const MANIFEST: Record<string, string> = {
   MAP_AURA_EMERALD: 'map_overhaul/m_aura_emerald.png',
   MAP_AURA_IVORY:   'map_overhaul/m_aura_ivory.png',
   MAP_AURA_AMBER:   'map_overhaul/m_aura_amber.png',
+  MAP_AURA_TIDE:    'map_overhaul/m_aura_tide.png',
   // Waypoints
   WP1: 'w_wp1_aquila.png', WP2: 'w_wp2_laurel.png', WP3: 'w_wp3_spqr.png',
   WP4: 'w_wp4_shewolf.png', WP5: 'w_wp5_fasces.png', WP6: 'w_wp6_jupiter.png',
