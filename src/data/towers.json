@@ -761,7 +761,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 3,
-    "ability": "ARC LIGHTNING: each shot chains to 4 nearby enemies, decaying 25% per jump. Stuns the primary target.",
+    "ability": "ARC LIGHTNING: each shot chains to 4 nearby enemies, decaying 25% per jump. Stuns the primary target. STORM CONDUCTOR: +100% damage vs ocean / sea-based enemies - soaked bodies carry the lightning. Fire, burn, and hellfire still do zero damage to those water-born threats.",
     "critChance": 0.18,
     "critMult": 2.4
   },

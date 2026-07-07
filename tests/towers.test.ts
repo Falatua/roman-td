@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { createTower, towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, SIEGE_FLYER_MISS_CHANCE, tickCombat } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat } from '../src/systems/CombatResolver';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { itemFamily } from '../src/systems/ItemRules';
 import { spawnProjectile } from '../src/systems/ProjectileSystem';
@@ -166,6 +166,40 @@ describe('Tower effective stats', () => {
       const tier = type === TowerType.AQUILA_VENATOR ? 3 : type === TowerType.SKYREAPER_BATTERY ? 4 : 1;
       expect(createTower(type, tier, 0, 0, 1).targetingMode).toBe(TargetingMode.FLYERS);
     }
+  });
+
+  it('makes Stormcaller a lightning specialist against ocean threats', () => {
+    const stormDamage = (oceanSpawn: boolean) => {
+      const state = createGameState();
+      const stormcaller = createTower(TowerType.STORMCALLER, 3, 5, 5, 0);
+      stormcaller.attackCooldown = 0;
+      state.towers.set(stormcaller.id, stormcaller);
+
+      const c = towerCenter(stormcaller);
+      const target = testEnemy(oceanSpawn ? 'drenched-target' : 'dry-target', c.x + GRID.TILE, c.y);
+      target.hp = 100000;
+      target.maxHp = 100000;
+      if (oceanSpawn) (target as any).__oceanSpawn = true;
+      state.enemies.set(target.id, target);
+
+      let firedDamage = 0;
+      const oldRandom = Math.random;
+      Math.random = () => 0.99;
+      try {
+        tickCombat(state, 0.016, {
+          ...noopCombatHooks(),
+          onProjectileFire: (_tower, _enemy, damage) => { firedDamage = damage; }
+        });
+      } finally {
+        Math.random = oldRandom;
+      }
+      return firedDamage;
+    };
+
+    const ability = String((towersData as any)[TowerType.STORMCALLER].ability);
+    expect(ability).toContain('+100% damage vs ocean / sea-based enemies');
+    expect(ability).toContain('Fire, burn, and hellfire still do zero damage');
+    expect(stormDamage(true)).toBeCloseTo(stormDamage(false) * STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, 4);
   });
 
   it('applies a linear tier damage ramp (T5 hits 2.5x T1)', () => {

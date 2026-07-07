@@ -445,6 +445,7 @@ const OCEAN_THREAT_TYPES = new Set<string>([
   'NETHER_AMPHIBIOUS_GIANT',
   'TIDECALLER_COMMANDER'
 ]);
+export const STORMCALLER_OCEAN_THREAT_DAMAGE_MULT = 2.0;
 
 function isOceanThreat(target: Enemy): boolean {
   return !!(target as any).__oceanSpawn || OCEAN_THREAT_TYPES.has(String(target.type));
@@ -1392,6 +1393,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.SKY_DOMINION && target.archetype === 'ELITE') damage *= 1.60;     // +60% vs elites
       if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 2.00;                 // CITY-BREAKER: +100% vs bosses
       if (t.type === TowerType.INFERNAL_COLOSSUS && target.isBoss) damage *= 3.00;                // +200% vs bosses
+      if (t.type === TowerType.STORMCALLER && oceanThreat) damage *= STORMCALLER_OCEAN_THREAT_DAMAGE_MULT; // +100% vs drenched ocean threats
       if ((t.type === TowerType.TRIREME_BALLISTA || t.type === TowerType.PRAETORIAN_FLEET)
           && (target.archetype === 'ELITE' || target.isBoss || isCommanderType((target as any).type))) {
         damage *= (t as any).placedOnWater ? 1.45 : 1.25;
