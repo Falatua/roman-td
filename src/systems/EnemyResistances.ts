@@ -322,7 +322,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // Dune Stalker: lightly-wrapped fast skirmisher — little armor, slippery to slows.
   [EnemyType.DUNE_STALKER]:     { slow: 0.6, burn: 1.10, poison: 0.85, bleed: 1.10 },
   // Stone Juggernaut: living granite — resists physical + DoT, cracked by siege/divine.
-  [EnemyType.STONE_JUGGERNAUT]: { melee: 0.6, ranged: 0.6, burn: 0.55, bleed: 0.3, poison: 0.3, siege: 1.75, divine: 1.55 }
+  [EnemyType.STONE_JUGGERNAUT]: { melee: 0.6, ranged: 0.6, burn: 0.55, bleed: 0.3, poison: 0.3, siege: 1.75, divine: 1.75 }
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {

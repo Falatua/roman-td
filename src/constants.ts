@@ -120,7 +120,7 @@ export const WAVE = {
 } as const;
 
 export const ENEMY_BALANCE = {
-  FLYER_HEALTH_MULT: 1.18
+  FLYER_HEALTH_MULT: 1.22
 } as const;
 
 // Tier multipliers (2026-05 — 20-WAVE CAMPAIGN). Re-introduces a damage

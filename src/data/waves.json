@@ -90,7 +90,7 @@
     "wave": 6,
     "type": "F",
     "faction": "CELTS",
-    "hpMult": 1.8,
+    "hpMult": 2.05,
     "gold": 19,
     "spawns": [
       {
@@ -103,7 +103,7 @@
     "wave": 7,
     "type": "G",
     "faction": "CARTHAGE",
-    "hpMult": 2.16,
+    "hpMult": 2.28,
     "gold": 16,
     "spawns": [
       {
@@ -120,7 +120,7 @@
     "wave": 8,
     "type": "M",
     "faction": "CARTHAGE",
-    "hpMult": 2.1,
+    "hpMult": 2.25,
     "gold": 17,
     "resistReduction": 0.15,
     "spawns": [
@@ -146,7 +146,7 @@
     "wave": 9,
     "type": "G",
     "faction": "CARTHAGE",
-    "hpMult": 2.4,
+    "hpMult": 2.55,
     "gold": 21,
     "spawns": [
       {
@@ -167,7 +167,7 @@
     "wave": 10,
     "type": "B",
     "faction": "CARTHAGE",
-    "hpMult": 5.5,
+    "hpMult": 5.9,
     "gold": 32,
     "spawns": [
       {
@@ -200,7 +200,7 @@
     "wave": 12,
     "type": "F",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 5.4,
+    "hpMult": 5.8,
     "gold": 14,
     "enemyDamageReductPct": 0.15,
     "comboAntiAirArmorPct": 0.18,
@@ -225,7 +225,7 @@
     "wave": 13,
     "type": "M",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 6.5,
+    "hpMult": 7,
     "gold": 16,
     "necromancy": true,
     "enemyDotResistPct": 0.3,
@@ -249,7 +249,7 @@
     "wave": 14,
     "type": "M",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 9,
+    "hpMult": 9.5,
     "gold": 19,
     "enemySpeedBoostPct": 0.15,
     "comboAntiAirArmorPct": 0.14,
@@ -272,7 +272,7 @@
     "wave": 15,
     "type": "M",
     "faction": "MONGOLS",
-    "hpMult": 7,
+    "hpMult": 7.5,
     "gold": 40,
     "spawns": [
       {

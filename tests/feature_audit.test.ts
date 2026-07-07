@@ -300,6 +300,95 @@ describe('Tower roster integrity', () => {
     expect(baseTowerAttackFlashWindow('FLAMEN')).toBeCloseTo(0.34, 4);
     expect(baseTowerAttackFlashWindow('JULIUS_CAESAR')).toBeCloseTo(0.18, 4);
   });
+
+  it('new Harbor and ocean sprites stay transparent, readable, and visually non-flat', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const sharp = (await import('sharp')).default;
+    const keys = [
+      'TIDECALLER_COMMANDER',
+      'TRIREME_BALLISTA',
+      'CORVUS_BOARDING_SHIP',
+      'RAMMING_QUINQUEREME',
+      'CHARYBDIS_VORTEX',
+      'NEREID_ORACLE',
+      'HYDRA_OF_LERNA',
+      'PRAETORIAN_FLEET',
+      'CORVUS_LEGION_DOCK',
+      'ORACLE_LIGHTHOUSE',
+      'ABYSSAL_ONAGER',
+      'HYDRA_BEAST_PIT',
+      'MARS_TIDAL_BASTION',
+      'ITEM_BRINEHOOK_ROPE',
+      'ITEM_AEGEAN_PEARL',
+      'ITEM_NEPTUNES_TRIDENT'
+    ];
+    for (const key of keys) {
+      const rel = (ASSET_KEYS as any)[key];
+      expect(rel, `${key} should be registered in the asset manifest`).toBeTruthy();
+      const file = path.join(process.cwd(), 'public/assets/sprites', rel);
+      expect(fs.existsSync(file), `${key} asset missing at ${file}`).toBe(true);
+      const img = sharp(file).ensureAlpha();
+      const meta = await img.metadata();
+      expect(meta.width, `${key} width`).toBe(128);
+      expect(meta.height, `${key} height`).toBe(128);
+      expect(meta.hasAlpha, `${key} should keep a transparent background`).toBe(true);
+      const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
+      let opaque = 0;
+      let tinyAlpha = 0;
+      const colorBuckets = new Set<string>();
+      for (let i = 0; i < data.length; i += 4) {
+        const a = data[i + 3];
+        if (a > 0 && a <= 4) tinyAlpha++;
+        if (a > 16) {
+          opaque++;
+          colorBuckets.add(`${data[i] >> 4},${data[i + 1] >> 4},${data[i + 2] >> 4}`);
+        }
+      }
+      const coverage = opaque / (info.width * info.height);
+      expect(tinyAlpha, `${key} has alpha dust that can look like a dirty background`).toBe(0);
+      expect(coverage, `${key} should not be a tiny unreadable mark`).toBeGreaterThan(0.12);
+      expect(coverage, `${key} should preserve transparent negative space`).toBeLessThan(0.65);
+      const minColorBuckets = key.startsWith('ITEM_') ? 8 : 24;
+      expect(colorBuckets.size, `${key} should have enough color variation to match the detailed pixel-art roster`).toBeGreaterThan(minColorBuckets);
+    }
+  });
+
+  it('Sulla meteor projectile and impact sheets keep stable transparent animation frames', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const sharp = (await import('sharp')).default;
+    const assets = [
+      { key: 'PROJ_SULLA_METEOR', file: 'sulla_meteor_projectile.png', w: 96, h: 96, frames: 1 },
+      { key: 'SULLA_METEOR_PROJECTILE', file: 'sulla_meteor_projectile_sheet.png', w: 576, h: 96, frames: 6 },
+      { key: 'SULLA_METEOR_IMPACT', file: 'sulla_meteor_impact_sheet.png', w: 768, h: 128, frames: 6 }
+    ];
+    for (const asset of assets) {
+      expect((ASSET_KEYS as any)[asset.key], `${asset.key} should be registered`).toBe(`../heroes/attacks/${asset.file}`);
+      const file = path.join(process.cwd(), 'public/assets/heroes/attacks', asset.file);
+      expect(fs.existsSync(file), `${asset.file} missing`).toBe(true);
+      const img = sharp(file).ensureAlpha();
+      const meta = await img.metadata();
+      expect(meta.width, `${asset.file} width`).toBe(asset.w);
+      expect(meta.height, `${asset.file} height`).toBe(asset.h);
+      expect(meta.hasAlpha, `${asset.file} should be transparent`).toBe(true);
+      const { data } = await img.raw().toBuffer({ resolveWithObject: true });
+      let tinyAlpha = 0;
+      for (let i = 3; i < data.length; i += 4) if (data[i] > 0 && data[i] <= 4) tinyAlpha++;
+      expect(tinyAlpha, `${asset.file} has alpha dust`).toBe(0);
+      const frameW = asset.frames === 1 ? asset.w : asset.w / asset.frames;
+      for (let frame = 0; frame < asset.frames; frame++) {
+        const raw = await sharp(file)
+          .extract({ left: frame * frameW, top: 0, width: frameW, height: asset.h })
+          .ensureAlpha()
+          .raw()
+          .toBuffer();
+        const bounds = alphaBounds(raw, Math.max(frameW, asset.h));
+        expect(bounds.width, `${asset.file} frame ${frame + 1} should contain visible art`).toBeGreaterThan(12);
+        expect(bounds.height, `${asset.file} frame ${frame + 1} should contain visible art`).toBeGreaterThan(12);
+      }
+    }
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────

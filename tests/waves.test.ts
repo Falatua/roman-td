@@ -32,7 +32,7 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
     //   linearStep    = 1 + 0.10*w
     //   midLateStep   = 0.10 * max(0, w-10)
     //   aggressiveLateStep = 0.15 * max(0, w-11)   (W11+ creative ramp)
-    //   pressure      = 1 + min(0.20, max(0, w-5) * 0.0075)
+    //   pressure      = 1 + min(0.25, max(0, w-5) * 0.012)
     //   linearTotal   = (linearStep + midLateStep + aggressiveLateStep) * pressure
     //   hp_mult       = baseHpMult * linearTotal * pow(2.00, floor((w-1)/5))
     expect(effectiveWaveHpMult(1, 1)).toBeCloseTo(1.10 * 1.0, 4);
@@ -50,9 +50,9 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
     expect(result).toBeCloseTo(w20Authored * (3.00 + 1.00 + 1.35) * campaignPressureHpMult(20) * Math.pow(2.0, 3), 4);
   });
 
-  it('keeps Wave 7 Carthage enemies on the 20% higher health line', () => {
+  it('keeps Wave 7 Carthage enemies on the hardened post-W5 health line', () => {
     const w7 = (wavesData as any[]).find(w => w.wave === 7);
-    expect(w7.hpMult).toBe(2.16);
+    expect(w7.hpMult).toBe(2.28);
   });
 
   it('curve is monotonic across the 30-wave run', () => {
@@ -81,13 +81,31 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
 
   it('adds a modest linear campaign pressure layer after W5', () => {
     expect(campaignPressureHpMult(5)).toBe(1);
-    expect(campaignPressureHpMult(6)).toBeCloseTo(1.0075, 4);
-    expect(campaignPressureHpMult(20)).toBeCloseTo(1.1125, 4);
-    expect(campaignPressureHpMult(30)).toBeCloseTo(1.1875, 4);
+    expect(campaignPressureHpMult(6)).toBeCloseTo(1.012, 4);
+    expect(campaignPressureHpMult(20)).toBeCloseTo(1.18, 4);
+    expect(campaignPressureHpMult(30)).toBeCloseTo(1.25, 4);
     expect(campaignPressureResistMult(5)).toBe(1);
-    expect(campaignPressureResistMult(6)).toBeCloseTo(0.996, 4);
-    expect(campaignPressureResistMult(30)).toBeCloseTo(0.90, 4);
-    expect(campaignPressureResistMult(30, true)).toBeCloseTo(0.9375, 4);
+    expect(campaignPressureResistMult(6)).toBeCloseTo(0.9945, 4);
+    expect(campaignPressureResistMult(30)).toBeCloseTo(0.8625, 4);
+    expect(campaignPressureResistMult(30, true)).toBeCloseTo(0.9125, 4);
+  });
+
+  it('keeps W6-W15 meaningfully hardened after the first boss', () => {
+    const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
+    const expected = new Map<number, number>([
+      [6, 2.05],
+      [7, 2.28],
+      [8, 2.25],
+      [9, 2.55],
+      [10, 5.9],
+      [12, 5.8],
+      [13, 7.0],
+      [14, 9.5],
+      [15, 7.5]
+    ]);
+    for (const [wave, hpMult] of expected) {
+      expect(byWave.get(wave)?.hpMult, `W${wave} authored HP should stay firm after W5`).toBe(hpMult);
+    }
   });
 });
 
