@@ -78,7 +78,7 @@ import { showBossTrophyModal } from './render/BossTrophyModal';
 import { showTestYourMightModal } from './render/TestYourMightModal';
 import { showLastStandTrove } from './render/LastStandTrove';
 import { showMercatorBackRoomModal } from './render/SecretEvents';
-import { showHarborDraftModal, showHarborUnlockModal } from './render/HarborDraftModal';
+import { showHarborDraftModal, showHarborWaveClearModal } from './render/HarborDraftModal';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { bossTrophyKillGoldBonus, consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, isTestYourMightLeakEnemy, shouldDeferSurpriseRewardForTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
@@ -97,6 +97,7 @@ import {
   isOceanThreatEnemy,
   markHarborUnlocked,
   placeTowerTileForType,
+  queueHarborDraftForClearedOceanWave,
   restoreTowerTileForType,
   shouldUnlockHarborFromKill
 } from './systems/HarborSystem';
@@ -822,8 +823,8 @@ async function boot() {
       col,
       row,
       (state as any).harborUnlocked
-        ? 'Ocean tiles can only hold Harbor towers. Click the ocean with no placement armed to open the Harbor Draft, or place a purchased naval contract here.'
-        : 'Ocean tiles are stirring, but the Harbor is still locked. Defeat a Sea Giant to unlock ocean-based towers.'
+        ? 'Ocean tiles can only hold Harbor towers. Buy naval contracts from the Harbor panel after clearing water-enemy waves, then place those contracts here.'
+        : 'Ocean tiles are stirring. Clear a wave with water-based enemies to receive the Harbor Draft option.'
     );
   }
 
@@ -6352,15 +6353,7 @@ async function boot() {
         return;
       }
     } else if (tile === TileType.WATER && !hasPlacementIntent) {
-      if ((state as any).harborUnlocked) {
-        if (!isPreWavePhase()) {
-          state.hint = 'The Harbor Draft opens between waves. Finish the fight, then click the ocean.';
-          return;
-        }
-        showHarborDraftModal(state, buildHarborDraftOffers(state), () => updateHeroPlacementBanner());
-      } else {
-        showOceanTowerOnlyAlert(col, row);
-      }
+      showOceanTowerOnlyAlert(col, row);
       return;
     }
 
@@ -8175,6 +8168,7 @@ async function boot() {
         const picked = autoPickupOnBuildPhase(state, inventory);
         if (picked > 0) state.hint = `Picked up ${picked} item${picked > 1 ? 's' : ''}.`;
         grantFinalBossPreludeLegendary();
+        queueHarborDraftForClearedOceanWave(state);
         // Mercator visit. Builds a SEPARATE shop state from the gate shop
         // so both vendors are usable on the same wave. The dedicated HUD
         // button is toggled on (and back off when the player starts the
@@ -8265,8 +8259,9 @@ async function boot() {
             offerCampaignRelic();
           }
         };
-        const offerHarborUnlockThenContinue = (next: () => void) => {
-          if (!(state as any).__pendingHarborUnlockNotice || state.lives <= 0) {
+        const offerHarborDraftThenContinue = (next: () => void) => {
+          const pendingWave = Number((state as any).__pendingHarborWaveDraft ?? 0);
+          if (!pendingWave || state.lives <= 0) {
             next();
             return;
           }
@@ -8275,8 +8270,9 @@ async function boot() {
             next();
             return;
           }
+          (state as any).__pendingHarborWaveDraft = undefined;
           (state as any).__pendingHarborUnlockNotice = false;
-          showHarborUnlockModal(state, () => {
+          showHarborWaveClearModal(state, pendingWave, () => {
             showHarborDraftModal(state, buildHarborDraftOffers(state, true), () => updateHeroPlacementBanner());
           });
         };
@@ -8284,22 +8280,22 @@ async function boot() {
           const pending = state.pendingBossTrophyOffer;
           if (!pending || pending.wave !== state.wave) {
             consumePendingBossTrophyOffer(state);
-            offerHarborUnlockThenContinue(offerTestYourMightOrCampaignRelic);
+            offerHarborDraftThenContinue(offerTestYourMightOrCampaignRelic);
             return;
           }
           const stage = document.getElementById('stage-wrap');
           if (!stage) {
-            offerHarborUnlockThenContinue(offerTestYourMightOrCampaignRelic);
+            offerHarborDraftThenContinue(offerTestYourMightOrCampaignRelic);
             return;
           }
           const trophy = consumePendingBossTrophyOffer(state);
           if (!trophy) {
-            offerHarborUnlockThenContinue(offerTestYourMightOrCampaignRelic);
+            offerHarborDraftThenContinue(offerTestYourMightOrCampaignRelic);
             return;
           }
           showBossTrophyModal(stage, state, trophy.bossName, () => {
             state.hint = 'Boss trophy claimed. The campaign remembers this kill.';
-            offerHarborUnlockThenContinue(offerTestYourMightOrCampaignRelic);
+            offerHarborDraftThenContinue(offerTestYourMightOrCampaignRelic);
           });
         };
         offerBossTrophyThenContinue();

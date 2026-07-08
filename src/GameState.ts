@@ -141,8 +141,11 @@ export interface GameStateShape {
   // Lifetime kills of enemies that emerged from the ocean/shipwreck lane.
   // Keeps naval quests tied to the water concept instead of generic kills.
   oceanEnemiesKilled?: number;
-  // Harbor unlock notice is queued when the first Sea Giant-class enemy
-  // dies, then shown after wave end so it never interrupts live combat.
+  // Harbor Draft offer is queued when a wave with ocean/water enemies is
+  // cleared, then shown after wave end so it never interrupts live combat.
+  __pendingHarborWaveDraft?: number;
+  // Legacy save compatibility: older builds used this boolean for the first
+  // Sea Giant notice. New builds clear it and use __pendingHarborWaveDraft.
   __pendingHarborUnlockNotice?: boolean;
   harborUnlocked?: boolean;
   harborUnlockWave?: number;

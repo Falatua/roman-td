@@ -146,8 +146,9 @@ export enum TowerType {
   INFERNAL_COLOSSUS = 'INFERNAL_COLOSSUS',
   ROMAN_TRANSFORMER = 'ROMAN_TRANSFORMER',
   NEPTUNES_LEVIATHAN = 'NEPTUNES_LEVIATHAN',
-  // 2026-07-07 — Harbor / naval tower line. These unlock from the first
-  // Sea Giant kill and live primarily in the ocean reserve.
+  // 2026-07-07 — Harbor / naval tower line. These are offered by the
+  // wave-end Harbor Draft after cleared ocean-threat waves and live
+  // primarily in the ocean reserve.
   TRIREME_BALLISTA = 'TRIREME_BALLISTA',
   CORVUS_BOARDING_SHIP = 'CORVUS_BOARDING_SHIP',
   RAMMING_QUINQUEREME = 'RAMMING_QUINQUEREME',

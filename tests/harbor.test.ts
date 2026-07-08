@@ -14,8 +14,10 @@ import {
   isHarborTowerType,
   isOceanThreatEnemy,
   markHarborUnlocked,
+  queueHarborDraftForClearedOceanWave,
   queueHarborDraftPurchase,
-  shouldUnlockHarborFromKill
+  shouldUnlockHarborFromKill,
+  waveHasOceanThreats
 } from '../src/systems/HarborSystem';
 
 function waterTile() {
@@ -40,15 +42,36 @@ function placeTower(s: any, type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: numbe
 }
 
 describe('Harbor naval tower system', () => {
-  it('unlocks only from Sea Giant-class kills and builds three draft offers', () => {
+  it('offers Harbor drafts after cleared ocean-threat waves and builds three draft offers', () => {
+    const s = readyState();
+    s.wave = 3;
+    expect(shouldUnlockHarborFromKill(s, EnemyType.FERAL_DOG)).toBe(false);
+    expect(waveHasOceanThreats(3)).toBe(true);
+    expect(waveHasOceanThreats(4)).toBe(false);
+    expect(queueHarborDraftForClearedOceanWave(s)).toBe(true);
+    expect((s as any).harborUnlocked).toBe(true);
+    expect((s as any).__pendingHarborWaveDraft).toBe(3);
+    expect((s as any).__pendingHarborUnlockNotice).toBe(false);
+    expect(s.hint).toContain('Ocean threat wave 3 cleared');
+    expect(harborDraftTierForWave(3)).toBe(1);
+    const earlyOffers = buildHarborDraftOffers(s, true);
+    expect(earlyOffers).toHaveLength(3);
+    for (const offer of earlyOffers) {
+      expect(isHarborTowerType(offer.type)).toBe(true);
+      expect(offer.tier).toBe(1);
+      expect(offer.price).toBeGreaterThan(0);
+    }
+  });
+
+  it('still marks Sea Giant-class kills as Harbor unlocks without opening a modal mid-wave', () => {
     const s = readyState();
     s.wave = 12;
-    expect(shouldUnlockHarborFromKill(s, EnemyType.FERAL_DOG)).toBe(false);
     expect(shouldUnlockHarborFromKill(s, EnemyType.SEA_GIANT)).toBe(true);
     expect(markHarborUnlocked(s)).toBe(true);
     expect((s as any).harborUnlocked).toBe(true);
-    expect((s as any).__pendingHarborUnlockNotice).toBe(true);
-    expect(s.hint).toContain('after this wave');
+    expect((s as any).__pendingHarborWaveDraft).toBe(12);
+    expect((s as any).__pendingHarborUnlockNotice).toBeFalsy();
+    expect(s.hint).toContain('after this ocean wave');
     expect(harborDraftTierForWave(12)).toBe(2);
     const offers = buildHarborDraftOffers(s, true);
     expect(offers).toHaveLength(3);

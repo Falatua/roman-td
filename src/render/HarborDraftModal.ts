@@ -17,19 +17,21 @@ function towerRole(type: string): string {
   return 'Naval contract';
 }
 
-export function showHarborUnlockModal(state: GameStateShape, onOpenDraft?: () => void): void {
+export function showHarborWaveClearModal(state: GameStateShape, clearedWave: number, onOpenDraft?: () => void): void {
   if (typeof document === 'undefined') return;
   document.getElementById('harbor-unlock-modal')?.remove();
   const wrap = document.createElement('div');
   wrap.id = 'harbor-unlock-modal';
+  const firstOpen = (state as any).harborUnlockWave === clearedWave;
   wrap.innerHTML = `
     <div id="harbor-unlock-panel" style="width:min(620px,92vw);padding:24px 28px;background:linear-gradient(180deg,#102532,#080c12);border:3px solid #5fe6ff;box-shadow:0 0 38px #25bfff88,inset 0 0 24px #000;color:#fff8e0;font-family:'Courier New',monospace;text-align:center">
-      <div style="font-size:11px;letter-spacing:6px;color:#88f7ff;font-weight:bold">THE SHIPWRECK STIRS</div>
-      <div style="margin-top:8px;font-size:26px;letter-spacing:4px;color:#ffd34d;text-shadow:2px 2px 0 #000">THE HARBOR AWAKENS</div>
+      <div style="font-size:11px;letter-spacing:6px;color:#88f7ff;font-weight:bold">${firstOpen ? 'THE SHIPWRECK STIRS' : 'TIDE SPOILS CLAIMED'}</div>
+      <div style="margin-top:8px;font-size:26px;letter-spacing:4px;color:#ffd34d;text-shadow:2px 2px 0 #000">${firstOpen ? 'THE HARBOR AWAKENS' : 'HARBOR CONTRACTS AVAILABLE'}</div>
       <div style="margin-top:14px;font-size:13px;line-height:1.65;text-align:left;background:rgba(0,0,0,0.38);border-left:3px solid #5fe6ff;padding:12px 14px">
-        The first Sea Giant has fallen. Ocean tiles can now host <b style="color:#88f7ff">naval towers</b> through the Harbor Draft.
+        Wave <b style="color:#ffd34d">${clearedWave}</b> brought ocean-born enemies, and Rome survived them.
+        The Harbor Draft is available <b style="color:#88f7ff">now, after the water threat is defeated</b>.
         The Draft shows <b style="color:#ffd34d">three randomized naval contracts</b>. Buy one, then click an ocean tile to place it.
-        You can reopen the Draft later by clicking the ocean between waves.
+        If you pass, the Harbor quartermaster returns after the next cleared wave that included water-based enemies.
       </div>
       <div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:left;font-size:10.5px;line-height:1.45;color:#cdefff">
         <div style="background:#07141c;border:1px solid #285a68;padding:8px"><b style="color:#88f7ff">1.</b> Pick a contract.</div>
@@ -44,13 +46,13 @@ export function showHarborUnlockModal(state: GameStateShape, onOpenDraft?: () =>
   wrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:130;pointer-events:auto';
   document.getElementById('stage-wrap')?.appendChild(wrap);
   const panel = wrap.querySelector<HTMLElement>('#harbor-unlock-panel');
-  if (panel) enhanceModalErgonomics(wrap, panel, { title: 'Harbor unlock notice' });
+  if (panel) enhanceModalErgonomics(wrap, panel, { title: 'Harbor wave-clear notice' });
   wrap.querySelector<HTMLButtonElement>('#harbor-unlock-open-draft')!.onclick = () => {
     wrap.remove();
     onOpenDraft?.();
   };
   wrap.querySelector<HTMLButtonElement>('#harbor-unlock-later')!.onclick = () => wrap.remove();
-  state.hint = 'The Harbor is awake. View contracts now, or click ocean tiles between waves to draft naval towers.';
+  state.hint = `Harbor contracts are available after clearing ocean wave ${clearedWave}. View contracts now, or wait for the next water-enemy wave.`;
 }
 
 export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftOffer[], onUpdate?: () => void): void {
@@ -80,7 +82,7 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
         <button id="harbor-close" aria-label="Close Harbor Draft" style="background:#241810;color:#ffd34d;border:2px solid #7a5a1a;width:34px;height:34px;cursor:pointer;font-family:'Courier New',monospace;font-weight:bold">X</button>
       </div>
       <div id="harbor-draft-body">
-        <div style="margin-top:10px;font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Choose one contract, then click an ocean tile to place it. Draft refreshes every three waves or after purchases.</div>
+        <div style="margin-top:10px;font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Choose one contract, then click an ocean tile to place it. Draft offers refresh after cleared water-enemy waves or after purchases.</div>
         <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap">${cards}</div>
       </div>
     </div>`;

@@ -934,7 +934,7 @@ describe('Codex modal interaction layer', () => {
 });
 
 describe('Modal ergonomics and popup stacking', () => {
-  it('queues Harbor unlock teaching until wave-end and makes the notice open the Draft', () => {
+  it('offers Harbor Draft access only after clearing ocean-threat waves', () => {
     const main = readFileSync('src/main.ts', 'utf8');
     const harborSystem = readFileSync('src/systems/HarborSystem.ts', 'utf8');
     const harborModal = readFileSync('src/render/HarborDraftModal.ts', 'utf8');
@@ -943,21 +943,27 @@ describe('Modal ergonomics and popup stacking', () => {
       main.indexOf('// 2026-05-16', main.indexOf('if (shouldUnlockHarborFromKill(state, e.type) && markHarborUnlocked(state))'))
     );
     const waveEndBlock = main.slice(
-      main.indexOf('const offerHarborUnlockThenContinue'),
+      main.indexOf('const offerHarborDraftThenContinue'),
       main.indexOf('const offerBossTrophyThenContinue')
     );
 
-    expect(harborSystem).toContain('__pendingHarborUnlockNotice = true');
-    expect(harborSystem).toContain('The Harbor will open after this wave');
-    expect(killBlock, 'Harbor unlock should not open its teaching modal mid-wave on the kill frame').not.toContain('showHarborUnlockModal(state)');
-    expect(waveEndBlock).toContain('__pendingHarborUnlockNotice');
-    expect(waveEndBlock).toContain('showHarborUnlockModal(state, () => {');
+    expect(harborSystem).toContain('export function waveHasOceanThreats');
+    expect(harborSystem).toContain('export function queueHarborDraftForClearedOceanWave');
+    expect(harborSystem).toContain('__pendingHarborWaveDraft = state.wave');
+    expect(harborSystem).toContain('Ocean threat wave ${state.wave} cleared');
+    expect(killBlock, 'Harbor unlock should not open a Harbor modal mid-wave on the kill frame').not.toContain('showHarborUnlockModal(state)');
+    expect(killBlock, 'Harbor unlock should not open the wave-clear modal mid-wave on the kill frame').not.toContain('showHarborWaveClearModal(state');
+    expect(main).toContain('queueHarborDraftForClearedOceanWave(state);');
+    expect(waveEndBlock).toContain('__pendingHarborWaveDraft');
+    expect(waveEndBlock).toContain('showHarborWaveClearModal(state, pendingWave, () => {');
     expect(waveEndBlock).toContain('showHarborDraftModal(state, buildHarborDraftOffers(state, true)');
-    expect(main).toContain('offerHarborUnlockThenContinue(offerTestYourMightOrCampaignRelic)');
+    expect(main).toContain('offerHarborDraftThenContinue(offerTestYourMightOrCampaignRelic)');
+    expect(main).not.toContain("showHarborDraftModal(state, buildHarborDraftOffers(state), () => updateHeroPlacementBanner());");
+    expect(main).toContain('Buy naval contracts from the Harbor panel after clearing water-enemy waves');
     expect(harborModal).toContain('VIEW NAVAL CONTRACTS');
-    expect(harborModal).toContain('showHarborUnlockModal(state: GameStateShape, onOpenDraft?: () => void)');
+    expect(harborModal).toContain('showHarborWaveClearModal(state: GameStateShape, clearedWave: number, onOpenDraft?: () => void)');
     expect(harborModal).toContain('onOpenDraft?.();');
-    expect(harborModal).toContain('You can reopen the Draft later by clicking the ocean between waves.');
+    expect(harborModal).toContain('If you pass, the Harbor quartermaster returns after the next cleared wave that included water-based enemies.');
   });
 
   it('ships one shared collapse and drag helper for major player-facing panels', () => {

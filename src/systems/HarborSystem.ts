@@ -3,6 +3,7 @@ import { GameStateShape } from '../GameState';
 import { canAfford, spendGold } from './EconomySystem';
 import { canBuildWaterTowerAt, isBuildable, isWaterZoneTile, restoreNaturalBuildTile, setTowerTile } from './GridManager';
 import towersData from '../data/towers.json';
+import wavesData from '../data/waves.json';
 
 export interface HarborDraftOffer {
   type: TowerType;
@@ -86,10 +87,31 @@ export function markHarborUnlocked(state: GameStateShape): boolean {
   if ((state as any).harborUnlocked) return false;
   (state as any).harborUnlocked = true;
   (state as any).harborUnlockWave = state.wave;
-  (state as any).__pendingHarborUnlockNotice = true;
+  (state as any).__pendingHarborWaveDraft = state.wave;
   (state as any).__harborDraftOffers = undefined;
   (state as any).__harborDraftWave = undefined;
-  state.hint = 'A Sea Giant has fallen. The Harbor will open after this wave.';
+  state.hint = 'A Sea Giant has fallen. The Harbor quartermaster will offer naval contracts after this ocean wave.';
+  return true;
+}
+
+export function waveHasOceanThreats(wave: number): boolean {
+  const w = (wavesData as any)[wave - 1];
+  if (!w || !Array.isArray(w.spawns)) return false;
+  return w.spawns.some((grp: any) => !!grp?.ocean && Number(grp.count ?? 0) > 0);
+}
+
+export function queueHarborDraftForClearedOceanWave(state: GameStateShape): boolean {
+  if (state.lives <= 0 || !waveHasOceanThreats(state.wave)) return false;
+  const firstOpen = !(state as any).harborUnlocked;
+  (state as any).harborUnlocked = true;
+  if ((state as any).harborUnlockWave === undefined) (state as any).harborUnlockWave = state.wave;
+  (state as any).__pendingHarborWaveDraft = state.wave;
+  (state as any).__pendingHarborUnlockNotice = false;
+  (state as any).__harborDraftOffers = undefined;
+  (state as any).__harborDraftWave = undefined;
+  state.hint = firstOpen
+    ? `Ocean threat wave ${state.wave} cleared. The Harbor will offer naval contracts now.`
+    : `Ocean threat wave ${state.wave} cleared. The Harbor quartermaster has fresh naval contracts.`;
   return true;
 }
 
