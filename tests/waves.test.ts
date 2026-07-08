@@ -10,10 +10,11 @@ import { buildGroundPath, buildGroundPathB, buildFlyerPath } from '../src/system
 import { enemyResistanceProfile } from '../src/systems/EnemyResistances';
 import { isLegendaryBossDropEnemy, isRareOnlyBossDropEnemy } from '../src/systems/RewardEligibility';
 import { isFinalBossBreach, leakLifeCostFor, shouldRespawnBossOnLeak } from '../src/systems/LeakRules';
+import { failTestYourMight, isTestYourMightLeakEnemy, startTestYourMight } from '../src/systems/TestYourMightSystem';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
 import waypointsData from '../src/data/waypoints.json';
-import { GRID, WATER_ZONE } from '../src/constants';
+import { GRID, WATER_ZONE, WAVE } from '../src/constants';
 
 function bootstrapState() {
   const s = createGameState();
@@ -729,6 +730,98 @@ describe('Wave 22 regression guards', () => {
       expect(s.lives).toBe(25);
       expect(shouldRespawnBossOnLeak(elephant)).toBe(false);
       expect(s.bossRespawnQueue ?? []).toEqual([]);
+    } finally {
+      if (prevWindow === undefined) delete (globalThis as any).window;
+      else (globalThis as any).window = prevWindow;
+    }
+  });
+});
+
+describe('Campaign opening leak audit', () => {
+  it('does not leak or set game over in the opening seconds of any authored wave', () => {
+    const prevWindow = (globalThis as any).window;
+    (globalThis as any).window = prevWindow ?? {};
+    try {
+      const report: Record<number, { leaks: string[]; lives: number; gameOverAt: number; queue: number; enemies: number; phase: GamePhase; ended: number }> = {};
+
+      for (let wave = 1; wave <= WAVE.TOTAL; wave++) {
+        const s = bootstrapState();
+        s.phase = GamePhase.BUILD_PHASE;
+        s.wave = wave - 1;
+        s.lives = 30;
+        startWave(s);
+
+        const leaks: string[] = [];
+        let ended = 0;
+        for (let i = 0; i < 180; i++) {
+          s.tick += 1 / 60;
+          tickSpawns(s, 1 / 60);
+          tickEnemies(
+            s,
+            1 / 60,
+            e => {
+              const progress = `${e.pathIndex}+${e.pathProgress.toFixed(2)}`;
+              leaks.push(`${String(e.type)}@${s.tick.toFixed(2)}#${progress}`);
+              s.lives -= leakLifeCostFor(e);
+              s.enemiesLeakedThisWave++;
+              if (s.lives <= 0 && s.gameOverAt < 0) s.gameOverAt = s.tick;
+            },
+            e => s.enemies.delete(e.id)
+          );
+          checkWaveEnd(s, () => { ended++; });
+        }
+
+        report[wave] = {
+          leaks,
+          lives: s.lives,
+          gameOverAt: s.gameOverAt,
+          queue: s.spawnQueue.length,
+          enemies: s.enemies.size,
+          phase: s.phase,
+          ended
+        };
+      }
+
+      for (let wave = 1; wave <= WAVE.TOTAL; wave++) {
+        expect(report[wave].leaks, `W${wave} should not leak in the first 3 seconds`).toEqual([]);
+        expect(report[wave].lives, `W${wave} should not lose lives in the first 3 seconds`).toBe(30);
+        expect(report[wave].gameOverAt, `W${wave} should not set game over in the first 3 seconds`).toBeLessThan(0);
+        expect(report[wave].ended, `W${wave} should not auto-end in the first 3 seconds`).toBe(0);
+        expect(report[wave].phase, `W${wave} should still be active in the first 3 seconds`).toBe(GamePhase.WAVE_PHASE);
+      }
+    } finally {
+      if (prevWindow === undefined) delete (globalThis as any).window;
+      else (globalThis as any).window = prevWindow;
+    }
+  }, 15000);
+
+  it('keeps Test Your Might alive during its opening seconds unless a real bonus enemy leaks', () => {
+    const prevWindow = (globalThis as any).window;
+    (globalThis as any).window = prevWindow ?? {};
+    const s = bootstrapState();
+    try {
+      startTestYourMight(s);
+
+      const leaks: string[] = [];
+      for (let i = 0; i < 180; i++) {
+        s.tick += 1 / 60;
+        tickSpawns(s, 1 / 60);
+        tickEnemies(
+          s,
+          1 / 60,
+          e => {
+            leaks.push(`${String(e.type)}@${s.tick.toFixed(2)}#${e.pathIndex}+${e.pathProgress.toFixed(2)}`);
+            if (isTestYourMightLeakEnemy(e)) failTestYourMight(s, String(e.type));
+          },
+          e => s.enemies.delete(e.id)
+        );
+      }
+
+      expect(leaks, 'W10.5 should not leak in the first 3 seconds').toEqual([]);
+      expect(s.testYourMightActive).toBe(true);
+      expect(s.testYourMightFailed).toBe(false);
+      expect(s.lives).toBeGreaterThan(0);
+      expect(s.gameOverAt).toBeLessThan(0);
     } finally {
       if (prevWindow === undefined) delete (globalThis as any).window;
       else (globalThis as any).window = prevWindow;
