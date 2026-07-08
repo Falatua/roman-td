@@ -167,7 +167,7 @@ describe('Item permanence classification', () => {
 
 describe('Loot drop rolling', () => {
   it('downweights aura-family items in random drops and shop rolls while keeping them possible', () => {
-    expect(AURA_ITEM_RANDOM_WEIGHT).toBe(0.25);
+    expect(AURA_ITEM_RANDOM_WEIGHT).toBe(0.10);
     for (const id of ['CENTURIONS_TRUMPET', 'BATTLE_STANDARD', 'AQUILIFER_BANNER', 'WAR_HOUND_COLLAR', 'DRUIDS_TORC', 'OPTIO_WHISTLE', 'BARCA_WAR_HORN', 'CURSED_TORC', 'LICH_GENERALS_SEAL']) {
       expect(isAuraItem(id), id).toBe(true);
       expect(itemRandomSelectionWeight(id), id).toBe(AURA_ITEM_RANDOM_WEIGHT);

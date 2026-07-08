@@ -192,7 +192,7 @@ export function itemFamily(itemId: ItemId): ItemFamily {
   return FAMILY[itemId] ?? 'SPECIAL';
 }
 
-export const AURA_ITEM_RANDOM_WEIGHT = 0.25;
+export const AURA_ITEM_RANDOM_WEIGHT = 0.10;
 export const OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT = 0.62;
 
 const OCEAN_SPECIALIST_ITEMS = new Set<string>([
