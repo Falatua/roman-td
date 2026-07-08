@@ -77,7 +77,7 @@ import { showCampaignRelicModal } from './render/CampaignRelicModal';
 import { showBossTrophyModal } from './render/BossTrophyModal';
 import { showTestYourMightModal } from './render/TestYourMightModal';
 import { showLastStandTrove } from './render/LastStandTrove';
-import { showMercatorBackRoomModal, showSenateBailoutModal } from './render/SecretEvents';
+import { showMercatorBackRoomModal } from './render/SecretEvents';
 import { showHarborDraftModal, showHarborUnlockModal } from './render/HarborDraftModal';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { bossTrophyKillGoldBonus, consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
@@ -87,11 +87,8 @@ import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, 
 import { isFinalBossBreach } from './systems/LeakRules';
 import { claimLastStandTroveTower, markLastStandTroveOffered, shouldOfferLastStandTrove } from './systems/LastStandTroveSystem';
 import {
-  finishSenateBailoutTaxWave,
   markMercatorBackRoomOffered,
-  markSenateBailoutOffered,
-  shouldOfferMercatorBackRoom,
-  shouldOfferSenateBailout
+  shouldOfferMercatorBackRoom
 } from './systems/SecretEventsSystem';
 import {
   buildHarborDraftOffers,
@@ -236,7 +233,6 @@ async function boot() {
   function anySecretEventModalOpen(): boolean {
     return !!document.getElementById('last-stand-trove-modal')
       || !!document.getElementById('mercator-backroom-modal')
-      || !!document.getElementById('senate-bailout-modal')
       || !!document.getElementById('shop-modal')
       || !!document.getElementById('campaign-relic-modal')
       || !!document.getElementById('boss-trophy-modal')
@@ -260,26 +256,6 @@ async function boot() {
       },
       onClose: () => {
         (state as any).__mercatorBackRoomOpen = false;
-      }
-    });
-  }
-  function maybeOpenSenateBailout(): void {
-    if (anySecretEventModalOpen()) return;
-    if (!shouldOfferSenateBailout(state)) return;
-    markSenateBailoutOffered(state);
-    (state as any).__senateBailoutOpen = true;
-    state.hint = 'THE SENATE OFFERS AN EMERGENCY BAILOUT — gold now, taxes later.';
-    try { SFX.comboAvailable?.(); } catch { /* optional */ }
-    showBossBanner('EMERGENCY SENATE SESSION — BAILOUT OFFERED', 'ROMAN');
-    showSenateBailoutModal(state, {
-      onAccept: () => {
-        (state as any).__senateBailoutOpen = false;
-        state.hint = 'Senate Bailout accepted — +450g now. Future combat income is taxed for 3 cleared campaign waves.';
-        try { SFX.buy(); } catch { /* optional */ }
-      },
-      onDecline: () => {
-        (state as any).__senateBailoutOpen = false;
-        state.hint = 'Senate Bailout refused. The senators look relieved, which is concerning.';
       }
     });
   }
@@ -6843,8 +6819,7 @@ async function boot() {
       || !!(state as any).__bossTrophyOpen
       || !!(state as any).__testYourMightOpen
       || !!(state as any).__lastStandTroveOpen
-      || !!(state as any).__mercatorBackRoomOpen
-      || !!(state as any).__senateBailoutOpen;
+      || !!(state as any).__mercatorBackRoomOpen;
     if (paused || autoPaused || rewardModalOpen) {
       dt = 0;
     } else {
@@ -6863,7 +6838,6 @@ async function boot() {
     state.tick += dt;
     maybeOpenLastStandTrove();
     maybeOpenMercatorBackRoom();
-    maybeOpenSenateBailout();
     // 2026-05-17 — REWARD MODAL TRIGGER (relocated). Fires the instant
     // pendingSurpriseReward is set, regardless of game phase. Previous
     // placement was inside the WAVE_PHASE conditional, but WaveManager's
@@ -8100,14 +8074,6 @@ async function boot() {
           const mvpDef: any = (towersData as any)[mvp.type] ?? {};
           const mvpName = mvpDef.name ?? String(mvp.type).replace(/_/g, ' ');
           showMvpBanner(`★ MVP — ${mvpName} T${mvp.qualityTier}: ${mvp.killsThisWave} kills, ${Math.round(mvp.damageThisWave)} dmg ★`, mvp.tileX, mvp.tileY, mvp.type);
-        }
-        if (!clearedTestYourMight) {
-          const wasTaxed = (state.senateBailoutTaxWavesRemaining ?? 0) > 0;
-          const remainingTaxWaves = finishSenateBailoutTaxWave(state);
-          if (wasTaxed && remainingTaxWaves === 0) {
-            const lost = state.senateBailoutTaxGoldLost ?? 0;
-            showBonusBossBanner(`SENATE TAX PAID OFF — ${lost}g SKIMMED, ROME CALLS IT PATRIOTISM`);
-          }
         }
         state.draw = [];
         state.selectedCard = null;

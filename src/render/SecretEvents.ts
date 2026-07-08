@@ -1,15 +1,10 @@
 import { GameStateShape } from '../GameState';
 import { InventoryState, inventoryAdd } from '../systems/LootSystem';
 import {
-  acceptSenateBailout,
   buildMercatorBackRoomOffers,
   claimMercatorBackRoomOffer,
   declineMercatorBackRoom,
-  declineSenateBailout,
-  MercatorBackRoomOffer,
-  SENATE_BAILOUT_GOLD,
-  SENATE_BAILOUT_TAX_RATE,
-  SENATE_BAILOUT_TAX_WAVES
+  MercatorBackRoomOffer
 } from '../systems/SecretEventsSystem';
 import towersData from '../data/towers.json';
 import itemsData from '../data/items_permanent.json';
@@ -59,7 +54,7 @@ function ensureSecretEventStyles(): void {
     }
     @media (max-width: 760px) {
       #mercator-backroom-grid { grid-template-columns:1fr !important; }
-      #mercator-backroom-panel, #senate-bailout-panel { width:94vw !important; max-height:90vh !important; }
+      #mercator-backroom-panel { width:94vw !important; max-height:90vh !important; }
     }
   `;
   document.head.appendChild(st);
@@ -190,83 +185,5 @@ export function showMercatorBackRoomModal(
       hooks.onClaim?.(result.offer);
       hooks.onClose?.();
     });
-  });
-}
-
-export function showSenateBailoutModal(
-  state: GameStateShape,
-  hooks: { onAccept?: () => void; onDecline?: () => void } = {}
-): void {
-  closeGameModals();
-  ensureSecretEventStyles();
-  document.getElementById('senate-bailout-modal')?.remove();
-  const root = document.createElement('div');
-  root.id = 'senate-bailout-modal';
-  root.setAttribute('role', 'dialog');
-  root.setAttribute('aria-modal', 'true');
-  root.style.cssText = `position:fixed;inset:0;z-index:2147483647;background:radial-gradient(circle at 50% 34%,rgba(136,221,255,0.16),rgba(0,0,0,0.88) 58%,rgba(0,0,0,0.96));font-family:'Courier New',monospace;color:#fff8e0;`;
-  const badgeSrc = texUrl('BADGE_GOLD') || texUrl('ORB_LEGENDARY');
-  const badge = badgeSrc ? `<img src="${badgeSrc}" alt="" style="width:82px;height:82px;image-rendering:pixelated;filter:drop-shadow(2px 2px 0 #000) drop-shadow(0 0 10px #ffd34d)"/>` : '';
-  const taxPct = Math.round(SENATE_BAILOUT_TAX_RATE * 100);
-  root.innerHTML = `
-    <div id="senate-bailout-panel" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(720px,92vw);max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#102030,#080604);border:4px double #88ddff;box-shadow:0 0 54px rgba(136,221,255,0.35),inset 0 0 28px rgba(0,0,0,0.8);animation:secretEventIn 0.22s ease-out;">
-      <div style="padding:18px 22px 14px;border-bottom:2px solid #446688;background:linear-gradient(90deg,#06111a,#1b3a4a,#06111a);display:flex;gap:16px;align-items:center">
-        ${badge}
-        <div style="flex:1;min-width:0">
-          <div style="font-size:11px;letter-spacing:5px;color:#88ddff;font-weight:bold">EMERGENCY SENATE SESSION</div>
-          <div style="margin-top:6px;font-size:25px;line-height:1.15;font-weight:bold;letter-spacing:3px;color:#fff8e0;text-shadow:2px 2px 0 #000,0 0 16px #88ddff">THE SENATE HAS FOUND A WALLET</div>
-          <div style="margin-top:9px;color:#d8c79a;font-size:12px;line-height:1.55">
-            Your treasury is thin and Rome is breathing through a reed. The Senate offers <b style="color:#ffd34d">${SENATE_BAILOUT_GOLD}g now</b>, then skims <b style="color:#ffcc66">${taxPct}%</b> from combat and wave income for the next <b style="color:#ffcc66">${SENATE_BAILOUT_TAX_WAVES}</b> cleared campaign waves.
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-start">
-          <button class="secret-event-btn" id="senate-bailout-x" type="button" title="Refuse bailout">X</button>
-        </div>
-      </div>
-      <div id="senate-bailout-body" style="padding:16px 20px;overflow:auto;min-height:0">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div style="background:#0c0a08;border:2px solid #ffd34d;padding:12px;text-align:center">
-            <div style="font-size:10px;color:#aa9a4a;letter-spacing:2px">IMMEDIATE RELIEF</div>
-            <div style="font-size:34px;color:#ffd34d;font-weight:bold;margin-top:4px">+${SENATE_BAILOUT_GOLD}g</div>
-            <div style="font-size:10.5px;color:#cdb98a;line-height:1.45;margin-top:4px">Use it for prospects, shop stock, recipes, or one questionable plan with confidence.</div>
-          </div>
-          <div style="background:#0c0a08;border:2px solid #ffcc66;padding:12px;text-align:center">
-            <div style="font-size:10px;color:#aa9a4a;letter-spacing:2px">SENATE TAX</div>
-            <div style="font-size:34px;color:#ffcc66;font-weight:bold;margin-top:4px">${taxPct}%</div>
-            <div style="font-size:10.5px;color:#cdb98a;line-height:1.45;margin-top:4px">Only future combat and wave reward income gets skimmed. Refunds and selling stay clean.</div>
-          </div>
-        </div>
-        <div style="margin-top:12px;padding:10px 12px;background:rgba(60,30,10,0.55);border:1px dashed #ff8844;color:#ffcc88;font-size:12px;line-height:1.55">
-          Accept this when the run is slipping but still alive. It is a comeback lever, not charity. The Senate will absolutely call it charity.
-        </div>
-      </div>
-      <div id="senate-bailout-footer" style="padding:13px 18px;border-top:1px solid #446688;background:#080604;display:flex;gap:10px;justify-content:flex-end;align-items:center">
-        <button class="secret-event-btn" id="senate-bailout-no" type="button" style="background:#2a1a0e;color:#cdb98a">REFUSE THE LOAN</button>
-        <button class="secret-event-btn" id="senate-bailout-yes" type="button" style="background:#204a30;border-color:#88ff88;color:#fff8e0">ACCEPT +${SENATE_BAILOUT_GOLD}g</button>
-      </div>
-    </div>`;
-  document.body.appendChild(root);
-  const panel = root.querySelector<HTMLElement>('#senate-bailout-panel');
-  if (panel) {
-    enhanceModalErgonomics(root, panel, {
-      bodySelector: '#senate-bailout-body',
-      footerSelector: '#senate-bailout-footer',
-      title: 'Senate Bailout',
-      toolRightPx: 58
-    });
-  }
-  const decline = () => {
-    declineSenateBailout(state);
-    root.remove();
-    hooks.onDecline?.();
-  };
-  root.querySelector<HTMLButtonElement>('#senate-bailout-x')?.addEventListener('click', decline);
-  root.querySelector<HTMLButtonElement>('#senate-bailout-no')?.addEventListener('click', decline);
-  root.querySelector<HTMLButtonElement>('#senate-bailout-yes')?.addEventListener('click', ev => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    if (!acceptSenateBailout(state)) return;
-    root.remove();
-    hooks.onAccept?.();
   });
 }

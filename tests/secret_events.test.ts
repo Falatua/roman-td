@@ -1,21 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createGameState } from '../src/GameState';
 import { GamePhase, TowerType } from '../src/types';
-import { earnGold } from '../src/systems/EconomySystem';
 import {
-  acceptSenateBailout,
-  applySenateBailoutTax,
   buildMercatorBackRoomOffers,
   claimMercatorBackRoomOffer,
   declineMercatorBackRoom,
-  finishSenateBailoutTaxWave,
   markMercatorBackRoomOffered,
-  markSenateBailoutOffered,
   recordMercatorBackRoomPurchase,
-  SENATE_BAILOUT_GOLD,
-  SENATE_BAILOUT_TAX_WAVES,
-  shouldOfferMercatorBackRoom,
-  shouldOfferSenateBailout
+  shouldOfferMercatorBackRoom
 } from '../src/systems/SecretEventsSystem';
 import towersData from '../src/data/towers.json';
 import itemsData from '../src/data/items_permanent.json';
@@ -139,69 +131,5 @@ describe('Mercator Back Room hidden event', () => {
       expect((offer as any).trapBundle, `${offer.id} should not sell traps through Mercator Back Room`).toBeUndefined();
       expect((offer as any).ramparts, `${offer.id} should not sell Stone Ramparts through Mercator Back Room`).toBeUndefined();
     }
-  });
-});
-
-describe('Senate Bailout hidden event', () => {
-  it('offers only to low-gold, low-life live campaign runs after early game', () => {
-    const s = createGameState();
-    s.phase = GamePhase.BUILD_PHASE;
-    s.wave = 8;
-    s.gold = 100;
-    s.lives = 7;
-    expect(shouldOfferSenateBailout(s)).toBe(true);
-
-    s.gold = 101;
-    expect(shouldOfferSenateBailout(s)).toBe(false);
-    s.gold = 100;
-    s.lives = 8;
-    expect(shouldOfferSenateBailout(s)).toBe(false);
-    s.lives = 7;
-    s.wave = 7;
-    expect(shouldOfferSenateBailout(s)).toBe(false);
-  });
-
-  it('accepts gold immediately and starts a three-wave tax', () => {
-    const s = createGameState();
-    s.wave = 10;
-    s.gold = 20;
-    s.lives = 5;
-    markSenateBailoutOffered(s);
-    const ok = acceptSenateBailout(s);
-    expect(ok).toBe(true);
-    expect(s.gold).toBe(20 + SENATE_BAILOUT_GOLD);
-    expect(s.senateBailoutClaimed).toBe(true);
-    expect(s.senateBailoutTaxWavesRemaining).toBe(SENATE_BAILOUT_TAX_WAVES);
-  });
-
-  it('taxes only taxable income and tracks gold skimmed', () => {
-    const s = createGameState();
-    s.gold = 0;
-    s.senateBailoutTaxWavesRemaining = 3;
-    const taxed = applySenateBailoutTax(s, 100);
-    expect(taxed).toEqual({ net: 70, tax: 30 });
-    expect(s.senateBailoutTaxGoldLost).toBe(30);
-
-    earnGold(s, 100);
-    expect(s.gold).toBe(100);
-    earnGold(s, 100, { taxable: true });
-    expect(s.gold).toBe(170);
-    expect(s.senateBailoutTaxGoldLost).toBe(60);
-  });
-
-  it('counts down after cleared campaign waves and blocks repeat offers', () => {
-    const s = createGameState();
-    s.wave = 9;
-    s.gold = 10;
-    s.lives = 4;
-    expect(shouldOfferSenateBailout(s)).toBe(true);
-    markSenateBailoutOffered(s);
-    acceptSenateBailout(s);
-    expect(shouldOfferSenateBailout(s)).toBe(false);
-    expect(finishSenateBailoutTaxWave(s)).toBe(2);
-    expect(finishSenateBailoutTaxWave(s)).toBe(1);
-    expect(finishSenateBailoutTaxWave(s)).toBe(0);
-    expect(finishSenateBailoutTaxWave(s)).toBe(0);
-    expect(shouldOfferSenateBailout(s)).toBe(false);
   });
 });

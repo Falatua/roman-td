@@ -303,13 +303,6 @@ export interface GameStateShape {
   mercatorBackRoomClaimed?: boolean;
   mercatorBackRoomDeclined?: boolean;
   mercatorBackRoomOffers?: any[];
-  // Hidden desperation bargain. The Senate can front gold to a struggling
-  // player, then skim future combat income for a few cleared campaign waves.
-  senateBailoutOffered?: boolean;
-  senateBailoutClaimed?: boolean;
-  senateBailoutDeclined?: boolean;
-  senateBailoutTaxWavesRemaining?: number;
-  senateBailoutTaxGoldLost?: number;
 }
 
 export function createGameState(): GameStateShape {
@@ -406,12 +399,7 @@ export function createGameState(): GameStateShape {
     mercatorBackRoomOffered: false,
     mercatorBackRoomClaimed: false,
     mercatorBackRoomDeclined: false,
-    mercatorBackRoomOffers: [],
-    senateBailoutOffered: false,
-    senateBailoutClaimed: false,
-    senateBailoutDeclined: false,
-    senateBailoutTaxWavesRemaining: 0,
-    senateBailoutTaxGoldLost: 0
+    mercatorBackRoomOffers: []
   };
 }
 

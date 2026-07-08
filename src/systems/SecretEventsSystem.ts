@@ -10,11 +10,6 @@ export const MERCATOR_BACKROOM_MIN_WAVE = 9;
 export const MERCATOR_BACKROOM_PURCHASE_TRIGGER = 3;
 export const MERCATOR_BACKROOM_SPEND_TRIGGER = 1500;
 
-export const SENATE_BAILOUT_MIN_WAVE = 8;
-export const SENATE_BAILOUT_GOLD = 450;
-export const SENATE_BAILOUT_TAX_RATE = 0.30;
-export const SENATE_BAILOUT_TAX_WAVES = 3;
-
 export type MercatorBackRoomOfferKind = 'ITEM' | 'TOWER' | 'SUPPLIES';
 
 export interface MercatorBackRoomOffer {
@@ -187,49 +182,4 @@ export function claimMercatorBackRoomOffer(
 
   state.mercatorBackRoomClaimed = true;
   return { ok: true, offer };
-}
-
-export function shouldOfferSenateBailout(state: GameStateShape): boolean {
-  if (!runIsAlive(state) || !isPreWave(state)) return false;
-  if (state.endlessMode || state.sandboxMode) return false;
-  if ((state.wave ?? 0) < SENATE_BAILOUT_MIN_WAVE) return false;
-  if (state.senateBailoutOffered || state.senateBailoutClaimed || state.senateBailoutDeclined) return false;
-  if ((state.senateBailoutTaxWavesRemaining ?? 0) > 0) return false;
-  return (state.gold ?? 0) <= 100 && (state.lives ?? 0) <= 7;
-}
-
-export function markSenateBailoutOffered(state: GameStateShape): void {
-  state.senateBailoutOffered = true;
-}
-
-export function declineSenateBailout(state: GameStateShape): void {
-  state.senateBailoutDeclined = true;
-}
-
-export function acceptSenateBailout(state: GameStateShape): boolean {
-  if (state.senateBailoutClaimed) return false;
-  if (!runIsAlive(state)) return false;
-  state.gold = (state.gold ?? 0) + SENATE_BAILOUT_GOLD;
-  state.senateBailoutClaimed = true;
-  state.senateBailoutTaxWavesRemaining = SENATE_BAILOUT_TAX_WAVES;
-  state.senateBailoutTaxGoldLost = state.senateBailoutTaxGoldLost ?? 0;
-  return true;
-}
-
-export function applySenateBailoutTax(state: GameStateShape, amount: number): { net: number; tax: number } {
-  const gross = Math.max(0, Math.round(amount));
-  if (gross <= 0 || (state.senateBailoutTaxWavesRemaining ?? 0) <= 0) {
-    return { net: gross, tax: 0 };
-  }
-  const tax = Math.min(gross, Math.max(1, Math.round(gross * SENATE_BAILOUT_TAX_RATE)));
-  const net = Math.max(0, gross - tax);
-  state.senateBailoutTaxGoldLost = (state.senateBailoutTaxGoldLost ?? 0) + tax;
-  return { net, tax };
-}
-
-export function finishSenateBailoutTaxWave(state: GameStateShape): number {
-  const remaining = state.senateBailoutTaxWavesRemaining ?? 0;
-  if (remaining <= 0) return 0;
-  state.senateBailoutTaxWavesRemaining = Math.max(0, remaining - 1);
-  return state.senateBailoutTaxWavesRemaining;
 }

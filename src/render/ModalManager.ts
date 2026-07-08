@@ -19,7 +19,6 @@ const GAME_MODAL_IDS = [
   'boss-trophy-modal',
   'test-your-might-modal',
   'mercator-backroom-modal',
-  'senate-bailout-modal',
   'last-stand-trove-modal',
   'harbor-unlock-modal',
   'harbor-draft-modal',
