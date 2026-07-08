@@ -127,9 +127,9 @@ describe('Boss drop guarantee (2026-05-19)', () => {
     const wave9Elephant = { type: 'WAR_ELEPHANT', isBoss: true, isScheduledBoss: false, isBonusBoss: false, rareDropOnly: true };
     expect(isRareOnlyBossDropEnemy(wave9Elephant)).toBe(true);
     expect(isLegendaryBossDropEnemy(wave9Elephant)).toBe(false);
-    expect(RARE_ONLY_BOSS_DROP_CHANCE).toBe(0.80);
-    expect(shouldDropRareOnlyBossLoot(wave9Elephant, 0.79)).toBe(true);
-    expect(shouldDropRareOnlyBossLoot(wave9Elephant, 0.80)).toBe(false);
+    expect(RARE_ONLY_BOSS_DROP_CHANCE).toBe(0.25);
+    expect(shouldDropRareOnlyBossLoot(wave9Elephant, 0.2499)).toBe(true);
+    expect(shouldDropRareOnlyBossLoot(wave9Elephant, 0.25)).toBe(false);
   });
 
   it('Wave 10 keeps Hannibal legendary while escort elephants use the Rare-only table', () => {

@@ -16,7 +16,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, rollBossDrop, rollCommanderDrop, rollEpicDrop, rollRareDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_TYPES } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
@@ -7885,47 +7885,24 @@ async function boot() {
             // flood the board with rare loot.
             const drop = rollOceanSpecialistDrop(e);
             if (drop) spawnLootAt(state, e, drop);
-          } else if ((e as any).isCommander) {
-            // Commanders are premium support kills now. Regular commanders
-            // drop EPIC; boss-wave escort commanders drop RARE so the player
-            // is still rewarded for killing them without turning boss waves
-            // into Epic floods. Keep this below the legendary-boss branch and
-            // above random trash drops.
-            const drop = rollCommanderDrop(e);
-            if (drop) spawnLootAt(state, e, drop);
           } else if (e.isBoss && premiumDropRoll(0.12)) {
             const drop = rollEpicDrop(state, inventory);
             if (drop) spawnLootAt(state, e, drop);
-          } else if (e.type === 'FIRE_GIANT') {
-            // 2026-06-28 — EVERY Fire Giant now drops a guaranteed item:
-            // ~45% EPIC, otherwise RARE (was a 10% epic chance, so most
-            // kills paid nothing). Per user: each fire giant drops an epic
-            // or rare item.
-            // The W16 GATES_OF_HELL event pumps out ~15 Fire Giants (from the
-            // two destructible Hell Gates), so guaranteeing an epic/rare per
-            // kill pays a real item haul. Fire Giant is `isBoss: false`, so the
-            // boss-drop branches above don't fire — this explicit type check is
-            // the kill hook. No legendaries, so it doesn't overshadow W15/W20.
-            const drop = premiumDropRoll(0.45) ? rollEpicDrop(state, inventory) : rollRareDrop();
-            if (drop) spawnLootAt(state, e, drop);
-          } else if (((e as any).isElite || (e as any).mutation) && premiumDropRoll(0.30)) {
-            // 2026-06-28 — Per user: elites should also drop epics. Commanders
-            // pay a guaranteed epic above; actual elite-FLAGGED creatures
-            // (Chimera, Cerberus, Typhon, Giant, Cyclops, Colossus, Siege Wagon,
-            // Stone Juggernaut) and elite mutations use a 30% premium chance.
-            // Do not key this to archetype === 'ELITE': early support enemies
-            // like Gallic Druids use that combat role and would otherwise flood
-            // normal waves with guaranteed items.
-            const drop = rollEpicDrop(state, inventory);
-            if (drop) spawnLootAt(state, e, drop);
           } else {
-            // 2026-05-24 — Elephant EPIC drop hook was moved above the
-            // boss-drop branch so it actually fires (elephants are
-            // `isBoss: true`, so the previous else-if path was
-            // unreachable). See the elephant short-circuit above.
-            // Non-boss enemies still roll the regular common/uncommon table
-            // by GROUND/FLYER drop rate.
-            maybeRollLootOnKill(state, e);
+            const premiumChance = premiumNonBossDropChance(e);
+            if (premiumChance > 0 && premiumDropRoll(premiumChance)) {
+              // 2026-07-08 — commanders and elites are no longer guaranteed
+              // item faucets. They still roll a premium RARE/EPIC table at a
+              // much higher chance than base enemies, preserving the
+              // kill-priority reward without flooding item economy. Boss
+              // legendaries remain in their separate branch above.
+              const drop = rollPremiumNonBossDrop(e, state, inventory);
+              if (drop) spawnLootAt(state, e, drop);
+            } else {
+              // Non-boss enemies still roll the regular common/uncommon table
+              // by GROUND/FLYER drop rate.
+              maybeRollLootOnKill(state, e);
+            }
           }
           // Visual + audio cue: only fire if a drop actually appeared.
           if (state.lootOrbs.length > orbsBefore) {

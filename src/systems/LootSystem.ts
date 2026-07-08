@@ -289,35 +289,60 @@ export function currentlyOwnedLegendarySet(
   return owned;
 }
 
-// 2026-05-20 — Fire Giant kills (W16 GATES_OF_HELL event) drop a
-// guaranteed EPIC item. Pool is "every item in items_permanent.json
-// whose rarity is EPIC and which isn't event-exclusive." EPIC items
-// don't carry the legendary one-per-run uniqueness gate, so duplicates
-// are allowed — the player can stack two of the same epic across
-// different towers/inventory slots. Computed once at module load.
+// Premium payload pool for chance-based non-boss elite kills. Pool is every
+// item in items_permanent.json whose rarity is EPIC and which isn't
+// event-exclusive. EPIC items don't carry the legendary one-per-run
+// uniqueness gate, so duplicates are allowed across different towers or
+// inventory slots. Computed once at module load.
 /**
- * Pick a random EPIC item for a guaranteed-drop kill (currently Fire
- * Giant). Returns null only if the player somehow has zero EPIC items
- * to draw from (shouldn't happen — the pool is non-empty by data).
- * Always 100% drop rate — the caller decides whether to call this.
+ * Pick a random EPIC item for a premium kill that already won its chance
+ * roll. Returns null only if the player somehow has zero EPIC items to draw
+ * from. The caller owns the chance roll.
  */
 export function rollEpicDrop(_state?: GameStateShape | null, _inv?: InventoryState | null): { itemId: ItemId; rarity: Rarity } | null {
   return rollFromPool('EPIC', EPIC_ITEM_POOL);
 }
 
-export function rollCommanderDrop(enemy: Partial<Enemy> | any): { itemId: ItemId; rarity: Rarity } | null {
-  if (!enemy?.isCommander) return null;
-  // Boss-wave escort commanders should still reward the player for
-  // prioritizing them, but Rare keeps boss waves from turning into Epic floods.
-  if (enemy.__bossEscortCommander) return rollRareDrop();
-  return rollEpicDrop();
+export const PREMIUM_NON_BOSS_DROP_CHANCES = Object.freeze({
+  COMMANDER: 0.35,
+  BOSS_ESCORT_COMMANDER: 0.22,
+  FIRE_GIANT: 0.28,
+  ELITE: 0.22,
+  ELITE_MUTATION: 0.08
+});
+
+export function premiumNonBossDropChance(enemy: Partial<Enemy> | any): number {
+  if (!enemy) return 0;
+  if (enemy.__bossEscortCommander) return PREMIUM_NON_BOSS_DROP_CHANCES.BOSS_ESCORT_COMMANDER;
+  if (enemy.isCommander) return PREMIUM_NON_BOSS_DROP_CHANCES.COMMANDER;
+  if (enemy.type === 'FIRE_GIANT') return PREMIUM_NON_BOSS_DROP_CHANCES.FIRE_GIANT;
+  if (enemy.isElite) return PREMIUM_NON_BOSS_DROP_CHANCES.ELITE;
+  if (enemy.mutation) return PREMIUM_NON_BOSS_DROP_CHANCES.ELITE_MUTATION;
+  return 0;
 }
 
-export function isGuaranteedEpicDropEnemy(enemy: Partial<Enemy> | any): boolean {
-  if (!enemy) return false;
-  if (enemy.__bossEscortCommander) return false;
-  if (enemy.isCommander) return true;
-  return false;
+export function rollPremiumNonBossDrop(
+  enemy: Partial<Enemy> | any,
+  state?: GameStateShape | null,
+  inv?: InventoryState | null
+): { itemId: ItemId; rarity: Rarity } | null {
+  const chance = premiumNonBossDropChance(enemy);
+  if (chance <= 0) return null;
+
+  if (enemy?.__bossEscortCommander) return rollRareDrop();
+  if (enemy?.isCommander) {
+    return premiumDropRoll(0.30) ? rollEpicDrop(state, inv) : rollRareDrop();
+  }
+  if (enemy?.type === 'FIRE_GIANT') {
+    return premiumDropRoll(0.35) ? rollEpicDrop(state, inv) : rollRareDrop();
+  }
+  if (enemy?.isElite) {
+    return premiumDropRoll(0.30) ? rollEpicDrop(state, inv) : rollRareDrop();
+  }
+  if (enemy?.mutation) {
+    return premiumDropRoll(0.15) ? rollEpicDrop(state, inv) : rollRareDrop();
+  }
+  return null;
 }
 
 export function rollBossDrop(

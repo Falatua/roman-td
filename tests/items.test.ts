@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, itemRandomSelectionWeight } from '../src/systems/ItemRules';
-import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, rollCommanderDrop, isGuaranteedEpicDropEnemy, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop } from '../src/systems/LootSystem';
+import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
 import towersData from '../src/data/towers.json';
@@ -496,25 +496,39 @@ describe('EPIC premium drop payload — rollEpicDrop', () => {
     }
   });
 
-  it('guarantees EPIC drops for commanders only, not ordinary elite-role enemies', () => {
-    expect(isGuaranteedEpicDropEnemy({ type: 'PATHFINDER_COMMANDER', isCommander: true, archetype: 'RUNNER' })).toBe(true);
-    expect(isGuaranteedEpicDropEnemy({ type: 'PATHFINDER_COMMANDER', isCommander: true, __bossEscortCommander: true })).toBe(false);
-    expect(isGuaranteedEpicDropEnemy({ type: 'GALLIC_DRUID', archetype: 'ELITE' })).toBe(false);
-    expect(isGuaranteedEpicDropEnemy({ type: 'ANUBIS_PRIEST', archetype: 'ELITE' })).toBe(false);
-    expect(isGuaranteedEpicDropEnemy({ type: 'FERAL_DOG', archetype: 'SWARM', mutation: 'VETERAN' })).toBe(false);
-    expect(isGuaranteedEpicDropEnemy({ type: 'FERAL_DOG', archetype: 'SWARM' })).toBe(false);
+  it('keeps commanders and elites chance-based instead of guaranteed item drops', () => {
+    expect(PREMIUM_NON_BOSS_DROP_CHANCES.COMMANDER).toBe(0.35);
+    expect(PREMIUM_NON_BOSS_DROP_CHANCES.BOSS_ESCORT_COMMANDER).toBe(0.22);
+    expect(PREMIUM_NON_BOSS_DROP_CHANCES.FIRE_GIANT).toBe(0.28);
+    expect(PREMIUM_NON_BOSS_DROP_CHANCES.ELITE).toBe(0.22);
+    expect(PREMIUM_NON_BOSS_DROP_CHANCES.ELITE_MUTATION).toBe(0.08);
+
+    expect(premiumNonBossDropChance({ type: 'PATHFINDER_COMMANDER', isCommander: true, archetype: 'RUNNER' })).toBe(0.35);
+    expect(premiumNonBossDropChance({ type: 'STANDARD_BEARER_COMMANDER', isCommander: true, __bossEscortCommander: true })).toBe(0.22);
+    expect(premiumNonBossDropChance({ type: 'FIRE_GIANT' })).toBe(0.28);
+    expect(premiumNonBossDropChance({ type: 'UNDEAD_GIANT', isElite: true })).toBe(0.22);
+    expect(premiumNonBossDropChance({ type: 'FERAL_DOG', archetype: 'SWARM', mutation: 'VETERAN' })).toBe(0.08);
+    expect(premiumNonBossDropChance({ type: 'GALLIC_DRUID', archetype: 'ELITE' })).toBe(0);
+    expect(premiumNonBossDropChance({ type: 'FERAL_DOG', archetype: 'SWARM' })).toBe(0);
   });
 
-  it('guarantees commanders always drop at least Rare loot', () => {
-    for (let i = 0; i < 30; i++) {
-      const normal = rollCommanderDrop({ type: 'PATHFINDER_COMMANDER', isCommander: true });
-      expect(normal).not.toBeNull();
-      expect(normal!.rarity).toBe('EPIC');
+  it('uses Rare/Epic payloads only after premium non-boss enemies win their chance roll', () => {
+    const randomSpy = vi.spyOn(Math, 'random');
+    try {
+      randomSpy.mockReturnValue(0.99);
+      expect(rollPremiumNonBossDrop({ type: 'PATHFINDER_COMMANDER', isCommander: true })?.rarity).toBe('RARE');
+      expect(rollPremiumNonBossDrop({ type: 'FIRE_GIANT' })?.rarity).toBe('RARE');
+      expect(rollPremiumNonBossDrop({ type: 'UNDEAD_GIANT', isElite: true })?.rarity).toBe('RARE');
 
-      const escort = rollCommanderDrop({ type: 'STANDARD_BEARER_COMMANDER', isCommander: true, __bossEscortCommander: true });
-      expect(escort).not.toBeNull();
-      expect(escort!.rarity).toBe('RARE');
+      randomSpy.mockReturnValue(0.01);
+      expect(rollPremiumNonBossDrop({ type: 'PATHFINDER_COMMANDER', isCommander: true })?.rarity).toBe('EPIC');
+      expect(rollPremiumNonBossDrop({ type: 'FIRE_GIANT' })?.rarity).toBe('EPIC');
+      expect(rollPremiumNonBossDrop({ type: 'UNDEAD_GIANT', isElite: true })?.rarity).toBe('EPIC');
+
+      expect(rollPremiumNonBossDrop({ type: 'STANDARD_BEARER_COMMANDER', isCommander: true, __bossEscortCommander: true })?.rarity).toBe('RARE');
+      expect(rollPremiumNonBossDrop({ type: 'GALLIC_DRUID', archetype: 'ELITE' })).toBeNull();
+    } finally {
+      randomSpy.mockRestore();
     }
-    expect(rollCommanderDrop({ type: 'GALLIC_DRUID', archetype: 'ELITE' })).toBeNull();
   });
 });
