@@ -963,6 +963,17 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(source).toContain("bodySelector: '.rtd-tower-menu-collapse'");
   });
 
+  it('keeps enemy inspect details inside a real scroll body', () => {
+    const source = readFileSync('src/render/EnemyInspect.ts', 'utf8');
+    expect(source).toContain('rtd-enemy-inspect-scroll-body');
+    expect(source).toContain("'overflow-y:auto'");
+    expect(source).toContain("'flex:1'");
+    expect(source).toContain('max-height:calc(100vh - 32px)');
+    expect(source).toContain("bodySelector: '.rtd-enemy-inspect-collapse'");
+    expect(source).toContain('markScrollable(body)');
+    expect(source).not.toContain('markScrollable(modal)');
+  });
+
   it('keeps mandatory decision modals expanded on every new offer', () => {
     for (const file of [
       'src/render/CampaignRelicModal.ts',

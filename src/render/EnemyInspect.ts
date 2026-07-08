@@ -76,12 +76,12 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // elements like the wave-preview chip (z:40) and prospect sidebar (z:75).
   // closeGameModals() already strips other modals, so a player clicking
   // a sprite to inspect always sees an unobstructed inspect dialog.
-  // 2026-05-19 — Responsive clamping (Codex pattern). Modal scrolls
-  // top-anchored; panel has no max-height so traits + abilities lists
-  // are always reachable regardless of viewport height.
+  // 2026-07-08 — Dedicated inner scroll body. The shared move/collapse
+  // controls need the outer panel to stay fixed, so long enemy bars scroll
+  // inside the parchment instead of depending on the backdrop scroll.
   modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.5);z-index:80;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
   const panel = document.createElement('div');
-  panel.style.cssText = `position:relative;background:linear-gradient(180deg,#241a12,#17110c 46%,#0b0907 100%);border:3px solid ${acColor};color:#e8d6a8;width:min(480px,96vw);box-shadow:0 0 24px ${acColor}44,0 18px 42px rgba(0,0,0,0.72);opacity:1;overflow:hidden;`;
+  panel.style.cssText = `position:relative;background:linear-gradient(180deg,#241a12,#17110c 46%,#0b0907 100%);border:3px solid ${acColor};color:#e8d6a8;width:min(480px,96vw);max-height:calc(100vh - 32px);box-shadow:0 0 24px ${acColor}44,0 18px 42px rgba(0,0,0,0.72);opacity:1;overflow:hidden;display:flex;flex-direction:column;`;
 
   const banner = document.createElement('div');
   banner.style.cssText = `background:${acColor};color:#1a1410;padding:6px 104px 6px 12px;font-weight:bold;letter-spacing:3px;display:flex;justify-content:space-between;align-items:center`;
@@ -104,6 +104,19 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       </div>
     </div>`;
   panel.appendChild(head);
+
+  const body = document.createElement('div');
+  body.className = 'rtd-enemy-inspect-scroll-body rtd-enemy-inspect-collapse';
+  body.style.cssText = [
+    'overflow-y:auto',
+    'overflow-x:hidden',
+    'min-height:0',
+    'flex:1',
+    'scrollbar-gutter:stable',
+    '-webkit-overflow-scrolling:touch',
+    'overscroll-behavior:contain'
+  ].join(';');
+  panel.appendChild(body);
 
   // 2026-05-15 v9 ARMOR ROW — single, prominent line at the top of the
   // resistance section showing the COMBINED faction × per-enemy armor %
@@ -142,7 +155,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     <div style="padding:8px 12px 4px;font-size:9px;color:#ffd34d;letter-spacing:2px;background:#1a1208">🛡 ARMOR (faction × per-enemy combined)</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:1px;background:#3a3025">${armorCells}</div>
   `;
-  panel.appendChild(armorBlock);
+  body.appendChild(armorBlock);
 
   // Original per-damage-type faction-only breakdown kept beneath the
   // combined armor row so power players can see WHY the combined number
@@ -159,7 +172,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     <div style="padding:8px 12px 4px;font-size:9px;color:#aa9a4a;letter-spacing:2px;background:#12100d">FACTION BASELINE</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:1px;background:#3a3025">${resCells}</div>
   `;
-  panel.appendChild(resGrid);
+  body.appendChild(resGrid);
 
   const specificRes = resistanceSummary(e.type);
   if (specificRes.length > 0) {
@@ -171,7 +184,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
         const color = r.value <= 0 ? '#aa3a3a' : '#7896c8';
         return `<span style="display:inline-block;margin:0 6px 6px 0;padding:4px 6px;background:#0c0a08;border:1px solid #3a3025;color:${color};font-size:10px"><b>${r.label}</b> ${label}</span>`;
       }).join('');
-    panel.appendChild(specBox);
+    body.appendChild(specBox);
   }
 
   // 2026-05-20 — FULL DAMAGE-OVER-TIME PROFILE. The SPECIFIC RESISTANCES
@@ -221,7 +234,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     <div style="display:grid;grid-template-columns:repeat(6, 1fr);gap:3px">${dotCellsHtml}</div>
     <div style="font-size:9px;color:#5a7a7a;margin-top:6px;line-height:1.4">Slow / Stun / Freeze are STATUS effects. Burn / Bleed / Poison are DAMAGE-OVER-TIME ticks. Full damage = no resist; +N% extra = vulnerable.</div>
   `;
-  panel.appendChild(dotBox);
+  body.appendChild(dotBox);
 
   // 2026-05 v6: greatly expanded trait/mechanic block. Every JSON flag
   // and boss-script behavior we run is documented here, with concrete
@@ -398,14 +411,14 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     tBox.style.cssText = 'padding:10px 12px;border-bottom:1px solid #3a3025;background:#1a0e08';
     tBox.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:1px;margin-bottom:6px">SPECIAL TRAITS</div>` +
       traits.map(t => `<div style="color:${t.color ?? '#ff8866'};font-size:11px;font-weight:bold;line-height:1.45;margin-bottom:3px">⚠ ${t.label}</div>`).join('');
-    panel.appendChild(tBox);
+    body.appendChild(tBox);
   }
   if (scriptLines.length > 0) {
     const bBox = document.createElement('div');
     bBox.style.cssText = 'padding:10px 12px;border-bottom:1px solid #3a3025;background:#1a0a0a';
     bBox.innerHTML = `<div style="font-size:9px;color:#ee5555;letter-spacing:2px;margin-bottom:6px">⚔ BOSS MECHANICS</div>` +
       scriptLines.map(t => `<div style="color:#ff8866;font-size:11px;font-weight:bold;line-height:1.45;margin-bottom:3px">▸ ${t}</div>`).join('');
-    panel.appendChild(bBox);
+    body.appendChild(bBox);
   }
 
   // Active status effects (only meaningful when inspecting a LIVE enemy
@@ -415,11 +428,12 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     sBox.style.cssText = 'padding:8px 12px;border-bottom:1px solid #3a3025';
     sBox.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:1px;margin-bottom:4px">ACTIVE STATUS</div>` +
       e.statusEffects.map(s => `<span style="display:inline-block;margin-right:8px;color:#9be0ff;font-size:11px">${s.kind} (${s.remaining.toFixed(1)}s)</span>`).join('');
-    panel.appendChild(sBox);
+    body.appendChild(sBox);
   }
 
   // Close
   const close = document.createElement('div');
+  close.className = 'rtd-enemy-inspect-footer';
   close.style.cssText = 'padding:10px;display:flex;justify-content:flex-end;background:#0c0a08';
   const cb = document.createElement('button');
   cb.textContent = 'CLOSE';
@@ -435,15 +449,15 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   panel.addEventListener('click', (ev) => ev.stopPropagation());
   parent.appendChild(modal);
   enhanceModalErgonomics(modal, panel, {
+    bodySelector: '.rtd-enemy-inspect-collapse',
     title: `${def?.name ?? pretty(e.type)} enemy inspect`,
     closeButton: true,
     closeButtonId: 'enemy-inspect-x',
     closeOnEscape: true,
     onClose: () => modal.remove()
   });
-  // Scroll cues on the MODAL (the actual scroll container after the
-  // 2026-05-19 responsive-clamping refactor).
-  markScrollable(modal);
+  // Gold scrollbar + "▼ SCROLL FOR MORE" hint on the enemy detail body.
+  markScrollable(body);
 }
 
 // 2026-05 v6: type-driven wrapper for the wave-preview clickable sprites.
