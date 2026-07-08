@@ -303,14 +303,6 @@ function ensureStyle() {
       30%  { background: rgba(255,255,255,0.85); }
       100% { background: rgba(255,255,255,0); }
     }
-    @keyframes bwShake {
-      0%, 100% { transform: translate(0,0) rotate(0); }
-      15%      { transform: translate(-8px, 4px) rotate(-0.5deg); }
-      30%      { transform: translate(7px, -5px) rotate(0.5deg); }
-      45%      { transform: translate(-5px, -4px) rotate(-0.3deg); }
-      60%      { transform: translate(6px, 4px) rotate(0.3deg); }
-      75%      { transform: translate(-3px, 2px); }
-    }
     .bw-overlay {
       position: absolute; inset: 0; z-index: 195;
       background: radial-gradient(ellipse at center, #1a0808 0%, #0a0202 60%, #000 100%);
@@ -319,7 +311,6 @@ function ensureStyle() {
       animation: bwFlicker 5.4s infinite;
       overflow: hidden;
     }
-    .bw-overlay.shake { animation: bwShake 520ms ease-in-out, bwFlicker 5.4s infinite; }
     .bw-scanlines {
       position: absolute; inset: 0; pointer-events: none; z-index: 1;
       background: repeating-linear-gradient(
@@ -569,15 +560,12 @@ export function showBossWarning(parent: HTMLElement, wave: number, onConfirm: ()
               { loop: true, gain: 0.65 }
             );
           } catch { /* ignore */ }
-          // Dramatic flash + shake on the second confirmation.
+          // Dramatic flash on the second confirmation.
           const flash = document.createElement('div');
           flash.className = 'bw-flash';
           secondScreen.appendChild(flash);
-          secondScreen.classList.add('shake');
 
-          // After flash/shake, show a brief countdown buildup, then fire.
-          const renderer: any = (window as any).__renderer;
-          if (renderer && typeof renderer.triggerShake === 'function') renderer.triggerShake(6, 0.6);
+          // After flash, show a brief countdown buildup, then fire.
           setTimeout(() => {
             secondScreen.querySelector('.bw-panel')!.remove();
             const buildup = document.createElement('div');

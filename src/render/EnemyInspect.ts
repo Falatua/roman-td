@@ -355,7 +355,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     WAR_ELEPHANT: [
       'STAMPEDE — at 50% HP, status-immune + +75% speed for 4s; strips slow/freeze/stun',
       'IMMUNE TO SLOW & FREEZE (data flags)',
-      'TUSK QUAKE — every 6s, silences every tower within 2 tiles for 0.6s (dust-brown ring + screen shake)',
+      'TUSK QUAKE — every 6s, silences every tower within 2 tiles for 0.6s (dust-brown ring)',
       'DUST-SHIELD AURA — 4-tile dome protects nearby ground allies from ranged attacks while alive (see SPECIAL TRAITS above)',
       'HEAVY HIDE: higher HP, light sustain, and only +25% damage from SIEGE'
     ],

@@ -1368,40 +1368,16 @@ async function boot() {
     SFX.bossArrival();
   }
   // ─── Low-lives vignette ─────────────────────────────────────────────────
-  // Pulsing red border around the play area when lives drop below 10.
+  // Retired: low-life state should not tint the screen red.
   function updateLowLivesVignette() {
-    const stage = document.getElementById('stage-wrap');
-    if (!stage) return;
-    let v = document.getElementById('low-lives-vignette') as HTMLElement | null;
-    if (state.lives <= 0 || state.lives > 10) {
-      if (v) v.remove();
-      return;
-    }
-    if (!v) {
-      v = document.createElement('div');
-      v.id = 'low-lives-vignette';
-      v.style.cssText = `position:absolute;inset:0;pointer-events:none;z-index:55;border:6px solid transparent;box-shadow:inset 0 0 60px rgba(220,30,30,0.45);animation:vignettePulse 1.4s ease-in-out infinite`;
-      stage.appendChild(v);
-      if (!document.getElementById('vignette-style')) {
-        const s = document.createElement('style');
-        s.id = 'vignette-style';
-        s.textContent = `@keyframes vignettePulse {
-          0%, 100% { box-shadow: inset 0 0 60px rgba(220,30,30,0.35), inset 0 0 120px rgba(220,30,30,0.15); }
-          50% { box-shadow: inset 0 0 80px rgba(255,30,30,0.7), inset 0 0 180px rgba(255,30,30,0.30); }
-        }`;
-        document.head.appendChild(s);
-      }
-    }
-    // Intensify as lives approach 0
-    const intensity = 1 - (state.lives / 10);
-    v.style.opacity = String(0.5 + intensity * 0.5);
+    document.getElementById('low-lives-vignette')?.remove();
+    document.getElementById('vignette-style')?.remove();
   }
   // FINAL HOUR AURA — pulsing gold border around the play area during
   // every build/prospect/keeper phase that precedes W20. It's a visual
   // companion to the hype modal so the field itself reminds the player
   // this is THE round to spend everything. Removes when W20 starts (or
-  // earlier if game is lost/won). Stays alongside the low-lives vignette
-  // when both fire.
+  // earlier if game is lost/won).
   function updateFinalHourAura() {
     const stage = document.getElementById('stage-wrap');
     if (!stage) return;
@@ -4507,16 +4483,13 @@ async function boot() {
       window.removeEventListener('focus', primeLoadingMusic);
       // 1) Coin drops into the slot.
       if (coinHint) coinHint.classList.add('dropping');
-      // 2) Immediate screen shake — cabinet just got hit.
-      setTimeout(() => { loadingEl.classList.add('shake'); }, 380);
-      // 3) After the shake settles, zoom-warp into the game.
+      // 2) Zoom-warp into the game after the coin lands.
       setTimeout(() => {
-        loadingEl.classList.remove('shake');
         loadingEl.classList.add('warp');
         copyLoopAlive = false;
         typewriterAbort = true;
       }, 900);
-      // 4) Once the warp keyframe finishes, tear the screen down.
+      // 3) Once the warp keyframe finishes, tear the screen down.
       setTimeout(() => {
         loadingEl.classList.add('hidden');
         setTimeout(() => loadingEl.remove(), 200);

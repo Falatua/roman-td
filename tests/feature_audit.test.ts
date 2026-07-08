@@ -1003,6 +1003,31 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(modalErgonomics, 'Shared modals should still keep Escape functionality without advertising it').toContain("ev.key !== 'Escape'");
   });
 
+  it('keeps Solo free of whole-screen shake and low-life red screen tint', () => {
+    const renderer = readFileSync('src/render/RenderEngine.ts', 'utf8');
+    const main = readFileSync('src/main.ts', 'utf8');
+    const index = readFileSync('index.html', 'utf8');
+    const bossWarning = readFileSync('src/render/BossWarning.ts', 'utf8');
+    const codex = readFileSync('src/render/Codex.ts', 'utf8');
+    const enemyInspect = readFileSync('src/render/EnemyInspect.ts', 'utf8');
+
+    expect(renderer).toContain('Screen shake is intentionally disabled for Solo readability');
+    expect(renderer).not.toContain('(Math.random() - 0.5) * 2 * this.shakeMagnitude');
+    expect(renderer).toContain('this.app.stage.x = WORLD.OFFSET_X');
+    expect(renderer).toContain('this.app.stage.y = WORLD.OFFSET_Y');
+
+    expect(index).not.toContain('@keyframes loadingShake');
+    expect(bossWarning).not.toContain('@keyframes bwShake');
+    expect(bossWarning).not.toContain("classList.add('shake')");
+    expect(main).not.toContain("classList.add('shake')");
+    expect(bossWarning).not.toContain('renderer.triggerShake(6, 0.6)');
+
+    expect(main).not.toContain("v.id = 'low-lives-vignette'");
+    expect(main).not.toContain('@keyframes vignettePulse');
+    expect(codex).not.toContain('Pulsing red border');
+    expect(enemyInspect).not.toContain('screen shake');
+  });
+
   it('does not stack the first-run teaching banner under name or hero gates', () => {
     const source = readFileSync('src/main.ts', 'utf8');
     expect(source).toContain('function queueFirstRoundBanner');

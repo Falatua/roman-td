@@ -718,7 +718,6 @@ function renderTab(tab: string): string {
           ${noteCard('Tower indicators', '<b>Pulsing red ring:</b> eligible to combine — click for options. <b>Gold ring + dots above tower:</b> tier (1-5, color-keyed). <b>Pink X:</b> silenced. <b>Pulsing colored dot:</b> weather is slowing attack speed.')}
           ${noteCard('Aura rings (colored circles)', '<b style="color:#c070ff">VIOLET</b> = ally buff (damage/speed/range). <b style="color:#ff5566">DASHED CRIMSON</b> = enemy debuff (+taken%/slow). <b style="color:#ffd34d">GOLD</b> = tower attack range. Three distinct colors so the layers never confuse.')}
           ${noteCard('Enemy indicators', '<b>Bronze shield:</b> needs melee hit before ranged can target. <b>Colored ring around enemy:</b> elite mutation (color = mutation type). <b>Status badges above:</b> active status effects.')}
-          ${noteCard('Play-area warnings', '<b>Pulsing red border:</b> you\'re below 10 lives — danger.')}
         </div>
       `)}
     `;

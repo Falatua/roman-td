@@ -2596,19 +2596,21 @@ export class RenderEngine {
     this.app.stage.y = WORLD.OFFSET_Y;
   }
 
-  // Screen shake (Animation Doc §10.5) — set by triggerShake, applied each frame to stage transform
+  // Screen shake is intentionally disabled for Solo readability. Many combat
+  // systems still call this legacy hook, so keep the API as a no-op.
   private shakeRemaining = 0;
   private shakeMagnitude = 0;
-  triggerShake(magnitude: number, durationSec: number) {
-    this.shakeMagnitude = Math.max(this.shakeMagnitude, magnitude);
-    this.shakeRemaining = Math.max(this.shakeRemaining, durationSec);
+  triggerShake(_magnitude: number, _durationSec: number) {
+    this.shakeMagnitude = 0;
+    this.shakeRemaining = 0;
+    this.app.stage.x = WORLD.OFFSET_X;
+    this.app.stage.y = WORLD.OFFSET_Y;
   }
 
   // Gate impact flash (Animation Doc §22.2) — set when an enemy leaks, decays over 0.4s
   private gateImpactT = 0;
   triggerGateImpact() {
     this.gateImpactT = 0.4;
-    this.triggerShake(2, 0.18);
   }
 
   // Cave spawn puff queue (Animation Doc §22.1)
@@ -2618,18 +2620,13 @@ export class RenderEngine {
     if (this.spawnPuffs.length > 12) this.spawnPuffs.shift();
   }
 
-  // Apply per-frame shake + gate impact decay. Call once per frame after all draws.
-  // 2026-05-17 — Shake offsets are added to the world-zoom baseline (WORLD.OFFSET_X/Y)
-  // instead of overwriting stage.x/y to 0. Without this the shake would yank the
-  // camera back to (0, 0) every frame, undoing the zoom-in centering.
+  // Apply gate impact decay. The stage position is always pinned to the
+  // world baseline so combat cannot shake the playfield.
   applyShake(dt: number, tick: number) {
-    if (this.shakeRemaining > 0) {
-      this.shakeRemaining = Math.max(0, this.shakeRemaining - dt);
-      const a = this.shakeRemaining / 0.18;
-      this.app.stage.x = WORLD.OFFSET_X + (Math.random() - 0.5) * 2 * this.shakeMagnitude * a;
-      this.app.stage.y = WORLD.OFFSET_Y + (Math.random() - 0.5) * 2 * this.shakeMagnitude * a;
-      if (this.shakeRemaining <= 0) { this.app.stage.x = WORLD.OFFSET_X; this.app.stage.y = WORLD.OFFSET_Y; this.shakeMagnitude = 0; }
-    }
+    this.shakeRemaining = 0;
+    this.shakeMagnitude = 0;
+    this.app.stage.x = WORLD.OFFSET_X;
+    this.app.stage.y = WORLD.OFFSET_Y;
     if (this.gateImpactT > 0) this.gateImpactT = Math.max(0, this.gateImpactT - dt);
     // Decay spawn puffs
     this.spawnPuffs = this.spawnPuffs.filter(p => tick - p.born < 0.5);
