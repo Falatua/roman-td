@@ -153,6 +153,110 @@ function playComboCreationSfx(resultType: TowerType | string, isSameTierMerge = 
   SFX.comboTowerMade();
 }
 
+const COMBO_MELEE_ATTACK_SFX: Record<string, () => void> = {
+  HORSEMAN: SFX.comboHorseman,
+  COHORT_GUARD: SFX.comboCohortGuard,
+  PRAETORIAN_WALL: SFX.comboPraetorianWall
+};
+
+const HEAVY_MELEE_ATTACK_TYPES = new Set<string>([
+  'CENTURION',
+  'PRIMUS_PILUS',
+  'IMPERATOR_GUARD',
+  'CATAPHRACT',
+  'EVOCATUS'
+]);
+
+const SPEAR_MELEE_ATTACK_TYPES = new Set<string>(['HASTATI', 'TRIARIUS']);
+
+function playTowerMeleeAttackSfx(t: any): void {
+  const type = String(t?.type ?? '');
+  const comboSfx = COMBO_MELEE_ATTACK_SFX[type];
+  if (comboSfx) {
+    comboSfx();
+    return;
+  }
+  if (HEAVY_MELEE_ATTACK_TYPES.has(type)) {
+    SFX.meleeSwordHeavy();
+  } else if (SPEAR_MELEE_ATTACK_TYPES.has(type)) {
+    SFX.meleeSpear();
+  } else {
+    SFX.meleeSwordLight();
+  }
+}
+
+const COMBO_PROJECTILE_ATTACK_SFX: Record<string, () => void> = {
+  SCORPION_BOLT: SFX.comboScorpionBolt,
+  WAR_CHARIOT: SFX.comboWarChariot,
+  EAGLE_STANDARD: SFX.comboEagleStandard,
+  PLAGUE_CART: SFX.comboPlagueCart,
+  NUMIDIAN_CAVALRY: SFX.comboNumidian,
+  AERARIUM: SFX.comboAerarium,
+  SIEGE_ONAGER: SFX.comboSiegeOnager,
+  AQUILIFER_TITAN: SFX.comboAquilifer,
+  INFERNO_CART: SFX.comboInfernoCart,
+  FROZEN_LEGION: SFX.comboFrozenLegion,
+  JULIUS_CAESAR: SFX.comboJuliusCaesar,
+  HANNIBALS_NIGHTMARE: SFX.comboHannibal,
+  GOD_OF_WAR: SFX.comboGodOfWar
+};
+
+const FIRE_ATTACK_TYPES = new Set<string>([
+  'IGNIFER',
+  'VULCAN_ENGINEER',
+  'HERO_SULLA',
+  'CHAMPION_SULLA'
+]);
+
+const BALLISTA_ATTACK_TYPES = new Set<string>([
+  'SCORPIO',
+  'HERO_AGRIPPA',
+  'CHAMPION_AGRIPPA'
+]);
+
+const CROSSBOW_ATTACK_TYPES = new Set<string>([
+  'BALLISTARIUS',
+  'CARROBALLISTA',
+  'COLOSSUS_ONAGER'
+]);
+
+const STAFF_ATTACK_TYPES = new Set<string>([
+  'LEGATE',
+  'FLAMEN',
+  'AUGUR',
+  'HARUSPEX',
+  'SOLAR_PRIEST',
+  'PRAEFECTUS'
+]);
+
+const THROWN_ATTACK_TYPES = new Set<string>([
+  'CLIBANARIUS',
+  'SPECULATOR',
+  'FUNDIBULUS'
+]);
+
+function playTowerProjectileAttackSfx(t: any): void {
+  const type = String(t?.type ?? '');
+  const comboSfx = COMBO_PROJECTILE_ATTACK_SFX[type];
+  if (comboSfx) {
+    comboSfx();
+  } else if (BALLISTA_ATTACK_TYPES.has(type)) {
+    SFX.ballista();
+  } else if (CROSSBOW_ATTACK_TYPES.has(type)) {
+    SFX.crossbow();
+  } else if (FIRE_ATTACK_TYPES.has(type)) {
+    SFX.fireWhoosh();
+  } else if (type === 'ARCUBALLISTA') {
+    SFX.bowstring();
+  } else if (STAFF_ATTACK_TYPES.has(type)) {
+    SFX.staffCast();
+  } else if (THROWN_ATTACK_TYPES.has(type)) {
+    SFX.javelinThrow();
+  } else {
+    SFX.bowstring();
+  }
+}
+
 async function boot() {
   try {
     const host = window.location.hostname;
@@ -7294,21 +7398,9 @@ async function boot() {
           // visuals + slash arc sprites still play unconditionally.
           const hasBleed = e.statusEffects.some((s: any) => s.kind === 'BLEED');
           if (hasBleed) emitHitSplatter(gore, e.x, e.y, false);
-          // Distinct melee audio per role family. Combo melees use their unique sounds.
-          const COMBO_MELEE_SFX: Record<string, () => void> = {
-            HORSEMAN: SFX.comboHorseman,
-            COHORT_GUARD: SFX.comboCohortGuard,
-            PRAETORIAN_WALL: SFX.comboPraetorianWall
-          };
-          if (t && COMBO_MELEE_SFX[t.type]) {
-            COMBO_MELEE_SFX[t.type]();
-          } else {
-            const HEAVY_SET = new Set(['CENTURION','PRIMUS_PILUS','IMPERATOR_GUARD','CATAPHRACT','EVOCATUS']);
-            const SPEAR_SET = new Set(['HASTATI','TRIARIUS']);
-            if (t && HEAVY_SET.has(t.type)) SFX.meleeSwordHeavy();
-            else if (t && SPEAR_SET.has(t.type)) SFX.meleeSpear();
-            else SFX.meleeSwordLight();
-          }
+          // Distinct melee audio per role family. Shared with DPS Check so
+          // the dummy path sounds like real combat instead of muted math.
+          playTowerMeleeAttackSfx(t);
           if (t) {
             const sx = t.tileX * GRID.TILE + GRID.TILE / 2;
             const sy = t.tileY * GRID.TILE + GRID.TILE / 2;
@@ -7382,48 +7474,9 @@ async function boot() {
           }
         },
         onProjectileFire: (t: any, target: any, _d: number) => {
-          // Combo towers get unique signature audio.
-          const COMBO_SFX: Record<string, () => void> = {
-            SCORPION_BOLT: SFX.comboScorpionBolt,
-            WAR_CHARIOT: SFX.comboWarChariot,
-            EAGLE_STANDARD: SFX.comboEagleStandard,
-            PLAGUE_CART: SFX.comboPlagueCart,
-            NUMIDIAN_CAVALRY: SFX.comboNumidian,
-            AERARIUM: SFX.comboAerarium,
-            SIEGE_ONAGER: SFX.comboSiegeOnager,
-            AQUILIFER_TITAN: SFX.comboAquilifer,
-            INFERNO_CART: SFX.comboInfernoCart,
-            FROZEN_LEGION: SFX.comboFrozenLegion,
-            JULIUS_CAESAR: SFX.comboJuliusCaesar,
-            HANNIBALS_NIGHTMARE: SFX.comboHannibal,
-            GOD_OF_WAR: SFX.comboGodOfWar
-          };
-          if (t && COMBO_SFX[t.type]) {
-            COMBO_SFX[t.type]();
-          } else if (t.type === 'SCORPIO') {
-            SFX.ballista();
-          } else if (t.type === 'IGNIFER' || t.type === 'VULCAN_ENGINEER') {
-            SFX.fireWhoosh();
-          } else if (t.type === 'BALLISTARIUS' || t.type === 'CARROBALLISTA' || t.type === 'COLOSSUS_ONAGER') {
-            // Heavy crew-served siege engines — crossbow click-snap fits.
-            SFX.crossbow();
-          } else if (t.type === 'ARCUBALLISTA') {
-            // 2026-05 v9: now a single auxilia archer (sprite swap) — fire
-            // a regular bowstring sound, not the crew-served crossbow click.
-            SFX.bowstring();
-          } else if (t.type === 'LEGATE' || t.type === 'FLAMEN' || t.type === 'AUGUR' || t.type === 'HARUSPEX' || t.type === 'SOLAR_PRIEST' || t.type === 'PRAEFECTUS') {
-            // Divine + scepter casters — staff cast SFX. Praefectus's eagle
-            // scepter (2026-05 v9 sprite swap) belongs here even though its
-            // damage type is PHYS_RANGED — the cast is cosmetic.
-            SFX.staffCast();
-          } else if (t.type === 'CLIBANARIUS' || t.type === 'SPECULATOR' || t.type === 'FUNDIBULUS') {
-            // Spear/javelin/sling throwers — javelin throw whistle.
-            // SPECULATOR flings a marker dagger, FUNDIBULUS releases a
-            // sling stone. (Venator returned to bow archer in v10.)
-            SFX.javelinThrow();
-          } else {
-            SFX.bowstring();
-          }
+          // Combo towers and hero identities get their signature audio.
+          // Shared with DPS Check so the pre-wave dummy keeps tower sound.
+          playTowerProjectileAttackSfx(t);
           // Muzzle flash at firing tip, color-keyed to damage type.
           if (t && target) {
             const sx = t.tileX * GRID.TILE + GRID.TILE / 2;
@@ -8259,19 +8312,20 @@ async function boot() {
       // scripts, NO leak penalty (the dummy's livesCost is already 0 and
       // its onLeak callback shows the summary popup instead).
       // 2026-05-15 v2: trigger the SAME visual feedback during DPS check
-      // as during a real wave so the player sees melee slash VFX +
-      // projectile sprites land on the dummy. Previously the hooks were
-      // no-ops, which made the test feel dead (towers attacked silently).
+      // as during a real wave so the player sees melee slash VFX,
+      // projectile sprites, and hears the tower / hero attack sounds
+      // land on the dummy. Previously part of this hook stayed silent,
+      // which made the test feel like muted math.
       const dpsCombatHooks = {
         onKill: (_t: any, e: any) => {
           if (e.isDpsCheck) showDpsCheckSummary(e, /*killed=*/true);
         },
         onHit: () => {},                  // skip gore/sparks (wave polish)
         onMeleeSwing: (t: any, e: any) => {
-          // Render the slash arc at the enemy position — same logic as
-          // the main wave-phase onMeleeSwing handler. Without this, the
-          // Hastati / Milites / etc. attack a dummy in eerie silence.
+          // Render the slash arc at the enemy position and play the same
+          // role-family SFX as real wave combat.
           if (!t) return;
+          playTowerMeleeAttackSfx(t);
           const sx = t.tileX * GRID.TILE + GRID.TILE / 2;
           const sy = t.tileY * GRID.TILE + GRID.TILE / 2;
           const angle = Math.atan2(e.y - sy, e.x - sx);
@@ -8282,7 +8336,11 @@ async function boot() {
           // hook so a Caesar dummy-DPS check also shows the gold swing.
           renderer.triggerMeleeSlash(e.x, e.y, angle, state.tick, size, cleaver, meleeSlashTintFor(t.type));
         },
-        onProjectileFire: () => {},       // projectile sprites spawn from tickCombat directly
+        onProjectileFire: (t: any) => {
+          // Projectile sprites spawn from tickCombat directly; this hook
+          // restores the same firing sounds used during real waves.
+          playTowerProjectileAttackSfx(t);
+        },
       };
       // 2026-05-15 audit fix: DPS-check side-tick was missing
       // tickBurnPatches, so fire-tower builds (Draconarius, Hannibal's

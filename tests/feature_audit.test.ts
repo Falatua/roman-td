@@ -864,6 +864,21 @@ describe('Sample SFX wiring', () => {
     expect(main.includes('SFX.oceanMurloc()'), 'main ocean hook should play the replacement murloc cue').toBe(true);
     expect(waveManager.includes('markOceanEmergenceOnce'), 'WaveManager should still mark the visual ocean surge once per wave').toBe(true);
   });
+
+  it('DPS Check keeps the normal tower and hero attack SFX hooks alive', () => {
+    const main = readFileSync('src/main.ts', 'utf8');
+    const start = main.indexOf('const dpsCombatHooks = {');
+    const end = main.indexOf('tickBurnPatches(state, dt);', start);
+    const dpsBlock = main.slice(start, end);
+
+    expect(main).toContain('function playTowerMeleeAttackSfx');
+    expect(main).toContain('function playTowerProjectileAttackSfx');
+    expect(main).toContain("'HERO_AGRIPPA'");
+    expect(main).toContain("'HERO_SULLA'");
+    expect(dpsBlock, 'DPS melee swings should use the same attack SFX mapping as live waves').toContain('playTowerMeleeAttackSfx(t)');
+    expect(dpsBlock, 'DPS projectile fires should use the same attack SFX mapping as live waves').toContain('playTowerProjectileAttackSfx(t)');
+    expect(dpsBlock, 'DPS projectile audio hook must not regress to a silent no-op').not.toContain('onProjectileFire: () => {}');
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────
