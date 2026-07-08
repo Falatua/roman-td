@@ -53,6 +53,32 @@ describe('Test Your Might bonus wave', () => {
     expect(shouldOfferTestYourMight(s)).toBe(false);
   });
 
+  it('is never offered after the run is already dead or decided', () => {
+    const s = bootstrapState();
+    s.lives = 0;
+    expect(shouldOfferTestYourMight(s)).toBe(false);
+
+    s.lives = 1;
+    s.gameOverAt = 12;
+    expect(shouldOfferTestYourMight(s)).toBe(false);
+
+    s.gameOverAt = -1;
+    s.phase = GamePhase.GAME_OVER;
+    expect(shouldOfferTestYourMight(s)).toBe(false);
+
+    s.phase = GamePhase.BUILD_PHASE;
+    s.endlessMode = true;
+    expect(shouldOfferTestYourMight(s)).toBe(false);
+
+    s.endlessMode = false;
+    s.testYourMightCleared = true;
+    expect(shouldOfferTestYourMight(s)).toBe(false);
+
+    s.testYourMightCleared = false;
+    s.testYourMightFailed = true;
+    expect(shouldOfferTestYourMight(s)).toBe(false);
+  });
+
   it('declining marks the offer without changing wave or lives', () => {
     const s = bootstrapState();
     declineTestYourMight(s);
@@ -80,6 +106,19 @@ describe('Test Your Might bonus wave', () => {
     expect(s.testYourMightAccepted).toBe(false);
     expect(s.testYourMightActive).toBe(true);
     expect(displayWaveNumber(s)).toBe('10.5');
+  });
+
+  it('starts W10.5 cleanly instead of advancing to W11 or opening a surprise event', () => {
+    const s = bootstrapState();
+    acceptTestYourMight(s);
+    startWave(s);
+
+    expect(s.wave).toBe(10);
+    expect(displayWaveNumber(s)).toBe('10.5');
+    expect(s.testYourMightActive).toBe(true);
+    expect(s.activeSurpriseEvent).toBeNull();
+    expect(s.extraSurpriseEvents).toEqual([]);
+    expect((s as any).__testYourMightOpen).not.toBe(true);
   });
 
   it('defers surprise reward modals while the W10.5 offer or challenge is in the way', () => {
@@ -317,5 +356,22 @@ describe('Test Your Might bonus wave', () => {
     expect(s.gold - beforeGold).toBe(3000);
     expect(s.weatherKey).toBeNull();
     expect(s.waveModifier).toBeNull();
+  });
+
+  it('continues into normal W11 after a perfect clear instead of replaying W10.5', () => {
+    const s = bootstrapState();
+    acceptTestYourMight(s);
+    startWave(s);
+    expect(s.testYourMightActive).toBe(true);
+    expect(completeTestYourMight(s)).toBe(true);
+
+    startWave(s);
+
+    expect(s.wave).toBe(11);
+    expect(displayWaveNumber(s)).toBe('11');
+    expect(s.testYourMightActive).toBe(false);
+    expect(s.testYourMightAccepted).toBe(false);
+    expect(s.spawnQueue.length).toBeGreaterThan(0);
+    expect(s.spawnQueue.every((item: any) => item.__testYourMightHpMult === undefined)).toBe(true);
   });
 });
