@@ -226,6 +226,7 @@ export const SFX = {
   codexOpen:      () => playSample(sfx('assets/sfx/codex_open.mp3'),     0.7),
   testYourMight:  () => playSample(sfx('assets/sfx/test_your_might.mp3'), 0.9),
   oceanMurloc:    () => playSample(sfx('assets/sfx/murloc.mp3'),          0.9),
+  moreGold:       () => playSample(sfx('assets/sfx/more_gold.mp3'),       0.85),
   // 2026-05 v10 — themed-music drops. Each one is a real licensed/
   // referential cue from the original brief; the engine plays them
   // through the standard MP3 sample path.
@@ -359,7 +360,8 @@ const PRELOAD_SFX_PATHS = [
   'assets/sfx/fatality_5.mp3',
   'assets/sfx/finish_him.mp3',
   'assets/sfx/test_your_might.mp3',
-  'assets/sfx/murloc.mp3'
+  'assets/sfx/murloc.mp3',
+  'assets/sfx/more_gold.mp3'
 ];
 
 export async function preloadAllSamples(): Promise<void> {

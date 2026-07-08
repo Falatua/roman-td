@@ -664,8 +664,15 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
           </div>`;
         card.onmouseenter = () => { if (canAfford) card.style.background = '#1d1714'; };
         card.onmouseleave = () => { card.style.background = '#0c0a08'; };
-        card.onclick = () => {
-          if (!canAfford) return;
+        card.onclick = (ev) => {
+          if (!canAfford) {
+            const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+            const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
+            const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
+            const ay = stageRect ? r.top - stageRect.top : undefined;
+            (window as any).__showInsufficientGoldToast?.(resolved.cost, ax, ay);
+            return;
+          }
           hooks.onCombine!(cb.recipeIndex, !!cb.isSameTierMerge, t.id);
           hooks.onClose();
         };

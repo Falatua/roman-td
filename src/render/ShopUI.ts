@@ -279,7 +279,11 @@ function renderHeroForgeSection(contentRoot: HTMLElement, state: GameStateShape,
         }
         if (!spendGold(state, cost)) {
           state.hint = `⚒ Not enough gold for next ${pathKey.toUpperCase()} tap (need ${cost}g).`;
-          try { (SFX as any).uiCancel?.(); } catch { /* ignore */ }
+          const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+          const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
+          const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
+          const ay = stageRect ? r.top - stageRect.top : undefined;
+          (window as any).__showInsufficientGoldToast?.(cost, ax, ay);
           return;
         }
         if (!state.heroForgeStacks) state.heroForgeStacks = { dmg: 0, cd: 0, aura: 0 };

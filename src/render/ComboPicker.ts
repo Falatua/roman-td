@@ -81,12 +81,18 @@ export function showComboPicker(parent: HTMLElement, combos: AvailableCombo[], s
       const ingTierColor = '#' + ((TIER_COLORS[ing.qualityTier] ?? 0xffffff)).toString(16).padStart(6, '0');
       chip.style.cssText = `font-family:'Courier New',monospace;font-size:10px;border:1px solid ${ingTierColor};padding:4px 8px;background:#1a1410;color:${ingTierColor};cursor:${canAfford ? 'pointer' : 'not-allowed'};transition:background 0.1s`;
       chip.innerHTML = `${def?.name ?? ing.type} T${ing.qualityTier} <span style="opacity:0.7">@ (${ing.tileX},${ing.tileY})</span>`;
-      chip.disabled = !canAfford;
       chip.onmouseenter = () => { if (canAfford) chip.style.background = '#2a1f12'; };
       chip.onmouseleave = () => { chip.style.background = '#1a1410'; };
       chip.onclick = (e) => {
         e.stopPropagation();
-        if (!canAfford) return;
+        if (!canAfford) {
+          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
+          const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
+          const ay = stageRect ? r.top - stageRect.top : undefined;
+          (window as any).__showInsufficientGoldToast?.(cb.cost, ax, ay);
+          return;
+        }
         hooks.onPick(cb, ing.id);
         modal.remove();
       };

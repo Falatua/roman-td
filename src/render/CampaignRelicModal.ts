@@ -74,7 +74,7 @@ export function showCampaignRelicModal(
   for (const relic of offers) {
     const affordability = campaignRelicAffordability(state, relic.id);
     const card = document.createElement('button');
-    card.disabled = !affordability.canAfford;
+    card.setAttribute('aria-disabled', String(!affordability.canAfford));
     card.style.cssText = `display:flex;flex-direction:column;gap:8px;min-height:236px;padding:14px 12px;background:#0c0a08;border:2px solid ${affordability.canAfford ? '#b8943d' : '#5b4030'};color:#e8d6a8;cursor:${affordability.canAfford ? 'pointer' : 'not-allowed'};font-family:inherit;text-align:left;transition:transform .08s,filter .1s,box-shadow .12s;opacity:${affordability.canAfford ? '1' : '0.58'};`;
     const claimText = affordability.canAfford
       ? 'CLAIM'
@@ -102,8 +102,21 @@ export function showCampaignRelicModal(
       card.style.boxShadow = '';
       card.style.transform = '';
     };
-    card.onclick = () => {
-      if (campaignRelicAffordability(state, relic.id).canAfford) closeWith(relic.id);
+    card.onclick = (ev) => {
+      const latest = campaignRelicAffordability(state, relic.id);
+      if (latest.canAfford) {
+        closeWith(relic.id);
+        return;
+      }
+      if (latest.goldCost > 0 && state.gold < latest.goldCost) {
+        const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+        const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
+        const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
+        const ay = stageRect ? r.top - stageRect.top : undefined;
+        (window as any).__showInsufficientGoldToast?.(latest.goldCost, ax, ay);
+      } else {
+        state.hint = latest.reason ?? 'This bargain demands more lives than Rome can spare.';
+      }
     };
     row.appendChild(card);
   }

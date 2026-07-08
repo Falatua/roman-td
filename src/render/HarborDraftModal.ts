@@ -54,7 +54,7 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
         <div style="margin-top:5px;font-size:16px;color:#ffd34d;font-weight:bold;line-height:1.2">${towerLabel(String(o.type))}</div>
         <div style="margin-top:5px;font-size:11px;color:#cdefff">Tier ${o.tier} · ${def.damageType ?? 'SPECIAL'} · ${def.range ?? '?'} tiles</div>
         <div style="margin-top:8px;font-size:11px;color:#fff8e0;line-height:1.45;min-height:88px">${def.ability ?? ''}</div>
-        <button data-harbor-buy="${idx}" ${affordable ? '' : 'disabled'} style="margin-top:10px;width:100%;background:${affordable ? '#1d5c66' : '#332222'};color:${affordable ? '#fff8e0' : '#aa8888'};border:2px solid ${affordable ? '#88f7ff' : '#6b3a3a'};padding:8px;cursor:${affordable ? 'pointer' : 'not-allowed'};font-family:'Courier New',monospace;font-weight:bold;letter-spacing:1.5px">${o.price}g CONTRACT</button>
+        <button data-harbor-buy="${idx}" style="margin-top:10px;width:100%;background:${affordable ? '#1d5c66' : '#332222'};color:${affordable ? '#fff8e0' : '#aa8888'};border:2px solid ${affordable ? '#88f7ff' : '#6b3a3a'};padding:8px;cursor:${affordable ? 'pointer' : 'not-allowed'};font-family:'Courier New',monospace;font-weight:bold;letter-spacing:1.5px">${affordable ? `${o.price}g CONTRACT` : `NEED ${o.price - state.gold}g`}</button>
       </div>`;
   }).join('');
   wrap.innerHTML = `
@@ -83,8 +83,17 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
   }
   wrap.querySelector<HTMLButtonElement>('#harbor-close')!.onclick = () => wrap.remove();
   wrap.querySelectorAll<HTMLButtonElement>('[data-harbor-buy]').forEach(btn => {
-    btn.onclick = () => {
+    btn.onclick = (ev) => {
       const offer = offers[Number(btn.dataset.harborBuy)];
+      if (offer && state.gold < offer.price) {
+        const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+        const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
+        const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
+        const ay = stageRect ? r.top - stageRect.top : undefined;
+        (window as any).__showInsufficientGoldToast?.(offer.price, ax, ay);
+        state.hint = `The Harbor wants ${offer.price}g. You have ${state.gold}g.`;
+        return;
+      }
       if (offer && queueHarborDraftPurchase(state, offer)) {
         wrap.remove();
         onUpdate?.();

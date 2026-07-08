@@ -696,6 +696,37 @@ describe('Item EQUIP_MODE gates', () => {
 // 9. Sample SFX wiring — critical UI stings stay present and preloaded
 // ───────────────────────────────────────────────────────────────────────
 describe('Sample SFX wiring', () => {
+  it('insufficient-gold purchases play the More Gold cue across buying surfaces', () => {
+    const fs = require('fs');
+    const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');
+    const main = fs.readFileSync('src/main.ts', 'utf8');
+    const shop = fs.readFileSync('src/render/ShopUI.ts', 'utf8');
+    const harbor = fs.readFileSync('src/render/HarborDraftModal.ts', 'utf8');
+    const relics = fs.readFileSync('src/render/CampaignRelicModal.ts', 'utf8');
+    const ui = fs.readFileSync('src/render/UIManager.ts', 'utf8');
+    const comboPicker = fs.readFileSync('src/render/ComboPicker.ts', 'utf8');
+    const towerMenu = fs.readFileSync('src/render/TowerMenu.ts', 'utf8');
+    const cue = 'assets/sfx/more_gold.mp3';
+
+    expect(fs.existsSync(`public/${cue}`), 'missing More Gold MP3 asset').toBe(true);
+    expect(fs.statSync(`public/${cue}`).size, 'More Gold MP3 asset should not be empty').toBeGreaterThan(1000);
+    expect(audio.includes(`'${cue}'`), 'More Gold MP3 should be preloaded').toBe(true);
+    expect(audio.includes(`moreGold:       () => playSample(sfx('${cue}')`), 'SFX.moreGold should play the MP3').toBe(true);
+    expect(main).toContain('function showInsufficientGoldToast');
+    expect(main).toContain('SFX.moreGold();');
+    expect(main, 'prospect placement should use the shared insufficient-gold feedback').toContain('showInsufficientGoldToast(1,');
+    expect(shop, 'Hero Forge should use the shared insufficient-gold feedback').toContain('__showInsufficientGoldToast?.(cost, ax, ay)');
+    expect(shop, 'Hero Forge should not call the old missing cancel cue').not.toContain('uiCancel?.();');
+    expect(harbor, 'Harbor unaffordable offers should stay clickable and show feedback').toContain('NEED ${o.price - state.gold}g');
+    expect(harbor).toContain('__showInsufficientGoldToast?.(offer.price, ax, ay)');
+    expect(relics, 'gold-cost relics should stay clickable for feedback instead of being disabled').not.toContain('card.disabled = !affordability.canAfford');
+    expect(relics).toContain('__showInsufficientGoldToast?.(latest.goldCost, ax, ay)');
+    expect(ui, 'pool upgrade should remain clickable when gold is short so the shared feedback can fire').not.toContain('|| !canAfford(state, uc)');
+    expect(comboPicker, 'combo picker location chips should not be disabled before feedback can fire').not.toContain('chip.disabled = !canAfford');
+    expect(comboPicker).toContain('__showInsufficientGoldToast?.(cb.cost, ax, ay)');
+    expect(towerMenu).toContain('__showInsufficientGoldToast?.(resolved.cost, ax, ay)');
+  });
+
   it('Test Your Might offer has its MP3 cue, playback hook, and preload entry', () => {
     const fs = require('fs');
     const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');

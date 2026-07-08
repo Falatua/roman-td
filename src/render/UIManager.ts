@@ -509,8 +509,8 @@ export class UIManager {
     this.startBtn.style.opacity = this.startBtn.disabled ? '0.4' : '1';
     const uc = poolUpgradeCost(state);
     this.upgradeBtn.textContent = uc < 0 ? 'POOL MAXIMA' : `UPGRADE POOL (${uc}g)`;
-    this.upgradeBtn.disabled = state.phase === GamePhase.WAVE_PHASE || state.phase === GamePhase.GAME_OVER || state.phase === GamePhase.VICTORY || uc < 0 || !canAfford(state, uc);
-    this.upgradeBtn.style.opacity = this.upgradeBtn.disabled ? '0.4' : '1';
+    this.upgradeBtn.disabled = state.phase === GamePhase.WAVE_PHASE || state.phase === GamePhase.GAME_OVER || state.phase === GamePhase.VICTORY || uc < 0;
+    this.upgradeBtn.style.opacity = this.upgradeBtn.disabled ? '0.4' : (!canAfford(state, uc) ? '0.65' : '1');
     // Probability tooltip on UPGRADE POOL button (Strategy doc §6)
     {
       const POOL_PROBS = POOL_PROBABILITIES;

@@ -1083,7 +1083,7 @@ async function boot() {
   // instead of some silently returning and others setting only state.hint.
   // The tooltip is purely visual; no interaction required to dismiss.
   function showInsufficientGoldToast(cost: number, anchorX?: number, anchorY?: number) {
-    try { (SFX as any).uiCancel?.(); } catch { /* SFX not loaded, ignore */ }
+    try { SFX.moreGold(); } catch { /* SFX not loaded, ignore */ }
     const need = Math.max(0, cost - state.gold);
     document.getElementById('insuff-gold-toast')?.remove();
     const toast = document.createElement('div');
@@ -6525,6 +6525,7 @@ async function boot() {
         // 2026-05 v10: surface insufficient-gold as a floating tooltip,
         // not just a status hint. Players were missing the hint and
         // clicking repeatedly without realising they were broke.
+        showInsufficientGoldToast(1, WORLD.OFFSET_X + (col * 32 + 16) * WORLD.ZOOM, WORLD.OFFSET_Y + (row * 32 - 6) * WORLD.ZOOM);
         showBlockedAlert(col, row, `Need 1g to roll a prospect — treasury is empty. Press START WAVE.`);
         // 2026-05 v10 — also fire the Choose-Your-Character cue when
         // the player has placed prospects but exhausted their gold
