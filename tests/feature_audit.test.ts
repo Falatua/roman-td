@@ -398,6 +398,7 @@ describe('Tower roster integrity', () => {
     const sharp = (await import('sharp')).default;
     const keys = [
       'TIDECALLER_COMMANDER',
+      'STORMTIDE_WYVERN_COMMANDER',
       'TRIREME_BALLISTA',
       'CORVUS_BOARDING_SHIP',
       'RAMMING_QUINQUEREME',

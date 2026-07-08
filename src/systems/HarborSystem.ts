@@ -46,7 +46,8 @@ const OCEAN_THREAT_ENEMY_TYPES = new Set<string>([
   EnemyType.SEA_GIANT,
   EnemyType.SEA_GIANT_WARBRINGER,
   EnemyType.NETHER_AMPHIBIOUS_GIANT,
-  EnemyType.TIDECALLER_COMMANDER
+  EnemyType.TIDECALLER_COMMANDER,
+  EnemyType.STORMTIDE_WYVERN_COMMANDER
 ]);
 
 export function isOceanThreatEnemy(enemyOrType: EnemyType | string | { type?: EnemyType | string; __oceanSpawn?: boolean } | null | undefined): boolean {

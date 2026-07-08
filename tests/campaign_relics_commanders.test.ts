@@ -38,7 +38,7 @@ import {
 } from '../src/systems/BossTrophySystem';
 import { buyTraps, trapPrice, TRAP_DEFS } from '../src/systems/TrapSystem';
 import { grantTrapInventory } from '../src/systems/TrapInventorySystem';
-import { bossEscortCommandersForWave, commanderDamageTakenMult, commanderSpeedMult, commanderTrapRadiusDisabled, isCommanderType } from '../src/systems/CommanderSystem';
+import { bossEscortCommandersForWave, commanderDamageTakenMult, commanderSpeedMult, commanderTrapRadiusDisabled, isCommanderType, tickCommanderSupport } from '../src/systems/CommanderSystem';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { canReceiveRunReward } from '../src/systems/RewardEligibility';
 import enemiesData from '../src/data/enemies.json';
@@ -744,5 +744,29 @@ describe('Enemy commanders', () => {
     expect(commanderDamageTakenMult(s, { type: EnemyType.MONGOL_FOOTMAN, hp: 100, isBoss: false, x: 120, y: 100 })).toBeCloseTo(0.92, 4);
     expect(commanderSpeedMult(s, { type: EnemyType.SPHINX, hp: 100, isFlyer: true })).toBeCloseTo(1.08, 4);
     expect(commanderSpeedMult(s, { type: EnemyType.MONGOL_FOOTMAN, hp: 100, isFlyer: false })).toBeCloseTo(1, 4);
+  });
+
+  it('Stormtide Wyvern commanders support ocean flyers and ocean-spawned allies', () => {
+    const s = bootstrapState();
+    s.wave = 18;
+    const wyvern: any = { id: 'sw', type: EnemyType.STORMTIDE_WYVERN_COMMANDER, hp: 100, x: 100, y: 100 };
+    const oceanFlyer: any = { id: 'of', type: EnemyType.SPHINX, hp: 100, maxHp: 100, isBoss: false, isFlyer: true, __oceanSpawn: true, x: 120, y: 100 };
+    const oceanGround: any = { id: 'og', type: EnemyType.SEA_GIANT, hp: 50, maxHp: 100, isBoss: false, isFlyer: false, __oceanSpawn: true, x: 125, y: 100 };
+    const landGround: any = { id: 'lg', type: EnemyType.MONGOL_FOOTMAN, hp: 100, maxHp: 100, isBoss: false, isFlyer: false, x: 130, y: 100 };
+    s.enemies.set(wyvern.id, wyvern);
+    s.enemies.set(oceanFlyer.id, oceanFlyer);
+    s.enemies.set(oceanGround.id, oceanGround);
+    s.enemies.set(landGround.id, landGround);
+
+    expect(isCommanderType(EnemyType.STORMTIDE_WYVERN_COMMANDER)).toBe(true);
+    expect(commanderDamageTakenMult(s, oceanFlyer)).toBeCloseTo(0.80, 4);
+    expect(commanderDamageTakenMult(s, oceanGround)).toBeCloseTo(0.80, 4);
+    expect(commanderDamageTakenMult(s, landGround)).toBeCloseTo(1, 4);
+    expect(commanderSpeedMult(s, oceanFlyer)).toBeCloseTo(1.10, 4);
+    expect(commanderSpeedMult(s, oceanGround)).toBeCloseTo(1.10, 4);
+    tickCommanderSupport(s, 0.016);
+    expect(oceanGround.hp).toBeGreaterThan(50);
+    expect((oceanGround as any).__stormtideUntil).toBeGreaterThan(0);
+    expect((landGround as any).__stormtideUntil).toBeUndefined();
   });
 });

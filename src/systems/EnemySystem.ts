@@ -123,6 +123,7 @@ const ARCHETYPE: Record<string, Enemy['archetype']> = {
   SKY_PATHFINDER_COMMANDER: 'RUNNER',
   SKY_ANUBIS_COMMANDER: 'ELITE',
   TIDECALLER_COMMANDER: 'ELITE',
+  STORMTIDE_WYVERN_COMMANDER: 'ELITE',
   SEA_GIANT: 'BULKY',
   SEA_GIANT_WARBRINGER: 'BULKY',
   NETHER_AMPHIBIOUS_GIANT: 'RESISTANT',
@@ -1610,7 +1611,8 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // V38 — Use the cached groundPathPx (built once at top of
     // tickEnemies). state.flyerPath is already pixel-coords so no
     // conversion needed.
-    const path = e.isFlyer ? state.flyerPath : ((e as any).__caveB ? groundPathBPx : groundPathPx);
+    const usesOceanGroundRoute = !!(e as any).__oceanRouteGroundPath;
+    const path = e.isFlyer && !usesOceanGroundRoute ? state.flyerPath : ((e as any).__caveB ? groundPathBPx : groundPathPx);
     if (e.pathIndex >= path.length - 1) {
       // reached gate
       onLeak(e);

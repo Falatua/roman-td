@@ -222,6 +222,7 @@ describe('Loot drop rolling', () => {
     expect(oceanSpecialistDropChance({ type: 'SEA_GIANT' })).toBe(0.18);
     expect(oceanSpecialistDropChance({ type: 'SEA_GIANT_WARBRINGER' })).toBe(0.38);
     expect(oceanSpecialistDropChance({ type: 'TIDECALLER_COMMANDER' })).toBe(0.45);
+    expect(oceanSpecialistDropChance({ type: 'STORMTIDE_WYVERN_COMMANDER' })).toBe(0.45);
 
     const randomSpy = vi.spyOn(Math, 'random');
     try {

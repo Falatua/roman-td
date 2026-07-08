@@ -61,6 +61,7 @@ describe('Harbor naval tower system', () => {
     expect(isOceanThreatEnemy(EnemyType.OCEAN_FISHLING)).toBe(true);
     expect(isOceanThreatEnemy(EnemyType.SEA_GIANT_WARBRINGER)).toBe(true);
     expect(isOceanThreatEnemy(EnemyType.TIDECALLER_COMMANDER)).toBe(true);
+    expect(isOceanThreatEnemy(EnemyType.STORMTIDE_WYVERN_COMMANDER)).toBe(true);
     expect(isOceanThreatEnemy({ type: EnemyType.FERAL_DOG, __oceanSpawn: true })).toBe(true);
     expect(isOceanThreatEnemy(EnemyType.FERAL_DOG)).toBe(false);
   });

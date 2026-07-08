@@ -10,7 +10,8 @@ export type CommanderType =
   | 'SKY_STANDARD_COMMANDER'
   | 'SKY_PATHFINDER_COMMANDER'
   | 'SKY_ANUBIS_COMMANDER'
-  | 'TIDECALLER_COMMANDER';
+  | 'TIDECALLER_COMMANDER'
+  | 'STORMTIDE_WYVERN_COMMANDER';
 
 export const COMMANDER_TYPES = new Set<string>([
   'STANDARD_BEARER_COMMANDER',
@@ -20,7 +21,8 @@ export const COMMANDER_TYPES = new Set<string>([
   'SKY_STANDARD_COMMANDER',
   'SKY_PATHFINDER_COMMANDER',
   'SKY_ANUBIS_COMMANDER',
-  'TIDECALLER_COMMANDER'
+  'TIDECALLER_COMMANDER',
+  'STORMTIDE_WYVERN_COMMANDER'
 ]);
 
 const CAMPAIGN_COMMANDERS: Record<number, CommanderType> = {
@@ -110,6 +112,13 @@ export function commanderDamageTakenMult(state: GameStateShape, target: any): nu
       mult = Math.min(mult, (state.wave ?? 1) >= 25 ? 0.80 : 0.88);
     }
   }
+  for (const commander of activeCommanders(state, 'STORMTIDE_WYVERN_COMMANDER')) {
+    if (!target.isFlyer && !(target as any).__oceanSpawn) continue;
+    if (Math.hypot(commander.x - target.x, commander.y - target.y) <= 5 * GRID.TILE) {
+      const wave = state.wave ?? 1;
+      mult = Math.min(mult, wave >= 25 ? 0.76 : wave >= 16 ? 0.80 : 0.86);
+    }
+  }
   return mult;
 }
 
@@ -124,6 +133,10 @@ export function commanderSpeedMult(state: GameStateShape, enemy: any): number {
   }
   if ((enemy as any).__oceanSpawn && activeCommanders(state, 'TIDECALLER_COMMANDER').length > 0) {
     mult *= (state.wave ?? 1) >= 25 ? 1.14 : 1.09;
+  }
+  if ((enemy.isFlyer || (enemy as any).__oceanSpawn) && activeCommanders(state, 'STORMTIDE_WYVERN_COMMANDER').length > 0) {
+    const wave = state.wave ?? 1;
+    mult *= wave >= 25 ? 1.14 : wave >= 16 ? 1.10 : 1.06;
   }
   return mult;
 }
@@ -166,6 +179,20 @@ export function tickCommanderSupport(state: GameStateShape, dt: number): void {
       e.hp = Math.min(e.maxHp, e.hp + e.maxHp * healPct);
       (e as any).__commanderHealedUntil = state.tick + 0.35;
       (e as any).__tidecalledUntil = state.tick + 0.55;
+    }
+  }
+  for (const commander of activeCommanders(state, 'STORMTIDE_WYVERN_COMMANDER')) {
+    const next = (commander as any).__stormtidePulseAt ?? 0;
+    if (state.tick < next) continue;
+    (commander as any).__stormtidePulseAt = state.tick + 3.6;
+    for (const e of state.enemies.values()) {
+      if (e.hp <= 0 || e.isBoss || isCommanderType(e.type as any)) continue;
+      if (!e.isFlyer && !(e as any).__oceanSpawn) continue;
+      if (Math.hypot(e.x - commander.x, e.y - commander.y) > 5 * GRID.TILE) continue;
+      const healPct = (state.wave ?? 1) >= 25 ? 0.07 : (state.wave ?? 1) >= 16 ? 0.055 : 0.04;
+      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * healPct);
+      (e as any).__commanderHealedUntil = state.tick + 0.35;
+      (e as any).__stormtideUntil = state.tick + 0.65;
     }
   }
 }

@@ -114,7 +114,7 @@ function markOceanEmergenceOnce(state: GameStateShape): void {
 }
 
 function routeOceanSpawnToPath(state: GameStateShape, enemy: any, oceanIndex = 0): boolean {
-  if (!enemy || enemy.isFlyer || state.groundPath.length === 0) return false;
+  if (!enemy || state.groundPath.length === 0) return false;
   const joinIdx = oceanJoinPathIndex(state);
   const join = state.groundPath[joinIdx] ?? state.groundPath[0];
   const { x: spawnX, y: spawnY } = oceanShipwreckSpawnPoint(oceanIndex);
@@ -127,6 +127,7 @@ function routeOceanSpawnToPath(state: GameStateShape, enemy: any, oceanIndex = 0
   enemy.pathIndex = joinIdx;
   enemy.pathProgress = 0;
   enemy.__oceanSpawn = true;
+  enemy.__oceanRouteGroundPath = true;
   enemy.__approachActive = true;
   enemy.__approachTargetX = targetX;
   enemy.__approachTargetY = targetY;
@@ -344,7 +345,7 @@ export function startWave(state: GameStateShape) {
       const ocean = !!(grp as any).ocean;
       const spacing = isFlyerGrp ? Math.max(WAVE.SPAWN_INTERVAL, 1.0) : WAVE.SPAWN_INTERVAL;
       const spawnAt = ocean
-        ? (commander ? Math.max(oceanT, oceanCommanderSpawnAt) : oceanT)
+        ? (commander ? Math.max(oceanT, oceanT > 0 ? oceanCommanderSpawnAt : 0) : oceanT)
         : (commander ? commanderSpawnAt : t);
       state.spawnQueue.push({
         type: grp.type,
@@ -494,7 +495,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // (the renderer reads this to un-hide the archway + fire the eruption).
     if (fromCaveB) state.caveBActive = true;
     const e = spawnEnemy(state, item.type as EnemyType, spawnHpMult, false, fromCaveB);
-    const fromOcean = !!item.ocean && !isBossSpawn && !isFlyerSpawn;
+    const fromOcean = !!item.ocean && !isBossSpawn;
     if (fromOcean) routeOceanSpawnToPath(state, e, item.oceanIndex ?? 0);
     if (item.bossEscort) {
       (e as any).__bossEscortCommander = true;

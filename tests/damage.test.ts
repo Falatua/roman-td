@@ -190,6 +190,15 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(enemyDamageMultiplier(tidecaller, DamageType.DIVINE)).toBeGreaterThan(1);
   });
 
+  it('gives the Stormtide Wyvern commander ocean flyer weaknesses and fire immunity', () => {
+    const wyvern = makeEnemy(EnemyType.STORMTIDE_WYVERN_COMMANDER, EnemyFaction.ROMAN_MYTH);
+    wyvern.isFlyer = true;
+    expect(enemyDamageMultiplier(wyvern, DamageType.ELEMENTAL_FIRE)).toBe(0);
+    expect(statusEffectiveness(wyvern, StatusEffectKind.BURN)).toBe(0);
+    expect(enemyDamageMultiplier(wyvern, DamageType.SIEGE)).toBeGreaterThan(1);
+    expect(enemyDamageMultiplier(wyvern, DamageType.DIVINE)).toBeGreaterThan(1);
+  });
+
   it('makes ocean giants immune to fire, burn, and hellfire', () => {
     const oceanTypes = [
       EnemyType.SEA_GIANT,

@@ -166,6 +166,7 @@ export function oceanSpecialistDropChance(enemy: Partial<Enemy> | any): number {
     case 'NETHER_AMPHIBIOUS_GIANT':
       return 0.38;
     case 'TIDECALLER_COMMANDER':
+    case 'STORMTIDE_WYVERN_COMMANDER':
       return 0.45;
     default:
       return 0;
@@ -175,7 +176,7 @@ export function oceanSpecialistDropChance(enemy: Partial<Enemy> | any): number {
 export function rollOceanSpecialistDrop(enemy: Partial<Enemy> | any): { itemId: ItemId; rarity: Rarity } | null {
   const type = String(enemy?.type ?? '');
   const epicChance =
-    type === 'SEA_GIANT_WARBRINGER' || type === 'NETHER_AMPHIBIOUS_GIANT' || type === 'TIDECALLER_COMMANDER'
+    type === 'SEA_GIANT_WARBRINGER' || type === 'NETHER_AMPHIBIOUS_GIANT' || type === 'TIDECALLER_COMMANDER' || type === 'STORMTIDE_WYVERN_COMMANDER'
       ? 0.35
       : 0.10;
   if (premiumDropRoll(epicChance)) {

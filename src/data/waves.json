@@ -141,6 +141,11 @@
         "count": 3
       },
       {
+        "type": "STORMTIDE_WYVERN_COMMANDER",
+        "count": 1,
+        "ocean": true
+      },
+      {
         "type": "SKY_PATHFINDER_COMMANDER",
         "count": 1
       }
@@ -397,6 +402,11 @@
       {
         "type": "SKY_STANDARD_COMMANDER",
         "count": 1
+      },
+      {
+        "type": "STORMTIDE_WYVERN_COMMANDER",
+        "count": 1,
+        "ocean": true
       },
       {
         "type": "SKY_BARGE",
@@ -827,6 +837,11 @@
       {
         "type": "TIDECALLER_COMMANDER",
         "count": 2,
+        "ocean": true
+      },
+      {
+        "type": "STORMTIDE_WYVERN_COMMANDER",
+        "count": 1,
         "ocean": true
       },
       {

@@ -310,6 +310,7 @@ export enum EnemyType {
   SKY_PATHFINDER_COMMANDER = 'SKY_PATHFINDER_COMMANDER',
   SKY_ANUBIS_COMMANDER = 'SKY_ANUBIS_COMMANDER',
   TIDECALLER_COMMANDER = 'TIDECALLER_COMMANDER',
+  STORMTIDE_WYVERN_COMMANDER = 'STORMTIDE_WYVERN_COMMANDER',
   // ─── GATES OF HELL (2026-05-17 surprise event) ───────────────────────
   // HELL_GATE — stationary "enemy" that anchors the event at WP3/WP4.
   // Has HP, takes tower fire, dies via the regular death path. Its

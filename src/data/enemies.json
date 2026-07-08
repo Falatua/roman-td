@@ -1059,6 +1059,22 @@
     "immuneHellfire": true,
     "outOfCombatRegen": 0.014
   },
+  "STORMTIDE_WYVERN_COMMANDER": {
+    "name": "Commander: Stormtide Wyvern",
+    "faction": "ROMAN_MYTH",
+    "baseHp": 2550,
+    "speed": 0.7,
+    "isFlyer": true,
+    "isBoss": false,
+    "livesCost": 5,
+    "isElite": true,
+    "bigGlow": true,
+    "renderScale": 1.28,
+    "immuneFire": true,
+    "immuneHellfire": true,
+    "immuneSlow": true,
+    "outOfCombatRegen": 0.012
+  },
   "SIEGE_WAGON": {
     "name": "Siege Wagon",
     "faction": "EGYPTIANS",

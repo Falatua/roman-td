@@ -195,13 +195,16 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(elephants?.count).toBe(2);
   });
 
-  it('adds shipwreck ocean spawns on Waves 3, 12, 27, and 29', () => {
+  it('adds shipwreck ocean spawns and Stormtide Wyvern commanders across the campaign', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     expect(byWave.get(3).spawns).toContainEqual({ type: 'OCEAN_FISHLING', count: 40, ocean: true });
+    expect(byWave.get(8).spawns).toContainEqual({ type: 'STORMTIDE_WYVERN_COMMANDER', count: 1, ocean: true });
     expect(byWave.get(12).spawns).toContainEqual({ type: 'SEA_GIANT', count: 2, ocean: true });
     expect(byWave.get(12).spawns).toContainEqual({ type: 'TIDECALLER_COMMANDER', count: 1, ocean: true });
+    expect(byWave.get(18).spawns).toContainEqual({ type: 'STORMTIDE_WYVERN_COMMANDER', count: 1, ocean: true });
     expect(byWave.get(27).spawns).toContainEqual({ type: 'SEA_GIANT_WARBRINGER', count: 6, ocean: true });
     expect(byWave.get(27).spawns).toContainEqual({ type: 'TIDECALLER_COMMANDER', count: 2, ocean: true });
+    expect(byWave.get(27).spawns).toContainEqual({ type: 'STORMTIDE_WYVERN_COMMANDER', count: 1, ocean: true });
     expect(byWave.get(29).spawns).toContainEqual({ type: 'NETHER_AMPHIBIOUS_GIANT', count: 4, ocean: true });
     expect(byWave.get(29).spawns).toContainEqual({ type: 'TIDECALLER_COMMANDER', count: 2, ocean: true });
   });
@@ -214,7 +217,7 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
   });
 
   it('starts ocean enemies alongside the normal cave wave instead of after it', () => {
-    for (const wave of [3, 12, 27, 29]) {
+    for (const wave of [3, 8, 12, 18, 27, 29]) {
       const s = bootstrapState();
       s.wave = wave - 1;
       startWave(s);
@@ -260,6 +263,29 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(sea.y).toBeLessThanOrEqual(wreckY + GRID.TILE * 3.375);
   });
 
+  it('keeps the Stormtide Wyvern targetable as air while routing it from the ocean', () => {
+    const s = bootstrapState();
+    s.wave = 7;
+    startWave(s);
+    expect(s.spawnQueue.some(item => item.type === EnemyType.STORMTIDE_WYVERN_COMMANDER && item.ocean)).toBe(true);
+    tickSpawns(s, 5);
+    const wyvern = Array.from(s.enemies.values()).find(e => e.type === EnemyType.STORMTIDE_WYVERN_COMMANDER) as any;
+    expect(wyvern).toBeTruthy();
+    expect(wyvern.isFlyer).toBe(true);
+    expect(wyvern.__oceanSpawn).toBe(true);
+    expect(wyvern.__oceanRouteGroundPath).toBe(true);
+    expect(wyvern.__approachActive).toBe(true);
+    const wp2 = (waypointsData as any).waypoints[1].topLeft;
+    let wp2PathIdx = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < s.groundPath.length; i++) {
+      const p = s.groundPath[i];
+      const d = Math.abs(p.col - wp2.col) + Math.abs(p.row - wp2.row);
+      if (d < bestD) { bestD = d; wp2PathIdx = i; }
+    }
+    expect(wyvern.pathIndex).toBeGreaterThan(wp2PathIdx);
+  });
+
   it('does not mirror ocean spawns to Cave B on late waves', () => {
     const s = bootstrapState();
     s.wave = 26;
@@ -270,6 +296,9 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     const tidecallers = s.spawnQueue.filter(item => item.type === 'TIDECALLER_COMMANDER');
     expect(tidecallers).toHaveLength(2);
     expect(tidecallers.every(item => item.ocean && !item.caveB)).toBe(true);
+    const wyverns = s.spawnQueue.filter(item => item.type === 'STORMTIDE_WYVERN_COMMANDER');
+    expect(wyverns).toHaveLength(1);
+    expect(wyverns.every(item => item.ocean && !item.caveB)).toBe(true);
   });
 
   it('plays the replacement ocean emergence cue only once per ocean wave', () => {
