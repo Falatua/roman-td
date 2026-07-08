@@ -686,17 +686,22 @@ describe('Sample SFX wiring', () => {
     expect(modal.includes('SFX.testYourMight();'), 'offer modal should fire the cue when it appears').toBe(true);
   });
 
-  it('ocean enemy emergence no longer plays or preloads the old MP3 cue', () => {
+  it('ocean enemy emergence plays the replacement murloc cue and keeps the old MP3 removed', () => {
     const fs = require('fs');
     const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');
     const main = fs.readFileSync('src/main.ts', 'utf8');
     const waveManager = fs.readFileSync('src/systems/WaveManager.ts', 'utf8');
-    const cue = 'assets/sfx/ocean_emerge.mp3';
+    const oldCue = 'assets/sfx/ocean_emerge.mp3';
+    const cue = 'assets/sfx/murloc.mp3';
 
-    expect(fs.existsSync(`public/${cue}`), 'old ocean emergence MP3 should be removed from shipped assets').toBe(false);
-    expect(audio.includes(`'${cue}'`), 'old ocean emergence MP3 should not be preloaded').toBe(false);
-    expect(audio.includes('oceanEmerge:'), 'SFX.oceanEmerge should not expose the old cue').toBe(false);
-    expect(main.includes('__oceanEmergenceSfx'), 'main should not expose the old ocean emergence audio hook').toBe(false);
+    expect(fs.existsSync(`public/${oldCue}`), 'old ocean emergence MP3 should stay removed from shipped assets').toBe(false);
+    expect(audio.includes(`'${oldCue}'`), 'old ocean emergence MP3 should not be preloaded').toBe(false);
+    expect(audio.includes('oceanEmerge:'), 'old SFX.oceanEmerge method should stay removed').toBe(false);
+    expect(fs.existsSync(`public/${cue}`), 'missing replacement murloc MP3 asset').toBe(true);
+    expect(audio.includes(`'${cue}'`), 'murloc MP3 should be preloaded').toBe(true);
+    expect(audio.includes(`oceanMurloc:    () => playSample(sfx('${cue}')`), 'SFX.oceanMurloc should play the replacement MP3').toBe(true);
+    expect(main.includes('__oceanEmergenceSfx'), 'main should expose the replacement ocean emergence audio hook').toBe(true);
+    expect(main.includes('SFX.oceanMurloc()'), 'main ocean hook should play the replacement murloc cue').toBe(true);
     expect(waveManager.includes('markOceanEmergenceOnce'), 'WaveManager should still mark the visual ocean surge once per wave').toBe(true);
   });
 });
