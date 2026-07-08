@@ -330,6 +330,46 @@ describe('Tower roster integrity', () => {
     expect(baseTowerAttackFlashWindow('JULIUS_CAESAR')).toBeCloseTo(0.18, 4);
   });
 
+  it('Pugio Assassin sprite keeps a complete full-body silhouette with feet', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const sharp = (await import('sharp')).default;
+    expect((ASSET_KEYS as any).PUGIO_ASSASSIN, 'Pugio Assassin asset registration').toBe('t_new_pugio_assassin.png');
+    const file = path.join(process.cwd(), 'public/assets/sprites/t_new_pugio_assassin.png');
+    expect(fs.existsSync(file), 'Pugio Assassin sprite missing').toBe(true);
+    const img = sharp(file).ensureAlpha();
+    const meta = await img.metadata();
+    expect(meta.width, 'Pugio Assassin should be normalized to the standard tower sprite cell width').toBe(256);
+    expect(meta.height, 'Pugio Assassin should be normalized to the standard tower sprite cell height').toBe(256);
+    expect(meta.hasAlpha, 'Pugio Assassin should keep a transparent background').toBe(true);
+    const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
+    let tinyAlpha = 0;
+    let greenPixels = 0;
+    let minX = info.width;
+    let minY = info.height;
+    let maxX = -1;
+    let maxY = -1;
+    for (let y = 0; y < info.height; y++) {
+      for (let x = 0; x < info.width; x++) {
+        const i = (y * info.width + x) * 4;
+        const a = data[i + 3];
+        if (a > 0 && a <= 4) tinyAlpha++;
+        if (a > 16) {
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+          if (data[i + 1] > 150 && data[i + 1] > data[i] * 1.45 && data[i + 1] > data[i + 2] * 1.45) greenPixels++;
+        }
+      }
+    }
+    expect(tinyAlpha, 'Pugio Assassin has alpha dust that can look like a dirty background').toBe(0);
+    expect(greenPixels, 'Pugio Assassin should not retain chroma-key green pixels').toBe(0);
+    expect(maxX - minX + 1, 'Pugio Assassin should stay broad enough to read shield and dagger').toBeGreaterThan(130);
+    expect(maxY - minY + 1, 'Pugio Assassin should include the full body from hood through feet').toBeGreaterThan(220);
+    expect(maxY, 'Pugio Assassin feet should not be clipped against the bottom edge').toBeLessThanOrEqual(248);
+  });
+
   it('new Harbor and ocean sprites stay transparent, readable, and visually non-flat', async () => {
     const fs = await import('node:fs');
     const path = await import('node:path');
