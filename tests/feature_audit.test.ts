@@ -746,6 +746,15 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(reward).toContain('__surpriseRewardOpen = false');
   });
 
+  it('does not stack the first-run teaching banner under name or hero gates', () => {
+    const source = readFileSync('src/main.ts', 'utf8');
+    expect(source).toContain('function queueFirstRoundBanner');
+    expect(source).toContain("document.getElementById('etch-name-modal')");
+    expect(source).toContain("document.getElementById('choose-hero-modal')");
+    expect(source).toContain('!state.activeHeroId');
+    expect(source).toContain("markTipSeen('first_run_intro')");
+  });
+
   it('registers recent popup surfaces in the central modal cleanup list', () => {
     const source = readFileSync('src/render/ModalManager.ts', 'utf8');
     for (const id of [

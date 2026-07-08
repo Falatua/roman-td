@@ -2472,6 +2472,28 @@ async function boot() {
   state.draw = []; // unused in Gem TD mode
   state.gold = ECONOMY.STARTING_GOLD;     // 10g — enough for an early stone-maze + a couple of pool draws
 
+  let firstRoundBannerQueued = false;
+  function queueFirstRoundBanner() {
+    if (firstRoundBannerQueued) return;
+    firstRoundBannerQueued = true;
+    let attempts = 0;
+    const tryShow = () => {
+      attempts++;
+      const nameGateOpen = !!document.getElementById('etch-name-modal');
+      const heroGateOpen = !!document.getElementById('choose-hero-modal');
+      const heroDraftStillNeeded = !state.sandboxMode && !state.activeHeroId && attempts < 80;
+      if (nameGateOpen || heroGateOpen || heroDraftStillNeeded) {
+        window.setTimeout(tryShow, 250);
+        return;
+      }
+      firstRoundBannerQueued = false;
+      if (tipAlreadySeen('first_run_intro')) return;
+      showFirstRoundBanner();
+      markTipSeen('first_run_intro');
+    };
+    window.setTimeout(tryShow, 0);
+  }
+
   // Roll 5 random prospects into a queue. Player will click 5 empty tiles to "reveal" them.
   function rollProspects() {
     const draw = rollDraw(state, BASE_TOWER_TYPES);
@@ -2494,8 +2516,7 @@ async function boot() {
     // the player has already seen it on a prior run (localStorage flag).
     const isFirstRound = state.wave === 0 && !state.hasKeptAnyTowerEver;
     if (isFirstRound && !tipAlreadySeen('first_run_intro')) {
-      showFirstRoundBanner();
-      markTipSeen('first_run_intro');
+      queueFirstRoundBanner();
     }
   }
   // Persistent "I've seen this tip" gate. Recurring tips (combo nudges,
