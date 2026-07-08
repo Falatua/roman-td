@@ -130,6 +130,28 @@ function meleeSlashTintFor(towerType: TowerType | string): number | undefined {
   }
 }
 
+function isSuperOrOmegaComboResult(towerType: TowerType | string): boolean {
+  const def: any = (towersData as any)[towerType];
+  if (!def) return false;
+  if (def.omega === true) return true;
+  if (towerType === TowerType.MARS_VICTOR) return true;
+  const ability = String(def.ability ?? '').toUpperCase();
+  return ability.includes('SUPERCOMBO') ||
+    ability.includes('SUPER COMBO') ||
+    ability.includes('OMEGA COMBO') ||
+    ability.includes('WATER-ONLY OMEGA') ||
+    ability.includes('COMBO-OF-COMBO') ||
+    ability.includes('COMBOS-OF-COMBOS');
+}
+
+function playComboCreationSfx(resultType: TowerType | string): void {
+  if (isSuperOrOmegaComboResult(resultType)) {
+    SFX.superOmegaCombo();
+    return;
+  }
+  SFX.comboMade();
+}
+
 async function boot() {
   try {
     const host = window.location.hostname;
@@ -4143,8 +4165,7 @@ async function boot() {
       // consumed ingredients are now invalid. Drop the entire stack so
       // we never replay a closure against a deleted tower.
       undoStack.length = 0;
-      // 2026-05 v11: user-supplied combo SFX (replaces the synth fanfare).
-      SFX.comboMade();
+      playComboCreationSfx(resolvedTarget.result);
       // Drain any leftover items from the combine into the inventory. If
       // inventory is full, the rest are silently lost (consistent with the
       // existing "INVENTORY FULL" pattern from quest item rewards).
@@ -4192,7 +4213,7 @@ async function boot() {
         const sx = anchor.tileX * 32 + 16;
         const sy = anchor.tileY * 32 + 16;
         if (executeCombo(state, mv, anchor.id)) {
-          SFX.comboMade();
+          playComboCreationSfx(mv.result);
           if (renderer?.triggerImpactRing) {
             renderer.triggerImpactRing(sx, sy, state.tick, 42, 0xffd34d);
             renderer.triggerImpactRing(sx, sy, state.tick + 0.1, 72, 0xffe88c);
@@ -5272,8 +5293,7 @@ async function boot() {
           const pickerIsMerge = !!pickerResolved.isSameTierMerge;
           const ok = executeCombo(state, pickerResolved, resultTileTowerId);
           if (ok) {
-            // 2026-05 v11: user-supplied combo SFX (replaces the synth fanfare).
-            SFX.comboMade();
+            playComboCreationSfx(pickerResolved.result);
             // 2026-05 v10: drain leftover items into inventory — same logic
             // as executeCombineFromMenu. Combo-picker path was previously
             // stranding overflow items (rare but real on merge-laddering

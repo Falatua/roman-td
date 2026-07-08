@@ -727,6 +727,26 @@ describe('Sample SFX wiring', () => {
     expect(towerMenu).toContain('__showInsufficientGoldToast?.(resolved.cost, ax, ay)');
   });
 
+  it('Supercombo and Omega crafted towers play their dedicated MP3 cue', () => {
+    const fs = require('fs');
+    const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');
+    const main = fs.readFileSync('src/main.ts', 'utf8');
+    const cue = 'assets/sfx/super_omega_combo.mp3';
+
+    expect(fs.existsSync(`public/${cue}`), 'missing Super/Omega combo MP3 asset').toBe(true);
+    expect(fs.statSync(`public/${cue}`).size, 'Super/Omega combo MP3 asset should not be empty').toBeGreaterThan(1000);
+    expect(audio.includes(`'${cue}'`), 'Super/Omega combo MP3 should be preloaded').toBe(true);
+    expect(audio.includes(`superOmegaCombo: () => playSample(sfx('${cue}')`), 'SFX.superOmegaCombo should play the MP3').toBe(true);
+    expect(main).toContain('function isSuperOrOmegaComboResult');
+    expect(main).toContain("ability.includes('SUPERCOMBO')");
+    expect(main).toContain("ability.includes('OMEGA COMBO')");
+    expect(main).toContain("ability.includes('COMBO-OF-COMBO')");
+    expect(main).toContain('towerType === TowerType.MARS_VICTOR');
+    expect(main).toContain('function playComboCreationSfx');
+    expect(main).toContain('SFX.superOmegaCombo();');
+    expect(main.split('playComboCreationSfx(').length - 1, 'all three Solo crafted-combo success paths should use the class-aware cue helper').toBeGreaterThanOrEqual(4);
+  });
+
   it('Test Your Might offer has its MP3 cue, playback hook, and preload entry', () => {
     const fs = require('fs');
     const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');
