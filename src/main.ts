@@ -343,7 +343,7 @@ async function boot() {
         <span style="color:#fff8e0;text-shadow:1px 1px 0 #000">CURRENT: <b style="color:#ffd34d">${RAMPART_ORIENT_LABEL[current]}</b></span>
       </div>
       <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap">${orientButtons}</div>
-      <div style="color:#cdb98a;font-size:10px;font-weight:normal;letter-spacing:0;line-height:1.3;text-align:center">Hover to preview like furniture placement. Click a valid tile or road, then confirm. ESC cancels. Collapse this tray if it covers a build tile.</div>
+      <div style="color:#cdb98a;font-size:10px;font-weight:normal;letter-spacing:0;line-height:1.3;text-align:center">Hover to preview like furniture placement. Click a valid tile or road, then confirm. Collapse this tray if it covers a build tile.</div>
     `;
     chip.querySelector<HTMLButtonElement>('#rampart-tray-collapse')?.addEventListener('click', ev => {
       ev.stopPropagation();

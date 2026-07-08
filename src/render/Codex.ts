@@ -202,7 +202,7 @@ function renderTab(tab: string): string {
             <li>A tower with a <span style="color:#ee5555">pulsing red ring AND glittery sparkles</span> can combine into something nasty. Click it.</li>
             <li>Click any tower to see its full <b style="color:#88ff88">stat breakdown</b> — base damage, every modifier, the actual final number. No hidden math.</li>
             <li>Click any enemy on the field to see exactly what it resists and why your shots aren't landing.</li>
-            <li class="desktop-hotkey-hint">Hotkeys: <b>C</b> opens this Codex, <b>B</b>/<b>G</b> opens the gate shop, <b>M</b> opens the Mercator (when he's in town), <b>P</b> toggles pause, <b>ESC</b> closes any open menu. (No SPACE-to-start anymore — use the START WAVE button.)</li>
+            <li class="desktop-hotkey-hint">Hotkeys: <b>C</b> opens this Codex, <b>B</b>/<b>G</b> opens the gate shop, <b>M</b> opens the Mercator (when he's in town), and <b>P</b> toggles pause. (No SPACE-to-start anymore — use the START WAVE button.)</li>
             <li>You can press START WAVE whenever you want. Leftover prospects auto-convert to walls. The game won't wait for you to be ready; it'll just punish you faster.</li>
             <li>The <b style="color:#88ff88">QUEST panel</b> bottom-right gives away free gold, items, and towers. Pretending it's not there is a choice.</li>
             <li><b style="color:#ffd34d">Mercator</b> sells real T5 towers at 325g. Use him to fill a critical recipe gap, not to trivialize the tower ladder.</li>

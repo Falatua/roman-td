@@ -965,6 +965,16 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(reward).toContain('__surpriseRewardOpen = false');
   });
 
+  it('does not show Escape-key copy when close controls already exist', () => {
+    const settings = readFileSync('src/render/SettingsPanel.ts', 'utf8');
+    const codex = readFileSync('src/render/Codex.ts', 'utf8');
+    const main = readFileSync('src/main.ts', 'utf8');
+    expect(settings).not.toContain('Press ESC to close');
+    expect(codex).not.toContain('<b>ESC</b> closes any open menu');
+    expect(main).not.toContain('ESC cancels.');
+    expect(settings, 'Settings should still keep Escape functionality without advertising it').toContain("ev.key === 'Escape'");
+  });
+
   it('does not stack the first-run teaching banner under name or hero gates', () => {
     const source = readFileSync('src/main.ts', 'utf8');
     expect(source).toContain('function queueFirstRoundBanner');

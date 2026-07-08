@@ -51,7 +51,6 @@ export function showSettingsPanel(parent: HTMLElement) {
       <div style="font-size:18px;color:#d4af37;font-weight:bold;letter-spacing:3px">SETTINGS</div>
       <div style="font-size:11px;color:#aa9a4a;letter-spacing:1px">Preferences persist between sessions</div>
     </div>
-    <div class="desktop-hotkey-hint" style="font-size:10px;color:#cdb98a;text-align:right;line-height:1.4">Press ESC to close</div>
   `;
   panel.appendChild(header);
 
