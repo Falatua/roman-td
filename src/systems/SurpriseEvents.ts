@@ -70,9 +70,11 @@ export const SURPRISE_EVENT_SCHEDULE: Record<number, SurpriseEventKind> = {
 // an omen, not a wall, so Gates stays dramatic but seals sooner. Later
 // campaign difficulty now comes from the W18/W21/W25 systems ramp. The
 // gate/giant base HP is also kept low because event spawns still pass
-// through the normal W16 late-game HP scaler.
+// through the normal W16 late-game HP scaler, then get the hard HP floor
+// below at the final event-spawn step.
 const GATES_OF_HELL_WINDOW_SECONDS = 12;
 const GATES_OF_HELL_CADENCE_SECONDS = 2;
+export const GATES_OF_HELL_MIN_HEALTH = 2_000_000;
 
 // v2 spawn tuning. Each of the 4 visual points (fire or urn) spawns
 // TWO enemies. Total enemies per event = 8 (still feels surprising
@@ -571,6 +573,15 @@ function attachSurpriseSpawnTags(state: GameStateShape, enemy: any, ev: Surprise
   if (hpMult !== 1) {
     enemy.maxHp *= hpMult;
     enemy.hp *= hpMult;
+  }
+  if (
+    ev.kind === SurpriseEventKind.GATES_OF_HELL &&
+    (enemy.type === 'HELL_GATE' || enemy.type === 'FIRE_GIANT') &&
+    enemy.maxHp < GATES_OF_HELL_MIN_HEALTH
+  ) {
+    const healthRatio = enemy.maxHp > 0 ? enemy.hp / enemy.maxHp : 1;
+    enemy.maxHp = GATES_OF_HELL_MIN_HEALTH;
+    enemy.hp = GATES_OF_HELL_MIN_HEALTH * healthRatio;
   }
   // 2026-05-18 — INVASION AGGRESSION BUFF. Every invader gains +25%
   // base speed to sell the "frenzied breach" feel. They run at the
