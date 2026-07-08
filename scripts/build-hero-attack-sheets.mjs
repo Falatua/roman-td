@@ -21,6 +21,8 @@ const HEROES = [
   { id: 'CAESAR', file: 'hero_caesar.png', color: '#ffd34d', kind: 'divineSlash', side: 1 },
   { id: 'SULLA', file: 'hero_sulla.png', color: '#ff7733', kind: 'spell', side: -1 }
 ];
+const CUSTOM_GPT_SHEETS = new Set(['MARIUS']);
+const forceCustomSheets = process.argv.includes('--force-custom');
 
 // 3x3 pose language: idle -> anticipation -> deeper anticipation ->
 // release -> impact -> follow-through -> recoil -> settle -> idle.
@@ -169,7 +171,12 @@ async function cleanTransparentPixels(input) {
 
 await mkdir(OUT_DIR, { recursive: true });
 
+let written = 0;
 for (const hero of HEROES) {
+  if (CUSTOM_GPT_SHEETS.has(hero.id) && !forceCustomSheets) {
+    console.log(`Skipping custom GPT-authored ${hero.id} attack sheet. Use --force-custom to overwrite.`);
+    continue;
+  }
   const frames = [];
   for (let i = 0; i < FRAMES; i++) frames.push(await makeFrame(hero, i));
   frames[FRAMES - 1] = frames[0];
@@ -184,6 +191,7 @@ for (const hero of HEROES) {
     .composite(composites)
     .png({ quality: 95, compressionLevel: 9 })
     .toFile(join(OUT_DIR, `hero_${hero.id.toLowerCase()}_attack_sheet.png`));
+  written++;
 }
 
-console.log(`Wrote ${HEROES.length} 3x3 hero attack sheets to ${OUT_DIR}`);
+console.log(`Wrote ${written} 3x3 hero attack sheets to ${OUT_DIR}`);

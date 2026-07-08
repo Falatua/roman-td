@@ -3892,7 +3892,11 @@ export class RenderEngine {
           const age = 1 - flashT;
           const side = (tw.id.charCodeAt(tw.id.length - 1) % 2 === 0) ? 1 : -1;
           if (usingHeroAttackSheet) {
-            heroAttackRotation = meleeHero ? Math.sin(age * Math.PI) * 0.12 * side : Math.sin(age * Math.PI) * -0.07 * side;
+            // Marius' custom 3x3 sheet already contains the body torque,
+            // sword arc, follow-through, and idle return.
+            heroAttackRotation = heroId === 'HERO_MARIUS'
+              ? 0
+              : meleeHero ? Math.sin(age * Math.PI) * 0.12 * side : Math.sin(age * Math.PI) * -0.07 * side;
             heroAttackSkewX = 0;
           } else if (meleeHero) {
             const windupToRelease = age < 0.46

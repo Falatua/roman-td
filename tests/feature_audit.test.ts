@@ -273,6 +273,21 @@ describe('Tower roster integrity', () => {
     }
   });
 
+  it('Marius custom attack sheet has a readable sword swing and idle return', async () => {
+    const path = await import('node:path');
+    const sharp = (await import('sharp')).default;
+    const file = path.join(process.cwd(), 'public/assets/heroes/attacks/hero_marius_attack_sheet.png');
+    const first = await sharp(file).extract({ left: 0, top: 0, width: 256, height: 256 }).ensureAlpha().raw().toBuffer();
+    const fifth = await sharp(file).extract({ left: 256, top: 256, width: 256, height: 256 }).ensureAlpha().raw().toBuffer();
+    const sixth = await sharp(file).extract({ left: 512, top: 256, width: 256, height: 256 }).ensureAlpha().raw().toBuffer();
+    const ninth = await sharp(file).extract({ left: 512, top: 512, width: 256, height: 256 }).ensureAlpha().raw().toBuffer();
+
+    expect(meanFrameDiff(first, fifth), 'Marius frame 5 should be a visibly different contact pose, not a floating slash over idle').toBeGreaterThan(30);
+    expect(meanFrameDiff(first, sixth), 'Marius frame 6 should carry follow-through motion after contact').toBeGreaterThan(30);
+    expect(meanFrameDiff(first, ninth), 'Marius frame 9 should return to frame 1 for clean idle recovery').toBeLessThan(0.05);
+    expect(alphaBounds(fifth, 256).width, 'Marius contact frame should include a broad readable sword arc').toBeGreaterThan(220);
+  });
+
   it('every non-melee, non-hero base tower has a 3x3 attack sprite sheet', async () => {
     const fs = await import('node:fs');
     const path = await import('node:path');
