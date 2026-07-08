@@ -352,6 +352,19 @@ describe('Tower roster integrity', () => {
     expect(baseTowerAttackFlashWindow('JULIUS_CAESAR')).toBeCloseTo(0.18, 4);
   });
 
+  it('attack and throw animations always fall back to idle when action ends', () => {
+    const combat = readFileSync('src/systems/CombatResolver.ts', 'utf8');
+    const render = readFileSync('src/render/RenderEngine.ts', 'utf8');
+    expect(combat, 'attackFlash must drain before no-enemy early return').toMatch(/for \(const t of towers\) \{\s*if \(!Number\.isFinite\(t\.attackFlash\)/);
+    expect(combat, 'sleep should not freeze a tower mid-swing').toContain('Attack-flash timers are decremented before');
+    expect(render, 'renderer should clear stale attack state outside combat').toContain('state.phase !== GamePhase.WAVE_PHASE');
+    expect(render, 'renderer should reject invalid animation timers').toContain('!Number.isFinite(tw.attackFlash)');
+    expect(render, 'renderer should clamp stale attack timers to their legal window').toContain('tw.attackFlash = flashWindow');
+    expect(render, 'idle texture must be restored when attack sampling is inactive').toContain('if (idleTex && entry.sp.texture !== idleTex) entry.sp.texture = idleTex');
+    expect(render, 'pose offsets must reset every non-attacking frame').toContain('entry.sp.rotation = heroAttackRotation');
+    expect(render, 'pose skew must reset every non-attacking frame').toContain('entry.sp.skew.x = heroAttackSkewX');
+  });
+
   it('Pugio Assassin sprite keeps a complete full-body silhouette with feet', async () => {
     const fs = await import('node:fs');
     const path = await import('node:path');

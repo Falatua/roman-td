@@ -1062,6 +1062,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   const enemies = enemySnapshotScratch;
   enemies.length = 0;
   for (const e of state.enemies.values()) enemies.push(e);
+  for (const t of towers) {
+    if (!Number.isFinite(t.attackFlash) || t.attackFlash < 0) t.attackFlash = 0;
+    else if (t.attackFlash > 0) t.attackFlash = Math.max(0, t.attackFlash - dt);
+  }
   if (enemies.length === 0) {
     for (const t of towers) t.attackCooldown = Math.max(0, t.attackCooldown - dt);
     return;
@@ -1076,7 +1080,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // clamped to >=3s by the sleep stamp anyway). We DO want the
     // facing rotation to stay frozen for visual coherence — the
     // sleeping tower shouldn't snap-rotate to a different enemy each
-    // frame while it dreams.
+    // frame while it dreams. Attack-flash timers are decremented before
+    // this branch so sleep can never freeze a hero or tower mid-swing.
     if ((t.asleepUntil ?? 0) > state.tick) {
       continue;
     }
@@ -2180,7 +2185,6 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         }
       }
     }
-    if (t.attackFlash > 0) t.attackFlash = Math.max(0, t.attackFlash - dt);
   }
 }
 

@@ -3793,6 +3793,13 @@ export class RenderEngine {
       }
       const baseX = tw.tileX * GRID.TILE + GRID.TILE / 2;
       const baseY = tw.tileY * GRID.TILE + GRID.TILE / 2;
+      const hasBaseAttackSheet = isBaseTowerAttackAnimated(String(tw.type));
+      const flashWindow = tw.isHero ? HERO_ATTACK_WINDOW : hasBaseAttackSheet ? baseTowerAttackFlashWindow(String(tw.type)) : 0.18;
+      if (state.phase !== GamePhase.WAVE_PHASE || !Number.isFinite(tw.attackFlash) || tw.attackFlash < 0) {
+        tw.attackFlash = 0;
+      } else if (tw.attackFlash > flashWindow) {
+        tw.attackFlash = flashWindow;
+      }
       const isAttacking = state.phase === GamePhase.WAVE_PHASE && tw.attackFlash > 0;
       // ─── FLOATING IDLE BREATH (2026-05-18 v3) ────────────────────────
       // Kept (non-pending) towers gently bob + sway when NOT attacking so
@@ -3830,8 +3837,6 @@ export class RenderEngine {
       // the target's position.)
       // Attack flash + recoil: stronger brightening, scale jump, kickback offset
       // along the firing direction for satisfying combat feel.
-      const hasBaseAttackSheet = isBaseTowerAttackAnimated(String(tw.type));
-      const flashWindow = tw.isHero ? HERO_ATTACK_WINDOW : hasBaseAttackSheet ? baseTowerAttackFlashWindow(String(tw.type)) : 0.18;
       const flashT = isAttacking ? Math.min(1, tw.attackFlash / flashWindow) : 0;
       const heroIdentity = heroIdForTowerType(String(tw.type));
       let usingHeroAttackSheet = false;
