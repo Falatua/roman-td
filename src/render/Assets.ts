@@ -371,13 +371,8 @@ const MANIFEST: Record<string, string> = {
   BURN_ZONE: 'v_burn_zone.png', SMOKE_PUFF: 'v_smoke_puff.png', DUST_PUFF: 'v_dust_puff.png',
   // 2026-05-16 — surprise-event sprites (INVASION fires already above; UPRISING skull-urn here)
   SKULL_URN: 'v_skull_urn.png',
-  // 2026-07-08 — GPT Images-authored 3x3 event animation sheets.
-  // These replace the old "drawn by code only" event centerpieces with
-  // sprite-based VFX while the lightweight Graphics rings/tints stay as
-  // supporting accents.
-  EVENT_DEAD_UPRISING_SHEET: 'vfx/event_dead_uprising_sheet.png',
-  EVENT_INVASION_BREACH_SHEET: 'vfx/event_invasion_breach_sheet.png',
-  EVENT_HELL_GATE_SHEET: 'vfx/event_hell_gate_sheet.png',
+  // 2026-07-08 — ocean emergence keeps a contained sprite-sheet cue at
+  // the shipwreck. Surprise events use their lighter procedural VFX.
   EVENT_OCEAN_EMERGENCE_SHEET: 'vfx/event_ocean_emergence_sheet.png',
   FINAL_BOSS_DAEMON_PORTAL_SHEET: 'vfx/final_boss_daemon_portal_sheet.png',
   // Mercator vendor art
