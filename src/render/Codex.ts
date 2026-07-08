@@ -605,7 +605,7 @@ function renderTab(tab: string): string {
       ${foldSection('⚔ v2 LATE-GAME GAUNTLET (W21-30) — NEW UNITS', `
         <div style="font-size:11px;color:#cdb98a;margin-bottom:6px">The campaign now runs to <b>W30</b>. A second cave (<b>CAVE B</b>) erupts open on the left at W21 and mirrors every ground non-boss spawn from the main gate — hold both lanes because both gates send the same ground count.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('🦅 Vulture Imperator (W20 boss flyer)', 'Egyptian undead vulture. <b>DIVE BOMB</b> every 8s: -40% attack speed for 4s on your highest-kill tower. <b>FLOCK CALL</b> at 50% HP: summons 3 escort Sphinx flyers. Melee-untargetable + fire-immune + ranged-resistant — answer it with anti-air DIVINE or siege.')}
+          ${noteCard('🦅 Vulture Imperator (W20 boss flyer)', 'Egyptian undead vulture. <b>DIVE BOMB</b> every 8s: -40% attack speed for 4s on your highest-kill tower. <b>FLOCK CALL</b> at 50% HP: summons 3 escort Sphinx flyers. Melee-untargetable + fire-immune + ranged-resistant + <b style="color:#ff5050">SIEGE-IMMUNE</b> — answer it with anti-air DIVINE, storm, marks, and non-siege flyer killers.')}
           ${noteCard('🗿 ROMAN-MYTH faction (W25-29)', 'The old monsters of legend. <b style="color:#cdb98a">Tough vs steel / fire / siege</b> but <b style="color:#fff4a8">+40% WEAK to DIVINE</b> — the gods smite them. Bring Solar Priest, Augur, Pontifex, or Mars Victor.')}
           ${noteCard('🦁 Chimera + 🐺 Cerberus', 'Chimera <b>FIRE BREATH</b>: every 3s, -30% atk speed for 2s on towers within ~2 tiles. Cerberus <b>TRIPLE HOWL</b>: a one-time +25% speed surge to nearby myth allies.')}
           ${noteCard('🐍 Typhon + 👁 Cyclops', 'Typhon <b>SERPENT STORM</b>: every 5s, silences towers within ~3 tiles for 1.5s — the W29 capstone. Cyclops <b>EYE BLAST</b>: every 6s, fully blinds the single nearest tower for 2s.')}
@@ -1545,6 +1545,11 @@ const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
     'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit by DIRECT damage in 1.0s, heals 0.4% maxHP/sec (active DoT softens to 0.2%/sec)',
     'OUT-OF-COMBAT REGEN — 1.7%/sec after 1.0s without DIRECT damage (active DoT softens to 0.85%/sec, was full block)',
     'TELEGRAPHED REBIRTH at 55% HP — 1s red lock-on warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
+  ],
+  BOSS_FLYER_VULTURE: [
+    'DIVE BOMB — every 8s, stamps -40% attack speed for 4s on your highest-kill tower',
+    'FLOCK CALL — at 50% HP, summons 3 escort Sphinx flyers',
+    'SIEGE-IMMUNE — siege damage deals 0. Bring anti-air DIVINE, storm, marks, and non-siege flyer killers.'
   ],
   UNDEAD_WARLORD: [
     'AMBUSH — 5s after spawn, 10 Undead Berserkers rise mid-path',

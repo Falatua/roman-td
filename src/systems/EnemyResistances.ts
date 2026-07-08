@@ -290,8 +290,10 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.MONGOL_SCOUT]:      { ranged: 0.7, slow: 0.3, burn: 0.8, poison: 0.75, bleed: 0.90 },
   [EnemyType.MONGOL_SHAMAN]:     { ranged: 0.55, slow: 0.4, burn: 0.6, poison: 0.65, bleed: 0.80 },
   [EnemyType.MONGOL_CAPTAIN]:    { melee: 0.6, ranged: 0.5, slow: 0.3, burn: 0.75, poison: 0.55, bleed: 0.60 },
-  // 2026 v2 spec Ch6 — Vulture Imperator: ranged-resistant; fire-immune + melee-untargetable handled via enemies.json flags.
-  [EnemyType.BOSS_FLYER_VULTURE]: { ranged: 0.7, slow: 0.4, burn: 0.25, poison: 0.45, bleed: 0.35 },
+  // 2026-07-08 — Vulture Imperator: mid-campaign boss twist. Fully
+  // siege-immune so anti-air siege cannot solve every flyer boss by itself;
+  // fire immunity + melee-untargetable stay handled via enemies.json flags.
+  [EnemyType.BOSS_FLYER_VULTURE]: { ranged: 0.7, siege: 0, slow: 0.4, burn: 0.25, poison: 0.45, bleed: 0.35 },
   // 2026 v2 spec Ch10-11 — Roman-myth elites. Thematic specialty resists
   // stack on the ROMAN_MYTH faction row (tough vs steel/fire, weak to DIVINE).
   [EnemyType.CHIMERA]:     { burn: 0.6, poison: 0.70, bleed: 0.90 },

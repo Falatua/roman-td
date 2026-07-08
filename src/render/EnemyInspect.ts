@@ -385,6 +385,11 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'OUT-OF-COMBAT REGEN — 1.7%/sec after 1.0s without DIRECT damage (active DoT softens to 0.85%/sec, was full block)',
       'TELEGRAPHED REBIRTH at 55% HP — 1-second red lock-on ring warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
     ],
+    BOSS_FLYER_VULTURE: [
+      'DIVE BOMB — every 8s, stamps -40% attack speed for 4s on your highest-kill tower',
+      'FLOCK CALL — at 50% HP, summons 3 escort Sphinx flyers',
+      'SIEGE-IMMUNE — siege damage deals 0. Bring anti-air DIVINE, storm, marks, and non-siege flyer killers.'
+    ],
     UNDEAD_WARLORD: [
       'AMBUSH — 5s after spawn, 10 Undead Berserkers rise mid-path',
       'NECROMANCY at 40% HP — raises 6 Undead Celts at his position',

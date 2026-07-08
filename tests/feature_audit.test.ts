@@ -974,6 +974,16 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(source).not.toContain('markScrollable(modal)');
   });
 
+  it('surfaces Vulture Imperator siege immunity in player-facing enemy copy', () => {
+    const codex = readFileSync('src/render/Codex.ts', 'utf8');
+    const enemyInspect = readFileSync('src/render/EnemyInspect.ts', 'utf8');
+    const resist = readFileSync('src/systems/EnemyResistances.ts', 'utf8');
+    expect(resist).toContain('[EnemyType.BOSS_FLYER_VULTURE]: { ranged: 0.7, siege: 0');
+    expect(codex).toContain('SIEGE-IMMUNE');
+    expect(codex).toContain('non-siege flyer killers');
+    expect(enemyInspect).toContain('SIEGE-IMMUNE — siege damage deals 0');
+  });
+
   it('keeps mandatory decision modals expanded on every new offer', () => {
     for (const file of [
       'src/render/CampaignRelicModal.ts',

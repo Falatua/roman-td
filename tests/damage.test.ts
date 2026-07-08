@@ -1,7 +1,7 @@
 // Tests for damage type math: faction resistance matrix + status effectiveness.
 import { describe, it, expect } from 'vitest';
 import { resistanceModifier, damageTypeFromString } from '../src/systems/DamageTypeSystem';
-import { enemyDamageMultiplier, isHellfireImmune, statusEffectiveness } from '../src/systems/EnemyResistances';
+import { armorProfile, enemyDamageMultiplier, isHellfireImmune, statusEffectiveness } from '../src/systems/EnemyResistances';
 import { DamageType, EnemyFaction, EnemyType, StatusEffectKind, Enemy } from '../src/types';
 import enemiesData from '../src/data/enemies.json';
 
@@ -162,6 +162,7 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       EnemyType.IRON_PHALANX,
       EnemyType.ARCHITECTUS,
       EnemyType.TYPHON,
+      EnemyType.BOSS_FLYER_VULTURE,
       EnemyType.SIEGE_CAPTAIN_COMMANDER,
       EnemyType.SKY_PATHFINDER_COMMANDER
     ];
@@ -171,6 +172,14 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       enemy.isFlyer = !!(enemiesData as any)[type].isFlyer;
       expect(enemyDamageMultiplier(enemy, DamageType.SIEGE), `${type} siege damage`).toBe(0);
     }
+  });
+
+  it('shows Vulture Imperator as a siege-immune mid-game boss', () => {
+    const vulture = makeEnemy(EnemyType.BOSS_FLYER_VULTURE, EnemyFaction.EGYPTIANS);
+    vulture.isBoss = true;
+    vulture.isFlyer = true;
+    expect(enemyDamageMultiplier(vulture, DamageType.SIEGE)).toBe(0);
+    expect(armorProfile(EnemyType.BOSS_FLYER_VULTURE).find(r => r.damageType === 'SIEGE')?.immune).toBe(true);
   });
 
   it('keeps other commanders vulnerable or resistant instead of making all commanders siege-immune', () => {
