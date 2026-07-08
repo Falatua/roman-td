@@ -30,8 +30,8 @@ export function showHarborWaveClearModal(state: GameStateShape, clearedWave: num
       <div style="margin-top:14px;font-size:13px;line-height:1.65;text-align:left;background:rgba(0,0,0,0.38);border-left:3px solid #5fe6ff;padding:12px 14px">
         Wave <b style="color:#ffd34d">${clearedWave}</b> brought ocean-born enemies, and Rome survived them.
         The Harbor Draft is available <b style="color:#88f7ff">now, after the water threat is defeated</b>.
-        The Draft shows <b style="color:#ffd34d">three randomized naval contracts</b>. Buy one, then click an ocean tile to place it.
-        If you pass, the Harbor quartermaster returns after the next cleared wave that included water-based enemies.
+        The Draft shows <b style="color:#ffd34d">three freshly randomized naval contracts</b>. Buy one, then click an ocean tile to place it.
+        You may also pass. The Harbor quartermaster returns with a refreshed draft after the next cleared wave that included water-based enemies.
       </div>
       <div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:left;font-size:10.5px;line-height:1.45;color:#cdefff">
         <div style="background:#07141c;border:1px solid #285a68;padding:8px"><b style="color:#88f7ff">1.</b> Pick a contract.</div>
@@ -40,7 +40,7 @@ export function showHarborWaveClearModal(state: GameStateShape, clearedWave: num
       </div>
       <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button id="harbor-unlock-open-draft" style="background:#17394a;color:#fff8e0;border:2px solid #88f7ff;padding:10px 24px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">VIEW NAVAL CONTRACTS</button>
-        <button id="harbor-unlock-later" style="background:#241810;color:#ffd34d;border:2px solid #7a5a1a;padding:10px 18px;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:2px">LATER</button>
+        <button id="harbor-unlock-later" style="background:#241810;color:#ffd34d;border:2px solid #7a5a1a;padding:10px 18px;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:2px">PASS THIS DRAFT</button>
       </div>
     </div>`;
   wrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:130;pointer-events:auto';
@@ -52,7 +52,7 @@ export function showHarborWaveClearModal(state: GameStateShape, clearedWave: num
     onOpenDraft?.();
   };
   wrap.querySelector<HTMLButtonElement>('#harbor-unlock-later')!.onclick = () => wrap.remove();
-  state.hint = `Harbor contracts are available after clearing ocean wave ${clearedWave}. View contracts now, or wait for the next water-enemy wave.`;
+  state.hint = `Fresh Harbor contracts are available after clearing ocean wave ${clearedWave}. View contracts now, or pass for the next water-enemy wave.`;
 }
 
 export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftOffer[], onUpdate?: () => void): void {
@@ -82,7 +82,7 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
         <button id="harbor-close" aria-label="Close Harbor Draft" style="background:#241810;color:#ffd34d;border:2px solid #7a5a1a;width:34px;height:34px;cursor:pointer;font-family:'Courier New',monospace;font-weight:bold">X</button>
       </div>
       <div id="harbor-draft-body">
-        <div style="margin-top:10px;font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Choose one contract, then click an ocean tile to place it. Draft offers refresh after cleared water-enemy waves or after purchases.</div>
+        <div style="margin-top:10px;font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Choose one contract, then click an ocean tile to place it, or close this panel to pass. A fresh draft appears after every cleared water-enemy wave.</div>
         <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap">${cards}</div>
       </div>
     </div>`;

@@ -950,6 +950,8 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(harborSystem).toContain('export function waveHasOceanThreats');
     expect(harborSystem).toContain('export function queueHarborDraftForClearedOceanWave');
     expect(harborSystem).toContain('__pendingHarborWaveDraft = state.wave');
+    expect(harborSystem).toContain('buildHarborDraftOffers(state, true);');
+    expect(harborSystem).toContain('scratch.__harborDraftWave !== state.wave');
     expect(harborSystem).toContain('Ocean threat wave ${state.wave} cleared');
     expect(killBlock, 'Harbor unlock should not open a Harbor modal mid-wave on the kill frame').not.toContain('showHarborUnlockModal(state)');
     expect(killBlock, 'Harbor unlock should not open the wave-clear modal mid-wave on the kill frame').not.toContain('showHarborWaveClearModal(state');
@@ -961,9 +963,11 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(main).not.toContain("showHarborDraftModal(state, buildHarborDraftOffers(state), () => updateHeroPlacementBanner());");
     expect(main).toContain('Buy naval contracts from the Harbor panel after clearing water-enemy waves');
     expect(harborModal).toContain('VIEW NAVAL CONTRACTS');
+    expect(harborModal).toContain('PASS THIS DRAFT');
     expect(harborModal).toContain('showHarborWaveClearModal(state: GameStateShape, clearedWave: number, onOpenDraft?: () => void)');
     expect(harborModal).toContain('onOpenDraft?.();');
-    expect(harborModal).toContain('If you pass, the Harbor quartermaster returns after the next cleared wave that included water-based enemies.');
+    expect(harborModal).toContain('You may also pass. The Harbor quartermaster returns with a refreshed draft after the next cleared wave that included water-based enemies.');
+    expect(harborModal).toContain('A fresh draft appears after every cleared water-enemy wave.');
   });
 
   it('ships one shared collapse and drag helper for major player-facing panels', () => {

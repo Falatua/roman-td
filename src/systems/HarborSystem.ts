@@ -107,8 +107,7 @@ export function queueHarborDraftForClearedOceanWave(state: GameStateShape): bool
   if ((state as any).harborUnlockWave === undefined) (state as any).harborUnlockWave = state.wave;
   (state as any).__pendingHarborWaveDraft = state.wave;
   (state as any).__pendingHarborUnlockNotice = false;
-  (state as any).__harborDraftOffers = undefined;
-  (state as any).__harborDraftWave = undefined;
+  buildHarborDraftOffers(state, true);
   state.hint = firstOpen
     ? `Ocean threat wave ${state.wave} cleared. The Harbor will offer naval contracts now.`
     : `Ocean threat wave ${state.wave} cleared. The Harbor quartermaster has fresh naval contracts.`;
@@ -136,7 +135,7 @@ export function buildHarborDraftOffers(state: GameStateShape, forceRefresh = fal
   const refreshDue = forceRefresh
     || !Array.isArray(scratch.__harborDraftOffers)
     || scratch.__harborDraftWave === undefined
-    || state.wave - scratch.__harborDraftWave >= 3;
+    || scratch.__harborDraftWave !== state.wave;
   if (!refreshDue) return scratch.__harborDraftOffers;
   const tier = harborDraftTierForWave(state.wave);
   const pool = NAVAL_TOWER_TYPES.slice();
