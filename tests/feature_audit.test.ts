@@ -747,6 +747,25 @@ describe('Sample SFX wiring', () => {
     expect(main.split('playComboCreationSfx(').length - 1, 'all three Solo crafted-combo success paths should use the class-aware cue helper').toBeGreaterThanOrEqual(4);
   });
 
+  it('regular recipe combo towers play the level-up MP3 without replacing merge or Super/Omega cues', () => {
+    const fs = require('fs');
+    const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');
+    const main = fs.readFileSync('src/main.ts', 'utf8');
+    const cue = 'assets/sfx/combo_tower_made.mp3';
+
+    expect(fs.existsSync(`public/${cue}`), 'missing regular combo-tower MP3 asset').toBe(true);
+    expect(fs.statSync(`public/${cue}`).size, 'regular combo-tower MP3 asset should not be empty').toBeGreaterThan(1000);
+    expect(audio.includes(`'${cue}'`), 'regular combo-tower MP3 should be preloaded').toBe(true);
+    expect(audio.includes(`comboTowerMade: () => playSample(sfx('${cue}')`), 'SFX.comboTowerMade should play the MP3').toBe(true);
+    expect(main).toContain('function playComboCreationSfx(resultType: TowerType | string, isSameTierMerge = false)');
+    expect(main).toContain('if (isSameTierMerge)');
+    expect(main).toContain('SFX.comboMade();');
+    expect(main).toContain('SFX.superOmegaCombo();');
+    expect(main).toContain('SFX.comboTowerMade();');
+    expect(main).toContain('playComboCreationSfx(resolvedTarget.result, !!resolvedTarget.isSameTierMerge)');
+    expect(main).toContain('playComboCreationSfx(pickerResolved.result, !!pickerResolved.isSameTierMerge)');
+  });
+
   it('Test Your Might offer has its MP3 cue, playback hook, and preload entry', () => {
     const fs = require('fs');
     const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');

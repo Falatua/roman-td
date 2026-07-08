@@ -144,12 +144,16 @@ function isSuperOrOmegaComboResult(towerType: TowerType | string): boolean {
     ability.includes('COMBOS-OF-COMBOS');
 }
 
-function playComboCreationSfx(resultType: TowerType | string): void {
+function playComboCreationSfx(resultType: TowerType | string, isSameTierMerge = false): void {
+  if (isSameTierMerge) {
+    SFX.comboMade();
+    return;
+  }
   if (isSuperOrOmegaComboResult(resultType)) {
     SFX.superOmegaCombo();
     return;
   }
-  SFX.comboMade();
+  SFX.comboTowerMade();
 }
 
 async function boot() {
@@ -4165,7 +4169,7 @@ async function boot() {
       // consumed ingredients are now invalid. Drop the entire stack so
       // we never replay a closure against a deleted tower.
       undoStack.length = 0;
-      playComboCreationSfx(resolvedTarget.result);
+      playComboCreationSfx(resolvedTarget.result, !!resolvedTarget.isSameTierMerge);
       // Drain any leftover items from the combine into the inventory. If
       // inventory is full, the rest are silently lost (consistent with the
       // existing "INVENTORY FULL" pattern from quest item rewards).
@@ -4213,7 +4217,7 @@ async function boot() {
         const sx = anchor.tileX * 32 + 16;
         const sy = anchor.tileY * 32 + 16;
         if (executeCombo(state, mv, anchor.id)) {
-          playComboCreationSfx(mv.result);
+          playComboCreationSfx(mv.result, !!mv.isSameTierMerge);
           if (renderer?.triggerImpactRing) {
             renderer.triggerImpactRing(sx, sy, state.tick, 42, 0xffd34d);
             renderer.triggerImpactRing(sx, sy, state.tick + 0.1, 72, 0xffe88c);
@@ -5293,7 +5297,7 @@ async function boot() {
           const pickerIsMerge = !!pickerResolved.isSameTierMerge;
           const ok = executeCombo(state, pickerResolved, resultTileTowerId);
           if (ok) {
-            playComboCreationSfx(pickerResolved.result);
+            playComboCreationSfx(pickerResolved.result, !!pickerResolved.isSameTierMerge);
             // 2026-05 v10: drain leftover items into inventory — same logic
             // as executeCombineFromMenu. Combo-picker path was previously
             // stranding overflow items (rare but real on merge-laddering
