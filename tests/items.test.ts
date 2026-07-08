@@ -206,10 +206,11 @@ describe('Loot drop rolling', () => {
   });
 
   it('uses 30-wave drop rates and deterministic premium-roll boundaries', () => {
-    // 2026-07-03 — slight loot buff: +33% per-kill rate; epic share inside
-    // rollDrop shrank 1%→0.75% so epic's absolute rate stayed constant.
-    expect(LOOT_DROP_RATES.GROUND).toBe(0.002);
-    expect(LOOT_DROP_RATES.FLYER).toBe(0.004);
+    // 2026-07-08 — ordinary random floor loot is quieter after ocean and
+    // late-wave enemy-count additions. Guaranteed boss/commander/event drops
+    // stay governed by their own reward rules.
+    expect(LOOT_DROP_RATES.GROUND).toBe(0.0015);
+    expect(LOOT_DROP_RATES.FLYER).toBe(0.003);
     expect(premiumDropRoll(0.20, 0.1999)).toBe(true);
     expect(premiumDropRoll(0.20, 0.20)).toBe(false);
     expect(premiumDropRoll(0.10, 0.95)).toBe(false);

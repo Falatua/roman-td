@@ -82,10 +82,11 @@ describe('30-wave Solo economy envelope', () => {
         else ground += wave.wave >= 21 && !def.isBoss ? group.count * 2 : group.count;
       }
     }
-    // 2026-07-05 — Cave B now mirrors every W21+ ground non-boss spawn, so
-    // the expected ordinary free-drop count rises with the doubled late lanes.
+    // 2026-07-08 — ordinary random floor loot should stay present but quiet;
+    // special item moments belong more to bosses, commanders, events, and
+    // ocean-specialist rewards.
     const expected = ground * LOOT_DROP_RATES.GROUND + flyers * LOOT_DROP_RATES.FLYER;
-    expect(expected).toBeGreaterThan(5);
-    expect(expected).toBeLessThan(6.5);
+    expect(expected).toBeGreaterThan(4);
+    expect(expected).toBeLessThan(5.25);
   });
 });
