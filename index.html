@@ -157,20 +157,7 @@
         99%           { filter: brightness(1.05); }
       }
       #loading { animation: loadingCrtFlicker 5.4s infinite; }
-      /* Screen-shake when the coin drops */
-      @keyframes loadingShake {
-        0%, 100% { transform: translate(0, 0) rotate(0); }
-        10% { transform: translate(-6px, 4px) rotate(-0.4deg); }
-        20% { transform: translate(7px, -3px) rotate(0.4deg); }
-        30% { transform: translate(-5px, -5px) rotate(-0.3deg); }
-        40% { transform: translate(6px, 5px) rotate(0.3deg); }
-        50% { transform: translate(-4px, 3px) rotate(-0.2deg); }
-        60% { transform: translate(5px, -2px) rotate(0.2deg); }
-        70% { transform: translate(-3px, -4px) rotate(-0.15deg); }
-        80% { transform: translate(3px, 4px) rotate(0.15deg); }
-        90% { transform: translate(-2px, 2px); }
-      }
-      #loading.shake { animation: loadingShake 520ms ease-in-out, loadingCrtFlicker 5.4s infinite; }
+      #loading.shake { animation: loadingCrtFlicker 5.4s infinite; }
       /* Warp/zoom-out transition */
       @keyframes loadingWarp {
         0%   { transform: scale(1.00); filter: brightness(1) blur(0); opacity: 1; }
@@ -1137,8 +1124,8 @@
       html.reduce-motion-opt-in #hero-placement-banner,
       html.reduce-motion-opt-in button { animation: none !important; }
     </style>
-    <script type="module" crossorigin src="./assets/index-_fYueH4M.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/pixi-CaEdeioT.js">
+    <script type="module" crossorigin src="./assets/index-DswrHBo5.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/pixi-BBAOssUs.js">
   </head>
   <body>
     <!-- Loading screen lives at body level — pulled OUT of #app so the
@@ -1146,7 +1133,7 @@
          position:fixed inset:0 covering the full viewport. -->
     <div id="loading">
       <div id="loading-stage">
-        <div id="loading-version">v0.7.0 · 270f4ae · 2026-07-08</div>
+        <div id="loading-version">v0.7.0 · 9bdfca1 · 2026-07-08</div>
         <div id="loading-eagle"></div>
         <div id="loading-title-main">ROMAN TD</div>
         <div id="loading-subtitle">THIRTY WAVES. ONE ROME.</div>
