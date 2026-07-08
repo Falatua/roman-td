@@ -47,6 +47,8 @@ describe('Harbor naval tower system', () => {
     expect(shouldUnlockHarborFromKill(s, EnemyType.SEA_GIANT)).toBe(true);
     expect(markHarborUnlocked(s)).toBe(true);
     expect((s as any).harborUnlocked).toBe(true);
+    expect((s as any).__pendingHarborUnlockNotice).toBe(true);
+    expect(s.hint).toContain('after this wave');
     expect(harborDraftTierForWave(12)).toBe(2);
     const offers = buildHarborDraftOffers(s, true);
     expect(offers).toHaveLength(3);

@@ -86,8 +86,10 @@ export function markHarborUnlocked(state: GameStateShape): boolean {
   if ((state as any).harborUnlocked) return false;
   (state as any).harborUnlocked = true;
   (state as any).harborUnlockWave = state.wave;
+  (state as any).__pendingHarborUnlockNotice = true;
   (state as any).__harborDraftOffers = undefined;
   (state as any).__harborDraftWave = undefined;
+  state.hint = 'A Sea Giant has fallen. The Harbor will open after this wave.';
   return true;
 }
 

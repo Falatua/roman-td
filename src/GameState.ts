@@ -141,6 +141,11 @@ export interface GameStateShape {
   // Lifetime kills of enemies that emerged from the ocean/shipwreck lane.
   // Keeps naval quests tied to the water concept instead of generic kills.
   oceanEnemiesKilled?: number;
+  // Harbor unlock notice is queued when the first Sea Giant-class enemy
+  // dies, then shown after wave end so it never interrupts live combat.
+  __pendingHarborUnlockNotice?: boolean;
+  harborUnlocked?: boolean;
+  harborUnlockWave?: number;
   // Lifetime direct damage grouped by tower type. Unlike per-tower counters,
   // this survives selling/combining so the post-game leaderboard can show
   // the run's true primary damage dealer.

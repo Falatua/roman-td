@@ -931,6 +931,32 @@ describe('Codex modal interaction layer', () => {
 });
 
 describe('Modal ergonomics and popup stacking', () => {
+  it('queues Harbor unlock teaching until wave-end and makes the notice open the Draft', () => {
+    const main = readFileSync('src/main.ts', 'utf8');
+    const harborSystem = readFileSync('src/systems/HarborSystem.ts', 'utf8');
+    const harborModal = readFileSync('src/render/HarborDraftModal.ts', 'utf8');
+    const killBlock = main.slice(
+      main.indexOf('if (shouldUnlockHarborFromKill(state, e.type) && markHarborUnlocked(state))'),
+      main.indexOf('// 2026-05-16', main.indexOf('if (shouldUnlockHarborFromKill(state, e.type) && markHarborUnlocked(state))'))
+    );
+    const waveEndBlock = main.slice(
+      main.indexOf('const offerHarborUnlockThenContinue'),
+      main.indexOf('const offerBossTrophyThenContinue')
+    );
+
+    expect(harborSystem).toContain('__pendingHarborUnlockNotice = true');
+    expect(harborSystem).toContain('The Harbor will open after this wave');
+    expect(killBlock, 'Harbor unlock should not open its teaching modal mid-wave on the kill frame').not.toContain('showHarborUnlockModal(state)');
+    expect(waveEndBlock).toContain('__pendingHarborUnlockNotice');
+    expect(waveEndBlock).toContain('showHarborUnlockModal(state, () => {');
+    expect(waveEndBlock).toContain('showHarborDraftModal(state, buildHarborDraftOffers(state, true)');
+    expect(main).toContain('offerHarborUnlockThenContinue(offerTestYourMightOrCampaignRelic)');
+    expect(harborModal).toContain('VIEW NAVAL CONTRACTS');
+    expect(harborModal).toContain('showHarborUnlockModal(state: GameStateShape, onOpenDraft?: () => void)');
+    expect(harborModal).toContain('onOpenDraft?.();');
+    expect(harborModal).toContain('You can reopen the Draft later by clicking the ocean between waves.');
+  });
+
   it('ships one shared collapse and drag helper for major player-facing panels', () => {
     const helper = readFileSync('src/render/ModalErgonomics.ts', 'utf8');
     expect(helper).toContain('export function enhanceModalErgonomics');

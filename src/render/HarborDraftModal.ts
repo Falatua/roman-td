@@ -17,7 +17,7 @@ function towerRole(type: string): string {
   return 'Naval contract';
 }
 
-export function showHarborUnlockModal(state: GameStateShape): void {
+export function showHarborUnlockModal(state: GameStateShape, onOpenDraft?: () => void): void {
   if (typeof document === 'undefined') return;
   document.getElementById('harbor-unlock-modal')?.remove();
   const wrap = document.createElement('div');
@@ -28,16 +28,29 @@ export function showHarborUnlockModal(state: GameStateShape): void {
       <div style="margin-top:8px;font-size:26px;letter-spacing:4px;color:#ffd34d;text-shadow:2px 2px 0 #000">THE HARBOR AWAKENS</div>
       <div style="margin-top:14px;font-size:13px;line-height:1.65;text-align:left;background:rgba(0,0,0,0.38);border-left:3px solid #5fe6ff;padding:12px 14px">
         The first Sea Giant has fallen. Ocean tiles can now host <b style="color:#88f7ff">naval towers</b> through the Harbor Draft.
-        Click the ocean between waves to see three randomized contracts. These towers are optional early, but late sea pressure rewards players who invest before Rome is surrounded.
+        The Draft shows <b style="color:#ffd34d">three randomized naval contracts</b>. Buy one, then click an ocean tile to place it.
+        You can reopen the Draft later by clicking the ocean between waves.
       </div>
-      <button id="harbor-unlock-close" style="margin-top:18px;background:#17394a;color:#fff8e0;border:2px solid #88f7ff;padding:10px 24px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">OPEN THE HARBOR</button>
+      <div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:left;font-size:10.5px;line-height:1.45;color:#cdefff">
+        <div style="background:#07141c;border:1px solid #285a68;padding:8px"><b style="color:#88f7ff">1.</b> Pick a contract.</div>
+        <div style="background:#07141c;border:1px solid #285a68;padding:8px"><b style="color:#88f7ff">2.</b> Pay gold.</div>
+        <div style="background:#07141c;border:1px solid #285a68;padding:8px"><b style="color:#88f7ff">3.</b> Place on water.</div>
+      </div>
+      <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button id="harbor-unlock-open-draft" style="background:#17394a;color:#fff8e0;border:2px solid #88f7ff;padding:10px 24px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">VIEW NAVAL CONTRACTS</button>
+        <button id="harbor-unlock-later" style="background:#241810;color:#ffd34d;border:2px solid #7a5a1a;padding:10px 18px;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:2px">LATER</button>
+      </div>
     </div>`;
   wrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:130;pointer-events:auto';
   document.getElementById('stage-wrap')?.appendChild(wrap);
   const panel = wrap.querySelector<HTMLElement>('#harbor-unlock-panel');
   if (panel) enhanceModalErgonomics(wrap, panel, { title: 'Harbor unlock notice' });
-  wrap.querySelector<HTMLButtonElement>('#harbor-unlock-close')!.onclick = () => wrap.remove();
-  state.hint = 'The Harbor is awake. Click ocean tiles between waves to draft naval towers.';
+  wrap.querySelector<HTMLButtonElement>('#harbor-unlock-open-draft')!.onclick = () => {
+    wrap.remove();
+    onOpenDraft?.();
+  };
+  wrap.querySelector<HTMLButtonElement>('#harbor-unlock-later')!.onclick = () => wrap.remove();
+  state.hint = 'The Harbor is awake. View contracts now, or click ocean tiles between waves to draft naval towers.';
 }
 
 export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftOffer[], onUpdate?: () => void): void {

@@ -7584,7 +7584,6 @@ async function boot() {
           // releasing their passengers.
           triggerEnemyDeathBurst(state, e);
           if (shouldUnlockHarborFromKill(state, e.type) && markHarborUnlocked(state)) {
-            showHarborUnlockModal(state);
             try {
               renderer?.triggerImpactRing?.(e.x, e.y, state.tick, 76, 0x5fe6ff);
               renderer?.triggerImpactRing?.(e.x, e.y, state.tick + 0.08, 116, 0xb9f7ff);
@@ -8266,26 +8265,41 @@ async function boot() {
             offerCampaignRelic();
           }
         };
-        const offerBossTrophyThenContinue = () => {
-          const pending = state.pendingBossTrophyOffer;
-          if (!pending || pending.wave !== state.wave) {
-            consumePendingBossTrophyOffer(state);
-            offerTestYourMightOrCampaignRelic();
+        const offerHarborUnlockThenContinue = (next: () => void) => {
+          if (!(state as any).__pendingHarborUnlockNotice || state.lives <= 0) {
+            next();
             return;
           }
           const stage = document.getElementById('stage-wrap');
           if (!stage) {
-            offerTestYourMightOrCampaignRelic();
+            next();
+            return;
+          }
+          (state as any).__pendingHarborUnlockNotice = false;
+          showHarborUnlockModal(state, () => {
+            showHarborDraftModal(state, buildHarborDraftOffers(state, true), () => updateHeroPlacementBanner());
+          });
+        };
+        const offerBossTrophyThenContinue = () => {
+          const pending = state.pendingBossTrophyOffer;
+          if (!pending || pending.wave !== state.wave) {
+            consumePendingBossTrophyOffer(state);
+            offerHarborUnlockThenContinue(offerTestYourMightOrCampaignRelic);
+            return;
+          }
+          const stage = document.getElementById('stage-wrap');
+          if (!stage) {
+            offerHarborUnlockThenContinue(offerTestYourMightOrCampaignRelic);
             return;
           }
           const trophy = consumePendingBossTrophyOffer(state);
           if (!trophy) {
-            offerTestYourMightOrCampaignRelic();
+            offerHarborUnlockThenContinue(offerTestYourMightOrCampaignRelic);
             return;
           }
           showBossTrophyModal(stage, state, trophy.bossName, () => {
             state.hint = 'Boss trophy claimed. The campaign remembers this kill.';
-            offerTestYourMightOrCampaignRelic();
+            offerHarborUnlockThenContinue(offerTestYourMightOrCampaignRelic);
           });
         };
         offerBossTrophyThenContinue();
