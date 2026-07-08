@@ -10,6 +10,7 @@ export interface ModalErgonomicsOptions {
   closeOnEscape?: boolean;
   onEscape?: () => void;
   storageKey?: string;
+  rememberCollapsed?: boolean;
   title?: string;
   toolRightPx?: number;
 }
@@ -25,6 +26,7 @@ export function ensureModalErgonomicsStyle(): void {
     .rtd-modal-panel {
       position: relative;
       max-height: min(88vh, 820px);
+      max-width: calc(100vw - 16px);
     }
     .rtd-modal-tools {
       position: absolute;
@@ -51,6 +53,7 @@ export function ensureModalErgonomicsStyle(): void {
       font-size: 13px;
       line-height: 1;
       font-weight: 900;
+      touch-action: none;
     }
     .rtd-modal-tool:hover { filter: brightness(1.18); border-color: #ffd34d; }
     .rtd-modal-tool:focus-visible { outline: 3px solid #88ddff; outline-offset: 2px; }
@@ -69,6 +72,9 @@ export function ensureModalErgonomicsStyle(): void {
     @media (max-width: 760px) {
       .rtd-modal-tools { right: 6px; top: 6px; }
       .rtd-modal-tool { width: 30px; height: 30px; }
+      .rtd-modal-panel {
+        max-height: calc(100vh - 14px);
+      }
     }
   `;
   document.head.appendChild(st);
@@ -92,6 +98,17 @@ export function makePanelDraggable(root: HTMLElement, panel: HTMLElement, handle
   let startY = 0;
   let startLeft = 0;
   let startTop = 0;
+
+  const clampToViewport = () => {
+    if (panel.style.position !== 'fixed') return;
+    const rect = panel.getBoundingClientRect();
+    const maxLeft = Math.max(8, window.innerWidth - rect.width - 8);
+    const maxTop = Math.max(8, window.innerHeight - rect.height - 8);
+    const nextLeft = Math.max(8, Math.min(maxLeft, rect.left));
+    const nextTop = Math.max(8, Math.min(maxTop, rect.top));
+    panel.style.left = `${nextLeft}px`;
+    panel.style.top = `${nextTop}px`;
+  };
 
   const begin = (ev: PointerEvent) => {
     if (ev.button !== 0) return;
@@ -136,15 +153,22 @@ export function makePanelDraggable(root: HTMLElement, panel: HTMLElement, handle
   handle.addEventListener('pointermove', move);
   handle.addEventListener('pointerup', end);
   handle.addEventListener('pointercancel', end);
+  window.addEventListener('resize', clampToViewport);
+  window.addEventListener('rtd:viewport-change', clampToViewport as EventListener);
   root.addEventListener('rtd:modal-force-close', () => {
     dragging = false;
     panel.classList.remove('is-rtd-dragging');
+    window.removeEventListener('resize', clampToViewport);
+    window.removeEventListener('rtd:viewport-change', clampToViewport as EventListener);
   });
 }
 
 export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, opts: ModalErgonomicsOptions = {}): void {
   ensureModalErgonomicsStyle();
   panel.classList.add('rtd-modal-panel');
+  panel.setAttribute('role', panel.getAttribute('role') ?? 'dialog');
+  panel.setAttribute('aria-modal', panel.getAttribute('aria-modal') ?? 'true');
+  panel.tabIndex = panel.tabIndex >= 0 ? panel.tabIndex : -1;
   if (opts.title) panel.setAttribute('aria-label', opts.title);
 
   const collapsibles: HTMLElement[] = [];
@@ -176,6 +200,7 @@ export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, op
       btn.id = opts.collapseButtonId ?? '';
       btn.textContent = '▾';
       btn.title = 'Collapse this panel so the map is easier to see';
+      btn.setAttribute('aria-label', 'Collapse this panel');
       btn.setAttribute('aria-expanded', 'true');
       collapseBtn = btn;
       btn.addEventListener('click', ev => {
@@ -187,10 +212,12 @@ export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, op
       btn.id = opts.moveButtonId ?? '';
       btn.textContent = '↔';
       btn.title = 'Drag this handle to move the panel';
+      btn.setAttribute('aria-label', 'Move this panel');
       makePanelDraggable(root, panel, btn);
     } else {
       btn.textContent = 'Esc';
       btn.title = 'Press Escape to close when available';
+      btn.setAttribute('aria-label', 'Escape closes this panel');
       btn.disabled = true;
       btn.style.opacity = '0.65';
     }
@@ -199,6 +226,7 @@ export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, op
   panel.appendChild(tools);
 
   const startCollapsed = opts.storageKey ? (() => {
+    if (opts.rememberCollapsed === false) return false;
     try { return localStorage.getItem(opts.storageKey) === '1'; } catch { return false; }
   })() : false;
   if (collapsibles.length > 0) setCollapsed(panel, collapseBtn, startCollapsed, opts.storageKey);

@@ -19,6 +19,7 @@ import HERO_DEFS_FOR_INSPECT from '../data/herodefs.json';
 import comboData from '../data/towerCombinations.json';
 import { canEquipItemFamily, canEquipItemOnDamageType, itemEquipMode, itemFamily } from '../systems/ItemRules';
 import { markScrollable } from './ScrollCues';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 import { scanCombos, resolveComboChoice } from '../systems/CombinationEngine';
 import { tex } from './Assets';
 import { closeGameModals } from './ModalManager';
@@ -39,6 +40,19 @@ export interface TowerMenuHooks {
   onUndoProspect?: (towerId: string) => void;
   // Combination execution from inside the tower menu.
   onCombine?: (recipeIndex: number, isSameTierMerge: boolean, resultTileTowerId: string) => void;
+}
+
+function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title: string): void {
+  Array.from(panel.children).forEach((child, index) => {
+    // Keep the tier/name banner and portrait header visible when collapsed.
+    // Everything after that is decision/action detail and can hide to reveal
+    // the board without losing which tower the player was inspecting.
+    if (index >= 2) (child as HTMLElement).classList.add('rtd-tower-menu-collapse');
+  });
+  enhanceModalErgonomics(modal, panel, {
+    bodySelector: '.rtd-tower-menu-collapse',
+    title
+  });
 }
 
 function tierColorHex(tier: number): string {
@@ -788,6 +802,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     });
     panel.addEventListener('click', (ev) => ev.stopPropagation());
     parent.appendChild(modal);
+    enhanceTowerInspectModal(modal, panel, `${def.name ?? t.type} prospect menu`);
     return;
   }
 
@@ -850,6 +865,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   });
   panel.addEventListener('click', (ev) => ev.stopPropagation());
   parent.appendChild(modal);
+  enhanceTowerInspectModal(modal, panel, `${def.name ?? t.type} tower menu`);
   // Gold scrollbar + "▼ SCROLL FOR MORE" hint on the MODAL (the scroll
   // container after the 2026-05-19 responsive-clamping refactor). Long
   // tower menus with lots of recipes overflow the viewport and the
@@ -1240,4 +1256,5 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
 
   modal.appendChild(panel);
   parent.appendChild(modal);
+  enhanceTowerInspectModal(modal, panel, `${heroDef.name ?? t.type} hero menu`);
 }

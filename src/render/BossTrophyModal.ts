@@ -39,7 +39,6 @@ export function showBossTrophyModal(
   modal.appendChild(panel);
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '#boss-trophy-body',
-    storageKey: 'roman_td_boss_trophy_collapsed',
     title: 'Boss trophy choice'
   });
 

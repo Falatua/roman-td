@@ -156,7 +156,6 @@ export function showMercatorBackRoomModal(
     enhanceModalErgonomics(root, panel, {
       bodySelector: '#mercator-backroom-body',
       footerSelector: '#mercator-backroom-footer',
-      storageKey: 'roman_td_mercator_backroom_collapsed',
       title: 'Mercator Back Room',
       toolRightPx: 58
     });
@@ -252,7 +251,6 @@ export function showSenateBailoutModal(
     enhanceModalErgonomics(root, panel, {
       bodySelector: '#senate-bailout-body',
       footerSelector: '#senate-bailout-footer',
-      storageKey: 'roman_td_senate_bailout_collapsed',
       title: 'Senate Bailout',
       toolRightPx: 58
     });

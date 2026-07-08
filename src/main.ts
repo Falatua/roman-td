@@ -6712,7 +6712,12 @@ async function boot() {
         'name-prompt', 'sandbox-wave-picker', 'sandbox-tower-picker',
         'stone-menu', 'block-alert'
       ];
-      for (const id of modalsToClose) document.getElementById(id)?.remove();
+      for (const id of modalsToClose) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        el.dispatchEvent(new CustomEvent('rtd:modal-force-close'));
+        if (el.isConnected) el.remove();
+      }
       // Also clear any in-flight "click a row" modes triggered by the
       // SELL STONES button — pressing ESC mid-mode aborts cleanly.
       if ((state as any).__sellStoneMode) {

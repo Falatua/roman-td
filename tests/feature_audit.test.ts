@@ -699,6 +699,8 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(helper).toContain('export function makePanelDraggable');
     expect(helper).toContain('is-rtd-collapsed');
     expect(helper).toContain('Drag this handle to move the panel');
+    expect(helper).toContain("setAttribute('role'");
+    expect(helper).toContain('rtd:viewport-change');
   });
 
   it('applies collapsible or movable ergonomics to the largest recurring choice panels', () => {
@@ -709,6 +711,9 @@ describe('Modal ergonomics and popup stacking', () => {
       'src/render/HarborDraftModal.ts',
       'src/render/LastStandTrove.ts',
       'src/render/SecretEvents.ts',
+      'src/render/SurpriseReward.ts',
+      'src/render/ComboPicker.ts',
+      'src/render/TowerMenu.ts',
       'src/render/SettingsPanel.ts',
       'src/main.ts'
     ];
@@ -716,6 +721,29 @@ describe('Modal ergonomics and popup stacking', () => {
       const source = readFileSync(file, 'utf8');
       expect(source, `${file} should use shared modal ergonomics`).toContain('enhanceModalErgonomics');
     }
+  });
+
+  it('keeps mandatory decision modals expanded on every new offer', () => {
+    for (const file of [
+      'src/render/CampaignRelicModal.ts',
+      'src/render/BossTrophyModal.ts',
+      'src/render/TestYourMightModal.ts',
+      'src/render/HarborDraftModal.ts',
+      'src/render/LastStandTrove.ts',
+      'src/render/SecretEvents.ts',
+      'src/render/SurpriseReward.ts'
+    ]) {
+      const source = readFileSync(file, 'utf8');
+      expect(source, `${file} should not persist collapsed state for a required decision`).not.toContain('storageKey:');
+    }
+  });
+
+  it('dispatches modal force-close cleanup before universal Escape removes panels', () => {
+    const source = readFileSync('src/main.ts', 'utf8');
+    expect(source).toContain("el.dispatchEvent(new CustomEvent('rtd:modal-force-close'))");
+    const reward = readFileSync('src/render/SurpriseReward.ts', 'utf8');
+    expect(reward).toContain("modal.addEventListener('rtd:modal-force-close'");
+    expect(reward).toContain('__surpriseRewardOpen = false');
   });
 
   it('registers recent popup surfaces in the central modal cleanup list', () => {

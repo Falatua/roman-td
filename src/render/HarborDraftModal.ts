@@ -77,7 +77,6 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
   if (panel) {
     enhanceModalErgonomics(wrap, panel, {
       bodySelector: '#harbor-draft-body',
-      storageKey: 'roman_td_harbor_draft_collapsed',
       title: 'Harbor Draft',
       toolRightPx: 52
     });

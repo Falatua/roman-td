@@ -15,6 +15,7 @@ import itemsData from '../data/items_permanent.json';
 import { closeGameModals } from './ModalManager';
 import { SFX } from './AudioManager';
 import { GameStateShape } from '../GameState';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 
 const RARITY_COLOR: Record<string, string> = {
   COMMON: '#cdb98a',
@@ -109,6 +110,7 @@ export function showSurpriseRewardModal(
   modal.id = 'surprise-reward-modal';
   // 2026-05-19 — Responsive clamping (Codex pattern).
   modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.7);z-index:75;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
+  let closed = false;
 
   const panel = document.createElement('div');
   panel.style.cssText = `width:min(660px,94vw);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid ${accent};color:#e8d6a8;box-shadow:0 0 36px ${accent}80;padding:22px;`;
@@ -119,7 +121,7 @@ export function showSurpriseRewardModal(
                      : kind === 'UPRISING' ? 40
                      : 50;   // GATES_OF_HELL
   panel.innerHTML = `
-    <div style="text-align:center;margin-bottom:14px">
+    <div style="text-align:center;margin-bottom:14px;padding-right:76px">
       <div style="font-size:11px;font-weight:bold;letter-spacing:5px;color:${accent};text-shadow:1px 1px 0 #000">${eyebrow}</div>
       <div style="font-size:22px;font-weight:bold;letter-spacing:4px;color:${accent};text-shadow:2px 2px 0 #000;margin-top:6px">${headline}</div>
       <div style="font-size:12px;color:#e8d6a8;line-height:1.5;margin-top:8px;letter-spacing:1px">${subline}</div>
@@ -130,8 +132,10 @@ export function showSurpriseRewardModal(
       </div>
       <div style="font-size:10px;color:#aa9a4a;margin-top:10px;letter-spacing:2px">CHOOSE ONE LEGENDARY</div>
     </div>
-    <div id="surprise-reward-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>
-    <div style="margin-top:14px;text-align:center;font-size:10px;color:#aa9a4a;letter-spacing:1px;font-style:italic">
+    <div id="surprise-reward-body" style="overflow:auto;min-height:0">
+      <div id="surprise-reward-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px"></div>
+    </div>
+    <div id="surprise-reward-footer" style="margin-top:14px;text-align:center;font-size:10px;color:#aa9a4a;letter-spacing:1px;font-style:italic">
       The game is paused. The Senate will wait.
     </div>
   `;
@@ -140,6 +144,8 @@ export function showSurpriseRewardModal(
   const cardsRow = panel.querySelector('#surprise-reward-cards')! as HTMLElement;
 
   const closeModal = (chosenId: string | null) => {
+    if (closed) return;
+    closed = true;
     modal.remove();
     (state as any).__surpriseRewardOpen = false;
     if (chosenId) {
@@ -155,6 +161,14 @@ export function showSurpriseRewardModal(
     }
     onClose();
   };
+  modal.addEventListener('rtd:modal-force-close', () => closeModal(null), { once: true });
+  enhanceModalErgonomics(modal, panel, {
+    bodySelector: '#surprise-reward-body',
+    footerSelector: '#surprise-reward-footer',
+    closeOnEscape: true,
+    onEscape: () => closeModal(null),
+    title: 'Surprise event reward'
+  });
 
   for (const offer of offers) {
     const card = document.createElement('button');

@@ -123,7 +123,6 @@ export function showLastStandTrove(state: GameStateShape, onChoose: (towerType: 
     enhanceModalErgonomics(root, panel, {
       bodySelector: '#last-stand-trove-body',
       footerSelector: '#last-stand-trove-footer',
-      storageKey: 'roman_td_last_stand_trove_collapsed',
       title: 'Last-life tower trove'
     });
   }

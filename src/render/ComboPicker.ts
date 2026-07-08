@@ -4,6 +4,7 @@ import towersData from '../data/towers.json';
 import { TIER_COLORS } from '../constants';
 import { closeGameModals } from './ModalManager';
 import { markScrollable } from './ScrollCues';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 
 export interface ComboPickerHooks {
   onPick: (combo: AvailableCombo, resultTileTowerId: string) => void;
@@ -30,7 +31,8 @@ export function showComboPicker(parent: HTMLElement, combos: AvailableCombo[], s
   <div style="font-size:11px;opacity:0.75;margin-bottom:10px">Pick a recipe, then choose which valid ingredient tile becomes the new tower. The other required ingredient tiles become wall stones (your maze stays intact).</div>`;
 
   const list = document.createElement('div');
-  list.style.cssText = `display:flex;flex-direction:column;gap:8px;`;
+  list.id = 'combo-picker-list';
+  list.style.cssText = `display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0;`;
 
   // Sort: recipe combos first by result tier desc, then same-tier merges
   const sorted = [...combos].sort((a, b) => {
@@ -112,6 +114,10 @@ export function showComboPicker(parent: HTMLElement, combos: AvailableCombo[], s
   panel.appendChild(list);
   modal.appendChild(panel);
   parent.appendChild(modal);
+  enhanceModalErgonomics(modal, panel, {
+    bodySelector: '#combo-picker-list',
+    title: 'Combination picker'
+  });
   // Scroll cues on the modal (the actual scroll container).
   markScrollable(modal);
 

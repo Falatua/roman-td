@@ -49,7 +49,6 @@ export function showCampaignRelicModal(
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '#campaign-relic-body',
     footerSelector: '#campaign-relic-footer',
-    storageKey: 'roman_td_campaign_relic_collapsed',
     title: 'Campaign relic choice'
   });
 

@@ -56,7 +56,6 @@ export function showTestYourMightModal(
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '#tym-body',
     footerSelector: '#tym-footer',
-    storageKey: 'roman_td_test_your_might_collapsed',
     title: 'Test Your Might offer'
   });
 
