@@ -26,6 +26,7 @@ import { buildGroundPathB } from './PathFinder';
 import { campaignRelicEnemyHpMult, campaignRelicEnemySpeedMult } from './CampaignRelicSystem';
 import { commanderSpeedMult, isCommanderType, tickCommanderSupport } from './CommanderSystem';
 import { campaignPressureResistMult } from './CampaignDifficulty';
+import { shouldRespawnBossOnLeak } from './LeakRules';
 
 // Pre-computed waypoint centers in WORLD pixel coordinates, used by the
 // per-frame proximity test so the checkpoint heal fires the instant an
@@ -1626,7 +1627,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       // 5% HP keep that progress across many "loops" — now leaking
       // resets that progress entirely. The boss is essentially saying
       // "you didn't kill me in time. I'm coming back fresh next wave."
-      if (e.isBoss) {
+      if (shouldRespawnBossOnLeak(e)) {
         if (!state.bossRespawnQueue) state.bossRespawnQueue = [];
         // 2026-05 v6: carry the HP across rebirth. Cap to 1 so a quirky
         // overheal can't bank > 100%. fraction recorded for the banner

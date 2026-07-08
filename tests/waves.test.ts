@@ -9,7 +9,7 @@ import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath, buildGroundPathB, buildFlyerPath } from '../src/systems/PathFinder';
 import { enemyResistanceProfile } from '../src/systems/EnemyResistances';
 import { isLegendaryBossDropEnemy, isRareOnlyBossDropEnemy } from '../src/systems/RewardEligibility';
-import { isFinalBossBreach } from '../src/systems/LeakRules';
+import { isFinalBossBreach, leakLifeCostFor, shouldRespawnBossOnLeak } from '../src/systems/LeakRules';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
 import waypointsData from '../src/data/waypoints.json';
@@ -661,6 +661,78 @@ describe('Wave 22 regression guards', () => {
     expect(leaked).toBe(0);
     expect(s.lives).toBe(30);
     expect(s.enemies.size).toBeGreaterThan(0);
+  });
+
+  it('does not leak or kill the player in the opening seconds of W21-W23', () => {
+    const prevWindow = (globalThis as any).window;
+    (globalThis as any).window = prevWindow ?? {};
+    try {
+      for (const wave of [21, 22, 23]) {
+        const s = bootstrapState();
+        s.phase = GamePhase.BUILD_PHASE;
+        s.wave = wave - 1;
+        s.lives = 30;
+        startWave(s);
+
+        const leaks: string[] = [];
+        for (let i = 0; i < 180; i++) {
+          s.tick += 1 / 60;
+          tickSpawns(s, 1 / 60);
+          tickEnemies(
+            s,
+            1 / 60,
+            e => {
+              leaks.push(`${String(e.type)}@${s.tick.toFixed(2)}#${e.pathIndex}+${e.pathProgress.toFixed(2)}`);
+              s.lives -= leakLifeCostFor(e);
+              if (s.lives <= 0 && s.gameOverAt < 0) s.gameOverAt = s.tick;
+            },
+            e => s.enemies.delete(e.id)
+          );
+        }
+
+        expect(leaks, `W${wave} should not leak in the first 3 seconds`).toEqual([]);
+        expect(s.lives, `W${wave} lives should stay untouched in the opening window`).toBe(30);
+        expect(s.gameOverAt, `W${wave} should not set game over in the opening window`).toBeLessThan(0);
+      }
+    } finally {
+      if (prevWindow === undefined) delete (globalThis as any).window;
+      else (globalThis as any).window = prevWindow;
+    }
+  });
+
+  it('treats W22 elephant breaches as elite leaks, not boss instant-death chains', () => {
+    const prevWindow = (globalThis as any).window;
+    (globalThis as any).window = prevWindow ?? {};
+    const s = bootstrapState();
+    s.phase = GamePhase.BUILD_PHASE;
+    s.wave = 21;
+    s.lives = 30;
+    startWave(s);
+
+    const elephant = spawnEnemy(s, EnemyType.UNDEAD_WAR_ELEPHANT, 1);
+    elephant.pathIndex = s.groundPath.length - 1;
+    elephant.pathProgress = 0;
+
+    let leakCost = 0;
+    try {
+      tickEnemies(
+        s,
+        1 / 60,
+        e => {
+          leakCost = leakLifeCostFor(e);
+          s.lives -= leakCost;
+        },
+        e => s.enemies.delete(e.id)
+      );
+
+      expect(leakCost).toBe(5);
+      expect(s.lives).toBe(25);
+      expect(shouldRespawnBossOnLeak(elephant)).toBe(false);
+      expect(s.bossRespawnQueue ?? []).toEqual([]);
+    } finally {
+      if (prevWindow === undefined) delete (globalThis as any).window;
+      else (globalThis as any).window = prevWindow;
+    }
   });
 });
 

@@ -84,7 +84,7 @@ import { bossTrophyKillGoldBonus, consumePendingBossTrophyOffer, queueBossTrophy
 import { failTestYourMight, isTestYourMightLeakEnemy, shouldDeferSurpriseRewardForTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
 import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy, shouldDropRareOnlyBossLoot } from './systems/RewardEligibility';
-import { isFinalBossBreach } from './systems/LeakRules';
+import { isFinalBossBreach, leakLifeCostFor, shouldRespawnBossOnLeak } from './systems/LeakRules';
 import { claimLastStandTroveTower, markLastStandTroveOffered, shouldOfferLastStandTrove } from './systems/LastStandTroveSystem';
 import {
   markMercatorBackRoomOffered,
@@ -7148,19 +7148,20 @@ async function boot() {
           }
           const leakDef: any = (enemiesData as any)[e.type];
           const leakedName = leakDef?.name ?? String(e.type).replace(/_/g, ' ');
-          state.lives -= e.livesCost;
+          const leakLifeCost = leakLifeCostFor(e);
+          state.lives -= leakLifeCost;
           state.enemiesLeakedThisWave++;
           state.leaksByArchetype[e.archetype] = (state.leaksByArchetype[e.archetype] ?? 0) + 1;
           renderer.triggerGateImpact();
-          if (e.isBoss) renderer.triggerShake(5, 0.5);
+          if (shouldRespawnBossOnLeak(e)) renderer.triggerShake(5, 0.5);
           // Auditory leak confirmation — heavy gate-clang. Boss leaks get
           // the deeper, more dramatic variant.
-          SFX.gateBreach(e.isBoss);
+          SFX.gateBreach(shouldRespawnBossOnLeak(e));
           // 2026-05 v6: BOSS LEAK ALERT. When a boss reaches Rome, surface
           // a big red banner explaining what just happened and what's
           // coming next wave (rebirth at carried HP). Players otherwise
           // can miss the implication if they're focused mid-battle.
-          if (e.isBoss) {
+          if (shouldRespawnBossOnLeak(e)) {
             const carryPct = Math.max(1, Math.round((e.hp / e.maxHp) * 100));
             const bossDef: any = (enemiesData as any)[e.type];
             const bossName = bossDef?.name ?? e.type.replace(/_/g, ' ');
@@ -7170,7 +7171,7 @@ async function boot() {
             showBossBanner(`☠ ${bossName.toUpperCase()} REACHED ROME — REBORN NEXT WAVE AT ${carryPct}% HP`, factionKey);
             state.hint = `☠ ${bossName} leaked at ${carryPct}% HP — he returns next wave with that HP.`;
           } else if (state.lives <= 0) {
-            const costText = e.livesCost === 1 ? '1 life' : `${e.livesCost} lives`;
+            const costText = leakLifeCost === 1 ? '1 life' : `${leakLifeCost} lives`;
             state.hint = `☠ ${leakedName} breached Rome for ${costText}. Rome has fallen.`;
           }
           // GHOST RIDER signature: on leak, also steal gold (5g + 1g per wave/10).
