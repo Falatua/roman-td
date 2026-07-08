@@ -104,13 +104,11 @@ function oceanJoinPathIndex(state: GameStateShape): number {
   return Math.min(state.groundPath.length - 1, wp2Idx + 1);
 }
 
-function playOceanEmergenceCueOnce(state: GameStateShape): void {
+function markOceanEmergenceOnce(state: GameStateShape): void {
   const scratch = state as any;
-  if (scratch.__oceanEmergenceSfxWave === state.wave) return;
-  scratch.__oceanEmergenceSfxWave = state.wave;
+  if (scratch.__oceanEmergenceWave === state.wave) return;
+  scratch.__oceanEmergenceWave = state.wave;
   scratch.__oceanSurgeUntil = Math.max(scratch.__oceanSurgeUntil ?? 0, state.tick + 6.0);
-  const hook = (globalThis as any).__oceanEmergenceSfx;
-  if (typeof hook === 'function') hook();
 }
 
 function routeOceanSpawnToPath(state: GameStateShape, enemy: any, oceanIndex = 0): boolean {
@@ -138,7 +136,7 @@ function routeOceanSpawnToPath(state: GameStateShape, enemy: any, oceanIndex = 0
     renderer.triggerImpactRing(spawnX, spawnY, state.tick + 0.16, 98, 0x1a72c8);
   }
   if (renderer?.triggerShake) renderer.triggerShake(2.5, 0.24);
-  playOceanEmergenceCueOnce(state);
+  markOceanEmergenceOnce(state);
   return true;
 }
 

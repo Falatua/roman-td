@@ -272,7 +272,7 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(tidecallers.every(item => item.ocean && !item.caveB)).toBe(true);
   });
 
-  it('plays the ocean emergence cue only once per ocean wave', () => {
+  it('marks ocean emergence visuals without playing the old audio cue', () => {
     const s = bootstrapState();
     let cueCount = 0;
     const prevRenderer = (globalThis as any).__renderer;
@@ -284,14 +284,17 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
       startWave(s);
       tickSpawns(s, 0.01);
       tickSpawns(s, 6);
-      expect(cueCount).toBe(1);
+      expect(cueCount).toBe(0);
+      expect((s as any).__oceanEmergenceWave).toBe(3);
+      expect((s as any).__oceanSurgeUntil).toBeGreaterThan(0);
 
       s.enemies.clear();
       s.phase = GamePhase.BUILD_PHASE;
       s.wave = 11;
       startWave(s);
       tickSpawns(s, 0.01);
-      expect(cueCount).toBe(2);
+      expect(cueCount).toBe(0);
+      expect((s as any).__oceanEmergenceWave).toBe(12);
     } finally {
       (globalThis as any).__renderer = prevRenderer;
       (globalThis as any).__oceanEmergenceSfx = prevOceanCue;
