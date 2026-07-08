@@ -108,6 +108,7 @@ function markOceanEmergenceOnce(state: GameStateShape): void {
   const scratch = state as any;
   if (scratch.__oceanEmergenceWave === state.wave) return;
   scratch.__oceanEmergenceWave = state.wave;
+  scratch.__oceanSurgeStartedAt = state.tick;
   scratch.__oceanSurgeUntil = Math.max(scratch.__oceanSurgeUntil ?? 0, state.tick + 6.0);
   const hook = (globalThis as any).__oceanEmergenceSfx;
   if (typeof hook === 'function') hook();

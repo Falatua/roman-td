@@ -5058,6 +5058,9 @@ export class RenderEngine {
   private surpriseDustPuffsEmitted = new Set<string>();   // event-id::point-index → one-shot guard
   private surpriseEmberClock = 0;                          // throttle counter for ember emission
   private surpriseAtmosSprites: Sprite[] = [];             // pooled atmospheric prop sprites
+  private surpriseSignatureSprites: Sprite[] = [];          // GPT Images 3x3 event-sheet overlays
+  private surpriseSignatureIdx = 0;
+  private oceanEmergenceSprites: Sprite[] = [];             // GPT Images 3x3 shipwreck/ocean emergence
   // 2026-05-17 — DEATH UPRISING over-the-top overlay. Single Graphics
   // drawn beneath the urn sprites; carries pulsing dark-aura rings,
   // ground cracks, orbiting floating skulls, and a vertical soul column
@@ -5180,6 +5183,7 @@ export class RenderEngine {
     //     overlay, atmos props). Iterates each active event so stacked
     //     endless chaos draws all of them. Gates-of-hell overlay sits
     //     after the loop because it iterates LIVE enemies, not points.
+    this.surpriseSignatureIdx = 0;
     for (const ev of events) {
     // 2026-05-17 — GATES OF HELL doesn't use the surpriseActiveSprites
     // pool (the HELL_GATE enemy renders via the normal enemy sprite
@@ -5239,6 +5243,17 @@ export class RenderEngine {
           sp.anchor.set(0.5, 1.0);
           sp.alpha = alpha;
           sp.visible = true;
+          this.drawEventSignatureSheet(
+            'EVENT_INVASION_BREACH_SHEET',
+            meta.vfxX,
+            meta.vfxY + GRID.TILE * 0.45,
+            tick,
+            tick - (meta.firstSpawnAt - VFX_TIMING.RISE_SECONDS),
+            alpha * 0.92,
+            GRID.TILE * 3.35,
+            0.66,
+            pointId * 0.08
+          );
           // Ember particles flickering upward — emit every ~6 frames
           // (rate-limited via a hash key per-point so we don't allocate
           // 60 particles/sec). The gore particle pool is capped so this
@@ -5285,6 +5300,17 @@ export class RenderEngine {
           sp.anchor.set(0.5, 1.0);
           sp.alpha = alpha;
           sp.visible = true;
+          this.drawEventSignatureSheet(
+            'EVENT_DEAD_UPRISING_SHEET',
+            meta.vfxX,
+            meta.vfxY + GRID.TILE * 0.45,
+            tick,
+            tick - (meta.firstSpawnAt - VFX_TIMING.RISE_SECONDS),
+            alpha * 0.96,
+            GRID.TILE * 3.75,
+            0.68,
+            pointId * 0.11
+          );
           // Mouth glow — purple ember escapes the urn's cavity faster
           // now (every ~3 frames vs 5). Sells the "alive and hungry"
           // feel, contrasts with the slower-burning invasion fires.
@@ -5578,6 +5604,17 @@ export class RenderEngine {
         if ((this.surpriseEmberClock += 1) % 5 === 0) {
           this.spawnEmberParticle(cx + (Math.random() - 0.5) * 14, cy - 8, /*warm=*/true);
         }
+        this.drawEventSignatureSheet(
+          'EVENT_HELL_GATE_SHEET',
+          cx,
+          cy,
+          state.tick,
+          state.tick - spawnTick,
+          envAlpha * 0.92,
+          GRID.TILE * 4.0,
+          0.69,
+          e.id.length * 0.03
+        );
       }
     }
 
@@ -5664,6 +5701,9 @@ export class RenderEngine {
     for (let i = atmosIdx; i < this.surpriseAtmosSprites.length; i++) {
       this.surpriseAtmosSprites[i].visible = false;
     }
+    for (let i = this.surpriseSignatureIdx; i < this.surpriseSignatureSprites.length; i++) {
+      this.surpriseSignatureSprites[i].visible = false;
+    }
     // v2 — NO PERSISTENT SCAR DRAWING. Any sprites still in the scar
     // pool from a prior frame are hidden.
     for (const sp of this.surpriseScarSprites) sp.visible = false;
@@ -5687,6 +5727,78 @@ export class RenderEngine {
       this.surpriseTintGfx.beginFill(color, tint.a);
       this.surpriseTintGfx.drawRect(0, 0, GRID.CANVAS_W, GRID.CANVAS_H);
       this.surpriseTintGfx.endFill();
+    }
+  }
+
+  private drawEventSignatureSheet(
+    key: string,
+    x: number,
+    y: number,
+    tick: number,
+    localAge: number,
+    alpha: number,
+    sizePx: number,
+    anchorY = 0.66,
+    phaseOffset = 0
+  ): void {
+    const frame = Math.max(0, Math.min(8, Math.floor(((Math.max(0, localAge) + phaseOffset) % 1.08) / 0.12)));
+    const tx = texGridFrame(key, frame, 256, 256, 3);
+    const sp = this.ensureSurpriseSignatureSprite(this.surpriseSignatureIdx++);
+    if (!tx) { sp.visible = false; return; }
+    sp.texture = tx;
+    sp.anchor.set(0.5, anchorY);
+    sp.x = x;
+    sp.y = y;
+    sp.width = sizePx;
+    sp.height = sizePx;
+    sp.alpha = Math.max(0, Math.min(1, alpha));
+    sp.rotation = Math.sin(tick * 1.2 + phaseOffset * 9) * 0.018;
+    sp.visible = sp.alpha > 0.01;
+  }
+
+  private ensureSurpriseSignatureSprite(idx: number): Sprite {
+    let sp = this.surpriseSignatureSprites[idx];
+    if (!sp) {
+      sp = new Sprite();
+      sp.anchor.set(0.5);
+      this.layers.fx.addChild(sp);
+      this.surpriseSignatureSprites.push(sp);
+    }
+    return sp;
+  }
+
+  drawOceanEmergenceFx(state: GameStateShape, tick: number): void {
+    const startedAt = Number((state as any).__oceanSurgeStartedAt ?? 0);
+    const until = Number((state as any).__oceanSurgeUntil ?? 0);
+    let used = 0;
+    if (startedAt > 0 && until > tick) {
+      const age = Math.max(0, tick - startedAt);
+      const fade = Math.max(0, Math.min(1, (until - tick) / 6.0));
+      const frame = Math.max(0, Math.min(8, Math.floor(Math.min(age, 1.18) / 0.1475)));
+      const tx = texGridFrame('EVENT_OCEAN_EMERGENCE_SHEET', frame, 256, 256, 3);
+      if (tx) {
+        let sp = this.oceanEmergenceSprites[used];
+        if (!sp) {
+          sp = new Sprite();
+          sp.anchor.set(0.5, 0.60);
+          this.layers.fx.addChild(sp);
+          this.oceanEmergenceSprites.push(sp);
+        }
+        sp.texture = tx;
+        sp.x = WATER_ZONE.col * GRID.TILE + GRID.TILE * 2.35;
+        sp.y = (WATER_ZONE.row + WATER_ZONE.height - 1.95) * GRID.TILE;
+        const pulse = 1 + Math.sin(tick * 5.8) * 0.025;
+        const size = GRID.TILE * (4.35 + Math.max(0, 1.2 - age) * 0.25);
+        sp.width = size * pulse;
+        sp.height = size * pulse;
+        sp.alpha = Math.min(0.96, 0.46 + fade * 0.50);
+        sp.rotation = Math.sin(tick * 0.8) * 0.015;
+        sp.visible = true;
+        used++;
+      }
+    }
+    for (let i = used; i < this.oceanEmergenceSprites.length; i++) {
+      this.oceanEmergenceSprites[i].visible = false;
     }
   }
 

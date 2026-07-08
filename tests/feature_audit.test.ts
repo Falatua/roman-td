@@ -456,6 +456,56 @@ describe('Tower roster integrity', () => {
     }
   });
 
+  it('surprise and ocean event animation sheets are sprite-based, transparent, and renderer-wired', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const sharp = (await import('sharp')).default;
+    const renderEngine = fs.readFileSync('src/render/RenderEngine.ts', 'utf8');
+    const waveManager = fs.readFileSync('src/systems/WaveManager.ts', 'utf8');
+    const eventKeys = [
+      'EVENT_DEAD_UPRISING_SHEET',
+      'EVENT_INVASION_BREACH_SHEET',
+      'EVENT_HELL_GATE_SHEET',
+      'EVENT_OCEAN_EMERGENCE_SHEET'
+    ];
+
+    for (const key of eventKeys) {
+      const rel = (ASSET_KEYS as any)[key];
+      expect(rel, `${key} should be registered in the asset manifest`).toBeTruthy();
+      expect(renderEngine.includes(key), `${key} should be consumed by the renderer, not only shipped as an unused asset`).toBe(true);
+      const file = path.join(process.cwd(), 'public/assets/sprites', rel);
+      expect(fs.existsSync(file), `${key} asset missing at ${file}`).toBe(true);
+      const img = sharp(file).ensureAlpha();
+      const meta = await img.metadata();
+      expect(meta.width, `${key} should be a 3x3 grid of 256px frames`).toBe(768);
+      expect(meta.height, `${key} should be a 3x3 grid of 256px frames`).toBe(768);
+      expect(meta.hasAlpha, `${key} should keep a transparent background`).toBe(true);
+      const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
+      let opaque = 0;
+      let tinyAlpha = 0;
+      let greenPixels = 0;
+      const colorBuckets = new Set<string>();
+      for (let i = 0; i < data.length; i += 4) {
+        const a = data[i + 3];
+        if (a > 0 && a <= 4) tinyAlpha++;
+        if (a > 16) {
+          opaque++;
+          colorBuckets.add(`${data[i] >> 4},${data[i + 1] >> 4},${data[i + 2] >> 4}`);
+          if (data[i + 1] > 150 && data[i + 1] > data[i] * 1.35 && data[i + 1] > data[i + 2] * 1.35) greenPixels++;
+        }
+      }
+      const coverage = opaque / (info.width * info.height);
+      expect(tinyAlpha, `${key} has alpha dust that can look like a dirty background`).toBe(0);
+      expect(greenPixels, `${key} should not retain chroma-key green pixels`).toBe(0);
+      expect(coverage, `${key} should have enough visible VFX mass to read in-game`).toBeGreaterThan(0.10);
+      expect(coverage, `${key} should preserve transparent negative space`).toBeLessThan(0.72);
+      expect(colorBuckets.size, `${key} should have enough color variation to look like sprite art, not a flat coded shape`).toBeGreaterThan(30);
+    }
+    expect(renderEngine.includes('texGridFrame(key, frame, 256, 256, 3)'), 'renderer should slice event sheets as 3x3 sprite animations').toBe(true);
+    expect(renderEngine.includes('drawOceanEmergenceFx'), 'renderer should expose the ocean emergence sprite-sheet pass').toBe(true);
+    expect(waveManager.includes('__oceanSurgeStartedAt'), 'ocean waves should record a start tick for sprite-sheet timing').toBe(true);
+  });
+
   it('Sulla meteor projectile and impact sheets keep stable transparent animation frames', async () => {
     const fs = await import('node:fs');
     const path = await import('node:path');

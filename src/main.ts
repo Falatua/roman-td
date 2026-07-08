@@ -8448,6 +8448,7 @@ async function boot() {
     // Sits between burn patches and weather so the event tint sits over
     // the play area but under the weather overlay (rain still reads).
     renderer.drawSurpriseEvents(state, state.tick);
+    renderer.drawOceanEmergenceFx(state, state.tick);
     renderer.drawWeather(state, state.tick);
     renderer.drawAuras(state, state.tick);
     renderer.drawTierPips(state);
