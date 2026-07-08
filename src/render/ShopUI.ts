@@ -17,6 +17,7 @@ import { tex } from './Assets';
 import { purchaseCompletesRecipe } from '../systems/CombinationEngine';
 import { itemFamily } from '../systems/ItemRules';
 import { markScrollable } from './ScrollCues';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 import { HERO_FORGE_CAP, heroForgeNextCost } from '../systems/HeroSystem';
 import { heroIdForTowerType, isMercatorChampionType } from '../systems/HeroIdentity';
 import { recordMercatorBackRoomPurchase } from '../systems/SecretEventsSystem';
@@ -565,6 +566,7 @@ function renderMercatorShop(
 
   // ── Scrollable body ───────────────────────────────────────────────
   const body = document.createElement('div');
+  body.id = 'mercator-shop-body';
   body.style.cssText = `padding:14px 18px;overflow:auto;flex:1;background:linear-gradient(180deg,#1a1410,#0c0a08);display:flex;flex-direction:column;gap:18px`;
   panel.appendChild(body);
   markScrollable(body);
@@ -949,6 +951,7 @@ function renderMercatorShop(
 
   // ── Footer: CLOSE button (sticky bottom) ──────────────────────────
   const footer = document.createElement('div');
+  footer.id = 'mercator-shop-footer';
   footer.style.cssText = `background:#0c0a08;border-top:2px solid #5a4a30;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0`;
   const footerHint = document.createElement('div');
   footerHint.style.cssText = `font-size:10px;color:#aa9a4a;letter-spacing:1px;font-style:italic`;
@@ -958,7 +961,7 @@ function renderMercatorShop(
   })();
   const closeBtn = document.createElement('button');
   closeBtn.className = 'merc-buy';
-  closeBtn.textContent = 'CLOSE (ESC)';
+  closeBtn.textContent = 'CLOSE';
   closeBtn.style.cssText = `background:#444;color:#e8d6a8;padding:8px 18px;font-size:12px`;
   closeBtn.onclick = () => hooks.onClose();
   footer.appendChild(footerHint);
@@ -966,6 +969,15 @@ function renderMercatorShop(
   panel.appendChild(footer);
 
   modal.appendChild(panel);
+  enhanceModalErgonomics(modal, panel, {
+    bodySelector: '#mercator-shop-body',
+    footerSelector: '#mercator-shop-footer',
+    title: 'Mercator shop',
+    closeButton: true,
+    closeButtonId: 'mercator-shop-x',
+    onClose: hooks.onClose,
+    toolRightPx: 8
+  });
   // 2026-05-24 — Backdrop click closes the shop. Per UI audit.
   modal.addEventListener('click', (ev) => {
     if (ev.target === modal) hooks.onClose();
@@ -1203,6 +1215,12 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   closeRow.appendChild(closeBtn);
   contentRoot.appendChild(closeRow);
   modal.appendChild(panel);
+  enhanceModalErgonomics(modal, panel, {
+    title: 'Gate shop',
+    closeButton: true,
+    closeButtonId: 'gate-shop-x',
+    onClose: hooks.onClose
+  });
   // 2026-05-24 — Backdrop click closes the Mercator modal.
   modal.addEventListener('click', (ev) => {
     if (ev.target === modal) hooks.onClose();
@@ -1567,6 +1585,12 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   closeRow.appendChild(close);
   panel.appendChild(closeRow);
   modal.appendChild(panel);
+  enhanceModalErgonomics(modal, panel, {
+    title: 'Inventory',
+    closeButton: true,
+    closeButtonId: 'inventory-modal-x',
+    onClose: hooks.onClose
+  });
   // 2026-05-24 — Backdrop click closes the inventory modal.
   modal.addEventListener('click', (ev) => {
     if (ev.target === modal) hooks.onClose();

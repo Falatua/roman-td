@@ -5494,7 +5494,7 @@ async function boot() {
       }
       mode.__sellStoneMode = true;
       mode.__sellStoneSelection = new Set<string>();
-      state.hint = '🪨 Pick stones to sell — click each one on the map. Press ✓ CONFIRM SELL when ready, or ESC to cancel.';
+      state.hint = '🪨 Pick stones to sell — click each one on the map. Press ✓ CONFIRM SELL when ready, or use the close control to cancel.';
       updateSellStonesButton();
     },
     // 2026-05 v11 (B2 Settings): open audio settings panel.
@@ -6167,11 +6167,11 @@ async function boot() {
         _mode.__sellStoneSelection = sel;
         const refund = sel.size * (ECONOMY.STONE_COST ?? 1);
         state.hint = sel.size > 0
-          ? `${sel.size} stone${sel.size === 1 ? '' : 's'} selected (+${refund}g). Click ✓ CONFIRM SELL to commit or ESC to cancel.`
-          : 'Selection cleared. Pick stones to sell, or ESC to cancel.';
+          ? `${sel.size} stone${sel.size === 1 ? '' : 's'} selected (+${refund}g). Click ✓ CONFIRM SELL to commit or use the close control to cancel.`
+          : 'Selection cleared. Pick stones to sell, or use the close control to cancel.';
         updateSellStonesButton();
       } else {
-        state.hint = 'Selection mode: click STONES only. Towers, paths, and grass are off-limits — press ✓ CONFIRM SELL or ESC.';
+        state.hint = 'Selection mode: click STONES only. Towers, paths, and grass are off-limits. Use ✓ CONFIRM SELL or the close control.';
       }
       return;
     }

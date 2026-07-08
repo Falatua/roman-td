@@ -16,6 +16,7 @@ import { GameStateShape } from '../GameState';
 import { TowerType } from '../types';
 import { sandboxAllTowerOptions } from '../systems/SandboxMode';
 import { WAVE } from '../constants';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 
 export interface SandboxPanelHooks {
   // Called when the player picks a wave from the JUMP TO WAVE modal.
@@ -198,6 +199,12 @@ function showWavePicker(hooks: SandboxPanelHooks): void {
   panel.appendChild(close);
 
   modal.appendChild(panel);
+  enhanceModalErgonomics(modal, panel, {
+    title: 'Sandbox wave picker',
+    closeButton: true,
+    closeButtonId: 'sandbox-wave-picker-x',
+    onClose: () => modal.remove()
+  });
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
   document.body.appendChild(modal);
 }
@@ -263,6 +270,12 @@ function showTowerPicker(hooks: SandboxPanelHooks): void {
   panel.appendChild(close);
 
   modal.appendChild(panel);
+  enhanceModalErgonomics(modal, panel, {
+    title: 'Sandbox tower picker',
+    closeButton: true,
+    closeButtonId: 'sandbox-tower-picker-x',
+    onClose: () => modal.remove()
+  });
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
   document.body.appendChild(modal);
 }

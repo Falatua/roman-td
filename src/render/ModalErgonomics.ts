@@ -19,6 +19,7 @@ export interface ModalErgonomicsOptions {
 }
 
 const STYLE_ID = 'rtd-modal-ergonomics-style';
+const COLLAPSIBLE_ATTR = 'data-rtd-collapsible';
 
 export function ensureModalErgonomicsStyle(): void {
   if (typeof document === 'undefined') return;
@@ -65,6 +66,19 @@ export function ensureModalErgonomicsStyle(): void {
       max-height: none !important;
       overflow: visible !important;
     }
+    .rtd-modal-panel.is-rtd-collapsed.is-rtd-summary-collapse::before {
+      content: attr(data-rtd-collapse-title);
+      display: block;
+      min-height: 28px;
+      padding: 8px 92px 8px 10px;
+      color: #ffd34d;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.25;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
     .rtd-modal-panel.is-rtd-collapsed [data-rtd-collapsible="true"] {
       display: none !important;
     }
@@ -85,6 +99,12 @@ export function ensureModalErgonomicsStyle(): void {
 
 function setCollapsed(panel: HTMLElement, collapseBtn: HTMLButtonElement | null, collapsed: boolean, storageKey?: string): void {
   panel.classList.toggle('is-rtd-collapsed', collapsed);
+  const keepsVisibleContent = Array.from(panel.children).some(el => (
+    el instanceof HTMLElement
+    && !el.classList.contains('rtd-modal-tools')
+    && el.getAttribute(COLLAPSIBLE_ATTR) !== 'true'
+  ));
+  panel.classList.toggle('is-rtd-summary-collapse', collapsed && !keepsVisibleContent);
   if (collapseBtn) {
     collapseBtn.textContent = collapsed ? '▸' : '▾';
     collapseBtn.title = collapsed ? 'Expand this panel' : 'Collapse this panel so the map is easier to see';
@@ -93,6 +113,24 @@ function setCollapsed(panel: HTMLElement, collapseBtn: HTMLButtonElement | null,
   if (storageKey) {
     try { localStorage.setItem(storageKey, collapsed ? '1' : '0'); } catch { /* ignore */ }
   }
+}
+
+function collapseTargetsFor(panel: HTMLElement, selectors: Array<string | undefined>): HTMLElement[] {
+  const targets: HTMLElement[] = [];
+  for (const selector of selectors) {
+    if (!selector) continue;
+    panel.querySelectorAll<HTMLElement>(selector).forEach(el => {
+      if (!targets.includes(el)) targets.push(el);
+    });
+  }
+  if (targets.length > 0) return targets;
+
+  const directChildren = Array.from(panel.children)
+    .filter((el): el is HTMLElement => el instanceof HTMLElement)
+    .filter(el => !el.classList.contains('rtd-modal-tools'));
+
+  if (directChildren.length > 1) return directChildren.slice(1);
+  return directChildren;
 }
 
 export function makePanelDraggable(root: HTMLElement, panel: HTMLElement, handle: HTMLElement): void {
@@ -173,13 +211,10 @@ export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, op
   panel.setAttribute('aria-modal', panel.getAttribute('aria-modal') ?? 'true');
   panel.tabIndex = panel.tabIndex >= 0 ? panel.tabIndex : -1;
   if (opts.title) panel.setAttribute('aria-label', opts.title);
+  panel.setAttribute('data-rtd-collapse-title', opts.title ?? panel.getAttribute('aria-label') ?? 'Panel');
 
-  const collapsibles: HTMLElement[] = [];
-  for (const selector of [opts.bodySelector, opts.footerSelector]) {
-    if (!selector) continue;
-    panel.querySelectorAll<HTMLElement>(selector).forEach(el => collapsibles.push(el));
-  }
-  collapsibles.forEach(el => el.setAttribute('data-rtd-collapsible', 'true'));
+  const collapsibles = collapseTargetsFor(panel, [opts.bodySelector, opts.footerSelector]);
+  collapsibles.forEach(el => el.setAttribute(COLLAPSIBLE_ATTR, 'true'));
   collapsibles.forEach(el => {
     markScrollable(el);
   });

@@ -14,6 +14,7 @@ import { Tower } from '../types';
 import { GameStateShape } from '../GameState';
 import { closeGameModals } from './ModalManager';
 import { markScrollable } from './ScrollCues';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 import { tex } from './Assets';
 import { damageTypeLabel } from '../format';
 import towersData from '../data/towers.json';
@@ -109,14 +110,25 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
 
   // Scrollable rows container
   const rowsWrap = document.createElement('div');
+  rowsWrap.id = 'tower-leaderboard-body';
   rowsWrap.style.cssText = `overflow-y:auto;flex:1;background:#0c0a08;padding:6px 8px`;
   panel.appendChild(rowsWrap);
   markScrollable(rowsWrap);
 
   // Footer summary (per-wave aggregates + MVP)
   const footer = document.createElement('div');
+  footer.id = 'tower-leaderboard-footer';
   footer.style.cssText = `padding:12px 18px;background:#120d0a;border-top:1px solid #5a4a30;font-size:11px;color:#cdb98a;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px`;
   panel.appendChild(footer);
+  enhanceModalErgonomics(modal, panel, {
+    bodySelector: '#tower-leaderboard-body',
+    footerSelector: '#tower-leaderboard-footer',
+    title: 'Wave damage leaderboard',
+    closeButton: true,
+    closeButtonId: 'tower-leaderboard-x',
+    onClose: hooks.onClose,
+    toolRightPx: 54
+  });
 
   function fmtNum(n: number): string {
     if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';

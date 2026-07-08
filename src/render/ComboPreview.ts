@@ -15,6 +15,7 @@
 import towersData from '../data/towers.json';
 import comboData from '../data/towerCombinations.json';
 import { texUrl } from './Assets';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 
 /**
  * Build the collapsible preview block HTML for a combo tower by type id.
@@ -211,20 +212,32 @@ export function showComboInfoModal(comboType: string): void {
   `;
   // Click outside the panel closes the modal. Inner panel stops the
   // bubble so clicks INSIDE the panel don't dismiss it.
-  modal.onclick = () => modal.remove();
   const panel = modal.querySelector('#combo-info-panel') as HTMLElement;
+  const closeModal = () => {
+    modal.remove();
+    document.removeEventListener('keydown', escHandler);
+  };
+  modal.onclick = closeModal;
   if (panel) panel.onclick = (ev) => ev.stopPropagation();
   (modal.querySelector('#combo-info-close') as HTMLButtonElement | null)
-    ?.addEventListener('click', () => modal.remove());
+    ?.addEventListener('click', closeModal);
   (modal.querySelector('#combo-info-dismiss') as HTMLButtonElement | null)
-    ?.addEventListener('click', () => modal.remove());
+    ?.addEventListener('click', closeModal);
   // Escape closes too.
   const escHandler = (ev: KeyboardEvent) => {
     if (ev.key === 'Escape') {
-      modal.remove();
-      document.removeEventListener('keydown', escHandler);
+      closeModal();
     }
   };
   document.addEventListener('keydown', escHandler);
+  if (panel) {
+    enhanceModalErgonomics(modal, panel, {
+      title: 'Combo information',
+      closeButton: true,
+      closeButtonId: 'combo-info-modal-x',
+      onClose: closeModal,
+      toolRightPx: 42
+    });
+  }
   document.body.appendChild(modal);
 }

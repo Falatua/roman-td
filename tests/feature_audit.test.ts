@@ -908,6 +908,9 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(helper).toContain('export function enhanceModalErgonomics');
     expect(helper).toContain('export function makePanelDraggable');
     expect(helper).toContain('is-rtd-collapsed');
+    expect(helper).toContain('collapseTargetsFor');
+    expect(helper).toContain('directChildren.slice(1)');
+    expect(helper).toContain('is-rtd-summary-collapse');
     expect(helper).toContain('Drag this handle to move the panel');
     expect(helper).toContain("setAttribute('role'");
     expect(helper).toContain('rtd:viewport-change');
@@ -924,6 +927,11 @@ describe('Modal ergonomics and popup stacking', () => {
       'src/render/SurpriseReward.ts',
       'src/render/ComboPicker.ts',
       'src/render/TowerMenu.ts',
+      'src/render/ShopUI.ts',
+      'src/render/Codex.ts',
+      'src/render/TowerLeaderboard.ts',
+      'src/render/ComboPreview.ts',
+      'src/render/SandboxPanel.ts',
       'src/render/SettingsPanel.ts',
       'src/main.ts'
     ];
@@ -970,9 +978,11 @@ describe('Modal ergonomics and popup stacking', () => {
     const codex = readFileSync('src/render/Codex.ts', 'utf8');
     const main = readFileSync('src/main.ts', 'utf8');
     const modalErgonomics = readFileSync('src/render/ModalErgonomics.ts', 'utf8');
+    const shop = readFileSync('src/render/ShopUI.ts', 'utf8');
     expect(settings).not.toContain('Press ESC to close');
     expect(codex).not.toContain('<b>ESC</b> closes any open menu');
     expect(main).not.toContain('ESC cancels.');
+    expect(shop).not.toContain('CLOSE (ESC)');
     expect(modalErgonomics).not.toContain("btn.textContent = 'Esc'");
     expect(modalErgonomics).not.toContain('Press Escape to close');
     expect(modalErgonomics).not.toContain('Escape closes this panel');
