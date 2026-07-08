@@ -190,13 +190,15 @@ describe('Test Your Might bonus wave', () => {
       expect(enemyDefs[type]?.stealthInterval, `${type} should not stealth-cycle in W10.5`).toBeUndefined();
     }
 
-    expect(byType.get('HANNIBAL_BARCA')?.hpMult).toBeGreaterThanOrEqual(50);
+    expect(byType.get('HANNIBAL_BARCA')?.hpMult).toBeGreaterThanOrEqual(75);
     expect(byType.get('HANNIBAL_BARCA')?.majorReward).toBe(true);
     expect(TEST_YOUR_MIGHT_SPAWNS.filter(g => g.majorReward).map(g => g.type)).toEqual(['HANNIBAL_BARCA']);
     expect(byType.get('CELTIC_BERSERKER')?.count).toBe(18);
     expect(byType.get('CARTHAGE_ELITE_GUARD')?.count).toBe(8);
     expect(byType.get('IRON_PHALANX')?.count).toBe(5);
-    expect(byType.get('CELTIC_BERSERKER')?.hpMult).toBeGreaterThanOrEqual(265);
+    expect(byType.get('CELTIC_BERSERKER')?.hpMult).toBeGreaterThanOrEqual(405);
+    expect(byType.get('CARTHAGE_ELITE_GUARD')?.hpMult).toBeGreaterThanOrEqual(425);
+    expect(byType.get('PATHFINDER_COMMANDER')?.hpMult).toBeGreaterThanOrEqual(315);
     expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.resistMult ?? 1) <= 0.82)).toBe(true);
     expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.statusGuard ?? 1) <= 0.46)).toBe(true);
     expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.rangedBlock ?? 0) >= 0.10)).toBe(true);
