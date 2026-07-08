@@ -43,12 +43,27 @@ export interface TowerMenuHooks {
 }
 
 function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title: string, onClose: () => void): void {
-  Array.from(panel.children).forEach((child, index) => {
-    // Keep the tier/name banner and portrait header visible when collapsed.
-    // Everything after that is decision/action detail and can hide to reveal
-    // the board without losing which tower the player was inspecting.
-    if (index >= 2) (child as HTMLElement).classList.add('rtd-tower-menu-collapse');
-  });
+  const existingBody = panel.querySelector<HTMLElement>('.rtd-tower-menu-scroll-body');
+  const body = existingBody ?? document.createElement('div');
+  if (!existingBody) {
+    body.className = 'rtd-tower-menu-scroll-body rtd-tower-menu-collapse';
+    body.style.cssText = [
+      'overflow-y:auto',
+      'overflow-x:hidden',
+      'min-height:0',
+      'flex:1',
+      'scrollbar-gutter:stable',
+      '-webkit-overflow-scrolling:touch',
+      'overscroll-behavior:contain'
+    ].join(';');
+    const detailChildren = Array.from(panel.children).slice(2);
+    for (const child of detailChildren) body.appendChild(child);
+    panel.appendChild(body);
+  }
+  panel.style.display = 'flex';
+  panel.style.flexDirection = 'column';
+  panel.style.maxHeight = 'calc(100vh - 32px)';
+  panel.style.overflow = 'hidden';
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '.rtd-tower-menu-collapse',
     title,

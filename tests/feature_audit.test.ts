@@ -878,6 +878,15 @@ describe('Modal ergonomics and popup stacking', () => {
     }
   });
 
+  it('keeps tower and hero inspect details inside a real scroll body', () => {
+    const source = readFileSync('src/render/TowerMenu.ts', 'utf8');
+    expect(source).toContain('rtd-tower-menu-scroll-body');
+    expect(source).toContain("'overflow-y:auto'");
+    expect(source).toContain("'flex:1'");
+    expect(source).toContain("panel.style.maxHeight = 'calc(100vh - 32px)'");
+    expect(source).toContain("bodySelector: '.rtd-tower-menu-collapse'");
+  });
+
   it('keeps mandatory decision modals expanded on every new offer', () => {
     for (const file of [
       'src/render/CampaignRelicModal.ts',
