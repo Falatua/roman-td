@@ -12,7 +12,7 @@
 // all 8 leaked on spawn AND the 27 UNDEAD_CELTs reanimated/rebirthed
 // cascade pushed the player to 0 lives without a fair shot.
 import { describe, it, expect } from 'vitest';
-import { maybeTriggerSurpriseEventForWave, SURPRISE_EVENT_SCHEDULE, spawnAtSurpriseEventPoint, surpriseEventHpMult } from '../src/systems/SurpriseEvents';
+import { deadUprisingTitanTypesForWave, maybeTriggerSurpriseEventForWave, SURPRISE_EVENT_SCHEDULE, spawnAtSurpriseEventPoint, surpriseEventHpMult } from '../src/systems/SurpriseEvents';
 import { EnemyType, SurpriseEventKind, TileType, TowerType } from '../src/types';
 import { createGameState } from '../src/GameState';
 import { GRID } from '../src/constants';
@@ -21,6 +21,7 @@ import { buildGroundPath } from '../src/systems/PathFinder';
 import { createTower } from '../src/systems/TowerSystem';
 import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
 import waypointsData from '../src/data/waypoints.json';
+import enemiesData from '../src/data/enemies.json';
 
 function makeState() {
   const s: any = createGameState();
@@ -152,6 +153,31 @@ describe('Surprise event spawn redirect — flyer guard (2026-05-19)', () => {
     expect((ground as any).__lateStatusGuard).toBeLessThanOrEqual(0.45);
     expect((ground as any).outOfCombatRegen).toBeGreaterThanOrEqual(0.04);
     expect((ground as any).checkpointHealPct).toBeGreaterThanOrEqual(0.10);
+  });
+
+  it('adds scaling undead giant and cyclops elites to Dead Uprising waves', () => {
+    expect(deadUprisingTitanTypesForWave(11)).toEqual([EnemyType.UNDEAD_GIANT]);
+    expect(deadUprisingTitanTypesForWave(14)).toEqual([EnemyType.UNDEAD_GIANT, EnemyType.UNDEAD_CYCLOPS]);
+    expect(deadUprisingTitanTypesForWave(23)).toEqual([EnemyType.DREAD_UNDEAD_GIANT, EnemyType.DREAD_UNDEAD_CYCLOPS]);
+
+    const checks: Array<{ wave: number; expected: EnemyType[] }> = [
+      { wave: 11, expected: [EnemyType.UNDEAD_GIANT] },
+      { wave: 14, expected: [EnemyType.UNDEAD_GIANT, EnemyType.UNDEAD_CYCLOPS] },
+      { wave: 23, expected: [EnemyType.DREAD_UNDEAD_GIANT, EnemyType.DREAD_UNDEAD_CYCLOPS] }
+    ];
+    for (const { wave, expected } of checks) {
+      const s: any = makeEventState(wave);
+      s.spawnQueue = Array.from({ length: 8 }, () => ({ type: EnemyType.UNDEAD_CELT, spawnAt: 0 }));
+      maybeTriggerSurpriseEventForWave(s);
+      const queuedTypes = s.spawnQueue.map((item: any) => item.type);
+      for (const type of expected) {
+        expect(queuedTypes).toContain(type);
+        const def = (enemiesData as any)[type];
+        expect(def.isBoss, type).toBe(false);
+        expect(def.isElite, type).toBe(true);
+        expect(def.livesCost, type).toBe(5);
+      }
+    }
   });
 
   it('the guard catches ALL queue indices for flyers (not just idx 0)', () => {

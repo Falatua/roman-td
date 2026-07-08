@@ -138,7 +138,24 @@ export function maybeTriggerSurpriseEventForWave(state: GameStateShape): void {
   // this, the wave queue's 0.6s SPAWN_INTERVAL produced a slow
   // single-file trickle that didn't look like a true uprising.
   if (kind === SurpriseEventKind.UPRISING && state.activeSurpriseEvent?.waveOverride) {
+    injectDeadUprisingTitans(state);
     clusterUprisingSpawnSchedule(state);
+  }
+}
+
+export function deadUprisingTitanTypesForWave(wave: number): EnemyType[] {
+  if (wave >= 23) return [EnemyType.DREAD_UNDEAD_GIANT, EnemyType.DREAD_UNDEAD_CYCLOPS];
+  if (wave >= 14) return [EnemyType.UNDEAD_GIANT, EnemyType.UNDEAD_CYCLOPS];
+  return [EnemyType.UNDEAD_GIANT];
+}
+
+function injectDeadUprisingTitans(state: GameStateShape): void {
+  const types = deadUprisingTitanTypesForWave(state.wave);
+  if (types.length === 0) return;
+  let spawnAt = Math.max(VFX_RISE_SECONDS, ...state.spawnQueue.map(item => Number(item.spawnAt ?? 0))) + UPRISING_INTER_BURST_GAP;
+  for (const type of types) {
+    state.spawnQueue.push({ type, spawnAt });
+    spawnAt += UPRISING_INTER_BURST_GAP;
   }
 }
 

@@ -399,6 +399,10 @@ describe('Tower roster integrity', () => {
     const keys = [
       'TIDECALLER_COMMANDER',
       'STORMTIDE_WYVERN_COMMANDER',
+      'UNDEAD_GIANT',
+      'UNDEAD_CYCLOPS',
+      'DREAD_UNDEAD_GIANT',
+      'DREAD_UNDEAD_CYCLOPS',
       'TRIREME_BALLISTA',
       'CORVUS_BOARDING_SHIP',
       'RAMMING_QUINQUEREME',

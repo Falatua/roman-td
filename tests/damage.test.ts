@@ -214,6 +214,22 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     }
   });
 
+  it('gives Dead Uprising giants undead weaknesses and dead-data DoT immunity', () => {
+    const checks = [
+      EnemyType.UNDEAD_GIANT,
+      EnemyType.UNDEAD_CYCLOPS,
+      EnemyType.DREAD_UNDEAD_GIANT,
+      EnemyType.DREAD_UNDEAD_CYCLOPS
+    ];
+    for (const type of checks) {
+      const enemy = makeEnemy(type, (enemiesData as any)[type].faction as EnemyFaction);
+      expect(statusEffectiveness(enemy, StatusEffectKind.POISON), `${type} poison`).toBe(0);
+      expect(statusEffectiveness(enemy, StatusEffectKind.BLEED), `${type} bleed`).toBe(0);
+      expect(enemyDamageMultiplier(enemy, DamageType.ELEMENTAL_FIRE), `${type} fire`).toBeGreaterThan(1);
+      expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine`).toBeGreaterThan(1);
+    }
+  });
+
   it('keeps all sea giants tanky while preserving divine as their main counter', () => {
     const expectations = [
       { type: EnemyType.SEA_GIANT, hp: 2400, meleeMax: 0.50, siegeMax: 1.05, divineMin: 1.10 },
