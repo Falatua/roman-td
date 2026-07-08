@@ -79,6 +79,28 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
     expect(effectiveWaveHpMult(20, 1, true)).toBeGreaterThan(effectiveWaveHpMult(15, 1, true));
   });
 
+  it('gives every boss before Wave 11 the 15 percent early-boss health bump', () => {
+    const expected = new Map<string, number>([
+      ['ALPHA_DOG', 3765],
+      ['CELTIC_WARLORD', 4117],
+      ['WAR_ELEPHANT', 23575],
+      ['HANNIBAL_BARCA', 8625]
+    ]);
+    const preWave11BossTypes = new Set<string>();
+
+    for (const wave of (wavesData as any[]).filter(wave => wave.wave < 11)) {
+      for (const spawn of wave.spawns ?? []) {
+        const def = (enemiesData as any)[spawn.type];
+        if (def?.isBoss) preWave11BossTypes.add(spawn.type);
+      }
+    }
+
+    expect([...preWave11BossTypes].sort()).toEqual([...expected.keys()].sort());
+    for (const [type, baseHp] of expected) {
+      expect((enemiesData as any)[type].baseHp).toBe(baseHp);
+    }
+  });
+
   it('adds a modest linear campaign pressure layer after W5', () => {
     expect(campaignPressureHpMult(5)).toBe(1);
     expect(campaignPressureHpMult(6)).toBeCloseTo(1.012, 4);

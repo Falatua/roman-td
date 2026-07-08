@@ -27,7 +27,7 @@
   "ALPHA_DOG": {
     "name": "Alpha Dog",
     "faction": "DOGS",
-    "baseHp": 3274,
+    "baseHp": 3765,
     "speed": 2,
     "isFlyer": false,
     "isBoss": true,
@@ -94,7 +94,7 @@
   "CELTIC_WARLORD": {
     "name": "Brennus",
     "faction": "CELTS",
-    "baseHp": 3580,
+    "baseHp": 4117,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": true,
@@ -148,7 +148,7 @@
   "WAR_ELEPHANT": {
     "name": "War Elephant",
     "faction": "CARTHAGE",
-    "baseHp": 20500,
+    "baseHp": 23575,
     "speed": 1.6,
     "isFlyer": false,
     "isBoss": true,
@@ -164,7 +164,7 @@
   "HANNIBAL_BARCA": {
     "name": "Hannibal Barca",
     "faction": "CARTHAGE",
-    "baseHp": 7500,
+    "baseHp": 8625,
     "speed": 1.7,
     "isFlyer": false,
     "isBoss": true,
