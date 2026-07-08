@@ -1,12 +1,10 @@
 import { ItemId, DamageType } from '../types';
 import towersData from '../data/towers.json';
 
-// 2026-05 v9: DOT split into per-kind sub-families (DOT_BURN, DOT_POISON,
-// DOT_BLEED) so a tower can carry one of each — variety of DoTs is
-// rewarded but stacking multiple of the SAME kind is blocked. The
-// legacy 'DOT' label is gone; every DoT-applying item now declares its
-// kind. Player-facing copy still calls them all "DoT items" — the
-// sub-families only matter for the canEquipItemFamily rule.
+// 2026-07: SPECIAL is now a real equip family, not a free-stacking bucket.
+// This prevents one tower from becoming the entire run by stacking multiple
+// trophies/procs. DoT items currently live in SPECIAL too, so they follow the
+// same one-special-item limit.
 export type ItemFamily =
   | 'DAMAGE'
   | 'SPEED'
@@ -93,18 +91,13 @@ const FAMILY: Record<string, ItemFamily> = {
   WATCHTOWER_LENS: 'RANGE',
   DRUID_STAFF_FRAGMENT: 'RANGE',
 
-  // 2026-05-17 — DoT items moved to SPECIAL so a tower can stack any
-  // combination of DoT items freely. Previously DoT was split into
-  // sub-families (DOT_BURN / DOT_POISON / DOT_BLEED) so one of each
-  // type could coexist, but two of the same type were blocked. Per
-  // user direction: DoT items now all stack — build a dedicated
-  // "DoT specialist" tower with burn + poison + bleed + venom + etc.
+  // DoT items occupy SPECIAL, which is capped at one per tower.
   FIRE_OIL_FLASK: 'SPECIAL',
   POISONED_BLADE: 'SPECIAL',
   BARBED_GLADIUS: 'SPECIAL',
   FALCATA_BLADE: 'SPECIAL',
   ALPHA_PACK_FANG: 'SPECIAL',
-  EXECUTIONERS_FALX: 'SPECIAL',   // 2026 v2 — AoE legendaries stack freely
+  EXECUTIONERS_FALX: 'SPECIAL',
   CONCUSSIVE_WARHEAD: 'SPECIAL',
   // CURSED_TORC moved out of DOT (description was actually +30% damage)
   // into AURA — now emits an enemy-debuff (nearby enemies take +18%).
@@ -135,37 +128,29 @@ const FAMILY: Record<string, ItemFamily> = {
   // DRUIDS_TORC moved to AURA (was SPECIAL self-buff).
   WARLORDS_WAR_PAINT: 'SPECIAL',
   UNDEAD_ELEPHANT_BONE: 'SPECIAL',
-  // New legendaries (2026-05): AQUILA_TALONS is a SPECIAL anti-air enabler
-  // (stacks with any damage/range item); SPEAR_OF_MARS occupies the RANGE
-  // family because its hook is the +5 tile reach; JUPITERS_WRATH is a
-  // SPECIAL chain-lightning proc so it can pair with a damage item.
+  // New legendaries (2026-05): AQUILA_TALONS is a SPECIAL anti-air enabler;
+  // SPEAR_OF_MARS occupies the RANGE family because its hook is the +5 tile
+  // reach; JUPITERS_WRATH is a SPECIAL chain-lightning proc.
   AQUILA_TALONS: 'SPECIAL',
   SPEAR_OF_MARS: 'RANGE',
   JUPITERS_WRATH: 'SPECIAL',
   CAPITOLINE_AEGIS: 'SPECIAL',
-  // 2026-05-15 — three new items. All SPECIAL so they stack freely with
-  // damage / speed / range / DOT / aura items on the same tower (the
-  // SPECIAL family always passes canEquipItemFamily). Effects are
-  // multi-hit expansions (cleave + extra shot) and a faction-specific
-  // damage spike (anti-demon).
+  // 2026-05-15 — three proc/faction items. SPECIAL now means one per
+  // tower, so these compete with other trophy/proc effects.
   FALX_BLADE: 'SPECIAL',
   VOLLEY_QUIVER: 'SPECIAL',
   SIGIL_OF_SOL_INVICTUS: 'SPECIAL',
   // TYRANTS_LAUREL is DAMAGE family (occupies the same slot as Sharpened
-  // Blade / Iron Tip). 2026-05-17 — VESTAL_PYRE / VENOM_TIPPED_ARROWS /
-  // SERPENT_AMULET / WITCHS_VENOM moved to SPECIAL with the rest of
-  // the DoT family so the "stack as many DoTs as you want" rule applies
-  // uniformly.
+  // Blade / Iron Tip). VESTAL_PYRE / VENOM_TIPPED_ARROWS / SERPENT_AMULET /
+  // WITCHS_VENOM live in SPECIAL, so they compete with other trophy/proc
+  // effects under the one-SPECIAL-item cap.
   TYRANTS_LAUREL: 'DAMAGE',
   VESTAL_PYRE: 'SPECIAL',
   VENOM_TIPPED_ARROWS: 'SPECIAL',
   SERPENT_AMULET: 'SPECIAL',
   WITCHS_VENOM: 'SPECIAL',
-  // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES. All registered SPECIAL
-  // so they stack with any other equipped item (DoT, damage, range,
-  // aura). The intention is event rewards feel additive to whatever
-  // build the player already has, not "you have to drop your damage
-  // item to use this".
+  // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES. They are SPECIAL trophy
+  // effects, capped at one per tower for build diversity.
   VANGUARD_PILUM: 'SPECIAL',
   AQUILA_RAMPART: 'SPECIAL',
   PERIMETER_TORCH: 'SPECIAL',
@@ -175,10 +160,9 @@ const FAMILY: Record<string, ItemFamily> = {
   HELLGATE_BRAND: 'SPECIAL',
   DEMONSWORN_CROWN: 'SPECIAL',
   INFERNO_STANDARD: 'SPECIAL',
-  // 2026-05-19 — DAMNATIO MEMORIAE. SPECIAL family so it stacks with
-  // damage/aura items. Triggers execute (instant kill) on non-Boss
-  // enemies below 25% HP when this tower's attack lands. Bosses are
-  // immune. Execution logic in CombatResolver post-damage step.
+  // 2026-05-19 — DAMNATIO MEMORIAE. SPECIAL execute trophy. Triggers
+  // instant kill on non-Boss enemies below 25% HP when this tower's
+  // attack lands. Bosses are immune.
   DAMNATIO_MEMORIAE: 'SPECIAL',
   // 2026-05-18 — EPIC TIER ITEMS. Three new at this rarity (Lictor's
   // Fasces, Auxiliary Sling, Optio's Whistle). DAMAGE for the two stat
@@ -236,7 +220,6 @@ export function itemRandomSelectionWeight(itemId: ItemId | string): number {
 
 export function canEquipItemFamily(equipped: ItemId[], itemId: ItemId): { ok: boolean; family: ItemFamily } {
   const family = itemFamily(itemId);
-  if (family === 'SPECIAL') return { ok: true, family };
   return { ok: !equipped.some(id => itemFamily(id) === family), family };
 }
 

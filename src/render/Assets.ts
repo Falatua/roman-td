@@ -379,6 +379,7 @@ const MANIFEST: Record<string, string> = {
   EVENT_INVASION_BREACH_SHEET: 'vfx/event_invasion_breach_sheet.png',
   EVENT_HELL_GATE_SHEET: 'vfx/event_hell_gate_sheet.png',
   EVENT_OCEAN_EMERGENCE_SHEET: 'vfx/event_ocean_emergence_sheet.png',
+  FINAL_BOSS_DAEMON_PORTAL_SHEET: 'vfx/final_boss_daemon_portal_sheet.png',
   // Mercator vendor art
   MERCATOR: 'u_mercator.png', MERCATOR_CART: 'u_mercator_cart.png',
   // ─── ITEM SPRITES — 2026-05-20 v3 full regeneration ────────────────────
@@ -989,6 +990,7 @@ export function prewarmAttackFrameCache(): void {
   for (const key of HERO_ATTACK_KEYS) {
     for (let frame = 0; frame < 9; frame++) texGridFrame(key, frame, 256, 256, 3);
   }
+  for (let frame = 0; frame < 9; frame++) texGridFrame('FINAL_BOSS_DAEMON_PORTAL_SHEET', frame, 256, 256, 3);
   for (const type of BASE_TOWER_ATTACK_TYPES) {
     const key = `ATTACK_${type}`;
     for (let frame = 0; frame < 9; frame++) texGridFrame(key, frame, 128, 128, 3);

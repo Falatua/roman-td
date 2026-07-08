@@ -23,9 +23,7 @@ describe('Item families', () => {
     expect(itemFamily('SHARPENED_BLADE')).toBe('DAMAGE');
     expect(itemFamily('TRAINING_SCROLL')).toBe('SPEED');
     expect(itemFamily('WATCHTOWER_LENS')).toBe('RANGE');
-    // 2026-05-17 — DoT items moved to SPECIAL family so they stack
-    // freely on a tower (multiple DoTs ticking simultaneously). Was
-    // split into DOT_BURN / DOT_POISON / DOT_BLEED sub-families pre-fix.
+    // DoT-bearing items live in SPECIAL and follow the one-SPECIAL cap.
     expect(itemFamily('FIRE_OIL_FLASK')).toBe('SPECIAL');
     expect(itemFamily('POISONED_BLADE')).toBe('SPECIAL');
     expect(itemFamily('BARBED_GLADIUS')).toBe('SPECIAL');
@@ -111,9 +109,9 @@ describe('Item equip family exclusivity', () => {
     expect(canEquipItemFamily(equipped, 'WATCHTOWER_LENS').ok).toBe(true);
   });
 
-  it('SPECIAL items always stack (no exclusivity)', () => {
+  it('blocks a second SPECIAL item on the same tower', () => {
     const equipped = ['BERSERKERS_MUZZLE'];
-    expect(canEquipItemFamily(equipped, 'DRUIDS_TORC').ok).toBe(true);
+    expect(canEquipItemFamily(equipped, 'JUPITERS_WRATH').ok).toBe(false);
   });
 });
 

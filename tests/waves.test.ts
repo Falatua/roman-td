@@ -233,13 +233,13 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
 
   it('adds Naga sleepcasters across late-beginning, mid-game, and end-game waves', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
-    expect(byWave.get(8).spawns).toContainEqual({ type: 'NAGA_ADEPT', count: 3 });
-    expect(byWave.get(17).spawns).toContainEqual({ type: 'NAGA_SLEEPWEAVER', count: 4 });
-    expect(byWave.get(28).spawns).toContainEqual({ type: 'NAGA_ORACLE', count: 3 });
+    expect(byWave.get(8).spawns).toContainEqual({ type: 'NAGA_ADEPT', count: 3, ocean: true });
+    expect(byWave.get(17).spawns).toContainEqual({ type: 'NAGA_SLEEPWEAVER', count: 4, ocean: true });
+    expect(byWave.get(28).spawns).toContainEqual({ type: 'NAGA_ORACLE', count: 3, ocean: true });
   });
 
   it('starts ocean enemies alongside the normal cave wave instead of after it', () => {
-    for (const wave of [3, 8, 12, 18, 27, 29]) {
+    for (const wave of [3, 8, 12, 17, 18, 27, 28, 29]) {
       const s = bootstrapState();
       s.wave = wave - 1;
       startWave(s);

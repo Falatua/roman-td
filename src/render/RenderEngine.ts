@@ -138,6 +138,7 @@ export class RenderEngine {
     wounds?: Container;
     woundCount?: number;
     nextDripTick?: number;
+    daemonPortal?: Sprite;
     // (Removed 2026-05-17: stuckArrowsBin + stuckArrowsCount — embedded-
     // shaft overlay pulled for perf. See onProjectileHit handler in main.ts.)
     // 2026-05 v7 perf: pooled shield indicator. Created ONCE on first
@@ -3894,11 +3895,10 @@ export class RenderEngine {
           const age = 1 - flashT;
           const side = (tw.id.charCodeAt(tw.id.length - 1) % 2 === 0) ? 1 : -1;
           if (usingHeroAttackSheet) {
-            // Marius' custom 3x3 sheet already contains the body torque,
-            // sword arc, follow-through, and idle return.
-            heroAttackRotation = heroId === 'HERO_MARIUS'
-              ? 0
-              : meleeHero ? Math.sin(age * Math.PI) * 0.12 * side : Math.sin(age * Math.PI) * -0.07 * side;
+            // Authored 3x3 sheets already contain body torque, release,
+            // follow-through, and idle return. Extra procedural rotation
+            // made ranged heroes look like they shrank or stuck mid-swing.
+            heroAttackRotation = 0;
             heroAttackSkewX = 0;
           } else if (meleeHero) {
             const windupToRelease = age < 0.46
@@ -4116,8 +4116,15 @@ export class RenderEngine {
         const hp = new Graphics();
         const statusBar = new Container();
         const wounds = new Container();
-        entry = { sp, hp, statusBar, displayX: e.x, displayY: e.y, lastTick: state.tick, wounds, woundCount: 0, nextDripTick: 0 };
+        const daemonPortal = e.type === 'DAEMON_IMPERATOR' ? new Sprite() : undefined;
+        if (daemonPortal) {
+          daemonPortal.anchor.set(0.5, 0.72);
+          daemonPortal.visible = false;
+          daemonPortal.blendMode = 1 as any;
+        }
+        entry = { sp, hp, statusBar, displayX: e.x, displayY: e.y, lastTick: state.tick, wounds, woundCount: 0, nextDripTick: 0, daemonPortal };
         this.enemySprites.set(e.id, entry);
+        if (daemonPortal) this.layers.enemies.addChild(daemonPortal);
         this.layers.enemies.addChild(sp, wounds, hp, statusBar);
       }
       const frameDt = Math.max(0, state.tick - entry.lastTick);
@@ -4274,6 +4281,62 @@ export class RenderEngine {
       } else if ((entry as any).__surpriseRiseOffset) {
         (entry as any).__surpriseRiseOffset = 0;
       }
+      if (e.type === 'DAEMON_IMPERATOR' && entry.daemonPortal) {
+        const portal = entry.daemonPortal;
+        if (typeof (entry as any).__daemonSpawnTick !== 'number') {
+          (entry as any).__daemonSpawnTick = state.tick;
+          (entry as any).__daemonSeenCheckpoints = new Set<number>();
+          (entry as any).__daemonVfxUntil = state.tick + 3.0;
+        }
+        const seenCheckpoints = (entry as any).__daemonSeenCheckpoints as Set<number>;
+        for (const wp of ((waypointsData as any).waypoints ?? [])) {
+          const wx = (wp.topLeft.col + 1) * GRID.TILE;
+          const wy = (wp.topLeft.row + 1) * GRID.TILE;
+          const dist = Math.hypot(e.x - wx, e.y - wy);
+          if (dist <= GRID.TILE * 1.35 && !seenCheckpoints.has(wp.index)) {
+            seenCheckpoints.add(wp.index);
+            (entry as any).__daemonVfxUntil = state.tick + 1.55;
+            this.triggerImpactRing(entry.displayX, entry.displayY + GRID.TILE * 0.25, state.tick, 78, 0xff5522);
+            this.triggerImpactRing(entry.displayX, entry.displayY + GRID.TILE * 0.25, state.tick + 0.08, 118, 0x8822aa);
+            for (let k = 0; k < 8; k++) {
+              this.spawnEmberParticle(entry.displayX + (Math.random() - 0.5) * 28, entry.displayY + GRID.TILE * 0.25, true);
+            }
+          }
+        }
+        if (e.currentSpeed > 0 && state.tick >= ((entry as any).__daemonNextStepVfx ?? 0)) {
+          (entry as any).__daemonNextStepVfx = state.tick + 0.62;
+          this.spawnEmberParticle(entry.displayX + (Math.random() - 0.5) * 18, entry.displayY + GRID.TILE * 0.45, true);
+          this.spawnEmberParticle(entry.displayX + (Math.random() - 0.5) * 18, entry.displayY + GRID.TILE * 0.45, false);
+        }
+        const spawnAge = state.tick - ((entry as any).__daemonSpawnTick ?? state.tick);
+        const spawnPulse = spawnAge < 3.0 ? Math.max(0, 1 - Math.max(0, spawnAge - 2.15) / 0.85) : 0;
+        const checkpointPulse = Math.max(0, (((entry as any).__daemonVfxUntil ?? 0) - state.tick) / 1.55);
+        const woundedAura = hpFrac < 0.5 ? 0.12 + (0.5 - hpFrac) * 0.22 : 0;
+        const moveAura = e.currentSpeed > 0 ? 0.08 + 0.04 * Math.sin(state.tick * 5.2) : 0;
+        const alpha = Math.max(spawnPulse * 0.82, checkpointPulse * 0.72, woundedAura, moveAura);
+        const animT = spawnPulse > 0.05
+          ? spawnAge
+          : checkpointPulse > 0.05
+            ? (1.55 - checkpointPulse * 1.55)
+            : state.tick * 0.75;
+        const frame = Math.max(0, Math.min(8, Math.floor((animT % 1.08) / 0.12)));
+        const portalTex = texGridFrame('FINAL_BOSS_DAEMON_PORTAL_SHEET', frame, 256, 256, 3);
+        if (portalTex && alpha > 0.025) {
+          portal.texture = portalTex;
+          portal.x = entry.sp.x;
+          portal.y = entry.sp.y + GRID.TILE * 0.55;
+          const pulseSize = GRID.TILE * (spawnPulse > 0.05 ? 4.3 : checkpointPulse > 0.05 ? 3.75 : 2.75);
+          portal.width = pulseSize;
+          portal.height = pulseSize;
+          portal.rotation = Math.sin(state.tick * 0.9) * 0.018;
+          portal.alpha = Math.max(0, Math.min(0.86, alpha));
+          portal.visible = true;
+        } else {
+          portal.visible = false;
+        }
+      } else if (entry.daemonPortal) {
+        entry.daemonPortal.visible = false;
+      }
       // Hit knockback jolt — visual-only offset that decays. Set when hpFlashTimer
       // jumps (i.e. fresh hit). Pushes the sprite slightly along the path direction
       // so it reads like the enemy got rocked. Game logic position is unaffected.
@@ -4419,6 +4482,7 @@ export class RenderEngine {
     for (const [id, entry] of this.enemySprites) {
       if (!seenEnemyIds.has(id)) {
         entry.sp.destroy(); entry.hp.destroy(); entry.statusBar.destroy();
+        if (entry.daemonPortal) entry.daemonPortal.destroy();
         if (entry.wounds) entry.wounds.destroy();
         if (entry.shieldBin) entry.shieldBin.destroy({ children: true });
         // BUGFIX 2026-05: the archetype tag (ARMORED / RESISTANT / BOSS / …)
@@ -5196,6 +5260,11 @@ export class RenderEngine {
       // sprite handles it. Skip to the next section.
     } else if (ev) {
       const isInvasion = ev.kind === SurpriseEventKind.INVASION;
+      const invasionVisualAge = tick - ev.startedAt;
+      const invasionVisualAlpha =
+        isInvasion
+          ? Math.max(0, Math.min(1, 1 - Math.max(0, invasionVisualAge - 2.2) / 0.55))
+          : 1;
       // ── Per-point visual state (one sprite per pointId 0..3) ────────
       // Collect the unique pointIds in this event + the FIRST spawnAt
       // per point (drives fade-in / fade-out timing).
@@ -5222,6 +5291,7 @@ export class RenderEngine {
           const fadeP = (tick - ev.vfxFadeOutAt) / VFX_TIMING.FADEOUT_SECONDS;
           alpha = Math.max(0, 1 - fadeP);
         }
+        if (isInvasion) alpha *= invasionVisualAlpha;
         if (alpha <= 0.005) continue;
 
         const sp = this.ensureSurpriseActiveSprite(activeIdx);
@@ -5260,7 +5330,7 @@ export class RenderEngine {
           // (rate-limited via a hash key per-point so we don't allocate
           // 60 particles/sec). The gore particle pool is capped so this
           // is safe; older embers age out naturally.
-          if ((this.surpriseEmberClock += 1) % 4 === 0) {
+          if (invasionVisualAlpha > 0.15 && (this.surpriseEmberClock += 1) % 8 === 0) {
             this.spawnEmberParticle(meta.vfxX, meta.vfxY, /*warm=*/true);
           }
         } else {
@@ -5353,10 +5423,10 @@ export class RenderEngine {
           }
           // Brief camera punch for each emergence — sells the moment.
           try { this.triggerShake?.(2, 0.18); } catch { /* renderer may not expose shake yet */ }
-        } else {
+        } else if (ev.kind === SurpriseEventKind.INVASION && (tick - ev.startedAt) <= 2.85) {
           this.triggerImpactRing(p.vfxX, p.vfxY + GRID.TILE * 0.4, tick,        24, ringColor);
           this.triggerImpactRing(p.vfxX, p.vfxY + GRID.TILE * 0.4, tick + 0.06, 38, ringColor);
-          for (let k = 0; k < 4; k++) this.spawnEmberParticle(p.vfxX, p.vfxY, true);
+          for (let k = 0; k < 2; k++) this.spawnEmberParticle(p.vfxX, p.vfxY, true);
         }
       }
       if (this.surpriseDustPuffsEmitted.size > 64) {
@@ -5634,6 +5704,10 @@ export class RenderEngine {
       if (ev.vfxFadeOutAt > 0) {
         const fadeP = (tick - ev.vfxFadeOutAt) / VFX_TIMING.FADEOUT_SECONDS;
         envAlpha = Math.max(0, 1 - fadeP);
+      }
+      if (ev.kind === SurpriseEventKind.INVASION) {
+        const age = tick - ev.startedAt;
+        envAlpha *= Math.max(0, Math.min(1, 1 - Math.max(0, age - 2.2) / 0.55));
       }
       if (envAlpha > 0.005) {
         for (const prop of ev.atmosProps) {

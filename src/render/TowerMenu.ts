@@ -524,7 +524,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
         <div style="font-size:9px;color:#cc6666;letter-spacing:0.5px">⚠ ONE PER FAMILY · NO DUPLICATES</div>
       </div>
       <div style="font-size:10px;color:#cdb98a;margin-bottom:6px;line-height:1.4">
-        Each tower can equip only <b style="color:#fff8e0">one item per family</b> (DAMAGE / SPEED / RANGE / BURN / POISON / BLEED / AURA / ECONOMY / DEFENSE). The DoT split means one tower can carry up to three distinct DoTs (burn + poison + bleed) but never two of the same kind. The same exact item can't be doubled either. Items already disallowed show a red tag. <b style="color:#88ff88">Click an equipped item</b> to send it back to your inventory.
+        Each tower can equip only <b style="color:#fff8e0">one item per family</b> (DAMAGE / SPEED / RANGE / AURA / ECONOMY / DEFENSE / SPECIAL). SPECIAL trophies and proc items are powerful, so a tower can carry only one of them. The same exact item can't be doubled either. Items already disallowed show a red tag. <b style="color:#88ff88">Click an equipped item</b> to send it back to your inventory.
       </div>`;
     const invGrid = document.createElement('div');
     invGrid.style.cssText = `display:grid;grid-template-columns:repeat(5,54px);gap:5px;padding:8px;background:#0c0a08;border:2px solid #5a4a30;box-shadow:inset 0 0 14px #000;`;
@@ -1193,7 +1193,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
         <div style="font-size:9px;color:#cc6666;letter-spacing:0.5px">⚠ ONE PER FAMILY · NO DUPLICATES</div>
       </div>
       <div style="font-size:10px;color:#cdb98a;margin-bottom:6px;line-height:1.4">
-        Heroes carry up to <b style="color:#fff8e0">${HERO_ITEM_SLOTS} items</b>. Same family + mode rules apply — one DAMAGE, one SPEED, etc., and MELEE / RANGED items respect the hero's attack class. Click an equipped item to send it back to your inventory.
+        Heroes carry up to <b style="color:#fff8e0">${HERO_ITEM_SLOTS} items</b>. Same family + mode rules apply — one DAMAGE, one SPEED, one SPECIAL, etc., and MELEE / RANGED items respect the hero's attack class. Click an equipped item to send it back to your inventory.
       </div>`;
     const invGrid = document.createElement('div');
     invGrid.style.cssText = `display:grid;grid-template-columns:repeat(5,54px);gap:5px;padding:8px;background:#0c0a08;border:2px solid ${tint};box-shadow:inset 0 0 14px #000;`;

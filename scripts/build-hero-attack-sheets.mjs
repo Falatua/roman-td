@@ -15,7 +15,7 @@ const transparent = { r: 0, g: 0, b: 0, alpha: 0 };
 
 const HEROES = [
   { id: 'MARIUS', file: 'hero_marius.png', color: '#d8e8ff', kind: 'slash', side: -1 },
-  { id: 'AGRIPPA', file: 'hero_agrippa.png', color: '#88bbff', kind: 'pilum', side: 1 },
+  { id: 'AGRIPPA', file: 'hero_agrippa.png', color: '#88bbff', kind: 'siege', side: 1 },
   { id: 'AGRICOLA', file: 'hero_agricola.png', color: '#aaccff', kind: 'bow', side: -1 },
   { id: 'SCIPIO', file: 'hero_scipio.png', color: '#ffd18a', kind: 'thrust', side: 1 },
   { id: 'CAESAR', file: 'hero_caesar.png', color: '#ffd34d', kind: 'divineSlash', side: 1 },
@@ -116,6 +116,10 @@ function svgOverlay(hero, frameIndex) {
   else if (hero.kind === 'divineSlash') marks = slashPath(hero, p) + `<circle cx="204" cy="128" r="${6 + 14 * p.power}" fill="#fff4a8" opacity="${0.45 * p.power}"/>`;
   else if (hero.kind === 'thrust') marks = thrustPath(hero, p);
   else if (hero.kind === 'pilum') marks = throwPath(hero, p, false);
+  else if (hero.kind === 'siege') marks = thrustPath(hero, p) + `
+    <rect x="${110 + 24 * p.arm}" y="${112 - 12 * p.arm}" width="78" height="24" rx="4" fill="#7b4a22" stroke="#d8b06b" stroke-width="3" opacity="${0.74 * Math.max(0.2, p.arm)}"/>
+    <line x1="${126 + 24 * p.arm}" y1="${124 - 12 * p.arm}" x2="${208 + 35 * p.arm}" y2="${116 - 20 * p.arm}" stroke="#d8d8d8" stroke-width="5" stroke-linecap="round" opacity="${0.88 * Math.max(0.1, p.arm)}"/>
+    <circle cx="${210 + 35 * p.arm}" cy="${116 - 20 * p.arm}" r="${5 + 12 * p.power}" fill="#fff0aa" opacity="${0.42 * p.power}"/>`;
   else if (hero.kind === 'bow') marks = bowPath(hero, p);
   else marks = spellPath(hero, p);
 

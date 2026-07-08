@@ -2340,7 +2340,7 @@ async function boot() {
     });
     if (hasNaga) tips.push({
       headline: '💤 NAGA SLEEPCASTERS',
-      body: `Wave <b>${nextWave}</b> has Naga casters. They <b style="color:#ff5050">channel sleep orbs at nearby LAND towers</b>, making those towers stop targeting and firing for a few seconds. <b style="color:#88ddff">Ocean towers cannot be targeted by Naga sleep</b>, so shoreline defenses are a clean counter. STUN or FREEZE the caster to interrupt the channel.`,
+      body: `Wave <b>${nextWave}</b> has Naga casters rising from the <b style="color:#45d9ff">shipwreck</b>. They skip the first two checkpoints and <b style="color:#ff5050">channel sleep orbs at nearby LAND towers</b>, making those towers stop targeting and firing for a few seconds. <b style="color:#88ddff">Ocean towers cannot be targeted by Naga sleep</b>, so shoreline defenses are a clean counter. STUN or FREEZE the caster to interrupt the channel.`,
       color: '#45d9ff'
     });
     if (hasPhoenix) tips.push({
