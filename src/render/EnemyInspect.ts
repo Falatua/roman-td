@@ -14,6 +14,7 @@ import { previewSpawnHp } from '../systems/WaveManager';
 import { markScrollable } from './ScrollCues';
 import itemsData from '../data/items_permanent.json';
 import { signatureLegendaryForBoss } from '../systems/LootSystem';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 
 const FACTION_KEY: Record<number, string> = {
   [EnemyFaction.DOGS]: 'DOGS',
@@ -80,10 +81,10 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // are always reachable regardless of viewport height.
   modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.5);z-index:80;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
   const panel = document.createElement('div');
-  panel.style.cssText = `background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid ${acColor};color:#e8d6a8;width:min(480px,96vw);`;
+  panel.style.cssText = `position:relative;background:linear-gradient(180deg,#241a12,#17110c 46%,#0b0907 100%);border:3px solid ${acColor};color:#e8d6a8;width:min(480px,96vw);box-shadow:0 0 24px ${acColor}44,0 18px 42px rgba(0,0,0,0.72);opacity:1;overflow:hidden;`;
 
   const banner = document.createElement('div');
-  banner.style.cssText = `background:${acColor};color:#1a1410;padding:6px 12px;font-weight:bold;letter-spacing:3px;display:flex;justify-content:space-between;align-items:center`;
+  banner.style.cssText = `background:${acColor};color:#1a1410;padding:6px 104px 6px 12px;font-weight:bold;letter-spacing:3px;display:flex;justify-content:space-between;align-items:center`;
   banner.innerHTML = `<span>${e.archetype}</span><span style="font-size:11px;opacity:0.7">${e.isFlyer ? 'FLYER' : 'GROUND'}${e.isBoss ? ' · BOSS' : ''}</span>`;
   panel.appendChild(banner);
 
@@ -428,7 +429,18 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   panel.appendChild(close);
 
   modal.appendChild(panel);
+  modal.addEventListener('click', (ev) => {
+    if (ev.target === modal) modal.remove();
+  });
+  panel.addEventListener('click', (ev) => ev.stopPropagation());
   parent.appendChild(modal);
+  enhanceModalErgonomics(modal, panel, {
+    title: `${def?.name ?? pretty(e.type)} enemy inspect`,
+    closeButton: true,
+    closeButtonId: 'enemy-inspect-x',
+    closeOnEscape: true,
+    onClose: () => modal.remove()
+  });
   // Scroll cues on the MODAL (the actual scroll container after the
   // 2026-05-19 responsive-clamping refactor).
   markScrollable(modal);

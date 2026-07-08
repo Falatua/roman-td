@@ -167,6 +167,28 @@ describe('Tower recipe names stay player-facing', () => {
 });
 
 // ───────────────────────────────────────────────────────────────────────
+// 2b. Inspection modal usability
+// ───────────────────────────────────────────────────────────────────────
+describe('Inspection panels keep obvious close controls', () => {
+  it('tower and hero inspect menus use opaque framed panels with X and Escape close', () => {
+    const src = readFileSync('src/render/TowerMenu.ts', 'utf8');
+    expect(src, 'tower menu should use the shared solid panel style').toContain('towerPanelStyle');
+    expect(src, 'tower/hero inspect should request a top-right X control').toContain("closeButtonId: 'tower-menu-x'");
+    expect(src, 'tower/hero inspect should close from Escape').toContain('closeOnEscape: true');
+    expect(src, 'hero inspect should no longer use translucent ability cards').not.toContain('background:rgba(0,0,0,0.3)');
+  });
+
+  it('stone and enemy quick inspect boxes have top-right X controls too', () => {
+    const stone = readFileSync('src/render/StoneMenu.ts', 'utf8');
+    const enemy = readFileSync('src/render/EnemyInspect.ts', 'utf8');
+    expect(stone).toContain("closeButtonId: 'stone-menu-x'");
+    expect(enemy).toContain("closeButtonId: 'enemy-inspect-x'");
+    expect(stone).toContain('closeOnEscape: true');
+    expect(enemy).toContain('closeOnEscape: true');
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────
 // 2. Tower roster integrity
 // ───────────────────────────────────────────────────────────────────────
 describe('Tower roster integrity', () => {

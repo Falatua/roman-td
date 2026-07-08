@@ -42,7 +42,7 @@ export interface TowerMenuHooks {
   onCombine?: (recipeIndex: number, isSameTierMerge: boolean, resultTileTowerId: string) => void;
 }
 
-function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title: string): void {
+function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title: string, onClose: () => void): void {
   Array.from(panel.children).forEach((child, index) => {
     // Keep the tier/name banner and portrait header visible when collapsed.
     // Everything after that is decision/action detail and can hide to reveal
@@ -51,8 +51,20 @@ function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title:
   });
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '.rtd-tower-menu-collapse',
-    title
+    title,
+    closeButton: true,
+    closeButtonId: 'tower-menu-x',
+    closeOnEscape: true,
+    onClose
   });
+}
+
+function towerModalStyle(): string {
+  return `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.58);z-index:55;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
+}
+
+function towerPanelStyle(accent: string, shadow = '24px'): string {
+  return `position:relative;background:linear-gradient(180deg,#241a12 0%,#17110c 46%,#0b0907 100%);border:3px solid ${accent};color:#e8d6a8;width:min(560px,96vw);box-shadow:0 0 ${shadow} ${accent}44,0 18px 42px rgba(0,0,0,0.72);opacity:1;overflow:hidden;`;
 }
 
 function tierColorHex(tier: number): string {
@@ -167,6 +179,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   const killBonusPct = ((t.killBonusFlat / Math.max(1, t.baseDps)) * 100).toFixed(1);
   const tierColor = tierColorHex(t.qualityTier);
   const portrait = spriteSrc(t.type);
+  const closeMenu = () => { hideTooltip(); hooks.onClose(); };
 
   const modal = document.createElement('div');
   modal.id = 'tower-menu';
@@ -176,21 +189,21 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   // height. When the panel is taller than the viewport (lots of
   // recipes + items), the user scrolls the whole panel inside the
   // modal — every button + recipe row stays reachable.
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:55;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
+  modal.style.cssText = towerModalStyle();
 
   const panel = document.createElement('div');
   // No max-height on the panel itself — the modal's overflow:auto above
   // handles the scrolling. Width is fixed at 560px but caps at 96vw on
   // narrow viewports.
-  panel.style.cssText = `background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid ${tierColor};color:#e8d6a8;width:min(560px,96vw);box-shadow:0 0 24px ${tierColor}44;`;
+  panel.style.cssText = towerPanelStyle(tierColor);
 
   // Top banner: pending vs permanent
   const banner = document.createElement('div');
   if (t.pending) {
-    banner.style.cssText = 'background:linear-gradient(90deg,#5a3a1a,#d4af37,#5a3a1a);color:#1a1410;padding:8px 10px;display:flex;justify-content:space-between;gap:12px;font-weight:bold;letter-spacing:2px;font-size:12px';
+    banner.style.cssText = 'background:linear-gradient(90deg,#5a3a1a,#d4af37,#5a3a1a);color:#1a1410;padding:8px 128px 8px 10px;display:flex;justify-content:space-between;gap:12px;font-weight:bold;letter-spacing:2px;font-size:12px';
     banner.innerHTML = `<span>PENDING PROSPECT — KEEP OR REVEAL ANOTHER</span><span>TIER ${t.qualityTier}</span>`;
   } else {
-    banner.style.cssText = `background:${tierColor};color:#1a1410;padding:6px 10px;display:flex;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px`;
+    banner.style.cssText = `background:${tierColor};color:#1a1410;padding:6px 128px 6px 10px;display:flex;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px`;
     banner.innerHTML = `<span>${def.kind === 'COMBO' ? 'COMBINATION TOWER' : 'LEGION UNIT'}</span><span>TIER ${t.qualityTier}</span>`;
   }
   panel.appendChild(banner);
@@ -792,17 +805,17 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
       keepRow.appendChild(undoBtn);
     }
     const cancel = mkBtn('CANCEL', '#444');
-    cancel.onclick = () => hooks.onClose();
+    cancel.onclick = () => closeMenu();
     keepRow.appendChild(cancel);
     panel.appendChild(keepRow);
     modal.appendChild(panel);
     // 2026-05-24 — Backdrop click dismiss (pending-prospect path too).
     modal.addEventListener('click', (ev) => {
-      if (ev.target === modal) hooks.onClose();
+      if (ev.target === modal) closeMenu();
     });
     panel.addEventListener('click', (ev) => ev.stopPropagation());
     parent.appendChild(modal);
-    enhanceTowerInspectModal(modal, panel, `${def.name ?? t.type} prospect menu`);
+    enhanceTowerInspectModal(modal, panel, `${def.name ?? t.type} prospect menu`, closeMenu);
     return;
   }
 
@@ -818,7 +831,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
       inventoryAdd(inv, id, idef?.rarity ?? 'COMMON', false);
     });
     if (ok) state.hint = `Downgraded to T${t.qualityTier}.`;
-    hooks.onClose();
+    closeMenu();
   };
   actions.appendChild(downgradeBtn);
   if (hooks.onUndoPlacement) {
@@ -846,11 +859,11 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     setTile(state, t.tileX, t.tileY, TileType.EMPTY);
     state.hint = `Sold for ${stats.refund}g.`;
     hooks.onPathRefresh();
-    hooks.onClose();
+    closeMenu();
   };
   actions.appendChild(sellBtn);
   const close = mkBtn('CLOSE', '#444');
-  close.onclick = () => hooks.onClose();
+  close.onclick = () => closeMenu();
   actions.appendChild(close);
   panel.appendChild(actions);
 
@@ -861,11 +874,11 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   // outside the panel → close; clicks INSIDE the panel stop here so
   // they don't bubble up to the backdrop.
   modal.addEventListener('click', (ev) => {
-    if (ev.target === modal) hooks.onClose();
+    if (ev.target === modal) closeMenu();
   });
   panel.addEventListener('click', (ev) => ev.stopPropagation());
   parent.appendChild(modal);
-  enhanceTowerInspectModal(modal, panel, `${def.name ?? t.type} tower menu`);
+  enhanceTowerInspectModal(modal, panel, `${def.name ?? t.type} tower menu`, closeMenu);
   // Gold scrollbar + "▼ SCROLL FOR MORE" hint on the MODAL (the scroll
   // container after the 2026-05-19 responsive-clamping refactor). Long
   // tower menus with lots of recipes overflow the viewport and the
@@ -912,6 +925,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   const curTh = thresholds[tier] ?? 0;
   const nextTh = thresholds[Math.min(thresholds.length - 1, tier + 1)] ?? thresholds[thresholds.length - 1];
   const pctXp = tier >= 4 ? 100 : Math.max(0, Math.min(100, ((xp - curTh) / Math.max(1, nextTh - curTh)) * 100));
+  const closeMenu = () => { hideTooltip(); hooks.onClose(); };
 
   // Stats — pull the breakdown helper (same one the regular tower
   // menu uses). Heroes gain a natural rank bonus from their definition,
@@ -929,13 +943,13 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
 
   const modal = document.createElement('div');
   modal.id = 'tower-menu';
-  modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:55;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
+  modal.style.cssText = towerModalStyle();
   const panel = document.createElement('div');
-  panel.style.cssText = `background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid ${tint};color:#e8d6a8;width:min(560px,96vw);box-shadow:0 0 30px ${tint}44;`;
+  panel.style.cssText = towerPanelStyle(tint, '30px');
 
   // ── Top banner (mirrors tower menu — "TIER N" on the right) ───────
   const banner = document.createElement('div');
-  banner.style.cssText = `background:${tint};color:#1a1410;padding:6px 10px;display:flex;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px`;
+  banner.style.cssText = `background:${tint};color:#1a1410;padding:6px 128px 6px 10px;display:flex;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px`;
   banner.innerHTML = `<span>⚔ HERO · ${tierTitles[tier]}</span><span>TIER ${tier + 1}/5</span>`;
   panel.appendChild(banner);
 
@@ -1226,7 +1240,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
     const timeToNext = Math.max(0, cooldownStamp - state.tick);
     const cdText = unlocked && timeToNext > 0 ? `⏱ ${timeToNext.toFixed(1)}s` : `⏱ ${ability.cooldownSec}s`;
     const card = document.createElement('div');
-    card.style.cssText = `margin-bottom:6px;padding:8px 10px;background:rgba(0,0,0,0.3);border-left:3px solid ${unlocked ? tint : '#5a4a30'};opacity:${unlocked ? 1 : 0.55}`;
+    card.style.cssText = `margin-bottom:6px;padding:8px 10px;background:#100c09;border-left:3px solid ${unlocked ? tint : '#5a4a30'};opacity:${unlocked ? 1 : 0.55}`;
     card.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
         <div style="font-size:12px;color:${unlocked ? tint : '#aa9a4a'};font-weight:bold;letter-spacing:1px">${unlocked ? '✓' : '🔒'} ${ability.name}</div>
@@ -1250,11 +1264,15 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   const closeBtn = document.createElement('button');
   closeBtn.textContent = 'CLOSE';
   closeBtn.style.cssText = 'background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:8px 22px;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:2px';
-  closeBtn.onclick = () => hooks.onClose();
+  closeBtn.onclick = () => closeMenu();
   closeRow.appendChild(closeBtn);
   panel.appendChild(closeRow);
 
   modal.appendChild(panel);
+  modal.addEventListener('click', (ev) => {
+    if (ev.target === modal) closeMenu();
+  });
+  panel.addEventListener('click', (ev) => ev.stopPropagation());
   parent.appendChild(modal);
-  enhanceTowerInspectModal(modal, panel, `${heroDef.name ?? t.type} hero menu`);
+  enhanceTowerInspectModal(modal, panel, `${heroDef.name ?? t.type} hero menu`, closeMenu);
 }

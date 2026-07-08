@@ -1,14 +1,17 @@
 import { markScrollable } from './ScrollCues';
 
-type ModalAction = 'collapse' | 'move' | 'escape';
+type ModalAction = 'collapse' | 'move' | 'close' | 'escape';
 
 export interface ModalErgonomicsOptions {
   bodySelector?: string;
   footerSelector?: string;
   collapseButtonId?: string;
   moveButtonId?: string;
+  closeButton?: boolean;
+  closeButtonId?: string;
   closeOnEscape?: boolean;
   onEscape?: () => void;
+  onClose?: () => void;
   storageKey?: string;
   rememberCollapsed?: boolean;
   title?: string;
@@ -189,7 +192,14 @@ export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, op
   const actions: ModalAction[] = [];
   if (collapsibles.length > 0) actions.push('collapse');
   actions.push('move');
+  if (opts.closeButton) actions.push('close');
   if (opts.closeOnEscape) actions.push('escape');
+
+  const requestClose = () => {
+    root.dispatchEvent(new CustomEvent('rtd:modal-force-close'));
+    if (opts.onClose) opts.onClose();
+    else root.remove();
+  };
 
   let collapseBtn: HTMLButtonElement | null = null;
   for (const action of actions) {
@@ -214,6 +224,16 @@ export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, op
       btn.title = 'Drag this handle to move the panel';
       btn.setAttribute('aria-label', 'Move this panel');
       makePanelDraggable(root, panel, btn);
+    } else if (action === 'close') {
+      btn.id = opts.closeButtonId ?? '';
+      btn.textContent = 'X';
+      btn.title = 'Close this panel';
+      btn.setAttribute('aria-label', 'Close this panel');
+      btn.addEventListener('click', ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        requestClose();
+      });
     } else {
       btn.textContent = 'Esc';
       btn.title = 'Press Escape to close when available';
@@ -231,11 +251,12 @@ export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, op
   })() : false;
   if (collapsibles.length > 0) setCollapsed(panel, collapseBtn, startCollapsed, opts.storageKey);
 
-  if (opts.closeOnEscape && opts.onEscape) {
+  if (opts.closeOnEscape) {
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key !== 'Escape') return;
       ev.preventDefault();
-      opts.onEscape?.();
+      if (opts.onEscape) opts.onEscape();
+      else requestClose();
       document.removeEventListener('keydown', onKey);
     };
     document.addEventListener('keydown', onKey);

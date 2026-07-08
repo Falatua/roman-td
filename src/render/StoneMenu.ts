@@ -1,6 +1,7 @@
 import { GameStateShape } from '../GameState';
 import { ECONOMY } from '../constants';
 import { closeGameModals } from './ModalManager';
+import { enhanceModalErgonomics } from './ModalErgonomics';
 
 export interface StoneMenuHooks {
   onSell: () => void;
@@ -15,9 +16,9 @@ export function showStoneMenu(parent: HTMLElement, col: number, row: number, sta
   modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.45);z-index:54;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
 
   const panel = document.createElement('div');
-  panel.style.cssText = 'width:min(360px,94vw);background:linear-gradient(180deg,#221912,#0c0a08);border:3px solid #8a7a5a;color:#e8d6a8;box-shadow:0 0 24px #000';
+  panel.style.cssText = 'position:relative;width:min(360px,94vw);background:linear-gradient(180deg,#241a12,#0b0907);border:3px solid #8a7a5a;color:#e8d6a8;box-shadow:0 0 24px #000,0 18px 42px rgba(0,0,0,0.72);opacity:1;overflow:hidden';
   panel.innerHTML = `
-    <div style="background:#6b6048;color:#120d0a;padding:8px 10px;font-weight:bold;letter-spacing:2px;font-size:12px;display:flex;justify-content:space-between">
+    <div style="background:#6b6048;color:#120d0a;padding:8px 104px 8px 10px;font-weight:bold;letter-spacing:2px;font-size:12px;display:flex;justify-content:space-between">
       <span>MAZE STONE</span><span>${col},${row}</span>
     </div>
     <div style="padding:14px;border-bottom:1px solid #3a3025">
@@ -41,7 +42,18 @@ export function showStoneMenu(parent: HTMLElement, col: number, row: number, sta
   actions.append(sell, close);
   panel.appendChild(actions);
   modal.appendChild(panel);
+  modal.addEventListener('click', (ev) => {
+    if (ev.target === modal) hooks.onClose();
+  });
+  panel.addEventListener('click', (ev) => ev.stopPropagation());
   parent.appendChild(modal);
+  enhanceModalErgonomics(modal, panel, {
+    title: 'Maze stone menu',
+    closeButton: true,
+    closeButtonId: 'stone-menu-x',
+    closeOnEscape: true,
+    onClose: hooks.onClose
+  });
 }
 
 function mkBtn(label: string, bg: string): HTMLButtonElement {
