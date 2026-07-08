@@ -262,9 +262,13 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // -- Tower disruption --
   if (def?.auraTowerSlow) traits.push({ label: `TOWER-SLOW AURA — every tower within ~2 tiles fires ${Math.round(def.auraTowerSlow*100)}% slower while this enemy is in range`, color: '#a078d0' });
   if (def?.auraNullifier) traits.push({ label: `AURA NULLIFIER — every tower within 2 tiles loses its aura contributions while this enemy is in range. Global damage / atk-speed / enemy-debuff / item auras (Centurion\'s Trumpet, Battle Standard, etc.) all silently drop out. Walks past → auras return. Periodic abilities (Caesar stun pulse, freeze cycles) are NOT auras and still fire.`, color: '#a078d0' });
-  // 2026-05 v10 — DRUID SLEEP CURSE (hardcoded by enemy type, no JSON flag).
-  if (e.type === 'GALLIC_DRUID' || e.type === 'ZOMBIE_DRUID') {
-    traits.push({ label: 'SLEEP CURSE — channels a slow cyan/purple dart at the nearest awake tower within 3 tiles every ~5s. On hit, that tower is fully inert (no targeting, no shots) for 3 seconds — a Z animation floats over the sleeping tower. STUN or FREEZE on the druid cancels the channel.', color: '#a078d0' });
+  const sleepRange = typeof def?.sleepDartRangeTiles === 'number'
+    ? def.sleepDartRangeTiles
+    : (e.type === 'GALLIC_DRUID' || e.type === 'ZOMBIE_DRUID' ? 3 : 0);
+  if (sleepRange > 0) {
+    const sleepDuration = def?.sleepDartDurationSec ?? 3;
+    const landNote = def?.sleepDartLandOnly ? ' Naga sleep magic only targets LAND towers — ocean towers are safe.' : '';
+    traits.push({ label: `SLEEP CURSE — channels a slow cyan/purple dart at the nearest awake tower within ${sleepRange} tiles every ~${def?.sleepDartCooldownSec ?? 5}s. On hit, that tower is fully inert (no targeting, no shots) for ${sleepDuration} seconds — a Z animation floats over the sleeping tower.${landNote} STUN or FREEZE cancels the channel.`, color: '#a078d0' });
   }
   // 2026-05 v10 — WAR ELEPHANT RANGED-PROTECT AURA (also hardcoded).
   if (e.type === 'WAR_ELEPHANT' || e.type === 'UNDEAD_WAR_ELEPHANT') {
@@ -482,7 +486,8 @@ export function showEnemyInspectByType(parent: HTMLElement, type: string, forWav
     DEMON_HELLHOUND: 'RUNNER', CELTIC_FIRE_DEMON: 'RESISTANT',
     SHADOW_CAVALRY: 'RUNNER', DEMON_LEGATE: 'ELITE', DAEMON_IMPERATOR: 'BOSS',
     IRON_PHALANX: 'RESISTANT', ARCHITECTUS: 'ARMORED',
-    REANIMATED_SKELETON: 'RUNNER', REANIMATED_ZOMBIE: 'SWARM', REANIMATED_LICH: 'ELITE'
+    REANIMATED_SKELETON: 'RUNNER', REANIMATED_ZOMBIE: 'SWARM', REANIMATED_LICH: 'ELITE',
+    NAGA_ADEPT: 'ELITE', NAGA_SLEEPWEAVER: 'ELITE', NAGA_ORACLE: 'ELITE'
   };
   // EnemyFaction enum: DOGS=0, CELTS=1, CARTHAGE=2, UNDEAD_CELTS=3,
   // UNDEAD_CARTHAGE=4, SUPER_DEMONS=5. Resolve from string for the stub.

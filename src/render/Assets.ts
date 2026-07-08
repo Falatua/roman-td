@@ -124,6 +124,9 @@ const MANIFEST: Record<string, string> = {
   SEA_GIANT: 'e3_sea_giant.png',
   SEA_GIANT_WARBRINGER: 'e3_sea_giant_warbringer.png',
   NETHER_AMPHIBIOUS_GIANT: 'e3_nether_amphibious_giant.png',
+  NAGA_ADEPT: 'e2_naga_adept.png',
+  NAGA_SLEEPWEAVER: 'e3_naga_sleepweaver.png',
+  NAGA_ORACLE: 'e3_naga_oracle.png',
   // 2026 v2 spec Ch12 — Colossus Gigas (W28 merged Super-Giant).
   SUPER_GIANT_COLOSSUS: 'e3_super_giant_colossus.png',
   // 2026 v2 spec Ch14 — Egyptian roster expansion.

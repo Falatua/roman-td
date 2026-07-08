@@ -135,7 +135,7 @@ describe('30-wave Solo quest pacing', () => {
     const completionWave = (target: number) => campaign.find(row => row.kills >= target)?.wave;
     expect(quest('bloodline').target).toBe(340);
     expect(quest('butcher').target).toBe(900);
-    expect(quest('destroyer').target).toBe(1900);
+    expect(quest('destroyer').target).toBe(2000);
     expect(completionWave(quest('bloodline').target)).toBe(6);
     expect(completionWave(quest('butcher').target)).toBe(14);
     expect(completionWave(quest('destroyer').target)).toBe(23);
@@ -186,7 +186,7 @@ describe('30-wave Solo quest pacing', () => {
 
   it('completes new thresholds exactly once and preserves tier identity', () => {
     const state = createGameState();
-    state.totalKills = 1900;
+    state.totalKills = 2000;
     state.bossesKilled = 20;
     state.wave = 27;
     const first = evaluateQuests(state).map(q => q.id);

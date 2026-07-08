@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createGameState } from '../src/GameState';
-import { tickEnemies } from '../src/systems/EnemySystem';
+import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
 import { Enemy, EnemyFaction, EnemyType, Tower, TowerType, DamageType, TargetingMode } from '../src/types';
 import { GRID } from '../src/constants';
 
@@ -286,5 +286,80 @@ describe('S3 — Sanity: data flags in enemies.json wire to the runtime', () => 
   it('Architectus has silenceAuraRadiusTiles in JSON', () => {
     const enemies = require('../src/data/enemies.json');
     expect(enemies.ARCHITECTUS.silenceAuraRadiusTiles).toBe(1.5);
+  });
+});
+
+describe('S4 — Naga sleepcasters target land towers only', () => {
+  function center(t: Tower) {
+    return { x: t.tileX * GRID.TILE + GRID.TILE / 2, y: t.tileY * GRID.TILE + GRID.TILE / 2 };
+  }
+  function seedSpawnPath(s: any) {
+    s.groundPath = [{ col: 0, row: 0 }, { col: 1, row: 0 }, { col: 2, row: 0 }];
+    s.flyerPath = [{ x: 16, y: 16 }, { x: 48, y: 16 }];
+  }
+
+  it('Naga sleep skips closer ocean towers and targets a land tower instead', () => {
+    const s = createGameState();
+    seedSpawnPath(s);
+    s.tick = 30;
+    const waterTower = makeTower('water_tower', 10, 10);
+    waterTower.placedOnWater = true;
+    const landTower = makeTower('land_tower', 12, 10);
+    s.towers.set(waterTower.id, waterTower);
+    s.towers.set(landTower.id, landTower);
+
+    s.wave = 8;
+    const wc = center(waterTower);
+    const e = spawnEnemy(s, EnemyType.NAGA_ADEPT, 1, true);
+    e.x = wc.x;
+    e.y = wc.y;
+    e.prevX = wc.x;
+    e.prevY = wc.y;
+    e.baseSpeed = 0;
+    e.currentSpeed = 0;
+
+    tickEnemies(s, 0.016, () => {}, () => {});
+    s.tick += 0.6;
+    tickEnemies(s, 0.016, () => {}, () => {});
+
+    const darts = (s as any).__druidSleepDarts ?? [];
+    expect(darts).toHaveLength(1);
+    expect(darts[0].targetTowerId).toBe('land_tower');
+    expect(waterTower.asleepUntil ?? 0).toBe(0);
+  });
+
+  it('Naga sleep dart lands and makes the targeted land tower inert', () => {
+    const s = createGameState();
+    seedSpawnPath(s);
+    s.tick = 40;
+    const landTower = makeTower('land_sleep_target', 10, 10);
+    s.towers.set(landTower.id, landTower);
+    s.wave = 8;
+    const tc = center(landTower);
+    const e = spawnEnemy(s, EnemyType.NAGA_ADEPT, 1, true);
+    e.x = tc.x - GRID.TILE * 1.4;
+    e.y = tc.y;
+    e.prevX = e.x;
+    e.prevY = e.y;
+    e.baseSpeed = 0;
+    e.currentSpeed = 0;
+
+    tickEnemies(s, 0.016, () => {}, () => {});
+    s.tick += 0.6;
+    tickEnemies(s, 0.016, () => {}, () => {});
+    for (let i = 0; i < 20 && !((landTower.asleepUntil ?? 0) > s.tick); i++) {
+      s.tick += 0.1;
+      tickEnemies(s, 0.1, () => {}, () => {});
+    }
+
+    expect(landTower.asleepUntil).toBeGreaterThan(s.tick);
+    expect(landTower.attackCooldown).toBeGreaterThanOrEqual(1.5);
+  });
+
+  it('Naga sleep profiles are declared in enemies.json as land-only elite disruption', () => {
+    const enemies = require('../src/data/enemies.json');
+    expect(enemies.NAGA_ADEPT.sleepDartLandOnly).toBe(true);
+    expect(enemies.NAGA_SLEEPWEAVER.sleepDartRangeTiles).toBeGreaterThan(enemies.NAGA_ADEPT.sleepDartRangeTiles);
+    expect(enemies.NAGA_ORACLE.sleepDartDurationSec).toBeGreaterThan(enemies.NAGA_SLEEPWEAVER.sleepDartDurationSec);
   });
 });

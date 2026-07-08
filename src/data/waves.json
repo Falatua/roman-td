@@ -121,7 +121,7 @@
     "type": "M",
     "faction": "CARTHAGE",
     "hpMult": 2.25,
-    "gold": 17,
+    "gold": 14,
     "resistReduction": 0.15,
     "spawns": [
       {
@@ -135,6 +135,10 @@
       {
         "type": "NUMIDIAN_RIDER",
         "count": 5
+      },
+      {
+        "type": "NAGA_ADEPT",
+        "count": 3
       },
       {
         "type": "SKY_PATHFINDER_COMMANDER",
@@ -320,7 +324,7 @@
     "type": "M",
     "faction": "MONGOLS",
     "hpMult": 10.5,
-    "gold": 14,
+    "gold": 10,
     "spawns": [
       {
         "type": "MONGOL_SPEAR_RIDER",
@@ -333,6 +337,10 @@
       {
         "type": "MONGOL_SHAMAN",
         "count": 14
+      },
+      {
+        "type": "NAGA_SLEEPWEAVER",
+        "count": 4
       },
       {
         "type": "MONGOL_SPEARMAN",
@@ -861,7 +869,7 @@
     "type": "G",
     "faction": "ROMAN_MYTH",
     "hpMult": 27,
-    "gold": 15,
+    "gold": 9,
     "fixedCount": true,
     "superGiantActive": true,
     "spawns": [
@@ -876,6 +884,10 @@
       {
         "type": "CERBERUS",
         "count": 4
+      },
+      {
+        "type": "NAGA_ORACLE",
+        "count": 3
       },
       {
         "type": "ANUBIS_PRIEST_COMMANDER",

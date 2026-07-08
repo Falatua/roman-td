@@ -577,7 +577,7 @@ function renderTab(tab: string): string {
           ${noteCard('Gold Theft (Ghost Rider)', 'On leak, Ghost Rider also steals 5g + floor(wave/10)g from your treasury. A W18 ghost steals 6g per leak.')}
           ${noteCard('🛡 Shielded Units', '<b style="color:#9be0ff">Gallic Druid (W4 sacred ward)</b>, <b style="color:#9be0ff">Carthage Elite Guard (W8)</b>, <b style="color:#9be0ff">Undead Spearman (W16+)</b>, and <b style="color:#9be0ff">Architectus (W18+)</b> cannot be targeted by ranged towers until a melee tower hits them. <b style="color:#ffe066">SHIELD BASH:</b> the first melee hit on a still-shielded enemy deals <b style="color:#ffe066">+50% damage</b> — the legionary slams his pommel into the scutum before the shield gives way. Applies to both single-target swings AND cleave secondaries; stacks multiplicatively with armor shred, faction resist, and item bonuses. A golden impact ring marks the bash that breaks the shield. The W4 druid intro is a clean teaching wave — no regen, no heal aura, just shields + tower-slow aura, so the player can focus on learning the melee-bash flow.')}
           ${noteCard('Tower-Slow Aura', 'Gallic Druid, Zombie Druid, Demon Legate emit a 2-3 tile aura that slows tower attack speed by 20–30%. Kill these support units fast.')}
-          ${noteCard('💤 Druid Sleep Curse', '<b style="color:#aaccff">Both druids now cast an active sleep dart</b> in addition to their passive tower-slow aura. Every ~5 seconds, the druid roots in place for a 0.5s telegraphed channel (the player\'s window to interrupt) then launches a slow cyan/purple homing orb at the nearest awake tower within 3 tiles. On hit, that tower is <b style="color:#aaccff">fully inert for 3 seconds</b> — no targeting, no shots, ZZZ animation overhead. Counters: kill the druid before the dart lands, STUN/FREEZE the druid mid-channel, or use a melee bash on the druid (it has a sacred-ward shield until cracked).')}
+          ${noteCard('💤 Sleep Curse', '<b style="color:#aaccff">Druids and Naga casters can sleep towers</b>. They root in place for a short telegraphed channel, then launch a slow cyan/purple homing orb at the nearest awake tower in range. On hit, that tower is <b style="color:#aaccff">fully inert</b> — no targeting, no shots, ZZZ animation overhead. <b style="color:#88ddff">Naga sleep magic only targets LAND towers; ocean towers are safe.</b> Counters: kill the caster before the dart lands, or STUN/FREEZE the caster mid-channel.')}
           ${noteCard('🛡 Elephant Dust Shield', '<b style="color:#cdb98a">War Elephants and Undead War Elephants project a 4-tile dust dome</b> that makes every NEARBY GROUND enemy untargetable by ranged towers until the elephant dies. Visual: dust-brown rotating dome around the elephant + small gold sparkle over each protected ally. The elephant itself stays ranged-targetable, but it is now a heavy-hide tank. <b style="color:#88ddff">Melee towers ignore the dust</b> — they hit allies inside the dome normally. Best counter: <b style="color:#ff9933">siege towers</b>, though living elephants only take +25% and undead elephants only +5% from siege.')}
           ${noteCard('Status Immunities', 'Rabid Dog (slow), Celtic Berserker (slow), Undead Berserker (freeze/poison/stun), Undead Celt (poison), Zombie Druid (poison), Undead Spearman (poison), Reanimated Skeleton (freeze/poison), Reanimated Zombie (poison), Reanimated Lich (poison). Inspect enemies to see exact resists.')}
         </div>
@@ -1567,6 +1567,7 @@ const ARCH_FOR_CODEX: Record<string, string> = {
   SHADOW_CAVALRY: 'RUNNER', DEMON_LEGATE: 'ELITE', DAEMON_IMPERATOR: 'BOSS',
   IRON_PHALANX: 'RESISTANT', ARCHITECTUS: 'ARMORED',
   REANIMATED_SKELETON: 'RUNNER', REANIMATED_ZOMBIE: 'SWARM', REANIMATED_LICH: 'ELITE',
+  NAGA_ADEPT: 'ELITE', NAGA_SLEEPWEAVER: 'ELITE', NAGA_ORACLE: 'ELITE',
   HELL_GATE: 'ELITE', FIRE_GIANT: 'BULKY', MUMMY_WARRIOR: 'ARMORED',
   MONGOL_HORSE_ARCHER: 'RUNNER', MONGOL_SPEAR_RIDER: 'ARMORED', SPHINX: 'BOSS'
 };
@@ -1629,9 +1630,13 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.auraTowerSlow) traits.push(`TOWER-SLOW AURA — every tower within ~2 tiles fires ${Math.round(def.auraTowerSlow*100)}% slower while this enemy is in range`);
   if (def.silenceAuraRadiusTiles) traits.push(`SILENCE AURA — every tower within ${def.silenceAuraRadiusTiles} tiles is SILENCED while this enemy is in range (pink X-mark). Expires ~0.6s after the enemy leaves. Distinct from the pass-by silence — this is sustained denial-while-near.`);
   if (def.auraNullifier) traits.push('AURA NULLIFIER — silences every tower aura within 2 tiles (damage/atk-speed/debuff/item auras all drop out). Periodic abilities like Caesar stun pulse and freeze cycles are NOT auras and still fire.');
-  // Druid sleep curse (hardcoded by type)
-  if (id === 'GALLIC_DRUID' || id === 'ZOMBIE_DRUID') {
-    traits.push('SLEEP CURSE — channels a slow dart at the nearest awake tower within 3 tiles every ~5s. On hit, that tower is fully inert for 3 seconds. STUN or FREEZE on the druid cancels the channel.');
+  const sleepRange = typeof def.sleepDartRangeTiles === 'number'
+    ? def.sleepDartRangeTiles
+    : (id === 'GALLIC_DRUID' || id === 'ZOMBIE_DRUID' ? 3 : 0);
+  if (sleepRange > 0) {
+    const sleepDuration = def.sleepDartDurationSec ?? 3;
+    const landNote = def.sleepDartLandOnly ? ' Naga sleep magic only targets LAND towers; ocean towers are safe.' : '';
+    traits.push(`SLEEP CURSE — channels a slow dart at the nearest awake tower within ${sleepRange} tiles every ~${def.sleepDartCooldownSec ?? 5}s. On hit, that tower is fully inert for ${sleepDuration} seconds.${landNote} STUN or FREEZE cancels the channel.`);
   }
   // Elephant dust-shield (hardcoded by type)
   if (id === 'WAR_ELEPHANT' || id === 'UNDEAD_WAR_ELEPHANT') {

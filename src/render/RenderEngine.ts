@@ -1351,8 +1351,8 @@ export class RenderEngine {
       // Two-tone halo: outer dim purple, inner cyan core. Color depends
       // on the casting faction so undead druids read different from the
       // living celts.
-      const outer = d.faction === 'undead' ? 0x55ffaa : 0xaa88ff;
-      const inner = d.faction === 'undead' ? 0xccffee : 0xddeeff;
+      const outer = d.faction === 'naga' ? 0x45d9ff : d.faction === 'undead' ? 0x55ffaa : 0xaa88ff;
+      const inner = d.faction === 'naga' ? 0xf0e0ff : d.faction === 'undead' ? 0xccffee : 0xddeeff;
       const pulse = 0.7 + Math.sin(state.tick * 8 + (d.bornTick ?? 0) * 13) * 0.3;
       // Trailing wisps to suggest motion + magic.
       for (let s = 1; s <= 3; s++) {

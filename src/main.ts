@@ -2265,6 +2265,7 @@ async function boot() {
     const hasShielded = types.has('CARTHAGE_ELITE_GUARD') || types.has('UNDEAD_SPEARMAN');
     const hasGhosts = types.has('SPECTRAL_SCOUT') || types.has('GHOST_RIDER');
     const hasDruid = types.has('GALLIC_DRUID') || types.has('ZOMBIE_DRUID') || types.has('DEMON_LEGATE');
+    const hasNaga = types.has('NAGA_ADEPT') || types.has('NAGA_SLEEPWEAVER') || types.has('NAGA_ORACLE');
     const hasPhoenix = types.has('SPECTRAL_SCOUT') || types.has('CELTIC_FIRE_DEMON');
     const hasRunners = types.has('RABID_DOG') || types.has('CELTIC_BERSERKER') || types.has('DEMON_HELLHOUND');
     const hasRegen = types.has('HANNIBAL_BARCA') || types.has('DAEMON_IMPERATOR') || types.has('GALLIC_DRUID');
@@ -2332,6 +2333,11 @@ async function boot() {
       headline: '🌫 DRUIDS — KILL THESE FIRST',
       body: `Druids and Demon Legates radiate an aura that <b style="color:#ff5050">slows your towers</b>. Ignore them at your own gate. The tankier targets can wait — these are the priority kill.`,
       color: '#88cc88'
+    });
+    if (hasNaga) tips.push({
+      headline: '💤 NAGA SLEEPCASTERS',
+      body: `Wave <b>${nextWave}</b> has Naga casters. They <b style="color:#ff5050">channel sleep orbs at nearby LAND towers</b>, making those towers stop targeting and firing for a few seconds. <b style="color:#88ddff">Ocean towers cannot be targeted by Naga sleep</b>, so shoreline defenses are a clean counter. STUN or FREEZE the caster to interrupt the channel.`,
+      color: '#45d9ff'
     });
     if (hasPhoenix) tips.push({
       headline: '🔥 THEY GET TO DIE THREE TIMES',

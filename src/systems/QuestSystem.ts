@@ -332,9 +332,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'destroyer', tier: 'LATE',
     title: 'Destroyer of Legions',
-    blurb: 'Total 1,900 enemy kills. Break the late-campaign armies.',
+    blurb: 'Total 2,000 enemy kills. Break the late-campaign armies.',
     condition: s => s.totalKills,
-    target: 1900,
+    target: 2000,
     reward: { kind: 'GOLD', amount: 180 }
   },
   {

@@ -47,6 +47,43 @@ const WAYPOINT_CENTERS: Array<{ idx: number; x: number; y: number; r2: number }>
 let nextId = 1;
 function newId(): string { return `e${nextId++}`; }
 
+interface SleepCasterProfile {
+  rangeTiles: number;
+  cooldownSec: number;
+  channelSec: number;
+  travelTilesPerSec: number;
+  durationSec: number;
+  landOnly: boolean;
+  dartFaction: 'celt' | 'undead' | 'naga';
+}
+
+function sleepCasterProfile(type: string): SleepCasterProfile | null {
+  const def: any = (enemiesData as any)[type] ?? {};
+  if (typeof def.sleepDartRangeTiles === 'number') {
+    return {
+      rangeTiles: def.sleepDartRangeTiles,
+      cooldownSec: def.sleepDartCooldownSec ?? 5.0,
+      channelSec: def.sleepDartChannelSec ?? 0.5,
+      travelTilesPerSec: def.sleepDartTravelTilesPerSec ?? 5.0,
+      durationSec: def.sleepDartDurationSec ?? 3.0,
+      landOnly: !!def.sleepDartLandOnly,
+      dartFaction: 'naga'
+    };
+  }
+  if (type === 'GALLIC_DRUID' || type === 'ZOMBIE_DRUID') {
+    return {
+      rangeTiles: 3.0,
+      cooldownSec: 5.0,
+      channelSec: 0.5,
+      travelTilesPerSec: 5.0,
+      durationSec: 3.0,
+      landOnly: false,
+      dartFaction: type === 'ZOMBIE_DRUID' ? 'undead' : 'celt'
+    };
+  }
+  return null;
+}
+
 // Classify each enemy type into one of the archetypes from the difficulty doc §7.
 // Used for visible labels and (eventually) damage-analysis suggestions.
 const ARCHETYPE: Record<string, Enemy['archetype']> = {
@@ -78,6 +115,9 @@ const ARCHETYPE: Record<string, Enemy['archetype']> = {
   STANDARD_BEARER_COMMANDER: 'ELITE',
   PATHFINDER_COMMANDER: 'RUNNER',
   ANUBIS_PRIEST_COMMANDER: 'ELITE',
+  NAGA_ADEPT: 'ELITE',
+  NAGA_SLEEPWEAVER: 'ELITE',
+  NAGA_ORACLE: 'ELITE',
   SIEGE_CAPTAIN_COMMANDER: 'ARMORED',
   SKY_STANDARD_COMMANDER: 'ELITE',
   SKY_PATHFINDER_COMMANDER: 'RUNNER',
@@ -847,24 +887,14 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       }
     }
   }
-  // ─── DRUID SLEEP CURSE (2026-05 v9): Gallic Druid + Zombie Druid cast a
-  // slow-moving sleep dart at the nearest awake tower within 3 tiles. The
-  // dart travels for ~0.8s then puts the tower to sleep for 3 seconds —
-  // during which the tower is completely inert (no targeting, no shots).
-  // Cooldown is 5 seconds per druid so it isn't a constant lockdown, and
-  // the slow projectile + 0.5s telegraphed channel gives the player time
-  // to kill the druid before the dart lands. Sleep is on top of the
-  // existing auraTowerSlow passive — that's the "ambient slow" while the
-  // dart cast is the "active threat".
-  const DRUIDS = new Set(['GALLIC_DRUID','ZOMBIE_DRUID']);
-  const DRUID_CAST_RADIUS = GRID.TILE * 3.0;
-  const DRUID_CAST_COOLDOWN = 5.0;    // seconds between successful casts
-  const DRUID_CHANNEL_TIME = 0.5;     // brief telegraph before dart spawn
-  const SLEEP_DART_TTL = 1.8;         // fail-safe — dart fades if it can't reach
+  // ─── SLEEP CASTERS (Druids + Naga): sleep casters channel a visible orb
+  // at the nearest awake tower. Naga profiles are data-driven and target
+  // only land towers; water/ocean towers are immune to their sleep magic.
   for (const e of state.enemies.values()) {
-    if (!DRUIDS.has(e.type)) continue;
+    const sleepProfile = sleepCasterProfile(e.type);
+    if (!sleepProfile) continue;
     if (e.hp <= 0) continue;
-    // STUNNED / FROZEN druids can't cast. Reuse standard status checks.
+    // STUNNED / FROZEN sleep casters can't cast. Reuse standard status checks.
     const incapacitated = e.statusEffects.some(s =>
       s.remaining > 0 &&
       (s.kind === StatusEffectKind.FREEZE || s.kind === StatusEffectKind.STUN)
@@ -883,13 +913,15 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // Find the nearest non-sleeping tower in range.
     let bestT = null as any;
     let bestD = Infinity;
+    const castRadius = GRID.TILE * sleepProfile.rangeTiles;
     for (const t of state.towers.values()) {
       if (t.pending) continue;
       if ((t.asleepUntil ?? 0) > state.tick) continue;     // already asleep
+      if (sleepProfile.landOnly && (t as any).placedOnWater) continue;
       const cx = t.tileX * GRID.TILE + GRID.TILE / 2;
       const cy = t.tileY * GRID.TILE + GRID.TILE / 2;
       const d = Math.hypot(cx - e.x, cy - e.y);
-      if (d > DRUID_CAST_RADIUS) continue;
+      if (d > castRadius) continue;
       if (d < bestD) { bestD = d; bestT = t; }
     }
     if (!bestT) continue;
@@ -902,7 +934,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       (e as any).__sleepChannelTargetId = bestT.id;
       continue;
     }
-    if (state.tick - channelStart < DRUID_CHANNEL_TIME) continue;
+    if (state.tick - channelStart < sleepProfile.channelSec) continue;
     // Channel complete — spawn the dart.
     const tx = bestT.tileX * GRID.TILE + GRID.TILE / 2;
     const ty = bestT.tileY * GRID.TILE + GRID.TILE / 2;
@@ -916,7 +948,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // remain the player's reaction window — the dart itself no
     // longer adds dead time on top. 3-tile max cast range now
     // resolves in ~0.6s of dart flight instead of ~1.4s.
-    const speed = GRID.TILE * 5.0;
+    const speed = GRID.TILE * sleepProfile.travelTilesPerSec;
     const darts = (state as any).__druidSleepDarts ?? ((state as any).__druidSleepDarts = []);
     darts.push({
       x: e.x,
@@ -925,10 +957,12 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       vy: (dy / dist) * speed,
       targetTowerId: bestT.id,
       bornTick: state.tick,
-      ttl: SLEEP_DART_TTL,
-      faction: e.type === 'ZOMBIE_DRUID' ? 'undead' : 'celt'
+      ttl: Math.max(1.2, sleepProfile.rangeTiles / Math.max(1, sleepProfile.travelTilesPerSec) + 1.0),
+      faction: sleepProfile.dartFaction,
+      sleepDurationSec: sleepProfile.durationSec,
+      landOnly: sleepProfile.landOnly
     });
-    (e as any).__nextSleepCastTick = state.tick + DRUID_CAST_COOLDOWN;
+    (e as any).__nextSleepCastTick = state.tick + sleepProfile.cooldownSec;
     (e as any).__sleepChannelStartTick = undefined;
     (e as any).__sleepChannelTargetId = undefined;
   }
@@ -954,8 +988,9 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
         const ddy = cy - d.y;
         const dd = Math.hypot(ddx, ddy);
         if (dd <= 10) {
-          tw.asleepUntil = state.tick + 3.0;
-          tw.attackCooldown = Math.max(tw.attackCooldown, 3.0);
+          const sleepDuration = typeof d.sleepDurationSec === 'number' ? d.sleepDurationSec : 3.0;
+          tw.asleepUntil = state.tick + sleepDuration;
+          tw.attackCooldown = Math.max(tw.attackCooldown, sleepDuration);
           hit = true;
           // Queue a render-side "zzz" pop so the player gets a juicy
           // confirmation frame. Cap the queue size to avoid runaway growth.
