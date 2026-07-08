@@ -1,6 +1,6 @@
 import { markScrollable } from './ScrollCues';
 
-type ModalAction = 'collapse' | 'move' | 'close' | 'escape';
+type ModalAction = 'collapse' | 'move' | 'close';
 
 export interface ModalErgonomicsOptions {
   bodySelector?: string;
@@ -193,7 +193,6 @@ export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, op
   if (collapsibles.length > 0) actions.push('collapse');
   actions.push('move');
   if (opts.closeButton) actions.push('close');
-  if (opts.closeOnEscape) actions.push('escape');
 
   const requestClose = () => {
     root.dispatchEvent(new CustomEvent('rtd:modal-force-close'));
@@ -234,12 +233,6 @@ export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, op
         ev.stopPropagation();
         requestClose();
       });
-    } else {
-      btn.textContent = 'Esc';
-      btn.title = 'Press Escape to close when available';
-      btn.setAttribute('aria-label', 'Escape closes this panel');
-      btn.disabled = true;
-      btn.style.opacity = '0.65';
     }
     tools.appendChild(btn);
   }

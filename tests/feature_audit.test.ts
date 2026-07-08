@@ -969,10 +969,15 @@ describe('Modal ergonomics and popup stacking', () => {
     const settings = readFileSync('src/render/SettingsPanel.ts', 'utf8');
     const codex = readFileSync('src/render/Codex.ts', 'utf8');
     const main = readFileSync('src/main.ts', 'utf8');
+    const modalErgonomics = readFileSync('src/render/ModalErgonomics.ts', 'utf8');
     expect(settings).not.toContain('Press ESC to close');
     expect(codex).not.toContain('<b>ESC</b> closes any open menu');
     expect(main).not.toContain('ESC cancels.');
+    expect(modalErgonomics).not.toContain("btn.textContent = 'Esc'");
+    expect(modalErgonomics).not.toContain('Press Escape to close');
+    expect(modalErgonomics).not.toContain('Escape closes this panel');
     expect(settings, 'Settings should still keep Escape functionality without advertising it').toContain("ev.key === 'Escape'");
+    expect(modalErgonomics, 'Shared modals should still keep Escape functionality without advertising it').toContain("ev.key !== 'Escape'");
   });
 
   it('does not stack the first-run teaching banner under name or hero gates', () => {
