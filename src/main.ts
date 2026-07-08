@@ -4,7 +4,7 @@ import { GamePhase, TileType, TowerType, TargetingMode, DrawCard, DamageType } f
 // on load and wires the rtd:viewport-change custom event used by
 // fitStageToViewport and (in later phases) touch handlers + modals.
 import { isMobile as isMobileDevice } from './Mobile';
-import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, TIER_COLORS, WAVE } from './constants';
+import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, TIER_COLORS, WAVE, INVENTORY_SIZE } from './constants';
 import { createGameState, isWaveModifierActive } from './GameState';
 import { initializeGrid, isBuildable, isWaterPlacementRestrictedTile, isWaterZoneTile, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
@@ -16,7 +16,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, rollBossDrop, rollCommanderDrop, rollEpicDrop, rollRareDrop, rollOceanSpecialistDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, rollBossDrop, rollCommanderDrop, rollEpicDrop, rollRareDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_TYPES } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
@@ -2043,6 +2043,32 @@ async function boot() {
     const niceName = def.name ?? id.replace(/_/g, ' ');
     state.hint = `🎁 Good job! Bonus item: ${niceName} added to inventory.`;
     return id;
+  }
+  function grantFinalBossPreludeLegendary(): string | null {
+    if (state.endlessMode || state.wave !== WAVE.TOTAL - 1) return null;
+    if (state.finalBossPreludeRewardGranted) return null;
+    if (!canReceiveRunReward(state)) return null;
+    state.finalBossPreludeRewardGranted = true;
+    const drop = rollFinalBossPreludeDrop(state, inventory);
+    if (!drop) {
+      state.hint = 'Final armory opened, but every usable legendary is already claimed.';
+      return null;
+    }
+    const def: any = (itemsData as any)[drop.itemId];
+    const niceName = def?.name ?? String(drop.itemId).replace(/_/g, ' ');
+    const added = inventoryAdd(inventory, drop.itemId as any, drop.rarity, false);
+    if (added) {
+      state.hint = `FINAL ARMAMENT — ${niceName} awarded for surviving Wave 29. Equip it before Wave 30.`;
+      showBonusBossBanner(`☀ FINAL ARMAMENT — ${niceName.toUpperCase()} CLAIMED BEFORE W30 ☀`);
+      return drop.itemId;
+    }
+    spawnLootAt(state, {
+      x: GRID.CANVAS_W - GRID.TILE * 2.5,
+      y: GRID.CANVAS_H - GRID.TILE * 3,
+    } as any, drop);
+    state.hint = `INVENTORY FULL — ${niceName} is waiting as a Legendary orb. Free a slot before Wave 30.`;
+    showBonusBossBanner(`☀ FINAL ARMAMENT WAITING — FREE AN INVENTORY SLOT BEFORE W30 ☀`);
+    return drop.itemId;
   }
   function showBonusBossBanner(text: string) {
     document.getElementById('bonus-boss-banner')?.remove();
@@ -6868,6 +6894,18 @@ async function boot() {
         }
       });
     }
+    const canAutoPickupDuringPrep = state.phase === GamePhase.BUILD_PHASE
+      || state.phase === GamePhase.PROSPECT_PLACEMENT
+      || state.phase === GamePhase.PICK_KEEPER;
+    if (
+      canReceiveRunReward(state) &&
+      canAutoPickupDuringPrep &&
+      state.lootOrbs.length > 0 &&
+      inventory.slots.length < INVENTORY_SIZE
+    ) {
+      const picked = autoPickupOnBuildPhase(state, inventory);
+      if (picked > 0) state.hint = `Picked up ${picked} item${picked > 1 ? 's' : ''}.`;
+    }
     if (state.phase === GamePhase.WAVE_PHASE) {
       tickSpawns(state, dt);
       // 2026-05-16 — SURPRISE EVENTS tick. Drains the 4-point spawn
@@ -7784,6 +7822,9 @@ async function boot() {
               const drop = rollRareDrop();
               if (drop) spawnLootAt(state, e, drop);
             }
+          } else if (e.type === 'DAEMON_IMPERATOR') {
+            // The final boss's usable legendary is awarded after W29 clear.
+            // A corpse drop after W30 victory has no strategic purpose.
           } else if (isLegendaryBossDropEnemy(e)) {
             const bossFaction = (enemiesData as any)[e.type]?.faction ?? w.faction;
             const drop = rollBossDrop(String(bossFaction), state, inventory, e.type as string);
@@ -8081,6 +8122,7 @@ async function boot() {
         // Auto-pickup loot during build phase (Architectus character not yet animated)
         const picked = autoPickupOnBuildPhase(state, inventory);
         if (picked > 0) state.hint = `Picked up ${picked} item${picked > 1 ? 's' : ''}.`;
+        grantFinalBossPreludeLegendary();
         // Mercator visit. Builds a SEPARATE shop state from the gate shop
         // so both vendors are usable on the same wave. The dedicated HUD
         // button is toggled on (and back off when the player starts the

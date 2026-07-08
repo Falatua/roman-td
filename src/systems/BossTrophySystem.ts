@@ -1,5 +1,6 @@
 import { DamageType, Tower } from '../types';
 import { GameStateShape } from '../GameState';
+import { WAVE } from '../constants';
 import { canReceiveRunReward, isMajorBossRewardEnemy } from './RewardEligibility';
 import towersData from '../data/towers.json';
 
@@ -128,6 +129,7 @@ export function applyBossTrophy(state: GameStateShape, id: BossTrophyId): void {
 
 export function shouldOfferBossTrophy(state: GameStateShape, enemy: any): boolean {
   if (!canReceiveRunReward(state)) return false;
+  if (!state.endlessMode && state.wave >= WAVE.TOTAL) return false;
   if (!isMajorBossRewardEnemy(enemy)) return false;
   const claimedWaves = state.bossTrophyWavesClaimed ?? [];
   if (claimedWaves.includes(state.wave)) return false;

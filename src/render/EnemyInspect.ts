@@ -407,8 +407,13 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   };
   const signature = signatureLegendaryForBoss(e.type);
   const signatureName = signature ? ((itemsData as any)[signature]?.name ?? pretty(signature)) : null;
+  const signatureLine = signatureName
+    ? e.type === 'DAEMON_IMPERATOR'
+      ? `FINAL ARMAMENT — ${signatureName} is awarded after surviving Wave 29, before the W30 fight. The final boss itself drops no item because victory ends the run.`
+      : `SIGNATURE LEGENDARY — drops ${signatureName} on kill. If already claimed, rotates to another unowned legendary.`
+    : null;
   const scriptLines = [
-    ...(signatureName ? [`SIGNATURE LEGENDARY — drops ${signatureName} on kill. If already claimed, rotates to another unowned legendary.`] : []),
+    ...(signatureLine ? [signatureLine] : []),
     ...(bossScripts[e.type] ?? [])
   ];
   if (traits.length > 0) {

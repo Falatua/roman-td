@@ -22,5 +22,8 @@ export function shouldDropRareOnlyBossLoot(enemy: any, randomValue = Math.random
 
 export function isLegendaryBossDropEnemy(enemy: any): boolean {
   if (isRareOnlyBossDropEnemy(enemy)) return false;
+  // Final boss drops arrive as a W29 clear prelude reward instead. A
+  // W30 kill ends the run, so a corpse drop there has no strategic value.
+  if (enemy?.type === 'DAEMON_IMPERATOR') return false;
   return !!enemy?.isBoss;
 }

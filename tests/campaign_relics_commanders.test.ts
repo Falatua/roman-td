@@ -536,6 +536,14 @@ describe('Boss trophies', () => {
     expect(shouldOfferBossTrophy(s, { isBoss: true, isScheduledBoss: false, type: 'ANUBIS_KING' })).toBe(false);
   });
 
+  it('does not offer a post-victory trophy for the final W30 boss', () => {
+    const s = bootstrapState();
+    s.wave = 30;
+    expect(shouldOfferBossTrophy(s, { isBoss: true, isScheduledBoss: true, type: 'DAEMON_IMPERATOR' })).toBe(false);
+    expect(queueBossTrophyOfferForWave(s, { isBoss: true, isScheduledBoss: true, type: 'DAEMON_IMPERATOR' }, 'Daemon Imperator')).toBe(false);
+    expect(s.pendingBossTrophyOffer).toBeNull();
+  });
+
   it('queues boss trophy choices until the wave-end reward flow consumes them', () => {
     const s = bootstrapState();
     s.wave = 24;

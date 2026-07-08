@@ -11,7 +11,7 @@
 //   - rollBossDrop returns a non-null result for every boss-wave
 //     faction on a fresh inventory.
 import { describe, it, expect } from 'vitest';
-import { BOSS_SIGNATURE_LEGENDARIES, rollBossDrop, signatureLegendaryForBoss } from '../src/systems/LootSystem';
+import { BOSS_SIGNATURE_LEGENDARIES, rollBossDrop, rollFinalBossPreludeDrop, signatureLegendaryForBoss } from '../src/systems/LootSystem';
 import { createInventory } from '../src/systems/LootSystem';
 import { createGameState } from '../src/GameState';
 import wavesData from '../src/data/waves.json';
@@ -59,13 +59,13 @@ describe('Boss drop guarantee (2026-05-19)', () => {
     }
   });
 
-  it('rollBossDrop returns each scheduled boss signature on fresh inventory', () => {
+  it('rollBossDrop returns each scheduled boss signature on fresh inventory before the final wave', () => {
     // Every scheduled-boss wave must produce the specific boss trophy
     // first, before falling back to broader faction pools for no-duplicate
     // repeated kills.
     const state = freshState();
     const inv = createInventory();
-    for (const w of SCHEDULED_BOSS_WAVES) {
+    for (const w of SCHEDULED_BOSS_WAVES.filter(w => w.wave < 30)) {
       const bossSpawn = w.spawns.find((s: any) => (enemiesData as any)[s.type]?.isBoss);
       expect(bossSpawn, `W${w.wave} boss spawn`).toBeTruthy();
       const drop = rollBossDrop(w.faction, state, inv, bossSpawn!.type);
@@ -74,6 +74,17 @@ describe('Boss drop guarantee (2026-05-19)', () => {
       expect((itemsData as any)[drop!.itemId]?.rarity).toBe('LEGENDARY');
       expect(drop!.itemId).toBe(BOSS_SIGNATURE_LEGENDARIES[bossSpawn!.type]);
     }
+  });
+
+  it('moves the W30 Daemon Imperator signature legendary to the W29 clear prelude', () => {
+    const daemon = { type: 'DAEMON_IMPERATOR', isBoss: true, isScheduledBoss: true, isBonusBoss: false };
+    expect(signatureLegendaryForBoss('DAEMON_IMPERATOR')).toBe('SIGIL_OF_SOL_INVICTUS');
+    expect(isLegendaryBossDropEnemy(daemon)).toBe(false);
+
+    const prelude = rollFinalBossPreludeDrop(freshState(), createInventory());
+    expect(prelude).not.toBeNull();
+    expect(prelude!.rarity).toBe('LEGENDARY');
+    expect(prelude!.itemId).toBe('SIGIL_OF_SOL_INVICTUS');
   });
 
   it('W5 specifically drops Brennus signature legendary on first kill', () => {

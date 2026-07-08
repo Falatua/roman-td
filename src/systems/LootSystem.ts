@@ -241,13 +241,11 @@ const BOSS_LEGENDARIES: Record<string, ItemId[]> = {
   // legendaries thematically fit (sky-claw for ghosts, spear for phalanx,
   // chain lightning for divine purification).
   UNDEAD_CARTHAGE: ['UNDEAD_ELEPHANT_BONE', 'LICH_GENERALS_SEAL', 'CURSED_TORC', 'AQUILA_TALONS', 'SPEAR_OF_MARS', 'JUPITERS_WRATH'],
-  // SUPER_DEMONS: the Daemon Imperator can drop any apex legendary —
-  // including the three divine-themed additions. Final-boss kills are
-  // the only path to these without raiding Mercator. 2026-05-15 added
-  // SIGIL_OF_SOL_INVICTUS to the SUPER_DEMONS pool too — thematic
-  // (sun-god relic dropped by the demon vanguard) and gives the player
-  // a way to seed the anti-demon item via W19 boss kill, in addition
-  // to the W3 Alpha-Dog opener.
+  // SUPER_DEMONS: the Daemon Imperator's intended boss legendary is now
+  // awarded as a W29 clear prelude reward, so the player can use it in
+  // the final fight instead of receiving a useless post-victory corpse
+  // drop. This pool still supplies the no-duplicate fallback for that
+  // prelude reward.
   SUPER_DEMONS: ['UNDEAD_ELEPHANT_BONE', 'LICH_GENERALS_SEAL', 'CURSED_TORC', 'WARLORDS_WAR_PAINT', 'ELEPHANT_TUSK', 'JUPITERS_WRATH', 'AQUILA_TALONS', 'SPEAR_OF_MARS', 'SIGIL_OF_SOL_INVICTUS'],
   EGYPTIANS: ['STORM_AQUILA_TALONS', 'JUPITERS_SKYFIRE', 'LICH_GENERALS_SEAL', 'JUPITERS_WRATH', 'CURSED_TORC'],
   MONGOLS: ['SPEAR_OF_MARS', 'NUMIDIAN_SADDLE', 'EXECUTIONERS_FALX', 'DAMNATIO_MEMORIAE', 'FALCATA_BLADE']
@@ -352,6 +350,13 @@ export function rollBossDrop(
   }
   if (pool.length === 0) return null; // player owns every legendary in the game — rare flex
   return { itemId: pick(pool), rarity: 'LEGENDARY' };
+}
+
+export function rollFinalBossPreludeDrop(
+  state?: GameStateShape | null,
+  inv?: InventoryState | null
+): { itemId: ItemId; rarity: Rarity } | null {
+  return rollBossDrop('SUPER_DEMONS', state, inv, 'DAEMON_IMPERATOR');
 }
 
 export function spawnLootAt(state: GameStateShape, e: Enemy, drop: { itemId: ItemId; rarity: Rarity }) {

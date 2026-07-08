@@ -132,6 +132,10 @@ export interface GameStateShape {
   // grant idempotent across save loads.
   questTierBonusGranted?: ('EARLY' | 'MID' | 'LATE' | 'ALL')[];
   bossesKilled?: number;
+  // The Daemon Imperator's signature legendary is awarded after W29 clear
+  // so the player can actually use it during W30. This one-shot flag keeps
+  // the prelude reward idempotent across save/load or repeated callbacks.
+  finalBossPreludeRewardGranted?: boolean;
   combosBuilt?: number;
   combosBuiltUniqueTypes?: string[];
   // Lifetime kills of enemies that emerged from the ocean/shipwreck lane.

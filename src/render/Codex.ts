@@ -1610,7 +1610,11 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
     `<span><span style="color:#aa9a4a;font-size:9px;letter-spacing:1px">SPEED</span> <b>${def.speed.toFixed(1)}t/s</b></span>`,
     `<span><span style="color:#aa9a4a;font-size:9px;letter-spacing:1px">LEAK</span> <b style="color:#ee5555">${def.livesCost ?? 1} ${(def.livesCost ?? 1) === 1 ? 'life' : 'lives'}</b></span>`,
     def.isBoss ? `<span><span style="color:#aa9a4a;font-size:9px;letter-spacing:1px">BOUNTY</span> <b style="color:#ffd34d">scales with wave</b></span>` : '',
-    signatureLegendaryForBoss(id) ? `<span style="color:#ff9933;font-size:10px;font-weight:bold">★ SIGNATURE LEGENDARY DROP</span>` : ''
+    signatureLegendaryForBoss(id)
+      ? id === 'DAEMON_IMPERATOR'
+        ? `<span style="color:#ff9933;font-size:10px;font-weight:bold">★ FINAL ARMAMENT AFTER W29</span>`
+        : `<span style="color:#ff9933;font-size:10px;font-weight:bold">★ SIGNATURE LEGENDARY DROP</span>`
+      : ''
   ].filter(Boolean).join('<span style="color:#3a3025;margin:0 6px">|</span>');
 
   // Trait list — exact mirror of EnemyInspect's traits[] construction.
@@ -1705,8 +1709,13 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   // Boss mechanics
   const signature = signatureLegendaryForBoss(id);
   const signatureName = signature ? ((permItems as any)[signature]?.name ?? pretty(signature)) : null;
+  const signatureLine = signatureName
+    ? id === 'DAEMON_IMPERATOR'
+      ? `FINAL ARMAMENT — ${signatureName} is awarded after surviving Wave 29, before the W30 fight. The final boss itself drops no item because victory ends the run.`
+      : `SIGNATURE LEGENDARY — drops ${signatureName} on kill. If already claimed, rotates to another unowned legendary.`
+    : null;
   const bossLines = [
-    ...(signatureName ? [`SIGNATURE LEGENDARY — drops ${signatureName} on kill. If already claimed, rotates to another unowned legendary.`] : []),
+    ...(signatureLine ? [signatureLine] : []),
     ...(BOSS_SCRIPTS_FOR_CODEX[id] ?? [])
   ];
   // Build the card.
