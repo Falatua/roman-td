@@ -27,6 +27,19 @@ function bootstrapState() {
   return s;
 }
 
+function waypointPathIndex(state: any, waypointNumber: number): number {
+  const wp = (waypointsData as any).waypoints.find((entry: any) => entry.index === waypointNumber)?.topLeft;
+  expect(wp, `Waypoint ${waypointNumber} should exist`).toBeTruthy();
+  let bestIdx = 0;
+  let bestD = Infinity;
+  for (let i = 0; i < state.groundPath.length; i++) {
+    const p = state.groundPath[i];
+    const d = Math.abs(p.col - wp.col) + Math.abs(p.row - wp.row);
+    if (d < bestD) { bestD = d; bestIdx = i; }
+  }
+  return bestIdx;
+}
+
 describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-cleared bump', () => {
   it('applies linear + mid-late accelerator + x2.00 per cleared 5-wave boss', () => {
     // Reference formula:
@@ -366,21 +379,57 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(sea).toBeTruthy();
     expect(sea.__oceanSpawn).toBe(true);
     expect(sea.__approachActive).toBe(true);
-    const wp2 = (waypointsData as any).waypoints[1].topLeft;
-    let wp2PathIdx = 0;
-    let bestD = Infinity;
-    for (let i = 0; i < s.groundPath.length; i++) {
-      const p = s.groundPath[i];
-      const d = Math.abs(p.col - wp2.col) + Math.abs(p.row - wp2.row);
-      if (d < bestD) { bestD = d; wp2PathIdx = i; }
-    }
-    expect(sea.pathIndex).toBeGreaterThan(wp2PathIdx);
+    expect(sea.pathIndex).toBeGreaterThan(waypointPathIndex(s, 2));
     const wreckX = WATER_ZONE.col * GRID.TILE + 4;
     const wreckY = (WATER_ZONE.row + WATER_ZONE.height - 3.45) * GRID.TILE;
     expect(sea.x).toBeGreaterThanOrEqual(wreckX);
     expect(sea.x).toBeLessThanOrEqual(wreckX + GRID.TILE * 4.5);
     expect(sea.y).toBeGreaterThanOrEqual(wreckY);
     expect(sea.y).toBeLessThanOrEqual(wreckY + GRID.TILE * 3.375);
+  });
+
+  it('routes every authored ocean-marked campaign spawn past the first two checkpoints', () => {
+    const oceanWaves = (wavesData as any[]).filter(wave => (wave.spawns ?? []).some((spawn: any) => spawn.ocean));
+    expect(oceanWaves.length, 'campaign should include ocean threat waves').toBeGreaterThan(0);
+
+    for (const waveDef of oceanWaves) {
+      const s = bootstrapState();
+      s.wave = waveDef.wave - 1;
+      startWave(s);
+      const oceanQueue = s.spawnQueue.filter(item => item.ocean);
+      expect(oceanQueue.length, `W${waveDef.wave} should schedule ocean enemies`).toBeGreaterThan(0);
+
+      s.enemies.clear();
+      s.spawnQueue = oceanQueue.map((item, idx) => ({ ...item, spawnAt: 0, oceanIndex: idx }));
+      s.spawnElapsed = 0;
+      tickSpawns(s, 0.01);
+
+      const spawned = Array.from(s.enemies.values()) as any[];
+      expect(spawned.length, `W${waveDef.wave} should spawn its ocean queue`).toBe(oceanQueue.length);
+      const wp2Idx = waypointPathIndex(s, 2);
+      for (const enemy of spawned) {
+        expect(enemy.__oceanSpawn, `W${waveDef.wave} ${enemy.type} should be tagged ocean-spawned`).toBe(true);
+        expect(enemy.__oceanRouteGroundPath, `W${waveDef.wave} ${enemy.type} should use the post-WP2 ground route`).toBe(true);
+        expect(enemy.__approachActive, `W${waveDef.wave} ${enemy.type} should approach from the shipwreck`).toBe(true);
+        expect(enemy.pathIndex, `W${waveDef.wave} ${enemy.type} should skip checkpoints 1 and 2`).toBeGreaterThan(wp2Idx);
+      }
+    }
+  });
+
+  it('routes ocean-flagged boss-class spawns from the shipwreck for future water bosses', () => {
+    const s = bootstrapState();
+    s.wave = 11;
+    s.phase = GamePhase.WAVE_PHASE;
+    s.spawnQueue = [{ type: EnemyType.HANNIBAL_BARCA, spawnAt: 0, ocean: true, oceanIndex: 0 }];
+    s.spawnElapsed = 0;
+
+    tickSpawns(s, 0.01);
+    const boss = Array.from(s.enemies.values()).find(e => e.type === EnemyType.HANNIBAL_BARCA) as any;
+    expect(boss).toBeTruthy();
+    expect(boss.isBoss).toBe(true);
+    expect(boss.__oceanSpawn).toBe(true);
+    expect(boss.__oceanRouteGroundPath).toBe(true);
+    expect(boss.pathIndex).toBeGreaterThan(waypointPathIndex(s, 2));
   });
 
   it('keeps the Stormtide Wyvern targetable as air while routing it from the ocean', () => {
@@ -395,15 +444,7 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(wyvern.__oceanSpawn).toBe(true);
     expect(wyvern.__oceanRouteGroundPath).toBe(true);
     expect(wyvern.__approachActive).toBe(true);
-    const wp2 = (waypointsData as any).waypoints[1].topLeft;
-    let wp2PathIdx = 0;
-    let bestD = Infinity;
-    for (let i = 0; i < s.groundPath.length; i++) {
-      const p = s.groundPath[i];
-      const d = Math.abs(p.col - wp2.col) + Math.abs(p.row - wp2.row);
-      if (d < bestD) { bestD = d; wp2PathIdx = i; }
-    }
-    expect(wyvern.pathIndex).toBeGreaterThan(wp2PathIdx);
+    expect(wyvern.pathIndex).toBeGreaterThan(waypointPathIndex(s, 2));
   });
 
   it('does not mirror ocean spawns to Cave B on late waves', () => {

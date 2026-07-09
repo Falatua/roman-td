@@ -415,7 +415,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // (the renderer reads this to un-hide the archway + fire the eruption).
     if (fromCaveB) state.caveBActive = true;
     const e = spawnEnemy(state, item.type as EnemyType, spawnHpMult, false, fromCaveB);
-    const fromOcean = !!item.ocean && !isBossSpawn;
+    const fromOcean = !!item.ocean;
     if (fromOcean) routeOceanSpawnToPath(state, e, item.oceanIndex ?? 0);
     if (item.bossEscort) {
       (e as any).__bossEscortCommander = true;
