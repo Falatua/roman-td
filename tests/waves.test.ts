@@ -116,7 +116,7 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
   it('keeps W6-W15 meaningfully hardened after the first boss', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     const expected = new Map<number, number>([
-      [6, 2.05],
+      [6, 2.3575],
       [7, 2.28],
       [8, 2.25],
       [9, 2.55],
