@@ -1595,7 +1595,7 @@ export class RenderEngine {
   }
 
   // ─── HERO ABILITY VFX (2026-05-19 v2) ──────────────────────────────
-  // Per-ability signature animations. Each of the 18 hero abilities
+  // Per-ability signature animations. Each of the 12 active hero abilities
   // queues a HeroAbilityFx record on cast; `drawHeroAbilityFx` ticks
   // them every frame, expiring entries past `life` and rendering each
   // ability's distinct shape on the dedicated `heroFxGfx` Graphics.
@@ -1684,7 +1684,8 @@ export class RenderEngine {
         //   __brandSprite     Scipio's Brand (Scipio) — branding iron
         //   __aquilaSprite    SPQR Decree (Caesar) — Roman eagle standard
         //   __laurelSprite    Pax Romana (Caesar) — laurel wreath
-        //   __boltSprite      Fortune's Bolt (Sulla) — storm javelin
+        //   __meteorSprite    Meteor Slam (Sulla) — falling meteor sheet
+        //   __meteorImpactSprite Meteor Slam (Sulla) — impact/explosion sheet
         this.destroyHeroAbilityFxAssets(fx);
         this.heroFxQueue.splice(i, 1);
         continue;

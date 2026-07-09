@@ -678,10 +678,10 @@ const MANIFEST: Record<string, string> = {
   SULLA_METEOR_PROJECTILE: '../heroes/attacks/sulla_meteor_projectile_sheet.png',
   SULLA_METEOR_IMPACT:     '../heroes/attacks/sulla_meteor_impact_sheet.png',
   // 2026-06-29 — Dedicated per-ability hero VFX sprites (hfx_*). Each of
-  // the 11 non-Meteor hero abilities now has its own unique projectile/
-  // emblem instead of borrowing a tower/item/PROJ texture. Live under
-  // heroes/attacks/ so isCriticalAsset() force-loads them on the critical
-  // path (abilities can fire on W1). Consumed by drawHeroAbilityFx().
+  // the 11 non-Meteor hero abilities has its own projectile/emblem,
+  // while Meteor Slam uses the animated Sulla meteor sheets below. These
+  // live under heroes/attacks/ so isCriticalAsset() force-loads them on
+  // the critical path. Consumed by drawHeroAbilityFx().
   HFX_MARIAN_STANDARD: '../heroes/attacks/hfx_marian_standard.png',  // Marius — Marian Formation (violet signum)
   HFX_CAPITE_PILUM:    '../heroes/attacks/hfx_capite_pilum.png',     // Marius — Capite Censi (amber levy pilum)
   HFX_PILUM_VOLLEY:    '../heroes/attacks/hfx_pilum_volley.png',     // Agrippa — Pilum Volley (steel-blue javelin)
@@ -1006,6 +1006,10 @@ export function prewarmAttackFrameCache(): void {
   for (const key of HERO_IMPACT_KEYS) {
     for (let frame = 0; frame < 6; frame++) texFrame(key, frame, 128, 128);
   }
+  for (let frame = 0; frame < 6; frame++) {
+    texFrame('SULLA_METEOR_PROJECTILE', frame, 96, 96);
+    texFrame('SULLA_METEOR_IMPACT', frame, 128, 128);
+  }
   for (let frame = 0; frame < 9; frame++) texGridFrame('FINAL_BOSS_DAEMON_PORTAL_SHEET', frame, 256, 256, 3);
   for (const type of BASE_TOWER_ATTACK_TYPES) {
     const key = `ATTACK_${type}`;
@@ -1039,3 +1043,59 @@ export function texUrl(key: string): string | null {
 }
 
 export const ASSET_KEYS = MANIFEST;
+
+export const HERO_ABILITY_VFX_ASSETS: Record<string, {
+  spriteKeys: string[];
+  sheetKeys?: string[];
+  description: string;
+}> = {
+  MARIAN_FORMATION: {
+    spriteKeys: ['HFX_MARIAN_STANDARD'],
+    description: 'Violet signum standard rallies Marius formation targets.'
+  },
+  CAPITE_CENSI: {
+    spriteKeys: ['AUXILIA', 'HFX_CAPITE_PILUM'],
+    description: 'Ghost auxilia rise and hurl amber pila.'
+  },
+  PILUM_VOLLEY: {
+    spriteKeys: ['HFX_PILUM_VOLLEY'],
+    description: 'Agrippa steel-blue javelins fan toward high-HP targets.'
+  },
+  NAVAL_BOMBARDMENT: {
+    spriteKeys: ['HFX_NAVAL_SHELL'],
+    description: 'Naval shells fall onto path impact points.'
+  },
+  EAGLE_SCOUT: {
+    spriteKeys: ['HFX_SCOUT_EAGLE'],
+    description: 'Scout eagle sprites mark flyer targets.'
+  },
+  FRONTIER_WALL: {
+    spriteKeys: ['HFX_FRONTIER_WALL'],
+    description: 'Palisade wall rises at Agricola.'
+  },
+  CORNU_CHARGE: {
+    spriteKeys: ['HFX_CORNU_CHARGE'],
+    description: 'Brass cornu cue and charge line mark Scipio priority burst.'
+  },
+  SCIPIO_BRAND: {
+    spriteKeys: ['HFX_SCIPIO_BRAND'],
+    description: 'Red-hot brand stamps bosses and commanders.'
+  },
+  SPQR_DECREE: {
+    spriteKeys: ['HFX_SPQR_DECREE'],
+    description: 'Golden aquila standard commands the board volley.'
+  },
+  PAX_ROMANA: {
+    spriteKeys: ['HFX_PAX_LAUREL'],
+    description: 'Laurel wreath and map shimmer slow enemies.'
+  },
+  FORTUNES_BOLT: {
+    spriteKeys: ['HERO_PROJ_SULLA_METEOR'],
+    sheetKeys: ['SULLA_METEOR_PROJECTILE', 'SULLA_METEOR_IMPACT'],
+    description: 'Sulla Meteor Slam uses animated falling meteor and impact sheets.'
+  },
+  PROSCRIPTION: {
+    spriteKeys: ['HFX_PROSCRIPTION'],
+    description: 'Flaming proscription tablet marks the divine override window.'
+  }
+};

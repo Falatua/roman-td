@@ -28,10 +28,11 @@ import {
   isFortunaRegularCombo,
   rollFortunaCombo
 } from '../src/systems/MerchantSystem';
-import { ASSET_KEYS, BASE_TOWER_ATTACK_TYPES } from '../src/render/Assets';
+import { ASSET_KEYS, BASE_TOWER_ATTACK_TYPES, HERO_ABILITY_VFX_ASSETS } from '../src/render/Assets';
 import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from '../src/systems/BaseTowerAttackAnimation';
 import comboData from '../src/data/towerCombinations.json';
 import towersData from '../src/data/towers.json';
+import HERO_DEFS from '../src/data/herodefs.json';
 
 beforeAll(() => {
   (globalThis as any).window = (globalThis as any).window ?? {};
@@ -766,6 +767,49 @@ describe('Tower roster integrity', () => {
     expect(render).toContain('MAX_TRANSIENT_SPRITE_IMPACTS');
     expect(main).toContain('function heroImpactKeyForTowerType');
     expect(main).toContain('triggerHeroHitImpact(tw, hx, hy)');
+  });
+
+  it('every hero ability has explicit sprite or sheet VFX coverage', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const sharp = (await import('sharp')).default;
+    const renderer = readFileSync('src/render/RenderEngine.ts', 'utf8');
+    const abilityIds = Object.values(HERO_DEFS as any).flatMap((def: any) => (def.abilities ?? []).map((ability: any) => ability.id));
+    expect(new Set(abilityIds).size, 'hero ability ids should be unique').toBe(abilityIds.length);
+
+    for (const abilityId of abilityIds) {
+      const coverage = (HERO_ABILITY_VFX_ASSETS as any)[abilityId];
+      expect(coverage, `${abilityId} must be registered in HERO_ABILITY_VFX_ASSETS`).toBeTruthy();
+      expect(coverage.description, `${abilityId} should explain its visual identity`).toBeTruthy();
+      const keys = [...(coverage.spriteKeys ?? []), ...(coverage.sheetKeys ?? [])];
+      expect(keys.length, `${abilityId} must name at least one sprite/sheet key`).toBeGreaterThan(0);
+      expect(renderer, `${abilityId} must have a drawHeroAbilityFx renderer case`).toContain(`case '${abilityId}'`);
+
+      for (const key of keys) {
+        const assetPath = (ASSET_KEYS as any)[key];
+        expect(assetPath, `${abilityId} references missing asset key ${key}`).toBeTruthy();
+        if (!String(assetPath).startsWith('../heroes/attacks/')) continue;
+        const file = path.join(process.cwd(), 'public/assets/heroes/attacks', String(assetPath).replace('../heroes/attacks/', ''));
+        expect(fs.existsSync(file), `${abilityId} asset ${key} missing at ${file}`).toBe(true);
+        const img = sharp(file).ensureAlpha();
+        const meta = await img.metadata();
+        expect(meta.width, `${abilityId} asset ${key} width`).toBeGreaterThanOrEqual(32);
+        expect(meta.height, `${abilityId} asset ${key} height`).toBeGreaterThanOrEqual(32);
+        expect(meta.hasAlpha, `${abilityId} asset ${key} should have transparency`).toBe(true);
+        const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
+        let visible = 0;
+        let chromaResidue = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i + 3] <= 16) continue;
+          visible++;
+          if (data[i + 1] > 95 && data[i + 1] > data[i] * 1.35 && data[i + 1] > data[i + 2] * 1.35) chromaResidue++;
+        }
+        expect(visible, `${abilityId} asset ${key} should contain visible sprite art`).toBeGreaterThan(64);
+        expect(visible / (info.width * info.height), `${abilityId} asset ${key} should preserve transparent negative space`).toBeLessThan(0.82);
+        expect(chromaResidue, `${abilityId} asset ${key} should not retain chroma-key residue`).toBe(0);
+      }
+    }
+    expect(Object.keys(HERO_ABILITY_VFX_ASSETS).sort(), 'ability VFX registry should not carry stale abilities').toEqual([...abilityIds].sort());
   });
 });
 
