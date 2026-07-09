@@ -620,6 +620,7 @@
     "auraTowerSlow": 0.25,
     "healAllyPctPerSec": 0.02,
     "meleeImmune": true,
+    "dotImmune": true,
     "immunePoison": true
   },
   "SOBEK_WARRIOR": {
@@ -740,6 +741,7 @@
     "livesCost": 2,
     "lowHpSpeedBoost": 1.6,
     "renderScale": 0.82,
+    "dotImmune": true,
     "siegeImmune": true
   },
   "MONGOL_SCOUT": {
@@ -769,6 +771,7 @@
     "auraTowerSlow": 0.22,
     "healAllyPctPerSec": 0.018,
     "renderScale": 0.82,
+    "dotImmune": true,
     "meleeImmune": true
   },
   "MONGOL_CAPTAIN": {
@@ -1081,6 +1084,7 @@
     "livesCost": 5,
     "isElite": true,
     "meleeImmune": true,
+    "dotImmune": true,
     "immunePoison": true,
     "renderScale": 1.2
   },
@@ -1212,6 +1216,7 @@
     "renderScale": 0.92,
     "dodgeChance": 0.15,
     "lowHpSpeedBoost": 1.5,
+    "dotImmune": true,
     "siegeImmune": true,
     "stealthInterval": { "period": 4.5, "duration": 1.0 }
   },
@@ -1228,6 +1233,7 @@
     "shieldBlockChance": 0.35,
     "meleeImmune": true,
     "rangedImmune": true,
+    "dotImmune": true,
     "immuneSlow": true,
     "immuneStun": true
   }

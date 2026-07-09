@@ -276,7 +276,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.EGYPTIAN_SPEARMAN]: { melee: 0.8, ranged: 0.6, burn: 0.85, poison: 0.90, bleed: 0.75 },
   [EnemyType.EGYPTIAN_CHARIOT]:  { ranged: 0.5, slow: 0.35, burn: 0.95, poison: 0.85, bleed: 0.6 },
   [EnemyType.PHARAOH_GUARD]:     { melee: 0.55, ranged: 0, burn: 0.55, poison: 0.45, bleed: 0.60, divine: 0.7 },
-  [EnemyType.ANUBIS_PRIEST]:     { melee: 0, ranged: 0.5, slow: 0.3, burn: 0.70, poison: 0, bleed: 0.55 },
+  [EnemyType.ANUBIS_PRIEST]:     { melee: 0, ranged: 0.5, slow: 0.3, burn: 0, poison: 0, bleed: 0 },
   [EnemyType.SOBEK_WARRIOR]:     { melee: 0.45, ranged: 0, slow: 0.3, burn: 0.5, poison: 0.55, bleed: 0.65 },
   [EnemyType.MUMMY_WARRIOR]:     { ranged: 0, siege: 0, slow: 0.5, poison: 0, bleed: 0.4, burn: 1.30 },
   [EnemyType.SPHINX]:            { melee: 0, ranged: 0.55, slow: 0.25, burn: 0.75, poison: 0.50, bleed: 0.40, divine: 1.30 },
@@ -286,9 +286,9 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.KHAN_RIDER]:        { melee: 0.55, ranged: 0.4, slow: 0.25, burn: 0.80, poison: 0.60, bleed: 0.5 },
   [EnemyType.MONGOL_FOOTMAN]:    { ranged: 0, melee: 0.9, burn: 0.90, poison: 0.85, bleed: 0.75 },
   [EnemyType.MONGOL_SPEARMAN]:   { melee: 0.85, ranged: 0.6, siege: 0, burn: 0.85, poison: 0.75, bleed: 0.60 },
-  [EnemyType.MONGOL_BERSERKER]:  { melee: 0.55, siege: 0, slow: 0.35, burn: 1.10, poison: 0.75, bleed: 0.4 },
+  [EnemyType.MONGOL_BERSERKER]:  { melee: 0.55, siege: 0, slow: 0.35, burn: 0, poison: 0, bleed: 0 },
   [EnemyType.MONGOL_SCOUT]:      { melee: 0, ranged: 0.7, slow: 0.3, burn: 0.8, poison: 0.75, bleed: 0.90 },
-  [EnemyType.MONGOL_SHAMAN]:     { melee: 0, ranged: 0.55, slow: 0.4, burn: 0.6, poison: 0.65, bleed: 0.80 },
+  [EnemyType.MONGOL_SHAMAN]:     { melee: 0, ranged: 0.55, slow: 0.4, burn: 0, poison: 0, bleed: 0 },
   [EnemyType.MONGOL_CAPTAIN]:    { melee: 0.6, ranged: 0, slow: 0.3, burn: 0.75, poison: 0.55, bleed: 0.60 },
   // 2026-07-08 — Vulture Imperator: mid-campaign boss twist. Fully
   // siege-immune so anti-air siege cannot solve every flyer boss by itself;
@@ -317,7 +317,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // boss-grade. Killing them should feel like solving the wave.
   [EnemyType.STANDARD_BEARER_COMMANDER]: { melee: 0.55, ranged: 0.5, slow: 0.35, burn: 0.75, poison: 0.65, bleed: 0.60, divine: 1.25 },
   [EnemyType.PATHFINDER_COMMANDER]:      { ranged: 0.65, slow: 0.25, burn: 0.90, poison: 0.75, bleed: 0.65 },
-  [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { melee: 0, ranged: 0.5, slow: 0.3, burn: 0.70, poison: 0, bleed: 0.50, divine: 1.30 },
+  [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { melee: 0, ranged: 0.5, slow: 0.3, burn: 0, poison: 0, bleed: 0, divine: 1.30 },
   [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0, burn: 0, poison: 1.15, bleed: 1.10, divine: 1.20 },
   [EnemyType.SKY_STANDARD_COMMANDER]:     { melee: 0.7, ranged: 0.55, slow: 0.35, siege: 1.2, burn: 0.8, poison: 0.65, bleed: 0.6, divine: 1.2 },
   [EnemyType.SKY_PATHFINDER_COMMANDER]:   { ranged: 0.7, slow: 0.3, siege: 0, burn: 0.85, poison: 0.75, bleed: 0.75 },
@@ -329,10 +329,11 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.SIEGE_WAGON]:      { melee: 0.65, ranged: 0.6, slow: 0.5, burn: 0.55, poison: 0.35, bleed: 0.25, siege: 1.75 },
   // Sky Barge: heavy flyer. Ranged/anti-air must do the work; divine and siege help crack the hull.
   [EnemyType.SKY_BARGE]:        { melee: 0.35, ranged: 0.55, slow: 0.3, burn: 0.7, poison: 0.55, bleed: 0.55, siege: 1.15, divine: 1.2 },
-  // Dune Stalker: lightly-wrapped fast skirmisher — little armor, slippery to slows.
-  [EnemyType.DUNE_STALKER]:     { siege: 0, slow: 0.6, burn: 1.10, poison: 0.85, bleed: 1.10 },
+  // Dune Stalker: sand-wrapped ambusher. DoT falls off it, but siege immunity
+  // is the only hard direct-damage shield.
+  [EnemyType.DUNE_STALKER]:     { siege: 0, slow: 0.6, burn: 0, poison: 0, bleed: 0 },
   // Stone Juggernaut: living granite — resists physical + DoT, cracked by siege/divine.
-  [EnemyType.STONE_JUGGERNAUT]: { melee: 0, ranged: 0, burn: 0.55, bleed: 0.3, poison: 0.3, siege: 1.75, divine: 1.75 }
+  [EnemyType.STONE_JUGGERNAUT]: { melee: 0, ranged: 0, burn: 0, bleed: 0, poison: 0, siege: 1.75, divine: 1.75 }
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
@@ -419,10 +420,14 @@ export function statusEffectiveness(enemy: Enemy, kind: StatusEffectKind): numbe
   // returns 0 effectiveness for that kind, making the JSON the single
   // source of truth for hard immunity.
   const def: any = (enemiesData as any)[enemy.type];
+  const isDotKind = kind === StatusEffectKind.BURN || kind === StatusEffectKind.BLEED || kind === StatusEffectKind.POISON;
+  if (def?.dotImmune && isDotKind) return 0;
   if (def?.immuneSlow && kind === StatusEffectKind.SLOW) return 0;
   if (def?.immuneFreeze && kind === StatusEffectKind.FREEZE) return 0;
   if (def?.immuneStun && kind === StatusEffectKind.STUN) return 0;
   if (def?.immunePoison && kind === StatusEffectKind.POISON) return 0;
+  if (def?.immuneBurn && kind === StatusEffectKind.BURN) return 0;
+  if (def?.immuneBleed && kind === StatusEffectKind.BLEED) return 0;
   // 2026-05-17 — immuneFire covers BURN DoT too (oil flasks, ignis
   // arrows, inferno cart, etc. all apply BURN). Bone bodies don't
   // smolder. HELLFIRE intentionally NOT covered — it's divine-fire,
@@ -452,6 +457,7 @@ export function statusEffectiveness(enemy: Enemy, kind: StatusEffectKind): numbe
 export function resistanceSummary(type: EnemyType): Array<{ label: string; value: number }> {
   const r = enemyResistanceProfile(type);
   const def: any = (enemiesData as any)[type];
+  const dotImmune = !!def?.dotImmune;
   return [
     ['Melee', def?.meleeImmune ? 0 : r.melee],
     ['Ranged', def?.rangedImmune ? 0 : r.ranged],
@@ -461,9 +467,9 @@ export function resistanceSummary(type: EnemyType): Array<{ label: string; value
     ['Fire', r.fire],
     ['Divine', r.divine],
     ['Slow', r.slow],
-    ['Burn', r.burn],
-    ['Bleed', r.bleed],
-    ['Poison', r.poison]
+    ['Burn', dotImmune || def?.immuneBurn || def?.immuneFire ? 0 : r.burn],
+    ['Bleed', dotImmune || def?.immuneBleed ? 0 : r.bleed],
+    ['Poison', dotImmune || def?.immunePoison ? 0 : r.poison]
   ]
     .filter(([, value]) => typeof value === 'number' && value < 1)
     .map(([label, value]) => ({ label: label as string, value: value as number }));

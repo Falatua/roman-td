@@ -249,6 +249,31 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     }
   });
 
+  it('gives selected post-W15 enemies true damage-over-time immunity with readable UI summary', () => {
+    const dotImmuneTypes = [
+      EnemyType.MONGOL_BERSERKER,
+      EnemyType.MONGOL_SHAMAN,
+      EnemyType.ANUBIS_PRIEST,
+      EnemyType.ANUBIS_PRIEST_COMMANDER,
+      EnemyType.DUNE_STALKER,
+      EnemyType.STONE_JUGGERNAUT
+    ];
+
+    for (const type of dotImmuneTypes) {
+      const def: any = (enemiesData as any)[type];
+      const enemy = makeEnemy(type, def.faction as EnemyFaction);
+      enemy.isFlyer = !!def.isFlyer;
+      expect(def.dotImmune, `${type} JSON dotImmune`).toBe(true);
+      expect(statusEffectiveness(enemy, StatusEffectKind.BURN), `${type} burn DoT`).toBe(0);
+      expect(statusEffectiveness(enemy, StatusEffectKind.BLEED), `${type} bleed DoT`).toBe(0);
+      expect(statusEffectiveness(enemy, StatusEffectKind.POISON), `${type} poison DoT`).toBe(0);
+      expect(resistanceSummary(type).some(row => row.label === 'Burn' && row.value === 0), `${type} burn summary`).toBe(true);
+      expect(resistanceSummary(type).some(row => row.label === 'Bleed' && row.value === 0), `${type} bleed summary`).toBe(true);
+      expect(resistanceSummary(type).some(row => row.label === 'Poison' && row.value === 0), `${type} poison summary`).toBe(true);
+      expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} direct-damage answer`).toBeGreaterThan(0);
+    }
+  });
+
   it('shows Vulture Imperator as a siege-immune mid-game boss', () => {
     const vulture = makeEnemy(EnemyType.BOSS_FLYER_VULTURE, EnemyFaction.EGYPTIANS);
     vulture.isBoss = true;

@@ -181,6 +181,22 @@ describe('Late-wave DoT profile coverage', () => {
     }
   });
 
+  it('keeps damage-over-time immune threats present across W16-W30', () => {
+    const dotImmuneTypes = new Set(
+      Object.entries(enemiesData as any)
+        .filter(([, def]: any) => def?.dotImmune === true)
+        .map(([type]) => type)
+    );
+
+    for (const wave of (wavesData as any[]).filter(w => w.wave >= 16 && w.wave <= 30)) {
+      const types = [...new Set((wave.spawns ?? []).map((spawn: any) => spawn.type))];
+      expect(
+        types.some(type => dotImmuneTypes.has(type)),
+        `W${wave.wave} should include at least one damage-over-time immune threat`
+      ).toBe(true);
+    }
+  });
+
   it('gives every W16-W30 enemy at least one explicit burn, poison, or bleed profile', () => {
     for (const wave of (wavesData as any[]).filter(w => w.wave >= 16 && w.wave <= 30)) {
       const types = [...new Set((wave.spawns ?? []).map((s: any) => s.type))] as EnemyType[];
@@ -202,7 +218,7 @@ describe('Late-wave DoT profile coverage', () => {
     expect(enemyResistanceProfile(EnemyType.MUMMY_WARRIOR).burn).toBeGreaterThan(1);
     expect(enemyResistanceProfile(EnemyType.MUMMY_WARRIOR).poison).toBe(0);
     expect(enemyResistanceProfile(EnemyType.STONE_JUGGERNAUT).poison).toBeLessThan(0.5);
-    expect(enemyResistanceProfile(EnemyType.DUNE_STALKER).bleed).toBeGreaterThan(1);
+    expect(enemyResistanceProfile(EnemyType.DUNE_STALKER).bleed).toBe(0);
     expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).burn).toBe(0);
     expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).siege).toBe(0);
     expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).bleed).toBeGreaterThan(1);
