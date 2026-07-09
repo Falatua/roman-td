@@ -2,7 +2,14 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { scanCombos, realizableCombos, executeCombo, comboResultLocationChoices } from '../src/systems/CombinationEngine';
+import {
+  scanCombos,
+  realizableCombos,
+  executeCombo,
+  comboResultLocationChoices,
+  purchaseCompletesRecipe,
+  purchaseRecipeHints
+} from '../src/systems/CombinationEngine';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
 import { TowerType, GamePhase, TileType } from '../src/types';
@@ -121,6 +128,34 @@ describe('Recipe combo detection', () => {
     const combos = scanCombos(s);
     const horseman = combos.find(c => c.result === TowerType.HORSEMAN && !c.isSameTierMerge);
     expect(horseman).toBeTruthy();
+  });
+
+  it('predicts named purchase recipe hints for naval contracts and same-tier merges', () => {
+    const s = bootstrapState();
+    placeTower(s, TowerType.SCORPIO, 4, 1, 1);
+
+    const navalHints = purchaseRecipeHints(s, TowerType.TRIREME_BALLISTA, 3);
+    expect(purchaseCompletesRecipe(s, TowerType.TRIREME_BALLISTA, 3)).toBe(true);
+    expect(navalHints.map(h => h.name)).toContain('Praetorian Fleet');
+
+    placeTower(s, TowerType.HYDRA_OF_LERNA, 2, 2, 1);
+    placeTower(s, TowerType.HYDRA_OF_LERNA, 2, 3, 1);
+    const mergeHints = purchaseRecipeHints(s, TowerType.HYDRA_OF_LERNA, 2);
+    expect(mergeHints.some(h => h.isSameTierMerge && h.name === 'Tier 3 Hydra of Lerna')).toBe(true);
+
+    placeTower(s, TowerType.HYDRA_OF_LERNA, 2, 4, 1);
+    const alreadyBuildableMergeHints = purchaseRecipeHints(s, TowerType.HYDRA_OF_LERNA, 2);
+    expect(alreadyBuildableMergeHints.some(h => h.isSameTierMerge && h.name === 'Tier 3 Hydra of Lerna')).toBe(false);
+  });
+
+  it('does not flag a purchase as completing a recipe that is already buildable', () => {
+    const s = bootstrapState();
+    placeTower(s, TowerType.SCORPIO, 4, 1, 1);
+    placeTower(s, TowerType.TRIREME_BALLISTA, 3, 2, 1);
+
+    expect(scanCombos(s).some(c => c.result === TowerType.PRAETORIAN_FLEET)).toBe(true);
+    const hints = purchaseRecipeHints(s, TowerType.TRIREME_BALLISTA, 3);
+    expect(hints.map(h => h.name)).not.toContain('Praetorian Fleet');
   });
 
   it('records recipe combo builds for quest progression from the engine', () => {

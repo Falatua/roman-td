@@ -4,6 +4,16 @@ import towersData from '../data/towers.json';
 import { enhanceModalErgonomics } from './ModalErgonomics';
 import { createTower, towerStatBreakdown } from '../systems/TowerSystem';
 import { ASSET_KEYS, texUrl } from './Assets';
+import { purchaseRecipeHints } from '../systems/CombinationEngine';
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 function towerLabel(type: string): string {
   return (towersData as any)[type]?.name ?? type.replace(/_/g, ' ');
@@ -92,6 +102,26 @@ function navalContractDetailsHtml(state: GameStateShape, offer: HarborDraftOffer
     </div>`;
 }
 
+function navalRecipeHintHtml(state: GameStateShape, offer: HarborDraftOffer): string {
+  const hints = purchaseRecipeHints(state, offer.type, offer.tier, 3);
+  if (hints.length > 0) {
+    const names = hints.map(hint => {
+      const prefix = hint.isSameTierMerge ? 'Tier merge: ' : '';
+      return `<b>${escapeHtml(prefix + hint.name)}</b>`;
+    }).join(', ');
+    return `
+      <div style="margin-top:8px;background:#092015;border:1.5px solid #66ff88;color:#b8ffcc;padding:7px 8px;font-size:10px;line-height:1.4;box-shadow:0 0 10px rgba(102,255,136,0.14)">
+        <b style="color:#88ff88;letter-spacing:1.2px">RECIPE ALERT</b><br/>
+        This contract completes ${names}.
+      </div>`;
+  }
+  return `
+    <div style="margin-top:8px;background:#101015;border:1px solid #3a4450;color:#9fb3bd;padding:7px 8px;font-size:10px;line-height:1.4">
+      <b style="color:#88f7ff;letter-spacing:1.2px">RECIPE ALERT</b><br/>
+      Does not complete a recipe with your current towers yet.
+    </div>`;
+}
+
 export function showHarborWaveClearModal(state: GameStateShape, clearedWave: number, onOpenDraft?: () => void): void {
   if (typeof document === 'undefined') return;
   document.getElementById('harbor-unlock-modal')?.remove();
@@ -139,8 +169,11 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
     const def: any = (towersData as any)[o.type] ?? {};
     const affordable = state.gold >= o.price;
     const label = towerLabel(String(o.type));
+    const recipeHints = purchaseRecipeHints(state, o.type, o.tier, 1);
+    const completesRecipe = recipeHints.length > 0;
     return `
-      <div style="background:linear-gradient(180deg,#162b35,#0b1118);border:2px solid ${affordable ? '#5fe6ff' : '#6b3a3a'};padding:12px;text-align:left;box-shadow:inset 0 0 16px #000;display:flex;flex-direction:column;min-height:430px">
+      <div style="background:linear-gradient(180deg,${completesRecipe ? '#173a27' : '#162b35'},#0b1118);border:2px solid ${completesRecipe ? '#66ff88' : affordable ? '#5fe6ff' : '#6b3a3a'};padding:12px;text-align:left;box-shadow:inset 0 0 16px #000${completesRecipe ? ',0 0 16px rgba(102,255,136,0.18)' : ''};display:flex;flex-direction:column;min-height:430px;position:relative">
+        ${completesRecipe ? `<div style="position:absolute;top:-10px;left:14px;background:#0c1a10;border:1.5px solid #66ff88;color:#bbffcc;font-size:9px;font-weight:bold;letter-spacing:1px;padding:2px 7px;white-space:nowrap;text-shadow:0 0 4px #66ff88">★ COMPLETES RECIPE</div>` : ''}
         <div style="display:flex;gap:12px;align-items:flex-start">
           ${navalContractSpriteHtml(String(o.type), label, o.tier)}
           <div style="min-width:0;flex:1">
@@ -150,6 +183,7 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
           </div>
         </div>
         ${navalContractDetailsHtml(state, o, def)}
+        ${navalRecipeHintHtml(state, o)}
         <button data-harbor-buy="${idx}" style="margin-top:10px;width:100%;background:${affordable ? '#1d5c66' : '#332222'};color:${affordable ? '#fff8e0' : '#aa8888'};border:2px solid ${affordable ? '#88f7ff' : '#6b3a3a'};padding:8px;cursor:${affordable ? 'pointer' : 'not-allowed'};font-family:'Courier New',monospace;font-weight:bold;letter-spacing:1.5px">${affordable ? `${o.price}g CONTRACT` : `NEED ${o.price - state.gold}g`}</button>
       </div>`;
   }).join('');
@@ -162,7 +196,7 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
         </div>
       </div>
       <div id="harbor-draft-body" style="margin-top:10px;max-height:min(70vh,650px);overflow-y:auto;padding-right:6px">
-        <div style="font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Choose one contract, then click an ocean tile to place it, or close this panel to pass. A fresh draft appears after every cleared water-enemy wave. Each card shows the tier-adjusted stats you are buying.</div>
+        <div style="font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Choose one contract, then click an ocean tile to place it, or close this panel to pass. A fresh draft appears after every cleared water-enemy wave. Each card shows the tier-adjusted stats you are buying and whether the contract completes a recipe right now.</div>
         <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">${cards}</div>
       </div>
     </div>`;

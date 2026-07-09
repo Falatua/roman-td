@@ -1246,9 +1246,14 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(harborModal).toContain('function navalContractSpriteHtml');
     expect(harborModal).toContain('texUrl(type)');
     expect(harborModal).toContain('Actual in-game sprite shown above.');
+    expect(harborModal).toContain('function navalRecipeHintHtml');
+    expect(harborModal).toContain('purchaseRecipeHints(state, offer.type, offer.tier, 3)');
+    expect(harborModal).toContain('RECIPE ALERT');
+    expect(harborModal).toContain('This contract completes');
+    expect(harborModal).toContain('Does not complete a recipe with your current towers yet.');
     expect(harborModal).toContain('function navalContractDetailsHtml');
     expect(harborModal).toContain('towerStatBreakdown(preview, state as any)');
-    expect(harborModal).toContain('Each card shows the tier-adjusted stats you are buying.');
+    expect(harborModal).toContain('Each card shows the tier-adjusted stats you are buying and whether the contract completes a recipe right now.');
     for (const label of ['DPS', 'ATK/S', 'RANGE', 'TYPE', 'CRIT', 'PLACE']) {
       expect(harborModal, `Harbor Draft should show ${label} detail`).toContain(`['${label}'`);
     }

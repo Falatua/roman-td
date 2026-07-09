@@ -265,26 +265,46 @@ export function realizableCombos(state: GameStateShape): AvailableCombo[] {
   });
 }
 
+export interface PurchaseRecipeHint {
+  result: TowerType;
+  name: string;
+  tier: number;
+  isSameTierMerge?: boolean;
+}
+
+function towerDisplayName(type: TowerType | string): string {
+  const def: any = (towersData as any)[type] ?? {};
+  return String(def.name ?? String(type).replace(/_/g, ' '));
+}
+
 // Predictive helper: would adding a tower of (type, tier) to the current board
-// finish a recipe that isn't already finishable? Used by the Mercator shop UI
-// (and any other purchase surface) to flag offers that complete a combo so the
-// player gets the same "recipe-ready" signal as a prospect glow. Same-tier
-// merges count: if you already own 2 of the same type+tier, the offer is a
-// 3rd-of-a-kind that ladders the tier.
-export function purchaseCompletesRecipe(state: GameStateShape, type: TowerType | string, tier: number): boolean {
+// finish a recipe that isn't already finishable? Used by purchase surfaces to
+// flag offers that complete a combo so the player gets the same "recipe-ready"
+// signal as a prospect glow. Same-tier merges count: if you already own 2 of
+// the same type+tier, the offer is a 3rd-of-a-kind that ladders the tier.
+export function purchaseRecipeHints(state: GameStateShape, type: TowerType | string, tier: number, limit = 3): PurchaseRecipeHint[] {
   const towers = Array.from(state.towers.values());
+  const hints: PurchaseRecipeHint[] = [];
   // Same-tier merge: 2 existing of same type+tier → buying one more completes a 3-merge.
   if (tier < 5) {
     let same = 0;
     for (const t of towers) {
       if (t.type === type && t.qualityTier === tier) same++;
-      if (same >= 2) return true;
+    }
+    if (same === 2) {
+      hints.push({
+        result: String(type) as TowerType,
+        name: `Tier ${tier + 1} ${towerDisplayName(type)}`,
+        tier: tier + 1,
+        isSameTierMerge: true
+      });
     }
   }
   // Cross-unit recipes: try every recipe; succeed if it can be filled when the
   // purchased tower is allowed to satisfy exactly one ingredient slot AND it
   // cannot be filled by current board towers alone.
   for (const recipe of comboData) {
+    if (hints.length >= limit) break;
     // Pass 1 — can it complete using ONLY existing towers (no offer)?
     const localUsedExisting = new Set<string>();
     let existingOk = true;
@@ -299,7 +319,7 @@ export function purchaseCompletesRecipe(state: GameStateShape, type: TowerType |
     // Pass 2 — can the offer fill exactly one slot the existing towers can't?
     for (let slotIdx = 0; slotIdx < recipe.ingredients.length; slotIdx++) {
       const slot = recipe.ingredients[slotIdx];
-      if (slot.type !== type) continue;
+      if (!ingTypeMatches(String(type), String(slot.type))) continue;
       if (tier < slot.minTier) continue;
       const localUsed = new Set<string>();
       let ok = true;
@@ -312,10 +332,22 @@ export function purchaseCompletesRecipe(state: GameStateShape, type: TowerType |
         if (!f) { ok = false; break; }
         localUsed.add(f.id);
       }
-      if (ok) return true;
+      if (ok) {
+        const result = String(recipe.result) as TowerType;
+        hints.push({
+          result,
+          name: towerDisplayName(result),
+          tier: Number(recipe.tier ?? 1)
+        });
+        break;
+      }
     }
   }
-  return false;
+  return hints.slice(0, limit);
+}
+
+export function purchaseCompletesRecipe(state: GameStateShape, type: TowerType | string, tier: number): boolean {
+  return purchaseRecipeHints(state, type, tier, 1).length > 0;
 }
 
 export function executeCombo(state: GameStateShape, combo: AvailableCombo, resultTileTowerId: string): boolean {
