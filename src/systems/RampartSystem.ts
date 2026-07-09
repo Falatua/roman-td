@@ -5,7 +5,7 @@
 // are ordinary TileType.STONE — identical art, identical sell/refund
 // behavior, identical pathing rules to the stones the player already gets
 // from crystallized prospects. No damage, no stats; purely architecture.
-// Hard-capped at 5 purchases per campaign so it eases early/mid mazing
+// Hard-capped at 3 purchases per campaign so it eases early/mid mazing
 // without trivializing the maze economy.
 //
 // 2026-07-03 v2 — ROTATABLE. Ramparts are now a single generic purchase;
@@ -29,7 +29,7 @@ import { isInsideStructureFootprint, tileAt, setTile } from './GridManager';
 import { buildGroundPath, resnapEnemiesToPath } from './PathFinder';
 
 export const RAMPART_COST = 30;
-export const RAMPART_MAX_PER_RUN = 5;
+export const RAMPART_MAX_PER_RUN = 3;
 export const RAMPART_LENGTH = 5;
 
 export type RampartOrientation = 'H' | 'V' | 'D1' | 'D2';

@@ -352,7 +352,7 @@ export interface ShopHooks {
 // ─── STONE RAMPARTS section (2026-07-02) — 5-tile barrier lines for
 // mazing. Rendered by the gate shop and inventory placement flow.
 // Buy → PLACE arms it → click a tile; placed tiles are ordinary wall
-// stones (identical art + sell rules); hard cap 5 purchases per campaign.
+// stones (identical art + sell rules); hard cap 3 purchases per campaign.
 // Styles are fully inline so the section renders correctly in the gate
 // shop, which never injects the Mercator stylesheet.
 function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh: () => void, onClose: () => void): void {
@@ -392,7 +392,7 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
   buyBtn.onclick = () => {
     const spent = buyRampart(state);
     if (spent <= 0) {
-      if (rampartsRemainingThisRun(state) <= 0) state.hint = 'Rampart quota exhausted — 5 per campaign.';
+      if (rampartsRemainingThisRun(state) <= 0) state.hint = `Rampart quota exhausted — ${RAMPART_MAX_PER_RUN} per campaign.`;
       else (window as any).__showInsufficientGoldToast?.(RAMPART_COST);
       return;
     }

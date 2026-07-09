@@ -49,14 +49,14 @@ describe('Rampart purchasing', () => {
     expect(rampartsOwned(s)).toBe(1);
   });
 
-  it('hard-caps at 5 purchases per run', () => {
+  it('hard-caps at 3 purchases per run', () => {
     const s = bootstrapState();
     s.gold = 9999;
-    for (let i = 0; i < 5; i++) expect(buyRampart(s)).toBe(RAMPART_COST);
+    for (let i = 0; i < RAMPART_MAX_PER_RUN; i++) expect(buyRampart(s)).toBe(RAMPART_COST);
     expect(rampartsRemainingThisRun(s)).toBe(0);
-    expect(buyRampart(s)).toBe(0);   // 6th refused regardless of gold
+    expect(buyRampart(s)).toBe(0);   // next purchase refused regardless of gold
     expect(s.rampartsPurchased).toBe(RAMPART_MAX_PER_RUN);
-    expect(rampartsOwned(s)).toBe(5);
+    expect(rampartsOwned(s)).toBe(RAMPART_MAX_PER_RUN);
   });
 
   it('refuses purchase when gold is short', () => {
@@ -243,7 +243,7 @@ describe('Rampart placement', () => {
   it('refuses partial footprints at map edges without consuming', () => {
     const s = bootstrapState();
     s.gold = 9999;
-    for (let i = 0; i < 4; i++) buyRampart(s);
+    for (let i = 0; i < RAMPART_MAX_PER_RUN; i++) buyRampart(s);
 
     const edgeAttempts: Array<[number, number, RampartOrientation]> = [
       [1, 10, 'H'],
@@ -258,7 +258,7 @@ describe('Rampart placement', () => {
       expect(placeRampart(s, col, row, orient), `${orient} placement should fail at edge`).toBe(false);
     }
 
-    expect(rampartsOwned(s)).toBe(4);
+    expect(rampartsOwned(s)).toBe(RAMPART_MAX_PER_RUN);
   });
 
   it('canPlaceRampart leaves the board unchanged after simulation', () => {

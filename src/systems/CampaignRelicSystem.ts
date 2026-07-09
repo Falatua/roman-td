@@ -612,7 +612,7 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     name: "Mason's Charter",
     eyebrow: 'GUILD STONEWORK',
     blurb: 'The masons\' guild donates two finished rampart sections. The workers are conscripted straight off the walls.',
-    upside: 'Immediately gain 2 free Stone Ramparts (they do NOT count against the 5-per-campaign shop quota).',
+    upside: 'Immediately gain 2 free Stone Ramparts (they do NOT count against the 3-per-campaign shop quota).',
     caveat: 'Lose 6 lives immediately.',
     effects: ['Gain 2 Stone Ramparts now (quota-free).', 'Lose 6 lives now.']
   },
@@ -1058,7 +1058,7 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   // 2026-07-03 — mechanic-hook relics.
   if (id === 'MASONS_CHARTER') {
     // Free ramparts land in inventory WITHOUT touching rampartsPurchased,
-    // so the shop's 5-per-campaign quota is unaffected.
+    // so the shop's 3-per-campaign quota is unaffected.
     state.rampartsOwned = (state.rampartsOwned ?? 0) + 2;
     payRelicLives(state, id);
   }
