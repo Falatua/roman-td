@@ -164,11 +164,8 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   // map-wide strike. embed:false because true-damage hits don't stick.
   [TowerType.CONSULAR_FATEBINDER]: { key: 'PROJ_DIVINE_APEX_ORB', arc: false, speed: 820, splash: 0, embed: false },
   // ── Heroes ───────────────────────────────────────────────────────────
-  // Projectile silhouette matches each hero's damageType so the visual
-  // reads correctly with the rest of the roster. Regular towers follow
-  // a convention (SIEGE = ballista, PHYS_RANGED = arrow/javelin, FIRE =
-  // hellfire/barrel, DIVINE = staff/orb), and heroes plug into that
-  // same convention rather than carrying off-theme sprites.
+  // Projectile silhouette matches each hero's kit so the visual reads as
+  // a named hero attack rather than another generic tower shot.
   //
   // HERO_MARIUS (PHYS_MELEE), HERO_SCIPIO (PHYS_MELEE), and HERO_CAESAR (DIVINE melee) stay OUT
   // of this map — they're in MELEE_TYPES (CombatResolver:113) and use
@@ -176,23 +173,15 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   // in main.ts to read as a DIVINE swing.
   //
   // Projectile picks:
-  //   Agrippa  (SIEGE)        → PROJ_BALLISTA — same heavy siege bolt
-  //                              every other siege tower fires (Scorpio,
-  //                              Ballistarius, Carroballista, Nemesis
-  //                              Engine, Carthage Scourge). Arc + modest
-  //                              splash for "siege admiral" feel.
-  //                              2026-05-20: was PROJ_PILUM (off-theme —
-  //                              pila are PHYS_RANGED throws).
-  //   Agricola (PHYS_RANGED)  → PROJ_ARROW — arching arrow, matches
-  //                              Sagittarius / Venator / Aquila Venator.
-  //   Sulla    (ELEMENTAL_FIRE)→ PROJ_SULLA_METEOR — compact meteor
-  //                              throw with splash, matching Meteor Slam.
-  [TowerType.HERO_AGRIPPA]:   { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
-  [TowerType.HERO_AGRICOLA]:  { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0.8, embed: true  },
-  [TowerType.HERO_SULLA]:     { key: 'PROJ_SULLA_METEOR',  arc: true,  speed: 560, splash: 1.2, embed: false },
-  [TowerType.CHAMPION_AGRIPPA]:  { key: 'PROJ_BALLISTA',      arc: true,  speed: 540, splash: 0.8, embed: true  },
-  [TowerType.CHAMPION_AGRICOLA]: { key: 'PROJ_ARROW',         arc: true,  speed: 600, splash: 0.8, embed: true  },
-  [TowerType.CHAMPION_SULLA]:    { key: 'PROJ_SULLA_METEOR',  arc: true,  speed: 560, splash: 1.2, embed: false }
+  //   Agrippa  (SIEGE)         → hero ballista bolt + dust-burst impact.
+  //   Agricola (PHYS_RANGED)   → hero blue arrow + frost-blue impact star.
+  //   Sulla    (ELEMENTAL_FIRE)→ hero meteor + fiery impact burst.
+  [TowerType.HERO_AGRIPPA]:   { key: 'HERO_PROJ_AGRIPPA_BOLT',   arc: true,  speed: 540, splash: 0.8, embed: true  },
+  [TowerType.HERO_AGRICOLA]:  { key: 'HERO_PROJ_AGRICOLA_ARROW', arc: true,  speed: 600, splash: 0.8, embed: true  },
+  [TowerType.HERO_SULLA]:     { key: 'HERO_PROJ_SULLA_METEOR',   arc: true,  speed: 560, splash: 1.2, embed: false },
+  [TowerType.CHAMPION_AGRIPPA]:  { key: 'HERO_PROJ_AGRIPPA_BOLT',   arc: true,  speed: 540, splash: 0.8, embed: true  },
+  [TowerType.CHAMPION_AGRICOLA]: { key: 'HERO_PROJ_AGRICOLA_ARROW', arc: true,  speed: 600, splash: 0.8, embed: true  },
+  [TowerType.CHAMPION_SULLA]:    { key: 'HERO_PROJ_SULLA_METEOR',   arc: true,  speed: 560, splash: 1.2, embed: false }
   // ──────────────────────────────────────────────────────────────────
   // Pure-aura support towers — intentionally NOT in this map because
   // they never call spawnProjectile (`CombatResolver` routes them

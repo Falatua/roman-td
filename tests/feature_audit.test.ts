@@ -709,6 +709,64 @@ describe('Tower roster integrity', () => {
       }
     }
   });
+
+  it('hero projectile and impact sprite assets are registered and transparent', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const sharp = (await import('sharp')).default;
+    const assets = [
+      { key: 'HERO_PROJ_AGRIPPA_BOLT', file: 'hero_proj_agrippa_bolt.png', w: 96, h: 96, frames: 1 },
+      { key: 'HERO_PROJ_AGRICOLA_ARROW', file: 'hero_proj_agricola_arrow.png', w: 96, h: 96, frames: 1 },
+      { key: 'HERO_PROJ_SULLA_METEOR', file: 'hero_proj_sulla_meteor.png', w: 96, h: 96, frames: 1 },
+      { key: 'HERO_IMPACT_MARIUS', file: 'hero_impact_marius_sheet.png', w: 768, h: 128, frames: 6 },
+      { key: 'HERO_IMPACT_AGRIPPA', file: 'hero_impact_agrippa_sheet.png', w: 768, h: 128, frames: 6 },
+      { key: 'HERO_IMPACT_AGRICOLA', file: 'hero_impact_agricola_sheet.png', w: 768, h: 128, frames: 6 },
+      { key: 'HERO_IMPACT_SCIPIO', file: 'hero_impact_scipio_sheet.png', w: 768, h: 128, frames: 6 },
+      { key: 'HERO_IMPACT_CAESAR', file: 'hero_impact_caesar_sheet.png', w: 768, h: 128, frames: 6 },
+      { key: 'HERO_IMPACT_SULLA', file: 'hero_impact_sulla_sheet.png', w: 768, h: 128, frames: 6 }
+    ];
+    for (const asset of assets) {
+      expect((ASSET_KEYS as any)[asset.key], `${asset.key} should be registered`).toBe(`../heroes/attacks/${asset.file}`);
+      const file = path.join(process.cwd(), 'public/assets/heroes/attacks', asset.file);
+      expect(fs.existsSync(file), `${asset.file} missing`).toBe(true);
+      const img = sharp(file).ensureAlpha();
+      const meta = await img.metadata();
+      expect(meta.width, `${asset.file} width`).toBe(asset.w);
+      expect(meta.height, `${asset.file} height`).toBe(asset.h);
+      expect(meta.hasAlpha, `${asset.file} should be transparent`).toBe(true);
+      const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
+      let tinyAlpha = 0;
+      let chromaResidue = 0;
+      let visible = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] > 0 && data[i + 3] <= 4) tinyAlpha++;
+        if (data[i + 3] > 16) {
+          visible++;
+          if (data[i + 1] > 95 && data[i + 1] > data[i] * 1.35 && data[i + 1] > data[i + 2] * 1.35) chromaResidue++;
+        }
+      }
+      expect(tinyAlpha, `${asset.file} has alpha dust`).toBe(0);
+      expect(chromaResidue, `${asset.file} has chroma-key residue`).toBe(0);
+      expect(visible / (info.width * info.height), `${asset.file} should preserve transparent negative space`).toBeLessThan(0.60);
+      const frameW = asset.frames === 1 ? asset.w : asset.w / asset.frames;
+      for (let frame = 0; frame < asset.frames; frame++) {
+        const raw = await sharp(file)
+          .extract({ left: frame * frameW, top: 0, width: frameW, height: asset.h })
+          .ensureAlpha()
+          .raw()
+          .toBuffer();
+        const bounds = alphaBounds(raw, Math.max(frameW, asset.h));
+        expect(bounds.width, `${asset.file} frame ${frame + 1} should contain visible art`).toBeGreaterThan(10);
+        expect(bounds.height, `${asset.file} frame ${frame + 1} should contain visible art`).toBeGreaterThan(10);
+      }
+    }
+    const render = readFileSync('src/render/RenderEngine.ts', 'utf8');
+    const main = readFileSync('src/main.ts', 'utf8');
+    expect(render).toContain('triggerSpriteImpact');
+    expect(render).toContain('MAX_TRANSIENT_SPRITE_IMPACTS');
+    expect(main).toContain('function heroImpactKeyForTowerType');
+    expect(main).toContain('triggerHeroHitImpact(tw, hx, hy)');
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────

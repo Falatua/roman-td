@@ -59,6 +59,7 @@ const HERO_ATTACK_WINDOW = 0.50;
 const MAX_TRANSIENT_SLASHES = 72;
 const MAX_TRANSIENT_MUZZLE_FLASHES = 96;
 const MAX_TRANSIENT_IMPACT_RINGS = 96;
+const MAX_TRANSIENT_SPRITE_IMPACTS = 72;
 const MAX_TRANSIENT_TELEGRAPH_RINGS = 32;
 const MAX_HERO_ABILITY_FX = 28;
 
@@ -1232,6 +1233,9 @@ export class RenderEngine {
       const color = p.spriteKey === 'PROJ_BARREL' ? 0xff8a22
         : p.spriteKey === 'PROJ_STAFF' ? 0xffd34d
         : p.spriteKey === 'PROJ_BALLISTA' ? 0xa07050
+        : p.spriteKey === 'HERO_PROJ_AGRIPPA_BOLT' ? 0xb88a4a
+        : p.spriteKey === 'HERO_PROJ_AGRICOLA_ARROW' ? 0x86d8ff
+        : p.spriteKey === 'HERO_PROJ_SULLA_METEOR' ? 0xff7733
         : p.spriteKey === 'PROJ_JAVELIN' ? 0xddc888
         : p.spriteKey === 'PROJ_PILUM' ? 0xeeddaa
         : p.spriteKey === 'PROJ_HASTA' ? 0xc8a868
@@ -1289,7 +1293,7 @@ export class RenderEngine {
         const alpha = (4 - s) / 8;
         // Divine projectiles get a brighter gold trail dot on top of the
         // family-keyed dot for unmistakable identity.
-        const isSullaMeteor = p.spriteKey === 'PROJ_SULLA_METEOR';
+        const isSullaMeteor = p.spriteKey === 'PROJ_SULLA_METEOR' || p.spriteKey === 'HERO_PROJ_SULLA_METEOR';
         const trailColor = isSullaMeteor ? 0xff7733 : (isDivine ? 0xffe066 : color);
         this.projGfx.beginFill(trailColor, isSullaMeteor ? alpha * 1.45 : alpha)
           .drawCircle(tx, ty, isSullaMeteor ? 3.2 : (isDivine ? 2.0 : 1.6))
@@ -1310,10 +1314,12 @@ export class RenderEngine {
           // tint it green so it reads as a flask of toxin in flight rather
           // than the orange status badge.
           const big = p.spriteKey === 'PROJ_BARREL';
-          const isSullaMeteor = p.spriteKey === 'PROJ_SULLA_METEOR';
+          const isSullaMeteor = p.spriteKey === 'PROJ_SULLA_METEOR' || p.spriteKey === 'HERO_PROJ_SULLA_METEOR';
           const isPoisonCloud = p.spriteKey === 'PROJ_POISON_CLOUD';
-          sp.width = isSullaMeteor ? 26 : (big ? 22 : isPoisonCloud ? 20 : 18);
-          sp.height = isSullaMeteor ? 26 : (big ? 22 : isPoisonCloud ? 20 : 18);
+          const isHeroBolt = p.spriteKey === 'HERO_PROJ_AGRIPPA_BOLT';
+          const isHeroArrow = p.spriteKey === 'HERO_PROJ_AGRICOLA_ARROW';
+          sp.width = isSullaMeteor ? 30 : (isHeroBolt ? 34 : isHeroArrow ? 30 : big ? 22 : isPoisonCloud ? 20 : 18);
+          sp.height = isSullaMeteor ? 30 : (isHeroBolt ? 22 : isHeroArrow ? 20 : big ? 22 : isPoisonCloud ? 20 : 18);
           if (isPoisonCloud) sp.tint = 0x66dd44;
           this.layers.fx.addChild(sp);
           this.projSprites.set(p.id, sp);
@@ -1470,9 +1476,16 @@ export class RenderEngine {
   // the ground for extra weight.
   private slashes: { sp: Sprite; born: number; life: number; size: number }[] = [];
   private impactRings: { x: number; y: number; born: number; life: number; maxR: number; color: number }[] = [];
+  private spriteImpacts: { sp: Sprite; key: string; born: number; life: number; size: number; frameW: number; frameH: number; frames: number }[] = [];
   private trimSlashQueue(): void {
     while (this.slashes.length > MAX_TRANSIENT_SLASHES) {
       const old = this.slashes.shift();
+      old?.sp.destroy();
+    }
+  }
+  private trimSpriteImpactQueue(): void {
+    while (this.spriteImpacts.length > MAX_TRANSIENT_SPRITE_IMPACTS) {
+      const old = this.spriteImpacts.shift();
       old?.sp.destroy();
     }
   }
@@ -1563,6 +1576,22 @@ export class RenderEngine {
   triggerImpactRing(x: number, y: number, tick: number, maxR = 24, color = 0xffffff) {
     this.impactRings.push({ x, y, born: tick, life: 0.32, maxR, color });
     this.trimPlainFxQueue(this.impactRings, MAX_TRANSIENT_IMPACT_RINGS);
+  }
+
+  triggerSpriteImpact(x: number, y: number, tick: number, key: string, size = 1.2, life = 0.30, frameW = 128, frameH = 128, frames = 6) {
+    const t = texFrame(key, 0, frameW, frameH);
+    if (!t) return;
+    const sp = new Sprite(t);
+    sp.anchor.set(0.5);
+    sp.x = x;
+    sp.y = y;
+    const px = GRID.TILE * size;
+    sp.width = px;
+    sp.height = px;
+    sp.alpha = 0.98;
+    this.layers.fx.addChild(sp);
+    this.spriteImpacts.push({ sp, key, born: tick, life, size, frameW, frameH, frames });
+    this.trimSpriteImpactQueue();
   }
 
   // ─── HERO ABILITY VFX (2026-05-19 v2) ──────────────────────────────
@@ -2516,6 +2545,23 @@ export class RenderEngine {
       s.sp.width = s.size * scale;
       s.sp.height = s.size * scale;
       s.sp.rotation += 0.14;     // swing arc — slowed slightly to match shorter life
+    }
+    for (let i = this.spriteImpacts.length - 1; i >= 0; i--) {
+      const fx = this.spriteImpacts[i];
+      const age = tick - fx.born;
+      if (age >= fx.life) {
+        fx.sp.destroy();
+        this.spriteImpacts.splice(i, 1);
+        continue;
+      }
+      const t = Math.max(0, Math.min(1, age / fx.life));
+      const frame = Math.min(fx.frames - 1, Math.floor(t * fx.frames));
+      const frameTex = texFrame(fx.key, frame, fx.frameW, fx.frameH);
+      if (frameTex) fx.sp.texture = frameTex;
+      const px = GRID.TILE * fx.size * (0.88 + t * 0.16);
+      fx.sp.width = px;
+      fx.sp.height = px;
+      fx.sp.alpha = 0.98 * (1 - Math.max(0, t - 0.66) / 0.34);
     }
     // Muzzle flashes — tiny bright burst at firing tip.
     if (!(this as any).muzzleGfx) {

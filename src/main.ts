@@ -4861,6 +4861,34 @@ async function boot() {
     return true;
   };
 
+  function heroImpactKeyForTowerType(type: string): string | null {
+    const heroId = heroIdForTowerType(type);
+    switch (heroId) {
+      case 'HERO_MARIUS': return 'HERO_IMPACT_MARIUS';
+      case 'HERO_AGRIPPA': return 'HERO_IMPACT_AGRIPPA';
+      case 'HERO_AGRICOLA': return 'HERO_IMPACT_AGRICOLA';
+      case 'HERO_SCIPIO': return 'HERO_IMPACT_SCIPIO';
+      case 'HERO_CAESAR': return 'HERO_IMPACT_CAESAR';
+      case 'HERO_SULLA': return 'HERO_IMPACT_SULLA';
+      default: return null;
+    }
+  }
+
+  function heroImpactSizeFor(type: string): number {
+    const heroId = heroIdForTowerType(type);
+    if (heroId === 'HERO_SULLA') return 1.65;
+    if (heroId === 'HERO_AGRIPPA') return 1.45;
+    if (heroId === 'HERO_CAESAR') return 1.45;
+    return 1.25;
+  }
+
+  function triggerHeroHitImpact(tower: any, x: number, y: number): void {
+    if (!tower?.isHero) return;
+    const key = heroImpactKeyForTowerType(String(tower.type));
+    if (!key) return;
+    renderer.triggerSpriteImpact?.(x, y, state.tick, key, heroImpactSizeFor(String(tower.type)));
+  }
+
   function emitTowerMeleeAttackVisual(t: any, e: any, includeBleedSplatter = true): void {
     if (!t || !e) return;
     if (includeBleedSplatter && e.statusEffects?.some((s: any) => s.kind === 'BLEED')) {
@@ -4878,6 +4906,7 @@ async function boot() {
     renderer.triggerMeleeSlash(e.x, e.y, angle, state.tick, size, cleaver, slashTint);
     if (isHero && allowHeroBasicVisualFx(t)) {
       renderer.triggerMeleeSlash(e.x, e.y, angle + 0.5, state.tick, size * 0.75, false, slashTint);
+      triggerHeroHitImpact(t, e.x, e.y);
       if (e.isBoss && allowHeroBasicShake()) renderer.triggerShake(1.4, 0.10);
       if (renderer.triggerImpactRing) {
         const ringColor = slashTint ?? 0xfff5cc;
@@ -7892,6 +7921,9 @@ async function boot() {
           if (target && target.hp > 0) {
             const tw = state.towers.get(p.sourceTowerId);
             if (tw) applyDamageAndStatus(state, tw, target, p.damage, combatHooks);
+            if (tw?.isHero && allowHeroBasicVisualFx(tw, 0.08)) {
+              triggerHeroHitImpact(tw, hx, hy);
+            }
             // 2026-05-17 — STUCK ARROWS REMOVED. The per-boss embedded
             // shafts (up to 5 sprites per boss, redrawn every frame with
             // per-frame Math.atan2/random offset math) were a non-trivial
@@ -7914,8 +7946,9 @@ async function boot() {
               // projectile family for splash-aware coding (orange for
               // BARREL/fire, brown for ballista, neutral cream otherwise).
               if (renderer?.triggerImpactRing) {
-                const ringColor = (p.spriteKey === 'PROJ_BARREL' || p.spriteKey === 'PROJ_SULLA_METEOR') ? 0xff8a22
-                  : p.spriteKey === 'PROJ_BALLISTA' ? 0xb88a4a
+                const ringColor = (p.spriteKey === 'PROJ_BARREL' || p.spriteKey === 'PROJ_SULLA_METEOR' || p.spriteKey === 'HERO_PROJ_SULLA_METEOR') ? 0xff8a22
+                  : (p.spriteKey === 'PROJ_BALLISTA' || p.spriteKey === 'HERO_PROJ_AGRIPPA_BOLT') ? 0xb88a4a
+                  : p.spriteKey === 'HERO_PROJ_AGRICOLA_ARROW' ? 0x86d8ff
                   : p.spriteKey === 'PROJ_POISON_CLOUD' ? 0x66dd44
                   : 0xeed8a0;
                 renderer.triggerImpactRing(hx, hy, state.tick, r * 0.9, ringColor);
@@ -8281,11 +8314,14 @@ async function boot() {
       );
       tickCombat(state, dt, dpsCombatHooks);
       tickProjectiles(state, dt, {
-        onImpact: (p, target, _hx, _hy) => {
+        onImpact: (p, target, hx, hy) => {
           if (p.cosmetic) return;
           if (target && target.hp > 0) {
             const tw = state.towers.get(p.sourceTowerId);
             if (tw) applyDamageAndStatus(state, tw, target, p.damage, dpsCombatHooks);
+            if (tw?.isHero && allowHeroBasicVisualFx(tw, 0.08)) {
+              triggerHeroHitImpact(tw, hx, hy);
+            }
           }
         }
       });

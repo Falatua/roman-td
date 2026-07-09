@@ -458,9 +458,13 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(fx[0]?.extras?.splashRadiusTiles).toBeCloseTo(1.35);
   });
 
-  it('Sulla basic attacks use meteor projectiles in starter and Champion form', () => {
-    expect(getTowerProjectileProfile(TowerType.HERO_SULLA)?.key).toBe('PROJ_SULLA_METEOR');
-    expect(getTowerProjectileProfile(TowerType.CHAMPION_SULLA)?.key).toBe('PROJ_SULLA_METEOR');
+  it('ranged heroes use named hero projectile sprites in starter and Champion form', () => {
+    expect(getTowerProjectileProfile(TowerType.HERO_AGRIPPA)?.key).toBe('HERO_PROJ_AGRIPPA_BOLT');
+    expect(getTowerProjectileProfile(TowerType.CHAMPION_AGRIPPA)?.key).toBe('HERO_PROJ_AGRIPPA_BOLT');
+    expect(getTowerProjectileProfile(TowerType.HERO_AGRICOLA)?.key).toBe('HERO_PROJ_AGRICOLA_ARROW');
+    expect(getTowerProjectileProfile(TowerType.CHAMPION_AGRICOLA)?.key).toBe('HERO_PROJ_AGRICOLA_ARROW');
+    expect(getTowerProjectileProfile(TowerType.HERO_SULLA)?.key).toBe('HERO_PROJ_SULLA_METEOR');
+    expect(getTowerProjectileProfile(TowerType.CHAMPION_SULLA)?.key).toBe('HERO_PROJ_SULLA_METEOR');
   });
 
   it('Marius passive starts at +35% melee tower damage', () => {

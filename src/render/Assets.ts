@@ -665,6 +665,15 @@ const MANIFEST: Record<string, string> = {
   HERO_ATTACK_SCIPIO:   '../heroes/attacks/hero_scipio_attack_sheet.png',
   HERO_ATTACK_CAESAR:   '../heroes/attacks/hero_caesar_attack_sheet.png',
   HERO_ATTACK_SULLA:    '../heroes/attacks/hero_sulla_attack_sheet.png',
+  HERO_PROJ_AGRIPPA_BOLT:  '../heroes/attacks/hero_proj_agrippa_bolt.png',
+  HERO_PROJ_AGRICOLA_ARROW:'../heroes/attacks/hero_proj_agricola_arrow.png',
+  HERO_PROJ_SULLA_METEOR:  '../heroes/attacks/hero_proj_sulla_meteor.png',
+  HERO_IMPACT_MARIUS:   '../heroes/attacks/hero_impact_marius_sheet.png',
+  HERO_IMPACT_AGRIPPA:  '../heroes/attacks/hero_impact_agrippa_sheet.png',
+  HERO_IMPACT_AGRICOLA: '../heroes/attacks/hero_impact_agricola_sheet.png',
+  HERO_IMPACT_SCIPIO:   '../heroes/attacks/hero_impact_scipio_sheet.png',
+  HERO_IMPACT_CAESAR:   '../heroes/attacks/hero_impact_caesar_sheet.png',
+  HERO_IMPACT_SULLA:    '../heroes/attacks/hero_impact_sulla_sheet.png',
   PROJ_SULLA_METEOR:    '../heroes/attacks/sulla_meteor_projectile.png',
   SULLA_METEOR_PROJECTILE: '../heroes/attacks/sulla_meteor_projectile_sheet.png',
   SULLA_METEOR_IMPACT:     '../heroes/attacks/sulla_meteor_impact_sheet.png',
@@ -985,6 +994,17 @@ export function prewarmAttackFrameCache(): void {
   ];
   for (const key of HERO_ATTACK_KEYS) {
     for (let frame = 0; frame < 9; frame++) texGridFrame(key, frame, 256, 256, 3);
+  }
+  const HERO_IMPACT_KEYS = [
+    'HERO_IMPACT_MARIUS',
+    'HERO_IMPACT_AGRIPPA',
+    'HERO_IMPACT_AGRICOLA',
+    'HERO_IMPACT_SCIPIO',
+    'HERO_IMPACT_CAESAR',
+    'HERO_IMPACT_SULLA'
+  ];
+  for (const key of HERO_IMPACT_KEYS) {
+    for (let frame = 0; frame < 6; frame++) texFrame(key, frame, 128, 128);
   }
   for (let frame = 0; frame < 9; frame++) texGridFrame('FINAL_BOSS_DAEMON_PORTAL_SHEET', frame, 256, 256, 3);
   for (const type of BASE_TOWER_ATTACK_TYPES) {
