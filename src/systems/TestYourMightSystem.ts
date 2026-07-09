@@ -97,6 +97,7 @@ export function startTestYourMight(state: GameStateShape): void {
   state.testYourMightActive = true;
   state.testYourMightCleared = false;
   state.testYourMightFailed = false;
+  (state as any).__testYourMightLegendaryDrops = 0;
   // W10.5 must be a clean, opt-in challenge. If any stale enemy, projectile,
   // or surprise-event route survived the W10 end flow, it must not be able to
   // leak and fail the bonus before the authored gauntlet begins.

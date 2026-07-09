@@ -24,6 +24,7 @@ import { tickEnemies } from '../src/systems/EnemySystem';
 import { initializeGrid } from '../src/systems/GridManager';
 import { buildFlyerPath, buildGroundPath } from '../src/systems/PathFinder';
 import { enemyDamageMultiplier, statusEffectiveness } from '../src/systems/EnemyResistances';
+import { isLegendaryBossDropEnemy } from '../src/systems/RewardEligibility';
 import enemiesData from '../src/data/enemies.json';
 
 beforeAll(() => {
@@ -218,6 +219,19 @@ describe('Test Your Might bonus wave', () => {
     expect(Array.from(s.enemies.values()).every(e => isTestYourMightLeakEnemy(e))).toBe(true);
     expect(Array.from(s.enemies.values()).every(e => (e as any).__testYourMightNoStealth === true)).toBe(true);
     expect(Array.from(s.enemies.values()).every(e => (e as any).__veiled !== true)).toBe(true);
+  });
+
+  it('limits legendary boss-drop eligibility to the single major W10.5 boss', () => {
+    const s = bootstrapState();
+    startTestYourMight(s);
+    s.spawnElapsed = 999;
+    tickTestYourMightSpawns(s);
+
+    const bosses = Array.from(s.enemies.values()).filter(e => e.isBoss);
+    const eligible = bosses.filter(e => isLegendaryBossDropEnemy(e)).map(e => e.type);
+    expect(eligible).toEqual(['HANNIBAL_BARCA']);
+    expect(bosses.filter(e => e.type !== 'HANNIBAL_BARCA').every(e => !isLegendaryBossDropEnemy(e))).toBe(true);
+    expect((s as any).__testYourMightLegendaryDrops).toBe(0);
   });
 
   it('does not auto-fail during the opening seconds unless an actual bonus enemy leaks', () => {

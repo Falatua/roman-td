@@ -179,6 +179,7 @@ export function sandboxResetForWave(state: GameStateShape, targetWave: number): 
   state.testYourMightFailed = false;
   (state as any).__testYourMightOpen = false;
   (state as any).__testYourMightRewardPaid = false;
+  (state as any).__testYourMightLegendaryDrops = 0;
   state.bossRespawnQueue = [];
   state.bossesKilled = 0;
   state.bonusBossesKilled = 0;

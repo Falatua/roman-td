@@ -25,5 +25,9 @@ export function isLegendaryBossDropEnemy(enemy: any): boolean {
   // Final boss drops arrive as a W29 clear prelude reward instead. A
   // W30 kill ends the run, so a corpse drop there has no strategic value.
   if (enemy?.type === 'DAEMON_IMPERATOR') return false;
+  // Test Your Might (W10.5) has several boss-class bruisers for pressure,
+  // but the bonus wave should pay at most the one intended boss Legendary.
+  // Only the challenge's scheduled/major-reward boss is eligible here.
+  if (enemy?.__testYourMightEnemy) return !!enemy?.isBoss && !!enemy?.isScheduledBoss;
   return !!enemy?.isBoss;
 }

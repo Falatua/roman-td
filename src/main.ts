@@ -7882,12 +7882,15 @@ async function boot() {
           } else if (e.type === 'DAEMON_IMPERATOR') {
             // The final boss's usable legendary is awarded after W29 clear.
             // A corpse drop after W30 victory has no strategic purpose.
-          } else if (isLegendaryBossDropEnemy(e)) {
+          } else if (isLegendaryBossDropEnemy(e) && (!(e as any).__testYourMightEnemy || ((state as any).__testYourMightLegendaryDrops ?? 0) < 1)) {
             const bossFaction = (enemiesData as any)[e.type]?.faction ?? w.faction;
             const drop = rollBossDrop(String(bossFaction), state, inventory, e.type as string);
             if (drop) {
               spawnLootAt(state, e, drop);
               bossLegendaryDropped = true;
+              if ((e as any).__testYourMightEnemy) {
+                (state as any).__testYourMightLegendaryDrops = ((state as any).__testYourMightLegendaryDrops ?? 0) + 1;
+              }
             }
           } else if (premiumDropRoll(oceanSpecialistDropChance(e))) {
             // Sea-giant-class kills can occasionally drop the dedicated

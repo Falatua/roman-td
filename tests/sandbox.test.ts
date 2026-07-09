@@ -169,6 +169,7 @@ describe('Sandbox wave reset', () => {
     s.testYourMightFailed = true;
     (s as any).__testYourMightOpen = true;
     (s as any).__testYourMightRewardPaid = true;
+    (s as any).__testYourMightLegendaryDrops = 1;
 
     sandboxResetForWave(s, 12);
 
@@ -180,6 +181,7 @@ describe('Sandbox wave reset', () => {
     expect(s.testYourMightFailed).toBe(false);
     expect((s as any).__testYourMightOpen).toBe(false);
     expect((s as any).__testYourMightRewardPaid).toBe(false);
+    expect((s as any).__testYourMightLegendaryDrops).toBe(0);
   });
 });
 
