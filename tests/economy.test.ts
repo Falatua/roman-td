@@ -74,7 +74,7 @@ describe('Economy — pool upgrade cost progression', () => {
   });
 
   it('pins the post-ocean economy pool-upgrade price curve', () => {
-    expect(ECONOMY.POOL_UPGRADE_COSTS).toEqual([15, 32, 64, 112, 176, 268, 406, 624]);
+    expect(ECONOMY.POOL_UPGRADE_COSTS).toEqual([18, 38, 77, 134, 211, 322, 487, 749]);
   });
 });
 
