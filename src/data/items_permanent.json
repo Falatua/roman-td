@@ -298,7 +298,7 @@
     "rarity": "LEGENDARY",
     "buy": 160,
     "sell": 50,
-    "effect": "Any tower: adds +35% of its attack as DIVINE damage on hit. This is additional damage and does not replace the tower's native damage type."
+    "effect": "Any tower: adds +35% of its attack as a separate DIVINE damage rider on hit. This is additional damage, does not replace the tower's native damage type, and helps answer divine-only enemies."
   },
   "FALX_BLADE": {
     "name": "Falx Blade",

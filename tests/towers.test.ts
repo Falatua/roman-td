@@ -3,6 +3,8 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { createTower, towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
 import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat } from '../src/systems/CombatResolver';
+import { resistanceModifier } from '../src/systems/DamageTypeSystem';
+import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { itemFamily } from '../src/systems/ItemRules';
 import { spawnProjectile } from '../src/systems/ProjectileSystem';
@@ -983,6 +985,62 @@ describe('Aura mechanics and visibility', () => {
     expect(attacker.damageType).toBe(DamageType.PHYS_MELEE);
     expect(hitDamage).toBeCloseTo(expected, 4);
     expect(100000 - target.hp).toBeCloseTo(expected, 4);
+  });
+
+  it('Capitoline Aegis lets a native non-divine tower damage divine-only enemies with only its divine rider', () => {
+    const state = createGameState();
+    const attacker = createTower(TowerType.DECURION, 1, 10, 10, 0);
+    attacker.attackCooldown = 0;
+    attacker.equippedItems.push('CAPITOLINE_AEGIS');
+    state.towers.set(attacker.id, attacker);
+    const c = towerCenter(attacker);
+    const target = testEnemy('aegis-spirit', c.x + GRID.TILE, c.y);
+    target.type = EnemyType.OCEAN_GHOST_SPIRIT;
+    target.faction = EnemyFaction.ROMAN_MYTH;
+    target.hp = 100000;
+    target.maxHp = 100000;
+    state.enemies.set(target.id, target);
+    let hitDamage = 0;
+
+    tickCombat(state, 0.016, {
+      ...noopCombatHooks(),
+      onHit: (_tower, _enemy, damage) => { hitDamage = damage; }
+    });
+
+    const expected = towerPerAttackDamageBase(attacker) *
+      CAPITOLINE_AEGIS_DIVINE_RIDER_PCT *
+      resistanceModifier(target.faction, DamageType.DIVINE) *
+      enemyDamageMultiplier(target, DamageType.DIVINE);
+    expect(attacker.damageType).toBe(DamageType.PHYS_MELEE);
+    expect(hitDamage).toBeCloseTo(expected, 4);
+    expect(100000 - target.hp).toBeCloseTo(expected, 4);
+  });
+
+  it('Capitoline Aegis does not bypass enemies that are explicitly divine-immune', () => {
+    const state = createGameState();
+    const attacker = createTower(TowerType.DECURION, 1, 10, 10, 0);
+    attacker.attackCooldown = 0;
+    attacker.equippedItems.push('CAPITOLINE_AEGIS');
+    state.towers.set(attacker.id, attacker);
+    const c = towerCenter(attacker);
+    const target = testEnemy('aegis-divine-immune', c.x + GRID.TILE, c.y);
+    target.type = EnemyType.MONGOL_CAPTAIN;
+    target.faction = EnemyFaction.MONGOLS;
+    target.hp = 100000;
+    target.maxHp = 100000;
+    state.enemies.set(target.id, target);
+    let hitDamage = 0;
+
+    tickCombat(state, 0.016, {
+      ...noopCombatHooks(),
+      onHit: (_tower, _enemy, damage) => { hitDamage = damage; }
+    });
+
+    const expectedNativeOnly = towerPerAttackDamageBase(attacker) *
+      resistanceModifier(target.faction, DamageType.PHYS_MELEE) *
+      enemyDamageMultiplier(target, DamageType.PHYS_MELEE);
+    expect(hitDamage).toBeCloseTo(expectedNativeOnly, 4);
+    expect(100000 - target.hp).toBeCloseTo(expectedNativeOnly, 4);
   });
 
   it('applies enemy vulnerability item auras to enemies inside the ring', () => {
