@@ -397,6 +397,12 @@ async function boot() {
       // Storage can be blocked; keep the in-memory state for this page.
     }
   }
+  function closeRampartPlacementTray(): void {
+    state.selectedRampart = null;
+    state.hint = 'Stone Rampart placement cancelled — the rampart is still in your inventory.';
+    document.getElementById('rampart-rotate-chip')?.remove();
+    renderer.drawRampartPreview([], false);
+  }
   function syncRampartRotateChip(): void {
     const stage = document.getElementById('stage-wrap');
     let chip = document.getElementById('rampart-rotate-chip') as HTMLDivElement | null;
@@ -409,9 +415,12 @@ async function boot() {
     }
     const current = state.selectedRampart!;
     const collapsed = isRampartTrayCollapsed();
+    const traySig = `${collapsed ? '1' : '0'}|${current}`;
+    if (chip.dataset.rampartTraySig === traySig) return;
+    chip.dataset.rampartTraySig = traySig;
     chip.title = 'Stone Rampart placement: hover the map to preview the five stones. Press R or click an orientation button to rotate. Click the map, then confirm to place.';
     if (collapsed) {
-      chip.style.cssText = `position:absolute;right:8px;bottom:86px;z-index:45;` +
+      chip.style.cssText = `position:absolute;right:8px;bottom:86px;z-index:75;pointer-events:auto;` +
         `background:linear-gradient(180deg,#2a1e10,#0c0906);border:2px solid #ffd34d;color:#ffe066;` +
         `font-family:'Courier New',monospace;font-size:10px;font-weight:bold;letter-spacing:1px;` +
         `padding:5px 7px;box-shadow:0 0 12px rgba(255,211,77,0.32), inset 0 0 12px rgba(0,0,0,0.55);` +
@@ -419,22 +428,30 @@ async function boot() {
       chip.innerHTML = `
         <button id="rampart-tray-expand" aria-label="Expand rampart controls" title="Expand rampart controls" style="background:#1a1410;color:#ffd34d;border:1px solid #7a5a1a;width:22px;height:22px;padding:0;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;line-height:1">▸</button>
         <button id="rampart-cycle-btn" title="Rotate rampart. Keyboard: R" style="background:#3a2a14;color:#fff8e0;border:1px solid #ffd34d;padding:4px 7px;cursor:pointer;font-family:'Courier New',monospace;font-size:10px;font-weight:bold;letter-spacing:1px">⟳</button>
-        <span title="${RAMPART_ORIENT_LABEL[current]}" style="color:#fff8e0;white-space:nowrap">RAMPART <b style="color:#ffd34d">${current}</b></span>`;
+        <span title="${RAMPART_ORIENT_LABEL[current]}" style="color:#fff8e0;white-space:nowrap">RAMPART <b style="color:#ffd34d">${current}</b></span>
+        <button id="rampart-tray-close" aria-label="Close rampart controls" title="Cancel rampart placement" style="background:#3a1606;color:#ffd34d;border:1px solid #d4af37;width:22px;height:22px;padding:0;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;line-height:1">X</button>`;
       chip.querySelector<HTMLButtonElement>('#rampart-tray-expand')?.addEventListener('click', ev => {
         ev.stopPropagation();
+        ev.preventDefault();
         setRampartTrayCollapsed(false);
         syncRampartRotateChip();
       });
       chip.querySelector<HTMLButtonElement>('#rampart-cycle-btn')?.addEventListener('click', ev => {
         ev.stopPropagation();
+        ev.preventDefault();
         rotateArmedRampart();
+      });
+      chip.querySelector<HTMLButtonElement>('#rampart-tray-close')?.addEventListener('click', ev => {
+        ev.stopPropagation();
+        ev.preventDefault();
+        closeRampartPlacementTray();
       });
       return;
     }
-    chip.style.cssText = `position:absolute;bottom:86px;left:50%;transform:translateX(-50%);z-index:45;` +
+    chip.style.cssText = `position:absolute;bottom:86px;left:50%;transform:translateX(-50%);z-index:75;pointer-events:auto;` +
       `background:linear-gradient(180deg,#2a1e10,#0c0906);border:2px solid #ffd34d;color:#ffe066;` +
       `font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:1px;` +
-      `padding:8px 34px 8px 10px;box-shadow:0 0 18px rgba(255,211,77,0.38), inset 0 0 18px rgba(0,0,0,0.6);` +
+      `padding:8px 62px 8px 10px;box-shadow:0 0 18px rgba(255,211,77,0.38), inset 0 0 18px rgba(0,0,0,0.6);` +
       `display:flex;flex-direction:column;gap:6px;align-items:center;max-width:min(620px,94vw);`;
     const orientButtons = RAMPART_ORIENTATIONS.map(o => {
       const active = o === current;
@@ -442,7 +459,8 @@ async function boot() {
       return `<button data-rampart-orient="${o}" title="Set orientation to ${label}" style="background:${active ? '#ffd34d' : '#1a1410'};color:${active ? '#1a1208' : '#ffe066'};border:1px solid ${active ? '#fff8e0' : '#7a5a1a'};padding:5px 8px;cursor:pointer;font-family:'Courier New',monospace;font-size:10px;font-weight:bold;letter-spacing:1px;min-width:112px">${active ? '◆' : '◇'} ${label}</button>`;
     }).join('');
     chip.innerHTML = `
-      <button id="rampart-tray-collapse" aria-label="Collapse rampart controls" title="Collapse rampart controls so build tiles are reachable" style="position:absolute;right:7px;top:7px;background:#1a1410;color:#ffd34d;border:1px solid #7a5a1a;width:22px;height:22px;padding:0;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;line-height:1">▾</button>
+      <button id="rampart-tray-close" aria-label="Close rampart controls" title="Cancel rampart placement" style="position:absolute;right:7px;top:7px;background:#3a1606;color:#ffd34d;border:1px solid #d4af37;width:22px;height:22px;padding:0;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;line-height:1">X</button>
+      <button id="rampart-tray-collapse" aria-label="Collapse rampart controls" title="Collapse rampart controls so build tiles are reachable" style="position:absolute;right:34px;top:7px;background:#1a1410;color:#ffd34d;border:1px solid #7a5a1a;width:22px;height:22px;padding:0;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;line-height:1">▾</button>
       <div style="display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap">
         <button id="rampart-cycle-btn" title="Cycle rampart orientation. Keyboard: R" style="background:#3a2a14;color:#fff8e0;border:2px solid #ffd34d;padding:7px 12px;cursor:pointer;font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:1px">⟳ ROTATE (R)</button>
         <span style="color:#fff8e0;text-shadow:1px 1px 0 #000">CURRENT: <b style="color:#ffd34d">${RAMPART_ORIENT_LABEL[current]}</b></span>
@@ -452,16 +470,24 @@ async function boot() {
     `;
     chip.querySelector<HTMLButtonElement>('#rampart-tray-collapse')?.addEventListener('click', ev => {
       ev.stopPropagation();
+      ev.preventDefault();
       setRampartTrayCollapsed(true);
       syncRampartRotateChip();
     });
+    chip.querySelector<HTMLButtonElement>('#rampart-tray-close')?.addEventListener('click', ev => {
+      ev.stopPropagation();
+      ev.preventDefault();
+      closeRampartPlacementTray();
+    });
     chip.querySelector<HTMLButtonElement>('#rampart-cycle-btn')?.addEventListener('click', ev => {
       ev.stopPropagation();
+      ev.preventDefault();
       rotateArmedRampart();
     });
     chip.querySelectorAll<HTMLButtonElement>('button[data-rampart-orient]').forEach(btn => {
       btn.addEventListener('click', ev => {
         ev.stopPropagation();
+        ev.preventDefault();
         const orient = btn.dataset.rampartOrient as RampartOrientation | undefined;
         if (!orient) return;
         state.selectedRampart = orient;

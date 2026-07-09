@@ -43,10 +43,15 @@ describe('Build overlay ergonomics', () => {
     expect(mainSource).toContain("const RAMPART_TRAY_COLLAPSED_KEY = 'roman_td_rampart_tray_collapsed'");
     expect(mainSource).toContain('aria-label="Collapse rampart controls"');
     expect(mainSource).toContain('aria-label="Expand rampart controls"');
+    expect(mainSource).toContain('aria-label="Close rampart controls"');
     expect(mainSource).toContain('Collapse this tray if it covers a build tile.');
     expect(mainSource).toContain('right:8px;bottom:86px');
+    expect(mainSource).toContain('z-index:75;pointer-events:auto;');
+    expect(mainSource).toContain('chip.dataset.rampartTraySig');
     expect(mainSource).toContain('setRampartTrayCollapsed(true)');
     expect(mainSource).toContain('setRampartTrayCollapsed(false)');
+    expect(mainSource).toContain('closeRampartPlacementTray()');
+    expect(mainSource).toContain('Stone Rampart placement cancelled');
   });
 
   it('keeps transient placement text boxes from stealing map clicks', () => {
