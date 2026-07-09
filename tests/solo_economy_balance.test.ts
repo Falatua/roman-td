@@ -48,7 +48,8 @@ describe('30-wave Solo economy envelope', () => {
   });
 
   it('keeps guaranteed authored income below the premium-buyout threshold', () => {
-    let kills = 0;
+    let authoredKills = 0;
+    let goldKills = 0;
     let waveGold = 0;
     let majorBossBounties = 0;
 
@@ -58,15 +59,18 @@ describe('30-wave Solo economy envelope', () => {
         const def = (enemiesData as any)[group.type] ?? {};
         if (wave.type === 'B' && wave.wave <= 15 && !def.isBoss) continue;
         const lateSecondGateMirror = wave.wave >= 21 && !def.isBoss && !def.isFlyer;
-        kills += lateSecondGateMirror ? group.count * 2 : group.count;
+        const count = lateSecondGateMirror ? group.count * 2 : group.count;
+        authoredKills += count;
+        if (!def.noGoldReward) goldKills += count;
         if (wave.type === 'B' && def.isBoss && !ADD_BOSS_TYPES.has(group.type)) {
           majorBossBounties += group.count * (22 + Math.round(wave.wave * 3.5));
         }
       }
     }
 
-    const guaranteed = ECONOMY.STARTING_GOLD + kills + waveGold + majorBossBounties;
-    expect(kills).toBe(2919);
+    const guaranteed = ECONOMY.STARTING_GOLD + goldKills + waveGold + majorBossBounties;
+    expect(authoredKills).toBe(2949);
+    expect(goldKills).toBe(2919);
     expect(guaranteed).toBe(3996);
     expect(guaranteed).toBeLessThan(4000);
   });
@@ -77,6 +81,7 @@ describe('30-wave Solo economy envelope', () => {
     for (const wave of wavesData as any[]) {
       for (const group of wave.spawns) {
         const def = (enemiesData as any)[group.type] ?? {};
+        if (def.noItemDrop) continue;
         if (wave.type === 'B' && wave.wave <= 15 && !def.isBoss) continue;
         if (def.isFlyer) flyers += group.count;
         else ground += wave.wave >= 21 && !def.isBoss ? group.count * 2 : group.count;

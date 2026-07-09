@@ -457,6 +457,7 @@ describe('Tower roster integrity', () => {
       'NAGA_ADEPT',
       'NAGA_SLEEPWEAVER',
       'NAGA_ORACLE',
+      'OCEAN_GHOST_SPIRIT',
       'ITEM_BRINEHOOK_ROPE',
       'ITEM_TIDEPIERCER_HARPOON',
       'ITEM_AEGEAN_PEARL',

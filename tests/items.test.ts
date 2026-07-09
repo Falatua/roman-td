@@ -218,6 +218,7 @@ describe('Loot drop rolling', () => {
 
   it('lets meaningful ocean enemies rarely drop anti-water specialist gear', () => {
     expect(oceanSpecialistDropChance({ type: 'OCEAN_FISHLING' })).toBe(0);
+    expect(oceanSpecialistDropChance({ type: 'OCEAN_GHOST_SPIRIT' })).toBe(0);
     expect(oceanSpecialistDropChance({ type: 'SEA_GIANT' })).toBe(0.18);
     expect(oceanSpecialistDropChance({ type: 'SEA_GIANT_WARBRINGER' })).toBe(0.38);
     expect(oceanSpecialistDropChance({ type: 'TIDECALLER_COMMANDER' })).toBe(0.45);

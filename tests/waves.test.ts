@@ -305,6 +305,7 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(byWave.get(12).spawns).toContainEqual({ type: 'SEA_GIANT', count: 2, ocean: true });
     expect(byWave.get(12).spawns).toContainEqual({ type: 'TIDECALLER_COMMANDER', count: 1, ocean: true });
     expect(byWave.get(18).spawns).toContainEqual({ type: 'STORMTIDE_WYVERN_COMMANDER', count: 1, ocean: true });
+    expect(byWave.get(18).spawns).toContainEqual({ type: 'OCEAN_GHOST_SPIRIT', count: 30, ocean: true });
     expect(byWave.get(27).spawns).toContainEqual({ type: 'SEA_GIANT_WARBRINGER', count: 6, ocean: true });
     expect(byWave.get(27).spawns).toContainEqual({ type: 'TIDECALLER_COMMANDER', count: 2, ocean: true });
     expect(byWave.get(27).spawns).toContainEqual({ type: 'STORMTIDE_WYVERN_COMMANDER', count: 1, ocean: true });

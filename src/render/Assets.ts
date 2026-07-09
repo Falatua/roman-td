@@ -123,6 +123,7 @@ const MANIFEST: Record<string, string> = {
   GIANT_GIGAS: 'e3_giant_gigas.png',
   CYCLOPS: 'e3_cyclops.png',
   OCEAN_FISHLING: 'e_ocean_fishling.png',
+  OCEAN_GHOST_SPIRIT: 'e_ocean_ghost_spirit.png',
   SEA_GIANT: 'e3_sea_giant.png',
   SEA_GIANT_WARBRINGER: 'e3_sea_giant_warbringer.png',
   NETHER_AMPHIBIOUS_GIANT: 'e3_nether_amphibious_giant.png',

@@ -84,6 +84,23 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(enemyDamageMultiplier(e, DamageType.SIEGE)).toBe(1);
   });
 
+  it('Drowned Manes can only be damaged by divine damage', () => {
+    const spirit = makeEnemy(EnemyType.OCEAN_GHOST_SPIRIT, EnemyFaction.ROMAN_MYTH);
+    expect((enemiesData as any).OCEAN_GHOST_SPIRIT.divineOnly).toBe(true);
+    expect(enemyDamageMultiplier(spirit, DamageType.PHYS_MELEE)).toBe(0);
+    expect(enemyDamageMultiplier(spirit, DamageType.PHYS_RANGED)).toBe(0);
+    expect(enemyDamageMultiplier(spirit, DamageType.SIEGE)).toBe(0);
+    expect(enemyDamageMultiplier(spirit, DamageType.ELEMENTAL_FIRE)).toBe(0);
+    expect(enemyDamageMultiplier(spirit, DamageType.DIVINE)).toBeGreaterThan(1);
+    expect(statusEffectiveness(spirit, StatusEffectKind.BURN)).toBe(0);
+    expect(statusEffectiveness(spirit, StatusEffectKind.BLEED)).toBe(0);
+    expect(statusEffectiveness(spirit, StatusEffectKind.POISON)).toBe(0);
+    expect(resistanceSummary(EnemyType.OCEAN_GHOST_SPIRIT).some(row => row.label === 'Melee' && row.value === 0)).toBe(true);
+    expect(resistanceSummary(EnemyType.OCEAN_GHOST_SPIRIT).some(row => row.label === 'Divine' && row.value === 0)).toBe(false);
+    expect(armorProfile(EnemyType.OCEAN_GHOST_SPIRIT).find(row => row.damageType === 'PHYS_RANGED')?.immune).toBe(true);
+    expect(armorProfile(EnemyType.OCEAN_GHOST_SPIRIT).find(row => row.damageType === 'DIVINE')?.immune).toBe(false);
+  });
+
   it('statusEffectiveness returns 0 for poison-immune undead', () => {
     const e = makeEnemy(EnemyType.UNDEAD_CELT, EnemyFaction.UNDEAD_CELTS);
     expect(statusEffectiveness(e, StatusEffectKind.POISON)).toBe(0);

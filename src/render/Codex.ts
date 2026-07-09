@@ -1614,6 +1614,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   const traits: string[] = [];
   // Combat / damage
   if (def.meleeImmune) traits.push('MELEE-IMMUNE — physical melee deals 0 damage');
+  if (def.divineOnly) traits.push('DIVINE-ONLY — can only be targeted and damaged by divine attacks');
   if (def.divineImmune) traits.push('DIVINE-IMMUNE — divine damage deals 0 damage');
   if (def.requiresMeleeBreak) traits.push('SHIELD — ranged & siege ignored until a melee tower cracks the shield');
   if (def.shieldBlockChance) traits.push(`SHIELD BLOCK — ${Math.round(def.shieldBlockChance*100)}% chance to fully block ranged/siege hits (until shield breaks)`);

@@ -411,6 +411,11 @@
         "ocean": true
       },
       {
+        "type": "OCEAN_GHOST_SPIRIT",
+        "count": 30,
+        "ocean": true
+      },
+      {
         "type": "SKY_BARGE",
         "count": 1
       },

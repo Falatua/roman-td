@@ -246,6 +246,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   if (def?.meleeImmune) traits.push({ label: 'MELEE-IMMUNE — physical melee deals 0 damage', color: '#ee5555' });
   if (def?.divineImmune) traits.push({ label: 'DIVINE-IMMUNE — divine damage deals 0 damage', color: '#ffd34d' });
   if (def?.requiresMeleeBreak) traits.push({ label: 'SHIELD — ranged & siege ignored until a melee tower cracks the shield', color: '#ee5555' });
+  if (def?.divineOnly) traits.push({ label: 'DIVINE-ONLY — can only be targeted and damaged by divine attacks', color: '#d8c76b' });
   if (def?.shieldBlockChance) traits.push({ label: `SHIELD BLOCK — ${Math.round(def.shieldBlockChance*100)}% chance to fully block ranged/siege hits (until shield breaks)`, color: '#ee5555' });
   // 2026-05-24 audit fix — surface allAttackBlockChance on the inspect
   // panel so the player sees Undead Spearman / Iron Phalanx's all-type

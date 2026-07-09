@@ -893,6 +893,25 @@
     "livesCost": 1,
     "renderScale": 0.7
   },
+  "OCEAN_GHOST_SPIRIT": {
+    "name": "Drowned Manes",
+    "faction": "ROMAN_MYTH",
+    "baseHp": 520,
+    "speed": 1.35,
+    "isFlyer": false,
+    "isBoss": false,
+    "livesCost": 1,
+    "renderScale": 0.9,
+    "divineOnly": true,
+    "noGoldReward": true,
+    "noItemDrop": true,
+    "dotImmune": true,
+    "immuneSlow": true,
+    "immuneFreeze": true,
+    "immuneStun": true,
+    "immunePoison": true,
+    "immuneBleed": true
+  },
   "SEA_GIANT": {
     "name": "Sea Giant",
     "faction": "ROMAN_MYTH",

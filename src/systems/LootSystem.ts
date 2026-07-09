@@ -160,6 +160,8 @@ export function premiumDropRoll(chance: number, randomValue = Math.random()): bo
 
 export function oceanSpecialistDropChance(enemy: Partial<Enemy> | any): number {
   switch (String(enemy?.type ?? '')) {
+    case 'OCEAN_GHOST_SPIRIT':
+      return 0;
     case 'SEA_GIANT':
       return 0.18;
     case 'SEA_GIANT_WARBRINGER':

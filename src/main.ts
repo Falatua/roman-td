@@ -7607,33 +7607,35 @@ async function boot() {
           // the HUD counter tick. Cheap — uses the existing floating
           // number system + impact-ring renderer (no new allocations).
           let goldEarnedHere = 0;
-          // 2026-05-19 — BASELINE GOLD PER KILL. Every kill always pays
+          const killRewardsEnabled = !(enemiesData as any)[e.type]?.noGoldReward;
+          // 2026-05-19 — BASELINE GOLD PER KILL. Standard kills pay
           // ECONOMY.BASE_GOLD_PER_KILL (+1g) instantaneously, regardless
-          // of which tower landed the blow or which enemy fell. Stacks
+          // of which tower landed the blow. Authored mechanic-check enemies
+          // can opt out with noGoldReward. Stacks
           // on top of every other gold-on-kill source below (Aerarium,
           // GOLD_PURSE, HANNIBALS_STRATEGY_SCROLL, PRAETORIAN_COIN,
           // GOLD aura tile). Boss kills still get their separate scaled
           // bounty below — this baseline is flat.
-          goldEarnedHere += earnGold(state, ECONOMY.BASE_GOLD_PER_KILL, { taxable: true });
+          if (killRewardsEnabled) goldEarnedHere += earnGold(state, ECONOMY.BASE_GOLD_PER_KILL, { taxable: true });
           const relicKillGold = campaignRelicKillGoldBonus(state);
-          if (relicKillGold > 0) { goldEarnedHere += earnGold(state, relicKillGold, { taxable: true }); }
+          if (killRewardsEnabled && relicKillGold > 0) { goldEarnedHere += earnGold(state, relicKillGold, { taxable: true }); }
           const trophyKillGold = bossTrophyKillGoldBonus(state, e);
-          if (trophyKillGold > 0) { goldEarnedHere += earnGold(state, trophyKillGold, { taxable: true }); }
-          if (t.isAerarium) { goldEarnedHere += earnGold(state, ECONOMY.AERARIUM_BONUS, { taxable: true }); }
+          if (killRewardsEnabled && trophyKillGold > 0) { goldEarnedHere += earnGold(state, trophyKillGold, { taxable: true }); }
+          if (killRewardsEnabled && t.isAerarium) { goldEarnedHere += earnGold(state, ECONOMY.AERARIUM_BONUS, { taxable: true }); }
           // GOLD-PER-KILL TROPHIES — linear rarity ladder (2026-05-19
           // rebalance): Common +1 → Rare +2 → Legendary +3. Stack
           // additively if multiple are equipped (rare in practice — same
           // ECONOMY family, so only one fits per tower slot anyway).
-          if (t.equippedItems?.includes('GOLD_PURSE'))                  { goldEarnedHere += earnGold(state, 2, { taxable: true }); }
-          if (t.equippedItems?.includes('HANNIBALS_STRATEGY_SCROLL'))   { goldEarnedHere += earnGold(state, 5, { taxable: true }); }
+          if (killRewardsEnabled && t.equippedItems?.includes('GOLD_PURSE'))                  { goldEarnedHere += earnGold(state, 2, { taxable: true }); }
+          if (killRewardsEnabled && t.equippedItems?.includes('HANNIBALS_STRATEGY_SCROLL'))   { goldEarnedHere += earnGold(state, 5, { taxable: true }); }
           // Gate-exclusive PRAETORIAN_COIN (Common): +1g per kill.
           // Cheaper than the Rare GOLD_PURSE (+2); same ECONOMY family
           // so they can't both be equipped on the same tower.
-          if (t.equippedItems?.includes('PRAETORIAN_COIN'))              { goldEarnedHere += earnGold(state, 1, { taxable: true }); }
+          if (killRewardsEnabled && t.equippedItems?.includes('PRAETORIAN_COIN'))              { goldEarnedHere += earnGold(state, 1, { taxable: true }); }
           // 2026-05-19 — TREASURY TILE (GOLD aura tile): +2g per kill.
           // Stacks with PRAETORIAN_COIN / GOLD_PURSE / Aerarium — all
           // independent gold-on-kill sources.
-          if (towerAuraTileKind(t) === 'GOLD')                            { goldEarnedHere += earnGold(state, 2, { taxable: true }); }
+          if (killRewardsEnabled && towerAuraTileKind(t) === 'GOLD')                            { goldEarnedHere += earnGold(state, 2, { taxable: true }); }
           if (goldEarnedHere > 0 && t) {
             const tcx = t.tileX * 32 + 16;
             const tcy = t.tileY * 32 + 16;
@@ -7858,12 +7860,15 @@ async function boot() {
           // Jupiter's Wrath). User confirmed expected behavior.
           const w = wavesData[state.wave - 1];
           const orbsBefore = state.lootOrbs.length;
+          const itemDropsEnabled = !(enemiesData as any)[e.type]?.noItemDrop;
           // 2026-07-05 — every boss-class enemy now routes through a
           // boss-type signature legendary table. If the exact signature is
           // already in inventory/equipped/pending as a loot orb, the roll
           // rotates to that boss faction's next unclaimed legendary so the
           // no-duplicate rule still holds during multi-elephant waves.
-          if (isRareOnlyBossDropEnemy(e)) {
+          if (!itemDropsEnabled) {
+            // Pure mechanic-check enemies do not add extra item lottery rolls.
+          } else if (isRareOnlyBossDropEnemy(e)) {
             if (shouldDropRareOnlyBossLoot(e)) {
               const drop = rollRareDrop();
               if (drop) spawnLootAt(state, e, drop);

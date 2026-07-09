@@ -256,6 +256,18 @@ function divineImmuneBlocksTower(enemyType: string, towerDmgType: DamageType, to
   }
   return towerDmgType === DamageType.DIVINE;
 }
+
+function towerHasDivineDamageForTargeting(tower: Tower, towerDmgType: DamageType): boolean {
+  return towerDmgType === DamageType.DIVINE
+    || tower.type === TowerType.MARS_VICTOR
+    || tower.equippedItems.includes('CAPITOLINE_AEGIS');
+}
+
+function divineOnlyBlocksTower(enemyType: string, towerDmgType: DamageType, tower: Tower): boolean {
+  if (!(enemiesData as any)[enemyType]?.divineOnly) return false;
+  return !towerHasDivineDamageForTargeting(tower, towerDmgType);
+}
+
 function targetingDamageType(state: GameStateShape, tower: Tower): DamageType {
   if (towerAuraTileKind(tower) === 'IVORY') return DamageType.DIVINE;
   const proscriptionUntil = (state as any).__proscriptionUntilTick ?? 0;
@@ -471,6 +483,7 @@ function sigilOfSolMult(t: Tower, target: Enemy): number {
 
 const OCEAN_THREAT_TYPES = new Set<string>([
   'OCEAN_FISHLING',
+  'OCEAN_GHOST_SPIRIT',
   'SEA_GIANT',
   'SEA_GIANT_WARBRINGER',
   'NETHER_AMPHIBIOUS_GIANT',
@@ -1757,6 +1770,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         // damage. Divine / fire / siege melee towers still hit. See
         // meleeImmuneBlocksTower comment for the design rationale.
         if (isMeleeRow && meleeImmuneBlocksTower(e.type, acquireDmgType)) continue;
+        if (divineOnlyBlocksTower(e.type, acquireDmgType, t)) continue;
         if (rangedImmuneBlocksTower(e.type, acquireDmgType)) continue;
         if (siegeImmuneBlocksTower(e.type, acquireDmgType)) continue;
         if (divineImmuneBlocksTower(e.type, acquireDmgType, t.type)) continue;
@@ -2270,6 +2284,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
     // reveal scan). Once tagged, every tower — not just the truesight
     // one — can acquire it through the veil.
     const revealed = !!(e as any).__truesightRevealed;
+    if (divineOnlyBlocksTower(e.type, acquireDmgType, t)) continue;
     if (rangedImmuneBlocksTower(e.type, acquireDmgType)) continue;
     if (siegeImmuneBlocksTower(e.type, acquireDmgType)) continue;
     if (divineImmuneBlocksTower(e.type, acquireDmgType, t.type)) continue;

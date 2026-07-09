@@ -44,6 +44,7 @@ export function isHarborTowerType(type: TowerType | string): boolean {
 
 const OCEAN_THREAT_ENEMY_TYPES = new Set<string>([
   EnemyType.OCEAN_FISHLING,
+  EnemyType.OCEAN_GHOST_SPIRIT,
   EnemyType.SEA_GIANT,
   EnemyType.SEA_GIANT_WARBRINGER,
   EnemyType.NETHER_AMPHIBIOUS_GIANT,

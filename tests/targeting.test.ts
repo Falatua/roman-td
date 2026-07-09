@@ -7,7 +7,7 @@ import { pickTarget } from '../src/systems/CombatResolver';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
 import { TowerType, TargetingMode, Enemy, EnemyType, EnemyFaction, DamageType } from '../src/types';
-import { GRID } from '../src/constants';
+import { AURA_TILES, GRID } from '../src/constants';
 
 // Minimal Enemy factory — only the fields pickTarget reads.
 function fakeEnemy(opts: {
@@ -350,5 +350,36 @@ describe('Tower targeting modes', () => {
     const valid = fakeEnemy({ id: 'VALID', type: EnemyType.MONGOL_SPEARMAN, x: TX + 30, y: TY, pathIndex: 4, hp: 500 });
     const picked = pickTarget(state, tower, [immune, valid], 10);
     expect(picked?.id).toBe('VALID');
+  });
+
+  it('non-divine towers ignore Drowned Manes while divine sources can target them', () => {
+    const { state, tower } = setup();
+    tower.targetingMode = TargetingMode.STRONG;
+    tower.damageType = DamageType.PHYS_RANGED;
+    const spirit = fakeEnemy({ id: 'SPIRIT', type: EnemyType.OCEAN_GHOST_SPIRIT, x: TX + 20, y: TY, pathIndex: 8, hp: 5000 });
+    const valid = fakeEnemy({ id: 'VALID', type: EnemyType.FERAL_DOG, x: TX + 30, y: TY, pathIndex: 4, hp: 500 });
+    expect(pickTarget(state, tower, [spirit, valid], 10)?.id).toBe('VALID');
+
+    tower.damageType = DamageType.DIVINE;
+    expect(pickTarget(state, tower, [spirit, valid], 10)?.id).toBe('SPIRIT');
+  });
+
+  it('divine aura tiles and divine-rider items qualify towers to target Drowned Manes', () => {
+    const { state } = setup();
+    const divineTile = AURA_TILES.find(tile => tile.kind === 'IVORY')!;
+    const divineTileTower = createTower(TowerType.VELITES, 1, divineTile.col, divineTile.row, 1);
+    divineTileTower.targetingMode = TargetingMode.STRONG;
+    divineTileTower.damageType = DamageType.PHYS_RANGED;
+    const tileX = divineTile.col * GRID.TILE + GRID.TILE / 2;
+    const tileY = divineTile.row * GRID.TILE + GRID.TILE / 2;
+    const spiritAtTile = fakeEnemy({ id: 'SPIRIT_TILE', type: EnemyType.OCEAN_GHOST_SPIRIT, x: tileX + 20, y: tileY, pathIndex: 8, hp: 5000 });
+    expect(pickTarget(state, divineTileTower, [spiritAtTile], 10)?.id).toBe('SPIRIT_TILE');
+
+    const itemTower = createTower(TowerType.VELITES, 1, 5, 5, 1);
+    itemTower.targetingMode = TargetingMode.STRONG;
+    itemTower.damageType = DamageType.PHYS_RANGED;
+    itemTower.equippedItems.push('CAPITOLINE_AEGIS');
+    const spiritWithItem = fakeEnemy({ id: 'SPIRIT_ITEM', type: EnemyType.OCEAN_GHOST_SPIRIT, x: TX + 20, y: TY, pathIndex: 8, hp: 5000 });
+    expect(pickTarget(state, itemTower, [spiritWithItem], 10)?.id).toBe('SPIRIT_ITEM');
   });
 });

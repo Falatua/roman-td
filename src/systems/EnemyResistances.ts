@@ -304,6 +304,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // Colossus Gigas — the fused Super-Giant: very tough all-round.
   [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0, slow: 0.8, burn: 0.65, poison: 0.25, bleed: 0.20, divine: 0 },
   [EnemyType.OCEAN_FISHLING]: { fire: 1.15, burn: 1.15, poison: 0.8, slow: 0.7 },
+  [EnemyType.OCEAN_GHOST_SPIRIT]: { melee: 0, ranged: 0, siege: 0, fire: 0, divine: 1.25, slow: 0, burn: 0, bleed: 0, poison: 0 },
   [EnemyType.SEA_GIANT]: { melee: 0.50, ranged: 0.50, siege: 1.05, fire: 0, divine: 1.10, slow: 0.30, burn: 0, poison: 0.34, bleed: 0.30 },
   [EnemyType.SEA_GIANT_WARBRINGER]: { melee: 0.35, ranged: 0.40, siege: 0.95, fire: 0, divine: 1.15, slow: 0.22, burn: 0, poison: 0.25, bleed: 0.25 },
   [EnemyType.NETHER_AMPHIBIOUS_GIANT]: { melee: 0.25, ranged: 0.30, siege: 0.55, fire: 0, divine: 1.35, slow: 0.18, burn: 0, poison: 0.16, bleed: 0.20 },
@@ -356,6 +357,7 @@ export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): num
   // statusEffectiveness below. HELLFIRE is a divine-fire stamp and is
   // NOT covered — angels still get to punish the dead.
   const def: any = (enemiesData as any)[enemy.type];
+  if (def?.divineOnly && damageType !== DamageType.DIVINE) return 0;
   if (def?.immuneFire && damageType === DamageType.ELEMENTAL_FIRE) return 0;
   if (def?.meleeImmune && damageType === DamageType.PHYS_MELEE) return 0;
   if (def?.rangedImmune && damageType === DamageType.PHYS_RANGED) return 0;
@@ -459,18 +461,19 @@ export function resistanceSummary(type: EnemyType): Array<{ label: string; value
   const r = enemyResistanceProfile(type);
   const def: any = (enemiesData as any)[type];
   const dotImmune = !!def?.dotImmune;
+  const divineOnly = !!def?.divineOnly;
   return [
-    ['Melee', def?.meleeImmune ? 0 : r.melee],
-    ['Ranged', def?.rangedImmune ? 0 : r.ranged],
+    ['Melee', divineOnly || def?.meleeImmune ? 0 : r.melee],
+    ['Ranged', divineOnly || def?.rangedImmune ? 0 : r.ranged],
     // 2026-05 v9: include the three new per-enemy elemental resists so
     // Codex / EnemyInspect lists them alongside melee/ranged when set.
-    ['Siege', def?.siegeImmune ? 0 : r.siege],
-    ['Fire', r.fire],
+    ['Siege', divineOnly || def?.siegeImmune ? 0 : r.siege],
+    ['Fire', divineOnly || def?.immuneFire ? 0 : r.fire],
     ['Divine', def?.divineImmune ? 0 : r.divine],
     ['Slow', r.slow],
-    ['Burn', dotImmune || def?.immuneBurn || def?.immuneFire ? 0 : r.burn],
-    ['Bleed', dotImmune || def?.immuneBleed ? 0 : r.bleed],
-    ['Poison', dotImmune || def?.immunePoison ? 0 : r.poison]
+    ['Burn', divineOnly || dotImmune || def?.immuneBurn || def?.immuneFire ? 0 : r.burn],
+    ['Bleed', divineOnly || dotImmune || def?.immuneBleed ? 0 : r.bleed],
+    ['Poison', divineOnly || dotImmune || def?.immunePoison ? 0 : r.poison]
   ]
     .filter(([, value]) => typeof value === 'number' && value < 1)
     .map(([label, value]) => ({ label: label as string, value: value as number }));
@@ -546,8 +549,9 @@ export function armorProfile(type: EnemyType): ArmorRow[] {
     const rangedImmune = dt === 'PHYS_RANGED' && !!enemyDef.rangedImmune;
     const siegeImmune = dt === 'SIEGE' && !!enemyDef.siegeImmune;
     const divineImmune = dt === 'DIVINE' && !!enemyDef.divineImmune;
-    const finalMult = (fireImmune || meleeImmune || rangedImmune || siegeImmune || divineImmune) ? 0 : factionMult * specificMult;
-    const immune = factionImmune || fireImmune || meleeImmune || rangedImmune || siegeImmune || divineImmune || finalMult <= 0;
+    const divineOnlyBlocked = !!enemyDef.divineOnly && dt !== 'DIVINE';
+    const finalMult = (fireImmune || meleeImmune || rangedImmune || siegeImmune || divineImmune || divineOnlyBlocked) ? 0 : factionMult * specificMult;
+    const immune = factionImmune || fireImmune || meleeImmune || rangedImmune || siegeImmune || divineImmune || divineOnlyBlocked || finalMult <= 0;
     const armorPct = immune ? 100 : Math.round((1 - finalMult) * 100);
     return { damageType: dt, finalMult, armorPct, immune };
   });

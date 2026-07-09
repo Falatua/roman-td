@@ -105,6 +105,7 @@ describe('Harbor naval tower system', () => {
 
   it('identifies ocean threats for naval quests and item bonuses', () => {
     expect(isOceanThreatEnemy(EnemyType.OCEAN_FISHLING)).toBe(true);
+    expect(isOceanThreatEnemy(EnemyType.OCEAN_GHOST_SPIRIT)).toBe(true);
     expect(isOceanThreatEnemy(EnemyType.SEA_GIANT_WARBRINGER)).toBe(true);
     expect(isOceanThreatEnemy(EnemyType.TIDECALLER_COMMANDER)).toBe(true);
     expect(isOceanThreatEnemy(EnemyType.STORMTIDE_WYVERN_COMMANDER)).toBe(true);
