@@ -505,5 +505,16 @@ export function executeCombo(state: GameStateShape, combo: AvailableCombo, resul
     const resultType = String(combo.result);
     if (!state.combosBuiltUniqueTypes.includes(resultType)) state.combosBuiltUniqueTypes.push(resultType);
   }
+  // Solo UI owns quest reward dispatch because it has access to gold,
+  // inventory, tower queues, SFX, and toast copy. Trigger it immediately
+  // after combo progress is recorded so action-based quests like
+  // Super Combo Commission / Omega Foundry pay out on the forge click,
+  // not at the next kill or wave-end safety tick.
+  try {
+    (state as any).__onImmediateQuestCheck?.('combo');
+  } catch {
+    // Quest dispatch is non-critical to the structural combo mutation.
+    // Keep the tower creation committed even if an optional UI hook fails.
+  }
   return true;
 }

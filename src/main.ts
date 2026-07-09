@@ -3480,6 +3480,10 @@ async function boot() {
     const newTiers = evaluateQuestTierBonuses(state);
     for (const tierKey of newTiers) grantQuestTierBonus(tierKey);
   }
+  // Action systems that live outside main.ts (notably CombinationEngine)
+  // call this after a state-changing action so action-based quests pay
+  // immediately instead of waiting for a later kill or wave-end tick.
+  (state as any).__onImmediateQuestCheck = () => tickQuests();
   // Pays out the tier-completion gold bonus and pops a celebratory
   // banner. Hooks into the same toast stack the per-quest grants use,
   // but with louder copy so the player feels the milestone.
@@ -4134,6 +4138,7 @@ async function boot() {
         : `Kept ${towerName(keeper.type)} T${keeper.qualityTier}. Pick ${state.keepsRemainingThisRound} more (or START WAVE to skip).`;
       const np = buildGroundPath(state);
       if (np) { state.groundPath = np; resnapEnemiesToPath(state, np); }
+      tickQuests();
       return;
     }
 
@@ -4149,6 +4154,7 @@ async function boot() {
     state.phase = GamePhase.BUILD_PHASE;
     const np = buildGroundPath(state);
     if (np) { state.groundPath = np; resnapEnemiesToPath(state, np); }
+    tickQuests();
   }
   // CRYSTALLIZE fallback: turn all pending prospects into walls (free) without picking one.
   function crystallizeAll() {
@@ -6761,6 +6767,7 @@ async function boot() {
       state.hint = remaining > 0
         ? `Placed ${popped.type.replace(/_/g,' ')} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
         : `Placed ${popped.type.replace(/_/g,' ')} T${popped.tier}.`;
+      tickQuests();
       return;
     }
 

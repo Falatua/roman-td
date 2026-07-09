@@ -12,6 +12,7 @@ import { buildGroundPath } from '../src/systems/PathFinder';
 import comboData from '../src/data/towerCombinations.json';
 import towersData from '../src/data/towers.json';
 import { buyTraps, placeTrap } from '../src/systems/TrapSystem';
+import { evaluateQuests } from '../src/systems/QuestSystem';
 
 function bootstrapState() {
   const s = createGameState();
@@ -28,6 +29,14 @@ function placeTower(state: any, type: TowerType, tier: 1|2|3|4|5, x: number, y: 
   state.towers.set(t.id, t);
   setTile(state, x, y, TileType.TOWER);
   return t;
+}
+
+function installImmediateGoldQuestPayout(state: any) {
+  state.__onImmediateQuestCheck = () => {
+    for (const q of evaluateQuests(state)) {
+      if (q.reward.kind === 'GOLD') state.gold += q.reward.amount ?? 0;
+    }
+  };
 }
 
 describe('Same-tier merge detection', () => {
@@ -148,6 +157,8 @@ describe('Recipe combo detection', () => {
 
   it('lets the starter hero plus five Mercator Champions form Mars Victor', () => {
     const s = bootstrapState();
+    s.gold = 10000;
+    installImmediateGoldQuestPayout(s);
     s.activeHeroId = 'HERO_MARIUS';
     const starter = placeTower(s, TowerType.HERO_MARIUS, 5, 1, 5);
     placeTower(s, TowerType.CHAMPION_AGRIPPA, 2, 2, 5);
@@ -169,11 +180,14 @@ describe('Recipe combo detection', () => {
     ]));
     expect(comboResultLocationChoices(s, mars!).map(t => t.id)).toContain(starter.id);
 
+    const expectedGoldAfterForge = s.gold - mars!.cost + 500; // Super Combo Commission pays immediately.
     expect(executeCombo(s, mars!, starter.id)).toBe(true);
     const result = Array.from(s.towers.values()).find(t => t.type === TowerType.MARS_VICTOR);
     expect(result?.tileX).toBe(starter.tileX);
     expect(result?.tileY).toBe(starter.tileY);
     expect(s.combosBuiltUniqueTypes).toContain(TowerType.MARS_VICTOR);
+    expect(s.completedQuests).toContain('super_combo_commission');
+    expect(s.gold).toBe(expectedGoldAfterForge);
   });
 
   it('detects SCORPION_BOLT recipe (Scorpio T2 + Velites T2)', () => {
@@ -538,6 +552,8 @@ describe('Combo execution', () => {
 
   it('requires water-only combo results to anchor on an ocean ingredient', () => {
     const s: any = bootstrapState();
+    s.gold = 10000;
+    installImmediateGoldQuestPayout(s);
     const landAbyssal = placeTower(s, TowerType.ABYSSAL_ONAGER, 5, 8, 8);
     const landHydra = placeTower(s, TowerType.HYDRA_BEAST_PIT, 5, 9, 8);
     const combo = scanCombos(s).find(c => c.result === TowerType.NEPTUNES_LEVIATHAN);
@@ -552,11 +568,19 @@ describe('Combo execution', () => {
     waterAbyssal.placedOnWater = true;
     const waterCombo = scanCombos(s).find(c => c.result === TowerType.NEPTUNES_LEVIATHAN);
     expect(waterCombo).toBeTruthy();
+    const expectedGoldAfterForge = s.gold - waterCombo!.cost + 1000 + 220 + 150 + 110;
     expect(executeCombo(s, waterCombo!, waterAbyssal.id)).toBe(true);
     const result = Array.from(s.towers.values()).find((t: any) => t.type === TowerType.NEPTUNES_LEVIATHAN) as any;
     expect(result?.tileX).toBe(ocean.x);
     expect(result?.tileY).toBe(ocean.y);
     expect(result?.placedOnWater).toBe(true);
+    expect(s.completedQuests).toEqual(expect.arrayContaining([
+      'omega_foundry',
+      'leviathan_pact',
+      'tideforged_doctrine',
+      'imperial_standard'
+    ]));
+    expect(s.gold).toBe(expectedGoldAfterForge);
   });
 
   it('refunds gold to player when combo cost exceeds available gold', () => {
