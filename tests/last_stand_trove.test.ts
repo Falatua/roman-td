@@ -56,7 +56,9 @@ describe('Last-Life Trove hidden event', () => {
     const choices = lastStandTroveChoices();
     expect(choices).toContain(TowerType.MILITES);
     expect(choices).toContain(TowerType.LEGATE);
-    expect(choices.length).toBeGreaterThanOrEqual(10);
+    expect(choices).not.toContain(TowerType.VELITES);
+    expect(choices).not.toContain(TowerType.SCORPIO);
+    expect(choices.length).toBeGreaterThanOrEqual(8);
     expect(choices).not.toContain(TowerType.SCORPION_BOLT);
     expect(choices).not.toContain(TowerType.HANNIBALS_NIGHTMARE);
     expect(choices).not.toContain(TowerType.ROMAN_TRANSFORMER);
@@ -90,11 +92,11 @@ describe('Last-Life Trove hidden event', () => {
 
   it('queues exactly one free Tier 5 tower for normal placement', () => {
     const state = createGameState();
-    const ok = claimLastStandTroveTower(state, TowerType.SCORPIO);
+    const ok = claimLastStandTroveTower(state, TowerType.LEGATE);
     expect(ok).toBe(true);
     expect(state.lastStandTroveClaimed).toBe(true);
     expect(state.pendingPurchasedTowers).toEqual([
-      { type: TowerType.SCORPIO, tier: LAST_STAND_TROVE_TIER, source: LAST_STAND_TROVE_SOURCE }
+      { type: TowerType.LEGATE, tier: LAST_STAND_TROVE_TIER, source: LAST_STAND_TROVE_SOURCE }
     ]);
 
     const duplicate = claimLastStandTroveTower(state, TowerType.LEGATE);
@@ -107,6 +109,8 @@ describe('Last-Life Trove hidden event', () => {
     expect(claimLastStandTroveTower(state, TowerType.SCORPION_BOLT)).toBe(false);
     expect(claimLastStandTroveTower(state, TowerType.ROMAN_TRANSFORMER)).toBe(false);
     expect(claimLastStandTroveTower(state, TowerType.HERO_MARIUS)).toBe(false);
+    expect(claimLastStandTroveTower(state, TowerType.SCORPIO)).toBe(false);
+    expect(claimLastStandTroveTower(state, TowerType.VELITES)).toBe(false);
     expect(state.pendingPurchasedTowers ?? []).toHaveLength(0);
     expect(state.lastStandTroveClaimed).toBeFalsy();
   });

@@ -371,9 +371,9 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     name: 'Triumphal Spoils',
     eyebrow: 'WAR-BOOTY GRANT',
     blurb: 'The triumph parades a captured siege engine into your service. The enemy quickens to take it back.',
-    upside: 'Immediately gain a free Tier-5 Scorpio to place.',
+    upside: 'Immediately gain a free Tier-5 Colossus Onager to place.',
     caveat: 'All enemies move +25% faster for the rest of the run.',
-    effects: ['Gain a free Tier-5 SCORPIO now.', 'Enemies move +25% faster all run.']
+    effects: ['Gain a free Tier-5 COLOSSUS ONAGER now.', 'Enemies move +25% faster all run.']
   },
   {
     id: 'SEALED_RELIQUARY',
@@ -935,7 +935,7 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   // sees this flag.
   if (id === 'TRIUMPHAL_SPOILS') {
     if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
-    state.pendingPurchasedTowers.push({ type: 'SCORPIO' as any, tier: 5, source: 'relic' });
+    state.pendingPurchasedTowers.push({ type: TowerType.COLOSSUS_ONAGER, tier: 5, source: 'relic' });
   }
   if (id === 'SEALED_RELIQUARY') (state as any).__pendingRelicLegendary = true;
   if (id === 'CONSCRIPTS_WAGER') {
@@ -1192,7 +1192,7 @@ export function campaignRelicEnemySpeedMult(state: GameStateShape, enemy?: any):
       case 'VULCANS_FORGE': if (enemy?.isFlyer) mult *= 1.50; break;
       case 'BLACK_OIL': if (enemy?.isFlyer) mult *= 1.60; break;
       case 'FROST_TITHE': mult *= 0.78; break;
-      case 'TRIUMPHAL_SPOILS': mult *= 1.25; break;   // pays for the free T5 Scorpio
+      case 'TRIUMPHAL_SPOILS': mult *= 1.25; break;   // pays for the free T5 siege engine
       case 'SATURNALIA_EDICT': mult *= 0.88; break;   // festival slows the world
     }
   }

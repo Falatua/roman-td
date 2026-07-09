@@ -139,7 +139,7 @@ export function startTestYourMight(state: GameStateShape): void {
   state.waveModifier = 'GROUP_MARCH';
   state.endlessExtraModifiers = ['STORM_SURGE'];
   state.waveModifierTick = 0;
-  state.hint = `WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} — TEST YOUR MIGHT! One leak ends the run. Perfect clear pays 3000g, a free Tier-5 Scorpio, and the boss Legendary.`;
+  state.hint = `WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} — TEST YOUR MIGHT! One leak ends the run. Perfect clear pays 3000g, a free Tier-5 Colossus Onager, and the boss Legendary.`;
   prepareHeroAbilitiesForWave(state);
 }
 
@@ -201,7 +201,7 @@ export function completeTestYourMight(state: GameStateShape): boolean {
   state.waveModifier = null;
   state.endlessExtraModifiers = [];
   state.waveModifierTick = 0;
-  state.hint = `WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} cleared perfectly. +${TEST_YOUR_MIGHT_REWARD_GOLD}g and a free Tier-5 Scorpio. Rome is acting very normal about this.`;
+  state.hint = `WAVE ${TEST_YOUR_MIGHT_DISPLAY_WAVE} cleared perfectly. +${TEST_YOUR_MIGHT_REWARD_GOLD}g and a free Tier-5 Colossus Onager. Rome is acting very normal about this.`;
   return true;
 }
 

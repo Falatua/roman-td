@@ -107,16 +107,31 @@ function newId(): string { return `tw${nextId++}`; }
 // Saddle now gate by attack class (MELEE / RANGED) instead of a niche
 // cavalry archetype check.
 
+export const TIER_FOUR_MAX_TOWER_TYPES = new Set<TowerType>([
+  TowerType.VELITES,
+  TowerType.SCORPIO
+]);
+
+export function maxQualityTierForTower(type: TowerType | string): 1 | 2 | 3 | 4 | 5 {
+  return TIER_FOUR_MAX_TOWER_TYPES.has(type as TowerType) ? 4 : 5;
+}
+
+export function clampQualityTierForTower(type: TowerType | string, tier: number): 1 | 2 | 3 | 4 | 5 {
+  const maxTier = maxQualityTierForTower(type);
+  return Math.max(1, Math.min(maxTier, Math.floor(tier))) as 1 | 2 | 3 | 4 | 5;
+}
+
 export function towerDef(type: TowerType): any {
   return (towersData as any)[type];
 }
 
 export function createTower(type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: number, row: number, wave: number, pending = false): Tower {
   const def = towerDef(type);
+  const qualityTier = clampQualityTierForTower(type, tier);
   return {
     id: newId(),
     type,
-    qualityTier: tier,
+    qualityTier,
     tileX: col,
     tileY: row,
     damageType: damageTypeFromString(def.damageType),
@@ -150,7 +165,7 @@ export function createTower(type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: numbe
     killsThisWave: 0,
     damageThisWave: 0,
     mvpAwards: 0,
-    costPaid: ECONOMY.TIER_PLACE_COST[tier] ?? 0,
+    costPaid: ECONOMY.TIER_PLACE_COST[qualityTier] ?? 0,
     ...((def as any).isHero ? { heroXp: 0, heroTier: 0 as 0 | 1 | 2 | 3 | 4 } : {}),
     // 2026-05-19 — Hero placement is free and the hero cannot be sold,
     // combined, moved, or downgraded. itemSlots and combineable
@@ -170,8 +185,11 @@ export function rollDraw(state: GameStateShape, basePool: TowerType[] = BASE_TOW
   for (let i = 0; i < 5; i++) {
     const tier = pickTier(tierWeights);
     const pool = tierPool(tier, basePool);
-    const type = pool[Math.floor(Math.random() * pool.length)];
-    cards.push({ type, tier });
+    const legalPool = pool.length > 0
+      ? pool
+      : (basePool.length > 0 ? basePool : BASE_TOWER_TYPES).filter(type => maxQualityTierForTower(type) >= 1);
+    const type = legalPool[Math.floor(Math.random() * legalPool.length)];
+    cards.push({ type, tier: clampQualityTierForTower(type, tier) });
   }
   // Duplicate-upgrade rule (Gem TD): if 2+ cards share type+tier, upgrade one of them.
   // 4 matches → +2 tiers on one. 2-3 matches → +1 tier on one.
@@ -193,10 +211,12 @@ function applyDuplicateUpgrade(cards: DrawCard[]) {
   }
   if (!bestIdx || bestSize < 2) return;
   const bump = bestSize >= 4 ? 2 : 1;
-  // Upgrade the first one in the group; cap at tier 5
+  // Upgrade the first one in the group; cap at that tower's legal max tier.
   const i = bestIdx[0];
-  cards[i] = { type: cards[i].type, tier: Math.min(5, cards[i].tier + bump) as 1 | 2 | 3 | 4 | 5 };
-  (cards[i] as any).__duplicateBumped = bump;     // surface to UI
+  const oldTier = cards[i].tier;
+  const bumpedTier = clampQualityTierForTower(cards[i].type, oldTier + bump);
+  cards[i] = { type: cards[i].type, tier: bumpedTier };
+  if (bumpedTier > oldTier) (cards[i] as any).__duplicateBumped = bump;     // surface to UI
 }
 
 function pickTier(weights: number[]): 1 | 2 | 3 | 4 | 5 {
@@ -256,7 +276,8 @@ export const TIER_BONUS_TOWER_TYPES: Record<number, TowerType[]> = {
 };
 
 function tierPool(tier: number, basePool: TowerType[]): TowerType[] {
-  return [...basePool, ...(TIER_BONUS_TOWER_TYPES[tier] ?? [])];
+  return [...basePool, ...(TIER_BONUS_TOWER_TYPES[tier] ?? [])]
+    .filter(type => maxQualityTierForTower(type) >= tier);
 }
 
 export function placeCost(tier: number): number {

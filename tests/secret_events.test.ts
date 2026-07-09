@@ -59,6 +59,8 @@ describe('Mercator Back Room hidden event', () => {
     expect((itemsData as any)[item.itemId!]?.rarity).toBe('LEGENDARY');
     expect((towersData as any)[tower.towerType!]?.kind ?? 'BASE').toBe('BASE');
     expect(tower.tier).toBe(5);
+    expect(tower.towerType).not.toBe(TowerType.VELITES);
+    expect(tower.towerType).not.toBe(TowerType.SCORPIO);
   });
 
   it('claims a discounted T5 tower through the normal placement queue', () => {
@@ -67,7 +69,28 @@ describe('Mercator Back Room hidden event', () => {
     s.mercatorBackRoomOffers = [{
       id: 'armory-chit-t5',
       kind: 'TOWER',
-      title: 'Scorpio T5',
+      title: 'Legate T5',
+      eyebrow: 'STAMPED ARMORY CHIT',
+      description: 'test',
+      price: 225,
+      towerType: TowerType.LEGATE,
+      tier: 5
+    }];
+    const result = claimMercatorBackRoomOffer(s, 'armory-chit-t5');
+    expect(result.ok).toBe(true);
+    expect(s.gold).toBe(275);
+    expect(s.mercatorBackRoomClaimed).toBe(true);
+    expect(s.pendingPurchasedTowers).toEqual([{ type: TowerType.LEGATE, tier: 5, source: 'backroom' }]);
+    expect(claimMercatorBackRoomOffer(s, 'armory-chit-t5').ok).toBe(false);
+  });
+
+  it('defensively clamps legacy hidden T5 Scorpio and Velites offers to Tier 4', () => {
+    const s = createGameState();
+    s.gold = 500;
+    s.mercatorBackRoomOffers = [{
+      id: 'armory-chit-t5',
+      kind: 'TOWER',
+      title: 'Legacy Scorpio T5',
       eyebrow: 'STAMPED ARMORY CHIT',
       description: 'test',
       price: 225,
@@ -76,10 +99,7 @@ describe('Mercator Back Room hidden event', () => {
     }];
     const result = claimMercatorBackRoomOffer(s, 'armory-chit-t5');
     expect(result.ok).toBe(true);
-    expect(s.gold).toBe(275);
-    expect(s.mercatorBackRoomClaimed).toBe(true);
-    expect(s.pendingPurchasedTowers).toEqual([{ type: TowerType.SCORPIO, tier: 5, source: 'backroom' }]);
-    expect(claimMercatorBackRoomOffer(s, 'armory-chit-t5').ok).toBe(false);
+    expect(s.pendingPurchasedTowers).toEqual([{ type: TowerType.SCORPIO, tier: 4, source: 'backroom' }]);
   });
 
   it('does not charge gold for a secret item when inventory is full', () => {

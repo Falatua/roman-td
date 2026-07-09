@@ -8034,11 +8034,11 @@ async function boot() {
           (state as any).__testYourMightRewardPaid = true;
           earnGold(state, TEST_YOUR_MIGHT_REWARD_GOLD, { taxable: true });
           state.score += 5000;
-          // 2026-06-25 — reward is gold + a free Tier-5 Scorpio to place.
+          // 2026-06-25 — reward is gold + a free Tier-5 siege engine to place.
           if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
-          state.pendingPurchasedTowers.push({ type: TowerType.SCORPIO, tier: 5, source: 'reward' as any });
-          state.hint = `WAVE ${displayWaveNumber(state)} PERFECT CLEAR — +${TEST_YOUR_MIGHT_REWARD_GOLD}g and a Tier-5 Scorpio. Click an empty tile to place it.`;
-          showBonusBossBanner(`TEST YOUR MIGHT CLEARED — +${TEST_YOUR_MIGHT_REWARD_GOLD}g + TIER-5 SCORPIO`);
+          state.pendingPurchasedTowers.push({ type: TowerType.COLOSSUS_ONAGER, tier: 5, source: 'reward' as any });
+          state.hint = `WAVE ${displayWaveNumber(state)} PERFECT CLEAR — +${TEST_YOUR_MIGHT_REWARD_GOLD}g and a Tier-5 Colossus Onager. Click an empty tile to place it.`;
+          showBonusBossBanner(`TEST YOUR MIGHT CLEARED — +${TEST_YOUR_MIGHT_REWARD_GOLD}g + TIER-5 COLOSSUS ONAGER`);
         }
         clearPlacedTrapsForWaveEnd(state);
         // 2026-05 v11: user-supplied wave-survived bumper SFX. Fires the

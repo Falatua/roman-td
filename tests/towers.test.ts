@@ -1,7 +1,7 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
-import { createTower, towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES } from '../src/systems/TowerSystem';
+import { createTower, towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw } from '../src/systems/TowerSystem';
 import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
@@ -131,9 +131,19 @@ describe('Tower creation', () => {
 
   it('records costPaid based on tier', () => {
     const t1 = createTower(TowerType.MILITES, 1, 0, 0, 0);
-    const t5 = createTower(TowerType.SCORPIO, 5, 0, 0, 0);
+    const t5 = createTower(TowerType.LEGATE, 5, 0, 0, 0);
     expect(t1.costPaid).toBe(ECONOMY.TIER_PLACE_COST[1]);
     expect(t5.costPaid).toBe(ECONOMY.TIER_PLACE_COST[5]);
+  });
+
+  it('caps Velites and Scorpio at Tier 4 so they no longer consume Tier 5 slots', () => {
+    expect(maxQualityTierForTower(TowerType.VELITES)).toBe(4);
+    expect(maxQualityTierForTower(TowerType.SCORPIO)).toBe(4);
+    expect(maxQualityTierForTower(TowerType.LEGATE)).toBe(5);
+    expect(clampQualityTierForTower(TowerType.VELITES, 5)).toBe(4);
+    expect(clampQualityTierForTower(TowerType.SCORPIO, 5)).toBe(4);
+    expect(createTower(TowerType.VELITES, 5, 0, 0, 0).qualityTier).toBe(4);
+    expect(createTower(TowerType.SCORPIO, 5, 0, 0, 0).qualityTier).toBe(4);
   });
 
   it('generates unique IDs for sequential towers', () => {
@@ -485,7 +495,7 @@ describe('Anti-air tower signatures', () => {
   it('makes W26-W30 an apex craft check instead of a regular-tower DPS race', () => {
     const state = createGameState();
     state.wave = FINAL_FIVE_APEX_WAVE;
-    const base = createTower(TowerType.SCORPIO, 5, 0, 0, 0);
+    const base = createTower(TowerType.LEGATE, 5, 0, 0, 0);
     const combo = createTower(TowerType.SCORPION_BOLT, 5, 0, 0, 0);
     const superCombo = createTower(TowerType.JULIUS_CAESAR, 5, 0, 0, 0);
     const omega = createTower(TowerType.ROMAN_TRANSFORMER, 5, 0, 0, 0);
@@ -506,7 +516,7 @@ describe('Anti-air tower signatures', () => {
     const state = createGameState();
     state.wave = 30;
     const waveDmgReduct = ((wavesData as any[]).find(w => w.wave === 30) as any).enemyDamageReductPct;
-    const base = createTower(TowerType.SCORPIO, 5, 0, 0, 0);
+    const base = createTower(TowerType.LEGATE, 5, 0, 0, 0);
     const superCombo = createTower(TowerType.JULIUS_CAESAR, 5, 0, 0, 0);
     const omega = createTower(TowerType.ROMAN_TRANSFORMER, 5, 0, 0, 0);
     const baseTarget = testEnemy('w30-base');
@@ -1179,5 +1189,35 @@ describe('Pool draw — base tower types', () => {
     expect(BASE_TOWER_TYPES).toContain(TowerType.MILITES);
     expect(BASE_TOWER_TYPES).toContain(TowerType.SCORPIO);
     expect(BASE_TOWER_TYPES).toContain(TowerType.LEGATE);
+  });
+
+  it('does not roll Tier 5 Velites or Scorpio even when the tier roll lands on T5', () => {
+    const state = createGameState();
+    state.poolLevel = 8;
+    state.heroLevel = 8;
+    const randomSpy = vi.spyOn(Math, 'random');
+    try {
+      randomSpy.mockReturnValue(0.99);
+      const draw = rollDraw(state, [TowerType.VELITES, TowerType.SCORPIO, TowerType.LEGATE]);
+      expect(draw.every(card => !(card.tier === 5 && [TowerType.VELITES, TowerType.SCORPIO].includes(card.type)))).toBe(true);
+      expect(draw.some(card => card.tier === 5)).toBe(true);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it('keeps capped-only input pools from producing illegal Tier 5 capped cards', () => {
+    const state = createGameState();
+    state.poolLevel = 8;
+    state.heroLevel = 8;
+    const randomSpy = vi.spyOn(Math, 'random');
+    try {
+      randomSpy.mockReturnValue(0.99);
+      const draw = rollDraw(state, [TowerType.VELITES, TowerType.SCORPIO]);
+      expect(draw.every(card => !(card.tier === 5 && [TowerType.VELITES, TowerType.SCORPIO].includes(card.type)))).toBe(true);
+      expect(draw.every(card => card.tier <= maxQualityTierForTower(card.type))).toBe(true);
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 });

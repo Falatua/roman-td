@@ -35,7 +35,7 @@
 import { GameStateShape } from '../GameState';
 import { TowerType, Tower, TileType, GamePhase } from '../types';
 import { ECONOMY, GRID, TIER_MULTS, WAVE } from '../constants';
-import { createTower } from './TowerSystem';
+import { createTower, maxQualityTierForTower } from './TowerSystem';
 import towersData from '../data/towers.json';
 import { TEST_YOUR_MIGHT_AFTER_WAVE } from './TestYourMightLabels';
 import { isWaterPlacementRestrictedTile } from './GridManager';
@@ -64,7 +64,7 @@ export function sandboxAddGold(state: GameStateShape, amount: number = 1000): vo
 
 // SANDBOX: Returns the full list of placeable tower types with each
 // available tier. Used by the tower picker to surface every entry in
-// towers.json at every tier T1-T5. Combo towers are included so
+// towers.json at every legal tier. Combo towers are included so
 // testers can spawn an Imperium Eternum without going through the
 // 5-ingredient recipe.
 export function sandboxAllTowerOptions(): Array<{ type: TowerType; name: string; tiers: number[]; kind: string }> {
@@ -76,7 +76,7 @@ export function sandboxAllTowerOptions(): Array<{ type: TowerType; name: string;
       type: id as TowerType,
       name: d.name,
       kind: d.kind ?? 'BASE',
-      tiers: [1, 2, 3, 4, 5]
+      tiers: [1, 2, 3, 4, 5].filter(tier => tier <= maxQualityTierForTower(id))
     });
   }
   // Sort: BASE first by name, then COMBO by name. Easier scanning.

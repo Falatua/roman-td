@@ -3,6 +3,7 @@ import items from '../data/items_permanent.json';
 import { itemBuyPrice, Rarity } from './LootSystem';
 import { championForHero } from './HeroIdentity';
 import { itemRandomSelectionWeight } from './ItemRules';
+import { maxQualityTierForTower } from './TowerSystem';
 
 export interface ShopOffer {
   itemId: ItemId;
@@ -229,7 +230,7 @@ export function buildMercatorTowerOffers(wave: number, count = 5, options: Merca
   // are NEVER offered for sale. If a future contributor accidentally
   // adds one to MERCATOR_TOWER_POOL, this filter blocks it from
   // reaching the player. Apex towers must be crafted, not bought.
-  const eligible = MERCATOR_TOWER_POOL.filter(id => !FORTUNA_APEX_BLOCKLIST.has(id));
+  const eligible = MERCATOR_TOWER_POOL.filter(id => !FORTUNA_APEX_BLOCKLIST.has(id) && maxQualityTierForTower(id) >= 5);
   // Fill the rest with 10 random T5 base towers (champions already took 6 slots).
   // 2026-07-03 — options.excludeTypes now applies to these random slots too
   // (previously it only gated champions). main.ts passes the PREVIOUS visit's

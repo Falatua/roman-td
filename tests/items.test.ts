@@ -433,6 +433,8 @@ describe('Merchant — Mercator stock', () => {
     expect(armory.every(o => o.tier === 5 && o.price === 325)).toBe(true);
     expect(new Set(armory.map(o => o.type)).size).toBe(10);
     expect(armory.every(o => (towersData as any)[o.type]?.kind === 'BASE')).toBe(true);
+    expect(armory.map(o => o.type)).not.toContain('VELITES');
+    expect(armory.map(o => o.type)).not.toContain('SCORPIO');
   });
 
   it('re-randomizes the T5 armory: excludeTypes bars last visit’s lineup', () => {

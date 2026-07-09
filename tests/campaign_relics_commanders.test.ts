@@ -428,6 +428,16 @@ describe('Campaign relics', () => {
     expect(guardState.pendingPurchasedTowers?.[0]).toEqual({ type: TowerType.IMPERATOR_GUARD, tier: 5, source: 'relic' });
   });
 
+  it('Triumphal Spoils grants a legal Tier-5 siege engine instead of capped Scorpio', () => {
+    const spoilsState = bootstrapState();
+    applyCampaignRelic(spoilsState, 'TRIUMPHAL_SPOILS');
+    expect(spoilsState.pendingPurchasedTowers?.[0]).toEqual({
+      type: TowerType.COLOSSUS_ONAGER,
+      tier: 5,
+      source: 'relic'
+    });
+  });
+
   it('adds life-sacrifice hero and epic item relics', () => {
     const agricolaState = bootstrapState();
     agricolaState.lives = 40;
