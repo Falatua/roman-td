@@ -8321,7 +8321,13 @@ async function boot() {
         onKill: (_t: any, e: any) => {
           if (e.isDpsCheck) showDpsCheckSummary(e, /*killed=*/true);
         },
-        onHit: () => {},                  // skip gore/sparks (wave polish)
+        onHit: (t: any, _e: any, d: number) => {
+          // DPS Check is a measurement tool, not a real wave. Credit the
+          // current leaderboard view so the summary's LEADERBOARD button
+          // shows per-tower contribution, but do not inflate lifetime run
+          // damage or post-game damage-dealer stats with training-dummy hits.
+          if (t) t.damageThisWave = (t.damageThisWave ?? 0) + Math.max(0, d);
+        },
         onMeleeSwing: (t: any, e: any) => {
           emitTowerMeleeAttackVisual(t, e, false);
         },

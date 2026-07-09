@@ -1138,6 +1138,8 @@ describe('Sample SFX wiring', () => {
     expect(main).toContain("'HERO_AGRIPPA'");
     expect(main).toContain("'HERO_SULLA'");
     expect(renderEngine, 'DPS Check runs pre-wave, so attack sheets must be allowed outside WAVE_PHASE while the dummy is active').toContain("!!(state as any).__dpsCheckActive");
+    expect(dpsBlock, 'DPS Check should credit current-wave tower damage so the in-game leaderboard shows per-tower contribution').toContain('t.damageThisWave = (t.damageThisWave ?? 0) + Math.max(0, d)');
+    expect(dpsBlock, 'DPS Check should not inflate lifetime run damage with training-dummy hits').not.toContain('t.totalDamageDealt +=');
     expect(dpsBlock, 'DPS melee swings should use the same attack visuals as live waves').toContain('emitTowerMeleeAttackVisual(t, e, false)');
     expect(dpsBlock, 'DPS projectile fires should use the same attack visuals as live waves').toContain('emitTowerProjectileAttackVisual(t, target)');
     expect(main, 'shared projectile helper should still play attack audio').toContain('playTowerProjectileAttackSfx(t)');
