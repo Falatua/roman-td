@@ -400,11 +400,23 @@ describe('Tower roster integrity', () => {
       expect(meta.height, `${id} hero attack sheet should be a 3x3 grid of 256px frames`).toBe(768);
       const { data } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
       let tinyAlpha = 0;
-      for (let i = 3; i < data.length; i += 4) if (data[i] > 0 && data[i] <= 4) tinyAlpha++;
+      let chromaResidue = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] > 0 && data[i + 3] <= 4) tinyAlpha++;
+        if (data[i + 3] > 16 && data[i + 1] > 95 && data[i + 1] > data[i] * 1.35 && data[i + 1] > data[i + 2] * 1.35) chromaResidue++;
+      }
       expect(tinyAlpha, `${id} hero attack sheet has barely-visible alpha dust that can look like a dirty background`).toBe(0);
+      expect(chromaResidue, `${id} hero attack sheet has chroma-key residue left in visible pixels`).toBe(0);
       const first = await sharp(file).extract({ left: 0, top: 0, width: 256, height: 256 }).ensureAlpha().raw().toBuffer();
+      const fifth = await sharp(file).extract({ left: 256, top: 256, width: 256, height: 256 }).ensureAlpha().raw().toBuffer();
       const ninth = await sharp(file).extract({ left: 512, top: 512, width: 256, height: 256 }).ensureAlpha().raw().toBuffer();
       expect(meanFrameDiff(first, ninth), `${id} hero attack frame 9 should visibly settle back to idle frame 1`).toBeLessThan(0.05);
+      if (id !== 'MARIUS') {
+        const idleFile = path.join(process.cwd(), 'public/assets/heroes', `hero_${id.toLowerCase()}.png`);
+        const idle = await sharp(idleFile).ensureAlpha().raw().toBuffer();
+        expect(meanFrameDiff(first, idle), `${id} hero attack frame 1 should match the shipped idle sprite to avoid popping into attacks`).toBeLessThan(1);
+        expect(meanFrameDiff(first, fifth), `${id} hero attack frame 5 should be a real contact/release pose, not a static idle frame`).toBeGreaterThan(12);
+      }
       await expectAttackSheetBodyStable(sharp, file, 256, `${id} hero`, 0.70);
     }
   });
