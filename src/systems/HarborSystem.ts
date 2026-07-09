@@ -119,8 +119,7 @@ export function harborDraftTierForWave(wave: number): 1 | 2 | 3 | 4 | 5 {
   if (wave >= 27) return 5;
   if (wave >= 21) return 4;
   if (wave >= 16) return 3;
-  if (wave >= 12) return 2;
-  return 1;
+  return 2;
 }
 
 export function harborDraftPrice(tier: number, type: TowerType | string): number {

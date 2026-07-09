@@ -56,13 +56,13 @@ describe('Harbor naval tower system', () => {
     expect((s as any).__harborDraftWave).toBe(3);
     expect((s as any).__harborDraftOffers).toHaveLength(3);
     expect(s.hint).toContain('Ocean threat wave 3 cleared');
-    expect(harborDraftTierForWave(3)).toBe(1);
+    expect(harborDraftTierForWave(3)).toBe(2);
     const earlyOffers = buildHarborDraftOffers(s);
     expect(earlyOffers).toBe((s as any).__harborDraftOffers);
     expect(earlyOffers).toHaveLength(3);
     for (const offer of earlyOffers) {
       expect(isHarborTowerType(offer.type)).toBe(true);
-      expect(offer.tier).toBe(1);
+      expect(offer.tier).toBe(2);
       expect(offer.price).toBeGreaterThan(0);
     }
   });
@@ -73,7 +73,7 @@ describe('Harbor naval tower system', () => {
     expect(queueHarborDraftForClearedOceanWave(s)).toBe(true);
     const wave3Offers = buildHarborDraftOffers(s);
     expect(wave3Offers).toHaveLength(3);
-    expect(wave3Offers.every(o => o.tier === 1)).toBe(true);
+    expect(wave3Offers.every(o => o.tier === 2)).toBe(true);
 
     s.wave = 12;
     expect(queueHarborDraftForClearedOceanWave(s)).toBe(true);
@@ -83,6 +83,9 @@ describe('Harbor naval tower system', () => {
     expect(wave12Offers.every(o => o.tier === 2)).toBe(true);
     expect((s as any).__pendingHarborWaveDraft).toBe(12);
     expect((s as any).__harborDraftWave).toBe(12);
+    expect(harborDraftTierForWave(16)).toBe(3);
+    expect(harborDraftTierForWave(21)).toBe(4);
+    expect(harborDraftTierForWave(27)).toBe(5);
   });
 
   it('still marks Sea Giant-class kills as Harbor unlocks without opening a modal mid-wave', () => {
