@@ -1257,8 +1257,8 @@ export const SELL_PRICE: Record<string, number> = {
   COMMON: 10,
   UNCOMMON: 22,
   RARE: 50,
-  EPIC: 105,
-  LEGENDARY: 200,
+  EPIC: 214,
+  LEGENDARY: 407,
   UNIQUE: 250
 };
 

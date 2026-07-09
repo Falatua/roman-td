@@ -6,22 +6,19 @@ import consumables from '../data/items_consumable.json';
 import { itemRandomSelectionWeight } from './ItemRules';
 
 // 2026-05-18 — EPIC tier inserted between RARE and LEGENDARY. Visual
-// color is purple (#a060ff). Standard buy price is 60g — sits cleanly
-// between RARE's ~38-42g and LEGENDARY's 120-150g. Used for the demoted
-// melee-stat legendaries (Berserker's Muzzle, Celtic Longsword,
-// Necrotic Longsword) and for new "premium-but-not-build-defining"
+// color is purple (#a060ff). Used for premium-but-not-build-defining
 // items that fill the gap between Rare and Legendary.
 export type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'UNIQUE';
 
-// 2026-06-23 — item prices ~1.85x to match the ~1.86x gold income from the
-// doubled enemy counts (1g/kill). Sell refunds (floor(buyPrice/2)) scale with
-// these automatically, as do Mercator trophy + item offers and loot-orb values.
+// 2026-07-09 — Epic and Legendary item prices +10% over the post-ocean
+// economy ladder. Sell refunds (floor(buyPrice/2)) scale with these
+// automatically, as do Gate/Mercator item offers and loot-orb values.
 export const RARITY_BUY_PRICE: Record<Rarity, number> = {
   COMMON: 37,
   UNCOMMON: 83,
   RARE: 185,
-  EPIC: 390,
-  LEGENDARY: 740,
+  EPIC: 429,
+  LEGENDARY: 814,
   UNIQUE: 925
 };
 

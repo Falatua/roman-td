@@ -306,8 +306,8 @@ describe('Item rarity economy', () => {
     expect(RARITY_BUY_PRICE.COMMON).toBe(37);
     expect(RARITY_BUY_PRICE.UNCOMMON).toBe(83);
     expect(RARITY_BUY_PRICE.RARE).toBe(185);
-    expect(RARITY_BUY_PRICE.EPIC).toBe(390);
-    expect(RARITY_BUY_PRICE.LEGENDARY).toBe(740);
+    expect(RARITY_BUY_PRICE.EPIC).toBe(429);
+    expect(RARITY_BUY_PRICE.LEGENDARY).toBe(814);
 
     for (const [id, def] of Object.entries(itemsData as any)) {
       expect(itemBuyPrice(id), id).toBe(RARITY_BUY_PRICE[(def as any).rarity as keyof typeof RARITY_BUY_PRICE]);
@@ -394,9 +394,9 @@ describe('Merchant — Mercator stock', () => {
   it('Mercator legendaries are priced significantly higher than gate shop rares', () => {
     const merc = buildMercatorStock();
     const legPrices = merc.offers.filter(o => o.rarity === 'LEGENDARY').map(o => o.price);
-    // 2026-06-28 — all shop/Mercator item buys are 10% cheaper (round(base*0.9)).
-    expect(new Set(legPrices)).toEqual(new Set([666]));
-    expect(merc.offers.filter(o => o.rarity === 'EPIC').every(o => o.price === 351)).toBe(true);
+    // Shop/Mercator item buys keep the 10% vendor discount on top of rarity prices.
+    expect(new Set(legPrices)).toEqual(new Set([733]));
+    expect(merc.offers.filter(o => o.rarity === 'EPIC').every(o => o.price === 386)).toBe(true);
     expect(merc.livesPrice).toBe(83);
   });
 
