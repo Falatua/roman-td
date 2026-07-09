@@ -1,7 +1,7 @@
 // Tests for damage type math: faction resistance matrix + status effectiveness.
 import { describe, it, expect } from 'vitest';
 import { resistanceModifier, damageTypeFromString } from '../src/systems/DamageTypeSystem';
-import { armorProfile, enemyDamageMultiplier, isHellfireImmune, statusEffectiveness } from '../src/systems/EnemyResistances';
+import { armorProfile, enemyDamageMultiplier, isHellfireImmune, resistanceSummary, statusEffectiveness } from '../src/systems/EnemyResistances';
 import { DamageType, EnemyFaction, EnemyType, StatusEffectKind, Enemy } from '../src/types';
 import enemiesData from '../src/data/enemies.json';
 
@@ -171,6 +171,31 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       const enemy = makeEnemy(type, (enemiesData as any)[type].faction as EnemyFaction);
       enemy.isFlyer = !!(enemiesData as any)[type].isFlyer;
       expect(enemyDamageMultiplier(enemy, DamageType.SIEGE), `${type} siege damage`).toBe(0);
+    }
+  });
+
+  it('gives selected post-W15 enemies true physical-melee immunity with readable UI armor', () => {
+    const meleeImmuneTypes = [
+      EnemyType.MONGOL_SCOUT,
+      EnemyType.MONGOL_SHAMAN,
+      EnemyType.ANUBIS_PRIEST,
+      EnemyType.SPHINX,
+      EnemyType.BOSS_FLYER_VULTURE,
+      EnemyType.ANUBIS_PRIEST_COMMANDER,
+      EnemyType.TYPHON,
+      EnemyType.NAGA_ORACLE,
+      EnemyType.STONE_JUGGERNAUT
+    ];
+
+    for (const type of meleeImmuneTypes) {
+      const def: any = (enemiesData as any)[type];
+      const enemy = makeEnemy(type, def.faction as EnemyFaction);
+      enemy.isFlyer = !!def.isFlyer;
+      expect(def.meleeImmune, `${type} JSON meleeImmune`).toBe(true);
+      expect(enemyDamageMultiplier(enemy, DamageType.PHYS_MELEE), `${type} physical melee`).toBe(0);
+      expect(armorProfile(type).find(row => row.damageType === 'PHYS_MELEE')?.immune, `${type} armor row`).toBe(true);
+      expect(resistanceSummary(type).some(row => row.label === 'Melee' && row.value === 0), `${type} summary row`).toBe(true);
+      expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine answer`).toBeGreaterThan(0);
     }
   });
 

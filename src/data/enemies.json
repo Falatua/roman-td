@@ -615,6 +615,7 @@
     "livesCost": 2,
     "auraTowerSlow": 0.25,
     "healAllyPctPerSec": 0.02,
+    "meleeImmune": true,
     "immunePoison": true
   },
   "SOBEK_WARRIOR": {
@@ -647,6 +648,7 @@
     "isFlyer": true,
     "isBoss": false,
     "livesCost": 3,
+    "meleeImmune": true,
     "phaseHits": 2,
     "groundConvertAs": "EGYPTIAN_SPEARMAN"
   },
@@ -739,6 +741,7 @@
     "isBoss": false,
     "livesCost": 1,
     "renderScale": 0.82,
+    "meleeImmune": true,
     "stealthInterval": {
       "period": 6,
       "duration": 1
@@ -755,7 +758,8 @@
     "livesCost": 2,
     "auraTowerSlow": 0.22,
     "healAllyPctPerSec": 0.018,
-    "renderScale": 0.82
+    "renderScale": 0.82,
+    "meleeImmune": true
   },
   "MONGOL_CAPTAIN": {
     "name": "Hun Captain",
@@ -814,6 +818,7 @@
     "livesCost": 5,
     "isElite": true,
     "bigGlow": true,
+    "meleeImmune": true,
     "immuneSlow": true,
     "immuneStun": true,
     "renderScale": 1.4
@@ -996,6 +1001,7 @@
     "sleepDartTravelTilesPerSec": 5.2,
     "sleepDartDurationSec": 3.25,
     "sleepDartLandOnly": true,
+    "meleeImmune": true,
     "immuneFire": true,
     "immuneHellfire": true
   },
@@ -1059,6 +1065,7 @@
     "isBoss": false,
     "livesCost": 5,
     "isElite": true,
+    "meleeImmune": true,
     "immunePoison": true,
     "renderScale": 1.2
   },
@@ -1201,6 +1208,7 @@
     "isElite": true,
     "renderScale": 1.5,
     "shieldBlockChance": 0.35,
+    "meleeImmune": true,
     "immuneSlow": true,
     "immuneStun": true
   }

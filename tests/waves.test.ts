@@ -133,6 +133,22 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
 });
 
 describe('Late-wave DoT profile coverage', () => {
+  it('keeps physical-melee immune threats present across W16-W30', () => {
+    const meleeImmuneTypes = new Set(
+      Object.entries(enemiesData as any)
+        .filter(([, def]: any) => def?.meleeImmune === true)
+        .map(([type]) => type)
+    );
+
+    for (const wave of (wavesData as any[]).filter(w => w.wave >= 16 && w.wave <= 30)) {
+      const types = [...new Set((wave.spawns ?? []).map((spawn: any) => spawn.type))];
+      expect(
+        types.some(type => meleeImmuneTypes.has(type)),
+        `W${wave.wave} should include at least one physical-melee immune threat`
+      ).toBe(true);
+    }
+  });
+
   it('gives every W16-W30 enemy at least one explicit burn, poison, or bleed profile', () => {
     for (const wave of (wavesData as any[]).filter(w => w.wave >= 16 && w.wave <= 30)) {
       const types = [...new Set((wave.spawns ?? []).map((s: any) => s.type))] as EnemyType[];
