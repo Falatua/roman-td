@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GamePhase, EnemyType, TileType, TowerType } from '../src/types';
 import { createGameState } from '../src/GameState';
 import { WATER_ZONE } from '../src/constants';
@@ -86,6 +86,26 @@ describe('Harbor naval tower system', () => {
     expect(harborDraftTierForWave(16)).toBe(3);
     expect(harborDraftTierForWave(21)).toBe(4);
     expect(harborDraftTierForWave(27)).toBe(5);
+  });
+
+  it('randomizes naval contract tower choices when the Harbor draft refreshes', () => {
+    const s = readyState();
+    s.wave = 12;
+    const randomSpy = vi.spyOn(Math, 'random');
+    try {
+      randomSpy.mockReturnValue(0);
+      const first = buildHarborDraftOffers(s, true).map(o => o.type);
+      const cached = buildHarborDraftOffers(s).map(o => o.type);
+      expect(cached).toEqual(first);
+
+      randomSpy.mockReturnValue(0.999);
+      const refreshed = buildHarborDraftOffers(s, true).map(o => o.type);
+      expect(refreshed).not.toEqual(first);
+      expect(new Set(refreshed).size).toBe(refreshed.length);
+      for (const type of refreshed) expect(isHarborTowerType(type)).toBe(true);
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
   it('still marks Sea Giant-class kills as Harbor unlocks without opening a modal mid-wave', () => {

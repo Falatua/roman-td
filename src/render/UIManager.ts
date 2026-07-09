@@ -6,6 +6,7 @@ import HERO_DEFS_TABLE from '../data/herodefs.json';
 import { ECONOMY, GRID, POOL_PROBABILITIES, WAVE } from '../constants';
 import { tex } from './Assets';
 import { canAfford, poolUpgradeCost } from '../systems/EconomySystem';
+import { MERCATOR_WAVES } from '../systems/MerchantSystem';
 import { previewSpawnHp } from '../systems/WaveManager';
 import { displayWaveNumber } from '../systems/TestYourMightLabels';
 import { factionName, enemyName, damageTypeLabel } from '../format';
@@ -586,11 +587,10 @@ export class UIManager {
     }
 
     // 2026-05 v11 (B5): Mercator countdown chip — fires 1-2 waves before
-    // each Mercator visit (W4/W9/W14/W19) so the player knows to save gold
+    // each Mercator visit so the player knows to save gold
     // for the legendary trophies + T5 armory. Sits just above the next-wave
     // preview chip; same insert-anchor + visual language so the two read as
     // a single info strip.
-    const MERCATOR_VISIT_WAVES = [4, 9, 14, 19];
     let mercChip = document.getElementById('mercator-countdown');
     if (!mercChip) {
       mercChip = document.createElement('div');
@@ -600,13 +600,13 @@ export class UIManager {
     }
     const inPreWave = state.phase === GamePhase.BUILD_PHASE || state.phase === GamePhase.PROSPECT_PLACEMENT || state.phase === GamePhase.PICK_KEEPER;
     // 2026-05 v10 — Endless mode has no Mercator visits (state.wave is
-    // frozen at 20, never matches MERCATOR_VISIT_WAVES). Hide the chip
+    // frozen at 20, never matches MERCATOR_WAVES). Hide the chip
     // entirely so the player isn't teased with a vendor that won't
     // appear. Could be reworked later as an endless-specific stocker.
     if (inPreWave && !state.endlessMode) {
       const nextWaveNum = state.wave + 1;
-      const arrivesNext = MERCATOR_VISIT_WAVES.includes(nextWaveNum);
-      const arrivesIn2  = MERCATOR_VISIT_WAVES.includes(nextWaveNum + 1);
+      const arrivesNext = MERCATOR_WAVES.includes(nextWaveNum);
+      const arrivesIn2  = MERCATOR_WAVES.includes(nextWaveNum + 1);
       if (arrivesNext) {
         mercChip.style.display = '';
         mercChip.innerHTML = `★ MERCATOR ARRIVES NEXT WAVE (W${nextWaveNum}) — save your gold · 733g LEGENDARIES · 325g T5 TOWERS`;
