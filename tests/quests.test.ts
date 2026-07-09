@@ -11,14 +11,18 @@ const quest = (id: string) => QUESTS.find(q => q.id === id)!;
 function soloCampaignCumulative() {
   let kills = 0;
   let bosses = 0;
+  let oceanKills = 0;
   return (wavesData as any[]).map(wave => {
     for (const group of wave.spawns) {
-      const isBoss = !!(enemiesData as any)[group.type]?.isBoss;
-      if (wave.type === 'B' && wave.wave <= 15 && !isBoss) continue;
-      kills += group.count;
-      if (isBoss) bosses += group.count;
+      const def = (enemiesData as any)[group.type] ?? {};
+      const isBoss = !!def.isBoss;
+      const lateSecondGateMirror = wave.wave >= 21 && !def.isBoss && !def.isFlyer;
+      const count = lateSecondGateMirror ? group.count * 2 : group.count;
+      kills += count;
+      if (isBoss) bosses += count;
+      if ((group as any).ocean) oceanKills += count;
     }
-    return { wave: wave.wave, kills, bosses };
+    return { wave: wave.wave, kills, bosses, oceanKills };
   });
 }
 
@@ -109,7 +113,7 @@ describe('30-wave Solo quest pacing', () => {
     expect(quest('leviathan_pact').reward).toEqual({ kind: 'GOLD', amount: 220 });
 
     const oceanKills = createGameState();
-    oceanKills.oceanEnemiesKilled = 6;
+    oceanKills.oceanEnemiesKilled = 40;
     expect(evaluateQuests(oceanKills).map(q => q.id)).toContain('shipwreck_omen');
 
     const harbor = createGameState();
@@ -130,30 +134,39 @@ describe('30-wave Solo quest pacing', () => {
     expect(evaluateQuests(leviathan).map(q => q.id)).toContain('leviathan_pact');
   });
 
-  it('paces total-kill quests near waves 6, 14, and 23', () => {
+  it('paces total-kill quests near waves 7, 13, and 22', () => {
     const campaign = soloCampaignCumulative();
     const completionWave = (target: number) => campaign.find(row => row.kills >= target)?.wave;
-    expect(quest('bloodline').target).toBe(340);
+    expect(quest('bloodline').target).toBe(430);
     expect(quest('butcher').target).toBe(900);
     expect(quest('destroyer').target).toBe(2000);
-    expect(completionWave(quest('bloodline').target)).toBe(6);
-    expect(completionWave(quest('butcher').target)).toBe(14);
-    expect(completionWave(quest('destroyer').target)).toBe(23);
+    expect(completionWave(quest('bloodline').target)).toBe(7);
+    expect(completionWave(quest('butcher').target)).toBe(13);
+    expect(completionWave(quest('destroyer').target)).toBe(22);
   });
 
-  it('paces boss quests near waves 5, 14, and 24', () => {
+  it('paces boss quests near waves 9, 14, and 24', () => {
     const campaign = soloCampaignCumulative();
     const completionWave = (target: number) => campaign.find(row => row.bosses >= target)?.wave;
-    expect(quest('beast_slayer').target).toBe(2);
+    expect(quest('beast_slayer').target).toBe(6);
     expect(quest('boss_hunter').target).toBe(12);
     expect(quest('boss_slayer_supreme').target).toBe(20);
-    expect(completionWave(quest('beast_slayer').target)).toBe(5);
+    expect(completionWave(quest('beast_slayer').target)).toBe(9);
     expect(completionWave(quest('boss_hunter').target)).toBe(14);
     expect(completionWave(quest('boss_slayer_supreme').target)).toBe(24);
   });
 
+  it('prevents the updated early campaign from cashing out too many milestone quests on wave 5', () => {
+    const campaign = soloCampaignCumulative();
+    const wave5 = campaign.find(row => row.wave === 5)!;
+    expect(wave5.kills).toBeLessThan(quest('bloodline').target);
+    expect(wave5.bosses).toBeLessThan(quest('beast_slayer').target);
+    expect(quest('iron_discipline').target).toBeGreaterThan(120);
+    expect(wave5.oceanKills).toBeGreaterThanOrEqual(quest('shipwreck_omen').target);
+  });
+
   it('aligns single-tower mastery with the long campaign badge ladder', () => {
-    expect(quest('iron_discipline').target).toBe(100);
+    expect(quest('iron_discipline').target).toBe(160);
     expect(quest('champion_tower').target).toBe(200);
     expect(quest('legend_tower').target).toBe(500);
     expect(quest('eternal_bulwark').target).toBe(27);

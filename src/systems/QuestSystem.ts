@@ -136,9 +136,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'bloodline', tier: 'EARLY',
     title: 'Bloodline',
-    blurb: 'Total 340 enemy kills across the field. Hold through the first campaign act.',
+    blurb: 'Total 430 enemy kills across the field. Hold past the first boss and prove the maze can scale.',
     condition: s => s.totalKills,
-    target: 340,
+    target: 430,
     reward: { kind: 'GOLD', amount: 25 }
   },
   {
@@ -160,9 +160,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'shipwreck_omen', tier: 'EARLY',
     title: 'Shipwreck Omen',
-    blurb: 'Kill 6 ocean-born enemies. The wreck is not just scenery.',
+    blurb: 'Kill 40 ocean-born enemies. Clear the first shipwreck surge.',
     condition: s => s.oceanEnemiesKilled ?? 0,
-    target: 6,
+    target: 40,
     reward: { kind: 'GOLD', amount: 20 }
   },
   {
@@ -176,17 +176,17 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'iron_discipline', tier: 'EARLY',
     title: 'Iron Discipline',
-    blurb: 'A single tower lands 100 kills. Keep your veterans alive.',
+    blurb: 'A single tower lands 160 kills. Keep your veterans alive.',
     condition: bestSingleTowerKills,
-    target: 100,
+    target: 160,
     reward: { kind: 'ITEM', item: 'TRAINING_SCROLL' }
   },
   {
     id: 'beast_slayer', tier: 'EARLY',
     title: 'Beast Slayer',
-    blurb: 'Kill 2 wave bosses. The hunt has only just begun.',
+    blurb: 'Kill 6 boss-class enemies. The hunt begins after the first true beast wave.',
     condition: s => s.bossesKilled ?? 0,
-    target: 2,
+    target: 6,
     reward: { kind: 'GOLD', amount: 25 }
   },
   // 2026-07-02 — playstyle-flavored quests (variety, gear, hero growth)
