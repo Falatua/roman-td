@@ -621,6 +621,7 @@
     "healAllyPctPerSec": 0.02,
     "meleeImmune": true,
     "dotImmune": true,
+    "divineImmune": true,
     "immunePoison": true
   },
   "SOBEK_WARRIOR": {
@@ -742,6 +743,7 @@
     "lowHpSpeedBoost": 1.6,
     "renderScale": 0.82,
     "dotImmune": true,
+    "divineImmune": true,
     "siegeImmune": true
   },
   "MONGOL_SCOUT": {
@@ -784,6 +786,7 @@
     "livesCost": 3,
     "outOfCombatRegen": 0.025,
     "renderScale": 0.9,
+    "divineImmune": true,
     "rangedImmune": true
   },
   "BOSS_FLYER_VULTURE": {
@@ -859,6 +862,7 @@
     "isBoss": false,
     "livesCost": 5,
     "isElite": true,
+    "divineImmune": true,
     "siegeImmune": true
   },
   "SUPER_GIANT_COLOSSUS": {
@@ -873,6 +877,7 @@
     "bigGlow": true,
     "renderScale": 1.7,
     "rangedImmune": true,
+    "divineImmune": true,
     "immuneSlow": true,
     "immuneStun": true,
     "immuneFreeze": true,
@@ -1085,6 +1090,7 @@
     "isElite": true,
     "meleeImmune": true,
     "dotImmune": true,
+    "divineImmune": true,
     "immunePoison": true,
     "renderScale": 1.2
   },

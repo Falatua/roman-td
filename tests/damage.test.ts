@@ -196,7 +196,11 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       expect(enemyDamageMultiplier(enemy, DamageType.SIEGE), `${type} siege`).toBe(0);
       expect(armorProfile(type).find(row => row.damageType === 'SIEGE')?.immune, `${type} armor row`).toBe(true);
       expect(resistanceSummary(type).some(row => row.label === 'Siege' && row.value === 0), `${type} summary row`).toBe(true);
-      expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine answer`).toBeGreaterThan(0);
+      if (def.divineImmune) {
+        expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine exception`).toBe(0);
+      } else {
+        expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine answer`).toBeGreaterThan(0);
+      }
     }
   });
 
@@ -221,7 +225,11 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       expect(enemyDamageMultiplier(enemy, DamageType.PHYS_MELEE), `${type} physical melee`).toBe(0);
       expect(armorProfile(type).find(row => row.damageType === 'PHYS_MELEE')?.immune, `${type} armor row`).toBe(true);
       expect(resistanceSummary(type).some(row => row.label === 'Melee' && row.value === 0), `${type} summary row`).toBe(true);
-      expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine answer`).toBeGreaterThan(0);
+      if (def.divineImmune) {
+        expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine exception`).toBe(0);
+      } else {
+        expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine answer`).toBeGreaterThan(0);
+      }
     }
   });
 
@@ -245,7 +253,11 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       expect(enemyDamageMultiplier(enemy, DamageType.PHYS_RANGED), `${type} physical ranged`).toBe(0);
       expect(armorProfile(type).find(row => row.damageType === 'PHYS_RANGED')?.immune, `${type} armor row`).toBe(true);
       expect(resistanceSummary(type).some(row => row.label === 'Ranged' && row.value === 0), `${type} summary row`).toBe(true);
-      expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine answer`).toBeGreaterThan(0);
+      if (def.divineImmune) {
+        expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine exception`).toBe(0);
+      } else {
+        expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine answer`).toBeGreaterThan(0);
+      }
     }
   });
 
@@ -270,7 +282,29 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       expect(resistanceSummary(type).some(row => row.label === 'Burn' && row.value === 0), `${type} burn summary`).toBe(true);
       expect(resistanceSummary(type).some(row => row.label === 'Bleed' && row.value === 0), `${type} bleed summary`).toBe(true);
       expect(resistanceSummary(type).some(row => row.label === 'Poison' && row.value === 0), `${type} poison summary`).toBe(true);
-      expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} direct-damage answer`).toBeGreaterThan(0);
+      expect(enemyDamageMultiplier(enemy, DamageType.ELEMENTAL_FIRE), `${type} direct-damage answer`).toBeGreaterThan(0);
+    }
+  });
+
+  it('gives selected post-W15 enemies true divine immunity with readable UI armor', () => {
+    const divineImmuneTypes = [
+      EnemyType.MONGOL_BERSERKER,
+      EnemyType.MONGOL_CAPTAIN,
+      EnemyType.ANUBIS_PRIEST,
+      EnemyType.ANUBIS_PRIEST_COMMANDER,
+      EnemyType.CYCLOPS,
+      EnemyType.SUPER_GIANT_COLOSSUS
+    ];
+
+    for (const type of divineImmuneTypes) {
+      const def: any = (enemiesData as any)[type];
+      const enemy = makeEnemy(type, def.faction as EnemyFaction);
+      enemy.isFlyer = !!def.isFlyer;
+      expect(def.divineImmune, `${type} JSON divineImmune`).toBe(true);
+      expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine`).toBe(0);
+      expect(armorProfile(type).find(row => row.damageType === 'DIVINE')?.immune, `${type} armor row`).toBe(true);
+      expect(resistanceSummary(type).some(row => row.label === 'Divine' && row.value === 0), `${type} summary row`).toBe(true);
+      expect(enemyDamageMultiplier(enemy, DamageType.ELEMENTAL_FIRE), `${type} non-divine answer`).toBeGreaterThan(0);
     }
   });
 

@@ -249,6 +249,19 @@ function siegeImmuneBlocksTower(enemyType: string, towerDmgType: DamageType): bo
   if (!(enemiesData as any)[enemyType]?.siegeImmune) return false;
   return towerDmgType === DamageType.SIEGE;
 }
+function divineImmuneBlocksTower(enemyType: string, towerDmgType: DamageType, towerType?: TowerType): boolean {
+  if (!(enemiesData as any)[enemyType]?.divineImmune) return false;
+  if (towerType === TowerType.MARS_VICTOR) {
+    return !!(enemiesData as any)[enemyType]?.siegeImmune;
+  }
+  return towerDmgType === DamageType.DIVINE;
+}
+function targetingDamageType(state: GameStateShape, tower: Tower): DamageType {
+  if (towerAuraTileKind(tower) === 'IVORY') return DamageType.DIVINE;
+  const proscriptionUntil = (state as any).__proscriptionUntilTick ?? 0;
+  if (state.tick < proscriptionUntil) return DamageType.DIVINE;
+  return tower.damageType;
+}
 function requiresMeleeBreak(enemyType: string): boolean {
   return !!(enemiesData as any)[enemyType]?.requiresMeleeBreak;
 }
@@ -1733,6 +1746,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const inRange = targetCandidateScratch;
       inRange.length = 0;
       const rPx2 = rPx * rPx;
+      const acquireDmgType = targetingDamageType(state, t);
       for (const e of enemies) {
         const dx = e.x - tcx;
         const dy = e.y - tcy;
@@ -1742,9 +1756,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         // 2026-05-19 v3 — meleeImmune now only blocks PHYS_MELEE
         // damage. Divine / fire / siege melee towers still hit. See
         // meleeImmuneBlocksTower comment for the design rationale.
-        if (isMeleeRow && meleeImmuneBlocksTower(e.type, t.damageType)) continue;
-        if (rangedImmuneBlocksTower(e.type, t.damageType)) continue;
-        if (siegeImmuneBlocksTower(e.type, t.damageType)) continue;
+        if (isMeleeRow && meleeImmuneBlocksTower(e.type, acquireDmgType)) continue;
+        if (rangedImmuneBlocksTower(e.type, acquireDmgType)) continue;
+        if (siegeImmuneBlocksTower(e.type, acquireDmgType)) continue;
+        if (divineImmuneBlocksTower(e.type, acquireDmgType, t.type)) continue;
         inRange.push(e);
       }
       // BURNING GROUND: fire-themed towers stamp a 3s burn patch at impact
@@ -2242,6 +2257,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   );
   const canHitFlyers = !isMelee || meleeAirEnabled;
   const antiAirOnly = ANTI_AIR_ONLY_TYPES.has(t.type);
+  const acquireDmgType = targetingDamageType(state, t);
   const inRange = targetCandidateScratch;
   inRange.length = 0;
   for (const e of enemies) {
@@ -2254,8 +2270,9 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
     // reveal scan). Once tagged, every tower — not just the truesight
     // one — can acquire it through the veil.
     const revealed = !!(e as any).__truesightRevealed;
-    if (rangedImmuneBlocksTower(e.type, t.damageType)) continue;
-    if (siegeImmuneBlocksTower(e.type, t.damageType)) continue;
+    if (rangedImmuneBlocksTower(e.type, acquireDmgType)) continue;
+    if (siegeImmuneBlocksTower(e.type, acquireDmgType)) continue;
+    if (divineImmuneBlocksTower(e.type, acquireDmgType, t.type)) continue;
     if (antiAirOnly) {
       if (e.isFlyer && (revealed || !(e as any).__veiled)) inRange.push(e);
       continue;
@@ -2263,7 +2280,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
     if (!canHitFlyers && e.isFlyer) continue;
     // 2026-05-19 v3 — Only PHYS_MELEE damage is blocked by meleeImmune.
     // Divine / fire / siege melee towers still acquire these targets.
-    if (isMelee && meleeImmuneBlocksTower(e.type, t.damageType)) continue;
+    if (isMelee && meleeImmuneBlocksTower(e.type, acquireDmgType)) continue;
     if ((e as any).__veiled && !revealed) continue;       // VEIL modifier: untargetable
     // SHIELDED units: ranged towers cannot target until a melee tower has
     // broken the shield. Melee towers can always hit and will set the flag.

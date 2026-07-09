@@ -244,6 +244,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   const traits: { label: string; color?: string }[] = [];
   // -- Combat / damage interaction --
   if (def?.meleeImmune) traits.push({ label: 'MELEE-IMMUNE — physical melee deals 0 damage', color: '#ee5555' });
+  if (def?.divineImmune) traits.push({ label: 'DIVINE-IMMUNE — divine damage deals 0 damage', color: '#ffd34d' });
   if (def?.requiresMeleeBreak) traits.push({ label: 'SHIELD — ranged & siege ignored until a melee tower cracks the shield', color: '#ee5555' });
   if (def?.shieldBlockChance) traits.push({ label: `SHIELD BLOCK — ${Math.round(def.shieldBlockChance*100)}% chance to fully block ranged/siege hits (until shield breaks)`, color: '#ee5555' });
   // 2026-05-24 audit fix — surface allAttackBlockChance on the inspect
