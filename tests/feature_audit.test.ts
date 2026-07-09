@@ -247,6 +247,12 @@ describe('Inspection panels keep obvious close controls', () => {
     expect(helper).toContain("btn.title = 'Close this panel'");
     expect(helper).toContain("btn.setAttribute('aria-label', 'Close this panel')");
     expect(helper).toContain("root.dispatchEvent(new CustomEvent('rtd:modal-force-close'))");
+    expect(helper).toContain('.rtd-modal-tools');
+    expect(helper).toContain('.rtd-modal-tool');
+    expect(helper).toContain('display: inline-grid');
+    expect(helper).toContain('place-items: center');
+    expect(helper).toContain('width: 34px');
+    expect(helper).toContain('height: 34px');
   });
 
   it('choice-modal X buttons use safe decline or skip behavior instead of trapping progression', () => {
@@ -264,16 +270,17 @@ describe('Inspection panels keep obvious close controls', () => {
     expect(tym).toContain('onClose: decline');
   });
 
-  it('manual-X modals opt out of the helper close button to avoid double X controls', () => {
+  it('manual-X modals opt out while Harbor uses the shared aligned control row', () => {
     const files = [
       'src/main.ts',
-      'src/render/HarborDraftModal.ts',
       'src/render/SecretEvents.ts',
       'src/render/ComboPreview.ts'
     ];
     const source = files.map(file => readFileSync(file, 'utf8')).join('\n');
     expect(source).toContain('closeButton: false');
-    expect(readFileSync('src/render/HarborDraftModal.ts', 'utf8')).toContain('id="harbor-close"');
+    const harbor = readFileSync('src/render/HarborDraftModal.ts', 'utf8');
+    expect(harbor).not.toContain('id="harbor-close"');
+    expect(harbor).toContain('onClose: () => wrap.remove()');
     expect(readFileSync('src/render/SecretEvents.ts', 'utf8')).toContain('id="mercator-backroom-x"');
     expect(readFileSync('src/render/ComboPreview.ts', 'utf8')).toContain('id="combo-info-close"');
     expect(readFileSync('src/main.ts', 'utf8')).toContain('id="dps-summary-close"');
@@ -1236,6 +1243,9 @@ describe('Modal ergonomics and popup stacking', () => {
 
   it('shows full naval contract stats and details in the Harbor Draft', () => {
     const harborModal = readFileSync('src/render/HarborDraftModal.ts', 'utf8');
+    expect(harborModal).toContain('function navalContractSpriteHtml');
+    expect(harborModal).toContain('texUrl(type)');
+    expect(harborModal).toContain('Actual in-game sprite shown above.');
     expect(harborModal).toContain('function navalContractDetailsHtml');
     expect(harborModal).toContain('towerStatBreakdown(preview, state as any)');
     expect(harborModal).toContain('Each card shows the tier-adjusted stats you are buying.');

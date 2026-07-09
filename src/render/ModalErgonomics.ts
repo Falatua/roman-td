@@ -38,25 +38,26 @@ export function ensureModalErgonomicsStyle(): void {
       top: 8px;
       z-index: 8;
       display: flex;
-      gap: 5px;
+      gap: 6px;
       align-items: center;
       pointer-events: auto;
     }
     .rtd-modal-tool {
-      width: 28px;
-      height: 28px;
+      width: 34px;
+      height: 34px;
       padding: 0;
       display: inline-grid;
       place-items: center;
       background: linear-gradient(180deg,#2a1a0e,#0c0a08);
       color: #ffd34d;
-      border: 1px solid #7a5a1a;
+      border: 2px solid #7a5a1a;
       box-shadow: 0 0 8px rgba(0,0,0,0.45);
       cursor: pointer;
       font-family: 'Courier New', monospace;
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1;
       font-weight: 900;
+      text-align: center;
       touch-action: none;
     }
     .rtd-modal-tool:hover { filter: brightness(1.18); border-color: #ffd34d; }
@@ -88,7 +89,7 @@ export function ensureModalErgonomicsStyle(): void {
     }
     @media (max-width: 760px) {
       .rtd-modal-tools { right: 6px; top: 6px; }
-      .rtd-modal-tool { width: 30px; height: 30px; }
+      .rtd-modal-tool { width: 34px; height: 34px; }
       .rtd-modal-panel {
         max-height: calc(100vh - 14px);
       }

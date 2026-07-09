@@ -3,6 +3,7 @@ import { HarborDraftOffer, queueHarborDraftPurchase } from '../systems/HarborSys
 import towersData from '../data/towers.json';
 import { enhanceModalErgonomics } from './ModalErgonomics';
 import { createTower, towerStatBreakdown } from '../systems/TowerSystem';
+import { ASSET_KEYS, texUrl } from './Assets';
 
 function towerLabel(type: string): string {
   return (towersData as any)[type]?.name ?? type.replace(/_/g, ' ');
@@ -39,6 +40,25 @@ function attackStyle(def: any): string {
   if (def?.damageType === 'SIEGE') return 'Siege projectile';
   if (def?.damageType === 'DIVINE') return 'Divine ranged';
   return 'Ranged';
+}
+
+function navalContractSpriteHtml(type: string, label: string, tier: number): string {
+  const manifestFile = (ASSET_KEYS as Record<string, string>)[type];
+  const src = texUrl(type) ?? (manifestFile ? `assets/sprites/${manifestFile}` : null);
+  const tierLabel = `T${tier}`;
+  if (src) {
+    return `
+      <div style="width:86px;height:86px;display:grid;place-items:center;background:radial-gradient(circle,#1b3f4c 0%,#07141c 72%);border:2px solid #5fe6ff;box-shadow:inset 0 0 14px #000,0 0 12px rgba(95,230,255,0.22);position:relative;flex:0 0 auto">
+        <img src="${src}" alt="${label}" style="width:76px;height:76px;object-fit:contain;image-rendering:pixelated;display:block"/>
+        <div style="position:absolute;right:4px;bottom:4px;background:#0c0a08;color:#ffd34d;border:1px solid #7a5a1a;font-size:9px;font-weight:bold;letter-spacing:1px;padding:2px 4px">${tierLabel}</div>
+      </div>`;
+  }
+  const letter = label.trim().charAt(0).toUpperCase() || '?';
+  return `
+    <div style="width:86px;height:86px;display:grid;place-items:center;background:radial-gradient(circle,#1b3f4c 0%,#07141c 72%);border:2px solid #5fe6ff;box-shadow:inset 0 0 14px #000,0 0 12px rgba(95,230,255,0.22);position:relative;flex:0 0 auto">
+      <span style="font-size:34px;color:#ffd34d;font-weight:bold;text-shadow:2px 2px 0 #000">${letter}</span>
+      <div style="position:absolute;right:4px;bottom:4px;background:#0c0a08;color:#ffd34d;border:1px solid #7a5a1a;font-size:9px;font-weight:bold;letter-spacing:1px;padding:2px 4px">${tierLabel}</div>
+    </div>`;
 }
 
 function navalContractDetailsHtml(state: GameStateShape, offer: HarborDraftOffer, def: any): string {
@@ -118,14 +138,16 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
   const cards = offers.map((o, idx) => {
     const def: any = (towersData as any)[o.type] ?? {};
     const affordable = state.gold >= o.price;
+    const label = towerLabel(String(o.type));
     return `
       <div style="background:linear-gradient(180deg,#162b35,#0b1118);border:2px solid ${affordable ? '#5fe6ff' : '#6b3a3a'};padding:12px;text-align:left;box-shadow:inset 0 0 16px #000;display:flex;flex-direction:column;min-height:430px">
-        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
-          <div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          ${navalContractSpriteHtml(String(o.type), label, o.tier)}
+          <div style="min-width:0;flex:1">
             <div style="font-size:10px;letter-spacing:2px;color:#88f7ff">${towerRole(String(o.type))}</div>
-            <div style="margin-top:5px;font-size:16px;color:#ffd34d;font-weight:bold;line-height:1.2">${towerLabel(String(o.type))}</div>
+            <div style="margin-top:5px;font-size:16px;color:#ffd34d;font-weight:bold;line-height:1.2">${label}</div>
+            <div style="margin-top:8px;font-size:10px;color:#cdefff;line-height:1.35">Actual in-game sprite shown above. Stats below reflect this offered tier.</div>
           </div>
-          <div style="flex:0 0 auto;background:#07141c;border:1px solid #5fe6ff;color:#88f7ff;font-size:10px;font-weight:bold;padding:4px 6px;letter-spacing:1px">T${o.tier}</div>
         </div>
         ${navalContractDetailsHtml(state, o, def)}
         <button data-harbor-buy="${idx}" style="margin-top:10px;width:100%;background:${affordable ? '#1d5c66' : '#332222'};color:${affordable ? '#fff8e0' : '#aa8888'};border:2px solid ${affordable ? '#88f7ff' : '#6b3a3a'};padding:8px;cursor:${affordable ? 'pointer' : 'not-allowed'};font-family:'Courier New',monospace;font-weight:bold;letter-spacing:1.5px">${affordable ? `${o.price}g CONTRACT` : `NEED ${o.price - state.gold}g`}</button>
@@ -133,12 +155,11 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
   }).join('');
   wrap.innerHTML = `
     <div id="harbor-draft-panel" style="width:min(1040px,96vw);max-height:min(88vh,820px);padding:20px 22px;background:linear-gradient(180deg,#102532,#070b10);border:3px solid #5fe6ff;box-shadow:0 0 38px #25bfff88,inset 0 0 24px #000;color:#fff8e0;font-family:'Courier New',monospace;text-align:center;overflow:hidden">
-      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding-right:120px">
         <div style="text-align:left">
           <div style="font-size:11px;letter-spacing:5px;color:#88f7ff;font-weight:bold">HARBOR DRAFT</div>
           <div style="font-size:21px;letter-spacing:3px;color:#ffd34d;font-weight:bold">Naval Contracts</div>
         </div>
-        <button id="harbor-close" aria-label="Close Harbor Draft" style="background:#241810;color:#ffd34d;border:2px solid #7a5a1a;width:34px;height:34px;cursor:pointer;font-family:'Courier New',monospace;font-weight:bold">X</button>
       </div>
       <div id="harbor-draft-body" style="margin-top:10px;max-height:min(70vh,650px);overflow-y:auto;padding-right:6px">
         <div style="font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Choose one contract, then click an ocean tile to place it, or close this panel to pass. A fresh draft appears after every cleared water-enemy wave. Each card shows the tier-adjusted stats you are buying.</div>
@@ -152,11 +173,9 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
     enhanceModalErgonomics(wrap, panel, {
       bodySelector: '#harbor-draft-body',
       title: 'Harbor Draft',
-      closeButton: false,
-      toolRightPx: 52
+      onClose: () => wrap.remove()
     });
   }
-  wrap.querySelector<HTMLButtonElement>('#harbor-close')!.onclick = () => wrap.remove();
   wrap.querySelectorAll<HTMLButtonElement>('[data-harbor-buy]').forEach(btn => {
     btn.onclick = (ev) => {
       const offer = offers[Number(btn.dataset.harborBuy)];
