@@ -2467,7 +2467,7 @@ async function boot() {
     });
     if (hasDruid) tips.push({
       headline: '🌫 DRUIDS — KILL THESE FIRST',
-      body: `Druids and Demon Legates radiate an aura that <b style="color:#ff5050">slows your towers</b>. Ignore them at your own gate. The tankier targets can wait — these are the priority kill.`,
+      body: `Druids and Demon Legates radiate an aura that <b style="color:#ff5050">slows your towers</b>. Ignore them at your own gate. The tankier targets can wait — use <b style="color:#ffd34d">TARGET ALL → CASTERS</b> or set key towers to <b style="color:#ffd34d">CASTERS</b> to burn them first.`,
       color: '#88cc88'
     });
     if (hasNaga) tips.push({

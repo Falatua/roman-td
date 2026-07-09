@@ -4089,9 +4089,10 @@ export class RenderEngine {
     const targetBadges = (this as any).targetBadges as Map<string, Text>;
     const seenTargetBadges = new Set<string>();
     // Indexed by TargetingMode enum order: FIRST, LAST, STRONG, CLOSE,
-    // FLYERS, WEAKEST, FAST. F/L/S/C/Y are the historical letters; W
-    // (weakest) and A (fAst — F is taken by FIRST) are new (2026-05-19).
-    const TARGET_LETTER = ['F', 'L', 'S', 'C', 'Y', 'W', 'A'];
+    // FLYERS, WEAKEST, FAST, CASTERS. F/L/S/C/Y are the historical
+    // letters; W (weakest), A (fAst — F is taken by FIRST), and M
+    // (Mage/Caster — C is taken by CLOSE) extend the badge set.
+    const TARGET_LETTER = ['F', 'L', 'S', 'C', 'Y', 'W', 'A', 'M'];
     for (const tw of state.towers.values()) {
       if (tw.pending) continue;
       const cx = tw.tileX * GRID.TILE + GRID.TILE / 2;

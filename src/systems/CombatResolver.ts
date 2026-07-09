@@ -2,7 +2,7 @@
 //
 // Responsibilities:
 //   1. Each frame, scan all (non-pending) towers and decide if they can attack.
-//   2. Pick a target per tower's targetingMode (FIRST/LAST/STRONG/CLOSE/FLYERS).
+//   2. Pick a target per tower's targetingMode (FIRST/LAST/STRONG/CLOSE/FLYERS/CASTERS).
 //   3. Apply support auras (Eagle Standard, Aquilifer Titan, item auras).
 //   4. Compute per-attack damage including faction resistances, mark debuffs,
 //      tower signature bonuses (Backstab, Trident & Net, Solar Flare etc.),
@@ -70,6 +70,24 @@ export const CAPITOLINE_AEGIS_DIVINE_RIDER_PCT = 0.35;
 export const SIEGE_FLYER_MISS_CHANCE = 0.20;
 
 export const FINAL_FIVE_APEX_WAVE = 26;
+
+const CASTER_TARGET_TYPES = new Set<EnemyType>([
+  EnemyType.GALLIC_DRUID,
+  EnemyType.ZOMBIE_DRUID,
+  EnemyType.DEMON_LEGATE,
+  EnemyType.REANIMATED_LICH,
+  EnemyType.ANUBIS_PRIEST,
+  EnemyType.MONGOL_SHAMAN,
+  EnemyType.NAGA_ADEPT,
+  EnemyType.NAGA_SLEEPWEAVER,
+  EnemyType.NAGA_ORACLE,
+  EnemyType.ANUBIS_PRIEST_COMMANDER,
+  EnemyType.SKY_ANUBIS_COMMANDER,
+]);
+
+export function isCasterTarget(enemy: Pick<Enemy, 'type'>): boolean {
+  return CASTER_TARGET_TYPES.has(enemy.type);
+}
 
 const SUPER_COMBO_CLASS_TYPES = new Set<TowerType>([
   TowerType.JULIUS_CAESAR,
@@ -2382,6 +2400,21 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
         }
       }
       return best;
+    }
+    case TargetingMode.CASTERS: {
+      // Spell/support enemies are priority targets because their auras,
+      // sleep darts, and command effects can collapse a maze even when
+      // bigger tanks are still alive. Among casters, prefer the one
+      // furthest along the path; if none are present, keep firing like
+      // FIRST mode so the tower never idles uselessly.
+      let bestCaster: Enemy | null = null; let bestCasterProg = -1;
+      for (const e of inRange) {
+        if (!isCasterTarget(e)) continue;
+        const p = e.pathIndex + e.pathProgress;
+        if (p > bestCasterProg) { bestCasterProg = p; bestCaster = e; }
+      }
+      if (bestCaster) return bestCaster;
+      return pickByFurthest(inRange);
     }
     case TargetingMode.CLOSE: {
       let best: Enemy | null = null; let bestD = Infinity;

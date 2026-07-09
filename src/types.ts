@@ -404,7 +404,10 @@ export enum TowerMode { MELEE, RANGED }
 // pairs naturally with STRONG). FAST
 // picks the highest-currentSpeed enemy in range — catches sprinters
 // (Spectral Scouts, Wolves, fast Druids) before they leak.
-export enum TargetingMode { FIRST, LAST, STRONG, CLOSE, FLYERS, WEAKEST, FAST }
+// 2026-07-09 — CASTERS appended for spell/support threats (Druids,
+// Legates, Shamans, Priests, Naga casters). Keep appended to avoid
+// shifting saved/legacy enum values.
+export enum TargetingMode { FIRST, LAST, STRONG, CLOSE, FLYERS, WEAKEST, FAST, CASTERS }
 export enum GamePhase { BUILD_PHASE, WAVE_PHASE, GAME_OVER, VICTORY, PROSPECT_PLACEMENT, PICK_KEEPER }
 export enum StatusEffectKind {
   SLOW = 'SLOW',

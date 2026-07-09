@@ -443,12 +443,12 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   const targetRow = document.createElement('div');
   targetRow.style.cssText = 'display:flex;gap:4px;padding:10px;border-bottom:1px solid #3a3025;flex-wrap:wrap';
   targetRow.innerHTML = `<div style="font-size:10px;color:#aa9a4a;width:100%;letter-spacing:1px;margin-bottom:4px">TARGETING</div>${antiAirOnly ? '<div style="font-size:10px;color:#66ccff;width:100%;margin:-2px 0 4px">Flyer-only tower. Ground targets are ignored.</div>' : ''}`;
-  // 2026-05-19 — WEAKEST sits next to STRONG (natural HP pair), FAST
-  // at the end. Order chosen for UI scan order: hp-pair → positional
-  // → flyer-specialty → speed-specialty.
+  // 2026-05-19 — WEAKEST sits near STRONG (natural HP pair), FAST
+  // at the end. CASTERS sits after STRONG because it is a priority-threat
+  // mode like boss/commander targeting.
   const targetingModes = antiAirOnly
     ? [TargetingMode.FLYERS]
-    : [TargetingMode.FIRST, TargetingMode.LAST, TargetingMode.STRONG, TargetingMode.WEAKEST, TargetingMode.CLOSE, TargetingMode.FLYERS, TargetingMode.FAST];
+    : [TargetingMode.FIRST, TargetingMode.LAST, TargetingMode.STRONG, TargetingMode.CASTERS, TargetingMode.WEAKEST, TargetingMode.CLOSE, TargetingMode.FLYERS, TargetingMode.FAST];
   for (const mode of targetingModes) {
     const b = document.createElement('button');
     b.textContent = targetingModeLabel(mode);
@@ -1107,7 +1107,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   const targetRow = document.createElement('div');
   targetRow.style.cssText = 'display:flex;gap:4px;padding:10px 14px;border-bottom:1px solid #3a3025;flex-wrap:wrap';
   targetRow.innerHTML = '<div style="font-size:9px;color:#aa9a4a;width:100%;letter-spacing:2px;margin-bottom:4px">TARGETING</div>';
-  for (const mode of [TargetingMode.FIRST, TargetingMode.LAST, TargetingMode.STRONG, TargetingMode.WEAKEST, TargetingMode.CLOSE, TargetingMode.FLYERS, TargetingMode.FAST]) {
+  for (const mode of [TargetingMode.FIRST, TargetingMode.LAST, TargetingMode.STRONG, TargetingMode.CASTERS, TargetingMode.WEAKEST, TargetingMode.CLOSE, TargetingMode.FLYERS, TargetingMode.FAST]) {
     const b = document.createElement('button');
     b.textContent = targetingModeLabel(mode);
     const isActive = t.targetingMode === mode;

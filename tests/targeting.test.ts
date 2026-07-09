@@ -1,9 +1,9 @@
-// Targeting-mode tests — locks the FIRST / LAST / STRONG / WEAKEST /
-// FAST / CLOSE / FLYERS behavior to prevent regressions. The
+// Targeting-mode tests — locks the FIRST / LAST / STRONG / CASTERS /
+// WEAKEST / FAST / CLOSE / FLYERS behavior to prevent regressions. The
 // pickTarget function is exported from CombatResolver specifically
 // for this test file.
 import { describe, it, expect } from 'vitest';
-import { pickTarget } from '../src/systems/CombatResolver';
+import { isCasterTarget, pickTarget } from '../src/systems/CombatResolver';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
 import { TowerType, TargetingMode, Enemy, EnemyType, EnemyFaction, DamageType } from '../src/types';
@@ -123,6 +123,54 @@ describe('Tower targeting modes', () => {
     expect(picked?.id).toBe('D');
   });
 
+  it('CASTERS prioritizes caster enemies, picking the furthest-along caster', () => {
+    const { state, tower, enemies } = setup();
+    const frontCaster = enemies.find(e => e.id === 'A')!;
+    frontCaster.type = EnemyType.GALLIC_DRUID;
+    frontCaster.pathIndex = 4;
+    frontCaster.pathProgress = 0.1;
+    const lateCaster = enemies.find(e => e.id === 'B')!;
+    lateCaster.type = EnemyType.NAGA_SLEEPWEAVER;
+    lateCaster.pathIndex = 7;
+    lateCaster.pathProgress = 0.4;
+    const nonCasterAlmostLeaking = enemies.find(e => e.id === 'C')!;
+    nonCasterAlmostLeaking.type = EnemyType.FERAL_DOG;
+    nonCasterAlmostLeaking.pathIndex = 9;
+    nonCasterAlmostLeaking.pathProgress = 0.9;
+
+    tower.targetingMode = TargetingMode.CASTERS;
+    const picked = pickTarget(state, tower, enemies, 10);
+    expect(picked?.id).toBe('B');
+  });
+
+  it('CASTERS falls back to FIRST behavior when no casters are in range', () => {
+    const { state, tower, enemies } = setup();
+    tower.targetingMode = TargetingMode.CASTERS;
+    const picked = pickTarget(state, tower, enemies, 10);
+    expect(picked?.id).toBe('C');
+  });
+
+  it('caster classification covers spell and support threats without marking regular units', () => {
+    for (const type of [
+      EnemyType.GALLIC_DRUID,
+      EnemyType.ZOMBIE_DRUID,
+      EnemyType.DEMON_LEGATE,
+      EnemyType.REANIMATED_LICH,
+      EnemyType.ANUBIS_PRIEST,
+      EnemyType.MONGOL_SHAMAN,
+      EnemyType.NAGA_ADEPT,
+      EnemyType.NAGA_SLEEPWEAVER,
+      EnemyType.NAGA_ORACLE,
+      EnemyType.ANUBIS_PRIEST_COMMANDER,
+      EnemyType.SKY_ANUBIS_COMMANDER,
+    ]) {
+      expect(isCasterTarget({ type }), `${type} should count as a caster`).toBe(true);
+    }
+    for (const type of [EnemyType.FERAL_DOG, EnemyType.WAR_ELEPHANT, EnemyType.STANDARD_BEARER_COMMANDER]) {
+      expect(isCasterTarget({ type }), `${type} should not count as a caster`).toBe(false);
+    }
+  });
+
   it('WEAKEST picks the enemy with the lowest remaining HP', () => {
     const { state, tower, enemies } = setup();
     tower.targetingMode = TargetingMode.WEAKEST;
@@ -227,6 +275,7 @@ describe('Tower targeting modes', () => {
       TargetingMode.FIRST,
       TargetingMode.LAST,
       TargetingMode.STRONG,
+      TargetingMode.CASTERS,
       TargetingMode.WEAKEST,
       TargetingMode.FAST,
       TargetingMode.CLOSE,
@@ -275,9 +324,11 @@ describe('Tower targeting modes', () => {
     const { state, enemies } = setup();
     const hero = createTower(TowerType.HERO_MARIUS, 5, 5, 5, 1);
     hero.isHero = true;
-    hero.targetingMode = TargetingMode.CLOSE;
+    const caster = enemies.find(e => e.id === 'B')!;
+    caster.type = EnemyType.DEMON_LEGATE;
+    hero.targetingMode = TargetingMode.CASTERS;
     const picked = pickTarget(state, hero, enemies, 10);
-    expect(picked?.id).toBe('D');
+    expect(picked?.id).toBe('B');
   });
 
   it('physical-ranged towers skip ranged-immune enemies and pick a valid target', () => {

@@ -38,7 +38,7 @@ export interface UICallbacks {
   onOpenSettings?: () => void;
   onDpsCheck?: () => void;
   // 2026-05-19 — Bulk-set every placed tower's targetingMode at once
-  // (right-panel "TARGET ALL" button + 7-button mode picker). Saves
+  // (right-panel "TARGET ALL" button + mode picker). Saves
   // the player from opening each tower one at a time when they want
   // a global retarget (e.g. flip everything to WEAKEST during a
   // grunt-clearing wave, then back to STRONG for the boss).
@@ -207,7 +207,7 @@ export class UIManager {
     // overlay, dismisses on selection or on a re-click of the button.
     const targetAllBtn = mkBtn('🎯 TARGET ALL', '#3a1a2a');
     targetAllBtn.id = 'target-all-btn';
-    targetAllBtn.title = 'Bulk-retarget EVERY placed tower at once. Click to open the mode picker (FIRST / LAST / STRONG / WEAKEST / CLOSEST / FLYERS / FAST), pick a mode, and every eligible tower on the map switches to it. Flyer-only towers stay on FLYERS. Saves you from opening each tower individually.';
+    targetAllBtn.title = 'Bulk-retarget EVERY placed tower at once. Click to open the mode picker (FIRST / LAST / STRONG / CASTERS / WEAKEST / CLOSEST / FLYERS / FAST), pick a mode, and every eligible tower on the map switches to it. Flyer-only towers stay on FLYERS. Saves you from opening each tower individually.';
     targetAllBtn.style.color = '#ffb3d9';
     targetAllBtn.style.border = '2px solid #ffb3d9';
     targetAllBtn.style.fontWeight = 'bold';
@@ -216,12 +216,13 @@ export class UIManager {
     const targetAllPicker = document.createElement('div');
     targetAllPicker.id = 'target-all-picker';
     targetAllPicker.style.cssText = 'display:none;background:#1a0f18;border:1px solid #5a3a4a;border-top:none;padding:8px;flex-direction:column;gap:4px;';
-    // 7 mode buttons matching the per-tower row in TowerMenu, in the
-    // same order: FIRST · LAST · STRONG · WEAKEST · CLOSEST · FLYERS · FAST.
+    // Mode buttons matching the per-tower row in TowerMenu, in the
+    // same order: FIRST · LAST · STRONG · CASTERS · WEAKEST · CLOSEST · FLYERS · FAST.
     const TARGET_ALL_MODES: { mode: TargetingMode; label: string; tip: string }[] = [
       { mode: TargetingMode.FIRST,   label: 'FIRST',   tip: 'Furthest along the path (closest to leaking)' },
       { mode: TargetingMode.LAST,    label: 'LAST',    tip: 'Earliest in the path (newest spawn)' },
       { mode: TargetingMode.STRONG,  label: 'STRONG',  tip: 'Bosses first, then commanders, then highest HP' },
+      { mode: TargetingMode.CASTERS, label: 'CASTERS', tip: 'Druids, Legates, Shamans, Priests, and Naga casters first' },
       { mode: TargetingMode.WEAKEST, label: 'WEAKEST', tip: 'Lowest current HP enemy — finisher mode' },
       { mode: TargetingMode.CLOSE,   label: 'CLOSEST', tip: 'Physically closest enemy' },
       { mode: TargetingMode.FLYERS,  label: 'FLYERS',  tip: 'Flyers first, then ground when allowed' },
