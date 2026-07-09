@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import { GamePhase, EnemyType, TileType, TowerType } from '../src/types';
+import { GamePhase, EnemyFaction, EnemyType, TileType, TowerType, type Enemy, type Tower } from '../src/types';
 import { createGameState } from '../src/GameState';
-import { WATER_ZONE } from '../src/constants';
+import { GRID, WATER_ZONE } from '../src/constants';
 import { initializeGrid, setTowerTile, tileAt } from '../src/systems/GridManager';
 import { buildGroundPath } from '../src/systems/PathFinder';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { executeCombo, scanCombos } from '../src/systems/CombinationEngine';
+import { applyDamageAndStatus, tickCombat, type CombatHooks } from '../src/systems/CombatResolver';
+import { tickProjectiles } from '../src/systems/ProjectileSystem';
 import { commanderDamageTakenMult, commanderSpeedMult, isCommanderType, tickCommanderSupport } from '../src/systems/CommanderSystem';
 import towersData from '../src/data/towers.json';
 import {
@@ -40,6 +42,84 @@ function placeTower(s: any, type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: numbe
   if (water) (t as any).placedOnWater = true;
   s.towers.set(t.id, t);
   return t;
+}
+
+function towerCenter(tower: { tileX: number; tileY: number }) {
+  return {
+    x: tower.tileX * GRID.TILE + GRID.TILE / 2,
+    y: tower.tileY * GRID.TILE + GRID.TILE / 2
+  };
+}
+
+function combatTarget(id: string, tower: Tower, offsetTiles = 1): Enemy {
+  const c = towerCenter(tower);
+  return {
+    id,
+    type: EnemyType.FERAL_DOG,
+    faction: EnemyFaction.DOGS,
+    hp: 100000,
+    maxHp: 100000,
+    baseSpeed: 1,
+    currentSpeed: 1,
+    isFlyer: false,
+    x: c.x + offsetTiles * GRID.TILE,
+    y: c.y,
+    pathIndex: 0,
+    pathProgress: 0,
+    statusEffects: [],
+    hasFeared: false,
+    livesCost: 1,
+    isBoss: false,
+    reward: 0,
+    archetype: 'SWARM',
+    hpFlashTimer: 0
+  };
+}
+
+function leaderboardDamageHooks(): CombatHooks {
+  return {
+    onKill: () => {},
+    onHit: (tower, _enemy, damage) => {
+      const dealt = Math.max(0, damage);
+      tower.damageThisWave = (tower.damageThisWave ?? 0) + dealt;
+      tower.totalDamageDealt = (tower.totalDamageDealt ?? 0) + dealt;
+    },
+    onMeleeSwing: () => {},
+    onProjectileFire: () => {}
+  };
+}
+
+function runOneAttackThroughLeaderboard(type: TowerType, tier: 1 | 2 | 3 | 4 | 5, offsetTiles = 1) {
+  const s = readyState();
+  s.phase = GamePhase.WAVE_PHASE;
+  s.wave = 12;
+  const tower = createTower(type, tier, 10, 10, s.wave);
+  tower.attackCooldown = 0;
+  tower.damageThisWave = 0;
+  tower.totalDamageDealt = 0;
+  (tower as any).placedOnWater = true;
+  s.towers.set(tower.id, tower);
+
+  const target = combatTarget(`target-${type}`, tower, offsetTiles);
+  s.enemies.set(target.id, target);
+
+  const hooks = leaderboardDamageHooks();
+  tickCombat(s, 0.016, hooks);
+  for (let i = 0; i < 240 && s.projectiles.length > 0; i++) {
+    tickProjectiles(s, 0.05, {
+      onImpact: (projectile, enemy) => {
+        if (!enemy || projectile.cosmetic || projectile.damage <= 0) return;
+        const source = s.towers.get(projectile.sourceTowerId);
+        if (source) applyDamageAndStatus(s, source, enemy, projectile.damage, hooks);
+      }
+    });
+  }
+
+  return {
+    tower,
+    target,
+    projectilesLeft: s.projectiles.length
+  };
 }
 
 describe('Harbor naval tower system', () => {
@@ -230,6 +310,45 @@ describe('Harbor naval tower system', () => {
     expect(pitBase.dps).toBeGreaterThan(hydraBase.dps);
     expect(pitRamped.dps).toBeGreaterThan(pitBase.dps * 1.9);
     expect(pitRamped.attackSpeed).toBeGreaterThan(pitBase.attackSpeed * 1.35);
+  });
+
+  it('routes every ranged Harbor and Tideforged tower through real projectile damage and leaderboard credit', () => {
+    const rangedHarborTypes: Array<[TowerType, 1 | 2 | 3 | 4 | 5]> = [
+      [TowerType.TRIREME_BALLISTA, 3],
+      [TowerType.RAMMING_QUINQUEREME, 4],
+      [TowerType.CHARYBDIS_VORTEX, 4],
+      [TowerType.NEREID_ORACLE, 4],
+      [TowerType.PRAETORIAN_FLEET, 5],
+      [TowerType.ORACLE_LIGHTHOUSE, 5],
+      [TowerType.ABYSSAL_ONAGER, 5],
+      [TowerType.MARS_TIDAL_BASTION, 5]
+    ];
+
+    for (const [type, tier] of rangedHarborTypes) {
+      const { tower, target, projectilesLeft } = runOneAttackThroughLeaderboard(type, tier, 2);
+      expect(projectilesLeft, `${type} projectile should resolve`).toBe(0);
+      expect(target.hp, `${type} should damage the target`).toBeLessThan(target.maxHp);
+      expect(tower.damageThisWave, `${type} should credit wave leaderboard damage`).toBeGreaterThan(0);
+      expect(tower.totalDamageDealt, `${type} should credit lifetime leaderboard damage`).toBeGreaterThan(0);
+    }
+  });
+
+  it('routes every melee Harbor and Tideforged tower through direct damage and leaderboard credit', () => {
+    const meleeHarborTypes: Array<[TowerType, 1 | 2 | 3 | 4 | 5]> = [
+      [TowerType.CORVUS_BOARDING_SHIP, 3],
+      [TowerType.HYDRA_OF_LERNA, 4],
+      [TowerType.CORVUS_LEGION_DOCK, 5],
+      [TowerType.HYDRA_BEAST_PIT, 5],
+      [TowerType.NEPTUNES_LEVIATHAN, 5]
+    ];
+
+    for (const [type, tier] of meleeHarborTypes) {
+      const { tower, target, projectilesLeft } = runOneAttackThroughLeaderboard(type, tier);
+      expect(projectilesLeft, `${type} should not need a damage projectile`).toBe(0);
+      expect(target.hp, `${type} should damage the target`).toBeLessThan(target.maxHp);
+      expect(tower.damageThisWave, `${type} should credit wave leaderboard damage`).toBeGreaterThan(0);
+      expect(tower.totalDamageDealt, `${type} should credit lifetime leaderboard damage`).toBeGreaterThan(0);
+    }
   });
 
   it('keeps the mythic sea towers on divine damage while grounded naval hardware stays physical', () => {

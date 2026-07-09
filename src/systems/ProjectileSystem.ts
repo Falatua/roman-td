@@ -158,6 +158,19 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   [TowerType.VULCAN_COLOSSUS]:   { key: 'PROJ_BARREL',         arc: true,  speed: 380, splash: 3.5, embed: false },
   [TowerType.SKY_DOMINION]:      { key: 'PROJ_STORM_BOLT',     arc: true,  speed: 780, splash: 0.4, embed: false },
   [TowerType.INFERNAL_COLOSSUS]: { key: 'PROJ_BARREL',         arc: true,  speed: 360, splash: 4.0, embed: false },
+  // ── Harbor / Tideforged towers ──────────────────────────────────────
+  // These towers are not cosmetic callers: their damage is delivered on
+  // projectile impact. Keep every ranged naval/tideforged type here so
+  // the visual shot, actual HP loss, and leaderboard damage credit stay
+  // locked together.
+  [TowerType.TRIREME_BALLISTA]:      { key: 'PROJ_BALLISTA',        arc: false, speed: 800, splash: 0.8, embed: true  },
+  [TowerType.RAMMING_QUINQUEREME]:   { key: 'PROJ_DIVINE_APEX_ORB', arc: false, speed: 660, splash: 1.0, embed: false },
+  [TowerType.CHARYBDIS_VORTEX]:      { key: 'PROJ_OMEN_ORB',        arc: false, speed: 620, splash: 0.8, embed: false },
+  [TowerType.NEREID_ORACLE]:         { key: 'PROJ_OMEN_ORB',        arc: false, speed: 680, splash: 0.35, embed: false },
+  [TowerType.PRAETORIAN_FLEET]:      { key: 'PROJ_BALLISTA',        arc: false, speed: 840, splash: 1.1, embed: true  },
+  [TowerType.ORACLE_LIGHTHOUSE]:     { key: 'PROJ_OMEN_ORB',        arc: false, speed: 720, splash: 0.55, embed: false },
+  [TowerType.ABYSSAL_ONAGER]:        { key: 'PROJ_POISON_CLOUD',    arc: true,  speed: 360, splash: 2.2, embed: false },
+  [TowerType.MARS_TIDAL_BASTION]:    { key: 'PROJ_DIVINE_APEX_ORB', arc: false, speed: 700, splash: 1.2, embed: false },
   // Consular Fatebinder — every shot strikes every enemy on the map
   // (true damage map-wide handled separately). The visible cast is a
   // fate-binding apex orb to the primary target — cosmetic anchor for the

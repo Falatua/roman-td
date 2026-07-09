@@ -363,6 +363,14 @@ const MELEE_TYPES = new Set<TowerType>([
   TowerType.SACRED_BAND,
   TowerType.GLACIAL_PALISADE,
   TowerType.ROMAN_TRANSFORMER,
+  // 2026-07-09 — Harbor melee towers are authored as short-range melee in
+  // towers.json. Without MELEE_TYPES membership they fell into the ranged
+  // branch, where no projectile profile existed, so they could animate
+  // without ever dealing or crediting damage.
+  TowerType.CORVUS_BOARDING_SHIP,
+  TowerType.CORVUS_LEGION_DOCK,
+  TowerType.HYDRA_OF_LERNA,
+  TowerType.HYDRA_BEAST_PIT,
   TowerType.NEPTUNES_LEVIATHAN,
   // 2026-05 v9: Consular Fatebinder converted from ranged DIVINE to a
   // melee strike (still keeps TRUE-damage primary + map-wide 40% splash
