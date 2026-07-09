@@ -170,7 +170,20 @@ describe('Harbor naval tower system', () => {
     expect(towerEffectiveStats(oracle).dps).toBeGreaterThan(470);
     expect(towerEffectiveStats(oracle).dps).toBeLessThan(towerEffectiveStats(fleet).dps);
     expect(towerEffectiveStats(leviathan).dps).toBeGreaterThan(3000);
-    expect(towerEffectiveStats(leviathan).dps).toBeLessThan(towerEffectiveStats(transformer).dps);
+    expect(towerEffectiveStats(leviathan).dps).toBeGreaterThan(towerEffectiveStats(transformer).dps);
+    expect(towerEffectiveStats(leviathan).range).toBeLessThan(towerEffectiveStats(transformer).range / 2);
+  });
+
+  it('rewards Tideforged combos for taking scarce ocean tiles', () => {
+    const landFleet = createTower(TowerType.PRAETORIAN_FLEET, 5, 10, 10, 20);
+    const waterFleet = createTower(TowerType.PRAETORIAN_FLEET, 5, 4, 20, 20);
+    waterFleet.placedOnWater = true;
+    const land = towerEffectiveStats(landFleet);
+    const water = towerEffectiveStats(waterFleet);
+
+    expect(water.dps).toBeGreaterThan(land.dps * 1.11);
+    expect(water.range).toBeGreaterThanOrEqual(land.range + 0.65);
+    expect(water.attackSpeed).toBeCloseTo(land.attackSpeed / 1.08, 4);
   });
 
   it('lets the Hydra line ramp into a real short-range naval payoff', () => {

@@ -489,8 +489,8 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   }
   if (harborDef?.amphibious) {
     if ((t as any).placedOnWater) {
-      harborRangeBonus += 0.5;
-      harborDmgMult *= 1.08;
+      harborRangeBonus += 0.65;
+      harborDmgMult *= 1.12;
     } else {
       harborSpeedMult *= 1.08;
     }
