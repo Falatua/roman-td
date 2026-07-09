@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { pickTarget } from '../src/systems/CombatResolver';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
-import { TowerType, TargetingMode, Enemy, EnemyType, EnemyFaction } from '../src/types';
+import { TowerType, TargetingMode, Enemy, EnemyType, EnemyFaction, DamageType } from '../src/types';
 import { GRID } from '../src/constants';
 
 // Minimal Enemy factory — only the fields pickTarget reads.
@@ -278,5 +278,25 @@ describe('Tower targeting modes', () => {
     hero.targetingMode = TargetingMode.CLOSE;
     const picked = pickTarget(state, hero, enemies, 10);
     expect(picked?.id).toBe('D');
+  });
+
+  it('physical-ranged towers skip ranged-immune enemies and pick a valid target', () => {
+    const { state, tower } = setup();
+    tower.targetingMode = TargetingMode.STRONG;
+    tower.damageType = DamageType.PHYS_RANGED;
+    const immune = fakeEnemy({ id: 'IMMUNE', type: EnemyType.MONGOL_CAPTAIN, x: TX + 20, y: TY, pathIndex: 8, hp: 5000 });
+    const valid = fakeEnemy({ id: 'VALID', type: EnemyType.MONGOL_SPEARMAN, x: TX + 30, y: TY, pathIndex: 4, hp: 500 });
+    const picked = pickTarget(state, tower, [immune, valid], 10);
+    expect(picked?.id).toBe('VALID');
+  });
+
+  it('non-physical-ranged towers may still target ranged-immune enemies', () => {
+    const { state, tower } = setup();
+    tower.targetingMode = TargetingMode.STRONG;
+    tower.damageType = DamageType.DIVINE;
+    const immune = fakeEnemy({ id: 'IMMUNE', type: EnemyType.MONGOL_CAPTAIN, x: TX + 20, y: TY, pathIndex: 8, hp: 5000 });
+    const valid = fakeEnemy({ id: 'VALID', type: EnemyType.MONGOL_SPEARMAN, x: TX + 30, y: TY, pathIndex: 4, hp: 500 });
+    const picked = pickTarget(state, tower, [immune, valid], 10);
+    expect(picked?.id).toBe('IMMUNE');
   });
 });

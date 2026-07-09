@@ -162,7 +162,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // one-button "I bought Sulla, the game is over" answer.
   [EnemyType.DEMON_HELLHOUND]: { ranged: 0.65, slow: 0.4, burn: 0, poison: 1.30, bleed: 1.25, divine: 1.20 },
   [EnemyType.CELTIC_FIRE_DEMON]: { melee: 0.65, ranged: 0.55, burn: 0, poison: 1.30, bleed: 1.25, slow: 0.5, divine: 1.20 },
-  [EnemyType.SHADOW_CAVALRY]: { melee: 0.35, ranged: 0.55, slow: 0.15, burn: 0, poison: 1.30, bleed: 1.25, divine: 1.20 },
+  [EnemyType.SHADOW_CAVALRY]: { melee: 0.35, ranged: 0, slow: 0.15, burn: 0, poison: 1.30, bleed: 1.25, divine: 1.20 },
   [EnemyType.DEMON_LEGATE]: { ranged: 0.5, slow: 0.25, burn: 0, poison: 1.30, bleed: 1.25, melee: 0.85, divine: 1.20 },
   // DAEMON IMPERATOR (W20 final boss) — ranged 0.40 → 0.20 (much
   // tougher to chip down with arrows / javelins / ballistae). Still
@@ -275,21 +275,21 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.EGYPTIAN_ARCHER]:   { ranged: 0.85, slow: 0.4, burn: 0.90, poison: 0.75, bleed: 0.85 },
   [EnemyType.EGYPTIAN_SPEARMAN]: { melee: 0.8, ranged: 0.6, burn: 0.85, poison: 0.90, bleed: 0.75 },
   [EnemyType.EGYPTIAN_CHARIOT]:  { ranged: 0.5, slow: 0.35, burn: 0.95, poison: 0.85, bleed: 0.6 },
-  [EnemyType.PHARAOH_GUARD]:     { melee: 0.55, ranged: 0.4, burn: 0.55, poison: 0.45, bleed: 0.60, divine: 0.7 },
+  [EnemyType.PHARAOH_GUARD]:     { melee: 0.55, ranged: 0, burn: 0.55, poison: 0.45, bleed: 0.60, divine: 0.7 },
   [EnemyType.ANUBIS_PRIEST]:     { melee: 0, ranged: 0.5, slow: 0.3, burn: 0.70, poison: 0, bleed: 0.55 },
-  [EnemyType.SOBEK_WARRIOR]:     { melee: 0.45, ranged: 0.5, slow: 0.3, burn: 0.5, poison: 0.55, bleed: 0.65 },
-  [EnemyType.MUMMY_WARRIOR]:     { ranged: 0.65, slow: 0.5, poison: 0, bleed: 0.4, burn: 1.30 },
+  [EnemyType.SOBEK_WARRIOR]:     { melee: 0.45, ranged: 0, slow: 0.3, burn: 0.5, poison: 0.55, bleed: 0.65 },
+  [EnemyType.MUMMY_WARRIOR]:     { ranged: 0, slow: 0.5, poison: 0, bleed: 0.4, burn: 1.30 },
   [EnemyType.SPHINX]:            { melee: 0, ranged: 0.55, slow: 0.25, burn: 0.75, poison: 0.50, bleed: 0.40, divine: 1.30 },
   [EnemyType.ANUBIS_KING]:       { melee: 0.35, ranged: 0.25, slow: 0.15, burn: 0.5, poison: 0.7, bleed: 0.55, divine: 1.40 },
   [EnemyType.MONGOL_HORSE_ARCHER]: { ranged: 0.6, slow: 0.3, burn: 0.95, poison: 0.85, bleed: 0.7 },
   [EnemyType.MONGOL_SPEAR_RIDER]:  { ranged: 0.55, slow: 0.3, burn: 0.90, poison: 0.80, bleed: 0.7 },
   [EnemyType.KHAN_RIDER]:        { melee: 0.55, ranged: 0.4, slow: 0.25, burn: 0.80, poison: 0.60, bleed: 0.5 },
-  [EnemyType.MONGOL_FOOTMAN]:    { ranged: 0.8, melee: 0.9, burn: 0.90, poison: 0.85, bleed: 0.75 },
+  [EnemyType.MONGOL_FOOTMAN]:    { ranged: 0, melee: 0.9, burn: 0.90, poison: 0.85, bleed: 0.75 },
   [EnemyType.MONGOL_SPEARMAN]:   { melee: 0.85, ranged: 0.6, burn: 0.85, poison: 0.75, bleed: 0.60 },
   [EnemyType.MONGOL_BERSERKER]:  { melee: 0.55, slow: 0.35, burn: 1.10, poison: 0.75, bleed: 0.4 },
   [EnemyType.MONGOL_SCOUT]:      { melee: 0, ranged: 0.7, slow: 0.3, burn: 0.8, poison: 0.75, bleed: 0.90 },
   [EnemyType.MONGOL_SHAMAN]:     { melee: 0, ranged: 0.55, slow: 0.4, burn: 0.6, poison: 0.65, bleed: 0.80 },
-  [EnemyType.MONGOL_CAPTAIN]:    { melee: 0.6, ranged: 0.5, slow: 0.3, burn: 0.75, poison: 0.55, bleed: 0.60 },
+  [EnemyType.MONGOL_CAPTAIN]:    { melee: 0.6, ranged: 0, slow: 0.3, burn: 0.75, poison: 0.55, bleed: 0.60 },
   // 2026-07-08 — Vulture Imperator: mid-campaign boss twist. Fully
   // siege-immune so anti-air siege cannot solve every flyer boss by itself;
   // fire immunity + melee-untargetable stay handled via enemies.json flags.
@@ -302,7 +302,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.GIANT_GIGAS]: { slow: 0.7, melee: 0.3, burn: 0.80, poison: 0.35, bleed: 0.30 },
   [EnemyType.CYCLOPS]:     { melee: 0.3, slow: 0.4, burn: 0.85, poison: 0.60, bleed: 0.50 },
   // Colossus Gigas — the fused Super-Giant: very tough all-round.
-  [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0.3, slow: 0.8, burn: 0.65, poison: 0.25, bleed: 0.20 },
+  [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0, slow: 0.8, burn: 0.65, poison: 0.25, bleed: 0.20 },
   [EnemyType.OCEAN_FISHLING]: { fire: 1.15, burn: 1.15, poison: 0.8, slow: 0.7 },
   [EnemyType.SEA_GIANT]: { melee: 0.50, ranged: 0.50, siege: 1.05, fire: 0, divine: 1.10, slow: 0.30, burn: 0, poison: 0.34, bleed: 0.30 },
   [EnemyType.SEA_GIANT_WARBRINGER]: { melee: 0.35, ranged: 0.40, siege: 0.95, fire: 0, divine: 1.15, slow: 0.22, burn: 0, poison: 0.25, bleed: 0.25 },
@@ -332,7 +332,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // Dune Stalker: lightly-wrapped fast skirmisher — little armor, slippery to slows.
   [EnemyType.DUNE_STALKER]:     { slow: 0.6, burn: 1.10, poison: 0.85, bleed: 1.10 },
   // Stone Juggernaut: living granite — resists physical + DoT, cracked by siege/divine.
-  [EnemyType.STONE_JUGGERNAUT]: { melee: 0, ranged: 0.6, burn: 0.55, bleed: 0.3, poison: 0.3, siege: 1.75, divine: 1.75 }
+  [EnemyType.STONE_JUGGERNAUT]: { melee: 0, ranged: 0, burn: 0.55, bleed: 0.3, poison: 0.3, siege: 1.75, divine: 1.75 }
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
@@ -357,6 +357,7 @@ export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): num
   const def: any = (enemiesData as any)[enemy.type];
   if (def?.immuneFire && damageType === DamageType.ELEMENTAL_FIRE) return 0;
   if (def?.meleeImmune && damageType === DamageType.PHYS_MELEE) return 0;
+  if (def?.rangedImmune && damageType === DamageType.PHYS_RANGED) return 0;
   const r = enemyResistanceProfile(enemy.type);
   let base = 1;
   if (damageType === DamageType.PHYS_MELEE) {
@@ -452,7 +453,7 @@ export function resistanceSummary(type: EnemyType): Array<{ label: string; value
   const def: any = (enemiesData as any)[type];
   return [
     ['Melee', def?.meleeImmune ? 0 : r.melee],
-    ['Ranged', r.ranged],
+    ['Ranged', def?.rangedImmune ? 0 : r.ranged],
     // 2026-05 v9: include the three new per-enemy elemental resists so
     // Codex / EnemyInspect lists them alongside melee/ranged when set.
     ['Siege', r.siege],
@@ -534,8 +535,9 @@ export function armorProfile(type: EnemyType): ArmorRow[] {
     // are bypassed because these flags short-circuit in damage math too.
     const fireImmune = dt === 'ELEMENTAL_FIRE' && !!enemyDef.immuneFire;
     const meleeImmune = dt === 'PHYS_MELEE' && !!enemyDef.meleeImmune;
-    const finalMult = (fireImmune || meleeImmune) ? 0 : factionMult * specificMult;
-    const immune = factionImmune || fireImmune || meleeImmune || finalMult <= 0;
+    const rangedImmune = dt === 'PHYS_RANGED' && !!enemyDef.rangedImmune;
+    const finalMult = (fireImmune || meleeImmune || rangedImmune) ? 0 : factionMult * specificMult;
+    const immune = factionImmune || fireImmune || meleeImmune || rangedImmune || finalMult <= 0;
     const armorPct = immune ? 100 : Math.round((1 - finalMult) * 100);
     return { damageType: dt, finalMult, armorPct, immune };
   });

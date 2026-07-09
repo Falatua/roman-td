@@ -241,6 +241,10 @@ function meleeImmuneBlocksTower(enemyType: string, towerDmgType: DamageType): bo
   if (!isMeleeImmune(enemyType)) return false;
   return towerDmgType === DamageType.PHYS_MELEE;
 }
+function rangedImmuneBlocksTower(enemyType: string, towerDmgType: DamageType): boolean {
+  if (!(enemiesData as any)[enemyType]?.rangedImmune) return false;
+  return towerDmgType === DamageType.PHYS_RANGED;
+}
 function requiresMeleeBreak(enemyType: string): boolean {
   return !!(enemiesData as any)[enemyType]?.requiresMeleeBreak;
 }
@@ -1735,6 +1739,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         // damage. Divine / fire / siege melee towers still hit. See
         // meleeImmuneBlocksTower comment for the design rationale.
         if (isMeleeRow && meleeImmuneBlocksTower(e.type, t.damageType)) continue;
+        if (rangedImmuneBlocksTower(e.type, t.damageType)) continue;
         inRange.push(e);
       }
       // BURNING GROUND: fire-themed towers stamp a 3s burn patch at impact
@@ -2244,6 +2249,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
     // reveal scan). Once tagged, every tower — not just the truesight
     // one — can acquire it through the veil.
     const revealed = !!(e as any).__truesightRevealed;
+    if (rangedImmuneBlocksTower(e.type, t.damageType)) continue;
     if (antiAirOnly) {
       if (e.isFlyer && (revealed || !(e as any).__veiled)) inRange.push(e);
       continue;

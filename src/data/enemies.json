@@ -417,6 +417,7 @@
     "spriteSheet": 6,
     "spriteCell": 5,
     "dodgeChance": 0.25,
+    "rangedImmune": true,
     "stealthInterval": {
       "period": 6,
       "duration": 1
@@ -603,6 +604,7 @@
     "isBoss": false,
     "livesCost": 2,
     "requiresMeleeBreak": true,
+    "rangedImmune": true,
     "immuneStun": true
   },
   "ANUBIS_PRIEST": {
@@ -626,6 +628,7 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 3,
+    "rangedImmune": true,
     "checkpointHealPct": 0.18
   },
   "MUMMY_WARRIOR": {
@@ -637,6 +640,7 @@
     "isBoss": false,
     "livesCost": 2,
     "immunePoison": true,
+    "rangedImmune": true,
     "outOfCombatRegen": 0.04,
     "reanimateAs": "MUMMY_WARRIOR"
   },
@@ -709,7 +713,8 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
-    "renderScale": 0.82
+    "renderScale": 0.82,
+    "rangedImmune": true
   },
   "MONGOL_SPEARMAN": {
     "name": "Hun Spearman",
@@ -770,7 +775,8 @@
     "isBoss": false,
     "livesCost": 3,
     "outOfCombatRegen": 0.025,
-    "renderScale": 0.9
+    "renderScale": 0.9,
+    "rangedImmune": true
   },
   "BOSS_FLYER_VULTURE": {
     "name": "Vulture Imperator",
@@ -855,6 +861,7 @@
     "isElite": true,
     "bigGlow": true,
     "renderScale": 1.7,
+    "rangedImmune": true,
     "immuneSlow": true,
     "immuneStun": true,
     "immuneFreeze": true,
@@ -1209,6 +1216,7 @@
     "renderScale": 1.5,
     "shieldBlockChance": 0.35,
     "meleeImmune": true,
+    "rangedImmune": true,
     "immuneSlow": true,
     "immuneStun": true
   }

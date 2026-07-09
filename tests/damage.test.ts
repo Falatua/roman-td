@@ -199,6 +199,30 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     }
   });
 
+  it('gives selected post-W15 enemies true physical-ranged immunity with readable UI armor', () => {
+    const rangedImmuneTypes = [
+      EnemyType.MONGOL_FOOTMAN,
+      EnemyType.MONGOL_CAPTAIN,
+      EnemyType.PHARAOH_GUARD,
+      EnemyType.SOBEK_WARRIOR,
+      EnemyType.MUMMY_WARRIOR,
+      EnemyType.SUPER_GIANT_COLOSSUS,
+      EnemyType.STONE_JUGGERNAUT,
+      EnemyType.SHADOW_CAVALRY
+    ];
+
+    for (const type of rangedImmuneTypes) {
+      const def: any = (enemiesData as any)[type];
+      const enemy = makeEnemy(type, def.faction as EnemyFaction);
+      enemy.isFlyer = !!def.isFlyer;
+      expect(def.rangedImmune, `${type} JSON rangedImmune`).toBe(true);
+      expect(enemyDamageMultiplier(enemy, DamageType.PHYS_RANGED), `${type} physical ranged`).toBe(0);
+      expect(armorProfile(type).find(row => row.damageType === 'PHYS_RANGED')?.immune, `${type} armor row`).toBe(true);
+      expect(resistanceSummary(type).some(row => row.label === 'Ranged' && row.value === 0), `${type} summary row`).toBe(true);
+      expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine answer`).toBeGreaterThan(0);
+    }
+  });
+
   it('shows Vulture Imperator as a siege-immune mid-game boss', () => {
     const vulture = makeEnemy(EnemyType.BOSS_FLYER_VULTURE, EnemyFaction.EGYPTIANS);
     vulture.isBoss = true;
