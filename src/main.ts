@@ -8600,7 +8600,10 @@ async function boot() {
     let info: string | null = null;
     if (selectedTowerId) {
       const t = state.towers.get(selectedTowerId);
-      if (t) info = `${towerName(t.type)} T${t.qualityTier} | DPS ${(t.baseDps * (t.attackSpeed)).toFixed(1)} | Kills ${t.killCount} (+${t.killBonusFlat.toFixed(1)} flat) | Target: ${TargetingMode[t.targetingMode]}`;
+      if (t) {
+        const targetLabel = t.targetingMode === TargetingMode.CLOSE ? 'CLOSEST' : TargetingMode[t.targetingMode];
+        info = `${towerName(t.type)} T${t.qualityTier} | DPS ${(t.baseDps * (t.attackSpeed)).toFixed(1)} | Kills ${t.killCount} (+${t.killBonusFlat.toFixed(1)} flat) | Target: ${targetLabel}`;
+      }
       else { selectedTowerId = null; renderer.selectedTowerId = null; }
     } else if (state.phase === GamePhase.BUILD_PHASE && state.draw.length > 0) {
       info = `Build phase. Pick a card, click a tile. Next wave: ${factionName(getNextWaveInfo(state).faction)}.`;

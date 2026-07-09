@@ -461,8 +461,6 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '.rtd-enemy-inspect-collapse',
     title: `${def?.name ?? pretty(e.type)} enemy inspect`,
-    closeButton: true,
-    closeButtonId: 'enemy-inspect-x',
     closeOnEscape: true,
     onClose: () => modal.remove()
   });

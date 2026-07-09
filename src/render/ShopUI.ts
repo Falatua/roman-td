@@ -973,8 +973,6 @@ function renderMercatorShop(
     bodySelector: '#mercator-shop-body',
     footerSelector: '#mercator-shop-footer',
     title: 'Mercator shop',
-    closeButton: true,
-    closeButtonId: 'mercator-shop-x',
     onClose: hooks.onClose,
     toolRightPx: 8
   });
@@ -1217,8 +1215,6 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   modal.appendChild(panel);
   enhanceModalErgonomics(modal, panel, {
     title: 'Gate shop',
-    closeButton: true,
-    closeButtonId: 'gate-shop-x',
     onClose: hooks.onClose
   });
   // 2026-05-24 — Backdrop click closes the Mercator modal.
@@ -1587,8 +1583,6 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   modal.appendChild(panel);
   enhanceModalErgonomics(modal, panel, {
     title: 'Inventory',
-    closeButton: true,
-    closeButtonId: 'inventory-modal-x',
     onClose: hooks.onClose
   });
   // 2026-05-24 — Backdrop click closes the inventory modal.

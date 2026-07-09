@@ -170,21 +170,46 @@ describe('Tower recipe names stay player-facing', () => {
 // 2b. Inspection modal usability
 // ───────────────────────────────────────────────────────────────────────
 describe('Inspection panels keep obvious close controls', () => {
-  it('tower and hero inspect menus use opaque framed panels with X and Escape close', () => {
+  it('tower and hero inspect menus use one close control plus Escape close', () => {
     const src = readFileSync('src/render/TowerMenu.ts', 'utf8');
     expect(src, 'tower menu should use the shared solid panel style').toContain('towerPanelStyle');
-    expect(src, 'tower/hero inspect should request a top-right X control').toContain("closeButtonId: 'tower-menu-x'");
+    expect(src, 'tower/hero inspect should not add a second helper X').not.toContain("closeButtonId: 'tower-menu-x'");
     expect(src, 'tower/hero inspect should close from Escape').toContain('closeOnEscape: true');
     expect(src, 'hero inspect should no longer use translucent ability cards').not.toContain('background:rgba(0,0,0,0.3)');
   });
 
-  it('stone and enemy quick inspect boxes have top-right X controls too', () => {
+  it('stone and enemy quick inspect boxes keep a single close path and Escape close', () => {
     const stone = readFileSync('src/render/StoneMenu.ts', 'utf8');
     const enemy = readFileSync('src/render/EnemyInspect.ts', 'utf8');
-    expect(stone).toContain("closeButtonId: 'stone-menu-x'");
-    expect(enemy).toContain("closeButtonId: 'enemy-inspect-x'");
+    expect(stone).not.toContain("closeButtonId: 'stone-menu-x'");
+    expect(enemy).not.toContain("closeButtonId: 'enemy-inspect-x'");
     expect(stone).toContain('closeOnEscape: true');
     expect(enemy).toContain('closeOnEscape: true');
+  });
+
+  it('major shop and info modals do not stack helper X buttons on manual close controls', () => {
+    const files = [
+      'src/render/ShopUI.ts',
+      'src/render/Codex.ts',
+      'src/render/ComboPreview.ts',
+      'src/render/TowerLeaderboard.ts',
+      'src/render/SandboxPanel.ts'
+    ];
+    const src = files.map(file => readFileSync(file, 'utf8')).join('\n');
+    for (const id of [
+      'mercator-shop-x',
+      'gate-shop-x',
+      'inventory-modal-x',
+      'codex-modal-x',
+      'combo-info-modal-x',
+      'tower-leaderboard-x',
+      'sandbox-wave-picker-x',
+      'sandbox-tower-picker-x'
+    ]) {
+      expect(src, `${id} should not add a duplicate helper close button`).not.toContain(`closeButtonId: '${id}'`);
+    }
+    expect(readFileSync('src/render/Codex.ts', 'utf8')).not.toContain('codex-close-bottom');
+    expect(readFileSync('src/render/ComboPreview.ts', 'utf8')).not.toContain('combo-info-dismiss');
   });
 });
 

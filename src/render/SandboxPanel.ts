@@ -201,8 +201,6 @@ function showWavePicker(hooks: SandboxPanelHooks): void {
   modal.appendChild(panel);
   enhanceModalErgonomics(modal, panel, {
     title: 'Sandbox wave picker',
-    closeButton: true,
-    closeButtonId: 'sandbox-wave-picker-x',
     onClose: () => modal.remove()
   });
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
@@ -272,8 +270,6 @@ function showTowerPicker(hooks: SandboxPanelHooks): void {
   modal.appendChild(panel);
   enhanceModalErgonomics(modal, panel, {
     title: 'Sandbox tower picker',
-    closeButton: true,
-    closeButtonId: 'sandbox-tower-picker-x',
     onClose: () => modal.remove()
   });
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });

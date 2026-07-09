@@ -198,16 +198,6 @@ export function showComboInfoModal(comboType: string): void {
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:2px">${ingredientsHtml}</div>
       </div>
 
-      <div style="margin-top:14px;text-align:center">
-        <button id="combo-info-dismiss" style="
-          padding:8px 20px;
-          background:linear-gradient(180deg,${tierColor}33,#1a1208);
-          color:${tierColor};
-          border:1.5px solid ${tierColor};
-          font-family:inherit;font-size:11px;font-weight:bold;letter-spacing:2px;
-          cursor:pointer;
-        ">CLOSE</button>
-      </div>
     </div>
   `;
   // Click outside the panel closes the modal. Inner panel stops the
@@ -221,8 +211,6 @@ export function showComboInfoModal(comboType: string): void {
   if (panel) panel.onclick = (ev) => ev.stopPropagation();
   (modal.querySelector('#combo-info-close') as HTMLButtonElement | null)
     ?.addEventListener('click', closeModal);
-  (modal.querySelector('#combo-info-dismiss') as HTMLButtonElement | null)
-    ?.addEventListener('click', closeModal);
   // Escape closes too.
   const escHandler = (ev: KeyboardEvent) => {
     if (ev.key === 'Escape') {
@@ -233,8 +221,6 @@ export function showComboInfoModal(comboType: string): void {
   if (panel) {
     enhanceModalErgonomics(modal, panel, {
       title: 'Combo information',
-      closeButton: true,
-      closeButtonId: 'combo-info-modal-x',
       onClose: closeModal,
       toolRightPx: 42
     });

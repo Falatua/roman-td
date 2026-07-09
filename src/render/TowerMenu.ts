@@ -67,11 +67,13 @@ function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title:
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '.rtd-tower-menu-collapse',
     title,
-    closeButton: true,
-    closeButtonId: 'tower-menu-x',
     closeOnEscape: true,
     onClose
   });
+}
+
+function targetingModeLabel(mode: TargetingMode): string {
+  return mode === TargetingMode.CLOSE ? 'CLOSEST' : TargetingMode[mode];
 }
 
 function towerModalStyle(): string {
@@ -335,7 +337,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     rngBox +
     statBox('Crit', critLabel, critColor) +
     statBox('Item slots', `${t.equippedItems.length} / ${stats.slots}`) +
-    statBox('Targeting', TargetingMode[t.targetingMode], '#9be0ff') +
+    statBox('Targeting', targetingModeLabel(t.targetingMode), '#9be0ff') +
     statBox('Kill bonus', `${t.killCount} kills · +${killBonusPct}%`, '#d4af37');
   panel.appendChild(statsGrid);
 
@@ -448,7 +450,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     : [TargetingMode.FIRST, TargetingMode.LAST, TargetingMode.STRONG, TargetingMode.WEAKEST, TargetingMode.CLOSE, TargetingMode.FLYERS, TargetingMode.FAST];
   for (const mode of targetingModes) {
     const b = document.createElement('button');
-    b.textContent = TargetingMode[mode];
+    b.textContent = targetingModeLabel(mode);
     const isActive = t.targetingMode === mode;
     b.style.cssText = `background:${isActive ? '#3a5520' : '#2a2018'};color:${isActive ? '#d4af37' : '#e8d6a8'};border:1px solid #5a4a30;padding:4px 8px;cursor:pointer;font-family:inherit;font-size:10px;letter-spacing:1px`;
     // 2026-05 v7: stay in the menu after a targeting change so the
@@ -1094,7 +1096,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   // breakdown is worth keeping front-and-center.
   const killsBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Kills</div><div style="color:#d4af37;font-size:14px;font-weight:bold;margin-top:2px">${t.killCount}</div></div>`;
   const kbBox    = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Kill Bonus</div><div style="color:#9be0ff;font-size:14px;font-weight:bold;margin-top:2px">+${t.killBonusFlat.toFixed(1)} DPS</div></div>`;
-  const targetBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px;grid-column:span 2"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Targeting</div><div style="color:#9be0ff;font-size:14px;font-weight:bold;margin-top:2px">${TargetingMode[t.targetingMode]}</div></div>`;
+  const targetBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px;grid-column:span 2"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Targeting</div><div style="color:#9be0ff;font-size:14px;font-weight:bold;margin-top:2px">${targetingModeLabel(t.targetingMode)}</div></div>`;
   statsGrid.innerHTML = dmgBox + spdBox + rngBox + dpsBox + killsBox + kbBox + targetBox;
   panel.appendChild(statsGrid);
 
@@ -1106,7 +1108,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   targetRow.innerHTML = '<div style="font-size:9px;color:#aa9a4a;width:100%;letter-spacing:2px;margin-bottom:4px">TARGETING</div>';
   for (const mode of [TargetingMode.FIRST, TargetingMode.LAST, TargetingMode.STRONG, TargetingMode.WEAKEST, TargetingMode.CLOSE, TargetingMode.FLYERS, TargetingMode.FAST]) {
     const b = document.createElement('button');
-    b.textContent = TargetingMode[mode];
+    b.textContent = targetingModeLabel(mode);
     const isActive = t.targetingMode === mode;
     b.style.cssText = `background:${isActive ? '#3a5520' : '#2a2018'};color:${isActive ? '#d4af37' : '#e8d6a8'};border:1px solid #5a4a30;padding:4px 8px;cursor:pointer;font-family:inherit;font-size:10px;letter-spacing:1px`;
     b.onclick = () => { t.targetingMode = mode; refresh(); };

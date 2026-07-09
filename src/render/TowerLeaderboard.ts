@@ -124,8 +124,6 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
     bodySelector: '#tower-leaderboard-body',
     footerSelector: '#tower-leaderboard-footer',
     title: 'Wave damage leaderboard',
-    closeButton: true,
-    closeButtonId: 'tower-leaderboard-x',
     onClose: hooks.onClose,
     toolRightPx: 54
   });

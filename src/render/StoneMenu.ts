@@ -49,8 +49,6 @@ export function showStoneMenu(parent: HTMLElement, col: number, row: number, sta
   parent.appendChild(modal);
   enhanceModalErgonomics(modal, panel, {
     title: 'Maze stone menu',
-    closeButton: true,
-    closeButtonId: 'stone-menu-x',
     closeOnEscape: true,
     onClose: hooks.onClose
   });

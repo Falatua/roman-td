@@ -97,10 +97,7 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   </div>
   <div id="codex-tabs" style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;position:sticky;top:0;background:#1a1410;padding:4px 0;z-index:5;border-bottom:1px solid #3a3025"></div>
   <input id="codex-search" type="text" placeholder="🔍 Filter cards in this tab..." style="width:100%;box-sizing:border-box;padding:6px 10px;margin-bottom:8px;background:#0c0a08;border:1px solid #5a4a30;color:#e8d6a8;font-family:'Courier New',monospace;font-size:11px;letter-spacing:1px;outline:none;"/>
-  <div id="codex-body" style="padding-top:6px"></div>
-  <div id="codex-footer" style="display:flex;justify-content:center;margin-top:12px;padding-top:10px;border-top:1px solid #3a3025">
-    <button id="codex-close-bottom" style="background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:8px 18px;cursor:pointer;font-family:inherit;letter-spacing:2px">CLOSE</button>
-  </div>`;
+  <div id="codex-body" style="padding-top:6px"></div>`;
   modal.appendChild(panel);
   (document.body ?? parent).appendChild(modal);
 
@@ -179,14 +176,10 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   };
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '#codex-tabs, #codex-search, #codex-body',
-    footerSelector: '#codex-footer',
     title: 'Codex',
-    closeButton: true,
-    closeButtonId: 'codex-modal-x',
     onClose: closeCodex
   });
   document.getElementById('codex-close')!.onclick = closeCodex;
-  document.getElementById('codex-close-bottom')!.onclick = closeCodex;
   // 2026-05-19 — ESC closes the codex (universal-escape behavior).
   function escClose(e: KeyboardEvent) {
     if (e.key === 'Escape') { e.stopPropagation(); closeCodex(); }
