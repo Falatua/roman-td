@@ -7,6 +7,7 @@ import { buildGroundPath } from '../src/systems/PathFinder';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { executeCombo, scanCombos } from '../src/systems/CombinationEngine';
 import { commanderDamageTakenMult, commanderSpeedMult, isCommanderType, tickCommanderSupport } from '../src/systems/CommanderSystem';
+import towersData from '../src/data/towers.json';
 import {
   buildHarborDraftOffers,
   harborDraftTierForWave,
@@ -170,6 +171,15 @@ describe('Harbor naval tower system', () => {
     expect(towerEffectiveStats(oracle).dps).toBeLessThan(towerEffectiveStats(fleet).dps);
     expect(towerEffectiveStats(leviathan).dps).toBeGreaterThan(3000);
     expect(towerEffectiveStats(leviathan).dps).toBeLessThan(towerEffectiveStats(transformer).dps);
+  });
+
+  it('keeps the mythic sea towers on divine damage while grounded naval hardware stays physical', () => {
+    expect((towersData as any).CHARYBDIS_VORTEX.damageType).toBe('DIVINE');
+    expect((towersData as any).NEREID_ORACLE.damageType).toBe('DIVINE');
+    expect((towersData as any).RAMMING_QUINQUEREME.damageType).toBe('DIVINE');
+    expect((towersData as any).HYDRA_OF_LERNA.damageType).toBe('DIVINE');
+    expect((towersData as any).TRIREME_BALLISTA.damageType).toBe('SIEGE');
+    expect((towersData as any).CORVUS_BOARDING_SHIP.damageType).toBe('PHYS_MELEE');
   });
 
   it('Tidecaller commanders protect and heal ocean-spawned allies until killed', () => {
