@@ -46,12 +46,6 @@ export function showCampaignRelicModal(
     </div>
   `;
   modal.appendChild(panel);
-  enhanceModalErgonomics(modal, panel, {
-    bodySelector: '#campaign-relic-body',
-    footerSelector: '#campaign-relic-footer',
-    title: 'Campaign relic choice'
-  });
-
   const row = panel.querySelector('#campaign-relic-cards') as HTMLElement;
   const closeWith = (id: CampaignRelicId) => {
     if (!applyCampaignRelic(state, id)) return;
@@ -60,15 +54,22 @@ export function showCampaignRelicModal(
     SFX.combo();
     onChoose(id);
   };
+  const declineAll = () => {
+    skipCampaignRelic(state);
+    modal.remove();
+    (state as any).__campaignRelicOpen = false;
+    SFX.prospectKeep();
+    onChoose(null);
+  };
+  enhanceModalErgonomics(modal, panel, {
+    bodySelector: '#campaign-relic-body',
+    footerSelector: '#campaign-relic-footer',
+    title: 'Campaign relic choice',
+    onClose: declineAll
+  });
   const reject = panel.querySelector('#campaign-relic-skip') as HTMLButtonElement | null;
   if (reject) {
-    reject.onclick = () => {
-      skipCampaignRelic(state);
-      modal.remove();
-      (state as any).__campaignRelicOpen = false;
-      SFX.prospectKeep();
-      onChoose(null);
-    };
+    reject.onclick = declineAll;
   }
 
   for (const relic of offers) {

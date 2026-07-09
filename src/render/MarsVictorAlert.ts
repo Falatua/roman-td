@@ -90,6 +90,15 @@ export function showMarsVictorReady(parent: HTMLElement, onFuse: () => void, onD
   const card = document.createElement('div');
   card.style.cssText = `position:relative;width:min(540px,92vw);padding:22px 20px 18px;text-align:center;background:linear-gradient(180deg,#1c1206,#0c0803);border:2px solid #d4af37;border-radius:10px;animation:mv-pop 0.45s cubic-bezier(.2,.9,.3,1.2), mv-glow 2.4s ease-in-out infinite;`;
 
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.textContent = 'X';
+  closeBtn.setAttribute('aria-label', 'Close Mars Victor prompt');
+  closeBtn.title = 'Close';
+  closeBtn.style.cssText = `position:absolute;top:8px;right:8px;z-index:5;width:30px;height:30px;display:grid;place-items:center;background:linear-gradient(180deg,#2a1a0e,#0c0a08);color:#ffd34d;border:1px solid #7a5a1a;box-shadow:0 0 8px rgba(0,0,0,0.45);cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:900;line-height:1;`;
+  closeBtn.onclick = () => { overlay.remove(); onDismiss?.(); };
+  card.appendChild(closeBtn);
+
   // Gold burst ring behind the portraits.
   const burst = document.createElement('div');
   burst.style.cssText = `position:absolute;top:96px;left:50%;width:200px;height:200px;margin-left:-100px;border-radius:50%;background:radial-gradient(circle, rgba(255,224,130,0.55), rgba(255,160,40,0.0) 70%);animation:mv-burst 1.1s ease-out 0.15s 1 both;pointer-events:none;`;

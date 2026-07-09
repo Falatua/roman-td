@@ -227,7 +227,7 @@ export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, op
   const actions: ModalAction[] = [];
   if (collapsibles.length > 0) actions.push('collapse');
   actions.push('move');
-  if (opts.closeButton) actions.push('close');
+  if (opts.closeButton !== false) actions.push('close');
 
   const requestClose = () => {
     root.dispatchEvent(new CustomEvent('rtd:modal-force-close'));

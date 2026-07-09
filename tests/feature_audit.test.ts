@@ -211,6 +211,68 @@ describe('Inspection panels keep obvious close controls', () => {
     expect(readFileSync('src/render/Codex.ts', 'utf8')).not.toContain('codex-close-bottom');
     expect(readFileSync('src/render/ComboPreview.ts', 'utf8')).not.toContain('combo-info-dismiss');
   });
+
+  it('shared modal ergonomics adds a standard X close button by default', () => {
+    const helper = readFileSync('src/render/ModalErgonomics.ts', 'utf8');
+    expect(helper).toContain('opts.closeButton !== false');
+    expect(helper).toContain("btn.textContent = 'X'");
+    expect(helper).toContain("btn.title = 'Close this panel'");
+    expect(helper).toContain("btn.setAttribute('aria-label', 'Close this panel')");
+    expect(helper).toContain("root.dispatchEvent(new CustomEvent('rtd:modal-force-close'))");
+  });
+
+  it('choice-modal X buttons use safe decline or skip behavior instead of trapping progression', () => {
+    const relic = readFileSync('src/render/CampaignRelicModal.ts', 'utf8');
+    const trophy = readFileSync('src/render/BossTrophyModal.ts', 'utf8');
+    const tym = readFileSync('src/render/TestYourMightModal.ts', 'utf8');
+    expect(relic).toContain('const declineAll = () =>');
+    expect(relic).toContain('skipCampaignRelic(state)');
+    expect(relic).toContain('onClose: declineAll');
+    expect(trophy).toContain('const skipTrophy = () =>');
+    expect(trophy).toContain('onChoose(null)');
+    expect(trophy).toContain('onClose: skipTrophy');
+    expect(tym).toContain('const decline = () =>');
+    expect(tym).toContain('declineTestYourMight(state)');
+    expect(tym).toContain('onClose: decline');
+  });
+
+  it('manual-X modals opt out of the helper close button to avoid double X controls', () => {
+    const files = [
+      'src/main.ts',
+      'src/render/HarborDraftModal.ts',
+      'src/render/SecretEvents.ts',
+      'src/render/ComboPreview.ts'
+    ];
+    const source = files.map(file => readFileSync(file, 'utf8')).join('\n');
+    expect(source).toContain('closeButton: false');
+    expect(readFileSync('src/render/HarborDraftModal.ts', 'utf8')).toContain('id="harbor-close"');
+    expect(readFileSync('src/render/SecretEvents.ts', 'utf8')).toContain('id="mercator-backroom-x"');
+    expect(readFileSync('src/render/ComboPreview.ts', 'utf8')).toContain('id="combo-info-close"');
+    expect(readFileSync('src/main.ts', 'utf8')).toContain('id="dps-summary-close"');
+  });
+
+  it('older full-screen overlays expose explicit X close icons too', () => {
+    const files = [
+      'src/render/ChooseHeroModal.ts',
+      'src/render/MarsVictorAlert.ts',
+      'src/render/Leaderboard.ts',
+      'src/render/EndScreens.ts',
+      'src/main.ts'
+    ];
+    const source = files.map(file => readFileSync(file, 'utf8')).join('\n');
+    for (const id of [
+      'sandbox-pw-x',
+      'etch-name-x',
+      'end-summary-x',
+      'name-prompt-x',
+      'hog-close-x',
+      'end-screen-x'
+    ]) {
+      expect(source).toContain(id);
+    }
+    expect(source).toContain("closeBtn.setAttribute('aria-label', 'Close hero selection')");
+    expect(source).toContain("closeBtn.setAttribute('aria-label', 'Close Mars Victor prompt')");
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────

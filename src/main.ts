@@ -747,6 +747,7 @@ async function boot() {
         footerSelector: '#dps-summary-footer',
         storageKey: 'roman_td_dps_summary_collapsed',
         title: 'DPS check summary',
+        closeButton: false,
         toolRightPx: 54
       });
     }
@@ -4977,6 +4978,7 @@ async function boot() {
     modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);z-index:240;font-family:'Courier New',monospace;`;
     modal.innerHTML = `
       <div style="position:relative;width:min(420px,92%);padding:28px 32px;background:linear-gradient(180deg,#1a0820,#0c0410);border:3px solid #ff5cc8;color:#ffb3d9;box-shadow:0 0 38px rgba(255,92,200,0.45),inset 0 0 32px rgba(0,0,0,0.7);text-align:center">
+        <button id="sandbox-pw-x" type="button" aria-label="Close sandbox password" title="Close" style="position:absolute;top:8px;right:8px;width:30px;height:30px;display:grid;place-items:center;background:linear-gradient(180deg,#2a1a0e,#0c0a08);color:#ffd34d;border:1px solid #7a5a1a;box-shadow:0 0 8px rgba(0,0,0,0.45);cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:900;line-height:1">X</button>
         <div style="font-size:18px;letter-spacing:4px;font-weight:bold;color:#ff5cc8;margin-bottom:6px">🧪 DEV SANDBOX</div>
         <div style="font-size:11px;letter-spacing:2px;color:#aa6090;margin-bottom:14px">DEVELOPER TESTING MODE</div>
         <div style="font-size:12px;color:#cdb98a;margin-bottom:14px;line-height:1.5">Enter the password to enable risk-free wave / tower testing.<br/><span style="color:#aa9a4a;font-size:11px">No leaderboard. No quest progress. No save data touched.</span></div>
@@ -4992,6 +4994,7 @@ async function boot() {
     const errorEl = modal.querySelector('#sandbox-password-error') as HTMLElement;
     const okBtn = modal.querySelector('#sandbox-pw-ok') as HTMLButtonElement;
     const cancelBtn = modal.querySelector('#sandbox-pw-cancel') as HTMLButtonElement;
+    const xBtn = modal.querySelector('#sandbox-pw-x') as HTMLButtonElement;
     setTimeout(() => input?.focus(), 30);
     const dismiss = () => modal.remove();
     const tryAccept = () => {
@@ -5001,6 +5004,7 @@ async function boot() {
     };
     okBtn.addEventListener('click', tryAccept);
     cancelBtn.addEventListener('click', dismiss);
+    xBtn.addEventListener('click', dismiss);
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); tryAccept(); }
       if (e.key === 'Escape') { e.preventDefault(); dismiss(); }
@@ -5013,6 +5017,7 @@ async function boot() {
     modal.innerHTML = `
       <div style="position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,0.30) 2px,rgba(0,0,0,0.30) 3px);pointer-events:none;mix-blend-mode:multiply"></div>
       <div style="position:relative;width:min(560px,92%);padding:32px 36px;background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 38px rgba(212,175,55,0.55),inset 0 0 32px rgba(0,0,0,0.7);text-align:center">
+        <button id="etch-name-x" type="button" aria-label="Close name entry" title="Close" style="position:absolute;top:8px;right:8px;width:30px;height:30px;display:grid;place-items:center;background:linear-gradient(180deg,#2a1a0e,#0c0a08);color:#ffd34d;border:1px solid #7a5a1a;box-shadow:0 0 8px rgba(0,0,0,0.45);cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:900;line-height:1">X</button>
         <div style="font-size:11px;letter-spacing:6px;color:#aa6a1a;font-weight:bold;margin-bottom:10px">▾ SENATUS POPULUSQUE ROMANUS ▾</div>
         <div style="font-size:26px;font-weight:900;letter-spacing:6px;color:#ffd34d;text-shadow:0 0 14px #ffaa00,3px 3px 0 #000;line-height:1.1;margin-bottom:18px">ETCH YOUR NAME<br/>IN THE HISTORY OF ROME</div>
         <div style="font-size:13px;color:#fff8e0;line-height:1.6;letter-spacing:0.5px;text-shadow:1px 1px 0 #000;margin-bottom:24px;text-align:left;padding:0 8px">
@@ -5049,6 +5054,7 @@ async function boot() {
       onSubmit(raw);
     };
     btn.onclick = commit;
+    (modal.querySelector('#etch-name-x') as HTMLButtonElement | null)?.addEventListener('click', commit);
     input.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
     });

@@ -126,6 +126,21 @@ export function showChooseHeroModal(state: GameStateShape): void {
     padding: clamp(20px, 3vh, 40px) clamp(20px, 3vw, 40px);
     text-align: center;
   `;
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.textContent = 'X';
+  closeBtn.setAttribute('aria-label', 'Close hero selection');
+  closeBtn.title = 'Close hero selection';
+  closeBtn.style.cssText = `
+    position:absolute;top:10px;right:10px;z-index:6;
+    width:32px;height:32px;
+    display:grid;place-items:center;
+    background:linear-gradient(180deg,#2a1a0e,#0c0a08);
+    color:#ffd34d;border:1px solid #7a5a1a;
+    box-shadow:0 0 10px rgba(0,0,0,0.55);
+    cursor:pointer;font-family:'Courier New',monospace;
+    font-size:14px;font-weight:900;line-height:1;
+  `;
   panel.innerHTML = `
     <div style="font-size: clamp(11px, 1.4vh, 14px); color: #aa6a1a; letter-spacing: 6px; font-weight: 900; margin-bottom: 6px; text-shadow: 1px 1px 0 #000;">ROME CALLS A CHAMPION</div>
     <div style="font-size: clamp(28px, 5vh, 52px); color: #ffd34d; letter-spacing: clamp(4px, 0.8vw, 12px); font-weight: 900; line-height: 1.05; margin-bottom: 6px; text-shadow: 0 0 18px #ffd34d, 4px 4px 0 #1a0808;">CHOOSE YOUR HERO</div>
@@ -403,6 +418,7 @@ export function showChooseHeroModal(state: GameStateShape): void {
 
   panel.appendChild(rowWrap);
   panel.appendChild(confirmStrip);
+  panel.appendChild(closeBtn);
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
 
@@ -445,6 +461,7 @@ export function showChooseHeroModal(state: GameStateShape): void {
     overlay.style.animation = 'chmFadeOut 0.22s ease-in forwards';
     setTimeout(() => overlay.remove(), 220);
   }
+  closeBtn.onclick = () => cleanup();
   window.addEventListener('keydown', onKey);
 }
 

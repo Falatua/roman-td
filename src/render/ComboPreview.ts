@@ -222,6 +222,7 @@ export function showComboInfoModal(comboType: string): void {
     enhanceModalErgonomics(modal, panel, {
       title: 'Combo information',
       onClose: closeModal,
+      closeButton: false,
       toolRightPx: 42
     });
   }

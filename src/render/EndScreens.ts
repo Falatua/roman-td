@@ -194,7 +194,8 @@ export function showGameOver(parent: HTMLElement, state: GameStateShape, onResta
   modal.id = 'end-screen';
   // 2026-05-19 — Responsive clamping (Codex pattern).
   modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:radial-gradient(circle,rgba(80,0,0,0.85),rgba(0,0,0,0.95));z-index:100;padding:16px 8px;box-sizing:border-box;overflow:auto;color:#e8d6a8;font-family:'Courier New',monospace;`;
-  modal.innerHTML = `<div style="text-align:center;padding:24px 28px;border:3px solid #aa1a1a;background:#1a0a08;width:min(580px,94vw);box-shadow:0 0 36px rgba(170,26,26,0.55)">
+  modal.innerHTML = `<div style="position:relative;text-align:center;padding:24px 28px;border:3px solid #aa1a1a;background:#1a0a08;width:min(580px,94vw);box-shadow:0 0 36px rgba(170,26,26,0.55)">
+    <button id="end-screen-x" type="button" aria-label="Close end screen" title="Close" style="position:absolute;top:8px;right:8px;width:30px;height:30px;display:grid;place-items:center;background:linear-gradient(180deg,#2a1a0e,#0c0a08);color:#ffd34d;border:1px solid #7a5a1a;box-shadow:0 0 8px rgba(0,0,0,0.45);cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:900;line-height:1">X</button>
     <h1 style="margin:0;font-size:32px;color:#ee2a2a;letter-spacing:6px;text-shadow:3px 3px 0 #000">ROME HAS FALLEN</h1>
     <div style="margin:6px 0 18px;font-size:14px;color:#aa6a6a;letter-spacing:2px">CASTRUM LUNUM, AVGVSTI MMXXVI</div>
     <div style="font-size:14px;line-height:1.7">
@@ -209,6 +210,7 @@ export function showGameOver(parent: HTMLElement, state: GameStateShape, onResta
   </div>`;
   parent.appendChild(modal);
   document.getElementById('restart-btn')!.onclick = () => { modal.remove(); onRestart(); };
+  document.getElementById('end-screen-x')!.onclick = () => { modal.remove(); };
 }
 
 export function showVictory(parent: HTMLElement, state: GameStateShape, onRestart: () => void) {
@@ -222,7 +224,8 @@ export function showVictory(parent: HTMLElement, state: GameStateShape, onRestar
   modal.id = 'end-screen';
   // 2026-05-19 — Responsive clamping (Codex pattern).
   modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:radial-gradient(circle,rgba(120,90,0,0.85),rgba(0,0,0,0.95));z-index:100;padding:16px 8px;box-sizing:border-box;overflow:auto;color:#e8d6a8;font-family:'Courier New',monospace;`;
-  modal.innerHTML = `<div style="text-align:center;padding:30px;border:3px solid #d4af37;background:#1a1410;width:min(500px,94vw);">
+  modal.innerHTML = `<div style="position:relative;text-align:center;padding:30px;border:3px solid #d4af37;background:#1a1410;width:min(500px,94vw);">
+    <button id="end-screen-x" type="button" aria-label="Close victory screen" title="Close" style="position:absolute;top:8px;right:8px;width:30px;height:30px;display:grid;place-items:center;background:linear-gradient(180deg,#2a1a0e,#0c0a08);color:#ffd34d;border:1px solid #7a5a1a;box-shadow:0 0 8px rgba(0,0,0,0.45);cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:900;line-height:1">X</button>
     <h1 style="margin:0;font-size:32px;color:#ffd34d;letter-spacing:6px;text-shadow:3px 3px 0 #000">ROMA AETERNA</h1>
     <div style="margin:6px 0 18px;font-size:14px;color:#aa9a4a;letter-spacing:2px">CASTRUM LUNUM STANDS</div>
     <div style="font-size:14px;line-height:1.7">
@@ -236,4 +239,5 @@ export function showVictory(parent: HTMLElement, state: GameStateShape, onRestar
   </div>`;
   parent.appendChild(modal);
   document.getElementById('restart-btn')!.onclick = () => { modal.remove(); onRestart(); };
+  document.getElementById('end-screen-x')!.onclick = () => { modal.remove(); };
 }

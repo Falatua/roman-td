@@ -52,17 +52,23 @@ export function showTestYourMightModal(
       <button id="tym-decline" style="font-family:inherit;background:#14100c;border:2px solid #5a4a30;color:#cdb98a;padding:12px 18px;cursor:pointer;font-size:13px;font-weight:bold;letter-spacing:3px">NO, I LIKE LIVING</button>
     </div>
   `;
-  modal.appendChild(panel);
-  enhanceModalErgonomics(modal, panel, {
-    bodySelector: '#tym-body',
-    footerSelector: '#tym-footer',
-    title: 'Test Your Might offer'
-  });
-
   const close = () => {
     modal.remove();
     (state as any).__testYourMightOpen = false;
   };
+  const decline = () => {
+    declineTestYourMight(state);
+    close();
+    SFX.prospectKeep();
+    onResolve(false);
+  };
+  modal.appendChild(panel);
+  enhanceModalErgonomics(modal, panel, {
+    bodySelector: '#tym-body',
+    footerSelector: '#tym-footer',
+    title: 'Test Your Might offer',
+    onClose: decline
+  });
 
   const accept = panel.querySelector('#tym-accept') as HTMLButtonElement | null;
   if (accept) {
@@ -73,14 +79,9 @@ export function showTestYourMightModal(
       onResolve(true);
     };
   }
-  const decline = panel.querySelector('#tym-decline') as HTMLButtonElement | null;
-  if (decline) {
-    decline.onclick = () => {
-      declineTestYourMight(state);
-      close();
-      SFX.prospectKeep();
-      onResolve(false);
-    };
+  const declineBtn = panel.querySelector('#tym-decline') as HTMLButtonElement | null;
+  if (declineBtn) {
+    declineBtn.onclick = decline;
   }
 
   parent.appendChild(modal);

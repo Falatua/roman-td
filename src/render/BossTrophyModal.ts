@@ -9,7 +9,7 @@ export function showBossTrophyModal(
   parent: HTMLElement,
   state: GameStateShape,
   bossName: string,
-  onChoose: (id: BossTrophyId) => void
+  onChoose: (id: BossTrophyId | null) => void
 ): void {
   if (!canReceiveRunReward(state)) return;
   const offers = bossTrophyOffers(state, 3);
@@ -36,12 +36,6 @@ export function showBossTrophyModal(
       <div id="boss-trophy-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px"></div>
     </div>
   `;
-  modal.appendChild(panel);
-  enhanceModalErgonomics(modal, panel, {
-    bodySelector: '#boss-trophy-body',
-    title: 'Boss trophy choice'
-  });
-
   const row = panel.querySelector('#boss-trophy-cards') as HTMLElement;
   const closeWith = (id: BossTrophyId) => {
     applyBossTrophy(state, id);
@@ -50,6 +44,17 @@ export function showBossTrophyModal(
     SFX.itemPickup('LEGENDARY');
     onChoose(id);
   };
+  const skipTrophy = () => {
+    modal.remove();
+    (state as any).__bossTrophyOpen = false;
+    onChoose(null);
+  };
+  modal.appendChild(panel);
+  enhanceModalErgonomics(modal, panel, {
+    bodySelector: '#boss-trophy-body',
+    title: 'Boss trophy choice',
+    onClose: skipTrophy
+  });
 
   for (const trophy of offers) {
     const card = document.createElement('button');

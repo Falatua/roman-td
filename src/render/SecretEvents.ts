@@ -152,6 +152,7 @@ export function showMercatorBackRoomModal(
       bodySelector: '#mercator-backroom-body',
       footerSelector: '#mercator-backroom-footer',
       title: 'Mercator Back Room',
+      closeButton: false,
       toolRightPx: 58
     });
   }

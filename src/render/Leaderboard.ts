@@ -488,6 +488,7 @@ export function showEndSummary(parent: HTMLElement, state: GameStateShape, won: 
   wrap.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:radial-gradient(circle,rgba(20,8,4,0.92),rgba(0,0,0,0.97));z-index:190;padding:16px 8px;box-sizing:border-box;overflow:auto;color:#ffd34d;font-family:'Courier New',monospace;`;
   wrap.innerHTML = `
     <div style="text-align:center;padding:28px 36px;background:#0a0202;border:3px solid ${accent};box-shadow:0 0 36px ${accent}88;width:min(520px,94vw);position:relative">
+      <button id="end-summary-x" type="button" aria-label="Close summary" title="Close" style="position:absolute;top:8px;right:8px;width:30px;height:30px;display:grid;place-items:center;background:linear-gradient(180deg,#2a1a0e,#0c0a08);color:#ffd34d;border:1px solid #7a5a1a;box-shadow:0 0 8px rgba(0,0,0,0.45);cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:900;line-height:1">X</button>
       <div style="font-size:34px;letter-spacing:8px;color:${accent};text-shadow:0 0 14px ${accent},3px 3px 0 #000;font-weight:900">${heading}</div>
       <div style="font-size:12px;letter-spacing:4px;color:#aa6a1a;margin-top:4px">${sub}</div>
       <div style="margin:22px 0 6px;font-size:11px;letter-spacing:4px;color:#aa6a1a">FINAL SCORE</div>
@@ -535,6 +536,7 @@ export function showEndSummary(parent: HTMLElement, state: GameStateShape, won: 
     onContinue(breakdown.final);
   };
   (wrap.querySelector('#end-continue') as HTMLButtonElement).onclick = finish;
+  (wrap.querySelector('#end-summary-x') as HTMLButtonElement | null)?.addEventListener('click', finish);
   const onKey = (ev: KeyboardEvent) => {
     if (ev.key === 'Enter' || ev.key === ' ') { document.removeEventListener('keydown', onKey); finish(); }
   };
@@ -551,6 +553,7 @@ export function promptForName(parent: HTMLElement, defaultName: string, onSubmit
   wrap.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.85);z-index:195;padding:16px 8px;box-sizing:border-box;overflow:auto;color:#ffd34d;font-family:'Courier New',monospace;`;
   wrap.innerHTML = `
     <div style="background:#0a0202;border:3px solid #ffd34d;box-shadow:0 0 30px rgba(255,211,77,0.5);padding:28px 36px;text-align:center;width:min(420px,94vw);position:relative">
+      <button id="name-prompt-x" type="button" aria-label="Close name prompt" title="Close" style="position:absolute;top:8px;right:8px;width:30px;height:30px;display:grid;place-items:center;background:linear-gradient(180deg,#2a1a0e,#0c0a08);color:#ffd34d;border:1px solid #7a5a1a;box-shadow:0 0 8px rgba(0,0,0,0.45);cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:900;line-height:1">X</button>
       <div style="font-size:18px;letter-spacing:5px;color:#ffd34d;text-shadow:0 0 10px #ffd34d,2px 2px 0 #000;font-weight:900;margin-bottom:10px">ENTER YOUR NAME</div>
       <div style="font-size:11px;letter-spacing:2px;color:#aa6a1a;margin-bottom:18px">A-Z, 0-9 only · max 12 characters</div>
       <input id="name-input" maxlength="12" autocomplete="off" style="width:100%;background:#1a0404;border:2px solid #aa1a1a;color:#ffd34d;font-family:inherit;font-size:22px;letter-spacing:6px;text-align:center;padding:10px 12px;font-weight:900;text-transform:uppercase;text-shadow:0 0 6px #ffd34d,1px 1px 0 #000;outline:none">
@@ -588,6 +591,7 @@ export function promptForName(parent: HTMLElement, defaultName: string, onSubmit
   const skip = () => { wrap.remove(); onSubmit(defaultName); };
   (wrap.querySelector('#name-submit') as HTMLButtonElement).onclick = submit;
   (wrap.querySelector('#name-skip') as HTMLButtonElement).onclick = skip;
+  (wrap.querySelector('#name-prompt-x') as HTMLButtonElement | null)?.addEventListener('click', skip);
   input.addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter') submit();
     if (ev.key === 'Escape') skip();
@@ -693,6 +697,7 @@ export function showLeaderboard(
     <div class="hog-scanlines"></div>
     <div class="hog-vignette"></div>
     <div class="hog-content">
+      <button id="hog-close-x" type="button" aria-label="Close Hall of Glory" title="Close" style="position:absolute;top:0;right:0;width:32px;height:32px;display:grid;place-items:center;background:linear-gradient(180deg,#2a1a0e,#0c0a08);color:#ffd34d;border:1px solid #7a5a1a;box-shadow:0 0 8px rgba(0,0,0,0.45);cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:900;line-height:1;z-index:4">X</button>
       <div class="hog-title">HALL OF GLORY</div>
       <div class="hog-subtitle" id="hog-subtitle">TOP X LEGIONS OF ROMA</div>
       ${submitBannerHtml}
@@ -1071,6 +1076,14 @@ export function showLeaderboard(
     document.removeEventListener('keydown', onKey);
     onRestart();
   };
+  const closeHall = () => {
+    stopAutoRefresh();
+    wrap.remove();
+    document.removeEventListener('keydown', onKey);
+    if (isLoadingMode && opts?.onBack) opts.onBack();
+    else onRestart();
+  };
+  (wrap.querySelector('#hog-close-x') as HTMLButtonElement | null)?.addEventListener('click', closeHall);
   const promptEl = wrap.querySelector('.hog-prompt') as HTMLElement;
   promptEl.style.cursor = 'pointer';
   promptEl.addEventListener('click', restart);

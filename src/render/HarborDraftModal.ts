@@ -93,6 +93,7 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
     enhanceModalErgonomics(wrap, panel, {
       bodySelector: '#harbor-draft-body',
       title: 'Harbor Draft',
+      closeButton: false,
       toolRightPx: 52
     });
   }
