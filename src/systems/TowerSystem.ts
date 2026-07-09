@@ -479,9 +479,13 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   let harborSpeedMult = 1;
   let harborRangeBonus = 0;
   if (t.type === TowerType.HYDRA_OF_LERNA || t.type === TowerType.HYDRA_BEAST_PIT) {
-    const headStacks = Math.min(t.type === TowerType.HYDRA_BEAST_PIT ? 8 : 5, Math.floor((t.killCount ?? 0) / 6));
-    harborDmgMult *= 1 + headStacks * (t.type === TowerType.HYDRA_BEAST_PIT ? 0.09 : 0.08);
-    harborSpeedMult *= 1 + headStacks * 0.035;
+    const isPit = t.type === TowerType.HYDRA_BEAST_PIT;
+    const placedOnWater = !!(t as any).placedOnWater;
+    const killsPerHead = isPit ? (placedOnWater ? 4 : 5) : 4;
+    const maxHeads = isPit ? 9 : 7;
+    const headStacks = Math.min(maxHeads, Math.floor((t.killCount ?? 0) / killsPerHead));
+    harborDmgMult *= 1 + headStacks * (isPit && !placedOnWater ? 0.10 : 0.11);
+    harborSpeedMult *= 1 + headStacks * (isPit ? 0.045 : 0.04);
   }
   if (harborDef?.amphibious) {
     if ((t as any).placedOnWater) {

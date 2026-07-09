@@ -173,6 +173,29 @@ describe('Harbor naval tower system', () => {
     expect(towerEffectiveStats(leviathan).dps).toBeLessThan(towerEffectiveStats(transformer).dps);
   });
 
+  it('lets the Hydra line ramp into a real short-range naval payoff', () => {
+    const charybdis = createTower(TowerType.CHARYBDIS_VORTEX, 4, 2, 20, 12);
+    const hydra = createTower(TowerType.HYDRA_OF_LERNA, 4, 3, 20, 12);
+    hydra.placedOnWater = true;
+    const hydraBase = towerEffectiveStats(hydra);
+    hydra.killCount = 28;
+    const hydraRamped = towerEffectiveStats(hydra);
+
+    const pit = createTower(TowerType.HYDRA_BEAST_PIT, 5, 4, 20, 12);
+    pit.placedOnWater = true;
+    const pitBase = towerEffectiveStats(pit);
+    pit.killCount = 36;
+    const pitRamped = towerEffectiveStats(pit);
+
+    expect(hydraBase.range).toBeGreaterThanOrEqual(2.6);
+    expect(hydraBase.dps).toBeGreaterThan(towerEffectiveStats(charybdis).dps);
+    expect(hydraRamped.dps).toBeGreaterThan(hydraBase.dps * 1.7);
+    expect(hydraRamped.attackSpeed).toBeGreaterThan(hydraBase.attackSpeed * 1.25);
+    expect(pitBase.dps).toBeGreaterThan(hydraBase.dps);
+    expect(pitRamped.dps).toBeGreaterThan(pitBase.dps * 1.9);
+    expect(pitRamped.attackSpeed).toBeGreaterThan(pitBase.attackSpeed * 1.35);
+  });
+
   it('keeps the mythic sea towers on divine damage while grounded naval hardware stays physical', () => {
     expect((towersData as any).CHARYBDIS_VORTEX.damageType).toBe('DIVINE');
     expect((towersData as any).NEREID_ORACLE.damageType).toBe('DIVINE');
