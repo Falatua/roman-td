@@ -63,6 +63,7 @@ function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title:
   panel.style.display = 'flex';
   panel.style.flexDirection = 'column';
   panel.style.maxHeight = 'calc(100vh - 32px)';
+  panel.style.height = 'min(900px, calc(100vh - 32px))';
   panel.style.overflow = 'hidden';
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '.rtd-tower-menu-collapse',

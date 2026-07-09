@@ -1039,6 +1039,7 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(source).toContain("'overflow-y:auto'");
     expect(source).toContain("'flex:1'");
     expect(source).toContain("panel.style.maxHeight = 'calc(100vh - 32px)'");
+    expect(source).toContain("panel.style.height = 'min(900px, calc(100vh - 32px))'");
     expect(source).toContain("bodySelector: '.rtd-tower-menu-collapse'");
   });
 
