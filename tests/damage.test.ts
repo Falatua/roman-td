@@ -14,6 +14,10 @@ function makeEnemy(type: EnemyType, faction: EnemyFaction = EnemyFaction.DOGS): 
   };
 }
 
+function hasDirectDamageAnswer(enemy: Enemy, damageTypes: DamageType[]): boolean {
+  return damageTypes.some(type => enemyDamageMultiplier(enemy, type) > 0);
+}
+
 describe('DamageType — faction resistance modifier', () => {
   it('DIVINE always returns 1.0 (true damage)', () => {
     expect(resistanceModifier(EnemyFaction.DOGS, DamageType.DIVINE)).toBe(1);
@@ -299,7 +303,10 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       expect(resistanceSummary(type).some(row => row.label === 'Burn' && row.value === 0), `${type} burn summary`).toBe(true);
       expect(resistanceSummary(type).some(row => row.label === 'Bleed' && row.value === 0), `${type} bleed summary`).toBe(true);
       expect(resistanceSummary(type).some(row => row.label === 'Poison' && row.value === 0), `${type} poison summary`).toBe(true);
-      expect(enemyDamageMultiplier(enemy, DamageType.ELEMENTAL_FIRE), `${type} direct-damage answer`).toBeGreaterThan(0);
+      expect(
+        hasDirectDamageAnswer(enemy, [DamageType.PHYS_MELEE, DamageType.PHYS_RANGED, DamageType.SIEGE, DamageType.ELEMENTAL_FIRE, DamageType.DIVINE]),
+        `${type} should still have at least one direct-damage answer`
+      ).toBe(true);
     }
   });
 
@@ -321,7 +328,10 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine`).toBe(0);
       expect(armorProfile(type).find(row => row.damageType === 'DIVINE')?.immune, `${type} armor row`).toBe(true);
       expect(resistanceSummary(type).some(row => row.label === 'Divine' && row.value === 0), `${type} summary row`).toBe(true);
-      expect(enemyDamageMultiplier(enemy, DamageType.ELEMENTAL_FIRE), `${type} non-divine answer`).toBeGreaterThan(0);
+      expect(
+        hasDirectDamageAnswer(enemy, [DamageType.PHYS_MELEE, DamageType.PHYS_RANGED, DamageType.SIEGE, DamageType.ELEMENTAL_FIRE]),
+        `${type} should still have at least one non-divine answer`
+      ).toBe(true);
     }
   });
 
@@ -357,6 +367,29 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(statusEffectiveness(wyvern, StatusEffectKind.BURN)).toBe(0);
     expect(enemyDamageMultiplier(wyvern, DamageType.SIEGE)).toBeGreaterThan(1);
     expect(enemyDamageMultiplier(wyvern, DamageType.DIVINE)).toBeGreaterThan(1);
+  });
+
+  it('makes selected late-wave portfolio checks immune to fire and burn', () => {
+    const fireChecks = [
+      EnemyType.MONGOL_BERSERKER,
+      EnemyType.MONGOL_SHAMAN,
+      EnemyType.ANUBIS_PRIEST,
+      EnemyType.ANUBIS_PRIEST_COMMANDER,
+      EnemyType.DUNE_STALKER,
+      EnemyType.STONE_JUGGERNAUT,
+      EnemyType.DEMON_HELLHOUND,
+      EnemyType.CERBERUS,
+      EnemyType.DAEMON_IMPERATOR
+    ];
+
+    for (const type of fireChecks) {
+      const enemy = makeEnemy(type, (enemiesData as any)[type].faction as EnemyFaction);
+      expect((enemiesData as any)[type].immuneFire, `${type} JSON immuneFire`).toBe(true);
+      expect(enemyDamageMultiplier(enemy, DamageType.ELEMENTAL_FIRE), `${type} fire`).toBe(0);
+      expect(statusEffectiveness(enemy, StatusEffectKind.BURN), `${type} burn`).toBe(0);
+      expect(armorProfile(type).find(row => row.damageType === 'ELEMENTAL_FIRE')?.immune, `${type} armor row`).toBe(true);
+      expect(resistanceSummary(type).some(row => row.label === 'Fire' && row.value === 0), `${type} summary row`).toBe(true);
+    }
   });
 
   it('makes ocean giants immune to fire, burn, and hellfire', () => {

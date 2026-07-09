@@ -249,6 +249,10 @@ function siegeImmuneBlocksTower(enemyType: string, towerDmgType: DamageType): bo
   if (!(enemiesData as any)[enemyType]?.siegeImmune) return false;
   return towerDmgType === DamageType.SIEGE;
 }
+function fireImmuneBlocksTower(enemyType: string, towerDmgType: DamageType): boolean {
+  if (!(enemiesData as any)[enemyType]?.immuneFire) return false;
+  return towerDmgType === DamageType.ELEMENTAL_FIRE;
+}
 function divineImmuneBlocksTower(enemyType: string, towerDmgType: DamageType, towerType?: TowerType): boolean {
   if (!(enemiesData as any)[enemyType]?.divineImmune) return false;
   if (towerType === TowerType.MARS_VICTOR) {
@@ -1771,6 +1775,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         // meleeImmuneBlocksTower comment for the design rationale.
         if (isMeleeRow && meleeImmuneBlocksTower(e.type, acquireDmgType)) continue;
         if (divineOnlyBlocksTower(e.type, acquireDmgType, t)) continue;
+        if (fireImmuneBlocksTower(e.type, acquireDmgType)) continue;
         if (rangedImmuneBlocksTower(e.type, acquireDmgType)) continue;
         if (siegeImmuneBlocksTower(e.type, acquireDmgType)) continue;
         if (divineImmuneBlocksTower(e.type, acquireDmgType, t.type)) continue;
@@ -2285,6 +2290,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
     // one — can acquire it through the veil.
     const revealed = !!(e as any).__truesightRevealed;
     if (divineOnlyBlocksTower(e.type, acquireDmgType, t)) continue;
+    if (fireImmuneBlocksTower(e.type, acquireDmgType)) continue;
     if (rangedImmuneBlocksTower(e.type, acquireDmgType)) continue;
     if (siegeImmuneBlocksTower(e.type, acquireDmgType)) continue;
     if (divineImmuneBlocksTower(e.type, acquireDmgType, t.type)) continue;

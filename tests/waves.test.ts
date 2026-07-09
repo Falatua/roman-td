@@ -213,6 +213,22 @@ describe('Late-wave DoT profile coverage', () => {
     }
   });
 
+  it('keeps fire-immune threats present across W16-W30', () => {
+    const fireImmuneTypes = new Set(
+      Object.entries(enemiesData as any)
+        .filter(([, def]: any) => def?.immuneFire === true)
+        .map(([type]) => type)
+    );
+
+    for (const wave of (wavesData as any[]).filter(w => w.wave >= 16 && w.wave <= 30)) {
+      const types = [...new Set((wave.spawns ?? []).map((spawn: any) => spawn.type))];
+      expect(
+        types.some(type => fireImmuneTypes.has(type)),
+        `W${wave.wave} should include at least one fire-immune threat`
+      ).toBe(true);
+    }
+  });
+
   it('gives every W16-W30 enemy at least one explicit burn, poison, or bleed profile', () => {
     for (const wave of (wavesData as any[]).filter(w => w.wave >= 16 && w.wave <= 30)) {
       const types = [...new Set((wave.spawns ?? []).map((s: any) => s.type))] as EnemyType[];

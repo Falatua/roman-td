@@ -380,6 +380,7 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
+    "immuneFire": true,
     "spriteSheet": 6,
     "spriteCell": 3,
     "splitOnDeath": {
@@ -446,6 +447,7 @@
     "isFlyer": false,
     "isBoss": true,
     "livesCost": 10,
+    "immuneFire": true,
     "spriteSheet": 6,
     "spriteCell": 7,
     "outOfCombatRegen": 0.028
@@ -622,6 +624,7 @@
     "meleeImmune": true,
     "dotImmune": true,
     "divineImmune": true,
+    "immuneFire": true,
     "immunePoison": true
   },
   "SOBEK_WARRIOR": {
@@ -744,7 +747,8 @@
     "renderScale": 0.82,
     "dotImmune": true,
     "divineImmune": true,
-    "siegeImmune": true
+    "siegeImmune": true,
+    "immuneFire": true
   },
   "MONGOL_SCOUT": {
     "name": "Hun Scout",
@@ -774,7 +778,8 @@
     "healAllyPctPerSec": 0.018,
     "renderScale": 0.82,
     "dotImmune": true,
-    "meleeImmune": true
+    "meleeImmune": true,
+    "immuneFire": true
   },
   "MONGOL_CAPTAIN": {
     "name": "Hun Captain",
@@ -823,6 +828,7 @@
     "isBoss": false,
     "livesCost": 5,
     "isElite": true,
+    "immuneFire": true,
     "immuneFreeze": true
   },
   "TYPHON": {
@@ -1110,6 +1116,7 @@
     "meleeImmune": true,
     "dotImmune": true,
     "divineImmune": true,
+    "immuneFire": true,
     "immunePoison": true,
     "renderScale": 1.2
   },
@@ -1243,6 +1250,7 @@
     "lowHpSpeedBoost": 1.5,
     "dotImmune": true,
     "siegeImmune": true,
+    "immuneFire": true,
     "stealthInterval": { "period": 4.5, "duration": 1.0 }
   },
   "STONE_JUGGERNAUT": {
@@ -1259,6 +1267,7 @@
     "meleeImmune": true,
     "rangedImmune": true,
     "dotImmune": true,
+    "immuneFire": true,
     "immuneSlow": true,
     "immuneStun": true
   }
