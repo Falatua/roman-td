@@ -43,6 +43,13 @@ function oceanJoinPathIndex(state: GameStateShape): number {
   return Math.min(state.groundPath.length - 1, wp2Idx + 1);
 }
 
+function oceanJoinFlyerPathIndex(state: GameStateShape): number {
+  // Flyer path shape: [spawn, checkpoint 1, checkpoint 2, checkpoint 3, ..., Rome].
+  // Ocean flyers should still emerge from the shipwreck, but they remain true
+  // air enemies and join at checkpoint 3 instead of being forced onto roads.
+  return Math.min(Math.max(0, state.flyerPath.length - 1), 3);
+}
+
 function markOceanEmergenceOnce(state: GameStateShape): void {
   const scratch = state as any;
   if (scratch.__oceanEmergenceWave === state.wave) return;
@@ -55,11 +62,13 @@ function markOceanEmergenceOnce(state: GameStateShape): void {
 
 export function routeOceanSpawnToPath(state: GameStateShape, enemy: any, oceanIndex = 0): boolean {
   if (!enemy || state.groundPath.length === 0) return false;
-  const joinIdx = oceanJoinPathIndex(state);
-  const join = state.groundPath[joinIdx] ?? state.groundPath[0];
+  const useFlyerRoute = !!enemy.isFlyer && state.flyerPath.length > 0;
+  const joinIdx = useFlyerRoute ? oceanJoinFlyerPathIndex(state) : oceanJoinPathIndex(state);
   const { x: spawnX, y: spawnY } = oceanShipwreckSpawnPoint(oceanIndex);
-  const targetX = join.col * GRID.TILE + GRID.TILE / 2;
-  const targetY = join.row * GRID.TILE + GRID.TILE / 2;
+  const flyerJoin = state.flyerPath[joinIdx];
+  const groundJoin = state.groundPath[joinIdx] ?? state.groundPath[0];
+  const targetX = useFlyerRoute ? flyerJoin.x : groundJoin.col * GRID.TILE + GRID.TILE / 2;
+  const targetY = useFlyerRoute ? flyerJoin.y : groundJoin.row * GRID.TILE + GRID.TILE / 2;
   enemy.x = spawnX;
   enemy.y = spawnY;
   enemy.prevX = spawnX;
@@ -67,7 +76,7 @@ export function routeOceanSpawnToPath(state: GameStateShape, enemy: any, oceanIn
   enemy.pathIndex = joinIdx;
   enemy.pathProgress = 0;
   enemy.__oceanSpawn = true;
-  enemy.__oceanRouteGroundPath = true;
+  enemy.__oceanRouteGroundPath = !useFlyerRoute;
   enemy.__approachActive = true;
   enemy.__approachTargetX = targetX;
   enemy.__approachTargetY = targetY;

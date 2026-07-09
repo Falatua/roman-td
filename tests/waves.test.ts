@@ -409,9 +409,15 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
       const wp2Idx = waypointPathIndex(s, 2);
       for (const enemy of spawned) {
         expect(enemy.__oceanSpawn, `W${waveDef.wave} ${enemy.type} should be tagged ocean-spawned`).toBe(true);
-        expect(enemy.__oceanRouteGroundPath, `W${waveDef.wave} ${enemy.type} should use the post-WP2 ground route`).toBe(true);
         expect(enemy.__approachActive, `W${waveDef.wave} ${enemy.type} should approach from the shipwreck`).toBe(true);
-        expect(enemy.pathIndex, `W${waveDef.wave} ${enemy.type} should skip checkpoints 1 and 2`).toBeGreaterThan(wp2Idx);
+        if (enemy.isFlyer) {
+          expect(enemy.__oceanRouteGroundPath, `W${waveDef.wave} ${enemy.type} should remain on the flyer route`).toBe(false);
+          expect(enemy.pathIndex, `W${waveDef.wave} ${enemy.type} should join flyer path at checkpoint 3`).toBeGreaterThanOrEqual(3);
+          expect(enemy.pathIndex, `W${waveDef.wave} ${enemy.type} should stay within flyer path bounds`).toBeLessThan(s.flyerPath.length);
+        } else {
+          expect(enemy.__oceanRouteGroundPath, `W${waveDef.wave} ${enemy.type} should use the post-WP2 ground route`).toBe(true);
+          expect(enemy.pathIndex, `W${waveDef.wave} ${enemy.type} should skip checkpoints 1 and 2`).toBeGreaterThan(wp2Idx);
+        }
       }
     }
   });
@@ -442,9 +448,10 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(wyvern).toBeTruthy();
     expect(wyvern.isFlyer).toBe(true);
     expect(wyvern.__oceanSpawn).toBe(true);
-    expect(wyvern.__oceanRouteGroundPath).toBe(true);
+    expect(wyvern.__oceanRouteGroundPath).toBe(false);
     expect(wyvern.__approachActive).toBe(true);
-    expect(wyvern.pathIndex).toBeGreaterThan(waypointPathIndex(s, 2));
+    expect(wyvern.pathIndex).toBeGreaterThanOrEqual(3);
+    expect(wyvern.pathIndex).toBeLessThan(s.flyerPath.length);
   });
 
   it('does not mirror ocean spawns to Cave B on late waves', () => {
