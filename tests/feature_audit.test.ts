@@ -1234,6 +1234,19 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(harborModal).toContain('A fresh draft appears after every cleared water-enemy wave.');
   });
 
+  it('shows full naval contract stats and details in the Harbor Draft', () => {
+    const harborModal = readFileSync('src/render/HarborDraftModal.ts', 'utf8');
+    expect(harborModal).toContain('function navalContractDetailsHtml');
+    expect(harborModal).toContain('towerStatBreakdown(preview, state as any)');
+    expect(harborModal).toContain('Each card shows the tier-adjusted stats you are buying.');
+    for (const label of ['DPS', 'ATK/S', 'RANGE', 'TYPE', 'CRIT', 'PLACE']) {
+      expect(harborModal, `Harbor Draft should show ${label} detail`).toContain(`['${label}'`);
+    }
+    expect(harborModal).toContain('<b style="color:#ffd34d">Ability:</b>');
+    expect(harborModal).toContain('max-height:min(70vh,650px);overflow-y:auto');
+    expect(harborModal).toContain('grid-template-columns:repeat(auto-fit,minmax(260px,1fr))');
+  });
+
   it('ships one shared collapse and drag helper for major player-facing panels', () => {
     const helper = readFileSync('src/render/ModalErgonomics.ts', 'utf8');
     expect(helper).toContain('export function enhanceModalErgonomics');
