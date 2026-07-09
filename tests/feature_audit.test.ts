@@ -563,6 +563,7 @@ describe('Tower roster integrity', () => {
     const sharp = (await import('sharp')).default;
     const renderEngine = fs.readFileSync('src/render/RenderEngine.ts', 'utf8');
     const waveManager = fs.readFileSync('src/systems/WaveManager.ts', 'utf8');
+    const oceanSpawnSystem = fs.readFileSync('src/systems/OceanSpawnSystem.ts', 'utf8');
     const retiredEventKeys = [
       'EVENT_DEAD_UPRISING_SHEET',
       'EVENT_INVASION_BREACH_SHEET',
@@ -607,7 +608,8 @@ describe('Tower roster integrity', () => {
     expect(colorBuckets.size, `${key} should have enough color variation to look like sprite art, not a flat coded shape`).toBeGreaterThan(30);
     expect(renderEngine.includes("texGridFrame('EVENT_OCEAN_EMERGENCE_SHEET', frame, 256, 256, 3)"), 'renderer should still slice the ocean emergence sheet as a 3x3 sprite animation').toBe(true);
     expect(renderEngine.includes('drawOceanEmergenceFx'), 'renderer should expose the ocean emergence sprite-sheet pass').toBe(true);
-    expect(waveManager.includes('__oceanSurgeStartedAt'), 'ocean waves should record a start tick for sprite-sheet timing').toBe(true);
+    expect(waveManager.includes('routeOceanSpawnToPath'), 'wave manager should route ocean spawns through the shared ocean helper').toBe(true);
+    expect(oceanSpawnSystem.includes('__oceanSurgeStartedAt'), 'ocean waves should record a start tick for sprite-sheet timing').toBe(true);
   });
 
   it('Sulla meteor projectile and impact sheets keep stable transparent animation frames', async () => {
@@ -942,6 +944,7 @@ describe('Sample SFX wiring', () => {
     const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');
     const main = fs.readFileSync('src/main.ts', 'utf8');
     const waveManager = fs.readFileSync('src/systems/WaveManager.ts', 'utf8');
+    const oceanSpawnSystem = fs.readFileSync('src/systems/OceanSpawnSystem.ts', 'utf8');
     const oldCue = 'assets/sfx/ocean_emerge.mp3';
     const cue = 'assets/sfx/murloc.mp3';
 
@@ -953,7 +956,8 @@ describe('Sample SFX wiring', () => {
     expect(audio.includes(`oceanMurloc:    () => playSample(sfx('${cue}')`), 'SFX.oceanMurloc should play the replacement MP3').toBe(true);
     expect(main.includes('__oceanEmergenceSfx'), 'main should expose the replacement ocean emergence audio hook').toBe(true);
     expect(main.includes('SFX.oceanMurloc()'), 'main ocean hook should play the replacement murloc cue').toBe(true);
-    expect(waveManager.includes('markOceanEmergenceOnce'), 'WaveManager should still mark the visual ocean surge once per wave').toBe(true);
+    expect(waveManager.includes('routeOceanSpawnToPath'), 'WaveManager should still use the ocean route helper').toBe(true);
+    expect(oceanSpawnSystem.includes('markOceanEmergenceOnce'), 'shared ocean helper should still mark the visual ocean surge once per wave').toBe(true);
   });
 
   it('DPS Check keeps the normal tower and hero attack SFX hooks alive', () => {

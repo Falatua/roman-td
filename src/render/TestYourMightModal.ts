@@ -44,7 +44,7 @@ export function showTestYourMightModal(
       </div>
     </div>
     <div style="margin:14px auto 0;max-width:620px;font-size:11px;color:#cdb98a;line-height:1.5;letter-spacing:1px">
-      If you accept, the wave does not start immediately. You get a prep window first, then press START when your maze, traps, heroes, and ground killers are ready. Expect a boss-rush gauntlet with heavy ground shields, elephant pressure, all commander auras, storm surges, death-pact healing, checkpoint heals, ranged blocks, and strong status resistance. This wave is rude on purpose.
+      If you accept, the wave does not start immediately. You get a prep window first, then press START when your maze, traps, heroes, anti-air, divine answers, and shore coverage are ready. Expect a boss-rush gauntlet with flyers, shipwreck enemies, drowned ghosts, heavy ground shields, elephant pressure, commander auras, storm surges, death-pact healing, checkpoint heals, ranged blocks, and strong status resistance. This wave is rude on purpose.
     </div>
     </div>
     <div id="tym-footer" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px">

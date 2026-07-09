@@ -166,18 +166,22 @@ describe('Test Your Might bonus wave', () => {
     expect(s.endlessExtraModifiers).toEqual(['STORM_SURGE']);
   });
 
-  it('is tuned as a brutal ground gauntlet with bosses, commanders, no flyers, and affixes', () => {
+  it('is tuned as a brutal mixed gauntlet with bosses, commanders, flyers, ocean pressure, ghosts, and affixes', () => {
     const byType = new Map(TEST_YOUR_MIGHT_SPAWNS.map(g => [g.type, g]));
     const types = TEST_YOUR_MIGHT_SPAWNS.map(g => g.type);
     const enemyDefs: any = enemiesData as any;
     const totalCount = TEST_YOUR_MIGHT_SPAWNS.reduce((sum, g) => sum + g.count, 0);
+    const oceanTypes = TEST_YOUR_MIGHT_SPAWNS.filter(g => (g as any).ocean).map(g => g.type);
 
     expect(types.some(type => enemyDefs[type]?.isBoss === true)).toBe(true);
-    expect(types.some(type => enemyDefs[type]?.isFlyer === true)).toBe(false);
+    expect(types.some(type => enemyDefs[type]?.isFlyer === true)).toBe(true);
     expect(types.some(type => enemyDefs[type]?.isBoss !== true && enemyDefs[type]?.isFlyer !== true)).toBe(true);
+    expect(oceanTypes).toEqual(['OCEAN_FISHLING', 'OCEAN_GHOST_SPIRIT', 'STORMTIDE_WYVERN_COMMANDER']);
+    expect(types).toContain('SPECTRAL_SCOUT');
+    expect(types).toContain('OCEAN_GHOST_SPIRIT');
+    expect(types).toContain('STORMTIDE_WYVERN_COMMANDER');
     expect(types).not.toContain('BOSS_FLYER_VULTURE');
     expect(types).not.toContain('NUMIDIAN_RIDER');
-    expect(types).not.toContain('SPECTRAL_SCOUT');
     expect(types).not.toContain('SHADOW_CAVALRY');
     expect(types).not.toContain('CARTHAGE_SPEARMAN');
     expect(types).toContain('PATHFINDER_COMMANDER');
@@ -185,7 +189,7 @@ describe('Test Your Might bonus wave', () => {
     expect(types).toContain('SIEGE_CAPTAIN_COMMANDER');
     expect(types).toContain('ANUBIS_PRIEST_COMMANDER');
     expect(types).toContain('CELTIC_BERSERKER');
-    expect(totalCount).toBe(40);
+    expect(totalCount).toBe(66);
     for (const type of types) {
       expect(enemyDefs[type]?.ambushStealth, `${type} should not ambush-stealth in W10.5`).not.toBe(true);
       expect(enemyDefs[type]?.stealthInterval, `${type} should not stealth-cycle in W10.5`).toBeUndefined();
@@ -196,6 +200,9 @@ describe('Test Your Might bonus wave', () => {
     expect(TEST_YOUR_MIGHT_SPAWNS.filter(g => g.majorReward).map(g => g.type)).toEqual(['HANNIBAL_BARCA']);
     expect(byType.get('CELTIC_BERSERKER')?.count).toBe(18);
     expect(byType.get('CARTHAGE_ELITE_GUARD')?.count).toBe(8);
+    expect(byType.get('OCEAN_FISHLING')?.count).toBe(12);
+    expect(byType.get('SPECTRAL_SCOUT')?.count).toBe(7);
+    expect(byType.get('OCEAN_GHOST_SPIRIT')?.count).toBe(6);
     expect(byType.get('IRON_PHALANX')?.count).toBe(5);
     expect(byType.get('CELTIC_BERSERKER')?.hpMult).toBeGreaterThanOrEqual(405);
     expect(byType.get('CARTHAGE_ELITE_GUARD')?.hpMult).toBeGreaterThanOrEqual(425);
@@ -208,13 +215,19 @@ describe('Test Your Might bonus wave', () => {
 
   it('routes tickSpawns through the bonus spawner and creates real enemies', () => {
     const s = bootstrapState();
+    let oceanSfx = 0;
+    (globalThis as any).__oceanEmergenceSfx = () => { oceanSfx++; };
     startTestYourMight(s);
     s.spawnElapsed = 999;
     tickTestYourMightSpawns(s);
     expect(s.spawnQueue.length).toBe(0);
     expect(s.enemies.size).toBeGreaterThan(0);
     expect(Array.from(s.enemies.values()).some(e => e.isBoss)).toBe(true);
-    expect(Array.from(s.enemies.values()).some(e => e.isFlyer)).toBe(false);
+    expect(Array.from(s.enemies.values()).some(e => e.isFlyer)).toBe(true);
+    expect(Array.from(s.enemies.values()).some(e => (e as any).__testYourMightOcean === true)).toBe(true);
+    expect(Array.from(s.enemies.values()).filter(e => (e as any).__testYourMightOcean).every(e => (e as any).__oceanSpawn === true)).toBe(true);
+    expect(Array.from(s.enemies.values()).some(e => e.type === 'OCEAN_GHOST_SPIRIT')).toBe(true);
+    expect(oceanSfx).toBe(1);
     expect(Array.from(s.enemies.values()).filter(e => e.isScheduledBoss).map(e => e.type)).toEqual(['HANNIBAL_BARCA']);
     expect(Array.from(s.enemies.values()).every(e => isTestYourMightLeakEnemy(e))).toBe(true);
     expect(Array.from(s.enemies.values()).every(e => (e as any).__testYourMightNoStealth === true)).toBe(true);
