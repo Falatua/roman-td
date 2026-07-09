@@ -4840,6 +4840,130 @@ async function boot() {
   (globalThis as any).__game = state;
   renderer.attachTo(wrap);
 
+  const allowHeroBasicVisualFx = (tower: any, minTowerGap = 0.12): boolean => {
+    const lastTowerFxTick = tower.__lastHeroBasicVisualFxTick ?? -999;
+    if (state.tick - lastTowerFxTick < minTowerGap) return false;
+    const bucketKey = Math.floor(state.tick * 10);
+    if ((state as any).__heroBasicFxBucketKey !== bucketKey) {
+      (state as any).__heroBasicFxBucketKey = bucketKey;
+      (state as any).__heroBasicFxBucketCount = 0;
+    }
+    if (((state as any).__heroBasicFxBucketCount ?? 0) >= 3) return false;
+    tower.__lastHeroBasicVisualFxTick = state.tick;
+    (state as any).__heroBasicFxBucketCount = ((state as any).__heroBasicFxBucketCount ?? 0) + 1;
+    return true;
+  };
+
+  const allowHeroBasicShake = (): boolean => {
+    const lastShakeTick = (state as any).__lastHeroBasicShakeTick ?? -999;
+    if (state.tick - lastShakeTick < 0.35) return false;
+    (state as any).__lastHeroBasicShakeTick = state.tick;
+    return true;
+  };
+
+  function emitTowerMeleeAttackVisual(t: any, e: any, includeBleedSplatter = true): void {
+    if (!t || !e) return;
+    if (includeBleedSplatter && e.statusEffects?.some((s: any) => s.kind === 'BLEED')) {
+      emitHitSplatter(gore, e.x, e.y, false);
+    }
+    playTowerMeleeAttackSfx(t);
+    const sx = t.tileX * GRID.TILE + GRID.TILE / 2;
+    const sy = t.tileY * GRID.TILE + GRID.TILE / 2;
+    const angle = Math.atan2(e.y - sy, e.x - sx);
+    const HEAVY = new Set(['PRIMUS_PILUS','TRIARIUS','CENTURION','COHORT_GUARD','PRAETORIAN_WALL','IMPERATOR_GUARD','EVOCATUS','CATAPHRACT','HORSEMAN']);
+    const isHero = !!t.isHero;
+    const size = isHero ? 2.2 : (HEAVY.has(t.type) ? 1.5 : 1.0);
+    const cleaver = hasCleave(t);
+    const slashTint = meleeSlashTintFor(t.type);
+    renderer.triggerMeleeSlash(e.x, e.y, angle, state.tick, size, cleaver, slashTint);
+    if (isHero && allowHeroBasicVisualFx(t)) {
+      renderer.triggerMeleeSlash(e.x, e.y, angle + 0.5, state.tick, size * 0.75, false, slashTint);
+      if (e.isBoss && allowHeroBasicShake()) renderer.triggerShake(1.4, 0.10);
+      if (renderer.triggerImpactRing) {
+        const ringColor = slashTint ?? 0xfff5cc;
+        renderer.triggerImpactRing(e.x, e.y, state.tick, GRID.TILE * 0.9, ringColor);
+      }
+    }
+    if (t.type === 'TRIPLEX_ACIES') {
+      const tripleTint = 0xe8d6a8;
+      renderer.triggerMeleeSlash(e.x, e.y, angle - 0.4, state.tick, size * 1.1, true, tripleTint);
+      renderer.triggerMeleeSlash(e.x, e.y, angle + 0.4, state.tick, size * 1.1, true, tripleTint);
+      renderer.triggerShake(2.5, 0.16);
+      renderer.triggerImpactRing?.(e.x, e.y, state.tick, GRID.TILE * 0.8, 0xfff5cc);
+    } else if (t.type === 'CONSULAR_FATEBINDER') {
+      const apexTint = 0xc89cff;
+      renderer.triggerMeleeSlash(e.x, e.y, angle + 0.6, state.tick, size * 1.0, true, apexTint);
+      renderer.triggerShake(5, 0.28);
+      renderer.triggerImpactRing?.(e.x, e.y, state.tick, GRID.TILE * 1.3, 0xffd34d);
+      renderer.triggerImpactRing?.(e.x, e.y, state.tick, GRID.TILE * 0.7, apexTint);
+    }
+    if (e.isBoss && HEAVY.has(t.type)) renderer.triggerShake(2, 0.12);
+  }
+
+  function emitTowerProjectileAttackVisual(t: any, target: any): void {
+    if (!t) return;
+    playTowerProjectileAttackSfx(t);
+    if (!target) return;
+    const sx = t.tileX * GRID.TILE + GRID.TILE / 2;
+    const sy = t.tileY * GRID.TILE + GRID.TILE / 2;
+    const ang = Math.atan2(target.y - sy, target.x - sx);
+    const tipX = sx + Math.cos(ang) * 14;
+    const tipY = sy + Math.sin(ang) * 14;
+    const COLOR_BY_TYPE: Record<number, number> = {
+      0: 0xffe6a8,
+      1: 0xffe6a8,
+      2: 0xb88a4a,
+      3: 0xff7733,
+      4: 0xfff4a8,
+      5: 0xffffff
+    };
+    const c = COLOR_BY_TYPE[t.damageType] ?? 0xffffff;
+    renderer.triggerMuzzleFlash(tipX, tipY, c, state.tick);
+    const HEAVY_RANGED = new Set(['SCORPIO','BALLISTARIUS','ARCUBALLISTA','CARROBALLISTA','SIEGE_ONAGER','VULCAN_ENGINEER','COLOSSUS_ONAGER']);
+    if (HEAVY_RANGED.has(t.type)) renderer.triggerImpactRing(sx, sy, state.tick, 16, 0xddaa55);
+    if (t.isHero) {
+      const HERO_TINT: Record<string, number> = {
+        HERO_AGRIPPA:  0xb88a4a,
+        HERO_AGRICOLA: 0xaaccff,
+        HERO_SCIPIO:   0xffe6a8,
+        HERO_SULLA:    0xff7733
+      };
+      const heroC = HERO_TINT[heroIdForTowerType(String(t.type)) ?? t.type] ?? c;
+      if (allowHeroBasicVisualFx(t)) {
+        renderer.triggerMuzzleFlash(tipX, tipY, heroC, state.tick);
+        renderer.triggerImpactRing(sx, sy, state.tick, 22, heroC);
+        if (target?.isBoss && allowHeroBasicShake()) renderer.triggerShake(1.2, 0.08);
+      }
+    }
+    if (t.type === 'LEGION_PRIME') {
+      renderer.triggerMuzzleFlash(tipX, tipY, 0xffd34d, state.tick);
+      renderer.triggerMuzzleFlash(tipX, tipY, 0xfff5cc, state.tick);
+      renderer.triggerImpactRing(sx, sy, state.tick, 28, 0xddaa55);
+      renderer.triggerImpactRing(sx, sy, state.tick, 18, 0xffd34d);
+      renderer.triggerShake(4, 0.20);
+    } else if (t.type === 'IMPERIUM_ETERNUM') {
+      renderer.triggerMuzzleFlash(tipX, tipY, 0xffd34d, state.tick);
+      renderer.triggerMuzzleFlash(tipX, tipY, 0xc89cff, state.tick);
+      renderer.triggerMuzzleFlash(tipX, tipY, 0xffffff, state.tick);
+      renderer.triggerImpactRing(sx, sy, state.tick, 32, 0xffd34d);
+      renderer.triggerImpactRing(sx, sy, state.tick, 20, 0xc89cff);
+      renderer.triggerShake(3.5, 0.22);
+    } else if (t.type === 'CARTHAGE_SCOURGE') {
+      renderer.triggerMuzzleFlash(tipX, tipY, 0xcc3322, state.tick);
+      renderer.triggerMuzzleFlash(tipX, tipY, 0xff7733, state.tick);
+      renderer.triggerImpactRing(sx, sy, state.tick, 18, 0xcc3322);
+      renderer.triggerShake(1.8, 0.08);
+    } else if (t.type === 'MARS_VICTOR') {
+      renderer.triggerMuzzleFlash(tipX, tipY, 0xffd34d, state.tick);
+      renderer.triggerMuzzleFlash(tipX, tipY, 0xffffff, state.tick);
+      renderer.triggerMuzzleFlash(tipX, tipY, 0xfff4a8, state.tick);
+      renderer.triggerMuzzleFlash(tipX, tipY, 0xc8322a, state.tick);
+      renderer.triggerImpactRing(sx, sy, state.tick, 34, 0xffd34d);
+      renderer.triggerImpactRing(sx, sy, state.tick, 22, 0xfff4a8);
+      renderer.triggerShake(4.5, 0.24);
+    }
+  }
+
   // 2026-05-19 — Hero system render/banner hooks. Passed into
   // awardHeroXp + tickHeroAbilities so HeroSystem stays decoupled
   // from the renderer and DOM. Each hook is optional — missing
@@ -7318,25 +7442,6 @@ async function boot() {
           }
         }
       );
-      const allowHeroBasicVisualFx = (tower: any, minTowerGap = 0.12): boolean => {
-        const lastTowerFxTick = tower.__lastHeroBasicVisualFxTick ?? -999;
-        if (state.tick - lastTowerFxTick < minTowerGap) return false;
-        const bucketKey = Math.floor(state.tick * 10);
-        if ((state as any).__heroBasicFxBucketKey !== bucketKey) {
-          (state as any).__heroBasicFxBucketKey = bucketKey;
-          (state as any).__heroBasicFxBucketCount = 0;
-        }
-        if (((state as any).__heroBasicFxBucketCount ?? 0) >= 3) return false;
-        tower.__lastHeroBasicVisualFxTick = state.tick;
-        (state as any).__heroBasicFxBucketCount = ((state as any).__heroBasicFxBucketCount ?? 0) + 1;
-        return true;
-      };
-      const allowHeroBasicShake = (): boolean => {
-        const lastShakeTick = (state as any).__lastHeroBasicShakeTick ?? -999;
-        if (state.tick - lastShakeTick < 0.35) return false;
-        (state as any).__lastHeroBasicShakeTick = state.tick;
-        return true;
-      };
       const combatHooks = {
         onHit: (t: any, e: any, d: number, resMod = 1, isCrit = false) => {
           // 2026-05 v6: blood spray now ONLY fires when the target is
@@ -7396,184 +7501,12 @@ async function boot() {
           // Same BLEED-gate as onHit — melee swings only produce blood
           // spray when the target is actively bleeding. Sword-impact
           // visuals + slash arc sprites still play unconditionally.
-          const hasBleed = e.statusEffects.some((s: any) => s.kind === 'BLEED');
-          if (hasBleed) emitHitSplatter(gore, e.x, e.y, false);
-          // Distinct melee audio per role family. Shared with DPS Check so
-          // the dummy path sounds like real combat instead of muted math.
-          playTowerMeleeAttackSfx(t);
-          if (t) {
-            const sx = t.tileX * GRID.TILE + GRID.TILE / 2;
-            const sy = t.tileY * GRID.TILE + GRID.TILE / 2;
-            const angle = Math.atan2(e.y - sy, e.x - sx);
-            const HEAVY = new Set(['PRIMUS_PILUS','TRIARIUS','CENTURION','COHORT_GUARD','PRAETORIAN_WALL','IMPERATOR_GUARD','EVOCATUS','CATAPHRACT','HORSEMAN']);
-            // 2026-05-18: heavy multiplier 1.3 → 1.5. Paired with the
-            // restored base slash size (RenderEngine.triggerMeleeSlash:
-            // 18 → 26 px). Heavy hits now visibly dominate over light
-            // ones without being overwhelming on stacked combat frames.
-            // 2026-05-20 — Hero melee swings are SIZE 2.2 (was 1.0/1.5)
-            // so Marius + Caesar visibly tower over regular melee
-            // swings. Reads as "this hero is hitting hard, not just
-            // another grunt." A second echo slash also fires at a
-            // 30° offset for extra theatrical weight.
-            const isHero = !!t.isHero;
-            const size = isHero ? 2.2 : (HEAVY.has(t.type) ? 1.5 : 1.0);
-            // 2026-05 v10 — pass cleave flag so cleavers draw a wider
-            // primary slash + a trailing echo arc on every swing.
-            const cleaver = hasCleave(t);
-            // 2026-05-20 — Damage-type tint on the slash. Caesar (DIVINE
-            // melee) swings in gold, matching the gold convention used
-            // for divine effects elsewhere. Plain PHYS_MELEE swingers
-            // (Marius + every other melee tower) pass undefined → the
-            // default white-silver slash.
-            const slashTint = meleeSlashTintFor(t.type);
-            renderer.triggerMeleeSlash(e.x, e.y, angle, state.tick, size, cleaver, slashTint);
-            // 2026-05-20 — Hero melee EXTRA: second echo slash at a
-            // wider angle offset + brief screen shake on every swing
-            // (not just boss hits). Caesar gets a gold impact ring on
-            // top; Marius gets a silver one. Reads as a hero strike,
-            // not a routine attack.
-            if (isHero && allowHeroBasicVisualFx(t)) {
-              renderer.triggerMeleeSlash(e.x, e.y, angle + 0.5, state.tick, size * 0.75, false, slashTint);
-              if (e.isBoss && allowHeroBasicShake()) renderer.triggerShake(1.4, 0.10);
-              if (renderer.triggerImpactRing) {
-                const ringColor = slashTint ?? 0xfff5cc;
-                renderer.triggerImpactRing(e.x, e.y, state.tick, GRID.TILE * 0.9, ringColor);
-              }
-            }
-            // 2026-05-20 — APEX SUPER-COMBO MELEE SIGNATURES. Each
-            // super combo with a melee strike gets a unique multi-
-            // slash + impact pattern so they're visually distinct
-            // from regular melee combos.
-            //
-            // TRIPLEX ACIES (5-base T2): three staggered slash arcs
-            //   representing the Hastati / Principes / Triarii lines,
-            //   each at a different angle offset. Light silver,
-            //   reads as a coordinated three-line charge.
-            // CONSULAR FATEBINDER (5-base T5 apex): purple-gold
-            //   double slash + a big screen-wide divine impact ring.
-            //   Sells "the consul has decided the fate of this
-            //   enemy" — apex divine theatrics.
-            if (t.type === 'TRIPLEX_ACIES') {
-              const tripleTint = 0xe8d6a8;
-              renderer.triggerMeleeSlash(e.x, e.y, angle - 0.4, state.tick, size * 1.1, true, tripleTint);
-              renderer.triggerMeleeSlash(e.x, e.y, angle + 0.4, state.tick, size * 1.1, true, tripleTint);
-              renderer.triggerShake(2.5, 0.16);
-              if (renderer.triggerImpactRing) {
-                renderer.triggerImpactRing(e.x, e.y, state.tick, GRID.TILE * 0.8, 0xfff5cc);
-              }
-            } else if (t.type === 'CONSULAR_FATEBINDER') {
-              const apexTint = 0xc89cff;     // divine-purple apex
-              renderer.triggerMeleeSlash(e.x, e.y, angle + 0.6, state.tick, size * 1.0, true, apexTint);
-              renderer.triggerShake(5, 0.28);
-              if (renderer.triggerImpactRing) {
-                renderer.triggerImpactRing(e.x, e.y, state.tick, GRID.TILE * 1.3, 0xffd34d);
-                renderer.triggerImpactRing(e.x, e.y, state.tick, GRID.TILE * 0.7, apexTint);
-              }
-            }
-            if (e.isBoss && HEAVY.has(t.type)) renderer.triggerShake(2, 0.12);
-          }
+          emitTowerMeleeAttackVisual(t, e, true);
         },
         onProjectileFire: (t: any, target: any, _d: number) => {
           // Combo towers and hero identities get their signature audio.
           // Shared with DPS Check so the pre-wave dummy keeps tower sound.
-          playTowerProjectileAttackSfx(t);
-          // Muzzle flash at firing tip, color-keyed to damage type.
-          if (t && target) {
-            const sx = t.tileX * GRID.TILE + GRID.TILE / 2;
-            const sy = t.tileY * GRID.TILE + GRID.TILE / 2;
-            // Tip is ~12 px from the tower center along the firing ray.
-            const ang = Math.atan2(target.y - sy, target.x - sx);
-            const tipX = sx + Math.cos(ang) * 14;
-            const tipY = sy + Math.sin(ang) * 14;
-            const COLOR_BY_TYPE: Record<number, number> = {
-              0: 0xffe6a8, // PHYS_MELEE (unused for ranged but here for completeness)
-              1: 0xffe6a8, // PHYS_RANGED — pale yellow
-              2: 0xb88a4a, // SIEGE — brown
-              3: 0xff7733, // ELEMENTAL_FIRE — orange
-              4: 0xfff4a8, // DIVINE — gold-white
-              5: 0xffffff  // NONE
-            };
-            const c = COLOR_BY_TYPE[t.damageType] ?? 0xffffff;
-            renderer.triggerMuzzleFlash(tipX, tipY, c, state.tick);
-            // Heavy ranged engines (siege/onager) get an extra ground impact at firing position
-            const HEAVY_RANGED = new Set(['SCORPIO','BALLISTARIUS','ARCUBALLISTA','CARROBALLISTA','SIEGE_ONAGER','VULCAN_ENGINEER','COLOSSUS_ONAGER']);
-            if (HEAVY_RANGED.has(t.type)) renderer.triggerImpactRing(sx, sy, state.tick, 16, 0xddaa55);
-            // 2026-05-20 — Hero ranged EXTRA: bigger muzzle flash + a
-            // ground impact ring at the firing position + a brief
-            // screen shake. Sells "the hero is firing, not another
-            // ballistarius." Colors derived from the per-hero tint
-            // when possible (Agrippa's siege brown vs Sulla's
-            // hellfire orange) instead of the generic damage-type
-            // ramp, so each hero's shots feel distinct.
-            if (t.isHero) {
-              const HERO_TINT: Record<string, number> = {
-                HERO_AGRIPPA:  0xb88a4a,    // siege brown
-                // 2026-05-23 — Agricola was 0x88dd66 (green) but his actual
-                // tint everywhere else (towers.json tint #aaccff, ring,
-                // ability VFX, Codex) is silver-blue. Sync muzzle flash so
-                // his shots match the rest of his visual identity.
-                HERO_AGRICOLA: 0xaaccff,    // silver-blue frontier
-                HERO_SCIPIO:   0xffe6a8,    // pale gold javelin
-                HERO_SULLA:    0xff7733     // hellfire orange
-              };
-              const heroC = HERO_TINT[heroIdForTowerType(String(t.type)) ?? t.type] ?? c;
-              // A SECOND muzzle flash with the hero color makes the
-              // tip pop twice in one frame — reads as a real
-              // burst of energy at the moment of release.
-              if (allowHeroBasicVisualFx(t)) {
-                renderer.triggerMuzzleFlash(tipX, tipY, heroC, state.tick);
-                renderer.triggerImpactRing(sx, sy, state.tick, 22, heroC);
-                if (target?.isBoss && allowHeroBasicShake()) renderer.triggerShake(1.2, 0.08);
-              }
-            }
-            // 2026-05-20 — APEX SUPER-COMBO RANGED SIGNATURES. Each
-            // ranged super combo gets a unique multi-layer firing
-            // VFX so they're visually distinct.
-            //
-            // LEGION PRIME (5-base T4 siege barrel): dual gold
-            //   muzzle flash + dust ring at the firing position +
-            //   heavy shake. Reads as "siege artillery from the
-            //   gods" — appropriately heavy.
-            // IMPERIUM ETERNUM (T5 apex divine orb): triple muzzle
-            //   flash in gold / divine-purple / white + a ground
-            //   quake ring at firing position + medium shake. The
-            //   eternal-empire orb leaves a presence as it launches.
-            // CARTHAGE SCOURGE (T5 apex 6-bolt volley): crimson
-            //   muzzle flash + a small impact ring per bolt fired
-            //   so the 6-bolt salvo reads as a coordinated barrage,
-            //   not just one shot. Light shake per bolt.
-            if (t.type === 'LEGION_PRIME') {
-              renderer.triggerMuzzleFlash(tipX, tipY, 0xffd34d, state.tick);
-              renderer.triggerMuzzleFlash(tipX, tipY, 0xfff5cc, state.tick);
-              renderer.triggerImpactRing(sx, sy, state.tick, 28, 0xddaa55);
-              renderer.triggerImpactRing(sx, sy, state.tick, 18, 0xffd34d);
-              renderer.triggerShake(4, 0.20);
-            } else if (t.type === 'IMPERIUM_ETERNUM') {
-              renderer.triggerMuzzleFlash(tipX, tipY, 0xffd34d, state.tick);
-              renderer.triggerMuzzleFlash(tipX, tipY, 0xc89cff, state.tick);
-              renderer.triggerMuzzleFlash(tipX, tipY, 0xffffff, state.tick);
-              renderer.triggerImpactRing(sx, sy, state.tick, 32, 0xffd34d);
-              renderer.triggerImpactRing(sx, sy, state.tick, 20, 0xc89cff);
-              renderer.triggerShake(3.5, 0.22);
-            } else if (t.type === 'CARTHAGE_SCOURGE') {
-              renderer.triggerMuzzleFlash(tipX, tipY, 0xcc3322, state.tick);
-              renderer.triggerMuzzleFlash(tipX, tipY, 0xff7733, state.tick);
-              renderer.triggerImpactRing(sx, sy, state.tick, 18, 0xcc3322);
-              renderer.triggerShake(1.8, 0.08);
-            } else if (t.type === 'MARS_VICTOR') {
-              // 2026 v2 spec Ch9 — Mars Victor, the war-god apex: the grandest
-              // firing signature. Quad muzzle flash (gold / white / divine-gold
-              // / imperial crimson) + a double sacred-fire ring + a strong
-              // shake so its Divine Wrath shot reads as the ultimate tower.
-              renderer.triggerMuzzleFlash(tipX, tipY, 0xffd34d, state.tick);
-              renderer.triggerMuzzleFlash(tipX, tipY, 0xffffff, state.tick);
-              renderer.triggerMuzzleFlash(tipX, tipY, 0xfff4a8, state.tick);
-              renderer.triggerMuzzleFlash(tipX, tipY, 0xc8322a, state.tick);
-              renderer.triggerImpactRing(sx, sy, state.tick, 34, 0xffd34d);
-              renderer.triggerImpactRing(sx, sy, state.tick, 22, 0xfff4a8);
-              renderer.triggerShake(4.5, 0.24);
-            }
-          }
+          emitTowerProjectileAttackVisual(t, target);
         },
         onKill: (t: any, e: any) => {
           awardKillBonus(t);
@@ -8324,24 +8257,13 @@ async function boot() {
         },
         onHit: () => {},                  // skip gore/sparks (wave polish)
         onMeleeSwing: (t: any, e: any) => {
-          // Render the slash arc at the enemy position and play the same
-          // role-family SFX as real wave combat.
-          if (!t) return;
-          playTowerMeleeAttackSfx(t);
-          const sx = t.tileX * GRID.TILE + GRID.TILE / 2;
-          const sy = t.tileY * GRID.TILE + GRID.TILE / 2;
-          const angle = Math.atan2(e.y - sy, e.x - sx);
-          const HEAVY = new Set(['PRIMUS_PILUS','TRIARIUS','CENTURION','COHORT_GUARD','PRAETORIAN_WALL','IMPERATOR_GUARD','EVOCATUS','CATAPHRACT','HORSEMAN']);
-          const size = HEAVY.has(t.type) ? 1.3 : 1.0;
-          const cleaver = hasCleave(t);
-          // 2026-05-20 — Same damage-type tint helper as the live combat
-          // hook so a Caesar dummy-DPS check also shows the gold swing.
-          renderer.triggerMeleeSlash(e.x, e.y, angle, state.tick, size, cleaver, meleeSlashTintFor(t.type));
+          emitTowerMeleeAttackVisual(t, e, false);
         },
-        onProjectileFire: (t: any) => {
+        onProjectileFire: (t: any, target: any) => {
           // Projectile sprites spawn from tickCombat directly; this hook
-          // restores the same firing sounds used during real waves.
-          playTowerProjectileAttackSfx(t);
+          // restores the same firing sounds and muzzle / signature VFX used
+          // during real waves.
+          emitTowerProjectileAttackVisual(t, target);
         },
       };
       // 2026-05-15 audit fix: DPS-check side-tick was missing

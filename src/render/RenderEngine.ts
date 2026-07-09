@@ -3793,12 +3793,13 @@ export class RenderEngine {
       const baseY = tw.tileY * GRID.TILE + GRID.TILE / 2;
       const hasBaseAttackSheet = isBaseTowerAttackAnimated(String(tw.type));
       const flashWindow = tw.isHero ? HERO_ATTACK_WINDOW : hasBaseAttackSheet ? baseTowerAttackFlashWindow(String(tw.type)) : 0.18;
-      if (state.phase !== GamePhase.WAVE_PHASE || !Number.isFinite(tw.attackFlash) || tw.attackFlash < 0) {
+      const combatVisualsActive = state.phase === GamePhase.WAVE_PHASE || !!(state as any).__dpsCheckActive;
+      if (!combatVisualsActive || !Number.isFinite(tw.attackFlash) || tw.attackFlash < 0) {
         tw.attackFlash = 0;
       } else if (tw.attackFlash > flashWindow) {
         tw.attackFlash = flashWindow;
       }
-      const isAttacking = state.phase === GamePhase.WAVE_PHASE && tw.attackFlash > 0;
+      const isAttacking = combatVisualsActive && tw.attackFlash > 0;
       // ─── FLOATING IDLE BREATH (2026-05-18 v3) ────────────────────────
       // Kept (non-pending) towers gently bob + sway when NOT attacking so
       // the field reads as "alive" — every Roman is subtly breathing, not

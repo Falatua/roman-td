@@ -17,8 +17,9 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { scanCombos, executeCombo } from '../src/systems/CombinationEngine';
 import { createTower } from '../src/systems/TowerSystem';
+import { tickCombat } from '../src/systems/CombatResolver';
 import { createGameState } from '../src/GameState';
-import { TowerType, GamePhase, TileType } from '../src/types';
+import { Enemy, EnemyFaction, EnemyType, TowerType, GamePhase, TileType } from '../src/types';
 import { WATER_ZONE } from '../src/constants';
 import { initializeGrid, setTile } from '../src/systems/GridManager';
 import { buildGroundPath, buildFlyerPath } from '../src/systems/PathFinder';
@@ -72,6 +73,32 @@ function placeRecipeIngredient(state: any, recipe: any, ing: any, index: number,
 function minTierFor(recipe: any, ingType: string): number {
   const ing = recipe.ingredients.find((i: any) => i.type === ingType);
   return ing?.minTier ?? 2;
+}
+
+function trainingDummy(id = 'dps-dummy'): Enemy {
+  return {
+    id,
+    type: EnemyType.TRAINING_DUMMY,
+    faction: EnemyFaction.DOGS,
+    hp: 15_000_000,
+    maxHp: 15_000_000,
+    baseSpeed: 0.25,
+    currentSpeed: 0.25,
+    isFlyer: false,
+    x: 7 * 32 + 16,
+    y: 5 * 32 + 16,
+    pathIndex: 0,
+    pathProgress: 0,
+    statusEffects: [],
+    hasFeared: false,
+    livesCost: 0,
+    isBoss: false,
+    reward: 0,
+    archetype: 'BULKY',
+    hpFlashTimer: 0,
+    isDpsCheck: true,
+    __dpsDmgAccum: 0
+  } as Enemy;
 }
 
 // ───────────────────────────────────────────────────────────────────────
@@ -444,12 +471,35 @@ describe('Tower roster integrity', () => {
     const render = readFileSync('src/render/RenderEngine.ts', 'utf8');
     expect(combat, 'attackFlash must drain before no-enemy early return').toMatch(/for \(const t of towers\) \{\s*if \(!Number\.isFinite\(t\.attackFlash\)/);
     expect(combat, 'sleep should not freeze a tower mid-swing').toContain('Attack-flash timers are decremented before');
-    expect(render, 'renderer should clear stale attack state outside combat').toContain('state.phase !== GamePhase.WAVE_PHASE');
+    expect(render, 'renderer should allow attack sheets during real waves and active DPS Check').toContain('const combatVisualsActive = state.phase === GamePhase.WAVE_PHASE || !!(state as any).__dpsCheckActive');
+    expect(render, 'renderer should clear stale attack state outside combat').toContain('if (!combatVisualsActive || !Number.isFinite(tw.attackFlash)');
     expect(render, 'renderer should reject invalid animation timers').toContain('!Number.isFinite(tw.attackFlash)');
     expect(render, 'renderer should clamp stale attack timers to their legal window').toContain('tw.attackFlash = flashWindow');
     expect(render, 'idle texture must be restored when attack sampling is inactive').toContain('if (idleTex && entry.sp.texture !== idleTex) entry.sp.texture = idleTex');
     expect(render, 'pose offsets must reset every non-attacking frame').toContain('entry.sp.rotation = heroAttackRotation');
     expect(render, 'pose skew must reset every non-attacking frame').toContain('entry.sp.skew.x = heroAttackSkewX');
+  });
+
+  it('DPS Check combat still drives real tower attack timers outside wave phase', () => {
+    const s = bootstrap();
+    s.phase = GamePhase.BUILD_PHASE;
+    (s as any).__dpsCheckActive = true;
+    const tower = place(s, TowerType.SCORPIO, 3, 7, 5);
+    tower.attackCooldown = 0;
+    const dummy = trainingDummy();
+    s.enemies.set(dummy.id, dummy);
+
+    let projectileFired = false;
+    tickCombat(s, 0.05, {
+      onHit: () => {},
+      onMeleeSwing: () => {},
+      onProjectileFire: () => { projectileFired = true; },
+      onKill: () => {}
+    });
+
+    expect(projectileFired, 'DPS Check should use the same combat firing path as a real wave').toBe(true);
+    expect(tower.attackFlash, 'DPS Check renderer should receive a non-idle attack timer to sample tower attack sheets').toBeGreaterThan(0);
+    expect(s.projectiles.length, 'ranged DPS Check attacks should create the same projectile objects used during real waves').toBeGreaterThan(0);
   });
 
   it('Pugio Assassin sprite keeps a complete full-body silhouette with feet', async () => {
@@ -962,16 +1012,22 @@ describe('Sample SFX wiring', () => {
 
   it('DPS Check keeps the normal tower and hero attack SFX hooks alive', () => {
     const main = readFileSync('src/main.ts', 'utf8');
+    const renderEngine = readFileSync('src/render/RenderEngine.ts', 'utf8');
     const start = main.indexOf('const dpsCombatHooks = {');
     const end = main.indexOf('tickBurnPatches(state, dt);', start);
     const dpsBlock = main.slice(start, end);
 
     expect(main).toContain('function playTowerMeleeAttackSfx');
     expect(main).toContain('function playTowerProjectileAttackSfx');
+    expect(main).toContain('function emitTowerMeleeAttackVisual');
+    expect(main).toContain('function emitTowerProjectileAttackVisual');
     expect(main).toContain("'HERO_AGRIPPA'");
     expect(main).toContain("'HERO_SULLA'");
-    expect(dpsBlock, 'DPS melee swings should use the same attack SFX mapping as live waves').toContain('playTowerMeleeAttackSfx(t)');
-    expect(dpsBlock, 'DPS projectile fires should use the same attack SFX mapping as live waves').toContain('playTowerProjectileAttackSfx(t)');
+    expect(renderEngine, 'DPS Check runs pre-wave, so attack sheets must be allowed outside WAVE_PHASE while the dummy is active').toContain("!!(state as any).__dpsCheckActive");
+    expect(dpsBlock, 'DPS melee swings should use the same attack visuals as live waves').toContain('emitTowerMeleeAttackVisual(t, e, false)');
+    expect(dpsBlock, 'DPS projectile fires should use the same attack visuals as live waves').toContain('emitTowerProjectileAttackVisual(t, target)');
+    expect(main, 'shared projectile helper should still play attack audio').toContain('playTowerProjectileAttackSfx(t)');
+    expect(main, 'shared projectile helper should still create muzzle flashes').toContain('renderer.triggerMuzzleFlash(tipX, tipY');
     expect(dpsBlock, 'DPS projectile audio hook must not regress to a silent no-op').not.toContain('onProjectileFire: () => {}');
   });
 });
