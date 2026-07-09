@@ -1381,21 +1381,19 @@ describe('Hero Forge — pay-gold upgrade system', () => {
     expect(HERO_FORGE_CAP).toBe(5);
   });
 
-  it('heroForgeNextCost doubles from 40g: 40/80/160/320/640 then MAXED', () => {
-    // 2026-06-23 — ramp bumped again to match the larger 30-wave economy.
-    // Was 20/40/80/160/320 (V3, 2026-05-20). The post-V25 first tap is
-    // 40g (still cheap enough to sample any new path in 1-2 waves)
-    // but the L4 → L5 tap costs 640g, a real commitment.
-    expect(heroForgeNextCost(0)).toBe(40);
-    expect(heroForgeNextCost(1)).toBe(80);
-    expect(heroForgeNextCost(2)).toBe(160);
-    expect(heroForgeNextCost(3)).toBe(320);
-    expect(heroForgeNextCost(4)).toBe(640);
+  it('heroForgeNextCost doubles from 46g: 46/92/184/368/736 then MAXED', () => {
+    // 2026-07-09 — ramp raised 15% so all-hero Forge scaling asks for
+    // more commitment in the larger 30-wave economy.
+    expect(heroForgeNextCost(0)).toBe(46);
+    expect(heroForgeNextCost(1)).toBe(92);
+    expect(heroForgeNextCost(2)).toBe(184);
+    expect(heroForgeNextCost(3)).toBe(368);
+    expect(heroForgeNextCost(4)).toBe(736);
     expect(heroForgeNextCost(5)).toBeNull();           // cap
     expect(heroForgeNextCost(99)).toBeNull();          // defensive
-    // Sum per path maxed = 40 + 80 + 160 + 320 + 640 = 1240g.
+    // Sum per path maxed = 46 + 92 + 184 + 368 + 736 = 1426g.
     const total = [0, 1, 2, 3, 4].reduce((acc, n) => acc + (heroForgeNextCost(n) ?? 0), 0);
-    expect(total).toBe(1240);
+    expect(total).toBe(1426);
   });
 
   it('heroForgeDmgMult: +6% per tap, +30% at 5/5', () => {
@@ -1461,13 +1459,13 @@ describe('Hero Forge — pay-gold upgrade system', () => {
     s.gold = 100;
     pickHero(s, 'HERO_CAESAR');
     // Simulate fully-maxed SHARPEN under the current doubling ramp
-    // (40 + 80 + 160 + 320 + 640 = 1240g).
+    // (46 + 92 + 184 + 368 + 736 = 1426g).
     s.heroForgeStacks = { dmg: 5, cd: 0, aura: 0 };
-    s.heroForgeGoldSpent = 1240;
+    s.heroForgeGoldSpent = 1426;
     const goldBeforeRePick = s.gold;
     pickHero(s, 'HERO_MARIUS');
-    // 50% of 1240 = 620g refunded
-    expect(s.gold).toBe(goldBeforeRePick + 620);
+    // 50% of 1426 = 713g refunded
+    expect(s.gold).toBe(goldBeforeRePick + 713);
     expect(s.heroForgeStacks).toEqual({ dmg: 0, cd: 0, aura: 0 });
     expect(s.heroForgeGoldSpent).toBe(0);
     expect(s.activeHeroId).toBe('HERO_MARIUS');

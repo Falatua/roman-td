@@ -139,8 +139,8 @@ function recordMercatorChampionPurchase(state: GameStateShape, type: string): vo
 //   ⚔ SHARPEN  — +6% basic-attack damage / tap (5 cap)
 //   ⏱ HASTEN   — −5% ability cooldown / tap  (5 cap)
 //   ✨ EMPOWER  — +5% to all numeric ability/passive magnitudes / tap (5 cap)
-// Each path has its own cost ramp (40/80/160/320/640g —
-// doubling from 40g) and own stack counter; the three paths don't share
+// Each path has its own cost ramp (46/92/184/368/736g —
+// doubling from 46g) and own stack counter; the three paths don't share
 // resources or interact. The section frame tints to the active
 // hero's color from towers.json so the forge feels personalized.
 // 2026-05-20 v3 — Richer per-path metadata for the hover tooltip.
@@ -204,7 +204,7 @@ function showForgeTooltip(btn: HTMLElement, path: typeof FORGE_PATHS[number]): v
     <div style="margin-top:4px"><b style="color:#88ff88">AT MAX:</b> ${path.maxedAt5}</div>
     <div style="margin-top:4px;color:#cdb98a;font-style:italic">${path.bestFor}</div>
     ${path.notes ? `<div style="margin-top:6px;padding-top:4px;border-top:1px dashed ${path.tint}44;font-size:10px;color:#aa9a4a">${path.notes}</div>` : ''}
-    <div style="margin-top:6px;padding-top:4px;border-top:1px solid #3a3025;color:#aa9a4a;font-size:10px;letter-spacing:1px">Cost ramp: 40g · 80g · 160g · 320g · 640g · MAXED</div>`;
+    <div style="margin-top:6px;padding-top:4px;border-top:1px solid #3a3025;color:#aa9a4a;font-size:10px;letter-spacing:1px">Cost ramp: 46g · 92g · 184g · 368g · 736g · MAXED</div>`;
   document.body.appendChild(tip);
   const rect = btn.getBoundingClientRect();
   const tw = 320, th = 200;
@@ -1045,7 +1045,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   // 2026-05-20 v2 — HERO FORGE section. Appears at the top of the gate
   // shop modal whenever the player has a hero placed on the field. Three
   // independent upgrade paths (SHARPEN / HASTEN / EMPOWER), each capped
-  // at 5 taps, each with a doubling 20/40/80/160/320g cost ramp.
+  // at 5 taps, each with a doubling 46/92/184/368/736g cost ramp.
   // Visible only on the gate shop (not Mercator) — the Mercator vendor
   // stays focused on legendaries + T5 armory.
   if (!isMerc && state.activeHeroTowerId) {

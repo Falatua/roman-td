@@ -276,8 +276,8 @@ export interface GameStateShape {
   heroLifeHealedThisRun?: number;      // Sulla cap tracker — max +20 per run
   // HERO FORGE (2026-05-20 v2) — gold-paid upgrades independent of the
   // natural XP/tier ladder. Three independent paths, 5 taps each cap.
-  // Cost per tap = 40 × 2^stack (doubling: 40/80/160/320/640). Sum per
-  // path maxed = 1,240g; sum across all three paths maxed = 3,720g.
+  // Cost per tap = 46 × 2^stack (doubling: 46/92/184/368/736). Sum per
+  // path maxed = 1,426g; sum across all three paths maxed = 4,278g.
   // On hero re-pick (destruction → fresh draft), 50% of heroForgeGoldSpent
   // is refunded before the stacks reset to zero.
   heroForgeStacks?: { dmg: number; cd: number; aura: number };
