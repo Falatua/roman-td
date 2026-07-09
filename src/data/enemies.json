@@ -465,6 +465,7 @@
     "requiresMeleeBreak": true,
     "auraNullifier": true,
     "silenceAuraRadiusTiles": 1.5,
+    "siegeImmune": true,
     "reanimateAs": "REANIMATED_ZOMBIE"
   },
   "IRON_PHALANX": {
@@ -478,6 +479,7 @@
     "spriteSheet": 5,
     "spriteCell": 1,
     "meleeImmune": true,
+    "siegeImmune": true,
     "phaseHits": 2,
     "allAttackBlockChance": 0.2,
     "outOfCombatRegen": 0.042
@@ -641,6 +643,7 @@
     "livesCost": 2,
     "immunePoison": true,
     "rangedImmune": true,
+    "siegeImmune": true,
     "outOfCombatRegen": 0.04,
     "reanimateAs": "MUMMY_WARRIOR"
   },
@@ -724,7 +727,8 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
-    "renderScale": 0.82
+    "renderScale": 0.82,
+    "siegeImmune": true
   },
   "MONGOL_BERSERKER": {
     "name": "Hun Berserker",
@@ -735,7 +739,8 @@
     "isBoss": false,
     "livesCost": 2,
     "lowHpSpeedBoost": 1.6,
-    "renderScale": 0.82
+    "renderScale": 0.82,
+    "siegeImmune": true
   },
   "MONGOL_SCOUT": {
     "name": "Hun Scout",
@@ -787,6 +792,7 @@
     "isBoss": true,
     "livesCost": 10,
     "meleeImmune": true,
+    "siegeImmune": true,
     "immuneFire": true,
     "renderScale": 1.5
   },
@@ -825,6 +831,7 @@
     "isElite": true,
     "bigGlow": true,
     "meleeImmune": true,
+    "siegeImmune": true,
     "immuneSlow": true,
     "immuneStun": true,
     "renderScale": 1.4
@@ -848,7 +855,8 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 5,
-    "isElite": true
+    "isElite": true,
+    "siegeImmune": true
   },
   "SUPER_GIANT_COLOSSUS": {
     "name": "Colossus Gigas",
@@ -1087,7 +1095,8 @@
     "isElite": true,
     "shieldBlockChance": 0.25,
     "requiresMeleeBreak": true,
-    "renderScale": 1.25
+    "renderScale": 1.25,
+    "siegeImmune": true
   },
   "SKY_STANDARD_COMMANDER": {
     "name": "Commander: Sky Standard",
@@ -1112,7 +1121,8 @@
     "livesCost": 5,
     "isElite": true,
     "dodgeChance": 0.16,
-    "renderScale": 1.1
+    "renderScale": 1.1,
+    "siegeImmune": true
   },
   "SKY_ANUBIS_COMMANDER": {
     "nullifyAuraRadiusTiles": 1.5,
@@ -1202,6 +1212,7 @@
     "renderScale": 0.92,
     "dodgeChance": 0.15,
     "lowHpSpeedBoost": 1.5,
+    "siegeImmune": true,
     "stealthInterval": { "period": 4.5, "duration": 1.0 }
   },
   "STONE_JUGGERNAUT": {

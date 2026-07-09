@@ -299,4 +299,24 @@ describe('Tower targeting modes', () => {
     const picked = pickTarget(state, tower, [immune, valid], 10);
     expect(picked?.id).toBe('IMMUNE');
   });
+
+  it('siege towers skip siege-immune enemies and pick a valid target', () => {
+    const { state, tower } = setup();
+    tower.targetingMode = TargetingMode.STRONG;
+    tower.damageType = DamageType.SIEGE;
+    const immune = fakeEnemy({ id: 'IMMUNE', type: EnemyType.CYCLOPS, x: TX + 20, y: TY, pathIndex: 8, hp: 5000 });
+    const valid = fakeEnemy({ id: 'VALID', type: EnemyType.GIANT_GIGAS, x: TX + 30, y: TY, pathIndex: 4, hp: 500 });
+    const picked = pickTarget(state, tower, [immune, valid], 10);
+    expect(picked?.id).toBe('VALID');
+  });
+
+  it('non-siege towers may still target siege-immune enemies', () => {
+    const { state, tower } = setup();
+    tower.targetingMode = TargetingMode.STRONG;
+    tower.damageType = DamageType.DIVINE;
+    const immune = fakeEnemy({ id: 'IMMUNE', type: EnemyType.CYCLOPS, x: TX + 20, y: TY, pathIndex: 8, hp: 5000 });
+    const valid = fakeEnemy({ id: 'VALID', type: EnemyType.GIANT_GIGAS, x: TX + 30, y: TY, pathIndex: 4, hp: 500 });
+    const picked = pickTarget(state, tower, [immune, valid], 10);
+    expect(picked?.id).toBe('IMMUNE');
+  });
 });

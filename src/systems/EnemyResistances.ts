@@ -278,15 +278,15 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.PHARAOH_GUARD]:     { melee: 0.55, ranged: 0, burn: 0.55, poison: 0.45, bleed: 0.60, divine: 0.7 },
   [EnemyType.ANUBIS_PRIEST]:     { melee: 0, ranged: 0.5, slow: 0.3, burn: 0.70, poison: 0, bleed: 0.55 },
   [EnemyType.SOBEK_WARRIOR]:     { melee: 0.45, ranged: 0, slow: 0.3, burn: 0.5, poison: 0.55, bleed: 0.65 },
-  [EnemyType.MUMMY_WARRIOR]:     { ranged: 0, slow: 0.5, poison: 0, bleed: 0.4, burn: 1.30 },
+  [EnemyType.MUMMY_WARRIOR]:     { ranged: 0, siege: 0, slow: 0.5, poison: 0, bleed: 0.4, burn: 1.30 },
   [EnemyType.SPHINX]:            { melee: 0, ranged: 0.55, slow: 0.25, burn: 0.75, poison: 0.50, bleed: 0.40, divine: 1.30 },
   [EnemyType.ANUBIS_KING]:       { melee: 0.35, ranged: 0.25, slow: 0.15, burn: 0.5, poison: 0.7, bleed: 0.55, divine: 1.40 },
   [EnemyType.MONGOL_HORSE_ARCHER]: { ranged: 0.6, slow: 0.3, burn: 0.95, poison: 0.85, bleed: 0.7 },
   [EnemyType.MONGOL_SPEAR_RIDER]:  { ranged: 0.55, slow: 0.3, burn: 0.90, poison: 0.80, bleed: 0.7 },
   [EnemyType.KHAN_RIDER]:        { melee: 0.55, ranged: 0.4, slow: 0.25, burn: 0.80, poison: 0.60, bleed: 0.5 },
   [EnemyType.MONGOL_FOOTMAN]:    { ranged: 0, melee: 0.9, burn: 0.90, poison: 0.85, bleed: 0.75 },
-  [EnemyType.MONGOL_SPEARMAN]:   { melee: 0.85, ranged: 0.6, burn: 0.85, poison: 0.75, bleed: 0.60 },
-  [EnemyType.MONGOL_BERSERKER]:  { melee: 0.55, slow: 0.35, burn: 1.10, poison: 0.75, bleed: 0.4 },
+  [EnemyType.MONGOL_SPEARMAN]:   { melee: 0.85, ranged: 0.6, siege: 0, burn: 0.85, poison: 0.75, bleed: 0.60 },
+  [EnemyType.MONGOL_BERSERKER]:  { melee: 0.55, siege: 0, slow: 0.35, burn: 1.10, poison: 0.75, bleed: 0.4 },
   [EnemyType.MONGOL_SCOUT]:      { melee: 0, ranged: 0.7, slow: 0.3, burn: 0.8, poison: 0.75, bleed: 0.90 },
   [EnemyType.MONGOL_SHAMAN]:     { melee: 0, ranged: 0.55, slow: 0.4, burn: 0.6, poison: 0.65, bleed: 0.80 },
   [EnemyType.MONGOL_CAPTAIN]:    { melee: 0.6, ranged: 0, slow: 0.3, burn: 0.75, poison: 0.55, bleed: 0.60 },
@@ -300,7 +300,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.CERBERUS]:    { burn: 0.5, poison: 0.3, bleed: 1.20 },
   [EnemyType.TYPHON]:      { melee: 0, slow: 0.6, ranged: 0.3, siege: 0, burn: 0.65, poison: 0.55, bleed: 0.45 },
   [EnemyType.GIANT_GIGAS]: { slow: 0.7, melee: 0.3, burn: 0.80, poison: 0.35, bleed: 0.30 },
-  [EnemyType.CYCLOPS]:     { melee: 0.3, slow: 0.4, burn: 0.85, poison: 0.60, bleed: 0.50 },
+  [EnemyType.CYCLOPS]:     { melee: 0.3, siege: 0, slow: 0.4, burn: 0.85, poison: 0.60, bleed: 0.50 },
   // Colossus Gigas — the fused Super-Giant: very tough all-round.
   [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0, slow: 0.8, burn: 0.65, poison: 0.25, bleed: 0.20 },
   [EnemyType.OCEAN_FISHLING]: { fire: 1.15, burn: 1.15, poison: 0.8, slow: 0.7 },
@@ -330,7 +330,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // Sky Barge: heavy flyer. Ranged/anti-air must do the work; divine and siege help crack the hull.
   [EnemyType.SKY_BARGE]:        { melee: 0.35, ranged: 0.55, slow: 0.3, burn: 0.7, poison: 0.55, bleed: 0.55, siege: 1.15, divine: 1.2 },
   // Dune Stalker: lightly-wrapped fast skirmisher — little armor, slippery to slows.
-  [EnemyType.DUNE_STALKER]:     { slow: 0.6, burn: 1.10, poison: 0.85, bleed: 1.10 },
+  [EnemyType.DUNE_STALKER]:     { siege: 0, slow: 0.6, burn: 1.10, poison: 0.85, bleed: 1.10 },
   // Stone Juggernaut: living granite — resists physical + DoT, cracked by siege/divine.
   [EnemyType.STONE_JUGGERNAUT]: { melee: 0, ranged: 0, burn: 0.55, bleed: 0.3, poison: 0.3, siege: 1.75, divine: 1.75 }
 };
@@ -358,6 +358,7 @@ export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): num
   if (def?.immuneFire && damageType === DamageType.ELEMENTAL_FIRE) return 0;
   if (def?.meleeImmune && damageType === DamageType.PHYS_MELEE) return 0;
   if (def?.rangedImmune && damageType === DamageType.PHYS_RANGED) return 0;
+  if (def?.siegeImmune && damageType === DamageType.SIEGE) return 0;
   const r = enemyResistanceProfile(enemy.type);
   let base = 1;
   if (damageType === DamageType.PHYS_MELEE) {
@@ -456,7 +457,7 @@ export function resistanceSummary(type: EnemyType): Array<{ label: string; value
     ['Ranged', def?.rangedImmune ? 0 : r.ranged],
     // 2026-05 v9: include the three new per-enemy elemental resists so
     // Codex / EnemyInspect lists them alongside melee/ranged when set.
-    ['Siege', r.siege],
+    ['Siege', def?.siegeImmune ? 0 : r.siege],
     ['Fire', r.fire],
     ['Divine', r.divine],
     ['Slow', r.slow],
@@ -536,8 +537,9 @@ export function armorProfile(type: EnemyType): ArmorRow[] {
     const fireImmune = dt === 'ELEMENTAL_FIRE' && !!enemyDef.immuneFire;
     const meleeImmune = dt === 'PHYS_MELEE' && !!enemyDef.meleeImmune;
     const rangedImmune = dt === 'PHYS_RANGED' && !!enemyDef.rangedImmune;
-    const finalMult = (fireImmune || meleeImmune || rangedImmune) ? 0 : factionMult * specificMult;
-    const immune = factionImmune || fireImmune || meleeImmune || rangedImmune || finalMult <= 0;
+    const siegeImmune = dt === 'SIEGE' && !!enemyDef.siegeImmune;
+    const finalMult = (fireImmune || meleeImmune || rangedImmune || siegeImmune) ? 0 : factionMult * specificMult;
+    const immune = factionImmune || fireImmune || meleeImmune || rangedImmune || siegeImmune || finalMult <= 0;
     const armorPct = immune ? 100 : Math.round((1 - finalMult) * 100);
     return { damageType: dt, finalMult, armorPct, immune };
   });

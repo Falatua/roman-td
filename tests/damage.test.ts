@@ -174,6 +174,32 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     }
   });
 
+  it('gives selected post-W15 enemies true siege immunity with readable UI armor', () => {
+    const siegeImmuneTypes = [
+      EnemyType.MONGOL_BERSERKER,
+      EnemyType.MONGOL_SPEARMAN,
+      EnemyType.MUMMY_WARRIOR,
+      EnemyType.DUNE_STALKER,
+      EnemyType.CYCLOPS,
+      EnemyType.BOSS_FLYER_VULTURE,
+      EnemyType.SIEGE_CAPTAIN_COMMANDER,
+      EnemyType.SKY_PATHFINDER_COMMANDER,
+      EnemyType.TYPHON,
+      EnemyType.IRON_PHALANX
+    ];
+
+    for (const type of siegeImmuneTypes) {
+      const def: any = (enemiesData as any)[type];
+      const enemy = makeEnemy(type, def.faction as EnemyFaction);
+      enemy.isFlyer = !!def.isFlyer;
+      expect(def.siegeImmune, `${type} JSON siegeImmune`).toBe(true);
+      expect(enemyDamageMultiplier(enemy, DamageType.SIEGE), `${type} siege`).toBe(0);
+      expect(armorProfile(type).find(row => row.damageType === 'SIEGE')?.immune, `${type} armor row`).toBe(true);
+      expect(resistanceSummary(type).some(row => row.label === 'Siege' && row.value === 0), `${type} summary row`).toBe(true);
+      expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine answer`).toBeGreaterThan(0);
+    }
+  });
+
   it('gives selected post-W15 enemies true physical-melee immunity with readable UI armor', () => {
     const meleeImmuneTypes = [
       EnemyType.MONGOL_SCOUT,
