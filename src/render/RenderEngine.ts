@@ -2830,6 +2830,7 @@ export class RenderEngine {
     const immediateShoreGroundKeys = ['OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_PEBBLES', 'OCEAN_SHORE_FOAM_BITS', 'OCEAN_SHORE_WET_ROCKS'];
     const outerShoreGroundKeys = ['OCEAN_SHORE_PEBBLES', 'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH'];
     const italyShoreRockKeys = ['OCEAN_SHORE_ITALY_ROCKS_A', 'OCEAN_SHORE_ITALY_ROCKS_B', 'OCEAN_SHORE_ITALY_ROCKS_C'];
+    const shoreSkullKeys = ['OCEAN_SHORE_SKULLS_A', 'OCEAN_SHORE_SKULLS_B', 'OCEAN_SHORE_SKULLS_C'];
     const addItalyShoreRock = (
       c: number,
       r: number,
@@ -2859,6 +2860,36 @@ export class RenderEngine {
       rock.alpha = scaleMult < 0.8 ? 0.84 : 0.94;
       if ((hash(c, r, 92178 + salt) % 2) === 1) rock.scale.x *= -1;
       coastalDetailLayer.addChild(rock);
+      return true;
+    };
+    const addShoreSkulls = (
+      c: number,
+      r: number,
+      edge: 'N' | 'E' | 'S' | 'W',
+      salt: number,
+      scaleMult = 1
+    ) => {
+      const skullTex = tex(shoreSkullKeys[hash(c, r, 93217 + salt) % shoreSkullKeys.length]);
+      if (!skullTex) return false;
+      const x = c * GRID.TILE;
+      const y = r * GRID.TILE;
+      const skulls = new Sprite(skullTex);
+      skulls.anchor.set(0.5);
+      const along = (hash(c, r, 93218 + salt) % 13) - 6;
+      const overhang = 2 + (hash(c, r, 93219 + salt) % 3);
+      if (edge === 'N' || edge === 'S') {
+        skulls.x = x + GRID.TILE / 2 + along;
+        skulls.y = edge === 'N' ? y - overhang : y + GRID.TILE + overhang;
+      } else {
+        skulls.x = edge === 'W' ? x - overhang : x + GRID.TILE + overhang;
+        skulls.y = y + GRID.TILE / 2 + along;
+      }
+      const skullScale = 0.74 * scaleMult;
+      skulls.width = GRID.TILE * skullScale;
+      skulls.height = GRID.TILE * skullScale;
+      skulls.alpha = 0.94;
+      if ((hash(c, r, 93220 + salt) % 2) === 1) skulls.scale.x *= -1;
+      coastalDetailLayer.addChild(skulls);
       return true;
     };
     const addTileSprite = (layer: Container, key: string, x: number, y: number, alpha = 1) => {
@@ -2958,9 +2989,15 @@ export class RenderEngine {
               if (waterS) addItalyShoreRock(c, r, 'S', 41, 0.68);
               else if (waterW) addItalyShoreRock(c, r, 'W', 43, 0.68);
             }
+            if ((hash(c, r, 93231) % 100) < 54) {
+              if (waterS) addShoreSkulls(c, r, 'S', 0, 1.0);
+              else if (waterW) addShoreSkulls(c, r, 'W', 7, 1.0);
+            }
           } else {
             if (waterN && (hash(c, r, 92311) % 100) < 44) addItalyShoreRock(c, r, 'N', 61, 0.74);
             if (waterE && (hash(c, r, 92313) % 100) < 44) addItalyShoreRock(c, r, 'E', 67, 0.74);
+            if (waterN && (hash(c, r, 93241) % 100) < 24) addShoreSkulls(c, r, 'N', 11, 0.86);
+            if (waterE && (hash(c, r, 93243) % 100) < 24) addShoreSkulls(c, r, 'E', 13, 0.86);
           }
         }
         let key: string;
