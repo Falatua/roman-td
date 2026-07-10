@@ -3383,7 +3383,7 @@ export class RenderEngine {
       { col: WATER_ZONE.col + 6, row: WATER_ZONE.row + 3, key: 'OCEAN_DEAD_FISHLING_BLOOD', terrain: 'water', alpha: 0.84, xOffset: 4, yOffset: 1, living: true, ampX: 0.28, ampY: 0.22 },
       { col: WATER_ZONE.col + 10, row: WATER_ZONE.row + 5, key: 'OCEAN_DEAD_FISHLING_SHORE', terrain: 'water', alpha: 0.86, xOffset: -2, yOffset: -1, living: true, ampX: 0.18, ampY: 0.18 },
       {
-        col: WATER_ZONE.col + 7,
+        col: WATER_ZONE.col + 9,
         row: WATER_ZONE.row + WATER_ZONE.height - 6,
         key: 'OCEAN_SEA_GIANT_HEAD',
         terrain: 'water',

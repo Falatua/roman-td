@@ -661,6 +661,7 @@ describe('Tower roster integrity', () => {
     expect(renderEngine).toContain('const len = isGiantArrow ? 18 : 12;');
     expect(renderEngine).toContain('isGiantArrow ? 42');
     expect(renderEngine).toContain('isGiantArrow ? 24');
+    expect(renderEngine).toContain('col: WATER_ZONE.col + 9');
     expect(renderEngine).toContain("key: 'OCEAN_SEA_GIANT_HEAD'");
     expect(renderEngine).toContain('width: GRID.TILE * 2.85');
     expect(renderEngine).toContain("key: 'MAP_CYCLOPS_SEVERED_HEAD', scale: 2.85");
