@@ -3390,7 +3390,7 @@ export class RenderEngine {
         width: GRID.TILE * 2.85,
         height: GRID.TILE * 2.85,
         alpha: 0.98,
-        yOffset: -GRID.TILE * 0.35,
+        yOffset: GRID.TILE * 1.15,
         living: true,
         ampX: 0.2,
         ampY: 0.45
