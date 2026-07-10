@@ -879,7 +879,7 @@ describe('Giant Killer transformation and combat wiring', () => {
 
     expect(giantKillerDps).toBeGreaterThan(militesBefore * 11);
     expect(giantsCohortDps).toBeGreaterThan(cohortBefore * 5);
-    expect(kingBattlefieldDps).toBeGreaterThan(murmilloBefore * 3.5);
+    expect(kingBattlefieldDps).toBeGreaterThan(murmilloBefore * 4.0);
     expect(kingBattlefieldDps).toBeLessThan(giantsCohortDps * 0.95);
     expect(towerItemSlotCap(milites)).toBe(4);
     expect(towerItemSlotCap(cohort)).toBe(4);
