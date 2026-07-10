@@ -3905,6 +3905,9 @@ export class RenderEngine {
       rotation?: number;
       alpha?: number;
     }> = [
+      { key: 'MAP_CAVE_FALLEN_SKELETON', x: caveCx - 48, y: caveCy - 92, size: 56, rotation: 0.18, alpha: 0.88 },
+      { key: 'MAP_CAVE_BONES_SCATTER', x: caveCx + 24, y: caveCy - 104, size: 46, rotation: -0.22, alpha: 0.84 },
+      { key: 'MAP_CAVE_SEVERED_HEADS', x: caveCx + 78, y: caveCy - 82, size: 42, rotation: 0.14, alpha: 0.86 },
       { key: 'MAP_CAVE_BONES_SCATTER', x: caveCx - 82, y: caveCy + 80, size: 58, rotation: -0.16, alpha: 0.96 },
       { key: 'MAP_CAVE_SEVERED_HEADS', x: caveCx + 86, y: caveCy + 76, size: 60, rotation: 0.08, alpha: 0.95 },
       { key: 'MAP_CAVE_FALLEN_SKELETON', x: caveCx + 26, y: caveCy + 108, size: 72, rotation: -0.04, alpha: 0.95 },

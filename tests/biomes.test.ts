@@ -465,6 +465,9 @@ describe('Cave battlefield remains props', () => {
     const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
     expect(source).toContain('const CAVE_REMAINS');
     for (const [key] of expected) expect(source).toContain(`key: '${key}'`);
+    expect(source).toContain('x: caveCx - 48, y: caveCy - 92');
+    expect(source).toContain('x: caveCx + 24, y: caveCy - 104');
+    expect(source).toContain('x: caveCx + 78, y: caveCy - 82');
     expect(source).toContain('x: caveCx');
     expect(source).toContain('y: caveCy');
   });
