@@ -12,7 +12,7 @@ import {
 } from '../src/systems/GridManager';
 import { aStar, buildGroundPath, canPlaceStone } from '../src/systems/PathFinder';
 import { TileType } from '../src/types';
-import { WATER_ROW_SPANS, WATER_TILE_COUNT, WATER_ZONE } from '../src/constants';
+import { GRID, WATER_ROW_SPANS, WATER_TILE_COUNT, WATER_ZONE } from '../src/constants';
 
 describe('Grid initialization', () => {
   it('creates a grid with border tiles around the perimeter', () => {
@@ -128,6 +128,23 @@ describe('Grid initialization', () => {
     }
     expect(isWaterPlacementRestrictedTile(WATER_ZONE.col + 2, WATER_ZONE.row + 2)).toBe(true);
     expect(isBuildable(s, WATER_ZONE.col + 2, WATER_ZONE.row + 2)).toBe(false);
+  });
+
+  it('keeps decorative visual props out of the maze/buildability system', () => {
+    const s = createGameState();
+    initializeGrid(s);
+    const visualOnlyGrassTiles = [
+      { col: 36, row: 4, label: 'bloody Cyclops head overlap' },
+      { col: 6, row: 7, label: 'cave battlefield remains outside cave footprint' },
+      { col: 32, row: 24, label: 'fallen Romans beside Rome gate footprint' },
+      { col: WATER_ZONE.col + WATER_ZONE.width, row: GRID.ROWS - 3, label: 'bottom-cove undead ruin edge' },
+      { col: WATER_ZONE.col + 1, row: WATER_ZONE.row, label: 'shoreline rocks/skulls trim grass' }
+    ];
+
+    for (const t of visualOnlyGrassTiles) {
+      expect(tileAt(s, t.col, t.row), `${t.label} stays an EMPTY gameplay tile`).toBe(TileType.EMPTY);
+      expect(isBuildable(s, t.col, t.row), `${t.label} should still accept tower/prospect placement`).toBe(true);
+    }
   });
 
   it('does not let generic tile writes erase water reserves', () => {

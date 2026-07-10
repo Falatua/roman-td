@@ -94,6 +94,9 @@ export function hasPlacedTrapAt(state: GameStateShape, col: number, row: number)
 // unaffected.
 const CAVE_GATE_RESERVE_RADIUS = 2;
 export function isInsideStructureFootprint(col: number, row: number): boolean {
+  // Only gameplay-critical structures reserve build space. Decorative corpses,
+  // skulls, shoreline rocks, ruins, and battlefield dressing are render-only
+  // props, so they must never be added here or affect mazing/buildability.
   const dSpawnC = Math.abs(col - waypointsData.spawn.col);
   const dSpawnR = Math.abs(row - waypointsData.spawn.row);
   if (dSpawnC <= CAVE_GATE_RESERVE_RADIUS && dSpawnR <= CAVE_GATE_RESERVE_RADIUS) return true;

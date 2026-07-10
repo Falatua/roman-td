@@ -2831,6 +2831,9 @@ export class RenderEngine {
     const outerShoreGroundKeys = ['OCEAN_SHORE_PEBBLES', 'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH'];
     const italyShoreRockKeys = ['OCEAN_SHORE_ITALY_ROCKS_A', 'OCEAN_SHORE_ITALY_ROCKS_B', 'OCEAN_SHORE_ITALY_ROCKS_C'];
     const shoreSkullKeys = ['OCEAN_SHORE_SKULLS_A', 'OCEAN_SHORE_SKULLS_B', 'OCEAN_SHORE_SKULLS_C'];
+    // Shoreline rocks/skulls and every battlefield dressing prop below are
+    // visual-only sprites. They live in Pixi background layers, never in
+    // state.tiles, so players can build on any underlying EMPTY grass tile.
     const addItalyShoreRock = (
       c: number,
       r: number,
@@ -3244,6 +3247,7 @@ export class RenderEngine {
         });
       }
     }
+    // Visual-only cove dressing. Do not reserve these tiles for mazing.
     const BOTTOM_OCEAN_UNDEAD_RUINS: Array<{
       key: string;
       x: number;
@@ -3370,6 +3374,8 @@ export class RenderEngine {
       return pathSet.has(`${t.col},${t.row}`);
     });
     const usedPathSkeletonTiles = new Set<string>();
+    // Visual-only trail dressing. The trail itself controls buildability,
+    // not these skeleton sprites.
     const PATH_SKELETONS: Array<{
       at: number;
       key: string;
@@ -3550,8 +3556,8 @@ export class RenderEngine {
       { col: 36, row: 3,  key: 'MAP_CORNER_SHRINE_A6', scale: 1.3 },     // SPQR banner column
       { col: 34, row: 4,  key: 'MAP_CORNER_SHRINE_B1', scale: 1.3 },     // ruined arch
       { col: 36, row: 0,  key: 'MAP_CORNER_SHRINE_A2', scale: 1.2 },     // small column
-      // Bloody Cyclops trophy: anchored to the immutable top border, then
-      // nudged inward so world zoom never clips its face or blood pool.
+      // Bloody Cyclops trophy: visual-only prop anchored to the immutable top
+      // border, then nudged inward so world zoom never clips its face or blood pool.
       { col: 36, row: 0, key: 'MAP_CYCLOPS_SEVERED_HEAD', scale: 2.85, xOffset: -24, yOffset: 144 }
     ];
     for (const anchor of CORNERS) {
@@ -3691,6 +3697,7 @@ export class RenderEngine {
       this.layers.bg.addChild(cs);
     }
     const caveRemains = new Container();
+    // Visual-only cave dressing. The cave footprint is the only build blocker.
     const CAVE_REMAINS: Array<{
       key: string;
       x: number;
@@ -3793,6 +3800,7 @@ export class RenderEngine {
       this.layers.bg.addChild(gs);
     }
 
+    // Visual-only gate dressing. The gate footprint is the only build blocker.
     const GATE_FALLEN_SOLDIERS: Array<{
       key: string;
       x: number;
