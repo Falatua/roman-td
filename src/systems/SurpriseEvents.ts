@@ -148,6 +148,14 @@ export function maybeTriggerSurpriseEventForWave(state: GameStateShape): void {
 export function deadUprisingTitanTypesForWave(wave: number): EnemyType[] {
   if (wave >= 23) return [EnemyType.DREAD_UNDEAD_GIANT, EnemyType.DREAD_UNDEAD_CYCLOPS];
   if (wave >= 14) return [EnemyType.UNDEAD_GIANT, EnemyType.UNDEAD_CYCLOPS];
+  if (wave === 11) return [
+    EnemyType.UNDEAD_GIANT,
+    EnemyType.UNDEAD_CYCLOPS,
+    EnemyType.UNDEAD_CYCLOPS,
+    EnemyType.UNDEAD_CYCLOPS,
+    EnemyType.UNDEAD_CYCLOPS,
+    EnemyType.UNDEAD_CYCLOPS
+  ];
   return [EnemyType.UNDEAD_GIANT];
 }
 

@@ -191,12 +191,19 @@ describe('Surprise event spawn redirect — flyer guard (2026-05-19)', () => {
   });
 
   it('adds scaling undead giant and cyclops elites to Dead Uprising waves', () => {
-    expect(deadUprisingTitanTypesForWave(11)).toEqual([EnemyType.UNDEAD_GIANT]);
+    expect(deadUprisingTitanTypesForWave(11)).toEqual([
+      EnemyType.UNDEAD_GIANT,
+      EnemyType.UNDEAD_CYCLOPS,
+      EnemyType.UNDEAD_CYCLOPS,
+      EnemyType.UNDEAD_CYCLOPS,
+      EnemyType.UNDEAD_CYCLOPS,
+      EnemyType.UNDEAD_CYCLOPS
+    ]);
     expect(deadUprisingTitanTypesForWave(14)).toEqual([EnemyType.UNDEAD_GIANT, EnemyType.UNDEAD_CYCLOPS]);
     expect(deadUprisingTitanTypesForWave(23)).toEqual([EnemyType.DREAD_UNDEAD_GIANT, EnemyType.DREAD_UNDEAD_CYCLOPS]);
 
     const checks: Array<{ wave: number; expected: EnemyType[] }> = [
-      { wave: 11, expected: [EnemyType.UNDEAD_GIANT] },
+      { wave: 11, expected: [EnemyType.UNDEAD_GIANT, EnemyType.UNDEAD_CYCLOPS] },
       { wave: 14, expected: [EnemyType.UNDEAD_GIANT, EnemyType.UNDEAD_CYCLOPS] },
       { wave: 23, expected: [EnemyType.DREAD_UNDEAD_GIANT, EnemyType.DREAD_UNDEAD_CYCLOPS] }
     ];
@@ -211,6 +218,9 @@ describe('Surprise event spawn redirect — flyer guard (2026-05-19)', () => {
         expect(def.isBoss, type).toBe(false);
         expect(def.isElite, type).toBe(true);
         expect(def.livesCost, type).toBe(5);
+      }
+      if (wave === 11) {
+        expect(queuedTypes.filter((type: EnemyType) => type === EnemyType.UNDEAD_CYCLOPS)).toHaveLength(5);
       }
     }
   });
