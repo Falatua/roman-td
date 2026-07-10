@@ -1287,6 +1287,16 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(helper).toContain('rtd:viewport-change');
   });
 
+  it('reserves a top control lane so shared modal buttons do not cover text', () => {
+    const helper = readFileSync('src/render/ModalErgonomics.ts', 'utf8');
+    expect(helper).toContain('rtd-modal-tools-reserved');
+    expect(helper).toContain('padding-top: max(var(--rtd-panel-padding-top, 0px), var(--rtd-modal-tools-reserve-top, 54px)) !important');
+    expect(helper).toContain('--rtd-modal-tools-reserve-right');
+    expect(helper).toContain('toolRowWidth = actions.length * 34');
+    expect(helper).toContain("panel.style.setProperty('--rtd-panel-padding-top', currentPaddingTop)");
+    expect(helper).toContain("panel.classList.add('rtd-modal-tools-reserved')");
+  });
+
   it('applies collapsible or movable ergonomics to the largest recurring choice panels', () => {
     const files = [
       'src/render/CampaignRelicModal.ts',

@@ -32,6 +32,9 @@ export function ensureModalErgonomicsStyle(): void {
       max-height: min(88vh, 820px);
       max-width: calc(100vw - 16px);
     }
+    .rtd-modal-panel.rtd-modal-tools-reserved:not(.is-rtd-collapsed) {
+      padding-top: max(var(--rtd-panel-padding-top, 0px), var(--rtd-modal-tools-reserve-top, 54px)) !important;
+    }
     .rtd-modal-tools {
       position: absolute;
       right: 8px;
@@ -71,7 +74,7 @@ export function ensureModalErgonomicsStyle(): void {
       content: attr(data-rtd-collapse-title);
       display: block;
       min-height: 28px;
-      padding: 8px 92px 8px 10px;
+      padding: 8px var(--rtd-modal-tools-reserve-right, 132px) 8px 10px;
       color: #ffd34d;
       font-family: 'Courier New', monospace;
       font-size: 12px;
@@ -229,6 +232,13 @@ export function enhanceModalErgonomics(root: HTMLElement, panel: HTMLElement, op
   if (collapsibles.length > 0) actions.push('collapse');
   actions.push('move');
   if (opts.closeButton !== false) actions.push('close');
+  const currentPaddingTop = getComputedStyle(panel).paddingTop || '0px';
+  const toolRight = opts.toolRightPx ?? 8;
+  const toolRowWidth = actions.length * 34 + Math.max(0, actions.length - 1) * 6;
+  panel.style.setProperty('--rtd-panel-padding-top', currentPaddingTop);
+  panel.style.setProperty('--rtd-modal-tools-reserve-top', '54px');
+  panel.style.setProperty('--rtd-modal-tools-reserve-right', `${toolRight + toolRowWidth + 12}px`);
+  panel.classList.add('rtd-modal-tools-reserved');
 
   const requestClose = () => {
     root.dispatchEvent(new CustomEvent('rtd:modal-force-close'));
