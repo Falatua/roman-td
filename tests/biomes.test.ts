@@ -300,3 +300,38 @@ describe('Top-right Cyclops trophy prop', () => {
     expect(source).toContain("{ col: 36, row: 0, key: 'MAP_CYCLOPS_SEVERED_HEAD'");
   });
 });
+
+describe('Cave battlefield remains props', () => {
+  it('registers transparent authored sprites and anchors them around the main cave', async () => {
+    const sharp = require('sharp');
+    const expected = [
+      ['MAP_CAVE_BONES_SCATTER', 'map_overhaul/m_cave_bones_scatter.png', 192],
+      ['MAP_CAVE_SEVERED_HEADS', 'map_overhaul/m_cave_severed_heads.png', 192],
+      ['MAP_CAVE_FALLEN_SKELETON', 'map_overhaul/m_cave_fallen_skeleton.png', 224],
+      ['MAP_CAVE_SKULL_STAKE', 'map_overhaul/m_cave_skull_stake.png', 192]
+    ] as const;
+
+    for (const [key, fileName, size] of expected) {
+      const file = assetFileFor(key);
+      expect(file).toBe(fileName);
+      const full = path.join(__dirname, '../public/assets/sprites', file!);
+      expect(fs.existsSync(full)).toBe(true);
+      const img = sharp(full);
+      const meta = await img.metadata();
+      expect(meta.width).toBe(size);
+      expect(meta.height).toBe(size);
+      expect(meta.hasAlpha).toBe(true);
+
+      const raw = await img.ensureAlpha().raw().toBuffer();
+      let transparent = 0;
+      for (let i = 3; i < raw.length; i += 4) if (raw[i] < 8) transparent++;
+      expect(transparent, `${key} should keep transparent padding`).toBeGreaterThan(size * size * 0.35);
+    }
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain('const CAVE_REMAINS');
+    for (const [key] of expected) expect(source).toContain(`key: '${key}'`);
+    expect(source).toContain('x: caveCx');
+    expect(source).toContain('y: caveCy');
+  });
+});

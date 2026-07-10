@@ -3531,6 +3531,34 @@ export class RenderEngine {
       cs.width = 112; cs.height = 112;
       this.layers.bg.addChild(cs);
     }
+    const caveRemains = new Container();
+    const CAVE_REMAINS: Array<{
+      key: string;
+      x: number;
+      y: number;
+      size: number;
+      rotation?: number;
+      alpha?: number;
+    }> = [
+      { key: 'MAP_CAVE_BONES_SCATTER', x: caveCx - 82, y: caveCy + 80, size: 58, rotation: -0.16, alpha: 0.96 },
+      { key: 'MAP_CAVE_SEVERED_HEADS', x: caveCx + 86, y: caveCy + 76, size: 60, rotation: 0.08, alpha: 0.95 },
+      { key: 'MAP_CAVE_FALLEN_SKELETON', x: caveCx + 26, y: caveCy + 108, size: 72, rotation: -0.04, alpha: 0.95 },
+      { key: 'MAP_CAVE_SKULL_STAKE', x: caveCx - 74, y: caveCy - 22, size: 54, rotation: 0.05, alpha: 0.94 }
+    ];
+    for (const anchor of CAVE_REMAINS) {
+      const remainsTex = tex(anchor.key);
+      if (!remainsTex) continue;
+      const sp = new Sprite(remainsTex);
+      sp.anchor.set(0.5);
+      sp.x = anchor.x;
+      sp.y = anchor.y;
+      sp.width = anchor.size;
+      sp.height = anchor.size;
+      sp.rotation = anchor.rotation ?? 0;
+      sp.alpha = anchor.alpha ?? 0.95;
+      caveRemains.addChild(sp);
+    }
+    this.layers.bg.addChild(caveRemains);
 
     // 2026 v2 spec Ch7 — CAVE B (second spawn), drawn only when defined. A
     // compact mirror of the main cave so its W21+ enemies emerge from a real

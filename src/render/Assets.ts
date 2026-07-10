@@ -234,6 +234,10 @@ const MANIFEST: Record<string, string> = {
   MAP_CORNER_SHRINE_B4:  'map_overhaul/m_corner_shrine_b4.png',
   MAP_CORNER_SHRINE_B5:  'map_overhaul/m_corner_shrine_b5.png',
   MAP_CYCLOPS_SEVERED_HEAD: 'm_cyclops_severed_head.png',
+  MAP_CAVE_BONES_SCATTER: 'map_overhaul/m_cave_bones_scatter.png',
+  MAP_CAVE_SEVERED_HEADS: 'map_overhaul/m_cave_severed_heads.png',
+  MAP_CAVE_FALLEN_SKELETON: 'map_overhaul/m_cave_fallen_skeleton.png',
+  MAP_CAVE_SKULL_STAKE: 'map_overhaul/m_cave_skull_stake.png',
   // 2026-05-22 V14 — Necromantic Roman ruin set (user-supplied art).
   // Two sheets cropped to 11 feature pieces — ornate columns with
   // green soul-flames, SPQR banners with skull standards, stone
