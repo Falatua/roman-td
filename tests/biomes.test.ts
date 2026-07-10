@@ -222,6 +222,7 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     'OCEAN_DEEP_A', 'OCEAN_DEEP_B', 'OCEAN_MID_A', 'OCEAN_MID_B', 'OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B',
     'OCEAN_FOAM_N', 'OCEAN_FOAM_E', 'OCEAN_FOAM_S', 'OCEAN_FOAM_W',
     'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK', 'OCEAN_SEA_GIANT_HEAD',
+    'OCEAN_LEVIATHAN_HEAD', 'OCEAN_LEVIATHAN_BACK', 'OCEAN_LEVIATHAN_TAIL',
     'OCEAN_DEAD_FISHLING_FLOAT', 'OCEAN_DEAD_FISHLING_SHORE', 'OCEAN_DEAD_FISHLING_BLOOD',
     'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH', 'OCEAN_SHORE_PEBBLES',
     'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_FOAM_BITS', 'OCEAN_SHORE_WET_ROCKS',
@@ -254,6 +255,15 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
       } else if (key === 'OCEAN_SEA_GIANT_HEAD') {
         expect(meta.width, `${key} width`).toBe(160);
         expect(meta.height, `${key} height`).toBe(160);
+      } else if (key === 'OCEAN_LEVIATHAN_HEAD') {
+        expect(meta.width, `${key} width`).toBe(57);
+        expect(meta.height, `${key} height`).toBe(72);
+      } else if (key === 'OCEAN_LEVIATHAN_BACK') {
+        expect(meta.width, `${key} width`).toBe(131);
+        expect(meta.height, `${key} height`).toBe(96);
+      } else if (key === 'OCEAN_LEVIATHAN_TAIL') {
+        expect(meta.width, `${key} width`).toBe(80);
+        expect(meta.height, `${key} height`).toBe(72);
       } else {
         expect(meta.width, `${key} width`).toBe(32);
         expect(meta.height, `${key} height`).toBe(32);
@@ -287,6 +297,12 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     expect(source).toContain("addDeadFishlingShore(c, r, 'W'");
     expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_FLOAT'");
     expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_BLOOD'");
+    expect(source).toContain("key: 'OCEAN_LEVIATHAN_HEAD'");
+    expect(source).toContain("key: 'OCEAN_LEVIATHAN_BACK'");
+    expect(source).toContain("key: 'OCEAN_LEVIATHAN_TAIL'");
+    expect(source).toContain('alphaPulse');
+    expect(source).toContain('bobSpeed');
+    expect(source).toContain('rotationAmp');
     expect(source).toContain('waterProximity(c, r, 2)');
     expect(source).toContain('t === TileType.EMPTY');
   });

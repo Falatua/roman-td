@@ -416,7 +416,19 @@ export class RenderEngine {
   private ambientGfx?: Graphics;
   private grassWindGfx?: Graphics;
   private oceanAmbientGfx?: Graphics;
-  private oceanLivingSprites: { sp: Sprite; baseX: number; baseY: number; baseAlpha: number; phase: number; ampX: number; ampY: number }[] = [];
+  private oceanLivingSprites: {
+    sp: Sprite;
+    baseX: number;
+    baseY: number;
+    baseAlpha: number;
+    phase: number;
+    ampX: number;
+    ampY: number;
+    alphaPulse?: number;
+    bobSpeed?: number;
+    driftSpeed?: number;
+    rotationAmp?: number;
+  }[] = [];
   drawAmbient(tick: number, wave: number = 0, isBossWave: boolean = false, caveBActive: boolean = false) {
     // 2026 v2 spec Ch7 — Cave B stays HIDDEN until its first enemy emerges
     // (caveBActive, set in the spawn loop). The frame it activates, the
@@ -523,12 +535,13 @@ export class RenderEngine {
       }
     }
     for (const entry of this.oceanLivingSprites) {
-      const breath = Math.sin(tick * 0.9 + entry.phase);
-      const drift = Math.sin(tick * 0.45 + entry.phase * 1.7);
+      const breath = Math.sin(tick * (entry.bobSpeed ?? 0.9) + entry.phase);
+      const drift = Math.sin(tick * (entry.driftSpeed ?? 0.45) + entry.phase * 1.7);
+      const alphaPulse = entry.alphaPulse ?? 0.12;
       entry.sp.x = entry.baseX + drift * entry.ampX;
       entry.sp.y = entry.baseY + breath * entry.ampY;
-      entry.sp.alpha = entry.baseAlpha * (0.88 + 0.12 * Math.sin(tick * 0.65 + entry.phase));
-      entry.sp.rotation = Math.sin(tick * 0.35 + entry.phase) * 0.018;
+      entry.sp.alpha = entry.baseAlpha * (1 - alphaPulse + alphaPulse * Math.sin(tick * 0.65 + entry.phase));
+      entry.sp.rotation = Math.sin(tick * 0.35 + entry.phase) * (entry.rotationAmp ?? 0.018);
     }
 
     // 2026-05-21 — BIOME TINT OVERLAY (visual overhaul phase V3).
@@ -3250,12 +3263,74 @@ export class RenderEngine {
       living?: boolean;
       ampX?: number;
       ampY?: number;
+      alphaPulse?: number;
+      bobSpeed?: number;
+      driftSpeed?: number;
+      rotationAmp?: number;
+      phase?: number;
     }> = [
       { col: WATER_ZONE.col + 1, row: WATER_ZONE.row + 8, key: 'OCEAN_ROCK', terrain: 'water' },
       { col: WATER_ZONE.col + 5, row: WATER_ZONE.row + 6, key: 'OCEAN_CORAL', terrain: 'water' },
       { col: WATER_ZONE.col + 7, row: WATER_ZONE.row + 2, key: 'OCEAN_KELP', terrain: 'water' },
       { col: WATER_ZONE.col + 9, row: WATER_ZONE.row + 4, key: 'OCEAN_FISH', terrain: 'water' },
       { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 1, key: 'OCEAN_FISH', terrain: 'water' },
+      {
+        col: WATER_ZONE.col + 4,
+        row: WATER_ZONE.row + 4,
+        key: 'OCEAN_LEVIATHAN_HEAD',
+        terrain: 'water',
+        width: GRID.TILE * 2.05,
+        height: GRID.TILE * 2.55,
+        alpha: 0.96,
+        xOffset: -12,
+        yOffset: -28,
+        living: true,
+        ampX: 0.32,
+        ampY: 2.6,
+        alphaPulse: 0.22,
+        bobSpeed: 0.55,
+        driftSpeed: 0.22,
+        rotationAmp: 0.012,
+        phase: 0.3
+      },
+      {
+        col: WATER_ZONE.col + 6,
+        row: WATER_ZONE.row + 5,
+        key: 'OCEAN_LEVIATHAN_BACK',
+        terrain: 'water',
+        width: GRID.TILE * 4.05,
+        height: GRID.TILE * 3.0,
+        alpha: 0.9,
+        xOffset: -2,
+        yOffset: -40,
+        living: true,
+        ampX: 0.24,
+        ampY: 2.1,
+        alphaPulse: 0.3,
+        bobSpeed: 0.5,
+        driftSpeed: 0.19,
+        rotationAmp: 0.008,
+        phase: 2.25
+      },
+      {
+        col: WATER_ZONE.col + 9,
+        row: WATER_ZONE.row + 4,
+        key: 'OCEAN_LEVIATHAN_TAIL',
+        terrain: 'water',
+        width: GRID.TILE * 2.45,
+        height: GRID.TILE * 2.2,
+        alpha: 0.88,
+        xOffset: -2,
+        yOffset: -12,
+        living: true,
+        ampX: 0.4,
+        ampY: 2.4,
+        alphaPulse: 0.26,
+        bobSpeed: 0.58,
+        driftSpeed: 0.24,
+        rotationAmp: 0.016,
+        phase: 4.2
+      },
       { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 2, key: 'OCEAN_DEAD_FISHLING_FLOAT', terrain: 'water', alpha: 0.88, living: true, ampX: 0.35, ampY: 0.25 },
       { col: WATER_ZONE.col + 6, row: WATER_ZONE.row + 3, key: 'OCEAN_DEAD_FISHLING_BLOOD', terrain: 'water', alpha: 0.84, xOffset: 4, yOffset: 1, living: true, ampX: 0.28, ampY: 0.22 },
       { col: WATER_ZONE.col + 10, row: WATER_ZONE.row + 5, key: 'OCEAN_DEAD_FISHLING_SHORE', terrain: 'water', alpha: 0.86, xOffset: -2, yOffset: -1, living: true, ampX: 0.18, ampY: 0.18 },
@@ -3292,9 +3367,13 @@ export class RenderEngine {
           baseX: x,
           baseY: y,
           baseAlpha: sp.alpha,
-          phase: (d.col * 0.73 + d.row * 1.11) % 6.28,
+          phase: d.phase ?? (d.col * 0.73 + d.row * 1.11) % 6.28,
           ampX: d.ampX ?? (d.key === 'OCEAN_FISH' ? 1.6 : 0.6),
-          ampY: d.ampY ?? (d.key === 'OCEAN_FISH' ? 1.0 : 0.45)
+          ampY: d.ampY ?? (d.key === 'OCEAN_FISH' ? 1.0 : 0.45),
+          alphaPulse: d.alphaPulse,
+          bobSpeed: d.bobSpeed,
+          driftSpeed: d.driftSpeed,
+          rotationAmp: d.rotationAmp
         });
       }
     }
