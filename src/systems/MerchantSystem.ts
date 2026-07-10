@@ -134,9 +134,9 @@ const LEGENDARY_PREMIUM_PRICE = 0;
 
 // (Consumable price table removed 2026-05 — one-use items are gone.)
 
-// MERCATOR tower offer — actual placeable tower for sale. Generated fresh
-// every Mercator visit. Tier weighting scales with current wave so late-game
-// visits offer T4-T5 more often. Purpose is to fill recipe gaps, not raw DPS.
+// MERCATOR placeable offer. Champions and armory towers intentionally use the
+// same shape because both queue a map placement, but they are exposed through
+// separate ShopState arrays so heroes never get treated as randomized towers.
 export interface MercatorTowerOffer {
   type: string;     // tower type id (e.g. 'CENTURION')
   tier: number;     // 1..5
@@ -149,7 +149,10 @@ export interface ShopState {
   livesPrice: number;
   livesMaxThisVisit: number;
   livesBoughtThisVisit: number;
-  // Mercator-only: random T5 base tower offers.
+  // Mercator-only: stable Champion hero recruits. These are heroes, not random
+  // armory towers, and disappear once bought or if they match the starter hero.
+  championOffers?: MercatorTowerOffer[];
+  // Mercator-only: randomized T5 base tower armory offers.
   towerOffers?: MercatorTowerOffer[];
   // Mercator-only: Fortuna's Wheel — RNG roll on a regular combo tower
   // (T2-T5, Supercombo/Omega/recipe-chain results excluded). Tracked
@@ -159,9 +162,9 @@ export interface ShopState {
   gambleWinsThisVisit?: string[];
 }
 
-// Mercator tower offerings (2026-05): Mercator now ONLY stocks T5 towers
-// and every offer has a flat armory price. The player still gets variety in tower
-// TYPE (the pool below picks 8 distinct types per visit) — they just
+// Mercator tower offerings (2026-05): Mercator now ONLY stocks T5 base towers
+// and every offer has a flat armory price. The player still gets variety in
+// tower TYPE (the pool below picks 10 distinct types per visit) — they just
 // always arrive at apex tier and at the same price tag.
 // 2026-07-07 — T5 Mercator armory towers lifted to 325g after the ocean /
 // late-wave enemy count expansion. Still a bargain, but no longer cheaper
@@ -170,8 +173,8 @@ const MERCATOR_TOWER_PRICE: Record<number, number> = {
   1: 325, 2: 325, 3: 325, 4: 325, 5: 325
 };
 
-// Buyable tower pool — base & low-tier combo towers only. Specifically
-// excludes apex/cross-combos: those have to be earned via crafting.
+// Buyable tower pool — base towers only. Champions are built by
+// buildMercatorChampionOffers and recipe/apex/cross-combos must be earned.
 const MERCATOR_TOWER_POOL = [
   // Core BASE
   'MILITES','VELITES','HASTATI','SAGITTARIUS','SCORPIO','TRIARIUS',
@@ -213,20 +216,25 @@ export function mercatorExcludedChampionForHero(activeHeroId?: string | null): s
   return championForHero(activeHeroId);
 }
 
-export function buildMercatorTowerOffers(wave: number, count = 5, options: MercatorTowerOfferOptions = {}): MercatorTowerOffer[] {
+export function buildMercatorChampionOffers(options: Pick<MercatorTowerOfferOptions, 'activeHeroId' | 'purchasedChampionTypes'> = {}): MercatorTowerOffer[] {
   const offers: MercatorTowerOffer[] = [];
-  const excluded = new Set(options.excludeTypes ?? []);
+  const excluded = new Set<string>();
   for (const championType of options.purchasedChampionTypes ?? []) {
     excluded.add(championType);
   }
   const activeHeroChampion = mercatorExcludedChampionForHero(options.activeHeroId);
   if (activeHeroChampion) excluded.add(activeHeroChampion);
-  // The 6 Champions always head the lineup at a flat 1000g — the Mars Victor path.
   for (const ct of CHAMPION_TYPES) {
     // Purchased Champions arrive as fresh T1 / level-0 heroes. They must
     // earn their own future kill XP before unlocking abilities and rank damage.
     if (!excluded.has(ct)) offers.push({ type: ct, tier: 1, price: CHAMPION_PRICE });
   }
+  return offers;
+}
+
+export function buildMercatorTowerOffers(wave: number, count = 10, options: MercatorTowerOfferOptions = {}): MercatorTowerOffer[] {
+  const offers: MercatorTowerOffer[] = [];
+  const excluded = new Set(options.excludeTypes ?? []);
   const used = new Set<string>(CHAMPION_TYPES);
   let tries = 0;
   // 2026-05 v9: defensive filter — APEX cross-combos (Imperium Eternum,
@@ -235,17 +243,16 @@ export function buildMercatorTowerOffers(wave: number, count = 5, options: Merca
   // adds one to MERCATOR_TOWER_POOL, this filter blocks it from
   // reaching the player. Apex towers must be crafted, not bought.
   const eligible = MERCATOR_TOWER_POOL.filter(id => !FORTUNA_APEX_BLOCKLIST.has(id) && maxQualityTierForTower(id) >= 5);
-  // Fill the rest with 10 random T5 base towers (champions already took 6 slots).
+  // Fill with randomized T5 base towers only.
   // 2026-07-03 — options.excludeTypes now applies to these random slots too
-  // (previously it only gated champions). main.ts passes the PREVIOUS visit's
-  // random lineup here, so consecutive Mercator visits never repeat a tower
-  // and the T5 armory is properly re-randomized each stop. Safety: if the
-  // exclusions would starve the pool below the draw count, ignore them.
-  const randomCount = 10;
+  // main.ts passes the PREVIOUS visit's random lineup here, so consecutive
+  // Mercator visits never repeat a tower and the T5 armory is properly
+  // re-randomized each stop. Safety: if the exclusions would starve the pool
+  // below the draw count, ignore them.
+  const randomCount = Math.max(0, count);
   let pool = eligible.filter(id => !excluded.has(id));
   if (pool.length < randomCount) pool = eligible;
-  const targetCount = offers.length + randomCount;
-  while (offers.length < targetCount && tries++ < 200) {
+  while (offers.length < randomCount && tries++ < 200) {
     const type = pool[Math.floor(Math.random() * pool.length)];
     if (used.has(type)) continue;
     used.add(type);
@@ -386,7 +393,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   // shelf does not always read as the same tier-bucket layout.
   shuffleInPlace(offers);
   for (const o of offers) o.price = Math.max(1, Math.round(o.price * 0.9));
-  return { type: 'MERCATOR', offers, livesPrice: 83, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };
+  return { type: 'MERCATOR', offers, livesPrice: 83, livesMaxThisVisit: 3, livesBoughtThisVisit: 0, championOffers: [], towerOffers: [], gambleSpinsThisVisit: 0, gambleWinsThisVisit: [] };
 }
 
 // ─── Fortuna's Wheel — 1050g RNG regular-combo gamble ──────────────────

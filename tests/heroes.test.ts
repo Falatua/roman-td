@@ -34,7 +34,7 @@ import { createGameState, GameStateShape } from '../src/GameState';
 import { DamageType, Enemy, EnemyFaction, EnemyType, GamePhase, StatusEffectKind, TowerType } from '../src/types';
 import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
 import { previewSpawnHp, startWave } from '../src/systems/WaveManager';
-import { buildMercatorTowerOffers, CHAMPION_PRICE, CHAMPION_TYPES } from '../src/systems/MerchantSystem';
+import { buildMercatorChampionOffers, buildMercatorTowerOffers, CHAMPION_PRICE, CHAMPION_TYPES } from '../src/systems/MerchantSystem';
 import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity';
 import { heroAuraScaleForTier, heroAuraScaleForTower, heroTierForTower } from '../src/systems/HeroScaling';
 import HERO_DEFS from '../src/data/herodefs.json';
@@ -313,13 +313,13 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
   });
 
   it('Mercator excludes the Champion matching the starter hero', () => {
-    const offers = buildMercatorTowerOffers(9, 5, { activeHeroId: 'HERO_CAESAR' });
+    const offers = buildMercatorChampionOffers({ activeHeroId: 'HERO_CAESAR' });
     expect(offers.map(o => o.type)).not.toContain(championForHero('HERO_CAESAR'));
     expect(offers.map(o => o.type)).toContain('CHAMPION_MARIUS');
   });
 
   it('Mercator excludes Champions already purchased from Mercator this run', () => {
-    const offers = buildMercatorTowerOffers(14, 5, {
+    const offers = buildMercatorChampionOffers({
       activeHeroId: 'HERO_CAESAR',
       purchasedChampionTypes: ['CHAMPION_MARIUS', 'CHAMPION_SULLA']
     });
@@ -331,19 +331,17 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(types.filter(t => CHAMPION_TYPES.includes(t)).length).toBe(3);
   });
 
-  it('Mercator keeps selling normal towers after every Champion has been bought', () => {
-    const offers = buildMercatorTowerOffers(23, 5, {
-      activeHeroId: null,
-      purchasedChampionTypes: [...CHAMPION_TYPES]
+  it('Mercator random armory keeps selling normal towers after every Champion has been bought', () => {
+    const offers = buildMercatorTowerOffers(23, 10, {
+      excludeTypes: [...CHAMPION_TYPES]
     });
     expect(offers.some(o => CHAMPION_TYPES.includes(o.type))).toBe(false);
-    expect(offers.length).toBeGreaterThan(0);
+    expect(offers).toHaveLength(10);
     expect(offers.every(o => o.tier === 5)).toBe(true);
   });
 
   it('every Mercator Champion resolves to a full hero kit for shop details', () => {
-    const offers = buildMercatorTowerOffers(9, 5, { activeHeroId: null });
-    const championOffers = offers.filter(o => String(o.type).startsWith('CHAMPION_'));
+    const championOffers = buildMercatorChampionOffers({ activeHeroId: null });
     expect(championOffers.length).toBe(6);
     for (const offer of championOffers) {
       expect(offer.tier).toBe(1);
@@ -356,6 +354,15 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
       expect(def?.abilities?.length, `${offer.type} must expose both ability descriptions for Mercator details`).toBe(2);
       expect(def?.basicAtkScalePerTier?.length, `${offer.type} must expose hero tier scaling for Mercator details`).toBe(5);
     }
+  });
+
+  it('Mercator randomized T5 armory never includes Champion heroes', () => {
+    const offers = buildMercatorTowerOffers(14, 10, {
+      excludeTypes: ['CHAMPION_MARIUS', 'CHAMPION_SULLA']
+    });
+    expect(offers).toHaveLength(10);
+    expect(offers.every(o => !CHAMPION_TYPES.includes(o.type))).toBe(true);
+    expect(offers.every(o => o.tier === 5)).toBe(true);
   });
 
   it('Mercator Champions are hero equivalents without overwriting the starter hero', () => {

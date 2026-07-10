@@ -461,12 +461,12 @@ describe('Merchant — Mercator stock', () => {
   });
 
   it('prices Mercator T5 towers as campaign investments', () => {
-    const towers = buildMercatorTowerOffers(10, 5);
-    const armory = towers.filter(o => !o.type.startsWith('CHAMPION_'));
+    const armory = buildMercatorTowerOffers(10, 10);
     expect(armory).toHaveLength(10);
     expect(armory.every(o => o.tier === 5 && o.price === 325)).toBe(true);
     expect(new Set(armory.map(o => o.type)).size).toBe(10);
     expect(armory.every(o => (towersData as any)[o.type]?.kind === 'BASE')).toBe(true);
+    expect(armory.every(o => !o.type.startsWith('CHAMPION_'))).toBe(true);
     expect(armory.map(o => o.type)).not.toContain('VELITES');
     expect(armory.map(o => o.type)).not.toContain('SCORPIO');
   });
@@ -474,14 +474,10 @@ describe('Merchant — Mercator stock', () => {
   it('re-randomizes the T5 armory: excludeTypes bars last visit’s lineup', () => {
     // 2026-07-03 — consecutive Mercator visits must not repeat T5 towers.
     // main.ts passes the previous visit's 10 random types as excludeTypes.
-    const first = buildMercatorTowerOffers(9, 5)
-      .filter(o => !o.type.startsWith('CHAMPION_'))
-      .map(o => o.type);
+    const first = buildMercatorTowerOffers(9, 10).map(o => o.type);
     expect(first).toHaveLength(10);
     for (let i = 0; i < 10; i++) {
-      const second = buildMercatorTowerOffers(14, 5, { excludeTypes: first })
-        .filter(o => !o.type.startsWith('CHAMPION_'))
-        .map(o => o.type);
+      const second = buildMercatorTowerOffers(14, 10, { excludeTypes: first }).map(o => o.type);
       expect(second).toHaveLength(10);
       for (const t of second) expect(first).not.toContain(t);
     }

@@ -17,7 +17,7 @@ import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './s
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
 import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
-import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_TYPES } from './systems/MerchantSystem';
+import { buildGateShop, buildMercatorChampionOffers, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_PRICE } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
@@ -309,12 +309,14 @@ async function boot() {
   // lineup on state (survives save/load) for the next visit's exclusion.
   function restockMercator(): void {
     mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
-    mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 5, {
+    mercatorShop.championOffers = buildMercatorChampionOffers({
       activeHeroId: state.activeHeroId,
-      purchasedChampionTypes: state.mercatorPurchasedChampionTypes ?? [],
+      purchasedChampionTypes: state.mercatorPurchasedChampionTypes ?? []
+    });
+    mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 10, {
       excludeTypes: (state.mercatorTowerOffers ?? []).map(o => o.type)
     });
-    state.mercatorTowerOffers = mercatorShop.towerOffers.filter(o => !CHAMPION_TYPES.includes(o.type));
+    state.mercatorTowerOffers = mercatorShop.towerOffers;
   }
   function maybeOpenLastStandTrove(): void {
     if (anySecretEventModalOpen()) return;
@@ -3315,7 +3317,11 @@ async function boot() {
     // mercator-equivalent so refunds remain bounded.
     if (entry.source === 'mercator' || entry.source === 'fortuna') return 325;
     if (entry.source === 'backroom') return 225;
-    // 2026-05-19 — Hero placement is free and yields no refund.
+    // Mercator Champions are heroes, but they are paid recruits. If the player
+    // puts one back before placement, refund its Champion price. Starter hero
+    // placement remains free and yields no refund.
+    if (entry.source === 'hero' && isMercatorChampionType(String(entry.type))) return CHAMPION_PRICE;
+    // 2026-05-19 — Starter hero placement is free and yields no refund.
     // 2026-07-01 — Relic towers are already paid for by the relic caveat
     // (gold/lives/global drawback), so putting one back cannot mint gold.
     // 2026-07-06 — Last-Life Trove towers are free emergency gifts; no refund.

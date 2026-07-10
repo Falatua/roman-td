@@ -640,111 +640,132 @@ function renderMercatorShop(
   panel.appendChild(body);
   markScrollable(body);
 
-  // ─── SECTION 1: TOWERS (the reason this vendor exists) ───────────
+  const renderMercatorPlaceableOffer = (
+    offer: NonNullable<ShopState['towerOffers']>[number],
+    listEl: HTMLElement,
+    purchaseKind: 'hero' | 'mercator'
+  ) => {
+    const isChampion = purchaseKind === 'hero';
+    const completesRecipe = !isChampion && purchaseCompletesRecipe(state, offer.type, offer.tier);
+    const card = document.createElement('div');
+    card.className = 'merc-card' + (completesRecipe ? ' recipe-ready-card' : '');
+    card.style.cssText = `border:2px solid ${completesRecipe ? '#66ff88' : TIER_COL[offer.tier]};padding:10px 8px 8px;background:${completesRecipe ? '#0c1a10' : '#0c0a08'};display:flex;flex-direction:column;gap:4px;text-align:center;align-items:center;position:relative;`;
+    const spriteSrc = imgSrcFromTex(offer.type);
+    const towerDef: any = (towersData as any)[offer.type] ?? {};
+    const towerName = towerDef.name ?? offer.type.replace(/_/g,' ');
+    const championDetails = isChampion
+      ? championHeroDetailsHtml(offer.type, towerDef, towerDef.tint ?? TIER_COL[offer.tier])
+      : '';
+    const portrait = spriteSrc
+      ? `<div style="width:64px;height:64px;border:1px solid ${TIER_COL[offer.tier]};background:#1a1410;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 8px ${TIER_COL[offer.tier]}55"><img src="${spriteSrc}" style="width:56px;height:56px;image-rendering:pixelated" alt="${towerName}"/></div>`
+      : `<div style="width:64px;height:64px;border:1px solid ${TIER_COL[offer.tier]};background:#1a1410;color:#cdb98a;font-size:9px;display:flex;align-items:center;justify-content:center;letter-spacing:1px">NO IMG</div>`;
+    const recipeBadge = completesRecipe
+      ? `<div class="recipe-ready-badge" style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#0c1a10;border:1.5px solid #66ff88;color:#bbffcc;font-size:9px;font-weight:bold;letter-spacing:1px;padding:2px 6px;white-space:nowrap;text-shadow:0 0 4px #66ff88">★ COMPLETES RECIPE</div>`
+      : '';
+    const dps = towerDef.baseDps ?? '?';
+    const range = towerDef.range ?? '?';
+    const atk = towerDef.attackSpeed ?? null;
+    const atkText = atk != null ? `${atk.toFixed(1)}/s` : '?/s';
+    const ability = (towerDef.ability ?? '').replace(/"/g, "'");
+    card.innerHTML = `
+      ${recipeBadge}
+      <div style="color:${TIER_COL[offer.tier]};font-weight:bold;font-size:13px;letter-spacing:2px">${isChampion ? 'HERO' : `T${offer.tier}`}</div>
+      ${portrait}
+      <div style="color:#fff8e0;font-size:12px;font-weight:bold;line-height:1.25;margin-top:2px">${towerName}</div>
+      <div style="display:flex;gap:6px;font-size:9px;color:#cdb98a;letter-spacing:0.5px">
+        <span title="Base DPS">⚔ ${dps}</span>
+        <span title="Attack Speed">⏱ ${atkText}</span>
+        <span title="Range (tiles)">◎ ${range}t</span>
+      </div>
+      <div style="font-size:9.5px;color:#cdb98a;line-height:1.35;margin-top:3px;min-height:34px">${ability}</div>
+      ${championDetails ? `<button class="merc-champion-toggle" type="button" data-champion-details="${offer.type}" aria-expanded="false">DETAILS</button>${championDetails}` : ''}
+      <div style="color:#f0c040;font-size:12px;font-weight:bold;margin-top:2px">${offer.price}g</div>`;
+    const detailBtn = card.querySelector<HTMLButtonElement>('button[data-champion-details]');
+    const detailPanel = card.querySelector<HTMLElement>('.merc-champion-details');
+    if (detailBtn && detailPanel) {
+      detailBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        const opening = detailPanel.style.display === 'none';
+        listEl.querySelectorAll<HTMLElement>('.merc-champion-details').forEach(el => { el.style.display = 'none'; });
+        listEl.querySelectorAll<HTMLButtonElement>('button[data-champion-details]').forEach(btn => {
+          btn.textContent = 'DETAILS';
+          btn.setAttribute('aria-expanded', 'false');
+        });
+        if (opening) {
+          detailPanel.style.display = 'block';
+          detailBtn.textContent = 'HIDE';
+          detailBtn.setAttribute('aria-expanded', 'true');
+        }
+      };
+    }
+    const canAfford = state.gold >= offer.price;
+    const buy = document.createElement('button');
+    buy.textContent = canAfford ? 'BUY' : 'NEED ' + (offer.price - state.gold) + 'g';
+    buy.className = 'merc-buy';
+    buy.style.cssText = `background:${canAfford ? '#3a5520' : '#2a2a2a'};color:${canAfford ? '#e8d6a8' : '#666'};width:100%;margin-top:4px;cursor:${canAfford ? 'pointer' : 'not-allowed'};`;
+    buy.onclick = (ev) => {
+      if (state.gold < offer.price) {
+        const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+        const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
+        const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
+        const ay = stageRect ? r.top - stageRect.top : undefined;
+        (window as any).__showInsufficientGoldToast?.(offer.price, ax, ay);
+        return;
+      }
+      spendGold(state, offer.price);
+      recordMercatorBackRoomPurchase(state, offer.price);
+      if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
+      state.pendingPurchasedTowers.push({ type: offer.type, tier: offer.tier, source: purchaseKind });
+      if (isChampion) recordMercatorChampionPurchase(state, offer.type);
+      const qLen = state.pendingPurchasedTowers.length;
+      const verb = isChampion ? 'Recruited' : 'Bought';
+      state.hint = qLen > 1
+        ? `${verb} ${offer.type.replace(/_/g,' ')}. ${qLen} placements queued — click empty tiles to place.`
+        : `${verb} ${offer.type.replace(/_/g,' ')}. Click an empty tile to place it.`;
+      SFX.itemPickup(isChampion ? 'LEGENDARY' : tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
+      if (isChampion) {
+        shop.championOffers = (shop.championOffers ?? []).filter(o => o !== offer);
+      } else {
+        shop.towerOffers = (shop.towerOffers ?? []).filter(o => o !== offer);
+      }
+      refresh();
+    };
+    card.appendChild(buy);
+    listEl.appendChild(card);
+  };
+
+  // ─── SECTION 1A: CHAMPIONS (hero recruits, not randomized towers) ──
+  if (shop.championOffers && shop.championOffers.length > 0) {
+    const champSection = document.createElement('div');
+    const champTitle = document.createElement('div');
+    champTitle.className = 'merc-section-title';
+    champTitle.innerHTML = `<span>★ CHAMPION RECRUITMENT</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">heroes · 1000g each · recruit all 6 → MARS VICTOR</span>`;
+    champSection.appendChild(champTitle);
+    const champNote = document.createElement('div');
+    champNote.style.cssText = `font-size:9.5px;color:#aa9a4a;line-height:1.35;margin:2px 0 8px;font-style:italic`;
+    champNote.textContent = 'Mercator Champions are heroes. They are not part of the random tower armory and bought Champions leave future visits.';
+    champSection.appendChild(champNote);
+    const cList = document.createElement('div');
+    cList.style.cssText = `display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;`;
+    for (const offer of shop.championOffers) renderMercatorPlaceableOffer(offer, cList, 'hero');
+    champSection.appendChild(cList);
+    body.appendChild(champSection);
+  }
+
+  // ─── SECTION 1B: T5 BASE TOWERS (randomized armory) ────────────────
   if (shop.towerOffers && shop.towerOffers.length > 0) {
     const towersSection = document.createElement('div');
     const towersTitle = document.createElement('div');
     towersTitle.className = 'merc-section-title';
-    towersTitle.innerHTML = `<span>★ TRAVELING ARMORY — CHAMPIONS & T5 TOWERS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">recruit all 6 Champions (1000g) → MARS VICTOR · click empty tile to place</span>`;
+    towersTitle.innerHTML = `<span>★ RANDOMIZED T5 BASE TOWERS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">10 random base towers · refreshes next Mercator visit</span>`;
     towersSection.appendChild(towersTitle);
-    // 2026-05 v9 — disclaim apex super-combos are NOT in this pool.
     const towersNote = document.createElement('div');
     towersNote.style.cssText = `font-size:9.5px;color:#aa9a4a;line-height:1.35;margin:2px 0 8px;font-style:italic`;
-    towersNote.innerHTML = `Base + early/mid combo towers only. <b style="color:#cc6666">Recipe-only apex / omega combos are never sold</b> — ${recipeOnlyComboNames()} must be crafted.`;
+    towersNote.innerHTML = `Base towers only. <b style="color:#cc6666">Heroes, combo towers, apex towers, and omega towers are never in this random shelf</b> — ${recipeOnlyComboNames()} must be crafted.`;
     towersSection.appendChild(towersNote);
-
     const tList = document.createElement('div');
     tList.style.cssText = `display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;`;
-    for (const offer of shop.towerOffers) {
-      const completesRecipe = purchaseCompletesRecipe(state, offer.type, offer.tier);
-      const card = document.createElement('div');
-      card.className = 'merc-card' + (completesRecipe ? ' recipe-ready-card' : '');
-      card.style.cssText = `border:2px solid ${completesRecipe ? '#66ff88' : TIER_COL[offer.tier]};padding:10px 8px 8px;background:${completesRecipe ? '#0c1a10' : '#0c0a08'};display:flex;flex-direction:column;gap:4px;text-align:center;align-items:center;position:relative;`;
-      const spriteSrc = imgSrcFromTex(offer.type);
-      const towerDef: any = (towersData as any)[offer.type] ?? {};
-      const towerName = towerDef.name ?? offer.type.replace(/_/g,' ');
-      const championDetails = isMercatorChampionType(offer.type)
-        ? championHeroDetailsHtml(offer.type, towerDef, towerDef.tint ?? TIER_COL[offer.tier])
-        : '';
-      const portrait = spriteSrc
-        ? `<div style="width:64px;height:64px;border:1px solid ${TIER_COL[offer.tier]};background:#1a1410;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 8px ${TIER_COL[offer.tier]}55"><img src="${spriteSrc}" style="width:56px;height:56px;image-rendering:pixelated" alt="${towerName}"/></div>`
-        : `<div style="width:64px;height:64px;border:1px solid ${TIER_COL[offer.tier]};background:#1a1410;color:#cdb98a;font-size:9px;display:flex;align-items:center;justify-content:center;letter-spacing:1px">NO IMG</div>`;
-      const recipeBadge = completesRecipe
-        ? `<div class="recipe-ready-badge" style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#0c1a10;border:1.5px solid #66ff88;color:#bbffcc;font-size:9px;font-weight:bold;letter-spacing:1px;padding:2px 6px;white-space:nowrap;text-shadow:0 0 4px #66ff88">★ COMPLETES RECIPE</div>`
-        : '';
-      const dps = towerDef.baseDps ?? '?';
-      const range = towerDef.range ?? '?';
-      const atk = towerDef.attackSpeed ?? null;
-      const atkText = atk != null ? `${atk.toFixed(1)}/s` : '?/s';
-      const ability = (towerDef.ability ?? '').replace(/"/g, "'");
-      card.innerHTML = `
-        ${recipeBadge}
-        <div style="color:${TIER_COL[offer.tier]};font-weight:bold;font-size:13px;letter-spacing:2px">T${offer.tier}</div>
-        ${portrait}
-        <div style="color:#fff8e0;font-size:12px;font-weight:bold;line-height:1.25;margin-top:2px">${towerName}</div>
-        <div style="display:flex;gap:6px;font-size:9px;color:#cdb98a;letter-spacing:0.5px">
-          <span title="Base DPS">⚔ ${dps}</span>
-          <span title="Attack Speed">⏱ ${atkText}</span>
-          <span title="Range (tiles)">◎ ${range}t</span>
-        </div>
-        <div style="font-size:9.5px;color:#cdb98a;line-height:1.35;margin-top:3px;min-height:34px">${ability}</div>
-        ${championDetails ? `<button class="merc-champion-toggle" type="button" data-champion-details="${offer.type}" aria-expanded="false">DETAILS</button>${championDetails}` : ''}
-        <div style="color:#f0c040;font-size:12px;font-weight:bold;margin-top:2px">${offer.price}g</div>`;
-      const detailBtn = card.querySelector<HTMLButtonElement>('button[data-champion-details]');
-      const detailPanel = card.querySelector<HTMLElement>('.merc-champion-details');
-      if (detailBtn && detailPanel) {
-        detailBtn.onclick = (ev) => {
-          ev.stopPropagation();
-          const opening = detailPanel.style.display === 'none';
-          tList.querySelectorAll<HTMLElement>('.merc-champion-details').forEach(el => { el.style.display = 'none'; });
-          tList.querySelectorAll<HTMLButtonElement>('button[data-champion-details]').forEach(btn => {
-            btn.textContent = 'DETAILS';
-            btn.setAttribute('aria-expanded', 'false');
-          });
-          if (opening) {
-            detailPanel.style.display = 'block';
-            detailBtn.textContent = 'HIDE';
-            detailBtn.setAttribute('aria-expanded', 'true');
-          }
-        };
-      }
-      const canAfford = state.gold >= offer.price;
-      const buy = document.createElement('button');
-      buy.textContent = canAfford ? 'BUY' : 'NEED ' + (offer.price - state.gold) + 'g';
-      // 2026-05 v9: leave the button CLICKABLE even when unaffordable so the
-      // failed click pops the floating insufficient-gold tooltip. Disabled
-      // buttons swallow the click silently — that wasn't enough feedback.
-      buy.className = 'merc-buy';
-      buy.style.cssText = `background:${canAfford ? '#3a5520' : '#2a2a2a'};color:${canAfford ? '#e8d6a8' : '#666'};width:100%;margin-top:4px;cursor:${canAfford ? 'pointer' : 'not-allowed'};`;
-      buy.onclick = (ev) => {
-        if (state.gold < offer.price) {
-          const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
-          const stageRect = document.getElementById('stage-wrap')?.getBoundingClientRect();
-          const ax = stageRect ? r.left + r.width / 2 - stageRect.left : undefined;
-          const ay = stageRect ? r.top - stageRect.top : undefined;
-          (window as any).__showInsufficientGoldToast?.(offer.price, ax, ay);
-          return;
-        }
-        spendGold(state, offer.price);
-        recordMercatorBackRoomPurchase(state, offer.price);
-        if (!state.pendingPurchasedTowers) state.pendingPurchasedTowers = [];
-        state.pendingPurchasedTowers.push({ type: offer.type, tier: offer.tier, source: 'mercator' });
-        recordMercatorChampionPurchase(state, offer.type);
-        const qLen = state.pendingPurchasedTowers.length;
-        state.hint = qLen > 1
-          ? `Bought ${offer.type.replace(/_/g,' ')} T${offer.tier}. ${qLen} towers queued — click empty tiles to place.`
-          : `Bought ${offer.type.replace(/_/g,' ')} T${offer.tier}. Click an empty tile to place it.`;
-        SFX.itemPickup(tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
-        // Mercator Champions are one recruit per run. Remove the bought
-        // offer immediately; restockMercator also excludes it forever after.
-        if (shop.towerOffers) {
-          shop.towerOffers = shop.towerOffers.filter(o => o !== offer);
-        }
-        refresh();
-      };
-      card.appendChild(buy);
-      tList.appendChild(card);
-    }
+    for (const offer of shop.towerOffers) renderMercatorPlaceableOffer(offer, tList, 'mercator');
     towersSection.appendChild(tList);
     body.appendChild(towersSection);
   }

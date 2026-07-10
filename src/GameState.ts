@@ -154,9 +154,9 @@ export interface GameStateShape {
   // the run's true primary damage dealer.
   towerDamageByType?: Record<string, number>;
   stonesPlaced?: number;
-  // Mercator persistent tower offers — when a Mercator visits, eight random
-  // T5 base tower offers are generated. Player can buy one and a "purchasedTower"
-  // gets queued for placement on the next empty-tile click.
+  // Mercator persistent tower offers — when a Mercator visits, 10 random T5
+  // base tower offers are generated. Champions are tracked separately as hero
+  // recruits and are not part of this randomized tower shelf.
   mercatorTowerOffers?: { type: string; tier: number; price: number }[];
   // Mercator Champions bought this run. Once a Champion is purchased from
   // Mercator, it leaves all future Mercator lineups so the player cannot
