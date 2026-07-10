@@ -614,7 +614,7 @@
   "ANUBIS_PRIEST": {
     "name": "Anubis Priest",
     "faction": "EGYPTIANS",
-    "baseHp": 990,
+    "baseHp": 650,
     "speed": 0.9,
     "isFlyer": false,
     "isBoss": false,
@@ -738,7 +738,7 @@
   "MONGOL_BERSERKER": {
     "name": "Hun Berserker",
     "faction": "MONGOLS",
-    "baseHp": 935,
+    "baseHp": 560,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": false,
@@ -1107,7 +1107,7 @@
     "nullifyAuraRadiusTiles": 2,
     "name": "Commander: Anubis Priest",
     "faction": "EGYPTIANS",
-    "baseHp": 3600,
+    "baseHp": 2700,
     "speed": 1.0,
     "isFlyer": false,
     "isBoss": false,

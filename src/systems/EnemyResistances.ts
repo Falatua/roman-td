@@ -286,7 +286,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.KHAN_RIDER]:        { melee: 0.55, ranged: 0.4, slow: 0.25, burn: 0.80, poison: 0.60, bleed: 0.5 },
   [EnemyType.MONGOL_FOOTMAN]:    { ranged: 0, melee: 0.9, burn: 0.90, poison: 0.85, bleed: 0.75 },
   [EnemyType.MONGOL_SPEARMAN]:   { melee: 0.85, ranged: 0.6, siege: 0, burn: 0.85, poison: 0.75, bleed: 0.60 },
-  [EnemyType.MONGOL_BERSERKER]:  { melee: 0.55, siege: 0, slow: 0.35, burn: 0, poison: 0, bleed: 0, divine: 0 },
+  [EnemyType.MONGOL_BERSERKER]:  { melee: 0.9, ranged: 1.05, siege: 0, slow: 0.35, burn: 0, poison: 0, bleed: 0, divine: 0 },
   [EnemyType.MONGOL_SCOUT]:      { melee: 0, ranged: 0.7, slow: 0.3, burn: 0.8, poison: 0.75, bleed: 0.90 },
   [EnemyType.MONGOL_SHAMAN]:     { melee: 0, ranged: 0.55, slow: 0.4, burn: 0, poison: 0, bleed: 0 },
   [EnemyType.MONGOL_CAPTAIN]:    { melee: 0.6, ranged: 0, slow: 0.3, burn: 0.75, poison: 0.55, bleed: 0.60, divine: 0 },

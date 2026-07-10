@@ -392,6 +392,57 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     }
   });
 
+  it('keeps high-immunity late-wave non-elites low-health and killable', () => {
+    const waves = require('../src/data/waves.json');
+    const lateTypes = new Set<string>();
+    for (const wave of waves.filter((w: any) => w.wave >= 16 && w.wave <= 30)) {
+      for (const spawn of wave.spawns ?? []) lateTypes.add(spawn.type);
+    }
+
+    const damageBlockingFlags = [
+      'meleeImmune',
+      'rangedImmune',
+      'siegeImmune',
+      'divineImmune',
+      'dotImmune',
+      'immuneFire',
+      'immunePoison'
+    ];
+
+    for (const type of lateTypes) {
+      const def: any = (enemiesData as any)[type];
+      if (!def || def.isBoss || def.isElite) continue;
+      const immunityCount = damageBlockingFlags.filter(flag => def[flag] === true).length;
+      if (immunityCount < 4) continue;
+
+      expect(def.baseHp, `${type} has ${immunityCount} damage-blocking immunities, so base HP must stay modest`).toBeLessThanOrEqual(650);
+
+      const enemy = makeEnemy(type as EnemyType, def.faction as EnemyFaction);
+      enemy.isFlyer = !!def.isFlyer;
+      expect(
+        hasDirectDamageAnswer(enemy, [
+          DamageType.PHYS_MELEE,
+          DamageType.PHYS_RANGED,
+          DamageType.SIEGE,
+          DamageType.ELEMENTAL_FIRE,
+          DamageType.DIVINE
+        ]),
+        `${type} should still have a direct damage answer`
+      ).toBe(true);
+    }
+
+    expect((enemiesData as any).MONGOL_BERSERKER.baseHp).toBe(560);
+    expect((enemiesData as any).ANUBIS_PRIEST.baseHp).toBe(650);
+    expect((enemiesData as any).ANUBIS_PRIEST_COMMANDER.baseHp).toBe(2700);
+
+    const berserker = makeEnemy(EnemyType.MONGOL_BERSERKER, EnemyFaction.MONGOLS);
+    expect(enemyDamageMultiplier(berserker, DamageType.PHYS_MELEE)).toBeGreaterThan(0.75);
+    expect(enemyDamageMultiplier(berserker, DamageType.PHYS_RANGED)).toBeGreaterThan(0.85);
+    expect(enemyDamageMultiplier(berserker, DamageType.SIEGE)).toBe(0);
+    expect(enemyDamageMultiplier(berserker, DamageType.ELEMENTAL_FIRE)).toBe(0);
+    expect(enemyDamageMultiplier(berserker, DamageType.DIVINE)).toBe(0);
+  });
+
   it('makes ocean giants immune to fire, burn, and hellfire', () => {
     const oceanTypes = [
       EnemyType.SEA_GIANT,
