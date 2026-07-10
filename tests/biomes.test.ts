@@ -335,3 +335,36 @@ describe('Cave battlefield remains props', () => {
     expect(source).toContain('y: caveCy');
   });
 });
+
+describe('Stone trail skeleton props', () => {
+  it('registers transparent path skeleton sprites and ties placement to the immutable trail', async () => {
+    const sharp = require('sharp');
+    const expected = [
+      ['MAP_PATH_SKELETON_BODY', 'map_overhaul/m_path_skeleton_body.png'],
+      ['MAP_PATH_SKELETON_SCATTER', 'map_overhaul/m_path_skeleton_scatter.png']
+    ] as const;
+
+    for (const [key, fileName] of expected) {
+      const file = assetFileFor(key);
+      expect(file).toBe(fileName);
+      const full = path.join(__dirname, '../public/assets/sprites', file!);
+      expect(fs.existsSync(full)).toBe(true);
+      const img = sharp(full);
+      const meta = await img.metadata();
+      expect(meta.width).toBe(128);
+      expect(meta.height).toBe(128);
+      expect(meta.hasAlpha).toBe(true);
+
+      const raw = await img.ensureAlpha().raw().toBuffer();
+      const corners = [3, (128 - 1) * 4 + 3, ((128 - 1) * 128) * 4 + 3, ((128 * 128) - 1) * 4 + 3].map(i => raw[i]);
+      expect(Math.max(...corners), `${key} transparent corners`).toBeLessThanOrEqual(8);
+    }
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain('const pathSkeletonLayer');
+    expect(source).toContain('const pathSkeletonCandidates = terrainPath.filter');
+    expect(source).toContain('pathSet.has(`${t.col},${t.row}`)');
+    expect(source).toContain('const PATH_SKELETONS');
+    for (const [key] of expected) expect(source).toContain(`key: '${key}'`);
+  });
+});

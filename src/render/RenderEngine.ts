@@ -3250,6 +3250,51 @@ export class RenderEngine {
     }
     this.layers.bg.addChild(cobbleGfx);
 
+    const pathSkeletonLayer = new Container();
+    const pathSkeletonCandidates = terrainPath.filter((t, idx) => {
+      if (idx < 5 || idx > terrainPath.length - 6) return false;
+      return pathSet.has(`${t.col},${t.row}`);
+    });
+    const usedPathSkeletonTiles = new Set<string>();
+    const PATH_SKELETONS: Array<{
+      at: number;
+      key: string;
+      scale: number;
+      rotation: number;
+      xOffset: number;
+      yOffset: number;
+      alpha: number;
+    }> = [
+      { at: 0.07, key: 'MAP_PATH_SKELETON_BODY', scale: 1.08, rotation: -0.20, xOffset: -2, yOffset: 1, alpha: 0.90 },
+      { at: 0.18, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.94, rotation: 0.18, xOffset: 2, yOffset: -1, alpha: 0.86 },
+      { at: 0.30, key: 'MAP_PATH_SKELETON_BODY', scale: 0.98, rotation: 0.32, xOffset: 1, yOffset: 2, alpha: 0.86 },
+      { at: 0.43, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.90, rotation: -0.28, xOffset: -1, yOffset: -2, alpha: 0.84 },
+      { at: 0.56, key: 'MAP_PATH_SKELETON_BODY', scale: 1.00, rotation: -0.48, xOffset: 2, yOffset: 1, alpha: 0.86 },
+      { at: 0.68, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.92, rotation: 0.44, xOffset: -2, yOffset: 2, alpha: 0.84 },
+      { at: 0.81, key: 'MAP_PATH_SKELETON_BODY', scale: 0.94, rotation: 0.14, xOffset: 1, yOffset: -2, alpha: 0.84 },
+      { at: 0.92, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.88, rotation: -0.16, xOffset: -1, yOffset: 1, alpha: 0.82 }
+    ];
+    for (const marker of PATH_SKELETONS) {
+      if (pathSkeletonCandidates.length === 0) break;
+      const idx = Math.min(pathSkeletonCandidates.length - 1, Math.max(0, Math.round(marker.at * (pathSkeletonCandidates.length - 1))));
+      const t = pathSkeletonCandidates[idx];
+      const tileKey = `${t.col},${t.row}`;
+      if (usedPathSkeletonTiles.has(tileKey)) continue;
+      usedPathSkeletonTiles.add(tileKey);
+      const skeletonTex = tex(marker.key);
+      if (!skeletonTex) continue;
+      const sp = new Sprite(skeletonTex);
+      sp.anchor.set(0.5);
+      sp.x = t.col * GRID.TILE + GRID.TILE / 2 + marker.xOffset;
+      sp.y = t.row * GRID.TILE + GRID.TILE / 2 + marker.yOffset;
+      sp.width = GRID.TILE * marker.scale;
+      sp.height = GRID.TILE * marker.scale;
+      sp.rotation = marker.rotation;
+      sp.alpha = marker.alpha;
+      pathSkeletonLayer.addChild(sp);
+    }
+    this.layers.bg.addChild(pathSkeletonLayer);
+
     // 2026-05-21 — STATIC BATTLE DEBRIS (visual overhaul phase V2).
     // Curated corpse / blood / weapon sprites pre-placed at hand-
     // anchored coordinates near the path. Adds "this gate has been
