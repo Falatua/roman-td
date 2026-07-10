@@ -1395,8 +1395,9 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(source).toContain('rtd-tower-menu-scroll-body');
     expect(source).toContain("'overflow-y:auto'");
     expect(source).toContain("'flex:1'");
-    expect(source).toContain("panel.style.maxHeight = 'calc(100vh - 16px)'");
-    expect(source).toContain("panel.style.height = 'min(960px, calc(100vh - 16px))'");
+    expect(source).toContain('TOWER_INSPECT_PANEL_MAX_HEIGHT_PX = 1152');
+    expect(source).toContain("panel.style.maxHeight = 'calc(100vh - 8px)'");
+    expect(source).toContain('calc(100vh - 8px)');
     expect(source).toContain("bodySelector: '.rtd-tower-menu-collapse'");
   });
 
