@@ -2962,6 +2962,24 @@ export class RenderEngine {
       layer.addChild(sp);
       return true;
     };
+    const oceanBorderFillTiles = new Set<string>();
+    for (let r = WATER_ZONE.row; r < WATER_ZONE.row + WATER_ZONE.height; r++) {
+      if (visuallyWater(WATER_ZONE.col, r)) oceanBorderFillTiles.add(`0,${r}`);
+    }
+    const bottomBorderRow = GRID.ROWS - 1;
+    const bottomWaterRow = WATER_ZONE.row + WATER_ZONE.height - 1;
+    for (let c = WATER_ZONE.col; c < WATER_ZONE.col + WATER_ZONE.width; c++) {
+      if (visuallyWater(c, bottomWaterRow)) oceanBorderFillTiles.add(`${c},${bottomBorderRow}`);
+    }
+    if (oceanBorderFillTiles.size > 0) oceanBorderFillTiles.add(`0,${bottomBorderRow}`);
+    for (const key of oceanBorderFillTiles) {
+      const [c, r] = key.split(',').map(Number);
+      const h = hash(c, r, 74011);
+      const waterKey = (h % 100) < 70 ? 'OCEAN_DEEP_A' : 'OCEAN_DEEP_B';
+      if (!addTileSprite(oceanLayer, waterKey, c * GRID.TILE, r * GRID.TILE, 1)) {
+        waterGfx.beginFill((h % 2) === 0 ? 0x0b2540 : 0x0f3150, 1).drawRect(c * GRID.TILE, r * GRID.TILE, GRID.TILE, GRID.TILE).endFill();
+      }
+    }
     const waterProximity = (col: number, row: number, maxTiles = 2): number => {
       let best = Infinity;
       for (let dr = -maxTiles; dr <= maxTiles; dr++) {
@@ -3247,6 +3265,17 @@ export class RenderEngine {
       shipwreck.height = GRID.TILE * 3.375;
       shipwreck.alpha = 0.96;
       coastalDetailLayer.addChild(shipwreck);
+    }
+    const tinyShipwreckTex = tex('OCEAN_TINY_SHIPWRECK');
+    if (tinyShipwreckTex) {
+      const tinyShipwreck = new Sprite(tinyShipwreckTex);
+      tinyShipwreck.x = (WATER_ZONE.col + 4.85) * GRID.TILE;
+      tinyShipwreck.y = (WATER_ZONE.row + WATER_ZONE.height - 2.72) * GRID.TILE;
+      tinyShipwreck.width = GRID.TILE * 2.7;
+      tinyShipwreck.height = tinyShipwreck.width * (tinyShipwreckTex.height / Math.max(1, tinyShipwreckTex.width));
+      tinyShipwreck.alpha = 0.94;
+      tinyShipwreck.rotation = -0.08;
+      coastalDetailLayer.addChild(tinyShipwreck);
     }
     // Sprite-water dressing in the bottom-left reserve. Drawn above terrain
     // and below all gameplay layers, so the cove gains life without hiding towers.

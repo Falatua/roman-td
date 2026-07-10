@@ -663,6 +663,7 @@ const MANIFEST: Record<string, string> = {
   OCEAN_SHORE_SKULLS_B: 'm_ocean_shore_skulls_b.png',
   OCEAN_SHORE_SKULLS_C: 'm_ocean_shore_skulls_c.png',
   OCEAN_SHIPWRECK: 'm_ocean_shipwreck.png',
+  OCEAN_TINY_SHIPWRECK: 'map_overhaul/m_ocean_tiny_shipwreck.png',
   // Decorative props — sprinkled atop grass tiles
   DP_MILESTONE: 'dp_milestone.png',
   DP_URN: 'dp_urn.png',

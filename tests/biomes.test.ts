@@ -228,7 +228,7 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_FOAM_BITS', 'OCEAN_SHORE_WET_ROCKS',
     'OCEAN_SHORE_ITALY_ROCKS_A', 'OCEAN_SHORE_ITALY_ROCKS_B', 'OCEAN_SHORE_ITALY_ROCKS_C',
     'OCEAN_SHORE_SKULLS_A', 'OCEAN_SHORE_SKULLS_B', 'OCEAN_SHORE_SKULLS_C',
-    'OCEAN_SHIPWRECK'
+    'OCEAN_SHIPWRECK', 'OCEAN_TINY_SHIPWRECK'
   ];
 
   it('registers every ocean tile used by RenderEngine', () => {
@@ -252,6 +252,9 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
       if (key === 'OCEAN_SHIPWRECK') {
         expect(meta.width, `${key} width`).toBe(160);
         expect(meta.height, `${key} height`).toBe(120);
+      } else if (key === 'OCEAN_TINY_SHIPWRECK') {
+        expect(meta.width, `${key} width`).toBe(128);
+        expect(meta.height, `${key} height`).toBe(96);
       } else if (key === 'OCEAN_SEA_GIANT_HEAD') {
         expect(meta.width, `${key} width`).toBe(160);
         expect(meta.height, `${key} height`).toBe(160);
@@ -303,6 +306,11 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     expect(source).toContain('alphaPulse');
     expect(source).toContain('bobSpeed');
     expect(source).toContain('rotationAmp');
+    expect(source).toContain('const oceanBorderFillTiles');
+    expect(source).toContain('oceanBorderFillTiles.add(`0,${r}`)');
+    expect(source).toContain('oceanBorderFillTiles.add(`${c},${bottomBorderRow}`)');
+    expect(source).toContain("tex('OCEAN_TINY_SHIPWRECK')");
+    expect(source).toContain('tinyShipwreck.rotation = -0.08');
     expect(source).toContain('waterProximity(c, r, 2)');
     expect(source).toContain('t === TileType.EMPTY');
   });
