@@ -3628,6 +3628,17 @@ export class RenderEngine {
       sp.alpha = 0.96;
       cornerLayer.addChild(sp);
     }
+    const topDragonTex = tex('MAP_TOP_UNDEAD_DRAGON_AFTERMATH');
+    if (topDragonTex) {
+      const topDragon = new Sprite(topDragonTex);
+      topDragon.anchor.set(0.5);
+      topDragon.x = GRID.CANVAS_W / 2;
+      topDragon.y = GRID.TILE * 1.30;
+      topDragon.width = GRID.TILE * 11.0;
+      topDragon.height = topDragon.width * (topDragonTex.height / Math.max(1, topDragonTex.width));
+      topDragon.alpha = 0.97;
+      cornerLayer.addChild(topDragon);
+    }
     this.layers.bg.addChild(cornerLayer);
 
     // GHOST PATH — the immutable brown stripe showing the unblocked enemy

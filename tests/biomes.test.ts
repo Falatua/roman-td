@@ -331,6 +331,42 @@ describe('Top-right Cyclops trophy prop', () => {
   });
 });
 
+describe('Top-border undead dragon aftermath prop', () => {
+  it('registers a wide transparent sprite and anchors it at the top center border', async () => {
+    const sharp = require('sharp');
+    const file = assetFileFor('MAP_TOP_UNDEAD_DRAGON_AFTERMATH');
+    expect(file).toBe('map_overhaul/m_top_undead_dragon_aftermath.png');
+
+    const full = path.join(__dirname, '../public/assets/sprites', file!);
+    expect(fs.existsSync(full)).toBe(true);
+    const img = sharp(full);
+    const meta = await img.metadata();
+    expect(meta.width).toBe(384);
+    expect(meta.height).toBe(153);
+    expect(meta.hasAlpha).toBe(true);
+
+    const raw = await img.ensureAlpha().raw().toBuffer();
+    let transparent = 0;
+    let magenta = 0;
+    for (let i = 0; i < raw.length; i += 4) {
+      const r = raw[i];
+      const g = raw[i + 1];
+      const b = raw[i + 2];
+      const a = raw[i + 3];
+      if (a < 8) transparent++;
+      if (a > 8 && r > 210 && b > 200 && g < 70) magenta++;
+    }
+    expect(transparent).toBeGreaterThan(384 * 153 * 0.35);
+    expect(magenta).toBe(0);
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain("tex('MAP_TOP_UNDEAD_DRAGON_AFTERMATH')");
+    expect(source).toContain('topDragon.x = GRID.CANVAS_W / 2');
+    expect(source).toContain('topDragon.y = GRID.TILE * 1.30');
+    expect(source).toContain('topDragon.width = GRID.TILE * 11.0');
+  });
+});
+
 describe('Cave battlefield remains props', () => {
   it('registers transparent authored sprites and anchors them around the main cave', async () => {
     const sharp = require('sharp');
