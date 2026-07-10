@@ -3376,14 +3376,24 @@ export class RenderEngine {
     // (1.5 tiles instead of 1). Bottom-left cluster — 4 pieces with
     // the bigger SPQR-banner shrines as the focal anchors.
     const cornerLayer = new Container();
-    type CornerAnchor = { col: number; row: number; key: string; scale: number };
+    type CornerAnchor = {
+      col: number;
+      row: number;
+      key: string;
+      scale: number;
+      xOffset?: number;
+      yOffset?: number;
+    };
     const CORNERS: CornerAnchor[] = [
       // Top-right corner (rows 0-3, cols 33-37)
       { col: 35, row: 1,  key: 'MAP_CORNER_SHRINE_B3', scale: 1.7 },     // skull-on-laurel SPQR banner
       { col: 33, row: 2,  key: 'MAP_CORNER_SHRINE_A4', scale: 1.4 },     // ornate column
       { col: 36, row: 3,  key: 'MAP_CORNER_SHRINE_A6', scale: 1.3 },     // SPQR banner column
       { col: 34, row: 4,  key: 'MAP_CORNER_SHRINE_B1', scale: 1.3 },     // ruined arch
-      { col: 36, row: 0,  key: 'MAP_CORNER_SHRINE_A2', scale: 1.2 }      // small column
+      { col: 36, row: 0,  key: 'MAP_CORNER_SHRINE_A2', scale: 1.2 },     // small column
+      // Bloody Cyclops trophy: anchored to the immutable top border, then
+      // nudged inward so world zoom never clips its face or blood pool.
+      { col: 36, row: 0, key: 'MAP_CYCLOPS_SEVERED_HEAD', scale: 2.85, xOffset: -24, yOffset: 144 }
     ];
     for (const anchor of CORNERS) {
       const cTex = tex(anchor.key);
@@ -3395,8 +3405,8 @@ export class RenderEngine {
       if (tile === TileType.EMPTY) continue;
       const sp = new Sprite(cTex);
       sp.anchor.set(0.5);
-      sp.x = anchor.col * GRID.TILE + GRID.TILE / 2;
-      sp.y = anchor.row * GRID.TILE + GRID.TILE / 2;
+      sp.x = anchor.col * GRID.TILE + GRID.TILE / 2 + (anchor.xOffset ?? 0);
+      sp.y = anchor.row * GRID.TILE + GRID.TILE / 2 + (anchor.yOffset ?? 0);
       const sz = GRID.TILE * anchor.scale;
       sp.width = sz; sp.height = sz;
       sp.alpha = 0.96;

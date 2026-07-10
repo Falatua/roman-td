@@ -276,3 +276,27 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     expect(source).toContain('t === TileType.EMPTY');
   });
 });
+
+describe('Top-right Cyclops trophy prop', () => {
+  it('registers a transparent authored sprite and anchors it to the top border', async () => {
+    const sharp = require('sharp');
+    const file = assetFileFor('MAP_CYCLOPS_SEVERED_HEAD');
+    expect(file).toBe('m_cyclops_severed_head.png');
+
+    const full = path.join(__dirname, '../public/assets/sprites', file!);
+    expect(fs.existsSync(full)).toBe(true);
+    const img = sharp(full);
+    const meta = await img.metadata();
+    expect(meta.width).toBe(192);
+    expect(meta.height).toBe(192);
+    expect(meta.hasAlpha).toBe(true);
+
+    const raw = await img.ensureAlpha().raw().toBuffer();
+    let transparent = 0;
+    for (let i = 3; i < raw.length; i += 4) if (raw[i] < 8) transparent++;
+    expect(transparent).toBeGreaterThan(192 * 192 * 0.35);
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain("{ col: 36, row: 0, key: 'MAP_CYCLOPS_SEVERED_HEAD'");
+  });
+});
