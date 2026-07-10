@@ -138,6 +138,22 @@ export function comboResultLocationChoices(state: GameStateShape, combo: Availab
   return out;
 }
 
+export function comboIngredientGlowIds(
+  state: GameStateShape,
+  combos: AvailableCombo[] = realizableCombos(state),
+  options: { includePending?: boolean } = {}
+): Set<string> {
+  const includePending = options.includePending ?? true;
+  const ids = new Set<string>();
+  for (const combo of combos) {
+    for (const tower of comboResultLocationChoices(state, combo)) {
+      if (!includePending && tower.pending) continue;
+      ids.add(tower.id);
+    }
+  }
+  return ids;
+}
+
 // Find all recipes whose ingredients are present on the map.
 // Greedy: a tower is consumed by at most one suggested recipe per scan.
 // Includes BOTH cross-unit recipes AND same-tier 3-of-a-kind merges.

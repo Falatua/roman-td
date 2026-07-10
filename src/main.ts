@@ -22,7 +22,7 @@ import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } 
 import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
 import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAuraTileKind, towerStatBreakdown } from './systems/TowerSystem';
-import { scanCombos, realizableCombos, executeCombo, resolveComboChoice } from './systems/CombinationEngine';
+import { scanCombos, realizableCombos, executeCombo, resolveComboChoice, comboIngredientGlowIds } from './systems/CombinationEngine';
 // SANDBOX: dev-mode imports. Delete this line + every line tagged
 // `// SANDBOX:` to remove sandbox mode entirely.
 import { activateSandbox, sandboxAddGold, sandboxAllTowerOptions, sandboxSpawnTowerDirect, sandboxResetForWave, sandboxJumpToEndless, sandboxWipeAllTowers, sandboxArmTestYourMight, SANDBOX_PASSWORD } from './systems/SandboxMode';
@@ -8573,8 +8573,7 @@ async function boot() {
       if (combos.some(cb => cb.result === TowerType.MARS_VICTOR)) {
         offerMarsVictorIfReady(stageWrap);
       }
-      const eligibleIds = new Set<string>();
-      for (const cb of combos) for (const ing of cb.ingredients) eligibleIds.add(ing.id);
+      const eligibleIds = comboIngredientGlowIds(state, combos, { includePending: false });
       renderer.drawComboGlow(eligibleIds, state, state.tick);
     } else {
       renderer.drawComboGlow(new Set(), state, state.tick);

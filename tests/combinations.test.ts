@@ -7,6 +7,7 @@ import {
   realizableCombos,
   executeCombo,
   comboResultLocationChoices,
+  comboIngredientGlowIds,
   purchaseCompletesRecipe,
   purchaseRecipeHints
 } from '../src/systems/CombinationEngine';
@@ -77,6 +78,20 @@ describe('Same-tier merge detection', () => {
     expect(result?.tileX).toBe(8);
     expect(result?.tileY).toBe(8);
     expect(s.towers.size).toBe(2);
+  });
+
+  it('glows every matching tower that could participate in a same-tier merge', () => {
+    const s = bootstrapState();
+    const towers = [
+      placeTower(s, TowerType.MILITES, 1, 5, 5),
+      placeTower(s, TowerType.MILITES, 1, 5, 6),
+      placeTower(s, TowerType.MILITES, 1, 5, 7),
+      placeTower(s, TowerType.MILITES, 1, 8, 8)
+    ];
+
+    const merge = realizableCombos(s).find(c => c.isSameTierMerge && c.result === TowerType.MILITES)!;
+    expect(merge.ingredients).toHaveLength(3);
+    expect(comboIngredientGlowIds(s, [merge])).toEqual(new Set(towers.map(t => t.id)));
   });
 
   it('does NOT trigger merge with only 2 of a kind', () => {
@@ -307,6 +322,19 @@ describe('Recipe combo detection', () => {
     const combos = scanCombos(s);
     const siege = combos.find(c => c.result === TowerType.SIEGE_ONAGER && !c.isSameTierMerge);
     expect(siege).toBeTruthy();
+  });
+
+  it('glows every duplicate ingredient candidate for a recipe combo', () => {
+    const s = bootstrapState();
+    const scorpios = [
+      placeTower(s, TowerType.SCORPIO, 3, 5, 5),
+      placeTower(s, TowerType.SCORPIO, 3, 5, 6),
+      placeTower(s, TowerType.SCORPIO, 3, 5, 7)
+    ];
+
+    const siege = realizableCombos(s).find(c => c.result === TowerType.SIEGE_ONAGER && !c.isSameTierMerge)!;
+    expect(siege.ingredients).toHaveLength(2);
+    expect(comboIngredientGlowIds(s, [siege])).toEqual(new Set(scorpios.map(t => t.id)));
   });
 
   it('keeps Julius Caesar craftable with T4 Legate and T4 Primus Pilus', () => {
