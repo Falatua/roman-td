@@ -3127,34 +3127,61 @@ export class RenderEngine {
     }
     // Sprite-water dressing in the bottom-left reserve. Drawn above terrain
     // and below all gameplay layers, so the cove gains life without hiding towers.
-    const waterDetail = [
+    const waterDetail: Array<{
+      col: number;
+      row: number;
+      key: string;
+      terrain: 'water';
+      width?: number;
+      height?: number;
+      alpha?: number;
+      xOffset?: number;
+      yOffset?: number;
+      living?: boolean;
+      ampX?: number;
+      ampY?: number;
+    }> = [
       { col: WATER_ZONE.col + 1, row: WATER_ZONE.row + 8, key: 'OCEAN_ROCK', terrain: 'water' },
       { col: WATER_ZONE.col + 5, row: WATER_ZONE.row + 6, key: 'OCEAN_CORAL', terrain: 'water' },
       { col: WATER_ZONE.col + 7, row: WATER_ZONE.row + 2, key: 'OCEAN_KELP', terrain: 'water' },
       { col: WATER_ZONE.col + 9, row: WATER_ZONE.row + 4, key: 'OCEAN_FISH', terrain: 'water' },
-      { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 1, key: 'OCEAN_FISH', terrain: 'water' }
+      { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 1, key: 'OCEAN_FISH', terrain: 'water' },
+      {
+        col: WATER_ZONE.col + 7,
+        row: WATER_ZONE.row + WATER_ZONE.height - 6,
+        key: 'OCEAN_SEA_GIANT_HEAD',
+        terrain: 'water',
+        width: GRID.TILE * 2.85,
+        height: GRID.TILE * 2.85,
+        alpha: 0.98,
+        yOffset: -GRID.TILE * 0.35,
+        living: true,
+        ampX: 0.2,
+        ampY: 0.45
+      }
     ];
     for (const d of waterDetail) {
-      const x = d.col * GRID.TILE;
-      const y = d.row * GRID.TILE;
+      const x = d.col * GRID.TILE + (d.xOffset ?? 0);
+      const y = d.row * GRID.TILE + (d.yOffset ?? 0);
       const tile = state.tiles[d.row]?.[d.col];
       if (d.terrain === 'water' && tile !== TileType.WATER) continue;
       const detailTex = tex(d.key);
       if (!detailTex) continue;
       const sp = new Sprite(detailTex);
       sp.x = x; sp.y = y;
-      sp.width = GRID.TILE; sp.height = GRID.TILE;
-      sp.alpha = d.key === 'OCEAN_FISH' ? 0.78 : 0.95;
+      sp.width = d.width ?? GRID.TILE;
+      sp.height = d.height ?? GRID.TILE;
+      sp.alpha = d.alpha ?? (d.key === 'OCEAN_FISH' ? 0.78 : 0.95);
       coastalDetailLayer.addChild(sp);
-      if (d.key === 'OCEAN_FISH' || d.key === 'OCEAN_KELP' || d.key === 'OCEAN_CORAL') {
+      if (d.living || d.key === 'OCEAN_FISH' || d.key === 'OCEAN_KELP' || d.key === 'OCEAN_CORAL') {
         this.oceanLivingSprites.push({
           sp,
           baseX: x,
           baseY: y,
           baseAlpha: sp.alpha,
           phase: (d.col * 0.73 + d.row * 1.11) % 6.28,
-          ampX: d.key === 'OCEAN_FISH' ? 1.6 : 0.6,
-          ampY: d.key === 'OCEAN_FISH' ? 1.0 : 0.45
+          ampX: d.ampX ?? (d.key === 'OCEAN_FISH' ? 1.6 : 0.6),
+          ampY: d.ampY ?? (d.key === 'OCEAN_FISH' ? 1.0 : 0.45)
         });
       }
     }

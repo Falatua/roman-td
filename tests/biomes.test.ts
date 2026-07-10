@@ -221,7 +221,7 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
   const oceanKeys = [
     'OCEAN_DEEP_A', 'OCEAN_DEEP_B', 'OCEAN_MID_A', 'OCEAN_MID_B', 'OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B',
     'OCEAN_FOAM_N', 'OCEAN_FOAM_E', 'OCEAN_FOAM_S', 'OCEAN_FOAM_W',
-    'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK',
+    'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK', 'OCEAN_SEA_GIANT_HEAD',
     'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH', 'OCEAN_SHORE_PEBBLES',
     'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_FOAM_BITS', 'OCEAN_SHORE_WET_ROCKS',
     'OCEAN_SHORE_ITALY_ROCKS_A', 'OCEAN_SHORE_ITALY_ROCKS_B', 'OCEAN_SHORE_ITALY_ROCKS_C',
@@ -237,7 +237,7 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     const sharp = require('sharp');
     const transparentOverlayKeys = oceanKeys.filter(key =>
       key.includes('FOAM') || key.includes('KELP') || key.includes('CORAL') || key.includes('FISH') ||
-      key.includes('ROCK') || key.includes('SHORE') || key.includes('SHIPWRECK')
+      key.includes('ROCK') || key.includes('SHORE') || key.includes('SHIPWRECK') || key.includes('HEAD')
     );
     for (const key of oceanKeys) {
       const file = assetFileFor(key);
@@ -249,6 +249,9 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
       if (key === 'OCEAN_SHIPWRECK') {
         expect(meta.width, `${key} width`).toBe(160);
         expect(meta.height, `${key} height`).toBe(120);
+      } else if (key === 'OCEAN_SEA_GIANT_HEAD') {
+        expect(meta.width, `${key} width`).toBe(160);
+        expect(meta.height, `${key} height`).toBe(160);
       } else {
         expect(meta.width, `${key} width`).toBe(32);
         expect(meta.height, `${key} height`).toBe(32);
