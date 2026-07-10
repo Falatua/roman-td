@@ -123,6 +123,8 @@ function meleeSlashTintFor(towerType: TowerType | string): number | undefined {
       return 0xc89cff;                          // apex divine-purple
     case TowerType.GOD_OF_WAR:
       return 0xff7733;                          // hellfire orange-red
+    case TowerType.UNDEAD_GLADIATOR_KING:
+      return 0x75ff66;                          // necromantic arena green
     default:
       if (heroId === 'HERO_CAESAR') return 0xffd34d;
       return undefined;                         // PHYS_MELEE default
@@ -5054,7 +5056,7 @@ async function boot() {
     const sx = t.tileX * GRID.TILE + GRID.TILE / 2;
     const sy = t.tileY * GRID.TILE + GRID.TILE / 2;
     const angle = Math.atan2(e.y - sy, e.x - sx);
-    const HEAVY = new Set(['PRIMUS_PILUS','TRIARIUS','CENTURION','COHORT_GUARD','GIANTS_COHORT_GUARD','PRAETORIAN_WALL','IMPERATOR_GUARD','EVOCATUS','CATAPHRACT','HORSEMAN']);
+    const HEAVY = new Set(['PRIMUS_PILUS','TRIARIUS','CENTURION','COHORT_GUARD','GIANTS_COHORT_GUARD','UNDEAD_GLADIATOR_KING','PRAETORIAN_WALL','IMPERATOR_GUARD','EVOCATUS','CATAPHRACT','HORSEMAN']);
     const isHero = !!t.isHero;
     const size = isHero ? 2.2 : (HEAVY.has(t.type) ? 1.5 : 1.0);
     const cleaver = hasCleave(t);

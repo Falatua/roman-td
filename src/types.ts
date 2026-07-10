@@ -163,6 +163,7 @@ export enum TowerType {
   MARS_TIDAL_BASTION = 'MARS_TIDAL_BASTION',
   GIANT_KILLER = 'GIANT_KILLER',
   GIANTS_COHORT_GUARD = 'GIANTS_COHORT_GUARD',
+  UNDEAD_GLADIATOR_KING = 'UNDEAD_GLADIATOR_KING',
   // 2026 v2 spec Ch9 — Mars Victor: DIVINE apex super-tower (fusion of
   // Imperium Eternum + Legion Prime). Engine-faithful read of the spec's
   // "6-hero combo" — activeHeroId is singular, so 6 literal heroes can't be

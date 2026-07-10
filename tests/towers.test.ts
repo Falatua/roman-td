@@ -1,8 +1,8 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
-import { canTransformWithGiantsBane, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, transformWithGiantsBane } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat } from '../src/systems/CombatResolver';
+import { canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, transformWithGiantsBane, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
+import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -782,6 +782,77 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(towerItemSlotCap(cohort)).toBe(4);
     expect(cohort.builtFrom).toContain(TowerType.COHORT_GUARD);
     expect(towerEffectiveStats(cohort).dps).toBeGreaterThan(cohortBefore.dps * 4);
+  });
+
+  it('transforms only legal Tier IV+ Witch\'s Brew Murmillo carriers and opens four total slots', () => {
+    const lowMurmillo = createTower(TowerType.MURMILLO, 3, 4, 4, 0);
+    lowMurmillo.equippedItems.push(WITCHS_BREW_ITEM_ID);
+    expect(canTransformWithWitchsBrew(lowMurmillo)).toBe(false);
+    expect(transformWithWitchsBrew(lowMurmillo)).toBe(false);
+    expect(lowMurmillo.type).toBe(TowerType.MURMILLO);
+
+    const wrongTower = createTower(TowerType.COHORT_GUARD, 4, 4, 4, 0);
+    wrongTower.equippedItems.push(WITCHS_BREW_ITEM_ID);
+    expect(canTransformWithWitchsBrew(wrongTower)).toBe(false);
+    expect(transformWithWitchsBrew(wrongTower)).toBe(false);
+    expect(wrongTower.type).toBe(TowerType.COHORT_GUARD);
+
+    const murmillo = createTower(TowerType.MURMILLO, 4, 6, 6, 0);
+    murmillo.equippedItems.push('SHARPENED_BLADE', WITCHS_BREW_ITEM_ID);
+    murmillo.equippedItemRarities = ['COMMON', 'LEGENDARY'];
+    const before = towerEffectiveStats(murmillo);
+
+    expect(canTransformWithWitchsBrew(murmillo)).toBe(true);
+    expect(transformWithWitchsBrew(murmillo)).toBe(true);
+    expect(murmillo.type).toBe(TowerType.UNDEAD_GLADIATOR_KING);
+    expect(murmillo.equippedItems).toContain(WITCHS_BREW_ITEM_ID);
+    expect(murmillo.equippedItemRarities).toEqual(['COMMON', 'LEGENDARY']);
+    expect(towerItemSlotCap(murmillo)).toBe(4);
+    expect(murmillo.builtFrom).toContain(TowerType.MURMILLO);
+    expect(towerEffectiveStats(murmillo).dps).toBeGreaterThan(before.dps * 1.8);
+  });
+
+  it('Undead Gladiator King raises timed melee summons that damage and slow enemies', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    state.wave = 14;
+    state.tick = 100;
+    const tower = createTower(TowerType.UNDEAD_GLADIATOR_KING, 5, 4, 4, 0);
+    tower.attackCooldown = 999;
+    state.towers.set(tower.id, tower);
+    const c = towerCenter(tower);
+    const target = testEnemy('king-summon-target', c.x + GRID.TILE * 1.2, c.y);
+    target.hp = 5000;
+    target.maxHp = 5000;
+    state.enemies.set(target.id, target);
+    let hitDamage = 0;
+    const hooks = {
+      ...noopCombatHooks(),
+      onHit: (src: any, _enemy: any, dmg: number) => {
+        if (src.id === tower.id) hitDamage += dmg;
+      }
+    };
+
+    tickCombat(state, 0.016, hooks);
+    state.tick += 0.4;
+    tickCombat(state, 0.4, hooks);
+    expect((state as any).__undeadGladiators).toHaveLength(UNDEAD_GLADIATOR_KING_SUMMON_COUNT);
+    expect((tower as any).__nextUndeadKingSummonTick).toBeCloseTo(state.tick + UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, 4);
+
+    const hpAfterSpawn = target.hp;
+    for (let i = 0; i < 90; i++) {
+      state.tick += 0.05;
+      tickCombat(state, 0.05, hooks);
+    }
+
+    expect(target.hp).toBeLessThan(hpAfterSpawn);
+    expect(hitDamage).toBeGreaterThan(0);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === UNDEAD_GLADIATOR_KING_SUMMON_SLOW)).toBe(true);
+
+    state.enemies.clear();
+    state.tick = 100.4 + UNDEAD_GLADIATOR_KING_SUMMON_TTL + 0.25;
+    tickCombat(state, 0.05, hooks);
+    expect((state as any).__undeadGladiators).toHaveLength(0);
   });
 
   it('specializes hard into giant-class enemies without becoming a universal answer', () => {

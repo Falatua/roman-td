@@ -83,6 +83,8 @@ const MANIFEST: Record<string, string> = {
   MARS_TIDAL_BASTION: 'naval/t_tideforged_mars_tidal_bastion.png',
   GIANT_KILLER: 'naval/t_tideforged_giant_killer.png',
   GIANTS_COHORT_GUARD: 't_giants_cohort_guard.png',
+  UNDEAD_GLADIATOR_KING: 't_undead_gladiator_king.png',
+  SUMMON_UNDEAD_GLADIATOR: 's_undead_gladiator.png',
   // 2026-05-17 — MURMILLO (T4 mid-game combo). Heavy Roman gladiator with
   // fish-helmet + scutum + gladius. Sliced from the user-supplied gladiator
   // roster sheet (top-left cell); chroma-keyed via the standard pipeline.
@@ -487,6 +489,7 @@ const MANIFEST: Record<string, string> = {
   ITEM_STORMGLASS_AMPHORA: 'inew_stormglass_amphora.png',
   ITEM_NEPTUNES_TRIDENT: 'inew_neptunes_trident.png',
   ITEM_GIANTS_BANE: 'inew_giants_bane.png',
+  ITEM_WITCHS_BREW: 'inew_witchs_brew.png',
   // Legacy keys preserved for backward compatibility — some are
   // referenced by event-reward modals or older tower-info panels.
   // These map to the closest-thematic new sprite so nothing breaks.

@@ -39,6 +39,7 @@ describe('Item families', () => {
     expect(itemFamily('STORMGLASS_AMPHORA')).toBe('SPECIAL');
     expect(itemFamily('NEPTUNES_TRIDENT')).toBe('SPECIAL');
     expect(itemFamily('GIANTS_BANE')).toBe('SPECIAL');
+    expect(itemFamily('WITCHS_BREW')).toBe('SPECIAL');
   });
 
   it('unknown items default to SPECIAL', () => {
@@ -270,6 +271,7 @@ describe('Loot drop rolling', () => {
     expect(coverage.legendary).toContain('CONCUSSIVE_WARHEAD');
     expect(coverage.legendary).toContain('CAPITOLINE_AEGIS');
     expect(coverage.legendary).toContain('GIANTS_BANE');
+    expect(coverage.legendary).toContain('WITCHS_BREW');
   });
 
   it('keeps event-exclusive items out of ordinary and boss RNG while still tracking them by event', () => {
@@ -411,6 +413,7 @@ describe('Merchant — Mercator stock', () => {
       const merc = buildMercatorStock();
       expect(merc.offers.some(o => o.itemId === 'NEPTUNES_TRIDENT' && o.rarity === 'LEGENDARY')).toBe(true);
       expect(merc.offers.some(o => o.itemId === 'GIANTS_BANE' && o.rarity === 'LEGENDARY')).toBe(true);
+      expect(merc.offers.some(o => o.itemId === 'WITCHS_BREW' && o.rarity === 'LEGENDARY')).toBe(true);
     } finally {
       randomSpy.mockRestore();
     }

@@ -4144,6 +4144,37 @@ export class RenderEngine {
       //  removal. Duplicate path removed in 2026-05 v11 QC.)
     }
 
+    // Undead Gladiator King summons — short-lived allied melee bodies.
+    if (!(this as any).undeadGladiatorSprites) {
+      (this as any).undeadGladiatorSprites = new Map<string, Sprite>();
+    }
+    const ugSprites = (this as any).undeadGladiatorSprites as Map<string, Sprite>;
+    const seenUndeadGladiators = new Set<string>();
+    const undeadSummons = Array.isArray((state as any).__undeadGladiators) ? (state as any).__undeadGladiators : [];
+    for (const s of undeadSummons) {
+      seenUndeadGladiators.add(s.id);
+      let sp = ugSprites.get(s.id);
+      if (!sp) {
+        sp = new Sprite(tex('SUMMON_UNDEAD_GLADIATOR') ?? undefined);
+        sp.anchor.set(0.5);
+        sp.width = GRID.TILE * 1.22;
+        sp.height = GRID.TILE * 1.22;
+        sp.alpha = 0.92;
+        ugSprites.set(s.id, sp);
+        this.layers.towers.addChild(sp);
+      }
+      sp.x = s.x;
+      sp.y = s.y + Math.sin(state.tick * 8 + s.id.length) * 1.2;
+      sp.rotation = Math.sin(state.tick * 11 + s.id.length) * 0.05;
+      sp.visible = true;
+    }
+    for (const [id, sp] of ugSprites) {
+      if (!seenUndeadGladiators.has(id)) {
+        sp.destroy();
+        ugSprites.delete(id);
+      }
+    }
+
     // Enemies
     const seenEnemyIds = new Set<string>();
     for (const e of state.enemies.values()) {

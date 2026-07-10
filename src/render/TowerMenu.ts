@@ -5,7 +5,7 @@ import { damageTypeLabel, pretty } from '../format';
 import { canDowngrade, downgradeTower } from '../systems/DowngradeSystem';
 import { earnGold } from '../systems/EconomySystem';
 import { setTile } from '../systems/GridManager';
-import { canTransformWithGiantsBane, GIANTS_BANE_ITEM_ID, isGiantsBaneTransformedTowerType, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, transformWithGiantsBane, StatModifier } from '../systems/TowerSystem';
+import { canTransformWithGiantsBane, canTransformWithWitchsBrew, GIANTS_BANE_ITEM_ID, isGiantsBaneTransformedTowerType, isWitchsBrewTransformedTowerType, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, transformWithGiantsBane, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID, StatModifier } from '../systems/TowerSystem';
 import { getTowerProjectileProfile } from '../systems/ProjectileSystem';
 import { TileType } from '../types';
 import { InventoryState, inventoryAdd, inventoryRemove, itemBuyPrice, Rarity } from '../systems/LootSystem';
@@ -502,6 +502,10 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
           state.hint = "This awakened giant tower is bound to Giant's Bane. Sell the tower if you want the relic back.";
           return;
         }
+        if (isWitchsBrewTransformedTowerType(t.type) && itemId === WITCHS_BREW_ITEM_ID) {
+          state.hint = "The Undead Gladiator King is bound to Witch's Brew. Sell the tower if you want the relic back.";
+          return;
+        }
         if (inv.slots.length >= INVENTORY_SIZE) { state.hint = 'Inventory full. Sell something first to unequip.'; return; }
         const idx = t.equippedItems.indexOf(itemId);
         if (idx >= 0) {
@@ -554,6 +558,9 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
       } else if (slot.itemId === GIANTS_BANE_ITEM_ID && !canTransformWithGiantsBane(t)) {
         blocker = "Giant's Bane only fits Tier IV or Tier V Milites or Cohort Guard.";
         blockerShort = 'T4+ ONLY';
+      } else if (slot.itemId === WITCHS_BREW_ITEM_ID && !canTransformWithWitchsBrew(t)) {
+        blocker = "Witch's Brew only fits a Tier IV or Tier V Murmillo.";
+        blockerShort = 'MURMILLO';
       } else {
         // EQUIP MODE GATE — runs before the family check so a Sagittarius
         // looking at a Barbed Gladius sees "MELEE ONLY" first, not the
@@ -602,8 +609,11 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
         t.equippedItemRarities.push(slot.rarity);
         inventoryRemove(inv, slot.id);
         const transformed = slot.itemId === GIANTS_BANE_ITEM_ID && transformWithGiantsBane(t);
+        const brewTransformed = slot.itemId === WITCHS_BREW_ITEM_ID && transformWithWitchsBrew(t);
         state.hint = transformed
           ? `Giant's Bane awakens. ${def.name ?? 'Tower'} has become ${(towersData as any)[t.type]?.name ?? t.type}.`
+          : brewTransformed
+          ? `Witch's Brew boils over. ${def.name ?? 'Tower'} has become ${(towersData as any)[t.type]?.name ?? t.type}.`
           : `Equipped ${idef?.name ?? slot.itemId}.`;
         refresh();
       };
@@ -1231,6 +1241,9 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
       } else if (slot.itemId === GIANTS_BANE_ITEM_ID) {
         blocker = "Giant's Bane only fits Tier IV or Tier V Milites or Cohort Guard.";
         blockerShort = 'T4+ ONLY';
+      } else if (slot.itemId === WITCHS_BREW_ITEM_ID) {
+        blocker = "Witch's Brew only fits a Tier IV or Tier V Murmillo.";
+        blockerShort = 'MURMILLO';
       } else {
         const modeCheck = canEquipItemOnDamageType(slot.itemId, t.damageType, t.type);
         if (!modeCheck.ok) {

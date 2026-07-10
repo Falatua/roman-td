@@ -121,7 +121,9 @@ const MERCATOR_LEGENDARY = [
   // for land towers against shipwreck-origin threats.
   'NEPTUNES_TRIDENT',
   // Milites T4-T5 transformation relic: creates the Giant Killer tower.
-  'GIANTS_BANE'
+  'GIANTS_BANE',
+  // Murmillo T4-T5 transformation relic: creates the Undead Gladiator King.
+  'WITCHS_BREW'
   // CELTIC_LONGSWORD + NECROTIC_LONGSWORD removed from this list — they
   // are now EPIC (see MERCATOR_EPIC).
 ];

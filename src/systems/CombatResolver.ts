@@ -377,6 +377,7 @@ const MELEE_TYPES = new Set<TowerType>([
   // with scutum + gladius; Punic Hunter damage bonus + Scutum Bash stun-
   // and-knockback every 4th swing. Pure melee, range 2.0.
   TowerType.MURMILLO,
+  TowerType.UNDEAD_GLADIATOR_KING,
   // 2026-06-30 — Sacred Band is authored as a DIVINE melee combo. It must
   // route through the melee branch for direct blade hits and AEGIS NOVA.
   TowerType.SACRED_BAND,
@@ -456,7 +457,7 @@ const CLEAVE_MELEE = new Set<TowerType>([
   TowerType.GIANTS_COHORT_GUARD, TowerType.PRAETORIAN_WALL, TowerType.IMPERATOR_GUARD,
   TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
   TowerType.PONTIFEX_MAXIMUS, TowerType.GLACIAL_PALISADE, TowerType.ROMAN_TRANSFORMER,
-  TowerType.NEPTUNES_LEVIATHAN
+  TowerType.NEPTUNES_LEVIATHAN, TowerType.UNDEAD_GLADIATOR_KING
 ]);
 
 // 2026-05-15 cleave/multi-shot item helpers. The FALX_BLADE item adds
@@ -542,6 +543,10 @@ const GIANT_KILLER_TARGET_TYPES = new Set<string>([
 export const GIANT_KILLER_GIANT_DAMAGE_MULT = 5.5;
 export const GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT = 4.5;
 export const GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT = 7.5;
+export const UNDEAD_GLADIATOR_KING_SUMMON_COUNT = 3;
+export const UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL = 10.0;
+export const UNDEAD_GLADIATOR_KING_SUMMON_TTL = 20.0;
+export const UNDEAD_GLADIATOR_KING_SUMMON_SLOW = 0.30;
 
 function isGiantKillerTarget(target: Enemy): boolean {
   return GIANT_KILLER_TARGET_TYPES.has(String(target.type));
@@ -554,6 +559,120 @@ function isOceanThreat(target: Enemy): boolean {
 function isHarborCarrier(t: Tower): boolean {
   const def: any = (towersData as any)[t.type];
   return !!(def?.waterOnly || def?.amphibious);
+}
+
+type UndeadGladiatorSummon = {
+  id: string;
+  sourceTowerId: string;
+  x: number;
+  y: number;
+  attackCooldown: number;
+  expiresAt: number;
+};
+
+function undeadGladiatorSummons(state: GameStateShape): UndeadGladiatorSummon[] {
+  const ref = state as any;
+  if (!Array.isArray(ref.__undeadGladiators)) ref.__undeadGladiators = [];
+  return ref.__undeadGladiators as UndeadGladiatorSummon[];
+}
+
+function pickUndeadGladiatorTarget(source: Tower, summon: UndeadGladiatorSummon, enemies: Enemy[]): Enemy | null {
+  const candidates = enemies.filter(e => e.hp > 0 && !e.isFlyer);
+  if (candidates.length === 0) return null;
+  switch (source.targetingMode) {
+    case TargetingMode.STRONG: {
+      const boss = candidates.filter(e => e.isBoss).sort((a, b) => b.hp - a.hp)[0];
+      if (boss) return boss;
+      const commander = candidates.filter(e => !!(e as any).isCommander || isCommanderType((e as any).type)).sort((a, b) => b.hp - a.hp)[0];
+      if (commander) return commander;
+      return candidates.sort((a, b) => b.hp - a.hp)[0] ?? null;
+    }
+    case TargetingMode.WEAKEST:
+      return candidates.sort((a, b) => a.hp - b.hp)[0] ?? null;
+    case TargetingMode.LAST:
+      return candidates.sort((a, b) => (a.pathIndex + a.pathProgress) - (b.pathIndex + b.pathProgress))[0] ?? null;
+    case TargetingMode.FAST:
+      return candidates.sort((a, b) => (b.currentSpeed ?? b.baseSpeed) - (a.currentSpeed ?? a.baseSpeed))[0] ?? null;
+    case TargetingMode.CASTERS: {
+      const caster = candidates.find(e => {
+        const def: any = (enemiesData as any)[e.type];
+        return String(e.archetype) === 'CASTER' || !!def?.caster || !!def?.towerSleepCaster || !!def?.auraNullifier;
+      });
+      if (caster) return caster;
+      return candidates.sort((a, b) => (b.pathIndex + b.pathProgress) - (a.pathIndex + a.pathProgress))[0] ?? null;
+    }
+    case TargetingMode.CLOSE:
+      return candidates.sort((a, b) => Math.hypot(a.x - summon.x, a.y - summon.y) - Math.hypot(b.x - summon.x, b.y - summon.y))[0] ?? null;
+    case TargetingMode.FIRST:
+    case TargetingMode.FLYERS:
+    default:
+      return candidates.sort((a, b) => (b.pathIndex + b.pathProgress) - (a.pathIndex + a.pathProgress))[0] ?? null;
+  }
+}
+
+function tickUndeadGladiatorKingSummons(state: GameStateShape, dt: number, towers: Tower[], enemies: Enemy[], hooks: CombatHooks): void {
+  const summons = undeadGladiatorSummons(state);
+  for (let i = summons.length - 1; i >= 0; i--) {
+    if (state.tick >= summons[i].expiresAt) summons.splice(i, 1);
+  }
+  if (enemies.length === 0) return;
+
+  const renderer: any = typeof globalThis !== 'undefined' ? (globalThis as any).__renderer : undefined;
+  for (const t of towers) {
+    if (t.type !== TowerType.UNDEAD_GLADIATOR_KING) continue;
+    if ((t.asleepUntil ?? 0) > state.tick) continue;
+    if ((t as any).__undeadKingWave !== state.wave) {
+      (t as any).__undeadKingWave = state.wave;
+      (t as any).__nextUndeadKingSummonTick = state.tick + 0.35;
+    }
+    const next = (t as any).__nextUndeadKingSummonTick ?? state.tick;
+    if (state.tick < next) continue;
+    (t as any).__nextUndeadKingSummonTick = state.tick + UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL;
+    const cx = tilePxX(t);
+    const cy = tilePxY(t);
+    const counter = ((state as any).__undeadGladiatorCounter ?? 0) as number;
+    for (let i = 0; i < UNDEAD_GLADIATOR_KING_SUMMON_COUNT; i++) {
+      const angle = -Math.PI / 2 + i * ((Math.PI * 2) / UNDEAD_GLADIATOR_KING_SUMMON_COUNT);
+      summons.push({
+        id: `ug${counter + i}`,
+        sourceTowerId: t.id,
+        x: cx + Math.cos(angle) * GRID.TILE * 0.45,
+        y: cy + Math.sin(angle) * GRID.TILE * 0.45,
+        attackCooldown: 0,
+        expiresAt: state.tick + UNDEAD_GLADIATOR_KING_SUMMON_TTL
+      });
+    }
+    (state as any).__undeadGladiatorCounter = counter + UNDEAD_GLADIATOR_KING_SUMMON_COUNT;
+    state.hint = 'The Undead Gladiator King raises the arena dead.';
+    renderer?.triggerImpactRing?.(cx, cy, state.tick, GRID.TILE * 1.7, 0x75ff66);
+  }
+
+  for (const s of summons) {
+    const source = state.towers.get(s.sourceTowerId);
+    if (!source || source.type !== TowerType.UNDEAD_GLADIATOR_KING) continue;
+    const target = pickUndeadGladiatorTarget(source, s, enemies);
+    if (!target) continue;
+    const dx = target.x - s.x;
+    const dy = target.y - s.y;
+    const dist = Math.max(0.0001, Math.hypot(dx, dy));
+    const meleeRange = GRID.TILE * 0.78;
+    if (dist > meleeRange) {
+      const step = Math.min(dist - meleeRange * 0.78, GRID.TILE * 4.2 * dt);
+      s.x += (dx / dist) * step;
+      s.y += (dy / dist) * step;
+    } else {
+      s.attackCooldown -= dt;
+      if (s.attackCooldown <= 0) {
+        s.attackCooldown = 0.85;
+        const stats = towerEffectiveStats(source);
+        const hit = Math.max(12, stats.dps * 0.13);
+        source.attackFlash = Math.max(source.attackFlash ?? 0, 0.16);
+        applyDamageAndStatus(state, source, target, hit, hooks);
+        if (target.hp > 0) pushStatus(target, StatusEffectKind.SLOW, 1.2, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, source.qualityTier);
+        renderer?.triggerMeleeSlash?.(target.x, target.y, Math.atan2(dy, dx), state.tick, 0.82, false, 0x75ff66);
+      }
+    }
+  }
 }
 
 // 2026-05-23 — SECONDARY HIT BLOCK ROLL. Re-runs the dodge / W8-block /
@@ -1158,6 +1277,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   const enemies = enemySnapshotScratch;
   enemies.length = 0;
   for (const e of state.enemies.values()) enemies.push(e);
+  tickUndeadGladiatorKingSummons(state, dt, towers, enemies, hooks);
   for (const t of towers) {
     if (!Number.isFinite(t.attackFlash) || t.attackFlash < 0) t.attackFlash = 0;
     else if (t.attackFlash > 0) t.attackFlash = Math.max(0, t.attackFlash - dt);
@@ -1406,9 +1526,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // mark / aura multipliers. Other factions take normal damage from
       // the Murmillo, so this combo is a deliberate counter-pick — strong
       // on Punic Wars waves, fine elsewhere.
-      if (t.type === TowerType.MURMILLO) {
-        if (target.faction === EnemyFaction.CARTHAGE)              damage *= 1.75;
-        else if (target.faction === EnemyFaction.UNDEAD_CARTHAGE)  damage *= 1.50;
+      if (t.type === TowerType.MURMILLO || t.type === TowerType.UNDEAD_GLADIATOR_KING) {
+        const kingMult = t.type === TowerType.UNDEAD_GLADIATOR_KING ? 1.18 : 1.0;
+        if (target.faction === EnemyFaction.CARTHAGE)              damage *= 1.75 * kingMult;
+        else if (target.faction === EnemyFaction.UNDEAD_CARTHAGE)  damage *= 1.50 * kingMult;
+        if (t.type === TowerType.UNDEAD_GLADIATOR_KING && target.isBoss) damage *= 1.20;
       }
       // 2026-05-15 SIGIL OF SOL INVICTUS — +85% damage vs any Demon-
       // faction enemy. Anti-late-game-Super-Demons carry. Stacks
@@ -2969,7 +3091,8 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       }
       break;
     }
-    case TowerType.MURMILLO: {
+    case TowerType.MURMILLO:
+    case TowerType.UNDEAD_GLADIATOR_KING: {
       // 2026-05-17 — SCUTUM BASH. Every 4th swing the Murmillo slams his
       // heavy rectangular scutum into the target: a HEAVY 1.2s STUN + a
       // HEAVY 0.8-tile knockback. The damage bonus vs Carthage / Undead-
@@ -2986,6 +3109,7 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       if (hc > 0 && hc % 4 === 0) {
         pushStatus(target, StatusEffectKind.STUN, dur(1.2), 0, tier);
         pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.8, tier);
+        if (t.type === TowerType.UNDEAD_GLADIATOR_KING) pushStatus(target, StatusEffectKind.SLOW, dur(2.0), 0.35, tier);
       }
       break;
     }

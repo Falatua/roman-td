@@ -120,7 +120,8 @@ describe('Boss drop guarantee (2026-05-19)', () => {
     expect(isLegendaryBossDropEnemy(elephant)).toBe(true);
     expect(isLegendaryBossDropEnemy(undeadElephant)).toBe(true);
     expect(rollBossDrop('CARTHAGE', freshState(), createInventory(), 'WAR_ELEPHANT')?.itemId).toBe('ELEPHANT_TUSK');
-    expect(rollBossDrop('UNDEAD_CARTHAGE', freshState(), createInventory(), 'UNDEAD_WAR_ELEPHANT')?.itemId).toBe('UNDEAD_ELEPHANT_BONE');
+    expect(rollBossDrop('UNDEAD_CARTHAGE', freshState(), createInventory(), 'UNDEAD_WAR_ELEPHANT')?.itemId).toBe('WITCHS_BREW');
+    expect((itemsData as any).WITCHS_BREW.effect).toContain('Murmillo');
   });
 
   it('Wave 9 teaching elephants bypass legendary boss drops for high-chance Rare loot', () => {

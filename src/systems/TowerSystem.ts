@@ -68,6 +68,7 @@ const MELEE_MIN_RANGE_TILES = 2.0;
 const AURA_STACK_CAP = 2.00;
 const SULLA_PASSIVE_RADIUS_TILES = 5.5;
 export const GIANTS_BANE_ITEM_ID = 'GIANTS_BANE';
+export const WITCHS_BREW_ITEM_ID = 'WITCHS_BREW';
 
 function isMeleeClassTower(t: Tower): boolean {
   const def: any = (towersData as any)[t.type];
@@ -178,7 +179,9 @@ export function createTower(type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: numbe
 
 export function towerItemSlotCap(t: Tower): number {
   if ((t as any).isHero) return HERO_ITEM_SLOTS;
-  if (isGiantsBaneTransformedTowerType(t.type)) return Math.max(4, TIER_MULTS.itemSlots[t.qualityTier] ?? 1);
+  if (isGiantsBaneTransformedTowerType(t.type) || isWitchsBrewTransformedTowerType(t.type)) {
+    return Math.max(4, TIER_MULTS.itemSlots[t.qualityTier] ?? 1);
+  }
   return TIER_MULTS.itemSlots[t.qualityTier] ?? 1;
 }
 
@@ -197,12 +200,21 @@ export function canTransformWithGiantsBane(t: Tower): boolean {
   return giantsBaneTransformResultType(t) !== null;
 }
 
-export function transformWithGiantsBane(t: Tower): boolean {
-  if (!canTransformWithGiantsBane(t)) return false;
-  if (!t.equippedItems.includes(GIANTS_BANE_ITEM_ID)) return false;
-  const sourceType = t.type;
-  const resultType = giantsBaneTransformResultType(t);
-  if (!resultType) return false;
+export function isWitchsBrewTransformedTowerType(type: TowerType | string): boolean {
+  return type === TowerType.UNDEAD_GLADIATOR_KING;
+}
+
+export function witchsBrewTransformResultType(t: Tower): TowerType | null {
+  if (t.pending || t.qualityTier < 4) return null;
+  if (t.type === TowerType.MURMILLO) return TowerType.UNDEAD_GLADIATOR_KING;
+  return null;
+}
+
+export function canTransformWithWitchsBrew(t: Tower): boolean {
+  return witchsBrewTransformResultType(t) !== null;
+}
+
+function transformTowerInto(t: Tower, resultType: TowerType, sourceType: TowerType): boolean {
   const def = towerDef(resultType);
   if (!def) return false;
   const priorBuiltFrom = t.builtFrom?.length ? t.builtFrom : [sourceType];
@@ -215,6 +227,24 @@ export function transformWithGiantsBane(t: Tower): boolean {
   t.isAerarium = false;
   t.builtFrom = Array.from(new Set([...priorBuiltFrom, sourceType]));
   return true;
+}
+
+export function transformWithGiantsBane(t: Tower): boolean {
+  if (!canTransformWithGiantsBane(t)) return false;
+  if (!t.equippedItems.includes(GIANTS_BANE_ITEM_ID)) return false;
+  const sourceType = t.type;
+  const resultType = giantsBaneTransformResultType(t);
+  if (!resultType) return false;
+  return transformTowerInto(t, resultType, sourceType);
+}
+
+export function transformWithWitchsBrew(t: Tower): boolean {
+  if (!canTransformWithWitchsBrew(t)) return false;
+  if (!t.equippedItems.includes(WITCHS_BREW_ITEM_ID)) return false;
+  const sourceType = t.type;
+  const resultType = witchsBrewTransformResultType(t);
+  if (!resultType) return false;
+  return transformTowerInto(t, resultType, sourceType);
 }
 
 export const transformMilitesWithGiantsBane = transformWithGiantsBane;

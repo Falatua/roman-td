@@ -579,5 +579,12 @@
     "buy": 180,
     "sell": 60,
     "effect": "Milites or Cohort Guard T4-T5 only: immediately transforms the tower into its Giant's Bane form. Milites becomes Giant Killer; Cohort Guard becomes Giant's Cohort Guard. The awakened tower holds four total items, with one slot permanently bound to Giant's Bane, and specializes in crushing giant-class enemies."
+  },
+  "WITCHS_BREW": {
+    "name": "Witch's Brew",
+    "rarity": "LEGENDARY",
+    "buy": 190,
+    "sell": 65,
+    "effect": "Murmillo T4-T5 only: immediately transforms Murmillo into the Undead Gladiator King. The awakened tower holds four total items, with one slot permanently bound to Witch's Brew, keeps Murmillo's heavy shield-bash identity, and raises undead gladiators every 10 seconds."
   }
 }

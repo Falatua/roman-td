@@ -596,6 +596,8 @@ describe('Tower roster integrity', () => {
       'MARS_TIDAL_BASTION',
       'GIANT_KILLER',
       'GIANTS_COHORT_GUARD',
+      'UNDEAD_GLADIATOR_KING',
+      'SUMMON_UNDEAD_GLADIATOR',
       'PROJ_GIANT_ARROW',
       'NEPTUNES_LEVIATHAN',
       'NAGA_ADEPT',
@@ -607,7 +609,8 @@ describe('Tower roster integrity', () => {
       'ITEM_AEGEAN_PEARL',
       'ITEM_STORMGLASS_AMPHORA',
       'ITEM_NEPTUNES_TRIDENT',
-      'ITEM_GIANTS_BANE'
+      'ITEM_GIANTS_BANE',
+      'ITEM_WITCHS_BREW'
     ];
     for (const key of keys) {
       const rel = (ASSET_KEYS as any)[key];
