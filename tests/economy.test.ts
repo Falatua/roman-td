@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { canAfford, spendGold, earnGold, effectivePoolLevel, poolUpgradeCost, bumpHeroXP, perfectWaveGoldBonus } from '../src/systems/EconomySystem';
 import { createGameState } from '../src/GameState';
-import { ECONOMY, HERO_XP_THRESHOLDS } from '../src/constants';
+import { ECONOMY, HERO_XP_THRESHOLDS, POOL_PROBABILITIES } from '../src/constants';
 
 describe('Economy — gold spend/earn', () => {
   let state: ReturnType<typeof createGameState>;
@@ -59,6 +59,8 @@ describe('Economy — pool upgrade cost progression', () => {
     expect(poolUpgradeCost(state)).toBe(ECONOMY.POOL_UPGRADE_COSTS[4]);
     state.poolLevel = 7;
     expect(poolUpgradeCost(state)).toBe(ECONOMY.POOL_UPGRADE_COSTS[7]);
+    state.poolLevel = 9;
+    expect(poolUpgradeCost(state)).toBe(ECONOMY.POOL_UPGRADE_COSTS[9]);
   });
 
   it('returns -1 once pool reaches max', () => {
@@ -67,14 +69,30 @@ describe('Economy — pool upgrade cost progression', () => {
     expect(poolUpgradeCost(state)).toBe(-1);
   });
 
-  it('costs are strictly monotonic and 8 levels long', () => {
+  it('costs are strictly monotonic and 10 levels long', () => {
     const c = ECONOMY.POOL_UPGRADE_COSTS;
-    expect(c.length).toBe(8);
+    expect(c.length).toBe(10);
     for (let i = 1; i < c.length; i++) expect(c[i]).toBeGreaterThan(c[i - 1]);
+    expect(ECONOMY.POOL_MAX_LEVEL).toBe(10);
   });
 
   it('pins the post-ocean economy pool-upgrade price curve', () => {
-    expect(ECONOMY.POOL_UPGRADE_COSTS).toEqual([18, 38, 77, 134, 211, 322, 487, 749]);
+    expect(ECONOMY.POOL_UPGRADE_COSTS).toEqual([18, 38, 77, 134, 211, 322, 487, 749, 1124, 1686]);
+  });
+
+  it('extends prospect odds to 10 levels without nerfing the old level-8 breakpoint', () => {
+    expect(POOL_PROBABILITIES).toHaveLength(ECONOMY.POOL_MAX_LEVEL + 1);
+    for (const row of POOL_PROBABILITIES) {
+      expect(row.reduce((sum, pct) => sum + pct, 0)).toBe(100);
+    }
+    expect(POOL_PROBABILITIES[8]).toEqual([1, 5, 18, 38, 38]);
+    expect(POOL_PROBABILITIES[9]).toEqual([1, 4, 15, 36, 44]);
+    expect(POOL_PROBABILITIES[10]).toEqual([0, 3, 12, 35, 50]);
+    const t4t5At8 = POOL_PROBABILITIES[8][3] + POOL_PROBABILITIES[8][4];
+    const t4t5At10 = POOL_PROBABILITIES[10][3] + POOL_PROBABILITIES[10][4];
+    expect(t4t5At8).toBe(76);
+    expect(t4t5At10).toBe(85);
+    expect(POOL_PROBABILITIES[10][4]).toBeGreaterThan(POOL_PROBABILITIES[8][4]);
   });
 });
 
@@ -112,8 +130,8 @@ describe('Economy — effective pool level', () => {
     state.poolLevel = 0;
     state.heroLevel = 4;
     expect(effectivePoolLevel(state)).toBe(4);
-    state.poolLevel = 7;
+    state.poolLevel = 10;
     state.heroLevel = 5;
-    expect(effectivePoolLevel(state)).toBe(7);
+    expect(effectivePoolLevel(state)).toBe(10);
   });
 });

@@ -249,7 +249,7 @@ function renderTab(tab: string): string {
       `, true)}
       ${foldSection('PROGRESSION — HOW YOU GROW (OR DO NOT)', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('Pool Upgrades (cost 18-749g, 8 levels)', 'Each level shifts your prospect rolls toward higher tiers. <b>L1 is the entry tier and grants no damage bonus</b> — starting at L2, every level adds <b style="color:#88ff88">+3% global tower damage</b> (max +21% at L8). Apex level (L8) total is <b>2,036g</b> across all 8 steps.')}
+          ${noteCard('Pool Upgrades (cost 18-1686g, 10 levels)', 'Each level shifts your prospect rolls toward higher tiers. <b>L1 is the entry tier and grants no damage bonus</b> — starting at L2, every level adds <b style="color:#88ff88">+3% global tower damage</b> (max +27% at L10). L8 preserves the old apex feel; L9-L10 are expensive late-run refinement. Full L10 total is <b>4,846g</b>.')}
           ${noteCard('Hero Kill XP', 'Cumulative kills raise hero level. Effective pool = max(gold-purchased pool, hero level). Caps at 5 from kills alone — pool L6+ requires gold purchases.')}
           ${noteCard('Per-Tower Crit Chance', 'Every tower has its own crit profile. Fast attackers (Pugio Assassin 28%, Eques signature 30%) crit often for modest bonuses. Heavy siege (Colossus Onager 6%, Vulcan Engineer 6%) crit rarely for huge multipliers (×3.0–×3.5).')}
           ${noteCard('Same-Tier Merging', '3 identical towers of the same tier merge into the next tier — automatic recipe, no special button. <b style="color:#88ff88">Works for combo towers too</b>: stack 3× Horseman T2 to merge into Horseman T3, all the way up. The survivor gets <b style="color:#88ff88">+15% damage</b> (stacking on each merge). Cheapest path to T5 for any unit.')}
@@ -729,7 +729,10 @@ function renderTab(tab: string): string {
       const isCurrent = lvl === eff;
       const isUnlocked = lvl <= eff;
       const cost = lvl === 0 ? 0 : (cumCosts[lvl - 1] ?? 0);
-      const heroNeed = lvl === 0 ? 0 : (HERO_XP_THRESHOLDS[lvl - 1] ?? 0);
+      const heroNeed = lvl === 0 ? 0 : HERO_XP_THRESHOLDS[lvl - 1];
+      const unlockText = lvl === 0
+        ? '(starting)'
+        : `Upgrade Pool: <b style="color:#f0c040">${cost}g</b>${heroNeed != null ? ` · or kill <b>${heroNeed}</b> enemies` : ' · gold investment only'}`;
       const bars = row.map((p, t) => `
         <div style="display:flex;align-items:center;gap:4px;font-size:10px">
           <span style="display:inline-block;width:14px;height:14px;background:${TIER_COL[t]};border:1px solid #000;text-align:center;line-height:14px;color:#000;font-weight:bold;font-size:9px">${t+1}</span>
@@ -747,7 +750,7 @@ function renderTab(tab: string): string {
               LEVEL ${lvl} ${isCurrent ? '— ACTIVE' : (isUnlocked ? '— unlocked' : '')}
             </div>
             <div style="font-size:10px;color:#aa9a4a">
-              ${lvl === 0 ? '(starting)' : `Upgrade Pool: <b style="color:#f0c040">${cost}g</b> · or kill <b>${heroNeed}</b> enemies`}
+              ${unlockText}
             </div>
           </div>
           <div style="display:flex;gap:14px;flex-wrap:wrap">${bars}</div>
@@ -755,9 +758,9 @@ function renderTab(tab: string): string {
     }).join('');
     const footer = `
       <div style="margin-top:10px;padding:8px 12px;background:#0c0a08;border:1px dashed #5a4a30;font-size:11px;color:#cdb98a;line-height:1.55">
-        <b style="color:#9be0ff">Strategy (30-wave campaign):</b> 95% T1 at start. 8-level curve costs <b>18 / 38 / 77 / 134 / 211 / 322 / 487 / 749g</b> per step (2,036g apex total). T4+T5 chance climbs to <b>76% at L8</b>. <b>L1 grants no damage bonus</b> (only the probability shift). Starting at L2, every level adds a permanent <b style="color:#88ff88">+3% global tower damage</b> (max +21% at L8). No rebate — you pay full price each step.<br/><br/>
+        <b style="color:#9be0ff">Strategy (30-wave campaign):</b> 95% T1 at start. 10-level curve costs <b>18 / 38 / 77 / 134 / 211 / 322 / 487 / 749 / 1124 / 1686g</b> per step (4,846g max total). L8 keeps the old apex feel at <b>76% T4+T5</b>; L10 climbs to <b>85% T4+T5</b> with <b>50% T5</b>. <b>L1 grants no damage bonus</b> (only the probability shift). Starting at L2, every level adds a permanent <b style="color:#88ff88">+3% global tower damage</b> (max +27% at L10). No rebate — you pay full price each step.<br/><br/>
         <b style="color:#9be0ff">What tier actually buys:</b> higher tiers stack two things — <b>raw damage</b> (T1=×1.0, T2=×1.25, T3=×1.55, T4=×1.95, T5=×2.50) and <b>attack speed</b> (T1=×1.00 up to T5=×1.42). A T5 same-type tower fires ~3.55× the raw output of its T1 cousin before any items or pool bonuses. <b style="color:#fff8e0">Item slots are fixed at 3 for every tower and hero, T1 through T5</b> — tier no longer changes slot count, so roll T5 purely for damage and speed.<br/><br/>
-        <b style="color:#9be0ff">Hero substitute:</b> kills passively raise hero level (caps at 5). Effective pool = max(gold-purchased pool, hero level). Pool L6-L8 only comes from gold investment.
+        <b style="color:#9be0ff">Hero substitute:</b> kills passively raise hero level (caps at 5). Effective pool = max(gold-purchased pool, hero level). Pool L6-L10 only comes from gold investment.
       </div>`;
     return header + rows + footer;
   }
@@ -802,7 +805,7 @@ function renderTab(tab: string): string {
       TESSERARIUS: 'EARLY', SCOUT_VEXILLUM: 'EARLY',
       STORMCALLER: 'EARLY', SACER_VESTAL: 'EARLY', TURMA_LANCERS: 'EARLY',
       // ─── MID GAME ─────────────────────────────────────────────────
-      // T5 BASE towers (apex base units, need pool L7-L8 or Mercator)
+      // T5 BASE towers (apex base units, need high pool levels or Mercator)
       // and the powerful named combos players plan around mid-run.
       PRAEFECTUS: 'MID', VULCAN_ENGINEER: 'MID', IMPERATOR_GUARD: 'MID',
       SOLAR_PRIEST: 'MID', COLOSSUS_ONAGER: 'MID',
@@ -839,7 +842,7 @@ function renderTab(tab: string): string {
     const STAGE_ORDER: Record<string, number> = { EARLY: 0, MID: 1, LATE: 2 };
     const STAGE_LABEL: Record<string, string> = {
       EARLY: '🌱 EARLY GAME — base towers + simple combos (pool L0-L4)',
-      MID:   '⚔ MID GAME — T5 base + powerful named combos (pool L5-L8, Mercator)',
+      MID:   '⚔ MID GAME — T5 base + powerful named combos (pool L5-L10, Mercator)',
       LATE:  '👑 LATE GAME (APEX) — 5-ingredient super-combos, win-condition towers'
     };
 

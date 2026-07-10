@@ -4,7 +4,7 @@ import { GamePhase, TileType, TowerType, TargetingMode, DrawCard, DamageType } f
 // on load and wires the rtd:viewport-change custom event used by
 // fitStageToViewport and (in later phases) touch handlers + modals.
 import { isMobile as isMobileDevice } from './Mobile';
-import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, TIER_COLORS, WAVE, INVENTORY_SIZE } from './constants';
+import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, TIER_COLORS, WAVE, INVENTORY_SIZE, POOL_PROBABILITIES } from './constants';
 import { createGameState, isWaveModifierActive } from './GameState';
 import { initializeGrid, isBuildable, isWaterPlacementRestrictedTile, isWaterZoneTile, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
@@ -3731,12 +3731,7 @@ async function boot() {
   // Lives independently of the main banner queue; auto-dismisses after a
   // short hold; CSS animations handle in/out for tactile feel.
   function showPoolUpgradeBanner(level: number, _rebate: number) {
-    const probs = [
-      [95,5,0,0,0],[70,20,8,2,0],[50,28,15,6,1],[32,30,22,12,4],[20,28,28,18,6],
-      [12,22,30,26,10],[8,18,30,28,16],[5,14,28,32,21],[3,10,25,35,27],
-      [2,7,22,38,31],[1,5,18,38,38]
-    ];
-    const row = probs[level] ?? probs[probs.length - 1];
+    const row = POOL_PROBABILITIES[Math.min(POOL_PROBABILITIES.length - 1, Math.max(0, level))];
     const dmgBonus = Math.max(0, level - 1) * 3;
     const TIER_COL = ['#aaaaaa','#b87333','#c0c0c0','#ffd34d','#ff5050'];
     const probsHtml = row.map((p, i) => `

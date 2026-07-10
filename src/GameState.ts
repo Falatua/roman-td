@@ -9,7 +9,7 @@ export interface GameStateShape {
   wave: number;            // current wave number (1..50). 0 = pre-game.
   lives: number;
   gold: number;
-  poolLevel: number;       // 0..5 — gold-purchased
+  poolLevel: number;       // 0..10 — gold-purchased prospect-pool upgrades
   heroLevel: number;       // 0..5 — kill-XP earned (Gem TD style)
   totalKills: number;      // cumulative across run
   score: number;

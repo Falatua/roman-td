@@ -1,5 +1,5 @@
 import { GameStateShape } from '../GameState';
-import { WAVE } from '../constants';
+import { ECONOMY, WAVE } from '../constants';
 import { TowerType } from '../types';
 import { displayWaveNumber } from '../systems/TestYourMightLabels';
 
@@ -138,7 +138,7 @@ function buildDeathAnalysis(state: GameStateShape): string {
     tips.push('⚠ <b>SINGLE DAMAGE TYPE</b> — every faction resists at least one type. Spread across PHYS / SIEGE / FIRE / DIVINE so no faction sponges you.');
   }
   if (poolLevel < 3 && wave >= 8) {
-    tips.push(`⚠ <b>LOW POOL LEVEL</b> — pool ${poolLevel}/8. Each upgrade tilts your prospect rolls to higher tiers AND grants +3% global tower damage. Invest by wave 8.`);
+    tips.push(`⚠ <b>LOW POOL LEVEL</b> — pool ${poolLevel}/${ECONOMY.POOL_MAX_LEVEL}. Each upgrade tilts your prospect rolls to higher tiers AND grants +3% global tower damage. Invest by wave 8.`);
   }
   if (stonesPlaced < 10 && wave >= 6) {
     tips.push('⚠ <b>SHORT MAZE</b> — fewer than 10 prospect tiles placed. Longer paths = more shots fired per enemy. Each empty-tile click during prospects costs 1g and the unkept ones cement into walls; the codex calls this "maze for time."');

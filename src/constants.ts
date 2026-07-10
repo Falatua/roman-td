@@ -69,25 +69,25 @@ export const ECONOMY = {
   // amount you started with.
   MAX_LIVES: 30,
   STARTING_GOLD: 100,
-  // 20-WAVE CAMPAIGN POOL CURVE (2026-05): trimmed from 10 levels to 8
-  // so endgame pool is actually reachable in a 20-wave run. Curve flattens
-  // — each step still feels meaningful but the apex (~200g for L8) lands
-  // within a real run's budget.
+  // 30-WAVE CAMPAIGN POOL CURVE. The first 8 levels preserve the current
+  // economy feel; L9-L10 are luxury late-run upgrades with premium prices and
+  // stronger T5 odds for players who commit hard to prospect quality.
   // 2026-05 v6: pool costs bumped ~35% so reaching the apex of the curve
   // is a real investment, not an inevitability. L8 was 200g; v6 set 270g.
   // 2026-05 v10: another +10% across the board — the 100g starting purse
   // already accelerates the early curve, so the per-step cost needs to
-  // rise to keep apex (L8) a real commitment. Rounded to whole gold.
+  // rise to keep high-pool investment a real commitment. Rounded to whole gold.
   // 2026-06-23 — prices ~1.85x to match the ~1.86x gold income from the
   // doubled enemy counts (1g/kill). Restores pre-doubling gold pressure.
   // 2026-06-28 — every pool-upgrade tier cut 10% cheaper (×0.9, rounded).
   // 2026-07-07 — economy audit after ocean spawns / larger late waves:
   // +15% on the pool curve keeps full-pool timing meaningful without
   // touching kill gold or making the opener feel stingy.
-  // 2026-07-08 — +20% per user request; same curve shape, rounded to
-  // whole gold. Full L8 commitment is now 2,036g.
-  POOL_UPGRADE_COSTS: [18, 38, 77, 134, 211, 322, 487, 749] as const,
-  POOL_MAX_LEVEL: 8,
+  // 2026-07-10 — expanded from 8 to 10 levels. L1-L8 unchanged; L9/L10
+  // continue the late curve at ~1.5x steps so max pool is powerful but not
+  // assumed. Full L10 commitment is now 4,846g.
+  POOL_UPGRADE_COSTS: [18, 38, 77, 134, 211, 322, 487, 749, 1124, 1686] as const,
+  POOL_MAX_LEVEL: 10,
   AERARIUM_BONUS: 4,
   AERARIUM_MAX_COUNT: 3,
   // 2026-05-19 — Baseline gold awarded on every kill. Always paid out
@@ -146,10 +146,9 @@ export const TIER_MULTS = {
 // expression through meaningful gear choices.
 export const HERO_ITEM_SLOTS = 3;
 
-// Probability draw pool table (rows = pool level 0..8; cols T1..T5).
-// 20-WAVE CAMPAIGN (2026-05): trimmed from 11 rows to 9. Each step is
-// steeper than before so 8 levels still cover T1-dominant → T4/T5-apex.
-// L8 is the new endgame (same shape as the old L10).
+// Probability draw pool table (rows = pool level 0..10; cols T1..T5).
+// L1-L8 preserve the previous curve exactly. L9-L10 are expensive late-run
+// refinements: mostly T4/T5, with T5 becoming the dominant apex result.
 export const POOL_PROBABILITIES: number[][] = [
   [95,  5,  0,  0,  0],   // 0 — start: almost all T1
   [65, 22, 10,  3,  0],   // 1 — first upgrade teases T3 + T4
@@ -159,7 +158,9 @@ export const POOL_PROBABILITIES: number[][] = [
   [ 8, 18, 30, 28, 16],   // 5
   [ 4, 12, 28, 34, 22],   // 6
   [ 2,  8, 22, 38, 30],   // 7
-  [ 1,  5, 18, 38, 38]    // 8 — endgame: T4 + T5 = 76% of all rolls
+  [ 1,  5, 18, 38, 38],   // 8 — old apex: T4 + T5 = 76% of all rolls
+  [ 1,  4, 15, 36, 44],   // 9 — luxury: 80% T4/T5, T5 now leads
+  [ 0,  3, 12, 35, 50]    // 10 — max: 85% T4/T5, half of all rolls are T5
 ];
 
 export const KILL_BONUS_RATE = 0.0002; // 0.02% of base T1 DPS per kill, capped at +10%

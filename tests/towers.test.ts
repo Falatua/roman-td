@@ -1498,8 +1498,8 @@ describe('Pool draw — base tower types', () => {
 
   it('does not roll Tier 5 Velites or Scorpio even when the tier roll lands on T5', () => {
     const state = createGameState();
-    state.poolLevel = 8;
-    state.heroLevel = 8;
+    state.poolLevel = ECONOMY.POOL_MAX_LEVEL;
+    state.heroLevel = ECONOMY.POOL_MAX_LEVEL;
     const randomSpy = vi.spyOn(Math, 'random');
     try {
       randomSpy.mockReturnValue(0.99);
@@ -1513,8 +1513,8 @@ describe('Pool draw — base tower types', () => {
 
   it('keeps capped-only input pools from producing illegal Tier 5 capped cards', () => {
     const state = createGameState();
-    state.poolLevel = 8;
-    state.heroLevel = 8;
+    state.poolLevel = ECONOMY.POOL_MAX_LEVEL;
+    state.heroLevel = ECONOMY.POOL_MAX_LEVEL;
     const randomSpy = vi.spyOn(Math, 'random');
     try {
       randomSpy.mockReturnValue(0.99);
