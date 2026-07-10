@@ -427,7 +427,7 @@ describe('Checkpoint III dead Carthaginian elephant prop', () => {
     expect(source).toContain('wp.index === 3');
     expect(source).toContain('(checkpointThree.col + 0.5 + 3.5) * GRID.TILE');
     expect(source).toContain('(checkpointThree.row + 0.5 + 2.0) * GRID.TILE');
-    expect(source).toContain('deadElephant.width = GRID.TILE * 5.6');
+    expect(source).toContain('deadElephant.width = GRID.TILE * 4.6');
     expect(source).toContain('cornerLayer.addChild(deadElephant)');
   });
 });

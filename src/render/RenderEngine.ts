@@ -3773,7 +3773,7 @@ export class RenderEngine {
       deadElephant.anchor.set(0.5);
       deadElephant.x = (checkpointThree.col + 0.5 + 3.5) * GRID.TILE;
       deadElephant.y = (checkpointThree.row + 0.5 + 2.0) * GRID.TILE;
-      deadElephant.width = GRID.TILE * 5.6;
+      deadElephant.width = GRID.TILE * 4.6;
       deadElephant.height = deadElephant.width * (deadElephantTex.height / Math.max(1, deadElephantTex.width));
       deadElephant.alpha = 0.97;
       cornerLayer.addChild(deadElephant);
