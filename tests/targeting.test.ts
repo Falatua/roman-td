@@ -371,6 +371,22 @@ describe('Tower targeting modes', () => {
     expect(picked?.id).toBe('VALID');
   });
 
+  it('Sulla-style additive fire riders do not make native physical towers skip fire-immune enemies', () => {
+    const state = createGameState();
+    const tower = createTower(TowerType.DECURION, 1, 5, 5, 1);
+    tower.targetingMode = TargetingMode.STRONG;
+    tower.damageType = DamageType.PHYS_MELEE;
+    const sulla = createTower(TowerType.HERO_SULLA, 5, 6, 5, 1);
+    state.towers.set(tower.id, tower);
+    state.towers.set(sulla.id, sulla);
+    state.activeHeroTowerId = sulla.id;
+    state.activeHeroId = 'HERO_SULLA';
+    const fireImmune = fakeEnemy({ id: 'FIRE_IMMUNE', type: EnemyType.MONGOL_BERSERKER, x: TX + 20, y: TY, pathIndex: 8, hp: 5000 });
+    const fallback = fakeEnemy({ id: 'FALLBACK', type: EnemyType.FERAL_DOG, x: TX + 30, y: TY, pathIndex: 4, hp: 500 });
+    const picked = pickTarget(state, tower, [fireImmune, fallback], 10);
+    expect(picked?.id).toBe('FIRE_IMMUNE');
+  });
+
   it('non-siege towers may still target siege-immune enemies', () => {
     const { state, tower } = setup();
     tower.targetingMode = TargetingMode.STRONG;

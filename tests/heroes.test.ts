@@ -769,6 +769,65 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(Object.prototype.hasOwnProperty.call(passive, 'convert' + 'To')).toBe(false);
   });
 
+  it('Sulla Pyre Ward loses only its fire rider against fire-immune enemies while native damage still lands', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    function decurionHit(withSulla: boolean): { damage: number; burnApplied: boolean } {
+      const s = freshState();
+      s.phase = GamePhase.WAVE_PHASE;
+      s.tick = 1;
+      s.wave = 16;
+      s.activeHeroId = withSulla ? 'HERO_SULLA' : null;
+      s.heroTier = 0;
+
+      if (withSulla) {
+        const sulla = createTower(TowerType.HERO_SULLA, 5, 5, 5, 1);
+        sulla.attackCooldown = 999;
+        s.activeHeroTowerId = sulla.id;
+        s.towers.set(sulla.id, sulla);
+      }
+
+      const decurion = createTower(TowerType.DECURION, 1, 7, 5, 1);
+      decurion.attackCooldown = 0;
+      decurion.critChance = 0;
+      s.towers.set(decurion.id, decurion);
+
+      const hunBerserker = testEnemy('fire-immune-hun', {
+        type: EnemyType.MONGOL_BERSERKER,
+        faction: EnemyFaction.MONGOLS,
+        hp: 100_000,
+        maxHp: 100_000,
+        x: 8 * 32 + 16,
+        y: 5 * 32 + 16
+      });
+      s.enemies.set(hunBerserker.id, hunBerserker);
+
+      let hitDamage = 0;
+      tickCombat(s, 0.016, {
+        onHit: (tower, enemy, damage) => {
+          if (tower.id === decurion.id && enemy.id === hunBerserker.id) hitDamage = damage;
+        },
+        onMeleeSwing: () => {},
+        onProjectileFire: () => {},
+        onKill: () => {}
+      });
+
+      return {
+        damage: hitDamage,
+        burnApplied: hunBerserker.statusEffects.some(st => st.kind === StatusEffectKind.BURN)
+      };
+    }
+
+    try {
+      const nativeOnly = decurionHit(false);
+      const nativePlusBlockedFire = decurionHit(true);
+      expect(nativeOnly.damage).toBeGreaterThan(0);
+      expect(nativePlusBlockedFire.damage).toBeCloseTo(nativeOnly.damage, 4);
+      expect(nativePlusBlockedFire.burnApplied).toBe(false);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
   it('SPQR Decree spreads a large board volley instead of zeroing every cooldown together', () => {
     const s = freshState();
     s.phase = GamePhase.WAVE_PHASE;

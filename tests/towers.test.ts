@@ -1330,6 +1330,34 @@ describe('Aura mechanics and visibility', () => {
     expect(100000 - target.hp).toBeCloseTo(expectedNativeOnly, 4);
   });
 
+  it('burn rider items fail independently on fire-immune enemies without canceling native damage', () => {
+    const state = createGameState();
+    const attacker = createTower(TowerType.DECURION, 1, 10, 10, 0);
+    attacker.attackCooldown = 0;
+    attacker.equippedItems.push('VESTAL_PYRE');
+    state.towers.set(attacker.id, attacker);
+    const c = towerCenter(attacker);
+    const target = testEnemy('vestal-pyre-fire-immune', c.x + GRID.TILE, c.y);
+    target.type = EnemyType.MONGOL_BERSERKER;
+    target.faction = EnemyFaction.MONGOLS;
+    target.hp = 100000;
+    target.maxHp = 100000;
+    state.enemies.set(target.id, target);
+    let hitDamage = 0;
+
+    tickCombat(state, 0.016, {
+      ...noopCombatHooks(),
+      onHit: (_tower, _enemy, damage) => { hitDamage = damage; }
+    });
+
+    const expectedNativeOnly = towerPerAttackDamageBase(attacker) *
+      resistanceModifier(target.faction, DamageType.PHYS_MELEE) *
+      enemyDamageMultiplier(target, DamageType.PHYS_MELEE);
+    expect(hitDamage).toBeCloseTo(expectedNativeOnly, 4);
+    expect(100000 - target.hp).toBeCloseTo(expectedNativeOnly, 4);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.BURN)).toBe(false);
+  });
+
   it('applies enemy vulnerability item auras to enemies inside the ring', () => {
     const base = singleSwingDamage();
     const cursed = singleSwingDamage({

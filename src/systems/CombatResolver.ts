@@ -1441,6 +1441,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const lateWaveDmgScale = Math.pow(1.50, bossesCleared);
       const preResDamage = perAttackBase * supportDmg * takenMult * lateWaveDmgScale;
       let damage = (preResDamage * resMod) + t.killBonusFlat;
+      // Additive damage riders are separate packets. If the target is
+      // immune to the rider's type, only that rider drops to 0; the tower's
+      // native hit above still resolves through its own damage type.
       const sullaFireRiderPct = sullaFireRiderPctForTower(t, heroAuraSources);
       if (sullaFireRiderPct > 0) {
         const fireResMod = applyWaveResistRelief(
