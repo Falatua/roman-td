@@ -578,13 +578,13 @@
     "rarity": "LEGENDARY",
     "buy": 180,
     "sell": 60,
-    "effect": "Milites or Cohort Guard T4-T5 only: immediately transforms the tower into its Giant's Bane form. Milites becomes Giant Killer; Cohort Guard becomes Giant's Cohort Guard. The awakened tower holds four total items, with one slot permanently bound to Giant's Bane, and specializes in crushing giant-class enemies."
+    "effect": "A blade-sized relic made for hands larger than men. Old camp whispers say a Tier IV or Tier V Milites or Cohort Guard can carry it, and if the right soldier bears it, something ancient wakes inside the ranks. The awakened tower holds four total items, with one slot forever bound to Giant's Bane, and turns its fury toward giant-class enemies."
   },
   "WITCHS_BREW": {
     "name": "Witch's Brew",
     "rarity": "LEGENDARY",
     "buy": 190,
     "sell": 65,
-    "effect": "Murmillo T4-T5 only: immediately transforms Murmillo into the Undead Gladiator King. The awakened tower holds four total items, with one slot permanently bound to Witch's Brew, keeps Murmillo's heavy shield-bash identity, and raises undead gladiators every 10 seconds."
+    "effect": "The draught bubbles with arena sand, bone ash, and old Punic curses. Veterans swear a Tier IV or Tier V Murmillo who drinks it does not remain merely a Murmillo for long. The awakened tower holds four total items, with one slot forever bound to Witch's Brew, and the arena dead may answer its call."
   }
 }
