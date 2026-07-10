@@ -12,6 +12,7 @@ import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS, GRID } from '../src/constants';
 import { createGameState } from '../src/GameState';
 import { initializeGrid, isBuildable, isWaterZoneTile, canBuildWaterTowerAt } from '../src/systems/GridManager';
+import { ASSET_KEYS } from '../src/render/Assets';
 import towersData from '../src/data/towers.json';
 import wavesData from '../src/data/waves.json';
 
@@ -883,6 +884,47 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(towerItemSlotCap(milites)).toBe(4);
     expect(towerItemSlotCap(cohort)).toBe(4);
     expect(towerItemSlotCap(murmillo)).toBe(4);
+  });
+
+  it('evolves into the new tower sprite when the legendary transform item is equipped', () => {
+    const cases = [
+      {
+        source: TowerType.MILITES,
+        item: GIANTS_BANE_ITEM_ID,
+        transform: transformWithGiantsBane,
+        result: TowerType.GIANT_KILLER,
+        resultSprite: 'naval/t_tideforged_giant_killer.png'
+      },
+      {
+        source: TowerType.COHORT_GUARD,
+        item: GIANTS_BANE_ITEM_ID,
+        transform: transformWithGiantsBane,
+        result: TowerType.GIANTS_COHORT_GUARD,
+        resultSprite: 't_giants_cohort_guard.png'
+      },
+      {
+        source: TowerType.MURMILLO,
+        item: WITCHS_BREW_ITEM_ID,
+        transform: transformWithWitchsBrew,
+        result: TowerType.UNDEAD_GLADIATOR_KING,
+        resultSprite: 't_undead_gladiator_king.png'
+      }
+    ] as const;
+
+    for (const c of cases) {
+      const tower = createTower(c.source, 4, 4, 4, 0);
+      const originalSprite = (ASSET_KEYS as any)[tower.type];
+      expect(originalSprite, `${c.source} should have a registered pre-evolution sprite`).toBeTruthy();
+
+      tower.equippedItems.push(c.item);
+      expect(c.transform(tower), `${c.source} should evolve when ${c.item} is equipped`).toBe(true);
+      expect(tower.type).toBe(c.result);
+
+      const evolvedSprite = (ASSET_KEYS as any)[tower.type];
+      expect(evolvedSprite, `${c.result} should have a registered evolved sprite`).toBe(c.resultSprite);
+      expect(evolvedSprite, `${c.result} should not keep the ${c.source} sprite after evolving`).not.toBe(originalSprite);
+      expect(fs.existsSync(`public/assets/sprites/${evolvedSprite}`), `${c.result} evolved sprite file should exist`).toBe(true);
+    }
   });
 
   it('specializes hard into giant-class enemies without becoming a universal answer', () => {
