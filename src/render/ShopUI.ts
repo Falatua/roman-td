@@ -1281,18 +1281,22 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   closeGameModals();
   const modal = document.createElement('div');
   modal.id = 'inventory-modal';
-  // 2026-05-19 — Responsive clamping (Codex pattern). Inventory modal
-  // can be tall (25-slot inventory + filter chips + headline + sort
-  // controls); flex-start + outer overflow:auto guarantees the close
-  // button at the top stays reachable on any viewport.
-  modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:100000;pointer-events:auto;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
+  // 2026-07-09 — Inventory containment. The modal frame itself stays fixed;
+  // the variable-height shelves/grid/detail area scrolls inside the yellow
+  // Armarium border so empty slots and the inspect panel never spill onto
+  // the map outside the frame.
+  modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:100000;pointer-events:auto;padding:16px 8px;box-sizing:border-box;overflow:hidden;font-family:'Courier New',monospace;`;
   const panel = document.createElement('div');
-  panel.style.cssText = `position:relative;z-index:1;width:min(560px,94vw);background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:14px;`;
+  panel.style.cssText = `position:relative;z-index:1;width:min(560px,94vw);height:min(900px,calc(100vh - 32px));max-height:calc(100vh - 32px);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:14px;`;
   const ownedRamparts = rampartsOwned(state);
-  panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex:0 0 auto">
     <div><div style="font-size:18px;color:#d4af37;font-weight:bold;letter-spacing:3px">ARMARIUM</div><div style="font-size:11px;color:#aa9a4a;letter-spacing:1px">ITEM VAULT ${inv.slots.length}/${INVENTORY_SIZE}${ownedRamparts > 0 ? ` · RAMPARTS ${ownedRamparts}` : ''}</div></div>
     <div style="font-size:11px;color:#cdb98a;text-align:right;max-width:240px;line-height:1.4">Click an item to inspect it.<br/>Click traps or ramparts to arm placement.</div>
   </div>`;
+  const body = document.createElement('div');
+  body.id = 'inventory-scroll-body';
+  body.style.cssText = `flex:1 1 auto;min-height:0;overflow:auto;padding-right:4px;box-sizing:border-box;scrollbar-gutter:stable both-edges;`;
+  panel.appendChild(body);
 
   // Selection state: which slot is currently selected.
   let selectedIdx = -1;
@@ -1330,7 +1334,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
       hooks.onClose();
     };
     rampShelf.appendChild(btn);
-    panel.appendChild(rampShelf);
+    body.appendChild(rampShelf);
   }
 
   const ownedTrapIds = TRAP_IDS.filter(tid => ((state.trapInventory ?? {})[tid] ?? 0) > 0);
@@ -1374,7 +1378,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
       trapGrid.appendChild(btn);
     }
     trapShelf.appendChild(trapGrid);
-    panel.appendChild(trapShelf);
+    body.appendChild(trapShelf);
   }
 
   // 2026-05 v11 (B4 Inventory sort + filter): controls row above the grid.
@@ -1417,7 +1421,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
     chipEls.push(chip);
     controls.appendChild(chip);
   });
-  panel.appendChild(controls);
+  body.appendChild(controls);
 
   const grid = document.createElement('div');
   grid.style.cssText = `display:grid;grid-template-columns:repeat(5,72px);grid-template-rows:repeat(5,72px);gap:6px;justify-content:center;padding:12px;background:#0c0a08;border:2px solid #5a4a30;box-shadow:inset 0 0 18px #000;`;
@@ -1505,8 +1509,8 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
     slot.dataset.invSlot = String(i);
     grid.appendChild(slot);
   }
-  panel.appendChild(grid);
-  panel.appendChild(detail);
+  body.appendChild(grid);
+  body.appendChild(detail);
   renderDetail();
 
   // Apply sort + filter: reorder via CSS `order`, hide non-matching via display:none.
@@ -1573,7 +1577,8 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   applyInventorySort();
 
   const closeRow = document.createElement('div');
-  closeRow.style.cssText = 'display:flex;justify-content:flex-end;margin-top:12px';
+  closeRow.id = 'inventory-footer';
+  closeRow.style.cssText = 'display:flex;justify-content:flex-end;margin-top:12px;flex:0 0 auto';
   const close = document.createElement('button');
   close.textContent = 'CLOSE';
   close.style.cssText = `background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:7px 14px;cursor:pointer;font-family:inherit;font-size:12px;`;
@@ -1582,6 +1587,8 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   panel.appendChild(closeRow);
   modal.appendChild(panel);
   enhanceModalErgonomics(modal, panel, {
+    bodySelector: '#inventory-scroll-body',
+    footerSelector: '#inventory-footer',
     title: 'Inventory',
     onClose: hooks.onClose
   });

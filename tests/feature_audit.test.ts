@@ -1180,6 +1180,20 @@ describe('Inventory modal interaction layer', () => {
     expect(source).toContain('position:relative;z-index:1;width:min(560px,94vw)');
     expect(source).toContain('(document.body ?? parent).appendChild(modal)');
   });
+
+  it('keeps inventory grid, details, and close controls inside one scrollable Armarium frame', () => {
+    const fs = require('fs');
+    const source = fs.readFileSync('src/render/ShopUI.ts', 'utf8');
+    expect(source).toContain('height:min(900px,calc(100vh - 32px))');
+    expect(source).toContain('display:flex;flex-direction:column;overflow:hidden');
+    expect(source).toContain("body.id = 'inventory-scroll-body'");
+    expect(source).toContain('flex:1 1 auto;min-height:0;overflow:auto');
+    expect(source).toContain("closeRow.id = 'inventory-footer'");
+    expect(source).toContain("body.appendChild(grid)");
+    expect(source).toContain("body.appendChild(detail)");
+    expect(source).toContain("bodySelector: '#inventory-scroll-body'");
+    expect(source).toContain("footerSelector: '#inventory-footer'");
+  });
 });
 
 describe('Quest modal interaction layer', () => {
