@@ -358,6 +358,8 @@ describe('Top-right Cyclops trophy prop', () => {
     expect(source).not.toContain("{ col: 35, row: 1,  key: 'MAP_CORNER_SHRINE_B3'");
     expect(source).not.toContain("{ col: 36, row: 0,  key: 'MAP_CORNER_SHRINE_A2'");
     expect(source).not.toContain("{ col: 36, row: 3,  key: 'MAP_CORNER_SHRINE_A6'");
+    expect(source).toContain('const inCyclopsTrophyClearance = c >= 34 && r <= 5;');
+    expect(source).toContain('t === TileType.EMPTY && !inCyclopsTrophyClearance');
     expect(source.indexOf('this.layers.bg.addChild(decorLayer);')).toBeLessThan(source.indexOf('this.layers.bg.addChild(cornerLayer);'));
   });
 });

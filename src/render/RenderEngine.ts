@@ -3126,7 +3126,11 @@ export class RenderEngine {
           const fill = isPath ? 0x886533 : 0x426f31;
           g.beginFill(fill).drawRect(x, y, GRID.TILE, GRID.TILE).endFill();
         }
-        if (!isPath && t === TileType.EMPTY) {
+        // Keep the top-right Cyclops trophy visually clean. Generic biome
+        // props (especially DP_URN) otherwise read as a brown pot sitting on
+        // the severed head when their deterministic roll lands nearby.
+        const inCyclopsTrophyClearance = c >= 34 && r <= 5;
+        if (!isPath && t === TileType.EMPTY && !inCyclopsTrophyClearance) {
           const shoreDist = waterProximity(c, r, 2);
           if (shoreDist > 0) {
             const directWater = shoreDist === 1;
