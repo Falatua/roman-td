@@ -1,7 +1,7 @@
 // PinnedRecipe — 2026-05 v11 QoL feature, expanded 2026-05-15 to two pins,
-// then 2026-07-06 to three.
+// 2026-07-06 to three, then 2026-07-10 to four.
 //
-// Lets the player pin up to three combination recipes from the Codex so they
+// Lets the player pin up to four combination recipes from the Codex so they
 // float below the INVENTORY button at all times. Ingredients update live:
 //   GREEN  — already-kept tower of the right type/tier on the field
 //   ORANGE — pending prospect that would satisfy the slot if KEPT
@@ -22,9 +22,9 @@ const LS_KEY = 'roman_td_pinned_recipe_v1';
 // starter, just swap this constant.
 const DEFAULT_PINNED_RECIPE = 'SCORPION_BOLT';
 
-// Hard cap on simultaneous pins. The right HUD panel owns overflow, so three
-// chips keep the existing format without pushing lower controls offscreen.
-export const MAX_PINNED_RECIPES = 3;
+// Hard cap on simultaneous pins. The right HUD panel owns overflow, so the
+// fourth chip stacks cleanly and scrolls with the side rail when needed.
+export const MAX_PINNED_RECIPES = 4;
 
 // 2026-05-15 v6: storage now holds a JSON array of result IDs. Read side
 // still handles the v5 single-string format so existing saves don't break.

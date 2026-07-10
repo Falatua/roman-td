@@ -34,20 +34,21 @@ describe('pinned recipe tracker', () => {
     });
   });
 
-  it('allows three pinned recipes before replacing the oldest', () => {
-    expect(MAX_PINNED_RECIPES).toBe(3);
+  it('allows four pinned recipes before replacing the oldest', () => {
+    expect(MAX_PINNED_RECIPES).toBe(4);
 
     togglePinnedRecipe('SCORPION_BOLT');
     togglePinnedRecipe('HORSEMAN');
     togglePinnedRecipe('PLAGUE_CART');
-    expect(getPinnedRecipes()).toEqual(['SCORPION_BOLT', 'HORSEMAN', 'PLAGUE_CART']);
-
     togglePinnedRecipe('AERARIUM');
-    expect(getPinnedRecipes()).toEqual(['HORSEMAN', 'PLAGUE_CART', 'AERARIUM']);
+    expect(getPinnedRecipes()).toEqual(['SCORPION_BOLT', 'HORSEMAN', 'PLAGUE_CART', 'AERARIUM']);
+
+    togglePinnedRecipe('EAGLE_SCOUT');
+    expect(getPinnedRecipes()).toEqual(['HORSEMAN', 'PLAGUE_CART', 'AERARIUM', 'EAGLE_SCOUT']);
   });
 
-  it('dedupes and caps saved recipes at three', () => {
-    setPinnedRecipes(['SCORPION_BOLT', 'HORSEMAN', 'SCORPION_BOLT', 'PLAGUE_CART', 'AERARIUM']);
-    expect(getPinnedRecipes()).toEqual(['SCORPION_BOLT', 'HORSEMAN', 'PLAGUE_CART']);
+  it('dedupes and caps saved recipes at four', () => {
+    setPinnedRecipes(['SCORPION_BOLT', 'HORSEMAN', 'SCORPION_BOLT', 'PLAGUE_CART', 'AERARIUM', 'EAGLE_SCOUT']);
+    expect(getPinnedRecipes()).toEqual(['SCORPION_BOLT', 'HORSEMAN', 'PLAGUE_CART', 'AERARIUM']);
   });
 });
