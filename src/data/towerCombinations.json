@@ -12,7 +12,7 @@
         "minTier": 2
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "SCORPION_BOLT",
@@ -27,7 +27,7 @@
         "minTier": 2
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "COHORT_GUARD",
@@ -42,7 +42,7 @@
         "minTier": 2
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "WAR_CHARIOT",
@@ -57,7 +57,7 @@
         "minTier": 3
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "EAGLE_STANDARD",
@@ -76,7 +76,7 @@
         "minTier": 2
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "PLAGUE_CART",
@@ -91,7 +91,7 @@
         "minTier": 2
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "NUMIDIAN_CAVALRY",
@@ -110,7 +110,7 @@
         "minTier": 3
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "PRAETORIAN_WALL",
@@ -129,7 +129,7 @@
         "minTier": 3
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "AERARIUM",
@@ -144,7 +144,7 @@
         "minTier": 2
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "SIEGE_ONAGER",
@@ -227,7 +227,7 @@
         "minTier": 4
       }
     ],
-    "cost": 120
+    "cost": 50
   },
   {
     "result": "HANNIBALS_NIGHTMARE",
@@ -242,7 +242,7 @@
         "minTier": 2
       }
     ],
-    "cost": 120
+    "cost": 50
   },
   {
     "result": "GOD_OF_WAR",
@@ -261,7 +261,7 @@
         "minTier": 4
       }
     ],
-    "cost": 175
+    "cost": 50
   },
   {
     "result": "VEXILLATION",
@@ -280,7 +280,7 @@
         "minTier": 2
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "TESSERARIUS",
@@ -295,7 +295,7 @@
         "minTier": 2
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "SCOUT_VEXILLUM",
@@ -310,7 +310,7 @@
         "minTier": 2
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "STORMCALLER",
@@ -325,7 +325,7 @@
         "minTier": 3
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "SACER_VESTAL",
@@ -344,7 +344,7 @@
         "minTier": 3
       }
     ],
-    "cost": 10
+    "cost": 50
   },
   {
     "result": "TRIBUNUS_LATICLAVIUS",
@@ -382,7 +382,7 @@
         "minTier": 4
       }
     ],
-    "cost": 90
+    "cost": 50
   },
   {
     "result": "TRIUMPHATOR",
@@ -401,7 +401,7 @@
         "minTier": 4
       }
     ],
-    "cost": 95
+    "cost": 50
   },
   {
     "result": "PONTIFEX_MAXIMUS",
@@ -420,7 +420,7 @@
         "minTier": 4
       }
     ],
-    "cost": 95
+    "cost": 50
   },
   {
     "result": "TURMA_LANCERS",
@@ -435,7 +435,7 @@
         "minTier": 3
       }
     ],
-    "cost": 25
+    "cost": 200
   },
   {
     "result": "AURORA_LEGION",
@@ -450,7 +450,7 @@
         "minTier": 4
       }
     ],
-    "cost": 60
+    "cost": 200
   },
   {
     "result": "STORM_VEXILLATION",
@@ -465,7 +465,7 @@
         "minTier": 4
       }
     ],
-    "cost": 60
+    "cost": 200
   },
   {
     "result": "IMPERIUM_ETERNUM",
@@ -484,7 +484,7 @@
         "minTier": 4
       }
     ],
-    "cost": 240
+    "cost": 200
   },
   {
     "result": "CARTHAGE_SCOURGE",
@@ -499,7 +499,7 @@
         "minTier": 5
       }
     ],
-    "cost": 220
+    "cost": 200
   },
   {
     "result": "TRIUMVIRATE",
@@ -518,7 +518,7 @@
         "minTier": 4
       }
     ],
-    "cost": 190
+    "cost": 200
   },
   {
     "result": "TRIPLEX_ACIES",
@@ -545,7 +545,7 @@
         "minTier": 2
       }
     ],
-    "cost": 40
+    "cost": 200
   },
   {
     "result": "LEGION_PRIME",
@@ -564,7 +564,7 @@
         "minTier": 3
       }
     ],
-    "cost": 125
+    "cost": 200
   },
   {
     "result": "CONSULAR_FATEBINDER",
@@ -583,7 +583,7 @@
         "minTier": 4
       }
     ],
-    "cost": 315
+    "cost": 200
   },
   {
     "result": "SIGNIFERS_DRACONARIUS",
@@ -682,12 +682,12 @@
         "minTier": 1
       }
     ],
-    "cost": 650
+    "cost": 200
   },
   {
     "result": "PRAETORIAN_EXECUTIONER",
     "tier": 3,
-    "cost": 10,
+    "cost": 50,
     "ingredients": [
       {
         "type": "LIBRITOR",
@@ -706,7 +706,7 @@
   {
     "result": "SACRED_BAND",
     "tier": 4,
-    "cost": 55,
+    "cost": 50,
     "ingredients": [
       {
         "type": "CATAPHRACT",
@@ -725,7 +725,7 @@
   {
     "result": "BEASTLORD_CHAMPION",
     "tier": 3,
-    "cost": 10,
+    "cost": 50,
     "ingredients": [
       {
         "type": "BEAST_HUNTER",
@@ -744,7 +744,7 @@
   {
     "result": "MIRMILLO_REAVER",
     "tier": 3,
-    "cost": 10,
+    "cost": 50,
     "ingredients": [
       {
         "type": "RETIARIUS",
@@ -763,7 +763,7 @@
   {
     "result": "TRIBUNE_AVENGER",
     "tier": 4,
-    "cost": 55,
+    "cost": 50,
     "ingredients": [
       {
         "type": "EVOCATUS",
@@ -782,7 +782,7 @@
   {
     "result": "CATAPHRACT_LANCER",
     "tier": 4,
-    "cost": 55,
+    "cost": 50,
     "ingredients": [
       {
         "type": "CATAPHRACT",
@@ -801,7 +801,7 @@
   {
     "result": "STORM_BALLISTA",
     "tier": 4,
-    "cost": 55,
+    "cost": 50,
     "ingredients": [
       {
         "type": "BALLISTARIUS",
@@ -820,7 +820,7 @@
   {
     "result": "SKYREAPER_BATTERY",
     "tier": 4,
-    "cost": 70,
+    "cost": 50,
     "ingredients": [
       {
         "type": "AQUILA_VENATOR",
@@ -839,7 +839,7 @@
   {
     "result": "PLAGUE_LOBBER",
     "tier": 3,
-    "cost": 10,
+    "cost": 50,
     "ingredients": [
       {
         "type": "FUNDIBULUS",
@@ -858,7 +858,7 @@
   {
     "result": "AUGURS_WRATH",
     "tier": 5,
-    "cost": 95,
+    "cost": 50,
     "ingredients": [
       {
         "type": "HARUSPEX",
@@ -877,7 +877,7 @@
   {
     "result": "EXPLORATORES",
     "tier": 3,
-    "cost": 35,
+    "cost": 50,
     "ingredients": [
       {
         "type": "SPECULATOR",
@@ -892,7 +892,7 @@
   {
     "result": "VULCAN_BOMBARD",
     "tier": 3,
-    "cost": 35,
+    "cost": 50,
     "ingredients": [
       {
         "type": "COLOSSUS_ONAGER",
@@ -907,7 +907,7 @@
   {
     "result": "VANGUARD_WING",
     "tier": 4,
-    "cost": 95,
+    "cost": 200,
     "ingredients": [
       {
         "type": "EXPLORATORES",
@@ -922,7 +922,7 @@
   {
     "result": "VULCAN_COLOSSUS",
     "tier": 5,
-    "cost": 140,
+    "cost": 200,
     "ingredients": [
       {
         "type": "VULCAN_BOMBARD",
@@ -937,7 +937,7 @@
   {
     "result": "SKY_DOMINION",
     "tier": 5,
-    "cost": 240,
+    "cost": 200,
     "ingredients": [
       {
         "type": "SKYREAPER_BATTERY",
@@ -956,7 +956,7 @@
   {
     "result": "AUREATE_TRIBUNAL",
     "tier": 5,
-    "cost": 250,
+    "cost": 200,
     "ingredients": [
       {
         "type": "AERARIUM",
@@ -975,7 +975,7 @@
   {
     "result": "GLACIAL_PALISADE",
     "tier": 5,
-    "cost": 240,
+    "cost": 200,
     "ingredients": [
       {
         "type": "FROZEN_LEGION",
@@ -994,7 +994,7 @@
   {
     "result": "INFERNAL_COLOSSUS",
     "tier": 5,
-    "cost": 290,
+    "cost": 200,
     "ingredients": [
       {
         "type": "VULCAN_COLOSSUS",
@@ -1013,7 +1013,7 @@
   {
     "result": "ROMAN_TRANSFORMER",
     "tier": 5,
-    "cost": 600,
+    "cost": 500,
     "ingredients": [
       {
         "type": "HANNIBALS_NIGHTMARE",
@@ -1028,7 +1028,7 @@
   {
     "result": "NEPTUNES_LEVIATHAN",
     "tier": 5,
-    "cost": 600,
+    "cost": 500,
     "ingredients": [
       {
         "type": "ABYSSAL_ONAGER",
@@ -1043,7 +1043,7 @@
   {
     "result": "PRAETORIAN_FLEET",
     "tier": 5,
-    "cost": 90,
+    "cost": 50,
     "ingredients": [
       {
         "type": "TRIREME_BALLISTA",
@@ -1058,7 +1058,7 @@
   {
     "result": "CORVUS_LEGION_DOCK",
     "tier": 5,
-    "cost": 90,
+    "cost": 50,
     "ingredients": [
       {
         "type": "CORVUS_BOARDING_SHIP",
@@ -1073,7 +1073,7 @@
   {
     "result": "ORACLE_LIGHTHOUSE",
     "tier": 5,
-    "cost": 95,
+    "cost": 50,
     "ingredients": [
       {
         "type": "NEREID_ORACLE",
@@ -1088,7 +1088,7 @@
   {
     "result": "ABYSSAL_ONAGER",
     "tier": 5,
-    "cost": 110,
+    "cost": 50,
     "ingredients": [
       {
         "type": "CHARYBDIS_VORTEX",
@@ -1103,7 +1103,7 @@
   {
     "result": "HYDRA_BEAST_PIT",
     "tier": 5,
-    "cost": 105,
+    "cost": 50,
     "ingredients": [
       {
         "type": "HYDRA_OF_LERNA",
@@ -1118,7 +1118,7 @@
   {
     "result": "MARS_TIDAL_BASTION",
     "tier": 5,
-    "cost": 120,
+    "cost": 50,
     "ingredients": [
       {
         "type": "RAMMING_QUINQUEREME",

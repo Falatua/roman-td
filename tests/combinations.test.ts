@@ -39,6 +39,29 @@ function placeTower(state: any, type: TowerType, tier: 1|2|3|4|5, x: number, y: 
   return t;
 }
 
+const BASE_COMBO_RECIPE_COST = 50;
+const SUPER_COMBO_RECIPE_COST = 200;
+const OMEGA_COMBO_RECIPE_COST = 500;
+
+function isOmegaComboRecipeResult(result: string): boolean {
+  return (towersData as any)[result]?.omega === true;
+}
+
+function isSuperComboRecipeResult(result: string): boolean {
+  if (result === TowerType.MARS_VICTOR) return true;
+  const ability = String((towersData as any)[result]?.ability ?? '').toUpperCase();
+  return ability.includes('SUPERCOMBO') ||
+    ability.includes('SUPER COMBO') ||
+    ability.includes('COMBO-OF-COMBO') ||
+    ability.includes('COMBOS-OF-COMBOS');
+}
+
+function expectedRecipeCost(result: string): number {
+  if (isOmegaComboRecipeResult(result)) return OMEGA_COMBO_RECIPE_COST;
+  if (isSuperComboRecipeResult(result)) return SUPER_COMBO_RECIPE_COST;
+  return BASE_COMBO_RECIPE_COST;
+}
+
 function installImmediateGoldQuestPayout(state: any) {
   state.__onImmediateQuestCheck = () => {
     for (const q of evaluateQuests(state)) {
@@ -488,41 +511,22 @@ describe('Recipe combo detection', () => {
     expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(235.0);
   });
 
-  it('prices Supercombo and Omega conversions as late-run commitments', () => {
-    const byResult = (result: string) => comboData.find((r: any) => r.result === result) as any;
-
-    expect(byResult(TowerType.TRIPLEX_ACIES).cost).toBe(40);
-    expect(byResult(TowerType.LEGION_PRIME).cost).toBe(125);
-    expect(byResult(TowerType.CONSULAR_FATEBINDER).cost).toBe(315);
-    expect(byResult(TowerType.JULIUS_CAESAR).cost).toBe(120);
-    expect(byResult(TowerType.HANNIBALS_NIGHTMARE).cost).toBe(120);
-    expect(byResult(TowerType.GOD_OF_WAR).cost).toBe(175);
-    expect(byResult(TowerType.IMPERIUM_ETERNUM).cost).toBe(240);
-    expect(byResult(TowerType.CARTHAGE_SCOURGE).cost).toBe(220);
-    expect(byResult(TowerType.TRIUMVIRATE).cost).toBe(190);
-
-    expect(byResult(TowerType.SKY_DOMINION).cost).toBe(240);
-    expect(byResult(TowerType.AUREATE_TRIBUNAL).cost).toBe(250);
-    expect(byResult(TowerType.GLACIAL_PALISADE).cost).toBe(240);
-    expect(byResult(TowerType.INFERNAL_COLOSSUS).cost).toBe(290);
-
-    expect(byResult(TowerType.MARS_VICTOR).cost).toBe(650);
-    expect(byResult(TowerType.ROMAN_TRANSFORMER).cost).toBe(600);
-    expect(byResult(TowerType.NEPTUNES_LEVIATHAN).cost).toBe(600);
+  it('prices authored combo recipes by class: base 50g, super 200g, omega 500g', () => {
+    const seen = { base: 0, super: 0, omega: 0 };
+    for (const recipe of comboData as any[]) {
+      expect(recipe.cost, `${recipe.result} should use the class price`).toBe(expectedRecipeCost(recipe.result));
+      if (isOmegaComboRecipeResult(recipe.result)) seen.omega++;
+      else if (isSuperComboRecipeResult(recipe.result)) seen.super++;
+      else seen.base++;
+    }
+    expect(seen).toEqual({ base: 47, super: 16, omega: 2 });
   });
 
-  it('prices formerly cheap recipe outliers as real investment choices', () => {
-    const byResult = (result: TowerType) => comboData.find((r: any) => r.result === result) as any;
-
-    expect(byResult(TowerType.NEMESIS_ENGINE).cost).toBe(90);
-
-    for (const result of [TowerType.AUGURS_WRATH, TowerType.EXPLORATORES, TowerType.VULCAN_BOMBARD]) {
-      const recipe = byResult(result);
-      expect(recipe.cost).toBeGreaterThanOrEqual(35);
-      for (const ingredient of recipe.ingredients) {
-        expect(ingredient.minTier).toBeGreaterThanOrEqual(3);
-      }
-    }
+  it('keeps legendary item evolutions out of paid recipe conversions', () => {
+    const paidRecipeResults = new Set((comboData as any[]).map(recipe => recipe.result));
+    expect(paidRecipeResults.has(TowerType.GIANT_KILLER)).toBe(false);
+    expect(paidRecipeResults.has(TowerType.GIANTS_COHORT_GUARD)).toBe(false);
+    expect(paidRecipeResults.has(TowerType.UNDEAD_GLADIATOR_KING)).toBe(false);
   });
 
   it('adds four new recipe-only supercombo towers from previously unused combo ingredients', () => {
@@ -559,7 +563,7 @@ describe('Recipe combo detection', () => {
     const recipe = comboData.find((r: any) => r.result === 'ROMAN_TRANSFORMER') as any;
     expect(recipe).toBeTruthy();
     expect(recipe.tier).toBe(5);
-    expect(recipe.cost).toBe(600);
+    expect(recipe.cost).toBe(OMEGA_COMBO_RECIPE_COST);
     expect(recipe.ingredients).toEqual([
       { type: 'HANNIBALS_NIGHTMARE', minTier: 5 },
       { type: 'JULIUS_CAESAR', minTier: 5 }
@@ -578,7 +582,7 @@ describe('Recipe combo detection', () => {
     const recipe = comboData.find((r: any) => r.result === 'NEPTUNES_LEVIATHAN') as any;
     expect(recipe).toBeTruthy();
     expect(recipe.tier).toBe(5);
-    expect(recipe.cost).toBe(600);
+    expect(recipe.cost).toBe(OMEGA_COMBO_RECIPE_COST);
     expect(recipe.ingredients).toEqual([
       { type: 'ABYSSAL_ONAGER', minTier: 5 },
       { type: 'HYDRA_BEAST_PIT', minTier: 5 }
