@@ -1439,6 +1439,18 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(modalErgonomics, 'Shared modals should still keep Escape functionality without advertising it').toContain("ev.key !== 'Escape'");
   });
 
+  it('tower hover preview names equipped items instead of only showing an item count', () => {
+    const source = readFileSync('src/main.ts', 'utf8');
+    expect(source).toContain("import { towerName, enemyName, itemName, factionName, pretty } from './format'");
+    expect(source).toContain('const equippedItemIds = t.equippedItems ?? []');
+    expect(source).toContain('tower-hover-equipped-items');
+    expect(source).toContain('tower-hover-item-pill');
+    expect(source).toContain('itemName(itemId)');
+    expect(source).toContain('itemKindLabel(itemDef.effect)');
+    expect(source).toContain("if (text.includes('STUN')) return 'STUN'");
+    expect(source).toContain('No equipped items');
+  });
+
   it('keeps Solo free of whole-screen shake and low-life red screen tint', () => {
     const renderer = readFileSync('src/render/RenderEngine.ts', 'utf8');
     const main = readFileSync('src/main.ts', 'utf8');

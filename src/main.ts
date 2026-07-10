@@ -67,7 +67,7 @@ import { comboPreviewBlockHtml, showComboInfoModal } from './render/ComboPreview
 import { markScrollable } from './render/ScrollCues';
 import { enhanceModalErgonomics } from './render/ModalErgonomics';
 import { Logger } from './Logger';
-import { towerName, enemyName, factionName, pretty } from './format';
+import { towerName, enemyName, itemName, factionName, pretty } from './format';
 import { showEnemyInspect, showEnemyInspectByType } from './render/EnemyInspect';
 import { armorProfileForGroup, armorDamageTypeShortLabel } from './systems/EnemyResistances';
 import { SFX, setFactionBGM, setMuted, isMuted, playMusicTrack, stopMusicTrack, stopAllMusicTracks, surpriseEventSting, sfx, preloadAllSamples, unmuteAndRestartMusicTrack } from './render/AudioManager';
@@ -6210,7 +6210,7 @@ async function boot() {
     document.getElementById('waypoint-tooltip')?.remove();
   });
   // 2026-05-19 — Tower hover preview helper. Shows a floating chip with
-  // name / tier / DPS / range / attack speed / item count / kill count.
+  // name / tier / DPS / range / attack speed / equipped items / kill count.
   // Auto-tracks the cursor and hides when the cursor leaves any tower.
   function updateTowerHoverPreview(towerId: string | null, mouseX: number, mouseY: number) {
     let tip = document.getElementById('tower-hover-preview');
@@ -6227,12 +6227,56 @@ async function boot() {
     const auraTag = auraKind
       ? `<span style="color:#${AURA_TILE_EFFECTS[auraKind].color.toString(16).padStart(6,'0')};font-weight:bold;font-size:9px;letter-spacing:1.5px">★ ON ${AURA_TILE_EFFECTS[auraKind].label}</span>`
       : '';
-    const items = (t.equippedItems ?? []).length;
+    const equippedItemIds = t.equippedItems ?? [];
+    const items = equippedItemIds.length;
+    const escapeInlineHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch] ?? ch));
+    const itemRarityColor = (rarity?: string) => ({
+      COMMON: '#cdb98a',
+      UNCOMMON: '#88ff88',
+      RARE: '#66c8ff',
+      EPIC: '#c080ff',
+      LEGENDARY: '#ffd34d'
+    }[String(rarity ?? '').toUpperCase()] ?? '#fff8e0');
+    const itemKindLabel = (effect?: string) => {
+      const text = String(effect ?? '').toUpperCase();
+      if (text.includes('AURA')) return 'AURA';
+      if (text.includes('MELEE ONLY')) return 'MELEE';
+      if (text.includes('RANGED ONLY')) return 'RANGED';
+      if (text.includes('HARBOR')) return 'HARBOR';
+      if (text.includes('DIVINE')) return 'DIVINE';
+      if (text.includes('STUN')) return 'STUN';
+      if (text.includes('BURN') || text.includes('FIRE') || text.includes('HELLFIRE')) return 'FIRE';
+      if (text.includes('POISON')) return 'POISON';
+      if (text.includes('BLEED')) return 'BLEED';
+      if (text.includes('ANY TOWER')) return 'ANY';
+      if (text.includes('EVERY ATTACK')) return 'SPECIAL';
+      return 'ITEM';
+    };
+    const equippedItemHtml = equippedItemIds.length
+      ? `<div id="tower-hover-equipped-items" style="margin-top:5px;display:flex;flex-direction:column;gap:3px">
+          ${equippedItemIds.map(itemId => {
+            const itemDef = (itemsData as Record<string, { name?: string; rarity?: string; effect?: string }>)[itemId] ?? {};
+            const rarity = String(itemDef.rarity ?? '').toUpperCase();
+            const kind = itemKindLabel(itemDef.effect);
+            const label = itemName(itemId);
+            return `<div class="tower-hover-item-pill" title="${escapeInlineHtml(itemDef.effect ?? label)}" style="display:flex;justify-content:space-between;gap:8px;align-items:center;border:1px solid #3a3025;background:rgba(255,248,224,0.035);padding:2px 5px;min-width:0">
+              <span style="color:${itemRarityColor(rarity)};font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeInlineHtml(label)}</span>
+              <span style="color:#aa9a4a;font-size:8.5px;letter-spacing:1px;white-space:nowrap">${escapeInlineHtml(rarity || 'ITEM')} · ${escapeInlineHtml(kind)}</span>
+            </div>`;
+          }).join('')}
+        </div>`
+      : `<div id="tower-hover-equipped-items" style="margin-top:5px;color:#6f6248;font-style:italic;font-size:10px">No equipped items</div>`;
     const niceName = def.name ?? String(t.type).replace(/_/g, ' ');
     if (!tip) {
       tip = document.createElement('div');
       tip.id = 'tower-hover-preview';
-      tip.style.cssText = `position:fixed;pointer-events:none;z-index:100;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid ${tierCol};padding:8px 12px;font-family:'Courier New',monospace;color:#e8d6a8;font-size:10.5px;letter-spacing:0.5px;line-height:1.5;box-shadow:0 0 18px rgba(0,0,0,0.6);min-width:200px;max-width:280px;`;
+      tip.style.cssText = `position:fixed;pointer-events:none;z-index:100;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid ${tierCol};padding:8px 12px;font-family:'Courier New',monospace;color:#e8d6a8;font-size:10.5px;letter-spacing:0.5px;line-height:1.5;box-shadow:0 0 18px rgba(0,0,0,0.6);min-width:230px;max-width:340px;`;
       document.body.appendChild(tip);
     } else {
       tip.style.borderColor = tierCol;
@@ -6250,10 +6294,11 @@ async function boot() {
         <span style="color:#aa9a4a">Items</span><b style="color:#fff8e0">${items} equipped</b>
         <span style="color:#aa9a4a">Kills</span><b style="color:#88ff88">${t.killCount ?? 0}</b>
       </div>
+      ${equippedItemHtml}
       <div style="margin-top:6px">${renderTowerDamageProfileHtml(damageProfile, true)}</div>
       ${auraTag ? `<div style="margin-top:5px;padding-top:4px;border-top:1px dashed #3a3025">${auraTag}</div>` : ''}
       <div style="margin-top:6px;font-size:9px;color:#aa9a4a;letter-spacing:1px;font-style:italic">${isMobileDevice() ? 'tap for full menu' : 'click for full menu'}</div>`;
-    const tipW = 300, tipH = 245;
+    const tipW = 360, tipH = 330;
     const left = Math.min(window.innerWidth - tipW - 8, Math.max(8, mouseX + 16));
     const top  = Math.min(window.innerHeight - tipH - 8, Math.max(8, mouseY + 16));
     tip.style.left = left + 'px';
