@@ -3579,6 +3579,7 @@ export class RenderEngine {
     }
     debrisLayer.addChild(debrisGfx);
     this.layers.bg.addChild(debrisLayer);
+    this.layers.bg.addChild(decorLayer);
 
     // 2026-05-22 — CORNER SHRINES. Player-supplied art sheets cropped
     // into 17 ornate Roman-shrine/SPQR/skull-banner pieces, scattered
@@ -3629,8 +3630,6 @@ export class RenderEngine {
       cornerLayer.addChild(sp);
     }
     this.layers.bg.addChild(cornerLayer);
-
-    this.layers.bg.addChild(decorLayer);
 
     // GHOST PATH — the immutable brown stripe showing the unblocked enemy
     // route. Drawn ABOVE the terrain layer (so it shows on top of grass)
