@@ -3193,7 +3193,8 @@ export class RenderEngine {
           const targetDensity = 0.28 * edgeBias * corridorMult * mobileDensityMult * reduceDecorMult;
           // Roll: hash to 0..0.999, compare to target.
           const propRoll = (h % 1000) / 1000;
-          if (propRoll < targetDensity) {
+          const nearOceanEdge = waterProximity(c, r, 2) > 0;
+          if (!nearOceanEdge && propRoll < targetDensity) {
             const propKey = decorProps[hash(c, r, 31337) % decorProps.length];
             const propTex = tex(propKey);
             // tex() returns null for unregistered keys (biome-specific

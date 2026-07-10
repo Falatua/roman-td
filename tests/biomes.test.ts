@@ -312,6 +312,8 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     expect(source).toContain("tex('OCEAN_TINY_SHIPWRECK')");
     expect(source).toContain('tinyShipwreck.rotation = -0.08');
     expect(source).toContain('waterProximity(c, r, 2)');
+    expect(source).toContain('const nearOceanEdge = waterProximity(c, r, 2) > 0;');
+    expect(source).toContain('if (!nearOceanEdge && propRoll < targetDensity)');
     expect(source).toContain('t === TileType.EMPTY');
   });
 
