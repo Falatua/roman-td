@@ -368,3 +368,36 @@ describe('Stone trail skeleton props', () => {
     for (const [key] of expected) expect(source).toContain(`key: '${key}'`);
   });
 });
+
+describe('Rome gate fallen soldier props', () => {
+  it('registers transparent fallen Roman sprites and anchors them at the Rome gate', async () => {
+    const sharp = require('sharp');
+    const expected = [
+      ['MAP_GATE_FALLEN_ROMAN_A', 'map_overhaul/m_gate_fallen_roman_a.png'],
+      ['MAP_GATE_FALLEN_ROMAN_B', 'map_overhaul/m_gate_fallen_roman_b.png'],
+      ['MAP_GATE_FALLEN_ROMAN_C', 'map_overhaul/m_gate_fallen_roman_c.png']
+    ] as const;
+
+    for (const [key, fileName] of expected) {
+      const file = assetFileFor(key);
+      expect(file).toBe(fileName);
+      const full = path.join(__dirname, '../public/assets/sprites', file!);
+      expect(fs.existsSync(full)).toBe(true);
+      const img = sharp(full);
+      const meta = await img.metadata();
+      expect(meta.width).toBe(160);
+      expect(meta.height).toBe(160);
+      expect(meta.hasAlpha).toBe(true);
+
+      const raw = await img.ensureAlpha().raw().toBuffer();
+      const corners = [3, (160 - 1) * 4 + 3, ((160 - 1) * 160) * 4 + 3, ((160 * 160) - 1) * 4 + 3].map(i => raw[i]);
+      expect(Math.max(...corners), `${key} transparent corners`).toBeLessThanOrEqual(8);
+    }
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain('const GATE_FALLEN_SOLDIERS');
+    expect(source).toContain('x: gateCx');
+    expect(source).toContain('y: gateCy');
+    for (const [key] of expected) expect(source).toContain(`key: '${key}'`);
+  });
+});

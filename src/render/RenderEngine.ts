@@ -3679,6 +3679,32 @@ export class RenderEngine {
       this.layers.bg.addChild(gs);
     }
 
+    const GATE_FALLEN_SOLDIERS: Array<{
+      key: string;
+      x: number;
+      y: number;
+      size: number;
+      rotation: number;
+      alpha: number;
+    }> = [
+      { key: 'MAP_GATE_FALLEN_ROMAN_A', x: gateCx - 88, y: gateCy + 30, size: 58, rotation: -0.18, alpha: 0.95 },
+      { key: 'MAP_GATE_FALLEN_ROMAN_B', x: gateCx - 56, y: gateCy - 8, size: 52, rotation: 0.24, alpha: 0.93 },
+      { key: 'MAP_GATE_FALLEN_ROMAN_C', x: gateCx - 20, y: gateCy + 48, size: 50, rotation: -0.08, alpha: 0.92 }
+    ];
+    for (const anchor of GATE_FALLEN_SOLDIERS) {
+      const fallenTex = tex(anchor.key);
+      if (!fallenTex) continue;
+      const fallen = new Sprite(fallenTex);
+      fallen.anchor.set(0.5);
+      fallen.x = anchor.x;
+      fallen.y = anchor.y;
+      fallen.width = anchor.size;
+      fallen.height = anchor.size;
+      fallen.rotation = anchor.rotation;
+      fallen.alpha = anchor.alpha;
+      this.layers.bg.addChild(fallen);
+    }
+
     // Waypoint coins — 1-tile checkpoints.
     // 2026-05-21 — ORNATE MEDALLION UPGRADE (visual overhaul phase V8).
     // Wraps the existing WP1-WP7 sprite with multi-layer procedural
