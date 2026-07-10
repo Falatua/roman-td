@@ -1,6 +1,6 @@
 import { Tower, TowerType, DamageType, TargetingMode, DrawCard } from '../types';
 import { GameStateShape } from '../GameState';
-import { TIER_MULTS, ECONOMY, POOL_PROBABILITIES, GRID, AURA_TILES, AURA_TILE_EFFECTS, type AuraTile } from '../constants';
+import { TIER_MULTS, ECONOMY, POOL_PROBABILITIES, GRID, AURA_TILES, AURA_TILE_EFFECTS, HERO_ITEM_SLOTS, type AuraTile } from '../constants';
 import towersData from '../data/towers.json';
 import { damageTypeFromString } from './DamageTypeSystem';
 import { isInsideStructureFootprint } from './GridManager';
@@ -67,6 +67,7 @@ const MELEE_ATTACK_SPEED_MULT = 1.06;
 const MELEE_MIN_RANGE_TILES = 2.0;
 const AURA_STACK_CAP = 2.00;
 const SULLA_PASSIVE_RADIUS_TILES = 5.5;
+export const GIANTS_BANE_ITEM_ID = 'GIANTS_BANE';
 
 function isMeleeClassTower(t: Tower): boolean {
   const def: any = (towersData as any)[t.type];
@@ -173,6 +174,33 @@ export function createTower(type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: numbe
     // for heroes is fixed at 2 regardless of tier (see TowerMenu).
     isHero: !!(def as any).isHero
   };
+}
+
+export function towerItemSlotCap(t: Tower): number {
+  if ((t as any).isHero) return HERO_ITEM_SLOTS;
+  if (t.type === TowerType.GIANT_KILLER) return Math.max(4, TIER_MULTS.itemSlots[t.qualityTier] ?? 1);
+  return TIER_MULTS.itemSlots[t.qualityTier] ?? 1;
+}
+
+export function canTransformWithGiantsBane(t: Tower): boolean {
+  return !t.pending && t.type === TowerType.MILITES && t.qualityTier >= 4;
+}
+
+export function transformMilitesWithGiantsBane(t: Tower): boolean {
+  if (!canTransformWithGiantsBane(t)) return false;
+  if (!t.equippedItems.includes(GIANTS_BANE_ITEM_ID)) return false;
+  const def = towerDef(TowerType.GIANT_KILLER);
+  if (!def) return false;
+  const priorBuiltFrom = t.builtFrom?.length ? t.builtFrom : [TowerType.MILITES];
+  t.type = TowerType.GIANT_KILLER;
+  t.damageType = damageTypeFromString(def.damageType);
+  t.baseDps = def.baseDps * 1.10;
+  t.attackSpeed = def.attackSpeed;
+  t.range = def.range;
+  t.targetingMode = def.antiAirOnly ? TargetingMode.FLYERS : TargetingMode.FIRST;
+  t.isAerarium = false;
+  t.builtFrom = Array.from(new Set([...priorBuiltFrom, TowerType.MILITES]));
+  return true;
 }
 
 // Probability draw: 5 cards. Each is type + tier per pool weights.

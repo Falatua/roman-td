@@ -605,7 +605,8 @@ describe('Tower roster integrity', () => {
       'ITEM_TIDEPIERCER_HARPOON',
       'ITEM_AEGEAN_PEARL',
       'ITEM_STORMGLASS_AMPHORA',
-      'ITEM_NEPTUNES_TRIDENT'
+      'ITEM_NEPTUNES_TRIDENT',
+      'ITEM_GIANTS_BANE'
     ];
     for (const key of keys) {
       const rel = (ASSET_KEYS as any)[key];

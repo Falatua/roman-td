@@ -1,7 +1,7 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
-import { createTower, towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw } from '../src/systems/TowerSystem';
+import { canTransformWithGiantsBane, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, transformMilitesWithGiantsBane } from '../src/systems/TowerSystem';
 import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
@@ -735,7 +735,35 @@ describe('Neptune\'s Leviathan omega combat wiring', () => {
   });
 });
 
-describe('Giant Killer combo combat wiring', () => {
+describe('Giant Killer transformation and combat wiring', () => {
+  it('transforms only Tier IV+ Milites carrying Giant\'s Bane and opens four total slots', () => {
+    const lowMilites = createTower(TowerType.MILITES, 3, 4, 4, 0);
+    lowMilites.equippedItems.push(GIANTS_BANE_ITEM_ID);
+    expect(canTransformWithGiantsBane(lowMilites)).toBe(false);
+    expect(transformMilitesWithGiantsBane(lowMilites)).toBe(false);
+    expect(lowMilites.type).toBe(TowerType.MILITES);
+
+    const wrongTower = createTower(TowerType.HASTATI, 4, 4, 4, 0);
+    wrongTower.equippedItems.push(GIANTS_BANE_ITEM_ID);
+    expect(canTransformWithGiantsBane(wrongTower)).toBe(false);
+    expect(transformMilitesWithGiantsBane(wrongTower)).toBe(false);
+    expect(wrongTower.type).toBe(TowerType.HASTATI);
+
+    const milites = createTower(TowerType.MILITES, 4, 4, 4, 0);
+    milites.equippedItems.push('SHARPENED_BLADE', GIANTS_BANE_ITEM_ID);
+    milites.equippedItemRarities = ['COMMON', 'LEGENDARY'];
+    const before = towerEffectiveStats(milites);
+
+    expect(canTransformWithGiantsBane(milites)).toBe(true);
+    expect(transformMilitesWithGiantsBane(milites)).toBe(true);
+    expect(milites.type).toBe(TowerType.GIANT_KILLER);
+    expect(milites.equippedItems).toContain(GIANTS_BANE_ITEM_ID);
+    expect(milites.equippedItemRarities).toEqual(['COMMON', 'LEGENDARY']);
+    expect(towerItemSlotCap(milites)).toBe(4);
+    expect(milites.builtFrom).toContain(TowerType.MILITES);
+    expect(towerEffectiveStats(milites).dps).toBeGreaterThan(before.dps * 3);
+  });
+
   it('specializes hard into giant-class enemies without becoming a universal answer', () => {
     function fireAt(type: EnemyType, faction: EnemyFaction, archetype: Enemy['archetype'] = 'SWARM') {
       const state = createGameState();
@@ -770,7 +798,7 @@ describe('Giant Killer combo combat wiring', () => {
     const seaGiant = fireAt(EnemyType.SEA_GIANT, EnemyFaction.ROMAN_MYTH, 'ELITE');
     const cyclops = fireAt(EnemyType.CYCLOPS, EnemyFaction.ROMAN_MYTH, 'ELITE');
 
-    expect(GIANT_KILLER_GIANT_DAMAGE_MULT).toBe(4.25);
+    expect(GIANT_KILLER_GIANT_DAMAGE_MULT).toBe(5.5);
     expect(seaGiant.loss).toBeGreaterThan(nonGiantMyth.loss * 1.7);
     expect(cyclops.loss).toBeGreaterThan(nonGiantMyth.loss * 1.15);
     expect(nonGiantMyth.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK)).toBe(false);

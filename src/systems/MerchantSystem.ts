@@ -119,7 +119,9 @@ const MERCATOR_LEGENDARY = [
   'EXECUTIONERS_FALX', 'CONCUSSIVE_WARHEAD',
   // Harbor apex item: strongest on naval/Tideforged towers, still useful
   // for land towers against shipwreck-origin threats.
-  'NEPTUNES_TRIDENT'
+  'NEPTUNES_TRIDENT',
+  // Milites T4-T5 transformation relic: creates the Giant Killer tower.
+  'GIANTS_BANE'
   // CELTIC_LONGSWORD + NECROTIC_LONGSWORD removed from this list — they
   // are now EPIC (see MERCATOR_EPIC).
 ];

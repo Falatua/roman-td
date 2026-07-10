@@ -104,6 +104,7 @@ const FAMILY: Record<string, ItemFamily> = {
   ALPHA_PACK_FANG: 'SPECIAL',
   EXECUTIONERS_FALX: 'SPECIAL',
   CONCUSSIVE_WARHEAD: 'SPECIAL',
+  GIANTS_BANE: 'SPECIAL',
   // CURSED_TORC moved out of DOT (description was actually +30% damage)
   // into AURA — now emits an enemy-debuff (nearby enemies take +18%).
 

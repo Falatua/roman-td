@@ -485,6 +485,7 @@ const MANIFEST: Record<string, string> = {
   ITEM_AEGEAN_PEARL: 'inew_aegean_pearl.png',
   ITEM_STORMGLASS_AMPHORA: 'inew_stormglass_amphora.png',
   ITEM_NEPTUNES_TRIDENT: 'inew_neptunes_trident.png',
+  ITEM_GIANTS_BANE: 'inew_giants_bane.png',
   // Legacy keys preserved for backward compatibility — some are
   // referenced by event-reward modals or older tower-info panels.
   // These map to the closest-thematic new sprite so nothing breaks.

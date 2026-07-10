@@ -1,11 +1,11 @@
-import { Tower, TargetingMode } from '../types';
+import { Tower, TowerType, TargetingMode } from '../types';
 import { GameStateShape } from '../GameState';
-import { ECONOMY, INVENTORY_SIZE, TIER_MULTS, TIER_COLORS, HERO_ITEM_SLOTS } from '../constants';
+import { ECONOMY, INVENTORY_SIZE, TIER_COLORS, HERO_ITEM_SLOTS } from '../constants';
 import { damageTypeLabel, pretty } from '../format';
 import { canDowngrade, downgradeTower } from '../systems/DowngradeSystem';
 import { earnGold } from '../systems/EconomySystem';
 import { setTile } from '../systems/GridManager';
-import { towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, StatModifier } from '../systems/TowerSystem';
+import { canTransformWithGiantsBane, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, transformMilitesWithGiantsBane, StatModifier } from '../systems/TowerSystem';
 import { getTowerProjectileProfile } from '../systems/ProjectileSystem';
 import { TileType } from '../types';
 import { InventoryState, inventoryAdd, inventoryRemove, itemBuyPrice, Rarity } from '../systems/LootSystem';
@@ -190,9 +190,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     speed: effective.attackSpeed,
     range: effective.range,
     damagePerHit: towerPerAttackDamageBase(t),
-    // Hero towers always carry HERO_ITEM_SLOTS regardless of tier;
-    // non-hero towers use the per-tier table.
-    slots: (t as any).isHero ? HERO_ITEM_SLOTS : TIER_MULTS.itemSlots[t.qualityTier],
+    slots: towerItemSlotCap(t),
     refund: Math.max(1, Math.floor((t.costPaid ?? ECONOMY.TIER_PLACE_COST[t.qualityTier] ?? 0) / 2))
   };
   const killBonusPct = ((t.killBonusFlat / Math.max(1, t.baseDps)) * 100).toFixed(1);
@@ -500,6 +498,10 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
       slot.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:1px">${itemIconSvg(itemId, rarity, 38)}<div style="font-size:7px;color:#aa9a4a;letter-spacing:1px">${itemFamily(itemId)}</div></div>`;
       attachItemTooltip(slot, itemId, rarity, idef, true);
       slot.onclick = () => {
+        if (t.type === TowerType.GIANT_KILLER && itemId === GIANTS_BANE_ITEM_ID) {
+          state.hint = "Giant Killer is bound to Giant's Bane. Sell the tower if you want the relic back.";
+          return;
+        }
         if (inv.slots.length >= INVENTORY_SIZE) { state.hint = 'Inventory full. Sell something first to unequip.'; return; }
         const idx = t.equippedItems.indexOf(itemId);
         if (idx >= 0) {
@@ -549,6 +551,9 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
       let blockerShort = '';
       if (t.equippedItems.includes(slot.itemId)) {
         blocker = 'Already equipped on this tower'; blockerShort = 'OWNED';
+      } else if (slot.itemId === GIANTS_BANE_ITEM_ID && !canTransformWithGiantsBane(t)) {
+        blocker = "Giant's Bane only fits Tier IV or Tier V Milites.";
+        blockerShort = 'MILITES T4+';
       } else {
         // EQUIP MODE GATE — runs before the family check so a Sagittarius
         // looking at a Barbed Gladius sees "MELEE ONLY" first, not the
@@ -596,7 +601,10 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
         if (!t.equippedItemRarities) t.equippedItemRarities = [];
         t.equippedItemRarities.push(slot.rarity);
         inventoryRemove(inv, slot.id);
-        state.hint = `Equipped ${idef?.name ?? slot.itemId}.`;
+        const transformed = slot.itemId === GIANTS_BANE_ITEM_ID && transformMilitesWithGiantsBane(t);
+        state.hint = transformed
+          ? "Giant's Bane awakens. Milites has become Giant Killer."
+          : `Equipped ${idef?.name ?? slot.itemId}.`;
         refresh();
       };
       invGrid.appendChild(cell);
@@ -1220,6 +1228,9 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
       let blockerShort = '';
       if (t.equippedItems.includes(slot.itemId)) {
         blocker = 'Already equipped on this hero'; blockerShort = 'OWNED';
+      } else if (slot.itemId === GIANTS_BANE_ITEM_ID) {
+        blocker = "Giant's Bane only fits Tier IV or Tier V Milites.";
+        blockerShort = 'MILITES T4+';
       } else {
         const modeCheck = canEquipItemOnDamageType(slot.itemId, t.damageType, t.type);
         if (!modeCheck.ok) {

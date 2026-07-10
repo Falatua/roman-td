@@ -535,7 +535,7 @@ const GIANT_KILLER_TARGET_TYPES = new Set<string>([
   'DREAD_UNDEAD_GIANT',
   'DREAD_UNDEAD_CYCLOPS'
 ]);
-export const GIANT_KILLER_GIANT_DAMAGE_MULT = 4.25;
+export const GIANT_KILLER_GIANT_DAMAGE_MULT = 5.5;
 
 function isGiantKillerTarget(target: Enemy): boolean {
   return GIANT_KILLER_TARGET_TYPES.has(String(target.type));

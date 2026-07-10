@@ -27,7 +27,6 @@ export const TIDEFORGED_TOWER_TYPES: TowerType[] = [
   TowerType.ABYSSAL_ONAGER,
   TowerType.HYDRA_BEAST_PIT,
   TowerType.MARS_TIDAL_BASTION,
-  TowerType.GIANT_KILLER,
   TowerType.NEPTUNES_LEVIATHAN
 ];
 
