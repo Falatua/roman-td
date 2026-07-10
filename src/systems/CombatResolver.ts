@@ -984,7 +984,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       localAuras.push({ x: cx, y: cy, r: 2.5 * GRID.TILE, dmg: 0.18 });
     }
     if (t.equippedItems.includes('WAR_HOUND_COLLAR') && !auraOff) {
-      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, spd: 0.28 });
+      // 2026-07-09 balance — was a +28% speed aura, an exact duplicate of
+      // Optio's Whistle at the same EPIC rarity. Now a hybrid pack aura:
+      // sits above RARE Aquilifer's Banner (20/15) and below LEGENDARY
+      // Barca War Horn (30/20) on the aura ladder.
+      localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.22, spd: 0.18 });
     }
     if (t.equippedItems.includes('DRUIDS_TORC') && !auraOff) {
       localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.28 });
@@ -1338,6 +1342,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         (s.kind === StatusEffectKind.STUN || s.kind === StatusEffectKind.SLOW || s.kind === StatusEffectKind.FREEZE) && s.remaining > 0)) damage *= 1.40;
       if (t.type === TowerType.AQUILA_VENATOR && target.isFlyer) damage *= 1.75;
       if (t.equippedItems.includes('FLYER_BANE') && target.isFlyer) damage *= 1.35;
+      // 2026-07-09 balance — RUSTED_HASTA is now a ground-only +14% (was a
+      // flat +10% self-mult in towerEffectiveStats, an exact duplicate of
+      // Sharpened Blade at the same COMMON rarity). Per-hit conditional,
+      // same pattern as FLYER_BANE but inverted: flyers are excluded.
+      if (t.equippedItems.includes('RUSTED_HASTA') && !target.isFlyer) damage *= 1.14;
       // 2026 v2 — anti-air item suite (any tower; range/speed halves live in TowerSystem).
       if (t.equippedItems.includes('SKYPIERCER_BOLTS') && target.isFlyer) damage *= 1.85;
       if (t.equippedItems.includes('JUPITERS_SKYFIRE') && target.isFlyer) damage *= 2.40;
@@ -1400,7 +1409,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // BOSS-DAMAGE TROPHIES (2026-05): per-hit multipliers that only fire
       // against bosses. Stack multiplicatively if a tower somehow holds
       // multiple, but the family system already gates duplicates.
-      if (target.isBoss && t.equippedItems.includes('ELEPHANT_TUSK'))        damage *= 1.75;
+      // 2026-07-09 balance — ELEPHANT_TUSK also fires vs ELITES. At boss-only
+      // +75% it was strictly dominated by Warlord's War Paint (+100%) and
+      // Undead Elephant Bone (+125%) at the same LEGENDARY rarity — a dead
+      // pull. Now it trades depth for breadth (the Tyrian Dye pattern):
+      // wider target coverage vs War Paint's bigger boss-only spike.
+      if ((target.isBoss || target.archetype === 'ELITE') && t.equippedItems.includes('ELEPHANT_TUSK')) damage *= 1.75;
       if (target.isBoss && t.equippedItems.includes('WARLORDS_WAR_PAINT'))   damage *= 2.00;
       if (target.isBoss && t.equippedItems.includes('UNDEAD_ELEPHANT_BONE')) damage *= 2.25;
       // 2026-05-19 — AURA TILE: TYRANT TILE (RED). Tower on a red tile
@@ -3166,12 +3180,17 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
     // burn/bleed which already had multiple options.
     //   VENOM_TIPPED_ARROWS : RANGED-only · 5%/sec × 4s = 20% maxHP total
     //   SERPENT_AMULET      : ANY tower   · 3%/sec × 5s = 15% maxHP total
-    //   WITCHS_VENOM        : RARE, ANY   · 8%/sec × 5s = 40% maxHP total
+    //   WITCHS_VENOM        : RARE, ANY   · 4%/sec × 5s = 20% maxHP total
     // The DOT_POISON sub-family rule means a tower can carry at most ONE
     // of these (+ POISONED_BLADE) — they don't stack on the same tower.
+    // 2026-07-09 balance — WITCHS_VENOM 8% → 4%/sec. At 8% a single RARE
+    // saturated the entire 7%/sec aggregate DoT cap by itself and beat the
+    // LEGENDARY Soulfire Brand (whose hellfire is clamped to 2%/sec by the
+    // sub-cap). Now it sits one clean step above the two UNCOMMON poisons:
+    // same 20% total as Venom-Tipped Arrows but without the class lock.
     if (t.equippedItems.includes('VENOM_TIPPED_ARROWS')) pushStatus(target, StatusEffectKind.POISON, 4, 0.05, tier);
     if (t.equippedItems.includes('SERPENT_AMULET'))      pushStatus(target, StatusEffectKind.POISON, 5, 0.03, tier);
-    if (t.equippedItems.includes('WITCHS_VENOM'))        pushStatus(target, StatusEffectKind.POISON, 5, 0.08, tier);
+    if (t.equippedItems.includes('WITCHS_VENOM'))        pushStatus(target, StatusEffectKind.POISON, 5, 0.04, tier);
   }
 }
 

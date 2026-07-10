@@ -49,6 +49,11 @@ const EQUIP_MODE: Record<string, EquipMode> = {
   // sub-25% enemies from across the map is too sweeping. Restricting
   // to melee makes the player invest in a frontline killer to use it.
   DAMNATIO_MEMORIAE: 'MELEE',
+  // 2026-07-09 balance — BRONZE_GREAVES is now MELEE-only (+0.5 reach,
+  // +10% damage). As a plain +0.5 range it was strictly dominated by
+  // Watchtower Lens (+0.75) at the same COMMON rarity; leg armor that
+  // extends polearm reach gives it a real melee identity instead.
+  BRONZE_GREAVES: 'MELEE',
   // RANGED-only — projectile / saddle / shot themed items
   STORM_JAVELIN: 'RANGED',
   QUICKDRAW_GLOVES: 'RANGED',
@@ -109,7 +114,7 @@ const FAMILY: Record<string, ItemFamily> = {
   // 2026-05 aura expansion — five items converted from single-tower
   // self-buffs to actual aura emitters so the AURA family has real
   // variety and supports vs. ally-buff vs. enemy-debuff archetypes.
-  WAR_HOUND_COLLAR: 'AURA',     // +18% atk speed aura, 2.5 tiles
+  WAR_HOUND_COLLAR: 'AURA',     // +22% dmg +18% atk speed aura, 3 tiles (2026-07-09)
   DRUIDS_TORC: 'AURA',          // +18% damage aura, 2.5 tiles
   CURSED_TORC: 'AURA',          // +18% enemy-taken aura, 2 tiles (debuff)
 

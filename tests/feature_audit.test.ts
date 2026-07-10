@@ -240,6 +240,15 @@ describe('Inspection panels keep obvious close controls', () => {
     expect(readFileSync('src/render/ComboPreview.ts', 'utf8')).not.toContain('combo-info-dismiss');
   });
 
+  it('wave breakdown uses only the shared aligned close control', () => {
+    const src = readFileSync('src/render/TowerLeaderboard.ts', 'utf8');
+    expect(src).toContain('enhanceModalErgonomics(modal, panel');
+    expect(src).toContain('closeOnEscape: true');
+    expect(src).not.toContain("textContent = '✕'");
+    expect(src).not.toContain('toolRightPx: 54');
+    expect(src).not.toContain('closeBtn.onclick');
+  });
+
   it('shared modal ergonomics adds a standard X close button by default', () => {
     const helper = readFileSync('src/render/ModalErgonomics.ts', 'utf8');
     expect(helper).toContain('opts.closeButton !== false');

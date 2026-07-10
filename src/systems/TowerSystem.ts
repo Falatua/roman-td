@@ -370,15 +370,19 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     itemSpeedMult *= 1.20;
   }
   // 2026-05-19 — GATE-EXCLUSIVE COMMONS/UNCOMMONS. Five new items
-  // that live only at the gate shop:
-  //   • RUSTED_HASTA: +10% damage
-  //   • AUGUR_SCROLL: +25% attack speed (gate-exclusive Uncommon)
+  // that live only at the gate shop (rebalanced 2026-07-09 so none is an
+  // exact duplicate of a Mercator item at the same rarity):
+  //   • RUSTED_HASTA: +14% vs GROUND — per-hit conditional in
+  //     CombatResolver (was a flat +10%, a Sharpened Blade clone)
+  //   • AUGUR_SCROLL: +18% attack speed, +0.5 range (was +25% speed,
+  //     a Mercury Feather clone; range below in extraRange)
   //   • CONSULAR_TOKEN: +15% damage, +0.75 range (range below)
   //   • PRAETORIAN_COIN: +1 gold per kill (wired in main.ts kill hook)
-  //   • BRONZE_GREAVES: +0.5 tile range (below in extraRange)
-  if (t.equippedItems.includes('RUSTED_HASTA')) itemDmgMult *= 1.10;
-  if (t.equippedItems.includes('AUGUR_SCROLL')) itemSpeedMult *= 1.25;
+  //   • BRONZE_GREAVES: MELEE ONLY +0.5 reach +10% damage (reach below
+  //     in extraRange; equip gate in ItemRules)
+  if (t.equippedItems.includes('AUGUR_SCROLL')) itemSpeedMult *= 1.18;
   if (t.equippedItems.includes('CONSULAR_TOKEN')) itemDmgMult *= 1.15;
+  if (t.equippedItems.includes('BRONZE_GREAVES')) itemDmgMult *= 1.10;
   // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES (atk-speed half).
   // PERIMETER_TORCH (invasion):    +50% atk speed (damage in CombatResolver)
   // HELLGATE_BRAND   (gates):      +40% atk speed (damage in CombatResolver)
@@ -399,6 +403,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     (t.equippedItems.includes('LICTOR_FASCES') ? 2 : 0) +
     // 2026-05-19 — Gate-exclusive range items.
     (t.equippedItems.includes('BRONZE_GREAVES') ? 0.5 : 0) +
+    (t.equippedItems.includes('AUGUR_SCROLL') ? 0.5 : 0) +
     (t.equippedItems.includes('CONSULAR_TOKEN') ? 0.75 : 0) +
     (isHarborOrTideforged && t.equippedItems.includes('AEGEAN_PEARL') ? 0.75 : 0) +
     (isHarborOrTideforged && t.equippedItems.includes('NEPTUNES_TRIDENT') ? 1.0 : 0) +
@@ -648,9 +653,11 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
   if (items.includes('LICTOR_FASCES')) { dmgMods.push({ source: "Lictor's Fasces", multiplier: 1.40 }); rngMods.push({ source: "Lictor's Fasces", flat: 2 }); }
   if (items.includes('AUXILIARY_SLING') && t.damageType === DamageType.PHYS_RANGED) dmgMods.push({ source: 'Auxiliary Sling', multiplier: 1.55 });
   if (items.includes('FALCONERS_WATCHPOST')) { spdMods.push({ source: "Falconer's Watchpost", multiplier: 1.40 }); rngMods.push({ source: "Falconer's Watchpost", flat: 3 }); }
-  if (items.includes('AUGUR_SCROLL')) spdMods.push({ source: "Augur's Scroll", multiplier: 1.25 });
+  if (items.includes('AUGUR_SCROLL')) { spdMods.push({ source: "Augur's Scroll", multiplier: 1.18 }); rngMods.push({ source: "Augur's Scroll", flat: 0.5 }); }
   if (items.includes('CONSULAR_TOKEN')) { dmgMods.push({ source: 'Consular Token', multiplier: 1.15 }); rngMods.push({ source: 'Consular Token', flat: 0.75 }); }
-  if (items.includes('RUSTED_HASTA')) dmgMods.push({ source: 'Rusted Hasta', multiplier: 1.10 });
+  // RUSTED_HASTA is a target-conditional per-hit bonus (+14% vs ground,
+  // CombatResolver) — like FLYER_BANE / the boss trophies it is not part
+  // of the unconditional stat breakdown.
   if (items.includes('SPEAR_OF_MARS')) { dmgMods.push({ source: 'Spear of Mars', multiplier: 1.60 }); rngMods.push({ source: 'Spear of Mars', flat: 7 }); }
   if (items.includes('CAPITOLINE_AEGIS')) dmgMods.push({ source: 'Capitoline Aegis divine rider', multiplier: 1.35 });
   if (items.includes('VANGUARD_PILUM')) { dmgMods.push({ source: 'Vanguard Pilum', multiplier: 1.75 }); rngMods.push({ source: 'Vanguard Pilum', flat: 2 }); }
@@ -662,7 +669,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
     dmgMods.push({ source: 'Hellgate Brand', multiplier: 1.80 });
     spdMods.push({ source: 'Hellgate Brand', multiplier: 1.40 });
   }
-  if (items.includes('BRONZE_GREAVES')) rngMods.push({ source: 'Bronze Greaves', flat: 0.5 });
+  if (items.includes('BRONZE_GREAVES')) { dmgMods.push({ source: 'Bronze Greaves (melee)', multiplier: 1.10 }); rngMods.push({ source: 'Bronze Greaves (melee)', flat: 0.5 }); }
   if (items.includes('STORM_AQUILA_TALONS')) rngMods.push({ source: 'Storm Aquila Talons', flat: 2 });
 
   // ── Live support aura stack ───────────────────────────────────────────
@@ -780,7 +787,10 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       const otherItems = other.equippedItems ?? [];
       if (otherItems.includes('CENTURIONS_TRUMPET') && within(other, 2.5)) addLocalSpeed("Centurion's Trumpet aura", 0.18);
       if (otherItems.includes('BATTLE_STANDARD') && within(other, 2.5)) addLocalDmg('Battle Standard aura', 0.18);
-      if (otherItems.includes('WAR_HOUND_COLLAR') && within(other, 3)) addLocalSpeed('War-Hound Collar aura', 0.28);
+      if (otherItems.includes('WAR_HOUND_COLLAR') && within(other, 3)) {
+        addLocalDmg('War-Hound Collar aura', 0.22);
+        addLocalSpeed('War-Hound Collar aura', 0.18);
+      }
       if (otherItems.includes('DRUIDS_TORC') && within(other, 3)) addLocalDmg("Druid's Torc aura", 0.28);
       if (otherItems.includes('BARCA_WAR_HORN') && within(other, 3.5)) {
         addLocalDmg('Barca War Horn aura', 0.30);

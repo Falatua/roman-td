@@ -62,20 +62,16 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
   modal.appendChild(panel);
   parent.appendChild(modal);
 
-  // Header bar — title + wave number + close button
+  // Header bar — title + wave number. The shared modal controls own
+  // collapse/move/close so the wave breakdown never renders duplicate Xs.
   const waveDisplay = state.wave > 0 ? `WAVE ${displayWaveNumber(state)}` : 'PRE-WAVE 1';
   const header = document.createElement('div');
-  header.style.cssText = `padding:14px 18px;background:linear-gradient(90deg,#3a2a14,#1a1410,#3a2a14);border-bottom:2px solid #d4af37;display:flex;justify-content:space-between;align-items:center`;
+  header.style.cssText = `padding:14px 18px;background:linear-gradient(90deg,#3a2a14,#1a1410,#3a2a14);border-bottom:2px solid #d4af37;display:flex;align-items:center`;
   header.innerHTML = `
     <div>
       <div style="font-size:18px;font-weight:bold;letter-spacing:4px;color:#ffd34d;text-shadow:2px 2px 0 #000">⚔ WAVE BREAKDOWN — <span style="color:#9be0ff">${waveDisplay}</span></div>
       <div style="font-size:11px;color:#cdb98a;letter-spacing:1px;margin-top:2px">Per-tower and damage-trap contribution to this wave only — totals reset between waves. Click tower rows to inspect.</div>
     </div>`;
-  const closeBtn = document.createElement('button');
-  closeBtn.textContent = '✕';
-  closeBtn.style.cssText = `background:#3a1606;color:#ffd34d;border:2px solid #d4af37;padding:6px 12px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:bold;`;
-  closeBtn.onclick = () => hooks.onClose();
-  header.appendChild(closeBtn);
   panel.appendChild(header);
 
   // Column header / sort controls
@@ -125,7 +121,7 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
     footerSelector: '#tower-leaderboard-footer',
     title: 'Wave damage leaderboard',
     onClose: hooks.onClose,
-    toolRightPx: 54
+    closeOnEscape: true
   });
 
   function fmtNum(n: number): string {
@@ -282,15 +278,7 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
     }
     paintRows();
   }, 600);
-  // ESC closes modal
-  const onKey = (ev: KeyboardEvent) => {
-    if (ev.key === 'Escape') {
-      hooks.onClose();
-      document.removeEventListener('keydown', onKey);
-      window.clearInterval(liveTimer);
-    }
-  };
-  document.addEventListener('keydown', onKey);
+  modal.addEventListener('rtd:modal-force-close', () => window.clearInterval(liveTimer), { once: true });
   // Headline updates with the current wave number too (in case the
   // wave advances while the modal is open).
   const headerTitleEl = panel.querySelector('div:first-child > div:first-child > div:first-child') as HTMLElement | null;

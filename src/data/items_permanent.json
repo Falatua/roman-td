@@ -158,7 +158,7 @@
     "rarity": "EPIC",
     "buy": 60,
     "sell": 30,
-    "effect": "Aura 3 tiles: allies gain +28% attack speed"
+    "effect": "Aura 3 tiles: allies gain +22% damage and +18% attack speed"
   },
   "BERSERKERS_MUZZLE": {
     "name": "Berserker's Muzzle",
@@ -207,7 +207,7 @@
     "rarity": "LEGENDARY",
     "buy": 130,
     "sell": 40,
-    "effect": "+75% damage vs Bosses"
+    "effect": "+75% damage vs Bosses and Elites"
   },
   "HANNIBALS_STRATEGY_SCROLL": {
     "name": "Hannibal's Strategy Scroll",
@@ -354,7 +354,7 @@
     "rarity": "RARE",
     "buy": 38,
     "sell": 12,
-    "effect": "Any tower: applies POISON (8% maxHP/sec for 5s) on hit."
+    "effect": "Any tower: applies POISON (4% maxHP/sec for 5s) on hit."
   },
   "LICTOR_FASCES": {
     "name": "Lictor's Fasces",
@@ -391,7 +391,7 @@
     "buy": 9,
     "sell": 4,
     "gateExclusive": true,
-    "effect": "+0.5 tile range."
+    "effect": "MELEE ONLY: +0.5 tile reach and +10% damage."
   },
   "RUSTED_HASTA": {
     "name": "Rusted Hasta",
@@ -399,7 +399,7 @@
     "buy": 8,
     "sell": 3,
     "gateExclusive": true,
-    "effect": "Any tower: +10% damage."
+    "effect": "Any tower: +14% damage vs GROUND enemies (flyers excluded)."
   },
   "AUGUR_SCROLL": {
     "name": "Augur's Scroll",
@@ -407,7 +407,7 @@
     "buy": 18,
     "sell": 7,
     "gateExclusive": true,
-    "effect": "Any tower: +25% attack speed."
+    "effect": "Any tower: +18% attack speed, +0.5 tile range."
   },
   "CONSULAR_TOKEN": {
     "name": "Consular Token",

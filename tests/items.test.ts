@@ -2,7 +2,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
-import { AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, itemRandomSelectionWeight } from '../src/systems/ItemRules';
+import { AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, itemRandomSelectionWeight, itemEquipMode } from '../src/systems/ItemRules';
+import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
+import { TowerType } from '../src/types';
 import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
@@ -533,5 +535,77 @@ describe('EPIC premium drop payload — rollEpicDrop', () => {
     } finally {
       randomSpy.mockRestore();
     }
+  });
+});
+
+// ── 2026-07-09 item balance pass ─────────────────────────────────────────
+// Pins the six changes that removed same-rarity duplicates, dominated
+// items, and the Witch's Venom RARE > LEGENDARY DoT inversion. Each pin
+// asserts the RUNTIME effect (not just JSON text) so a future retune has
+// to touch these deliberately.
+describe('2026-07-09 item balance pass', () => {
+  const mkMelee = () => {
+    const t = createTowerForItems(TowerType.MILITES);
+    return t;
+  };
+  const mkRanged = () => createTowerForItems(TowerType.VELITES);
+
+  function createTowerForItems(type: TowerType) {
+    return createTower(type, 3, 10, 10, 0);
+  }
+
+  it("Augur's Scroll is a hybrid (+18% speed, +0.5 range), no longer a Mercury Feather clone", () => {
+    const bare = mkRanged();
+    const withScroll = mkRanged();
+    withScroll.equippedItems.push('AUGUR_SCROLL');
+    const a = towerEffectiveStats(bare);
+    const b = towerEffectiveStats(withScroll);
+    expect(b.attackSpeed / a.attackSpeed).toBeCloseTo(1.18, 6);
+    expect(b.range - a.range).toBeCloseTo(0.5, 6);
+    const withFeather = mkRanged();
+    withFeather.equippedItems.push('MERCURY_FEATHER');
+    const c = towerEffectiveStats(withFeather);
+    expect(c.attackSpeed / a.attackSpeed).toBeCloseTo(1.25, 6);
+    expect(c.range - a.range).toBeCloseTo(0, 6);
+  });
+
+  it('Rusted Hasta no longer grants a flat self damage multiplier (now +14% vs ground per-hit in CombatResolver)', () => {
+    const bare = mkMelee();
+    const withHasta = mkMelee();
+    withHasta.equippedItems.push('RUSTED_HASTA');
+    expect(towerEffectiveStats(withHasta).dps).toBeCloseTo(towerEffectiveStats(bare).dps, 6);
+    expect((itemsData as any).RUSTED_HASTA.effect).toContain('GROUND');
+  });
+
+  it('Bronze Greaves is MELEE-only with +0.5 reach and +10% damage', () => {
+    expect(itemEquipMode('BRONZE_GREAVES')).toBe('MELEE');
+    const bare = mkMelee();
+    const withGreaves = mkMelee();
+    withGreaves.equippedItems.push('BRONZE_GREAVES');
+    const a = towerEffectiveStats(bare);
+    const b = towerEffectiveStats(withGreaves);
+    expect(b.dps / a.dps).toBeCloseTo(1.10, 6);
+    expect(b.range - a.range).toBeCloseTo(0.5, 6);
+    expect((itemsData as any).BRONZE_GREAVES.effect).toContain('MELEE ONLY');
+  });
+
+  it("Witch's Venom applies 4% maxHP/sec poison (was 8%, which saturated the 7% aggregate cap alone)", () => {
+    const source = readFileSync(path.join(process.cwd(), 'src/systems/CombatResolver.ts'), 'utf8');
+    const m = source.match(/WITCHS_VENOM'\)\)\s+pushStatus\(target, StatusEffectKind\.POISON, 5, ([0-9.]+), tier\)/);
+    expect(m, 'WITCHS_VENOM pushStatus call not found').toBeTruthy();
+    expect(parseFloat(m![1])).toBeCloseTo(0.04, 6);
+    expect((itemsData as any).WITCHS_VENOM.effect).toContain('4% maxHP/sec');
+  });
+
+  it('Elephant Tusk fires vs Elites as well as Bosses (no longer dominated by War Paint)', () => {
+    const source = readFileSync(path.join(process.cwd(), 'src/systems/CombatResolver.ts'), 'utf8');
+    expect(source).toMatch(/\(target\.isBoss \|\| target\.archetype === 'ELITE'\) && t\.equippedItems\.includes\('ELEPHANT_TUSK'\)/);
+    expect((itemsData as any).ELEPHANT_TUSK.effect).toContain('Bosses and Elites');
+  });
+
+  it('War Hound Collar aura is a hybrid (+22% dmg, +18% speed), no longer an Optio Whistle clone', () => {
+    const source = readFileSync(path.join(process.cwd(), 'src/systems/CombatResolver.ts'), 'utf8');
+    expect(source).toMatch(/WAR_HOUND_COLLAR'\) && !auraOff\) \{[\s\S]{0,600}?dmg: 0\.22, spd: 0\.18/);
+    expect((itemsData as any).WAR_HOUND_COLLAR.effect).toContain('+22% damage and +18% attack speed');
   });
 });
