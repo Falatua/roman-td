@@ -332,6 +332,75 @@ const RARITY_COLOR: Record<string, string> = {
   UNIQUE: '#ffd34d'
 };
 
+let __inventoryTooltipEl: HTMLElement | null = null;
+
+function ensureInventoryItemTooltip(): HTMLElement {
+  if (__inventoryTooltipEl && __inventoryTooltipEl.isConnected) return __inventoryTooltipEl;
+  __inventoryTooltipEl = document.createElement('div');
+  __inventoryTooltipEl.id = 'inventory-item-tooltip';
+  __inventoryTooltipEl.style.cssText = `position:fixed;z-index:100050;pointer-events:none;display:none;width:min(280px,calc(100vw - 24px));background:linear-gradient(180deg,#1a1410,#0c0a08);color:#fff8e0;border:2px solid #d4af37;padding:10px 12px;font-family:'Courier New',monospace;font-size:11px;line-height:1.45;box-shadow:0 0 18px rgba(0,0,0,0.72);`;
+  document.body.appendChild(__inventoryTooltipEl);
+  return __inventoryTooltipEl;
+}
+
+function hideInventoryItemTooltip(): void {
+  if (__inventoryTooltipEl) __inventoryTooltipEl.style.display = 'none';
+}
+
+function positionInventoryItemTooltip(tip: HTMLElement, ev: MouseEvent): void {
+  const margin = 14;
+  const w = tip.offsetWidth || 280;
+  const h = tip.offsetHeight || 120;
+  let x = ev.clientX + margin;
+  let y = ev.clientY + margin;
+  if (x + w > window.innerWidth - 8) x = ev.clientX - w - margin;
+  if (y + h > window.innerHeight - 8) y = ev.clientY - h - margin;
+  tip.style.left = `${Math.max(6, x)}px`;
+  tip.style.top = `${Math.max(6, y)}px`;
+}
+
+function attachInventoryItemTooltip(el: HTMLElement, itm: { itemId: string; rarity: string }, def: any): void {
+  el.setAttribute('aria-label', `${def?.name ?? itm.itemId}. ${def?.effect ?? ''}`);
+  el.addEventListener('mouseenter', (ev) => {
+    const tip = ensureInventoryItemTooltip();
+    const color = RARITY_COLOR[itm.rarity] ?? '#d4af37';
+    const family = itemFamily(itm.itemId) ?? 'SPECIAL';
+    const price = itemBuyPrice(itm.itemId);
+    tip.style.borderColor = color;
+    tip.style.boxShadow = `0 0 18px rgba(0,0,0,0.72),0 0 12px ${color}66`;
+    tip.innerHTML = `
+      <div style="display:flex;align-items:flex-start;gap:8px;border-bottom:1px solid ${color}55;padding-bottom:6px;margin-bottom:7px">
+        <div style="flex:0 0 auto">${itemIconSvg(itm.itemId, itm.rarity, 34)}</div>
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:bold;letter-spacing:1px;color:${color};line-height:1.2">${escapeHtml(def?.name ?? itm.itemId.replace(/_/g, ' '))}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;font-size:9px;color:#aa9a4a;letter-spacing:1px">
+            <span>${escapeHtml(itm.rarity)}</span><span>${escapeHtml(family)}</span>${isConsumable(itm.itemId) ? '<span>CONSUMABLE</span>' : ''}
+          </div>
+        </div>
+      </div>
+      <div style="color:#cdb98a;font-size:11px;line-height:1.5">${escapeHtml(def?.effect ?? '(no effect description)')}</div>
+      ${price > 0 ? `<div style="margin-top:7px;font-size:10px;color:#f0c040">Base cost: ${price}g · Click to inspect</div>` : '<div style="margin-top:7px;font-size:10px;color:#f0c040">Click to inspect</div>'}`;
+    tip.style.display = 'block';
+    positionInventoryItemTooltip(tip, ev as MouseEvent);
+  });
+  el.addEventListener('mousemove', (ev) => {
+    if (__inventoryTooltipEl && __inventoryTooltipEl.style.display === 'block') {
+      positionInventoryItemTooltip(__inventoryTooltipEl, ev as MouseEvent);
+    }
+  });
+  el.addEventListener('mouseleave', hideInventoryItemTooltip);
+}
+
+if (typeof window !== 'undefined' && !(window as any).__inventoryItemTooltipBound) {
+  window.addEventListener('click', hideInventoryItemTooltip, true);
+  window.addEventListener('scroll', hideInventoryItemTooltip, true);
+  window.addEventListener('blur', hideInventoryItemTooltip);
+  window.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') hideInventoryItemTooltip();
+  }, true);
+  (window as any).__inventoryItemTooltipBound = true;
+}
+
 export interface ShopHooks {
   onClose: () => void;
 }
@@ -1279,6 +1348,11 @@ export function inventorySellPrice(rarityOrSlot: any): number {
 
 export function showInventoryModal(parent: HTMLElement, inv: InventoryState, state: GameStateShape, hooks: { onSell: (idx: number) => void; onClose: () => void }) {
   closeGameModals();
+  hideInventoryItemTooltip();
+  const closeInventory = () => {
+    hideInventoryItemTooltip();
+    hooks.onClose();
+  };
   const modal = document.createElement('div');
   modal.id = 'inventory-modal';
   // 2026-07-09 — Inventory containment. The modal frame itself stays fixed;
@@ -1296,6 +1370,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   const body = document.createElement('div');
   body.id = 'inventory-scroll-body';
   body.style.cssText = `flex:1 1 auto;min-height:0;overflow:auto;padding-right:4px;box-sizing:border-box;scrollbar-gutter:stable both-edges;`;
+  body.addEventListener('scroll', hideInventoryItemTooltip, { passive: true });
   panel.appendChild(body);
 
   // Selection state: which slot is currently selected.
@@ -1492,7 +1567,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
     if (itm) {
       const def: any = isConsumable(itm.itemId) ? (consumables as any)[itm.itemId] : (items as any)[itm.itemId];
       slot.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">${itemIconSvg(itm.itemId, itm.rarity, 44)}${isConsumable(itm.itemId) ? '<div style="font-size:7px;color:#ee9966;letter-spacing:1px;line-height:1">1×</div>' : ''}</div>`;
-      slot.title = `${def?.name ?? itm.itemId}\n${def?.effect ?? ''}\nClick to inspect`;
+      attachInventoryItemTooltip(slot, itm, def);
       slot.onclick = () => {
         // Update selection: clear previous highlight, mark this one.
         const prev = grid.querySelectorAll<HTMLDivElement>('[data-inv-slot]');
@@ -1582,7 +1657,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   const close = document.createElement('button');
   close.textContent = 'CLOSE';
   close.style.cssText = `background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:7px 14px;cursor:pointer;font-family:inherit;font-size:12px;`;
-  close.onclick = hooks.onClose;
+  close.onclick = closeInventory;
   closeRow.appendChild(close);
   panel.appendChild(closeRow);
   modal.appendChild(panel);
@@ -1590,11 +1665,11 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
     bodySelector: '#inventory-scroll-body',
     footerSelector: '#inventory-footer',
     title: 'Inventory',
-    onClose: hooks.onClose
+    onClose: closeInventory
   });
   // 2026-05-24 — Backdrop click closes the inventory modal.
   modal.addEventListener('click', (ev) => {
-    if (ev.target === modal) hooks.onClose();
+    if (ev.target === modal) closeInventory();
   });
   panel.addEventListener('click', (ev) => ev.stopPropagation());
   // Mount at body level so the transformed stage wrapper can never sit

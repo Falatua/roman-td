@@ -1210,6 +1210,20 @@ describe('Inventory modal interaction layer', () => {
     expect(source).toContain("bodySelector: '#inventory-scroll-body'");
     expect(source).toContain("footerSelector: '#inventory-footer'");
   });
+
+  it('shows item effects on Armarium item hover without replacing click inspection', () => {
+    const fs = require('fs');
+    const source = fs.readFileSync('src/render/ShopUI.ts', 'utf8');
+    expect(source).toContain("id = 'inventory-item-tooltip'");
+    expect(source).toContain('function attachInventoryItemTooltip');
+    expect(source).toContain("el.addEventListener('mouseenter'");
+    expect(source).toContain("el.addEventListener('mousemove'");
+    expect(source).toContain("el.addEventListener('mouseleave', hideInventoryItemTooltip)");
+    expect(source).toContain('attachInventoryItemTooltip(slot, itm, def)');
+    expect(source).toContain('Click to inspect');
+    expect(source).toContain("body.addEventListener('scroll', hideInventoryItemTooltip");
+    expect(source).not.toContain('slot.title = `${def?.name ?? itm.itemId}');
+  });
 });
 
 describe('Quest modal interaction layer', () => {
