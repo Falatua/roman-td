@@ -1193,14 +1193,14 @@ describe('Inventory modal interaction layer', () => {
     expect(source).toContain("modal.id = 'inventory-modal'");
     expect(source).toContain('position:fixed;inset:0');
     expect(source).toContain('z-index:100000;pointer-events:auto');
-    expect(source).toContain('position:relative;z-index:1;width:min(560px,94vw)');
+    expect(source).toContain('position:relative;z-index:1;width:min(680px,96vw)');
     expect(source).toContain('(document.body ?? parent).appendChild(modal)');
   });
 
   it('keeps inventory grid, details, and close controls inside one scrollable Armarium frame', () => {
     const fs = require('fs');
     const source = fs.readFileSync('src/render/ShopUI.ts', 'utf8');
-    expect(source).toContain('height:min(900px,calc(100vh - 32px))');
+    expect(source).toContain('height:min(960px,calc(100vh - 16px))');
     expect(source).toContain('display:flex;flex-direction:column;overflow:hidden');
     expect(source).toContain("body.id = 'inventory-scroll-body'");
     expect(source).toContain('flex:1 1 auto;min-height:0;overflow:auto');
@@ -1252,7 +1252,7 @@ describe('Codex modal interaction layer', () => {
     const source = fs.readFileSync('src/render/Codex.ts', 'utf8');
     expect(source).toContain('overflow:hidden');
     expect(source).toContain('display:flex;flex-direction:column');
-    expect(source).toContain('height:min(860px,calc(100vh - 32px))');
+    expect(source).toContain('height:min(960px,calc(100vh - 16px))');
     expect(source).toContain('class="rtd-codex-scroll-body"');
     expect(source).toContain('flex:1 1 auto;min-height:0;overflow:auto');
     expect(source).toContain('background:#0c0a08;border:1px solid #3a3025;padding:10px');
@@ -1314,14 +1314,15 @@ describe('Modal ergonomics and popup stacking', () => {
       expect(harborModal, `Harbor Draft should show ${label} detail`).toContain(`['${label}'`);
     }
     expect(harborModal).toContain('<b style="color:#ffd34d">Ability:</b>');
-    expect(harborModal).toContain('max-height:min(70vh,650px);overflow-y:auto');
-    expect(harborModal).toContain('grid-template-columns:repeat(auto-fit,minmax(260px,1fr))');
+    expect(harborModal).toContain('max-height:min(78vh,760px);overflow-y:auto');
+    expect(harborModal).toContain('grid-template-columns:repeat(auto-fit,minmax(280px,1fr))');
   });
 
   it('ships one shared collapse and drag helper for major player-facing panels', () => {
     const helper = readFileSync('src/render/ModalErgonomics.ts', 'utf8');
     expect(helper).toContain('export function enhanceModalErgonomics');
     expect(helper).toContain('export function makePanelDraggable');
+    expect(helper).toContain('max-height: min(94vh, 960px)');
     expect(helper).toContain('is-rtd-collapsed');
     expect(helper).toContain('collapseTargetsFor');
     expect(helper).toContain('directChildren.slice(1)');
@@ -1371,8 +1372,8 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(source).toContain('rtd-tower-menu-scroll-body');
     expect(source).toContain("'overflow-y:auto'");
     expect(source).toContain("'flex:1'");
-    expect(source).toContain("panel.style.maxHeight = 'calc(100vh - 32px)'");
-    expect(source).toContain("panel.style.height = 'min(900px, calc(100vh - 32px))'");
+    expect(source).toContain("panel.style.maxHeight = 'calc(100vh - 16px)'");
+    expect(source).toContain("panel.style.height = 'min(960px, calc(100vh - 16px))'");
     expect(source).toContain("bodySelector: '.rtd-tower-menu-collapse'");
   });
 
@@ -1381,7 +1382,7 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(source).toContain('rtd-enemy-inspect-scroll-body');
     expect(source).toContain("'overflow-y:auto'");
     expect(source).toContain("'flex:1'");
-    expect(source).toContain('max-height:calc(100vh - 32px)');
+    expect(source).toContain('max-height:calc(100vh - 16px)');
     expect(source).toContain("bodySelector: '.rtd-enemy-inspect-collapse'");
     expect(source).toContain('markScrollable(body)');
     expect(source).not.toContain('markScrollable(modal)');

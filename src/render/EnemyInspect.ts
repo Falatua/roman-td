@@ -81,7 +81,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // inside the parchment instead of depending on the backdrop scroll.
   modal.style.cssText = `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.5);z-index:80;padding:16px 8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
   const panel = document.createElement('div');
-  panel.style.cssText = `position:relative;background:linear-gradient(180deg,#241a12,#17110c 46%,#0b0907 100%);border:3px solid ${acColor};color:#e8d6a8;width:min(480px,96vw);max-height:calc(100vh - 32px);box-shadow:0 0 24px ${acColor}44,0 18px 42px rgba(0,0,0,0.72);opacity:1;overflow:hidden;display:flex;flex-direction:column;`;
+  panel.style.cssText = `position:relative;background:linear-gradient(180deg,#241a12,#17110c 46%,#0b0907 100%);border:3px solid ${acColor};color:#e8d6a8;width:min(620px,96vw);max-height:calc(100vh - 16px);box-shadow:0 0 24px ${acColor}44,0 18px 42px rgba(0,0,0,0.72);opacity:1;overflow:hidden;display:flex;flex-direction:column;`;
 
   const banner = document.createElement('div');
   banner.style.cssText = `background:${acColor};color:#1a1410;padding:6px 104px 6px 12px;font-weight:bold;letter-spacing:3px;display:flex;justify-content:space-between;align-items:center`;

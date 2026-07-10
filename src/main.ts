@@ -3564,10 +3564,10 @@ async function boot() {
       : '';
     const modal = document.createElement('div');
     modal.id = 'quests-modal';
-    modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);z-index:100000;pointer-events:auto;font-family:'Courier New',monospace;`;
+    modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);z-index:100000;pointer-events:auto;font-family:'Courier New',monospace;padding:8px;box-sizing:border-box;`;
     const panel = document.createElement('div');
     panel.id = 'quests-panel';
-    panel.style.cssText = `background:#1a1410;border:3px solid #88ff88;color:#e8d6a8;width:min(560px,94vw);max-height:84vh;display:flex;flex-direction:column;padding:14px 16px;box-shadow:0 0 28px rgba(136,255,136,0.35);`;
+    panel.style.cssText = `background:#1a1410;border:3px solid #88ff88;color:#e8d6a8;width:min(760px,96vw);height:min(900px,calc(100vh - 16px));max-height:calc(100vh - 16px);display:flex;flex-direction:column;padding:14px 16px;box-shadow:0 0 28px rgba(136,255,136,0.35);box-sizing:border-box;`;
     panel.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 90px 8px 0;border-bottom:1px solid #5a4a30;flex-shrink:0">
         <div style="font-size:18px;font-weight:bold;letter-spacing:3px;color:#88ff88;text-shadow:1px 1px 0 #000">📜 QUESTS</div>

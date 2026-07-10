@@ -58,7 +58,7 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
   modal.addEventListener('click', (e) => { if (e.target === modal) hooks.onClose(); });
 
   const panel = document.createElement('div');
-  panel.style.cssText = `width:min(920px,94vw);max-height:96%;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #d4af37;box-shadow:0 0 0 2px #120d0a,0 0 36px rgba(212,175,55,0.4),inset 0 0 60px rgba(0,0,0,0.6);display:flex;flex-direction:column;`;
+  panel.style.cssText = `width:min(1120px,96vw);max-height:calc(100vh - 16px);background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #d4af37;box-shadow:0 0 0 2px #120d0a,0 0 36px rgba(212,175,55,0.4),inset 0 0 60px rgba(0,0,0,0.6);display:flex;flex-direction:column;`;
   modal.appendChild(panel);
   parent.appendChild(modal);
 

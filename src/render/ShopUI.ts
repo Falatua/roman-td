@@ -594,7 +594,7 @@ function renderMercatorShop(
   modal.style.cssText = `position:absolute;left:0;top:0;bottom:0;right:120px;display:flex;align-items:flex-start;justify-content:center;background:radial-gradient(ellipse at center,rgba(58,22,6,0.65),rgba(0,0,0,0.85));z-index:50;padding:12px 8px;box-sizing:border-box;font-family:'Courier New',monospace;`;
 
   const panel = document.createElement('div');
-  panel.style.cssText = `background:linear-gradient(180deg,#2a1a0e,#0c0a08);border:4px solid #d4af37;outline:1px solid #1a1410;color:#fff8e0;padding:0;width:min(680px,94vw);max-height:96%;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 36px rgba(212,175,55,0.45),inset 0 0 24px rgba(0,0,0,0.5);`;
+  panel.style.cssText = `background:linear-gradient(180deg,#2a1a0e,#0c0a08);border:4px solid #d4af37;outline:1px solid #1a1410;color:#fff8e0;padding:0;width:min(920px,96vw);max-height:calc(100% - 8px);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 36px rgba(212,175,55,0.45),inset 0 0 24px rgba(0,0,0,0.5);`;
 
   // ── Header banner ──────────────────────────────────────────────────
   const cartSrc = imgSrcFromTex('MERCATOR_CART') || imgSrcFromTex('MERCATOR');
@@ -1084,7 +1084,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   // Mercator panel: larger, double-bordered, ornate gold accents, decorative
   // top banner with a tent/cart sprite. Gate shop keeps its compact look.
   if (isMerc) {
-    panel.style.cssText = `background:linear-gradient(180deg,#2a1a0e,#0c0a08);border:4px solid #d4af37;outline:1px solid #1a1410;color:#fff8e0;padding:0;width:min(600px,94vw);max-height:96%;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 36px rgba(212,175,55,0.45),inset 0 0 24px rgba(0,0,0,0.5);`;
+    panel.style.cssText = `background:linear-gradient(180deg,#2a1a0e,#0c0a08);border:4px solid #d4af37;outline:1px solid #1a1410;color:#fff8e0;padding:0;width:min(920px,96vw);max-height:calc(100% - 8px);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 36px rgba(212,175,55,0.45),inset 0 0 24px rgba(0,0,0,0.5);`;
     // Header strip with gold gradient + Mercator portrait/cart icon
     const cartSrc = imgSrcFromTex('MERCATOR_CART') || imgSrcFromTex('MERCATOR');
     const cartHtml = cartSrc ? `<img src="${cartSrc}" style="width:64px;height:64px;image-rendering:pixelated;flex-shrink:0;filter:drop-shadow(2px 2px 0 #000)"/>` : '';
@@ -1103,7 +1103,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
     // pattern. The outer modal already has overflow scroll via padding +
     // align-items:flex-start, so the panel just sets a max-height of 96%
     // of parent (#app) and lets the inner content overflow:auto.
-    panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:14px;width:min(520px,94vw);max-height:96%;overflow:auto;font-family:'Courier New',monospace;`;
+    panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:14px;width:min(760px,96vw);max-height:calc(100% - 8px);overflow:auto;font-family:'Courier New',monospace;`;
     panel.innerHTML = `<h2 style="margin:0 0 10px;color:#d4af37">GATE SHOP</h2>
       <div style="font-size:12px;margin-bottom:10px;opacity:0.8">Refreshes every 4 waves (W4 / W8 / W12 / W16 / W20 / W24 / W28).</div>`;
   }
@@ -1361,7 +1361,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
   // the map outside the frame.
   modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.55);z-index:100000;pointer-events:auto;padding:16px 8px;box-sizing:border-box;overflow:hidden;font-family:'Courier New',monospace;`;
   const panel = document.createElement('div');
-  panel.style.cssText = `position:relative;z-index:1;width:min(560px,94vw);height:min(900px,calc(100vh - 32px));max-height:calc(100vh - 32px);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:14px;`;
+  panel.style.cssText = `position:relative;z-index:1;width:min(680px,96vw);height:min(960px,calc(100vh - 16px));max-height:calc(100vh - 16px);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,#241a12,#0c0a08);border:3px solid #d4af37;color:#e8d6a8;box-shadow:0 0 28px #000;padding:14px;`;
   const ownedRamparts = rampartsOwned(state);
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex:0 0 auto">
     <div><div style="font-size:18px;color:#d4af37;font-weight:bold;letter-spacing:3px">ARMARIUM</div><div style="font-size:11px;color:#aa9a4a;letter-spacing:1px">ITEM VAULT ${inv.slots.length}/${INVENTORY_SIZE}${ownedRamparts > 0 ? ` · RAMPARTS ${ownedRamparts}` : ''}</div></div>

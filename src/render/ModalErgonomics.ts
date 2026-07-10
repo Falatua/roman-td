@@ -29,8 +29,8 @@ export function ensureModalErgonomicsStyle(): void {
   st.textContent = `
     .rtd-modal-panel {
       position: relative;
-      max-height: min(88vh, 820px);
-      max-width: calc(100vw - 16px);
+      max-height: min(94vh, 960px);
+      max-width: calc(100vw - 12px);
     }
     .rtd-modal-panel.rtd-modal-tools-reserved:not(.is-rtd-collapsed) {
       padding-top: max(var(--rtd-panel-padding-top, 0px), var(--rtd-modal-tools-reserve-top, 54px)) !important;
@@ -94,7 +94,7 @@ export function ensureModalErgonomicsStyle(): void {
       .rtd-modal-tools { right: 6px; top: 6px; }
       .rtd-modal-tool { width: 34px; height: 34px; }
       .rtd-modal-panel {
-        max-height: calc(100vh - 14px);
+        max-height: calc(100vh - 8px);
       }
     }
   `;

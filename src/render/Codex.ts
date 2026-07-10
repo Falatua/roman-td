@@ -81,10 +81,10 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   // 2026-05-18 — Codex window enlarged so the dense per-tab tables
   // (Items, Enemies, Combinations) have more horizontal breathing room
   // and the player can scan rows without horizontal cramping. Width
-  // bumped from 720px → 1040px (clamped to 96vw). The content body
+  // bumped from 720px → 1180px (clamped to 97vw). The content body
   // scrolls independently so tabs/search remain on the brown frame
   // and long text never leaks over the live map.
-  panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:18px;width:min(1040px,96vw);height:min(860px,calc(100vh - 32px));max-height:calc(100vh - 32px);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;font-family:'Courier New',monospace;font-size:12px;box-shadow:0 0 28px rgba(212,175,55,0.35);`;
+  panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:18px;width:min(1180px,97vw);height:min(960px,calc(100vh - 16px));max-height:calc(100vh - 16px);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;font-family:'Courier New',monospace;font-size:12px;box-shadow:0 0 28px rgba(212,175,55,0.35);`;
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex:0 0 auto;">
     <h2 style="margin:0;color:#d4af37;letter-spacing:3px">LEGION CODEX</h2>
     <button id="codex-close" style="background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:6px 12px;cursor:pointer;font-family:inherit">CLOSE</button>

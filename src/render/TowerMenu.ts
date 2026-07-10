@@ -63,8 +63,8 @@ function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title:
   }
   panel.style.display = 'flex';
   panel.style.flexDirection = 'column';
-  panel.style.maxHeight = 'calc(100vh - 32px)';
-  panel.style.height = 'min(900px, calc(100vh - 32px))';
+  panel.style.maxHeight = 'calc(100vh - 16px)';
+  panel.style.height = 'min(960px, calc(100vh - 16px))';
   panel.style.overflow = 'hidden';
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '.rtd-tower-menu-collapse',
@@ -83,7 +83,7 @@ function towerModalStyle(): string {
 }
 
 function towerPanelStyle(accent: string, shadow = '24px'): string {
-  return `position:relative;background:linear-gradient(180deg,#241a12 0%,#17110c 46%,#0b0907 100%);border:3px solid ${accent};color:#e8d6a8;width:min(560px,96vw);box-shadow:0 0 ${shadow} ${accent}44,0 18px 42px rgba(0,0,0,0.72);opacity:1;overflow:hidden;`;
+  return `position:relative;background:linear-gradient(180deg,#241a12 0%,#17110c 46%,#0b0907 100%);border:3px solid ${accent};color:#e8d6a8;width:min(680px,96vw);box-shadow:0 0 ${shadow} ${accent}44,0 18px 42px rgba(0,0,0,0.72);opacity:1;overflow:hidden;`;
 }
 
 function tierColorHex(tier: number): string {

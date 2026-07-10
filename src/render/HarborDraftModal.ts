@@ -188,16 +188,16 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
       </div>`;
   }).join('');
   wrap.innerHTML = `
-    <div id="harbor-draft-panel" style="width:min(1040px,96vw);max-height:min(88vh,820px);padding:20px 22px;background:linear-gradient(180deg,#102532,#070b10);border:3px solid #5fe6ff;box-shadow:0 0 38px #25bfff88,inset 0 0 24px #000;color:#fff8e0;font-family:'Courier New',monospace;text-align:center;overflow:hidden">
+    <div id="harbor-draft-panel" style="width:min(1180px,97vw);max-height:min(94vh,960px);padding:20px 22px;background:linear-gradient(180deg,#102532,#070b10);border:3px solid #5fe6ff;box-shadow:0 0 38px #25bfff88,inset 0 0 24px #000;color:#fff8e0;font-family:'Courier New',monospace;text-align:center;overflow:hidden">
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding-right:120px">
         <div style="text-align:left">
           <div style="font-size:11px;letter-spacing:5px;color:#88f7ff;font-weight:bold">HARBOR DRAFT</div>
           <div style="font-size:21px;letter-spacing:3px;color:#ffd34d;font-weight:bold">Naval Contracts</div>
         </div>
       </div>
-      <div id="harbor-draft-body" style="margin-top:10px;max-height:min(70vh,650px);overflow-y:auto;padding-right:6px">
+      <div id="harbor-draft-body" style="margin-top:10px;max-height:min(78vh,760px);overflow-y:auto;padding-right:6px">
         <div style="font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Choose one contract, then click an ocean tile to place it, or close this panel to pass. A fresh draft appears after every cleared water-enemy wave. Each card shows the tier-adjusted stats you are buying and whether the contract completes a recipe right now.</div>
-        <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">${cards}</div>
+        <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">${cards}</div>
       </div>
     </div>`;
   wrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:125;pointer-events:auto';
