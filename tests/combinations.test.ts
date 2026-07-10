@@ -639,7 +639,7 @@ describe('Combo execution', () => {
     waterAbyssal.placedOnWater = true;
     const waterCombo = scanCombos(s).find(c => c.result === TowerType.NEPTUNES_LEVIATHAN);
     expect(waterCombo).toBeTruthy();
-    const expectedGoldAfterForge = s.gold - waterCombo!.cost + 1000 + 220 + 150 + 110;
+    const expectedGoldAfterForge = s.gold - waterCombo!.cost + 1000 + 220;
     expect(executeCombo(s, waterCombo!, waterAbyssal.id)).toBe(true);
     const result = Array.from(s.towers.values()).find((t: any) => t.type === TowerType.NEPTUNES_LEVIATHAN) as any;
     expect(result?.tileX).toBe(ocean.x);
@@ -647,10 +647,10 @@ describe('Combo execution', () => {
     expect(result?.placedOnWater).toBe(true);
     expect(s.completedQuests).toEqual(expect.arrayContaining([
       'omega_foundry',
-      'leviathan_pact',
-      'tideforged_doctrine',
-      'imperial_standard'
+      'leviathan_pact'
     ]));
+    expect(s.completedQuests).not.toContain('tideforged_doctrine');
+    expect(s.completedQuests).not.toContain('imperial_standard');
     expect(s.gold).toBe(expectedGoldAfterForge);
   });
 

@@ -123,6 +123,12 @@ const OMEGA_COMBO_TYPES = new Set<string>([
   'NEPTUNES_LEVIATHAN'
 ]);
 
+const countUniqueCombosInSet = (s: GameStateShape, set: Set<string>): number => {
+  let n = 0;
+  for (const k of s.combosBuiltUniqueTypes ?? []) if (set.has(k)) n++;
+  return n;
+};
+
 export const QUESTS: QuestDef[] = [
   // ─── EARLY (still hard — gateway feel, not freebies) ───────────────────
   {
@@ -332,29 +338,25 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'destroyer', tier: 'LATE',
     title: 'Destroyer of Legions',
-    blurb: 'Total 2,000 enemy kills. Break the late-campaign armies.',
+    blurb: 'Total 2,500 enemy kills. Break the late-campaign armies, not just their vanguard.',
     condition: s => s.totalKills,
-    target: 2000,
+    target: 2500,
     reward: { kind: 'GOLD', amount: 180 }
   },
   {
     id: 'legend_tower', tier: 'LATE',
     title: 'Tower of Legend',
-    blurb: 'A single tower reaches 500 kills. Claim the Gold badge.',
+    blurb: 'A single tower reaches 650 kills. Claim the Gold badge.',
     condition: bestSingleTowerKills,
-    target: 500,
+    target: 650,
     reward: { kind: 'GOLD', amount: 200 }
   },
   {
     id: 'apex_forger', tier: 'LATE',
     title: 'Apex Forger',
-    blurb: 'Build at least ONE cross-combo or super-combo (combos-of-combos / 5-base recipes).',
-    condition: s => {
-      const seen = s.combosBuiltUniqueTypes ?? [];
-      for (const k of seen) if (APEX_COMBO_TYPES.has(k)) return 1;
-      return 0;
-    },
-    target: 1,
+    blurb: 'Build 2 different cross-combo towers. One apex is inspiration; two is doctrine.',
+    condition: s => countUniqueCombosInSet(s, APEX_COMBO_TYPES),
+    target: 2,
     reward: { kind: 'GOLD', amount: 110 }
   },
   {
@@ -384,9 +386,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'tideforged_doctrine', tier: 'LATE',
     title: 'Tideforged Doctrine',
-    blurb: 'Forge any Tideforged combo tower on an ocean tile. Land and sea agree to be violent.',
+    blurb: 'Forge 2 Tideforged combo towers on ocean tiles. Land and sea agree to be violent.',
     condition: countTideforgedTowersOnWater,
-    target: 1,
+    target: 2,
     reward: { kind: 'GOLD', amount: 150 }
   },
   {
@@ -400,25 +402,25 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'combo_dynasty', tier: 'LATE',
     title: 'Combo Dynasty',
-    blurb: 'Build 15 combo towers total across the run. Repeats count.',
+    blurb: 'Build 20 combo towers total across the run. Repeats count.',
     condition: s => s.combosBuilt ?? 0,
-    target: 15,
+    target: 20,
     reward: { kind: 'GOLD', amount: 1000 }
   },
   {
     id: 'ten_million_dps', tier: 'LATE',
-    title: 'Ten Million DPS',
-    blurb: 'Use DPS Check and break 10,000,000 effective DPS.',
+    title: 'Fifteen Million DPS',
+    blurb: 'Use DPS Check and break 15,000,000 effective DPS.',
     condition: s => s.bestDpsCheck ?? 0,
-    target: 10000000,
+    target: 15000000,
     reward: { kind: 'GOLD', amount: 500 }
   },
   {
     id: 'imperial_standard', tier: 'LATE',
     title: 'Imperial Standard',
-    blurb: 'Own 2 Tier 5 towers simultaneously on the field.',
+    blurb: 'Own 4 Tier 5 towers simultaneously on the field.',
     condition: s => countTowersAtTier(s, 5),
-    target: 2,
+    target: 4,
     reward: { kind: 'GOLD', amount: 110 }
   },
   {
@@ -432,32 +434,32 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'eternal_bulwark', tier: 'LATE',
     title: 'Eternal Bulwark',
-    blurb: 'Reach wave 27. Stand through the mythic gauntlet.',
+    blurb: 'Reach wave 29. Stand through the mythic gauntlet.',
     condition: s => s.wave,
-    target: 27,
+    target: 29,
     reward: { kind: 'GOLD', amount: 250 }
   },
   {
     id: 'untouched_walls', tier: 'LATE',
     title: 'Untouched Walls',
-    blurb: 'Reach wave 25 with 25+ lives — lose no more than 5 all campaign. Purchased lives do not launder the record.',
-    condition: s => (s.wave >= 25 && s.lives >= 25 && (s.livesBoughtThisRun ?? 0) === 0) ? 1 : 0,
+    blurb: 'Reach wave 27 with 27+ lives — lose no more than 3 all campaign. Purchased lives do not launder the record.',
+    condition: s => (s.wave >= 27 && s.lives >= 27 && (s.livesBoughtThisRun ?? 0) === 0) ? 1 : 0,
     target: 1,
     reward: { kind: 'GOLD', amount: 300 }
   },
   {
     id: 'legion_without_end', tier: 'LATE',
     title: 'Legion Without End',
-    blurb: 'Field 20 towers at the same time. Wall-to-wall Rome.',
+    blurb: 'Field 24 towers at the same time. Wall-to-wall Rome.',
     condition: countFieldedTowers,
-    target: 20,
+    target: 24,
     reward: { kind: 'GOLD', amount: 150 }
   },
   {
     id: 'croesus_of_rome', tier: 'LATE',
     title: 'Croesus of Rome',
-    blurb: 'Hold 2,000 gold at one moment. The Senate audits — and applauds.',
-    condition: s => s.gold >= 2000 ? 1 : 0,
+    blurb: 'Hold 3,000 gold at one moment. The Senate audits — and applauds.',
+    condition: s => s.gold >= 3000 ? 1 : 0,
     target: 1,
     reward: { kind: 'LIFE', amount: 5 }
   }

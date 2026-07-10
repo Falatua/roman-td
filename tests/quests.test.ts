@@ -46,14 +46,14 @@ describe('30-wave Solo quest pacing', () => {
     expect(quest('kitted_veteran').target).toBe(3);
     expect(quest('oathbound').tier).toBe('MID');
     expect(quest('untouched_walls').tier).toBe('LATE');
-    expect(quest('legion_without_end').target).toBe(20);
+    expect(quest('legion_without_end').target).toBe(24);
     expect(quest('croesus_of_rome').reward.kind).toBe('LIFE');
 
     // Condition spot-checks against a synthetic state.
     const s = createGameState();
-    s.gold = 2500;
+    s.gold = 3000;
     expect(quest('croesus_of_rome').condition(s)).toBe(1);
-    s.wave = 25; s.lives = 26; s.livesBoughtThisRun = 0;
+    s.wave = 27; s.lives = 27; s.livesBoughtThisRun = 0;
     expect(quest('untouched_walls').condition(s)).toBe(1);
     s.livesBoughtThisRun = 1;   // purchased lives disqualify the record
     expect(quest('untouched_walls').condition(s)).toBe(0);
@@ -127,6 +127,8 @@ describe('30-wave Solo quest pacing', () => {
 
     const tideforged = createGameState();
     tideforged.towers.set('tf1', { type: TowerType.PRAETORIAN_FLEET, pending: false, placedOnWater: true } as any);
+    expect(evaluateQuests(tideforged).map(q => q.id)).not.toContain('tideforged_doctrine');
+    tideforged.towers.set('tf2', { type: TowerType.ORACLE_LIGHTHOUSE, pending: false, placedOnWater: true } as any);
     expect(evaluateQuests(tideforged).map(q => q.id)).toContain('tideforged_doctrine');
 
     const leviathan = createGameState();
@@ -134,15 +136,15 @@ describe('30-wave Solo quest pacing', () => {
     expect(evaluateQuests(leviathan).map(q => q.id)).toContain('leviathan_pact');
   });
 
-  it('paces total-kill quests near waves 7, 13, and 22', () => {
+  it('paces total-kill quests near waves 7, 13, and 24', () => {
     const campaign = soloCampaignCumulative();
     const completionWave = (target: number) => campaign.find(row => row.kills >= target)?.wave;
     expect(quest('bloodline').target).toBe(430);
     expect(quest('butcher').target).toBe(900);
-    expect(quest('destroyer').target).toBe(2000);
+    expect(quest('destroyer').target).toBe(2500);
     expect(completionWave(quest('bloodline').target)).toBe(7);
     expect(completionWave(quest('butcher').target)).toBe(13);
-    expect(completionWave(quest('destroyer').target)).toBe(22);
+    expect(completionWave(quest('destroyer').target)).toBe(24);
   });
 
   it('paces boss quests near waves 9, 14, and 24', () => {
@@ -168,17 +170,24 @@ describe('30-wave Solo quest pacing', () => {
   it('aligns single-tower mastery with the long campaign badge ladder', () => {
     expect(quest('iron_discipline').target).toBe(160);
     expect(quest('champion_tower').target).toBe(200);
-    expect(quest('legend_tower').target).toBe(500);
-    expect(quest('eternal_bulwark').target).toBe(27);
+    expect(quest('legend_tower').target).toBe(650);
+    expect(quest('eternal_bulwark').target).toBe(29);
   });
 
-  it('rewards super combo, omega combo, combo volume, and 10M DPS check milestones', () => {
+  it('rewards super combo, omega combo, combo volume, and 15M DPS check milestones', () => {
     expect(quest('super_combo_commission').reward).toEqual({ kind: 'GOLD', amount: 500 });
     expect(quest('omega_foundry').reward).toEqual({ kind: 'GOLD', amount: 1000 });
-    expect(quest('combo_dynasty').target).toBe(15);
+    expect(quest('apex_forger').target).toBe(2);
+    expect(quest('combo_dynasty').target).toBe(20);
     expect(quest('combo_dynasty').reward).toEqual({ kind: 'GOLD', amount: 1000 });
-    expect(quest('ten_million_dps').target).toBe(10000000);
+    expect(quest('ten_million_dps').target).toBe(15000000);
     expect(quest('ten_million_dps').reward).toEqual({ kind: 'GOLD', amount: 500 });
+
+    const apexState = createGameState();
+    apexState.combosBuiltUniqueTypes = ['LEGION_PRIME'];
+    expect(evaluateQuests(apexState).map(q => q.id)).not.toContain('apex_forger');
+    apexState.combosBuiltUniqueTypes.push('CONSULAR_FATEBINDER');
+    expect(evaluateQuests(apexState).map(q => q.id)).toContain('apex_forger');
 
     const superState = createGameState();
     superState.combosBuiltUniqueTypes = ['HANNIBALS_NIGHTMARE'];
@@ -189,19 +198,19 @@ describe('30-wave Solo quest pacing', () => {
     expect(evaluateQuests(omegaState).map(q => q.id)).toContain('omega_foundry');
 
     const volumeState = createGameState();
-    volumeState.combosBuilt = 15;
+    volumeState.combosBuilt = 20;
     expect(evaluateQuests(volumeState).map(q => q.id)).toContain('combo_dynasty');
 
     const dpsState = createGameState();
-    dpsState.bestDpsCheck = 10000000;
+    dpsState.bestDpsCheck = 15000000;
     expect(evaluateQuests(dpsState).map(q => q.id)).toContain('ten_million_dps');
   });
 
   it('completes new thresholds exactly once and preserves tier identity', () => {
     const state = createGameState();
-    state.totalKills = 2000;
+    state.totalKills = 2500;
     state.bossesKilled = 20;
-    state.wave = 27;
+    state.wave = 29;
     const first = evaluateQuests(state).map(q => q.id);
     expect(first).toEqual(expect.arrayContaining([
       'first_blood', 'bloodline', 'butcher', 'destroyer',
