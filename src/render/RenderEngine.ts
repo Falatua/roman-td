@@ -2831,6 +2831,7 @@ export class RenderEngine {
     const outerShoreGroundKeys = ['OCEAN_SHORE_PEBBLES', 'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH'];
     const italyShoreRockKeys = ['OCEAN_SHORE_ITALY_ROCKS_A', 'OCEAN_SHORE_ITALY_ROCKS_B', 'OCEAN_SHORE_ITALY_ROCKS_C'];
     const shoreSkullKeys = ['OCEAN_SHORE_SKULLS_A', 'OCEAN_SHORE_SKULLS_B', 'OCEAN_SHORE_SKULLS_C'];
+    const deadFishlingKeys = ['OCEAN_DEAD_FISHLING_FLOAT', 'OCEAN_DEAD_FISHLING_SHORE', 'OCEAN_DEAD_FISHLING_BLOOD'];
     // Shoreline rocks/skulls and every battlefield dressing prop below are
     // visual-only sprites. They live in Pixi background layers, never in
     // state.tiles, so players can build on any underlying EMPTY grass tile.
@@ -2893,6 +2894,49 @@ export class RenderEngine {
       skulls.alpha = 0.94;
       if ((hash(c, r, 93220 + salt) % 2) === 1) skulls.scale.x *= -1;
       coastalDetailLayer.addChild(skulls);
+      return true;
+    };
+    const addDeadFishlingShore = (
+      c: number,
+      r: number,
+      edge: 'S' | 'W',
+      salt: number,
+      scaleMult = 1
+    ) => {
+      const fishTex = tex(deadFishlingKeys[hash(c, r, 94401 + salt) % deadFishlingKeys.length]);
+      if (!fishTex) return false;
+      const x = c * GRID.TILE;
+      const y = r * GRID.TILE;
+      const fish = new Sprite(fishTex);
+      fish.anchor.set(0.5);
+      const along = (hash(c, r, 94402 + salt) % 13) - 6;
+      const intoWater = 5 + (hash(c, r, 94403 + salt) % 5);
+      if (edge === 'S') {
+        fish.x = x + GRID.TILE / 2 + along;
+        fish.y = y + GRID.TILE + intoWater;
+        fish.rotation = -0.12 + (hash(c, r, 94404 + salt) % 9) * 0.03;
+      } else {
+        fish.x = x - intoWater;
+        fish.y = y + GRID.TILE / 2 + along;
+        fish.rotation = Math.PI / 2 + (-0.12 + (hash(c, r, 94404 + salt) % 9) * 0.03);
+      }
+      const fishScale = 0.86 * scaleMult;
+      fish.width = GRID.TILE * fishScale;
+      fish.height = GRID.TILE * fishScale;
+      fish.alpha = 0.88;
+      if ((hash(c, r, 94405 + salt) % 2) === 1) fish.scale.x *= -1;
+      coastalDetailLayer.addChild(fish);
+      if (fishTex && (hash(c, r, 94406 + salt) % 100) < 40) {
+        this.oceanLivingSprites.push({
+          sp: fish,
+          baseX: fish.x,
+          baseY: fish.y,
+          baseAlpha: fish.alpha,
+          phase: (c * 0.49 + r * 0.83 + salt) % 6.28,
+          ampX: edge === 'S' ? 0.25 : 0.18,
+          ampY: edge === 'S' ? 0.18 : 0.25
+        });
+      }
       return true;
     };
     const addTileSprite = (layer: Container, key: string, x: number, y: number, alpha = 1) => {
@@ -2995,6 +3039,10 @@ export class RenderEngine {
             if ((hash(c, r, 93231) % 100) < 54) {
               if (waterS) addShoreSkulls(c, r, 'S', 0, 1.0);
               else if (waterW) addShoreSkulls(c, r, 'W', 7, 1.0);
+            }
+            if ((hash(c, r, 94431) % 100) < 20) {
+              if (waterS) addDeadFishlingShore(c, r, 'S', 0, 0.92);
+              else if (waterW) addDeadFishlingShore(c, r, 'W', 7, 0.92);
             }
           } else {
             if (waterN && (hash(c, r, 92311) % 100) < 44) addItalyShoreRock(c, r, 'N', 61, 0.74);
@@ -3208,6 +3256,9 @@ export class RenderEngine {
       { col: WATER_ZONE.col + 7, row: WATER_ZONE.row + 2, key: 'OCEAN_KELP', terrain: 'water' },
       { col: WATER_ZONE.col + 9, row: WATER_ZONE.row + 4, key: 'OCEAN_FISH', terrain: 'water' },
       { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 1, key: 'OCEAN_FISH', terrain: 'water' },
+      { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 2, key: 'OCEAN_DEAD_FISHLING_FLOAT', terrain: 'water', alpha: 0.88, living: true, ampX: 0.35, ampY: 0.25 },
+      { col: WATER_ZONE.col + 6, row: WATER_ZONE.row + 3, key: 'OCEAN_DEAD_FISHLING_BLOOD', terrain: 'water', alpha: 0.84, xOffset: 4, yOffset: 1, living: true, ampX: 0.28, ampY: 0.22 },
+      { col: WATER_ZONE.col + 10, row: WATER_ZONE.row + 5, key: 'OCEAN_DEAD_FISHLING_SHORE', terrain: 'water', alpha: 0.86, xOffset: -2, yOffset: -1, living: true, ampX: 0.18, ampY: 0.18 },
       {
         col: WATER_ZONE.col + 7,
         row: WATER_ZONE.row + WATER_ZONE.height - 6,
@@ -3233,9 +3284,9 @@ export class RenderEngine {
       sp.x = x; sp.y = y;
       sp.width = d.width ?? GRID.TILE;
       sp.height = d.height ?? GRID.TILE;
-      sp.alpha = d.alpha ?? (d.key === 'OCEAN_FISH' ? 0.78 : 0.95);
+      sp.alpha = d.alpha ?? (d.key === 'OCEAN_FISH' || d.key.includes('DEAD_FISHLING') ? 0.78 : 0.95);
       coastalDetailLayer.addChild(sp);
-      if (d.living || d.key === 'OCEAN_FISH' || d.key === 'OCEAN_KELP' || d.key === 'OCEAN_CORAL') {
+      if (d.living || d.key === 'OCEAN_FISH' || d.key.includes('DEAD_FISHLING') || d.key === 'OCEAN_KELP' || d.key === 'OCEAN_CORAL') {
         this.oceanLivingSprites.push({
           sp,
           baseX: x,

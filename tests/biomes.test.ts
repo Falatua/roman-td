@@ -222,6 +222,7 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     'OCEAN_DEEP_A', 'OCEAN_DEEP_B', 'OCEAN_MID_A', 'OCEAN_MID_B', 'OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B',
     'OCEAN_FOAM_N', 'OCEAN_FOAM_E', 'OCEAN_FOAM_S', 'OCEAN_FOAM_W',
     'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK', 'OCEAN_SEA_GIANT_HEAD',
+    'OCEAN_DEAD_FISHLING_FLOAT', 'OCEAN_DEAD_FISHLING_SHORE', 'OCEAN_DEAD_FISHLING_BLOOD',
     'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH', 'OCEAN_SHORE_PEBBLES',
     'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_FOAM_BITS', 'OCEAN_SHORE_WET_ROCKS',
     'OCEAN_SHORE_ITALY_ROCKS_A', 'OCEAN_SHORE_ITALY_ROCKS_B', 'OCEAN_SHORE_ITALY_ROCKS_C',
@@ -273,13 +274,19 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     expect(source).toContain('outerShoreGroundKeys');
     expect(source).toContain('italyShoreRockKeys');
     expect(source).toContain('shoreSkullKeys');
+    expect(source).toContain('deadFishlingKeys');
     expect(source).toContain('addItalyShoreRock');
     expect(source).toContain('addShoreSkulls');
+    expect(source).toContain('addDeadFishlingShore');
     expect(source).toContain('checkpointFacingShore');
     expect(source).toContain("addItalyShoreRock(c, r, 'S'");
     expect(source).toContain("addItalyShoreRock(c, r, 'W'");
     expect(source).toContain("addShoreSkulls(c, r, 'S'");
     expect(source).toContain("addShoreSkulls(c, r, 'W'");
+    expect(source).toContain("addDeadFishlingShore(c, r, 'S'");
+    expect(source).toContain("addDeadFishlingShore(c, r, 'W'");
+    expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_FLOAT'");
+    expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_BLOOD'");
     expect(source).toContain('waterProximity(c, r, 2)');
     expect(source).toContain('t === TileType.EMPTY');
   });
