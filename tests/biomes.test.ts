@@ -303,6 +303,9 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     expect(source).toContain("key: 'OCEAN_LEVIATHAN_HEAD'");
     expect(source).toContain("key: 'OCEAN_LEVIATHAN_BACK'");
     expect(source).toContain("key: 'OCEAN_LEVIATHAN_TAIL'");
+    expect(source).toMatch(/col: WATER_ZONE\.col \+ 2,[\s\S]*?key: 'OCEAN_LEVIATHAN_HEAD'/);
+    expect(source).toMatch(/col: WATER_ZONE\.col \+ 4,[\s\S]*?key: 'OCEAN_LEVIATHAN_BACK'/);
+    expect(source).toMatch(/col: WATER_ZONE\.col \+ 7,[\s\S]*?key: 'OCEAN_LEVIATHAN_TAIL'/);
     expect(source).toContain('alphaPulse');
     expect(source).toContain('bobSpeed');
     expect(source).toContain('rotationAmp');

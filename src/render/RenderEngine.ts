@@ -3323,7 +3323,7 @@ export class RenderEngine {
       { col: WATER_ZONE.col + 9, row: WATER_ZONE.row + 4, key: 'OCEAN_FISH', terrain: 'water' },
       { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 1, key: 'OCEAN_FISH', terrain: 'water' },
       {
-        col: WATER_ZONE.col + 4,
+        col: WATER_ZONE.col + 2,
         row: WATER_ZONE.row + 4,
         key: 'OCEAN_LEVIATHAN_HEAD',
         terrain: 'water',
@@ -3342,7 +3342,7 @@ export class RenderEngine {
         phase: 0.3
       },
       {
-        col: WATER_ZONE.col + 6,
+        col: WATER_ZONE.col + 4,
         row: WATER_ZONE.row + 5,
         key: 'OCEAN_LEVIATHAN_BACK',
         terrain: 'water',
@@ -3361,7 +3361,7 @@ export class RenderEngine {
         phase: 2.25
       },
       {
-        col: WATER_ZONE.col + 9,
+        col: WATER_ZONE.col + 7,
         row: WATER_ZONE.row + 4,
         key: 'OCEAN_LEVIATHAN_TAIL',
         terrain: 'water',
