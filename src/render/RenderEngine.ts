@@ -3730,7 +3730,6 @@ export class RenderEngine {
     };
     const CORNERS: CornerAnchor[] = [
       // Top-right corner (rows 0-3, cols 33-37)
-      { col: 35, row: 1,  key: 'MAP_CORNER_SHRINE_B3', scale: 1.7 },     // skull-on-laurel SPQR banner
       { col: 33, row: 2,  key: 'MAP_CORNER_SHRINE_A4', scale: 1.4 },     // ornate column
       { col: 36, row: 3,  key: 'MAP_CORNER_SHRINE_A6', scale: 1.3 },     // SPQR banner column
       { col: 34, row: 4,  key: 'MAP_CORNER_SHRINE_B1', scale: 1.3 },     // ruined arch
