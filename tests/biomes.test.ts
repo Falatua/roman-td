@@ -300,6 +300,10 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     expect(source).toContain("addDeadFishlingShore(c, r, 'W'");
     expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_FLOAT'");
     expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_BLOOD'");
+    expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_FLOAT', terrain: 'water', alpha: 0.96");
+    expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_BLOOD', terrain: 'water', alpha: 0.96");
+    expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_SHORE', terrain: 'water', alpha: 0.96");
+    expect(source).toContain('fish.alpha = 0.96;');
     expect(source).toContain("key: 'OCEAN_LEVIATHAN_HEAD'");
     expect(source).toContain("key: 'OCEAN_LEVIATHAN_BACK'");
     expect(source).toContain("key: 'OCEAN_LEVIATHAN_TAIL'");

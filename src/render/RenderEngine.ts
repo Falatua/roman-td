@@ -2954,7 +2954,7 @@ export class RenderEngine {
       const fishScale = 0.86 * scaleMult;
       fish.width = GRID.TILE * fishScale;
       fish.height = GRID.TILE * fishScale;
-      fish.alpha = 0.88;
+      fish.alpha = 0.96;
       if ((hash(c, r, 94405 + salt) % 2) === 1) fish.scale.x *= -1;
       coastalDetailLayer.addChild(fish);
       if (fishTex && (hash(c, r, 94406 + salt) % 100) < 40) {
@@ -3383,9 +3383,9 @@ export class RenderEngine {
         rotationAmp: 0.016,
         phase: 4.2
       },
-      { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 2, key: 'OCEAN_DEAD_FISHLING_FLOAT', terrain: 'water', alpha: 0.88, living: true, ampX: 0.35, ampY: 0.25 },
-      { col: WATER_ZONE.col + 6, row: WATER_ZONE.row + 3, key: 'OCEAN_DEAD_FISHLING_BLOOD', terrain: 'water', alpha: 0.84, xOffset: 4, yOffset: 1, living: true, ampX: 0.28, ampY: 0.22 },
-      { col: WATER_ZONE.col + 10, row: WATER_ZONE.row + 5, key: 'OCEAN_DEAD_FISHLING_SHORE', terrain: 'water', alpha: 0.86, xOffset: -2, yOffset: -1, living: true, ampX: 0.18, ampY: 0.18 },
+      { col: WATER_ZONE.col + 2, row: WATER_ZONE.row + 2, key: 'OCEAN_DEAD_FISHLING_FLOAT', terrain: 'water', alpha: 0.96, living: true, ampX: 0.35, ampY: 0.25 },
+      { col: WATER_ZONE.col + 6, row: WATER_ZONE.row + 3, key: 'OCEAN_DEAD_FISHLING_BLOOD', terrain: 'water', alpha: 0.96, xOffset: 4, yOffset: 1, living: true, ampX: 0.28, ampY: 0.22 },
+      { col: WATER_ZONE.col + 10, row: WATER_ZONE.row + 5, key: 'OCEAN_DEAD_FISHLING_SHORE', terrain: 'water', alpha: 0.96, xOffset: -2, yOffset: -1, living: true, ampX: 0.18, ampY: 0.18 },
       {
         col: WATER_ZONE.col + 9,
         row: WATER_ZONE.row + WATER_ZONE.height - 6,
