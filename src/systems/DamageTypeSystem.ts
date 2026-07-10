@@ -13,7 +13,13 @@ const FACTION_KEYS: Record<number, string> = {
   // damage type (faction row never reached), which would have made
   // the new chaos roster trivial to chip down with any tower.
   [EnemyFaction.MONGOLS]: 'MONGOLS',
-  [EnemyFaction.EGYPTIANS]: 'EGYPTIANS'
+  [EnemyFaction.EGYPTIANS]: 'EGYPTIANS',
+  // 2026-07-09 QC fix — ROMAN_MYTH was missing from this map, which is the
+  // exact failure mode the comment above warns about: every W25-29 myth
+  // enemy (Chimera, Cerberus, Typhon, Gigas, Cyclops, Colossus, sea giants,
+  // naga, Stone Juggernaut + 3 commanders) silently took FULL damage from
+  // every damage type while the armor UI showed the faction resists.
+  [EnemyFaction.ROMAN_MYTH]: 'ROMAN_MYTH'
 };
 const DAMAGE_KEYS: Record<number, string> = {
   [DamageType.PHYS_MELEE]: 'PHYS_MELEE',

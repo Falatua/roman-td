@@ -530,6 +530,14 @@ export function armorProfile(type: EnemyType): ArmorRow[] {
     if (factionVal === 'IMMUNE') { factionMult = 0; factionImmune = true; }
     else if (typeof factionVal === 'number') factionMult = 1 + factionVal;
     else factionMult = 1.0;
+    // 2026-07-09 QC fix — combat's resistanceModifier hard-returns 1.0 for
+    // DIVINE ("true damage": faction rows never resist OR boost it; only the
+    // per-enemy `divine` profile entry applies, via enemyDamageMultiplier).
+    // The display was multiplying the faction DIVINE column in anyway, so the
+    // UI advertised e.g. +100% divine vs SUPER_DEMONS and +40% vs the Daemon
+    // Imperator — damage the engine never deals (the Imperator actually
+    // RESISTS divine at 0.70 per-enemy). Mirror combat: faction layer = 1.0.
+    if (dt === 'DIVINE') { factionMult = 1.0; factionImmune = false; }
     // 2026-05 v9: per-enemy multipliers now cover melee + ranged AND
     // siege / fire / divine. Used by the W6-W9 resist pass so the
     // armor strip / Codex / inspect panel all reflect the new
