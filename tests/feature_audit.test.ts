@@ -1202,6 +1202,18 @@ describe('Codex modal interaction layer', () => {
     expect(source).toContain('z-index:100000;pointer-events:auto');
     expect(source).toContain('(document.body ?? parent).appendChild(modal)');
   });
+
+  it('keeps codex text inside a real brown scroll body instead of overflowing over the map', () => {
+    const fs = require('fs');
+    const source = fs.readFileSync('src/render/Codex.ts', 'utf8');
+    expect(source).toContain('overflow:hidden');
+    expect(source).toContain('display:flex;flex-direction:column');
+    expect(source).toContain('height:min(860px,calc(100vh - 32px))');
+    expect(source).toContain('class="rtd-codex-scroll-body"');
+    expect(source).toContain('flex:1 1 auto;min-height:0;overflow:auto');
+    expect(source).toContain('background:#0c0a08;border:1px solid #3a3025;padding:10px');
+    expect(source).toContain('scrollbar-gutter:stable both-edges');
+  });
 });
 
 describe('Modal ergonomics and popup stacking', () => {

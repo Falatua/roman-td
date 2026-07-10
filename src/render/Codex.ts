@@ -72,32 +72,26 @@ export function showCodex(parent: HTMLElement, ctx?: CodexCtx) {
   closeGameModals();
   const modal = document.createElement('div');
   modal.id = 'codex-modal';
-  // 2026-05-18 v2 — RESPONSIVE CLAMPING. The modal scrolls vertically
-  // and aligns from the top of the viewport so an enlarged panel can
-  // never push its tabs / close button above the top edge regardless
-  // of viewport height (fullscreen vs windowed, mobile orientation
-  // changes, devtools open, etc.). align-items:flex-start anchors
-  // the top; padding clamps a small breathing strip from the top
-  // edge; overflow:auto on the modal lets the user scroll the
-  // whole modal if the panel is taller than the viewport — even
-  // when the panel itself has overflow set.
-  modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.6);z-index:100000;pointer-events:auto;padding:16px 8px;box-sizing:border-box;overflow:auto;`;
+  // 2026-07-09 — Codex overflow fix. The frame itself must not scroll
+  // or long tab tables can paint past the parchment over the map. Keep
+  // the panel fixed inside the viewport and let #codex-body own the
+  // scrolling on a real brown backing.
+  modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.6);z-index:100000;pointer-events:auto;padding:16px 8px;box-sizing:border-box;overflow:hidden;`;
   const panel = document.createElement('div');
   // 2026-05-18 — Codex window enlarged so the dense per-tab tables
   // (Items, Enemies, Combinations) have more horizontal breathing room
   // and the player can scan rows without horizontal cramping. Width
-  // bumped from 720px → 1040px (clamped to 96vw). max-height removed
-  // in favor of letting the MODAL scroll (responsive clamping above)
-  // — that way the codex top tabs are always reachable even when
-  // the viewport is very short.
-  panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:18px;width:min(1040px,96vw);font-family:'Courier New',monospace;font-size:12px;box-shadow:0 0 28px rgba(212,175,55,0.35);`;
-  panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+  // bumped from 720px → 1040px (clamped to 96vw). The content body
+  // scrolls independently so tabs/search remain on the brown frame
+  // and long text never leaks over the live map.
+  panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:18px;width:min(1040px,96vw);height:min(860px,calc(100vh - 32px));max-height:calc(100vh - 32px);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;font-family:'Courier New',monospace;font-size:12px;box-shadow:0 0 28px rgba(212,175,55,0.35);`;
+  panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex:0 0 auto;">
     <h2 style="margin:0;color:#d4af37;letter-spacing:3px">LEGION CODEX</h2>
     <button id="codex-close" style="background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:6px 12px;cursor:pointer;font-family:inherit">CLOSE</button>
   </div>
-  <div id="codex-tabs" style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;position:sticky;top:0;background:#1a1410;padding:4px 0;z-index:5;border-bottom:1px solid #3a3025"></div>
-  <input id="codex-search" type="text" placeholder="🔍 Filter cards in this tab..." style="width:100%;box-sizing:border-box;padding:6px 10px;margin-bottom:8px;background:#0c0a08;border:1px solid #5a4a30;color:#e8d6a8;font-family:'Courier New',monospace;font-size:11px;letter-spacing:1px;outline:none;"/>
-  <div id="codex-body" style="padding-top:6px"></div>`;
+  <div id="codex-tabs" style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;background:#1a1410;padding:4px 0;z-index:5;border-bottom:1px solid #3a3025;flex:0 0 auto"></div>
+  <input id="codex-search" type="text" placeholder="🔍 Filter cards in this tab..." style="width:100%;box-sizing:border-box;padding:6px 10px;margin-bottom:8px;background:#0c0a08;border:1px solid #5a4a30;color:#e8d6a8;font-family:'Courier New',monospace;font-size:11px;letter-spacing:1px;outline:none;flex:0 0 auto;"/>
+  <div id="codex-body" class="rtd-codex-scroll-body" style="flex:1 1 auto;min-height:0;overflow:auto;background:#0c0a08;border:1px solid #3a3025;padding:10px;box-sizing:border-box;scrollbar-gutter:stable both-edges"></div>`;
   modal.appendChild(panel);
   (document.body ?? parent).appendChild(modal);
 
