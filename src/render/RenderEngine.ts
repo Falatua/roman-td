@@ -20,6 +20,7 @@ import { SurpriseEventKind } from '../types';
 import { heroIdForTowerType } from '../systems/HeroIdentity';
 import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from '../systems/BaseTowerAttackAnimation';
 import { isWaterPlacementBufferTile } from '../systems/GridManager';
+import { enemySpriteSizeTiles } from './EnemySpriteScale';
 
 // 2026-05-20 v2 — Per-hero halo ring assignment. Each ring style was
 // hand-picked to match the hero's color tint + thematic identity:
@@ -4236,15 +4237,9 @@ export class RenderEngine {
         const t = tex(e.type);
         const sp = new Sprite(t || undefined);
         sp.anchor.set(0.5);
-        // 2026-05-17 — Initial-claim sizing matches the per-frame
-        // sizing logic below so GATES OF HELL spawns don't pop in
-        // at the wrong size for the first frame.
-        const initIsHellGate = e.type === 'HELL_GATE';
-        const initIsFireGiant = e.type === 'FIRE_GIANT';
-        const size = initIsHellGate ? GRID.TILE * 3.0
-                   : initIsFireGiant ? GRID.TILE * 2.4
-                   : e.isBoss ? GRID.TILE * 2.4
-                   : GRID.TILE * 1.75;
+        // Initial-claim sizing matches the per-frame sizing logic below
+        // so large enemies don't pop in at the wrong size for frame one.
+        const size = GRID.TILE * enemySpriteSizeTiles(e);
         sp.width = size; sp.height = size;
         const hp = new Graphics();
         const statusBar = new Container();
@@ -4302,12 +4297,8 @@ export class RenderEngine {
       }
       const dirX = (e.dirX ?? Math.sign(e.x - (e.prevX ?? e.x))) || 1;
       const dirY = (e.dirY ?? Math.sign(e.y - (e.prevY ?? e.y))) || 0;
-      // 2026-05-17 — GATES OF HELL sprite sizing (isHellGate/isFireGiant
-      // declared earlier at the top of the per-enemy block).
-      const size = (isHellGate ? GRID.TILE * 3.0
-                 : isFireGiant ? GRID.TILE * 2.4
-                 : e.isBoss ? GRID.TILE * 2.4
-                 : GRID.TILE * 1.75) * ((e as any).__renderScale ?? 1);
+      // Keep enemy body scale in sync with first-frame spawn sizing.
+      const size = GRID.TILE * enemySpriteSizeTiles(e) * ((e as any).__renderScale ?? 1);
       const baseScaleX = size / (entry.sp.texture?.width || 1);
       const baseScaleY = size / (entry.sp.texture?.height || 1);
       const runAmt = e.currentSpeed > 0 ? Math.min(1, e.currentSpeed / 2.4) : 0;
