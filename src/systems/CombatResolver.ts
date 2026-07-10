@@ -547,6 +547,7 @@ export const UNDEAD_GLADIATOR_KING_SUMMON_COUNT = 3;
 export const UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL = 10.0;
 export const UNDEAD_GLADIATOR_KING_SUMMON_TTL = 20.0;
 export const UNDEAD_GLADIATOR_KING_SUMMON_SLOW = 0.30;
+export const UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR = 0.13;
 
 function isGiantKillerTarget(target: Enemy): boolean {
   return GIANT_KILLER_TARGET_TYPES.has(String(target.type));
@@ -665,7 +666,7 @@ function tickUndeadGladiatorKingSummons(state: GameStateShape, dt: number, tower
       if (s.attackCooldown <= 0) {
         s.attackCooldown = 0.85;
         const stats = towerEffectiveStats(source);
-        const hit = Math.max(12, stats.dps * 0.13);
+        const hit = Math.max(12, stats.dps * UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR);
         source.attackFlash = Math.max(source.attackFlash ?? 0, 0.16);
         applyDamageAndStatus(state, source, target, hit, hooks);
         if (target.hp > 0) pushStatus(target, StatusEffectKind.SLOW, 1.2, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, source.qualityTier);

@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, transformWithGiantsBane, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -853,6 +853,36 @@ describe('Giant Killer transformation and combat wiring', () => {
     state.tick = 100.4 + UNDEAD_GLADIATOR_KING_SUMMON_TTL + 0.25;
     tickCombat(state, 0.05, hooks);
     expect((state as any).__undeadGladiators).toHaveLength(0);
+  });
+
+  it('keeps item-awakened towers worth their legendary transform item', () => {
+    const milites = createTower(TowerType.MILITES, 4, 4, 4, 0);
+    const militesBefore = towerEffectiveStats(milites).dps;
+    milites.equippedItems.push(GIANTS_BANE_ITEM_ID);
+    expect(transformWithGiantsBane(milites)).toBe(true);
+    const giantKillerDps = towerEffectiveStats(milites).dps;
+
+    const cohort = createTower(TowerType.COHORT_GUARD, 4, 4, 4, 0);
+    const cohortBefore = towerEffectiveStats(cohort).dps;
+    cohort.equippedItems.push(GIANTS_BANE_ITEM_ID);
+    expect(transformWithGiantsBane(cohort)).toBe(true);
+    const giantsCohortDps = towerEffectiveStats(cohort).dps;
+
+    const murmillo = createTower(TowerType.MURMILLO, 4, 4, 4, 0);
+    const murmilloBefore = towerEffectiveStats(murmillo).dps;
+    murmillo.equippedItems.push(WITCHS_BREW_ITEM_ID);
+    expect(transformWithWitchsBrew(murmillo)).toBe(true);
+    const kingStats = towerEffectiveStats(murmillo);
+    const sustainedSummonDps = UNDEAD_GLADIATOR_KING_SUMMON_COUNT * (Math.max(12, kingStats.dps * UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR) / 0.85);
+    const kingBattlefieldDps = kingStats.dps + sustainedSummonDps;
+
+    expect(giantKillerDps).toBeGreaterThan(militesBefore * 11);
+    expect(giantsCohortDps).toBeGreaterThan(cohortBefore * 5);
+    expect(kingBattlefieldDps).toBeGreaterThan(murmilloBefore * 3.5);
+    expect(kingBattlefieldDps).toBeLessThan(giantsCohortDps * 0.95);
+    expect(towerItemSlotCap(milites)).toBe(4);
+    expect(towerItemSlotCap(cohort)).toBe(4);
+    expect(towerItemSlotCap(murmillo)).toBe(4);
   });
 
   it('specializes hard into giant-class enemies without becoming a universal answer', () => {
