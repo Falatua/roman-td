@@ -3558,7 +3558,7 @@ export class RenderEngine {
       { col: 36, row: 0,  key: 'MAP_CORNER_SHRINE_A2', scale: 1.2 },     // small column
       // Bloody Cyclops trophy: visual-only prop anchored to the immutable top
       // border, then nudged inward so world zoom never clips its face or blood pool.
-      { col: 36, row: 0, key: 'MAP_CYCLOPS_SEVERED_HEAD', scale: 2.85, xOffset: -24, yOffset: 144 }
+      { col: 36, row: 0, key: 'MAP_CYCLOPS_SEVERED_HEAD', scale: 2.85, xOffset: -24, yOffset: 112 }
     ];
     for (const anchor of CORNERS) {
       const cTex = tex(anchor.key);

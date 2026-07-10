@@ -318,6 +318,7 @@ describe('Top-right Cyclops trophy prop', () => {
 
     const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
     expect(source).toContain("{ col: 36, row: 0, key: 'MAP_CYCLOPS_SEVERED_HEAD'");
+    expect(source).toContain("yOffset: 112");
   });
 });
 
