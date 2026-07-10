@@ -3871,7 +3871,10 @@ export class RenderEngine {
     }> = [
       { key: 'MAP_GATE_FALLEN_ROMAN_A', x: gateCx - 88, y: gateCy + 30, size: 58, rotation: -0.18, alpha: 0.95 },
       { key: 'MAP_GATE_FALLEN_ROMAN_B', x: gateCx - 56, y: gateCy - 8, size: 52, rotation: 0.24, alpha: 0.93 },
-      { key: 'MAP_GATE_FALLEN_ROMAN_C', x: gateCx - 20, y: gateCy + 48, size: 50, rotation: -0.08, alpha: 0.92 }
+      { key: 'MAP_GATE_FALLEN_ROMAN_C', x: gateCx - 20, y: gateCy + 48, size: 50, rotation: -0.08, alpha: 0.92 },
+      { key: 'MAP_GATE_FALLEN_ROMAN_B', x: gateCx + 22, y: gateCy - 34, size: 44, rotation: -0.30, alpha: 0.90 },
+      { key: 'MAP_GATE_FALLEN_ROMAN_A', x: gateCx + 44, y: gateCy + 8, size: 48, rotation: 0.34, alpha: 0.92 },
+      { key: 'MAP_GATE_FALLEN_ROMAN_C', x: gateCx + 28, y: gateCy + 40, size: 42, rotation: 0.10, alpha: 0.88 }
     ];
     for (const anchor of GATE_FALLEN_SOLDIERS) {
       const fallenTex = tex(anchor.key);

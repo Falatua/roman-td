@@ -464,6 +464,9 @@ describe('Rome gate fallen soldier props', () => {
     expect(source).toContain('const GATE_FALLEN_SOLDIERS');
     expect(source).toContain('x: gateCx');
     expect(source).toContain('y: gateCy');
+    expect(source).toContain('x: gateCx + 22');
+    expect(source).toContain('x: gateCx + 44');
+    expect(source).toContain('x: gateCx + 28');
     for (const [key] of expected) expect(source).toContain(`key: '${key}'`);
   });
 });
