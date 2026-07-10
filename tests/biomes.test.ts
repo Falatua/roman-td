@@ -271,7 +271,10 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     expect(source).toContain('immediateShoreGroundKeys');
     expect(source).toContain('outerShoreGroundKeys');
     expect(source).toContain('italyShoreRockKeys');
+    expect(source).toContain('addItalyShoreRock');
     expect(source).toContain('checkpointFacingShore');
+    expect(source).toContain("addItalyShoreRock(c, r, 'S'");
+    expect(source).toContain("addItalyShoreRock(c, r, 'W'");
     expect(source).toContain('waterProximity(c, r, 2)');
     expect(source).toContain('t === TileType.EMPTY');
   });
