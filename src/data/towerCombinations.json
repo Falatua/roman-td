@@ -227,7 +227,7 @@
         "minTier": 4
       }
     ],
-    "cost": 50
+    "cost": 120
   },
   {
     "result": "HANNIBALS_NIGHTMARE",
@@ -242,7 +242,7 @@
         "minTier": 2
       }
     ],
-    "cost": 50
+    "cost": 120
   },
   {
     "result": "GOD_OF_WAR",
@@ -261,7 +261,7 @@
         "minTier": 4
       }
     ],
-    "cost": 50
+    "cost": 175
   },
   {
     "result": "VEXILLATION",
@@ -401,7 +401,7 @@
         "minTier": 4
       }
     ],
-    "cost": 50
+    "cost": 95
   },
   {
     "result": "PONTIFEX_MAXIMUS",
@@ -420,7 +420,7 @@
         "minTier": 4
       }
     ],
-    "cost": 50
+    "cost": 95
   },
   {
     "result": "TURMA_LANCERS",
@@ -484,7 +484,7 @@
         "minTier": 4
       }
     ],
-    "cost": 190
+    "cost": 240
   },
   {
     "result": "CARTHAGE_SCOURGE",
@@ -499,7 +499,7 @@
         "minTier": 5
       }
     ],
-    "cost": 150
+    "cost": 220
   },
   {
     "result": "TRIUMVIRATE",
@@ -518,7 +518,7 @@
         "minTier": 4
       }
     ],
-    "cost": 125
+    "cost": 190
   },
   {
     "result": "TRIPLEX_ACIES",
@@ -682,7 +682,7 @@
         "minTier": 1
       }
     ],
-    "cost": 0
+    "cost": 650
   },
   {
     "result": "PRAETORIAN_EXECUTIONER",
@@ -706,7 +706,7 @@
   {
     "result": "SACRED_BAND",
     "tier": 4,
-    "cost": 10,
+    "cost": 55,
     "ingredients": [
       {
         "type": "CATAPHRACT",
@@ -763,7 +763,7 @@
   {
     "result": "TRIBUNE_AVENGER",
     "tier": 4,
-    "cost": 10,
+    "cost": 55,
     "ingredients": [
       {
         "type": "EVOCATUS",
@@ -782,7 +782,7 @@
   {
     "result": "CATAPHRACT_LANCER",
     "tier": 4,
-    "cost": 10,
+    "cost": 55,
     "ingredients": [
       {
         "type": "CATAPHRACT",
@@ -801,7 +801,7 @@
   {
     "result": "STORM_BALLISTA",
     "tier": 4,
-    "cost": 10,
+    "cost": 55,
     "ingredients": [
       {
         "type": "BALLISTARIUS",
@@ -820,7 +820,7 @@
   {
     "result": "SKYREAPER_BATTERY",
     "tier": 4,
-    "cost": 10,
+    "cost": 70,
     "ingredients": [
       {
         "type": "AQUILA_VENATOR",
@@ -858,7 +858,7 @@
   {
     "result": "AUGURS_WRATH",
     "tier": 5,
-    "cost": 50,
+    "cost": 95,
     "ingredients": [
       {
         "type": "HARUSPEX",
@@ -874,20 +874,260 @@
       }
     ]
   },
-  { "result": "EXPLORATORES", "tier": 3, "cost": 35, "ingredients": [ { "type": "SPECULATOR", "minTier": 3 }, { "type": "VENATOR", "minTier": 3 } ] },
-  { "result": "VULCAN_BOMBARD", "tier": 3, "cost": 35, "ingredients": [ { "type": "COLOSSUS_ONAGER", "minTier": 3 }, { "type": "VULCAN_ENGINEER", "minTier": 3 } ] },
-  { "result": "VANGUARD_WING", "tier": 4, "cost": 55, "ingredients": [ { "type": "EXPLORATORES", "minTier": 3 }, { "type": "TESSERARIUS", "minTier": 2 } ] },
-  { "result": "VULCAN_COLOSSUS", "tier": 5, "cost": 90, "ingredients": [ { "type": "VULCAN_BOMBARD", "minTier": 3 }, { "type": "STORM_BALLISTA", "minTier": 4 } ] },
-  { "result": "SKY_DOMINION", "tier": 5, "cost": 190, "ingredients": [ { "type": "SKYREAPER_BATTERY", "minTier": 4 }, { "type": "NUMIDIAN_CAVALRY", "minTier": 4 }, { "type": "VANGUARD_WING", "minTier": 4 } ] },
-  { "result": "AUREATE_TRIBUNAL", "tier": 5, "cost": 190, "ingredients": [ { "type": "AERARIUM", "minTier": 4 }, { "type": "TRIUMVIRATE", "minTier": 5 }, { "type": "SACER_VESTAL", "minTier": 4 } ] },
-  { "result": "GLACIAL_PALISADE", "tier": 5, "cost": 190, "ingredients": [ { "type": "FROZEN_LEGION", "minTier": 4 }, { "type": "SACRED_BAND", "minTier": 4 }, { "type": "CATAPHRACT_LANCER", "minTier": 4 } ] },
-  { "result": "INFERNAL_COLOSSUS", "tier": 5, "cost": 225, "ingredients": [ { "type": "VULCAN_COLOSSUS", "minTier": 5 }, { "type": "GOD_OF_WAR", "minTier": 5 }, { "type": "TRIUMPHATOR", "minTier": 5 } ] },
-  { "result": "ROMAN_TRANSFORMER", "tier": 5, "cost": 450, "ingredients": [ { "type": "HANNIBALS_NIGHTMARE", "minTier": 5 }, { "type": "JULIUS_CAESAR", "minTier": 5 } ] },
-  { "result": "NEPTUNES_LEVIATHAN", "tier": 5, "cost": 450, "ingredients": [ { "type": "ABYSSAL_ONAGER", "minTier": 5 }, { "type": "HYDRA_BEAST_PIT", "minTier": 5 } ] },
-  { "result": "PRAETORIAN_FLEET", "tier": 5, "cost": 90, "ingredients": [ { "type": "TRIREME_BALLISTA", "minTier": 3 }, { "type": "SCORPIO", "minTier": 4 } ] },
-  { "result": "CORVUS_LEGION_DOCK", "tier": 5, "cost": 90, "ingredients": [ { "type": "CORVUS_BOARDING_SHIP", "minTier": 3 }, { "type": "COHORT_GUARD", "minTier": 3 } ] },
-  { "result": "ORACLE_LIGHTHOUSE", "tier": 5, "cost": 95, "ingredients": [ { "type": "NEREID_ORACLE", "minTier": 3 }, { "type": "SPECULATOR", "minTier": 4 } ] },
-  { "result": "ABYSSAL_ONAGER", "tier": 5, "cost": 110, "ingredients": [ { "type": "CHARYBDIS_VORTEX", "minTier": 3 }, { "type": "SIEGE_ONAGER", "minTier": 4 } ] },
-  { "result": "HYDRA_BEAST_PIT", "tier": 5, "cost": 105, "ingredients": [ { "type": "HYDRA_OF_LERNA", "minTier": 3 }, { "type": "BESTIARIUS", "minTier": 4 } ] },
-  { "result": "MARS_TIDAL_BASTION", "tier": 5, "cost": 120, "ingredients": [ { "type": "RAMMING_QUINQUEREME", "minTier": 3 }, { "type": "COHORT_GUARD", "minTier": 4 } ] }
+  {
+    "result": "EXPLORATORES",
+    "tier": 3,
+    "cost": 35,
+    "ingredients": [
+      {
+        "type": "SPECULATOR",
+        "minTier": 3
+      },
+      {
+        "type": "VENATOR",
+        "minTier": 3
+      }
+    ]
+  },
+  {
+    "result": "VULCAN_BOMBARD",
+    "tier": 3,
+    "cost": 35,
+    "ingredients": [
+      {
+        "type": "COLOSSUS_ONAGER",
+        "minTier": 3
+      },
+      {
+        "type": "VULCAN_ENGINEER",
+        "minTier": 3
+      }
+    ]
+  },
+  {
+    "result": "VANGUARD_WING",
+    "tier": 4,
+    "cost": 95,
+    "ingredients": [
+      {
+        "type": "EXPLORATORES",
+        "minTier": 3
+      },
+      {
+        "type": "TESSERARIUS",
+        "minTier": 2
+      }
+    ]
+  },
+  {
+    "result": "VULCAN_COLOSSUS",
+    "tier": 5,
+    "cost": 140,
+    "ingredients": [
+      {
+        "type": "VULCAN_BOMBARD",
+        "minTier": 3
+      },
+      {
+        "type": "STORM_BALLISTA",
+        "minTier": 4
+      }
+    ]
+  },
+  {
+    "result": "SKY_DOMINION",
+    "tier": 5,
+    "cost": 240,
+    "ingredients": [
+      {
+        "type": "SKYREAPER_BATTERY",
+        "minTier": 4
+      },
+      {
+        "type": "NUMIDIAN_CAVALRY",
+        "minTier": 4
+      },
+      {
+        "type": "VANGUARD_WING",
+        "minTier": 4
+      }
+    ]
+  },
+  {
+    "result": "AUREATE_TRIBUNAL",
+    "tier": 5,
+    "cost": 250,
+    "ingredients": [
+      {
+        "type": "AERARIUM",
+        "minTier": 4
+      },
+      {
+        "type": "TRIUMVIRATE",
+        "minTier": 5
+      },
+      {
+        "type": "SACER_VESTAL",
+        "minTier": 4
+      }
+    ]
+  },
+  {
+    "result": "GLACIAL_PALISADE",
+    "tier": 5,
+    "cost": 240,
+    "ingredients": [
+      {
+        "type": "FROZEN_LEGION",
+        "minTier": 4
+      },
+      {
+        "type": "SACRED_BAND",
+        "minTier": 4
+      },
+      {
+        "type": "CATAPHRACT_LANCER",
+        "minTier": 4
+      }
+    ]
+  },
+  {
+    "result": "INFERNAL_COLOSSUS",
+    "tier": 5,
+    "cost": 290,
+    "ingredients": [
+      {
+        "type": "VULCAN_COLOSSUS",
+        "minTier": 5
+      },
+      {
+        "type": "GOD_OF_WAR",
+        "minTier": 5
+      },
+      {
+        "type": "TRIUMPHATOR",
+        "minTier": 5
+      }
+    ]
+  },
+  {
+    "result": "ROMAN_TRANSFORMER",
+    "tier": 5,
+    "cost": 600,
+    "ingredients": [
+      {
+        "type": "HANNIBALS_NIGHTMARE",
+        "minTier": 5
+      },
+      {
+        "type": "JULIUS_CAESAR",
+        "minTier": 5
+      }
+    ]
+  },
+  {
+    "result": "NEPTUNES_LEVIATHAN",
+    "tier": 5,
+    "cost": 600,
+    "ingredients": [
+      {
+        "type": "ABYSSAL_ONAGER",
+        "minTier": 5
+      },
+      {
+        "type": "HYDRA_BEAST_PIT",
+        "minTier": 5
+      }
+    ]
+  },
+  {
+    "result": "PRAETORIAN_FLEET",
+    "tier": 5,
+    "cost": 90,
+    "ingredients": [
+      {
+        "type": "TRIREME_BALLISTA",
+        "minTier": 3
+      },
+      {
+        "type": "SCORPIO",
+        "minTier": 4
+      }
+    ]
+  },
+  {
+    "result": "CORVUS_LEGION_DOCK",
+    "tier": 5,
+    "cost": 90,
+    "ingredients": [
+      {
+        "type": "CORVUS_BOARDING_SHIP",
+        "minTier": 3
+      },
+      {
+        "type": "COHORT_GUARD",
+        "minTier": 3
+      }
+    ]
+  },
+  {
+    "result": "ORACLE_LIGHTHOUSE",
+    "tier": 5,
+    "cost": 95,
+    "ingredients": [
+      {
+        "type": "NEREID_ORACLE",
+        "minTier": 3
+      },
+      {
+        "type": "SPECULATOR",
+        "minTier": 4
+      }
+    ]
+  },
+  {
+    "result": "ABYSSAL_ONAGER",
+    "tier": 5,
+    "cost": 110,
+    "ingredients": [
+      {
+        "type": "CHARYBDIS_VORTEX",
+        "minTier": 3
+      },
+      {
+        "type": "SIEGE_ONAGER",
+        "minTier": 4
+      }
+    ]
+  },
+  {
+    "result": "HYDRA_BEAST_PIT",
+    "tier": 5,
+    "cost": 105,
+    "ingredients": [
+      {
+        "type": "HYDRA_OF_LERNA",
+        "minTier": 3
+      },
+      {
+        "type": "BESTIARIUS",
+        "minTier": 4
+      }
+    ]
+  },
+  {
+    "result": "MARS_TIDAL_BASTION",
+    "tier": 5,
+    "cost": 120,
+    "ingredients": [
+      {
+        "type": "RAMMING_QUINQUEREME",
+        "minTier": 3
+      },
+      {
+        "type": "COHORT_GUARD",
+        "minTier": 4
+      }
+    ]
+  }
 ]

@@ -3,8 +3,9 @@ import towersData from '../data/towers.json';
 
 // 2026-07: SPECIAL is now a real equip family, not a free-stacking bucket.
 // This prevents one tower from becoming the entire run by stacking multiple
-// trophies/procs. DoT items currently live in SPECIAL too, so they follow the
-// same one-special-item limit.
+// transformations, executes, targeting converters, and major proc trophies.
+// DoT items have their own Burn / Poison / Bleed families so the player can
+// build around status without accidentally spending the one-SPECIAL slot.
 export type ItemFamily =
   | 'DAMAGE'
   | 'SPEED'
@@ -15,6 +16,7 @@ export type ItemFamily =
   | 'AURA'
   | 'ECONOMY'
   | 'DEFENSE'
+  | 'UTILITY'
   | 'SPECIAL';
 // EquipMode (2026-05 v6): all class-restricted items resolve to either
 // MELEE or RANGED — the prior PHYSICAL + CAVALRY niche gates were too
@@ -96,12 +98,15 @@ const FAMILY: Record<string, ItemFamily> = {
   WATCHTOWER_LENS: 'RANGE',
   DRUID_STAFF_FRAGMENT: 'RANGE',
 
-  // DoT items occupy SPECIAL, which is capped at one per tower.
-  FIRE_OIL_FLASK: 'SPECIAL',
-  POISONED_BLADE: 'SPECIAL',
-  BARBED_GLADIUS: 'SPECIAL',
-  FALCATA_BLADE: 'SPECIAL',
-  ALPHA_PACK_FANG: 'SPECIAL',
+  FIRE_OIL_FLASK: 'DOT_BURN',
+  VESTAL_PYRE: 'DOT_BURN',
+  POISONED_BLADE: 'DOT_POISON',
+  VENOM_TIPPED_ARROWS: 'DOT_POISON',
+  SERPENT_AMULET: 'DOT_POISON',
+  WITCHS_VENOM: 'DOT_POISON',
+  BARBED_GLADIUS: 'DOT_BLEED',
+  FALCATA_BLADE: 'DOT_BLEED',
+  ALPHA_PACK_FANG: 'DOT_BLEED',
   EXECUTIONERS_FALX: 'SPECIAL',
   CONCUSSIVE_WARHEAD: 'SPECIAL',
   GIANTS_BANE: 'SPECIAL',
@@ -128,13 +133,14 @@ const FAMILY: Record<string, ItemFamily> = {
   SCIPIO_PLAYBOOK: 'DAMAGE',
   AQUILIFER_BANNER: 'AURA',
 
-  GALLIC_SHIELD_BOSS: 'DEFENSE',
   GILDED_SCALE_ARMOR: 'DEFENSE',
+  TRUESIGHT_LENS: 'UTILITY',
+  GALLIC_SHIELD_BOSS: 'UTILITY',
 
-  BERSERKERS_MUZZLE: 'SPECIAL',
+  BERSERKERS_MUZZLE: 'SPEED',
   // DRUIDS_TORC moved to AURA (was SPECIAL self-buff).
-  WARLORDS_WAR_PAINT: 'SPECIAL',
-  UNDEAD_ELEPHANT_BONE: 'SPECIAL',
+  WARLORDS_WAR_PAINT: 'DAMAGE',
+  UNDEAD_ELEPHANT_BONE: 'DAMAGE',
   // New legendaries (2026-05): AQUILA_TALONS is a SPECIAL anti-air enabler;
   // SPEAR_OF_MARS occupies the RANGE family because its hook is the +5 tile
   // reach; JUPITERS_WRATH is a SPECIAL chain-lightning proc.
@@ -149,24 +155,20 @@ const FAMILY: Record<string, ItemFamily> = {
   SIGIL_OF_SOL_INVICTUS: 'SPECIAL',
   // TYRANTS_LAUREL is DAMAGE family (occupies the same slot as Sharpened
   // Blade / Iron Tip). VESTAL_PYRE / VENOM_TIPPED_ARROWS / SERPENT_AMULET /
-  // WITCHS_VENOM live in SPECIAL, so they compete with other trophy/proc
-  // effects under the one-SPECIAL-item cap.
+  // WITCHS_VENOM live in their element/status families, so they compete
+  // with same-status items instead of transformation/proc trophies.
   TYRANTS_LAUREL: 'DAMAGE',
-  VESTAL_PYRE: 'SPECIAL',
-  VENOM_TIPPED_ARROWS: 'SPECIAL',
-  SERPENT_AMULET: 'SPECIAL',
-  WITCHS_VENOM: 'SPECIAL',
   // 2026-05-18 — EVENT-EXCLUSIVE LEGENDARIES. They are SPECIAL trophy
   // effects, capped at one per tower for build diversity.
-  VANGUARD_PILUM: 'SPECIAL',
-  AQUILA_RAMPART: 'SPECIAL',
-  PERIMETER_TORCH: 'SPECIAL',
-  GRAVEKEEPERS_SCYTHE: 'SPECIAL',
+  VANGUARD_PILUM: 'RANGE',
+  AQUILA_RAMPART: 'DAMAGE',
+  PERIMETER_TORCH: 'SPEED',
+  GRAVEKEEPERS_SCYTHE: 'DAMAGE',
   SOULFIRE_BRAND: 'SPECIAL',
-  NECROMANCERS_LANTERN: 'SPECIAL',
+  NECROMANCERS_LANTERN: 'AURA',
   HELLGATE_BRAND: 'SPECIAL',
-  DEMONSWORN_CROWN: 'SPECIAL',
-  INFERNO_STANDARD: 'SPECIAL',
+  DEMONSWORN_CROWN: 'DAMAGE',
+  INFERNO_STANDARD: 'AURA',
   // 2026-05-19 — DAMNATIO MEMORIAE. SPECIAL execute trophy. Triggers
   // instant kill on non-Boss enemies below 25% HP when this tower's
   // attack lands. Bosses are immune.
@@ -179,11 +181,14 @@ const FAMILY: Record<string, ItemFamily> = {
   LICTOR_FASCES: 'DAMAGE',
   AUXILIARY_SLING: 'DAMAGE',
   OPTIO_WHISTLE: 'AURA',
-  BRINEHOOK_ROPE: 'SPECIAL',
-  TIDEPIERCER_HARPOON: 'SPECIAL',
-  AEGEAN_PEARL: 'SPECIAL',
-  STORMGLASS_AMPHORA: 'SPECIAL',
-  NEPTUNES_TRIDENT: 'SPECIAL',
+  SKYPIERCER_BOLTS: 'DAMAGE',
+  FALCONERS_WATCHPOST: 'RANGE',
+  JUPITERS_SKYFIRE: 'DAMAGE',
+  BRINEHOOK_ROPE: 'DAMAGE',
+  TIDEPIERCER_HARPOON: 'DAMAGE',
+  AEGEAN_PEARL: 'DAMAGE',
+  STORMGLASS_AMPHORA: 'DAMAGE',
+  NEPTUNES_TRIDENT: 'DAMAGE',
   // 2026-05-19 — GATE-EXCLUSIVE STARTER ITEMS. Five new items only
   // sold at the gate shop. Family assignments keep them slotted with
   // the existing exclusivity rules so they conflict appropriately

@@ -494,17 +494,21 @@ describe('Recipe combo detection', () => {
     expect(byResult(TowerType.TRIPLEX_ACIES).cost).toBe(40);
     expect(byResult(TowerType.LEGION_PRIME).cost).toBe(125);
     expect(byResult(TowerType.CONSULAR_FATEBINDER).cost).toBe(315);
-    expect(byResult(TowerType.IMPERIUM_ETERNUM).cost).toBe(190);
-    expect(byResult(TowerType.CARTHAGE_SCOURGE).cost).toBe(150);
-    expect(byResult(TowerType.TRIUMVIRATE).cost).toBe(125);
+    expect(byResult(TowerType.JULIUS_CAESAR).cost).toBe(120);
+    expect(byResult(TowerType.HANNIBALS_NIGHTMARE).cost).toBe(120);
+    expect(byResult(TowerType.GOD_OF_WAR).cost).toBe(175);
+    expect(byResult(TowerType.IMPERIUM_ETERNUM).cost).toBe(240);
+    expect(byResult(TowerType.CARTHAGE_SCOURGE).cost).toBe(220);
+    expect(byResult(TowerType.TRIUMVIRATE).cost).toBe(190);
 
-    expect(byResult(TowerType.SKY_DOMINION).cost).toBe(190);
-    expect(byResult(TowerType.AUREATE_TRIBUNAL).cost).toBe(190);
-    expect(byResult(TowerType.GLACIAL_PALISADE).cost).toBe(190);
-    expect(byResult(TowerType.INFERNAL_COLOSSUS).cost).toBe(225);
+    expect(byResult(TowerType.SKY_DOMINION).cost).toBe(240);
+    expect(byResult(TowerType.AUREATE_TRIBUNAL).cost).toBe(250);
+    expect(byResult(TowerType.GLACIAL_PALISADE).cost).toBe(240);
+    expect(byResult(TowerType.INFERNAL_COLOSSUS).cost).toBe(290);
 
-    expect(byResult(TowerType.ROMAN_TRANSFORMER).cost).toBe(450);
-    expect(byResult(TowerType.NEPTUNES_LEVIATHAN).cost).toBe(450);
+    expect(byResult(TowerType.MARS_VICTOR).cost).toBe(650);
+    expect(byResult(TowerType.ROMAN_TRANSFORMER).cost).toBe(600);
+    expect(byResult(TowerType.NEPTUNES_LEVIATHAN).cost).toBe(600);
   });
 
   it('prices formerly cheap recipe outliers as real investment choices', () => {
@@ -555,7 +559,7 @@ describe('Recipe combo detection', () => {
     const recipe = comboData.find((r: any) => r.result === 'ROMAN_TRANSFORMER') as any;
     expect(recipe).toBeTruthy();
     expect(recipe.tier).toBe(5);
-    expect(recipe.cost).toBe(450);
+    expect(recipe.cost).toBe(600);
     expect(recipe.ingredients).toEqual([
       { type: 'HANNIBALS_NIGHTMARE', minTier: 5 },
       { type: 'JULIUS_CAESAR', minTier: 5 }
@@ -574,7 +578,7 @@ describe('Recipe combo detection', () => {
     const recipe = comboData.find((r: any) => r.result === 'NEPTUNES_LEVIATHAN') as any;
     expect(recipe).toBeTruthy();
     expect(recipe.tier).toBe(5);
-    expect(recipe.cost).toBe(450);
+    expect(recipe.cost).toBe(600);
     expect(recipe.ingredients).toEqual([
       { type: 'ABYSSAL_ONAGER', minTier: 5 },
       { type: 'HYDRA_BEAST_PIT', minTier: 5 }

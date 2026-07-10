@@ -25,19 +25,18 @@ describe('Item families', () => {
     expect(itemFamily('SHARPENED_BLADE')).toBe('DAMAGE');
     expect(itemFamily('TRAINING_SCROLL')).toBe('SPEED');
     expect(itemFamily('WATCHTOWER_LENS')).toBe('RANGE');
-    // DoT-bearing items live in SPECIAL and follow the one-SPECIAL cap.
-    expect(itemFamily('FIRE_OIL_FLASK')).toBe('SPECIAL');
-    expect(itemFamily('POISONED_BLADE')).toBe('SPECIAL');
-    expect(itemFamily('BARBED_GLADIUS')).toBe('SPECIAL');
+    expect(itemFamily('FIRE_OIL_FLASK')).toBe('DOT_BURN');
+    expect(itemFamily('POISONED_BLADE')).toBe('DOT_POISON');
+    expect(itemFamily('BARBED_GLADIUS')).toBe('DOT_BLEED');
     expect(itemFamily('CENTURIONS_TRUMPET')).toBe('AURA');
     expect(itemFamily('GOLD_PURSE')).toBe('ECONOMY');
-    expect(itemFamily('GALLIC_SHIELD_BOSS')).toBe('DEFENSE');
+    expect(itemFamily('GALLIC_SHIELD_BOSS')).toBe('UTILITY');
     expect(itemFamily('CAPITOLINE_AEGIS')).toBe('SPECIAL');
-    expect(itemFamily('BRINEHOOK_ROPE')).toBe('SPECIAL');
-    expect(itemFamily('TIDEPIERCER_HARPOON')).toBe('SPECIAL');
-    expect(itemFamily('AEGEAN_PEARL')).toBe('SPECIAL');
-    expect(itemFamily('STORMGLASS_AMPHORA')).toBe('SPECIAL');
-    expect(itemFamily('NEPTUNES_TRIDENT')).toBe('SPECIAL');
+    expect(itemFamily('BRINEHOOK_ROPE')).toBe('DAMAGE');
+    expect(itemFamily('TIDEPIERCER_HARPOON')).toBe('DAMAGE');
+    expect(itemFamily('AEGEAN_PEARL')).toBe('DAMAGE');
+    expect(itemFamily('STORMGLASS_AMPHORA')).toBe('DAMAGE');
+    expect(itemFamily('NEPTUNES_TRIDENT')).toBe('DAMAGE');
     expect(itemFamily('GIANTS_BANE')).toBe('SPECIAL');
     expect(itemFamily('WITCHS_BREW')).toBe('SPECIAL');
   });
@@ -115,7 +114,34 @@ describe('Item equip family exclusivity', () => {
 
   it('blocks a second SPECIAL item on the same tower', () => {
     const equipped = ['BERSERKERS_MUZZLE'];
-    expect(canEquipItemFamily(equipped, 'JUPITERS_WRATH').ok).toBe(false);
+    expect(canEquipItemFamily(equipped, 'JUPITERS_WRATH').ok).toBe(true);
+    expect(canEquipItemFamily(['CAPITOLINE_AEGIS'], 'JUPITERS_WRATH').ok).toBe(false);
+  });
+
+  it('keeps Burn, Poison, and Bleed as separate status families instead of SPECIAL', () => {
+    expect(canEquipItemFamily(['FIRE_OIL_FLASK'], 'VESTAL_PYRE').ok).toBe(false);
+    expect(canEquipItemFamily(['POISONED_BLADE'], 'WITCHS_VENOM').ok).toBe(false);
+    expect(canEquipItemFamily(['BARBED_GLADIUS'], 'FALCATA_BLADE').ok).toBe(false);
+    expect(canEquipItemFamily(['FIRE_OIL_FLASK'], 'POISONED_BLADE').ok).toBe(true);
+    expect(canEquipItemFamily(['FIRE_OIL_FLASK'], 'GIANTS_BANE').ok).toBe(true);
+  });
+
+  it('keeps Legendary SPECIAL as a curated rule-breaking lane, not the default legendary bucket', () => {
+    const legendaryIds = Object.keys(itemsData as any).filter(id => (itemsData as any)[id]?.rarity === 'LEGENDARY');
+    const specialLegendaryIds = legendaryIds.filter(id => itemFamily(id as any) === 'SPECIAL');
+    const nonSpecialFamilies = new Set(legendaryIds.map(id => itemFamily(id as any)).filter(f => f !== 'SPECIAL'));
+
+    expect(specialLegendaryIds).toEqual(expect.arrayContaining([
+      'GIANTS_BANE',
+      'WITCHS_BREW',
+      'CAPITOLINE_AEGIS',
+      'JUPITERS_WRATH',
+      'EXECUTIONERS_FALX',
+      'CONCUSSIVE_WARHEAD',
+      'DAMNATIO_MEMORIAE'
+    ]));
+    expect(specialLegendaryIds.length).toBeLessThan(legendaryIds.length / 2);
+    expect([...nonSpecialFamilies]).toEqual(expect.arrayContaining(['DAMAGE', 'AURA', 'SPEED', 'RANGE', 'ECONOMY', 'DEFENSE']));
   });
 });
 
