@@ -3607,7 +3607,6 @@ export class RenderEngine {
       { col: 33, row: 2,  key: 'MAP_CORNER_SHRINE_A4', scale: 1.4 },     // ornate column
       { col: 36, row: 3,  key: 'MAP_CORNER_SHRINE_A6', scale: 1.3 },     // SPQR banner column
       { col: 34, row: 4,  key: 'MAP_CORNER_SHRINE_B1', scale: 1.3 },     // ruined arch
-      { col: 36, row: 0,  key: 'MAP_CORNER_SHRINE_A2', scale: 1.2 },     // small column
       // Bloody Cyclops trophy: visual-only prop anchored to the immutable top
       // border, then nudged inward so world zoom never clips its face or blood pool.
       { col: 36, row: 0, key: 'MAP_CYCLOPS_SEVERED_HEAD', scale: 2.85, xOffset: -24, yOffset: 112 }
