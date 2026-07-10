@@ -383,6 +383,44 @@ describe('Top-border undead dragon aftermath prop', () => {
   });
 });
 
+describe('Checkpoint III dead Carthaginian elephant prop', () => {
+  it('registers a transparent battlefield sprite and anchors it two down, three-and-a-half right of checkpoint III', async () => {
+    const sharp = require('sharp');
+    const file = assetFileFor('MAP_DEAD_CARTHAGE_ELEPHANT');
+    expect(file).toBe('map_overhaul/m_dead_carthage_elephant.png');
+
+    const full = path.join(__dirname, '../public/assets/sprites', file!);
+    expect(fs.existsSync(full)).toBe(true);
+    const img = sharp(full);
+    const meta = await img.metadata();
+    expect(meta.width).toBe(256);
+    expect(meta.height).toBe(160);
+    expect(meta.hasAlpha).toBe(true);
+
+    const raw = await img.ensureAlpha().raw().toBuffer();
+    let transparent = 0;
+    let magenta = 0;
+    for (let i = 0; i < raw.length; i += 4) {
+      const r = raw[i];
+      const g = raw[i + 1];
+      const b = raw[i + 2];
+      const a = raw[i + 3];
+      if (a < 8) transparent++;
+      if (a > 8 && r > 210 && b > 200 && g < 70) magenta++;
+    }
+    expect(transparent).toBeGreaterThan(256 * 160 * 0.35);
+    expect(magenta).toBe(0);
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain("tex('MAP_DEAD_CARTHAGE_ELEPHANT')");
+    expect(source).toContain('wp.index === 3');
+    expect(source).toContain('(checkpointThree.col + 0.5 + 3.5) * GRID.TILE');
+    expect(source).toContain('(checkpointThree.row + 0.5 + 2.0) * GRID.TILE');
+    expect(source).toContain('deadElephant.width = GRID.TILE * 5.6');
+    expect(source).toContain('cornerLayer.addChild(deadElephant)');
+  });
+});
+
 describe('Cave battlefield remains props', () => {
   it('registers transparent authored sprites and anchors them around the main cave', async () => {
     const sharp = require('sharp');

@@ -3718,6 +3718,19 @@ export class RenderEngine {
       topDragon.alpha = 0.97;
       cornerLayer.addChild(topDragon);
     }
+    const checkpointThree = (waypointsData.waypoints as Array<{ index: number; topLeft: { col: number; row: number } }>)
+      .find(wp => wp.index === 3)?.topLeft;
+    const deadElephantTex = tex('MAP_DEAD_CARTHAGE_ELEPHANT');
+    if (deadElephantTex && checkpointThree) {
+      const deadElephant = new Sprite(deadElephantTex);
+      deadElephant.anchor.set(0.5);
+      deadElephant.x = (checkpointThree.col + 0.5 + 3.5) * GRID.TILE;
+      deadElephant.y = (checkpointThree.row + 0.5 + 2.0) * GRID.TILE;
+      deadElephant.width = GRID.TILE * 5.6;
+      deadElephant.height = deadElephant.width * (deadElephantTex.height / Math.max(1, deadElephantTex.width));
+      deadElephant.alpha = 0.97;
+      cornerLayer.addChild(deadElephant);
+    }
     this.layers.bg.addChild(cornerLayer);
 
     // GHOST PATH — the immutable brown stripe showing the unblocked enemy
