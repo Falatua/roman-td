@@ -65,6 +65,23 @@ const MAX_TRANSIENT_TELEGRAPH_RINGS = 32;
 const MAX_TRANSIENT_CHARYBDIS_CURRENTS = 48;
 const MAX_HERO_ABILITY_FX = 28;
 
+const SMALL_CROP_TOWER_VISUAL_SCALE: Record<string, number> = {
+  BEAST_HUNTER: 1.25,
+  BEAST_SLAYER: 1.25
+};
+
+const GIANT_CLASS_TOWER_VISUAL_SCALE: Record<string, number> = {
+  [TowerType.GIANT_KILLER]: 1.95,
+  [TowerType.GIANTS_COHORT_GUARD]: 2.05
+};
+
+function towerVisualBaseScale(tower: { type: TowerType | string; isHero?: boolean }): number {
+  if (tower.isHero) return 1.85;
+  return GIANT_CLASS_TOWER_VISUAL_SCALE[String(tower.type)]
+    ?? SMALL_CROP_TOWER_VISUAL_SCALE[String(tower.type)]
+    ?? 1.5;
+}
+
 export class RenderEngine {
   app: Application;
   layers: {
@@ -1258,6 +1275,7 @@ export class RenderEngine {
         : p.spriteKey === 'PROJ_GIANT_ARROW' ? 0xf0b95c
         : p.spriteKey === 'PROJ_POISON_CLOUD' ? 0x44dd44       // sickly green
         : 0xc8c8c8;
+      const isGiantArrow = p.spriteKey === 'PROJ_GIANT_ARROW';
       // 2026-05 v10 — VISUAL DAMAGE-CLASS DIFFERENTIATION
       //
       // Splash projectiles: faint outer ring sweeping the splash radius
@@ -1302,7 +1320,7 @@ export class RenderEngine {
         this.projGfx.lineStyle(0);
       }
       // Trail: 3 fading shadow segments behind the projectile
-      const len = 12;
+      const len = isGiantArrow ? 18 : 12;
       for (let s = 1; s <= 3; s++) {
         const tx = p.x - Math.cos(p.rotation) * (len * s * 0.7);
         const ty = p.y - Math.sin(p.rotation) * (len * s * 0.7);
@@ -1312,7 +1330,7 @@ export class RenderEngine {
         const isSullaMeteor = p.spriteKey === 'PROJ_SULLA_METEOR' || p.spriteKey === 'HERO_PROJ_SULLA_METEOR';
         const trailColor = isSullaMeteor ? 0xff7733 : (isDivine ? 0xffe066 : color);
         this.projGfx.beginFill(trailColor, isSullaMeteor ? alpha * 1.45 : alpha)
-          .drawCircle(tx, ty, isSullaMeteor ? 3.2 : (isDivine ? 2.0 : 1.6))
+          .drawCircle(tx, ty, isSullaMeteor ? 3.2 : isGiantArrow ? 2.4 : (isDivine ? 2.0 : 1.6))
           .endFill();
         if (isSullaMeteor) {
           this.projGfx.beginFill(0xffd34d, alpha * 0.45).drawCircle(tx + 2, ty - 1, 1.8).endFill();
@@ -1334,8 +1352,8 @@ export class RenderEngine {
           const isPoisonCloud = p.spriteKey === 'PROJ_POISON_CLOUD';
           const isHeroBolt = p.spriteKey === 'HERO_PROJ_AGRIPPA_BOLT';
           const isHeroArrow = p.spriteKey === 'HERO_PROJ_AGRICOLA_ARROW';
-          sp.width = isSullaMeteor ? 30 : (isHeroBolt ? 34 : isHeroArrow ? 30 : big ? 22 : isPoisonCloud ? 20 : 18);
-          sp.height = isSullaMeteor ? 30 : (isHeroBolt ? 22 : isHeroArrow ? 20 : big ? 22 : isPoisonCloud ? 20 : 18);
+          sp.width = isSullaMeteor ? 30 : (isHeroBolt ? 34 : isHeroArrow ? 30 : isGiantArrow ? 42 : big ? 22 : isPoisonCloud ? 20 : 18);
+          sp.height = isSullaMeteor ? 30 : (isHeroBolt ? 22 : isHeroArrow ? 20 : isGiantArrow ? 24 : big ? 22 : isPoisonCloud ? 20 : 18);
           if (isPoisonCloud) sp.tint = 0x66dd44;
           this.layers.fx.addChild(sp);
           this.projSprites.set(p.id, sp);
@@ -4248,18 +4266,15 @@ export class RenderEngine {
         // at 1.5×, so it gets a dedicated 1.25× override to bring it
         // back in line with the rest of the tower roster.
         const isHeroSprite = !!tw.isHero;
-        const PER_TYPE_SCALE: Record<string, number> = {
-          BEAST_HUNTER: 1.25,
-          BEAST_SLAYER: 1.25
-        };
         // 2026-05-24 — Hero scale bumped 1.6 → 1.85 per player feedback
         // that heroes should be visibly larger than regular towers. The
         // old 1.6 vs 1.5 gap was only +7% which barely read on screen;
         // 1.85 is +23% over the tower baseline so heroes pop clearly as
         // "this is the named commander" without becoming cartoonish.
-        const scale = isHeroSprite
-          ? 1.85
-          : (PER_TYPE_SCALE[tw.type] ?? 1.5);
+        // Giant-class item-evolved towers are larger again, so the
+        // awakened giant fantasy reads on the board without changing
+        // their tile footprint, hitbox, range, or balance.
+        const scale = towerVisualBaseScale(tw);
         const sz = GRID.TILE * scale;
         sp.width = sz; sp.height = sz;
         if (isHeroSprite) {
@@ -4517,17 +4532,11 @@ export class RenderEngine {
       // canonical 1.5×. Without this branch the per-frame update
       // would silently force every sprite back to 1.5× and undo the
       // creation-time size override.
-      const PER_TYPE_SCALE_FRAME: Record<string, number> = {
-        BEAST_HUNTER: 1.25,
-        BEAST_SLAYER: 1.25
-      };
       // 2026-05-24 — Mirror of the creation-time hero scale bump above.
       // Both paths MUST match — the per-frame path runs every tick for
       // re-positioning, and a mismatch would cause heroes to "jump"
       // size between creation and the first redraw.
-      const baseScale = tw.isHero
-        ? 1.85
-        : (PER_TYPE_SCALE_FRAME[tw.type] ?? 1.5);
+      const baseScale = towerVisualBaseScale(tw);
       const tileScale = GRID.TILE * baseScale;
       entry.sp.scale.set((tileScale / (entry.sp.texture?.width  || 1)) * totalScale,
                          (tileScale / (entry.sp.texture?.height || 1)) * totalScale);

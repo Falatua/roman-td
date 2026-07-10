@@ -643,6 +643,29 @@ describe('Tower roster integrity', () => {
     }
   });
 
+  it('giant-class enemies, towers, props, and projectiles keep oversized visual hierarchy', async () => {
+    const fs = await import('node:fs');
+    const renderEngine = fs.readFileSync('src/render/RenderEngine.ts', 'utf8');
+    const enemyScale = fs.readFileSync('src/render/EnemySpriteScale.ts', 'utf8');
+
+    expect(enemyScale).toContain('GIANT_CLASS_ENEMY_SPRITE_SIZE_TILES');
+    expect(enemyScale).toContain('[EnemyType.CYCLOPS]: 2.3');
+    expect(enemyScale).toContain('[EnemyType.SEA_GIANT_WARBRINGER]: 2.5');
+    expect(enemyScale).toContain('[EnemyType.SUPER_GIANT_COLOSSUS]: 2.7');
+    expect(renderEngine).toContain('const GIANT_CLASS_TOWER_VISUAL_SCALE');
+    expect(renderEngine).toContain('[TowerType.GIANT_KILLER]: 1.95');
+    expect(renderEngine).toContain('[TowerType.GIANTS_COHORT_GUARD]: 2.05');
+    expect(renderEngine).toContain('const scale = towerVisualBaseScale(tw);');
+    expect(renderEngine).toContain('const baseScale = towerVisualBaseScale(tw);');
+    expect(renderEngine).toContain("const isGiantArrow = p.spriteKey === 'PROJ_GIANT_ARROW';");
+    expect(renderEngine).toContain('const len = isGiantArrow ? 18 : 12;');
+    expect(renderEngine).toContain('isGiantArrow ? 42');
+    expect(renderEngine).toContain('isGiantArrow ? 24');
+    expect(renderEngine).toContain("key: 'OCEAN_SEA_GIANT_HEAD'");
+    expect(renderEngine).toContain('width: GRID.TILE * 2.85');
+    expect(renderEngine).toContain("key: 'MAP_CYCLOPS_SEVERED_HEAD', scale: 2.85");
+  });
+
   it('ocean emergence animation sheet stays sprite-based, transparent, and renderer-wired', async () => {
     const fs = await import('node:fs');
     const path = await import('node:path');
