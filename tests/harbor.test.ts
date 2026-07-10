@@ -290,6 +290,31 @@ describe('Harbor naval tower system', () => {
     expect(towerEffectiveStats(leviathan).range).toBeLessThan(towerEffectiveStats(transformer).range / 2);
   });
 
+  it('keeps Harbor tower ability copy practical instead of flavor-only', () => {
+    const harborTypes = [
+      TowerType.TRIREME_BALLISTA,
+      TowerType.CORVUS_BOARDING_SHIP,
+      TowerType.RAMMING_QUINQUEREME,
+      TowerType.CHARYBDIS_VORTEX,
+      TowerType.NEREID_ORACLE,
+      TowerType.HYDRA_OF_LERNA,
+      TowerType.PRAETORIAN_FLEET,
+      TowerType.CORVUS_LEGION_DOCK,
+      TowerType.ORACLE_LIGHTHOUSE,
+      TowerType.ABYSSAL_ONAGER,
+      TowerType.HYDRA_BEAST_PIT,
+      TowerType.MARS_TIDAL_BASTION,
+      TowerType.NEPTUNES_LEVIATHAN
+    ];
+
+    for (const type of harborTypes) {
+      const ability = String((towersData as any)[type]?.ability ?? '');
+      expect(ability, `${type} should name placement rules`).toMatch(/OCEAN|TIDEFORGED|WATER-ONLY/);
+      expect(ability, `${type} should include numeric mechanics`).toMatch(/\d/);
+      expect(ability, `${type} should name at least one concrete effect`).toMatch(/SLOW|STUN|MARK|ARMOR SHRED|BLEED|POISON|knockback|splash|damage|range|attack speed/i);
+    }
+  });
+
   it('shows a visible current when Charybdis applies its slow', () => {
     const previousRenderer = (globalThis as any).__renderer;
     const triggerCharybdisCurrent = vi.fn();
