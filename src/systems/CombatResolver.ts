@@ -2102,7 +2102,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         }
         hooks.onHit(t, target, damage, resMod, !!(t as any).__lastWasCrit);
         hooks.onMeleeSwing(t, target, damage);
-        applyOnHitEffects(t, target);
+        applyOnHitEffects(t, target, state.tick);
         // JUPITER'S WRATH on melee hits — same chain logic as the ranged
         // path. Skips on phased hits (damage was zeroed above).
         if (!phasedThisHit && t.equippedItems.includes('JUPITERS_WRATH')) {
@@ -2341,7 +2341,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             }
             hooks.onHit(t, other, cleaveDmg, resMod);
             hooks.onMeleeSwing(t, other, cleaveDmg);
-            applyOnHitEffects(t, other);
+            applyOnHitEffects(t, other, state.tick);
             if (other.hp <= 0 && !checkRebirth(state, other, state.tick)) hooks.onKill(t, other);
           }
         }
@@ -2689,7 +2689,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   }
   const resMod = (target as any).__lastResMod ?? 1;
   hooks.onHit(t, target, damage, resMod, !!(t as any).__lastWasCrit);
-  applyOnHitEffects(t, target);
+  applyOnHitEffects(t, target, state.tick);
   if (target.hp <= 0 && !checkRebirth(state, target, state.tick)) hooks.onKill(t, target);
   // CONSULAR_FATEBINDER — every shot strikes EVERY enemy on the map. The
   // initial target gets the full hit; every other enemy alive takes 40% of
@@ -2828,7 +2828,7 @@ function fireJupitersWrathChain(
   }
 }
 
-function applyOnHitEffects(t: Tower, target: Enemy) {
+function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
   // Apply baseline status effects per tower archetype.
   const tier = t.qualityTier;
   const dur = (base: number) => base * (1 + 0.15 * tier);
@@ -2959,6 +2959,10 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       pushStatus(target, StatusEffectKind.SLOW, dur(3.5), 0.48, tier);
       pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.18, tier);
       if (target.isBoss || isCommanderType((target as any).type)) pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(3.5), 0, tier);
+      {
+        const renderer: any = typeof globalThis !== 'undefined' ? (globalThis as any).__renderer : undefined;
+        renderer?.triggerCharybdisCurrent?.(target.x, target.y, tick ?? 0, GRID.TILE * 1.75);
+      }
       break;
     case TowerType.ABYSSAL_ONAGER:
       pushStatus(target, StatusEffectKind.SLOW, dur((t as any).placedOnWater ? 4.0 : 2.6), (t as any).placedOnWater ? 0.55 : 0.32, tier);

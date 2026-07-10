@@ -61,6 +61,7 @@ const MAX_TRANSIENT_MUZZLE_FLASHES = 96;
 const MAX_TRANSIENT_IMPACT_RINGS = 96;
 const MAX_TRANSIENT_SPRITE_IMPACTS = 72;
 const MAX_TRANSIENT_TELEGRAPH_RINGS = 32;
+const MAX_TRANSIENT_CHARYBDIS_CURRENTS = 48;
 const MAX_HERO_ABILITY_FX = 28;
 
 export class RenderEngine {
@@ -1477,6 +1478,7 @@ export class RenderEngine {
   // the ground for extra weight.
   private slashes: { sp: Sprite; born: number; life: number; size: number }[] = [];
   private impactRings: { x: number; y: number; born: number; life: number; maxR: number; color: number }[] = [];
+  private charybdisCurrents: { x: number; y: number; born: number; life: number; radius: number; spin: number }[] = [];
   private spriteImpacts: { sp: Sprite; key: string; born: number; life: number; size: number; frameW: number; frameH: number; frames: number }[] = [];
   private trimSlashQueue(): void {
     while (this.slashes.length > MAX_TRANSIENT_SLASHES) {
@@ -1577,6 +1579,28 @@ export class RenderEngine {
   triggerImpactRing(x: number, y: number, tick: number, maxR = 24, color = 0xffffff) {
     this.impactRings.push({ x, y, born: tick, life: 0.32, maxR, color });
     this.trimPlainFxQueue(this.impactRings, MAX_TRANSIENT_IMPACT_RINGS);
+  }
+
+  triggerCharybdisCurrent(x: number, y: number, tick: number, radius = GRID.TILE * 1.55) {
+    this.charybdisCurrents.push({
+      x,
+      y,
+      born: tick,
+      life: 0.92,
+      radius,
+      spin: Math.random() * Math.PI * 2
+    });
+    this.trimPlainFxQueue(this.charybdisCurrents, MAX_TRANSIENT_CHARYBDIS_CURRENTS);
+  }
+
+  private drawEllipseArc(g: Graphics, x: number, y: number, rx: number, ry: number, start: number, sweep: number, steps = 18): void {
+    for (let i = 0; i <= steps; i++) {
+      const a = start + sweep * (i / steps);
+      const px = x + Math.cos(a) * rx;
+      const py = y + Math.sin(a) * ry;
+      if (i === 0) g.moveTo(px, py);
+      else g.lineTo(px, py);
+    }
   }
 
   triggerSpriteImpact(x: number, y: number, tick: number, key: string, size = 1.2, life = 0.30, frameW = 128, frameH = 128, frames = 6) {
@@ -2601,6 +2625,34 @@ export class RenderEngine {
       // dust puff inside
       mg.beginFill(ir.color, a * 0.18).drawCircle(ir.x, ir.y, r * 0.5).endFill();
       mg.lineStyle(0);
+    }
+    // Charybdis Vortex slow/current marker. This is deliberately more
+    // "current" than "impact": a flattened rotating whirlpool that sits
+    // briefly under the affected enemy so players can see the naval slow
+    // and pull effect actually took hold.
+    for (let i = this.charybdisCurrents.length - 1; i >= 0; i--) {
+      const cur = this.charybdisCurrents[i];
+      const age = tick - cur.born;
+      if (age >= cur.life) { this.charybdisCurrents.splice(i, 1); continue; }
+      const p = Math.max(0, Math.min(1, age / cur.life));
+      const fade = Math.sin(Math.PI * p);
+      const alpha = 0.82 * fade * (1 - p * 0.12);
+      const rx = cur.radius * (0.72 + p * 0.18);
+      const ry = rx * 0.46;
+      const rot = cur.spin + age * 5.8;
+      mg.beginFill(0x114a64, 0.15 * alpha).drawEllipse(cur.x, cur.y + 3, rx * 0.82, ry * 0.82).endFill();
+      for (let arm = 0; arm < 3; arm++) {
+        const start = rot + arm * ((Math.PI * 2) / 3);
+        const sweep = Math.PI * 1.08;
+        const armRx = rx * (0.48 + arm * 0.17);
+        const armRy = ry * (0.48 + arm * 0.17);
+        mg.lineStyle(3.6 - arm * 0.45, arm === 0 ? 0xd9fbff : 0x5fe6ff, alpha * (0.9 - arm * 0.12));
+        this.drawEllipseArc(mg, cur.x, cur.y + 3, armRx, armRy, start, sweep);
+      }
+      mg.lineStyle(1.25, 0xd9fbff, alpha * 0.78);
+      this.drawEllipseArc(mg, cur.x, cur.y + 3, rx * 0.24, ry * 0.24, -rot, Math.PI * 1.55, 14);
+      mg.lineStyle(0);
+      mg.beginFill(0x5fe6ff, alpha * 0.58).drawCircle(cur.x, cur.y + 3, 3.0 + 1.9 * fade).endFill();
     }
     // Telegraph rings SHRINK toward the target — opposite motion to
     // impact rings so the player reads them as "incoming windup" rather

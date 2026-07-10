@@ -290,6 +290,29 @@ describe('Harbor naval tower system', () => {
     expect(towerEffectiveStats(leviathan).range).toBeLessThan(towerEffectiveStats(transformer).range / 2);
   });
 
+  it('shows a visible current when Charybdis applies its slow', () => {
+    const previousRenderer = (globalThis as any).__renderer;
+    const triggerCharybdisCurrent = vi.fn();
+    (globalThis as any).__renderer = { triggerCharybdisCurrent };
+    try {
+      const s = readyState();
+      s.phase = GamePhase.WAVE_PHASE;
+      s.wave = 12;
+      s.tick = 42;
+      const charybdis = createTower(TowerType.CHARYBDIS_VORTEX, 4, 2, 20, s.wave);
+      (charybdis as any).placedOnWater = true;
+      const target = combatTarget('current-target', charybdis, 1.5);
+
+      applyDamageAndStatus(s, charybdis, target, 100, leaderboardDamageHooks());
+
+      expect(target.statusEffects.some(effect => effect.kind === 'SLOW')).toBe(true);
+      expect(triggerCharybdisCurrent).toHaveBeenCalledTimes(1);
+      expect(triggerCharybdisCurrent).toHaveBeenCalledWith(target.x, target.y, s.tick, expect.any(Number));
+    } finally {
+      (globalThis as any).__renderer = previousRenderer;
+    }
+  });
+
   it('rewards Tideforged combos for taking scarce ocean tiles', () => {
     const landFleet = createTower(TowerType.PRAETORIAN_FLEET, 5, 10, 10, 20);
     const waterFleet = createTower(TowerType.PRAETORIAN_FLEET, 5, 4, 20, 20);
