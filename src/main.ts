@@ -5054,7 +5054,7 @@ async function boot() {
     const sx = t.tileX * GRID.TILE + GRID.TILE / 2;
     const sy = t.tileY * GRID.TILE + GRID.TILE / 2;
     const angle = Math.atan2(e.y - sy, e.x - sx);
-    const HEAVY = new Set(['PRIMUS_PILUS','TRIARIUS','CENTURION','COHORT_GUARD','PRAETORIAN_WALL','IMPERATOR_GUARD','EVOCATUS','CATAPHRACT','HORSEMAN']);
+    const HEAVY = new Set(['PRIMUS_PILUS','TRIARIUS','CENTURION','COHORT_GUARD','GIANTS_COHORT_GUARD','PRAETORIAN_WALL','IMPERATOR_GUARD','EVOCATUS','CATAPHRACT','HORSEMAN']);
     const isHero = !!t.isHero;
     const size = isHero ? 2.2 : (HEAVY.has(t.type) ? 1.5 : 1.0);
     const cleaver = hasCleave(t);

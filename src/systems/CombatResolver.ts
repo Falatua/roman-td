@@ -335,6 +335,7 @@ const BEAST_ENEMY_TYPES = new Set<EnemyType>([
 const MELEE_TYPES = new Set<TowerType>([
   TowerType.MILITES, TowerType.HASTATI, TowerType.TRIARIUS, TowerType.DECURION, TowerType.CENTURION,
   TowerType.PRIMUS_PILUS, TowerType.HORSEMAN, TowerType.COHORT_GUARD, TowerType.PRAETORIAN_WALL,
+  TowerType.GIANTS_COHORT_GUARD,
   TowerType.AUXILIA, TowerType.ACCENSUS, TowerType.PUGIO_ASSASSIN, TowerType.CATAPHRACT,
   TowerType.EVOCATUS, TowerType.IMPERATOR_GUARD,
   TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
@@ -452,7 +453,7 @@ export const ANTI_AIR_ONLY_TYPES = new Set<TowerType>(
 // not just one. Cleave damage on secondary targets is reduced to 70%.
 const CLEAVE_MELEE = new Set<TowerType>([
   TowerType.HASTATI, TowerType.TRIARIUS, TowerType.COHORT_GUARD,
-  TowerType.PRAETORIAN_WALL, TowerType.IMPERATOR_GUARD,
+  TowerType.GIANTS_COHORT_GUARD, TowerType.PRAETORIAN_WALL, TowerType.IMPERATOR_GUARD,
   TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
   TowerType.PONTIFEX_MAXIMUS, TowerType.GLACIAL_PALISADE, TowerType.ROMAN_TRANSFORMER,
   TowerType.NEPTUNES_LEVIATHAN
@@ -473,7 +474,7 @@ export function hasCleave(t: Tower): boolean {
 // "wide arcing swing." Item-only cleavers without FALX hit only the
 // default cap.
 function meleeHitCap(t: Tower): number {
-  const base = 6;
+  const base = t.type === TowerType.GIANTS_COHORT_GUARD ? 8 : 6;
   const bonus = (t.equippedItems.includes('FALX_BLADE') ? 2 : 0)
               + (t.equippedItems.includes('EXECUTIONERS_FALX') ? 3 : 0);   // legendary: wider swing, up to 9
   return base + bonus;
@@ -486,6 +487,9 @@ function cleaveSecondaryMult(t: Tower): number {
   // at 60% so they're a step below natives without the item.
   // 2026 v2 — Executioner's Falx (legendary) = full-power cleave, secondaries take 100%.
   if (t.equippedItems.includes('EXECUTIONERS_FALX')) return 1.0;
+  if (t.type === TowerType.GIANTS_COHORT_GUARD) {
+    return t.equippedItems.includes('FALX_BLADE') ? 0.95 : 0.85;
+  }
   if (CLEAVE_MELEE.has(t.type)) {
     return t.equippedItems.includes('FALX_BLADE') ? 0.90 : 0.70;
   }
@@ -536,6 +540,8 @@ const GIANT_KILLER_TARGET_TYPES = new Set<string>([
   'DREAD_UNDEAD_CYCLOPS'
 ]);
 export const GIANT_KILLER_GIANT_DAMAGE_MULT = 5.5;
+export const GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT = 4.5;
+export const GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT = 7.5;
 
 function isGiantKillerTarget(target: Enemy): boolean {
   return GIANT_KILLER_TARGET_TYPES.has(String(target.type));
@@ -930,6 +936,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     if (t.type === TowerType.COHORT_GUARD && !auraOff) {
       // "+15% damage aura" — implement as local 3-tile to keep positioning relevant.
       localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.15 });
+    }
+    if (t.type === TowerType.GIANTS_COHORT_GUARD && !auraOff) {
+      localAuras.push({ x: cx, y: cy, r: 4 * GRID.TILE, dmg: 0.25, spd: 0.15 });
     }
     // HANNIBALS_NIGHTMARE — periodic AoE freeze every 10s.
     if (t.type === TowerType.HANNIBALS_NIGHTMARE) {
@@ -1510,6 +1519,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.INFERNAL_COLOSSUS && target.isBoss) damage *= 3.00;                // +200% vs bosses
       if (t.type === TowerType.STORMCALLER && oceanThreat) damage *= STORMCALLER_OCEAN_THREAT_DAMAGE_MULT; // +100% vs drenched ocean threats
       if (t.type === TowerType.GIANT_KILLER && isGiantKillerTarget(target)) damage *= GIANT_KILLER_GIANT_DAMAGE_MULT;
+      if (t.type === TowerType.GIANTS_COHORT_GUARD) {
+        if (isGiantKillerTarget(target)) damage *= GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT;
+        else if (target.isBoss) damage *= GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT;
+      }
       if ((t.type === TowerType.TRIREME_BALLISTA || t.type === TowerType.PRAETORIAN_FLEET)
           && (target.archetype === 'ELITE' || target.isBoss || isCommanderType((target as any).type))) {
         damage *= (t as any).placedOnWater ? 1.45 : 1.25;
@@ -2810,6 +2823,13 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       if (isGiantKillerTarget(target)) {
         pushStatus(target, StatusEffectKind.SLOW, dur(2.2), 0.42, tier);
         pushStatus(target, StatusEffectKind.MARK, dur(2.5), 0.14, tier);
+      }
+      break;
+    case TowerType.GIANTS_COHORT_GUARD:
+      pushStatus(target, StatusEffectKind.SLOW, dur(2.4), 0.36, tier);
+      if (target.isBoss || isGiantKillerTarget(target)) {
+        pushStatus(target, StatusEffectKind.MARK, dur(3.2), isGiantKillerTarget(target) ? 0.24 : 0.18, tier);
+        if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.45), 0, tier);
       }
       break;
     case TowerType.CHARYBDIS_VORTEX:

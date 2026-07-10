@@ -178,30 +178,46 @@ export function createTower(type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: numbe
 
 export function towerItemSlotCap(t: Tower): number {
   if ((t as any).isHero) return HERO_ITEM_SLOTS;
-  if (t.type === TowerType.GIANT_KILLER) return Math.max(4, TIER_MULTS.itemSlots[t.qualityTier] ?? 1);
+  if (isGiantsBaneTransformedTowerType(t.type)) return Math.max(4, TIER_MULTS.itemSlots[t.qualityTier] ?? 1);
   return TIER_MULTS.itemSlots[t.qualityTier] ?? 1;
 }
 
-export function canTransformWithGiantsBane(t: Tower): boolean {
-  return !t.pending && t.type === TowerType.MILITES && t.qualityTier >= 4;
+export function isGiantsBaneTransformedTowerType(type: TowerType | string): boolean {
+  return type === TowerType.GIANT_KILLER || type === TowerType.GIANTS_COHORT_GUARD;
 }
 
-export function transformMilitesWithGiantsBane(t: Tower): boolean {
+export function giantsBaneTransformResultType(t: Tower): TowerType | null {
+  if (t.pending || t.qualityTier < 4) return null;
+  if (t.type === TowerType.MILITES) return TowerType.GIANT_KILLER;
+  if (t.type === TowerType.COHORT_GUARD) return TowerType.GIANTS_COHORT_GUARD;
+  return null;
+}
+
+export function canTransformWithGiantsBane(t: Tower): boolean {
+  return giantsBaneTransformResultType(t) !== null;
+}
+
+export function transformWithGiantsBane(t: Tower): boolean {
   if (!canTransformWithGiantsBane(t)) return false;
   if (!t.equippedItems.includes(GIANTS_BANE_ITEM_ID)) return false;
-  const def = towerDef(TowerType.GIANT_KILLER);
+  const sourceType = t.type;
+  const resultType = giantsBaneTransformResultType(t);
+  if (!resultType) return false;
+  const def = towerDef(resultType);
   if (!def) return false;
-  const priorBuiltFrom = t.builtFrom?.length ? t.builtFrom : [TowerType.MILITES];
-  t.type = TowerType.GIANT_KILLER;
+  const priorBuiltFrom = t.builtFrom?.length ? t.builtFrom : [sourceType];
+  t.type = resultType;
   t.damageType = damageTypeFromString(def.damageType);
   t.baseDps = def.baseDps * 1.10;
   t.attackSpeed = def.attackSpeed;
   t.range = def.range;
   t.targetingMode = def.antiAirOnly ? TargetingMode.FLYERS : TargetingMode.FIRST;
   t.isAerarium = false;
-  t.builtFrom = Array.from(new Set([...priorBuiltFrom, TowerType.MILITES]));
+  t.builtFrom = Array.from(new Set([...priorBuiltFrom, sourceType]));
   return true;
 }
+
+export const transformMilitesWithGiantsBane = transformWithGiantsBane;
 
 // Probability draw: 5 cards. Each is type + tier per pool weights.
 // Uses the EFFECTIVE pool level = max(gold-purchased poolLevel, kill-XP heroLevel).
@@ -808,6 +824,10 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
         addGlobalSpeed('Fatebinder', 1.22);
       }
       if (other.type === TowerType.COHORT_GUARD && within(other, 3)) addLocalDmg('Cohort Guard local', 0.15);
+      if (other.type === TowerType.GIANTS_COHORT_GUARD && within(other, 4)) {
+        addLocalDmg("Giant's Cohort Guard local", 0.25);
+        addLocalSpeed("Giant's Cohort Guard local", 0.15);
+      }
       if (other.type === TowerType.TRIPLEX_ACIES && within(other, 3)) addLocalSpeed('Triplex Acies', 0.25);
       if (other.type === TowerType.LEGION_PRIME && within(other, 3)) addLocalDmg('Legion Prime', 0.25);
       if (other.type === TowerType.GLACIAL_PALISADE && within(other, 3)) addLocalDmg('Glacial Palisade', 0.20);

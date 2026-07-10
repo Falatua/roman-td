@@ -82,6 +82,7 @@ const MANIFEST: Record<string, string> = {
   HYDRA_BEAST_PIT: 'naval/t_tideforged_hydra_beast_pit.png',
   MARS_TIDAL_BASTION: 'naval/t_tideforged_mars_tidal_bastion.png',
   GIANT_KILLER: 'naval/t_tideforged_giant_killer.png',
+  GIANTS_COHORT_GUARD: 't_giants_cohort_guard.png',
   // 2026-05-17 — MURMILLO (T4 mid-game combo). Heavy Roman gladiator with
   // fish-helmet + scutum + gladius. Sliced from the user-supplied gladiator
   // roster sheet (top-left cell); chroma-keyed via the standard pipeline.

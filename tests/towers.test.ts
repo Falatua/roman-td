@@ -1,8 +1,8 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
-import { canTransformWithGiantsBane, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, transformMilitesWithGiantsBane } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat } from '../src/systems/CombatResolver';
+import { canTransformWithGiantsBane, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, transformWithGiantsBane } from '../src/systems/TowerSystem';
+import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -736,17 +736,17 @@ describe('Neptune\'s Leviathan omega combat wiring', () => {
 });
 
 describe('Giant Killer transformation and combat wiring', () => {
-  it('transforms only Tier IV+ Milites carrying Giant\'s Bane and opens four total slots', () => {
+  it('transforms only legal Tier IV+ Giant\'s Bane carriers and opens four total slots', () => {
     const lowMilites = createTower(TowerType.MILITES, 3, 4, 4, 0);
     lowMilites.equippedItems.push(GIANTS_BANE_ITEM_ID);
     expect(canTransformWithGiantsBane(lowMilites)).toBe(false);
-    expect(transformMilitesWithGiantsBane(lowMilites)).toBe(false);
+    expect(transformWithGiantsBane(lowMilites)).toBe(false);
     expect(lowMilites.type).toBe(TowerType.MILITES);
 
     const wrongTower = createTower(TowerType.HASTATI, 4, 4, 4, 0);
     wrongTower.equippedItems.push(GIANTS_BANE_ITEM_ID);
     expect(canTransformWithGiantsBane(wrongTower)).toBe(false);
-    expect(transformMilitesWithGiantsBane(wrongTower)).toBe(false);
+    expect(transformWithGiantsBane(wrongTower)).toBe(false);
     expect(wrongTower.type).toBe(TowerType.HASTATI);
 
     const milites = createTower(TowerType.MILITES, 4, 4, 4, 0);
@@ -755,13 +755,33 @@ describe('Giant Killer transformation and combat wiring', () => {
     const before = towerEffectiveStats(milites);
 
     expect(canTransformWithGiantsBane(milites)).toBe(true);
-    expect(transformMilitesWithGiantsBane(milites)).toBe(true);
+    expect(transformWithGiantsBane(milites)).toBe(true);
     expect(milites.type).toBe(TowerType.GIANT_KILLER);
     expect(milites.equippedItems).toContain(GIANTS_BANE_ITEM_ID);
     expect(milites.equippedItemRarities).toEqual(['COMMON', 'LEGENDARY']);
     expect(towerItemSlotCap(milites)).toBe(4);
     expect(milites.builtFrom).toContain(TowerType.MILITES);
     expect(towerEffectiveStats(milites).dps).toBeGreaterThan(before.dps * 3);
+
+    const lowCohort = createTower(TowerType.COHORT_GUARD, 3, 4, 4, 0);
+    lowCohort.equippedItems.push(GIANTS_BANE_ITEM_ID);
+    expect(canTransformWithGiantsBane(lowCohort)).toBe(false);
+    expect(transformWithGiantsBane(lowCohort)).toBe(false);
+    expect(lowCohort.type).toBe(TowerType.COHORT_GUARD);
+
+    const cohort = createTower(TowerType.COHORT_GUARD, 4, 5, 4, 0);
+    cohort.equippedItems.push('BATTLE_STANDARD', GIANTS_BANE_ITEM_ID);
+    cohort.equippedItemRarities = ['UNCOMMON', 'LEGENDARY'];
+    const cohortBefore = towerEffectiveStats(cohort);
+
+    expect(canTransformWithGiantsBane(cohort)).toBe(true);
+    expect(transformWithGiantsBane(cohort)).toBe(true);
+    expect(cohort.type).toBe(TowerType.GIANTS_COHORT_GUARD);
+    expect(cohort.equippedItems).toContain(GIANTS_BANE_ITEM_ID);
+    expect(cohort.equippedItemRarities).toEqual(['UNCOMMON', 'LEGENDARY']);
+    expect(towerItemSlotCap(cohort)).toBe(4);
+    expect(cohort.builtFrom).toContain(TowerType.COHORT_GUARD);
+    expect(towerEffectiveStats(cohort).dps).toBeGreaterThan(cohortBefore.dps * 4);
   });
 
   it('specializes hard into giant-class enemies without becoming a universal answer', () => {
@@ -804,6 +824,48 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(nonGiantMyth.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK)).toBe(false);
     expect(seaGiant.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.14)).toBe(true);
     expect(cyclops.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.14)).toBe(true);
+  });
+
+  it('routes Giant\'s Cohort Guard through melee cleave with boss and giant specialization', () => {
+    function swingAt(type: EnemyType, opts: { boss?: boolean; faction?: EnemyFaction; archetype?: Enemy['archetype'] } = {}) {
+      const state = createGameState();
+      state.wave = 6;
+      const tower = createTower(TowerType.GIANTS_COHORT_GUARD, 5, 4, 4, 0);
+      tower.attackCooldown = 0;
+      state.towers.set(tower.id, tower);
+      const c = towerCenter(tower);
+      const target = testEnemy(`giants-cohort-${type}`, c.x + GRID.TILE * 1.4, c.y);
+      target.type = type;
+      target.faction = opts.faction ?? EnemyFaction.ROMAN_MYTH;
+      target.archetype = opts.archetype ?? 'ELITE';
+      target.isBoss = !!opts.boss;
+      target.hp = 20000;
+      target.maxHp = 20000;
+      state.enemies.set(target.id, target);
+      tickCombat(state, 0.016, noopCombatHooks());
+      return { loss: target.maxHp - target.hp, target };
+    }
+
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    let normal: ReturnType<typeof swingAt>;
+    let boss: ReturnType<typeof swingAt>;
+    let giant: ReturnType<typeof swingAt>;
+    try {
+      normal = swingAt(EnemyType.FERAL_DOG, { faction: EnemyFaction.DOGS, archetype: 'SWARM' });
+      boss = swingAt(EnemyType.HANNIBAL_BARCA, { boss: true, faction: EnemyFaction.CARTHAGE, archetype: 'BOSS' });
+      giant = swingAt(EnemyType.SEA_GIANT, { faction: EnemyFaction.ROMAN_MYTH, archetype: 'ELITE' });
+    } finally {
+      randomSpy.mockRestore();
+    }
+
+    expect(GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT).toBe(4.5);
+    expect(GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT).toBe(7.5);
+    expect(normal.loss).toBeGreaterThan(0);
+    expect(boss.loss).toBeGreaterThan(normal.loss * 1.7);
+    expect(giant.loss).toBeGreaterThan(normal.loss * 3.0);
+    expect(normal.target.statusEffects.some(s => s.kind === StatusEffectKind.SLOW)).toBe(true);
+    expect(boss.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.18)).toBe(true);
+    expect(giant.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.24)).toBe(true);
   });
 });
 

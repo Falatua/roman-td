@@ -4798,6 +4798,10 @@ export class RenderEngine {
       if (tw.type === TowerType.COHORT_GUARD) {
         this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.85);
       }
+      // Giant's Cohort Guard — stronger local command aura from the awakened shield wall.
+      if (tw.type === TowerType.GIANTS_COHORT_GUARD) {
+        this.drawAuraRing(cx, cy, 4 * GRID.TILE, ALLY, pulse * 0.9);
+      }
       // Triplex Acies super combo — +25% atk speed aura (3 tiles).
       if (tw.type === TowerType.TRIPLEX_ACIES) {
         this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.85);
