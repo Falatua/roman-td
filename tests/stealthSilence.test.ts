@@ -63,20 +63,20 @@ function makeTower(id: string, tileX: number, tileY: number): Tower {
 }
 
 describe('S1 — Ambush stealth on selected ground enemies', () => {
-  // 2026-05-22 V22 — Ambush window dropped 15s → 10s per design tuning,
-  // AND the clear-after-window bug was fixed (previously __veiled stayed
-  // true forever once set; now it's explicitly assigned per-frame).
-  it('Carthage Spearman is __veiled during the first 10s of the wave', () => {
+  // 2026-07-10 — Stealth durations doubled: ambush window 10s → 20s.
+  // Keep the clear-after-window regression covered so __veiled does not
+  // stick forever once the longer window expires.
+  it('Carthage Spearman is __veiled during the first 20s of the wave', () => {
     const s = createGameState();
     (s as any).__waveStartTick = 0;
-    s.tick = 5;                   // 5 seconds into the wave (< 10)
+    s.tick = 10;                  // 10 seconds into the wave (< 20)
     const e = makeEnemy(EnemyType.CARTHAGE_SPEARMAN, EnemyFaction.CARTHAGE, 320, 320);
     s.enemies.set(e.id, e);
     tickEnemies(s, 0.016, () => {}, () => {});
     expect((e as any).__veiled).toBe(true);
   });
 
-  it('Undead Berserker is __veiled during the first 10s of the wave', () => {
+  it('Undead Berserker is __veiled during the first 20s of the wave', () => {
     const s = createGameState();
     (s as any).__waveStartTick = 0;
     s.tick = 1;
@@ -86,10 +86,10 @@ describe('S1 — Ambush stealth on selected ground enemies', () => {
     expect((e as any).__veiled).toBe(true);
   });
 
-  it('ambush stealth lifts at exactly 10s — enemy becomes targetable', () => {
+  it('ambush stealth lifts after 20s — enemy becomes targetable', () => {
     const s = createGameState();
     (s as any).__waveStartTick = 0;
-    s.tick = 10.5;                // past the 10s window
+    s.tick = 20.5;                // past the 20s window
     const e = makeEnemy(EnemyType.CARTHAGE_SPEARMAN, EnemyFaction.CARTHAGE, 320, 320);
     s.enemies.set(e.id, e);
     tickEnemies(s, 0.016, () => {}, () => {});
@@ -108,16 +108,24 @@ describe('S1 — Ambush stealth on selected ground enemies', () => {
     expect((e as any).__veiled).toBeFalsy();
   });
 
-  it('ambush stealth uses the per-enemy ambushStealthSec override (current 10)', () => {
-    // Carthage Spearman in enemies.json explicitly sets ambushStealthSec: 10
-    // post-V22. Confirm the duration matches by sampling at the boundary.
+  it('ambush stealth uses the per-enemy ambushStealthSec override (current 20)', () => {
+    // Carthage Spearman in enemies.json explicitly sets ambushStealthSec: 20.
+    // Confirm the duration matches by sampling at the boundary.
     const s = createGameState();
     (s as any).__waveStartTick = 0;
-    s.tick = 9.9;                 // just inside the window
+    s.tick = 19.9;                // just inside the window
     const e = makeEnemy(EnemyType.CARTHAGE_SPEARMAN, EnemyFaction.CARTHAGE, 320, 320);
     s.enemies.set(e.id, e);
     tickEnemies(s, 0.016, () => {}, () => {});
     expect((e as any).__veiled).toBe(true);
+  });
+
+  it('cycling stealth durations are doubled while periods stay readable', () => {
+    const enemies = require('../src/data/enemies.json');
+    expect(enemies.GHOST_RIDER.stealthInterval).toEqual({ period: 5, duration: 1.6 });
+    expect(enemies.SHADOW_CAVALRY.stealthInterval).toEqual({ period: 6, duration: 2 });
+    expect(enemies.MONGOL_SCOUT.stealthInterval).toEqual({ period: 6, duration: 2 });
+    expect(enemies.DUNE_STALKER.stealthInterval).toEqual({ period: 4.5, duration: 2.0 });
   });
 });
 
@@ -269,13 +277,13 @@ describe('S3 — Sanity: data flags in enemies.json wire to the runtime', () => 
   it('Carthage Spearman has ambushStealth in JSON', () => {
     const enemies = require('../src/data/enemies.json');
     expect(enemies.CARTHAGE_SPEARMAN.ambushStealth).toBe(true);
-    expect(enemies.CARTHAGE_SPEARMAN.ambushStealthSec).toBe(10);
+    expect(enemies.CARTHAGE_SPEARMAN.ambushStealthSec).toBe(20);
   });
 
   it('Undead Berserker has ambushStealth in JSON', () => {
     const enemies = require('../src/data/enemies.json');
     expect(enemies.UNDEAD_BERSERKER.ambushStealth).toBe(true);
-    expect(enemies.UNDEAD_BERSERKER.ambushStealthSec).toBe(10);
+    expect(enemies.UNDEAD_BERSERKER.ambushStealthSec).toBe(20);
   });
 
   it('Zombie Druid has silenceAuraRadiusTiles in JSON', () => {

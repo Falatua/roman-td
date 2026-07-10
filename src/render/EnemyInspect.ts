@@ -273,7 +273,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // -- Movement modifiers --
   if (def?.lowHpSpeedBoost) traits.push({ label: `LOW-HP SURGE — when below 30% HP, gains +${Math.round((def.lowHpSpeedBoost - 1) * 100)}% movement speed`, color: '#ff8866' });
   if (def?.stealthInterval) traits.push({ label: `STEALTH CYCLE — fades to untargetable for ${def.stealthInterval.duration.toFixed(1)}s every ${def.stealthInterval.period}s (visual: alpha drops, towers can't target)`, color: '#a078d0' });
-  if (def?.ambushStealth) traits.push({ label: `AMBUSH STEALTH — untargetable for the first ${def.ambushStealthSec ?? 10}s of the wave (visual: alpha drops to 40%). After the window expires, every alive instance becomes targetable simultaneously. Spawns AFTER the window are visible from the start.`, color: '#a078d0' });
+  if (def?.ambushStealth) traits.push({ label: `AMBUSH STEALTH — untargetable for the first ${def.ambushStealthSec ?? 20}s of the wave (visual: alpha drops to 40%). After the window expires, every alive instance becomes targetable simultaneously. Spawns AFTER the window are visible from the start.`, color: '#a078d0' });
   if (def?.silenceAuraRadiusTiles) traits.push({ label: `SILENCE AURA — every tower within ${def.silenceAuraRadiusTiles} tiles is SILENCED while this enemy is in range. Refreshes each frame in range; expires ~0.6s after the enemy walks out. Pink X-mark icon over silenced towers. Plant power towers OFF the path to avoid the aura.`, color: '#a078d0' });
   // -- Tower disruption --
   if (def?.auraTowerSlow) traits.push({ label: `TOWER-SLOW AURA — every tower within ~2 tiles fires ${Math.round(def.auraTowerSlow*100)}% slower while this enemy is in range`, color: '#a078d0' });

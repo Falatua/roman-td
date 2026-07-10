@@ -669,7 +669,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
   // ─── AMBUSH STEALTH (2026-05-21, bug-fixed 2026-05-22 V22): selected
   //   ground enemies (Carthage Spearman, Undead Berserker) emerge from
   //   cover during the opening seconds of their wave — untargetable
-  //   until wave-elapsed-time crosses `ambushStealthSec` (default 10s).
+  //   until wave-elapsed-time crosses `ambushStealthSec` (default 20s).
   //   After that window all instances become targetable simultaneously.
   //
   //   V22 BUG FIX: previous code only set `__veiled = true` during the
@@ -691,7 +691,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     if ((e as any).__testYourMightNoStealth) { (e as any).__veiled = false; continue; }
     const def = (enemiesData as any)[e.type];
     if (!def?.ambushStealth) continue;
-    const ambushSec = def.ambushStealthSec ?? 10;
+    const ambushSec = def.ambushStealthSec ?? 20;
     (e as any).__veiled = waveElapsed < ambushSec;
   }
   // ─── WAVE-LEVEL FLYER INITIAL STEALTH (2026-05-22): some waves

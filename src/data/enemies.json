@@ -115,7 +115,7 @@
     "phaseHits": 1,
     "reanimateAs": "REANIMATED_ZOMBIE",
     "ambushStealth": true,
-    "ambushStealthSec": 10
+    "ambushStealthSec": 20
   },
   "NUMIDIAN_RIDER": {
     "name": "Numidian Rider",
@@ -222,7 +222,7 @@
     "checkpointHealPct": 0.15,
     "reanimateAs": "REANIMATED_SKELETON",
     "ambushStealth": true,
-    "ambushStealthSec": 10
+    "ambushStealthSec": 20
   },
   "SPECTRAL_SCOUT": {
     "name": "Spectral Scout",
@@ -282,7 +282,7 @@
     "outOfCombatRegen": 0.022,
     "stealthInterval": {
       "period": 5,
-      "duration": 0.8
+      "duration": 1.6
     },
     "dodgeChance": 0.15,
     "groundConvertAs": "UNDEAD_SPEARMAN"
@@ -421,7 +421,7 @@
     "rangedImmune": true,
     "stealthInterval": {
       "period": 6,
-      "duration": 1
+      "duration": 2
     },
     "groundConvertAs": "DEMON_HELLHOUND"
   },
@@ -762,7 +762,7 @@
     "meleeImmune": true,
     "stealthInterval": {
       "period": 6,
-      "duration": 1
+      "duration": 2
     }
   },
   "MONGOL_SHAMAN": {
@@ -1251,7 +1251,7 @@
     "dotImmune": true,
     "siegeImmune": true,
     "immuneFire": true,
-    "stealthInterval": { "period": 4.5, "duration": 1.0 }
+    "stealthInterval": { "period": 4.5, "duration": 2.0 }
   },
   "STONE_JUGGERNAUT": {
     "name": "Stone Juggernaut",
