@@ -278,6 +278,18 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     expect(source).toContain('waterProximity(c, r, 2)');
     expect(source).toContain('t === TileType.EMPTY');
   });
+
+  it('anchors the bottom-ocean undead Roman ruin cluster beside the cove', () => {
+    const fs = require('fs');
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain('const BOTTOM_OCEAN_UNDEAD_RUINS');
+    expect(source).toContain("key: 'MAP_NECRO_GATE_A'");
+    expect(source).toContain("key: 'MAP_NECRO_RUIN_2'");
+    expect(source).toContain("key: 'MAP_NECRO_STANDARD'");
+    expect(source).toContain("key: 'MAP_NECRO_SKULL_SHRINE'");
+    expect(source).toContain('WATER_ZONE.col + WATER_ZONE.width');
+    expect(source).toContain('GRID.ROWS - 2.25');
+  });
 });
 
 describe('Top-right Cyclops trophy prop', () => {

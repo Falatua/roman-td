@@ -3207,6 +3207,61 @@ export class RenderEngine {
         });
       }
     }
+    const BOTTOM_OCEAN_UNDEAD_RUINS: Array<{
+      key: string;
+      x: number;
+      y: number;
+      height: number;
+      rotation: number;
+      alpha: number;
+    }> = [
+      {
+        key: 'MAP_NECRO_GATE_A',
+        x: (WATER_ZONE.col + WATER_ZONE.width + 0.35) * GRID.TILE,
+        y: (GRID.ROWS - 2.25) * GRID.TILE,
+        height: GRID.TILE * 2.15,
+        rotation: -0.04,
+        alpha: 0.92
+      },
+      {
+        key: 'MAP_NECRO_RUIN_2',
+        x: (WATER_ZONE.col + WATER_ZONE.width + 1.75) * GRID.TILE,
+        y: (GRID.ROWS - 2.05) * GRID.TILE,
+        height: GRID.TILE * 1.65,
+        rotation: 0.08,
+        alpha: 0.88
+      },
+      {
+        key: 'MAP_NECRO_STANDARD',
+        x: (WATER_ZONE.col + WATER_ZONE.width + 3.10) * GRID.TILE,
+        y: (GRID.ROWS - 2.30) * GRID.TILE,
+        height: GRID.TILE * 1.90,
+        rotation: 0.03,
+        alpha: 0.90
+      },
+      {
+        key: 'MAP_NECRO_SKULL_SHRINE',
+        x: (WATER_ZONE.col + WATER_ZONE.width + 2.45) * GRID.TILE,
+        y: (GRID.ROWS - 1.18) * GRID.TILE,
+        height: GRID.TILE * 1.20,
+        rotation: -0.02,
+        alpha: 0.86
+      }
+    ];
+    for (const anchor of BOTTOM_OCEAN_UNDEAD_RUINS) {
+      const ruinTex = tex(anchor.key);
+      if (!ruinTex) continue;
+      const ruin = new Sprite(ruinTex);
+      ruin.anchor.set(0.5, 1);
+      ruin.x = anchor.x;
+      ruin.y = anchor.y;
+      const aspect = ruinTex.width > 0 ? ruinTex.width / Math.max(1, ruinTex.height) : 1;
+      ruin.height = anchor.height;
+      ruin.width = anchor.height * aspect;
+      ruin.rotation = anchor.rotation;
+      ruin.alpha = anchor.alpha;
+      coastalDetailLayer.addChild(ruin);
+    }
     this.layers.bg.addChild(coastalDetailLayer);
 
     // 2026-05-21 — PROCEDURAL COBBLESTONE OVERLAY (visual overhaul
