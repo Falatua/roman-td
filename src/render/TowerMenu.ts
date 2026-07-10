@@ -27,6 +27,7 @@ import { itemIconSvg } from './ItemIcon';
 import { comboPreviewBlockHtml } from './ComboPreview';
 import { heroIdForTowerType } from '../systems/HeroIdentity';
 import { heroTierForTower, heroXpForTower } from '../systems/HeroScaling';
+import { towerDamageProfile, renderTowerDamageProfileHtml } from './TowerDamageProfile';
 
 const RAR: Record<string, string> = { COMMON:'#cccccc', UNCOMMON:'#5cd05c', RARE:'#5ca0ff', EPIC:'#a060ff', LEGENDARY:'#ff9933', UNIQUE:'#ffd34d' };
 
@@ -265,6 +266,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   // with its contribution. Player can see exactly why their tower is
   // hitting harder than the raw def number.
   const breakdown = towerStatBreakdown(t, state);
+  const damageProfile = towerDamageProfile(t, state, breakdown);
   const finalDpsValue = breakdown.damageFinal * (breakdown.speedFinal / Math.max(0.05, breakdown.speedBase));
   const finalPerHit = finalDpsValue / Math.max(0.05, breakdown.speedFinal);
   const basePerHit = breakdown.damageBase / Math.max(0.05, breakdown.speedBase);
@@ -341,6 +343,11 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     statBox('Targeting', targetingModeLabel(t.targetingMode), '#9be0ff') +
     statBox('Kill bonus', `${t.killCount} kills · +${killBonusPct}%`, '#d4af37');
   panel.appendChild(statsGrid);
+
+  const damageProfilePanel = document.createElement('div');
+  damageProfilePanel.style.cssText = 'padding:10px 12px;background:#0c0a08;border-bottom:1px solid #3a3025';
+  damageProfilePanel.innerHTML = renderTowerDamageProfileHtml(damageProfile);
+  panel.appendChild(damageProfilePanel);
 
   // ITEM IMPACT PANEL (2026-05): the stat boxes above show base→final
   // numbers but a 12% Sharpened Blade barely moves a T1 tower's DPS. This
@@ -1038,6 +1045,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   // highlighting up front).
   const statsGrid = document.createElement('div');
   statsGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#3a3025;border-top:1px solid #3a3025;border-bottom:1px solid #3a3025';
+  const damageProfile = towerDamageProfile(t, state, breakdown);
   const finalDpsValue = breakdown.damageFinal * (breakdown.speedFinal / Math.max(0.05, breakdown.speedBase));
   const finalPerHit = finalDpsValue / Math.max(0.05, breakdown.speedFinal);
   const basePerHit = breakdown.damageBase / Math.max(0.05, breakdown.speedBase);
@@ -1100,6 +1108,11 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   const targetBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px;grid-column:span 2"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Targeting</div><div style="color:#9be0ff;font-size:14px;font-weight:bold;margin-top:2px">${targetingModeLabel(t.targetingMode)}</div></div>`;
   statsGrid.innerHTML = dmgBox + spdBox + rngBox + dpsBox + killsBox + kbBox + targetBox;
   panel.appendChild(statsGrid);
+
+  const damageProfilePanel = document.createElement('div');
+  damageProfilePanel.style.cssText = 'padding:10px 14px;background:#0c0a08;border-bottom:1px solid #3a3025';
+  damageProfilePanel.innerHTML = renderTowerDamageProfileHtml(damageProfile);
+  panel.appendChild(damageProfilePanel);
 
   // Heroes use the same targeting engine as towers. Surface the per-hero
   // controls here so a purchased champion can be tuned without relying on

@@ -79,6 +79,7 @@ import { showTestYourMightModal } from './render/TestYourMightModal';
 import { showLastStandTrove } from './render/LastStandTrove';
 import { showMercatorBackRoomModal } from './render/SecretEvents';
 import { showHarborDraftModal, showHarborWaveClearModal } from './render/HarborDraftModal';
+import { towerDamageProfile, renderTowerDamageProfileHtml } from './render/TowerDamageProfile';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { bossTrophyKillGoldBonus, consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, isTestYourMightLeakEnemy, shouldDeferSurpriseRewardForTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
@@ -6094,6 +6095,7 @@ async function boot() {
     const tierCol = ['#aaaaaa','#aaaaaa','#b87333','#c0c0c0','#ffd34d','#ff5050'][t.qualityTier] ?? '#aaaaaa';
     const breakdown = towerStatBreakdown(t, state);
     const liveDps = breakdown.damageFinal * (breakdown.speedFinal / Math.max(0.05, breakdown.speedBase));
+    const damageProfile = towerDamageProfile(t, state, breakdown);
     const pendingTag = t.pending ? '<span style="color:#ff9933;font-weight:bold">PENDING — keep to activate</span>' : '';
     const auraKind = towerAuraTileKind(t);
     const auraTag = auraKind
@@ -6122,9 +6124,10 @@ async function boot() {
         <span style="color:#aa9a4a">Items</span><b style="color:#fff8e0">${items} equipped</b>
         <span style="color:#aa9a4a">Kills</span><b style="color:#88ff88">${t.killCount ?? 0}</b>
       </div>
+      <div style="margin-top:6px">${renderTowerDamageProfileHtml(damageProfile, true)}</div>
       ${auraTag ? `<div style="margin-top:5px;padding-top:4px;border-top:1px dashed #3a3025">${auraTag}</div>` : ''}
       <div style="margin-top:6px;font-size:9px;color:#aa9a4a;letter-spacing:1px;font-style:italic">${isMobileDevice() ? 'tap for full menu' : 'click for full menu'}</div>`;
-    const tipW = 280, tipH = 160;
+    const tipW = 300, tipH = 245;
     const left = Math.min(window.innerWidth - tipW - 8, Math.max(8, mouseX + 16));
     const top  = Math.min(window.innerHeight - tipH - 8, Math.max(8, mouseY + 16));
     tip.style.left = left + 'px';
@@ -8613,7 +8616,9 @@ async function boot() {
       const t = state.towers.get(selectedTowerId);
       if (t) {
         const targetLabel = t.targetingMode === TargetingMode.CLOSE ? 'CLOSEST' : TargetingMode[t.targetingMode];
-        info = `${towerName(t.type)} T${t.qualityTier} | DPS ${(t.baseDps * (t.attackSpeed)).toFixed(1)} | Kills ${t.killCount} (+${t.killBonusFlat.toFixed(1)} flat) | Target: ${targetLabel}`;
+        const breakdown = towerStatBreakdown(t, state);
+        const profile = towerDamageProfile(t, state, breakdown);
+        info = `${towerName(t.type)} T${t.qualityTier} | DPS ${(breakdown.damageFinal * (breakdown.speedFinal / Math.max(0.05, breakdown.speedBase))).toFixed(1)} | Damage: ${profile.summary} | Kills ${t.killCount} (+${t.killBonusFlat.toFixed(1)} flat) | Target: ${targetLabel}`;
       }
       else { selectedTowerId = null; renderer.selectedTowerId = null; }
     } else if (state.phase === GamePhase.BUILD_PHASE && state.draw.length > 0) {
