@@ -1240,6 +1240,7 @@ export class RenderEngine {
         : p.spriteKey === 'PROJ_PILUM' ? 0xeeddaa
         : p.spriteKey === 'PROJ_HASTA' ? 0xc8a868
         : p.spriteKey === 'PROJ_ARROW' ? 0xddccaa
+        : p.spriteKey === 'PROJ_GIANT_ARROW' ? 0xf0b95c
         : p.spriteKey === 'PROJ_POISON_CLOUD' ? 0x44dd44       // sickly green
         : 0xc8c8c8;
       // 2026-05 v10 — VISUAL DAMAGE-CLASS DIFFERENTIATION

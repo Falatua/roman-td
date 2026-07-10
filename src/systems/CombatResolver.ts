@@ -522,6 +522,25 @@ const OCEAN_THREAT_TYPES = new Set<string>([
 ]);
 export const STORMCALLER_OCEAN_THREAT_DAMAGE_MULT = 2.0;
 
+const GIANT_KILLER_TARGET_TYPES = new Set<string>([
+  'SEA_GIANT',
+  'SEA_GIANT_WARBRINGER',
+  'NETHER_AMPHIBIOUS_GIANT',
+  'FIRE_GIANT',
+  'GIANT_GIGAS',
+  'CYCLOPS',
+  'SUPER_GIANT_COLOSSUS',
+  'UNDEAD_GIANT',
+  'UNDEAD_CYCLOPS',
+  'DREAD_UNDEAD_GIANT',
+  'DREAD_UNDEAD_CYCLOPS'
+]);
+export const GIANT_KILLER_GIANT_DAMAGE_MULT = 4.25;
+
+function isGiantKillerTarget(target: Enemy): boolean {
+  return GIANT_KILLER_TARGET_TYPES.has(String(target.type));
+}
+
 function isOceanThreat(target: Enemy): boolean {
   return !!(target as any).__oceanSpawn || OCEAN_THREAT_TYPES.has(String(target.type));
 }
@@ -1490,6 +1509,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 2.00;                 // CITY-BREAKER: +100% vs bosses
       if (t.type === TowerType.INFERNAL_COLOSSUS && target.isBoss) damage *= 3.00;                // +200% vs bosses
       if (t.type === TowerType.STORMCALLER && oceanThreat) damage *= STORMCALLER_OCEAN_THREAT_DAMAGE_MULT; // +100% vs drenched ocean threats
+      if (t.type === TowerType.GIANT_KILLER && isGiantKillerTarget(target)) damage *= GIANT_KILLER_GIANT_DAMAGE_MULT;
       if ((t.type === TowerType.TRIREME_BALLISTA || t.type === TowerType.PRAETORIAN_FLEET)
           && (target.archetype === 'ELITE' || target.isBoss || isCommanderType((target as any).type))) {
         damage *= (t as any).placedOnWater ? 1.45 : 1.25;
@@ -2785,6 +2805,12 @@ function applyOnHitEffects(t: Tower, target: Enemy) {
       pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, (t as any).placedOnWater ? 0.65 : 0.35, tier);
       pushStatus(target, StatusEffectKind.MARK, dur(3.0), 0.16, tier);
       if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.65), 0, tier);
+      break;
+    case TowerType.GIANT_KILLER:
+      if (isGiantKillerTarget(target)) {
+        pushStatus(target, StatusEffectKind.SLOW, dur(2.2), 0.42, tier);
+        pushStatus(target, StatusEffectKind.MARK, dur(2.5), 0.14, tier);
+      }
       break;
     case TowerType.CHARYBDIS_VORTEX:
       pushStatus(target, StatusEffectKind.SLOW, dur(3.5), 0.48, tier);

@@ -2,12 +2,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { createTower, towerEffectiveStats, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { itemFamily } from '../src/systems/ItemRules';
-import { spawnProjectile } from '../src/systems/ProjectileSystem';
+import { spawnProjectile, tickProjectiles } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind, TargetingMode } from '../src/types';
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS, GRID } from '../src/constants';
 import { createGameState } from '../src/GameState';
@@ -732,6 +732,50 @@ describe('Neptune\'s Leviathan omega combat wiring', () => {
     expect(near.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.28)).toBe(true);
     expect(far.statusEffects.length).toBe(0);
     expect((tower as any).__nextAbyssalJudgmentTick).toBe(70);
+  });
+});
+
+describe('Giant Killer combo combat wiring', () => {
+  it('specializes hard into giant-class enemies without becoming a universal answer', () => {
+    function fireAt(type: EnemyType, faction: EnemyFaction, archetype: Enemy['archetype'] = 'SWARM') {
+      const state = createGameState();
+      (globalThis as any).__lastState = state;
+      state.wave = 6;
+      const tower = createTower(TowerType.GIANT_KILLER, 4, 4, 4, 0);
+      tower.attackCooldown = 0;
+      state.towers.set(tower.id, tower);
+      const c = towerCenter(tower);
+      const target = testEnemy(`giant-killer-${type}`, c.x + GRID.TILE * 2.5, c.y);
+      target.type = type;
+      target.faction = faction;
+      target.archetype = archetype;
+      target.hp = 10000;
+      target.maxHp = 10000;
+      state.enemies.set(target.id, target);
+      const hooks = noopCombatHooks();
+      tickCombat(state, 0.016, hooks);
+      for (let i = 0; i < 240 && state.projectiles.length > 0; i++) {
+        tickProjectiles(state, 0.05, {
+          onImpact: (projectile, enemy) => {
+            if (!enemy || projectile.cosmetic || projectile.damage <= 0) return;
+            const source = state.towers.get(projectile.sourceTowerId);
+            if (source) applyDamageAndStatus(state, source, enemy, projectile.damage, hooks);
+          }
+        });
+      }
+      return { loss: target.maxHp - target.hp, target };
+    }
+
+    const nonGiantMyth = fireAt(EnemyType.CHIMERA, EnemyFaction.ROMAN_MYTH, 'ELITE');
+    const seaGiant = fireAt(EnemyType.SEA_GIANT, EnemyFaction.ROMAN_MYTH, 'ELITE');
+    const cyclops = fireAt(EnemyType.CYCLOPS, EnemyFaction.ROMAN_MYTH, 'ELITE');
+
+    expect(GIANT_KILLER_GIANT_DAMAGE_MULT).toBe(4.25);
+    expect(seaGiant.loss).toBeGreaterThan(nonGiantMyth.loss * 1.7);
+    expect(cyclops.loss).toBeGreaterThan(nonGiantMyth.loss * 1.15);
+    expect(nonGiantMyth.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK)).toBe(false);
+    expect(seaGiant.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.14)).toBe(true);
+    expect(cyclops.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.14)).toBe(true);
   });
 });
 

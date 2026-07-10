@@ -594,6 +594,8 @@ describe('Tower roster integrity', () => {
       'ABYSSAL_ONAGER',
       'HYDRA_BEAST_PIT',
       'MARS_TIDAL_BASTION',
+      'GIANT_KILLER',
+      'PROJ_GIANT_ARROW',
       'NEPTUNES_LEVIATHAN',
       'NAGA_ADEPT',
       'NAGA_SLEEPWEAVER',

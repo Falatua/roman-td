@@ -247,6 +247,30 @@ describe('Harbor naval tower system', () => {
     expect(oldLandIngredientTile).toBe(TileType.STONE);
   });
 
+  it('builds Giant Killer from three Tier IV land-and-water ingredients', () => {
+    const s = readyState();
+    s.wave = 18;
+    markHarborUnlocked(s);
+    const water = waterTile();
+    const oracle = placeTower(s, TowerType.NEREID_ORACLE, 4, water.col, water.row, true);
+    placeTower(s, TowerType.LIBRITOR, 4, 12, 7);
+    placeTower(s, TowerType.BEAST_HUNTER, 4, 13, 7);
+
+    const combo = scanCombos(s).find(c => c.result === TowerType.GIANT_KILLER);
+    expect(combo).toBeTruthy();
+    expect(combo?.ingredients.map(i => `${i.type}:${i.qualityTier}`).sort()).toEqual([
+      'BEAST_HUNTER:4',
+      'LIBRITOR:4',
+      'NEREID_ORACLE:4'
+    ]);
+    expect(executeCombo(s, combo!, oracle.id)).toBe(true);
+    const result = Array.from(s.towers.values()).find(t => t.type === TowerType.GIANT_KILLER);
+    expect(result).toBeTruthy();
+    expect((result as any).placedOnWater).toBe(true);
+    expect(result?.qualityTier).toBe(4);
+    expect(tileAt(s, water.col, water.row)).toBe(TileType.TOWER);
+  });
+
   it('naval items give Harbor towers real stat growth', () => {
     const base = createTower(TowerType.TRIREME_BALLISTA, 3, 2, 20, 12);
     const plain = towerEffectiveStats(base);
@@ -267,9 +291,13 @@ describe('Harbor naval tower system', () => {
     const transformer = createTower(TowerType.ROMAN_TRANSFORMER, 5, 6, 20, 12);
     const fleet = createTower(TowerType.PRAETORIAN_FLEET, 5, 7, 20, 12);
     fleet.placedOnWater = true;
+    const giantKiller = createTower(TowerType.GIANT_KILLER, 4, 8, 20, 12);
+    giantKiller.placedOnWater = true;
 
     expect(towerEffectiveStats(charybdis).dps).toBeGreaterThan(155);
     expect(towerEffectiveStats(nereid).dps).toBeGreaterThan(145);
+    expect(towerEffectiveStats(giantKiller).dps).toBeGreaterThan(850);
+    expect(towerEffectiveStats(giantKiller).dps).toBeLessThan(towerEffectiveStats(oracle).dps * 2.2);
     expect(towerEffectiveStats(oracle).dps).toBeGreaterThan(470);
     expect(towerEffectiveStats(oracle).dps).toBeLessThan(towerEffectiveStats(fleet).dps);
     expect(towerEffectiveStats(leviathan).dps).toBeGreaterThan(3000);
@@ -321,7 +349,8 @@ describe('Harbor naval tower system', () => {
       [TowerType.PRAETORIAN_FLEET, 5],
       [TowerType.ORACLE_LIGHTHOUSE, 5],
       [TowerType.ABYSSAL_ONAGER, 5],
-      [TowerType.MARS_TIDAL_BASTION, 5]
+      [TowerType.MARS_TIDAL_BASTION, 5],
+      [TowerType.GIANT_KILLER, 4]
     ];
 
     for (const [type, tier] of rangedHarborTypes) {

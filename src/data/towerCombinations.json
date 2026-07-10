@@ -889,5 +889,6 @@
   { "result": "ORACLE_LIGHTHOUSE", "tier": 5, "cost": 95, "ingredients": [ { "type": "NEREID_ORACLE", "minTier": 3 }, { "type": "SPECULATOR", "minTier": 4 } ] },
   { "result": "ABYSSAL_ONAGER", "tier": 5, "cost": 110, "ingredients": [ { "type": "CHARYBDIS_VORTEX", "minTier": 3 }, { "type": "SIEGE_ONAGER", "minTier": 4 } ] },
   { "result": "HYDRA_BEAST_PIT", "tier": 5, "cost": 105, "ingredients": [ { "type": "HYDRA_OF_LERNA", "minTier": 3 }, { "type": "BESTIARIUS", "minTier": 4 } ] },
-  { "result": "MARS_TIDAL_BASTION", "tier": 5, "cost": 120, "ingredients": [ { "type": "RAMMING_QUINQUEREME", "minTier": 3 }, { "type": "COHORT_GUARD", "minTier": 4 } ] }
+  { "result": "MARS_TIDAL_BASTION", "tier": 5, "cost": 120, "ingredients": [ { "type": "RAMMING_QUINQUEREME", "minTier": 3 }, { "type": "COHORT_GUARD", "minTier": 4 } ] },
+  { "result": "GIANT_KILLER", "tier": 4, "cost": 90, "ingredients": [ { "type": "NEREID_ORACLE", "minTier": 4 }, { "type": "LIBRITOR", "minTier": 4 }, { "type": "BEAST_HUNTER", "minTier": 4 } ] }
 ]
