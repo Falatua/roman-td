@@ -813,13 +813,17 @@
       html.mobile-mode .chm-kbd-hint { display: none !important; }
       html.mobile-mode .desktop-hotkey-hint { display: none !important; }
 
-      /* UX3 — Hero Inspect Panel and other tall #tower-menu modals can
-         exceed phone-landscape viewport height. Constrain the inner
-         panel to ~88dvh and let it scroll inside the modal frame. */
+      /* UX3 — Give tower/hero inspection the full safe phone viewport.
+         Its internal body remains scrollable for unusually long recipe
+         lists, but ordinary units expose far more controls immediately. */
       html.mobile-mode #tower-menu > div {
-        max-height: 88dvh !important;
+        height: calc(100dvh - 4px) !important;
+        max-height: calc(100dvh - 4px) !important;
         overflow-y: auto !important;
         scrollbar-width: thin;
+      }
+      html.mobile-mode #tower-menu .rtd-tower-stats-grid {
+        grid-template-columns: 1fr 1fr !important;
       }
 
       /* UX1/UX3 — Collapse the ABILITIES ladder on each hero card on
@@ -1124,8 +1128,8 @@
       html.reduce-motion-opt-in #hero-placement-banner,
       html.reduce-motion-opt-in button { animation: none !important; }
     </style>
-    <script type="module" crossorigin src="./assets/index-rbjbZJ3U.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/pixi-CaEdeioT.js">
+    <script type="module" crossorigin src="./assets/index-YDOAqLaa.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/pixi-BBAOssUs.js">
   </head>
   <body>
     <!-- Loading screen lives at body level — pulled OUT of #app so the
@@ -1133,7 +1137,7 @@
          position:fixed inset:0 covering the full viewport. -->
     <div id="loading">
       <div id="loading-stage">
-        <div id="loading-version">v0.7.0 · 0be3caf · 2026-07-10</div>
+        <div id="loading-version">v0.7.0 · 8a07918 · 2026-07-10</div>
         <div id="loading-eagle"></div>
         <div id="loading-title-main">ROMAN TD</div>
         <div id="loading-subtitle">THIRTY WAVES. ONE ROME.</div>
