@@ -12,7 +12,7 @@
 // bosses / flyers.
 import { GameStateShape } from '../GameState';
 import { GRID } from '../constants';
-import { StatusEffectKind } from '../types';
+import { GamePhase, StatusEffectKind } from '../types';
 import { pushStatus } from './CombatResolver';
 import { campaignRelicTrapDamageMult, campaignRelicTrapPriceMult, campaignRelicTrapRadiusMult } from './CampaignRelicSystem';
 import { bossTrophyTrapDamageMult, bossTrophyTrapRadiusMult } from './BossTrophySystem';
@@ -106,6 +106,12 @@ export function trapPrice(state: GameStateShape, id: string): number {
   return Math.max(1, Math.round(def.price * campaignRelicTrapPriceMult(state)));
 }
 
+export function canDeployTraps(state: GameStateShape): boolean {
+  return state.phase === GamePhase.BUILD_PHASE ||
+    state.phase === GamePhase.PROSPECT_PLACEMENT ||
+    state.phase === GamePhase.PICK_KEEPER;
+}
+
 // Buy `qty` of a trap into inventory. Returns gold spent (0 if unaffordable).
 export function buyTraps(state: GameStateShape, id: string, qty: number): number {
   const def = TRAP_DEFS[id];
@@ -125,6 +131,10 @@ export function buyTraps(state: GameStateShape, id: string, qty: number): number
 // Arm a trap from inventory so the next empty map clicks place that trap one
 // at a time. Buying traps deliberately does not arm them.
 export function armTrapFromInventory(state: GameStateShape, id: string): boolean {
+  if (!canDeployTraps(state)) {
+    state.selectedTrapType = null;
+    return false;
+  }
   if (!TRAP_DEFS[id] || trapOwned(state, id) <= 0) return false;
   state.selectedTrapType = id;
   // 2026-07-03 QC fix — arming a trap disarms any armed Stone Rampart
@@ -138,6 +148,7 @@ export function armTrapFromInventory(state: GameStateShape, id: string): boolean
 // Consume 1 from inventory and drop a placed trap at a tile. Returns false if
 // none owned. Traps do NOT block the path (they are an overlay entity).
 export function placeTrap(state: GameStateShape, id: string, col: number, row: number): boolean {
+  if (!canDeployTraps(state)) return false;
   const def = TRAP_DEFS[id];
   if (!def || trapOwned(state, id) <= 0) return false;
   if (isWaterPlacementRestrictedTile(col, row)) return false;

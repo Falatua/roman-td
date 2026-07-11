@@ -204,6 +204,10 @@ export function startWave(state: GameStateShape) {
     state.phase !== GamePhase.PROSPECT_PLACEMENT &&
     state.phase !== GamePhase.PICK_KEEPER
   ) return;
+  // Deployment is a preparation decision. Clear any armed trap before every
+  // normal, bonus, endless, or sandbox wave so pausing combat cannot revive
+  // a placement cursor that was armed during the preceding build phase.
+  state.selectedTrapType = null;
   if (state.testYourMightAccepted && !state.testYourMightActive && !state.testYourMightCleared && !state.testYourMightFailed) {
     startTestYourMight(state);
     return;

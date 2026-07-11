@@ -181,7 +181,7 @@ export function showTowerLeaderboard(parent: HTMLElement, state: GameStateShape,
           tier: 0,
           color: '#' + def.color.toString(16).padStart(6, '0'),
           src: textureSrc(def.spriteKey),
-          subtitle: `<span style="color:#ffcc44">TRAP</span> · ${def.effect} · wave-only`,
+          subtitle: `<span style="color:#ffcc44">TRAP</span> · ${def.effect} · one-wave lifespan`,
         };
       })
       .filter(row => row.waveDmg > 0 || row.lifetimeDmg > 0);

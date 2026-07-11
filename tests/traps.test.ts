@@ -3,16 +3,18 @@ import { createGameState } from '../src/GameState';
 import { WATER_ZONE } from '../src/constants';
 import { initializeGrid, isBuildable, setTile } from '../src/systems/GridManager';
 import { canPlaceStone } from '../src/systems/PathFinder';
-import { TileType } from '../src/types';
+import { GamePhase, TileType } from '../src/types';
 import {
   TRAP_DEFS,
   armTrapFromInventory,
   buyTraps,
   clearPlacedTrapsForWaveEnd,
+  canDeployTraps,
   placeTrap,
   trapOwned,
   trapPrice,
 } from '../src/systems/TrapSystem';
+import { startWave } from '../src/systems/WaveManager';
 import {
   TRAP_PURCHASE_CAP_PER_TYPE,
   grantTrapInventory,
@@ -89,6 +91,37 @@ describe('Trap inventory flow', () => {
 
     expect(armTrapFromInventory(s, 'VENOM_TRAP')).toBe(true);
     expect(s.selectedTrapType).toBe('VENOM_TRAP');
+  });
+
+  it('blocks arming and placement throughout an active wave, including while gameplay is paused', () => {
+    const s = createGameState();
+    const id = 'VENOM_TRAP';
+    s.gold = 999;
+    buyTraps(s, id, 2);
+    s.phase = GamePhase.WAVE_PHASE;
+
+    // Pause is intentionally not part of GameState. The phase remains
+    // WAVE_PHASE while the main loop is paused, so this same lock applies.
+    expect(canDeployTraps(s)).toBe(false);
+    expect(armTrapFromInventory(s, id)).toBe(false);
+    expect(placeTrap(s, id, 10, 10)).toBe(false);
+    expect(s.selectedTrapType).toBeNull();
+    expect(trapOwned(s, id)).toBe(2);
+    expect(s.placedTraps ?? []).toHaveLength(0);
+  });
+
+  it('disarms a prepared trap as soon as a wave starts', () => {
+    const s = createGameState();
+    const id = 'IRON_SPIKE_TRAP';
+    s.gold = 999;
+    buyTraps(s, id, 1);
+    expect(armTrapFromInventory(s, id)).toBe(true);
+
+    startWave(s);
+
+    expect(s.phase).toBe(GamePhase.WAVE_PHASE);
+    expect(s.selectedTrapType).toBeNull();
+    expect(trapOwned(s, id)).toBe(1);
   });
 
   it('places armed traps one at a time and expires deployed traps at wave end', () => {

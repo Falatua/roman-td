@@ -6812,6 +6812,11 @@ async function boot() {
     // next empty-tile click drops it (consuming 1). Traps don't block the path.
     {
       const selTrap = state.selectedTrapType;
+      if (selTrap && state.phase === GamePhase.WAVE_PHASE) {
+        state.selectedTrapType = null;
+        state.hint = 'Trap placement is locked during an active wave, even while paused. Deploy traps between waves.';
+        return;
+      }
       if (selTrap && trapOwned(state, selTrap) > 0 && tile === TileType.EMPTY) {
         if (isWaterPlacementRestrictedTile(col, row)) {
           showOceanTowerOnlyAlert(col, row);

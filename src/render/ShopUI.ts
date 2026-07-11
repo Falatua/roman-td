@@ -1,5 +1,5 @@
 import { ShopState, FORTUNA_APEX_BLOCKLIST, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds } from '../systems/MerchantSystem';
-import { TRAP_DEFS, TRAP_IDS, armTrapFromInventory, buyTraps, trapPrice } from '../systems/TrapSystem';
+import { TRAP_DEFS, TRAP_IDS, armTrapFromInventory, buyTraps, canDeployTraps, trapPrice } from '../systems/TrapSystem';
 import { TRAP_PURCHASE_CAP_PER_TYPE, trapPurchasesRemaining, trapsPurchasedByType } from '../systems/TrapInventorySystem';
 import { RAMPART_COST, RAMPART_MAX_PER_RUN, RAMPART_ORIENT_LABEL, armRampartFromInventory, buyRampart, rampartsOwned, rampartsRemainingThisRun } from '../systems/RampartSystem';
 import { GameStateShape } from '../GameState';
@@ -493,11 +493,11 @@ function renderTrapSection(root: HTMLElement, state: GameStateShape, refresh: ()
   const trapTitle = document.createElement('div');
   trapTitle.className = 'merc-section-title';
   trapTitle.style.cssText = `display:flex;justify-content:space-between;align-items:center;color:#d4af37;font-weight:bold;letter-spacing:2px;font-size:13px;border-bottom:1px solid #4a3a24;padding-bottom:4px;margin-bottom:6px;`;
-  trapTitle.innerHTML = `<span>☠ CONSUMABLE TRAPS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">buy → inventory → arm → place · wave-only · 5 each</span>`;
+  trapTitle.innerHTML = `<span>☠ CONSUMABLE TRAPS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">buy → inventory → place between waves · 5 each</span>`;
   trapSection.appendChild(trapTitle);
   const tNote = document.createElement('div');
   tNote.style.cssText = `font-size:9.5px;color:#aa9a4a;line-height:1.35;margin:2px 0 8px;font-style:italic`;
-  tNote.innerHTML = `Stockpile traps, then open inventory and click one to arm it. Each type is capped at <b style="color:#ffd34d">5 per campaign</b>. Deployed traps re-arm during the wave, then expire when the wave ends. <b style="color:#ffcc44">Ballista Snare</b> shreds bosses; <b style="color:#88ddff">Sky Net</b> is the only trap that catches fliers.`;
+  tNote.innerHTML = `Stockpile traps, then <b style="color:#ffd34d">deploy them between waves</b>. Active-wave placement stays locked even while paused. Each type is capped at <b style="color:#ffd34d">5 per campaign</b>. Deployed traps re-arm during that wave, then expire when it ends. <b style="color:#ffcc44">Ballista Snare</b> shreds bosses; <b style="color:#88ddff">Sky Net</b> is the only trap that catches fliers.`;
   trapSection.appendChild(tNote);
   const tg = document.createElement('div');
   tg.style.cssText = `display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px;`;
@@ -1435,13 +1435,14 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
 
   const ownedTrapIds = TRAP_IDS.filter(tid => ((state.trapInventory ?? {})[tid] ?? 0) > 0);
   if (ownedTrapIds.length > 0) {
+    const trapPlacementLocked = !canDeployTraps(state);
     const trapShelf = document.createElement('div');
     trapShelf.style.cssText = `margin-bottom:12px;padding:10px;background:#100c09;border:2px solid #4a3a24;`;
     const trapHead = document.createElement('div');
     trapHead.style.cssText = `display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;`;
     trapHead.innerHTML = `
       <div style="font-size:12px;color:#d4af37;font-weight:bold;letter-spacing:2px">TRAPS</div>
-      <div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;text-align:right">CLICK TO ARM · DEPLOYED TRAPS EXPIRE AT WAVE END</div>
+      <div style="font-size:10px;color:${trapPlacementLocked ? '#ff8877' : '#aa9a4a'};letter-spacing:1px;text-align:right">${trapPlacementLocked ? 'PLACEMENT LOCKED DURING WAVES' : 'CLICK TO ARM · DEPLOYED TRAPS EXPIRE AT WAVE END'}</div>
     `;
     trapShelf.appendChild(trapHead);
     const trapGrid = document.createElement('div');
@@ -1453,7 +1454,8 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
       const colHex = '#' + def.color.toString(16).padStart(6, '0');
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.style.cssText = `min-height:58px;background:${selected ? 'linear-gradient(180deg,#3a2a14,#1a1208)' : 'linear-gradient(180deg,#1a1410,#100c09)'};border:${selected ? '3px solid #ffd34d' : `2px solid ${colHex}`};color:#e8d6a8;padding:6px;display:flex;align-items:center;gap:8px;cursor:pointer;font-family:inherit;text-align:left;box-shadow:${selected ? '0 0 14px rgba(255,211,77,0.45)' : 'inset 0 0 10px #000'};`;
+      btn.disabled = trapPlacementLocked;
+      btn.style.cssText = `min-height:58px;background:${selected ? 'linear-gradient(180deg,#3a2a14,#1a1208)' : 'linear-gradient(180deg,#1a1410,#100c09)'};border:${selected ? '3px solid #ffd34d' : `2px solid ${colHex}`};color:#e8d6a8;padding:6px;display:flex;align-items:center;gap:8px;cursor:${trapPlacementLocked ? 'not-allowed' : 'pointer'};font-family:inherit;text-align:left;box-shadow:${selected ? '0 0 14px rgba(255,211,77,0.45)' : 'inset 0 0 10px #000'};opacity:${trapPlacementLocked ? '0.52' : '1'};`;
       const src = imgSrcFromTex(def.spriteKey);
       const icon = src
         ? `<img src="${src}" style="width:36px;height:36px;image-rendering:pixelated;flex-shrink:0"/>`
@@ -1465,7 +1467,9 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
           <div style="font-size:10px;color:#88ff88;margin-top:2px">x${owned}</div>
         </div>
       `;
-      btn.title = `${def.name}\n${def.blurb}\nClick to arm`;
+      btn.title = trapPlacementLocked
+        ? `${def.name}\nTraps can only be armed and placed between waves.`
+        : `${def.name}\n${def.blurb}\nClick to arm`;
       btn.onclick = () => {
         if (!armTrapFromInventory(state, tid)) return;
         state.hint = `${def.name} armed. Click empty tiles to place one at a time.`;
