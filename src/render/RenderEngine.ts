@@ -3867,10 +3867,9 @@ export class RenderEngine {
     // per combo placement).
 
     // CAVE: dramatic 4×4 entry with biome-aware glow + carved-stone frame.
-    // 2026-05-21 — Phase V11 upgrade. Sprite render size bumped 86 →
-    // 112px (3.5 tiles). Ornate procedural frame layered underneath:
-    // rocky cliff cutout, biome-colored portal glow, carved column
-    // pilasters flanking the entrance.
+    // Main cave landmark. The authored sprite now owns the full 4x4 visual
+    // footprint; the old procedural colored frame was removed so its edge
+    // treatment cannot fight the sprite's stonework.
     const caveCx = waypointsData.spawn.col * GRID.TILE + GRID.TILE / 2;
     const caveCy = waypointsData.spawn.row * GRID.TILE + GRID.TILE / 2;
     addHeavyBloodSplatter(this.layers.bg, caveCx + 58, caveCy + 30, GRID.TILE * 2.85, 0.18, 0.96);
@@ -3887,45 +3886,6 @@ export class RenderEngine {
       caveBloodTrail.alpha = 0.92;
       this.layers.bg.addChild(caveBloodTrail);
     }
-    const caveFrame = new Graphics();
-    // Biome-aware portal glow color
-    const caveGlowColor = (() => {
-      switch (biome.id) {
-        case 'BIOME_GRASSLAND':       return 0xffaa44;       // warm torch
-        case 'BIOME_CELTIC_WOOD':     return 0xddee88;       // pale yellow torch
-        case 'BIOME_CARTHAGE_ARID':   return 0xffd078;       // dry desert torch
-        case 'BIOME_UNDEAD_FOREST':   return 0x9050ff;       // purple portal
-        case 'BIOME_UNDEAD_RUINS':    return 0x60dd80;       // sickly green miasma
-        case 'BIOME_HELLSCAPE':       return 0xff3018;       // demon red
-      }
-    })();
-    // Outer rocky cliff (large, organic). Drawn 4×4 = 128px footprint.
-    caveFrame.beginFill(0x2a2622, 1).drawRoundedRect(caveCx - 64, caveCy - 64, 128, 128, 18).endFill();
-    caveFrame.beginFill(0x3b342c, 1).drawRoundedRect(caveCx - 56, caveCy - 56, 112, 112, 16).endFill();
-    // Carved column pilasters (left + right of entrance)
-    caveFrame.beginFill(0x5a4a32, 1);
-    caveFrame.drawRect(caveCx - 58, caveCy - 50, 7, 96);     // left column
-    caveFrame.drawRect(caveCx + 51, caveCy - 50, 7, 96);     // right column
-    caveFrame.endFill();
-    // Column highlights (subtle vertical line)
-    caveFrame.beginFill(0x7a6a48, 0.9);
-    caveFrame.drawRect(caveCx - 57, caveCy - 50, 1.4, 96);
-    caveFrame.drawRect(caveCx + 56.6, caveCy - 50, 1.4, 96);
-    caveFrame.endFill();
-    // Column capitals (decorated top + bottom)
-    caveFrame.beginFill(0x6a5a3a, 1);
-    caveFrame.drawRect(caveCx - 60, caveCy - 52, 11, 4);
-    caveFrame.drawRect(caveCx - 60, caveCy + 42, 11, 4);
-    caveFrame.drawRect(caveCx + 49, caveCy - 52, 11, 4);
-    caveFrame.drawRect(caveCx + 49, caveCy + 42, 11, 4);
-    caveFrame.endFill();
-    // Inner shadow well — pitch-dark interior
-    caveFrame.beginFill(0x000000, 0.85).drawCircle(caveCx, caveCy, 48).endFill();
-    caveFrame.beginFill(0x1a0d2a, 0.90).drawCircle(caveCx, caveCy, 38).endFill();
-    // Biome-colored portal glow (replaces hardcoded purple)
-    caveFrame.beginFill(caveGlowColor, 0.22).drawCircle(caveCx, caveCy, 88).endFill();
-    caveFrame.beginFill(caveGlowColor, 0.12).drawCircle(caveCx, caveCy, 118).endFill();
-    this.layers.bg.addChild(caveFrame);
     // Biome-aware cave entrance sprite. Sunny biomes (grassland/celtic/
     // carthage) use the user-supplied dramatic skull-cave reference;
     // undead biomes use the craftpix skull-door variants. DARK_CAVE
@@ -3935,11 +3895,7 @@ export class RenderEngine {
     if (cave) {
       const cs = new Sprite(cave);
       cs.anchor.set(0.5); cs.x = caveCx; cs.y = caveCy;
-      // 2026-05-21 — Bumped 86 → 112px (3.5 tile) for visual drama.
-      // 2026-05-22 — Reverted off the 160×196 user-supplied size when
-      // those reference sprites were rolled back. The 112×112 fits
-      // inside the procedural stone frame cleanly.
-      cs.width = 112; cs.height = 112;
+      cs.width = 128; cs.height = 128;
       this.layers.bg.addChild(cs);
     }
     const caveRemains = new Container();
@@ -3981,38 +3937,26 @@ export class RenderEngine {
 
     // 2026 v2 spec Ch7 — CAVE B (second spawn), drawn only when defined. A
     // compact mirror of the main cave so its W21+ enemies emerge from a real
-    // archway, not blank ground. Reuses the biome glow color + cave texture.
+    // archway, not blank ground. Its sprite fills the former 3x3 frame area.
     const caveB = (waypointsData as any).caveB;
     if (caveB) {
       const bcx = caveB.col * GRID.TILE + GRID.TILE / 2;
       const bcy = caveB.row * GRID.TILE + GRID.TILE / 2;
-      const bf = new Graphics();
-      bf.beginFill(0x2a2622, 1).drawRoundedRect(bcx - 48, bcy - 48, 96, 96, 14).endFill();
-      bf.beginFill(0x3b342c, 1).drawRoundedRect(bcx - 42, bcy - 42, 84, 84, 12).endFill();
-      bf.beginFill(0x000000, 0.85).drawCircle(bcx, bcy, 36).endFill();
-      bf.beginFill(0x1a0d2a, 0.90).drawCircle(bcx, bcy, 28).endFill();
-      bf.beginFill(caveGlowColor, 0.22).drawCircle(bcx, bcy, 66).endFill();
-      bf.beginFill(caveGlowColor, 0.12).drawCircle(bcx, bcy, 90).endFill();
-      this.layers.bg.addChild(bf);
       // 2026 v2 spec Ch7 — created HIDDEN. drawAmbient reveals it the moment
       // the first enemy emerges from Cave B (state.caveBActive), so it stays a
       // surprise instead of sitting on the map from W1.
-      bf.visible = false;
-      (this as any).__caveBGfx = bf;
       const caveTexB = tex(biome.caveKey) ?? tex('DARK_CAVE');
       if (caveTexB) {
         const cbs = new Sprite(caveTexB);
         cbs.anchor.set(0.5); cbs.x = bcx; cbs.y = bcy;
-        cbs.width = 84; cbs.height = 84;
+        cbs.width = 96; cbs.height = 96;
         cbs.visible = false;
         this.layers.bg.addChild(cbs);
         (this as any).__caveBSprite = cbs;
       }
     }
 
-    // GATE: 4×4 fortress with biome-aware glow + crenellated frame.
-    // 2026-05-21 — Phase V11 upgrade. Sprite size 76 → 112px. Added
-    // crenellation frame + flanking pilasters + brighter gold halo.
+    // GATE: the authored fortress now fills the full former frame footprint.
     const gateCx = waypointsData.gate.col * GRID.TILE + GRID.TILE / 2;
     const gateCy = waypointsData.gate.row * GRID.TILE + GRID.TILE / 2;
     addHeavyBloodSplatter(this.layers.bg, gateCx - 58, gateCy - 6, GRID.TILE * 2.95, -0.10, 0.96);
@@ -4044,39 +3988,13 @@ export class RenderEngine {
       gateCyclops.alpha = 0.98;
       this.layers.bg.addChild(gateCyclops);
     }
-    const gateFrame = new Graphics();
-    // Bigger gold glow underneath (warmth — civilization to defend)
-    gateFrame.beginFill(0xd4af37, 0.24).drawCircle(gateCx, gateCy, 72).endFill();
-    gateFrame.beginFill(0xd4af37, 0.14).drawCircle(gateCx, gateCy, 100).endFill();
-    // Crenellated outer frame (stone color with battlements)
-    gateFrame.beginFill(0x3a3025, 1).drawRoundedRect(gateCx - 60, gateCy - 60, 120, 120, 6).endFill();
-    gateFrame.beginFill(0x6a5a3a, 1).drawRoundedRect(gateCx - 56, gateCy - 56, 112, 112, 4).endFill();
-    // Battlements along the top edge
-    for (let bx = -54; bx <= 54; bx += 12) {
-      gateFrame.beginFill(0x3a3025, 1).drawRect(gateCx + bx, gateCy - 64, 6, 8).endFill();
-    }
-    // Inner sandstone wall
-    gateFrame.beginFill(0xa68a5e, 1).drawRoundedRect(gateCx - 48, gateCy - 48, 96, 96, 2).endFill();
-    // Watchtower pilasters (left + right)
-    gateFrame.beginFill(0x3a3025, 1);
-    gateFrame.drawRect(gateCx - 56, gateCy - 56, 10, 112);
-    gateFrame.drawRect(gateCx + 46, gateCy - 56, 10, 112);
-    gateFrame.endFill();
-    // Tower pilaster highlights
-    gateFrame.beginFill(0x7a6a48, 0.7);
-    gateFrame.drawRect(gateCx - 55, gateCy - 56, 1.5, 112);
-    gateFrame.drawRect(gateCx + 53.5, gateCy - 56, 1.5, 112);
-    gateFrame.endFill();
-    this.layers.bg.addChild(gateFrame);
-    // The redesigned Roman gate keeps the same 100x100 render footprint and
-    // center anchor, so this art pass cannot move the gate or alter pathing.
+    // The center anchor and blocked tiles remain unchanged; only the visible
+    // sprite grows to replace the removed procedural colored edge.
     const gate = tex('ROMAN_GATE');
     if (gate) {
       const gs = new Sprite(gate);
       gs.anchor.set(0.5); gs.x = gateCx; gs.y = gateCy;
-      // 2026-05-21 — Bumped 76 → 100px so the gate sprite fills the
-      // ornate frame instead of floating in the middle.
-      gs.width = 100; gs.height = 100;
+      gs.width = 120; gs.height = 120;
       this.layers.bg.addChild(gs);
     }
 

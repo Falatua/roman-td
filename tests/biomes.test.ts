@@ -412,7 +412,7 @@ describe('Rome gate fallen Cyclops tableau', () => {
     expect(source).toContain('gateCyclops.x = gateCx - GRID.TILE * 5');
     expect(source).toContain('gateCyclops.y = gateCy - GRID.TILE * 1.10');
     expect(source).toContain('gateCyclops.width = GRID.TILE * 4.90');
-    expect(source.indexOf('this.layers.bg.addChild(gateCyclops);')).toBeLessThan(source.indexOf('const gateFrame = new Graphics();'));
+    expect(source.indexOf('this.layers.bg.addChild(gateCyclops);')).toBeLessThan(source.indexOf("const gate = tex('ROMAN_GATE')"));
   });
 });
 
@@ -438,7 +438,10 @@ describe('Redesigned main cave', () => {
     expect(chromaGreen).toBe(0);
 
     const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
-    expect(source).toContain('cs.width = 112; cs.height = 112;');
+    expect(source).toContain('cs.width = 128; cs.height = 128;');
+    expect(source).toContain('cbs.width = 96; cbs.height = 96;');
+    expect(source).not.toContain('const caveFrame = new Graphics();');
+    expect(source).not.toContain('caveGlowColor');
     expect(source).toContain('drawTorch(caveCx - 30, caveCy + 14, 0);');
     expect(source).toContain('drawTorch(caveCx + 30, caveCy + 14, 1.7);');
     expect(source).toContain('drawTorch(gateCx - 29, gateCy + 24, 0.9);');
@@ -479,7 +482,8 @@ describe('Redesigned Gates of Rome', () => {
     const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
     expect(source).toContain("const gate = tex('ROMAN_GATE')");
     expect(source).toContain('gs.anchor.set(0.5); gs.x = gateCx; gs.y = gateCy;');
-    expect(source).toContain('gs.width = 100; gs.height = 100;');
+    expect(source).toContain('gs.width = 120; gs.height = 120;');
+    expect(source).not.toContain('const gateFrame = new Graphics();');
   });
 });
 
