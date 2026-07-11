@@ -3,6 +3,8 @@ import { GameStateShape } from '../GameState';
 import { WAVE } from '../constants';
 import { canReceiveRunReward } from './RewardEligibility';
 import { grantTrapInventory } from './TrapInventorySystem';
+import towersData from '../data/towers.json';
+import { eligibleBaseTowerTypesAtTier } from './BaseTowerRoster';
 
 export const CAMPAIGN_RELIC_IDS = [
   'JUPITERS_MANDATE',
@@ -853,27 +855,25 @@ export function skipCampaignRelic(state: GameStateShape, wave = state.wave): voi
   state.hint = `No campaign relic chosen after wave ${wave}. Rome stays unbound.`;
 }
 
-const BASE_TOWER_RELIC_POOL = [
-  TowerType.MILITES, TowerType.VELITES, TowerType.HASTATI, TowerType.SAGITTARIUS, TowerType.SCORPIO,
-  TowerType.TRIARIUS, TowerType.DECURION, TowerType.CENTURION, TowerType.PRIMUS_PILUS, TowerType.LEGATE,
-  TowerType.AUXILIA, TowerType.FUNDIBULUS, TowerType.RORARIUS, TowerType.LIBRITOR, TowerType.ACCENSUS,
-  TowerType.RETIARIUS, TowerType.BALLISTARIUS, TowerType.OPTIO, TowerType.PUGIO_ASSASSIN, TowerType.ARCUBALLISTA,
-  TowerType.VENATOR, TowerType.IGNIFER, TowerType.SPECULATOR, TowerType.FLAMEN, TowerType.CARROBALLISTA,
-  TowerType.CATAPHRACT, TowerType.AUGUR, TowerType.EVOCATUS, TowerType.HARUSPEX, TowerType.CLIBANARIUS,
-  TowerType.PRAEFECTUS, TowerType.VULCAN_ENGINEER, TowerType.IMPERATOR_GUARD, TowerType.SOLAR_PRIEST,
-  TowerType.COLOSSUS_ONAGER, TowerType.AQUILA_VENATOR
-] as const;
-
-const MELEE_BASE_TOWER_RELIC_POOL = [
-  TowerType.MILITES, TowerType.HASTATI, TowerType.TRIARIUS, TowerType.DECURION, TowerType.CENTURION,
-  TowerType.PRIMUS_PILUS, TowerType.AUXILIA, TowerType.ACCENSUS, TowerType.RETIARIUS, TowerType.PUGIO_ASSASSIN,
-  TowerType.CATAPHRACT, TowerType.EVOCATUS, TowerType.CLIBANARIUS, TowerType.IMPERATOR_GUARD
-] as const;
-
-const RANGED_BASE_TOWER_RELIC_POOL = BASE_TOWER_RELIC_POOL.filter(t => !MELEE_BASE_TOWER_RELIC_POOL.includes(t as any));
+export function campaignRelicBaseTowerPool(tier: 1 | 2 | 3 | 4 | 5, attackClass?: 'MELEE' | 'RANGED'): TowerType[] {
+  return eligibleBaseTowerTypesAtTier(tier).filter(type => {
+    if (!attackClass) return true;
+    const melee = !!(towersData as any)[type]?.melee;
+    return attackClass === 'MELEE' ? melee : !melee;
+  });
+}
 
 function pickRelicTower(pool: readonly TowerType[]): TowerType {
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function pickDistinctRelicTowers(pool: readonly TowerType[], count: number): TowerType[] {
+  const bag = [...pool];
+  const picks: TowerType[] = [];
+  while (bag.length > 0 && picks.length < count) {
+    picks.push(bag.splice(Math.floor(Math.random() * bag.length), 1)[0]);
+  }
+  return picks;
 }
 
 function queueRelicTower(state: GameStateShape, type: TowerType, tier: 1 | 2 | 3 | 4 | 5): void {
@@ -939,7 +939,7 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   }
   if (id === 'SEALED_RELIQUARY') (state as any).__pendingRelicLegendary = true;
   if (id === 'CONSCRIPTS_WAGER') {
-    queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 5);
+    queueRelicTower(state, pickRelicTower(campaignRelicBaseTowerPool(5)), 5);
     payRelicLives(state, id);
   }
   if (id === 'ARMORY_BARGAIN') {
@@ -951,17 +951,18 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
     payRelicLives(state, id);
   }
   if (id === 'VETERAN_DRAFT') {
-    queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 3);
-    queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 3);
+    for (const type of pickDistinctRelicTowers(campaignRelicBaseTowerPool(3), 2)) {
+      queueRelicTower(state, type, 3);
+    }
     payRelicLives(state, id);
   }
   if (id === 'ARCHITECTS_PERMIT') {
-    queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 4);
+    queueRelicTower(state, pickRelicTower(campaignRelicBaseTowerPool(4)), 4);
     payRelicLives(state, id);
   }
   if (id === 'FRONTIER_RECRUITS') {
-    queueRelicTower(state, pickRelicTower(MELEE_BASE_TOWER_RELIC_POOL), 4);
-    queueRelicTower(state, pickRelicTower(RANGED_BASE_TOWER_RELIC_POOL), 4);
+    queueRelicTower(state, pickRelicTower(campaignRelicBaseTowerPool(4, 'MELEE')), 4);
+    queueRelicTower(state, pickRelicTower(campaignRelicBaseTowerPool(4, 'RANGED')), 4);
     payRelicLives(state, id);
   }
   if (id === 'LEGATE_CONTRACT') {
@@ -1039,7 +1040,7 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
     payRelicLives(state, id);
   }
   if (id === 'BUILDER_CHIT') {
-    queueRelicTower(state, pickRelicTower(BASE_TOWER_RELIC_POOL), 3);
+    queueRelicTower(state, pickRelicTower(campaignRelicBaseTowerPool(3)), 3);
     payRelicGold(state, id);
   }
   if (id === 'SMALL_RAMPART_GRANT') {

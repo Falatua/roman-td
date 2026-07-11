@@ -39,6 +39,7 @@ import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity
 import { heroAuraScaleForTier, heroAuraScaleForTower, heroTierForTower } from '../src/systems/HeroScaling';
 import HERO_DEFS from '../src/data/herodefs.json';
 import TOWERS from '../src/data/towers.json';
+import { eligibleBaseTowerTypesAtTier } from '../src/systems/BaseTowerRoster';
 
 function freshState(): GameStateShape {
   const s = createGameState();
@@ -363,6 +364,27 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(offers).toHaveLength(10);
     expect(offers.every(o => !CHAMPION_TYPES.includes(o.type))).toBe(true);
     expect(offers.every(o => o.tier === 5)).toBe(true);
+  });
+
+  it('Solo Mercator randomizes across every legal T5 base tower without visit duplicates', () => {
+    const expected = new Set(eligibleBaseTowerTypesAtTier(5).map(String));
+    const seen = new Set<string>();
+    for (let i = 0; i < 800; i++) {
+      const offers = buildMercatorTowerOffers(23, 10, { fullLegionRoster: true });
+      expect(new Set(offers.map(o => o.type)).size).toBe(offers.length);
+      for (const offer of offers) seen.add(offer.type);
+    }
+    expect(seen).toEqual(expected);
+    expect(seen).toContain(String(TowerType.BEAST_HUNTER));
+    expect(seen).toContain(String(TowerType.BEAST_SLAYER));
+  });
+
+  it('Solo Mercator excludes the previous armory lineup when enough fresh towers remain', () => {
+    const first = buildMercatorTowerOffers(14, 10, { fullLegionRoster: true });
+    const prior = first.map(offer => offer.type);
+    const second = buildMercatorTowerOffers(19, 10, { fullLegionRoster: true, excludeTypes: prior });
+    expect(second).toHaveLength(10);
+    expect(second.every(offer => !prior.includes(offer.type))).toBe(true);
   });
 
   it('Mercator Champions are hero equivalents without overwriting the starter hero', () => {

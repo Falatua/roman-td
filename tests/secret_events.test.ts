@@ -11,6 +11,7 @@ import {
 } from '../src/systems/SecretEventsSystem';
 import towersData from '../src/data/towers.json';
 import itemsData from '../src/data/items_permanent.json';
+import { eligibleBaseTowerTypesAtTier } from '../src/systems/BaseTowerRoster';
 
 describe('Mercator Back Room hidden event', () => {
   it('unlocks from repeat Mercator purchases only during a live pre-wave run', () => {
@@ -61,6 +62,19 @@ describe('Mercator Back Room hidden event', () => {
     expect(tower.tier).toBe(5);
     expect(tower.towerType).not.toBe(TowerType.VELITES);
     expect(tower.towerType).not.toBe(TowerType.SCORPIO);
+  });
+
+  it('randomizes the Backroom chit across the complete legal T5 base roster and caches one visit', () => {
+    const expected = new Set(eligibleBaseTowerTypesAtTier(5));
+    const seen = new Set<TowerType>();
+    for (let i = 0; i < 2000; i++) {
+      const state = createGameState();
+      const first = buildMercatorBackRoomOffers(state);
+      const cached = buildMercatorBackRoomOffers(state);
+      expect(cached).toBe(first);
+      seen.add(first.find(offer => offer.kind === 'TOWER')!.towerType!);
+    }
+    expect(seen).toEqual(expected);
   });
 
   it('claims a discounted T5 tower through the normal placement queue', () => {

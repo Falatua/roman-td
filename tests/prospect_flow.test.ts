@@ -27,4 +27,8 @@ describe('Prospect keep flow', () => {
     expect(mainSource.match(/rollSoloDraw\(state, BASE_TOWER_TYPES\)/g)?.length).toBe(6);
     expect(mainSource).not.toContain('rollDraw(state, BASE_TOWER_TYPES)');
   });
+
+  it('uses the full authored Legion roster for Solo Mercator armory refreshes', () => {
+    expect(mainSource).toContain('fullLegionRoster: true');
+  });
 });

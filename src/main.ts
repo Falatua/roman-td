@@ -314,6 +314,7 @@ async function boot() {
       purchasedChampionTypes: state.mercatorPurchasedChampionTypes ?? []
     });
     mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 10, {
+      fullLegionRoster: true,
       excludeTypes: (state.mercatorTowerOffers ?? []).map(o => o.type)
     });
     state.mercatorTowerOffers = mercatorShop.towerOffers;

@@ -3,7 +3,8 @@ import { GamePhase, ItemId, TowerType } from '../types';
 import towersData from '../data/towers.json';
 import itemsData from '../data/items_permanent.json';
 import { ECONOMY } from '../constants';
-import { BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower } from './TowerSystem';
+import { clampQualityTierForTower } from './TowerSystem';
+import { eligibleBaseTowerTypesAtTier } from './BaseTowerRoster';
 import { itemBuyPrice, Rarity } from './LootSystem';
 
 export const MERCATOR_BACKROOM_MIN_WAVE = 9;
@@ -107,10 +108,7 @@ export function buildMercatorBackRoomOffers(state: GameStateShape): MercatorBack
   }
   const legendary = pick(BACKROOM_LEGENDARIES);
   const legendaryPrice = Math.max(1, Math.round(itemBuyPrice(legendary) * 0.65));
-  const tower = pick(BASE_TOWER_TYPES.filter(type => {
-    const def: any = (towersData as any)[type];
-    return !!def && (def.kind ?? 'BASE') === 'BASE' && maxQualityTierForTower(type) >= 5;
-  }));
+  const tower = pick(eligibleBaseTowerTypesAtTier(5));
   const towerName = towerDisplayName(tower);
   const itemName = itemDisplayName(legendary);
   const offers: MercatorBackRoomOffer[] = [

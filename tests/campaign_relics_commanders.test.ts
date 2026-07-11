@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createGameState } from '../src/GameState';
 import { DamageType, EnemyType, GamePhase, TowerType } from '../src/types';
 import { initializeGrid } from '../src/systems/GridManager';
@@ -10,6 +10,7 @@ import {
   applyCampaignRelic,
   campaignRelicAffordability,
   campaignRelicBossKillLives,
+  campaignRelicBaseTowerPool,
   campaignRelicDamageMult,
   campaignRelicEnemyHpMult,
   campaignRelicEnemySpeedMult,
@@ -21,6 +22,8 @@ import {
   shouldOfferCampaignRelics,
   skipCampaignRelic
 } from '../src/systems/CampaignRelicSystem';
+import towersData from '../src/data/towers.json';
+import { maxQualityTierForTower } from '../src/systems/BaseTowerRoster';
 import {
   BOSS_TROPHIES,
   applyBossTrophy,
@@ -90,6 +93,35 @@ describe('Campaign relics', () => {
     expect(new Set(offers.map(o => o.id)).size).toBe(4);
     expect(offers.map(o => o.id)).not.toContain('MARS_TAX');
     expect(campaignRelicOffersForWave(s, 10).map(o => o.id)).toEqual(offers.map(o => o.id));
+  });
+
+  it('random tower relics use every legal base line and never include combo towers', () => {
+    for (const tier of [3, 4, 5] as const) {
+      const pool = campaignRelicBaseTowerPool(tier);
+      expect(new Set(pool).size).toBe(pool.length);
+      expect(pool).toContain(TowerType.BEAST_HUNTER);
+      expect(pool).toContain(TowerType.BEAST_SLAYER);
+      expect(pool).not.toContain(TowerType.CLIBANARIUS);
+      for (const type of pool) {
+        expect((towersData as any)[type]?.kind, type).toBe('BASE');
+        expect(maxQualityTierForTower(type), type).toBeGreaterThanOrEqual(tier);
+      }
+    }
+  });
+
+  it('Veteran Draft grants two distinct randomized base towers', () => {
+    const state = bootstrapState();
+    state.lives = 50;
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    try {
+      expect(applyCampaignRelic(state, 'VETERAN_DRAFT')).toBe(true);
+      const grants = state.pendingPurchasedTowers ?? [];
+      expect(grants).toHaveLength(2);
+      expect(grants[0].type).not.toBe(grants[1].type);
+      expect(grants.every(grant => (towersData as any)[grant.type]?.kind === 'BASE')).toBe(true);
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
   it('lets the player reject an offer without adding a relic', () => {

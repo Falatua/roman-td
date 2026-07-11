@@ -2,16 +2,13 @@ import { GameStateShape } from '../GameState';
 import { GamePhase, TowerType } from '../types';
 import towersData from '../data/towers.json';
 import comboData from '../data/towerCombinations.json';
-import { BASE_TOWER_TYPES, maxQualityTierForTower } from './TowerSystem';
+import { eligibleBaseTowerTypesAtTier } from './BaseTowerRoster';
 
 export const LAST_STAND_TROVE_SOURCE = 'laststand' as const;
 export const LAST_STAND_TROVE_TIER = 5 as const;
 
 export function lastStandTroveChoices(): TowerType[] {
-  return BASE_TOWER_TYPES.filter(type => {
-    const def: any = (towersData as any)[type];
-    return !!def && (def.kind ?? 'BASE') === 'BASE' && maxQualityTierForTower(type) >= LAST_STAND_TROVE_TIER;
-  });
+  return eligibleBaseTowerTypesAtTier(LAST_STAND_TROVE_TIER);
 }
 
 export function shouldOfferLastStandTrove(state: GameStateShape): boolean {

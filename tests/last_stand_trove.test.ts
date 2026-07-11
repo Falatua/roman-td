@@ -12,6 +12,7 @@ import {
   markLastStandTroveOffered,
   shouldOfferLastStandTrove
 } from '../src/systems/LastStandTroveSystem';
+import { eligibleBaseTowerTypesAtTier } from '../src/systems/BaseTowerRoster';
 
 describe('Last-Life Trove hidden event', () => {
   it('only offers at exactly one life during a live run', () => {
@@ -54,11 +55,12 @@ describe('Last-Life Trove hidden event', () => {
 
   it('offers every authored base tower and no combo, super, omega, or hero tower', () => {
     const choices = lastStandTroveChoices();
+    expect(new Set(choices)).toEqual(new Set(eligibleBaseTowerTypesAtTier(5)));
     expect(choices).toContain(TowerType.MILITES);
     expect(choices).toContain(TowerType.LEGATE);
     expect(choices).not.toContain(TowerType.VELITES);
     expect(choices).not.toContain(TowerType.SCORPIO);
-    expect(choices.length).toBeGreaterThanOrEqual(8);
+    expect(choices.length).toBe(35);
     expect(choices).not.toContain(TowerType.SCORPION_BOLT);
     expect(choices).not.toContain(TowerType.HANNIBALS_NIGHTMARE);
     expect(choices).not.toContain(TowerType.ROMAN_TRANSFORMER);

@@ -9,6 +9,9 @@ import { campaignRelicTowerDpsMult, campaignRelicTowerRangeBonus, campaignRelicT
 import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 import { heroAuraScaleForTower, heroBasicAttackScaleForTower } from './HeroScaling';
 import enemiesData from '../data/enemies.json';
+import { maxQualityTierForTower, TIER_FOUR_MAX_TOWER_TYPES } from './BaseTowerRoster';
+
+export { maxQualityTierForTower, TIER_FOUR_MAX_TOWER_TYPES } from './BaseTowerRoster';
 
 // 2026-05-19 — AURA TILE LOOKUP. Returns the kind of aura tile the
 // tower sits on, or null. Used by stat math + combat hooks so every
@@ -108,15 +111,6 @@ function newId(): string { return `tw${nextId++}`; }
 // 2026-05 v6: CAVALRY_TYPES set retired — Cavalry Spur and Numidian
 // Saddle now gate by attack class (MELEE / RANGED) instead of a niche
 // cavalry archetype check.
-
-export const TIER_FOUR_MAX_TOWER_TYPES = new Set<TowerType>([
-  TowerType.VELITES,
-  TowerType.SCORPIO
-]);
-
-export function maxQualityTierForTower(type: TowerType | string): 1 | 2 | 3 | 4 | 5 {
-  return TIER_FOUR_MAX_TOWER_TYPES.has(type as TowerType) ? 4 : 5;
-}
 
 export function clampQualityTierForTower(type: TowerType | string, tier: number): 1 | 2 | 3 | 4 | 5 {
   const maxTier = maxQualityTierForTower(type);

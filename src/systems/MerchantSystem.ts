@@ -4,6 +4,7 @@ import { itemBuyPrice, Rarity } from './LootSystem';
 import { championForHero } from './HeroIdentity';
 import { itemRandomSelectionWeight } from './ItemRules';
 import { maxQualityTierForTower } from './TowerSystem';
+import { ALL_LEGION_BASE_TOWER_TYPES } from './BaseTowerRoster';
 
 export interface ShopOffer {
   itemId: ItemId;
@@ -210,6 +211,7 @@ export interface MercatorTowerOfferOptions {
   activeHeroId?: string | null;
   excludeTypes?: string[];
   purchasedChampionTypes?: string[];
+  fullLegionRoster?: boolean;
 }
 
 export function mercatorExcludedChampionForHero(activeHeroId?: string | null): string | null {
@@ -242,7 +244,10 @@ export function buildMercatorTowerOffers(wave: number, count = 10, options: Merc
   // are NEVER offered for sale. If a future contributor accidentally
   // adds one to MERCATOR_TOWER_POOL, this filter blocks it from
   // reaching the player. Apex towers must be crafted, not bought.
-  const eligible = MERCATOR_TOWER_POOL.filter(id => !FORTUNA_APEX_BLOCKLIST.has(id) && maxQualityTierForTower(id) >= 5);
+  const sourcePool = options.fullLegionRoster
+    ? ALL_LEGION_BASE_TOWER_TYPES.map(String)
+    : MERCATOR_TOWER_POOL;
+  const eligible = sourcePool.filter(id => !FORTUNA_APEX_BLOCKLIST.has(id) && maxQualityTierForTower(id) >= 5);
   // Fill with randomized T5 base towers only.
   // 2026-07-03 — options.excludeTypes now applies to these random slots too
   // main.ts passes the PREVIOUS visit's random lineup here, so consecutive
