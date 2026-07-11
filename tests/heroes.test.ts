@@ -34,7 +34,7 @@ import { createGameState, GameStateShape } from '../src/GameState';
 import { DamageType, Enemy, EnemyFaction, EnemyType, GamePhase, StatusEffectKind, TowerType } from '../src/types';
 import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
 import { previewSpawnHp, startWave } from '../src/systems/WaveManager';
-import { buildMercatorChampionOffers, buildMercatorTowerOffers, CHAMPION_PRICE, CHAMPION_TYPES } from '../src/systems/MerchantSystem';
+import { buildMercatorChampionOffers, buildMercatorTowerOffers, CHAMPION_PRICE, CHAMPION_TYPES, MERCATOR_TOWER_OFFER_COUNT } from '../src/systems/MerchantSystem';
 import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity';
 import { heroAuraScaleForTier, heroAuraScaleForTower, heroTierForTower } from '../src/systems/HeroScaling';
 import HERO_DEFS from '../src/data/herodefs.json';
@@ -333,11 +333,12 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
   });
 
   it('Mercator random armory keeps selling normal towers after every Champion has been bought', () => {
-    const offers = buildMercatorTowerOffers(23, 10, {
+    const offers = buildMercatorTowerOffers(23, undefined, {
       excludeTypes: [...CHAMPION_TYPES]
     });
     expect(offers.some(o => CHAMPION_TYPES.includes(o.type))).toBe(false);
-    expect(offers).toHaveLength(10);
+    expect(offers).toHaveLength(MERCATOR_TOWER_OFFER_COUNT);
+    expect(MERCATOR_TOWER_OFFER_COUNT).toBe(12);
     expect(offers.every(o => o.tier === 5)).toBe(true);
   });
 
@@ -380,10 +381,10 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
   });
 
   it('Solo Mercator excludes the previous armory lineup when enough fresh towers remain', () => {
-    const first = buildMercatorTowerOffers(14, 10, { fullLegionRoster: true });
+    const first = buildMercatorTowerOffers(14, MERCATOR_TOWER_OFFER_COUNT, { fullLegionRoster: true });
     const prior = first.map(offer => offer.type);
-    const second = buildMercatorTowerOffers(19, 10, { fullLegionRoster: true, excludeTypes: prior });
-    expect(second).toHaveLength(10);
+    const second = buildMercatorTowerOffers(19, MERCATOR_TOWER_OFFER_COUNT, { fullLegionRoster: true, excludeTypes: prior });
+    expect(second).toHaveLength(MERCATOR_TOWER_OFFER_COUNT);
     expect(second.every(offer => !prior.includes(offer.type))).toBe(true);
   });
 

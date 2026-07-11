@@ -17,7 +17,7 @@ import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './s
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
 import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
-import { buildGateShop, buildMercatorChampionOffers, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_PRICE } from './systems/MerchantSystem';
+import { buildGateShop, buildMercatorChampionOffers, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_PRICE, MERCATOR_TOWER_OFFER_COUNT } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
@@ -313,7 +313,7 @@ async function boot() {
       activeHeroId: state.activeHeroId,
       purchasedChampionTypes: state.mercatorPurchasedChampionTypes ?? []
     });
-    mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, 10, {
+    mercatorShop.towerOffers = buildMercatorTowerOffers(state.wave, MERCATOR_TOWER_OFFER_COUNT, {
       fullLegionRoster: true,
       excludeTypes: (state.mercatorTowerOffers ?? []).map(o => o.type)
     });

@@ -757,7 +757,7 @@ function renderMercatorShop(
     const towersSection = document.createElement('div');
     const towersTitle = document.createElement('div');
     towersTitle.className = 'merc-section-title';
-    towersTitle.innerHTML = `<span>★ RANDOMIZED T5 BASE TOWERS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">10 random base towers · refreshes next Mercator visit</span>`;
+    towersTitle.innerHTML = `<span>★ RANDOMIZED T5 BASE TOWERS</span><span style="font-size:10px;color:#cdb98a;letter-spacing:1px;font-weight:normal">${shop.towerOffers.length} random base towers · refreshes next Mercator visit</span>`;
     towersSection.appendChild(towersTitle);
     const towersNote = document.createElement('div');
     towersNote.style.cssText = `font-size:9.5px;color:#aa9a4a;line-height:1.35;margin:2px 0 8px;font-style:italic`;

@@ -485,7 +485,7 @@ describe('Merchant — Mercator stock', () => {
 
   it('re-randomizes the T5 armory: excludeTypes bars last visit’s lineup', () => {
     // 2026-07-03 — consecutive Mercator visits must not repeat T5 towers.
-    // main.ts passes the previous visit's 10 random types as excludeTypes.
+    // main.ts passes the previous visit's randomized types as excludeTypes.
     const first = buildMercatorTowerOffers(9, 10).map(o => o.type);
     expect(first).toHaveLength(10);
     for (let i = 0; i < 10; i++) {
