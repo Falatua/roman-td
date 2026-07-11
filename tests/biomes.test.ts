@@ -387,10 +387,10 @@ describe('Top-right Cyclops trophy prop', () => {
 });
 
 describe('Rome gate fallen Cyclops tableau', () => {
-  it('ships a distinct transparent half-Cyclops and anchors it five tiles left of Rome', async () => {
+  it('ships a transparent undead half-Cyclops and anchors it five tiles left of Rome', async () => {
     const sharp = require('sharp');
-    const file = assetFileFor('MAP_GATE_CYCLOPS_DEVOURING_ROMAN');
-    expect(file).toBe('map_overhaul/m_gate_cyclops_devouring_roman.png');
+    const file = assetFileFor('MAP_GATE_UNDEAD_CYCLOPS_GRIP');
+    expect(file).toBe('map_overhaul/m_gate_undead_cyclops_grip.png');
     const img = sharp(path.join(__dirname, '../public/assets/sprites', file!));
     const meta = await img.metadata();
     expect(meta.width).toBe(512);
@@ -408,11 +408,78 @@ describe('Rome gate fallen Cyclops tableau', () => {
     expect(chromaGreen).toBe(0);
 
     const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
-    expect(source).toContain("tex('MAP_GATE_CYCLOPS_DEVOURING_ROMAN')");
+    expect(source).toContain("tex('MAP_GATE_UNDEAD_CYCLOPS_GRIP')");
     expect(source).toContain('gateCyclops.x = gateCx - GRID.TILE * 5');
     expect(source).toContain('gateCyclops.y = gateCy - GRID.TILE * 1.10');
     expect(source).toContain('gateCyclops.width = GRID.TILE * 4.90');
     expect(source.indexOf('this.layers.bg.addChild(gateCyclops);')).toBeLessThan(source.indexOf('const gateFrame = new Graphics();'));
+  });
+});
+
+describe('Redesigned main cave', () => {
+  it('keeps the legacy cave dimensions and uses aligned animated braziers', async () => {
+    const sharp = require('sharp');
+    const file = assetFileFor('DARK_CAVE');
+    expect(file).toBe('m_dark_cave.png');
+    const img = sharp(path.join(__dirname, '../public/assets/sprites', file!));
+    const meta = await img.metadata();
+    expect(meta.width).toBe(256);
+    expect(meta.height).toBe(214);
+    expect(meta.hasAlpha).toBe(true);
+
+    const raw = await img.ensureAlpha().raw().toBuffer();
+    let transparent = 0;
+    let chromaGreen = 0;
+    for (let i = 0; i < raw.length; i += 4) {
+      if (raw[i + 3] < 8) transparent++;
+      if (raw[i] < 80 && raw[i + 1] > 150 && raw[i + 2] < 80 && raw[i + 3] > 8) chromaGreen++;
+    }
+    expect(transparent).toBeGreaterThan(256 * 214 * 0.25);
+    expect(chromaGreen).toBe(0);
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain('cs.width = 112; cs.height = 112;');
+    expect(source).toContain('drawTorch(caveCx - 30, caveCy + 14, 0);');
+    expect(source).toContain('drawTorch(caveCx + 30, caveCy + 14, 1.7);');
+    expect(source).toContain('drawTorch(gateCx - 29, gateCy + 24, 0.9);');
+    expect(source).toContain('drawTorch(gateCx + 29, gateCy + 24, 2.4);');
+    expect(source).toContain('if (caveBActive && caveBData)');
+  });
+});
+
+describe('Redesigned Gates of Rome', () => {
+  it('keeps both intact and destroyed gate states transparent and footprint-compatible', async () => {
+    const sharp = require('sharp');
+    for (const [key, expectedFile] of [
+      ['ROMAN_GATE', 'm_roman_gate.png'],
+      ['ROMAN_GATE_DESTROYED', 'm_roman_gate_destroyed.png']
+    ]) {
+      const file = assetFileFor(key);
+      expect(file).toBe(expectedFile);
+      const img = sharp(path.join(__dirname, '../public/assets/sprites', file!));
+      const meta = await img.metadata();
+      expect(meta.width).toBe(256);
+      expect(meta.height).toBe(224);
+      expect(meta.hasAlpha).toBe(true);
+
+      const raw = await img.ensureAlpha().raw().toBuffer();
+      let transparent = 0;
+      let chromaGreen = 0;
+      let legacyMagenta = 0;
+      for (let i = 0; i < raw.length; i += 4) {
+        if (raw[i + 3] < 8) transparent++;
+        if (raw[i] < 80 && raw[i + 1] > 150 && raw[i + 2] < 80 && raw[i + 3] > 8) chromaGreen++;
+        if (raw[i] > 100 && raw[i + 2] > 100 && raw[i + 1] < 70 && raw[i + 3] > 8) legacyMagenta++;
+      }
+      expect(transparent).toBeGreaterThan(256 * 224 * 0.35);
+      expect(chromaGreen).toBe(0);
+      expect(legacyMagenta).toBe(0);
+    }
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain("const gate = tex('ROMAN_GATE')");
+    expect(source).toContain('gs.anchor.set(0.5); gs.x = gateCx; gs.y = gateCy;');
+    expect(source).toContain('gs.width = 100; gs.height = 100;');
   });
 });
 

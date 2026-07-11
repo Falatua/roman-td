@@ -709,10 +709,19 @@ export class RenderEngine {
       // Soft glow halo
       a.beginFill(0xff9a30, 0.18 * fl).drawCircle(px, py - 4, 12 + fl * 3).endFill();
     };
-    drawTorch(caveCx - 38, caveCy + 10, 0);
-    drawTorch(caveCx + 38, caveCy + 10, 1.7);
-    drawTorch(gateCx - 36, gateCy - 14, 0.9);
-    drawTorch(gateCx + 36, gateCy - 14, 2.4);
+    // Positions match the braziers painted into the redesigned cave and gate
+    // sprites. The sprite supplies the metal bowl; these cheap overlays make
+    // the fire itself breathe without adding animated textures.
+    drawTorch(caveCx - 30, caveCy + 14, 0);
+    drawTorch(caveCx + 30, caveCy + 14, 1.7);
+    drawTorch(gateCx - 29, gateCy + 24, 0.9);
+    drawTorch(gateCx + 29, gateCy + 24, 2.4);
+    if (caveBActive && caveBData) {
+      const caveBCx = caveBData.col * GRID.TILE + GRID.TILE / 2;
+      const caveBCy = caveBData.row * GRID.TILE + GRID.TILE / 2;
+      drawTorch(caveBCx - 22, caveBCy + 11, 0.45);
+      drawTorch(caveBCx + 22, caveBCy + 11, 2.05);
+    }
 
     // ── 2 SWAYING BANNERS ON THE GATE ─────────────────────────────
     // Red Roman war banners with gold trim, hung from invisible poles
@@ -4021,10 +4030,10 @@ export class RenderEngine {
       gateBloodTrail.alpha = 0.90;
       this.layers.bg.addChild(gateBloodTrail);
     }
-    // Visual-only fallen Cyclops tableau. Its center is exactly five tiles
-    // left of Rome's gate; the slight upward offset keeps the blood pool on
-    // the grass instead of clipping against the bottom map border.
-    const gateCyclopsTex = tex('MAP_GATE_CYCLOPS_DEVOURING_ROMAN');
+    // Visual-only fallen undead Cyclops tableau. Its center is exactly five
+    // tiles left of Rome's gate; the slight upward offset keeps the blood pool
+    // and the Roman held in its right hand inside the bottom map border.
+    const gateCyclopsTex = tex('MAP_GATE_UNDEAD_CYCLOPS_GRIP');
     if (gateCyclopsTex) {
       const gateCyclops = new Sprite(gateCyclopsTex);
       gateCyclops.anchor.set(0.5);
@@ -4059,10 +4068,8 @@ export class RenderEngine {
     gateFrame.drawRect(gateCx + 53.5, gateCy - 56, 1.5, 112);
     gateFrame.endFill();
     this.layers.bg.addChild(gateFrame);
-    // 2026-05-22 — Reverted off MAP_GATE_USER_ROME per design feedback.
-    // Universal gate render falls back to the procedural ROMAN_GATE
-    // sprite (the original Roman fortress art). The crenellated frame
-    // + pilasters above provide the architectural setting.
+    // The redesigned Roman gate keeps the same 100x100 render footprint and
+    // center anchor, so this art pass cannot move the gate or alter pathing.
     const gate = tex('ROMAN_GATE');
     if (gate) {
       const gs = new Sprite(gate);
