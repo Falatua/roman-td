@@ -813,13 +813,17 @@
       html.mobile-mode .chm-kbd-hint { display: none !important; }
       html.mobile-mode .desktop-hotkey-hint { display: none !important; }
 
-      /* UX3 — Hero Inspect Panel and other tall #tower-menu modals can
-         exceed phone-landscape viewport height. Constrain the inner
-         panel to ~88dvh and let it scroll inside the modal frame. */
+      /* UX3 — Give tower/hero inspection the full safe phone viewport.
+         Its internal body remains scrollable for unusually long recipe
+         lists, but ordinary units expose far more controls immediately. */
       html.mobile-mode #tower-menu > div {
-        max-height: 88dvh !important;
+        height: calc(100dvh - 4px) !important;
+        max-height: calc(100dvh - 4px) !important;
         overflow-y: auto !important;
         scrollbar-width: thin;
+      }
+      html.mobile-mode #tower-menu .rtd-tower-stats-grid {
+        grid-template-columns: 1fr 1fr !important;
       }
 
       /* UX1/UX3 — Collapse the ABILITIES ladder on each hero card on

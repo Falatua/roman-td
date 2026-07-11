@@ -30,7 +30,7 @@ import { heroTierForTower, heroXpForTower } from '../systems/HeroScaling';
 import { towerDamageProfile, renderTowerDamageProfileHtml } from './TowerDamageProfile';
 
 const RAR: Record<string, string> = { COMMON:'#cccccc', UNCOMMON:'#5cd05c', RARE:'#5ca0ff', EPIC:'#a060ff', LEGENDARY:'#ff9933', UNIQUE:'#ffd34d' };
-const TOWER_INSPECT_PANEL_MAX_HEIGHT_PX = 1152;
+const TOWER_INSPECT_PANEL_MAX_HEIGHT_PX = 1440;
 
 export interface TowerMenuHooks {
   onClose: () => void;
@@ -64,8 +64,8 @@ function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title:
   }
   panel.style.display = 'flex';
   panel.style.flexDirection = 'column';
-  panel.style.maxHeight = 'calc(100vh - 8px)';
-  panel.style.height = `min(${TOWER_INSPECT_PANEL_MAX_HEIGHT_PX}px, calc(100vh - 8px))`;
+  panel.style.maxHeight = 'calc(100dvh - 4px)';
+  panel.style.height = `min(${TOWER_INSPECT_PANEL_MAX_HEIGHT_PX}px, calc(100dvh - 4px))`;
   panel.style.overflow = 'hidden';
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '.rtd-tower-menu-collapse',
@@ -73,6 +73,10 @@ function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title:
     closeOnEscape: true,
     onClose
   });
+  // Tower banners already reserve horizontal room for all three tools. Keep
+  // the controls in that banner instead of spending a separate 54px row on
+  // empty chrome, which exposes more of the actionable footer at once.
+  panel.style.setProperty('--rtd-modal-tools-reserve-top', '0px');
 }
 
 function targetingModeLabel(mode: TargetingMode): string {
@@ -80,7 +84,7 @@ function targetingModeLabel(mode: TargetingMode): string {
 }
 
 function towerModalStyle(): string {
-  return `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.58);z-index:55;padding:8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
+  return `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.58);z-index:55;padding:2px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
 }
 
 function towerPanelStyle(accent: string, shadow = '24px'): string {
@@ -218,10 +222,10 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   // Top banner: pending vs permanent
   const banner = document.createElement('div');
   if (t.pending) {
-    banner.style.cssText = 'background:linear-gradient(90deg,#5a3a1a,#d4af37,#5a3a1a);color:#1a1410;padding:8px 128px 8px 10px;display:flex;justify-content:space-between;gap:12px;font-weight:bold;letter-spacing:2px;font-size:12px';
+    banner.style.cssText = 'background:linear-gradient(90deg,#5a3a1a,#d4af37,#5a3a1a);color:#1a1410;padding:8px 128px 8px 10px;min-height:42px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:bold;letter-spacing:2px;font-size:12px';
     banner.innerHTML = `<span>PENDING PROSPECT — KEEP OR REVEAL ANOTHER</span><span>TIER ${t.qualityTier}</span>`;
   } else {
-    banner.style.cssText = `background:${tierColor};color:#1a1410;padding:6px 128px 6px 10px;display:flex;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px`;
+    banner.style.cssText = `background:${tierColor};color:#1a1410;padding:6px 128px 6px 10px;min-height:42px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px`;
     banner.innerHTML = `<span>${def.kind === 'COMBO' ? 'COMBINATION TOWER' : 'LEGION UNIT'}</span><span>TIER ${t.qualityTier}</span>`;
   }
   panel.appendChild(banner);
@@ -255,7 +259,8 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
 
   // Stats grid
   const statsGrid = document.createElement('div');
-  statsGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#3a3025;border-top:1px solid #3a3025;border-bottom:1px solid #3a3025';
+  statsGrid.className = 'rtd-tower-stats-grid';
+  statsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:#3a3025;border-top:1px solid #3a3025;border-bottom:1px solid #3a3025';
   const statBox = (label: string, value: string, color = '#e8d6a8') =>
     `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">${label}</div><div style="color:${color};font-size:14px;font-weight:bold;margin-top:2px">${value}</div></div>`;
 
@@ -1000,7 +1005,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
 
   // ── Top banner (mirrors tower menu — "TIER N" on the right) ───────
   const banner = document.createElement('div');
-  banner.style.cssText = `background:${tint};color:#1a1410;padding:6px 128px 6px 10px;display:flex;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px`;
+  banner.style.cssText = `background:${tint};color:#1a1410;padding:6px 128px 6px 10px;min-height:42px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;font-weight:bold;letter-spacing:2px;font-size:12px`;
   banner.innerHTML = `<span>⚔ HERO · ${tierTitles[tier]}</span><span>TIER ${tier + 1}/5</span>`;
   panel.appendChild(banner);
 
@@ -1063,7 +1068,8 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   // section, but heroes have a kill-bonus stack that's worth
   // highlighting up front).
   const statsGrid = document.createElement('div');
-  statsGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#3a3025;border-top:1px solid #3a3025;border-bottom:1px solid #3a3025';
+  statsGrid.className = 'rtd-tower-stats-grid';
+  statsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:#3a3025;border-top:1px solid #3a3025;border-bottom:1px solid #3a3025';
   const damageProfile = towerDamageProfile(t, state, breakdown);
   const finalDpsValue = breakdown.damageFinal * (breakdown.speedFinal / Math.max(0.05, breakdown.speedBase));
   const finalPerHit = finalDpsValue / Math.max(0.05, breakdown.speedFinal);
