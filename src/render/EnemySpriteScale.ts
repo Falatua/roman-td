@@ -12,9 +12,14 @@ export const GIANT_CLASS_ENEMY_SPRITE_SIZE_TILES: Partial<Record<EnemyType, numb
   [EnemyType.UNDEAD_CYCLOPS]: 2.25,
   [EnemyType.DREAD_UNDEAD_GIANT]: 2.35,
   [EnemyType.DREAD_UNDEAD_CYCLOPS]: 2.35,
-  [EnemyType.BONEWING_DRAKE]: 2.6,
-  [EnemyType.GRAVE_LEGION_DRAGON]: 2.8,
-  [EnemyType.DREAD_UPRISING_DRAGON]: 3.0,
+  // Dragon-class flyers use an intentionally oversized progression so each
+  // Dead Uprising arrival reads as a major airborne threat at map scale.
+  [EnemyType.BONEWING_DRAKE]: 3.0,
+  [EnemyType.GRAVE_LEGION_DRAGON]: 3.3,
+  [EnemyType.DREAD_UPRISING_DRAGON]: 3.6,
+  // This commander also carries a 1.28 authored render scale, producing a
+  // final visual footprint of 3.2 tiles without changing its hitbox.
+  [EnemyType.STORMTIDE_WYVERN_COMMANDER]: 2.5,
   [EnemyType.FIRE_GIANT]: 2.45,
   [EnemyType.SEA_GIANT]: 2.35,
   [EnemyType.SEA_GIANT_WARBRINGER]: 2.5,

@@ -657,6 +657,7 @@ describe('Tower roster integrity', () => {
     expect(renderEngine).toContain('[TowerType.GIANTS_COHORT_GUARD]: 2.05');
     expect(renderEngine).toContain('const scale = towerVisualBaseScale(tw);');
     expect(renderEngine).toContain('const baseScale = towerVisualBaseScale(tw);');
+    expect(renderEngine).toContain("const size = GRID.TILE * enemySpriteSizeTiles(e) * ((e as any).__renderScale ?? 1);");
     expect(renderEngine).toContain("const isGiantArrow = p.spriteKey === 'PROJ_GIANT_ARROW';");
     expect(renderEngine).toContain('const len = isGiantArrow ? 18 : 12;');
     expect(renderEngine).toContain('isGiantArrow ? 42');

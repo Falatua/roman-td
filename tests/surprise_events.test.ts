@@ -250,7 +250,7 @@ describe('Surprise event spawn redirect — flyer guard (2026-05-19)', () => {
       expect(def.speed).toBeLessThanOrEqual(0.62);
       expect(def.baseHp).toBeGreaterThan(previousHp);
       previousHp = def.baseHp;
-      const size = type === EnemyType.BONEWING_DRAKE ? 2.6 : type === EnemyType.GRAVE_LEGION_DRAGON ? 2.8 : 3.0;
+      const size = type === EnemyType.BONEWING_DRAKE ? 3.0 : type === EnemyType.GRAVE_LEGION_DRAGON ? 3.3 : 3.6;
       expect(size).toBeGreaterThan(previousSize);
       previousSize = size;
     }

@@ -22,6 +22,7 @@ describe('enemy sprite scale', () => {
       EnemyType.BONEWING_DRAKE,
       EnemyType.GRAVE_LEGION_DRAGON,
       EnemyType.DREAD_UPRISING_DRAGON,
+      EnemyType.STORMTIDE_WYVERN_COMMANDER,
       EnemyType.FIRE_GIANT,
       EnemyType.SEA_GIANT,
       EnemyType.SEA_GIANT_WARBRINGER,
@@ -45,6 +46,13 @@ describe('enemy sprite scale', () => {
       .toBeGreaterThan(enemySpriteSizeTiles({ type: EnemyType.BONEWING_DRAKE }));
     expect(enemySpriteSizeTiles({ type: EnemyType.DREAD_UPRISING_DRAGON }))
       .toBeGreaterThan(enemySpriteSizeTiles({ type: EnemyType.GRAVE_LEGION_DRAGON }));
+  });
+
+  it('gives every dragon-class enemy a clearly oversized map footprint', () => {
+    expect(enemySpriteSizeTiles({ type: EnemyType.BONEWING_DRAKE })).toBe(3.0);
+    expect(enemySpriteSizeTiles({ type: EnemyType.GRAVE_LEGION_DRAGON })).toBe(3.3);
+    expect(enemySpriteSizeTiles({ type: EnemyType.DREAD_UPRISING_DRAGON })).toBe(3.6);
+    expect(enemySpriteSizeTiles({ type: EnemyType.STORMTIDE_WYVERN_COMMANDER })).toBe(2.5);
   });
 
   it('preserves special non-giant sizing fallbacks', () => {

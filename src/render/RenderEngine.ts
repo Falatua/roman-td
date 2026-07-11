@@ -4703,7 +4703,7 @@ export class RenderEngine {
         sp.anchor.set(0.5);
         // Initial-claim sizing matches the per-frame sizing logic below
         // so large enemies don't pop in at the wrong size for frame one.
-        const size = GRID.TILE * enemySpriteSizeTiles(e);
+        const size = GRID.TILE * enemySpriteSizeTiles(e) * ((e as any).__renderScale ?? 1);
         sp.width = size; sp.height = size;
         const hp = new Graphics();
         const statusBar = new Container();
