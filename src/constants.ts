@@ -68,13 +68,13 @@ export const ECONOMY = {
   // stockpile a cushion. Set to STARTING_LIVES so you can never exceed the
   // amount you started with.
   MAX_LIVES: 30,
-  STARTING_GOLD: 100,
+  STARTING_GOLD: 150,
   // 30-WAVE CAMPAIGN POOL CURVE. The first 8 levels preserve the current
   // economy feel; L9-L10 are luxury late-run upgrades with premium prices and
   // stronger T5 odds for players who commit hard to prospect quality.
   // 2026-05 v6: pool costs bumped ~35% so reaching the apex of the curve
   // is a real investment, not an inevitability. L8 was 200g; v6 set 270g.
-  // 2026-05 v10: another +10% across the board — the 100g starting purse
+  // 2026-05 v10: another +10% across the board. The starting purse
   // already accelerates the early curve, so the per-step cost needs to
   // rise to keep high-pool investment a real commitment. Rounded to whole gold.
   // 2026-06-23 — prices ~1.85x to match the ~1.86x gold income from the

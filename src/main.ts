@@ -2741,7 +2741,7 @@ async function boot() {
   (state as any).ghostPath = path.slice();
   state.flyerPath = buildFlyerPath();
   state.draw = []; // unused in Gem TD mode
-  state.gold = ECONOMY.STARTING_GOLD;     // 10g — enough for an early stone-maze + a couple of pool draws
+  state.gold = ECONOMY.STARTING_GOLD;     // Canonical Solo starting purse.
 
   let firstRoundBannerQueued = false;
   function queueFirstRoundBanner() {

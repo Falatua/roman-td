@@ -8,6 +8,10 @@ import { QUESTS } from '../src/systems/QuestSystem';
 const ADD_BOSS_TYPES = new Set(['WAR_ELEPHANT', 'UNDEAD_WAR_ELEPHANT']);
 
 describe('30-wave Solo economy envelope', () => {
+  it('starts every Solo campaign with 150 gold', () => {
+    expect(ECONOMY.STARTING_GOLD).toBe(150);
+  });
+
   it('keeps a perfect early opener below the old runaway 700g feel', () => {
     let kills = 0;
     let waveGold = 0;
@@ -44,7 +48,8 @@ describe('30-wave Solo economy envelope', () => {
 
     const perfectOpenerGold = ECONOMY.STARTING_GOLD + kills + waveGold + bossBounties + questGold + perfectGold;
     expect(perfectGold).toBe(40);
-    expect(perfectOpenerGold).toBeLessThan(550);
+    expect(perfectOpenerGold).toBe(559);
+    expect(perfectOpenerGold).toBeLessThan(600);
   });
 
   it('keeps guaranteed authored income below the premium-buyout threshold', () => {
@@ -71,8 +76,8 @@ describe('30-wave Solo economy envelope', () => {
     const guaranteed = ECONOMY.STARTING_GOLD + goldKills + waveGold + majorBossBounties;
     expect(authoredKills).toBe(2949);
     expect(goldKills).toBe(2919);
-    expect(guaranteed).toBe(3996);
-    expect(guaranteed).toBeLessThan(4000);
+    expect(guaranteed).toBe(4046);
+    expect(guaranteed).toBeLessThan(4100);
   });
 
   it('keeps ordinary random drops rare outside bosses, commanders, and events', () => {
