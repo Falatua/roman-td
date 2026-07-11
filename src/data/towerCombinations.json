@@ -201,11 +201,11 @@
       },
       {
         "type": "VELITES",
-        "minTier": 4
+        "minTier": 3
       },
       {
         "type": "SAGITTARIUS",
-        "minTier": 4
+        "minTier": 3
       }
     ],
     "cost": 50
@@ -333,10 +333,6 @@
       },
       {
         "type": "AUGUR",
-        "minTier": 3
-      },
-      {
-        "type": "HARUSPEX",
         "minTier": 3
       }
     ],

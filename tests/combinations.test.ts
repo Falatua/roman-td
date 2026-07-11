@@ -478,7 +478,10 @@ describe('Recipe combo detection', () => {
     const expectedBoosted: Partial<Record<TowerType, number>> = {
       [TowerType.WAR_CHARIOT]: 112.0,
       [TowerType.INFERNO_CART]: 60.5,
-      [TowerType.FROZEN_LEGION]: 175.0,
+      // 2026-07-11 — 175 → 200: the combo difficulty↔power audit put Frozen
+      // Legion at 177 expected draws (40th hardest of 53) for rank-40 power;
+      // the freeze utility alone wasn't carrying that price.
+      [TowerType.FROZEN_LEGION]: 200.0,
       [TowerType.JULIUS_CAESAR]: 140.0,
       [TowerType.GOD_OF_WAR]: 350.0,
       [TowerType.TURMA_LANCERS]: 155.0,
