@@ -19,7 +19,7 @@ import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
 import { spawnEnemy } from './EnemySystem';
 import { generateEndlessWave, EndlessWaveConfig, endlessClearScore } from './EndlessMode';
-import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, clearSurpriseEventsForWaveEnd, spawnAtSurpriseEventPoint, notifySurpriseEventWaveEnded } from './SurpriseEvents';
+import { maybeTriggerSurpriseEventForWave, maybeTriggerEndlessSurpriseEvent, clearSurpriseEventsForWaveEnd, spawnAtSurpriseEventPoint, spawnUprisingDragonAtEventPoint, notifySurpriseEventWaveEnded } from './SurpriseEvents';
 import { injectBossEscortCommanders, injectCampaignCommanders, isCommanderType } from './CommanderSystem';
 import { campaignRelicWaveGoldMult } from './CampaignRelicSystem';
 import { prepareHeroAbilitiesForWave } from './HeroSystem';
@@ -365,6 +365,10 @@ export function startWave(state: GameStateShape) {
   // 8 seconds into the wave if SURPRISE_EVENT_SCHEDULE matches. Cooldown
   // gates inside the helper; W7 / W11 / W14 / W18 are the campaign hits.
   maybeTriggerSurpriseEventForWave(state);
+  // Surprise events may append event-only elites after the authored wave
+  // roster has been counted. Refresh the HUD denominator so Uprising giants
+  // and dragons cannot drive "enemies remaining" below zero.
+  (state as any).totalEnemiesThisWave = state.spawnQueue.length + state.enemies.size;
 }
 
 export function tickSpawns(state: GameStateShape, dt: number) {
@@ -453,7 +457,9 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // produced the auto-death this guard fixes. Flyers now always
     // spawn from the normal flyer cave entry regardless of any active
     // surprise event.
-    if (!isBossSpawn && !isFlyerSpawn && !fromCaveB && !fromOcean) {
+    if (item.uprisingDragon && isFlyerSpawn) {
+      spawnUprisingDragonAtEventPoint(state, e);
+    } else if (!isBossSpawn && !isFlyerSpawn && !fromCaveB && !fromOcean) {
       spawnAtSurpriseEventPoint(state, e, surpriseSpawnIdx);
       surpriseSpawnIdx++;
     }

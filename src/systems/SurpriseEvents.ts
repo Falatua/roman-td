@@ -141,6 +141,7 @@ export function maybeTriggerSurpriseEventForWave(state: GameStateShape): void {
   // single-file trickle that didn't look like a true uprising.
   if (kind === SurpriseEventKind.UPRISING && state.activeSurpriseEvent?.waveOverride) {
     injectDeadUprisingTitans(state);
+    injectDeadUprisingDragon(state);
     clusterUprisingSpawnSchedule(state);
   }
 }
@@ -167,6 +168,22 @@ function injectDeadUprisingTitans(state: GameStateShape): void {
     state.spawnQueue.push({ type, spawnAt });
     spawnAt += UPRISING_INTER_BURST_GAP;
   }
+}
+
+export function deadUprisingDragonTypeForWave(wave: number): EnemyType {
+  if (wave >= 23) return EnemyType.DREAD_UPRISING_DRAGON;
+  if (wave >= 14) return EnemyType.GRAVE_LEGION_DRAGON;
+  return EnemyType.BONEWING_DRAKE;
+}
+
+function injectDeadUprisingDragon(state: GameStateShape): void {
+  const spawnAt = Math.max(VFX_RISE_SECONDS, ...state.spawnQueue.map(item => Number(item.spawnAt ?? 0)))
+    + UPRISING_INTER_BURST_GAP;
+  state.spawnQueue.push({
+    type: deadUprisingDragonTypeForWave(state.wave),
+    spawnAt,
+    uprisingDragon: true
+  });
 }
 
 // Called right after an INVASION event is scheduled in waveOverride
@@ -559,6 +576,45 @@ export function spawnAtSurpriseEventPoint(
       enemy.prevY = enemy.y;
     }
   }
+  attachSurpriseSpawnTags(state, enemy, ev, point);
+  point.fired = true;
+  ev.lastSpawnFiredAt = state.tick;
+  ev.spawnedEnemyIds.add(enemy.id);
+  return true;
+}
+
+// Dead Uprising dragons are the one intentional exception to the general
+// surprise-event flyer guard. They emerge from the center urn, then approach
+// a safe flyer-path join index. A ground path index is never applied to them.
+export function spawnUprisingDragonAtEventPoint(state: GameStateShape, enemy: any): boolean {
+  const ev = state.activeSurpriseEvent;
+  if (!ev || !ev.waveOverride || ev.kind !== SurpriseEventKind.UPRISING || !enemy?.isFlyer) return false;
+  const point = ev.spawnPoints[0];
+  if (!point || state.flyerPath.length < 2) return false;
+
+  const lastSafeIndex = Math.max(0, state.flyerPath.length - 3);
+  let joinIndex = 0;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (let i = 0; i <= lastSafeIndex; i++) {
+    const candidate = state.flyerPath[i];
+    const distance = Math.hypot(candidate.x - point.vfxX, candidate.y - point.vfxY);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      joinIndex = i;
+    }
+  }
+
+  const join = state.flyerPath[joinIndex];
+  enemy.pathIndex = joinIndex;
+  enemy.pathProgress = 0;
+  enemy.x = point.vfxX;
+  enemy.y = point.vfxY;
+  enemy.prevX = enemy.x;
+  enemy.prevY = enemy.y;
+  enemy.__approachActive = true;
+  enemy.__approachTargetX = join.x;
+  enemy.__approachTargetY = join.y;
+  enemy.__uprisingDragon = true;
   attachSurpriseSpawnTags(state, enemy, ev, point);
   point.fired = true;
   ev.lastSpawnFiredAt = state.tick;

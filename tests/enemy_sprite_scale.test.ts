@@ -19,6 +19,9 @@ describe('enemy sprite scale', () => {
       EnemyType.UNDEAD_CYCLOPS,
       EnemyType.DREAD_UNDEAD_GIANT,
       EnemyType.DREAD_UNDEAD_CYCLOPS,
+      EnemyType.BONEWING_DRAKE,
+      EnemyType.GRAVE_LEGION_DRAGON,
+      EnemyType.DREAD_UPRISING_DRAGON,
       EnemyType.FIRE_GIANT,
       EnemyType.SEA_GIANT,
       EnemyType.SEA_GIANT_WARBRINGER,
@@ -38,6 +41,10 @@ describe('enemy sprite scale', () => {
       .toBeGreaterThan(enemySpriteSizeTiles({ type: EnemyType.SEA_GIANT }));
     expect(enemySpriteSizeTiles({ type: EnemyType.SEA_GIANT_WARBRINGER }))
       .toBeGreaterThan(enemySpriteSizeTiles({ type: EnemyType.UNDEAD_GIANT }));
+    expect(enemySpriteSizeTiles({ type: EnemyType.GRAVE_LEGION_DRAGON }))
+      .toBeGreaterThan(enemySpriteSizeTiles({ type: EnemyType.BONEWING_DRAKE }));
+    expect(enemySpriteSizeTiles({ type: EnemyType.DREAD_UPRISING_DRAGON }))
+      .toBeGreaterThan(enemySpriteSizeTiles({ type: EnemyType.GRAVE_LEGION_DRAGON }));
   });
 
   it('preserves special non-giant sizing fallbacks', () => {

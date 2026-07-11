@@ -144,6 +144,9 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.UNDEAD_CYCLOPS]: { melee: 0.30, ranged: 0.42, slow: 0.18, fire: 1.20, burn: 1.20, poison: 0, bleed: 0, siege: 1.15, divine: 1.35 },
   [EnemyType.DREAD_UNDEAD_GIANT]: { melee: 0.22, ranged: 0.34, slow: 0.12, fire: 1.15, burn: 1.15, poison: 0, bleed: 0, siege: 1.05, divine: 1.45 },
   [EnemyType.DREAD_UNDEAD_CYCLOPS]: { melee: 0.20, ranged: 0.30, slow: 0.10, fire: 1.10, burn: 1.10, poison: 0, bleed: 0, siege: 1.10, divine: 1.50 },
+  [EnemyType.BONEWING_DRAKE]: { melee: 0.55, ranged: 0.75, slow: 0.45, fire: 1.15, burn: 1.15, poison: 0, bleed: 0.55, siege: 1.15, divine: 1.35 },
+  [EnemyType.GRAVE_LEGION_DRAGON]: { melee: 0.40, ranged: 0.60, slow: 0.25, fire: 1.05, burn: 1.05, poison: 0, bleed: 0.45, siege: 1.20, divine: 1.45 },
+  [EnemyType.DREAD_UPRISING_DRAGON]: { melee: 0.32, ranged: 0.48, slow: 0.18, fire: 1.00, burn: 1.00, poison: 0, bleed: 0.35, siege: 1.15, divine: 1.55 },
 
   // SUPER DEMONS — fire-immune across the board (lore: born from
   // hellfire). Poison and bleed land HARDER on demons (×1.30 / ×1.25)

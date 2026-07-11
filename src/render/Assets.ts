@@ -99,6 +99,8 @@ const MANIFEST: Record<string, string> = {
   UNDEAD_SPEARMAN: 'e3_undead_spearman.png', GHOST_RIDER: 'e3_ghost_rider.png', UNDEAD_WAR_ELEPHANT: 'e3_undead_war_elephant.png',
   UNDEAD_GIANT: 'e3_undead_giant.png', UNDEAD_CYCLOPS: 'e3_undead_cyclops.png',
   DREAD_UNDEAD_GIANT: 'e3_dread_undead_giant.png', DREAD_UNDEAD_CYCLOPS: 'e3_dread_undead_cyclops.png',
+  BONEWING_DRAKE: 'e3_bonewing_drake.png', GRAVE_LEGION_DRAGON: 'e3_grave_legion_dragon.png',
+  DREAD_UPRISING_DRAGON: 'e3_dread_uprising_dragon.png',
   DEMON_HELLHOUND: 'e3_demon_hellhound.png', CELTIC_FIRE_DEMON: 'e3_celtic_fire_demon.png', SHADOW_CAVALRY: 'e3_shadow_cavalry.png',
   DEMON_LEGATE: 'e3_demon_legate.png', DAEMON_IMPERATOR: 'e3_daemon_imperator.png', ARCHITECTUS: 'e3_architectus.png',
   IRON_PHALANX: 'e2_iron_phalanx.png',

@@ -40,7 +40,7 @@ export interface GameStateShape {
   // UI hint string
   hint: string;
   // Whether wave is currently spawning
-  spawnQueue: { type: string; spawnAt: number; bossEscort?: boolean; caveB?: boolean; ocean?: boolean; oceanIndex?: number }[];
+  spawnQueue: { type: string; spawnAt: number; bossEscort?: boolean; caveB?: boolean; ocean?: boolean; oceanIndex?: number; uprisingDragon?: boolean }[];
   spawnElapsed: number;
   // Wave-end accounting
   enemiesKilledThisWave: number;

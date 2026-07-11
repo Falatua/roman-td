@@ -12,12 +12,12 @@
 // all 8 leaked on spawn AND the 27 UNDEAD_CELTs reanimated/rebirthed
 // cascade pushed the player to 0 lives without a fair shot.
 import { describe, it, expect } from 'vitest';
-import { deadUprisingTitanTypesForWave, GATES_OF_HELL_MIN_HEALTH, maybeTriggerSurpriseEventForWave, SURPRISE_EVENT_SCHEDULE, spawnAtSurpriseEventPoint, surpriseEventHpMult, tickSurpriseEvents } from '../src/systems/SurpriseEvents';
-import { EnemyType, SurpriseEventKind, TileType, TowerType } from '../src/types';
+import { deadUprisingDragonTypeForWave, deadUprisingTitanTypesForWave, GATES_OF_HELL_MIN_HEALTH, maybeTriggerSurpriseEventForWave, SURPRISE_EVENT_SCHEDULE, spawnAtSurpriseEventPoint, spawnUprisingDragonAtEventPoint, surpriseEventHpMult, tickSurpriseEvents } from '../src/systems/SurpriseEvents';
+import { EnemyType, GamePhase, SurpriseEventKind, TileType, TowerType } from '../src/types';
 import { createGameState } from '../src/GameState';
 import { GRID } from '../src/constants';
 import { initializeGrid } from '../src/systems/GridManager';
-import { buildGroundPath } from '../src/systems/PathFinder';
+import { buildFlyerPath, buildGroundPath } from '../src/systems/PathFinder';
 import { createTower } from '../src/systems/TowerSystem';
 import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
 import waypointsData from '../src/data/waypoints.json';
@@ -73,6 +73,7 @@ function makeEventState(wave: number) {
   s.wave = wave;
   s.tick = 0;
   s.groundPath = buildGroundPath(s) ?? [];
+  s.flyerPath = buildFlyerPath();
   return s;
 }
 
@@ -223,6 +224,57 @@ describe('Surprise event spawn redirect — flyer guard (2026-05-19)', () => {
         expect(queuedTypes.filter((type: EnemyType) => type === EnemyType.UNDEAD_CYCLOPS)).toHaveLength(5);
       }
     }
+  });
+
+  it('adds one progressively stronger undead flying dragon to every Dead Uprising', () => {
+    const checks = [
+      { wave: 11, type: EnemyType.BONEWING_DRAKE },
+      { wave: 14, type: EnemyType.GRAVE_LEGION_DRAGON },
+      { wave: 23, type: EnemyType.DREAD_UPRISING_DRAGON }
+    ];
+    let previousHp = 0;
+    let previousSize = 0;
+    for (const { wave, type } of checks) {
+      expect(deadUprisingDragonTypeForWave(wave)).toBe(type);
+      const s: any = makeEventState(wave);
+      s.spawnQueue = Array.from({ length: 8 }, () => ({ type: EnemyType.UNDEAD_CELT, spawnAt: 0 }));
+      maybeTriggerSurpriseEventForWave(s);
+      const dragonSpawns = s.spawnQueue.filter((item: any) => item.uprisingDragon);
+      expect(dragonSpawns).toHaveLength(1);
+      expect(dragonSpawns[0].type).toBe(type);
+      const def = (enemiesData as any)[type];
+      expect(def.isFlyer).toBe(true);
+      expect(def.isElite).toBe(true);
+      expect(def.isBoss).toBe(false);
+      expect(def.livesCost).toBe(5);
+      expect(def.speed).toBeLessThanOrEqual(0.62);
+      expect(def.baseHp).toBeGreaterThan(previousHp);
+      previousHp = def.baseHp;
+      const size = type === EnemyType.BONEWING_DRAKE ? 2.6 : type === EnemyType.GRAVE_LEGION_DRAGON ? 2.8 : 3.0;
+      expect(size).toBeGreaterThan(previousSize);
+      previousSize = size;
+    }
+  });
+
+  it('routes the uprising dragon from the center urn onto a safe flyer-path index', () => {
+    const s: any = makeEventState(14);
+    s.spawnQueue = Array.from({ length: 8 }, () => ({ type: EnemyType.UNDEAD_CELT, spawnAt: 0 }));
+    maybeTriggerSurpriseEventForWave(s);
+    const dragon = spawnEnemy(s, EnemyType.GRAVE_LEGION_DRAGON, 1);
+    const ok = spawnUprisingDragonAtEventPoint(s, dragon);
+    expect(ok).toBe(true);
+    expect((dragon as any).__uprisingDragon).toBe(true);
+    expect((dragon as any).__approachActive).toBe(true);
+    expect(dragon.pathIndex).toBeGreaterThanOrEqual(0);
+    expect(dragon.pathIndex).toBeLessThan(s.flyerPath.length - 1);
+    expect(dragon.x).toBe(s.activeSurpriseEvent.spawnPoints[0].vfxX);
+    expect(dragon.y).toBe(s.activeSurpriseEvent.spawnPoints[0].vfxY);
+
+    const livesBefore = s.lives;
+    s.phase = GamePhase.WAVE_PHASE;
+    tickEnemies(s, 0.1);
+    expect(s.lives).toBe(livesBefore);
+    expect(s.enemies.has(dragon.id)).toBe(true);
   });
 
   it('the guard catches ALL queue indices for flyers (not just idx 0)', () => {
