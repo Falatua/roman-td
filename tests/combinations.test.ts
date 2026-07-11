@@ -21,6 +21,14 @@ import comboData from '../src/data/towerCombinations.json';
 import towersData from '../src/data/towers.json';
 import { buyTraps, placeTrap } from '../src/systems/TrapSystem';
 import { evaluateQuests } from '../src/systems/QuestSystem';
+import {
+  BASE_COMBO_RECIPE_COST,
+  SUPER_COMBO_RECIPE_COST,
+  OMEGA_COMBO_RECIPE_COST,
+  SUPER_COMBO_RECIPE_RESULTS,
+  OMEGA_COMBO_RECIPE_RESULTS,
+  comboRecipeCost
+} from '../src/systems/ComboPricing';
 
 function bootstrapState() {
   const s = createGameState();
@@ -39,27 +47,16 @@ function placeTower(state: any, type: TowerType, tier: 1|2|3|4|5, x: number, y: 
   return t;
 }
 
-const BASE_COMBO_RECIPE_COST = 50;
-const SUPER_COMBO_RECIPE_COST = 200;
-const OMEGA_COMBO_RECIPE_COST = 500;
-
 function isOmegaComboRecipeResult(result: string): boolean {
-  return (towersData as any)[result]?.omega === true;
+  return OMEGA_COMBO_RECIPE_RESULTS.has(result);
 }
 
 function isSuperComboRecipeResult(result: string): boolean {
-  if (result === TowerType.MARS_VICTOR) return true;
-  const ability = String((towersData as any)[result]?.ability ?? '').toUpperCase();
-  return ability.includes('SUPERCOMBO') ||
-    ability.includes('SUPER COMBO') ||
-    ability.includes('COMBO-OF-COMBO') ||
-    ability.includes('COMBOS-OF-COMBOS');
+  return SUPER_COMBO_RECIPE_RESULTS.has(result);
 }
 
 function expectedRecipeCost(result: string): number {
-  if (isOmegaComboRecipeResult(result)) return OMEGA_COMBO_RECIPE_COST;
-  if (isSuperComboRecipeResult(result)) return SUPER_COMBO_RECIPE_COST;
-  return BASE_COMBO_RECIPE_COST;
+  return comboRecipeCost(result);
 }
 
 function installImmediateGoldQuestPayout(state: any) {
@@ -534,7 +531,34 @@ describe('Recipe combo detection', () => {
       else if (isSuperComboRecipeResult(recipe.result)) seen.super++;
       else seen.base++;
     }
-    expect(seen).toEqual({ base: 47, super: 16, omega: 2 });
+    expect(seen).toEqual({ base: 41, super: 22, omega: 2 });
+  });
+
+  it('charges the full 200g when Hannibal\'s Nightmare is actually created', () => {
+    const s = bootstrapState();
+    s.gold = SUPER_COMBO_RECIPE_COST;
+    const siege = placeTower(s, TowerType.SIEGE_ONAGER, 4, 5, 5);
+    placeTower(s, TowerType.SCORPION_BOLT, 2, 5, 6);
+    const combo = scanCombos(s).find(c => c.result === TowerType.HANNIBALS_NIGHTMARE && !c.isSameTierMerge);
+
+    expect(combo?.cost).toBe(SUPER_COMBO_RECIPE_COST);
+    expect(executeCombo(s, combo!, siege.id)).toBe(true);
+    expect(s.gold).toBe(0);
+    expect(Array.from(s.towers.values()).some(t => t.type === TowerType.HANNIBALS_NIGHTMARE)).toBe(true);
+  });
+
+  it('refuses Hannibal\'s Nightmare at 199g without consuming its ingredients', () => {
+    const s = bootstrapState();
+    s.gold = SUPER_COMBO_RECIPE_COST - 1;
+    const siege = placeTower(s, TowerType.SIEGE_ONAGER, 4, 5, 5);
+    const bolt = placeTower(s, TowerType.SCORPION_BOLT, 2, 5, 6);
+    const combo = scanCombos(s).find(c => c.result === TowerType.HANNIBALS_NIGHTMARE && !c.isSameTierMerge);
+
+    expect(executeCombo(s, combo!, siege.id)).toBe(false);
+    expect(s.gold).toBe(SUPER_COMBO_RECIPE_COST - 1);
+    expect(s.towers.has(siege.id)).toBe(true);
+    expect(s.towers.has(bolt.id)).toBe(true);
+    expect(s.hint).toContain('need 200');
   });
 
   it('keeps legendary item evolutions out of paid recipe conversions', () => {

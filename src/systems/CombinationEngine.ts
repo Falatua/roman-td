@@ -27,6 +27,7 @@ import towersData from '../data/towers.json';
 import { canEquipItemOnDamageType } from './ItemRules';
 import { DamageType } from '../types';
 import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
+import { comboRecipeCost } from './ComboPricing';
 
 // 2026-06-25 — MARS VICTOR ingredient matching. The recipe lists the six
 // CHAMPION_* heroes, but Mercator never sells the champion matching the
@@ -237,7 +238,9 @@ export function scanCombos(state: GameStateShape): AvailableCombo[] {
         recipeIndex: idx,
         result: recipe.result as TowerType,
         resultTier: inheritedTier,
-        cost: recipe.cost,
+        // Resolve from the result class so the actual charge cannot drift
+        // from the advertised base / Supercombo / Omega price bands.
+        cost: comboRecipeCost(recipe.result),
         ingredients: picked
       });
     }

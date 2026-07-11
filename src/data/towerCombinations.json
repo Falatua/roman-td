@@ -227,7 +227,7 @@
         "minTier": 4
       }
     ],
-    "cost": 50
+    "cost": 200
   },
   {
     "result": "HANNIBALS_NIGHTMARE",
@@ -242,7 +242,7 @@
         "minTier": 2
       }
     ],
-    "cost": 50
+    "cost": 200
   },
   {
     "result": "GOD_OF_WAR",
@@ -261,7 +261,7 @@
         "minTier": 4
       }
     ],
-    "cost": 50
+    "cost": 200
   },
   {
     "result": "VEXILLATION",
@@ -378,7 +378,7 @@
         "minTier": 4
       }
     ],
-    "cost": 50
+    "cost": 200
   },
   {
     "result": "TRIUMPHATOR",
@@ -397,7 +397,7 @@
         "minTier": 4
       }
     ],
-    "cost": 50
+    "cost": 200
   },
   {
     "result": "PONTIFEX_MAXIMUS",
@@ -416,7 +416,7 @@
         "minTier": 4
       }
     ],
-    "cost": 50
+    "cost": 200
   },
   {
     "result": "TURMA_LANCERS",
