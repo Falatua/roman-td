@@ -206,6 +206,15 @@ export function itemFamily(itemId: ItemId): ItemFamily {
 
 export const AURA_ITEM_RANDOM_WEIGHT = 0.10;
 export const OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT = 0.62;
+// 2026-07-11 balance — DoT items are downweighted in RANDOM drops and shop
+// rolls. Percent-maxHP DoTs ride enemy-HP inflation, so by W24-30 a single
+// cheap applicator outputs more than most towers until the shared 7%/sec
+// aggregate cap binds; making them a rarer find keeps the archetype strong
+// when you land one without every run drowning in poison blades.
+// Guaranteed paths are intentionally unaffected: specific boss trophies
+// (direct map) and event reward choices (SOULFIRE_BRAND is Uprising-only,
+// INFERNO_STANDARD is Gates-of-Hell-only — neither sits in ordinary pools).
+export const DOT_ITEM_RANDOM_WEIGHT = 0.40;
 
 const OCEAN_SPECIALIST_ITEMS = new Set<string>([
   'BRINEHOOK_ROPE',
@@ -213,6 +222,21 @@ const OCEAN_SPECIALIST_ITEMS = new Set<string>([
   'AEGEAN_PEARL',
   'STORMGLASS_AMPHORA',
   'NEPTUNES_TRIDENT'
+]);
+
+// Every ordinary-pool item that applies a BURN / POISON / BLEED DoT on hit.
+// Kept as an explicit list (not the SPECIAL family, which also holds
+// non-DoT procs like Executioner's Falx and Concussive Warhead).
+const DOT_ITEMS = new Set<string>([
+  'BARBED_GLADIUS',        // COMMON  · bleed
+  'FIRE_OIL_FLASK',        // UNCOMMON · burn
+  'POISONED_BLADE',        // UNCOMMON · poison
+  'VESTAL_PYRE',           // UNCOMMON · burn
+  'VENOM_TIPPED_ARROWS',   // UNCOMMON · poison
+  'SERPENT_AMULET',        // UNCOMMON · poison
+  'WITCHS_VENOM',          // RARE     · poison
+  'ALPHA_PACK_FANG',       // LEGENDARY · bleed
+  'FALCATA_BLADE'          // LEGENDARY · bleed
 ]);
 
 export function isAuraItem(itemId: ItemId | string): boolean {
@@ -223,10 +247,15 @@ export function isOceanSpecialistItem(itemId: ItemId | string): boolean {
   return OCEAN_SPECIALIST_ITEMS.has(String(itemId));
 }
 
+export function isDotItem(itemId: ItemId | string): boolean {
+  return DOT_ITEMS.has(String(itemId));
+}
+
 export function itemRandomSelectionWeight(itemId: ItemId | string): number {
   let weight = 1;
   if (isAuraItem(itemId)) weight *= AURA_ITEM_RANDOM_WEIGHT;
   if (isOceanSpecialistItem(itemId)) weight *= OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT;
+  if (isDotItem(itemId)) weight *= DOT_ITEM_RANDOM_WEIGHT;
   return weight;
 }
 

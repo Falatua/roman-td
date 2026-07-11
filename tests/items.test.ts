@@ -2,7 +2,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
-import { AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, itemRandomSelectionWeight, itemEquipMode } from '../src/systems/ItemRules';
+import { AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, DOT_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, isDotItem, itemRandomSelectionWeight, itemEquipMode } from '../src/systems/ItemRules';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { TowerType } from '../src/types';
 import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop } from '../src/systems/LootSystem';
@@ -205,6 +205,18 @@ describe('Loot drop rolling', () => {
     for (const id of ['SHARPENED_BLADE', 'LICTOR_FASCES', 'SKYPIERCER_BOLTS', 'JUPITERS_SKYFIRE']) {
       expect(isAuraItem(id), id).toBe(false);
       expect(itemRandomSelectionWeight(id), id).toBe(1);
+    }
+    // 2026-07-11 — DoT items are rarer finds in random drops and shop rolls.
+    // Explicit list (not the SPECIAL family); event-exclusive DoT rewards
+    // (Soulfire Brand, Inferno Standard) are untouched since they never
+    // enter ordinary pools.
+    expect(DOT_ITEM_RANDOM_WEIGHT).toBe(0.40);
+    for (const id of ['BARBED_GLADIUS', 'FIRE_OIL_FLASK', 'POISONED_BLADE', 'VESTAL_PYRE', 'VENOM_TIPPED_ARROWS', 'SERPENT_AMULET', 'WITCHS_VENOM', 'ALPHA_PACK_FANG', 'FALCATA_BLADE']) {
+      expect(isDotItem(id), id).toBe(true);
+      expect(itemRandomSelectionWeight(id), id).toBe(DOT_ITEM_RANDOM_WEIGHT);
+    }
+    for (const id of ['SOULFIRE_BRAND', 'INFERNO_STANDARD', 'SHARPENED_BLADE', 'EXECUTIONERS_FALX', 'CONCUSSIVE_WARHEAD']) {
+      expect(isDotItem(id), id).toBe(false);
     }
     expect(OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT).toBe(0.62);
     for (const id of ['BRINEHOOK_ROPE', 'TIDEPIERCER_HARPOON', 'AEGEAN_PEARL', 'STORMGLASS_AMPHORA', 'NEPTUNES_TRIDENT']) {
