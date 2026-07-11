@@ -236,6 +236,7 @@ const MANIFEST: Record<string, string> = {
   MAP_CORNER_SHRINE_B4:  'map_overhaul/m_corner_shrine_b4.png',
   MAP_CORNER_SHRINE_B5:  'map_overhaul/m_corner_shrine_b5.png',
   MAP_CYCLOPS_SEVERED_HEAD: 'm_cyclops_severed_head.png',
+  MAP_GATE_CYCLOPS_DEVOURING_ROMAN: 'map_overhaul/m_gate_cyclops_devouring_roman.png',
   MAP_CAVE_BONES_SCATTER: 'map_overhaul/m_cave_bones_scatter.png',
   MAP_CAVE_SEVERED_HEADS: 'map_overhaul/m_cave_severed_heads.png',
   MAP_CAVE_FALLEN_SKELETON: 'map_overhaul/m_cave_fallen_skeleton.png',

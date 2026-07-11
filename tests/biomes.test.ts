@@ -386,6 +386,36 @@ describe('Top-right Cyclops trophy prop', () => {
   });
 });
 
+describe('Rome gate fallen Cyclops tableau', () => {
+  it('ships a distinct transparent half-Cyclops and anchors it five tiles left of Rome', async () => {
+    const sharp = require('sharp');
+    const file = assetFileFor('MAP_GATE_CYCLOPS_DEVOURING_ROMAN');
+    expect(file).toBe('map_overhaul/m_gate_cyclops_devouring_roman.png');
+    const img = sharp(path.join(__dirname, '../public/assets/sprites', file!));
+    const meta = await img.metadata();
+    expect(meta.width).toBe(512);
+    expect(meta.height).toBe(384);
+    expect(meta.hasAlpha).toBe(true);
+
+    const raw = await img.ensureAlpha().raw().toBuffer();
+    let transparent = 0;
+    let chromaGreen = 0;
+    for (let i = 0; i < raw.length; i += 4) {
+      if (raw[i + 3] < 8) transparent++;
+      if (raw[i] < 80 && raw[i + 1] > 150 && raw[i + 2] < 80 && raw[i + 3] > 8) chromaGreen++;
+    }
+    expect(transparent).toBeGreaterThan(512 * 384 * 0.50);
+    expect(chromaGreen).toBe(0);
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain("tex('MAP_GATE_CYCLOPS_DEVOURING_ROMAN')");
+    expect(source).toContain('gateCyclops.x = gateCx - GRID.TILE * 5');
+    expect(source).toContain('gateCyclops.y = gateCy - GRID.TILE * 1.10');
+    expect(source).toContain('gateCyclops.width = GRID.TILE * 4.90');
+    expect(source.indexOf('this.layers.bg.addChild(gateCyclops);')).toBeLessThan(source.indexOf('const gateFrame = new Graphics();'));
+  });
+});
+
 describe('Top-border undead dragon aftermath prop', () => {
   it('registers a wide transparent sprite and anchors it at the top center border', async () => {
     const sharp = require('sharp');

@@ -4021,6 +4021,20 @@ export class RenderEngine {
       gateBloodTrail.alpha = 0.90;
       this.layers.bg.addChild(gateBloodTrail);
     }
+    // Visual-only fallen Cyclops tableau. Its center is exactly five tiles
+    // left of Rome's gate; the slight upward offset keeps the blood pool on
+    // the grass instead of clipping against the bottom map border.
+    const gateCyclopsTex = tex('MAP_GATE_CYCLOPS_DEVOURING_ROMAN');
+    if (gateCyclopsTex) {
+      const gateCyclops = new Sprite(gateCyclopsTex);
+      gateCyclops.anchor.set(0.5);
+      gateCyclops.x = gateCx - GRID.TILE * 5;
+      gateCyclops.y = gateCy - GRID.TILE * 1.10;
+      gateCyclops.width = GRID.TILE * 4.90;
+      gateCyclops.height = gateCyclops.width * (gateCyclopsTex.height / Math.max(1, gateCyclopsTex.width));
+      gateCyclops.alpha = 0.98;
+      this.layers.bg.addChild(gateCyclops);
+    }
     const gateFrame = new Graphics();
     // Bigger gold glow underneath (warmth — civilization to defend)
     gateFrame.beginFill(0xd4af37, 0.24).drawCircle(gateCx, gateCy, 72).endFill();
