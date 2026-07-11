@@ -537,6 +537,33 @@ describe('Battlefield blood trails and Cyclops remains', () => {
     expect(source).toContain('GRID.TILE * 35.10');
     expect(source).toContain('GRID.TILE * 37.15');
   });
+
+  it('ships a transparent heavy splatter and places three stains at each battlefield entry', async () => {
+    const sharp = require('sharp');
+    const file = assetFileFor('MAP_BATTLE_BLOOD_SPLATTER_HEAVY');
+    expect(file).toBe('map_overhaul/m_battle_blood_splatter_heavy.png');
+    const img = sharp(path.join(__dirname, '../public/assets/sprites', file!));
+    const meta = await img.metadata();
+    expect(meta.width).toBe(256);
+    expect(meta.height).toBe(256);
+    expect(meta.hasAlpha).toBe(true);
+    const raw = await img.ensureAlpha().raw().toBuffer();
+    let transparent = 0;
+    let chromaGreen = 0;
+    for (let i = 0; i < raw.length; i += 4) {
+      if (raw[i + 3] < 8) transparent++;
+      if (raw[i] < 80 && raw[i + 1] > 180 && raw[i + 2] < 80 && raw[i + 3] > 8) chromaGreen++;
+    }
+    expect(transparent).toBeGreaterThan(256 * 256 * 0.50);
+    expect(chromaGreen).toBe(0);
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain("tex('MAP_BATTLE_BLOOD_SPLATTER_HEAVY')");
+    expect(source).toContain('const addHeavyBloodSplatter');
+    expect(source.match(/addHeavyBloodSplatter\(/g)).toHaveLength(9);
+    expect(source.match(/addHeavyBloodSplatter\(coastalDetailLayer/g)).toHaveLength(3);
+    expect(source.match(/addHeavyBloodSplatter\(this\.layers\.bg/g)).toHaveLength(6);
+  });
 });
 
 describe('Stone trail skeleton props', () => {

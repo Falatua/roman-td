@@ -3430,6 +3430,26 @@ export class RenderEngine {
       }
     }
     const battleBloodTex = tex('MAP_BATTLE_BLOOD_TRAIL');
+    const heavyBloodTex = tex('MAP_BATTLE_BLOOD_SPLATTER_HEAVY');
+    const addHeavyBloodSplatter = (
+      parent: Container,
+      x: number,
+      y: number,
+      size: number,
+      rotation: number,
+      alpha: number
+    ) => {
+      if (!heavyBloodTex) return;
+      const blood = new Sprite(heavyBloodTex);
+      blood.anchor.set(0.5);
+      blood.x = x;
+      blood.y = y;
+      blood.width = size;
+      blood.height = size * 0.82;
+      blood.rotation = rotation;
+      blood.alpha = alpha;
+      parent.addChild(blood);
+    };
     const checkpointTwo = (waypointsData.waypoints as Array<{ index: number; topLeft: { col: number; row: number } }>)
       .find(wp => wp.index === 2)?.topLeft;
     if (battleBloodTex && checkpointTwo) {
@@ -3444,6 +3464,13 @@ export class RenderEngine {
       oceanBloodTrail.rotation = -Math.PI / 2 + 0.04;
       oceanBloodTrail.alpha = 0.86;
       coastalDetailLayer.addChild(oceanBloodTrail);
+    }
+    if (checkpointTwo) {
+      const oceanBloodX = (checkpointTwo.col + 0.5) * GRID.TILE;
+      const oceanBloodY = (checkpointTwo.row + 3.0) * GRID.TILE;
+      addHeavyBloodSplatter(coastalDetailLayer, oceanBloodX + 5, oceanBloodY, GRID.TILE * 2.75, 0.08, 0.94);
+      addHeavyBloodSplatter(coastalDetailLayer, oceanBloodX - 34, oceanBloodY - 22, GRID.TILE * 1.65, -0.42, 0.91);
+      addHeavyBloodSplatter(coastalDetailLayer, oceanBloodX + 31, oceanBloodY - 42, GRID.TILE * 1.40, 0.68, 0.88);
     }
     // One cohesive, low-profile coastal ruin replaces the old cluster of
     // freestanding necromancer props. It stays visual-only and grounded in
@@ -3837,6 +3864,9 @@ export class RenderEngine {
     // pilasters flanking the entrance.
     const caveCx = waypointsData.spawn.col * GRID.TILE + GRID.TILE / 2;
     const caveCy = waypointsData.spawn.row * GRID.TILE + GRID.TILE / 2;
+    addHeavyBloodSplatter(this.layers.bg, caveCx + 58, caveCy + 30, GRID.TILE * 2.85, 0.18, 0.96);
+    addHeavyBloodSplatter(this.layers.bg, caveCx - 43, caveCy + 51, GRID.TILE * 1.70, -0.52, 0.91);
+    addHeavyBloodSplatter(this.layers.bg, caveCx + 108, caveCy + 45, GRID.TILE * 1.45, 0.76, 0.89);
     if (battleBloodTex) {
       const caveBloodTrail = new Sprite(battleBloodTex);
       caveBloodTrail.anchor.set(0.5);
@@ -3976,6 +4006,9 @@ export class RenderEngine {
     // crenellation frame + flanking pilasters + brighter gold halo.
     const gateCx = waypointsData.gate.col * GRID.TILE + GRID.TILE / 2;
     const gateCy = waypointsData.gate.row * GRID.TILE + GRID.TILE / 2;
+    addHeavyBloodSplatter(this.layers.bg, gateCx - 58, gateCy - 6, GRID.TILE * 2.95, -0.10, 0.96);
+    addHeavyBloodSplatter(this.layers.bg, gateCx + 18, gateCy + 36, GRID.TILE * 1.75, 0.54, 0.92);
+    addHeavyBloodSplatter(this.layers.bg, gateCx - 114, gateCy - 20, GRID.TILE * 1.50, -0.72, 0.89);
     if (battleBloodTex) {
       const gateBloodTrail = new Sprite(battleBloodTex);
       gateBloodTrail.anchor.set(0.5);
