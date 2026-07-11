@@ -1,4 +1,4 @@
-import { DamageType, Tower } from '../types';
+import { DamageType, GamePhase, Tower } from '../types';
 import { GameStateShape } from '../GameState';
 import { WAVE } from '../constants';
 import { canReceiveRunReward, isMajorBossRewardEnemy } from './RewardEligibility';
@@ -148,6 +148,16 @@ export function queueBossTrophyOfferForWave(state: GameStateShape, enemy: any, b
   return true;
 }
 
+export function bossTrophyWaveHasEnded(state: GameStateShape): boolean {
+  if (state.phase === GamePhase.WAVE_PHASE) return false;
+  if ((state.spawnQueue ?? []).length > 0) return false;
+  for (const enemy of state.enemies.values()) {
+    if ((enemy as any).isDpsCheck) continue;
+    if ((enemy.hp ?? 1) > 0) return false;
+  }
+  return true;
+}
+
 export function consumePendingBossTrophyOffer(state: GameStateShape): { wave: number; bossName: string } | null {
   const pending = state.pendingBossTrophyOffer ?? null;
   if (!pending) return null;
@@ -155,6 +165,11 @@ export function consumePendingBossTrophyOffer(state: GameStateShape): { wave: nu
     state.pendingBossTrophyOffer = null;
     return null;
   }
+  // A boss kill only queues the reward. Preserve that queue until the wave
+  // has actually transitioned out of combat with no remaining spawns or
+  // living enemies, so multi-boss and boss-plus-escort waves are never
+  // interrupted by the trophy modal.
+  if (!bossTrophyWaveHasEnded(state)) return null;
   state.pendingBossTrophyOffer = null;
   return pending;
 }

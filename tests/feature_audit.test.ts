@@ -1286,6 +1286,22 @@ describe('Codex modal interaction layer', () => {
 });
 
 describe('Modal ergonomics and popup stacking', () => {
+  it('keeps boss trophies queued until the complete wave-clear reward flow', () => {
+    const main = readFileSync('src/main.ts', 'utf8');
+    const trophySystem = readFileSync('src/systems/BossTrophySystem.ts', 'utf8');
+    const killQueueAt = main.indexOf('queueBossTrophyOfferForWave(state, e, enemyName(e.type as string));');
+    const waveEndAt = main.indexOf('checkWaveEnd(state, (gold) => {');
+    const modalAt = main.indexOf('showBossTrophyModal(stage, state, trophy.bossName');
+
+    expect(killQueueAt).toBeGreaterThan(0);
+    expect(waveEndAt).toBeGreaterThan(killQueueAt);
+    expect(modalAt).toBeGreaterThan(waveEndAt);
+    expect(trophySystem).toContain('if (state.phase === GamePhase.WAVE_PHASE) return false;');
+    expect(trophySystem).toContain('if ((state.spawnQueue ?? []).length > 0) return false;');
+    expect(trophySystem).toContain('if ((enemy.hp ?? 1) > 0) return false;');
+    expect(trophySystem).toContain('if (!bossTrophyWaveHasEnded(state)) return null;');
+  });
+
   it('offers Harbor Draft access only after clearing ocean-threat waves', () => {
     const main = readFileSync('src/main.ts', 'utf8');
     const harborSystem = readFileSync('src/systems/HarborSystem.ts', 'utf8');

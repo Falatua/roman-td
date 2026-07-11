@@ -35,6 +35,7 @@ import {
   bossTrophyTowerSpeedMult,
   bossTrophyTrapDamageMult,
   bossTrophyTrapRadiusMult,
+  bossTrophyWaveHasEnded,
   consumePendingBossTrophyOffer,
   queueBossTrophyOfferForWave,
   shouldOfferBossTrophy
@@ -586,7 +587,7 @@ describe('Boss trophies', () => {
     expect(s.pendingBossTrophyOffer).toBeNull();
   });
 
-  it('queues boss trophy choices until the wave-end reward flow consumes them', () => {
+  it('queues boss trophy choices until the entire wave ends', () => {
     const s = bootstrapState();
     s.wave = 24;
     const boss = { isBoss: true, isScheduledBoss: true, type: 'ANUBIS_KING' };
@@ -596,6 +597,20 @@ describe('Boss trophies', () => {
     expect(s.bossTrophyWavesClaimed).toContain(24);
     expect(shouldOfferBossTrophy(s, boss)).toBe(false);
 
+    s.phase = GamePhase.WAVE_PHASE;
+    s.spawnQueue = [{ type: EnemyType.CELTIC_FOOTMAN, spawnAt: 10 }];
+    expect(bossTrophyWaveHasEnded(s)).toBe(false);
+    expect(consumePendingBossTrophyOffer(s)).toBeNull();
+    expect(s.pendingBossTrophyOffer).toEqual({ wave: 24, bossName: 'Anubis King' });
+
+    s.spawnQueue = [];
+    s.enemies.set('escort', { id: 'escort', hp: 100 } as any);
+    expect(consumePendingBossTrophyOffer(s)).toBeNull();
+    expect(s.pendingBossTrophyOffer).not.toBeNull();
+
+    s.enemies.clear();
+    s.phase = GamePhase.BUILD_PHASE;
+    expect(bossTrophyWaveHasEnded(s)).toBe(true);
     const pending = consumePendingBossTrophyOffer(s);
     expect(pending).toEqual({ wave: 24, bossName: 'Anubis King' });
     expect(s.pendingBossTrophyOffer).toBeNull();
