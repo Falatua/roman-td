@@ -1401,6 +1401,8 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(source).toContain('calc(100vh - 8px)');
     expect(source).toContain("panel.style.setProperty('--rtd-modal-tools-reserve-top', '0px')");
     expect(source).toContain('grid-template-columns:repeat(auto-fit,minmax(180px,1fr))');
+    expect(source.match(/rtd-tower-menu-sticky-actions/g)).toHaveLength(3);
+    expect(source.match(/position:sticky;bottom:0;z-index:5/g)).toHaveLength(3);
     const html = readFileSync('index.html', 'utf8');
     expect(html).toContain('html.mobile-mode #tower-menu .rtd-tower-stats-grid');
     expect(source).toContain("bodySelector: '.rtd-tower-menu-collapse'");

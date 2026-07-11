@@ -848,7 +848,8 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   // PENDING: KEEP remains the primary action, but recipe context above explains why.
   if (t.pending && hooks.onKeep) {
     const keepRow = document.createElement('div');
-    keepRow.style.cssText = 'padding:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap';
+    keepRow.className = 'rtd-tower-menu-sticky-actions';
+    keepRow.style.cssText = `position:sticky;bottom:0;z-index:5;padding:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;background:linear-gradient(180deg,#1a1410,#0c0a08);border-top:2px solid ${tierColor};box-shadow:0 -12px 24px rgba(0,0,0,0.72)`;
     const keepBtn = mkBtn('★ KEEP THIS TOWER ★', '#3a7720');
     keepBtn.style.fontSize = '14px';
     keepBtn.style.padding = '10px 22px';
@@ -877,7 +878,8 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
 
   // Action footer
   const actions = document.createElement('div');
-  actions.style.cssText = 'display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:12px;background:linear-gradient(180deg,#1a1410,#0c0a08)';
+  actions.className = 'rtd-tower-menu-sticky-actions';
+  actions.style.cssText = `position:sticky;bottom:0;z-index:5;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:12px;background:linear-gradient(180deg,#1a1410,#0c0a08);border-top:2px solid ${tierColor};box-shadow:0 -12px 24px rgba(0,0,0,0.72)`;
   const downgradeBtn = mkBtn(canDowngrade(t) ? `DOWNGRADE (2g)` : 'DOWNGRADED', '#5a3a1a');
   if (!canDowngrade(t)) downgradeBtn.disabled = true;
   downgradeBtn.onclick = () => {
@@ -1329,7 +1331,8 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   // Close button only — no sell/move/downgrade for heroes. Mars Victor
   // fusion is surfaced by the global readiness prompt, not this panel.
   const closeRow = document.createElement('div');
-  closeRow.style.cssText = 'padding:10px;display:flex;justify-content:center;background:linear-gradient(180deg,#1a1410,#0c0a08)';
+  closeRow.className = 'rtd-tower-menu-sticky-actions';
+  closeRow.style.cssText = `position:sticky;bottom:0;z-index:5;padding:10px;display:flex;justify-content:center;background:linear-gradient(180deg,#1a1410,#0c0a08);border-top:2px solid ${tint};box-shadow:0 -12px 24px rgba(0,0,0,0.72)`;
   const closeBtn = document.createElement('button');
   closeBtn.textContent = 'CLOSE';
   closeBtn.style.cssText = 'background:#444;color:#e8d6a8;border:1px solid #5a4a30;padding:8px 22px;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:2px';
