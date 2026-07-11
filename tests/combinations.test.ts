@@ -147,6 +147,21 @@ describe('Same-tier merge detection', () => {
 });
 
 describe('Recipe combo detection', () => {
+  it('does not require Accensus for Vexillation or Praetorian Executioner', () => {
+    const recipes = comboData as Array<{ result: string; ingredients: Array<{ type: string; minTier: number }> }>;
+    const vexillation = recipes.find(recipe => recipe.result === TowerType.VEXILLATION);
+    const executioner = recipes.find(recipe => recipe.result === TowerType.PRAETORIAN_EXECUTIONER);
+
+    expect(vexillation?.ingredients).toEqual([
+      { type: TowerType.MILITES, minTier: 2 },
+      { type: TowerType.AUXILIA, minTier: 2 }
+    ]);
+    expect(executioner?.ingredients).toEqual([
+      { type: TowerType.LIBRITOR, minTier: 2 },
+      { type: TowerType.RETIARIUS, minTier: 2 }
+    ]);
+  });
+
   it('every recipe in the data file has at least one valid result tier and ingredients', () => {
     expect(comboData.length).toBeGreaterThan(0);
     for (const r of comboData) {

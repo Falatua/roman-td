@@ -274,10 +274,6 @@
       {
         "type": "AUXILIA",
         "minTier": 2
-      },
-      {
-        "type": "ACCENSUS",
-        "minTier": 2
       }
     ],
     "cost": 50
@@ -691,10 +687,6 @@
     "ingredients": [
       {
         "type": "LIBRITOR",
-        "minTier": 2
-      },
-      {
-        "type": "ACCENSUS",
         "minTier": 2
       },
       {
