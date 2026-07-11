@@ -3541,14 +3541,14 @@ export class RenderEngine {
       yOffset: number;
       alpha: number;
     }> = [
-      { at: 0.07, key: 'MAP_PATH_SKELETON_BODY', scale: 1.08, rotation: -0.20, xOffset: -2, yOffset: 1, alpha: 0.90 },
-      { at: 0.18, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.94, rotation: 0.18, xOffset: 2, yOffset: -1, alpha: 0.86 },
-      { at: 0.30, key: 'MAP_PATH_SKELETON_BODY', scale: 0.98, rotation: 0.32, xOffset: 1, yOffset: 2, alpha: 0.86 },
-      { at: 0.43, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.90, rotation: -0.28, xOffset: -1, yOffset: -2, alpha: 0.84 },
-      { at: 0.56, key: 'MAP_PATH_SKELETON_BODY', scale: 1.00, rotation: -0.48, xOffset: 2, yOffset: 1, alpha: 0.86 },
-      { at: 0.68, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.92, rotation: 0.44, xOffset: -2, yOffset: 2, alpha: 0.84 },
-      { at: 0.81, key: 'MAP_PATH_SKELETON_BODY', scale: 0.94, rotation: 0.14, xOffset: 1, yOffset: -2, alpha: 0.84 },
-      { at: 0.92, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.88, rotation: -0.16, xOffset: -1, yOffset: 1, alpha: 0.82 }
+      { at: 0.07, key: 'MAP_PATH_SKELETON_BODY', scale: 1.08, rotation: -0.20, xOffset: -2, yOffset: 1, alpha: 1.00 },
+      { at: 0.18, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.94, rotation: 0.18, xOffset: 2, yOffset: -1, alpha: 1.00 },
+      { at: 0.30, key: 'MAP_PATH_SKELETON_BODY', scale: 0.98, rotation: 0.32, xOffset: 1, yOffset: 2, alpha: 1.00 },
+      { at: 0.43, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.90, rotation: -0.28, xOffset: -1, yOffset: -2, alpha: 1.00 },
+      { at: 0.56, key: 'MAP_PATH_SKELETON_BODY', scale: 1.00, rotation: -0.48, xOffset: 2, yOffset: 1, alpha: 1.00 },
+      { at: 0.68, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.92, rotation: 0.44, xOffset: -2, yOffset: 2, alpha: 1.00 },
+      { at: 0.81, key: 'MAP_PATH_SKELETON_BODY', scale: 0.94, rotation: 0.14, xOffset: 1, yOffset: -2, alpha: 1.00 },
+      { at: 0.92, key: 'MAP_PATH_SKELETON_SCATTER', scale: 0.88, rotation: -0.16, xOffset: -1, yOffset: 1, alpha: 1.00 }
     ];
     for (const marker of PATH_SKELETONS) {
       if (pathSkeletonCandidates.length === 0) break;

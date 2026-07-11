@@ -568,6 +568,9 @@ describe('Stone trail skeleton props', () => {
     expect(source).toContain('pathSet.has(`${t.col},${t.row}`)');
     expect(source).toContain('const PATH_SKELETONS');
     for (const [key] of expected) expect(source).toContain(`key: '${key}'`);
+    const markerBlock = source.slice(source.indexOf('const PATH_SKELETONS'), source.indexOf('for (const marker of PATH_SKELETONS)'));
+    expect(markerBlock.match(/alpha: 1\.00/g)).toHaveLength(8);
+    expect(markerBlock).not.toMatch(/alpha: 0\./);
   });
 });
 
