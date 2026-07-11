@@ -566,6 +566,13 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     harborDmgMult *= 1 + headStacks * (isPit && !placedOnWater ? 0.10 : 0.11);
     harborSpeedMult *= 1 + headStacks * (isPit ? 0.045 : 0.04);
   }
+  // Ocean space is scarce and asks the player to shape the maze around the
+  // shoreline. Reward every Harbor/Tideforged tower that actually occupies
+  // water with 20% more damage; amphibious towers keep their existing
+  // Tideforged water bonus on top, while their land profile stays unchanged.
+  if ((harborDef?.waterOnly || harborDef?.amphibious) && (t as any).placedOnWater) {
+    harborDmgMult *= 1.20;
+  }
   if (harborDef?.amphibious) {
     if ((t as any).placedOnWater) {
       harborRangeBonus += 0.65;
@@ -680,6 +687,18 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
     } else if (APEX.has(t.type)) dmgMods.push({ source: 'Apex Balance', multiplier: 0.88 });
     else if (def.kind === 'COMBO' && def.melee === false) dmgMods.push({ source: 'Ranged Combo Balance', multiplier: 0.92 });
     else if (def.kind === 'BASE' && def.tierBand === 5) dmgMods.push({ source: 'T5 Base Balance', multiplier: 0.90 });
+  }
+
+  if ((def?.waterOnly || def?.amphibious) && (t as any).placedOnWater) {
+    dmgMods.push({ source: 'Ocean deployment', multiplier: 1.20 });
+  }
+  if (def?.amphibious) {
+    if ((t as any).placedOnWater) {
+      dmgMods.push({ source: 'Tideforged water stance', multiplier: 1.12 });
+      rngMods.push({ source: 'Tideforged water stance', flat: 0.65 });
+    } else {
+      spdMods.push({ source: 'Tideforged land stance', multiplier: 1.08 });
+    }
   }
 
   // ── Items ──────────────────────────────────────────────────────────────

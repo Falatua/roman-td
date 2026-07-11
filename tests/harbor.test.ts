@@ -345,9 +345,30 @@ describe('Harbor naval tower system', () => {
     const land = towerEffectiveStats(landFleet);
     const water = towerEffectiveStats(waterFleet);
 
-    expect(water.dps).toBeGreaterThan(land.dps * 1.11);
+    // Ocean stance keeps the prior 1.12 Tideforged bonus and gains the
+    // global 1.20 Harbor deployment buff: 1.12 * 1.20 = 1.344 damage.
+    expect(water.dps).toBeCloseTo(land.dps * 1.344, 4);
     expect(water.range).toBeGreaterThanOrEqual(land.range + 0.65);
     expect(water.attackSpeed).toBeCloseTo(land.attackSpeed / 1.08, 4);
+  });
+
+  it('makes every water-only Harbor tower exactly 20% stronger at sea', () => {
+    const navalTypes: Array<[TowerType, 1 | 2 | 3 | 4 | 5]> = [
+      [TowerType.TRIREME_BALLISTA, 3],
+      [TowerType.CORVUS_BOARDING_SHIP, 3],
+      [TowerType.RAMMING_QUINQUEREME, 4],
+      [TowerType.CHARYBDIS_VORTEX, 4],
+      [TowerType.NEREID_ORACLE, 4],
+      [TowerType.HYDRA_OF_LERNA, 4],
+      [TowerType.NEPTUNES_LEVIATHAN, 5]
+    ];
+    for (const [type, tier] of navalTypes) {
+      const dryReference = createTower(type, tier, 8, 8, 20);
+      const oceanTower = createTower(type, tier, 4, 20, 20);
+      oceanTower.placedOnWater = true;
+      expect(towerEffectiveStats(oceanTower).dps, type)
+        .toBeCloseTo(towerEffectiveStats(dryReference).dps * 1.20, 4);
+    }
   });
 
   it('lets the Hydra line ramp into a real short-range naval payoff', () => {
