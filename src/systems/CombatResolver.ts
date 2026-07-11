@@ -442,6 +442,13 @@ const MELEE_TYPES = new Set<TowerType>([
   TowerType.CHAMPION_CAESAR
 ]);
 
+// The authored `melee` flag is canonical. The explicit registry remains for
+// legacy entries, but a missing registry row must never turn a melee tower
+// into a ranged attacker or grant it default flyer access.
+function isMeleeTowerType(type: TowerType): boolean {
+  return MELEE_TYPES.has(type) || !!(towersData as any)[type]?.melee;
+}
+
 // Towers that ONLY hit flyers — useless on ground waves, devastating on air ones.
 // Driven from tower data so Codex/menu badges and combat targeting cannot drift.
 export const ANTI_AIR_ONLY_TYPES = new Set<TowerType>(
@@ -965,6 +972,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     }
     if (t.type === TowerType.ROMAN_TRANSFORMER) {
       if (!auraOff) enemyTakenAuras.push({ x: cx, y: cy, r: 6 * GRID.TILE, pct: 0.55 });
+      const canReachFlyers = meleeTowerCanHitFlyers(state, t);
 
       const lastBurn = (t as any).__lastOmegaImmolationTick ?? -999;
       if (state.tick - lastBurn >= 0.5 && !asleep) {
@@ -972,6 +980,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         const burnR = 1.5 * GRID.TILE;
         for (const e of state.enemies.values()) {
           if (e.hp <= 0) continue;
+          if (e.isFlyer && !canReachFlyers) continue;
           if (Math.hypot(e.x - cx, e.y - cy) > burnR) continue;
           pushStatus(e, StatusEffectKind.BURN, 2.0, 0.08, t.qualityTier);
         }
@@ -987,6 +996,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         let hitCount = 0;
         for (const e of state.enemies.values()) {
           if (e.hp <= 0) continue;
+          if (e.isFlyer && !canReachFlyers) continue;
           const slash = Math.max(1, e.hp * 0.25);
           e.hp -= slash;
           e.hpFlashTimer = 0.35;
@@ -1004,12 +1014,14 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
     }
     if (t.type === TowerType.NEPTUNES_LEVIATHAN) {
+      const canReachFlyers = meleeTowerCanHitFlyers(state, t);
       const undertowR = 2.5 * GRID.TILE;
       const lastUndertow = (t as any).__lastLeviathanUndertowTick ?? -999;
       if (state.tick - lastUndertow >= 0.5 && !asleep) {
         (t as any).__lastLeviathanUndertowTick = state.tick;
         for (const e of state.enemies.values()) {
           if (e.hp <= 0) continue;
+          if (e.isFlyer && !canReachFlyers) continue;
           if (Math.hypot(e.x - cx, e.y - cy) > undertowR) continue;
           pushStatus(e, StatusEffectKind.SLOW, 1.5, 0.35, t.qualityTier);
           pushStatus(e, StatusEffectKind.POISON, 1.5, 0.012, t.qualityTier);
@@ -1026,6 +1038,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         let hitCount = 0;
         for (const e of state.enemies.values()) {
           if (e.hp <= 0) continue;
+          if (e.isFlyer && !canReachFlyers) continue;
           if (Math.hypot(e.x - cx, e.y - cy) > undertowR) continue;
           const rip = Math.max(1, e.hp * 0.18);
           e.hp -= rip;
@@ -1352,7 +1365,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // they'd be unable to reach passing enemies. 2026-05 v10: gate is
     // MELEE_TYPES membership (not range <= 1.5) because spear/lance
     // melee now sit at range 2.0 but should still get weather immunity.
-    const isMeleeRange = MELEE_TYPES.has(t.type);
+    const isMeleeRange = isMeleeTowerType(t.type);
     const effRange = isMeleeRange
       ? stats.range
       : Math.max(1.5, stats.range - wRangePenalty);
@@ -1939,7 +1952,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const tcx = tilePxX(t);
       const tcy = tilePxY(t);
       const rPx = stats.range * GRID.TILE;
-      const isMeleeRow = MELEE_TYPES.has(t.type);
+      const isMeleeRow = isMeleeTowerType(t.type);
       // AQUILA TALONS unlocks anti-air for melee towers — eagle talons let
       // the gladius claw down passing flyers at melee range.
       // 2026-05-19 — AETHER TILE (CYAN) also unlocks anti-air for any
@@ -1949,16 +1962,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // melee-vs-flyer unlock to EVERY tower on the map. Same pipeline
       // — just sets the flag map-wide while Agricola is active.
       const agricolaActive = agricolaEnablesAirAt(state, tcx, tcy);  // scoped to 10 tiles of an Agricola hero
-      const meleeHitsFlyers = isMeleeRow && (
-        agricolaActive ||
-        (state as any).__marsVictorActive ||
-        t.type === TowerType.BEASTLORD_CHAMPION ||   // 2026-06-28 — melee anti-air combo
-        t.type === TowerType.ROMAN_TRANSFORMER ||     // OMEGA blades reach the sky lane too
-        t.type === TowerType.NEPTUNES_LEVIATHAN ||    // mythic tide tendrils can swat low flyers
-        t.equippedItems.includes('AQUILA_TALONS') ||
-        t.equippedItems.includes('STORM_AQUILA_TALONS') ||
-        towerAuraTileKind(t) === 'CYAN'
-      );
+      const meleeHitsFlyers = isMeleeRow && meleeTowerCanHitFlyers(state, t, agricolaActive);
       const inRange = targetCandidateScratch;
       inRange.length = 0;
       const rPx2 = rPx * rPx;
@@ -2449,6 +2453,20 @@ function agricolaEnablesAirAt(state: GameStateShape, cx: number, cy: number): bo
   return false;
 }
 
+// One permission gate for every melee attack path. Melee identity alone never
+// grants anti-air, including Omega and specialist combo towers.
+export function meleeTowerCanHitFlyers(
+  state: GameStateShape,
+  tower: Tower,
+  agricolaActive = agricolaEnablesAirAt(state, tilePxX(tower), tilePxY(tower))
+): boolean {
+  return agricolaActive ||
+    !!(state as any).__marsVictorActive ||
+    tower.equippedItems.includes('AQUILA_TALONS') ||
+    tower.equippedItems.includes('STORM_AQUILA_TALONS') ||
+    towerAuraTileKind(tower) === 'CYAN';
+}
+
 // Exported for testing — tests/targeting.test.ts asserts behavior per
 // TargetingMode. Production code calls this only from tickCombat above.
 export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], rangeTiles: number): Enemy | null {
@@ -2456,7 +2474,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   const ty = tilePxY(t);
   const rangePx = rangeTiles * GRID.TILE;
   const rangePx2 = rangePx * rangePx;
-  const isMelee = MELEE_TYPES.has(t.type);
+  const isMelee = isMeleeTowerType(t.type);
   // AQUILA TALONS — melee towers carrying this legendary can target flyers
   // in their range too. Mirrors the same flag used in the per-tick attack
   // loop above so target-acquisition and damage-application agree.
@@ -2464,15 +2482,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
   // as AQUILA_TALONS.
   // 2026-05-19 — Agricola hero global passive extends the
   // CYAN/AQUILA_TALONS unlock to ALL melee towers map-wide.
-  const meleeAirEnabled = isMelee && (
-    agricolaEnablesAirAt(state, tx, ty) ||   // scoped to 10 tiles of an Agricola hero (was global)
-    (state as any).__marsVictorActive ||   // Mars Victor fuses Agricola's all-towers-strike-flyers passive
-    t.type === TowerType.ROMAN_TRANSFORMER ||
-    t.type === TowerType.NEPTUNES_LEVIATHAN ||
-    t.equippedItems.includes('AQUILA_TALONS') ||
-    t.equippedItems.includes('STORM_AQUILA_TALONS') ||   // 2026 v2 — legendary grants ANY tower anti-air
-    towerAuraTileKind(t) === 'CYAN'
-  );
+  const meleeAirEnabled = isMelee && meleeTowerCanHitFlyers(state, t);
   const canHitFlyers = !isMelee || meleeAirEnabled;
   const antiAirOnly = ANTI_AIR_ONLY_TYPES.has(t.type);
   const acquireDmgType = targetingDamageType(state, t);

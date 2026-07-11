@@ -686,6 +686,27 @@ describe('Roman Transformer omega combat wiring', () => {
     expect(far.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.35)).toBe(true);
     expect((tower as any).__nextOmegaSlashTick).toBe(240);
   });
+
+  it('does not burn, slash, or target flyers without an anti-air item or aura', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    state.wave = 18;
+    state.tick = 120;
+    const tower = createTower(TowerType.ROMAN_TRANSFORMER, 5, 4, 4, 0);
+    tower.attackCooldown = 0;
+    (tower as any).__omegaWave = 18;
+    (tower as any).__nextOmegaSlashTick = 120;
+    state.towers.set(tower.id, tower);
+    const flyer = flyerEnemy('omega-flyer', 150, 150);
+    const hpBefore = flyer.hp;
+    state.enemies.set(flyer.id, flyer);
+
+    tickCombat(state, 0.016, noopCombatHooks());
+
+    expect(flyer.hp).toBe(hpBefore);
+    expect(flyer.statusEffects).toHaveLength(0);
+    expect(tower.attackCooldown).toBeLessThanOrEqual(0);
+  });
 });
 
 describe('Neptune\'s Leviathan omega combat wiring', () => {

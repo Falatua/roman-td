@@ -3,11 +3,12 @@
 // pickTarget function is exported from CombatResolver specifically
 // for this test file.
 import { describe, it, expect } from 'vitest';
-import { isCasterTarget, pickTarget } from '../src/systems/CombatResolver';
+import { isCasterTarget, meleeTowerCanHitFlyers, pickTarget } from '../src/systems/CombatResolver';
 import { createTower } from '../src/systems/TowerSystem';
 import { createGameState } from '../src/GameState';
 import { TowerType, TargetingMode, Enemy, EnemyType, EnemyFaction, DamageType } from '../src/types';
 import { AURA_TILES, GRID } from '../src/constants';
+import towersData from '../src/data/towers.json';
 
 // Minimal Enemy factory — only the fields pickTarget reads.
 function fakeEnemy(opts: {
@@ -318,6 +319,50 @@ describe('Tower targeting modes', () => {
     const picked = pickTarget(state, meleeTower, onlyFlyer, 10);
     // No ground enemies + melee can't reach flyer → null.
     expect(picked).toBeNull();
+  });
+
+  it('no authored melee tower has innate flyer targeting, including Omega towers', () => {
+    const flyer = fakeEnemy({ id: 'AIR', x: TX + 10, y: TY, pathIndex: 3, hp: 1000, isFlyer: true });
+    for (const [type, def] of Object.entries(towersData as any)) {
+      if (!def.melee) continue;
+      const state = createGameState();
+      const tower = createTower(type as TowerType, 5, 5, 5, 1);
+      tower.targetingMode = TargetingMode.FLYERS;
+      expect(meleeTowerCanHitFlyers(state, tower), `${type} should need an anti-air enabler`).toBe(false);
+      expect(pickTarget(state, tower, [flyer], 10), `${type} should not acquire flyers by default`).toBeNull();
+    }
+  });
+
+  it('Roman Transformer gains flyer targeting from supported items and auras', () => {
+    const flyer = fakeEnemy({ id: 'AIR', x: TX + 10, y: TY, pathIndex: 3, hp: 1000, isFlyer: true });
+
+    const itemState = createGameState();
+    const itemTower = createTower(TowerType.ROMAN_TRANSFORMER, 5, 5, 5, 1);
+    itemTower.equippedItems.push('AQUILA_TALONS' as any);
+    expect(meleeTowerCanHitFlyers(itemState, itemTower)).toBe(true);
+    expect(pickTarget(itemState, itemTower, [flyer], 10)?.id).toBe('AIR');
+
+    const cyan = AURA_TILES.find(tile => tile.kind === 'CYAN')!;
+    const auraState = createGameState();
+    const auraTower = createTower(TowerType.ROMAN_TRANSFORMER, 5, cyan.col, cyan.row, 1);
+    const auraFlyer = fakeEnemy({
+      id: 'AURA_AIR',
+      x: cyan.col * GRID.TILE + GRID.TILE / 2 + 10,
+      y: cyan.row * GRID.TILE + GRID.TILE / 2,
+      pathIndex: 3,
+      hp: 1000,
+      isFlyer: true
+    });
+    expect(meleeTowerCanHitFlyers(auraState, auraTower)).toBe(true);
+    expect(pickTarget(auraState, auraTower, [auraFlyer], 10)?.id).toBe('AURA_AIR');
+
+    const agricolaState = createGameState();
+    const protectedTower = createTower(TowerType.ROMAN_TRANSFORMER, 5, 5, 5, 1);
+    const agricola = createTower(TowerType.HERO_AGRICOLA, 1, 6, 5, 1);
+    agricolaState.activeHeroTowerId = agricola.id;
+    agricolaState.towers.set(agricola.id, agricola);
+    expect(meleeTowerCanHitFlyers(agricolaState, protectedTower)).toBe(true);
+    expect(pickTarget(agricolaState, protectedTower, [flyer], 10)?.id).toBe('AIR');
   });
 
   it('hero towers use the same targeting modes as regular towers', () => {
