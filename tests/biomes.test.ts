@@ -523,6 +523,11 @@ describe('Battlefield blood trails and Cyclops remains', () => {
 
     const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
     expect(source).toContain("tex('MAP_BATTLE_BLOOD_TRAIL')");
+    expect(source).toContain('const oceanBloodTrail');
+    expect(source).toContain('wp.index === 2');
+    expect(source).toContain('(checkpointTwo.row + 0.5 + 2.35) * GRID.TILE');
+    expect(source).toContain('oceanBloodTrail.rotation = -Math.PI / 2 + 0.04');
+    expect(source).toContain('coastalDetailLayer.addChild(oceanBloodTrail)');
     expect(source).toContain('const caveBloodTrail');
     expect(source).toContain('const gateBloodTrail');
     expect(source).toContain('gateBloodTrail.scale.x *= -1');

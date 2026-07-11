@@ -3429,6 +3429,22 @@ export class RenderEngine {
         });
       }
     }
+    const battleBloodTex = tex('MAP_BATTLE_BLOOD_TRAIL');
+    const checkpointTwo = (waypointsData.waypoints as Array<{ index: number; topLeft: { col: number; row: number } }>)
+      .find(wp => wp.index === 2)?.topLeft;
+    if (battleBloodTex && checkpointTwo) {
+      const oceanBloodTrail = new Sprite(battleBloodTex);
+      oceanBloodTrail.anchor.set(0.5);
+      oceanBloodTrail.x = (checkpointTwo.col + 0.5) * GRID.TILE + 6;
+      oceanBloodTrail.y = (checkpointTwo.row + 0.5 + 2.35) * GRID.TILE;
+      oceanBloodTrail.width = GRID.TILE * 5.10;
+      oceanBloodTrail.height = GRID.TILE * 1.65;
+      // The authored sprite's pooled origin is on its left. Rotating it
+      // upward keeps the pool in the ocean and tapers toward checkpoint II.
+      oceanBloodTrail.rotation = -Math.PI / 2 + 0.04;
+      oceanBloodTrail.alpha = 0.86;
+      coastalDetailLayer.addChild(oceanBloodTrail);
+    }
     // One cohesive, low-profile coastal ruin replaces the old cluster of
     // freestanding necromancer props. It stays visual-only and grounded in
     // the shoreline palette, so no gameplay tile is reserved for it.
@@ -3821,7 +3837,6 @@ export class RenderEngine {
     // pilasters flanking the entrance.
     const caveCx = waypointsData.spawn.col * GRID.TILE + GRID.TILE / 2;
     const caveCy = waypointsData.spawn.row * GRID.TILE + GRID.TILE / 2;
-    const battleBloodTex = tex('MAP_BATTLE_BLOOD_TRAIL');
     if (battleBloodTex) {
       const caveBloodTrail = new Sprite(battleBloodTex);
       caveBloodTrail.anchor.set(0.5);
