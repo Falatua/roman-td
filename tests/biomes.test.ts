@@ -442,10 +442,10 @@ describe('Redesigned main cave', () => {
     expect(source).toContain('cbs.width = 96; cbs.height = 96;');
     expect(source).not.toContain('const caveFrame = new Graphics();');
     expect(source).not.toContain('caveGlowColor');
-    expect(source).toContain('drawTorch(caveCx - 30, caveCy + 14, 0);');
-    expect(source).toContain('drawTorch(caveCx + 30, caveCy + 14, 1.7);');
-    expect(source).toContain('drawTorch(gateCx - 29, gateCy + 24, 0.9);');
-    expect(source).toContain('drawTorch(gateCx + 29, gateCy + 24, 2.4);');
+    expect(source).toContain('drawTorch(caveCx - 34, caveCy + 16, 0);');
+    expect(source).toContain('drawTorch(caveCx + 34, caveCy + 16, 1.7);');
+    expect(source).toContain('drawTorch(gateCx - 35, gateCy + 29, 0.9);');
+    expect(source).toContain('drawTorch(gateCx + 35, gateCy + 29, 2.4);');
     expect(source).toContain('if (caveBActive && caveBData)');
   });
 });

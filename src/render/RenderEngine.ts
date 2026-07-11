@@ -712,15 +712,15 @@ export class RenderEngine {
     // Positions match the braziers painted into the redesigned cave and gate
     // sprites. The sprite supplies the metal bowl; these cheap overlays make
     // the fire itself breathe without adding animated textures.
-    drawTorch(caveCx - 30, caveCy + 14, 0);
-    drawTorch(caveCx + 30, caveCy + 14, 1.7);
-    drawTorch(gateCx - 29, gateCy + 24, 0.9);
-    drawTorch(gateCx + 29, gateCy + 24, 2.4);
+    drawTorch(caveCx - 34, caveCy + 16, 0);
+    drawTorch(caveCx + 34, caveCy + 16, 1.7);
+    drawTorch(gateCx - 35, gateCy + 29, 0.9);
+    drawTorch(gateCx + 35, gateCy + 29, 2.4);
     if (caveBActive && caveBData) {
       const caveBCx = caveBData.col * GRID.TILE + GRID.TILE / 2;
       const caveBCy = caveBData.row * GRID.TILE + GRID.TILE / 2;
-      drawTorch(caveBCx - 22, caveBCy + 11, 0.45);
-      drawTorch(caveBCx + 22, caveBCy + 11, 2.05);
+      drawTorch(caveBCx - 25, caveBCy + 13, 0.45);
+      drawTorch(caveBCx + 25, caveBCy + 13, 2.05);
     }
 
     // ── 2 SWAYING BANNERS ON THE GATE ─────────────────────────────
