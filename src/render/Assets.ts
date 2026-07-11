@@ -238,6 +238,7 @@ const MANIFEST: Record<string, string> = {
   MAP_CAVE_SEVERED_HEADS: 'map_overhaul/m_cave_severed_heads.png',
   MAP_CAVE_FALLEN_SKELETON: 'map_overhaul/m_cave_fallen_skeleton.png',
   MAP_CAVE_SKULL_STAKE: 'map_overhaul/m_cave_skull_stake.png',
+  MAP_BATTLE_BLOOD_TRAIL: 'map_overhaul/m_battle_blood_trail.png',
   MAP_PATH_SKELETON_BODY: 'map_overhaul/m_path_skeleton_body.png',
   MAP_PATH_SKELETON_SCATTER: 'map_overhaul/m_path_skeleton_scatter.png',
   MAP_GATE_FALLEN_ROMAN_A: 'map_overhaul/m_gate_fallen_roman_a.png',

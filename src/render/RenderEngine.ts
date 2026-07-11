@@ -3690,6 +3690,26 @@ export class RenderEngine {
       xOffset?: number;
       yOffset?: number;
     };
+    // A sparse crown of battlefield remains above the Cyclops trophy. These
+    // sit behind the head and stay visual-only, preserving its readable face.
+    const CYCLOPS_REMAINS: Array<{ key: string; x: number; y: number; size: number; rotation: number; alpha: number }> = [
+      { key: 'MAP_CAVE_FALLEN_SKELETON', x: GRID.TILE * 33.00, y: GRID.TILE * 1.10, size: 44, rotation: 0.10, alpha: 0.90 },
+      { key: 'MAP_CAVE_BONES_SCATTER', x: GRID.TILE * 35.10, y: GRID.TILE * 0.80, size: 38, rotation: -0.22, alpha: 0.88 },
+      { key: 'MAP_CAVE_FALLEN_SKELETON', x: GRID.TILE * 37.15, y: GRID.TILE * 0.90, size: 34, rotation: -0.10, alpha: 0.86 }
+    ];
+    for (const anchor of CYCLOPS_REMAINS) {
+      const remainsTex = tex(anchor.key);
+      if (!remainsTex) continue;
+      const remains = new Sprite(remainsTex);
+      remains.anchor.set(0.5);
+      remains.x = anchor.x;
+      remains.y = anchor.y;
+      remains.width = anchor.size;
+      remains.height = anchor.size;
+      remains.rotation = anchor.rotation;
+      remains.alpha = anchor.alpha;
+      cornerLayer.addChild(remains);
+    }
     const CORNERS: CornerAnchor[] = [
       // Top-right corner (rows 0-3, cols 33-37)
       { col: 33, row: 2,  key: 'MAP_CORNER_SHRINE_A4', scale: 1.4 },     // ornate column
@@ -3801,6 +3821,18 @@ export class RenderEngine {
     // pilasters flanking the entrance.
     const caveCx = waypointsData.spawn.col * GRID.TILE + GRID.TILE / 2;
     const caveCy = waypointsData.spawn.row * GRID.TILE + GRID.TILE / 2;
+    const battleBloodTex = tex('MAP_BATTLE_BLOOD_TRAIL');
+    if (battleBloodTex) {
+      const caveBloodTrail = new Sprite(battleBloodTex);
+      caveBloodTrail.anchor.set(0.5);
+      caveBloodTrail.x = caveCx + 78;
+      caveBloodTrail.y = caveCy + 34;
+      caveBloodTrail.width = GRID.TILE * 6.25;
+      caveBloodTrail.height = GRID.TILE * 2.05;
+      caveBloodTrail.rotation = 0.16;
+      caveBloodTrail.alpha = 0.92;
+      this.layers.bg.addChild(caveBloodTrail);
+    }
     const caveFrame = new Graphics();
     // Biome-aware portal glow color
     const caveGlowColor = (() => {
@@ -3872,7 +3904,11 @@ export class RenderEngine {
       { key: 'MAP_CAVE_BONES_SCATTER', x: caveCx - 82, y: caveCy + 80, size: 58, rotation: -0.16, alpha: 0.96 },
       { key: 'MAP_CAVE_SEVERED_HEADS', x: caveCx + 86, y: caveCy + 76, size: 60, rotation: 0.08, alpha: 0.95 },
       { key: 'MAP_CAVE_FALLEN_SKELETON', x: caveCx + 26, y: caveCy + 108, size: 72, rotation: -0.04, alpha: 0.95 },
-      { key: 'MAP_CAVE_SKULL_STAKE', x: caveCx - 74, y: caveCy - 22, size: 54, rotation: 0.05, alpha: 0.94 }
+      { key: 'MAP_CAVE_SKULL_STAKE', x: caveCx - 74, y: caveCy - 22, size: 54, rotation: 0.05, alpha: 0.94 },
+      { key: 'MAP_CAVE_FALLEN_SKELETON', x: caveCx - 104, y: caveCy - 58, size: 46, rotation: -0.26, alpha: 0.88 },
+      { key: 'MAP_CAVE_BONES_SCATTER', x: caveCx + 110, y: caveCy - 18, size: 48, rotation: 0.30, alpha: 0.90 },
+      { key: 'MAP_CAVE_BONES_SCATTER', x: caveCx - 108, y: caveCy + 24, size: 44, rotation: 0.12, alpha: 0.90 },
+      { key: 'MAP_CAVE_FALLEN_SKELETON', x: caveCx + 114, y: caveCy + 42, size: 50, rotation: 0.22, alpha: 0.90 }
     ];
     for (const anchor of CAVE_REMAINS) {
       const remainsTex = tex(anchor.key);
@@ -3925,6 +3961,18 @@ export class RenderEngine {
     // crenellation frame + flanking pilasters + brighter gold halo.
     const gateCx = waypointsData.gate.col * GRID.TILE + GRID.TILE / 2;
     const gateCy = waypointsData.gate.row * GRID.TILE + GRID.TILE / 2;
+    if (battleBloodTex) {
+      const gateBloodTrail = new Sprite(battleBloodTex);
+      gateBloodTrail.anchor.set(0.5);
+      gateBloodTrail.x = gateCx - 88;
+      gateBloodTrail.y = gateCy - 10;
+      gateBloodTrail.width = GRID.TILE * 6.10;
+      gateBloodTrail.height = GRID.TILE * 2.00;
+      gateBloodTrail.scale.x *= -1;
+      gateBloodTrail.rotation = -0.06;
+      gateBloodTrail.alpha = 0.90;
+      this.layers.bg.addChild(gateBloodTrail);
+    }
     const gateFrame = new Graphics();
     // Bigger gold glow underneath (warmth — civilization to defend)
     gateFrame.beginFill(0xd4af37, 0.24).drawCircle(gateCx, gateCy, 72).endFill();

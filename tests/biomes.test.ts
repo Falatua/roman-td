@@ -380,6 +380,7 @@ describe('Top-right Cyclops trophy prop', () => {
     expect(source).not.toContain("{ col: 36, row: 3,  key: 'MAP_CORNER_SHRINE_A6'");
     expect(source).toContain('const inCyclopsTrophyClearance = c >= 34 && r <= 5;');
     expect(source).toContain('t === TileType.EMPTY && !inCyclopsTrophyClearance');
+    expect(Object.values(BIOMES).flatMap(biome => biome.propPool)).not.toContain('DP_URN');
     expect(source.indexOf('this.layers.bg.addChild(decorLayer);')).toBeLessThan(source.indexOf('this.layers.bg.addChild(cornerLayer);'));
   });
 });
@@ -491,8 +492,44 @@ describe('Cave battlefield remains props', () => {
     expect(source).toContain('x: caveCx - 48, y: caveCy - 92');
     expect(source).toContain('x: caveCx + 24, y: caveCy - 104');
     expect(source).toContain('x: caveCx + 78, y: caveCy - 82');
+    expect(source).toContain('x: caveCx - 104, y: caveCy - 58');
+    expect(source).toContain('x: caveCx + 110, y: caveCy - 18');
+    expect(source).toContain('x: caveCx - 108, y: caveCy + 24');
+    expect(source).toContain('x: caveCx + 114, y: caveCy + 42');
     expect(source).toContain('x: caveCx');
     expect(source).toContain('y: caveCy');
+  });
+});
+
+describe('Battlefield blood trails and Cyclops remains', () => {
+  it('ships a transparent pixel blood trail and places it at the cave and Rome gate', async () => {
+    const sharp = require('sharp');
+    const file = assetFileFor('MAP_BATTLE_BLOOD_TRAIL');
+    expect(file).toBe('map_overhaul/m_battle_blood_trail.png');
+    const img = sharp(path.join(__dirname, '../public/assets/sprites', file!));
+    const meta = await img.metadata();
+    expect(meta.width).toBe(192);
+    expect(meta.height).toBe(64);
+    expect(meta.hasAlpha).toBe(true);
+    const raw = await img.ensureAlpha().raw().toBuffer();
+    let transparent = 0;
+    let green = 0;
+    for (let i = 0; i < raw.length; i += 4) {
+      if (raw[i + 3] < 8) transparent++;
+      if (raw[i] < 80 && raw[i + 1] > 220 && raw[i + 2] < 80 && raw[i + 3] > 8) green++;
+    }
+    expect(transparent).toBeGreaterThan(192 * 64 * 0.45);
+    expect(green).toBe(0);
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain("tex('MAP_BATTLE_BLOOD_TRAIL')");
+    expect(source).toContain('const caveBloodTrail');
+    expect(source).toContain('const gateBloodTrail');
+    expect(source).toContain('gateBloodTrail.scale.x *= -1');
+    expect(source).toContain('const CYCLOPS_REMAINS');
+    expect(source).toContain('GRID.TILE * 33.00');
+    expect(source).toContain('GRID.TILE * 35.10');
+    expect(source).toContain('GRID.TILE * 37.15');
   });
 });
 

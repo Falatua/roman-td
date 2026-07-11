@@ -79,7 +79,7 @@ export const BIOMES: Record<BiomeId, BiomeProfile> = {
     ],
     propPool: [
       'DP_BUSH', 'DP_FLOWERS_RED', 'DP_FLOWERS_WHITE', 'DP_MUSHROOMS',
-      'DP_URN', 'DP_HELMET', 'DP_SCROLL', 'DP_WOODEN_POST', 'DP_MILESTONE'
+      'DP_HELMET', 'DP_SCROLL', 'DP_WOODEN_POST', 'DP_MILESTONE'
     ],
     pathPrefix: 'PATH_SUNNY_',
     caveKey: 'MAP_CAVE_GRASSLAND'
@@ -124,7 +124,7 @@ export const BIOMES: Record<BiomeId, BiomeProfile> = {
       { key: 'TT_GRASS_FLOWERS', weight: 5 }
     ],
     propPool: [
-      'DP_URN', 'DP_HELMET', 'DP_WOODEN_POST', 'DP_MILESTONE', 'DP_BUSH',
+      'DP_HELMET', 'DP_WOODEN_POST', 'DP_MILESTONE', 'DP_BUSH',
       // 2026-05-21 — Carthage substitutes from craftpix. Dead trees
       // double as cypress silhouettes against the arid wash, helmets +
       // weathered ruins as Punic battle relics. The arid biome tint
@@ -185,7 +185,7 @@ export const BIOMES: Record<BiomeId, BiomeProfile> = {
       { key: 'TT_GRASS_FLOWERS', weight: 2 }
     ],
     propPool: [
-      'DP_URN', 'DP_HELMET', 'DP_SCROLL', 'DP_WOODEN_POST',
+      'DP_HELMET', 'DP_SCROLL', 'DP_WOODEN_POST',
       // 2026-05-21 — Craftpix ruins + Roman shrine monuments (user
       // assets). The shrines are higher-fidelity feature pieces;
       // weighting them alongside the craftpix ruins gives the biome
