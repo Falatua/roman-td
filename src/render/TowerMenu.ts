@@ -30,7 +30,7 @@ import { heroTierForTower, heroXpForTower } from '../systems/HeroScaling';
 import { towerDamageProfile, renderTowerDamageProfileHtml } from './TowerDamageProfile';
 
 const RAR: Record<string, string> = { COMMON:'#cccccc', UNCOMMON:'#5cd05c', RARE:'#5ca0ff', EPIC:'#a060ff', LEGENDARY:'#ff9933', UNIQUE:'#ffd34d' };
-const TOWER_INSPECT_PANEL_MAX_HEIGHT_PX = 1440;
+const TOWER_INSPECT_PANEL_MAX_HEIGHT_PX = 1152;
 
 export interface TowerMenuHooks {
   onClose: () => void;
@@ -64,8 +64,8 @@ function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title:
   }
   panel.style.display = 'flex';
   panel.style.flexDirection = 'column';
-  panel.style.maxHeight = 'calc(100dvh - 4px)';
-  panel.style.height = `min(${TOWER_INSPECT_PANEL_MAX_HEIGHT_PX}px, calc(100dvh - 4px))`;
+  panel.style.maxHeight = 'calc(100vh - 8px)';
+  panel.style.height = `min(${TOWER_INSPECT_PANEL_MAX_HEIGHT_PX}px, calc(100vh - 8px))`;
   panel.style.overflow = 'hidden';
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '.rtd-tower-menu-collapse',
@@ -84,7 +84,7 @@ function targetingModeLabel(mode: TargetingMode): string {
 }
 
 function towerModalStyle(): string {
-  return `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.58);z-index:55;padding:2px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
+  return `position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.58);z-index:55;padding:8px;box-sizing:border-box;overflow:auto;font-family:'Courier New',monospace;`;
 }
 
 function towerPanelStyle(accent: string, shadow = '24px'): string {
