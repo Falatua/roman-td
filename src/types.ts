@@ -134,6 +134,7 @@ export enum TowerType {
   SKYREAPER_BATTERY = 'SKYREAPER_BATTERY',
   PLAGUE_LOBBER = 'PLAGUE_LOBBER',
   AUGURS_WRATH = 'AUGURS_WRATH',
+  UNDEAD_GENERAL = 'UNDEAD_GENERAL',
   // 2026-06-28 — 2 new combos from under-used bases (Speculator/Venator,
   // Colossus Onager/Vulcan Engineer) + 2 super-combos built from them.
   EXPLORATORES = 'EXPLORATORES',

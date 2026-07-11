@@ -1121,5 +1121,20 @@
         "minTier": 4
       }
     ]
+  },
+  {
+    "result": "UNDEAD_GENERAL",
+    "tier": 4,
+    "cost": 50,
+    "ingredients": [
+      {
+        "type": "PRIMUS_PILUS",
+        "minTier": 4
+      },
+      {
+        "type": "EVOCATUS",
+        "minTier": 4
+      }
+    ]
   }
 ]

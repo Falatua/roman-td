@@ -331,6 +331,16 @@ const BEAST_ENEMY_TYPES = new Set<EnemyType>([
   EnemyType.UNDEAD_WAR_ELEPHANT,
 ]);
 
+export const UNDEAD_GENERAL_BEAST_DAMAGE_MULT = 2.25;
+export const UNDEAD_GENERAL_ELEPHANT_DAMAGE_MULT = 3.0;
+
+export function undeadGeneralPreyDamageMult(target: Pick<Enemy, 'type'>): number {
+  if (target.type === EnemyType.WAR_ELEPHANT || target.type === EnemyType.UNDEAD_WAR_ELEPHANT) {
+    return UNDEAD_GENERAL_ELEPHANT_DAMAGE_MULT;
+  }
+  return BEAST_ENEMY_TYPES.has(target.type) ? UNDEAD_GENERAL_BEAST_DAMAGE_MULT : 1;
+}
+
 // Tower types that fight in melee (no projectile, instant damage with slash VFX).
 const MELEE_TYPES = new Set<TowerType>([
   TowerType.MILITES, TowerType.HASTATI, TowerType.TRIARIUS, TowerType.DECURION, TowerType.CENTURION,
@@ -338,6 +348,7 @@ const MELEE_TYPES = new Set<TowerType>([
   TowerType.GIANTS_COHORT_GUARD,
   TowerType.AUXILIA, TowerType.ACCENSUS, TowerType.PUGIO_ASSASSIN, TowerType.CATAPHRACT,
   TowerType.EVOCATUS, TowerType.IMPERATOR_GUARD,
+  TowerType.UNDEAD_GENERAL,
   TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
   TowerType.TURMA_LANCERS,
   // 2026-05-17 — Pontifex Maximus converted to melee. The High Priest now
@@ -464,7 +475,8 @@ const CLEAVE_MELEE = new Set<TowerType>([
   TowerType.GIANTS_COHORT_GUARD, TowerType.PRAETORIAN_WALL, TowerType.IMPERATOR_GUARD,
   TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
   TowerType.PONTIFEX_MAXIMUS, TowerType.GLACIAL_PALISADE, TowerType.ROMAN_TRANSFORMER,
-  TowerType.NEPTUNES_LEVIATHAN, TowerType.UNDEAD_GLADIATOR_KING
+  TowerType.NEPTUNES_LEVIATHAN, TowerType.UNDEAD_GLADIATOR_KING,
+  TowerType.UNDEAD_GENERAL
 ]);
 
 // 2026-05-15 cleave/multi-shot item helpers. The FALX_BLADE item adds
@@ -1738,6 +1750,13 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // currently exist in campaign — flag for future cross-overlap).
       if (t.type === TowerType.CLIBANARIUS && BEAST_ENEMY_TYPES.has(target.type)) {
         damage *= 2.0;
+      }
+      // UNDEAD GENERAL — Primus Pilus + Evocatus anti-beast command tower.
+      // Its neutral baseline matches Scorpion Bolt, while beasts take 2.25x
+      // and elephant variants take 3x. The elephant bonus replaces rather
+      // than stacks with the broader beast rider.
+      if (t.type === TowerType.UNDEAD_GENERAL) {
+        damage *= undeadGeneralPreyDamageMult(target);
       }
       // HANNIBALS_NIGHTMARE — apex anti-siege T5. 2026-05-15 v3 (today):
       // the +200% anti-elephant hook now applies to BOTH living and undead
@@ -3141,6 +3160,11 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       // tradition (a real practice in late-Republican mercenary cavalry).
       pushStatus(target, StatusEffectKind.MARK, dur(2), 0.20, tier);
       pushStatus(target, StatusEffectKind.POISON, dur(4), 0.05, tier);
+      break;
+    case TowerType.UNDEAD_GENERAL:
+      if (BEAST_ENEMY_TYPES.has(target.type)) {
+        pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(3), 0, tier);
+      }
       break;
     case TowerType.SCORPION_BOLT:
       if (target.isFlyer) {

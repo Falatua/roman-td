@@ -531,7 +531,7 @@ describe('Recipe combo detection', () => {
       else if (isSuperComboRecipeResult(recipe.result)) seen.super++;
       else seen.base++;
     }
-    expect(seen).toEqual({ base: 41, super: 22, omega: 2 });
+    expect(seen).toEqual({ base: 42, super: 22, omega: 2 });
   });
 
   it('charges the full 200g when Hannibal\'s Nightmare is actually created', () => {
