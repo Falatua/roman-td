@@ -1359,8 +1359,8 @@ describe('Aura mechanics and visibility', () => {
     state.towers.set(attacker.id, attacker);
     const c = towerCenter(attacker);
     const target = testEnemy('vestal-pyre-fire-immune', c.x + GRID.TILE, c.y);
-    target.type = EnemyType.MONGOL_BERSERKER;
-    target.faction = EnemyFaction.MONGOLS;
+    target.type = EnemyType.DEMON_HELLHOUND;
+    target.faction = EnemyFaction.SUPER_DEMONS;
     target.hp = 100000;
     target.maxHp = 100000;
     state.enemies.set(target.id, target);

@@ -284,7 +284,6 @@ describe('Enemy resistances — per-enemy multipliers', () => {
 
   it('gives selected post-W15 enemies true damage-over-time immunity with readable UI summary', () => {
     const dotImmuneTypes = [
-      EnemyType.MONGOL_BERSERKER,
       EnemyType.MONGOL_SHAMAN,
       EnemyType.ANUBIS_PRIEST,
       EnemyType.ANUBIS_PRIEST_COMMANDER,
@@ -312,7 +311,6 @@ describe('Enemy resistances — per-enemy multipliers', () => {
 
   it('gives selected post-W15 enemies true divine immunity with readable UI armor', () => {
     const divineImmuneTypes = [
-      EnemyType.MONGOL_BERSERKER,
       EnemyType.MONGOL_CAPTAIN,
       EnemyType.ANUBIS_PRIEST,
       EnemyType.ANUBIS_PRIEST_COMMANDER,
@@ -371,7 +369,6 @@ describe('Enemy resistances — per-enemy multipliers', () => {
 
   it('makes selected late-wave portfolio checks immune to fire and burn', () => {
     const fireChecks = [
-      EnemyType.MONGOL_BERSERKER,
       EnemyType.MONGOL_SHAMAN,
       EnemyType.ANUBIS_PRIEST,
       EnemyType.ANUBIS_PRIEST_COMMANDER,
@@ -431,16 +428,24 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       ).toBe(true);
     }
 
-    expect((enemiesData as any).MONGOL_BERSERKER.baseHp).toBe(560);
+    expect((enemiesData as any).MONGOL_BERSERKER.baseHp).toBe(480);
     expect((enemiesData as any).ANUBIS_PRIEST.baseHp).toBe(650);
     expect((enemiesData as any).ANUBIS_PRIEST_COMMANDER.baseHp).toBe(2700);
 
     const berserker = makeEnemy(EnemyType.MONGOL_BERSERKER, EnemyFaction.MONGOLS);
+    const berserkerDef: any = (enemiesData as any).MONGOL_BERSERKER;
     expect(enemyDamageMultiplier(berserker, DamageType.PHYS_MELEE)).toBeGreaterThan(0.75);
     expect(enemyDamageMultiplier(berserker, DamageType.PHYS_RANGED)).toBeGreaterThan(0.85);
     expect(enemyDamageMultiplier(berserker, DamageType.SIEGE)).toBe(0);
-    expect(enemyDamageMultiplier(berserker, DamageType.ELEMENTAL_FIRE)).toBe(0);
-    expect(enemyDamageMultiplier(berserker, DamageType.DIVINE)).toBe(0);
+    expect(enemyDamageMultiplier(berserker, DamageType.ELEMENTAL_FIRE)).toBeCloseTo(0.45, 4);
+    expect(enemyDamageMultiplier(berserker, DamageType.DIVINE)).toBeCloseTo(0.60, 4);
+    expect(statusEffectiveness(berserker, StatusEffectKind.BURN)).toBeCloseTo(0.35, 4);
+    expect(statusEffectiveness(berserker, StatusEffectKind.BLEED)).toBeCloseTo(0.35, 4);
+    expect(statusEffectiveness(berserker, StatusEffectKind.POISON)).toBeCloseTo(0.35, 4);
+    expect(berserkerDef.siegeImmune).toBe(true);
+    expect(berserkerDef.divineImmune).not.toBe(true);
+    expect(berserkerDef.dotImmune).not.toBe(true);
+    expect(berserkerDef.immuneFire).not.toBe(true);
   });
 
   it('makes ocean giants immune to fire, burn, and hellfire', () => {

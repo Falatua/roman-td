@@ -194,14 +194,14 @@ describe('Late-wave DoT profile coverage', () => {
     }
   });
 
-  it('keeps damage-over-time immune threats present across W16-W30', () => {
+  it('keeps damage-over-time immune threats present after the W16 bridge', () => {
     const dotImmuneTypes = new Set(
       Object.entries(enemiesData as any)
         .filter(([, def]: any) => def?.dotImmune === true)
         .map(([type]) => type)
     );
 
-    for (const wave of (wavesData as any[]).filter(w => w.wave >= 16 && w.wave <= 30)) {
+    for (const wave of (wavesData as any[]).filter(w => w.wave >= 17 && w.wave <= 30)) {
       const types = [...new Set((wave.spawns ?? []).map((spawn: any) => spawn.type))];
       expect(
         types.some(type => dotImmuneTypes.has(type)),
@@ -210,14 +210,14 @@ describe('Late-wave DoT profile coverage', () => {
     }
   });
 
-  it('keeps divine-immune threats present across W16-W30', () => {
+  it('keeps divine-immune threats present after the W16 bridge', () => {
     const divineImmuneTypes = new Set(
       Object.entries(enemiesData as any)
         .filter(([, def]: any) => def?.divineImmune === true)
         .map(([type]) => type)
     );
 
-    for (const wave of (wavesData as any[]).filter(w => w.wave >= 16 && w.wave <= 30)) {
+    for (const wave of (wavesData as any[]).filter(w => w.wave >= 17 && w.wave <= 30)) {
       const types = [...new Set((wave.spawns ?? []).map((spawn: any) => spawn.type))];
       expect(
         types.some(type => divineImmuneTypes.has(type)),
@@ -226,14 +226,14 @@ describe('Late-wave DoT profile coverage', () => {
     }
   });
 
-  it('keeps fire-immune threats present across W16-W30', () => {
+  it('keeps fire-immune threats present after the W16 bridge', () => {
     const fireImmuneTypes = new Set(
       Object.entries(enemiesData as any)
         .filter(([, def]: any) => def?.immuneFire === true)
         .map(([type]) => type)
     );
 
-    for (const wave of (wavesData as any[]).filter(w => w.wave >= 16 && w.wave <= 30)) {
+    for (const wave of (wavesData as any[]).filter(w => w.wave >= 17 && w.wave <= 30)) {
       const types = [...new Set((wave.spawns ?? []).map((spawn: any) => spawn.type))];
       expect(
         types.some(type => fireImmuneTypes.has(type)),

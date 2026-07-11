@@ -410,7 +410,7 @@ describe('Tower targeting modes', () => {
     const { state, tower } = setup();
     tower.targetingMode = TargetingMode.STRONG;
     tower.damageType = DamageType.ELEMENTAL_FIRE;
-    const immune = fakeEnemy({ id: 'IMMUNE', type: EnemyType.MONGOL_BERSERKER, x: TX + 20, y: TY, pathIndex: 8, hp: 5000 });
+    const immune = fakeEnemy({ id: 'IMMUNE', type: EnemyType.MONGOL_SHAMAN, x: TX + 20, y: TY, pathIndex: 8, hp: 5000 });
     const valid = fakeEnemy({ id: 'VALID', type: EnemyType.MONGOL_SPEARMAN, x: TX + 30, y: TY, pathIndex: 4, hp: 500 });
     const picked = pickTarget(state, tower, [immune, valid], 10);
     expect(picked?.id).toBe('VALID');
@@ -426,7 +426,7 @@ describe('Tower targeting modes', () => {
     state.towers.set(sulla.id, sulla);
     state.activeHeroTowerId = sulla.id;
     state.activeHeroId = 'HERO_SULLA';
-    const fireImmune = fakeEnemy({ id: 'FIRE_IMMUNE', type: EnemyType.MONGOL_BERSERKER, x: TX + 20, y: TY, pathIndex: 8, hp: 5000 });
+    const fireImmune = fakeEnemy({ id: 'FIRE_IMMUNE', type: EnemyType.DEMON_HELLHOUND, x: TX + 20, y: TY, pathIndex: 8, hp: 5000 });
     const fallback = fakeEnemy({ id: 'FALLBACK', type: EnemyType.FERAL_DOG, x: TX + 30, y: TY, pathIndex: 4, hp: 500 });
     const picked = pickTarget(state, tower, [fireImmune, fallback], 10);
     expect(picked?.id).toBe('FIRE_IMMUNE');

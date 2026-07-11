@@ -785,17 +785,14 @@
   "MONGOL_BERSERKER": {
     "name": "Hun Berserker",
     "faction": "MONGOLS",
-    "baseHp": 560,
+    "baseHp": 480,
     "speed": 1.4,
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 2,
     "lowHpSpeedBoost": 1.6,
     "renderScale": 0.82,
-    "dotImmune": true,
-    "divineImmune": true,
-    "siegeImmune": true,
-    "immuneFire": true
+    "siegeImmune": true
   },
   "MONGOL_SCOUT": {
     "name": "Hun Scout",

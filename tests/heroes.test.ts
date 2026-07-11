@@ -798,20 +798,20 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
       decurion.critChance = 0;
       s.towers.set(decurion.id, decurion);
 
-      const hunBerserker = testEnemy('fire-immune-hun', {
-        type: EnemyType.MONGOL_BERSERKER,
-        faction: EnemyFaction.MONGOLS,
+      const fireImmuneDemon = testEnemy('fire-immune-demon', {
+        type: EnemyType.DEMON_HELLHOUND,
+        faction: EnemyFaction.SUPER_DEMONS,
         hp: 100_000,
         maxHp: 100_000,
         x: 8 * 32 + 16,
         y: 5 * 32 + 16
       });
-      s.enemies.set(hunBerserker.id, hunBerserker);
+      s.enemies.set(fireImmuneDemon.id, fireImmuneDemon);
 
       let hitDamage = 0;
       tickCombat(s, 0.016, {
         onHit: (tower, enemy, damage) => {
-          if (tower.id === decurion.id && enemy.id === hunBerserker.id) hitDamage = damage;
+          if (tower.id === decurion.id && enemy.id === fireImmuneDemon.id) hitDamage = damage;
         },
         onMeleeSwing: () => {},
         onProjectileFire: () => {},
@@ -820,7 +820,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
 
       return {
         damage: hitDamage,
-        burnApplied: hunBerserker.statusEffects.some(st => st.kind === StatusEffectKind.BURN)
+        burnApplied: fireImmuneDemon.statusEffects.some(st => st.kind === StatusEffectKind.BURN)
       };
     }
 
