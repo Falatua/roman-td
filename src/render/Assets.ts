@@ -245,6 +245,7 @@ const MANIFEST: Record<string, string> = {
   MAP_GATE_FALLEN_ROMAN_C: 'map_overhaul/m_gate_fallen_roman_c.png',
   MAP_TOP_UNDEAD_DRAGON_AFTERMATH: 'map_overhaul/m_top_undead_dragon_aftermath.png',
   MAP_DEAD_CARTHAGE_ELEPHANT: 'map_overhaul/m_dead_carthage_elephant.png',
+  MAP_BOTTOM_COASTAL_UNDEAD_RUINS: 'map_overhaul/m_bottom_coastal_undead_ruins.png',
   // 2026-05-22 V14 — Necromantic Roman ruin set (user-supplied art).
   // Two sheets cropped to 11 feature pieces — ornate columns with
   // green soul-flames, SPQR banners with skull standards, stone

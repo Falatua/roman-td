@@ -324,16 +324,32 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     expect(source).toContain('t === TileType.EMPTY');
   });
 
-  it('anchors the bottom-ocean undead Roman ruin cluster beside the cove', () => {
+  it('anchors one cohesive bottom-ocean undead Roman ruin beside the cove', async () => {
+    const sharp = require('sharp');
     const fs = require('fs');
     const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
-    expect(source).toContain('const BOTTOM_OCEAN_UNDEAD_RUINS');
-    expect(source).toContain("key: 'MAP_NECRO_GATE_A'");
-    expect(source).toContain("key: 'MAP_NECRO_RUIN_2'");
-    expect(source).toContain("key: 'MAP_NECRO_STANDARD'");
-    expect(source).toContain("key: 'MAP_NECRO_SKULL_SHRINE'");
+    expect(source).toContain("tex('MAP_BOTTOM_COASTAL_UNDEAD_RUINS')");
     expect(source).toContain('WATER_ZONE.col + WATER_ZONE.width');
-    expect(source).toContain('GRID.ROWS - 2.25');
+    expect(source).toContain('GRID.ROWS - 0.65');
+    expect(source).toContain('GRID.TILE * 5.20');
+    expect(source).not.toContain('const BOTTOM_OCEAN_UNDEAD_RUINS');
+
+    const file = assetFileFor('MAP_BOTTOM_COASTAL_UNDEAD_RUINS');
+    expect(file).toBe('map_overhaul/m_bottom_coastal_undead_ruins.png');
+    const img = sharp(path.join(__dirname, '../public/assets/sprites', file!));
+    const meta = await img.metadata();
+    expect(meta.width).toBe(192);
+    expect(meta.height).toBe(96);
+    expect(meta.hasAlpha).toBe(true);
+    const raw = await img.ensureAlpha().raw().toBuffer();
+    let transparent = 0;
+    let magenta = 0;
+    for (let i = 0; i < raw.length; i += 4) {
+      if (raw[i + 3] < 8) transparent++;
+      if (raw[i] > 220 && raw[i + 1] < 80 && raw[i + 2] > 220 && raw[i + 3] > 8) magenta++;
+    }
+    expect(transparent).toBeGreaterThan(192 * 96 * 0.35);
+    expect(magenta).toBe(0);
   });
 });
 
