@@ -3762,6 +3762,20 @@ export class RenderEngine {
       remains.alpha = anchor.alpha;
       cornerLayer.addChild(remains);
     }
+    // Cyclopean war trophy planted above-left of the severed head. It is a
+    // background-only sprite: the compact crater base never changes tile
+    // occupancy, prospect placement, or enemy pathfinding.
+    const cyclopsSwordTex = tex('MAP_CYCLOPS_WAR_SWORD');
+    if (cyclopsSwordTex) {
+      const cyclopsSword = new Sprite(cyclopsSwordTex);
+      cyclopsSword.anchor.set(0.5);
+      cyclopsSword.x = GRID.TILE * 34.25;
+      cyclopsSword.y = GRID.TILE * 2.55;
+      cyclopsSword.width = GRID.TILE * 2.25;
+      cyclopsSword.height = cyclopsSword.width * (cyclopsSwordTex.height / Math.max(1, cyclopsSwordTex.width));
+      cyclopsSword.alpha = 0.98;
+      cornerLayer.addChild(cyclopsSword);
+    }
     const CORNERS: CornerAnchor[] = [
       // Top-right corner (rows 0-3, cols 33-37)
       { col: 33, row: 2,  key: 'MAP_CORNER_SHRINE_A4', scale: 1.4 },     // ornate column

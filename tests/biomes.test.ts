@@ -384,6 +384,32 @@ describe('Top-right Cyclops trophy prop', () => {
     expect(Object.values(BIOMES).flatMap(biome => biome.propPool)).not.toContain('DP_URN');
     expect(source.indexOf('this.layers.bg.addChild(decorLayer);')).toBeLessThan(source.indexOf('this.layers.bg.addChild(cornerLayer);'));
   });
+
+  it('adds a transparent giant war sword above the severed head without changing gameplay tiles', async () => {
+    const sharp = require('sharp');
+    const file = assetFileFor('MAP_CYCLOPS_WAR_SWORD');
+    expect(file).toBe('map_overhaul/m_cyclops_war_sword.png');
+
+    const full = path.join(__dirname, '../public/assets/sprites', file!);
+    expect(fs.existsSync(full)).toBe(true);
+    const img = sharp(full);
+    const meta = await img.metadata();
+    expect(meta.width).toBe(384);
+    expect(meta.height).toBe(576);
+    expect(meta.hasAlpha).toBe(true);
+
+    const raw = await img.ensureAlpha().raw().toBuffer();
+    let transparent = 0;
+    for (let i = 3; i < raw.length; i += 4) if (raw[i] < 8) transparent++;
+    expect(transparent).toBeGreaterThan(384 * 576 * 0.45);
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain("tex('MAP_CYCLOPS_WAR_SWORD')");
+    expect(source).toContain('cyclopsSword.x = GRID.TILE * 34.25');
+    expect(source).toContain('cyclopsSword.y = GRID.TILE * 2.55');
+    expect(source).toContain('cyclopsSword.width = GRID.TILE * 2.25');
+    expect(source).toContain('background-only sprite');
+  });
 });
 
 describe('Rome gate fallen Cyclops tableau', () => {
