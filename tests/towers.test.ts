@@ -1,7 +1,7 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
-import { canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, transformWithGiantsBane, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
+import { canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
 import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
@@ -1544,6 +1544,41 @@ describe('Pool draw — base tower types', () => {
       expect(draw.every(card => card.tier <= maxQualityTierForTower(card.type))).toBe(true);
     } finally {
       randomSpy.mockRestore();
+    }
+  });
+
+  it('keeps unlocked specialist lines available on every higher Solo tier', () => {
+    for (const type of [TowerType.VENATOR, TowerType.AQUILA_VENATOR]) {
+      expect(soloProspectTierPool(2)).not.toContain(type);
+      expect(soloProspectTierPool(3)).toContain(type);
+      expect(soloProspectTierPool(4)).toContain(type);
+      expect(soloProspectTierPool(5)).toContain(type);
+    }
+    expect(soloProspectTierPool(4)).not.toContain(TowerType.PRAEFECTUS);
+    expect(soloProspectTierPool(5)).toContain(TowerType.PRAEFECTUS);
+  });
+
+  it('gives Venator lines a comparable max-pool type chance instead of a T3-only bottleneck', () => {
+    const level = ECONOMY.POOL_MAX_LEVEL;
+    const legate = soloTowerTypeChance(level, TowerType.LEGATE);
+    const venator = soloTowerTypeChance(level, TowerType.VENATOR);
+    const aquila = soloTowerTypeChance(level, TowerType.AQUILA_VENATOR);
+    const praefectus = soloTowerTypeChance(level, TowerType.PRAEFECTUS);
+
+    expect(venator).toBeCloseTo(aquila, 8);
+    expect(venator).toBeGreaterThanOrEqual(legate * 0.75);
+    expect(praefectus).toBeGreaterThan(0);
+    expect(praefectus).toBeLessThan(venator);
+  });
+
+  it('never emits a Solo card outside that tower line\'s legal tier range', () => {
+    const state = createGameState();
+    state.poolLevel = ECONOMY.POOL_MAX_LEVEL;
+    state.heroLevel = ECONOMY.POOL_MAX_LEVEL;
+    for (let i = 0; i < 1000; i++) {
+      for (const card of rollSoloDraw(state)) {
+        expect(card.tier).toBeLessThanOrEqual(maxQualityTierForTower(card.type));
+      }
     }
   });
 });

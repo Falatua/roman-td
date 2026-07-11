@@ -6,9 +6,9 @@
 //
 // DIFFICULTY = expected number of prospect draws to assemble the recipe,
 // computed from the REAL draw machinery: tier rolled from POOL_PROBABILITIES
-// at a pool level, then type picked uniformly from that tier's pool
-// (BASE_TOWER_TYPES + TIER_BONUS_TOWER_TYPES, max-tier filtered) — the exact
-// mirror of TowerSystem.rollDraw. P(ingredient) sums P(tier)×P(type|tier)
+// at a pool level, then type picked uniformly from the Solo tier pool
+// (native unlock band through the rolled tier, max-tier filtered) — the exact
+// mirror of TowerSystem.rollSoloDraw. P(ingredient) sums P(tier)×P(type|tier)
 // over tiers ≥ minTier; expected draws = 1/P; recipe difficulty = Σ over
 // ingredients, recursing into combo ingredients (memoized). Reported at the
 // pool level that MINIMIZES the recipe's expected draws (the level a player
@@ -31,7 +31,7 @@ import { DamageType, EnemyFaction, StatusEffectKind } from '../src/types';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier, statusEffectiveness } from '../src/systems/EnemyResistances';
 import { POOL_PROBABILITIES } from '../src/constants';
-import { BASE_TOWER_TYPES, TIER_BONUS_TOWER_TYPES, maxQualityTierForTower } from '../src/systems/TowerSystem';
+import { soloProspectTierPool } from '../src/systems/TowerSystem';
 
 const RUN = !!process.env.COMBO_REPORT;
 
@@ -39,9 +39,7 @@ const RUN = !!process.env.COMBO_REPORT;
 function tierPools(): Record<number, string[]> {
   const pools: Record<number, string[]> = {};
   for (let tier = 1; tier <= 5; tier++) {
-    pools[tier] = [...BASE_TOWER_TYPES, ...((TIER_BONUS_TOWER_TYPES as any)[tier] ?? [])]
-      .map(String)
-      .filter(type => maxQualityTierForTower(type as any) >= tier);
+    pools[tier] = soloProspectTierPool(tier).map(String);
   }
   return pools;
 }

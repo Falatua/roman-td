@@ -252,13 +252,29 @@ export const transformMilitesWithGiantsBane = transformWithGiantsBane;
 // Probability draw: 5 cards. Each is type + tier per pool weights.
 // Uses the EFFECTIVE pool level = max(gold-purchased poolLevel, kill-XP heroLevel).
 export function rollDraw(state: GameStateShape, basePool: TowerType[] = BASE_TOWER_TYPES): DrawCard[] {
+  return rollDrawWithTierPool(state, basePool, tierPool);
+}
+
+// Solo campaign draw. A specialist's authored tier is its unlock floor, not
+// the only tier where it can appear: T3 lines remain eligible on T4/T5 rolls,
+// and T4 lines remain eligible on T5 rolls. This keeps higher pool upgrades
+// from crowding Venator/Aquila Venator and other specialist lines out.
+export function rollSoloDraw(state: GameStateShape, basePool: TowerType[] = BASE_TOWER_TYPES): DrawCard[] {
+  return rollDrawWithTierPool(state, basePool, soloProspectTierPool);
+}
+
+function rollDrawWithTierPool(
+  state: GameStateShape,
+  basePool: TowerType[],
+  poolForTier: (tier: number, basePool: TowerType[]) => TowerType[]
+): DrawCard[] {
   const eff = Math.max(state.poolLevel ?? 0, state.heroLevel ?? 0);
   const tierWeights = POOL_PROBABILITIES[Math.min(POOL_PROBABILITIES.length - 1, eff)];
 
   const cards: DrawCard[] = [];
   for (let i = 0; i < 5; i++) {
     const tier = pickTier(tierWeights);
-    const pool = tierPool(tier, basePool);
+    const pool = poolForTier(tier, basePool);
     const legalPool = pool.length > 0
       ? pool
       : (basePool.length > 0 ? basePool : BASE_TOWER_TYPES).filter(type => maxQualityTierForTower(type) >= 1);
@@ -352,6 +368,28 @@ export const TIER_BONUS_TOWER_TYPES: Record<number, TowerType[]> = {
 function tierPool(tier: number, basePool: TowerType[]): TowerType[] {
   return [...basePool, ...(TIER_BONUS_TOWER_TYPES[tier] ?? [])]
     .filter(type => maxQualityTierForTower(type) >= tier);
+}
+
+export function soloProspectTierPool(tier: number, basePool: TowerType[] = BASE_TOWER_TYPES): TowerType[] {
+  const unlockedBonusTypes: TowerType[] = [];
+  for (let unlockTier = 1; unlockTier <= tier; unlockTier++) {
+    unlockedBonusTypes.push(...(TIER_BONUS_TOWER_TYPES[unlockTier] ?? []));
+  }
+  return [...new Set([...basePool, ...unlockedBonusTypes])]
+    .filter(type => maxQualityTierForTower(type) >= tier);
+}
+
+// Exact pre-duplicate-upgrade type probability for audit/UI tests. Duplicate
+// upgrades change a card's tier but never its tower type.
+export function soloTowerTypeChance(poolLevel: number, type: TowerType, basePool: TowerType[] = BASE_TOWER_TYPES): number {
+  const weights = POOL_PROBABILITIES[Math.min(POOL_PROBABILITIES.length - 1, Math.max(0, poolLevel))];
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  let chance = 0;
+  for (let tier = 1; tier <= 5; tier++) {
+    const pool = soloProspectTierPool(tier, basePool);
+    if (pool.includes(type) && pool.length > 0) chance += (weights[tier - 1] / totalWeight) / pool.length;
+  }
+  return chance;
 }
 
 export function placeCost(tier: number): number {

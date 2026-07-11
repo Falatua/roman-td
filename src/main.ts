@@ -21,7 +21,7 @@ import { buildGateShop, buildMercatorChampionOffers, buildMercatorStock, buildMe
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
-import { BASE_TOWER_TYPES, createTower, rollDraw, findRandomBuildTiles, towerAuraTileKind, towerStatBreakdown } from './systems/TowerSystem';
+import { BASE_TOWER_TYPES, createTower, rollSoloDraw, findRandomBuildTiles, towerAuraTileKind, towerStatBreakdown } from './systems/TowerSystem';
 import { scanCombos, realizableCombos, executeCombo, resolveComboChoice, comboIngredientGlowIds } from './systems/CombinationEngine';
 // SANDBOX: dev-mode imports. Delete this line + every line tagged
 // `// SANDBOX:` to remove sandbox mode entirely.
@@ -2766,7 +2766,7 @@ async function boot() {
 
   // Roll 5 random prospects into a queue. Player will click 5 empty tiles to "reveal" them.
   function rollProspects() {
-    const draw = rollDraw(state, BASE_TOWER_TYPES);
+    const draw = rollSoloDraw(state, BASE_TOWER_TYPES);
     state.prospectQueue = draw;
     state.prospectsPlaced = 0;
     state.phase = GamePhase.PROSPECT_PLACEMENT;
@@ -5648,9 +5648,9 @@ async function boot() {
         spendGold(state, cost);
         state.poolLevel = Math.min(ECONOMY.POOL_MAX_LEVEL, state.poolLevel + 1);
         if (state.phase === GamePhase.PROSPECT_PLACEMENT && state.prospectQueue.length > 0) {
-          state.prospectQueue = rollDraw(state, BASE_TOWER_TYPES).slice(0, state.prospectQueue.length);
+          state.prospectQueue = rollSoloDraw(state, BASE_TOWER_TYPES).slice(0, state.prospectQueue.length);
         } else {
-          state.draw = rollDraw(state, BASE_TOWER_TYPES);
+          state.draw = rollSoloDraw(state, BASE_TOWER_TYPES);
         }
         // 2026-05: gold rebate on pool upgrades REMOVED. You pay the full
         // cost — the value is the better prospect rolls + the global damage
@@ -5665,9 +5665,9 @@ async function boot() {
             spendGold(state, cost);
             state.poolLevel = Math.min(ECONOMY.POOL_MAX_LEVEL, prevLevel + 1);
             if (state.phase === GamePhase.PROSPECT_PLACEMENT && state.prospectQueue.length > 0) {
-              state.prospectQueue = rollDraw(state, BASE_TOWER_TYPES).slice(0, state.prospectQueue.length);
+              state.prospectQueue = rollSoloDraw(state, BASE_TOWER_TYPES).slice(0, state.prospectQueue.length);
             } else {
-              state.draw = rollDraw(state, BASE_TOWER_TYPES);
+              state.draw = rollSoloDraw(state, BASE_TOWER_TYPES);
             }
           }
         );
@@ -7003,7 +7003,7 @@ async function boot() {
       // time. Higher pool levels make repeat rolling more lucrative, which
       // is the intended power curve.
       if (state.prospectQueue.length === 0) {
-        state.prospectQueue = rollDraw(state, BASE_TOWER_TYPES);
+        state.prospectQueue = rollSoloDraw(state, BASE_TOWER_TYPES);
       }
       // Path validation
       setTile(state, col, row, TileType.TOWER);

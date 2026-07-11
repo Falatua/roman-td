@@ -21,4 +21,10 @@ describe('Prospect keep flow', () => {
     expect(queueClearIndex).toBeGreaterThan(exhaustedIndex);
     expect(buildPhaseIndex).toBeGreaterThan(queueClearIndex);
   });
+
+  it('uses the cumulative Solo roster draw for every campaign prospect refresh', () => {
+    expect(mainSource).toContain("import { BASE_TOWER_TYPES, createTower, rollSoloDraw");
+    expect(mainSource.match(/rollSoloDraw\(state, BASE_TOWER_TYPES\)/g)?.length).toBe(6);
+    expect(mainSource).not.toContain('rollDraw(state, BASE_TOWER_TYPES)');
+  });
 });
