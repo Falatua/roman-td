@@ -3178,7 +3178,7 @@ export class RenderEngine {
         // Result: combat lanes stay visually clean (~3% prop density
         // within 2 tiles of path), borders + corners stay rich
         // (~30% density), but the total prop count drops ~35%.
-        if (!isPath && t === TileType.EMPTY) {
+        if (!isPath && t === TileType.EMPTY && !inCyclopsTrophyClearance) {
           // Center-vs-edge weight (1.0 at corners, ~0.7 at dead center).
           const cxNorm = (c - GRID.COLS / 2) / (GRID.COLS / 2);
           const cyNorm = (r - GRID.ROWS / 2) / (GRID.ROWS / 2);

@@ -380,6 +380,7 @@ describe('Top-right Cyclops trophy prop', () => {
     expect(source).not.toContain("{ col: 36, row: 3,  key: 'MAP_CORNER_SHRINE_A6'");
     expect(source).toContain('const inCyclopsTrophyClearance = c >= 34 && r <= 5;');
     expect(source).toContain('t === TileType.EMPTY && !inCyclopsTrophyClearance');
+    expect(source.match(/t === TileType\.EMPTY && !inCyclopsTrophyClearance/g)).toHaveLength(2);
     expect(Object.values(BIOMES).flatMap(biome => biome.propPool)).not.toContain('DP_URN');
     expect(source.indexOf('this.layers.bg.addChild(decorLayer);')).toBeLessThan(source.indexOf('this.layers.bg.addChild(cornerLayer);'));
   });
