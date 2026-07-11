@@ -215,6 +215,7 @@ export const OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT = 0.62;
 // (direct map) and event reward choices (SOULFIRE_BRAND is Uprising-only,
 // INFERNO_STANDARD is Gates-of-Hell-only — neither sits in ordinary pools).
 export const DOT_ITEM_RANDOM_WEIGHT = 0.40;
+export const APOTHEOSIS_ITEM_RANDOM_WEIGHT = 0.35;
 
 const OCEAN_SPECIALIST_ITEMS = new Set<string>([
   'BRINEHOOK_ROPE',
@@ -256,6 +257,7 @@ export function itemRandomSelectionWeight(itemId: ItemId | string): number {
   if (isAuraItem(itemId)) weight *= AURA_ITEM_RANDOM_WEIGHT;
   if (isOceanSpecialistItem(itemId)) weight *= OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT;
   if (isDotItem(itemId)) weight *= DOT_ITEM_RANDOM_WEIGHT;
+  if (String(itemId) === 'EAGLE_OF_APOTHEOSIS') weight *= APOTHEOSIS_ITEM_RANDOM_WEIGHT;
   return weight;
 }
 

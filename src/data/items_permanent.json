@@ -586,5 +586,13 @@
     "buy": 190,
     "sell": 65,
     "effect": "The draught bubbles with arena sand, bone ash, and old Punic curses. Veterans swear a Tier IV or Tier V Murmillo who drinks it does not remain merely a Murmillo for long. The awakened tower holds four total items, with one slot forever bound to Witch's Brew, and the arena dead may answer its call."
+  },
+  "EAGLE_OF_APOTHEOSIS": {
+    "name": "Eagle of Apotheosis",
+    "rarity": "LEGENDARY",
+    "buy": 210,
+    "sell": 70,
+    "consumable": true,
+    "effect": "ONE USE: During preparation, apply to a kept non-hero tower that can legally reach Tier V. It immediately becomes Tier V, the Eagle is consumed, and no item slot is occupied. Cannot raise Scorpio or Velites beyond their Tier IV cap. Guaranteed once after the first Flyer wave; later copies may appear as exceptionally lucky drops or randomized Mercator stock."
   }
 }

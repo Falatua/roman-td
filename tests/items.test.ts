@@ -2,11 +2,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
-import { AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, DOT_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, isDotItem, itemRandomSelectionWeight, itemEquipMode } from '../src/systems/ItemRules';
+import { APOTHEOSIS_ITEM_RANDOM_WEIGHT, AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, DOT_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, isDotItem, itemRandomSelectionWeight, itemEquipMode } from '../src/systems/ItemRules';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { TowerType } from '../src/types';
 import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop } from '../src/systems/LootSystem';
-import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue } from '../src/systems/MerchantSystem';
+import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, MERCATOR_LEGENDARY } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
 import towersData from '../src/data/towers.json';
 import { LOOT_DROP_RATES } from '../src/constants';
@@ -185,9 +185,10 @@ describe('Item permanence classification', () => {
     expect(isPermanent('SHARPENED_BLADE')).toBe(true);
   });
 
-  it('isConsumable always returns false (consumables removed 2026-05)', () => {
+  it('recognizes the one-use Apotheosis relic without treating normal gear as consumable', () => {
     expect(isConsumable('RAGE_POTION')).toBe(false);
     expect(isConsumable('SHARPENED_BLADE')).toBe(false);
+    expect(isConsumable('EAGLE_OF_APOTHEOSIS')).toBe(true);
   });
 
   it('every item is permanent (no consumables)', () => {
@@ -310,6 +311,7 @@ describe('Loot drop rolling', () => {
     expect(coverage.legendary).toContain('CAPITOLINE_AEGIS');
     expect(coverage.legendary).toContain('GIANTS_BANE');
     expect(coverage.legendary).toContain('WITCHS_BREW');
+    expect(coverage.legendary).toContain('EAGLE_OF_APOTHEOSIS');
   });
 
   it('keeps event-exclusive items out of ordinary and boss RNG while still tracking them by event', () => {
@@ -425,7 +427,8 @@ describe('Merchant — Mercator stock', () => {
     expect(rare.length).toBeGreaterThanOrEqual(2);
     // 2026-05-18 — 2 guaranteed EPIC slots per visit.
     expect(epic.length).toBe(2);
-    expect(cons.length).toBe(0);
+    expect(cons.every(o => o.itemId === 'EAGLE_OF_APOTHEOSIS')).toBe(true);
+    expect(cons.length).toBeLessThanOrEqual(1);
     // 2026-05-25 — TRUESIGHT_LENS now ships as a GUARANTEED slot every
     // Mercator visit (was a 3-in-13 random MID roll). Player must
     // always have reliable access to the stealth-reveal counter.
@@ -455,6 +458,13 @@ describe('Merchant — Mercator stock', () => {
     } finally {
       randomSpy.mockRestore();
     }
+  });
+
+  it('keeps the Eagle of Apotheosis in Mercator\'s randomized Legendary pool', () => {
+    expect(MERCATOR_LEGENDARY).toContain('EAGLE_OF_APOTHEOSIS');
+    expect((itemsData as any).EAGLE_OF_APOTHEOSIS.rarity).toBe('LEGENDARY');
+    expect(APOTHEOSIS_ITEM_RANDOM_WEIGHT).toBe(0.35);
+    expect(itemRandomSelectionWeight('EAGLE_OF_APOTHEOSIS')).toBe(0.35);
   });
 
   it('rerolls Mercator item stock when each visit resets', () => {

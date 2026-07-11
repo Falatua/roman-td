@@ -136,6 +136,10 @@ export interface GameStateShape {
   // so the player can actually use it during W30. This one-shot flag keeps
   // the prelude reward idempotent across save/load or repeated callbacks.
   finalBossPreludeRewardGranted?: boolean;
+  // One guaranteed Eagle of Apotheosis is awarded after the first authored
+  // Flyer wave. The flag records creation of the reward, whether it entered
+  // inventory immediately or had to wait as a loot orb because inventory was full.
+  firstFlyerApotheosisGranted?: boolean;
   combosBuilt?: number;
   combosBuiltUniqueTypes?: string[];
   // Lifetime kills of enemies that emerged from the ocean/shipwreck lane.
@@ -398,6 +402,7 @@ export function createGameState(): GameStateShape {
     bossTrophyWavesClaimed: [],
     pendingBossTrophyOffer: null,
     towerDamageByType: {},
+    firstFlyerApotheosisGranted: false,
     testYourMightOffered: false,
     testYourMightDeclined: false,
     testYourMightActive: false,

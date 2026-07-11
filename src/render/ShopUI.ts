@@ -789,7 +789,7 @@ function renderMercatorShop(
     const itemList = document.createElement('div');
     itemList.style.cssText = `display:grid;grid-template-columns:1fr 1fr;gap:8px;`;
     for (const offer of sortedOffers) {
-      const def: any = isConsumable(offer.itemId) ? (consumables as any)[offer.itemId] : (items as any)[offer.itemId];
+      const def: any = (consumables as any)[offer.itemId] ?? (items as any)[offer.itemId];
       const card = document.createElement('div');
       card.className = 'merc-card';
       card.style.cssText = `border:2px solid ${RARITY_COLOR[offer.rarity]};padding:8px;background:#0c0a08;display:flex;flex-direction:column;gap:5px;position:relative;`;
@@ -1145,7 +1145,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   const list = document.createElement('div');
   list.style.cssText = `display:grid;grid-template-columns:1fr 1fr;gap:6px;`;
   for (const offer of shop.offers) {
-    const def: any = isConsumable(offer.itemId) ? (consumables as any)[offer.itemId] : (items as any)[offer.itemId];
+    const def: any = (consumables as any)[offer.itemId] ?? (items as any)[offer.itemId];
     const card = document.createElement('div');
     card.style.cssText = `border:2px solid ${RARITY_COLOR[offer.rarity]};padding:6px;background:#0c0a08;display:flex;flex-direction:column;gap:4px;`;
     const oneUseTag = offer.isConsumable ? `<span style="font-size:9px;color:#ee9966;letter-spacing:1px;background:#2a1410;border:1px solid #ee9966;padding:1px 4px;margin-left:4px">ONE USE</span>` : '';
@@ -1537,7 +1537,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
       return;
     }
     const itm = inv.slots[selectedIdx];
-    const def: any = isConsumable(itm.itemId) ? (consumables as any)[itm.itemId] : (items as any)[itm.itemId];
+    const def: any = (consumables as any)[itm.itemId] ?? (items as any)[itm.itemId];
     const color = RARITY_COLOR[itm.rarity];
     const sellPrice = inventorySellPrice(itm);
     const left = document.createElement('div');
@@ -1590,7 +1590,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
     };
     setStyle(isSel);
     if (itm) {
-      const def: any = isConsumable(itm.itemId) ? (consumables as any)[itm.itemId] : (items as any)[itm.itemId];
+      const def: any = (consumables as any)[itm.itemId] ?? (items as any)[itm.itemId];
       slot.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">${itemIconSvg(itm.itemId, itm.rarity, 44)}${isConsumable(itm.itemId) ? '<div style="font-size:7px;color:#ee9966;letter-spacing:1px;line-height:1">1×</div>' : ''}</div>`;
       attachInventoryItemTooltip(slot, itm, def);
       slot.onclick = () => {
@@ -1625,7 +1625,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
       let primary: string | number = idx;
       let familyOk = true;
       if (itm) {
-        const def: any = isConsumable(itm.itemId) ? (consumables as any)[itm.itemId] : (items as any)[itm.itemId];
+        const def: any = (consumables as any)[itm.itemId] ?? (items as any)[itm.itemId];
         const fam = itemFamily(itm.itemId) ?? 'SPECIAL';
         // 2026-05 v9: DoT sub-families (DOT_BURN/POISON/BLEED) all match
         // the player-facing "DOT" chip — the split is mechanical, not UX.

@@ -9,6 +9,8 @@ import { itemRandomSelectionWeight } from './ItemRules';
 // color is purple (#a060ff). Used for premium-but-not-build-defining
 // items that fill the gap between Rare and Legendary.
 export type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'UNIQUE';
+export const EAGLE_OF_APOTHEOSIS_ITEM_ID: ItemId = 'EAGLE_OF_APOTHEOSIS';
+export const APOTHEOSIS_LUCKY_DROP_CHANCE = 0.00015;
 
 // 2026-07-09 — Epic and Legendary item prices +10% over the post-ocean
 // economy ladder. Sell refunds (floor(buyPrice/2)) scale with these
@@ -405,7 +407,44 @@ export function isPermanent(itemId: ItemId): boolean {
 }
 
 export function isConsumable(itemId: ItemId): boolean {
-  return Object.prototype.hasOwnProperty.call(consumables, itemId);
+  return Object.prototype.hasOwnProperty.call(consumables, itemId)
+    || (items as any)[itemId]?.consumable === true;
+}
+
+export type FirstFlyerApotheosisGrant = 'inventory' | 'loot_orb' | 'none';
+
+/**
+ * Creates the campaign's one guaranteed ascension relic after the first
+ * authored Flyer wave. A full inventory never destroys the reward: it waits
+ * beside Rome as a normal loot orb until the player frees a slot.
+ */
+export function grantFirstFlyerApotheosis(
+  state: GameStateShape,
+  inv: InventoryState,
+  clearedAuthoredFlyerWave: boolean
+): FirstFlyerApotheosisGrant {
+  if (!clearedAuthoredFlyerWave || state.firstFlyerApotheosisGranted || state.sandboxMode || state.endlessMode) return 'none';
+  state.firstFlyerApotheosisGranted = true;
+  if (inventoryAdd(inv, EAGLE_OF_APOTHEOSIS_ITEM_ID, 'LEGENDARY', true)) return 'inventory';
+  state.lootOrbs.push({
+    id: newId(),
+    x: GRID.CANVAS_W - GRID.TILE * 1.5,
+    y: GRID.CANVAS_H - GRID.TILE * 1.5,
+    itemId: EAGLE_OF_APOTHEOSIS_ITEM_ID,
+    rarity: 'LEGENDARY'
+  });
+  return 'loot_orb';
+}
+
+/** Extremely rare post-W6 ordinary-enemy chance for additional copies. */
+export function rollApotheosisLuckyDrop(
+  state: GameStateShape,
+  inv: InventoryState,
+  randomValue = Math.random()
+): { itemId: ItemId; rarity: Rarity } | null {
+  if (!state.firstFlyerApotheosisGranted || state.wave <= 6 || randomValue >= APOTHEOSIS_LUCKY_DROP_CHANCE) return null;
+  if (currentlyOwnedLegendarySet(state, inv).has(EAGLE_OF_APOTHEOSIS_ITEM_ID)) return null;
+  return { itemId: EAGLE_OF_APOTHEOSIS_ITEM_ID, rarity: 'LEGENDARY' };
 }
 
 // Auto-pickup: any orb whose tile center is within 1.2 tile of the gate area is grabbed

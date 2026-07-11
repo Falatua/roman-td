@@ -1,4 +1,4 @@
-import { Tower, TowerType, TargetingMode } from '../types';
+import { GamePhase, Tower, TowerType, TargetingMode } from '../types';
 import { GameStateShape } from '../GameState';
 import { ECONOMY, INVENTORY_SIZE, TIER_COLORS, HERO_ITEM_SLOTS } from '../constants';
 import { damageTypeLabel, pretty } from '../format';
@@ -8,7 +8,7 @@ import { setTile } from '../systems/GridManager';
 import { canTransformWithGiantsBane, canTransformWithWitchsBrew, GIANTS_BANE_ITEM_ID, isGiantsBaneTransformedTowerType, isWitchsBrewTransformedTowerType, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, transformWithGiantsBane, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID, StatModifier } from '../systems/TowerSystem';
 import { getTowerProjectileProfile } from '../systems/ProjectileSystem';
 import { TileType } from '../types';
-import { InventoryState, inventoryAdd, inventoryRemove, itemBuyPrice, Rarity } from '../systems/LootSystem';
+import { InventoryState, inventoryAdd, inventoryRemove, isConsumable, itemBuyPrice, Rarity } from '../systems/LootSystem';
 import permItems from '../data/items_permanent.json';
 import consumables from '../data/items_consumable.json';
 import towersData from '../data/towers.json';
@@ -28,6 +28,7 @@ import { comboPreviewBlockHtml } from './ComboPreview';
 import { heroIdForTowerType } from '../systems/HeroIdentity';
 import { heroTierForTower, heroXpForTower } from '../systems/HeroScaling';
 import { towerDamageProfile, renderTowerDamageProfileHtml } from './TowerDamageProfile';
+import { applyEagleOfApotheosis, canApplyEagleOfApotheosis, EAGLE_OF_APOTHEOSIS_ITEM_ID } from '../systems/TierAscensionSystem';
 
 const RAR: Record<string, string> = { COMMON:'#cccccc', UNCOMMON:'#5cd05c', RARE:'#5ca0ff', EPIC:'#a060ff', LEGENDARY:'#ff9933', UNIQUE:'#ffd34d' };
 const TOWER_INSPECT_PANEL_MAX_HEIGHT_PX = 1152;
@@ -473,6 +474,44 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   }
   panel.appendChild(targetRow);
 
+  // One-use Tier V ascension lives outside the equipment grid. Consuming it
+  // never occupies a slot, so it must remain usable even when all equipment
+  // slots are full.
+  const ascensionSlot = inv.slots.find(slot => slot.itemId === EAGLE_OF_APOTHEOSIS_ITEM_ID);
+  if (!t.pending && ascensionSlot) {
+    const eligibility = canApplyEagleOfApotheosis(t);
+    const inPrep = state.phase !== GamePhase.WAVE_PHASE;
+    const blockedReason = !inPrep ? 'The Eagle can only be invoked between waves.' : eligibility.reason;
+    const apotheosisRow = document.createElement('div');
+    apotheosisRow.style.cssText = 'padding:10px;border-bottom:1px solid #5a3a20;background:linear-gradient(90deg,#25160a,#120c08)';
+    apotheosisRow.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:0 0 auto">${itemIconSvg(EAGLE_OF_APOTHEOSIS_ITEM_ID, 'LEGENDARY', 48)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;color:#ff9933;font-weight:bold;letter-spacing:1.5px">EAGLE OF APOTHEOSIS · ONE USE</div>
+          <div style="font-size:10px;color:#cdb98a;line-height:1.4;margin-top:3px">Raise this kept tower immediately from Tier ${t.qualityTier} to Tier V. The relic is consumed and uses no item slot.</div>
+          ${blockedReason ? `<div style="font-size:9px;color:#ff8877;margin-top:4px">${blockedReason}</div>` : ''}
+        </div>
+      </div>`;
+    const useButton = document.createElement('button');
+    useButton.type = 'button';
+    useButton.disabled = !!blockedReason;
+    useButton.textContent = blockedReason ? 'CANNOT ASCEND' : `ASCEND TO TIER V`;
+    useButton.style.cssText = `width:100%;margin-top:8px;padding:8px;background:${blockedReason ? '#28221c' : 'linear-gradient(180deg,#805510,#4a2c08)'};border:2px solid ${blockedReason ? '#5a4a30' : '#ffb347'};color:${blockedReason ? '#776b58' : '#fff3c4'};font-family:inherit;font-weight:bold;letter-spacing:1.5px;cursor:${blockedReason ? 'not-allowed' : 'pointer'};`;
+    useButton.onclick = () => {
+      if (blockedReason) return;
+      const towerName = (towersData as any)[t.type]?.name ?? String(t.type).replace(/_/g, ' ');
+      if (!window.confirm(`Consume the Eagle of Apotheosis and raise ${towerName} from Tier ${t.qualityTier} to Tier V?`)) return;
+      const result = applyEagleOfApotheosis(t);
+      if (!result.ok) { state.hint = result.reason ?? 'This tower cannot ascend.'; return; }
+      inventoryRemove(inv, ascensionSlot.id);
+      state.hint = `The Eagle rises. ${towerName} is now Tier V, and its recipe eligibility has been refreshed.`;
+      refresh();
+    };
+    apotheosisRow.appendChild(useButton);
+    panel.appendChild(apotheosisRow);
+  }
+
   // Equipped items — square slots to match the Armarium inventory feel.
   // Pending prospects show a single LOCKED notice in place of the equip block.
   if (t.pending) {
@@ -537,7 +576,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   // Inventory equip list — only meaningful for kept towers.
   if (t.pending) {
     // No-op: we already showed a single LOCKED notice above. Avoid duplicate.
-  } else if (t.equippedItems.length < stats.slots && inv.slots.length > 0) {
+  } else if (t.equippedItems.length < stats.slots && inv.slots.some(slot => !isConsumable(slot.itemId))) {
     const equipRow = document.createElement('div');
     equipRow.style.cssText = 'padding:10px;border-bottom:1px solid #3a3025';
     equipRow.innerHTML = `
@@ -554,6 +593,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     // tower right now (already equipped, family conflict, or no slot left).
     // The player sees the conflict before clicking, not after.
     for (const slot of inv.slots) {
+      if (isConsumable(slot.itemId)) continue;
       const idef: any = (permItems as any)[slot.itemId] ?? (consumables as any)[slot.itemId];
       const cell = document.createElement('div');
       // Compute the blocker reason (if any) up-front for the visual state.
@@ -1227,7 +1267,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   // Hero equip-from-inventory section. Mirrors the regular tower menu's
   // grid (family/mode gates, blocker chips, click-to-equip) with
   // HERO_ITEM_SLOTS as the slot cap.
-  if (t.equippedItems.length < HERO_ITEM_SLOTS && inv.slots.length > 0) {
+  if (t.equippedItems.length < HERO_ITEM_SLOTS && inv.slots.some(slot => !isConsumable(slot.itemId))) {
     const equipRow = document.createElement('div');
     equipRow.style.cssText = 'padding:10px 14px;border-bottom:1px solid #3a3025';
     equipRow.innerHTML = `
@@ -1241,6 +1281,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
     const invGrid = document.createElement('div');
     invGrid.style.cssText = `display:grid;grid-template-columns:repeat(5,54px);gap:5px;padding:8px;background:#0c0a08;border:2px solid ${tint};box-shadow:inset 0 0 14px #000;`;
     for (const slot of inv.slots) {
+      if (isConsumable(slot.itemId)) continue;
       const idef: any = (permItems as any)[slot.itemId] ?? (consumables as any)[slot.itemId];
       const cell = document.createElement('div');
       let blocker: string | null = null;

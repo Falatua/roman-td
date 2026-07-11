@@ -1,6 +1,6 @@
 import { ItemId } from '../types';
 import items from '../data/items_permanent.json';
-import { itemBuyPrice, Rarity } from './LootSystem';
+import { isConsumable, itemBuyPrice, Rarity } from './LootSystem';
 import { championForHero } from './HeroIdentity';
 import { itemRandomSelectionWeight } from './ItemRules';
 import { maxQualityTierForTower } from './TowerSystem';
@@ -101,7 +101,7 @@ const MERCATOR_EPIC = [
 ];
 // Premium Mercator stock — Legendary trophies that the Gate Shop never carries.
 // These cost 3-5× a normal item but offer build-defining effects.
-const MERCATOR_LEGENDARY = [
+export const MERCATOR_LEGENDARY = [
   // 2026 v2 — anti-air LEGENDARY options.
   'JUPITERS_SKYFIRE','STORM_AQUILA_TALONS',
   'ALPHA_PACK_FANG','WAR_HOUND_COLLAR','ELEPHANT_TUSK',
@@ -124,7 +124,10 @@ const MERCATOR_LEGENDARY = [
   // Milites T4-T5 transformation relic: creates the Giant Killer tower.
   'GIANTS_BANE',
   // Murmillo T4-T5 transformation relic: creates the Undead Gladiator King.
-  'WITCHS_BREW'
+  'WITCHS_BREW',
+  // One-use Tier V ascension relic. It competes for the randomized
+  // Legendary shelf instead of becoming guaranteed Mercator stock.
+  'EAGLE_OF_APOTHEOSIS'
   // CELTIC_LONGSWORD + NECROTIC_LONGSWORD removed from this list — they
   // are now EPIC (see MERCATOR_EPIC).
 ];
@@ -337,7 +340,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   // legendaries so no duplicates land in the stock.
   const legs = sampleNWeightedItems(entries(filteredLegendaryIds), 4);
   for (const [id] of legs) {
-    offers.push({ itemId: id, rarity: 'LEGENDARY', price: itemBuyPrice(id), isConsumable: false });
+    offers.push({ itemId: id, rarity: 'LEGENDARY', price: itemBuyPrice(id), isConsumable: isConsumable(id) });
   }
 
   // 1 guaranteed Rare with a steep markup.

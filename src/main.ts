@@ -16,7 +16,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollApotheosisLuckyDrop, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, grantFirstFlyerApotheosis, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorChampionOffers, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_PRICE, MERCATOR_TOWER_OFFER_COUNT } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
@@ -8090,7 +8090,9 @@ async function boot() {
             } else {
               // Non-boss enemies still roll the regular common/uncommon table
               // by GROUND/FLYER drop rate.
-              maybeRollLootOnKill(state, e);
+              const apotheosisDrop = rollApotheosisLuckyDrop(state, inventory);
+              if (apotheosisDrop) spawnLootAt(state, e, apotheosisDrop);
+              else maybeRollLootOnKill(state, e);
             }
           }
           // Visual + audio cue: only fire if a drop actually appeared.
@@ -8338,6 +8340,16 @@ async function boot() {
         // Auto-pickup loot during build phase (Architectus character not yet animated)
         const picked = autoPickupOnBuildPhase(state, inventory);
         if (picked > 0) state.hint = `Picked up ${picked} item${picked > 1 ? 's' : ''}.`;
+        const clearedWaveDef: any = (wavesData as any[])[state.wave - 1];
+        const firstFlyerRelic = grantFirstFlyerApotheosis(state, inventory, clearedWaveDef?.type === 'F');
+        if (firstFlyerRelic !== 'none') {
+          SFX.itemPickup('LEGENDARY');
+          const delivery = firstFlyerRelic === 'inventory'
+            ? 'It waits in the Armarium. Open a kept tower to invoke it.'
+            : 'Your Armarium is full, so it waits beside Rome as a loot orb.';
+          state.hint = `Eagle of Apotheosis earned. ${delivery}`;
+          showBonusBossBanner('★ FIRST FLYER WAVE CLEARED · EAGLE OF APOTHEOSIS EARNED ★');
+        }
         grantFinalBossPreludeLegendary();
         queueHarborDraftForClearedOceanWave(state);
         // Mercator visit. Builds a SEPARATE shop state from the gate shop
