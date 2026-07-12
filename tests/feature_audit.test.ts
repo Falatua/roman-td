@@ -1139,6 +1139,18 @@ describe('Sample SFX wiring', () => {
     expect(main).toContain('playComboCreationSfx(pickerResolved.result, !!pickerResolved.isSameTierMerge)');
   });
 
+  it('item-awakened tower evolutions use the same class-aware combo creation cue', () => {
+    const fs = require('fs');
+    const main = fs.readFileSync('src/main.ts', 'utf8');
+    const towerMenu = fs.readFileSync('src/render/TowerMenu.ts', 'utf8');
+
+    expect(towerMenu).toContain('onTowerTransformed?: (resultType: TowerType) => void;');
+    expect(towerMenu).toContain('if (transformed || brewTransformed) hooks.onTowerTransformed?.(t.type);');
+    expect(main).toContain('onTowerTransformed: (resultType) => playComboCreationSfx(resultType)');
+    expect(main.indexOf('onTowerTransformed: (resultType) => playComboCreationSfx(resultType)'))
+      .toBeGreaterThan(main.indexOf('function playComboCreationSfx'));
+  });
+
   it('Test Your Might offer has its MP3 cue, playback hook, and preload entry', () => {
     const fs = require('fs');
     const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');

@@ -43,6 +43,9 @@ export interface TowerMenuHooks {
   onUndoProspect?: (towerId: string) => void;
   // Combination execution from inside the tower menu.
   onCombine?: (recipeIndex: number, isSameTierMerge: boolean, resultTileTowerId: string) => void;
+  // Item-awakened evolution (Giant's Bane / Witch's Brew) uses the same
+  // class-aware creation cue as a recipe-built combo or supercombo.
+  onTowerTransformed?: (resultType: TowerType) => void;
 }
 
 function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title: string, onClose: () => void): void {
@@ -661,6 +664,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
         inventoryRemove(inv, slot.id);
         const transformed = slot.itemId === GIANTS_BANE_ITEM_ID && transformWithGiantsBane(t);
         const brewTransformed = slot.itemId === WITCHS_BREW_ITEM_ID && transformWithWitchsBrew(t);
+        if (transformed || brewTransformed) hooks.onTowerTransformed?.(t.type);
         state.hint = transformed
           ? `Giant's Bane awakens. ${def.name ?? 'Tower'} has become ${(towersData as any)[t.type]?.name ?? t.type}.`
           : brewTransformed

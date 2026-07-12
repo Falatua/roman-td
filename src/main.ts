@@ -4506,6 +4506,7 @@ async function boot() {
       // type and tier stay identical), only the tile commitment is undone.
       // Only available while still in PROSPECT_PLACEMENT / PICK_KEEPER.
       onUndoProspect: tw.pending ? undoProspect : undefined,
+      onTowerTransformed: (resultType) => playComboCreationSfx(resultType),
       // Combine is now available on PENDING prospects too — if a lucky
       // prospect-round roll happens to satisfy a recipe, the player can
       // combine the prospects directly into the resulting tower (which
