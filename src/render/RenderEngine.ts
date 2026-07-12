@@ -446,6 +446,16 @@ export class RenderEngine {
     driftSpeed?: number;
     rotationAmp?: number;
   }[] = [];
+  private cyclopsFlySprites: Array<{
+    sp: Sprite;
+    frames: NonNullable<ReturnType<typeof texGridFrame>>[];
+    phase: number;
+    speed: number;
+    radiusX: number;
+    radiusY: number;
+    frameOffset: number;
+    frame: number;
+  }> = [];
   drawAmbient(tick: number, wave: number = 0, isBossWave: boolean = false, caveBActive: boolean = false) {
     // 2026 v2 spec Ch7 — Cave B stays HIDDEN until its first enemy emerges
     // (caveBActive, set in the spawn loop). The frame it activates, the
@@ -490,6 +500,27 @@ export class RenderEngine {
     a.clear();
     g.clear();
     ocean.clear();
+
+    // A tiny pooled carrion-fly loop circles the severed Cyclops trophy.
+    // The five sprites are created only when the static map is rebuilt;
+    // this pass merely changes frame, position, and alpha.
+    const reduceMotion = !!(window as any).__reduceMotion;
+    const flyMotion = reduceMotion ? 0.38 : 1;
+    const flyCenterX = GRID.TILE * 36 + GRID.TILE / 2 - 24;
+    const flyCenterY = GRID.TILE / 2 + 112;
+    for (const fly of this.cyclopsFlySprites) {
+      if (!fly.sp.parent || fly.frames.length === 0) continue;
+      const frame = Math.floor(tick * 12 + fly.frameOffset) % fly.frames.length;
+      if (frame !== fly.frame) {
+        fly.frame = frame;
+        fly.sp.texture = fly.frames[frame];
+      }
+      const angle = tick * fly.speed * flyMotion + fly.phase;
+      fly.sp.x = flyCenterX + Math.cos(angle) * fly.radiusX + Math.sin(tick * 2.1 + fly.phase) * 3.5;
+      fly.sp.y = flyCenterY + Math.sin(angle * 1.27) * fly.radiusY + Math.cos(tick * 2.8 + fly.phase) * 2.2;
+      fly.sp.rotation = Math.sin(angle * 1.8) * 0.16;
+      fly.sp.alpha = 0.72 + 0.22 * (0.5 + 0.5 * Math.sin(tick * 5.2 + fly.phase));
+    }
 
     // GRASS WIND TUFTS — sparse animated grass tufts drift in a sine wave (§8.1)
     // Performance: only render on a 2-tile-spaced subgrid + skip path/border/etc tiles.
@@ -2858,6 +2889,7 @@ export class RenderEngine {
     const oceanCurrentGfx = new Graphics();
     if (!this.oceanAmbientGfx) this.oceanAmbientGfx = new Graphics();
     this.oceanLivingSprites = [];
+    this.cyclopsFlySprites = [];
     const waterDeepKeys = ['OCEAN_DEEP_A', 'OCEAN_DEEP_B'];
     const waterMidKeys = ['OCEAN_MID_A', 'OCEAN_MID_B'];
     const waterShallowKeys = ['OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B'];
@@ -3800,6 +3832,36 @@ export class RenderEngine {
       sp.width = sz; sp.height = sz;
       sp.alpha = 0.96;
       cornerLayer.addChild(sp);
+    }
+    const cyclopsFlyFrames = [0, 1, 2, 3]
+      .map(frame => texGridFrame('MAP_CYCLOPS_FLIES', frame, 64, 64, 2))
+      .filter((frame): frame is NonNullable<typeof frame> => frame !== null);
+    if (cyclopsFlyFrames.length === 4) {
+      const flyOrbits = [
+        { phase: 0.20, speed: 2.05, radiusX: 43, radiusY: 28, frameOffset: 0 },
+        { phase: 1.55, speed: -1.72, radiusX: 36, radiusY: 34, frameOffset: 1 },
+        { phase: 2.85, speed: 2.38, radiusX: 48, radiusY: 20, frameOffset: 2 },
+        { phase: 4.18, speed: -2.12, radiusX: 29, radiusY: 38, frameOffset: 3 },
+        { phase: 5.42, speed: 1.58, radiusX: 52, radiusY: 31, frameOffset: 1 }
+      ];
+      for (const orbit of flyOrbits) {
+        const fly = new Sprite(cyclopsFlyFrames[orbit.frameOffset]);
+        fly.anchor.set(0.5);
+        fly.width = 44;
+        fly.height = 44;
+        fly.alpha = 0.86;
+        cornerLayer.addChild(fly);
+        this.cyclopsFlySprites.push({
+          sp: fly,
+          frames: cyclopsFlyFrames,
+          phase: orbit.phase,
+          speed: orbit.speed,
+          radiusX: orbit.radiusX,
+          radiusY: orbit.radiusY,
+          frameOffset: orbit.frameOffset,
+          frame: orbit.frameOffset
+        });
+      }
     }
     const topDragonTex = tex('MAP_TOP_UNDEAD_DRAGON_AFTERMATH');
     if (topDragonTex) {

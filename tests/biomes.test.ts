@@ -385,6 +385,33 @@ describe('Top-right Cyclops trophy prop', () => {
     expect(source.indexOf('this.layers.bg.addChild(decorLayer);')).toBeLessThan(source.indexOf('this.layers.bg.addChild(cornerLayer);'));
   });
 
+  it('animates a transparent pooled fly sheet around the severed head', async () => {
+    const sharp = require('sharp');
+    const file = assetFileFor('MAP_CYCLOPS_FLIES');
+    expect(file).toBe('map_overhaul/m_cyclops_flies_sheet.png');
+
+    const full = path.join(__dirname, '../public/assets/sprites', file!);
+    expect(fs.existsSync(full)).toBe(true);
+    const img = sharp(full);
+    const meta = await img.metadata();
+    expect(meta.width).toBe(128);
+    expect(meta.height).toBe(128);
+    expect(meta.hasAlpha).toBe(true);
+
+    const raw = await img.ensureAlpha().raw().toBuffer();
+    let transparent = 0;
+    for (let i = 3; i < raw.length; i += 4) if (raw[i] < 8) transparent++;
+    expect(transparent).toBeGreaterThan(128 * 128 * 0.75);
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain("texGridFrame('MAP_CYCLOPS_FLIES', frame, 64, 64, 2)");
+    expect(source).toContain('const flyOrbits = [');
+    expect(source).toContain('fly.width = 44;');
+    expect(source).toContain('this.cyclopsFlySprites.push');
+    expect(source).toContain('for (const fly of this.cyclopsFlySprites)');
+    expect(source).toContain('if (!fly.sp.parent || fly.frames.length === 0) continue;');
+  });
+
   it('adds a transparent giant war sword above the severed head without changing gameplay tiles', async () => {
     const sharp = require('sharp');
     const file = assetFileFor('MAP_CYCLOPS_WAR_SWORD');
