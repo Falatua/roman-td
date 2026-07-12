@@ -102,6 +102,7 @@ import {
   restoreTowerTileForType,
   shouldUnlockHarborFromKill
 } from './systems/HarborSystem';
+import { canPlaceTowersOrProspects } from './systems/PlacementPhase';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -1001,6 +1002,11 @@ async function boot() {
   }
 
   function commitRampartPlacement(col: number, row: number, orient: RampartOrientation): boolean {
+    if (!isPreWavePhase()) {
+      state.hint = 'Ramparts can only be placed between waves, even while combat is paused.';
+      showActionBlockedToast('Placement is locked during an active wave. Finish the wave before raising a rampart.');
+      return false;
+    }
     if (placeRampart(state, col, row, orient)) {
       renderer.drawStatic(state);
       const left = rampartsOwned(state);
@@ -1104,6 +1110,13 @@ async function boot() {
       const cancelBtn = document.getElementById('hpc-cancel');
       if (confirmBtn) confirmBtn.onclick = (ev) => {
         ev.stopPropagation();
+        if (!isPreWavePhase()) {
+          (state as any).__heroPlacementConfirmed = false;
+          dismissActiveBanner();
+          state.hint = 'Heroes can only be placed between waves, even while combat is paused.';
+          showActionBlockedToast('Tower placement is locked during an active wave. Your hero remains ready for the next preparation phase.');
+          return;
+        }
         (state as any).__heroPlacementConfirmed = true;
         dismissActiveBanner();
         // Re-invoke the placement path with the flag set. The click
@@ -1241,6 +1254,13 @@ async function boot() {
       const cancelBtn = document.getElementById('ppc-cancel');
       if (confirmBtn) confirmBtn.onclick = (ev) => {
         ev.stopPropagation();
+        if (!isPreWavePhase()) {
+          (state as any).__purchasedPlacementConfirmed = false;
+          dismissActiveBanner();
+          state.hint = 'Purchased and rewarded towers can only be placed between waves, even while combat is paused.';
+          showActionBlockedToast('Tower placement is locked during an active wave. The tower remains in your placement queue.');
+          return;
+        }
         (state as any).__purchasedPlacementConfirmed = true;
         dismissActiveBanner();
         // Re-run the placement inline. Same path-validate + create flow as
@@ -4303,9 +4323,7 @@ async function boot() {
     return false;
   }
   function isPreWavePhase(): boolean {
-    return state.phase === GamePhase.BUILD_PHASE ||
-      state.phase === GamePhase.PROSPECT_PLACEMENT ||
-      state.phase === GamePhase.PICK_KEEPER;
+    return canPlaceTowersOrProspects(state.phase);
   }
   // 2026-05-15 v3 (Sell Stones multi-select): re-skin the SELL STONES
   // button based on whether the player is in stone-selection mode + how
@@ -6683,13 +6701,25 @@ async function boot() {
     // modes the empty tile is the desired target, and snapping would
     // misroute the click to the neighbor tower's inspect panel.
     const sbPending = (state as any).__sandboxPendingTower as { type: TowerType; tier: 1|2|3|4|5 } | undefined;
-    const hasPlacementIntent =
+    const hasTowerPlacementIntent =
       state.selectedCard !== null ||
       ((state.pendingPurchasedTowers ?? []).length > 0) ||
       state.phase === GamePhase.PROSPECT_PLACEMENT ||
-      !!state.selectedTrapType ||
-      !!state.selectedRampart ||
       (state.sandboxMode && !!sbPending);
+    const hasPlacementIntent =
+      hasTowerPlacementIntent ||
+      !!state.selectedTrapType ||
+      !!state.selectedRampart;
+
+    // Placement cursors may survive a phase transition (for example, a
+    // Mercator tower waiting in the queue when START WAVE is pressed).
+    // Keep inspection and the Gate Shop available, but never let an active
+    // or paused combat wave commit a tower or prospect to the map.
+    if (state.phase === GamePhase.WAVE_PHASE && hasTowerPlacementIntent && tile !== TileType.TOWER && tile !== TileType.GATE) {
+      state.hint = 'Tower and prospect placement is locked during an active wave, even while paused. Place them between waves.';
+      showBlockedAlert(col, row, state.hint);
+      return;
+    }
     if (tile === TileType.EMPTY && !hasPlacementIntent) {
       const snapR = GRID.TILE * 0.75;       // 24px — covers full sprite halo
       let best: { tw: any; d: number } | null = null;
@@ -6843,7 +6873,7 @@ async function boot() {
     // and the next empty-tile click drops it. No gold, no prospects,
     // no combo. Path is rebuilt + verified before commit so a
     // sandbox tower can't seal Rome.
-    if (state.sandboxMode && sbPending && tile === TileType.EMPTY) {
+    if (state.sandboxMode && sbPending && isPreWavePhase() && tile === TileType.EMPTY) {
       if (isWaterPlacementRestrictedTile(col, row)) {
         showOceanTowerOnlyAlert(col, row);
         return;
@@ -6874,7 +6904,7 @@ async function boot() {
     // PURCHASED-TOWER PLACEMENT: pops the FRONT of the queue. Both Mercator
     // purchases and quest rewards append here so they never collide.
     const queue = state.pendingPurchasedTowers ?? [];
-    if (queue.length > 0 && (tile === TileType.EMPTY || (tile === TileType.WATER && isHarborTowerType(queue[0].type)))) {
+    if (isPreWavePhase() && queue.length > 0 && (tile === TileType.EMPTY || (tile === TileType.WATER && isHarborTowerType(queue[0].type)))) {
       const head = queue[0];
       if (!canPlaceQueuedTowerAt(head.type, col, row)) {
         if (isWaterPlacementRestrictedTile(col, row)) {

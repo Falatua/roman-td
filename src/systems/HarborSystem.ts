@@ -4,6 +4,7 @@ import { canAfford, spendGold } from './EconomySystem';
 import { canBuildWaterTowerAt, isBuildable, isWaterZoneTile, restoreNaturalBuildTile, setTowerTile } from './GridManager';
 import towersData from '../data/towers.json';
 import wavesData from '../data/waves.json';
+import { canPlaceTowersOrProspects } from './PlacementPhase';
 
 export interface HarborDraftOffer {
   type: TowerType;
@@ -71,6 +72,7 @@ export function harborTowerCanUseTile(state: GameStateShape, type: TowerType | s
 }
 
 export function placeTowerTileForType(state: GameStateShape, type: TowerType | string, col: number, row: number): boolean {
+  if (!canPlaceTowersOrProspects(state.phase)) return false;
   if (!harborTowerCanUseTile(state, type, col, row)) return false;
   return setTowerTile(state, col, row);
 }

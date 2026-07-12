@@ -60,6 +60,21 @@ describe('Sandbox tower spawning', () => {
     expect(s.towers.size).toBe(1);
   });
 
+  it('refuses direct tower placement during an active wave, including paused combat', () => {
+    const s = bootstrapState();
+    activateSandbox(s);
+    // Pausing freezes the loop without changing WAVE_PHASE, so this same
+    // boundary governs both moving and paused combat.
+    s.phase = GamePhase.WAVE_PHASE;
+    const before = s.tiles[5][5];
+
+    const t = sandboxSpawnTowerDirect(s, TowerType.SCORPIO, 3, 5, 5);
+
+    expect(t).toBeNull();
+    expect(s.towers.size).toBe(0);
+    expect(s.tiles[5][5]).toBe(before);
+  });
+
   it('refuses to overwrite a non-empty tile', () => {
     const s = bootstrapState();
     activateSandbox(s);

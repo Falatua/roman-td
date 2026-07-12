@@ -19,6 +19,7 @@ import {
   markHarborUnlocked,
   queueHarborDraftForClearedOceanWave,
   queueHarborDraftPurchase,
+  placeTowerTileForType,
   shouldUnlockHarborFromKill,
   waveHasOceanThreats
 } from '../src/systems/HarborSystem';
@@ -123,6 +124,15 @@ function runOneAttackThroughLeaderboard(type: TowerType, tier: 1 | 2 | 3 | 4 | 5
 }
 
 describe('Harbor naval tower system', () => {
+  it('refuses every queued tower tile commit during an active wave', () => {
+    const s = readyState();
+    s.phase = GamePhase.WAVE_PHASE;
+    const before = tileAt(s, 5, 5);
+
+    expect(placeTowerTileForType(s, TowerType.MILITES, 5, 5)).toBe(false);
+    expect(tileAt(s, 5, 5)).toBe(before);
+  });
+
   it('offers Harbor drafts after cleared ocean-threat waves and builds three draft offers', () => {
     const s = readyState();
     s.wave = 3;
