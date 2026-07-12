@@ -41,8 +41,15 @@ describe('Left HUD space allocation', () => {
 
   it('removes the score chip from Solo while preserving opt-in shared HUD behavior', () => {
     expect(uiSource).toContain('private showScore: boolean;');
-    expect(uiSource).toContain('this.showScore = opts?.showScore ?? !!(opts?.leftPanel || opts?.rightPanel);');
+    expect(uiSource).toContain('this.showScore = opts?.showScore ?? sharedHudDefault;');
     expect(uiSource).toContain("${this.showScore ? `<span class=\"hud-icon\" data-stat=\"score\"");
+  });
+
+  it('removes the tier percentage strip from Solo while keeping the Pool level', () => {
+    expect(uiSource).toContain('private showTierOdds: boolean;');
+    expect(uiSource).toContain('this.showTierOdds = opts?.showTierOdds ?? sharedHudDefault;');
+    expect(uiSource).toContain('<b>POOL</b> ${state.poolLevel}/${ECONOMY.POOL_MAX_LEVEL}');
+    expect(uiSource).toContain('${this.showTierOdds ? `<span class="hud-icon" data-stat="probs"');
   });
 
   it('caps the left next-wave briefing and scrolls only its roster body', () => {

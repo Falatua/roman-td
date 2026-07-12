@@ -75,13 +75,16 @@ export class UIManager {
   private targetAllPickerButtons: { mode: TargetingMode; btn: HTMLButtonElement }[] = [];
   private targetAllBtn: HTMLButtonElement | null = null;
   private showScore: boolean;
+  private showTierOdds: boolean;
 
-  constructor(parent: HTMLElement, cb: UICallbacks, opts?: { leftPanel?: HTMLElement; rightPanel?: HTMLElement; showScore?: boolean }) {
+  constructor(parent: HTMLElement, cb: UICallbacks, opts?: { leftPanel?: HTMLElement; rightPanel?: HTMLElement; showScore?: boolean; showTierOdds?: boolean }) {
     this.cb = cb;
     // Solo keeps the left rail focused on building and prospect decisions.
     // Shared/Legion callers pass their own panel containers and retain the
-    // existing score chip unless they explicitly opt out.
-    this.showScore = opts?.showScore ?? !!(opts?.leftPanel || opts?.rightPanel);
+    // existing score and tier-odds chips unless they explicitly opt out.
+    const sharedHudDefault = !!(opts?.leftPanel || opts?.rightPanel);
+    this.showScore = opts?.showScore ?? sharedHudDefault;
+    this.showTierOdds = opts?.showTierOdds ?? sharedHudDefault;
     // SPLIT-PANEL LAYOUT: HUD (waves/gold/lives) lives in the LEFT panel.
     // Action buttons (start, speed, pool, shop, quests, codex) live in
     // the RIGHT panel. Stage-wrap is the middle column — already wired in
@@ -421,7 +424,7 @@ export class UIManager {
     const probStrip = probs.map((p, i) => `<span title="Tier ${i+1}: ${p}% chance per prospect" style="color:${TIER_COL[i]};font-size:13px;font-weight:900;letter-spacing:0.5px">${p}%</span>`).join('<span style="opacity:0.4;font-size:12px"> · </span>');
     right.innerHTML = `
       <span class="hud-icon" data-stat="pool"><span class="ic ic-pool"></span><b>POOL</b> ${state.poolLevel}/${ECONOMY.POOL_MAX_LEVEL}</span>
-      <span class="hud-icon" data-stat="probs" title="Tier roll probabilities at the current effective pool. Click 📖 CODEX → POOL for full table.">${probStrip}</span>
+      ${this.showTierOdds ? `<span class="hud-icon" data-stat="probs" title="Tier roll probabilities at the current effective pool. Click 📖 CODEX → POOL for full table.">${probStrip}</span>` : ''}
       ${this.showScore ? `<span class="hud-icon" data-stat="score"><span class="ic ic-score"></span><b>SCORE</b> ${campaignLeaderboardScore.toLocaleString()}</span>` : ''}
       <span class="hud-icon" data-stat="phase" style="color:#9be0ff;font-weight:900;font-size:14px;letter-spacing:2px;text-shadow:1px 1px 0 #000">${phaseStr}</span>
     `;
