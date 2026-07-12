@@ -26,6 +26,7 @@ import { buildFlyerPath, buildGroundPath } from '../src/systems/PathFinder';
 import { enemyDamageMultiplier, statusEffectiveness } from '../src/systems/EnemyResistances';
 import { isLegendaryBossDropEnemy } from '../src/systems/RewardEligibility';
 import enemiesData from '../src/data/enemies.json';
+import { ELEPHANT_SPAWN_GAP_SECONDS } from '../src/systems/ElephantPacing';
 
 beforeAll(() => {
   (globalThis as any).window = (globalThis as any).window ?? {};
@@ -44,6 +45,19 @@ function bootstrapState() {
 }
 
 describe('Test Your Might bonus wave', () => {
+  it('does not release its mixed elephant groups on top of each other', () => {
+    const s = bootstrapState();
+    s.testYourMightAccepted = true;
+    startTestYourMight(s);
+    const times = s.spawnQueue
+      .filter(item => item.type === 'WAR_ELEPHANT' || item.type === 'UNDEAD_WAR_ELEPHANT')
+      .map(item => item.spawnAt)
+      .sort((a, b) => a - b);
+    for (let i = 1; i < times.length; i++) {
+      expect(times[i] - times[i - 1]).toBeGreaterThanOrEqual(ELEPHANT_SPAWN_GAP_SECONDS - 1e-9);
+    }
+  });
+
   it('is offered once after W10 when the run is alive', () => {
     const s = bootstrapState();
     expect(shouldOfferTestYourMight(s)).toBe(true);

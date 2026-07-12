@@ -2,6 +2,7 @@ import { GameStateShape } from '../GameState';
 import { GamePhase } from '../types';
 import { spawnEnemy } from './EnemySystem';
 import { prepareHeroAbilitiesForWave } from './HeroSystem';
+import { staggerElephantSpawns } from './ElephantPacing';
 import { routeOceanSpawnToPath } from './OceanSpawnSystem';
 import { TEST_YOUR_MIGHT_AFTER_WAVE, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './TestYourMightLabels';
 
@@ -140,7 +141,7 @@ export function startTestYourMight(state: GameStateShape): void {
       } as any);
     }
   }
-  state.spawnQueue.sort((a, b) => a.spawnAt - b.spawnAt);
+  staggerElephantSpawns(state.spawnQueue);
   (state as any).totalEnemiesThisWave = state.spawnQueue.length + state.enemies.size;
   (state as any).__waveStartTick = state.tick;
   state.phase = GamePhase.WAVE_PHASE;

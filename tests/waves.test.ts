@@ -15,6 +15,7 @@ import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
 import waypointsData from '../src/data/waypoints.json';
 import { GRID, WATER_ZONE, WAVE } from '../src/constants';
+import { ELEPHANT_SPAWN_GAP_SECONDS } from '../src/systems/ElephantPacing';
 
 function bootstrapState() {
   const s = createGameState();
@@ -329,6 +330,28 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     const wave14 = (wavesData as any[]).find(w => w.wave === 14);
     const elephants = (wave14.spawns ?? []).find((spawn: any) => spawn.type === 'UNDEAD_WAR_ELEPHANT');
     expect(elephants?.count).toBe(2);
+  });
+
+  it('stagger-releases every campaign elephant by at least two seconds', () => {
+    for (const wave of [9, 10, 14, 22, 30]) {
+      const s = bootstrapState();
+      s.wave = wave - 1;
+      startWave(s);
+      const times = s.spawnQueue
+        .filter(item => item.type === EnemyType.WAR_ELEPHANT || item.type === EnemyType.UNDEAD_WAR_ELEPHANT)
+        .map(item => item.spawnAt)
+        .sort((a, b) => a - b);
+      expect(times.length, `W${wave} should schedule elephants`).toBeGreaterThan(0);
+      for (let i = 1; i < times.length; i++) {
+        expect(times[i] - times[i - 1], `W${wave} elephant ${i + 1} released too soon`)
+          .toBeGreaterThanOrEqual(ELEPHANT_SPAWN_GAP_SECONDS - 1e-9);
+      }
+    }
+  });
+
+  it('keeps elite elephants deliberately slower than ordinary heavy units', () => {
+    expect((enemiesData as any).WAR_ELEPHANT.speed).toBe(1.3);
+    expect((enemiesData as any).UNDEAD_WAR_ELEPHANT.speed).toBe(1.35);
   });
 
   it('adds shipwreck ocean spawns and Stormtide Wyvern commanders across the campaign', () => {

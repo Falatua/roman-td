@@ -27,6 +27,7 @@ import { completeTestYourMight, startTestYourMight, TEST_YOUR_MIGHT_MAX_SPAWN_DT
 import { campaignPressureHpMult } from './CampaignDifficulty';
 import { routeOceanSpawnToPath } from './OceanSpawnSystem';
 import { isBossEnemy, isEliteEnemy } from './EnemyClassification';
+import { staggerElephantSpawns } from './ElephantPacing';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
 const FACTION_BOSS: Record<string, string> = {
@@ -392,6 +393,10 @@ export function startWave(state: GameStateShape) {
   // 8 seconds into the wave if SURPRISE_EVENT_SCHEDULE matches. Cooldown
   // gates inside the helper; W7 / W11 / W14 / W18 are the campaign hits.
   maybeTriggerSurpriseEventForWave(state);
+  // Elephant dust shields and tower-slow auras become oppressive when event
+  // bursts or Cave B release several elephants together. Apply this after all
+  // campaign queue transformations so every elephant enters at least 2s apart.
+  staggerElephantSpawns(state.spawnQueue);
   // Surprise events may append event-only elites after the authored wave
   // roster has been counted. Refresh the HUD denominator so Uprising giants
   // and dragons cannot drive "enemies remaining" below zero.
@@ -693,6 +698,7 @@ function runEndlessSpawnQueue(state: GameStateShape, cfg: EndlessWaveConfig) {
       t += WAVE.SPAWN_INTERVAL * intervalScale;
     }
   }
+  staggerElephantSpawns(state.spawnQueue);
   state.enemiesKilledThisWave = 0;
   state.enemiesLeakedThisWave = 0;
   (state as any).carriedEnemiesThisWave = state.enemies.size;
