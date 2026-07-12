@@ -758,6 +758,23 @@ describe('Neptune\'s Leviathan omega combat wiring', () => {
 });
 
 describe('Giant Killer transformation and combat wiring', () => {
+  it('uses a deliberately slow colossal bow cadence with heavier individual arrows', () => {
+    const def = (towersData as any)[TowerType.GIANT_KILLER];
+    const positiveTowerSpeeds = Object.values(towersData as any)
+      .map((tower: any) => Number(tower.attackSpeed ?? 0))
+      .filter(speed => speed > 0);
+    const fasterTowerShare = positiveTowerSpeeds.filter(speed => speed > def.attackSpeed).length / positiveTowerSpeeds.length;
+
+    expect(def.attackSpeed).toBe(0.30);
+    expect(1 / def.attackSpeed).toBeCloseTo(3.33, 1);
+    expect(fasterTowerShare).toBeGreaterThan(0.9);
+
+    const giantKiller = createTower(TowerType.GIANT_KILLER, 4, 4, 4, 0);
+    const stats = towerEffectiveStats(giantKiller);
+    expect(stats.attackSpeed).toBeCloseTo(0.39, 4);
+    expect(towerPerAttackDamageBase(giantKiller)).toBeCloseTo(stats.dps / stats.attackSpeed, 4);
+  });
+
   it('transforms only legal Tier IV+ Giant\'s Bane carriers and opens four total slots', () => {
     const lowMilites = createTower(TowerType.MILITES, 3, 4, 4, 0);
     lowMilites.equippedItems.push(GIANTS_BANE_ITEM_ID);
