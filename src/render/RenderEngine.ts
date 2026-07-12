@@ -73,7 +73,11 @@ const SMALL_CROP_TOWER_VISUAL_SCALE: Record<string, number> = {
 
 const GIANT_CLASS_TOWER_VISUAL_SCALE: Record<string, number> = {
   [TowerType.GIANT_KILLER]: 1.95,
-  [TowerType.GIANTS_COHORT_GUARD]: 2.05
+  [TowerType.GIANTS_COHORT_GUARD]: 2.05,
+  [TowerType.IMPERIAL_HEADSMAN]: 1.75,
+  [TowerType.SOL_INVICTUS_QUADRIGA]: 2.05,
+  [TowerType.JOVIAN_SKY_HUNTER]: 1.75,
+  [TowerType.MEFITIS_PLAGUE_ENGINE]: 1.85
 };
 
 function towerVisualBaseScale(tower: { type: TowerType | string; isHero?: boolean }): number {
@@ -1353,6 +1357,8 @@ export class RenderEngine {
         : p.spriteKey === 'PROJ_HASTA' ? 0xc8a868
         : p.spriteKey === 'PROJ_ARROW' ? 0xddccaa
         : p.spriteKey === 'PROJ_GIANT_ARROW' ? 0xf0b95c
+        : p.spriteKey === 'PROJ_JOVIAN_HARPOON' ? 0x8ee8ff
+        : p.spriteKey === 'PROJ_MEFITIS_AMPHORA' ? 0x9acd62
         : p.spriteKey === 'PROJ_POISON_CLOUD' ? 0x44dd44       // sickly green
         : 0xc8c8c8;
       const isGiantArrow = p.spriteKey === 'PROJ_GIANT_ARROW';
@@ -1432,8 +1438,10 @@ export class RenderEngine {
           const isPoisonCloud = p.spriteKey === 'PROJ_POISON_CLOUD';
           const isHeroBolt = p.spriteKey === 'HERO_PROJ_AGRIPPA_BOLT';
           const isHeroArrow = p.spriteKey === 'HERO_PROJ_AGRICOLA_ARROW';
-          sp.width = isSullaMeteor ? 30 : (isHeroBolt ? 34 : isHeroArrow ? 30 : isGiantArrow ? 42 : big ? 22 : isPoisonCloud ? 20 : 18);
-          sp.height = isSullaMeteor ? 30 : (isHeroBolt ? 22 : isHeroArrow ? 20 : isGiantArrow ? 24 : big ? 22 : isPoisonCloud ? 20 : 18);
+          const isJovianHarpoon = p.spriteKey === 'PROJ_JOVIAN_HARPOON';
+          const isMefitisAmphora = p.spriteKey === 'PROJ_MEFITIS_AMPHORA';
+          sp.width = isSullaMeteor ? 30 : (isHeroBolt ? 34 : isHeroArrow ? 30 : isJovianHarpoon ? 42 : isMefitisAmphora ? 30 : isGiantArrow ? 42 : big ? 22 : isPoisonCloud ? 20 : 18);
+          sp.height = isSullaMeteor ? 30 : (isHeroBolt ? 22 : isHeroArrow ? 20 : isJovianHarpoon ? 18 : isMefitisAmphora ? 30 : isGiantArrow ? 24 : big ? 22 : isPoisonCloud ? 20 : 18);
           if (isPoisonCloud) sp.tint = 0x66dd44;
           this.layers.fx.addChild(sp);
           this.projSprites.set(p.id, sp);

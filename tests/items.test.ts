@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { APOTHEOSIS_ITEM_RANDOM_WEIGHT, AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, DOT_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, isDotItem, itemRandomSelectionWeight, itemEquipMode } from '../src/systems/ItemRules';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { TowerType } from '../src/types';
-import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop } from '../src/systems/LootSystem';
+import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop, LEGENDARY_DROP_ITEM_POOL } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, MERCATOR_LEGENDARY } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
 import towersData from '../src/data/towers.json';
@@ -39,10 +39,19 @@ describe('Item families', () => {
     expect(itemFamily('NEPTUNES_TRIDENT')).toBe('DAMAGE');
     expect(itemFamily('GIANTS_BANE')).toBe('SPECIAL');
     expect(itemFamily('WITCHS_BREW')).toBe('SPECIAL');
+    expect(itemFamily('CENSER_OF_MEFITIS')).toBe('SPECIAL');
   });
 
   it('unknown items default to SPECIAL', () => {
     expect(itemFamily('UNKNOWN_ITEM')).toBe('SPECIAL');
+  });
+});
+
+describe('Mefitis awakening relic availability', () => {
+  it('is a randomized legendary drop and Mercator offering', () => {
+    expect(LEGENDARY_DROP_ITEM_POOL).toContain('CENSER_OF_MEFITIS');
+    expect(MERCATOR_LEGENDARY).toContain('CENSER_OF_MEFITIS');
+    expect(itemBuyPrice('CENSER_OF_MEFITIS')).toBe(RARITY_BUY_PRICE.LEGENDARY);
   });
 });
 

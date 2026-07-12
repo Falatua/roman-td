@@ -165,6 +165,10 @@ export enum TowerType {
   GIANT_KILLER = 'GIANT_KILLER',
   GIANTS_COHORT_GUARD = 'GIANTS_COHORT_GUARD',
   UNDEAD_GLADIATOR_KING = 'UNDEAD_GLADIATOR_KING',
+  IMPERIAL_HEADSMAN = 'IMPERIAL_HEADSMAN',
+  SOL_INVICTUS_QUADRIGA = 'SOL_INVICTUS_QUADRIGA',
+  JOVIAN_SKY_HUNTER = 'JOVIAN_SKY_HUNTER',
+  MEFITIS_PLAGUE_ENGINE = 'MEFITIS_PLAGUE_ENGINE',
   // 2026 v2 spec Ch9 — Mars Victor: DIVINE apex super-tower (fusion of
   // Imperium Eternum + Legion Prime). Engine-faithful read of the spec's
   // "6-hero combo" — activeHeroId is singular, so 6 literal heroes can't be

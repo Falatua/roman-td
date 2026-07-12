@@ -1145,7 +1145,7 @@ describe('Sample SFX wiring', () => {
     const towerMenu = fs.readFileSync('src/render/TowerMenu.ts', 'utf8');
 
     expect(towerMenu).toContain('onTowerTransformed?: (resultType: TowerType) => void;');
-    expect(towerMenu).toContain('if (transformed || brewTransformed) hooks.onTowerTransformed?.(t.type);');
+    expect(towerMenu).toContain('if (transformed) hooks.onTowerTransformed?.(t.type);');
     expect(main).toContain('onTowerTransformed: (resultType) => playComboCreationSfx(resultType)');
     expect(main.indexOf('onTowerTransformed: (resultType) => playComboCreationSfx(resultType)'))
       .toBeGreaterThan(main.indexOf('function playComboCreationSfx'));

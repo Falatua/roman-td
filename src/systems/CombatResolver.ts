@@ -109,6 +109,10 @@ const SUPER_COMBO_CLASS_TYPES = new Set<TowerType>([
   TowerType.GLACIAL_PALISADE,
   TowerType.INFERNAL_COLOSSUS,
   TowerType.NEPTUNES_LEVIATHAN,
+  TowerType.IMPERIAL_HEADSMAN,
+  TowerType.SOL_INVICTUS_QUADRIGA,
+  TowerType.JOVIAN_SKY_HUNTER,
+  TowerType.MEFITIS_PLAGUE_ENGINE,
   TowerType.MARS_VICTOR
 ]);
 
@@ -210,7 +214,9 @@ function sullaFireRiderPctForTower(
 }
 
 function divineDamageRiderPctForTower(tower: Tower): number {
-  return tower.equippedItems.includes('CAPITOLINE_AEGIS') ? CAPITOLINE_AEGIS_DIVINE_RIDER_PCT : 0;
+  let pct = tower.equippedItems.includes('CAPITOLINE_AEGIS') ? CAPITOLINE_AEGIS_DIVINE_RIDER_PCT : 0;
+  if (tower.type === TowerType.SOL_INVICTUS_QUADRIGA) pct += 0.35;
+  return pct;
 }
 
 // BURNING GROUND — fire-themed towers stamp a 3-second patch at the impact
@@ -353,6 +359,7 @@ const MELEE_TYPES = new Set<TowerType>([
   TowerType.AUXILIA, TowerType.ACCENSUS, TowerType.PUGIO_ASSASSIN, TowerType.CATAPHRACT,
   TowerType.EVOCATUS, TowerType.IMPERATOR_GUARD,
   TowerType.UNDEAD_GENERAL,
+  TowerType.IMPERIAL_HEADSMAN, TowerType.SOL_INVICTUS_QUADRIGA,
   TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
   TowerType.TURMA_LANCERS,
   // 2026-05-17 — Pontifex Maximus converted to melee. The High Priest now
@@ -480,6 +487,7 @@ const CLEAVE_MELEE = new Set<TowerType>([
   TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
   TowerType.PONTIFEX_MAXIMUS, TowerType.GLACIAL_PALISADE, TowerType.ROMAN_TRANSFORMER,
   TowerType.NEPTUNES_LEVIATHAN, TowerType.UNDEAD_GLADIATOR_KING,
+  TowerType.IMPERIAL_HEADSMAN,
   TowerType.UNDEAD_GENERAL
 ]);
 
@@ -537,6 +545,22 @@ const DEMON_TYPES = new Set([
 function sigilOfSolMult(t: Tower, target: Enemy): number {
   if (!t.equippedItems.includes('SIGIL_OF_SOL_INVICTUS')) return 1;
   return DEMON_TYPES.has(target.type as string) ? 2.50 : 1;
+}
+
+export function damnatioExecuteThreshold(t: Tower, target: Enemy): number {
+  if (!t.equippedItems.includes('DAMNATIO_MEMORIAE') || t.damageType !== DamageType.PHYS_MELEE || target.isBoss) return 0;
+  if (t.type !== TowerType.IMPERIAL_HEADSMAN) return 0.35;
+  return target.archetype === 'ELITE' || !!(target as any).isCommander || isCommanderType((target as any).type) ? 0.18 : 0.30;
+}
+
+function applyDamnatioExecution(t: Tower, target: Enemy, tick: number): void {
+  const threshold = damnatioExecuteThreshold(t, target);
+  if (threshold <= 0 || target.hp <= 0 || target.hp / target.maxHp >= threshold) return;
+  target.hp = 0;
+  if (t.type === TowerType.IMPERIAL_HEADSMAN) {
+    const renderer: any = typeof globalThis !== 'undefined' ? (globalThis as any).__renderer : undefined;
+    renderer?.triggerSpriteImpact?.(target.x, target.y, tick, 'VFX_IMPERIAL_EXECUTION', 2.2, 0.28, 128, 128, 1);
+  }
 }
 
 const OCEAN_THREAT_TYPES = new Set<string>([
@@ -747,7 +771,8 @@ const MULTI_SHOT_COUNT: Partial<Record<TowerType, number>> = {
   [TowerType.CARTHAGE_SCOURGE]: 6,             // SIX-bolt volley
   [TowerType.EXPLORATORES]: 3,                 // RECON VOLLEY — 3 targets
   [TowerType.VANGUARD_WING]: 4,                // EAGLE-EYE BARRAGE — 4 targets
-  [TowerType.SKY_DOMINION]: 6                  // SKY DECREE — six-target apex barrage
+  [TowerType.SKY_DOMINION]: 6,                 // SKY DECREE — six-target apex barrage
+  [TowerType.JOVIAN_SKY_HUNTER]: 3
 };
 
 // Process all towers vs enemies for one frame.
@@ -1518,6 +1543,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.SKY_DOMINION && target.isFlyer) damage *= 3.20;         // +220% vs flyers
       if (t.type === TowerType.BEASTLORD_CHAMPION && target.isFlyer) damage *= 2.00;  // +100% vs flyers
       if (t.type === TowerType.STORM_BALLISTA && target.isFlyer) damage *= 1.70;       // +70% vs plated flyers
+      if (t.type === TowerType.JOVIAN_SKY_HUNTER && target.isFlyer) {
+        if (target.isBoss || isCommanderType((target as any).type) || (target as any).isCommander) damage *= 1.35;
+        if (isOceanThreat(target) || (target as any).__oceanSpawn) damage *= 1.50;
+      }
       // PRAETORIAN EXECUTIONER — +40% vs disabled targets (stun/slow/freeze).
       if (t.type === TowerType.PRAETORIAN_EXECUTIONER && target.statusEffects.some(s =>
         (s.kind === StatusEffectKind.STUN || s.kind === StatusEffectKind.SLOW || s.kind === StatusEffectKind.FREEZE) && s.remaining > 0)) damage *= 1.40;
@@ -2107,11 +2136,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           // only (equip-gated in ItemRules so a ranged tower can't
           // mount it; the damageType guard below is a defense-in-depth
           // belt to match the player-facing copy "MELEE ONLY").
-          if (target.hp > 0 && !target.isBoss && t.equippedItems.includes('DAMNATIO_MEMORIAE') && t.damageType === DamageType.PHYS_MELEE) {
-            if (target.hp / target.maxHp < 0.35) {
-              target.hp = 0;
-            }
-          }
+          applyDamnatioExecution(t, target, state.tick);
           // Apply the 1s STUN from a frenzy strike, after damage so kill
           // detection still fires on the same hit (a stunned-but-dead
           // enemy still counts as killed). Route through pushStatus so
@@ -2133,6 +2158,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         hooks.onHit(t, target, damage, resMod, !!(t as any).__lastWasCrit);
         hooks.onMeleeSwing(t, target, damage);
         applyOnHitEffects(t, target, state.tick);
+        fireSolInvictusLaneCharge(state, t, target, damage, hooks);
         // JUPITER'S WRATH on melee hits — same chain logic as the ranged
         // path. Skips on phased hits (damage was zeroed above).
         if (!phasedThisHit && t.equippedItems.includes('JUPITERS_WRATH')) {
@@ -2556,6 +2582,13 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
     }
     if (write > 0) inRange.length = write;
   }
+  if (t.type === TowerType.JOVIAN_SKY_HUNTER) {
+    const priority = inRange.filter(e => e.isBoss);
+    const commanders = inRange.filter(e => !!(e as any).isCommander || isCommanderType((e as any).type));
+    const transporters = inRange.filter(e => String(e.type) === 'SKY_BARGE');
+    const preferred = priority.length ? priority : commanders.length ? commanders : transporters;
+    if (preferred.length) return pickByFurthest(preferred);
+  }
   // Phase-through: SPECTRAL_SCOUT phases first 2 hits — for simplicity ignore here; combat still hits
   switch (t.targetingMode) {
     case TargetingMode.LAST: {
@@ -2714,11 +2747,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   applyAuraTileHitEffects(t, target, damage);
   // 2026-05-19 — DAMNATIO MEMORIAE execute (see line ~1055 for the
   // primary hit-site copy). Bosses immune. MELEE only.
-  if (target.hp > 0 && !target.isBoss && t.equippedItems.includes('DAMNATIO_MEMORIAE') && t.damageType === DamageType.PHYS_MELEE) {
-    if (target.hp / target.maxHp < 0.35) {
-      target.hp = 0;
-    }
-  }
+  applyDamnatioExecution(t, target, state.tick);
   // Stamp a burn patch at the impact location for fire-themed towers
   if (towerBurnsGround(t.type)) {
     spawnBurnPatch(state, target.x, target.y, t.qualityTier, burnPatchLife(t.type));
@@ -2921,6 +2950,44 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       // combo has.
       if ((((t as any).__hitCount ?? 0) % 2) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.8), 0, tier);
       break;
+    case TowerType.IMPERIAL_HEADSMAN:
+      if ((((t as any).__hitCount ?? 0) % 2) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.8), 0, tier);
+      if (target.isBoss) pushStatus(target, StatusEffectKind.MARK, 5.0, 0.35, tier);
+      break;
+    case TowerType.SOL_INVICTUS_QUADRIGA: {
+      const hc = (t as any).__hitCount ?? 0;
+      if (hc > 0 && hc % 3 === 0 && !target.isFlyer) {
+        pushStatus(target, StatusEffectKind.STUN, dur(0.7), 0, tier);
+        pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.5, tier);
+      }
+      if (hc > 0 && hc % 4 === 0) {
+        if (target.isBoss || isCommanderType((target as any).type) || (target as any).isCommander) {
+          pushStatus(target, StatusEffectKind.ARMOR_SHRED, 4.0, 0, tier);
+        } else {
+          pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.7, tier);
+        }
+        const renderer: any = typeof globalThis !== 'undefined' ? (globalThis as any).__renderer : undefined;
+        renderer?.triggerSpriteImpact?.(target.x, target.y, tick ?? 0, 'VFX_SPECTRAL_QUADRIGA', 2.5, 0.45, 256, 256, 1);
+      }
+      break;
+    }
+    case TowerType.JOVIAN_SKY_HUNTER:
+      if (target.isFlyer) {
+        pushStatus(target, StatusEffectKind.MARK, 3.5, 0.28, tier);
+        if (target.isBoss || isCommanderType((target as any).type) || (target as any).isCommander) {
+          pushStatus(target, StatusEffectKind.STUN, 0.35, 0, tier);
+          pushStatus(target, StatusEffectKind.SLOW, 2.5, 0.45, tier);
+        }
+      }
+      break;
+    case TowerType.MEFITIS_PLAGUE_ENGINE: {
+      const cycle = ((t as any).__hitCount ?? 0) % 3;
+      if (cycle === 1) pushStatus(target, StatusEffectKind.BURN, 4.0, 0.045, tier);
+      else if (cycle === 2) pushStatus(target, StatusEffectKind.POISON, 4.0, 0.045, tier);
+      else pushStatus(target, StatusEffectKind.ARMOR_SHRED, 4.0, 0, tier);
+      (target as any).__healingBlockedUntil = Math.max((target as any).__healingBlockedUntil ?? 0, (tick ?? 0) + 4.0);
+      break;
+    }
     case TowerType.CATAPHRACT_LANCER:
       // LANCE CHARGE — every 3rd couched thrust STUNS 1.0s AND knocks the
       // target back ~0.5 tiles. Stun+knockback together is its signature.
@@ -3407,6 +3474,35 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
     if (t.equippedItems.includes('VENOM_TIPPED_ARROWS')) pushStatus(target, StatusEffectKind.POISON, 4, 0.05, tier);
     if (t.equippedItems.includes('SERPENT_AMULET'))      pushStatus(target, StatusEffectKind.POISON, 5, 0.03, tier);
     if (t.equippedItems.includes('WITCHS_VENOM'))        pushStatus(target, StatusEffectKind.POISON, 5, 0.04, tier);
+  }
+}
+
+function fireSolInvictusLaneCharge(state: GameStateShape, t: Tower, primary: Enemy, damage: number, hooks: CombatHooks): void {
+  const hc = (t as any).__hitCount ?? 0;
+  if (t.type !== TowerType.SOL_INVICTUS_QUADRIGA || hc <= 0 || hc % 4 !== 0 || damage <= 0) return;
+  const sx = tilePxX(t), sy = tilePxY(t);
+  const dx = primary.x - sx, dy = primary.y - sy;
+  const len = Math.max(1, Math.hypot(dx, dy));
+  const ux = dx / len, uy = dy / len;
+  const maxDistance = 7 * GRID.TILE;
+  const halfWidth = 0.85 * GRID.TILE;
+  const laneDamage = damage * 0.60;
+  for (const enemy of state.enemies.values()) {
+    if (enemy.id === primary.id || enemy.hp <= 0 || enemy.isFlyer) continue;
+    const ex = enemy.x - sx, ey = enemy.y - sy;
+    const along = ex * ux + ey * uy;
+    const across = Math.abs(ex * uy - ey * ux);
+    if (along < 0 || along > maxDistance || across > halfWidth) continue;
+    enemy.hp -= laneDamage;
+    enemy.hpFlashTimer = 0.16;
+    enemy.lastDamagedTick = state.tick;
+    if (enemy.isBoss || isCommanderType((enemy as any).type) || (enemy as any).isCommander) {
+      pushStatus(enemy, StatusEffectKind.ARMOR_SHRED, 4.0, 0, t.qualityTier);
+    } else {
+      pushStatus(enemy, StatusEffectKind.KNOCKBACK, 0.05, 0.7, t.qualityTier);
+    }
+    hooks.onHit(t, enemy, laneDamage, 1, false);
+    if (enemy.hp <= 0 && !checkRebirth(state, enemy, state.tick)) hooks.onKill(t, enemy);
   }
 }
 

@@ -72,6 +72,19 @@ const AURA_STACK_CAP = 2.00;
 const SULLA_PASSIVE_RADIUS_TILES = 5.5;
 export const GIANTS_BANE_ITEM_ID = 'GIANTS_BANE';
 export const WITCHS_BREW_ITEM_ID = 'WITCHS_BREW';
+export const CENSER_OF_MEFITIS_ITEM_ID = 'CENSER_OF_MEFITIS';
+
+const LEGENDARY_AWAKENINGS: ReadonlyArray<{ source: TowerType; itemId: string; result: TowerType }> = [
+  { source: TowerType.MILITES, itemId: GIANTS_BANE_ITEM_ID, result: TowerType.GIANT_KILLER },
+  { source: TowerType.COHORT_GUARD, itemId: GIANTS_BANE_ITEM_ID, result: TowerType.GIANTS_COHORT_GUARD },
+  { source: TowerType.MURMILLO, itemId: WITCHS_BREW_ITEM_ID, result: TowerType.UNDEAD_GLADIATOR_KING },
+  { source: TowerType.PRAETORIAN_EXECUTIONER, itemId: 'DAMNATIO_MEMORIAE', result: TowerType.IMPERIAL_HEADSMAN },
+  { source: TowerType.WAR_CHARIOT, itemId: 'SIGIL_OF_SOL_INVICTUS', result: TowerType.SOL_INVICTUS_QUADRIGA },
+  { source: TowerType.BEASTLORD_CHAMPION, itemId: 'STORM_AQUILA_TALONS', result: TowerType.JOVIAN_SKY_HUNTER },
+  { source: TowerType.PLAGUE_LOBBER, itemId: CENSER_OF_MEFITIS_ITEM_ID, result: TowerType.MEFITIS_PLAGUE_ENGINE }
+];
+
+const AWAKENED_TOWER_TYPES = new Set<TowerType>(LEGENDARY_AWAKENINGS.map(a => a.result));
 
 function isMeleeClassTower(t: Tower): boolean {
   const def: any = (towersData as any)[t.type];
@@ -173,10 +186,27 @@ export function createTower(type: TowerType, tier: 1 | 2 | 3 | 4 | 5, col: numbe
 
 export function towerItemSlotCap(t: Tower): number {
   if ((t as any).isHero) return HERO_ITEM_SLOTS;
-  if (isGiantsBaneTransformedTowerType(t.type) || isWitchsBrewTransformedTowerType(t.type)) {
+  if (isLegendaryAwakenedTowerType(t.type)) {
     return Math.max(4, TIER_MULTS.itemSlots[t.qualityTier] ?? 1);
   }
   return TIER_MULTS.itemSlots[t.qualityTier] ?? 1;
+}
+
+export function isLegendaryAwakenedTowerType(type: TowerType | string): boolean {
+  return AWAKENED_TOWER_TYPES.has(type as TowerType);
+}
+
+export function boundAwakeningItemForTowerType(type: TowerType | string): string | null {
+  return LEGENDARY_AWAKENINGS.find(a => a.result === type)?.itemId ?? null;
+}
+
+export function legendaryAwakeningResultType(t: Tower, itemId: string): TowerType | null {
+  if (t.pending || t.qualityTier < 4) return null;
+  return LEGENDARY_AWAKENINGS.find(a => a.source === t.type && a.itemId === itemId)?.result ?? null;
+}
+
+export function canAwakenWithLegendaryItem(t: Tower, itemId: string): boolean {
+  return legendaryAwakeningResultType(t, itemId) !== null;
 }
 
 export function isGiantsBaneTransformedTowerType(type: TowerType | string): boolean {
@@ -238,6 +268,13 @@ export function transformWithWitchsBrew(t: Tower): boolean {
   const sourceType = t.type;
   const resultType = witchsBrewTransformResultType(t);
   if (!resultType) return false;
+  return transformTowerInto(t, resultType, sourceType);
+}
+
+export function transformWithLegendaryAwakening(t: Tower, itemId: string): boolean {
+  const resultType = legendaryAwakeningResultType(t, itemId);
+  if (!resultType || !t.equippedItems.includes(itemId)) return false;
+  const sourceType = t.type;
   return transformTowerInto(t, resultType, sourceType);
 }
 

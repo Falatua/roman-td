@@ -1502,13 +1502,14 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // DoT-active multiplier changes.
     //
     // EXEMPTION (2026-05 v9 confirm): the CHECKPOINT touch heal
-    // (`checkpointHealPct`) is intentionally NOT suppressed by DoT.
+    // (`checkpointHealPct`) is intentionally NOT suppressed by ordinary DoT.
     // The coin-touch heal is a wave-design lever that punishes letting
     // enemies through; it must always fire when the enemy reaches the
     // coin so the player feels the design pressure regardless of
     // whether they happened to have a DoT ticking on the unit. The
     // checkpoint block lives further down (search `WAYPOINT_CENTERS`)
-    // and is deliberately outside this regen logic.
+    // and is deliberately outside this regen logic. Mefitis Plague Engine's
+    // explicit healing lock is the sole exception and blocks both paths.
     const def: any = (enemiesData as any)[e.type];
     const hasActiveDot = e.statusEffects.some(s =>
       s.remaining > 0 && (
@@ -1519,8 +1520,9 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       )
     );
     const regenMult = hasActiveDot ? 0.5 : 1.0;
+    const healingBlocked = ((e as any).__healingBlockedUntil ?? 0) > state.tick;
     // Constant regen (always-on, e.g. Iron Phalanx / Architectus).
-    if (def.regenPctPerSec) {
+    if (def.regenPctPerSec && !healingBlocked) {
       e.hp = Math.min(e.maxHp, e.hp + e.maxHp * def.regenPctPerSec * regenMult * dt);
     }
     // 2026-05-22 — WAVE-LEVEL REGEN. Some W11+ waves stamp
@@ -1529,7 +1531,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // outOfCombatRegen). Same DoT-suppression rule (50% under DoT).
     const _curWave: any = (wavesData as any[])[(state.wave ?? 1) - 1];
     const waveRegen = _curWave?.enemyRegenPctPerSec ?? 0;
-    if (waveRegen > 0) {
+    if (waveRegen > 0 && !healingBlocked) {
       e.hp = Math.min(e.maxHp, e.hp + e.maxHp * waveRegen * regenMult * dt);
     }
     // 2026-05-22 — WAVE-LEVEL SPEED BOOST. Wave defs with
@@ -1562,7 +1564,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // regen by the reduction.
     const w8OocCut = (e as any).__w8OocRegenCut ?? 0;
     if (w8OocCut > 0 && oocRegen > 0) oocRegen = Math.max(0, oocRegen - w8OocCut);
-    if (oocRegen > 0) {
+    if (oocRegen > 0 && !healingBlocked) {
       const sinceHit = state.tick - (e.lastDamagedTick ?? -999);
       if (sinceHit > 1.0) {
         e.hp = Math.min(e.maxHp, e.hp + e.maxHp * oocRegen * regenMult * dt);
@@ -1780,12 +1782,13 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // `healedCheckpoints` log dedupes — each waypoint heals once per
     // enemy lifetime regardless of knockback / path-resnap loops.
     //
-    // IMPORTANT: this heal fires regardless of DoT state. Unlike
-    // regenPctPerSec / outOfCombatRegen above (which are nullified
-    // while burn/poison/bleed/hellfire ticks), the checkpoint touch
+    // IMPORTANT: this heal fires regardless of ordinary DoT state. Unlike
+    // regenPctPerSec / outOfCombatRegen above (which are softened while
+    // burn/poison/bleed/hellfire ticks), the checkpoint touch
     // heal is part of the wave-design contract — letting an enemy
     // reach a coin must always restore HP so the cost of leaks is
-    // legible. Stacking three DoTs on the unit does NOT block it.
+    // legible. Stacking three DoTs does NOT block it; Mefitis's dedicated
+    // healing-lock debuff does.
     //
     // 2026-05-20 — Per-wave OVERRIDE. A wave entry can carry
     // `disableCheckpointHeal: true` in waves.json to suppress this
@@ -1799,7 +1802,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     const currentWaveDef: any = (wavesData as any[])[state.wave - 1];
     const checkpointHealSuppressed = !!currentWaveDef?.disableCheckpointHeal;
     const w9WarElephantCheckpointHeal = state.wave === 9 && e.type === EnemyType.WAR_ELEPHANT;
-    if (!e.isFlyer && (!e.isBoss || w9WarElephantCheckpointHeal) && e.checkpointHealPct && e.checkpointHealPct > 0 && !checkpointHealSuppressed) {
+    if (!e.isFlyer && (!e.isBoss || w9WarElephantCheckpointHeal) && e.checkpointHealPct && e.checkpointHealPct > 0 && !checkpointHealSuppressed && !healingBlocked) {
       for (let i = 0; i < WAYPOINT_CENTERS.length; i++) {
         const wp = WAYPOINT_CENTERS[i];
         const dxw = e.x - wp.x;

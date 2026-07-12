@@ -116,6 +116,7 @@ export const MERCATOR_LEGENDARY = [
   // legendary pool so the player can buy it directly between waves
   // rather than relying on a random boss drop.
   'DAMNATIO_MEMORIAE',
+  'CENSER_OF_MEFITIS',
   // 2026 v2 — legendary AoE items: full cleave (melee) + splash (ranged).
   'EXECUTIONERS_FALX', 'CONCUSSIVE_WARHEAD',
   // Harbor apex item: strongest on naval/Tideforged towers, still useful

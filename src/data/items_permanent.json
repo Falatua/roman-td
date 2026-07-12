@@ -319,7 +319,7 @@
     "rarity": "LEGENDARY",
     "buy": 140,
     "sell": 45,
-    "effect": "Any tower: +150% damage vs Demon-faction enemies."
+    "effect": "Any tower: +150% damage vs Demon-faction enemies. A Tier IV or Tier V War Chariot bearing the sigil is said to become the sun's own war machine."
   },
   "TYRANTS_LAUREL": {
     "name": "Tyrant's Laurel",
@@ -494,7 +494,7 @@
     "rarity": "LEGENDARY",
     "buy": 150,
     "sell": 50,
-    "effect": "MELEE ONLY: instantly executes any non-Boss enemy below 35% HP. Bosses are immune."
+    "effect": "MELEE ONLY: instantly executes any non-Boss enemy below 35% HP. A Tier IV or Tier V Praetorian Executioner may remember a darker imperial office when it bears this name."
   },
   "SKYPIERCER_BOLTS": {
     "name": "Skypiercer Bolts",
@@ -522,7 +522,7 @@
     "rarity": "LEGENDARY",
     "buy": 160,
     "sell": 50,
-    "effect": "ANY tower can target Flyers (even melee), +90% damage vs Flyers, and +2 tile range."
+    "effect": "ANY tower can target Flyers (even melee), +90% damage vs Flyers, and +2 tile range. The oldest aquilae answer differently in the hands of a Tier IV or Tier V Beastlord Champion."
   },
   "EXECUTIONERS_FALX": {
     "name": "Executioner's Falx",
@@ -586,6 +586,13 @@
     "buy": 190,
     "sell": 65,
     "effect": "The draught bubbles with arena sand, bone ash, and old Punic curses. Veterans swear a Tier IV or Tier V Murmillo who drinks it does not remain merely a Murmillo for long. The awakened tower holds four total items, with one slot forever bound to Witch's Brew, and the arena dead may answer its call."
+  },
+  "CENSER_OF_MEFITIS": {
+    "name": "Censer of Mefitis",
+    "rarity": "LEGENDARY",
+    "effect": "A sealed censer whose fumes remember every plague Rome tried to bury. Old apothecaries whisper that a Tier IV or Tier V Plague Lobber can bear it, and that the engine which wakes will no longer answer to fire alone. The awakened tower holds four total items, with one slot forever bound to the censer.",
+    "buy": 814,
+    "sell": 271
   },
   "EAGLE_OF_APOTHEOSIS": {
     "name": "Eagle of Apotheosis",

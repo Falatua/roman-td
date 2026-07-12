@@ -1,8 +1,8 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
-import { canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
+import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -66,6 +66,88 @@ function displayedDpsFromBreakdown(tower: ReturnType<typeof createTower>, state:
   const breakdown = towerStatBreakdown(tower, state);
   return breakdown.damageFinal * (breakdown.speedFinal / Math.max(0.05, breakdown.speedBase));
 }
+
+describe('legendary item-awakened Supercombos', () => {
+  const cases = [
+    [TowerType.PRAETORIAN_EXECUTIONER, 'DAMNATIO_MEMORIAE', TowerType.IMPERIAL_HEADSMAN],
+    [TowerType.WAR_CHARIOT, 'SIGIL_OF_SOL_INVICTUS', TowerType.SOL_INVICTUS_QUADRIGA],
+    [TowerType.BEASTLORD_CHAMPION, 'STORM_AQUILA_TALONS', TowerType.JOVIAN_SKY_HUNTER],
+    [TowerType.PLAGUE_LOBBER, 'CENSER_OF_MEFITIS', TowerType.MEFITIS_PLAGUE_ENGINE]
+  ] as const;
+
+  it.each(cases)('awakens %s with its bound relic', (source, itemId, result) => {
+    const low = createTower(source, 3, 2, 2, 1);
+    low.equippedItems.push(itemId);
+    expect(canAwakenWithLegendaryItem(low, itemId)).toBe(false);
+    expect(transformWithLegendaryAwakening(low, itemId)).toBe(false);
+
+    const tower = createTower(source, 4, 2, 2, 1);
+    const sourceDps = towerEffectiveStats(tower).dps;
+    tower.equippedItems.push(itemId);
+    expect(canAwakenWithLegendaryItem(tower, itemId)).toBe(true);
+    expect(transformWithLegendaryAwakening(tower, itemId)).toBe(true);
+    expect(tower.type).toBe(result);
+    expect(towerItemSlotCap(tower)).toBe(4);
+    expect(boundAwakeningItemForTowerType(result)).toBe(itemId);
+    expect(towerEffectiveStats(tower).dps).toBeGreaterThan(sourceDps * 1.75);
+  });
+
+  it('keeps dedicated projectile and anti-air identities wired', () => {
+    const sky = createTower(TowerType.JOVIAN_SKY_HUNTER, 5, 2, 2, 1);
+    const plague = createTower(TowerType.MEFITIS_PLAGUE_ENGINE, 5, 2, 2, 1);
+    expect((towersData as any).JOVIAN_SKY_HUNTER.antiAirOnly).toBe(true);
+    expect((spawnProjectile as any)).toBeTypeOf('function');
+    expect(ASSET_KEYS.JOVIAN_SKY_HUNTER).toBe('t_super_jovian_sky_hunter.png');
+    expect(ASSET_KEYS.MEFITIS_PLAGUE_ENGINE).toBe('t_super_mefitis_plague_engine.png');
+    expect(sky.damageType).toBe(DamageType.PHYS_RANGED);
+    expect(plague.damageType).toBe(DamageType.SIEGE);
+  });
+
+  it('uses distinct Headsman execute thresholds and never executes bosses', () => {
+    const headsman = createTower(TowerType.IMPERIAL_HEADSMAN, 5, 2, 2, 1);
+    headsman.equippedItems.push('DAMNATIO_MEMORIAE');
+    const ordinary = testEnemy('ordinary');
+    const elite = testEnemy('elite'); elite.archetype = 'ELITE';
+    const commander = testEnemy('commander'); (commander as any).isCommander = true;
+    const boss = testEnemy('boss'); boss.isBoss = true; boss.archetype = 'BOSS';
+    expect(damnatioExecuteThreshold(headsman, ordinary)).toBe(0.30);
+    expect(damnatioExecuteThreshold(headsman, elite)).toBe(0.18);
+    expect(damnatioExecuteThreshold(headsman, commander)).toBe(0.18);
+    expect(damnatioExecuteThreshold(headsman, boss)).toBe(0);
+  });
+
+  it('executes through the normal damage path and condemns bosses instead', () => {
+    const state = createGameState(); state.tick = 10;
+    const headsman = createTower(TowerType.IMPERIAL_HEADSMAN, 5, 2, 2, 1);
+    headsman.equippedItems.push('DAMNATIO_MEMORIAE');
+    const ordinary = testEnemy('ordinary'); ordinary.hp = 305;
+    applyDamageAndStatus(state, headsman, ordinary, 10, noopCombatHooks());
+    expect(ordinary.hp).toBe(0);
+
+    const boss = testEnemy('boss'); boss.isBoss = true; boss.archetype = 'BOSS';
+    applyDamageAndStatus(state, headsman, boss, 10, noopCombatHooks());
+    expect(boss.hp).toBe(990);
+    expect(boss.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.35)).toBe(true);
+  });
+
+  it('Mefitis clouds rotate effects and stamp the shared healing lock', () => {
+    const state = createGameState(); state.tick = 20;
+    const plague = createTower(TowerType.MEFITIS_PLAGUE_ENGINE, 5, 2, 2, 1);
+    const enemy = testEnemy('victim');
+    (plague as any).__hitCount = 1;
+    applyDamageAndStatus(state, plague, enemy, 10, noopCombatHooks());
+    expect((enemy as any).__healingBlockedUntil).toBe(24);
+    expect(enemy.statusEffects.some(s => s.kind === StatusEffectKind.BURN)).toBe(true);
+
+    (plague as any).__hitCount = 2;
+    applyDamageAndStatus(state, plague, enemy, 10, noopCombatHooks());
+    expect(enemy.statusEffects.some(s => s.kind === StatusEffectKind.POISON)).toBe(true);
+
+    (plague as any).__hitCount = 3;
+    applyDamageAndStatus(state, plague, enemy, 10, noopCombatHooks());
+    expect(enemy.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+  });
+});
 
 function singleSwingDamage(opts: {
   support?: Array<{ type: TowerType; x: number; y: number; tier?: 1|2|3|4|5; items?: string[] }>;

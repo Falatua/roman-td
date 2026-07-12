@@ -86,6 +86,15 @@ const MANIFEST: Record<string, string> = {
   GIANTS_COHORT_GUARD: 't_giants_cohort_guard.png',
   UNDEAD_GLADIATOR_KING: 't_undead_gladiator_king.png',
   SUMMON_UNDEAD_GLADIATOR: 's_undead_gladiator.png',
+  IMPERIAL_HEADSMAN: 't_super_imperial_headsman.png',
+  SOL_INVICTUS_QUADRIGA: 't_super_sol_invictus_quadriga.png',
+  JOVIAN_SKY_HUNTER: 't_super_jovian_sky_hunter.png',
+  MEFITIS_PLAGUE_ENGINE: 't_super_mefitis_plague_engine.png',
+  ITEM_CENSER_OF_MEFITIS: 'inew_censer_of_mefitis.png',
+  VFX_IMPERIAL_EXECUTION: 'vfx_imperial_execution.png',
+  VFX_SPECTRAL_QUADRIGA: 'p_spectral_quadriga.png',
+  PROJ_JOVIAN_HARPOON: 'p_jovian_harpoon.png',
+  PROJ_MEFITIS_AMPHORA: 'p_mefitis_amphora.png',
   // 2026-05-17 — MURMILLO (T4 mid-game combo). Heavy Roman gladiator with
   // fish-helmet + scutum + gladius. Sliced from the user-supplied gladiator
   // roster sheet (top-left cell); chroma-keyed via the standard pipeline.
