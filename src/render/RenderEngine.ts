@@ -21,7 +21,7 @@ import { heroIdForTowerType } from '../systems/HeroIdentity';
 import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from '../systems/BaseTowerAttackAnimation';
 import { isWaterPlacementBufferTile } from '../systems/GridManager';
 import { enemySpriteSizeTiles } from './EnemySpriteScale';
-import { shouldShowCyclopsFlies } from './AmbientPropRules';
+import { shouldShowCyclopsFlies, shouldShowOpeningThundercloud } from './AmbientPropRules';
 
 // 2026-05-20 v2 — Per-hero halo ring assignment. Each ring style was
 // hand-picked to match the hero's color tint + thematic identity:
@@ -468,6 +468,12 @@ export class RenderEngine {
     frameOffset: number;
     frame: number;
   }> = [];
+  private openingThundercloud?: {
+    sp: Sprite;
+    frames: NonNullable<ReturnType<typeof texGridFrame>>[];
+    baseY: number;
+    frame: number;
+  };
   drawAmbient(tick: number, wave: number = 0, isBossWave: boolean = false, caveBActive: boolean = false) {
     // 2026 v2 spec Ch7 — Cave B stays HIDDEN until its first enemy emerges
     // (caveBActive, set in the spawn loop). The frame it activates, the
@@ -520,9 +526,10 @@ export class RenderEngine {
     const flyCenterX = GRID.TILE * 36 + GRID.TILE / 2 - 24;
     const flyCenterY = GRID.TILE / 2 + 112;
     const ambientState: any = (globalThis as any).__lastState ?? (globalThis as any).__game ?? null;
+    const ambientPhase = ambientState?.phase ?? GamePhase.BUILD_PHASE;
     const showCyclopsFlies = shouldShowCyclopsFlies(
       wave,
-      ambientState?.phase ?? GamePhase.BUILD_PHASE
+      ambientPhase
     );
     for (const fly of this.cyclopsFlySprites) {
       if (!fly.sp.parent || fly.frames.length === 0) continue;
@@ -564,6 +571,26 @@ export class RenderEngine {
       }
       fly.sp.rotation = landed ? 0 : Math.sin(angle * 1.8) * 0.14;
       fly.sp.alpha = landed ? 0.82 : 0.70 + 0.20 * (0.5 + 0.5 * Math.sin(tick * 5.2 + fly.phase));
+    }
+
+    const openingCloud = this.openingThundercloud;
+    if (openingCloud?.sp.parent && openingCloud.frames.length === 9) {
+      const showCloud = shouldShowOpeningThundercloud(wave, ambientPhase);
+      openingCloud.sp.visible = showCloud;
+      if (showCloud) {
+        const cloudCycle = ((tick / 6.2) % 1 + 1) % 1;
+        let frame = 0;
+        if (reduceMotion) frame = 1;
+        else if (cloudCycle < 0.48) frame = Math.min(2, Math.floor((cloudCycle / 0.48) * 3));
+        else if (cloudCycle < 0.68) frame = 3 + Math.min(2, Math.floor(((cloudCycle - 0.48) / 0.20) * 3));
+        else frame = 6 + Math.min(2, Math.floor(((cloudCycle - 0.68) / 0.32) * 3));
+        if (frame !== openingCloud.frame) {
+          openingCloud.frame = frame;
+          openingCloud.sp.texture = openingCloud.frames[frame];
+        }
+        openingCloud.sp.y = openingCloud.baseY + (reduceMotion ? 0 : Math.sin(tick * 0.55) * 1.5);
+        openingCloud.sp.alpha = reduceMotion ? 0.90 : 0.92 + Math.sin(tick * 0.42) * 0.035;
+      }
     }
 
     // GRASS WIND TUFTS — sparse animated grass tufts drift in a sine wave (§8.1)
@@ -2959,6 +2986,7 @@ export class RenderEngine {
     if (!this.oceanAmbientGfx) this.oceanAmbientGfx = new Graphics();
     this.oceanLivingSprites = [];
     this.cyclopsFlySprites = [];
+    this.openingThundercloud = undefined;
     const waterDeepKeys = ['OCEAN_DEEP_A', 'OCEAN_DEEP_B'];
     const waterMidKeys = ['OCEAN_MID_A', 'OCEAN_MID_B'];
     const waterShallowKeys = ['OCEAN_SHALLOW_A', 'OCEAN_SHALLOW_B'];
@@ -4019,6 +4047,28 @@ export class RenderEngine {
     // treatment cannot fight the sprite's stonework.
     const caveCx = waypointsData.spawn.col * GRID.TILE + GRID.TILE / 2;
     const caveCy = waypointsData.spawn.row * GRID.TILE + GRID.TILE / 2;
+    const openingCloudFrames = Array.from({ length: 9 }, (_, frame) =>
+      texGridFrame('MAP_OPENING_THUNDERCLOUD', frame, 256, 256, 3)
+    ).filter((frame): frame is NonNullable<typeof frame> => frame !== null);
+    if (openingCloudFrames.length === 9) {
+      const openingCloud = new Sprite(openingCloudFrames[0]);
+      openingCloud.anchor.set(0.5);
+      openingCloud.x = caveCx;
+      // The dark cloud mass stays above the 4x4 cave sprite while its lower
+      // electrical forks can briefly reach the stone lip. This offset keeps
+      // the broad silhouette inside the map instead of clipping at the top.
+      openingCloud.y = caveCy - GRID.TILE * 3.2;
+      openingCloud.width = GRID.TILE * 6.5;
+      openingCloud.height = GRID.TILE * 4.3;
+      openingCloud.alpha = 0.94;
+      this.layers.bg.addChild(openingCloud);
+      this.openingThundercloud = {
+        sp: openingCloud,
+        frames: openingCloudFrames,
+        baseY: openingCloud.y,
+        frame: 0
+      };
+    }
     addHeavyBloodSplatter(this.layers.bg, caveCx + 58, caveCy + 30, GRID.TILE * 2.85, 0.18, 0.96);
     addHeavyBloodSplatter(this.layers.bg, caveCx - 43, caveCy + 51, GRID.TILE * 1.70, -0.52, 0.91);
     addHeavyBloodSplatter(this.layers.bg, caveCx + 108, caveCy + 45, GRID.TILE * 1.45, 0.76, 0.89);

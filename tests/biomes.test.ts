@@ -13,7 +13,7 @@
 import { describe, it, expect } from 'vitest';
 import { BIOMES, biomeForWave, pickGrassTile, STATIC_BATTLE_DEBRIS, PATH_PIECE_SUFFIXES } from '../src/render/Biomes';
 import { GamePhase } from '../src/types';
-import { shouldShowCyclopsFlies } from '../src/render/AmbientPropRules';
+import { shouldShowCyclopsFlies, shouldShowOpeningThundercloud } from '../src/render/AmbientPropRules';
 
 // Inline import — vitest config resolves JSON imports automatically.
 // We need this to verify every key referenced in BIOMES exists in the
@@ -421,6 +421,54 @@ describe('Top-right Cyclops trophy prop', () => {
     expect(shouldShowCyclopsFlies(1, GamePhase.WAVE_PHASE)).toBe(true);
     expect(shouldShowCyclopsFlies(1, GamePhase.BUILD_PHASE)).toBe(false);
     expect(shouldShowCyclopsFlies(2, GamePhase.WAVE_PHASE)).toBe(false);
+  });
+
+  it('animates a large transparent thundercloud above the cave only through Wave 1', async () => {
+    const sharp = require('sharp');
+    const file = assetFileFor('MAP_OPENING_THUNDERCLOUD');
+    expect(file).toBe('map_overhaul/m_opening_thundercloud_sheet.png');
+
+    const full = path.join(__dirname, '../public/assets/sprites', file!);
+    expect(fs.existsSync(full)).toBe(true);
+    const img = sharp(full).ensureAlpha();
+    const meta = await img.metadata();
+    expect(meta.width).toBe(768);
+    expect(meta.height).toBe(768);
+    expect(meta.hasAlpha).toBe(true);
+
+    const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
+    let transparent = 0;
+    let visibleEdgePixels = 0;
+    let magenta = 0;
+    for (let y = 0; y < info.height; y++) {
+      for (let x = 0; x < info.width; x++) {
+        const i = (y * info.width + x) * info.channels;
+        const alpha = data[i + 3];
+        if (alpha < 8) transparent++;
+        if ((x === 0 || y === 0 || x === info.width - 1 || y === info.height - 1) && alpha > 0) visibleEdgePixels++;
+        if (data[i] > 230 && data[i + 1] < 45 && data[i + 2] > 230 && alpha > 0) magenta++;
+      }
+    }
+    expect(transparent).toBeGreaterThan(info.width * info.height * 0.55);
+    expect(visibleEdgePixels).toBe(0);
+    expect(magenta).toBe(0);
+
+    const frameOne = await img.clone().extract({ left: 0, top: 0, width: 256, height: 256 }).raw().toBuffer();
+    const strikeFrame = await img.clone().extract({ left: 256, top: 256, width: 256, height: 256 }).raw().toBuffer();
+    expect(Buffer.compare(frameOne, strikeFrame)).not.toBe(0);
+
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain("texGridFrame('MAP_OPENING_THUNDERCLOUD', frame, 256, 256, 3)");
+    expect(source).toContain('openingCloud.width = GRID.TILE * 6.5;');
+    expect(source).toContain('openingCloud.height = GRID.TILE * 4.3;');
+    expect(source).toContain('openingCloud.y = caveCy - GRID.TILE * 3.2;');
+    expect(source).toContain('const cloudCycle = ((tick / 6.2) % 1 + 1) % 1;');
+
+    expect(shouldShowOpeningThundercloud(0, GamePhase.BUILD_PHASE)).toBe(true);
+    expect(shouldShowOpeningThundercloud(0, GamePhase.PROSPECT_PLACEMENT)).toBe(true);
+    expect(shouldShowOpeningThundercloud(1, GamePhase.WAVE_PHASE)).toBe(true);
+    expect(shouldShowOpeningThundercloud(1, GamePhase.BUILD_PHASE)).toBe(false);
+    expect(shouldShowOpeningThundercloud(2, GamePhase.WAVE_PHASE)).toBe(false);
   });
 
   it('adds a transparent giant war sword above the severed head without changing gameplay tiles', async () => {
