@@ -21,6 +21,7 @@ import { heroIdForTowerType } from '../systems/HeroIdentity';
 import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from '../systems/BaseTowerAttackAnimation';
 import { isWaterPlacementBufferTile } from '../systems/GridManager';
 import { enemySpriteSizeTiles } from './EnemySpriteScale';
+import { shouldShowCyclopsFlies } from './AmbientPropRules';
 
 // 2026-05-20 v2 — Per-hero halo ring assignment. Each ring style was
 // hand-picked to match the hero's color tint + thematic identity:
@@ -80,6 +81,10 @@ function towerVisualBaseScale(tower: { type: TowerType | string; isHero?: boolea
   return GIANT_CLASS_TOWER_VISUAL_SCALE[String(tower.type)]
     ?? SMALL_CROP_TOWER_VISUAL_SCALE[String(tower.type)]
     ?? 1.5;
+}
+
+function lerpNumber(from: number, to: number, amount: number): number {
+  return from + (to - from) * amount;
 }
 
 export class RenderEngine {
@@ -453,6 +458,9 @@ export class RenderEngine {
     speed: number;
     radiusX: number;
     radiusY: number;
+    landingX: number;
+    landingY: number;
+    cycleOffset: number;
     frameOffset: number;
     frame: number;
   }> = [];
@@ -501,25 +509,57 @@ export class RenderEngine {
     g.clear();
     ocean.clear();
 
-    // A tiny pooled carrion-fly loop circles the severed Cyclops trophy.
-    // The five sprites are created only when the static map is rebuilt;
-    // this pass merely changes frame, position, and alpha.
+    // A tiny pooled carrion-fly vignette circles and briefly lands on the
+    // severed Cyclops trophy during Wave 1, then leaves for the campaign.
     const reduceMotion = !!(window as any).__reduceMotion;
     const flyMotion = reduceMotion ? 0.38 : 1;
     const flyCenterX = GRID.TILE * 36 + GRID.TILE / 2 - 24;
     const flyCenterY = GRID.TILE / 2 + 112;
+    const ambientState: any = (globalThis as any).__lastState ?? (globalThis as any).__game ?? null;
+    const showCyclopsFlies = shouldShowCyclopsFlies(
+      wave,
+      ambientState?.phase ?? GamePhase.BUILD_PHASE
+    );
     for (const fly of this.cyclopsFlySprites) {
       if (!fly.sp.parent || fly.frames.length === 0) continue;
-      const frame = Math.floor(tick * 12 + fly.frameOffset) % fly.frames.length;
+      fly.sp.visible = showCyclopsFlies;
+      if (!showCyclopsFlies) continue;
+
+      const cycle = ((tick * (reduceMotion ? 0.08 : 0.18) + fly.cycleOffset) % 1 + 1) % 1;
+      const landed = cycle >= 0.62 && cycle < 0.78;
+      const frame = landed
+        ? 0
+        : Math.floor(tick * 12 + fly.frameOffset) % fly.frames.length;
       if (frame !== fly.frame) {
         fly.frame = frame;
         fly.sp.texture = fly.frames[frame];
       }
       const angle = tick * fly.speed * flyMotion + fly.phase;
-      fly.sp.x = flyCenterX + Math.cos(angle) * fly.radiusX + Math.sin(tick * 2.1 + fly.phase) * 3.5;
-      fly.sp.y = flyCenterY + Math.sin(angle * 1.27) * fly.radiusY + Math.cos(tick * 2.8 + fly.phase) * 2.2;
-      fly.sp.rotation = Math.sin(angle * 1.8) * 0.16;
-      fly.sp.alpha = 0.72 + 0.22 * (0.5 + 0.5 * Math.sin(tick * 5.2 + fly.phase));
+      const orbitX = flyCenterX + Math.cos(angle) * fly.radiusX + Math.sin(tick * 2.1 + fly.phase) * 3;
+      const orbitY = flyCenterY + Math.sin(angle * 1.27) * fly.radiusY + Math.cos(tick * 2.8 + fly.phase) * 2;
+      const landingX = flyCenterX + fly.landingX;
+      const landingY = flyCenterY + fly.landingY;
+      const departureAngle = angle + 0.8;
+      const departureX = flyCenterX + Math.cos(departureAngle) * fly.radiusX * 1.15;
+      const departureY = flyCenterY + Math.sin(departureAngle * 1.27) * fly.radiusY * 1.15;
+
+      if (cycle >= 0.50 && cycle < 0.62) {
+        const approach = (cycle - 0.50) / 0.12;
+        fly.sp.x = lerpNumber(orbitX, landingX, approach);
+        fly.sp.y = lerpNumber(orbitY, landingY, approach);
+      } else if (landed) {
+        fly.sp.x = landingX;
+        fly.sp.y = landingY;
+      } else if (cycle >= 0.78 && cycle < 0.90) {
+        const depart = (cycle - 0.78) / 0.12;
+        fly.sp.x = lerpNumber(landingX, departureX, depart);
+        fly.sp.y = lerpNumber(landingY, departureY, depart);
+      } else {
+        fly.sp.x = orbitX;
+        fly.sp.y = orbitY;
+      }
+      fly.sp.rotation = landed ? 0 : Math.sin(angle * 1.8) * 0.14;
+      fly.sp.alpha = landed ? 0.82 : 0.70 + 0.20 * (0.5 + 0.5 * Math.sin(tick * 5.2 + fly.phase));
     }
 
     // GRASS WIND TUFTS — sparse animated grass tufts drift in a sine wave (§8.1)
@@ -3838,17 +3878,16 @@ export class RenderEngine {
       .filter((frame): frame is NonNullable<typeof frame> => frame !== null);
     if (cyclopsFlyFrames.length === 4) {
       const flyOrbits = [
-        { phase: 0.20, speed: 2.05, radiusX: 43, radiusY: 28, frameOffset: 0 },
-        { phase: 1.55, speed: -1.72, radiusX: 36, radiusY: 34, frameOffset: 1 },
-        { phase: 2.85, speed: 2.38, radiusX: 48, radiusY: 20, frameOffset: 2 },
-        { phase: 4.18, speed: -2.12, radiusX: 29, radiusY: 38, frameOffset: 3 },
-        { phase: 5.42, speed: 1.58, radiusX: 52, radiusY: 31, frameOffset: 1 }
+        { phase: 0.20, speed: 2.05, radiusX: 43, radiusY: 28, landingX: -12, landingY: -8, cycleOffset: 0.00, frameOffset: 0 },
+        { phase: 1.55, speed: -1.72, radiusX: 36, radiusY: 34, landingX: 7, landingY: -15, cycleOffset: 0.23, frameOffset: 1 },
+        { phase: 2.85, speed: 2.38, radiusX: 48, radiusY: 20, landingX: 15, landingY: 2, cycleOffset: 0.47, frameOffset: 2 },
+        { phase: 4.18, speed: -2.12, radiusX: 29, radiusY: 38, landingX: -4, landingY: 11, cycleOffset: 0.71, frameOffset: 3 }
       ];
       for (const orbit of flyOrbits) {
         const fly = new Sprite(cyclopsFlyFrames[orbit.frameOffset]);
         fly.anchor.set(0.5);
-        fly.width = 44;
-        fly.height = 44;
+        fly.width = 36;
+        fly.height = 36;
         fly.alpha = 0.86;
         cornerLayer.addChild(fly);
         this.cyclopsFlySprites.push({
@@ -3858,6 +3897,9 @@ export class RenderEngine {
           speed: orbit.speed,
           radiusX: orbit.radiusX,
           radiusY: orbit.radiusY,
+          landingX: orbit.landingX,
+          landingY: orbit.landingY,
+          cycleOffset: orbit.cycleOffset,
           frameOffset: orbit.frameOffset,
           frame: orbit.frameOffset
         });

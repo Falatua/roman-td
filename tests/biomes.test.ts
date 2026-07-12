@@ -12,6 +12,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { BIOMES, biomeForWave, pickGrassTile, STATIC_BATTLE_DEBRIS, PATH_PIECE_SUFFIXES } from '../src/render/Biomes';
+import { GamePhase } from '../src/types';
+import { shouldShowCyclopsFlies } from '../src/render/AmbientPropRules';
 
 // Inline import — vitest config resolves JSON imports automatically.
 // We need this to verify every key referenced in BIOMES exists in the
@@ -385,7 +387,7 @@ describe('Top-right Cyclops trophy prop', () => {
     expect(source.indexOf('this.layers.bg.addChild(decorLayer);')).toBeLessThan(source.indexOf('this.layers.bg.addChild(cornerLayer);'));
   });
 
-  it('animates a transparent pooled fly sheet around the severed head', async () => {
+  it('animates a transparent pooled fly sheet around the severed head only for Wave 1', async () => {
     const sharp = require('sharp');
     const file = assetFileFor('MAP_CYCLOPS_FLIES');
     expect(file).toBe('map_overhaul/m_cyclops_flies_sheet.png');
@@ -406,10 +408,19 @@ describe('Top-right Cyclops trophy prop', () => {
     const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
     expect(source).toContain("texGridFrame('MAP_CYCLOPS_FLIES', frame, 64, 64, 2)");
     expect(source).toContain('const flyOrbits = [');
-    expect(source).toContain('fly.width = 44;');
+    expect(source).toContain('fly.width = 36;');
     expect(source).toContain('this.cyclopsFlySprites.push');
     expect(source).toContain('for (const fly of this.cyclopsFlySprites)');
     expect(source).toContain('if (!fly.sp.parent || fly.frames.length === 0) continue;');
+    expect(source).toContain('fly.sp.visible = showCyclopsFlies;');
+    expect(source).toContain('const landed = cycle >= 0.62 && cycle < 0.78;');
+    expect(source).toContain('landingX: orbit.landingX');
+
+    expect(shouldShowCyclopsFlies(0, GamePhase.BUILD_PHASE)).toBe(true);
+    expect(shouldShowCyclopsFlies(0, GamePhase.PROSPECT_PLACEMENT)).toBe(true);
+    expect(shouldShowCyclopsFlies(1, GamePhase.WAVE_PHASE)).toBe(true);
+    expect(shouldShowCyclopsFlies(1, GamePhase.BUILD_PHASE)).toBe(false);
+    expect(shouldShowCyclopsFlies(2, GamePhase.WAVE_PHASE)).toBe(false);
   });
 
   it('adds a transparent giant war sword above the severed head without changing gameplay tiles', async () => {
