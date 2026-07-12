@@ -1,7 +1,7 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
-import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
+import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
 import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
@@ -1107,11 +1107,21 @@ describe('Giant Killer transformation and combat wiring', () => {
       return { loss: target.maxHp - target.hp, target };
     }
 
-    const nonGiantMyth = fireAt(EnemyType.CHIMERA, EnemyFaction.ROMAN_MYTH, 'ELITE');
-    const seaGiant = fireAt(EnemyType.SEA_GIANT, EnemyFaction.ROMAN_MYTH, 'ELITE');
-    const cyclops = fireAt(EnemyType.CYCLOPS, EnemyFaction.ROMAN_MYTH, 'ELITE');
-    const warElephant = fireAt(EnemyType.WAR_ELEPHANT, EnemyFaction.CARTHAGE, 'ELITE');
-    const undeadElephant = fireAt(EnemyType.UNDEAD_WAR_ELEPHANT, EnemyFaction.UNDEAD_CARTHAGE, 'ELITE');
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    let nonGiantMyth: ReturnType<typeof fireAt>;
+    let seaGiant: ReturnType<typeof fireAt>;
+    let cyclops: ReturnType<typeof fireAt>;
+    let warElephant: ReturnType<typeof fireAt>;
+    let undeadElephant: ReturnType<typeof fireAt>;
+    try {
+      nonGiantMyth = fireAt(EnemyType.CHIMERA, EnemyFaction.ROMAN_MYTH, 'ELITE');
+      seaGiant = fireAt(EnemyType.SEA_GIANT, EnemyFaction.ROMAN_MYTH, 'ELITE');
+      cyclops = fireAt(EnemyType.CYCLOPS, EnemyFaction.ROMAN_MYTH, 'ELITE');
+      warElephant = fireAt(EnemyType.WAR_ELEPHANT, EnemyFaction.CARTHAGE, 'ELITE');
+      undeadElephant = fireAt(EnemyType.UNDEAD_WAR_ELEPHANT, EnemyFaction.UNDEAD_CARTHAGE, 'ELITE');
+    } finally {
+      randomSpy.mockRestore();
+    }
 
     expect(GIANT_KILLER_GIANT_DAMAGE_MULT).toBe(5.5);
     expect(seaGiant.loss).toBeGreaterThan(nonGiantMyth.loss * 1.7);
@@ -1418,7 +1428,22 @@ describe('Aura mechanics and visibility', () => {
       ]
     });
 
-    expect(withGlobal.damage / base.damage).toBeCloseTo(1.30, 4);
+    expect(withGlobal.damage / base.damage).toBeCloseTo(1.22, 4);
+  });
+
+  it('reduces Eagle Standard global damage to 10% without changing its local speed aura', () => {
+    const base = singleSwingDamage();
+    const far = singleSwingDamage({
+      support: [{ type: TowerType.EAGLE_STANDARD, x: 1, y: 1, tier: 5 }]
+    });
+    const nearby = singleSwingDamage({
+      support: [{ type: TowerType.EAGLE_STANDARD, x: 9, y: 10, tier: 5 }]
+    });
+
+    expect(EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS).toBe(0.10);
+    expect(far.damage / base.damage).toBeCloseTo(1.10, 4);
+    expect(nearby.damage / base.damage).toBeCloseTo(1.10, 4);
+    expect(far.cooldown / nearby.cooldown).toBeCloseTo(1.22, 4);
   });
 
   it('caps extreme global aura stacking at 2x damage and 2x attack speed', () => {

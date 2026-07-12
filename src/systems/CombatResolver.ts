@@ -32,7 +32,7 @@ export {
   giantKillerPreyDamageMult
 } from './TowerSpecialization';
 import { GRID, KILL_BONUS_RATE, KILL_BONUS_MAX_PCT, FACTION_WEATHER, AURA_TILE_EFFECTS } from '../constants';
-import { towerEffectiveStats, towerPerAttackDamageBase, towerAuraTileKind } from './TowerSystem';
+import { EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, towerEffectiveStats, towerPerAttackDamageBase, towerAuraTileKind } from './TowerSystem';
 import { resistanceModifier } from './DamageTypeSystem';
 import { spawnPhoenixMinions } from './EnemySystem';
 import { spawnProjectile, spawnCosmeticProjectile } from './ProjectileSystem';
@@ -843,7 +843,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   (state as any).__truesightActive = truesightCount > 0;     // legacy flag for render hooks
 
   // SUPPORT AURA scan (Vision §9 / build expression §12).
-  // Eagle Standard:    global +18% damage, +22% atk speed within 5 tiles
+  // Eagle Standard:    global +10% damage, +22% atk speed within 5 tiles
   // Aquilifer Titan:   global +35% damage; enemies near it take +25% from all sources
   // Item: Centurion's Trumpet → 2-tile aura, +10% atk speed to nearby towers
   // Item: Battle Standard    → 2-tile aura, +8% damage to nearby towers
@@ -854,10 +854,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // × 1.30 × 1.30 = 5.06× *before* per-tower buffs — which made late-game
   // DPS impossible to predict and trivialized many encounters.
   //
-  // New model: collect everyone's CONTRIBUTION, sum them, apply once.
-  // Pool +30% + EagleStandard +18% + AquiliferTitan +30% + JuliusCaesar +55%
-  // + Triumvirate +40% + ConsularFatebinder +30% = 1 + 1.98 = 2.98× max,
-  // a meaningful but legible cap.
+  // New model: collect every source's current contribution, sum them, and
+  // apply the shared cap once. Keeping the arithmetic in the live constants
+  // avoids stale totals when one support tower is rebalanced.
   // Pool damage bonus — starts at pool level 2 (the FIRST upgrade past L1
   // is what grants damage). L0 and L1 = +0%, then +3% per level after that.
   // L10 caps at +27%. L1 only gives the probability shift, no damage.
@@ -938,12 +937,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // visual cue that this tower is currently silenced.
     (t as any).__auraNullified = auraOff;
     if (t.type === TowerType.EAGLE_STANDARD && !auraOff) {
-      // Aura-only support tower. Global damage 18% base (scales +5% per
-      // tier — T5 lands at ~+21.6% global damage). Local atk-speed +22%
-      // in 5 tiles. Stacks multiplicatively with same-tier-merge bonus,
-      // items, and pool damage. Suppressed entirely if an aura-nullifier
-      // enemy is within 2 tiles.
-      globalDmgBonus += 0.18 * (1 + 0.05 * (t.qualityTier - 1));
+      // Aura-only support tower. Global damage is a flat +10% at every
+      // tier. Its separate local +22% attack-speed aura remains intact
+      // within 5 tiles. Both are suppressed if an aura-nullifier enemy is
+      // within 2 tiles.
+      globalDmgBonus += EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS;
       localAuras.push({ x: cx, y: cy, r: 5 * GRID.TILE, spd: 0.22 });
     }
     if (t.type === TowerType.AQUILIFER_TITAN && !auraOff) {

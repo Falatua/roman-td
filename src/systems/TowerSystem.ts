@@ -70,6 +70,7 @@ const MELEE_ATTACK_SPEED_MULT = 1.06;
 const MELEE_MIN_RANGE_TILES = 2.0;
 const AURA_STACK_CAP = 2.00;
 const SULLA_PASSIVE_RADIUS_TILES = 5.5;
+export const EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS = 0.10;
 export const GIANTS_BANE_ITEM_ID = 'GIANTS_BANE';
 export const WITCHS_BREW_ITEM_ID = 'WITCHS_BREW';
 export const CENSER_OF_MEFITIS_ITEM_ID = 'CENSER_OF_MEFITIS';
@@ -917,7 +918,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       if (other.pending || isAuraOff(other)) continue;
       const oTier = other.qualityTier;
       if (other.type === TowerType.EAGLE_STANDARD) {
-        addGlobalDmg(`Eagle Standard T${oTier}`, 0.18 * (1 + 0.05 * (oTier - 1)));
+        addGlobalDmg(`Eagle Standard T${oTier}`, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS);
         if (within(other, 5)) addLocalSpeed('Eagle Standard local', 0.22);
       }
       if (other.type === TowerType.AQUILIFER_TITAN) {

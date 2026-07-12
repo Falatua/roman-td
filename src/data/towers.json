@@ -549,7 +549,7 @@
     "melee": false,
     "spriteSheet": 2,
     "spriteCell": 5,
-    "ability": "Global +18% damage aura (scales to ~+22% at T5). Nearby towers (5 tiles) gain +22% attack speed. Pure support — does no direct damage.",
+    "ability": "Global +10% damage. A separate aura gives nearby towers within 5 tiles +22% attack speed. Pure support — does no direct damage.",
     "critChance": 0,
     "critMult": 1
   },
