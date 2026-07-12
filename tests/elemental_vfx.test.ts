@@ -1,4 +1,5 @@
 import { describe, expect, it, afterEach } from 'vitest';
+import fs from 'node:fs';
 import sharp from 'sharp';
 import { join } from 'node:path';
 import { createGameState } from '../src/GameState';
@@ -130,6 +131,17 @@ describe('Stormcaller chain animation contract', () => {
     expect(queue.map((fx: any) => fx.bornTick)).toEqual([12, 12.035, 12.07, 12.105]);
     expect(queue[0]).toMatchObject({ x1: 120, x2: 145 });
     expect(queue[3]).toMatchObject({ x1: 195, x2: 220 });
+  });
+
+  it('uses compact lightning bursts without straight unit-to-unit cables', () => {
+    const source = fs.readFileSync('src/render/RenderEngine.ts', 'utf8');
+    const start = source.indexOf('drawChainLightningFx(state: GameStateShape');
+    const end = source.indexOf('// Persistent boss HP bar', start);
+    const renderer = source.slice(start, end);
+
+    expect(renderer).toContain('sp.width = Math.min(64');
+    expect(renderer).not.toContain('moveTo(fx.x1, fx.y1)');
+    expect(renderer).not.toContain('lineTo(fx.x2, fx.y2)');
   });
 });
 

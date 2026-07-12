@@ -1157,8 +1157,9 @@ export class RenderEngine {
   }
 
   // Chain-lightning arcs use the shared lightning sheet for a readable,
-  // sequential source-to-target jump. A restrained line remains beneath
-  // the sprite so long jumps stay legible without procedural visual noise.
+  // sequential source-to-target jump. The sprite stays compact at the
+  // midpoint: stretching one frame across the whole jump turned its bright
+  // center pixels into a pale cable connecting distant units.
   private chainLightningFxGfx?: Graphics;
   private chainLightningLiveSprites = new Set<Sprite>();
   drawChainLightningFx(state: GameStateShape, tick: number) {
@@ -1215,13 +1216,10 @@ export class RenderEngine {
         sp.x = fx.x1 + dx * 0.5;
         sp.y = fx.y1 + dy * 0.5;
         sp.rotation = Math.atan2(dy, dx);
-        sp.width = len + 12;
-        sp.height = Math.min(34, Math.max(20, len * 0.22));
+        sp.width = Math.min(64, Math.max(34, len * 0.58));
+        sp.height = Math.min(40, Math.max(28, len * 0.30));
         sp.alpha = Math.max(0, alpha);
       }
-      g.lineStyle(3, 0x70bfff, alpha * 0.24);
-      g.moveTo(fx.x1, fx.y1);
-      g.lineTo(fx.x2, fx.y2);
       if (!fx.__impactTriggered) {
         fx.__impactTriggered = true;
         this.triggerSpriteImpact(fx.x2, fx.y2, fx.bornTick, 'VFX_ELEMENT_LIGHTNING', 1.15, 0.28, 128, 128, 6, 3, 3);
