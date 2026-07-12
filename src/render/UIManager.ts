@@ -74,9 +74,14 @@ export class UIManager {
   private lastBulkTargetMode: TargetingMode | null = TargetingMode.FIRST;
   private targetAllPickerButtons: { mode: TargetingMode; btn: HTMLButtonElement }[] = [];
   private targetAllBtn: HTMLButtonElement | null = null;
+  private showScore: boolean;
 
-  constructor(parent: HTMLElement, cb: UICallbacks, opts?: { leftPanel?: HTMLElement; rightPanel?: HTMLElement }) {
+  constructor(parent: HTMLElement, cb: UICallbacks, opts?: { leftPanel?: HTMLElement; rightPanel?: HTMLElement; showScore?: boolean }) {
     this.cb = cb;
+    // Solo keeps the left rail focused on building and prospect decisions.
+    // Shared/Legion callers pass their own panel containers and retain the
+    // existing score chip unless they explicitly opt out.
+    this.showScore = opts?.showScore ?? !!(opts?.leftPanel || opts?.rightPanel);
     // SPLIT-PANEL LAYOUT: HUD (waves/gold/lives) lives in the LEFT panel.
     // Action buttons (start, speed, pool, shop, quests, codex) live in
     // the RIGHT panel. Stage-wrap is the middle column — already wired in
@@ -387,17 +392,19 @@ export class UIManager {
         ${eliteCount > 0 ? `<span class="hud-icon" title="Elite/Boss enemies present" style="color:#ffd34d;font-size:14px"><b>⚠ ${eliteCount}</b></span>` : ''}
         ${topThreats ? `<span class="hud-icon" title="Most common archetypes on field" style="font-size:12px;opacity:0.85">${topThreats}</span>` : ''}`;
     }
-    // 2026-05 v10 — Endless mode: display E1/E2/… and the running
-    // endless score in place of the campaign counter.
+    // 2026-05 v10 — Endless mode: display E1/E2/…; shared HUD callers may
+    // also retain the running score, while Solo reserves that rail space.
     // 2026-05-22 UX6 — Each hud-icon gains data-stat="…" so the mobile
     // tap-to-reveal popover (wired below) can match it to a friendly
     // explanation. Desktop hover-title strings stay as the fallback.
     const waveNum = displayWaveNumber(state);
     const currentWaveCleared = state.phase !== GamePhase.WAVE_PHASE && state.phase !== GamePhase.GAME_OVER;
-    const campaignLeaderboardScore = computeLeaderboardScoreForState(state, currentWaveCleared);
+    const campaignLeaderboardScore = this.showScore
+      ? computeLeaderboardScoreForState(state, currentWaveCleared)
+      : 0;
     const waveDisplay = state.endlessMode
       ? `<span class="hud-icon" data-stat="endless" style="color:#ff5050"><span class="ic ic-wave"></span><b>ENDLESS</b> E${state.endlessWave ?? 0}</span>
-         <span class="hud-icon" data-stat="score" title="Cumulative endless score" style="color:#ff5050"><b>SCORE</b> ${(state.endlessScore ?? 0).toLocaleString()}</span>`
+         ${this.showScore ? `<span class="hud-icon" data-stat="score" title="Cumulative endless score" style="color:#ff5050"><b>SCORE</b> ${(state.endlessScore ?? 0).toLocaleString()}</span>` : ''}`
       : `<span class="hud-icon" data-stat="wave"><span class="ic ic-wave"></span><b>WAVE</b> ${waveNum}/${WAVE.TOTAL}</span>`;
     left.innerHTML = `
       ${waveDisplay}
@@ -415,7 +422,7 @@ export class UIManager {
     right.innerHTML = `
       <span class="hud-icon" data-stat="pool"><span class="ic ic-pool"></span><b>POOL</b> ${state.poolLevel}/${ECONOMY.POOL_MAX_LEVEL}</span>
       <span class="hud-icon" data-stat="probs" title="Tier roll probabilities at the current effective pool. Click 📖 CODEX → POOL for full table.">${probStrip}</span>
-      <span class="hud-icon" data-stat="score"><span class="ic ic-score"></span><b>SCORE</b> ${campaignLeaderboardScore.toLocaleString()}</span>
+      ${this.showScore ? `<span class="hud-icon" data-stat="score"><span class="ic ic-score"></span><b>SCORE</b> ${campaignLeaderboardScore.toLocaleString()}</span>` : ''}
       <span class="hud-icon" data-stat="phase" style="color:#9be0ff;font-weight:900;font-size:14px;letter-spacing:2px;text-shadow:1px 1px 0 #000">${phaseStr}</span>
     `;
     this.hud.append(left, right);
@@ -626,7 +633,7 @@ export class UIManager {
     if (!preview) {
       preview = document.createElement('div');
       preview.id = 'next-wave-preview';
-      preview.style.cssText = `padding:6px 10px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:1px solid #3a3025;color:#cdb98a;font-size:11px;letter-spacing:1px;text-align:center;display:none`;
+      preview.style.cssText = `box-sizing:border-box;width:100%;max-height:clamp(96px,18vh,150px);overflow:hidden;flex:0 0 auto;padding:6px 8px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:1px solid #3a3025;color:#cdb98a;font-size:11px;letter-spacing:1px;text-align:left;display:none;flex-direction:column`;
       this.hud.parentElement?.insertBefore(preview, this.hud.nextSibling);
     }
     // 2026-05 v10 — Endless mode hides the authored next-wave preview
@@ -698,8 +705,15 @@ export class UIManager {
           ? `<div style="margin-top:3px;font-size:9.5px;letter-spacing:1.5px">THREATS: ${tags.map(t => `<span style="color:${t.color};font-weight:bold;border:1px solid ${t.color}55;padding:1px 4px;margin:0 2px">${t.txt}</span>`).join('')}</div>`
           : '';
         const isBoss = w.type === 'B';
-        preview.style.display = '';
-        preview.innerHTML = `${isBoss ? '<span style="color:#ee5555;font-weight:bold;letter-spacing:2px">⚠ BOSS WAVE ⚠</span> · ' : ''}<b style="color:#9be0ff">NEXT: WAVE ${idx + 1}</b> · ${factionName(w.faction)} · ${enemies}${carriedSuffix}${tagBar}`;
+        preview.style.display = 'flex';
+        preview.innerHTML = `
+          <div class="next-wave-preview-title" style="flex:0 0 auto;padding-bottom:4px;margin-bottom:4px;border-bottom:1px solid #3a3025;line-height:1.35">
+            ${isBoss ? '<span style="color:#ee5555;font-weight:bold;letter-spacing:1.5px">⚠ BOSS</span> · ' : ''}<b style="color:#9be0ff">NEXT: W${idx + 1}</b> · ${factionName(w.faction)}
+          </div>
+          <div class="next-wave-preview-scroll" tabindex="0" aria-label="Upcoming wave enemies and threats" style="min-height:0;overflow-y:auto;overflow-x:hidden;padding-right:4px;line-height:1.45;scrollbar-width:thin;scrollbar-color:#d4af37 #1a1410;overscroll-behavior:contain">
+            <div>${enemies}${carriedSuffix}</div>
+            ${tagBar}
+          </div>`;
       } else {
         preview.style.display = 'none';
       }

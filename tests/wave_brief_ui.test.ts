@@ -36,6 +36,25 @@ describe('Next-wave preview chip ergonomics', () => {
   });
 });
 
+describe('Left HUD space allocation', () => {
+  const uiSource = fs.readFileSync('src/render/UIManager.ts', 'utf8');
+
+  it('removes the score chip from Solo while preserving opt-in shared HUD behavior', () => {
+    expect(uiSource).toContain('private showScore: boolean;');
+    expect(uiSource).toContain('this.showScore = opts?.showScore ?? !!(opts?.leftPanel || opts?.rightPanel);');
+    expect(uiSource).toContain("${this.showScore ? `<span class=\"hud-icon\" data-stat=\"score\"");
+  });
+
+  it('caps the left next-wave briefing and scrolls only its roster body', () => {
+    expect(uiSource).toContain('max-height:clamp(96px,18vh,150px);overflow:hidden;flex:0 0 auto');
+    expect(uiSource).toContain('class="next-wave-preview-title"');
+    expect(uiSource).toContain('class="next-wave-preview-scroll"');
+    expect(uiSource).toContain('aria-label="Upcoming wave enemies and threats"');
+    expect(uiSource).toContain('min-height:0;overflow-y:auto;overflow-x:hidden');
+    expect(uiSource).toContain("preview.style.display = 'flex';");
+  });
+});
+
 describe('Build overlay ergonomics', () => {
   const mainSource = fs.readFileSync('src/main.ts', 'utf8');
 
