@@ -22,6 +22,7 @@ import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from '../system
 import { isWaterPlacementBufferTile } from '../systems/GridManager';
 import { enemySpriteSizeTiles } from './EnemySpriteScale';
 import { shouldShowCyclopsFlies, shouldShowOpeningThundercloud } from './AmbientPropRules';
+import { apexAuraProfile, ApexAuraProfile } from './OmegaAuraProfiles';
 
 // 2026-05-20 v2 — Per-hero halo ring assignment. Each ring style was
 // hand-picked to match the hero's color tint + thematic identity:
@@ -5499,6 +5500,11 @@ export class RenderEngine {
       const cx = tw.tileX * GRID.TILE + GRID.TILE / 2;
       const cy = tw.tileY * GRID.TILE + GRID.TILE / 2;
 
+      const apexAura = apexAuraProfile(tw.type);
+      if (apexAura) {
+        this.drawApexSignatureAura(cx, cy, tick, tw.tileX, tw.tileY, apexAura);
+      }
+
       // ── HERO PASSIVE AURA RINGS (2026-05-22) ──────────────────────
       // Heroes with a spatial passive (LOCAL_AURA, DUAL.local,
       // DAMAGE_TYPE_RIDER) need their range surfaced so the player
@@ -5628,6 +5634,99 @@ export class RenderEngine {
         this.drawAuraRing(cx, cy, 3.5 * GRID.TILE, ENEMY, pulse * 0.9, true);
       }
     }
+  }
+
+  private drawApexSignatureAura(
+    cx: number,
+    cy: number,
+    tick: number,
+    tileX: number,
+    tileY: number,
+    profile: ApexAuraProfile
+  ) {
+    const reduceMotion = typeof window !== 'undefined' && !!(window as any).__reduceMotion;
+    const phaseOffset = tileX * 0.73 + tileY * 0.41;
+    const phase = reduceMotion ? phaseOffset : tick * 0.72 + phaseOffset;
+    const breath = reduceMotion ? 0.72 : 0.72 + Math.sin(tick * 2.15 + phaseOffset) * 0.16;
+    const strength = profile.intensity;
+    const r = profile.radiusTiles * GRID.TILE;
+
+    // Shared low-alpha ground bloom. The class-specific marks below carry
+    // the identity, while this restrained fill keeps enemies readable.
+    this.auraGfx.beginFill(profile.primary, 0.055 * breath * strength)
+      .drawCircle(cx, cy, r)
+      .endFill();
+
+    if (profile.style === 'CRIMSON_BLADES') {
+      this.auraGfx.beginFill(profile.primary, 0.10 * breath)
+        .drawCircle(cx, cy, r * 0.58)
+        .endFill();
+      this.auraGfx.lineStyle(3.2, profile.primary, 0.78 * breath);
+      for (let i = 0; i < 4; i++) {
+        const a0 = phase + i * Math.PI / 2;
+        this.auraGfx.arc(cx, cy, r * 0.82, a0, a0 + 0.72, false);
+      }
+      this.auraGfx.lineStyle(1.4, profile.secondary, 0.72 * breath)
+        .drawCircle(cx, cy, r * 0.64);
+      // Four short tangential strokes read as twin blades rather than a
+      // generic magic circle, even when reduced motion freezes the phase.
+      for (let i = 0; i < 4; i++) {
+        const a = phase + Math.PI / 4 + i * Math.PI / 2;
+        const x = cx + Math.cos(a) * r * 0.95;
+        const y = cy + Math.sin(a) * r * 0.95;
+        const tx = Math.cos(a + Math.PI / 2) * r * 0.16;
+        const ty = Math.sin(a + Math.PI / 2) * r * 0.16;
+        this.auraGfx.moveTo(x - tx, y - ty).lineTo(x + tx, y + ty);
+      }
+      this.auraGfx.lineStyle(0);
+      return;
+    }
+
+    if (profile.style === 'ABYSSAL_TIDE') {
+      this.auraGfx.beginFill(profile.secondary, 0.075 * breath)
+        .drawEllipse(cx, cy + r * 0.08, r * 0.90, r * 0.62)
+        .endFill();
+      for (let band = 0; band < 3; band++) {
+        const bandR = r * (0.48 + band * 0.18);
+        const drift = reduceMotion ? 0 : Math.sin(phase * 1.8 + band) * r * 0.045;
+        this.auraGfx.lineStyle(2.3 - band * 0.35, band === 1 ? profile.secondary : profile.primary, (0.72 - band * 0.10) * breath);
+        this.auraGfx.arc(cx + drift, cy + band * 2, bandR, Math.PI * 0.10, Math.PI * 0.92, false);
+        this.auraGfx.arc(cx - drift, cy + band * 2, bandR, Math.PI * 1.10, Math.PI * 1.92, false);
+      }
+      this.auraGfx.lineStyle(1.3, profile.primary, 0.68 * breath);
+      for (let i = 0; i < 6; i++) {
+        const a = phase * 0.65 + i * Math.PI / 3;
+        const bubbleR = r * (0.66 + (i % 2) * 0.18);
+        const bubbleSize = 1.8 + (i % 3) * 0.8;
+        this.auraGfx.drawCircle(cx + Math.cos(a) * bubbleR, cy + Math.sin(a) * bubbleR * 0.72, bubbleSize);
+      }
+      this.auraGfx.lineStyle(0);
+      return;
+    }
+
+    // Vulcan Colossus: a slightly quieter Supercombo treatment. A molten
+    // core, forge ring, and eight vent spokes separate it from both Omegas.
+    this.auraGfx.beginFill(profile.primary, 0.095 * breath * strength)
+      .drawCircle(cx, cy, r * 0.62)
+      .endFill();
+    this.auraGfx.lineStyle(3, profile.primary, 0.72 * breath * strength)
+      .drawCircle(cx, cy, r * 0.78);
+    this.auraGfx.lineStyle(1.5, profile.secondary, 0.82 * breath * strength)
+      .drawCircle(cx, cy, r * 0.52);
+    for (let i = 0; i < 8; i++) {
+      const a = phase * 0.32 + i * Math.PI / 4;
+      const inner = r * 0.76;
+      const outer = r * (0.94 + (i % 2) * 0.05);
+      this.auraGfx.moveTo(cx + Math.cos(a) * inner, cy + Math.sin(a) * inner)
+        .lineTo(cx + Math.cos(a) * outer, cy + Math.sin(a) * outer);
+    }
+    this.auraGfx.lineStyle(0);
+    this.auraGfx.beginFill(profile.secondary, 0.55 * breath * strength);
+    for (let i = 0; i < 3; i++) {
+      const a = -Math.PI / 2 + i * Math.PI * 2 / 3 + phase * 0.22;
+      this.auraGfx.drawCircle(cx + Math.cos(a) * r * 0.69, cy + Math.sin(a) * r * 0.69, 2.2);
+    }
+    this.auraGfx.endFill();
   }
 
   // 2026-05 v11: prominent variant for Aquilifer Titan's damage-taken
