@@ -2,6 +2,7 @@ import { Tower, Enemy, DamageType, TowerType } from '../types';
 import { GameStateShape } from '../GameState';
 import { GRID, RENDER_LIMITS, AURA_TILE_EFFECTS } from '../constants';
 import { towerAuraTileKind } from './TowerSystem';
+import { elementalProjectileSpriteKey } from './ElementalVfx';
 
 export interface FlyingProjectile {
   id: string;
@@ -218,22 +219,10 @@ export function spawnProjectile(state: GameStateShape, tower: Tower, target: Ene
   // ITEM-DRIVEN PROJECTILE SWAPS (2026-05): the projectile sprite reads
   // the tower's equipped legendaries / themed items so the visual matches
   // the effect being applied. Priority order picks the most-dramatic
-  // swap when multiple items would qualify (JUPITER'S WRATH wins over
-  // STORM_JAVELIN; STORM swaps win over FIRE_OIL_FLASK). Stat stays on
-  // the tower's normal profile — only the silhouette changes.
-  const usesStormBolt = tower.equippedItems.includes('JUPITERS_WRATH')
-                     || tower.equippedItems.includes('STORM_JAVELIN');
-  // FIRE_OIL_FLASK only swaps in for non-staff non-barrel sprites — a
-  // Solar Priest casting a fire-barrel of oil would look silly. Limits
-  // the swap to physical-projectile towers (pilum / arrow / javelin /
-  // hasta / light-javelin) where the sprite swap reads as oil-soaked.
-  const fireOilEligible = tower.equippedItems.includes('FIRE_OIL_FLASK')
-    && (def.key === 'PROJ_PILUM' || def.key === 'PROJ_ARROW'
-        || def.key === 'PROJ_JAVELIN' || def.key === 'PROJ_LIGHT_JAVELIN'
-        || def.key === 'PROJ_HASTA');
-  const spriteKey = usesStormBolt
-    ? 'PROJ_STORM_BOLT'
-    : (fireOilEligible ? 'PROJ_BARREL' : def.key);
+  // Elemental items and native elemental towers keep their normal combat
+  // profile while receiving the matching animated travel silhouette.
+  const spriteKey = elementalProjectileSpriteKey(tower, def.key);
+  const elementalSwap = spriteKey !== def.key;
 
   const sx = tower.tileX * GRID.TILE + GRID.TILE / 2;
   const sy = tower.tileY * GRID.TILE + GRID.TILE / 2;
@@ -270,7 +259,7 @@ export function spawnProjectile(state: GameStateShape, tower: Tower, target: Ene
       tower.equippedItems.includes('CONCUSSIVE_WARHEAD') ? 1.6 : 0,   // 2026 v2 legendary splash
       (() => { const k = towerAuraTileKind(tower); return (k && AURA_TILE_EFFECTS[k].splashBonus) || 0; })()
     ),
-    embedAfter: def.embed && !usesStormBolt && !fireOilEligible   // storm/fire-oil don't stick
+    embedAfter: def.embed && !elementalSwap
   });
 }
 

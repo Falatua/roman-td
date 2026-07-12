@@ -603,8 +603,8 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
       if (t.equippedItems.includes(slot.itemId)) {
         blocker = 'Already equipped on this tower'; blockerShort = 'OWNED';
       } else if (slot.itemId === GIANTS_BANE_ITEM_ID && !canTransformWithGiantsBane(t)) {
-        blocker = "Giant's Bane only fits Tier IV or Tier V Milites or Cohort Guard.";
-        blockerShort = 'T4+ ONLY';
+        blocker = "Giant's Bane only awakens a Tier V Milites or Cohort Guard.";
+        blockerShort = 'T5 ONLY';
       } else if (slot.itemId === WITCHS_BREW_ITEM_ID && !canTransformWithWitchsBrew(t)) {
         blocker = "Witch's Brew only fits a Tier IV or Tier V Murmillo.";
         blockerShort = 'MURMILLO';
@@ -1297,8 +1297,8 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
       if (t.equippedItems.includes(slot.itemId)) {
         blocker = 'Already equipped on this hero'; blockerShort = 'OWNED';
       } else if (slot.itemId === GIANTS_BANE_ITEM_ID) {
-        blocker = "Giant's Bane only fits Tier IV or Tier V Milites or Cohort Guard.";
-        blockerShort = 'T4+ ONLY';
+        blocker = "Giant's Bane only awakens a Tier V Milites or Cohort Guard.";
+        blockerShort = 'T5 ONLY';
       } else if (slot.itemId === WITCHS_BREW_ITEM_ID) {
         blocker = "Witch's Brew only fits a Tier IV or Tier V Murmillo.";
         blockerShort = 'MURMILLO';

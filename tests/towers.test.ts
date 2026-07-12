@@ -861,7 +861,7 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(towerPerAttackDamageBase(giantKiller)).toBeCloseTo(stats.dps / stats.attackSpeed, 4);
   });
 
-  it('transforms only legal Tier IV+ Giant\'s Bane carriers and opens four total slots', () => {
+  it('transforms only legal Tier V Giant\'s Bane carriers and opens four total slots', () => {
     const lowMilites = createTower(TowerType.MILITES, 3, 4, 4, 0);
     lowMilites.equippedItems.push(GIANTS_BANE_ITEM_ID);
     expect(canTransformWithGiantsBane(lowMilites)).toBe(false);
@@ -874,11 +874,18 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(transformWithGiantsBane(wrongTower)).toBe(false);
     expect(wrongTower.type).toBe(TowerType.HASTATI);
 
-    const milites = createTower(TowerType.MILITES, 4, 4, 4, 0);
+    const tierFourMilites = createTower(TowerType.MILITES, 4, 4, 4, 0);
+    tierFourMilites.equippedItems.push(GIANTS_BANE_ITEM_ID);
+    expect(canAwakenWithLegendaryItem(tierFourMilites, GIANTS_BANE_ITEM_ID)).toBe(false);
+    expect(canTransformWithGiantsBane(tierFourMilites)).toBe(false);
+    expect(transformWithGiantsBane(tierFourMilites)).toBe(false);
+
+    const milites = createTower(TowerType.MILITES, 5, 4, 4, 0);
     milites.equippedItems.push('SHARPENED_BLADE', GIANTS_BANE_ITEM_ID);
     milites.equippedItemRarities = ['COMMON', 'LEGENDARY'];
     const before = towerEffectiveStats(milites);
 
+    expect(canAwakenWithLegendaryItem(milites, GIANTS_BANE_ITEM_ID)).toBe(true);
     expect(canTransformWithGiantsBane(milites)).toBe(true);
     expect(transformWithGiantsBane(milites)).toBe(true);
     expect(milites.type).toBe(TowerType.GIANT_KILLER);
@@ -894,11 +901,18 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(transformWithGiantsBane(lowCohort)).toBe(false);
     expect(lowCohort.type).toBe(TowerType.COHORT_GUARD);
 
-    const cohort = createTower(TowerType.COHORT_GUARD, 4, 5, 4, 0);
+    const tierFourCohort = createTower(TowerType.COHORT_GUARD, 4, 5, 4, 0);
+    tierFourCohort.equippedItems.push(GIANTS_BANE_ITEM_ID);
+    expect(canAwakenWithLegendaryItem(tierFourCohort, GIANTS_BANE_ITEM_ID)).toBe(false);
+    expect(canTransformWithGiantsBane(tierFourCohort)).toBe(false);
+    expect(transformWithGiantsBane(tierFourCohort)).toBe(false);
+
+    const cohort = createTower(TowerType.COHORT_GUARD, 5, 5, 4, 0);
     cohort.equippedItems.push('BATTLE_STANDARD', GIANTS_BANE_ITEM_ID);
     cohort.equippedItemRarities = ['UNCOMMON', 'LEGENDARY'];
     const cohortBefore = towerEffectiveStats(cohort);
 
+    expect(canAwakenWithLegendaryItem(cohort, GIANTS_BANE_ITEM_ID)).toBe(true);
     expect(canTransformWithGiantsBane(cohort)).toBe(true);
     expect(transformWithGiantsBane(cohort)).toBe(true);
     expect(cohort.type).toBe(TowerType.GIANTS_COHORT_GUARD);
@@ -981,13 +995,13 @@ describe('Giant Killer transformation and combat wiring', () => {
   });
 
   it('keeps item-awakened towers worth their legendary transform item', () => {
-    const milites = createTower(TowerType.MILITES, 4, 4, 4, 0);
+    const milites = createTower(TowerType.MILITES, 5, 4, 4, 0);
     const militesBefore = towerEffectiveStats(milites).dps;
     milites.equippedItems.push(GIANTS_BANE_ITEM_ID);
     expect(transformWithGiantsBane(milites)).toBe(true);
     const giantKillerDps = towerEffectiveStats(milites).dps;
 
-    const cohort = createTower(TowerType.COHORT_GUARD, 4, 4, 4, 0);
+    const cohort = createTower(TowerType.COHORT_GUARD, 5, 4, 4, 0);
     const cohortBefore = towerEffectiveStats(cohort).dps;
     cohort.equippedItems.push(GIANTS_BANE_ITEM_ID);
     expect(transformWithGiantsBane(cohort)).toBe(true);
@@ -1014,6 +1028,7 @@ describe('Giant Killer transformation and combat wiring', () => {
     const cases = [
       {
         source: TowerType.MILITES,
+        tier: 5,
         item: GIANTS_BANE_ITEM_ID,
         transform: transformWithGiantsBane,
         result: TowerType.GIANT_KILLER,
@@ -1021,6 +1036,7 @@ describe('Giant Killer transformation and combat wiring', () => {
       },
       {
         source: TowerType.COHORT_GUARD,
+        tier: 5,
         item: GIANTS_BANE_ITEM_ID,
         transform: transformWithGiantsBane,
         result: TowerType.GIANTS_COHORT_GUARD,
@@ -1028,6 +1044,7 @@ describe('Giant Killer transformation and combat wiring', () => {
       },
       {
         source: TowerType.MURMILLO,
+        tier: 4,
         item: WITCHS_BREW_ITEM_ID,
         transform: transformWithWitchsBrew,
         result: TowerType.UNDEAD_GLADIATOR_KING,
@@ -1036,7 +1053,7 @@ describe('Giant Killer transformation and combat wiring', () => {
     ] as const;
 
     for (const c of cases) {
-      const tower = createTower(c.source, 4, 4, 4, 0);
+      const tower = createTower(c.source, c.tier as 4 | 5, 4, 4, 0);
       const originalSprite = (ASSET_KEYS as any)[tower.type];
       expect(originalSprite, `${c.source} should have a registered pre-evolution sprite`).toBeTruthy();
 

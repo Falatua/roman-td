@@ -30,6 +30,7 @@ import { commanderDamageTakenMult, isCommanderType } from './CommanderSystem';
 import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 import { heroAuraScaleForTower } from './HeroScaling';
 import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from './BaseTowerAttackAnimation';
+import { triggerElementalHitVfx } from './ElementalVfx';
 import enemiesData from '../data/enemies.json';
 import towersData from '../data/towers.json';
 import wavesData from '../data/waves.json';
@@ -903,6 +904,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // below. Avoids a per-tower state.towers.get lookup.
   const localAuras: Array<{ x: number; y: number; r: number; dmg?: number; spd?: number }> = [];
   const enemyTakenAuras: Array<{ x: number; y: number; r: number; pct: number }> = [];
+  const infernoStandardAuras: Array<{ x: number; y: number; r: number }> = [];
   // AURA NULLIFIER enemies (Architectus on W16): if alive AND within 2 tiles
   // of an aura-emitting tower, that tower's aura contributions are silently
   // skipped this tick. The aura comes back the instant the enemy walks out
@@ -1226,6 +1228,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     }
     if (t.equippedItems.includes('INFERNO_STANDARD') && !auraOff) {
       localAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, dmg: 0.40 });
+      infernoStandardAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE });
     }
     // SCOUT_VEXILLUM — every 4 seconds, mass-mark every enemy in range.
     if (t.type === TowerType.SCOUT_VEXILLUM) {
@@ -1266,6 +1269,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     let sm = globalSpeedMult;
     const cx = t.tileX * GRID.TILE + GRID.TILE / 2;
     const cy = t.tileY * GRID.TILE + GRID.TILE / 2;
+    (t as any).__infernoStandardAura = infernoStandardAuras.some(a => Math.hypot(a.x - cx, a.y - cy) <= a.r);
     for (const a of localAuras) {
       if (Math.hypot(a.x - cx, a.y - cy) <= a.r) {
         if (a.dmg) dm *= 1 + a.dmg;
@@ -1499,6 +1503,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // immune to the rider's type, only that rider drops to 0; the tower's
       // native hit above still resolves through its own damage type.
       const sullaFireRiderPct = sullaFireRiderPctForTower(t, heroAuraSources);
+      (t as any).__sullaFireVfx = sullaFireRiderPct > 0;
       if (sullaFireRiderPct > 0) {
         const fireResMod = applyWaveResistRelief(
           state,
@@ -2158,6 +2163,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         hooks.onHit(t, target, damage, resMod, !!(t as any).__lastWasCrit);
         hooks.onMeleeSwing(t, target, damage);
         applyOnHitEffects(t, target, state.tick);
+        triggerElementalHitVfx(t, target.x, target.y, state.tick);
         fireSolInvictusLaneCharge(state, t, target, damage, hooks);
         // JUPITER'S WRATH on melee hits — same chain logic as the ranged
         // path. Skips on phased hits (damage was zeroed above).
@@ -2398,6 +2404,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             hooks.onHit(t, other, cleaveDmg, resMod);
             hooks.onMeleeSwing(t, other, cleaveDmg);
             applyOnHitEffects(t, other, state.tick);
+            triggerElementalHitVfx(t, other.x, other.y, state.tick);
             if (other.hp <= 0 && !checkRebirth(state, other, state.tick)) hooks.onKill(t, other);
           }
         }
@@ -2755,6 +2762,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   const resMod = (target as any).__lastResMod ?? 1;
   hooks.onHit(t, target, damage, resMod, !!(t as any).__lastWasCrit);
   applyOnHitEffects(t, target, state.tick);
+  triggerElementalHitVfx(t, target.x, target.y, state.tick);
   if (target.hp <= 0 && !checkRebirth(state, target, state.tick)) hooks.onKill(t, target);
   // CONSULAR_FATEBINDER — every shot strikes EVERY enemy on the map. The
   // initial target gets the full hit; every other enemy alive takes 40% of
@@ -2818,6 +2826,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
       nearest.hpFlashTimer = 0.18;
       nearest.lastDamagedTick = state.tick;
       hooks.onHit(t, nearest, chainDmg, resMod);
+      queueChainLightningFx(state, prevX, prevY, nearest.x, nearest.y, jump);
       if (nearest.hp <= 0 && !checkRebirth(state, nearest, state.tick)) hooks.onKill(t, nearest);
       prevX = nearest.x; prevY = nearest.y;
       chainDmg *= 0.80;
@@ -2846,10 +2855,36 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
       nearest.hpFlashTimer = 0.18;
       nearest.lastDamagedTick = state.tick;
       hooks.onHit(t, nearest, chainDmg, resMod);
+      queueChainLightningFx(state, prevX, prevY, nearest.x, nearest.y, jump);
       if (nearest.hp <= 0 && !checkRebirth(state, nearest, state.tick)) hooks.onKill(t, nearest);
       prevX = nearest.x; prevY = nearest.y;
       chainDmg *= 0.75;
     }
+  }
+}
+
+let nextChainLightningFxId = 1;
+
+function queueChainLightningFx(
+  state: GameStateShape,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  jump: number
+): void {
+  const queue = ((state as any).chainLightningFxQueue ??= []);
+  queue.push({
+    id: `chain-lightning-${nextChainLightningFxId++}`,
+    x1,
+    y1,
+    x2,
+    y2,
+    bornTick: state.tick + jump * 0.035
+  });
+  while (queue.length > 60) {
+    const old = queue.shift();
+    old?.__sprite?.destroy();
   }
 }
 
@@ -2863,7 +2898,6 @@ function fireJupitersWrathChain(
   hooks: CombatHooks, resMod: number
 ) {
   pushStatus(target, StatusEffectKind.STUN, 0.4, 0, t.qualityTier);
-  (state as any).chainLightningFxQueue = (state as any).chainLightningFxQueue ?? [];
   let prevX = target.x, prevY = target.y;
   let chainDmg = damage * 0.40;
   const visited = new Set<string>([target.id]);
@@ -2881,12 +2915,7 @@ function fireJupitersWrathChain(
     nearest.lastDamagedTick = state.tick;
     hooks.onHit(t, nearest, chainDmg, resMod);
     pushStatus(nearest, StatusEffectKind.STUN, 0.25, 0, t.qualityTier);
-    const fxq = (state as any).chainLightningFxQueue;
-    fxq.push({ x1: prevX, y1: prevY, x2: nearest.x, y2: nearest.y, bornTick: state.tick });
-    // Hard cap so a packed wave with multiple chain-towers can't blow up
-    // the FX list (each arc lives ~0.35s so without a cap a burst could
-    // pile up dozens before the cleanup loop catches them).
-    if (fxq.length > 60) fxq.shift();
+    queueChainLightningFx(state, prevX, prevY, nearest.x, nearest.y, jump);
     if (nearest.hp <= 0 && !checkRebirth(state, nearest, state.tick)) hooks.onKill(t, nearest);
     prevX = nearest.x; prevY = nearest.y;
     chainDmg *= 0.40;
@@ -3441,6 +3470,9 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
     // damage buff is handled in the localAuras pass; the on-hit
     // BURN ride-along stamps a BURN status on every direct hit.
     if (t.equippedItems.includes('INFERNO_STANDARD')) {
+      pushStatus(target, StatusEffectKind.BURN, 3, 0.08, tier);
+    }
+    if ((t as any).__infernoStandardAura && !t.equippedItems.includes('INFERNO_STANDARD')) {
       pushStatus(target, StatusEffectKind.BURN, 3, 0.08, tier);
     }
     // 2026-05 v11 BLEED BOOST: bleed items felt under-tuned relative to the

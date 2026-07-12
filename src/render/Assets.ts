@@ -95,6 +95,12 @@ const MANIFEST: Record<string, string> = {
   VFX_SPECTRAL_QUADRIGA: 'p_spectral_quadriga.png',
   PROJ_JOVIAN_HARPOON: 'p_jovian_harpoon.png',
   PROJ_MEFITIS_AMPHORA: 'p_mefitis_amphora.png',
+  VFX_ELEMENT_LIGHTNING: 'vfx_element_lightning_sheet.png',
+  VFX_ELEMENT_FIRE: 'vfx_element_fire_sheet.png',
+  VFX_ELEMENT_POISON: 'vfx_element_poison_sheet.png',
+  VFX_ELEMENT_WATER: 'vfx_element_water_sheet.png',
+  VFX_ELEMENT_ICE: 'vfx_element_ice_sheet.png',
+  VFX_ELEMENT_BLEED: 'vfx_element_bleed_sheet.png',
   // 2026-05-17 — MURMILLO (T4 mid-game combo). Heavy Roman gladiator with
   // fish-helmet + scutum + gladius. Sliced from the user-supplied gladiator
   // roster sheet (top-left cell); chroma-keyed via the standard pipeline.

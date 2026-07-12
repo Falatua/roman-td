@@ -202,6 +202,7 @@ export function boundAwakeningItemForTowerType(type: TowerType | string): string
 
 export function legendaryAwakeningResultType(t: Tower, itemId: string): TowerType | null {
   if (t.pending || t.qualityTier < 4) return null;
+  if (itemId === GIANTS_BANE_ITEM_ID && t.qualityTier !== 5) return null;
   return LEGENDARY_AWAKENINGS.find(a => a.source === t.type && a.itemId === itemId)?.result ?? null;
 }
 
@@ -214,7 +215,7 @@ export function isGiantsBaneTransformedTowerType(type: TowerType | string): bool
 }
 
 export function giantsBaneTransformResultType(t: Tower): TowerType | null {
-  if (t.pending || t.qualityTier < 4) return null;
+  if (t.pending || t.qualityTier !== 5) return null;
   if (t.type === TowerType.MILITES) return TowerType.GIANT_KILLER;
   if (t.type === TowerType.COHORT_GUARD) return TowerType.GIANTS_COHORT_GUARD;
   return null;

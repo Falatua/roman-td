@@ -1128,11 +1128,11 @@ export class RenderEngine {
     }
   }
 
-  // JUPITER'S WRATH chain-lightning arcs — jagged white-blue bolts drawn
-  // between each chain segment, plus a brief impact pulse at the strike
-  // points. Each entry lives ~0.35s. The runtime queues entries from
-  // CombatResolver every time the chain procs.
+  // Chain-lightning arcs use the shared lightning sheet for a readable,
+  // sequential source-to-target jump. A restrained line remains beneath
+  // the sprite so long jumps stay legible without procedural visual noise.
   private chainLightningFxGfx?: Graphics;
+  private chainLightningLiveSprites = new Set<Sprite>();
   drawChainLightningFx(state: GameStateShape, tick: number) {
     if (!this.chainLightningFxGfx) {
       this.chainLightningFxGfx = new Graphics();
@@ -1141,54 +1141,63 @@ export class RenderEngine {
     const g = this.chainLightningFxGfx;
     g.clear();
     const queue = (state as any).chainLightningFxQueue as any[] | undefined;
-    if (!queue) return;
-    while (queue.length > 0 && tick - queue[0].bornTick > 0.35) queue.shift();
+    for (const sp of this.chainLightningLiveSprites) {
+      if ((sp as any).destroyed) this.chainLightningLiveSprites.delete(sp);
+    }
+    if (!queue) {
+      for (const sp of this.chainLightningLiveSprites) sp.destroy();
+      this.chainLightningLiveSprites.clear();
+      return;
+    }
+    while (queue.length > 0 && tick - queue[0].bornTick > 0.35) {
+      const old = queue.shift();
+      if (old?.__sprite) {
+        this.chainLightningLiveSprites.delete(old.__sprite);
+        old.__sprite.destroy();
+      }
+    }
+    if (queue.length === 0) {
+      for (const sp of this.chainLightningLiveSprites) sp.destroy();
+      this.chainLightningLiveSprites.clear();
+      return;
+    }
     for (const fx of queue) {
       const age = tick - fx.bornTick;
-      const t = age / 0.35;                  // 0..1
+      if (age < 0) {
+        if (fx.__sprite) fx.__sprite.visible = false;
+        continue;
+      }
+      const t = Math.min(1, age / 0.35);
       const alpha = 1 - t;
-      // Build a jagged poly-line between (x1,y1) and (x2,y2) with random
-      // perpendicular jitter at each segment so the bolt reads as
-      // electric, not a flat ruler line. Deterministic from bornTick so
-      // every frame within the lifespan renders the same path.
       const dx = fx.x2 - fx.x1;
       const dy = fx.y2 - fx.y1;
       const len = Math.max(1, Math.hypot(dx, dy));
-      const nx = -dy / len, ny = dx / len;   // perpendicular unit
-      const segments = 7;
-      const seed = (fx.bornTick * 7919) | 0;
-      const rand = (i: number) => {
-        const x = Math.sin(seed + i * 13.37) * 43758.5453;
-        return x - Math.floor(x);
-      };
-      const pts: { x: number; y: number }[] = [];
-      pts.push({ x: fx.x1, y: fx.y1 });
-      for (let i = 1; i < segments; i++) {
-        const u = i / segments;
-        const jx = fx.x1 + dx * u;
-        const jy = fx.y1 + dy * u;
-        const offset = (rand(i) - 0.5) * 14;
-        pts.push({ x: jx + nx * offset, y: jy + ny * offset });
+      const frameTexture = texGridFrame('VFX_ELEMENT_LIGHTNING', Math.floor(age * 30) % 3, 128, 128, 3);
+      if (!fx.__sprite && frameTexture) {
+        const sp = new Sprite(frameTexture);
+        sp.anchor.set(0.5);
+        this.layers.fx.addChild(sp);
+        fx.__sprite = sp;
+        this.chainLightningLiveSprites.add(sp);
       }
-      pts.push({ x: fx.x2, y: fx.y2 });
-      // Outer glow bolt
-      g.lineStyle(5, 0x66aaff, alpha * 0.45);
-      g.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) g.lineTo(pts[i].x, pts[i].y);
-      // Mid layer
-      g.lineStyle(2.5, 0xaaccff, alpha * 0.85);
-      g.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) g.lineTo(pts[i].x, pts[i].y);
-      // Hot white core
-      g.lineStyle(1.2, 0xffffff, alpha);
-      g.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) g.lineTo(pts[i].x, pts[i].y);
-      // Impact rings at both endpoints
-      g.lineStyle(0);
-      const r = 6 + (1 - alpha) * 8;
-      g.beginFill(0xffffff, alpha * 0.55).drawCircle(fx.x1, fx.y1, r * 0.5).endFill();
-      g.beginFill(0xaaccff, alpha * 0.85).drawCircle(fx.x2, fx.y2, r * 0.7).endFill();
-      g.beginFill(0xffffff, alpha).drawCircle(fx.x2, fx.y2, r * 0.35).endFill();
+      const sp = fx.__sprite as Sprite | undefined;
+      if (sp) {
+        if (frameTexture) sp.texture = frameTexture;
+        sp.visible = true;
+        sp.x = fx.x1 + dx * 0.5;
+        sp.y = fx.y1 + dy * 0.5;
+        sp.rotation = Math.atan2(dy, dx);
+        sp.width = len + 12;
+        sp.height = Math.min(34, Math.max(20, len * 0.22));
+        sp.alpha = Math.max(0, alpha);
+      }
+      g.lineStyle(3, 0x70bfff, alpha * 0.24);
+      g.moveTo(fx.x1, fx.y1);
+      g.lineTo(fx.x2, fx.y2);
+      if (!fx.__impactTriggered) {
+        fx.__impactTriggered = true;
+        this.triggerSpriteImpact(fx.x2, fx.y2, fx.bornTick, 'VFX_ELEMENT_LIGHTNING', 1.15, 0.28, 128, 128, 6, 3, 3);
+      }
     }
   }
 
@@ -1359,6 +1368,11 @@ export class RenderEngine {
         : p.spriteKey === 'PROJ_GIANT_ARROW' ? 0xf0b95c
         : p.spriteKey === 'PROJ_JOVIAN_HARPOON' ? 0x8ee8ff
         : p.spriteKey === 'PROJ_MEFITIS_AMPHORA' ? 0x9acd62
+        : p.spriteKey === 'VFX_ELEMENT_LIGHTNING' ? 0x9edcff
+        : p.spriteKey === 'VFX_ELEMENT_FIRE' ? 0xff7a22
+        : p.spriteKey === 'VFX_ELEMENT_POISON' ? 0x9edd32
+        : p.spriteKey === 'VFX_ELEMENT_WATER' ? 0x43cbea
+        : p.spriteKey === 'VFX_ELEMENT_ICE' ? 0xc9f5ff
         : p.spriteKey === 'PROJ_POISON_CLOUD' ? 0x44dd44       // sickly green
         : 0xc8c8c8;
       const isGiantArrow = p.spriteKey === 'PROJ_GIANT_ARROW';
@@ -1424,7 +1438,9 @@ export class RenderEngine {
       }
       // Real sprite (rotated to flight direction)
       let sp = this.projSprites.get(p.id);
-      const t = tex(p.spriteKey);
+      const isElementalSheet = String(p.spriteKey).startsWith('VFX_ELEMENT_');
+      const elementalFrame = Math.floor((p.travelTime ?? state.tick) * 18) % 3;
+      const t = isElementalSheet ? texGridFrame(p.spriteKey, elementalFrame, 128, 128, 3) : tex(p.spriteKey);
       if (t) {
         if (!sp) {
           sp = new Sprite(t);
@@ -1440,12 +1456,13 @@ export class RenderEngine {
           const isHeroArrow = p.spriteKey === 'HERO_PROJ_AGRICOLA_ARROW';
           const isJovianHarpoon = p.spriteKey === 'PROJ_JOVIAN_HARPOON';
           const isMefitisAmphora = p.spriteKey === 'PROJ_MEFITIS_AMPHORA';
-          sp.width = isSullaMeteor ? 30 : (isHeroBolt ? 34 : isHeroArrow ? 30 : isJovianHarpoon ? 42 : isMefitisAmphora ? 30 : isGiantArrow ? 42 : big ? 22 : isPoisonCloud ? 20 : 18);
-          sp.height = isSullaMeteor ? 30 : (isHeroBolt ? 22 : isHeroArrow ? 20 : isJovianHarpoon ? 18 : isMefitisAmphora ? 30 : isGiantArrow ? 24 : big ? 22 : isPoisonCloud ? 20 : 18);
+          sp.width = isElementalSheet ? 32 : isSullaMeteor ? 30 : (isHeroBolt ? 34 : isHeroArrow ? 30 : isJovianHarpoon ? 42 : isMefitisAmphora ? 30 : isGiantArrow ? 42 : big ? 22 : isPoisonCloud ? 20 : 18);
+          sp.height = isElementalSheet ? 32 : isSullaMeteor ? 30 : (isHeroBolt ? 22 : isHeroArrow ? 20 : isJovianHarpoon ? 18 : isMefitisAmphora ? 30 : isGiantArrow ? 24 : big ? 22 : isPoisonCloud ? 20 : 18);
           if (isPoisonCloud) sp.tint = 0x66dd44;
           this.layers.fx.addChild(sp);
           this.projSprites.set(p.id, sp);
         }
+        if (isElementalSheet) sp.texture = t;
         sp.x = p.x;
         sp.y = p.y;
         sp.rotation = p.rotation;
@@ -1599,7 +1616,7 @@ export class RenderEngine {
   private slashes: { sp: Sprite; born: number; life: number; size: number }[] = [];
   private impactRings: { x: number; y: number; born: number; life: number; maxR: number; color: number }[] = [];
   private charybdisCurrents: { x: number; y: number; born: number; life: number; radius: number; spin: number }[] = [];
-  private spriteImpacts: { sp: Sprite; key: string; born: number; life: number; size: number; frameW: number; frameH: number; frames: number }[] = [];
+  private spriteImpacts: { sp: Sprite; key: string; born: number; life: number; size: number; frameW: number; frameH: number; frames: number; columns: number; startFrame: number }[] = [];
   private trimSlashQueue(): void {
     while (this.slashes.length > MAX_TRANSIENT_SLASHES) {
       const old = this.slashes.shift();
@@ -1723,8 +1740,8 @@ export class RenderEngine {
     }
   }
 
-  triggerSpriteImpact(x: number, y: number, tick: number, key: string, size = 1.2, life = 0.30, frameW = 128, frameH = 128, frames = 6) {
-    const t = texFrame(key, 0, frameW, frameH);
+  triggerSpriteImpact(x: number, y: number, tick: number, key: string, size = 1.2, life = 0.30, frameW = 128, frameH = 128, frames = 6, columns = 1, startFrame = 0) {
+    const t = columns > 1 ? texGridFrame(key, startFrame, frameW, frameH, columns) : texFrame(key, startFrame, frameW, frameH);
     if (!t) return;
     const sp = new Sprite(t);
     sp.anchor.set(0.5);
@@ -1735,7 +1752,7 @@ export class RenderEngine {
     sp.height = px;
     sp.alpha = 0.98;
     this.layers.fx.addChild(sp);
-    this.spriteImpacts.push({ sp, key, born: tick, life, size, frameW, frameH, frames });
+    this.spriteImpacts.push({ sp, key, born: tick, life, size, frameW, frameH, frames, columns, startFrame });
     this.trimSpriteImpactQueue();
   }
 
@@ -2695,14 +2712,18 @@ export class RenderEngine {
     for (let i = this.spriteImpacts.length - 1; i >= 0; i--) {
       const fx = this.spriteImpacts[i];
       const age = tick - fx.born;
+      if (age < 0) { fx.sp.visible = false; continue; }
+      fx.sp.visible = true;
       if (age >= fx.life) {
         fx.sp.destroy();
         this.spriteImpacts.splice(i, 1);
         continue;
       }
       const t = Math.max(0, Math.min(1, age / fx.life));
-      const frame = Math.min(fx.frames - 1, Math.floor(t * fx.frames));
-      const frameTex = texFrame(fx.key, frame, fx.frameW, fx.frameH);
+      const frame = fx.startFrame + Math.min(fx.frames - 1, Math.floor(t * fx.frames));
+      const frameTex = fx.columns > 1
+        ? texGridFrame(fx.key, frame, fx.frameW, fx.frameH, fx.columns)
+        : texFrame(fx.key, frame, fx.frameW, fx.frameH);
       if (frameTex) fx.sp.texture = frameTex;
       const px = GRID.TILE * fx.size * (0.88 + t * 0.16);
       fx.sp.width = px;
