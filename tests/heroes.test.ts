@@ -548,17 +548,33 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(boosted).toBeCloseTo(baseline * 1.35, 4);
   });
 
-  it('Marius and Agrippa hero DPS buffs apply to starter and Champion forms', () => {
+  it('buffs every starter and Champion hero except Marcus Agrippa', () => {
     const defs: any = TOWERS;
-    expect(defs.HERO_MARIUS.baseDps).toBeCloseTo(168.6, 4);
-    expect(defs.CHAMPION_MARIUS.baseDps).toBeCloseTo(185.5, 4);
+    const expected = {
+      HERO_MARIUS: [185.5, 1.815],
+      HERO_AGRICOLA: [93.2, 1.331],
+      HERO_SCIPIO: [162.5, 0.6655],
+      HERO_CAESAR: [131.9, 1.452],
+      HERO_SULLA: [100.4, 1.36125],
+      CHAMPION_MARIUS: [204.1, 1.815],
+      CHAMPION_AGRICOLA: [102.5, 1.21],
+      CHAMPION_SCIPIO: [178.8, 0.605],
+      CHAMPION_CAESAR: [145.1, 1.452],
+      CHAMPION_SULLA: [110.4, 1.2375]
+    } as const;
+    for (const [type, [dps, speed]] of Object.entries(expected)) {
+      expect(defs[type].baseDps, `${type} DPS`).toBeCloseTo(dps, 5);
+      expect(defs[type].attackSpeed, `${type} attack speed`).toBeCloseTo(speed, 5);
+    }
+
+    // Agrippa's starter and Champion forms are deliberately excluded.
     expect(defs.HERO_AGRIPPA.baseDps).toBeCloseTo(164.6, 4);
     expect(defs.CHAMPION_AGRIPPA.baseDps).toBeCloseTo(181.1, 4);
     expect(defs.HERO_AGRIPPA.attackSpeed).toBeCloseTo(1.1 * 0.85, 5);
     expect(defs.CHAMPION_AGRIPPA.attackSpeed).toBeCloseTo(1.0 * 0.85, 5);
 
-    expect(createTower(TowerType.HERO_MARIUS, 1, 1, 1, 1).baseDps).toBeCloseTo(168.6 * 1.10, 4);
-    expect(createTower(TowerType.CHAMPION_MARIUS, 1, 1, 1, 1).baseDps).toBeCloseTo(185.5 * 1.10, 4);
+    expect(createTower(TowerType.HERO_MARIUS, 1, 1, 1, 1).baseDps).toBeCloseTo(185.5 * 1.10, 4);
+    expect(createTower(TowerType.CHAMPION_MARIUS, 1, 1, 1, 1).baseDps).toBeCloseTo(204.1 * 1.10, 4);
     expect(createTower(TowerType.HERO_AGRIPPA, 1, 1, 1, 1).baseDps).toBeCloseTo(164.6 * 1.10, 4);
     expect(createTower(TowerType.CHAMPION_AGRIPPA, 1, 1, 1, 1).baseDps).toBeCloseTo(181.1 * 1.10, 4);
     expect(createTower(TowerType.HERO_AGRIPPA, 1, 1, 1, 1).attackSpeed).toBeCloseTo(0.935, 5);
@@ -1383,8 +1399,8 @@ describe('herodefs.json shape (single source of tuning)', () => {
     expect(champion.damageType).toBe(DamageType.PHYS_MELEE);
     expect(starter.range).toBe(2);
     expect(champion.range).toBe(2);
-    expect(starter.baseDps).toBeCloseTo(147.7 * 1.10, 4);
-    expect(champion.baseDps).toBeCloseTo(162.5 * 1.10, 4);
+    expect(starter.baseDps).toBeCloseTo(162.5 * 1.10, 4);
+    expect(champion.baseDps).toBeCloseTo(178.8 * 1.10, 4);
     expect(getTowerProjectileProfile(TowerType.HERO_SCIPIO)).toBeNull();
     expect(getTowerProjectileProfile(TowerType.CHAMPION_SCIPIO)).toBeNull();
   });
@@ -1396,8 +1412,8 @@ describe('herodefs.json shape (single source of tuning)', () => {
 
     expect(starter.range).toBe(6);
     expect(champion.range).toBe(6);
-    expect(starter.attackSpeed).toBeCloseTo(0.99 * 1.25, 5);
-    expect(champion.attackSpeed).toBeCloseTo(0.9 * 1.25, 5);
+    expect(starter.attackSpeed).toBeCloseTo(0.99 * 1.25 * 1.10, 5);
+    expect(champion.attackSpeed).toBeCloseTo(0.9 * 1.25 * 1.10, 5);
     expect(passive.radiusTiles).toBe(5.5);
   });
 });
