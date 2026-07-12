@@ -751,6 +751,22 @@ describe('Battlefield blood trails and Cyclops remains', () => {
     expect(source).toContain('GRID.TILE * 37.15');
   });
 
+  it('spaces bloody authored skeletons down the right border as visual-only props', () => {
+    const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
+    expect(source).toContain('const RIGHT_BORDER_REMAINS');
+    const block = source.slice(
+      source.indexOf('const RIGHT_BORDER_REMAINS'),
+      source.indexOf('for (const anchor of RIGHT_BORDER_REMAINS)')
+    );
+    expect(block.match(/MAP_CAVE_FALLEN_SKELETON/g)).toHaveLength(3);
+    expect(block.match(/MAP_CAVE_BONES_SCATTER/g)).toHaveLength(3);
+    expect(block.match(/col: 3[67]\./g)).toHaveLength(6);
+    expect(source).toContain('addHeavyBloodSplatter(cornerLayer, x, y + 4, anchor.size * 1.15');
+    expect(source).toContain('cornerLayer.addChild(remains);');
+    expect(block).not.toContain('setTile');
+    expect(block).not.toContain('TileType');
+  });
+
   it('ships a transparent heavy splatter and places three stains at each battlefield entry', async () => {
     const sharp = require('sharp');
     const file = assetFileFor('MAP_BATTLE_BLOOD_SPLATTER_HEAVY');
@@ -773,7 +789,7 @@ describe('Battlefield blood trails and Cyclops remains', () => {
     const source = fs.readFileSync(path.join(__dirname, '../src/render/RenderEngine.ts'), 'utf8');
     expect(source).toContain("tex('MAP_BATTLE_BLOOD_SPLATTER_HEAVY')");
     expect(source).toContain('const addHeavyBloodSplatter');
-    expect(source.match(/addHeavyBloodSplatter\(/g)).toHaveLength(9);
+    expect(source.match(/addHeavyBloodSplatter\(/g)).toHaveLength(10);
     expect(source.match(/addHeavyBloodSplatter\(coastalDetailLayer/g)).toHaveLength(3);
     expect(source.match(/addHeavyBloodSplatter\(this\.layers\.bg/g)).toHaveLength(6);
   });

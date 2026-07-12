@@ -3891,6 +3891,40 @@ export class RenderEngine {
       remains.alpha = anchor.alpha;
       cornerLayer.addChild(remains);
     }
+    // A spaced trail of bloody skeletons along the right border carries the
+    // battlefield story down toward Rome. These are background sprites only:
+    // they never reserve tiles or participate in pathfinding/build checks.
+    const RIGHT_BORDER_REMAINS: Array<{
+      key: string;
+      col: number;
+      row: number;
+      size: number;
+      rotation: number;
+      alpha: number;
+    }> = [
+      { key: 'MAP_CAVE_FALLEN_SKELETON', col: 36.55, row: 6.35, size: 54, rotation: 0.18, alpha: 0.97 },
+      { key: 'MAP_CAVE_BONES_SCATTER', col: 37.02, row: 8.90, size: 46, rotation: -0.30, alpha: 0.95 },
+      { key: 'MAP_CAVE_FALLEN_SKELETON', col: 36.45, row: 11.45, size: 58, rotation: -0.12, alpha: 0.98 },
+      { key: 'MAP_CAVE_BONES_SCATTER', col: 37.00, row: 14.55, size: 48, rotation: 0.34, alpha: 0.96 },
+      { key: 'MAP_CAVE_FALLEN_SKELETON', col: 36.38, row: 17.35, size: 56, rotation: 0.27, alpha: 0.97 },
+      { key: 'MAP_CAVE_BONES_SCATTER', col: 36.95, row: 20.10, size: 45, rotation: -0.22, alpha: 0.95 }
+    ];
+    for (const anchor of RIGHT_BORDER_REMAINS) {
+      const x = anchor.col * GRID.TILE;
+      const y = anchor.row * GRID.TILE;
+      addHeavyBloodSplatter(cornerLayer, x, y + 4, anchor.size * 1.15, anchor.rotation * 0.45, 0.72);
+      const remainsTex = tex(anchor.key);
+      if (!remainsTex) continue;
+      const remains = new Sprite(remainsTex);
+      remains.anchor.set(0.5);
+      remains.x = x;
+      remains.y = y;
+      remains.width = anchor.size;
+      remains.height = anchor.size;
+      remains.rotation = anchor.rotation;
+      remains.alpha = anchor.alpha;
+      cornerLayer.addChild(remains);
+    }
     // Cyclopean war trophy planted above-left of the severed head. It is a
     // background-only sprite: the compact crater base never changes tile
     // occupancy, prospect placement, or enemy pathfinding.
