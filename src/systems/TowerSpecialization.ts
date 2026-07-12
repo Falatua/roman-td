@@ -8,6 +8,7 @@ const GIANT_KILLER_ELEPHANT_TYPES = new Set<string>([
 
 export const GIANT_KILLER_GIANT_DAMAGE_MULT = 5.5;
 export const GIANT_KILLER_ELEPHANT_DAMAGE_MULT = 3.5;
+export const GIANT_KILLER_SPLASH_DAMAGE_MULT = 0.5;
 export const HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT = 6.5;
 export const HANNIBALS_NIGHTMARE_FLYER_DAMAGE_MULT = 1.60;
 export const HANNIBALS_NIGHTMARE_BOSS_DAMAGE_MULT = 1.30;
@@ -27,6 +28,15 @@ export function giantKillerPreyDamageMult(target: Pick<PreyTarget, 'type'>): num
   if (isGiantKillerTarget(target)) return GIANT_KILLER_GIANT_DAMAGE_MULT;
   if (GIANT_KILLER_ELEPHANT_TYPES.has(String(target.type))) return GIANT_KILLER_ELEPHANT_DAMAGE_MULT;
   return 1;
+}
+
+export function giantKillerSplashDamage(
+  primaryDamage: number,
+  primary: Pick<PreyTarget, 'type'>,
+  secondary: Pick<PreyTarget, 'type'>
+): number {
+  const neutralDamage = primaryDamage / giantKillerPreyDamageMult(primary);
+  return neutralDamage * giantKillerPreyDamageMult(secondary) * GIANT_KILLER_SPLASH_DAMAGE_MULT;
 }
 
 export function hannibalsNightmarePreyDamageMult(target: PreyTarget): number {

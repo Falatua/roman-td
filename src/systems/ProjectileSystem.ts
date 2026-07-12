@@ -172,7 +172,7 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   [TowerType.ORACLE_LIGHTHOUSE]:     { key: 'PROJ_OMEN_ORB',        arc: false, speed: 720, splash: 0.55, embed: false },
   [TowerType.ABYSSAL_ONAGER]:        { key: 'PROJ_POISON_CLOUD',    arc: true,  speed: 360, splash: 2.2, embed: false },
   [TowerType.MARS_TIDAL_BASTION]:    { key: 'PROJ_DIVINE_APEX_ORB', arc: false, speed: 700, splash: 1.2, embed: false },
-  [TowerType.GIANT_KILLER]:          { key: 'PROJ_GIANT_ARROW',     arc: true,  speed: 760, splash: 0.55, embed: true  },
+  [TowerType.GIANT_KILLER]:          { key: 'PROJ_GIANT_ARROW',     arc: true,  speed: 760, splash: 1.6,  embed: true  },
   [TowerType.JOVIAN_SKY_HUNTER]:     { key: 'PROJ_JOVIAN_HARPOON',  arc: false, speed: 820, splash: 0.25, embed: true  },
   [TowerType.MEFITIS_PLAGUE_ENGINE]: { key: 'PROJ_MEFITIS_AMPHORA', arc: true,  speed: 360, splash: 2.0,  embed: false },
   // Consular Fatebinder — every shot strikes every enemy on the map

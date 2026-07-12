@@ -80,7 +80,7 @@ import { showLastStandTrove } from './render/LastStandTrove';
 import { showMercatorBackRoomModal } from './render/SecretEvents';
 import { showHarborDraftModal, showHarborWaveClearModal } from './render/HarborDraftModal';
 import { towerDamageProfile, renderTowerDamageProfileHtml } from './render/TowerDamageProfile';
-import { towerSpecialistDpsRows } from './systems/TowerSpecialization';
+import { giantKillerSplashDamage, towerSpecialistDpsRows } from './systems/TowerSpecialization';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { bossTrophyKillGoldBonus, consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, isTestYourMightLeakEnemy, shouldDeferSurpriseRewardForTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
@@ -8194,7 +8194,12 @@ async function boot() {
               for (const other of state.enemies.values()) {
                 if (other.id === target.id) continue;
                 if (Math.hypot(other.x - hx, other.y - hy) <= r) {
-                  if (tw) applyDamageAndStatus(state, tw, other, p.damage * 0.6, combatHooks);
+                  if (tw) {
+                    const splashDamage = tw.type === TowerType.GIANT_KILLER
+                      ? giantKillerSplashDamage(p.damage, target, other)
+                      : p.damage * 0.6;
+                    applyDamageAndStatus(state, tw, other, splashDamage, combatHooks);
+                  }
                 }
               }
               // 2026-05 v10 — VISUAL: splash impact gets a tan/cream

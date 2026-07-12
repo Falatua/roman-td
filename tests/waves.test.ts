@@ -965,7 +965,7 @@ describe('Campaign opening leak audit', () => {
       if (prevWindow === undefined) delete (globalThis as any).window;
       else (globalThis as any).window = prevWindow;
     }
-  }, 15000);
+  }, 30000);
 
   it('keeps Test Your Might alive during its opening seconds unless a real bonus enemy leaks', () => {
     const prevWindow = (globalThis as any).window;

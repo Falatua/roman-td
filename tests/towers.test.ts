@@ -15,7 +15,7 @@ import { initializeGrid, isBuildable, isWaterZoneTile, canBuildWaterTowerAt } fr
 import { ASSET_KEYS } from '../src/render/Assets';
 import towersData from '../src/data/towers.json';
 import wavesData from '../src/data/waves.json';
-import { HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT, hannibalsNightmarePreyDamageMult, towerSpecialistDpsRows } from '../src/systems/TowerSpecialization';
+import { GIANT_KILLER_SPLASH_DAMAGE_MULT, giantKillerSplashDamage, HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT, hannibalsNightmarePreyDamageMult, towerSpecialistDpsRows } from '../src/systems/TowerSpecialization';
 
 function testEnemy(id: string, x = 160, y = 160): Enemy {
   return {
@@ -853,6 +853,21 @@ describe('Neptune\'s Leviathan omega combat wiring', () => {
 });
 
 describe('Giant Killer transformation and combat wiring', () => {
+  it('fires a visible colossal splash without lending prey bonuses to the wrong target', () => {
+    const state = createGameState();
+    const tower = createTower(TowerType.GIANT_KILLER, 5, 4, 4, 0);
+    const giant = testEnemy('giant-primary');
+    giant.type = EnemyType.CYCLOPS;
+    state.enemies.set(giant.id, giant);
+    spawnProjectile(state, tower, giant, 550);
+
+    expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(1.6, 6);
+    expect(GIANT_KILLER_SPLASH_DAMAGE_MULT).toBe(0.5);
+    expect(giantKillerSplashDamage(550, giant, { type: EnemyType.FERAL_DOG })).toBeCloseTo(50, 6);
+    expect(giantKillerSplashDamage(550, giant, { type: EnemyType.CYCLOPS })).toBeCloseTo(275, 6);
+    expect(giantKillerSplashDamage(100, { type: EnemyType.FERAL_DOG }, { type: EnemyType.WAR_ELEPHANT })).toBeCloseTo(175, 6);
+  });
+
   it('uses a deliberately slow colossal bow cadence with heavier individual arrows', () => {
     const def = (towersData as any)[TowerType.GIANT_KILLER];
     const positiveTowerSpeeds = Object.values(towersData as any)
