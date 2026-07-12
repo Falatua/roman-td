@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_GIANT_DAMAGE_MULT, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -1101,13 +1101,37 @@ describe('Giant Killer transformation and combat wiring', () => {
     const nonGiantMyth = fireAt(EnemyType.CHIMERA, EnemyFaction.ROMAN_MYTH, 'ELITE');
     const seaGiant = fireAt(EnemyType.SEA_GIANT, EnemyFaction.ROMAN_MYTH, 'ELITE');
     const cyclops = fireAt(EnemyType.CYCLOPS, EnemyFaction.ROMAN_MYTH, 'ELITE');
+    const warElephant = fireAt(EnemyType.WAR_ELEPHANT, EnemyFaction.CARTHAGE, 'ELITE');
+    const undeadElephant = fireAt(EnemyType.UNDEAD_WAR_ELEPHANT, EnemyFaction.UNDEAD_CARTHAGE, 'ELITE');
 
     expect(GIANT_KILLER_GIANT_DAMAGE_MULT).toBe(5.5);
     expect(seaGiant.loss).toBeGreaterThan(nonGiantMyth.loss * 1.7);
     expect(cyclops.loss).toBeGreaterThan(nonGiantMyth.loss * 1.15);
+    expect(warElephant.loss).toBeGreaterThan(nonGiantMyth.loss);
+    expect(undeadElephant.loss).toBeGreaterThan(nonGiantMyth.loss);
+    expect(warElephant.loss).toBeLessThan(seaGiant.loss);
+    expect(undeadElephant.loss).toBeLessThan(seaGiant.loss);
     expect(nonGiantMyth.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK)).toBe(false);
+    expect(warElephant.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK || s.kind === StatusEffectKind.SLOW)).toBe(false);
+    expect(undeadElephant.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK || s.kind === StatusEffectKind.SLOW)).toBe(false);
     expect(seaGiant.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.14)).toBe(true);
     expect(cyclops.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.14)).toBe(true);
+  });
+
+  it('treats elephants as secondary prey below true giants', () => {
+    expect(GIANT_KILLER_ELEPHANT_DAMAGE_MULT).toBe(3.5);
+    expect(GIANT_KILLER_GIANT_DAMAGE_MULT).toBe(5.5);
+    expect(giantKillerPreyDamageMult({ type: EnemyType.WAR_ELEPHANT })).toBe(3.5);
+    expect(giantKillerPreyDamageMult({ type: EnemyType.UNDEAD_WAR_ELEPHANT })).toBe(3.5);
+    expect(giantKillerPreyDamageMult({ type: EnemyType.CYCLOPS })).toBe(5.5);
+    expect(giantKillerPreyDamageMult({ type: EnemyType.SEA_GIANT })).toBe(5.5);
+    expect(giantKillerPreyDamageMult({ type: EnemyType.CHIMERA })).toBe(1);
+
+    const tower = createTower(TowerType.GIANT_KILLER, 5, 4, 4, 0);
+    const elephant = testEnemy('giant-killer-elephant');
+    elephant.type = EnemyType.WAR_ELEPHANT;
+    applyDamageAndStatus(createGameState(), tower, elephant, 100, noopCombatHooks());
+    expect(elephant.statusEffects.some(s => s.kind === StatusEffectKind.MARK || s.kind === StatusEffectKind.SLOW)).toBe(false);
   });
 
   it('routes Giant\'s Cohort Guard through melee cleave with boss and giant specialization', () => {

@@ -588,7 +588,12 @@ const GIANT_KILLER_TARGET_TYPES = new Set<string>([
   'DREAD_UNDEAD_GIANT',
   'DREAD_UNDEAD_CYCLOPS'
 ]);
+const GIANT_KILLER_ELEPHANT_TYPES = new Set<string>([
+  'WAR_ELEPHANT',
+  'UNDEAD_WAR_ELEPHANT'
+]);
 export const GIANT_KILLER_GIANT_DAMAGE_MULT = 5.5;
+export const GIANT_KILLER_ELEPHANT_DAMAGE_MULT = 3.5;
 export const GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT = 4.5;
 export const GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT = 7.5;
 export const UNDEAD_GLADIATOR_KING_SUMMON_COUNT = 3;
@@ -599,6 +604,12 @@ export const UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR = 0.13;
 
 function isGiantKillerTarget(target: Enemy): boolean {
   return GIANT_KILLER_TARGET_TYPES.has(String(target.type));
+}
+
+export function giantKillerPreyDamageMult(target: Pick<Enemy, 'type'>): number {
+  if (GIANT_KILLER_TARGET_TYPES.has(String(target.type))) return GIANT_KILLER_GIANT_DAMAGE_MULT;
+  if (GIANT_KILLER_ELEPHANT_TYPES.has(String(target.type))) return GIANT_KILLER_ELEPHANT_DAMAGE_MULT;
+  return 1;
 }
 
 function isOceanThreat(target: Enemy): boolean {
@@ -1707,7 +1718,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 2.00;                 // CITY-BREAKER: +100% vs bosses
       if (t.type === TowerType.INFERNAL_COLOSSUS && target.isBoss) damage *= 3.00;                // +200% vs bosses
       if (t.type === TowerType.STORMCALLER && oceanThreat) damage *= STORMCALLER_OCEAN_THREAT_DAMAGE_MULT; // +100% vs drenched ocean threats
-      if (t.type === TowerType.GIANT_KILLER && isGiantKillerTarget(target)) damage *= GIANT_KILLER_GIANT_DAMAGE_MULT;
+      if (t.type === TowerType.GIANT_KILLER) damage *= giantKillerPreyDamageMult(target);
       if (t.type === TowerType.GIANTS_COHORT_GUARD) {
         if (isGiantKillerTarget(target)) damage *= GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT;
         else if (target.isBoss) damage *= GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT;
