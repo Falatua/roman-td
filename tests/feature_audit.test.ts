@@ -192,6 +192,14 @@ describe('Tower recipe names stay player-facing', () => {
     expect((towersData as any).CONSULAR_FATEBINDER.name).toBe('Fatebinder');
     expect((towersData as any).MIRMILLO_REAVER.name).toBe('Murmillo Reaver');
   });
+
+  it('routes prospect cards and recipe labels through canonical tower names', () => {
+    const main = readFileSync('src/main.ts', 'utf8');
+    expect(main).toContain('${towerName(type)}</div>');
+    expect(main).toContain('const resultName = towerName(String(cb.result));');
+    expect(main).toContain('${towerName(String(ing.type))}</span>');
+    expect(main).not.toContain('${String(ing.type).replace(/_/g, \' \')}</span>');
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────

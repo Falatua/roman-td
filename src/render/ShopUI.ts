@@ -21,6 +21,7 @@ import { enhanceModalErgonomics } from './ModalErgonomics';
 import { HERO_FORGE_CAP, heroForgeNextCost } from '../systems/HeroSystem';
 import { heroIdForTowerType, isMercatorChampionType } from '../systems/HeroIdentity';
 import { recordMercatorBackRoomPurchase } from '../systems/SecretEventsSystem';
+import { towerName } from '../format';
 
 // Inject the recipe-ready pulse keyframes once. Mirrors the green glow used on
 // pending prospects whose `id` lands in scanCombos's ingredient set, so the
@@ -720,8 +721,8 @@ function renderMercatorShop(
       const qLen = state.pendingPurchasedTowers.length;
       const verb = isChampion ? 'Recruited' : 'Bought';
       state.hint = qLen > 1
-        ? `${verb} ${offer.type.replace(/_/g,' ')}. ${qLen} placements queued — click empty tiles to place.`
-        : `${verb} ${offer.type.replace(/_/g,' ')}. Click an empty tile to place it.`;
+        ? `${verb} ${towerName(String(offer.type))}. ${qLen} placements queued — click empty tiles to place.`
+        : `${verb} ${towerName(String(offer.type))}. Click an empty tile to place it.`;
       SFX.itemPickup(isChampion ? 'LEGENDARY' : tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
       if (isChampion) {
         shop.championOffers = (shop.championOffers ?? []).filter(o => o !== offer);
@@ -1276,8 +1277,8 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
         recordMercatorChampionPurchase(state, offer.type);
         const qLen = state.pendingPurchasedTowers.length;
         state.hint = qLen > 1
-          ? `Bought ${offer.type.replace(/_/g,' ')} T${offer.tier}. ${qLen} towers queued — click empty tiles to place.`
-          : `Bought ${offer.type.replace(/_/g,' ')} T${offer.tier}. Click an empty tile to place it.`;
+          ? `Bought ${towerName(String(offer.type))} T${offer.tier}. ${qLen} towers queued — click empty tiles to place.`
+          : `Bought ${towerName(String(offer.type))} T${offer.tier}. Click an empty tile to place it.`;
         // Tier-flavored purchase sound (T1=COMMON, T5=UNIQUE)
         const tierToRarity = ['COMMON','UNCOMMON','RARE','LEGENDARY','UNIQUE'];
         SFX.itemPickup(tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);

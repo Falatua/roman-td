@@ -1171,8 +1171,8 @@ async function boot() {
         }
         const remaining = queue.length;
         state.hint = remaining > 0
-          ? `Placed ${popped.type.replace(/_/g, ' ')} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
-          : `Placed ${popped.type.replace(/_/g, ' ')} T${popped.tier}.`;
+          ? `Placed ${towerName(String(popped.type))} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
+          : `Placed ${towerName(String(popped.type))} T${popped.tier}.`;
         // Impact ring on confirm so the moment still reads visually.
         // 2026-05-23 — Audio (waveStartBlast war-horn) removed per user
         // feedback. The hero-placement modal already gives a clear
@@ -1208,8 +1208,7 @@ async function boot() {
   // different tile. The flag is one-shot per placement — once a tile
   // commits or cancels, the next purchased-tower click re-prompts.
   function showPurchasedTowerPlacementConfirm(col: number, row: number, towerType: TowerType, tier: number, source: string): void {
-    const def: any = (towersData as any)[towerType] ?? {};
-    const towerName = String(def.name ?? String(towerType).replace(/_/g, ' '));
+    const towerDisplayName = towerName(String(towerType));
     // TIER_COLORS stores numeric values (e.g. 0xffd34d) for Pixi tint use.
     // Convert to a CSS-safe '#rrggbb' hex string. Fallback to a neutral
     // gold-ish when the tier isn't in the table (shouldn't happen for
@@ -1235,9 +1234,9 @@ async function boot() {
     b.id = 'purchased-place-confirm';
     b.innerHTML = `
       <div style="font-size:11px;letter-spacing:6px;color:${tint};font-weight:bold;text-shadow:0 0 8px ${tint}88">⚒ ${sourceLabel} ⚒</div>
-      <div style="margin-top:8px;font-size:22px;font-weight:bold;letter-spacing:4px;color:#fff8e0;text-shadow:2px 2px 0 #000,0 0 14px ${tint}cc">PLACE ${towerName.toUpperCase()} T${tier} HERE?</div>
+      <div style="margin-top:8px;font-size:22px;font-weight:bold;letter-spacing:4px;color:#fff8e0;text-shadow:2px 2px 0 #000,0 0 14px ${tint}cc">PLACE ${towerDisplayName.toUpperCase()} T${tier} HERE?</div>
       <div style="margin-top:14px;font-size:13px;font-weight:bold;color:#fff8e0;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(0,0,0,0.45);border-left:3px solid ${tint};padding:10px 14px">
-        You're about to drop <b style="color:${tint}">${towerName} T${tier}</b> on <b style="color:${tint}">column ${col + 1}, row ${row + 1}</b>.
+        You're about to drop <b style="color:${tint}">${towerDisplayName} T${tier}</b> on <b style="color:${tint}">column ${col + 1}, row ${row + 1}</b>.
       </div>
       <div style="margin-top:12px;font-size:12px;color:#ffcc88;line-height:1.65;text-shadow:1px 1px 0 #000;text-align:left;background:rgba(60,30,10,0.55);border:1px dashed #ff8844;padding:10px 14px">
         <b style="color:#ff8844">⚠ TOWERS CAN'T BE MOVED.</b><br/>
@@ -1304,8 +1303,8 @@ async function boot() {
         (state as any).__purchasedPlacementConfirmed = false;
         const remaining = queue.length;
         state.hint = remaining > 0
-          ? `Placed ${popped.type.replace(/_/g, ' ')} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
-          : `Placed ${popped.type.replace(/_/g, ' ')} T${popped.tier}.`;
+          ? `Placed ${towerName(String(popped.type))} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
+          : `Placed ${towerName(String(popped.type))} T${popped.tier}.`;
         // Small impact ring so the commit moment reads visually.
         if (renderer?.triggerImpactRing) {
           const cx = col * 32 + 16;
@@ -3012,7 +3011,7 @@ async function boot() {
           ${queuedTag}
         </div>
         <div style="font-size:11px;color:${TIER_HEX[tier]};font-weight:bold;letter-spacing:1px">T${tier}</div>
-        <div style="font-size:10px;color:#cdb98a;text-align:center;line-height:1.2;letter-spacing:0.5px;word-break:break-word;font-weight:bold">${type.replace(/_/g,' ')}</div>
+        <div style="font-size:10px;color:#cdb98a;text-align:center;line-height:1.2;letter-spacing:0.5px;word-break:break-word;font-weight:bold">${towerName(type)}</div>
         <div style="font-size:9px;color:${critCol};letter-spacing:0.7px;font-weight:bold">CRIT ${critTxt}</div>
       </div>`;
     };
@@ -3049,14 +3048,14 @@ async function boot() {
       // unambiguous — click → big popup — and lets us include the sprite
       // and a properly-sized stat grid.
       const lines = combos.slice(0, 5).map(cb => {
-        const resultName = String(cb.result).replace(/_/g, ' ');
+        const resultName = towerName(String(cb.result));
         const anyPending = cb.ingredients.some(ing => state.towers.get(ing.id)?.pending);
         const headerColor = anyPending ? '#ff9933' : '#88ff88';
         const statusTag = anyPending ? 'READY-IF-KEPT' : 'READY';
         const ingTxt = cb.ingredients.map(ing => {
           const isPending = !!state.towers.get(ing.id)?.pending;
           const c = isPending ? '#ff9933' : '#88ff88';
-          return `<span style="color:${c}">${String(ing.type).replace(/_/g, ' ')}</span>`;
+          return `<span style="color:${c}">${towerName(String(ing.type))}</span>`;
         }).join('<span style="color:#cdb98a"> + </span>');
         return `<div class="recipe-row" data-combo-type="${String(cb.result)}" style="margin-bottom:6px;border-left:2px solid ${headerColor};background:#100c08;cursor:pointer;transition:background-color 120ms ease">
           <div style="font-size:11px;line-height:1.35;padding:6px 8px">
@@ -3304,7 +3303,7 @@ async function boot() {
       chip.innerHTML = `
         ${toggleBtn}
         <div style="font-size:9px;letter-spacing:2px;color:#88ff88;font-weight:bold">📥 PLACE NEXT</div>
-        <div style="font-size:13px;font-weight:bold;color:#ffd34d;margin-top:2px">${head.type.replace(/_/g,' ')} <span style="color:#fff">T${head.tier}</span></div>
+        <div style="font-size:13px;font-weight:bold;color:#ffd34d;margin-top:2px">${towerName(String(head.type))} <span style="color:#fff">T${head.tier}</span></div>
         <div style="font-size:9px;color:#cdb98a;margin-top:1px">click any empty tile</div>
         ${moreLine}
         ${putBackBtn}`;
@@ -3323,7 +3322,7 @@ async function boot() {
       const popped = q.shift()!;
       state.pendingPurchasedTowers = q;
       earnGold(state, purchasedTowerPrice(popped));
-      state.hint = `Put back ${popped.type.replace(/_/g,' ')} T${popped.tier} — ${purchasedTowerPrice(popped)}g refunded.`;
+      state.hint = `Put back ${towerName(String(popped.type))} T${popped.tier} — ${purchasedTowerPrice(popped)}g refunded.`;
       updateTowerQueueIndicator();
     };
   }
@@ -6015,7 +6014,7 @@ async function boot() {
       if (!last) { state.hint = 'Nothing to undo. Your record is unblemished. So far.'; return; }
       last.undo();
       redoStack.push(last);
-      state.hint = `Undone: ${String(last.type).replace(/_/g,' ')}.`;
+      state.hint = `Undone: ${towerName(String(last.type))}.`;
     },
     onReset: () => {
       if (state.phase === GamePhase.WAVE_PHASE) {
@@ -6988,8 +6987,8 @@ async function boot() {
       offerMarsVictorIfReady(document.getElementById('stage-wrap'));
       const remaining = queue.length;
       state.hint = remaining > 0
-        ? `Placed ${popped.type.replace(/_/g,' ')} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
-        : `Placed ${popped.type.replace(/_/g,' ')} T${popped.tier}.`;
+        ? `Placed ${towerName(String(popped.type))} T${popped.tier}. ${remaining} purchased tower${remaining > 1 ? 's' : ''} still waiting.`
+        : `Placed ${towerName(String(popped.type))} T${popped.tier}.`;
       tickQuests();
       return;
     }
