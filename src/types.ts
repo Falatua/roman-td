@@ -555,6 +555,13 @@ export interface Enemy {
   hasFeared: boolean;
   livesCost: number;
   isBoss: boolean;
+  isElite?: boolean;
+  isCommander?: boolean;
+  isCaster?: boolean;
+  isGiant?: boolean;
+  isBeast?: boolean;
+  isOceanEnemy?: boolean;
+  isEventStructure?: boolean;
   reward: number;
   archetype: 'SWARM' | 'RUNNER' | 'ARMORED' | 'RESISTANT' | 'BULKY' | 'ELITE' | 'BOSS';
   // VFX
@@ -573,8 +580,7 @@ export interface Enemy {
   // boss ALWAYS drops a legendary — even if it carries over into a later
   // wave. Decouples the legendary reward from the wave-type check.
   isScheduledBoss?: boolean;
-  // Wave 9 uses War Elephants as elite checkpoint-heal teachers, not as
-  // legendary boss trophies. They still keep boss-class combat mechanics.
+  // Select elite encounters can use a Rare-only reward table.
   rareDropOnly?: boolean;
   // 2026-05 v11 DPS CHECK: flags this enemy as a training dummy spawned
   // by the DPS CHECK button. Excluded from wave-end checks; deals 0 damage

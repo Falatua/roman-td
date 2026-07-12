@@ -40,6 +40,7 @@ import { enemyDamageMultiplier, statusEffectiveness } from './EnemyResistances';
 import { campaignRelicDamageMult } from './CampaignRelicSystem';
 import { bossTrophyDamageMult } from './BossTrophySystem';
 import { commanderDamageTakenMult, isCommanderType } from './CommanderSystem';
+import { isBeastEnemy, isBossEnemy, isCasterEnemy, isCommanderEnemy, isEliteEnemy, isOceanEnemy } from './EnemyClassification';
 import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 import { heroAuraScaleForTower } from './HeroScaling';
 import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from './BaseTowerAttackAnimation';
@@ -85,22 +86,8 @@ export const SIEGE_FLYER_MISS_CHANCE = 0.20;
 
 export const FINAL_FIVE_APEX_WAVE = 26;
 
-const CASTER_TARGET_TYPES = new Set<EnemyType>([
-  EnemyType.GALLIC_DRUID,
-  EnemyType.ZOMBIE_DRUID,
-  EnemyType.DEMON_LEGATE,
-  EnemyType.REANIMATED_LICH,
-  EnemyType.ANUBIS_PRIEST,
-  EnemyType.MONGOL_SHAMAN,
-  EnemyType.NAGA_ADEPT,
-  EnemyType.NAGA_SLEEPWEAVER,
-  EnemyType.NAGA_ORACLE,
-  EnemyType.ANUBIS_PRIEST_COMMANDER,
-  EnemyType.SKY_ANUBIS_COMMANDER,
-]);
-
 export function isCasterTarget(enemy: Pick<Enemy, 'type'>): boolean {
-  return CASTER_TARGET_TYPES.has(enemy.type);
+  return isCasterEnemy(enemy);
 }
 
 const SUPER_COMBO_CLASS_TYPES = new Set<TowerType>([
@@ -346,17 +333,8 @@ export interface CombatHooks {
 // damage from Beast Hunter + Beast Slayer towers. Covers the early-game
 // dog pressure (W1-W3), the W9-W10 elephant pair, the W14 undead elephant
 // rebirth, and the W19 hellhound demon swarm.
-const BEAST_ENEMY_TYPES = new Set<EnemyType>([
-  EnemyType.FERAL_DOG,
-  EnemyType.RABID_DOG,
-  EnemyType.ALPHA_DOG,
-  EnemyType.DEMON_HELLHOUND,
-  EnemyType.WAR_ELEPHANT,
-  EnemyType.UNDEAD_WAR_ELEPHANT,
-]);
-
 export function isBeastEnemyType(type: EnemyType): boolean {
-  return BEAST_ENEMY_TYPES.has(type);
+  return isBeastEnemy(type);
 }
 
 export const UNDEAD_GENERAL_BEAST_DAMAGE_MULT = 2.25;
@@ -568,7 +546,7 @@ function sigilOfSolMult(t: Tower, target: Enemy): number {
 export function damnatioExecuteThreshold(t: Tower, target: Enemy): number {
   if (!t.equippedItems.includes('DAMNATIO_MEMORIAE') || t.damageType !== DamageType.PHYS_MELEE || target.isBoss) return 0;
   if (t.type !== TowerType.IMPERIAL_HEADSMAN) return 0.35;
-  return target.archetype === 'ELITE' || !!(target as any).isCommander || isCommanderType((target as any).type) ? 0.18 : 0.30;
+  return isEliteEnemy(target) || isCommanderEnemy(target) ? 0.18 : 0.30;
 }
 
 function applyDamnatioExecution(t: Tower, target: Enemy, tick: number): void {
@@ -581,15 +559,6 @@ function applyDamnatioExecution(t: Tower, target: Enemy, tick: number): void {
   }
 }
 
-const OCEAN_THREAT_TYPES = new Set<string>([
-  'OCEAN_FISHLING',
-  'OCEAN_GHOST_SPIRIT',
-  'SEA_GIANT',
-  'SEA_GIANT_WARBRINGER',
-  'NETHER_AMPHIBIOUS_GIANT',
-  'TIDECALLER_COMMANDER',
-  'STORMTIDE_WYVERN_COMMANDER'
-]);
 export const STORMCALLER_OCEAN_THREAT_DAMAGE_MULT = 2.0;
 
 export const GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT = 4.5;
@@ -601,7 +570,7 @@ export const UNDEAD_GLADIATOR_KING_SUMMON_SLOW = 0.30;
 export const UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR = 0.13;
 
 function isOceanThreat(target: Enemy): boolean {
-  return !!(target as any).__oceanSpawn || OCEAN_THREAT_TYPES.has(String(target.type));
+  return !!(target as any).__oceanSpawn || isOceanEnemy(target);
 }
 
 function isHarborCarrier(t: Tower): boolean {
@@ -642,10 +611,7 @@ function pickUndeadGladiatorTarget(source: Tower, summon: UndeadGladiatorSummon,
     case TargetingMode.FAST:
       return candidates.sort((a, b) => (b.currentSpeed ?? b.baseSpeed) - (a.currentSpeed ?? a.baseSpeed))[0] ?? null;
     case TargetingMode.CASTERS: {
-      const caster = candidates.find(e => {
-        const def: any = (enemiesData as any)[e.type];
-        return String(e.archetype) === 'CASTER' || !!def?.caster || !!def?.towerSleepCaster || !!def?.auraNullifier;
-      });
+      const caster = candidates.find(e => isCasterEnemy(e));
       if (caster) return caster;
       return candidates.sort((a, b) => (b.pathIndex + b.pathProgress) - (a.pathIndex + a.pathProgress))[0] ?? null;
     }
@@ -1141,7 +1107,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         }
       }
     }
-    // FROZEN_LEGION — GLACIAL PULSE: every 10s, freeze EVERY enemy on the
+    // FROZEN_LEGION — GLACIAL PULSE: every 8s, freeze EVERY enemy on the
     // field for 2.5s, no range cap. This is the headline mechanic of the
     // combo (separate from its per-hit freeze, which lands in the
     // per-tower status-effect switch below). Pairs with the global Frozen
@@ -1152,7 +1118,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     if (t.type === TowerType.FROZEN_LEGION) {
       const next = (t as any).__nextFrozenLegionPulseTick ?? 0;
       if (state.tick >= next && !asleep) {
-        (t as any).__nextFrozenLegionPulseTick = state.tick + 10.0;
+        (t as any).__nextFrozenLegionPulseTick = state.tick + 8.0;
         for (const e of state.enemies.values()) {
           if (e.hp <= 0) continue;
           pushStatus(e, StatusEffectKind.FREEZE, 2.5, 0, t.qualityTier);
@@ -1541,7 +1507,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.RORARIUS && target.archetype === 'RUNNER') damage *= 1.35;
       if ((t.type === TowerType.SAGITTARIUS || t.type === TowerType.VENATOR) && target.isFlyer) damage *= 1.45;
       // 2026-06-28 — new anti-flyer combos.
-      if (t.type === TowerType.SKYREAPER_BATTERY && target.isFlyer) damage *= 2.40;   // +140% vs flyers
+      if (t.type === TowerType.SKYREAPER_BATTERY && target.isFlyer) {
+        damage *= 2.80;
+        if (isBossEnemy(target) || isCommanderEnemy(target)) damage *= 1.25;
+      }
       if (t.type === TowerType.SKY_DOMINION && target.isFlyer) damage *= 3.20;         // +220% vs flyers
       if (t.type === TowerType.BEASTLORD_CHAMPION && target.isFlyer) damage *= 2.00;  // +100% vs flyers
       if (t.type === TowerType.STORM_BALLISTA && target.isFlyer) damage *= 1.70;       // +70% vs plated flyers
@@ -1606,7 +1575,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Pilus, Scorpio, Triumphator, Eques, etc.).
       if (t.equippedItems.includes('TYRANTS_LAUREL') && target.isBoss) damage *= 2.50;
       // 2026-05 v6 Mercator-exclusive items:
-      if (t.equippedItems.includes('TYRIAN_DYE') && (target.archetype === 'ELITE' || target.isBoss)) {
+      if (t.equippedItems.includes('TYRIAN_DYE') && (isEliteEnemy(target) || isBossEnemy(target))) {
         damage *= 1.35;
       }
       if (t.equippedItems.includes('SCIPIO_PLAYBOOK')) {
@@ -1628,7 +1597,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Undead Elephant Bone (+125%) at the same LEGENDARY rarity — a dead
       // pull. Now it trades depth for breadth (the Tyrian Dye pattern):
       // wider target coverage vs War Paint's bigger boss-only spike.
-      if ((target.isBoss || target.archetype === 'ELITE') && t.equippedItems.includes('ELEPHANT_TUSK')) damage *= 1.75;
+      if ((isBossEnemy(target) || isEliteEnemy(target)) && t.equippedItems.includes('ELEPHANT_TUSK')) damage *= 1.75;
       if (target.isBoss && t.equippedItems.includes('WARLORDS_WAR_PAINT'))   damage *= 2.00;
       if (target.isBoss && t.equippedItems.includes('UNDEAD_ELEPHANT_BONE')) damage *= 2.25;
       // 2026-05-19 — AURA TILE: TYRANT TILE (RED). Tower on a red tile
@@ -1693,14 +1662,14 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (DEMON_TYPES.has(target.type as string)) damage *= 2.50;
         if (target.isBoss) damage *= 2.00;
       }
-      if (t.type === TowerType.PRAEFECTUS && (target.archetype === 'ELITE' || target.archetype === 'BOSS')) damage *= 1.45;
+      if (t.type === TowerType.PRAEFECTUS && (isEliteEnemy(target) || isBossEnemy(target))) damage *= 1.45;
       // ─── NEW COMBOS: identity damage multipliers ─────────────────────
       if (t.type === TowerType.NEMESIS_ENGINE && target.isFlyer) damage *= 2.6;          // SKY-RIPPER: +160% vs flyers
       if (t.type === TowerType.PONTIFEX_MAXIMUS && target.isBoss) damage *= 3.0;         // RITE OF DOOM: +200% vs bosses
-      if (t.type === TowerType.AURORA_LEGION && target.archetype === 'ELITE') damage *= 1.50;   // 2026-05 v11: 1.30 → 1.50
+      if (t.type === TowerType.AURORA_LEGION && isEliteEnemy(target)) damage *= 1.50;
       if (t.type === TowerType.EXPLORATORES && target.archetype === 'RUNNER') damage *= 1.50;   // RECON: +50% vs runners
-      if (t.type === TowerType.VANGUARD_WING && target.archetype === 'ELITE') damage *= 1.40;   // EAGLE-EYE: +40% vs elites
-      if (t.type === TowerType.SKY_DOMINION && target.archetype === 'ELITE') damage *= 1.60;     // +60% vs elites
+      if (t.type === TowerType.VANGUARD_WING && isEliteEnemy(target)) damage *= 1.40;
+      if (t.type === TowerType.SKY_DOMINION && isEliteEnemy(target)) damage *= 1.60;
       if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 2.00;                 // CITY-BREAKER: +100% vs bosses
       if (t.type === TowerType.INFERNAL_COLOSSUS && target.isBoss) damage *= 3.00;                // +200% vs bosses
       if (t.type === TowerType.STORMCALLER && oceanThreat) damage *= STORMCALLER_OCEAN_THREAT_DAMAGE_MULT; // +100% vs drenched ocean threats
@@ -1710,15 +1679,15 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         else if (target.isBoss) damage *= GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT;
       }
       if ((t.type === TowerType.TRIREME_BALLISTA || t.type === TowerType.PRAETORIAN_FLEET)
-          && (target.archetype === 'ELITE' || target.isBoss || isCommanderType((target as any).type))) {
+          && (isEliteEnemy(target) || isBossEnemy(target) || isCommanderEnemy(target))) {
         damage *= (t as any).placedOnWater ? 1.45 : 1.25;
       }
-      if (t.type === TowerType.RAMMING_QUINQUEREME && (target.archetype === 'ELITE' || target.isBoss)) damage *= 1.50;
-      if (t.type === TowerType.MARS_TIDAL_BASTION && (target.archetype === 'ELITE' || target.isBoss)) damage *= (t as any).placedOnWater ? 1.65 : 1.35;
-      if ((t.type === TowerType.HYDRA_OF_LERNA || t.type === TowerType.HYDRA_BEAST_PIT) && (target.archetype === 'ELITE' || isBeastEnemyType(target.type))) damage *= 1.35;
+      if (t.type === TowerType.RAMMING_QUINQUEREME && (isEliteEnemy(target) || isBossEnemy(target))) damage *= 1.50;
+      if (t.type === TowerType.MARS_TIDAL_BASTION && (isEliteEnemy(target) || isBossEnemy(target))) damage *= (t as any).placedOnWater ? 1.65 : 1.35;
+      if ((t.type === TowerType.HYDRA_OF_LERNA || t.type === TowerType.HYDRA_BEAST_PIT) && (isEliteEnemy(target) || isBeastEnemyType(target.type))) damage *= 1.35;
       if (t.type === TowerType.HYDRA_BEAST_PIT && (t as any).placedOnWater && (target as any).__oceanSpawn) damage *= 1.40;
       if (t.type === TowerType.NEPTUNES_LEVIATHAN) {
-        if (target.archetype === 'ELITE' || target.isBoss || isCommanderType((target as any).type)) damage *= 1.35;
+        if (isEliteEnemy(target) || isBossEnemy(target) || isCommanderEnemy(target)) damage *= 1.35;
         if ((target as any).__oceanSpawn) damage *= 1.30;
       }
       if (t.type === TowerType.CARTHAGE_SCOURGE && target.isBoss) damage *= 4.2;         // +320% vs bosses
@@ -1793,8 +1762,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.UNDEAD_GENERAL) {
         damage *= undeadGeneralPreyDamageMult(target);
       }
-      // HANNIBAL'S NIGHTMARE — dedicated anti-elephant apex. Both elephant
-      // variants receive the prey bonus plus their boss bonus. The twin-shot
+      // HANNIBAL'S NIGHTMARE — dedicated anti-elephant apex. Both elite
+      // elephant variants receive the full explicit prey bonus. The twin-shot
       // branch below recalculates this factor for each projectile target.
       if (t.type === TowerType.HANNIBALS_NIGHTMARE) {
         damage *= hannibalsNightmarePreyDamageMult(target);
@@ -1820,7 +1789,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.CONSULAR_FATEBINDER) {
         damage = (perAttackBase * supportDmg * takenMult) + t.killBonusFlat;
       }
-      if (t.type === TowerType.TRIBUNUS_LATICLAVIUS && target.archetype === 'ELITE') damage *= 1.20;
+      if (t.type === TowerType.TRIBUNUS_LATICLAVIUS && (isEliteEnemy(target) || isCommanderEnemy(target))) damage *= 1.45;
+      if (t.type === TowerType.GOD_OF_WAR && (isBossEnemy(target) || isEliteEnemy(target) || isCommanderEnemy(target))) damage *= 1.35;
       if (t.type === TowerType.VEXILLATION) {
         // MOB CRUSHER: +18% damage per OTHER enemy in melee range, capped at +90%.
         let nearby = 0;
@@ -2766,10 +2736,10 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   triggerElementalHitVfx(t, target.x, target.y, state.tick);
   if (target.hp <= 0 && !checkRebirth(state, target, state.tick)) hooks.onKill(t, target);
   // CONSULAR_FATEBINDER — every shot strikes EVERY enemy on the map. The
-  // initial target gets the full hit; every other enemy alive takes 40% of
+  // initial target gets the full hit; every other enemy alive takes 45% of
   // the damage as a parallel strike. Counts toward kills/credit normally.
   if (t.type === TowerType.CONSULAR_FATEBINDER) {
-    const splash = damage * 0.4;
+    const splash = damage * 0.45;
     for (const e of state.enemies.values()) {
       if (e.id === target.id || e.hp <= 0) continue;
       e.hp -= splash;
@@ -2798,7 +2768,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   // IMPERIUM_ETERNUM — divine quake on every hit: 3-tile AoE, true damage.
   if (t.type === TowerType.IMPERIUM_ETERNUM) {
     const r = 3 * GRID.TILE;
-    const aoe = damage * 0.75;
+    const aoe = damage * 0.90;
     for (const e of state.enemies.values()) {
       if (e.id === target.id || e.hp <= 0) continue;
       if (Math.hypot(e.x - target.x, e.y - target.y) > r) continue;
@@ -3046,7 +3016,7 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       break;
     case TowerType.TRIREME_BALLISTA:
       pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur((t as any).placedOnWater ? 4.5 : 3.0), 0, tier);
-      if (target.archetype === 'ELITE' || target.isBoss || isCommanderType((target as any).type)) {
+      if (isEliteEnemy(target) || isBossEnemy(target) || isCommanderEnemy(target)) {
         pushStatus(target, StatusEffectKind.MARK, dur(2.5), 0.12, tier);
       }
       break;
@@ -3332,7 +3302,7 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
     case TowerType.TRIBUNUS_LATICLAVIUS:
       // TIME WARP: heavy slow status as a passive readable effect.
       // Slow-buff pass v6.2: 45% → 60% (apex slow — targets crawl).
-      pushStatus(target, StatusEffectKind.SLOW, dur(2.5), 0.60, tier);
+      pushStatus(target, StatusEffectKind.SLOW, dur(3.0), 0.65, tier);
       break;
     case TowerType.NEMESIS_ENGINE:
       // SKY-RIPPER: long-range flyer control, not map-wide cleanup.

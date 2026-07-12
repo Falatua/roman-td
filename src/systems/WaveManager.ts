@@ -26,6 +26,7 @@ import { prepareHeroAbilitiesForWave } from './HeroSystem';
 import { completeTestYourMight, startTestYourMight, TEST_YOUR_MIGHT_MAX_SPAWN_DT, tickTestYourMightSpawns } from './TestYourMightSystem';
 import { campaignPressureHpMult } from './CampaignDifficulty';
 import { routeOceanSpawnToPath } from './OceanSpawnSystem';
+import { isBossEnemy, isEliteEnemy } from './EnemyClassification';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
 const FACTION_BOSS: Record<string, string> = {
@@ -46,7 +47,7 @@ function sortSpawnQueue(queue: SpawnQueueItem[]): void {
 function shouldMirrorToCaveB(state: GameStateShape, type: string): boolean {
   if (state.wave < 21 || state.groundPathB.length === 0) return false;
   const def = (enemiesData as any)[type];
-  if (!def || def.isBoss || def.isFlyer) return false;
+  if (!def || isBossEnemy(type) || def.isFlyer) return false;
   return true;
 }
 
@@ -187,7 +188,7 @@ export function previewSpawnHp(def: any, waveNumber: number, wType: 'B' | 'M' | 
     // (sandbox / pre-hero saves) the floor stays at 300.
     return heroActive ? 350 : 300;
   }
-  const isBoss  = !!def.isBoss;
+  const isBoss  = isBossEnemy(String(def?.type ?? '')) || def.isBoss === true;
   const isFlyer = !!def.isFlyer;
   const waveMult = effectiveWaveHpMult(waveNumber, hpMult, isBoss);
   const soloBuff = (isBoss && wType === 'B' && waveNumber <= 15) ? 2.0 : 1.0;
@@ -196,6 +197,28 @@ export function previewSpawnHp(def: any, waveNumber: number, wType: 'B' | 'M' | 
   const heroComp = heroActive ? 1.15 : 1.00;
   const flyerHpMult = isFlyer ? ENEMY_BALANCE.FLYER_HEALTH_MULT : 1.0;
   return Math.round(def.baseHp * waveMult * soloBuff * layer * basicBuff * heroComp * flyerHpMult);
+}
+
+// Campaign-level encounter budget used by balance tests and tooling. It
+// composes the same HP layers as live spawns, includes the second-gate mirror,
+// and honors the early boss-wave rule that keeps only bosses and authored
+// elites. Keeping this beside previewSpawnHp prevents future wave tuning from
+// comparing raw hpMult values that omit most of the real difficulty stack.
+export function nominalWaveThreatHp(waveNumber: number, heroActive = true): number {
+  const wave: any = (wavesData as any[])[waveNumber - 1];
+  if (!wave) return 0;
+  let total = 0;
+  const earlySoloBossWave = wave.type === 'B' && waveNumber <= 15;
+  for (const group of wave.spawns ?? []) {
+    const def: any = (enemiesData as any)[group.type];
+    if (!def) continue;
+    const boss = isBossEnemy(group.type);
+    if (earlySoloBossWave && !boss && !isEliteEnemy(group.type)) continue;
+    const mirror = waveNumber >= 21 && !group.ocean && !boss && !def.isFlyer ? group.count : 0;
+    const count = Number(group.count ?? 0) + mirror;
+    total += previewSpawnHp(def, waveNumber, wave.type, wave.hpMult, heroActive) * count;
+  }
+  return total;
 }
 
 export function startWave(state: GameStateShape) {
@@ -259,8 +282,8 @@ export function startWave(state: GameStateShape) {
   let commanderSpawnAt = 4.5;
   let oceanCommanderSpawnAt = 4.5;
   for (const grp of w.spawns) {
-    const isBossGrp = !!(enemiesData as any)[grp.type]?.isBoss;
-    if (soloBossWave && !isBossGrp) continue;       // skip mobs on early boss waves
+    const isBossGrp = isBossEnemy(grp.type);
+    if (soloBossWave && !isBossGrp && !isEliteEnemy(grp.type)) continue;
     // 2026 v2 — stagger FLYER releases by >=1s each so air groups arrive in a
     // readable trickle instead of a swarm (per design feedback).
     const isFlyerGrp = !!(enemiesData as any)[grp.type]?.isFlyer && !isBossGrp;
@@ -405,7 +428,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // 20-wave run — no exponential doubling — so each boss is a real
     // step heavier than the previous boss without being a wall. Basic
     // mobs still get the doubling-per-5-waves stack.
-    const isBossSpawn = !!(enemiesData as any)[item.type]?.isBoss;
+    const isBossSpawn = isBossEnemy(item.type);
     const isFlyerSpawn = !!(enemiesData as any)[item.type]?.isFlyer;
     // LAYERED LATE-GAME HP UPLIFT — single source of truth in
     // `lateGameLayerMult` (W7 / W10 / W11 / W15 breakpoints all live
@@ -526,7 +549,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
       // Only flag it if this is one of the post-authored spawns (heuristic: the
       // pendingBonusBoss flag is set when scheduling, and we set isBonusBoss on
       // the final boss enemy in the queue).
-      if (state.spawnQueue.filter(s => (enemiesData as any)[s.type]?.isBoss).length === 0) {
+      if (state.spawnQueue.filter(s => isBossEnemy(s.type)).length === 0) {
         e.isBonusBoss = true;
         (state as any).bonusBossAnnouncement = (state as any).pendingBonusBoss;
         (state as any).pendingBonusBoss = null;
@@ -725,7 +748,7 @@ function tickEndlessSpawns(state: GameStateShape) {
   if (!cfg) return;
   while (state.spawnQueue.length > 0 && state.spawnQueue[0].spawnAt <= state.spawnElapsed) {
     const item = state.spawnQueue.shift()!;
-    const isBossSpawn = !!(enemiesData as any)[item.type]?.isBoss;
+    const isBossSpawn = isBossEnemy(item.type);
     const isFlyerSpawn = !!(enemiesData as any)[item.type]?.isFlyer;
     // Compose a wave-curve mult for the W20 baseline THEN multiply by
     // the Endless hpMult on top.

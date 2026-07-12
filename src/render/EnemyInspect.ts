@@ -15,6 +15,7 @@ import { markScrollable } from './ScrollCues';
 import itemsData from '../data/items_permanent.json';
 import { signatureLegendaryForBoss } from '../systems/LootSystem';
 import { enhanceModalErgonomics } from './ModalErgonomics';
+import { classifyEnemy, isBossEnemy, isEliteEnemy } from '../systems/EnemyClassification';
 
 const FACTION_KEY: Record<number, string> = {
   [EnemyFaction.DOGS]: 'DOGS',
@@ -85,7 +86,13 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
 
   const banner = document.createElement('div');
   banner.style.cssText = `background:${acColor};color:#1a1410;padding:6px 104px 6px 12px;font-weight:bold;letter-spacing:3px;display:flex;justify-content:space-between;align-items:center`;
-  banner.innerHTML = `<span>${e.archetype}</span><span style="font-size:11px;opacity:0.7">${e.isFlyer ? 'FLYER' : 'GROUND'}${e.isBoss ? ' · BOSS' : ''}</span>`;
+  const enemyClass = classifyEnemy(e);
+  const classLabel = enemyClass.boss ? 'BOSS'
+    : enemyClass.commander ? 'COMMANDER'
+    : enemyClass.elite ? 'ELITE'
+    : enemyClass.caster ? 'CASTER'
+    : 'BASE UNIT';
+  banner.innerHTML = `<span>${classLabel}</span><span style="font-size:11px;opacity:0.7">${e.isFlyer ? 'FLYER' : 'GROUND'} · ${e.archetype}</span>`;
   panel.appendChild(banner);
 
   const head = document.createElement('div');
@@ -494,7 +501,7 @@ export function showEnemyInspectByType(parent: HTMLElement, type: string, forWav
   } else {
     for (const w of wavesData as any[]) {
       if (w.spawns?.some((s: any) => s.type === type)) {
-        if (w.type === 'B' && !def.isBoss) continue;   // boss waves strip non-boss mobs
+        if (w.type === 'B' && w.wave <= 15 && !isBossEnemy(type) && !isEliteEnemy(type)) continue;
         waveCtx = w;
         break;
       }

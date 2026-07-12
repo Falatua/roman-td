@@ -25,6 +25,7 @@ import { isHellfireImmune, statusEffectiveness } from './EnemyResistances';
 import { buildGroundPathB } from './PathFinder';
 import { campaignRelicEnemyHpMult, campaignRelicEnemySpeedMult } from './CampaignRelicSystem';
 import { commanderSpeedMult, isCommanderType, tickCommanderSupport } from './CommanderSystem';
+import { classifyEnemy } from './EnemyClassification';
 import { campaignPressureResistMult } from './CampaignDifficulty';
 import { shouldRespawnBossOnLeak } from './LeakRules';
 
@@ -154,6 +155,7 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     return spawnEnemy(state, EnemyType.FERAL_DOG, hpMult);
   }
   const factionEnum = factionFromString(def.faction);
+  const classification = classifyEnemy(type);
   const flyer: boolean = !!def.isFlyer;
   // 2026 v2 spec Ch7 — Cave B routes GROUND enemies down the second lane.
   const useCaveB = !!caveB && !flyer && state.groundPathB.length > 0;
@@ -167,7 +169,7 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   // HP at spawn. Every trash mob now demands real damage commitment plus
   // the relevant mechanic counter (DoT for regen, melee for shielded,
   // ranged for phalanx, etc). Bosses are balanced separately, untouched.
-  const basicHpBuff = def.isBoss ? 1.0 : 1.70;
+  const basicHpBuff = classification.boss ? 1.0 : 1.70;
   // HERO HP COMPENSATION (2026-05-19): a run with an active hero gets an
   // effectively-free extra tower from the moment the draft completes,
   // and that hero grows into a ~30% map-wide damage multiplier by DIVUS.
@@ -201,7 +203,14 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     statusEffects: [],
     hasFeared: false,
     livesCost: def.livesCost ?? 1,
-    isBoss: !!def.isBoss,
+    isBoss: classification.boss,
+    isElite: classification.elite,
+    isCommander: classification.commander,
+    isCaster: classification.caster,
+    isGiant: classification.giant,
+    isBeast: classification.beast,
+    isOceanEnemy: classification.ocean,
+    isEventStructure: classification.eventStructure,
     reward: 0,
     archetype: ARCHETYPE[type] ?? 'SWARM',
     hpFlashTimer: 0,
@@ -210,8 +219,7 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     checkpointHealPct: def.checkpointHealPct,
     healedCheckpoints: []
   };
-  if (isCommanderType(type as any)) {
-    (e as any).isCommander = true;
+  if (classification.commander) {
     (e as any).__commanderSpawnWave = state.wave;
   }
   // ─── ELITE MUTATIONS ────────────────────────────────────────────────
@@ -389,7 +397,7 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   }
   // 2026 v2 spec Ch10-13 — elite flag drives the universal #E87020 glow;
   // bigGlow = the larger Typhon / Super-Giant aura (read by RenderEngine).
-  if ((def as any).isElite) (e as any).isElite = true;
+  if (classification.elite) e.isElite = true;
   if ((def as any).bigGlow) { (e as any).__bigGlow = true; (e as any).__glowScale = 1.4; }
   if ((def as any).renderScale) (e as any).__renderScale = (def as any).renderScale;
   if (useCaveB) (e as any).__caveB = true;

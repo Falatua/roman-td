@@ -1,13 +1,13 @@
 import { GameStateShape } from '../GameState';
 import { GamePhase } from '../types';
+import { isBossEnemy } from './EnemyClassification';
 
 export function canReceiveRunReward(state: GameStateShape): boolean {
   return state.lives > 0 && state.gameOverAt < 0 && state.phase !== GamePhase.GAME_OVER;
 }
 
 export function isMajorBossRewardEnemy(enemy: any): boolean {
-  if (!enemy?.isBoss || !enemy?.isScheduledBoss || enemy?.isBonusBoss) return false;
-  return enemy.type !== 'WAR_ELEPHANT' && enemy.type !== 'UNDEAD_WAR_ELEPHANT';
+  return !!enemy && isBossEnemy(enemy) && !!enemy.isScheduledBoss && !enemy.isBonusBoss;
 }
 
 export function isRareOnlyBossDropEnemy(enemy: any): boolean {
@@ -28,6 +28,6 @@ export function isLegendaryBossDropEnemy(enemy: any): boolean {
   // Test Your Might (W10.5) has several boss-class bruisers for pressure,
   // but the bonus wave should pay at most the one intended boss Legendary.
   // Only the challenge's scheduled/major-reward boss is eligible here.
-  if (enemy?.__testYourMightEnemy) return !!enemy?.isBoss && !!enemy?.isScheduledBoss;
-  return !!enemy?.isBoss;
+  if (enemy?.__testYourMightEnemy) return isBossEnemy(enemy) && !!enemy?.isScheduledBoss;
+  return !!enemy && isBossEnemy(enemy);
 }

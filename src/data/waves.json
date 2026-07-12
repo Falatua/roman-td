@@ -303,7 +303,7 @@
     "wave": 16,
     "type": "G",
     "faction": "MONGOLS",
-    "hpMult": 7.6,
+    "hpMult": 6.4,
     "gold": 14,
     "spawns": [
       {
@@ -329,7 +329,7 @@
     "wave": 17,
     "type": "M",
     "faction": "MONGOLS",
-    "hpMult": 10.5,
+    "hpMult": 3.4,
     "gold": 10,
     "spawns": [
       {
@@ -370,7 +370,7 @@
     "wave": 18,
     "type": "M",
     "faction": "EGYPTIANS",
-    "hpMult": 11,
+    "hpMult": 5.8,
     "gold": 14,
     "spawns": [
       {
@@ -433,7 +433,7 @@
     "wave": 19,
     "type": "M",
     "faction": "EGYPTIANS",
-    "hpMult": 12.5,
+    "hpMult": 7.4,
     "gold": 16,
     "spawns": [
       {
@@ -483,7 +483,7 @@
     "wave": 20,
     "type": "B",
     "faction": "EGYPTIANS",
-    "hpMult": 55,
+    "hpMult": 34.5,
     "gold": 18,
     "spawns": [
       {
@@ -512,7 +512,7 @@
     "wave": 21,
     "type": "B",
     "faction": "MONGOLS",
-    "hpMult": 14,
+    "hpMult": 8.3,
     "gold": 15,
     "spawns": [
       {
@@ -552,7 +552,7 @@
     "wave": 22,
     "type": "M",
     "faction": "MONGOLS",
-    "hpMult": 15,
+    "hpMult": 9.9,
     "gold": 16,
     "spawns": [
       {
@@ -610,7 +610,7 @@
     "wave": 23,
     "type": "M",
     "faction": "EGYPTIANS",
-    "hpMult": 8.5,
+    "hpMult": 14.3,
     "gold": 16,
     "spawns": [
       {
@@ -726,7 +726,7 @@
     "wave": 25,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 47,
+    "hpMult": 38,
     "gold": 14,
     "fixedCount": true,
     "spawns": [
@@ -777,7 +777,7 @@
     "wave": 26,
     "type": "M",
     "faction": "ROMAN_MYTH",
-    "hpMult": 21,
+    "hpMult": 30.3,
     "gold": 14,
     "fixedCount": true,
     "spawns": [
@@ -824,7 +824,7 @@
     "wave": 27,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 24,
+    "hpMult": 27,
     "gold": 15,
     "fixedCount": true,
     "spawns": [
@@ -890,7 +890,7 @@
     "wave": 28,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 27,
+    "hpMult": 34.9,
     "gold": 9,
     "fixedCount": true,
     "superGiantActive": true,
@@ -1008,7 +1008,7 @@
     "wave": 30,
     "type": "B",
     "faction": "SUPER_DEMONS",
-    "hpMult": 18,
+    "hpMult": 3.6,
     "gold": 0,
     "spawns": [
       {

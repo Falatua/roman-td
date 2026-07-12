@@ -171,9 +171,10 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
     const label = towerLabel(String(o.type));
     const recipeHints = purchaseRecipeHints(state, o.type, o.tier, 1);
     const completesRecipe = recipeHints.length > 0;
+    const assisted = o.recipeAssisted === true;
     return `
       <div style="background:linear-gradient(180deg,${completesRecipe ? '#173a27' : '#162b35'},#0b1118);border:2px solid ${completesRecipe ? '#66ff88' : affordable ? '#5fe6ff' : '#6b3a3a'};padding:12px;text-align:left;box-shadow:inset 0 0 16px #000${completesRecipe ? ',0 0 16px rgba(102,255,136,0.18)' : ''};display:flex;flex-direction:column;min-height:430px;position:relative">
-        ${completesRecipe ? `<div style="position:absolute;top:-10px;left:14px;background:#0c1a10;border:1.5px solid #66ff88;color:#bbffcc;font-size:9px;font-weight:bold;letter-spacing:1px;padding:2px 7px;white-space:nowrap;text-shadow:0 0 4px #66ff88">★ COMPLETES RECIPE</div>` : ''}
+        ${completesRecipe ? `<div style="position:absolute;top:-10px;left:14px;background:#0c1a10;border:1.5px solid #66ff88;color:#bbffcc;font-size:9px;font-weight:bold;letter-spacing:1px;padding:2px 7px;white-space:nowrap;text-shadow:0 0 4px #66ff88">★ COMPLETES RECIPE</div>` : assisted ? `<div style="position:absolute;top:-10px;left:14px;background:#10202a;border:1.5px solid #88f7ff;color:#cdefff;font-size:9px;font-weight:bold;letter-spacing:1px;padding:2px 7px;white-space:nowrap">★ BEST RECIPE PATH</div>` : ''}
         <div style="display:flex;gap:12px;align-items:flex-start">
           ${navalContractSpriteHtml(String(o.type), label, o.tier)}
           <div style="min-width:0;flex:1">

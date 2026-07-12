@@ -5,11 +5,14 @@ import { canBuildWaterTowerAt, isBuildable, isWaterZoneTile, restoreNaturalBuild
 import towersData from '../data/towers.json';
 import wavesData from '../data/waves.json';
 import { canPlaceTowersOrProspects } from './PlacementPhase';
+import { purchaseRecipeHints, purchaseRecipeProgressScore } from './CombinationEngine';
+import { isOceanEnemy } from './EnemyClassification';
 
 export interface HarborDraftOffer {
   type: TowerType;
   tier: 1 | 2 | 3 | 4 | 5;
   price: number;
+  recipeAssisted?: boolean;
 }
 
 export const NAVAL_TOWER_TYPES: TowerType[] = [
@@ -43,22 +46,12 @@ export function isHarborTowerType(type: TowerType | string): boolean {
   return isNavalTowerType(type) || isTideforgedTowerType(type);
 }
 
-const OCEAN_THREAT_ENEMY_TYPES = new Set<string>([
-  EnemyType.OCEAN_FISHLING,
-  EnemyType.OCEAN_GHOST_SPIRIT,
-  EnemyType.SEA_GIANT,
-  EnemyType.SEA_GIANT_WARBRINGER,
-  EnemyType.NETHER_AMPHIBIOUS_GIANT,
-  EnemyType.TIDECALLER_COMMANDER,
-  EnemyType.STORMTIDE_WYVERN_COMMANDER
-]);
-
 export function isOceanThreatEnemy(enemyOrType: EnemyType | string | { type?: EnemyType | string; __oceanSpawn?: boolean } | null | undefined): boolean {
   if (!enemyOrType) return false;
   if (typeof enemyOrType === 'object') {
-    return !!enemyOrType.__oceanSpawn || OCEAN_THREAT_ENEMY_TYPES.has(String(enemyOrType.type ?? ''));
+    return !!enemyOrType.__oceanSpawn || isOceanEnemy(String(enemyOrType.type ?? ''));
   }
-  return OCEAN_THREAT_ENEMY_TYPES.has(String(enemyOrType));
+  return isOceanEnemy(String(enemyOrType));
 }
 
 export function harborTowerCanUseTile(state: GameStateShape, type: TowerType | string, col: number, row: number): boolean {
@@ -142,10 +135,35 @@ export function buildHarborDraftOffers(state: GameStateShape, forceRefresh = fal
   const tier = harborDraftTierForWave(state.wave);
   const pool = NAVAL_TOWER_TYPES.slice();
   const offers: HarborDraftOffer[] = [];
+  // Reserve one slot for the best current recipe path. Direct completions
+  // win; otherwise prefer a naval ingredient whose companion ingredient is
+  // already on the board. Ties remain randomized, and an empty board still
+  // receives a fully random draft.
+  const scored = pool.map(type => ({
+    type,
+    score: purchaseRecipeProgressScore(state, type, tier),
+    completes: purchaseRecipeHints(state, type, tier, 1).length > 0
+  }));
+  const bestScore = Math.max(0, ...scored.map(row => row.score));
+  if (bestScore > 0) {
+    const best = scored.filter(row => row.score === bestScore);
+    const chosen = best[Math.floor(Math.random() * best.length)];
+    pool.splice(pool.indexOf(chosen.type), 1);
+    offers.push({
+      type: chosen.type,
+      tier,
+      price: harborDraftPrice(tier, chosen.type),
+      recipeAssisted: true
+    });
+  }
   while (pool.length > 0 && offers.length < 3) {
     const idx = Math.floor(Math.random() * pool.length);
     const type = pool.splice(idx, 1)[0];
     offers.push({ type, tier, price: harborDraftPrice(tier, type) });
+  }
+  for (let i = offers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [offers[i], offers[j]] = [offers[j], offers[i]];
   }
   scratch.__harborDraftOffers = offers;
   scratch.__harborDraftWave = state.wave;

@@ -1,6 +1,7 @@
 import { EnemyType } from '../types';
 import { GRID } from '../constants';
 import { GameStateShape } from '../GameState';
+import { COMMANDER_ENEMY_TYPES, isCommanderEnemy } from './EnemyClassification';
 
 export type CommanderType =
   | 'STANDARD_BEARER_COMMANDER'
@@ -13,17 +14,7 @@ export type CommanderType =
   | 'TIDECALLER_COMMANDER'
   | 'STORMTIDE_WYVERN_COMMANDER';
 
-export const COMMANDER_TYPES = new Set<string>([
-  'STANDARD_BEARER_COMMANDER',
-  'PATHFINDER_COMMANDER',
-  'ANUBIS_PRIEST_COMMANDER',
-  'SIEGE_CAPTAIN_COMMANDER',
-  'SKY_STANDARD_COMMANDER',
-  'SKY_PATHFINDER_COMMANDER',
-  'SKY_ANUBIS_COMMANDER',
-  'TIDECALLER_COMMANDER',
-  'STORMTIDE_WYVERN_COMMANDER'
-]);
+export const COMMANDER_TYPES = COMMANDER_ENEMY_TYPES;
 
 const CAMPAIGN_COMMANDERS: Record<number, CommanderType> = {
   8: 'SKY_PATHFINDER_COMMANDER',
@@ -47,7 +38,7 @@ const BOSS_ESCORT_COMMANDERS: Record<number, CommanderType[]> = {
 };
 
 export function isCommanderType(type: string | EnemyType | undefined): boolean {
-  return !!type && COMMANDER_TYPES.has(String(type));
+  return !!type && isCommanderEnemy(String(type));
 }
 
 export function bossEscortCommandersForWave(wave: number): CommanderType[] {

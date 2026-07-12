@@ -20,6 +20,7 @@ import { damageTypeLabel, factionName, pretty } from '../format';
 import { previewSpawnHp } from '../systems/WaveManager';
 import { itemBuyPrice, signatureLegendaryForBoss } from '../systems/LootSystem';
 import { FORTUNA_GAMBLE_COST } from '../systems/MerchantSystem';
+import { isBossEnemy, isEliteEnemy } from '../systems/EnemyClassification';
 
 function spriteImg(key: string, size = 28): string {
   const t = tex(key);
@@ -629,9 +630,9 @@ function renderTab(tab: string): string {
           ${noteCard('Siege Kickback (Turris)', 'Every 3rd shot knocks target back.')}
           ${noteCard('Charge + Venom (Horseman)', 'Every hit MARKS (+20%) AND applies POISON (5% maxHp/sec, 4s).')}
           ${noteCard('Trample (War Chariot)', 'Every 4th attack stuns + knocks back ground. +50% vs bosses.')}
-          ${noteCard('Damage-Type vs Archetype', '<b>Bosses:</b> Scorpio +40, Pontifex +200, Carthage Scourge +320. <b>Flyers:</b> Sagittarius / Venator +45, Aquila Venator +75, Scorpion Bolt +65, Storm Ballista +70, Beastlord +100, Eques +110, Skyreaper +140, Nemesis +160, Sky Dominion +220. <b>Ground:</b> Horseman +20, Turma Lancers +45. <b>Elephants:</b> living and undead elephants count as BEASTS. Hannibal\'s Nightmare deals 5x prey damage before its boss bonus; Beast Hunter/Slayer deal +200%. Clibanarius, both Hydra towers, and Undead General also receive their beast bonuses. Other listed values are bonus damage percentages.')}
+          ${noteCard('Damage-Type vs Archetype', '<b>Bosses:</b> Scorpio +40, Pontifex +200, Carthage Scourge +320. <b>Flyers:</b> Sagittarius / Venator +45, Aquila Venator +75, Scorpion Bolt +65, Storm Ballista +70, Beastlord +100, Eques +110, Skyreaper +180, Nemesis +160, Sky Dominion +220. <b>Ground:</b> Horseman +20, Turma Lancers +45. <b>Elephants:</b> living and undead elephants are ELITE BEASTS, not bosses. Hannibal\'s Nightmare deals 6.5x prey damage; Beast Hunter/Slayer deal +200%. Clibanarius, both Hydra towers, and Undead General also receive their beast bonuses. Other listed values are bonus damage percentages.')}
           ${noteCard('Native Auras', 'Triarius +12% global · Cohort Guard 3-tile +15% local · Eagle Standard / Praetorian Wall / Aquilifer / Vestalis / Triplex Acies / Legion Prime / Fatebinder all draw violet rings — stand inside.')}
-          ${noteCard('Frozen Legion (deep dive)', 'Two layered freeze mechanics: <b style="color:#88ddff">(1)</b> every attack freezes its target for 2.5s — locked in place, no movement, no knockback displacement · <b style="color:#88ddff">(2)</b> every 10 seconds, a <b>GLACIAL PULSE</b> freezes EVERY enemy on the map (no range cap) for 2.5s. The pulse turns each 10s window into a battlefield-wide hard-stop window so your damage towers can finish kills uncontested.')}
+          ${noteCard('Frozen Legion (deep dive)', 'Two layered freeze mechanics: <b style="color:#88ddff">(1)</b> every attack freezes its target for 2.5s — locked in place, no movement, no knockback displacement · <b style="color:#88ddff">(2)</b> every 8 seconds, a <b>GLACIAL PULSE</b> freezes EVERY enemy on the map (no range cap) for 2.5s. The pulse turns each 8s window into a battlefield-wide hard-stop window so your damage towers can finish kills uncontested.')}
           ${noteCard('Periodic AoE Freeze', '<b style="color:#88ddff">Frozen Legion</b> — every 10s, freezes EVERY enemy on the map (no range cap) for 2.5s. <b>Hannibal\'s Nightmare</b> — every 10s, freezes everything in its 6.5-tile range for 1.5s. <b>Carthage Scourge</b> — every 5s, freezes everything in its 7-tile range for 1.8s.')}
         </div>
       `)}
@@ -1039,7 +1040,7 @@ function renderTab(tab: string): string {
     return `${section('COMBINATION LOGIC',
       `<div style="font-size:11px;color:#cdb98a;line-height:1.5">Recipes listed in DIFFICULTY ORDER — easiest single-step builds first, cross-combos and super combos at the bottom. Color-coded against the towers you have: <b style="color:#88ff88">Green</b> = committed towers, <b style="color:#ff9933">orange</b> = pending prospects (you'll have to KEEP them first). Each result card carries a <b style="color:#c4731a">DAMAGE-TYPE</b> chip (Melee / Ranged / Siege / Fire / Divine) and a <b style="color:#5aa6d4">MODE</b> chip (Melee swing vs Projectile) so you can spot a combo's role at a glance before reading the ability.</div>${legend}
       <div style="margin-top:8px;background:#0c1418;border:1px solid #4a6a88;padding:8px 10px;font-size:11px;color:#cdb98a;line-height:1.5">
-        <span style="color:#88ddff;font-weight:bold;letter-spacing:1.5px">❄ FROZEN LEGION SPOTLIGHT</span> — Pure hard-stop crowd-control combo. Every attack freezes its target for <b>2.5s</b> — fully locked in place, no movement, no knockback displacement. Every <b>10 seconds</b> it releases a <b>GLACIAL PULSE</b> that freezes EVERY enemy on the map for 2.5s (no range cap). Pairs with high-DPS towers that want stationary targets — Aurora Legion piercing lines, Scorpio bolts, Colossus Onager splash — anything that benefits from the target staying exactly where it is.
+        <span style="color:#88ddff;font-weight:bold;letter-spacing:1.5px">❄ FROZEN LEGION SPOTLIGHT</span> — Pure hard-stop crowd-control combo. Every attack freezes its target for <b>2.5s</b> — fully locked in place, no movement, no knockback displacement. Every <b>8 seconds</b> it releases a <b>GLACIAL PULSE</b> that freezes EVERY enemy on the map for 2.5s (no range cap). Pairs with high-DPS towers that want stationary targets — Aurora Legion piercing lines, Scorpio bolts, Colossus Onager splash — anything that benefits from the target staying exactly where it is.
       </div>`)}
       <div style="display:grid;grid-template-columns:1fr;gap:8px">${cards}</div>`;
   }
@@ -1051,8 +1052,8 @@ function renderTab(tab: string): string {
     // copy of the formula that fell out of sync when the W11+ creative
     // ramp was added — never again.
     // Build "first wave appearance" map from waves.json. Two passes:
-    //   1) viable spawns (mob on non-boss wave OR boss on any wave)
-    //   2) stripped spawns (non-boss mob on boss wave — would-be HP shown
+    //   1) viable spawns (all late-wave groups, plus bosses/elites in early boss waves)
+    //   2) stripped spawns (ordinary mob on an early solo-boss wave — would-be HP shown
     //      with a "stripped" tag so the player knows the data is on the
     //      books but the runtime never spawns them)
     const firstWaveByEnemy = new Map<string, any>();
@@ -1063,11 +1064,11 @@ function renderTab(tab: string): string {
     // across all enemies and visibility of recurring spawns.
     const allWavesByEnemy = new Map<string, number[]>();
     for (const w of waves as any[]) {
-      const isBossWave = w.type === 'B';
+      const isSoloBossWave = w.type === 'B' && w.wave <= 15;
       for (const grp of w.spawns) {
         const grpDef: any = (enemies as any)[grp.type];
         if (!grpDef) continue;
-        if (isBossWave && !grpDef.isBoss) {
+        if (isSoloBossWave && !isBossEnemy(grp.type) && !isEliteEnemy(grp.type)) {
           if (!strippedFirstWave.has(grp.type)) strippedFirstWave.set(grp.type, w);
           continue;
         }
@@ -1088,9 +1089,8 @@ function renderTab(tab: string): string {
       for (const src of sources) {
         for (const w of waves as any[]) {
           if (!w.necromancy) continue;
-          const isBossWave = w.type === 'B';
-          const srcDef: any = (enemies as any)[src];
-          if (isBossWave && !srcDef?.isBoss) continue;
+          const isSoloBossWave = w.type === 'B' && w.wave <= 15;
+          if (isSoloBossWave && !isBossEnemy(src) && !isEliteEnemy(src)) continue;
           if (!w.spawns.some((s: any) => s.type === src)) continue;
           if (!best || w.wave < best.wave.wave) best = { wave: w, source: src };
         }

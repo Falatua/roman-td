@@ -4,6 +4,7 @@ import { GRID, INVENTORY_SIZE, LOOT_DROP_RATES } from '../constants';
 import items from '../data/items_permanent.json';
 import consumables from '../data/items_consumable.json';
 import { itemRandomSelectionWeight } from './ItemRules';
+import { isCommanderEnemy, isEliteEnemy } from './EnemyClassification';
 
 // 2026-05-18 — EPIC tier inserted between RARE and LEGENDARY. Visual
 // color is purple (#a060ff). Used for premium-but-not-build-defining
@@ -318,9 +319,9 @@ export const PREMIUM_NON_BOSS_DROP_CHANCES = Object.freeze({
 export function premiumNonBossDropChance(enemy: Partial<Enemy> | any): number {
   if (!enemy) return 0;
   if (enemy.__bossEscortCommander) return PREMIUM_NON_BOSS_DROP_CHANCES.BOSS_ESCORT_COMMANDER;
-  if (enemy.isCommander) return PREMIUM_NON_BOSS_DROP_CHANCES.COMMANDER;
+  if (isCommanderEnemy(enemy)) return PREMIUM_NON_BOSS_DROP_CHANCES.COMMANDER;
   if (enemy.type === 'FIRE_GIANT') return PREMIUM_NON_BOSS_DROP_CHANCES.FIRE_GIANT;
-  if (enemy.isElite) return PREMIUM_NON_BOSS_DROP_CHANCES.ELITE;
+  if (isEliteEnemy(enemy)) return PREMIUM_NON_BOSS_DROP_CHANCES.ELITE;
   if (enemy.mutation) return PREMIUM_NON_BOSS_DROP_CHANCES.ELITE_MUTATION;
   return 0;
 }
@@ -334,13 +335,13 @@ export function rollPremiumNonBossDrop(
   if (chance <= 0) return null;
 
   if (enemy?.__bossEscortCommander) return rollRareDrop();
-  if (enemy?.isCommander) {
+  if (isCommanderEnemy(enemy)) {
     return premiumDropRoll(0.30) ? rollEpicDrop(state, inv) : rollRareDrop();
   }
   if (enemy?.type === 'FIRE_GIANT') {
     return premiumDropRoll(0.35) ? rollEpicDrop(state, inv) : rollRareDrop();
   }
-  if (enemy?.isElite) {
+  if (isEliteEnemy(enemy)) {
     return premiumDropRoll(0.30) ? rollEpicDrop(state, inv) : rollRareDrop();
   }
   if (enemy?.mutation) {

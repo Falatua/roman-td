@@ -666,7 +666,7 @@ describe('Boss trophies', () => {
     expect(bossTrophyTowerRangeBonus(s, ranged)).toBeCloseTo(0.35, 4);
 
     applyBossTrophy(s, 'SIEGEBREAKER_TABLETS');
-    expect(bossTrophyDamageMult(s, siege, { archetype: 'ELITE' })).toBeCloseTo(1.18, 4);
+    expect(bossTrophyDamageMult(s, siege, { type: 'TEST_ELITE', isElite: true })).toBeCloseTo(1.18, 4);
     expect(bossTrophyTowerSpeedMult(s, siege)).toBeCloseTo(1.06, 4);
 
     applyBossTrophy(s, 'HARBOR_CHARTS');

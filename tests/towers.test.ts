@@ -108,7 +108,7 @@ describe('legendary item-awakened Supercombos', () => {
     const headsman = createTower(TowerType.IMPERIAL_HEADSMAN, 5, 2, 2, 1);
     headsman.equippedItems.push('DAMNATIO_MEMORIAE');
     const ordinary = testEnemy('ordinary');
-    const elite = testEnemy('elite'); elite.archetype = 'ELITE';
+    const elite = testEnemy('elite'); elite.archetype = 'ELITE'; elite.isElite = true;
     const commander = testEnemy('commander'); (commander as any).isCommander = true;
     const boss = testEnemy('boss'); boss.isBoss = true; boss.archetype = 'BOSS';
     expect(damnatioExecuteThreshold(headsman, ordinary)).toBe(0.30);
@@ -256,7 +256,7 @@ describe('Tower effective stats', () => {
       [TowerType.NUMIDIAN_CAVALRY]: 285.0,
       [TowerType.NEMESIS_ENGINE]: 235.0,
       [TowerType.BEASTLORD_CHAMPION]: 144.0,
-      [TowerType.SKYREAPER_BATTERY]: 190.0
+      [TowerType.SKYREAPER_BATTERY]: 240.0
     };
     for (const [type, expectedDps] of Object.entries(expectedAntiAirDps)) {
       expect((towersData as any)[type].baseDps).toBe(expectedDps);
@@ -1163,8 +1163,8 @@ describe('Giant Killer transformation and combat wiring', () => {
   });
 
   it('keeps Hannibal Nightmare decisively strongest against elephant packs', () => {
-    const elephant = { type: EnemyType.WAR_ELEPHANT, isBoss: true, isFlyer: false };
-    expect(HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT).toBe(5);
+    const elephant = { type: EnemyType.WAR_ELEPHANT, isBoss: false, isFlyer: false };
+    expect(HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT).toBe(6.5);
     expect(hannibalsNightmarePreyDamageMult(elephant)).toBeCloseTo(6.5, 6);
 
     const hannibalRows = towerSpecialistDpsRows(TowerType.HANNIBALS_NIGHTMARE, 235);
@@ -1191,7 +1191,7 @@ describe('Giant Killer transformation and combat wiring', () => {
     const elephant = testEnemy('hannibal-elephant', c.x + GRID.TILE * 2.5, c.y);
     elephant.type = EnemyType.WAR_ELEPHANT;
     elephant.faction = EnemyFaction.CARTHAGE;
-    elephant.isBoss = true;
+    elephant.isBoss = false;
     elephant.pathIndex = 4;
     elephant.hp = elephant.maxHp = 100000;
     state.enemies.set(ordinary.id, ordinary);

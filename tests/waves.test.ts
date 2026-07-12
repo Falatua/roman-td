@@ -1,6 +1,6 @@
 // Tests for the wave system: HP scaling, wave-end conditions, win/loss state.
 import { describe, it, expect, beforeEach } from 'vitest';
-import { effectiveWaveHpMult, startWave, tickSpawns, checkWaveEnd } from '../src/systems/WaveManager';
+import { effectiveWaveHpMult, nominalWaveThreatHp, startWave, tickSpawns, checkWaveEnd } from '../src/systems/WaveManager';
 import { campaignPressureHpMult, campaignPressureResistMult } from '../src/systems/CampaignDifficulty';
 import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
 import { createGameState } from '../src/GameState';
@@ -97,7 +97,6 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
     const expected = new Map<string, number>([
       ['ALPHA_DOG', 3765],
       ['CELTIC_WARLORD', 4117],
-      ['WAR_ELEPHANT', 23575],
       ['HANNIBAL_BARCA', 8625]
     ]);
     const preWave11BossTypes = new Set<string>();
@@ -292,10 +291,6 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     const w23 = byWave.get(23);
     const w24 = byWave.get(24);
     const count = (wave: any, type: string) => (wave.spawns ?? []).find((s: any) => s.type === type)?.count ?? 0;
-    const authoredHp = (wave: any) => (wave.spawns ?? []).reduce(
-      (sum: number, spawn: any) => sum + ((enemiesData as any)[spawn.type]?.baseHp ?? 0) * spawn.count * (wave.hpMult ?? 1),
-      0
-    );
 
     expect(w24.enemySpeedBoostPct).toBeGreaterThan(w23.enemySpeedBoostPct);
     expect(w24.enemyDamageReductPct).toBeGreaterThan(w23.enemyDamageReductPct);
@@ -303,22 +298,31 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(w24.enemyRegenPctPerSec).toBeGreaterThan(w23.enemyRegenPctPerSec);
     expect(count(w24, 'SIEGE_WAGON')).toBe(count(w23, 'SIEGE_WAGON'));
     expect(count(w24, 'SPHINX')).toBe(4);
-    expect(authoredHp(w24)).toBeGreaterThan(authoredHp(w23) * 3.5);
+    expect(nominalWaveThreatHp(24)).toBeGreaterThan(nominalWaveThreatHp(23) * 1.8);
   });
 
   it('makes Wave 25 escalate after Wave 24 instead of dipping', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     const w24 = byWave.get(24);
     const w25 = byWave.get(25);
-    const authoredHp = (wave: any) => (wave.spawns ?? []).reduce(
-      (sum: number, spawn: any) => sum + ((enemiesData as any)[spawn.type]?.baseHp ?? 0) * spawn.count * (wave.hpMult ?? 1),
-      0
-    );
-
-    expect(authoredHp(w25)).toBeGreaterThan(authoredHp(w24));
+    expect(nominalWaveThreatHp(25)).toBeGreaterThan(nominalWaveThreatHp(24) * 1.25);
     expect(w25.enemySpeedBoostPct).toBeGreaterThan(w24.enemySpeedBoostPct);
     expect(w25.enemyDamageReductPct).toBeGreaterThan(w24.enemyDamageReductPct);
     expect(w25.comboAntiAirArmorPct).toBeGreaterThan(w24.comboAntiAirArmorPct);
+  });
+
+  it('keeps the W15-W29 encounter budget increasing without major cliffs', () => {
+    let previous = nominalWaveThreatHp(15);
+    for (let wave = 16; wave <= 29; wave++) {
+      const current = nominalWaveThreatHp(wave);
+      const growth = current / previous;
+      expect(growth, `W${wave} should increase over W${wave - 1}`).toBeGreaterThan(1.2);
+      expect(growth, `W${wave} should not cliff over W${wave - 1}`).toBeLessThan(2.1);
+      previous = current;
+    }
+    const finalGrowth = nominalWaveThreatHp(30) / nominalWaveThreatHp(29);
+    expect(finalGrowth).toBeGreaterThan(2.25);
+    expect(finalGrowth).toBeLessThan(3.0);
   });
 
   it('spawns two undead war elephants on Wave 14', () => {
@@ -501,11 +505,11 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
   it('turns W26-W30 into the final apex-tower gauntlet', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     const expected = new Map<number, { hp: number; dr: number; aa: number; dot: number; regen: number }>([
-      [26, { hp: 21, dr: 0.12, aa: 0.62, dot: 0.25, regen: 0.007 }],
-      [27, { hp: 24, dr: 0.14, aa: 0.66, dot: 0.28, regen: 0.008 }],
-      [28, { hp: 27, dr: 0.16, aa: 0.68, dot: 0.30, regen: 0.009 }],
+      [26, { hp: 30.3, dr: 0.12, aa: 0.62, dot: 0.25, regen: 0.007 }],
+      [27, { hp: 27, dr: 0.14, aa: 0.66, dot: 0.28, regen: 0.008 }],
+      [28, { hp: 34.9, dr: 0.16, aa: 0.68, dot: 0.30, regen: 0.009 }],
       [29, { hp: 30, dr: 0.18, aa: 0.70, dot: 0.32, regen: 0.010 }],
-      [30, { hp: 18, dr: 0.20, aa: 0.72, dot: 0.35, regen: 0.012 }]
+      [30, { hp: 3.6, dr: 0.20, aa: 0.72, dot: 0.35, regen: 0.012 }]
     ]);
 
     for (const [waveNumber, values] of expected) {
@@ -1025,7 +1029,7 @@ describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () =
     expect(others.length).toBe(0);
   });
 
-  it('wave 9 war elephants heal at checkpoint coins despite being boss-class enemies', () => {
+  it('wave 9 war elephant elites heal at checkpoint coins without boss rewards', () => {
     const s = bootstrapState();
     s.phase = GamePhase.BUILD_PHASE;
     s.wave = 8;
@@ -1034,7 +1038,8 @@ describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () =
 
     const elephant = Array.from(s.enemies.values()).find(e => e.type === EnemyType.WAR_ELEPHANT);
     expect(elephant).toBeDefined();
-    expect(elephant!.isBoss).toBe(true);
+    expect(elephant!.isBoss).toBe(false);
+    expect(elephant!.isElite).toBe(true);
     expect(elephant!.checkpointHealPct).toBe(0.15);
     expect(isRareOnlyBossDropEnemy(elephant)).toBe(true);
     expect(isLegendaryBossDropEnemy(elephant)).toBe(false);
@@ -1068,7 +1073,8 @@ describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () =
 
     expect(elephants.length).toBeGreaterThan(0);
     for (const elephant of elephants) {
-      expect(elephant.isBoss).toBe(true);
+      expect(elephant.isBoss).toBe(false);
+      expect(elephant.isElite).toBe(true);
       expect(isRareOnlyBossDropEnemy(elephant)).toBe(true);
       expect(isLegendaryBossDropEnemy(elephant)).toBe(false);
     }

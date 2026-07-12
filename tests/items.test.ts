@@ -658,7 +658,7 @@ describe('2026-07-09 item balance pass', () => {
 
   it('Elephant Tusk fires vs Elites as well as Bosses (no longer dominated by War Paint)', () => {
     const source = readFileSync(path.join(process.cwd(), 'src/systems/CombatResolver.ts'), 'utf8');
-    expect(source).toMatch(/\(target\.isBoss \|\| target\.archetype === 'ELITE'\) && t\.equippedItems\.includes\('ELEPHANT_TUSK'\)/);
+    expect(source).toContain("(isBossEnemy(target) || isEliteEnemy(target)) && t.equippedItems.includes('ELEPHANT_TUSK')");
     expect((itemsData as any).ELEPHANT_TUSK.effect).toContain('Bosses and Elites');
   });
 

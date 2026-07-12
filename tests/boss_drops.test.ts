@@ -114,18 +114,18 @@ describe('Boss drop guarantee (2026-05-19)', () => {
     expect((itemsData as any)[drop!.itemId]?.rarity).toBe('LEGENDARY');
   });
 
-  it('War Elephants now use the boss signature legendary path', () => {
-    const elephant = { type: 'WAR_ELEPHANT', isBoss: true, isScheduledBoss: false, isBonusBoss: false };
-    const undeadElephant = { type: 'UNDEAD_WAR_ELEPHANT', isBoss: true, isScheduledBoss: true, isBonusBoss: false };
-    expect(isLegendaryBossDropEnemy(elephant)).toBe(true);
-    expect(isLegendaryBossDropEnemy(undeadElephant)).toBe(true);
+  it('keeps elephant signatures available without classifying elephants as bosses', () => {
+    const elephant = { type: 'WAR_ELEPHANT', isBoss: false, isElite: true, isScheduledBoss: false, isBonusBoss: false };
+    const undeadElephant = { type: 'UNDEAD_WAR_ELEPHANT', isBoss: false, isElite: true, isScheduledBoss: false, isBonusBoss: false };
+    expect(isLegendaryBossDropEnemy(elephant)).toBe(false);
+    expect(isLegendaryBossDropEnemy(undeadElephant)).toBe(false);
     expect(rollBossDrop('CARTHAGE', freshState(), createInventory(), 'WAR_ELEPHANT')?.itemId).toBe('ELEPHANT_TUSK');
     expect(rollBossDrop('UNDEAD_CARTHAGE', freshState(), createInventory(), 'UNDEAD_WAR_ELEPHANT')?.itemId).toBe('WITCHS_BREW');
     expect((itemsData as any).WITCHS_BREW.effect).toContain('Murmillo');
   });
 
   it('Wave 9 teaching elephants bypass legendary boss drops for high-chance Rare loot', () => {
-    const wave9Elephant = { type: 'WAR_ELEPHANT', isBoss: true, isScheduledBoss: false, isBonusBoss: false, rareDropOnly: true };
+    const wave9Elephant = { type: 'WAR_ELEPHANT', isBoss: false, isElite: true, isScheduledBoss: false, isBonusBoss: false, rareDropOnly: true };
     expect(isRareOnlyBossDropEnemy(wave9Elephant)).toBe(true);
     expect(isLegendaryBossDropEnemy(wave9Elephant)).toBe(false);
     expect(RARE_ONLY_BOSS_DROP_CHANCE).toBe(0.25);

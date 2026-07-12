@@ -37,6 +37,7 @@ export interface QuestDef {
   condition: (state: GameStateShape) => number;
   target: number;
   reward: QuestRewardPayload;
+  unlock?: (state: GameStateShape) => boolean;
 }
 
 // All quests in the game — tuned for the 30-wave Solo
@@ -189,10 +190,10 @@ export const QUESTS: QuestDef[] = [
   },
   {
     id: 'beast_slayer', tier: 'EARLY',
-    title: 'Beast Slayer',
-    blurb: 'Kill 6 boss-class enemies. The hunt begins after the first true beast wave.',
+    title: 'Tyrant Slayer',
+    blurb: 'Kill 3 true bosses. Elites and commanders do not count.',
     condition: s => s.bossesKilled ?? 0,
-    target: 6,
+    target: 3,
     reward: { kind: 'GOLD', amount: 25 }
   },
   // 2026-07-02 — playstyle-flavored quests (variety, gear, hero growth)
@@ -289,9 +290,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'boss_hunter', tier: 'MID',
     title: 'Boss Hunter',
-    blurb: 'Kill 12 boss-class enemies. Survive the campaign midpoint.',
+    blurb: 'Kill 4 true bosses. Elites and commanders do not count.',
     condition: s => s.bossesKilled ?? 0,
-    target: 12,
+    target: 4,
     reward: { kind: 'TOWER', towerType: TowerType.CENTURION, towerTier: 4 }
   },
   {
@@ -324,7 +325,8 @@ export const QUESTS: QuestDef[] = [
     blurb: 'Kill a Sea Giant and unlock the Harbor. Rome opens the docks.',
     condition: s => (s as any).harborUnlocked ? 1 : 0,
     target: 1,
-    reward: { kind: 'GOLD', amount: 50 }
+    reward: { kind: 'GOLD', amount: 50 },
+    unlock: s => (s.oceanEnemiesKilled ?? 0) > 0 || (s.wave ?? 0) >= 12
   },
   {
     id: 'dockside_battery', tier: 'MID',
@@ -332,7 +334,8 @@ export const QUESTS: QuestDef[] = [
     blurb: 'Place 2 Harbor towers on ocean tiles. Turn the cove into artillery.',
     condition: countHarborTowersOnWater,
     target: 2,
-    reward: { kind: 'GOLD', amount: 85 }
+    reward: { kind: 'GOLD', amount: 85 },
+    unlock: s => !!(s as any).harborUnlocked
   },
   // ─── LATE (campaign-defining — only the prepared finish these) ─────────
   {
@@ -357,7 +360,8 @@ export const QUESTS: QuestDef[] = [
     blurb: 'Build 2 different cross-combo towers. One apex is inspiration; two is doctrine.',
     condition: s => countUniqueCombosInSet(s, APEX_COMBO_TYPES),
     target: 2,
-    reward: { kind: 'GOLD', amount: 110 }
+    reward: { kind: 'GOLD', amount: 110 },
+    unlock: s => (s.combosBuiltUniqueTypes ?? []).length >= 5
   },
   {
     id: 'super_combo_commission', tier: 'LATE',
@@ -369,7 +373,8 @@ export const QUESTS: QuestDef[] = [
       return 0;
     },
     target: 1,
-    reward: { kind: 'GOLD', amount: 500 }
+    reward: { kind: 'GOLD', amount: 500 },
+    unlock: s => (s.combosBuiltUniqueTypes ?? []).length >= 5 || (s.wave ?? 0) >= 18
   },
   {
     id: 'omega_foundry', tier: 'LATE',
@@ -381,7 +386,8 @@ export const QUESTS: QuestDef[] = [
       return 0;
     },
     target: 1,
-    reward: { kind: 'GOLD', amount: 1000 }
+    reward: { kind: 'GOLD', amount: 1000 },
+    unlock: s => countUniqueCombosInSet(s, SUPER_COMBO_TYPES) >= 1
   },
   {
     id: 'tideforged_doctrine', tier: 'LATE',
@@ -389,7 +395,8 @@ export const QUESTS: QuestDef[] = [
     blurb: 'Forge 2 Tideforged combo towers on ocean tiles. Land and sea agree to be violent.',
     condition: countTideforgedTowersOnWater,
     target: 2,
-    reward: { kind: 'GOLD', amount: 150 }
+    reward: { kind: 'GOLD', amount: 150 },
+    unlock: s => !!(s as any).harborUnlocked && countHarborTowersOnWater(s) >= 1
   },
   {
     id: 'leviathan_pact', tier: 'LATE',
@@ -397,7 +404,8 @@ export const QUESTS: QuestDef[] = [
     blurb: "Forge Neptune's Leviathan. The sea signs Rome's final contract.",
     condition: hasNeptunesLeviathan,
     target: 1,
-    reward: { kind: 'GOLD', amount: 220 }
+    reward: { kind: 'GOLD', amount: 220 },
+    unlock: s => countTideforgedTowersOnWater(s) >= 1 || (s.wave ?? 0) >= 24
   },
   {
     id: 'combo_dynasty', tier: 'LATE',
@@ -413,7 +421,8 @@ export const QUESTS: QuestDef[] = [
     blurb: 'Use DPS Check and break 15,000,000 effective DPS.',
     condition: s => s.bestDpsCheck ?? 0,
     target: 15000000,
-    reward: { kind: 'GOLD', amount: 500 }
+    reward: { kind: 'GOLD', amount: 500 },
+    unlock: s => (s.bestDpsCheck ?? 0) > 0
   },
   {
     id: 'imperial_standard', tier: 'LATE',
@@ -426,9 +435,9 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'boss_slayer_supreme', tier: 'LATE',
     title: 'Boss Slayer Supreme',
-    blurb: 'Kill 20 boss-class enemies across the full campaign.',
+    blurb: 'Kill all 7 true campaign bosses. Elites and commanders do not count.',
     condition: s => s.bossesKilled ?? 0,
-    target: 20,
+    target: 7,
     reward: { kind: 'GOLD', amount: 200 }
   },
   {
@@ -543,7 +552,16 @@ export function activeQuestsByTier(s: GameStateShape): Record<QuestTier, QuestDe
   const out: Record<QuestTier, QuestDef[]> = { EARLY: [], MID: [], LATE: [] };
   for (const q of QUESTS) {
     if (s.completedQuests!.includes(q.id)) continue;
+    if (!isQuestUnlocked(s, q)) continue;
     out[q.tier].push(q);
   }
+  for (const tier of Object.keys(out) as QuestTier[]) out[tier] = out[tier].slice(0, 5);
   return out;
+}
+
+export function isQuestUnlocked(s: GameStateShape, q: QuestDef): boolean {
+  if (q.unlock) return q.unlock(s);
+  if (q.tier === 'MID') return (s.wave ?? 0) >= 6;
+  if (q.tier === 'LATE') return (s.wave ?? 0) >= 15;
+  return true;
 }

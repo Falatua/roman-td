@@ -198,6 +198,18 @@ describe('Harbor naval tower system', () => {
     }
   });
 
+  it('reserves one randomized Harbor slot for the best current recipe path', () => {
+    const s = readyState();
+    s.wave = 16;
+    placeTower(s, TowerType.SCORPIO, 4, 12, 8);
+
+    const offers = buildHarborDraftOffers(s, true);
+    const trireme = offers.find(offer => offer.type === TowerType.TRIREME_BALLISTA);
+    expect(trireme).toBeDefined();
+    expect(trireme?.tier).toBe(3);
+    expect(trireme?.recipeAssisted).toBe(true);
+  });
+
   it('still marks Sea Giant-class kills as Harbor unlocks without opening a modal mid-wave', () => {
     const s = readyState();
     s.wave = 12;

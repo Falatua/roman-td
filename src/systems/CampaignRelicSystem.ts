@@ -5,6 +5,7 @@ import { canReceiveRunReward } from './RewardEligibility';
 import { grantTrapInventory } from './TrapInventorySystem';
 import towersData from '../data/towers.json';
 import { eligibleBaseTowerTypesAtTier } from './BaseTowerRoster';
+import { isBossEnemy, isCommanderEnemy, isEliteEnemy } from './EnemyClassification';
 
 export const CAMPAIGN_RELIC_IDS = [
   'JUPITERS_MANDATE',
@@ -1125,7 +1126,7 @@ export function campaignRelicDamageMult(state: GameStateShape, tower: Tower, tar
     switch (id) {
       case 'JUPITERS_MANDATE':
         if (tower.damageType === DamageType.DIVINE) mult *= 1.80;
-        if (target?.isCommander) mult *= 1.50;
+        if (isCommanderEnemy(target)) mult *= 1.50;
         break;
       case 'SATURNS_DEBT':
         if (state.wave >= 30 && target?.type === 'DAEMON_IMPERATOR') {
@@ -1144,7 +1145,7 @@ export function campaignRelicDamageMult(state: GameStateShape, tower: Tower, tar
         if (tower.damageType === DamageType.ELEMENTAL_FIRE || tower.damageType === DamageType.DIVINE) mult *= 1.55;
         break;
       case 'PLUTOS_PACT':
-        if (target?.isBoss) mult *= 1.60;
+        if (isBossEnemy(target)) mult *= 1.60;
         break;
       case 'BLOOD_STANDARD':
         if (tower.damageType === DamageType.PHYS_MELEE) mult *= 1.80;
@@ -1156,19 +1157,19 @@ export function campaignRelicDamageMult(state: GameStateShape, tower: Tower, tar
         if (tower.damageType === DamageType.SIEGE) mult *= 1.50;
         break;
       case 'GLADIATOR_OATH':
-        if (target?.isCommander || target?.archetype === 'ELITE') mult *= 1.75;
+        if (isCommanderEnemy(target) || isEliteEnemy(target)) mult *= 1.75;
         break;
       case 'ROME_BURNS':
         if (tower.damageType === DamageType.ELEMENTAL_FIRE || tower.damageType === DamageType.DIVINE) mult *= 1.75;
         break;
       case 'HARUSPEX_WARNING':
-        if (target?.isCommander) mult *= 2.25;
+        if (isCommanderEnemy(target)) mult *= 2.25;
         break;
       case 'BLESSING_OF_MARS':
         if (tower.damageType === DamageType.PHYS_MELEE || tower.damageType === DamageType.SIEGE) mult *= 1.55;
         break;
       case 'RANK_AND_FILE_EDICT':
-        if (target?.isBoss || target?.isCommander || String(target?.type ?? '').includes('COMMANDER')) {
+        if (isBossEnemy(target) || isCommanderEnemy(target)) {
           mult *= 0.80;
         } else if (target?.archetype !== 'ELITE') {
           mult *= 1.20;
@@ -1202,7 +1203,7 @@ export function campaignRelicEnemySpeedMult(state: GameStateShape, enemy?: any):
 
 export function campaignRelicEnemyHpMult(state: GameStateShape, enemyDef: any): number {
   let mult = 1;
-  const isBoss = !!enemyDef?.isBoss;
+  const isBoss = isBossEnemy(String(enemyDef?.type ?? enemyDef?.id ?? '')) || enemyDef?.isBoss === true;
   const isFlyer = !!enemyDef?.isFlyer;
   for (const id of activeCampaignRelicIds(state)) {
     switch (id) {

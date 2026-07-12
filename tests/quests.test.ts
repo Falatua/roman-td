@@ -3,7 +3,7 @@ import { createGameState } from '../src/GameState';
 import { GamePhase, TowerType } from '../src/types';
 import enemiesData from '../src/data/enemies.json';
 import wavesData from '../src/data/waves.json';
-import { evaluateQuests, QUESTS } from '../src/systems/QuestSystem';
+import { activeQuestsByTier, evaluateQuests, isQuestUnlocked, QUESTS } from '../src/systems/QuestSystem';
 import { startWave } from '../src/systems/WaveManager';
 
 const quest = (id: string) => QUESTS.find(q => q.id === id)!;
@@ -136,6 +136,24 @@ describe('30-wave Solo quest pacing', () => {
     expect(evaluateQuests(leviathan).map(q => q.id)).toContain('leviathan_pact');
   });
 
+  it('reveals advanced quest families progressively and caps journal clutter', () => {
+    const state = createGameState();
+    state.wave = 15;
+    let active = activeQuestsByTier(state);
+    expect(active.LATE.map(q => q.id)).not.toContain('omega_foundry');
+    expect(active.MID.map(q => q.id)).not.toContain('dockside_battery');
+    expect(active.EARLY.length).toBeLessThanOrEqual(5);
+    expect(active.MID.length).toBeLessThanOrEqual(5);
+    expect(active.LATE.length).toBeLessThanOrEqual(5);
+
+    (state as any).harborUnlocked = true;
+    state.combosBuiltUniqueTypes = ['JULIUS_CAESAR'];
+    expect(isQuestUnlocked(state, quest('dockside_battery'))).toBe(true);
+
+    state.combosBuiltUniqueTypes = ['JULIUS_CAESAR', 'HANNIBALS_NIGHTMARE'];
+    expect(isQuestUnlocked(state, quest('omega_foundry'))).toBe(true);
+  });
+
   it('paces total-kill quests near waves 7, 13, and 24', () => {
     const campaign = soloCampaignCumulative();
     const completionWave = (target: number) => campaign.find(row => row.kills >= target)?.wave;
@@ -147,15 +165,15 @@ describe('30-wave Solo quest pacing', () => {
     expect(completionWave(quest('destroyer').target)).toBe(24);
   });
 
-  it('paces boss quests near waves 9, 14, and 24', () => {
+  it('paces boss quests against true bosses rather than elephant elites', () => {
     const campaign = soloCampaignCumulative();
     const completionWave = (target: number) => campaign.find(row => row.bosses >= target)?.wave;
-    expect(quest('beast_slayer').target).toBe(6);
-    expect(quest('boss_hunter').target).toBe(12);
-    expect(quest('boss_slayer_supreme').target).toBe(20);
-    expect(completionWave(quest('beast_slayer').target)).toBe(9);
-    expect(completionWave(quest('boss_hunter').target)).toBe(14);
-    expect(completionWave(quest('boss_slayer_supreme').target)).toBe(24);
+    expect(quest('beast_slayer').target).toBe(3);
+    expect(quest('boss_hunter').target).toBe(4);
+    expect(quest('boss_slayer_supreme').target).toBe(7);
+    expect(completionWave(quest('beast_slayer').target)).toBe(10);
+    expect(completionWave(quest('boss_hunter').target)).toBe(20);
+    expect(completionWave(quest('boss_slayer_supreme').target)).toBe(30);
   });
 
   it('prevents the updated early campaign from cashing out too many milestone quests on wave 5', () => {

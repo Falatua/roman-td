@@ -369,6 +369,37 @@ export function purchaseCompletesRecipe(state: GameStateShape, type: TowerType |
   return purchaseRecipeHints(state, type, tier, 1).length > 0;
 }
 
+// Scores how strongly a purchase advances its closest authored recipe.
+// A direct completion gets a large premium; otherwise each already-owned
+// companion ingredient contributes one point. Purchase surfaces can use this
+// to preserve RNG while guaranteeing that at least one offer respects the
+// player's current recipe plan.
+export function purchaseRecipeProgressScore(state: GameStateShape, type: TowerType | string, tier: number): number {
+  if (purchaseCompletesRecipe(state, type, tier)) return 100;
+  const towers = Array.from(state.towers.values());
+  let best = 0;
+  for (const recipe of comboData) {
+    for (let slotIdx = 0; slotIdx < recipe.ingredients.length; slotIdx++) {
+      const slot = recipe.ingredients[slotIdx];
+      if (!ingTypeMatches(String(type), String(slot.type)) || tier < slot.minTier) continue;
+      const used = new Set<string>();
+      let matched = 0;
+      for (let i = 0; i < recipe.ingredients.length; i++) {
+        if (i === slotIdx) continue;
+        const ing = recipe.ingredients[i];
+        const found = towers.find(t => !used.has(t.id)
+          && ingTypeMatches(String(t.type), String(ing.type))
+          && t.qualityTier >= ing.minTier);
+        if (!found) continue;
+        used.add(found.id);
+        matched++;
+      }
+      best = Math.max(best, matched);
+    }
+  }
+  return best;
+}
+
 export function executeCombo(state: GameStateShape, combo: AvailableCombo, resultTileTowerId: string): boolean {
   const chosenCombo = resolveComboChoice(state, combo, resultTileTowerId);
   if (!chosenCombo) {

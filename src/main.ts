@@ -31,7 +31,7 @@ import { activateSandbox, sandboxAddGold, sandboxAllTowerOptions, sandboxSpawnTo
 // runs once per WAVE_PHASE frame.
 import { awardHeroXp as heroAwardXp, tickHeroAbilities, type HeroHooks } from './systems/HeroSystem';
 import { heroIdForTowerType, isMercatorChampionType } from './systems/HeroIdentity';
-import { evaluateQuests, ensureQuestState, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
+import { evaluateQuests, ensureQuestState, isQuestUnlocked, QuestDef, QUESTS, activeQuestsByTier, evaluateQuestTierBonuses, QUEST_TIER_BONUS } from './systems/QuestSystem';
 import towersData from './data/towers.json';
 import itemsData from './data/items_permanent.json';
 import enemiesData from './data/enemies.json';
@@ -104,6 +104,7 @@ import {
   shouldUnlockHarborFromKill
 } from './systems/HarborSystem';
 import { canPlaceTowersOrProspects } from './systems/PlacementPhase';
+import { isBossEnemy, isEliteEnemy } from './systems/EnemyClassification';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -3468,10 +3469,10 @@ async function boot() {
     for (const spawn of w.spawns) {
       const def: any = (enemiesData as any)[spawn.type];
       if (!def) continue;
-      // Skip the same stripped/orphan filter the Codex uses — if this
-      // enemy won't actually spawn (boss wave strips non-boss mobs),
+      // Skip the same early solo-boss filter the runtime and Codex use.
+      // Late boss waves keep their complete authored compositions.
       // hide it.
-      if (isBoss && !def.isBoss) continue;
+      if (isBoss && w.wave <= 15 && !isBossEnemy(spawn.type) && !isEliteEnemy(spawn.type)) continue;
       const src = texUrl(spawn.type) ?? '';
       const portrait = src
         ? `<img src="${src}" style="width:36px;height:36px;image-rendering:pixelated;display:block" alt="${def.name}"/>`
@@ -3503,7 +3504,8 @@ async function boot() {
   }
   // ─── Quest modal ──────────────────────────────────────────────────────
   // Click-to-open dialog (triggered by the QUESTS button at the bottom of
-  // the screen). Shows EVERY active quest with its progress + reward. The
+  // the screen). Shows a focused queue of up to five active quests per act;
+  // Harbor, Supercombo, and Omega families reveal as those systems unlock.
   // modal is dismissed by clicking outside or pressing the close button.
   // No persistent overlay on the playfield — the canvas stays unobstructed.
   function showQuestsModal() {
@@ -3545,6 +3547,7 @@ async function boot() {
     const tierTitle: Record<'EARLY'|'MID'|'LATE', string> = { EARLY: '🌱 EARLY GAME', MID: '⚔ MID GAME', LATE: '👑 LATE GAME' };
     const renderTierBanner = (tierKey: 'EARLY'|'MID'|'LATE') => {
       const tierQuests = QUESTS.filter(q => q.tier === tierKey);
+      const unlocked = tierQuests.filter(q => isQuestUnlocked(state, q)).length;
       const done = tierQuests.filter(q => completed.includes(q.id)).length;
       const total = tierQuests.length;
       const paid = granted.has(tierKey);
@@ -3556,7 +3559,7 @@ async function boot() {
       return `<div style="background:linear-gradient(180deg,#1a1410,#0c0a08);border:1px solid ${tierColor[tierKey]};border-left:4px solid ${tierColor[tierKey]};padding:7px 10px;margin:10px 0 6px;display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="color:${tierColor[tierKey]};font-weight:bold;letter-spacing:2px;font-size:12px">${tierTitle[tierKey]}</div>
-          <div style="font-size:10px;color:#cdb98a;margin-top:2px">Complete all ${total} for a <b style="color:#88ff88">+${tierBonusValues[tierKey]}g</b> bonus</div>
+          <div style="font-size:10px;color:#cdb98a;margin-top:2px">${unlocked} of ${total} objectives revealed · complete all for <b style="color:#88ff88">+${tierBonusValues[tierKey]}g</b></div>
         </div>
         <div style="font-size:10px;text-align:right">${status}</div>
       </div>`;
@@ -3564,9 +3567,10 @@ async function boot() {
     const renderTierSection = (tierKey: 'EARLY'|'MID'|'LATE') => {
       const banner = renderTierBanner(tierKey);
       const quests = all[tierKey];
+      const tierComplete = QUESTS.filter(q => q.tier === tierKey).every(q => completed.includes(q.id));
       const body = quests.length > 0
         ? quests.map(renderQuest).join('')
-        : `<div style="text-align:center;color:#aa9a4a;padding:8px;font-style:italic;font-size:11px">All ${tierKey.toLowerCase()}-game quests done.</div>`;
+        : `<div style="text-align:center;color:#aa9a4a;padding:8px;font-style:italic;font-size:11px">${tierComplete ? `All ${tierKey.toLowerCase()}-game quests done.` : 'More objectives reveal as their campaign systems come online.'}</div>`;
       return banner + body;
     };
     // Grand-completion capstone banner — shown at the top of the modal so

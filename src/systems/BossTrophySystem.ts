@@ -3,6 +3,7 @@ import { GameStateShape } from '../GameState';
 import { WAVE } from '../constants';
 import { canReceiveRunReward, isMajorBossRewardEnemy } from './RewardEligibility';
 import towersData from '../data/towers.json';
+import { isBossEnemy, isCommanderEnemy, isEliteEnemy, isOceanEnemy } from './EnemyClassification';
 
 export type BossTrophyId =
   | 'EXECUTIONERS_LAUREL'
@@ -179,19 +180,11 @@ export function bossTrophyDamageMult(state: GameStateShape, tower: Tower, target
   const def: any = (towersData as any)[tower.type];
   const kind = String(def?.kind ?? '');
   const targetType = String(target?.type ?? '');
-  const isCommander = !!target?.isCommander || targetType.includes('COMMANDER');
-  const isElite = !!target?.isElite || target?.archetype === 'ELITE'
-    || targetType.includes('ELEPHANT')
-    || targetType.includes('FIRE_GIANT')
-    || targetType.includes('SEA_GIANT')
-    || targetType.includes('AMPHIBIOUS_GIANT');
-  const isOceanThreat = !!target?.__oceanSpawn
-    || targetType.includes('OCEAN')
-    || targetType.includes('SEA_')
-    || targetType.includes('TIDE')
-    || targetType.includes('AMPHIBIOUS');
+  const isCommander = isCommanderEnemy(target);
+  const isElite = isEliteEnemy(target);
+  const isOceanThreat = !!target?.__oceanSpawn || isOceanEnemy(target);
   if (hasBossTrophy(state, 'EXECUTIONERS_LAUREL')) {
-    if (target?.isBoss) mult *= 1.15;
+    if (isBossEnemy(target)) mult *= 1.15;
     if (isCommander) mult *= 1.10;
   }
   if (hasBossTrophy(state, 'AUXILIA_DRILL') && tower.damageType === DamageType.PHYS_MELEE) {
@@ -200,7 +193,7 @@ export function bossTrophyDamageMult(state: GameStateShape, tower: Tower, target
   if (hasBossTrophy(state, 'SKYWARD_AQUILA') && (target?.isFlyer || target?.isFlying || target?.flying)) {
     mult *= 1.22;
   }
-  if (hasBossTrophy(state, 'SIEGEBREAKER_TABLETS') && tower.damageType === DamageType.SIEGE && (target?.isBoss || isCommander || isElite)) {
+  if (hasBossTrophy(state, 'SIEGEBREAKER_TABLETS') && tower.damageType === DamageType.SIEGE && (isBossEnemy(target) || isCommander || isElite)) {
     mult *= 1.18;
   }
   if (hasBossTrophy(state, 'HARBOR_CHARTS') && (def?.waterOnly || def?.amphibious) && isOceanThreat) {
@@ -214,7 +207,7 @@ export function bossTrophyDamageMult(state: GameStateShape, tower: Tower, target
     if (faction.includes('UNDEAD') || faction.includes('DEMON') || faction.includes('MYTH')
       || targetType.includes('UNDEAD') || targetType.includes('DEMON') || targetType.includes('GHOST') || targetType.includes('SPECTRAL')) mult *= 1.12;
   }
-  if (hasBossTrophy(state, 'WATCHTOWER_SURVEYORS') && tower.damageType === DamageType.PHYS_RANGED && (target?.isBoss || isCommander)) {
+  if (hasBossTrophy(state, 'WATCHTOWER_SURVEYORS') && tower.damageType === DamageType.PHYS_RANGED && (isBossEnemy(target) || isCommander)) {
     mult *= 1.06;
   }
   return mult;
@@ -245,14 +238,7 @@ export function bossTrophyTowerRangeBonus(state: GameStateShape, tower: Tower): 
 
 export function bossTrophyKillGoldBonus(state: GameStateShape, enemy: any): number {
   if (!hasBossTrophy(state, 'PAYMASTER_SIGIL')) return 0;
-  const type = String(enemy?.type ?? '');
-  const isElite = !!enemy?.isElite || enemy?.archetype === 'ELITE'
-    || type.includes('ELEPHANT')
-    || type.includes('FIRE_GIANT')
-    || type.includes('SEA_GIANT')
-    || type.includes('AMPHIBIOUS_GIANT');
-  const isCommander = !!enemy?.isCommander || type.includes('COMMANDER');
-  return enemy?.isBoss || isElite || isCommander ? 8 : 0;
+  return isBossEnemy(enemy) || isEliteEnemy(enemy) || isCommanderEnemy(enemy) ? 8 : 0;
 }
 
 export function bossTrophyTrapDamageMult(state: GameStateShape): number {
