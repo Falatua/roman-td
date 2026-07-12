@@ -355,6 +355,10 @@ const BEAST_ENEMY_TYPES = new Set<EnemyType>([
   EnemyType.UNDEAD_WAR_ELEPHANT,
 ]);
 
+export function isBeastEnemyType(type: EnemyType): boolean {
+  return BEAST_ENEMY_TYPES.has(type);
+}
+
 export const UNDEAD_GENERAL_BEAST_DAMAGE_MULT = 2.25;
 export const UNDEAD_GENERAL_ELEPHANT_DAMAGE_MULT = 3.0;
 
@@ -362,7 +366,7 @@ export function undeadGeneralPreyDamageMult(target: Pick<Enemy, 'type'>): number
   if (target.type === EnemyType.WAR_ELEPHANT || target.type === EnemyType.UNDEAD_WAR_ELEPHANT) {
     return UNDEAD_GENERAL_ELEPHANT_DAMAGE_MULT;
   }
-  return BEAST_ENEMY_TYPES.has(target.type) ? UNDEAD_GENERAL_BEAST_DAMAGE_MULT : 1;
+  return isBeastEnemyType(target.type) ? UNDEAD_GENERAL_BEAST_DAMAGE_MULT : 1;
 }
 
 // Tower types that fight in melee (no projectile, instant damage with slash VFX).
@@ -1576,7 +1580,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // variants. Standalone early-game answer to the W1-W3 dog wave
       // and the W9-W10 + W14 elephant pressure. Stacks multiplicatively
       // with marks, items, and other riders.
-      if ((t.type === TowerType.BEAST_HUNTER || t.type === TowerType.BEAST_SLAYER) && BEAST_ENEMY_TYPES.has(target.type)) {
+      if ((t.type === TowerType.BEAST_HUNTER || t.type === TowerType.BEAST_SLAYER) && isBeastEnemyType(target.type)) {
         damage *= 3.0;
       }
       // 2026-05-17 — PUNIC HUNTER. The Murmillo gladiator's signature
@@ -1713,7 +1717,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
       if (t.type === TowerType.RAMMING_QUINQUEREME && (target.archetype === 'ELITE' || target.isBoss)) damage *= 1.50;
       if (t.type === TowerType.MARS_TIDAL_BASTION && (target.archetype === 'ELITE' || target.isBoss)) damage *= (t as any).placedOnWater ? 1.65 : 1.35;
-      if ((t.type === TowerType.HYDRA_OF_LERNA || t.type === TowerType.HYDRA_BEAST_PIT) && (target.archetype === 'ELITE' || BEAST_ENEMY_TYPES.has(target.type))) damage *= 1.35;
+      if ((t.type === TowerType.HYDRA_OF_LERNA || t.type === TowerType.HYDRA_BEAST_PIT) && (target.archetype === 'ELITE' || isBeastEnemyType(target.type))) damage *= 1.35;
       if (t.type === TowerType.HYDRA_BEAST_PIT && (t as any).placedOnWater && (target as any).__oceanSpawn) damage *= 1.40;
       if (t.type === TowerType.NEPTUNES_LEVIATHAN) {
         if (target.archetype === 'ELITE' || target.isBoss || isCommanderType((target as any).type)) damage *= 1.35;
@@ -1781,7 +1785,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // stays consistent across the gladiator family). Stacks with the
       // boss multiplier above on the rare flying-beast-boss case (none
       // currently exist in campaign — flag for future cross-overlap).
-      if (t.type === TowerType.CLIBANARIUS && BEAST_ENEMY_TYPES.has(target.type)) {
+      if (t.type === TowerType.CLIBANARIUS && isBeastEnemyType(target.type)) {
         damage *= 2.0;
       }
       // UNDEAD GENERAL — Primus Pilus + Evocatus anti-beast command tower.
@@ -3261,7 +3265,7 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       pushStatus(target, StatusEffectKind.POISON, dur(4), 0.05, tier);
       break;
     case TowerType.UNDEAD_GENERAL:
-      if (BEAST_ENEMY_TYPES.has(target.type)) {
+      if (isBeastEnemyType(target.type)) {
         pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(3), 0, tier);
       }
       break;
