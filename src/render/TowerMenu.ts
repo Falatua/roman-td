@@ -29,6 +29,7 @@ import { heroIdForTowerType } from '../systems/HeroIdentity';
 import { heroTierForTower, heroXpForTower } from '../systems/HeroScaling';
 import { towerDamageProfile, renderTowerDamageProfileHtml } from './TowerDamageProfile';
 import { applyEagleOfApotheosis, canApplyEagleOfApotheosis, EAGLE_OF_APOTHEOSIS_ITEM_ID } from '../systems/TierAscensionSystem';
+import { towerSpecialistDpsRows } from '../systems/TowerSpecialization';
 
 const RAR: Record<string, string> = { COMMON:'#cccccc', UNCOMMON:'#5cd05c', RARE:'#5ca0ff', EPIC:'#a060ff', LEGENDARY:'#ff9933', UNIQUE:'#ffd34d' };
 const TOWER_INSPECT_PANEL_MAX_HEIGHT_PX = 1152;
@@ -320,7 +321,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   const dpsFinal = finalDpsValue.toFixed(1);
   const dpsBaseCalc = breakdown.damageBase.toFixed(1);
   const dpsHasBoost = breakdown.damageMods.length + breakdown.speedMods.length > 0;
-  const dpsBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Effective DPS</div>${
+  const dpsBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">General DPS</div>${
     dpsHasBoost
       ? `<div style="display:flex;align-items:baseline;gap:6px;margin-top:2px;flex-wrap:wrap">
           <span style="color:#aa9a4a;font-size:11px;text-decoration:line-through">${dpsBaseCalc}</span>
@@ -329,6 +330,17 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
         </div>`
       : `<div style="color:#ffbe7a;font-size:14px;font-weight:bold;margin-top:2px">${dpsFinal}</div>`
   }</div>`;
+  const specialistRows = towerSpecialistDpsRows(t.type, finalDpsValue);
+  const specialistDpsBox = specialistRows.length === 0 ? '' : `<div style="background:#12100d;padding:9px 10px;font-size:11px;grid-column:1/-1">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap">
+      <div style="color:#ffd34d;letter-spacing:1px;text-transform:uppercase;font-size:9px">Specialist DPS</div>
+      <div style="color:#796b4d;font-size:9px">before crits and enemy resistance</div>
+    </div>
+    ${specialistRows.map(row => `<div style="display:grid;grid-template-columns:minmax(130px,1fr) auto;gap:8px;margin-top:6px;padding-top:6px;border-top:1px solid #30271d">
+      <div><div style="color:#e8d6a8;font-weight:bold">${row.label}</div><div style="color:#8f805f;font-size:9px">${row.detail} · ${row.multiplier.toFixed(1)}x general</div></div>
+      <div style="color:#ffbe7a;font-size:14px;font-weight:bold;text-align:right">${row.dps.toFixed(1)}</div>
+    </div>`).join('')}
+  </div>`;
   // CRIT row (2026-05 v11): show crit chance × crit multiplier so the
   // player understands the burst potential of each tower. Towers with
   // critChance=0 have other crit mechanics (e.g., Scorpio's every-5th-shot
@@ -344,6 +356,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     statBox('Splash', projectile ? (projectile.splash > 0 ? `${projectile.splash} tiles` : 'Single target') : 'Melee') +
     dmgBoxClean +
     dpsBox +
+    specialistDpsBox +
     spdBox +
     rngBox +
     statBox('Crit', critLabel, critColor) +
@@ -1165,7 +1178,7 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
   const dpsFinal = finalDpsValue.toFixed(1);
   const dpsBaseCalc = breakdown.damageBase.toFixed(1);
   const dpsHasBoost = breakdown.damageMods.length + breakdown.speedMods.length > 0;
-  const dpsBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">Effective DPS</div>${
+  const dpsBox = `<div style="background:#1a1410;padding:8px 10px;font-size:11px"><div style="color:#aa9a4a;letter-spacing:1px;text-transform:uppercase;font-size:9px">General DPS</div>${
     dpsHasBoost
       ? `<div style="display:flex;align-items:baseline;gap:6px;margin-top:2px;flex-wrap:wrap">
           <span style="color:#aa9a4a;font-size:11px;text-decoration:line-through">${dpsBaseCalc}</span>

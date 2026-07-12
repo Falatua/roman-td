@@ -80,6 +80,7 @@ import { showLastStandTrove } from './render/LastStandTrove';
 import { showMercatorBackRoomModal } from './render/SecretEvents';
 import { showHarborDraftModal, showHarborWaveClearModal } from './render/HarborDraftModal';
 import { towerDamageProfile, renderTowerDamageProfileHtml } from './render/TowerDamageProfile';
+import { towerSpecialistDpsRows } from './systems/TowerSpecialization';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { bossTrophyKillGoldBonus, consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, isTestYourMightLeakEnemy, shouldDeferSurpriseRewardForTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
@@ -6246,6 +6247,7 @@ async function boot() {
     const tierCol = ['#aaaaaa','#aaaaaa','#b87333','#c0c0c0','#ffd34d','#ff5050'][t.qualityTier] ?? '#aaaaaa';
     const breakdown = towerStatBreakdown(t, state);
     const liveDps = breakdown.damageFinal * (breakdown.speedFinal / Math.max(0.05, breakdown.speedBase));
+    const specialistDpsRows = towerSpecialistDpsRows(t.type, liveDps);
     const damageProfile = towerDamageProfile(t, state, breakdown);
     const pendingTag = t.pending ? '<span style="color:#ff9933;font-weight:bold">PENDING — keep to activate</span>' : '';
     const auraKind = towerAuraTileKind(t);
@@ -6313,7 +6315,8 @@ async function boot() {
       </div>
       ${pendingTag ? `<div style="margin-bottom:4px">${pendingTag}</div>` : ''}
       <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:11px">
-        <span style="color:#aa9a4a">DPS</span><b style="color:#fff8e0">${Math.round(liveDps).toLocaleString()}</b>
+        <span style="color:#aa9a4a">General DPS</span><b style="color:#fff8e0">${Math.round(liveDps).toLocaleString()}</b>
+        ${specialistDpsRows.map(row => `<span style="color:#aa9a4a">${row.label}</span><b style="color:#ffbe7a">${Math.round(row.dps).toLocaleString()} <span style="color:#796b4d;font-size:8px">(${row.multiplier.toFixed(1)}x)</span></b>`).join('')}
         <span style="color:#aa9a4a">Range</span><b style="color:#fff8e0">${breakdown.rangeFinal.toFixed(1)} tiles</b>
         <span style="color:#aa9a4a">Atk Speed</span><b style="color:#fff8e0">${breakdown.speedFinal.toFixed(2)}/sec</b>
         <span style="color:#aa9a4a">Items</span><b style="color:#fff8e0">${items} equipped</b>

@@ -18,6 +18,19 @@
 
 import { Tower, Enemy, TargetingMode, DamageType, StatusEffectKind, EntityType, TowerType, EnemyType, EnemyFaction } from '../types';
 import { GameStateShape } from '../GameState';
+import {
+  GIANT_KILLER_ELEPHANT_DAMAGE_MULT,
+  GIANT_KILLER_GIANT_DAMAGE_MULT,
+  HANNIBALS_NIGHTMARE_TARGET_COUNT,
+  giantKillerPreyDamageMult,
+  hannibalsNightmarePreyDamageMult,
+  isGiantKillerTarget
+} from './TowerSpecialization';
+export {
+  GIANT_KILLER_ELEPHANT_DAMAGE_MULT,
+  GIANT_KILLER_GIANT_DAMAGE_MULT,
+  giantKillerPreyDamageMult
+} from './TowerSpecialization';
 import { GRID, KILL_BONUS_RATE, KILL_BONUS_MAX_PCT, FACTION_WEATHER, AURA_TILE_EFFECTS } from '../constants';
 import { towerEffectiveStats, towerPerAttackDamageBase, towerAuraTileKind } from './TowerSystem';
 import { resistanceModifier } from './DamageTypeSystem';
@@ -575,25 +588,6 @@ const OCEAN_THREAT_TYPES = new Set<string>([
 ]);
 export const STORMCALLER_OCEAN_THREAT_DAMAGE_MULT = 2.0;
 
-const GIANT_KILLER_TARGET_TYPES = new Set<string>([
-  'SEA_GIANT',
-  'SEA_GIANT_WARBRINGER',
-  'NETHER_AMPHIBIOUS_GIANT',
-  'FIRE_GIANT',
-  'GIANT_GIGAS',
-  'CYCLOPS',
-  'SUPER_GIANT_COLOSSUS',
-  'UNDEAD_GIANT',
-  'UNDEAD_CYCLOPS',
-  'DREAD_UNDEAD_GIANT',
-  'DREAD_UNDEAD_CYCLOPS'
-]);
-const GIANT_KILLER_ELEPHANT_TYPES = new Set<string>([
-  'WAR_ELEPHANT',
-  'UNDEAD_WAR_ELEPHANT'
-]);
-export const GIANT_KILLER_GIANT_DAMAGE_MULT = 5.5;
-export const GIANT_KILLER_ELEPHANT_DAMAGE_MULT = 3.5;
 export const GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT = 4.5;
 export const GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT = 7.5;
 export const UNDEAD_GLADIATOR_KING_SUMMON_COUNT = 3;
@@ -601,16 +595,6 @@ export const UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL = 10.0;
 export const UNDEAD_GLADIATOR_KING_SUMMON_TTL = 20.0;
 export const UNDEAD_GLADIATOR_KING_SUMMON_SLOW = 0.30;
 export const UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR = 0.13;
-
-function isGiantKillerTarget(target: Enemy): boolean {
-  return GIANT_KILLER_TARGET_TYPES.has(String(target.type));
-}
-
-export function giantKillerPreyDamageMult(target: Pick<Enemy, 'type'>): number {
-  if (GIANT_KILLER_TARGET_TYPES.has(String(target.type))) return GIANT_KILLER_GIANT_DAMAGE_MULT;
-  if (GIANT_KILLER_ELEPHANT_TYPES.has(String(target.type))) return GIANT_KILLER_ELEPHANT_DAMAGE_MULT;
-  return 1;
-}
 
 function isOceanThreat(target: Enemy): boolean {
   return !!(target as any).__oceanSpawn || OCEAN_THREAT_TYPES.has(String(target.type));
@@ -778,7 +762,7 @@ const MULTI_SHOT_COUNT: Partial<Record<TowerType, number>> = {
   [TowerType.SCORPION_BOLT]: 3,
   [TowerType.NUMIDIAN_CAVALRY]: 3,   // 2 → 3 (2026-05-15 v2 buff): TRIPLE VOLLEY upgrade
   [TowerType.CARROBALLISTA]: 2,
-  [TowerType.HANNIBALS_NIGHTMARE]: 2,
+  [TowerType.HANNIBALS_NIGHTMARE]: HANNIBALS_NIGHTMARE_TARGET_COUNT,
   [TowerType.AURORA_LEGION]: 4,                // pierces 4 in line (2026-05 v11 buff)
   [TowerType.CARTHAGE_SCOURGE]: 6,             // SIX-bolt volley
   [TowerType.EXPLORATORES]: 3,                 // RECON VOLLEY — 3 targets
@@ -1807,17 +1791,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.UNDEAD_GENERAL) {
         damage *= undeadGeneralPreyDamageMult(target);
       }
-      // HANNIBALS_NIGHTMARE — apex anti-siege T5. 2026-05-15 v3 (today):
-      // the +200% anti-elephant hook now applies to BOTH living and undead
-      // war elephants. Previously only WAR_ELEPHANT matched; the undead
-      // variant got nothing despite being the same archetype. v2 also
-      // layered an anti-Flyer multiplier (heavy javelins arc up at sky
-      // targets) and a small anti-Boss bump. Each bonus is independent so
-      // the combat tooltip can surface them line-by-line.
+      // HANNIBAL'S NIGHTMARE — dedicated anti-elephant apex. Both elephant
+      // variants receive the prey bonus plus their boss bonus. The twin-shot
+      // branch below recalculates this factor for each projectile target.
       if (t.type === TowerType.HANNIBALS_NIGHTMARE) {
-        if (target.type === 'WAR_ELEPHANT' || target.type === 'UNDEAD_WAR_ELEPHANT') damage *= 3.0;   // +200% vs ALL elephant variants
-        if (target.isFlyer)                 damage *= 1.60;  // +60% vs Flyers
-        if (target.isBoss)                  damage *= 1.30;  // +30% vs Bosses
+        damage *= hannibalsNightmarePreyDamageMult(target);
       }
       // 2026-05-17 — Frozen Synergy (+50% damage on frozen targets) removed
       // per user request. FREEZE is now purely a hard-stop crowd-control
@@ -2488,9 +2466,19 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           const ordered = inRange.slice().sort((a: Enemy, b: Enemy) => (b.pathIndex + b.pathProgress) - (a.pathIndex + a.pathProgress));
           const targets = ordered.slice(0, shots);
           for (const tgt of targets) {
-            spawnProjectile(state, t, tgt, damage);
+            // Most of the attack chain is shared across a volley, but
+            // Hannibal's prey/flyer/boss stack must belong to each target.
+            // Otherwise an elephant selected first lent its 6.5x bonus to
+            // the ordinary unit beside it, while an elephant selected second
+            // could lose its specialization entirely.
+            const targetDamage = t.type === TowerType.HANNIBALS_NIGHTMARE
+              ? damage
+                / hannibalsNightmarePreyDamageMult(target)
+                * hannibalsNightmarePreyDamageMult(tgt)
+              : damage;
+            spawnProjectile(state, t, tgt, targetDamage);
             (tgt as any).__lastResMod = resMod;
-            hooks.onProjectileFire(t, tgt, damage);
+            hooks.onProjectileFire(t, tgt, targetDamage);
           }
         } else {
           spawnProjectile(state, t, target, damage);
