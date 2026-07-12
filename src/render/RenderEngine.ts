@@ -96,6 +96,7 @@ export class RenderEngine {
   app: Application;
   layers: {
     bg: Container;
+    openingAtmosphere: Container;
     tiles: Container;
     waypoints: Container;
     overlay: Container;     // range circles, hover preview
@@ -204,6 +205,7 @@ export class RenderEngine {
     });
     this.layers = {
       bg: new Container(),
+      openingAtmosphere: new Container(),
       tiles: new Container(),
       waypoints: new Container(),
       overlay: new Container(),
@@ -212,7 +214,9 @@ export class RenderEngine {
       fx: new Container(),
       hud: new Container()
     };
-    this.app.stage.addChild(this.layers.bg, this.layers.tiles, this.layers.waypoints,
+    // Opening atmosphere sits in front of every background landmark and
+    // battlefield-remains sprite, but behind build tiles and live actors.
+    this.app.stage.addChild(this.layers.bg, this.layers.openingAtmosphere, this.layers.tiles, this.layers.waypoints,
       this.layers.overlay, this.layers.enemies, this.layers.towers, this.layers.fx, this.layers.hud);
     this.bgGfx = new Graphics();
     this.stainGfx = new Graphics();
@@ -2985,6 +2989,7 @@ export class RenderEngine {
     if (!this.oceanAmbientGfx) this.oceanAmbientGfx = new Graphics();
     this.oceanLivingSprites = [];
     this.cyclopsFlySprites = [];
+    this.layers.openingAtmosphere.removeChildren();
     this.openingThundercloud = undefined;
     const waterDeepKeys = ['OCEAN_DEEP_A', 'OCEAN_DEEP_B'];
     const waterMidKeys = ['OCEAN_MID_A', 'OCEAN_MID_B'];
@@ -4094,7 +4099,10 @@ export class RenderEngine {
       openingCloud.width = GRID.TILE * 6.5;
       openingCloud.height = GRID.TILE * 4.3;
       openingCloud.alpha = 0.94;
-      this.layers.bg.addChild(openingCloud);
+      // Dedicated stage layer gives the cloud a true "bring to front" order
+      // over the cave, blood trails, and skeleton dressing while preserving
+      // gameplay readability above it.
+      this.layers.openingAtmosphere.addChild(openingCloud);
       this.openingThundercloud = {
         sp: openingCloud,
         frames: openingCloudFrames,

@@ -462,6 +462,9 @@ describe('Top-right Cyclops trophy prop', () => {
     expect(source).toContain('openingCloud.width = GRID.TILE * 6.5;');
     expect(source).toContain('openingCloud.height = GRID.TILE * 4.3;');
     expect(source).toContain('openingCloud.y = caveCy - GRID.TILE * 3.2;');
+    expect(source).toContain('this.layers.bg, this.layers.openingAtmosphere, this.layers.tiles');
+    expect(source).toContain('this.layers.openingAtmosphere.removeChildren();');
+    expect(source).toContain('this.layers.openingAtmosphere.addChild(openingCloud);');
     expect(source).toContain('const cloudCycle = ((tick / 6.2) % 1 + 1) % 1;');
 
     expect(shouldShowOpeningThundercloud(0, GamePhase.BUILD_PHASE)).toBe(true);
