@@ -493,7 +493,7 @@ describe('Anti-air tower signatures', () => {
     expect(1000 - target.hp).toBeCloseTo(100, 4);
   });
 
-  it('makes W26-W30 an apex craft check instead of a regular-tower DPS race', () => {
+  it('keeps ordinary combos at full damage through W26-W30', () => {
     const state = createGameState();
     state.wave = FINAL_FIVE_APEX_WAVE;
     const base = createTower(TowerType.LEGATE, 5, 0, 0, 0);
@@ -502,13 +502,13 @@ describe('Anti-air tower signatures', () => {
     const omega = createTower(TowerType.ROMAN_TRANSFORMER, 5, 0, 0, 0);
 
     expect(finalFiveApexDamageMult(state, base)).toBeCloseTo(0.50, 4);
-    expect(finalFiveApexDamageMult(state, combo)).toBeCloseTo(0.65, 4);
+    expect(finalFiveApexDamageMult(state, combo)).toBeCloseTo(1.00, 4);
     expect(finalFiveApexDamageMult(state, superCombo)).toBeCloseTo(1.00, 4);
     expect(finalFiveApexDamageMult(state, omega)).toBeCloseTo(1.10, 4);
 
     state.wave = 30;
     expect(finalFiveApexDamageMult(state, base)).toBeCloseTo(0.30, 4);
-    expect(finalFiveApexDamageMult(state, combo)).toBeCloseTo(0.45, 4);
+    expect(finalFiveApexDamageMult(state, combo)).toBeCloseTo(1.00, 4);
     expect(finalFiveApexDamageMult(state, superCombo)).toBeCloseTo(1.00, 4);
     expect(finalFiveApexDamageMult(state, omega)).toBeCloseTo(1.10, 4);
   });
@@ -518,9 +518,11 @@ describe('Anti-air tower signatures', () => {
     state.wave = 30;
     const waveDmgReduct = ((wavesData as any[]).find(w => w.wave === 30) as any).enemyDamageReductPct;
     const base = createTower(TowerType.LEGATE, 5, 0, 0, 0);
+    const combo = createTower(TowerType.SCORPION_BOLT, 5, 0, 0, 0);
     const superCombo = createTower(TowerType.JULIUS_CAESAR, 5, 0, 0, 0);
     const omega = createTower(TowerType.ROMAN_TRANSFORMER, 5, 0, 0, 0);
     const baseTarget = testEnemy('w30-base');
+    const comboTarget = testEnemy('w30-combo');
     const superTarget = testEnemy('w30-super');
     const omegaTarget = testEnemy('w30-omega');
 
@@ -528,6 +530,7 @@ describe('Anti-air tower signatures', () => {
     Math.random = () => 0.99;
     try {
       applyDamageAndStatus(state, base, baseTarget, 100, noopCombatHooks());
+      applyDamageAndStatus(state, combo, comboTarget, 100, noopCombatHooks());
       applyDamageAndStatus(state, superCombo, superTarget, 100, noopCombatHooks());
       applyDamageAndStatus(state, omega, omegaTarget, 100, noopCombatHooks());
     } finally {
@@ -535,6 +538,7 @@ describe('Anti-air tower signatures', () => {
     }
 
     expect(1000 - baseTarget.hp).toBeCloseTo(100 * 0.30 * (1 - waveDmgReduct), 4);
+    expect(1000 - comboTarget.hp).toBeCloseTo(100 * 1.00 * (1 - waveDmgReduct), 4);
     expect(1000 - superTarget.hp).toBeCloseTo(100 * 1.00 * (1 - waveDmgReduct), 4);
     expect(1000 - omegaTarget.hp).toBeCloseTo(100 * 1.10 * (1 - waveDmgReduct), 4);
   });

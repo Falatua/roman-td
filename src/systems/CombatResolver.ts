@@ -148,7 +148,11 @@ export function finalFiveApexDamageMult(state: GameStateShape, tower: Tower): nu
   if (isOmegaTower(tower.type)) return 1.10;
   if (isSuperComboClassTower(tower.type)) return 1.00;
   const def: any = (towersData as any)[tower.type];
-  if (def?.kind === 'COMBO') return Math.max(0.45, 0.65 - step * 0.05);
+  // Ordinary combos keep their full earned damage in the final five waves.
+  // Their recipes already consume towers, gold, space, and positioning;
+  // late enemy HP, resistances, immunities, and wave modifiers supply the
+  // intended difficulty without a hidden class-wide damage penalty.
+  if (def?.kind === 'COMBO') return 1.00;
   return Math.max(0.30, 0.50 - step * 0.05);
 }
 
