@@ -55,6 +55,35 @@ describe('Mefitis awakening relic availability', () => {
   });
 });
 
+describe('Legendary mystery copy', () => {
+  const awakeningClues: Record<string, string> = {
+    GIANTS_BANE: 'Milites or Cohort Guard',
+    WITCHS_BREW: 'Murmillo',
+    CENSER_OF_MEFITIS: 'Plague Lobber',
+    DAMNATIO_MEMORIAE: 'Praetorian Executioner',
+    SIGIL_OF_SOL_INVICTUS: 'War Chariot',
+    STORM_AQUILA_TALONS: 'Beastlord Champion'
+  };
+
+  it('keeps awakening clues concise, mysterious, and mechanically useful', () => {
+    for (const [id, sourceTower] of Object.entries(awakeningClues)) {
+      const effect = String((itemsData as any)[id].effect);
+      expect(effect.trim().split(/\s+/).length, id).toBeLessThanOrEqual(45);
+      expect(effect, id).toContain(sourceTower);
+      expect(effect, id).toMatch(/Tier IV|Tier V/);
+      expect(effect, id).toMatch(/remain(s)? bound/);
+    }
+  });
+
+  it('keeps the one-use Apotheosis legend readable at a glance', () => {
+    const effect = String((itemsData as any).EAGLE_OF_APOTHEOSIS.effect);
+    expect(effect.trim().split(/\s+/).length).toBeLessThanOrEqual(45);
+    expect(effect).toContain('ONE USE');
+    expect(effect).toContain('Tier V');
+    expect(effect).toContain('without taking an item slot');
+  });
+});
+
 describe('Item icon assets', () => {
   it('maps every current item to a transparent PNG icon', async () => {
     const sharp = (await import('sharp')).default;

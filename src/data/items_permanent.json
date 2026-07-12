@@ -319,7 +319,7 @@
     "rarity": "LEGENDARY",
     "buy": 140,
     "sell": 45,
-    "effect": "Any tower: +150% damage vs Demon-faction enemies. A Tier IV or Tier V War Chariot bearing the sigil is said to become the sun's own war machine."
+    "effect": "Any tower: +150% damage vs Demons. Old augurs whisper that a Tier IV or V War Chariot bearing this sigil becomes the sun's own war machine. The sigil remains bound after awakening."
   },
   "TYRANTS_LAUREL": {
     "name": "Tyrant's Laurel",
@@ -494,7 +494,7 @@
     "rarity": "LEGENDARY",
     "buy": 150,
     "sell": 50,
-    "effect": "MELEE ONLY: instantly executes any non-Boss enemy below 35% HP. A Tier IV or Tier V Praetorian Executioner may remember a darker imperial office when it bears this name."
+    "effect": "MELEE ONLY: executes non-Boss enemies below 35% HP. Give it to a Tier IV or V Praetorian Executioner, and Rome may remember an office erased from history. The name remains bound after awakening."
   },
   "SKYPIERCER_BOLTS": {
     "name": "Skypiercer Bolts",
@@ -522,7 +522,7 @@
     "rarity": "LEGENDARY",
     "buy": 160,
     "sell": 50,
-    "effect": "ANY tower can target Flyers (even melee), +90% damage vs Flyers, and +2 tile range. The oldest aquilae answer differently in the hands of a Tier IV or Tier V Beastlord Champion."
+    "effect": "Any tower: targets Flyers, +90% damage vs Flyers, and +2 range. In the hands of a Tier IV or V Beastlord Champion, the oldest aquilae are said to hunt for themselves. The talons remain bound after awakening."
   },
   "EXECUTIONERS_FALX": {
     "name": "Executioner's Falx",
@@ -578,19 +578,19 @@
     "rarity": "LEGENDARY",
     "buy": 180,
     "sell": 60,
-    "effect": "A blade-sized relic made for hands larger than men. Old camp whispers say only a Tier V Milites or Tier V Cohort Guard can carry it, and if the right veteran bears it, something ancient wakes inside the ranks. The awakened tower holds four total items, with one slot forever bound to Giant's Bane, and turns its fury toward giant-class enemies."
+    "effect": "Forged for hands larger than men. Give it to a Tier V Milites or Cohort Guard, and an ancient giant-hunter may wake within the ranks. The awakened tower holds four items; Giant's Bane remains bound."
   },
   "WITCHS_BREW": {
     "name": "Witch's Brew",
     "rarity": "LEGENDARY",
     "buy": 190,
     "sell": 65,
-    "effect": "The draught bubbles with arena sand, bone ash, and old Punic curses. Veterans swear a Tier IV or Tier V Murmillo who drinks it does not remain merely a Murmillo for long. The awakened tower holds four total items, with one slot forever bound to Witch's Brew, and the arena dead may answer its call."
+    "effect": "Arena sand and bone ash churn inside. Give it to a Tier IV or V Murmillo, and the dead may crown a new gladiator king. The awakened tower holds four items; Witch's Brew remains bound."
   },
   "CENSER_OF_MEFITIS": {
     "name": "Censer of Mefitis",
     "rarity": "LEGENDARY",
-    "effect": "A sealed censer whose fumes remember every plague Rome tried to bury. Old apothecaries whisper that a Tier IV or Tier V Plague Lobber can bear it, and that the engine which wakes will no longer answer to fire alone. The awakened tower holds four total items, with one slot forever bound to the censer.",
+    "effect": "Its fumes remember every plague Rome buried. Give it to a Tier IV or V Plague Lobber, and a fouler engine may wake. The awakened tower holds four items; the censer remains bound.",
     "buy": 814,
     "sell": 271
   },
@@ -600,6 +600,6 @@
     "buy": 210,
     "sell": 70,
     "consumable": true,
-    "effect": "ONE USE: During preparation, apply to a kept non-hero tower that can legally reach Tier V. It immediately becomes Tier V, the Eagle is consumed, and no item slot is occupied. Cannot raise Scorpio or Velites beyond their Tier IV cap. Guaranteed once after the first Flyer wave; later copies may appear as exceptionally lucky drops or randomized Mercator stock."
+    "effect": "ONE USE: Rome's eagle lifts a kept non-hero tower to Tier V during preparation, then vanishes without taking an item slot. It cannot break Scorpio or Velites beyond Tier IV. One is promised after the first Flyer wave; later Eagles are rare."
   }
 }
