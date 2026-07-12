@@ -140,6 +140,9 @@ export interface GameStateShape {
   // Flyer wave. The flag records creation of the reward, whether it entered
   // inventory immediately or had to wait as a loot orb because inventory was full.
   firstFlyerApotheosisGranted?: boolean;
+  // The first cleared wave awards one ceremonial Giant's Bane. This flag
+  // prevents duplicate grants across saves/repeated wave-end callbacks.
+  waveOneGiantsBaneGranted?: boolean;
   combosBuilt?: number;
   combosBuiltUniqueTypes?: string[];
   // Lifetime kills of enemies that emerged from the ocean/shipwreck lane.
@@ -403,6 +406,7 @@ export function createGameState(): GameStateShape {
     pendingBossTrophyOffer: null,
     towerDamageByType: {},
     firstFlyerApotheosisGranted: false,
+    waveOneGiantsBaneGranted: false,
     testYourMightOffered: false,
     testYourMightDeclined: false,
     testYourMightActive: false,

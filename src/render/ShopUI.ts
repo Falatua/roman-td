@@ -1359,7 +1359,8 @@ export const SELL_PRICE: Record<string, number> = {
 //   3. Pure rarity fallback                   → rarity table above (half-derived)
 export function inventorySellPrice(rarityOrSlot: any): number {
   if (typeof rarityOrSlot === 'string') return SELL_PRICE[rarityOrSlot] ?? 2;
-  const slot = rarityOrSlot as { rarity: string; buyPrice?: number; itemId?: string };
+  const slot = rarityOrSlot as { rarity: string; buyPrice?: number; itemId?: string; sellLockedReason?: string };
+  if (slot.sellLockedReason) return 0;
   if (slot.buyPrice && slot.buyPrice > 0) return Math.max(1, Math.floor(slot.buyPrice / 2));
   // Fallback: look up the items.json buy price for this itemId.
   const baseBuy = slot.itemId ? itemBuyPrice(slot.itemId) : undefined;
@@ -1540,6 +1541,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
     const def: any = (consumables as any)[itm.itemId] ?? (items as any)[itm.itemId];
     const color = RARITY_COLOR[itm.rarity];
     const sellPrice = inventorySellPrice(itm);
+    const saleLocked = !!itm.sellLockedReason;
     const left = document.createElement('div');
     left.style.cssText = `flex:1;min-width:0;display:flex;gap:12px;align-items:flex-start`;
     const oneUseNote = isConsumable(itm.itemId)
@@ -1551,6 +1553,7 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
         <div style="font-size:14px;font-weight:bold;color:${color};letter-spacing:1px">${def?.name ?? itm.itemId}</div>
         <div style="font-size:10px;color:${color};opacity:0.85;letter-spacing:2px;margin:2px 0 6px">${itm.rarity}${isConsumable(itm.itemId) ? ' · CONSUMABLE' : ''}</div>
         ${oneUseNote}
+        ${saleLocked ? `<div style="font-size:10px;color:#ffd34d;letter-spacing:1px;margin:0 0 6px;font-weight:bold">★ ${itm.sellLockedReason}</div>` : ''}
         <div style="font-size:11px;color:#cdb98a;line-height:1.5">${def?.effect ?? ''}</div>
       </div>
     `;
@@ -1558,14 +1561,16 @@ export function showInventoryModal(parent: HTMLElement, inv: InventoryState, sta
     right.style.cssText = `display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0`;
     const priceLabel = document.createElement('div');
     priceLabel.style.cssText = `font-size:11px;color:#f0c040;letter-spacing:1px`;
-    priceLabel.innerHTML = `SELL VALUE: <b style="font-size:14px">${sellPrice}g</b>`;
+    priceLabel.innerHTML = saleLocked
+      ? '<b style="font-size:12px;color:#ffd34d">NOT FOR SALE</b>'
+      : `SELL VALUE: <b style="font-size:14px">${sellPrice}g</b>`;
     const sellBtn = document.createElement('button');
     // 2026-05 v11 BUGFIX: previously only blocked WAVE_PHASE; now mirrors
     // the actual sell handler's `isPreWavePhase()` gate (BUILD_PHASE,
     // PROSPECT_PLACEMENT, PICK_KEEPER all OK; WAVE/GAME_OVER/VICTORY blocked).
     // 0=BUILD_PHASE 4=PROSPECT_PLACEMENT 5=PICK_KEEPER per GamePhase enum.
-    const canSell = state.phase === 0 || state.phase === 4 || state.phase === 5;
-    sellBtn.textContent = `SELL FOR ${sellPrice}g`;
+    const canSell = !saleLocked && (state.phase === 0 || state.phase === 4 || state.phase === 5);
+    sellBtn.textContent = saleLocked ? 'CEREMONIAL GIFT' : `SELL FOR ${sellPrice}g`;
     sellBtn.disabled = !canSell;
     sellBtn.style.cssText = `background:linear-gradient(180deg,#aa1818,#660808);color:#ffe6e6;border:2px solid #ff5050;padding:9px 16px;cursor:${canSell ? 'pointer' : 'not-allowed'};font-family:inherit;font-size:13px;font-weight:bold;letter-spacing:2px;text-shadow:1px 1px 0 #000;box-shadow:0 0 12px rgba(255,80,80,0.35);transition:transform 0.08s,filter 0.1s;${canSell ? '' : 'opacity:0.4;'}`;
     sellBtn.onmouseenter = () => { if (canSell) sellBtn.style.filter = 'brightness(1.25)'; };

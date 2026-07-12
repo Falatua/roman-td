@@ -638,6 +638,9 @@ export interface LootOrb {
   y: number;
   itemId: ItemId;
   rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'UNIQUE';
+  // Instance-level sale lock for ceremonial gifts. Ordinary copies of the
+  // same item remain sellable because the restriction travels with the orb.
+  sellLockedReason?: string;
 }
 
 export interface DrawCard {

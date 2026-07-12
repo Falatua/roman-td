@@ -16,7 +16,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollApotheosisLuckyDrop, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, grantFirstFlyerApotheosis, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollApotheosisLuckyDrop, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, grantFirstFlyerApotheosis, grantWaveOneGiantsBane, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorChampionOffers, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_PRICE, MERCATOR_TOWER_OFFER_COUNT } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import wavesData from './data/waves.json';
@@ -5801,6 +5801,11 @@ async function boot() {
         }
         const slot = inventory.slots[idx];
         if (!slot) return;
+        if (slot.sellLockedReason) {
+          state.hint = slot.sellLockedReason;
+          showActionBlockedToast(slot.sellLockedReason);
+          return;
+        }
         const refund = inventorySellPrice(slot);
         const removed = inventoryRemove(inventory, slot.id);
         if (!removed) return;
@@ -8340,6 +8345,15 @@ async function boot() {
         // Auto-pickup loot during build phase (Architectus character not yet animated)
         const picked = autoPickupOnBuildPhase(state, inventory);
         if (picked > 0) state.hint = `Picked up ${picked} item${picked > 1 ? 's' : ''}.`;
+        const giantsBaneGift = grantWaveOneGiantsBane(state, inventory);
+        if (giantsBaneGift !== 'none') {
+          SFX.itemPickup('LEGENDARY');
+          const delivery = giantsBaneGift === 'inventory'
+            ? 'It waits in the Armarium.'
+            : 'Your Armarium is full, so it waits beside Rome as a loot orb.';
+          state.hint = `The Senate grants Giant's Bane. ${delivery} This ceremonial copy cannot be sold.`;
+          showBonusBossBanner("★ WAVE 1 CLEARED · THE SENATE GRANTS GIANT'S BANE ★");
+        }
         const clearedWaveDef: any = (wavesData as any[])[state.wave - 1];
         const firstFlyerRelic = grantFirstFlyerApotheosis(state, inventory, clearedWaveDef?.type === 'F');
         if (firstFlyerRelic !== 'none') {

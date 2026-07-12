@@ -46,6 +46,9 @@ export interface InventorySlot {
   // Gold paid for this item, when known. Sell refund = floor(buyPrice / 2).
   // Loot drops have no buyPrice; those fall back to a rarity-based default.
   buyPrice?: number;
+  // Instance-level restriction. Used by the one ceremonial Wave 1 Giant's
+  // Bane; later copies of Giant's Bane do not carry this field.
+  sellLockedReason?: string;
 }
 
 export interface InventoryState {
@@ -54,9 +57,9 @@ export interface InventoryState {
 
 export function createInventory(): InventoryState { return { slots: [] }; }
 
-export function inventoryAdd(inv: InventoryState, itemId: ItemId, rarity: Rarity, isConsumable = false, buyPrice?: number): boolean {
+export function inventoryAdd(inv: InventoryState, itemId: ItemId, rarity: Rarity, isConsumable = false, buyPrice?: number, sellLockedReason?: string): boolean {
   if (inv.slots.length >= INVENTORY_SIZE) return false;
-  inv.slots.push({ id: newInvSlotId(), itemId, rarity, isConsumable, buyPrice });
+  inv.slots.push({ id: newInvSlotId(), itemId, rarity, isConsumable, buyPrice, sellLockedReason });
   return true;
 }
 
@@ -412,6 +415,23 @@ export function isConsumable(itemId: ItemId): boolean {
 }
 
 export type FirstFlyerApotheosisGrant = 'inventory' | 'loot_orb' | 'none';
+export const WAVE_ONE_GIANTS_BANE_GIFT_REASON = 'Gift of the Senate: this ceremonial copy cannot be sold.';
+export type WaveOneGiantsBaneGrant = 'inventory' | 'loot_orb' | 'none';
+
+export function grantWaveOneGiantsBane(state: GameStateShape, inv: InventoryState): WaveOneGiantsBaneGrant {
+  if (state.wave !== 1 || state.waveOneGiantsBaneGranted || state.sandboxMode || state.endlessMode) return 'none';
+  state.waveOneGiantsBaneGranted = true;
+  if (inventoryAdd(inv, 'GIANTS_BANE', 'LEGENDARY', false, undefined, WAVE_ONE_GIANTS_BANE_GIFT_REASON)) return 'inventory';
+  state.lootOrbs.push({
+    id: newId(),
+    x: GRID.CANVAS_W - GRID.TILE * 1.5,
+    y: GRID.CANVAS_H - GRID.TILE * 1.5,
+    itemId: 'GIANTS_BANE',
+    rarity: 'LEGENDARY',
+    sellLockedReason: WAVE_ONE_GIANTS_BANE_GIFT_REASON
+  });
+  return 'loot_orb';
+}
 
 /**
  * Creates the campaign's one guaranteed ascension relic after the first
@@ -458,7 +478,7 @@ export function autoPickupOnBuildPhase(state: GameStateShape, inv: InventoryStat
       state.hint = 'INVENTORY FULL — sell or equip an item.';
       break;
     }
-    const ok = inventoryAdd(inv, o.itemId, o.rarity, isConsumable(o.itemId));
+    const ok = inventoryAdd(inv, o.itemId, o.rarity, isConsumable(o.itemId), undefined, o.sellLockedReason);
     if (ok) { state.lootOrbs.splice(i, 1); picked++; }
   }
   return picked;

@@ -561,7 +561,9 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
         // Return to inventory at the rarity it was actually equipped at
         // — not the def's base rarity. Fixes orange-LEGENDARY → purple-
         // EPIC demotion on the equip/unequip cycle.
-        inventoryAdd(inv, itemId, rarity as Rarity, false);
+        const sellLockMap = ((t as any).__itemSellLockById ?? {}) as Record<string, string>;
+        inventoryAdd(inv, itemId, rarity as Rarity, false, undefined, sellLockMap[itemId]);
+        delete sellLockMap[itemId];
         state.hint = `Unequipped ${idef?.name ?? itemId} → inventory.`;
         refresh();        // stay in the menu so the player can keep swapping
       };
@@ -653,6 +655,9 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
         // demoting it to the def's base rarity.
         if (!t.equippedItemRarities) t.equippedItemRarities = [];
         t.equippedItemRarities.push(slot.rarity);
+        if (slot.sellLockedReason) {
+          ((t as any).__itemSellLockById ??= {})[slot.itemId] = slot.sellLockedReason;
+        }
         inventoryRemove(inv, slot.id);
         const transformed = slot.itemId === GIANTS_BANE_ITEM_ID && transformWithGiantsBane(t);
         const brewTransformed = slot.itemId === WITCHS_BREW_ITEM_ID && transformWithWitchsBrew(t);
@@ -926,7 +931,9 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
     if (!confirm(`Downgrade ${t.type} from T${t.qualityTier} to T${t.qualityTier - 1}?\nThis destroys ${t.killCount} kills and +${t.killBonusFlat.toFixed(1)} flat bonus permanently.\nCosts 2 Gold.`)) return;
     const ok = downgradeTower(state, t, (id) => {
       const idef: any = (permItems as any)[id] ?? (consumables as any)[id];
-      inventoryAdd(inv, id, idef?.rarity ?? 'COMMON', false);
+      const sellLockMap = ((t as any).__itemSellLockById ?? {}) as Record<string, string>;
+      inventoryAdd(inv, id, idef?.rarity ?? 'COMMON', false, undefined, sellLockMap[id]);
+      delete sellLockMap[id];
     });
     if (ok) state.hint = `Downgraded to T${t.qualityTier}.`;
     closeMenu();
@@ -950,7 +957,8 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
       const itemId = t.equippedItems[i];
       const idef: any = (permItems as any)[itemId] ?? (consumables as any)[itemId];
       const rarity = (t.equippedItemRarities?.[i] ?? idef?.rarity ?? 'COMMON') as Rarity;
-      inventoryAdd(inv, itemId, rarity, false);
+      const sellLockMap = ((t as any).__itemSellLockById ?? {}) as Record<string, string>;
+      inventoryAdd(inv, itemId, rarity, false, undefined, sellLockMap[itemId]);
     }
     earnGold(state, stats.refund);
     state.towers.delete(t.id);
