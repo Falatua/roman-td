@@ -24,9 +24,13 @@ export function isGiantKillerTarget(target: Pick<PreyTarget, 'type'>): boolean {
   return isGiantEnemy(String(target.type));
 }
 
+export function isElephantEnemyTarget(target: Pick<PreyTarget, 'type'>): boolean {
+  return GIANT_KILLER_ELEPHANT_TYPES.has(String(target.type));
+}
+
 export function giantKillerPreyDamageMult(target: Pick<PreyTarget, 'type'>): number {
   if (isGiantKillerTarget(target)) return GIANT_KILLER_GIANT_DAMAGE_MULT;
-  if (GIANT_KILLER_ELEPHANT_TYPES.has(String(target.type))) return GIANT_KILLER_ELEPHANT_DAMAGE_MULT;
+  if (isElephantEnemyTarget(target)) return GIANT_KILLER_ELEPHANT_DAMAGE_MULT;
   return 1;
 }
 
@@ -41,7 +45,7 @@ export function giantKillerSplashDamage(
 
 export function hannibalsNightmarePreyDamageMult(target: PreyTarget): number {
   let multiplier = 1;
-  const isElephant = GIANT_KILLER_ELEPHANT_TYPES.has(String(target.type));
+  const isElephant = isElephantEnemyTarget(target);
   if (isElephant) {
     multiplier *= HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT;
   }

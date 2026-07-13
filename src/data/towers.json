@@ -694,7 +694,7 @@
     "melee": false,
     "spriteSheet": 3,
     "spriteCell": 6,
-    "ability": "TWIN SIEGE JAVELINS (SIEGE): fires at 2 targets per shot. Deals 6.5x damage vs War Elephants and Undead War Elephants, +60% vs Flyers, and +30% vs true Bosses. AoE freeze every 10s. The apex anti-elephant T5, built for cracking elite elephant packs. Siege damage bypasses ranged-resistant armor.",
+    "ability": "TWIN SIEGE JAVELINS (SIEGE): fires at 2 targets per shot. Deals 6.5x damage vs War Elephants and Undead War Elephants, +60% vs Flyers, and +30% vs true Bosses. Every 10s it freezes nearby enemies and briefly concussion-stuns freeze-immune elephants. The apex anti-elephant T5, built for cracking elite elephant packs. Siege damage bypasses ranged-resistant armor.",
     "critChance": 0.18,
     "critMult": 2.8
   },

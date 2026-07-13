@@ -141,6 +141,18 @@ describe('previewSpawnHp formula spot-checks', () => {
     );
   });
 
+  it('keeps elite War Elephants off the ordinary-mob doubling and +70% HP lanes', () => {
+    const def: any = (enemiesData as any).WAR_ELEPHANT;
+    const w9: any = (wavesData as any[])[8];
+    const expected = Math.round(
+      def.baseHp *
+      effectiveWaveHpMult(9, w9.hpMult, false, true) *
+      lateGameLayerMult(9, false, false) *
+      1.15
+    );
+    expect(previewSpawnHp(def, 9, w9.type, w9.hpMult, true)).toBe(expected);
+  });
+
   it('W15 Undead Warlord = baseHp × hpMult × aggressive linear pressure × 2.0 solo × W10+1.25 × W11+1.40 boss layers', () => {
     const def: any = (enemiesData as any).UNDEAD_WARLORD;
     // Linear at W15: 1 + 0.10*15 + 0.10*5 (>W10) + 0.15*4 (>W11) = 3.60

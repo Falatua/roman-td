@@ -1,8 +1,7 @@
 // WaveManager — wave start/end + spawn schedule + difficulty curve.
 //
 // Responsibilities:
-//   1. effectiveWaveHpMult: linear-stepped HP multiplier for each wave
-//      (+25% per 5 waves, +50% per 10 waves cumulatively).
+//   1. effectiveWaveHpMult: class-aware campaign HP multiplier.
 //   2. startWave: bumps wave counter, builds spawn queue from waves.json,
 //      injects Iron Phalanx at every 15th wave, rolls bonus boss past W20+
 //      and surprise boss past W40, sets faction weather, rolls a wave
@@ -26,7 +25,7 @@ import { prepareHeroAbilitiesForWave } from './HeroSystem';
 import { completeTestYourMight, startTestYourMight, TEST_YOUR_MIGHT_MAX_SPAWN_DT, tickTestYourMightSpawns } from './TestYourMightSystem';
 import { campaignPressureHpMult } from './CampaignDifficulty';
 import { routeOceanSpawnToPath } from './OceanSpawnSystem';
-import { isBossEnemy, isEliteEnemy } from './EnemyClassification';
+import { isBossEnemy, isCommanderEnemy, isEliteEnemy } from './EnemyClassification';
 import { staggerElephantSpawns } from './ElephantPacing';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
@@ -65,41 +64,31 @@ function mirrorGroundSpawnsToCaveB(state: GameStateShape): void {
   sortSpawnQueue(state.spawnQueue);
 }
 
-export function effectiveWaveHpMult(waveNumber: number, baseHpMult: number, isBoss = false): number {
-  // 20-WAVE CAMPAIGN (2026-05 v5): the curve splits by enemy class.
+export function effectiveWaveHpMult(waveNumber: number, baseHpMult: number, isBoss = false, isElite = false): number {
+  // 30-WAVE CAMPAIGN: the curve splits by enemy class. Authored hpMult values
+  // are encounter-budget controls, not standalone difficulty ratings; the
+  // composed campaign curve is guarded by nominalWaveThreatHp tests below.
   //
-  // BASIC ENEMIES — linear + mid-late accelerator + every-5-wave DOUBLING:
-  //   linear (every wave):      1 + 0.10 * w               (W1=1.10, W20=3.00)
-  //   mid-late accelerator:     +0.10 * max(0, w - 10)     (kicks in at W11)
-  //   per-5-wave doubling:      2.00 ^ floor((w-1)/5)
-  //
-  // BOSSES — LINEAR ONLY. The doubling step is intentionally skipped so
-  // bosses follow a smooth, predictable progression instead of the
-  // monstrous exponential blow-up basic enemies get late game. Bosses
-  // still get the wave-authored hpMult (boss waves are tagged 4.0-5.0×)
-  // and the in-spawn `bossWaveSoloBuff` (×2.0 for solo arrival), but the
-  // multiplicative every-5-wave doubling is OFF.
-  //
-  // Sample curves (composed, baseHpMult = 1.0):
-  //                         Basic       Boss (linear-only)
-  //   W1   1.10×1.0     =   1.10        1.10
-  //   W5   1.50×1.0     =   1.50        1.50
-  //   W6   1.60×2.0     =   3.20        1.60
-  //   W10  2.00×2.0     =   4.00        2.00
-  //   W11  (2.10+0.10)×4.0 = 8.80       2.20  (mid-late kicks in)
-  //   W15  (2.50+0.50)×4.0 = 12.00      3.00
-  //   W20  (3.00+1.00)×8.0 = 32.00      4.00  (linear, predictable)
-  // Linear ramp: +10% per wave baseline. W11+ adds an additional +15%
-  // per wave on top, making the post-W11 climb significantly steeper
-  // than the pre-W11 phase. Ground basics + bosses both feel this; the
-  // lateGameLayerMult below adds per-class flavor on top.
+  // Ordinary mobs retain the legacy milestone pressure that supports large
+  // swarm waves. Bosses skip that pressure and follow the authored linear
+  // lane. Elites and commanders use a continuous progression between those
+  // extremes. The wave-level hpMult values compensate for roster size and
+  // composition so total encounter pressure stays smooth even when a wave
+  // changes from swarms to a few premium threats.
   const linearStep    = 1 + 0.10 * waveNumber;
   const midLateStep   = 0.10 * Math.max(0, waveNumber - 10);
   const aggressiveLateStep = 0.15 * Math.max(0, waveNumber - 11);
   const linearTotal   = (linearStep + midLateStep + aggressiveLateStep) * campaignPressureHpMult(waveNumber);
   if (isBoss) {
-    // Linear progression — no exponential per-5-wave doubling for bosses.
+    // Bosses stay on the authored linear lane.
     return baseHpMult * linearTotal;
+  }
+  if (isElite) {
+    // Elites begin their own continuous escalation at W9. The endpoint meets
+    // the old late-campaign pressure by W30, but the 21%-per-wave ramp removes
+    // every five-wave health cliffs and, crucially, does not front-load W9.
+    const eliteProgression = waveNumber < 9 ? 1 : Math.pow(1.21, waveNumber - 9);
+    return baseHpMult * linearTotal * eliteProgression;
   }
   const bossesCleared = Math.floor((waveNumber - 1) / 5);
   const postBossStep  = Math.pow(2.00, bossesCleared);
@@ -189,12 +178,14 @@ export function previewSpawnHp(def: any, waveNumber: number, wType: 'B' | 'M' | 
     // (sandbox / pre-hero saves) the floor stays at 300.
     return heroActive ? 350 : 300;
   }
-  const isBoss  = isBossEnemy(String(def?.type ?? '')) || def.isBoss === true;
+  const type = String(def?.type ?? '');
+  const isBoss  = isBossEnemy(type) || def.isBoss === true;
+  const isElite = isEliteEnemy(type) || isCommanderEnemy(type) || def.isElite === true || def.isCommander === true;
   const isFlyer = !!def.isFlyer;
-  const waveMult = effectiveWaveHpMult(waveNumber, hpMult, isBoss);
+  const waveMult = effectiveWaveHpMult(waveNumber, hpMult, isBoss, isElite);
   const soloBuff = (isBoss && wType === 'B' && waveNumber <= 15) ? 2.0 : 1.0;
   const layer    = lateGameLayerMult(waveNumber, isBoss, isFlyer);
-  const basicBuff = isBoss ? 1.0 : 1.70;
+  const basicBuff = (isBoss || isElite) ? 1.0 : 1.70;
   const heroComp = heroActive ? 1.15 : 1.00;
   const flyerHpMult = isFlyer ? ENEMY_BALANCE.FLYER_HEALTH_MULT : 1.0;
   return Math.round(def.baseHp * waveMult * soloBuff * layer * basicBuff * heroComp * flyerHpMult);
@@ -419,8 +410,8 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     return;
   }
   const w = wavesData[state.wave - 1];
-  // Basic-enemy HP path (with the every-5-wave doubling). Computed once
-  // per tickSpawns; bosses use a separate linear-only path below.
+  // Basic-enemy HP path (with the every-5-wave doubling). Elite threats use
+  // their own smooth lane below so they cannot inherit trash-mob inflation.
   const basicHpMult = effectiveWaveHpMult(state.wave, w.hpMult, false);
   const bossWaveSoloBuff = (w.type === 'B' && state.wave <= 15) ? 2.0 : 1.0;     // early solo boss HP
   // 2026-05-17 — Round-robin counter for surprise-event waveOverride mode.
@@ -434,6 +425,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // step heavier than the previous boss without being a wall. Basic
     // mobs still get the doubling-per-5-waves stack.
     const isBossSpawn = isBossEnemy(item.type);
+    const isEliteSpawn = isEliteEnemy(item.type) || isCommanderEnemy(item.type);
     const isFlyerSpawn = !!(enemiesData as any)[item.type]?.isFlyer;
     // LAYERED LATE-GAME HP UPLIFT — single source of truth in
     // `lateGameLayerMult` (W7 / W10 / W11 / W15 breakpoints all live
@@ -442,6 +434,8 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     const layerMult = lateGameLayerMult(state.wave, isBossSpawn, isFlyerSpawn);
     const spawnHpMult = (isBossSpawn
       ? effectiveWaveHpMult(state.wave, w.hpMult, true) * bossWaveSoloBuff
+      : isEliteSpawn
+        ? effectiveWaveHpMult(state.wave, w.hpMult, false, true)
       : basicHpMult) * layerMult;
     // 2026-07-05 — Cave B route is now explicit on the queue item. W21+
     // ground non-boss groups are mirrored at wave start so both gates emit
@@ -469,7 +463,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
     // 2026-07-05 — W9/W10 escort elephants are boss-class combat threats,
     // but not legendary trophy bosses. Hannibal is the W10 legendary drop.
     if (state.wave === 9 && item.type === EnemyType.WAR_ELEPHANT) {
-      e.checkpointHealPct = 0.15;
+      e.checkpointHealPct = 0.08;
     }
     if ((state.wave === 9 || state.wave === 10) && item.type === EnemyType.WAR_ELEPHANT) {
       e.rareDropOnly = true;
@@ -755,10 +749,11 @@ function tickEndlessSpawns(state: GameStateShape) {
   while (state.spawnQueue.length > 0 && state.spawnQueue[0].spawnAt <= state.spawnElapsed) {
     const item = state.spawnQueue.shift()!;
     const isBossSpawn = isBossEnemy(item.type);
+    const isEliteSpawn = isEliteEnemy(item.type) || isCommanderEnemy(item.type);
     const isFlyerSpawn = !!(enemiesData as any)[item.type]?.isFlyer;
     // Compose a wave-curve mult for the W20 baseline THEN multiply by
     // the Endless hpMult on top.
-    const baseLineMult = effectiveWaveHpMult(20, 1.0, isBossSpawn);
+    const baseLineMult = effectiveWaveHpMult(20, 1.0, isBossSpawn, isEliteSpawn);
     const layer = lateGameLayerMult(20, isBossSpawn, isFlyerSpawn);
     const basicBuff = isBossSpawn ? 1.0 : 1.70;
     const spawnHpMult = baseLineMult * cfg.hpMult * layer * basicBuff;

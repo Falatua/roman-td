@@ -165,11 +165,11 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   const startY = (flyer ? state.flyerPath[0].y : startTile.row * GRID.TILE + GRID.TILE / 2);
   // BLOOD_MOON wave modifier: +25% HP on every spawn this wave.
   const moonBoost = (state as any).bloodMoonHpMult ?? 1;
-  // BASIC-ENEMY HEALTH BUFF (2026-05 v4): non-boss enemies get a flat +70%
-  // HP at spawn. Every trash mob now demands real damage commitment plus
-  // the relevant mechanic counter (DoT for regen, melee for shielded,
-  // ranged for phalanx, etc). Bosses are balanced separately, untouched.
-  const basicHpBuff = classification.boss ? 1.0 : 1.70;
+  // BASIC-ENEMY HEALTH BUFF (2026-05 v4): ordinary mobs get a flat +70%.
+  // Elites and commanders already pay for their mechanics in base HP and
+  // use a smoother wave curve, so applying the trash bonus here created
+  // severe walls such as the W8 -> W9 War Elephant jump.
+  const basicHpBuff = (classification.boss || classification.elite || classification.commander) ? 1.0 : 1.70;
   // HERO HP COMPENSATION (2026-05-19): a run with an active hero gets an
   // effectively-free extra tower from the moment the draft completes,
   // and that hero grows into a ~30% map-wide damage multiplier by DIVUS.

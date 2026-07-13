@@ -177,7 +177,7 @@
     "wave": 10,
     "type": "B",
     "faction": "CARTHAGE",
-    "hpMult": 5.9,
+    "hpMult": 8.3,
     "gold": 32,
     "spawns": [
       {
@@ -194,7 +194,7 @@
     "wave": 11,
     "type": "G",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 6.5,
+    "hpMult": 3.425,
     "gold": 16,
     "necromancy": true,
     "disableCheckpointHeal": true,
@@ -210,7 +210,7 @@
     "wave": 12,
     "type": "F",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 5.8,
+    "hpMult": 8.746,
     "gold": 14,
     "enemyDamageReductPct": 0.15,
     "comboAntiAirArmorPct": 0.18,
@@ -235,7 +235,7 @@
     "wave": 13,
     "type": "M",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 7,
+    "hpMult": 3.277,
     "gold": 16,
     "necromancy": true,
     "enemyDotResistPct": 0.3,
@@ -259,7 +259,7 @@
     "wave": 14,
     "type": "M",
     "faction": "UNDEAD_CELTS",
-    "hpMult": 9.5,
+    "hpMult": 3.836,
     "gold": 19,
     "enemySpeedBoostPct": 0.15,
     "comboAntiAirArmorPct": 0.14,
@@ -282,7 +282,7 @@
     "wave": 15,
     "type": "M",
     "faction": "MONGOLS",
-    "hpMult": 7.5,
+    "hpMult": 2.649,
     "gold": 40,
     "spawns": [
       {
@@ -303,7 +303,7 @@
     "wave": 16,
     "type": "G",
     "faction": "MONGOLS",
-    "hpMult": 6.4,
+    "hpMult": 1.73,
     "gold": 14,
     "spawns": [
       {
@@ -329,7 +329,7 @@
     "wave": 17,
     "type": "M",
     "faction": "MONGOLS",
-    "hpMult": 3.4,
+    "hpMult": 0.766,
     "gold": 10,
     "spawns": [
       {
@@ -370,7 +370,7 @@
     "wave": 18,
     "type": "M",
     "faction": "EGYPTIANS",
-    "hpMult": 5.8,
+    "hpMult": 1.116,
     "gold": 14,
     "spawns": [
       {
@@ -433,7 +433,7 @@
     "wave": 19,
     "type": "M",
     "faction": "EGYPTIANS",
-    "hpMult": 7.4,
+    "hpMult": 1.076,
     "gold": 16,
     "spawns": [
       {
@@ -483,7 +483,7 @@
     "wave": 20,
     "type": "B",
     "faction": "EGYPTIANS",
-    "hpMult": 34.5,
+    "hpMult": 3.412,
     "gold": 18,
     "spawns": [
       {
@@ -512,7 +512,7 @@
     "wave": 21,
     "type": "B",
     "faction": "MONGOLS",
-    "hpMult": 8.3,
+    "hpMult": 0.629,
     "gold": 15,
     "spawns": [
       {
@@ -552,7 +552,7 @@
     "wave": 22,
     "type": "M",
     "faction": "MONGOLS",
-    "hpMult": 9.9,
+    "hpMult": 0.727,
     "gold": 16,
     "spawns": [
       {
@@ -610,7 +610,7 @@
     "wave": 23,
     "type": "M",
     "faction": "EGYPTIANS",
-    "hpMult": 14.3,
+    "hpMult": 0.711,
     "gold": 16,
     "spawns": [
       {
@@ -672,7 +672,7 @@
     "wave": 24,
     "type": "B",
     "faction": "EGYPTIANS",
-    "hpMult": 50,
+    "hpMult": 1.882,
     "gold": 16,
     "spawns": [
       {
@@ -726,7 +726,7 @@
     "wave": 25,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 38,
+    "hpMult": 1.929,
     "gold": 14,
     "fixedCount": true,
     "spawns": [
@@ -777,7 +777,7 @@
     "wave": 26,
     "type": "M",
     "faction": "ROMAN_MYTH",
-    "hpMult": 30.3,
+    "hpMult": 2.703,
     "gold": 14,
     "fixedCount": true,
     "spawns": [
@@ -824,7 +824,7 @@
     "wave": 27,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 27,
+    "hpMult": 2.417,
     "gold": 15,
     "fixedCount": true,
     "spawns": [
@@ -890,7 +890,7 @@
     "wave": 28,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 34.9,
+    "hpMult": 2.952,
     "gold": 9,
     "fixedCount": true,
     "superGiantActive": true,
@@ -943,7 +943,7 @@
     "wave": 29,
     "type": "G",
     "faction": "ROMAN_MYTH",
-    "hpMult": 30,
+    "hpMult": 2.418,
     "gold": 16,
     "fixedCount": true,
     "spawns": [
@@ -1008,7 +1008,7 @@
     "wave": 30,
     "type": "B",
     "faction": "SUPER_DEMONS",
-    "hpMult": 3.6,
+    "hpMult": 0.227,
     "gold": 0,
     "spawns": [
       {

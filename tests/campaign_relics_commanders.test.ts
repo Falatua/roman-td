@@ -760,7 +760,7 @@ describe('Enemy commanders', () => {
     const wave5BasicHpMult = effectiveWaveHpMult(5, 5, false) * lateGameLayerMult(5, false, false);
     for (const e of spawnedEscort) {
       const def: any = (enemiesData as any)[e.type];
-      const unreducedHp = def.baseHp * wave5BasicHpMult * 1.7;
+      const unreducedHp = def.baseHp * wave5BasicHpMult;
       expect(e.maxHp, e.type).toBeCloseTo(unreducedHp * 0.9, 4);
       expect(e.hp, e.type).toBeCloseTo(e.maxHp, 4);
     }

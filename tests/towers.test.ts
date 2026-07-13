@@ -1226,6 +1226,9 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(ordinaryShot).toBeDefined();
     expect(elephantShot).toBeDefined();
     expect(elephantShot!.damage / ordinaryShot!.damage).toBeCloseTo(6.5, 5);
+    expect(ordinary.statusEffects.some(status => status.kind === StatusEffectKind.FREEZE)).toBe(true);
+    expect(elephant.statusEffects.some(status => status.kind === StatusEffectKind.STUN)).toBe(true);
+    expect(elephant.statusEffects.some(status => status.kind === StatusEffectKind.FREEZE)).toBe(false);
   });
 
   it('routes Giant\'s Cohort Guard through restrained melee cleave and giant-only specialization', () => {

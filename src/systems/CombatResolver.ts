@@ -24,6 +24,7 @@ import {
   HANNIBALS_NIGHTMARE_TARGET_COUNT,
   giantKillerPreyDamageMult,
   hannibalsNightmarePreyDamageMult,
+  isElephantEnemyTarget,
   isGiantKillerTarget
 } from './TowerSpecialization';
 export {
@@ -1087,7 +1088,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         for (const e of state.enemies.values()) {
           if (e.hp <= 0) continue;
           if (Math.hypot(e.x - cx, e.y - cy) <= r) {
-            pushStatus(e, StatusEffectKind.FREEZE, 1.5, 0, t.qualityTier);
+            // War Elephants are natively freeze-immune, which made the apex
+            // anti-elephant tower's signature control do nothing to its own
+            // prey. A short concussion stun preserves the immunity while
+            // giving Hannibal's Nightmare its intended pack-breaking window.
+            if (isElephantEnemyTarget(e)) pushStatus(e, StatusEffectKind.STUN, 0.75, 0, t.qualityTier);
+            else pushStatus(e, StatusEffectKind.FREEZE, 1.5, 0, t.qualityTier);
           }
         }
       }

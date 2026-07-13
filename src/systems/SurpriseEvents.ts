@@ -31,6 +31,7 @@ import { effectiveWaveHpMult, lateGameLayerMult } from './WaveManager';
 import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
 import waypointsData from '../data/waypoints.json';
+import { isBossEnemy, isCommanderEnemy, isEliteEnemy } from './EnemyClassification';
 
 // ─── PUBLIC API ────────────────────────────────────────────────────────
 
@@ -446,12 +447,15 @@ function tickSingleSurpriseEvent(state: GameStateShape, ev: SurpriseEventState):
       const enemyType = point.enemyType as EnemyType;
       const wIdx = Math.max(0, Math.min(wavesData.length - 1, state.wave - 1));
       const w = wavesData[wIdx];
-      const isBossSpawn = !!(enemiesData as any)[enemyType]?.isBoss;
+      const isBossSpawn = isBossEnemy(enemyType);
+      const isEliteSpawn = isEliteEnemy(enemyType) || isCommanderEnemy(enemyType);
       const isFlyerSpawn = !!(enemiesData as any)[enemyType]?.isFlyer;
       const basicHpMult = effectiveWaveHpMult(state.wave, w.hpMult, false);
       const layerMult = lateGameLayerMult(state.wave, isBossSpawn, isFlyerSpawn);
       const spawnHpMult = (isBossSpawn
         ? effectiveWaveHpMult(state.wave, w.hpMult, true)
+        : isEliteSpawn
+          ? effectiveWaveHpMult(state.wave, w.hpMult, false, true)
         : basicHpMult) * layerMult;
       const e = spawnEnemy(state, enemyType, spawnHpMult);
       // Reposition the spawn onto the event's path index. For
