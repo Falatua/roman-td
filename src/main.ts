@@ -2787,7 +2787,8 @@ async function boot() {
     window.setTimeout(tryShow, 0);
   }
 
-  // Roll 5 random prospects into a queue. Player will click 5 empty tiles to "reveal" them.
+  // Roll the first five-card prospect batch. The queue refills as it is
+  // exhausted until the player reaches the ten-placement wave cap.
   function rollProspects() {
     const draw = rollSoloDraw(state, BASE_TOWER_TYPES);
     state.prospectQueue = draw;
@@ -3208,9 +3209,9 @@ async function boot() {
   // 2026-05-22 UX10 — Three-step mobile onboarding overlay. The DOM
   // lives in index.html (#onboarding-overlay) and is inert until this
   // helper opens it. Steps:
-  //   1) Tap an empty tile to spend 1g and roll a tower.
-  //   2) Keep your two best — the rest become stone walls for free.
-  //   3) Survive 30 waves. Tap START WAVE when ready.
+  //   1) Shape the route through all seven checkpoints.
+  //   2) Place up to ten prospects and keep two.
+  //   3) Build combination towers for the campaign power curve.
   // Steps were chosen by the user-feedback audit to match the three
   // most-confused first-run questions on mobile.
   const ONBOARDING_KEY = 'roman_td_onboarding_seen_v1';
@@ -3221,9 +3222,9 @@ async function boot() {
     if (!overlay) return;
     if (overlay.classList.contains('active')) return;     // already open
     const STEPS = [
-      { step: 'STEP 1 OF 3', title: 'BUILD YOUR MAZE', body: 'Tap any empty tile to spend 1 gold and roll a random tower. The legion walks the path you build.' },
-      { step: 'STEP 2 OF 3', title: 'KEEP TWO PER ROUND', body: 'You roll up to 5 towers each round but only your best 2 stay. The rest become free stone walls — useful for stretching the path.' },
-      { step: 'STEP 3 OF 3', title: 'HOLD THE LINE', body: 'Survive 30 waves. Tap START WAVE when your maze is ready. Pinch the map to zoom, double-tap to recenter.' }
+      { step: 'STEP 1 OF 3', title: 'DRAW THE ROAD', body: 'Enemies must reach all seven checkpoints before Rome. Shape the longest legal route you can; they follow the path you leave.' },
+      { step: 'STEP 2 OF 3', title: 'TEN ROLLS, TWO KEEPS', body: 'Spend 1 gold per prospect and place up to 10 each wave. Keep only 2. Every unkept prospect becomes a stone wall for your maze.' },
+      { step: 'STEP 3 OF 3', title: 'COMBINE FOR POWER', body: 'Combination towers are your strongest path through later waves. Use the Codex to plan recipes around the two prospects you keep.' }
     ];
     let i = 0;
     const stepEl = document.getElementById('ob-step');
@@ -3832,21 +3833,23 @@ async function boot() {
       <div style="font-size:11px;letter-spacing:5px;color:#aa9a4a;font-weight:bold">⚔ ROME EXPECTS A LEGION ⚔</div>
       <div style="margin-top:6px;font-size:24px;font-weight:bold;letter-spacing:4px;color:#ffd34d;text-shadow:2px 2px 0 #000,0 0 18px rgba(255,211,77,0.55)">FORGE YOUR LEGION</div>
       <div style="margin-top:14px;font-size:13px;letter-spacing:0.5px;color:#fff8e0;line-height:1.7">
-        Empty grass tile + click = <b style="color:#ffd34d">1 gold</b>, one random prospect tower. The dice don't care about your plan.
+        Every enemy must reach <b style="color:#ffd34d">all seven checkpoints</b> in order. If it completes the route and enters <b style="color:#ff7766">ROME</b>, you lose lives.
       </div>
       <div style="margin-top:14px;display:grid;grid-template-columns:32px 1fr;gap:10px 12px;text-align:left;font-size:11px;color:#cdb98a;line-height:1.55">
         <div style="color:#88ff88;font-size:18px;font-weight:bold;text-align:center">1</div>
-        <div>Spam clicks. Build the maze. Bad rolls become walls — they're still doing work.</div>
+        <div><b style="color:#fff8e0">DRAW THE ROAD.</b> You create the maze; enemies follow the shortest legal path you leave. Stretch every lane between the checkpoints.</div>
         <div style="color:#88ff88;font-size:18px;font-weight:bold;text-align:center">2</div>
-        <div>Click a glowing prospect → <b style="color:#ffd34d">KEEP</b>. You get <b style="color:#ffd34d">two per round.</b> Choose like the gate depends on it.</div>
+        <div><b style="color:#fff8e0">ROLL TEN.</b> Each empty grass tile costs <b style="color:#ffd34d">1 gold</b> and reveals a random tower. You may place up to <b style="color:#ffd34d">10 prospects per wave</b> if you can afford them.</div>
         <div style="color:#88ff88;font-size:18px;font-weight:bold;text-align:center">3</div>
-        <div>Press <b style="color:#ffd34d">START WAVE</b>. The unkept prospects cement into stone. The wave doesn't wait for confidence.</div>
+        <div><b style="color:#fff8e0">KEEP TWO.</b> Only <b style="color:#ffd34d">2 prospects</b> may join your legion. Every unkept prospect becomes a stone wall, so even a bad roll can lengthen the maze.</div>
+        <div style="color:#88ff88;font-size:18px;font-weight:bold;text-align:center">4</div>
+        <div><b style="color:#fff8e0">COMBINE FOR POWER.</b> Combination towers are your greatest strength jumps. Keep towers that complete recipes, then combine them before later waves overwhelm the base legion.</div>
       </div>
       <div style="margin-top:16px;font-size:11px;letter-spacing:1px;color:#cdb98a;background:rgba(255,80,80,0.08);border-left:3px solid #ff5050;padding:8px 10px;text-align:left;line-height:1.55">
-        <b style="color:#ff5050">⚠ THIS GAME WILL HUMBLE YOU.</b> The <b style="color:#ffd34d">CODEX</b> has every recipe, every resistance, every survival rule. Read it now or learn the same lessons at the Hall of Glory later. Combinations are non-optional past wave 5.
+        <b style="color:#ff5050">YOUR PLAN:</b> Build the longest legal maze possible, keep enemies marching, and kill them before checkpoint VII becomes the road to Rome. Open the <b style="color:#ffd34d">CODEX</b> for combination recipes.
       </div>
-      <div style="margin-top:14px;font-size:10px;letter-spacing:2px;color:#aa9a4a">[ click anywhere when you're brave enough ]</div>`;
-    b.style.cssText = `width:min(560px,86%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #ffd34d;box-shadow:0 0 36px rgba(255,211,77,0.55),inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;cursor:pointer;`;
+      <div style="margin-top:14px;font-size:10px;letter-spacing:2px;color:#aa9a4a">[ CLICK TO DRAW THE ROAD ]</div>`;
+    b.style.cssText = `width:min(600px,88%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #ffd34d;box-shadow:0 0 36px rgba(255,211,77,0.55),inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;cursor:pointer;`;
     pushBanner(b, 0, { modal: true, clickDismiss: true });
   }
   // ─── FINAL HOUR HYPE — fires once at the start of W30's build phase ───

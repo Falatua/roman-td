@@ -191,7 +191,7 @@ function renderTab(tab: string): string {
         <div style="font-size:11.5px;color:#cdb98a;line-height:1.65;background:#0c0a08;padding:10px 14px;border-left:3px solid #d4af37">
           <b style="color:#ffd34d">Tower defense in 30 seconds:</b> enemies walk from the cave to your gate. If they reach the gate, you lose lives. If you run out of lives, Rome falls and the leaderboard remembers your name. Build towers to make them not get there.
           <br/><br/>
-          <b style="color:#ffd34d">The twist that breaks new players:</b> you don't pick which tower you place. Every round rolls <b>5 random prospects</b> (each placement costs <b>1g</b>). Then you KEEP up to <b>two</b>. Everything else turns to stone. The maze you accidentally build is the maze your enemies must walk.
+          <b style="color:#ffd34d">The twist that breaks new players:</b> you don't pick which tower you place. Spend <b>1g</b> per roll and place up to <b>10 random prospects</b> each wave if you can afford them. Then KEEP up to <b>two</b>. Everything else turns to stone. The maze you build is the maze your enemies must walk.
           <br/><br/>
           <b style="color:#ffd34d">The big idea:</b> long twisty mazes = more time in your towers' range = more shots = more dead enemies. <b>Your maze matters at least as much as your towers.</b> Players who don't believe this lose around wave 5.
           <br/><br/>
@@ -229,7 +229,7 @@ function renderTab(tab: string): string {
       `)}
       ${foldSection('THE LOOP — DO THIS OR LOSE', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('1. Spend Coins, Roll Prospects', 'Each round rolls 5 random prospects. Click empty tiles to place them (1g each). Pending prospects glow gold — they cannot fight yet, but they already shape the maze.')}
+          ${noteCard('1. Spend Coins, Roll Prospects', 'Place up to 10 random prospects each wave if you have the gold. Each empty-tile roll costs 1g. Pending prospects glow gold; they cannot fight yet, but they already shape the maze.')}
           ${noteCard('2. Pick Two Survivors', 'You promote TWO prospects per round. Everyone else gets cemented into the wall. Choose like the gate depends on it. It does.')}
           ${noteCard('3. Build The Maze Of Suffering', 'Walls and towers bend the path between 7 checkpoints. Long, twisty, single-tile pinches are the goal. A short path is a losing path.')}
           ${noteCard('4. Press START. Brace.', 'The wave does not pause for second thoughts. Unkept prospects auto-convert. Build phase returns only after every enemy is dead or has walked into Rome.')}
@@ -240,7 +240,7 @@ function renderTab(tab: string): string {
           Almost every defeat is a short-path defeat dressed up in different excuses. The route runs <b>spawn → 7 checkpoints → gate</b>. Every empty grass tile you fill forces enemies to walk further. Longer path = more shots fired = more bodies in the dirt.
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('Spam clicks like you mean it', 'Every empty-tile click places one of the 5 rolled prospects for 1g. <b style="color:#88ff88">Place all of them, even the ones you don\'t intend to keep.</b> Unkept prospects cement into walls. You also start with Cavalry Spur (+25% attack speed and +0.5 range) and Barbed Gladius (a modest Common bleed) to establish the early item ladder.')}
+          ${noteCard('Spend gold to stretch the maze', 'Every empty-tile click rolls one prospect for 1g, up to 10 per wave. <b style="color:#88ff88">Place as many as your plan and treasury allow.</b> Unkept prospects cement into walls. You also start with Cavalry Spur (+25% attack speed and +0.5 range) and Barbed Gladius (a modest Common bleed) to establish the early item ladder.')}
           ${noteCard('S-curves, never straight lines', 'The A* pathfinder picks the shortest legal route. Close one shortcut, it finds the next. Drop stones one tile at a time and watch the dotted path update. Make it embarrassing for the enemy.')}
           ${noteCard('Pinch the checkpoints', 'Squeeze the path into a single tile near every checkpoint. AoE/cleave towers (Hastati, Plague Cart, War Chariot, Triumphator) eat single-tile chokes alive.')}
           ${noteCard("You can't fully wall it off", "The game refuses any placement that would orphan spawn, gate, or a checkpoint — you can't grief yourself into a perfect maze. Rejected click? Try one tile over.")}
