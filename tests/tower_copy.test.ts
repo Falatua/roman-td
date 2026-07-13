@@ -13,6 +13,7 @@ describe('canonical player-facing tower field notes', () => {
       expect(mechanics.split(/\s+/).length, type).toBeLessThanOrEqual(48);
       expect(mechanics, type).not.toMatch(/<[^>]+>/);
       expect(brief, type).toContain(mechanics);
+      expect(brief, type).not.toMatch(/recipe is expensive|hesitation costs more/i);
       expect(html, type).toContain('FIELD NOTE:');
       expect(html, type).toContain('title=');
     }

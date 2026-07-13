@@ -100,7 +100,7 @@ export function towerFlavorLine(type: string, def: TowerDefinition): string {
   } else if (def.kind === 'COMBO') {
     lines = [
       'Several Roman doctrines enter the forge; one answer leaves.',
-      'The recipe is expensive because hesitation costs more.',
+      'The legion trades numbers for concentrated force.',
       'This is what happens when the legion stops thinking small.'
     ];
   } else if (def.damageType === 'SIEGE') {
