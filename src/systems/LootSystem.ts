@@ -58,10 +58,24 @@ export interface InventoryState {
 
 export function createInventory(): InventoryState { return { slots: [] }; }
 
+export const SOLO_STARTING_ITEM_LOADOUT: ReadonlyArray<Readonly<{ itemId: ItemId; rarity: Rarity }>> = Object.freeze([
+  { itemId: 'CAVALRY_SPUR' as ItemId, rarity: 'UNCOMMON' },
+  { itemId: 'BARBED_GLADIUS' as ItemId, rarity: 'COMMON' },
+  { itemId: 'SHARPENED_BLADE' as ItemId, rarity: 'COMMON' }
+]);
+
 export function inventoryAdd(inv: InventoryState, itemId: ItemId, rarity: Rarity, isConsumable = false, buyPrice?: number, sellLockedReason?: string): boolean {
   if (inv.slots.length >= INVENTORY_SIZE) return false;
   inv.slots.push({ id: newInvSlotId(), itemId, rarity, isConsumable, buyPrice, sellLockedReason });
   return true;
+}
+
+export function grantSoloStartingItems(inv: InventoryState): number {
+  let granted = 0;
+  for (const item of SOLO_STARTING_ITEM_LOADOUT) {
+    if (inventoryAdd(inv, item.itemId, item.rarity, false)) granted++;
+  }
+  return granted;
 }
 
 export function inventoryRemove(inv: InventoryState, slotId: string): InventorySlot | null {

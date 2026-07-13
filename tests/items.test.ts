@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { APOTHEOSIS_ITEM_RANDOM_WEIGHT, AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, DOT_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, isDotItem, itemRandomSelectionWeight, itemEquipMode } from '../src/systems/ItemRules';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { TowerType } from '../src/types';
-import { createInventory, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop, LEGENDARY_DROP_ITEM_POOL } from '../src/systems/LootSystem';
+import { createInventory, grantSoloStartingItems, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop, LEGENDARY_DROP_ITEM_POOL, SOLO_STARTING_ITEM_LOADOUT } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, MERCATOR_LEGENDARY } from '../src/systems/MerchantSystem';
 import itemsData from '../src/data/items_permanent.json';
 import towersData from '../src/data/towers.json';
@@ -184,6 +184,18 @@ describe('Item equip family exclusivity', () => {
 });
 
 describe('Inventory operations', () => {
+  it('starts a fresh Solo run with Sharpened Blade and both existing starter items', () => {
+    const inv = createInventory();
+    const granted = grantSoloStartingItems(inv);
+    expect(granted).toBe(3);
+    expect(inv.slots.map(slot => [slot.itemId, slot.rarity, slot.isConsumable])).toEqual([
+      ['CAVALRY_SPUR', 'UNCOMMON', false],
+      ['BARBED_GLADIUS', 'COMMON', false],
+      ['SHARPENED_BLADE', 'COMMON', false]
+    ]);
+    expect(SOLO_STARTING_ITEM_LOADOUT).toHaveLength(3);
+  });
+
   it('adds an item and returns true', () => {
     const inv = createInventory();
     const ok = inventoryAdd(inv, 'SHARPENED_BLADE', 'COMMON');

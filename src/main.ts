@@ -16,7 +16,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollApotheosisLuckyDrop, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, grantFirstFlyerApotheosis, grantWaveOneGiantsBane, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollApotheosisLuckyDrop, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, grantFirstFlyerApotheosis, grantWaveOneGiantsBane, grantSoloStartingItems, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorChampionOffers, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_PRICE, MERCATOR_TOWER_OFFER_COUNT } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import { scaledEnemyRegenRate } from './systems/EnemyHealing';
@@ -287,17 +287,10 @@ async function boot() {
   const gore = createGoreState();
   const inventory = createInventory();
   startLiveUpdateWatcher();
-  // 2026-05 v10: starting inventory bonus — Cavalry Spur (UNCOMMON melee
-  // item, MELEE-ONLY gate). Gives the player a real T1 build option right
-  // out of the gate: equip on a Milites/Hastati/Centurion for +30% atk
-  // speed and +0.5 tile range. Pairs naturally with the bumped 100g
-  // starting purse so an opening combo path is on the table.
-  inventoryAdd(inventory, 'CAVALRY_SPUR' as any, 'UNCOMMON', false);
-  // 2026-05 v11: also start with a Barbed Gladius (COMMON melee DoT item,
-  // MELEE-ONLY gate). 1% maxHp/sec bleed for 10s — drops a sticky chip-DoT
-  // onto whichever swordsman wears it, so the player has two distinct
-  // early-game melee buffs (speed/range vs sustain DoT) to choose between.
-  inventoryAdd(inventory, 'BARBED_GLADIUS' as any, 'COMMON', false);
+  // Fresh Solo runs begin with three distinct item lessons: universal damage,
+  // melee speed/range, and melee bleed. The shared loadout authority keeps the
+  // boot grant and its regression tests in sync.
+  grantSoloStartingItems(inventory);
   // SHOP STATE — two distinct vendors that run in parallel during Mercator
   // waves. The Gate Shop is always reachable via the SHOP button / GATE
   // tile / B-G hotkey. The Mercator only exists during a Mercator visit
