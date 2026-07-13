@@ -1,5 +1,6 @@
 // Tests for the wave system: HP scaling, wave-end conditions, win/loss state.
 import { describe, it, expect, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { effectiveWaveHpMult, nominalWaveThreatHp, previewSpawnHp, startWave, tickSpawns, checkWaveEnd } from '../src/systems/WaveManager';
 import { campaignPressureHpMult, campaignPressureResistMult } from '../src/systems/CampaignDifficulty';
 import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
@@ -16,6 +17,7 @@ import enemiesData from '../src/data/enemies.json';
 import waypointsData from '../src/data/waypoints.json';
 import { GRID, WATER_ZONE, WAVE } from '../src/constants';
 import { ELEPHANT_SPAWN_GAP_SECONDS } from '../src/systems/ElephantPacing';
+import { createBossRuntime, tickBossScripts } from '../src/systems/BossScripts';
 
 function bootstrapState() {
   const s = createGameState();
@@ -1156,6 +1158,40 @@ describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () =
       expect(elephant.isElite).toBe(true);
       expect(isRareOnlyBossDropEnemy(elephant)).toBe(true);
       expect(isLegendaryBossDropEnemy(elephant)).toBe(false);
+    }
+  });
+
+  it('does not summon replacement elephants when Hannibal enters his low-health phase', () => {
+    const s = bootstrapState();
+    s.wave = 10;
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 10;
+    const hannibal = spawnEnemy(s, EnemyType.HANNIBAL_BARCA, 1);
+    const runtime = createBossRuntime();
+
+    hannibal.hp = hannibal.maxHp * 0.54;
+    tickBossScripts(s, 0.016, runtime, 0);
+    expect(Array.from(s.enemies.values()).filter(e => e.type === EnemyType.WAR_ELEPHANT)).toHaveLength(0);
+
+    s.tick = 11.1;
+    hannibal.hp = hannibal.maxHp * 0.50;
+    tickBossScripts(s, 0.016, runtime, 0);
+
+    expect(hannibal.hasRebirthed).toBe(true);
+    expect(hannibal.hp).toBeCloseTo(hannibal.maxHp * 0.65, 4);
+    expect(Array.from(s.enemies.values()).filter(e => e.type === EnemyType.WAR_ELEPHANT)).toHaveLength(0);
+    expect(s.spawnQueue.filter(item => item.type === EnemyType.WAR_ELEPHANT)).toHaveLength(0);
+    expect(s.hint).not.toContain('Elephant');
+
+    s.tick = 20;
+    hannibal.hp = hannibal.maxHp * 0.15;
+    tickBossScripts(s, 0.016, runtime, 0);
+    expect(Array.from(s.enemies.values()).filter(e => e.type === EnemyType.WAR_ELEPHANT)).toHaveLength(0);
+
+    for (const file of ['src/systems/BossScripts.ts', 'src/render/EnemyInspect.ts', 'src/render/Codex.ts']) {
+      const source = readFileSync(file, 'utf8');
+      expect(source).not.toMatch(/Hannibal[\s\S]{0,220}summons? 2 War Elephants/i);
+      expect(source).not.toMatch(/summons? 2 War Elephants[\s\S]{0,220}Hannibal/i);
     }
   });
 });

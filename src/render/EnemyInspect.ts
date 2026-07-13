@@ -393,7 +393,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     HANNIBAL_BARCA: [
       'ELEPHANT HEAL — while any War Elephant lives and Hannibal goes 1.0s without DIRECT damage, heals 0.32% maxHP/sec; active DoT halves it to 0.16%/sec',
       'OUT-OF-COMBAT REGEN — 1.34%/sec after 1.0s without DIRECT damage; active DoT halves it to 0.67%/sec',
-      'TELEGRAPHED REBIRTH at 55% HP — 1-second red lock-on ring warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
+      'TELEGRAPHED REBIRTH at 55% HP — 1-second red lock-on ring warning, then heals to 65% HP, clears statuses, and gains +60% speed for 10s'
     ],
     BOSS_FLYER_VULTURE: [
       'DIVE BOMB — every 8s, stamps -40% attack speed for 4s on your highest-kill tower',

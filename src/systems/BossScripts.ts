@@ -387,9 +387,10 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
         break;
       }
 
-      // ─── HANNIBAL BARCA (W20) ────────────────────────────────────────────
-      // OOC regen (data) + heal-while-elephants-live (existing) + REBIRTH at 50% HP
-      // — phase 2: status-immune, +60% speed, summons 2 War Elephants on rebirth.
+      // ─── HANNIBAL BARCA (W10) ────────────────────────────────────────────
+      // OOC regen (data) + heal-while-authored-elephants-live + REBIRTH near
+      // half HP. Phase 2 is status-immune and faster, but does not create new
+      // elephants: the Wave 10 escort is the full elephant budget.
       case EnemyType.HANNIBAL_BARCA: {
         // 2026-05: elephant-heal nerf 1.2%/s → 0.4%/s. Only fires if
         // Hannibal hasn't been touched by DIRECT damage recently.
@@ -429,7 +430,7 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
         if (rt.hannibalRebirthTelegraphAt > 0 && state.tick < rt.hannibalRebirthTelegraphAt) {
           // Emit a telegraph each tick — the ring lives ~1s so multiple
           // overlapping emits keep it solid and pulsing on Hannibal.
-          const renderer = (window as any).__renderer;
+          const renderer = (globalThis as any).__renderer;
           if (renderer?.triggerTelegraphRing) {
             const remaining = rt.hannibalRebirthTelegraphAt - state.tick;
             renderer.triggerTelegraphRing(e.x, e.y, state.tick, remaining, 48, 0xff2222);
@@ -448,16 +449,7 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
           e.currentSpeed *= 1.6;
           rt.hannibalEnragedEndsAt = state.tick + 10;
           (e as any).__hannibalEnraged = true;
-          // Spawn 2 War Elephants
-          const w = wavesData[state.wave - 1];
-          for (let i = 0; i < 2; i++) {
-            const we = spawnEnemy(state, EnemyType.WAR_ELEPHANT, w.hpMult * 0.5);
-            we.x = e.x; we.y = e.y;
-            we.pathIndex = Math.max(0, e.pathIndex - 1);
-            we.pathProgress = 0;
-            if (state.wave === 10) we.rareDropOnly = true;
-          }
-          state.hint = '⚔ HANNIBAL RETURNS! +60% speed, status-immune, 2 War Elephants summoned!';
+          state.hint = '⚔ HANNIBAL RETURNS! +60% speed and status immunity!';
         }
         break;
       }
