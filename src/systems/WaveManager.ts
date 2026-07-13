@@ -188,7 +188,8 @@ export function previewSpawnHp(def: any, waveNumber: number, wType: 'B' | 'M' | 
   const basicBuff = (isBoss || isElite) ? 1.0 : 1.70;
   const heroComp = heroActive ? 1.15 : 1.00;
   const flyerHpMult = isFlyer ? ENEMY_BALANCE.FLYER_HEALTH_MULT : 1.0;
-  return Math.round(def.baseHp * waveMult * soloBuff * layer * basicBuff * heroComp * flyerHpMult);
+  const campaignRoleHpScale = Number(def.campaignHpScaleByWave?.[String(waveNumber)] ?? 1);
+  return Math.round(def.baseHp * waveMult * soloBuff * layer * basicBuff * heroComp * flyerHpMult * campaignRoleHpScale);
 }
 
 // Campaign-level encounter budget used by balance tests and tooling. It

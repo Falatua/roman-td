@@ -182,7 +182,13 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   const heroComp = state.activeHeroId ? 1.15 : 1.00;
   const relicHpMult = campaignRelicEnemyHpMult(state, def);
   const flyerHpMult = flyer ? ENEMY_BALANCE.FLYER_HEALTH_MULT : 1.0;
-  const finalHp = def.baseHp * hpMult * moonBoost * basicHpBuff * heroComp * relicHpMult * flyerHpMult;
+  // A small number of authored boss waves redistribute their total budget
+  // between the boss and escorts. Bonus/Test Your Might waves deliberately
+  // ignore these campaign-only role scalars.
+  const campaignRoleHpScale = state.testYourMightActive
+    ? 1
+    : Number(def.campaignHpScaleByWave?.[String(state.wave)] ?? 1);
+  const finalHp = def.baseHp * hpMult * moonBoost * basicHpBuff * heroComp * relicHpMult * flyerHpMult * campaignRoleHpScale;
   const e: Enemy = {
     id: newId(),
     type,

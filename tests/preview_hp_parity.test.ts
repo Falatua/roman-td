@@ -8,6 +8,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import {
   effectiveWaveHpMult,
   lateGameLayerMult,
+  nominalWaveThreatHp,
   previewSpawnHp,
   startWave,
   tickSpawns
@@ -174,8 +175,21 @@ describe('previewSpawnHp formula spot-checks', () => {
     const def: any = (enemiesData as any).HANNIBAL_BARCA;
     const w10: any = (wavesData as any[])[9];
     // W10 boss layer: wave>10 false (10 is not >10) → layer = 1.0
-    const expected = Math.round(def.baseHp * w10.hpMult * (1 + 0.10 * 10) * campaignPressureHpMult(10) * 2.0 * 1.0);
+    const expected = Math.round(def.baseHp * w10.hpMult * (1 + 0.10 * 10) * campaignPressureHpMult(10) * 2.0 * 1.0 * 5.0);
     expect(previewSpawnHp(def, 10, w10.type, w10.hpMult)).toBe(expected);
+  });
+
+  it('makes Hannibal the W10 health centerpiece instead of his elephant escorts', () => {
+    const w10: any = (wavesData as any[])[9];
+    const hannibal: any = (enemiesData as any).HANNIBAL_BARCA;
+    const elephant: any = (enemiesData as any).WAR_ELEPHANT;
+    const bossHp = previewSpawnHp(hannibal, 10, w10.type, w10.hpMult, true);
+    const escortHp = previewSpawnHp(elephant, 10, w10.type, w10.hpMult, true);
+
+    expect(escortHp).toBeGreaterThan(250_000);
+    expect(escortHp).toBeLessThan(325_000);
+    expect(bossHp).toBeGreaterThan(escortHp * 5);
+    expect(bossHp + escortHp * 3).toBeCloseTo(nominalWaveThreatHp(10), -3);
   });
 
   it('Post-W7 ground mob gets +30% HP layer (2026-05 v9 — was post-W8 +20%)', () => {

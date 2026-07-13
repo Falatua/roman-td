@@ -160,7 +160,8 @@
     "outOfCombatRegen": 0.025,
     "immuneSlow": true,
     "immuneFreeze": true,
-    "auraTowerSlow": 0.2
+    "auraTowerSlow": 0.2,
+    "campaignHpScaleByWave": { "10": 0.38 }
   },
   "HANNIBAL_BARCA": {
     "name": "Hannibal Barca",
@@ -172,7 +173,8 @@
     "livesCost": 10,
     "spriteSheet": 5,
     "spriteCell": 3,
-    "outOfCombatRegen": 0.0168
+    "outOfCombatRegen": 0.0168,
+    "campaignHpScaleByWave": { "10": 5.0 }
   },
   "UNDEAD_CELT": {
     "name": "Undead Celt",
