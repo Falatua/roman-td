@@ -1128,7 +1128,8 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
     // of parent (#app) and lets the inner content overflow:auto.
     panel.style.cssText = `background:#1a1410;border:3px solid #d4af37;color:#e8d6a8;padding:14px;width:min(760px,96vw);max-height:calc(100% - 8px);overflow:auto;font-family:'Courier New',monospace;`;
     panel.innerHTML = `<h2 style="margin:0 0 10px;color:#d4af37">GATE SHOP</h2>
-      <div style="font-size:12px;margin-bottom:10px;opacity:0.8">Refreshes every 4 waves (W4 / W8 / W12 / W16 / W20 / W24 / W28).</div>`;
+      <div style="font-size:12px;margin-bottom:4px;opacity:0.8">Refreshes every 4 waves (W4 / W8 / W12 / W16 / W20 / W24 / W28).</div>
+      <div style="font-size:10px;margin-bottom:10px;color:#cdb98a;letter-spacing:1px">4 COMMON · 2 UNCOMMON · 2 EPIC · <b style="color:#ff9933">1 RANDOM LEGENDARY</b></div>`;
   }
   // Where new content (offer list, lives row, tower offers, close btn)
   // appends. For Mercator we use the inner content div; for Gate it's

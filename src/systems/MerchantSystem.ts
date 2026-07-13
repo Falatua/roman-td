@@ -99,8 +99,10 @@ const MERCATOR_EPIC = [
   'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST',
   'AEGEAN_PEARL','STORMGLASS_AMPHORA'
 ];
-// Premium Mercator stock — Legendary trophies that the Gate Shop never carries.
-// These cost 3-5× a normal item but offer build-defining effects.
+// Premium Legendary stock shared by Mercator and the Gate Shop's single
+// rotating Legendary shelf. Event-exclusive rewards are intentionally absent.
+// Selection weights still make aura, ocean-specialist, DoT, and Apotheosis
+// items rarer than ordinary trophies.
 export const MERCATOR_LEGENDARY = [
   // 2026 v2 — anti-air LEGENDARY options.
   'JUPITERS_SKYFIRE','STORM_AQUILA_TALONS',
@@ -281,20 +283,11 @@ function asRarity(s: string): Rarity { return s as Rarity; }
 // the W24 Anubis King and the W30 Daemon finale.
 export const MERCATOR_WAVES = [4, 9, 14, 19, 23, 27];
 
-// 2026-05-18 — Gate shop is now a thin starter shop: it sells the
-// two gate-exclusive commons (SHARPENED_BLADE + WATCHTOWER_LENS) and
-// nothing else. Every other item — uncommon, rare, epic, legendary —
-// requires a Mercator visit. This honors the design rule "all items
-// at Mercator are exclusive to Mercator." The 2-item offering is
-// always the same so the gate shop is predictable filler between
-// Mercator stops, not a meaningful loot rotation.
-// `ownedLegendaries` kept for back-compat with the call sites but
-// unused now that the legendary slot is removed.
-// 2026-05-19 — Gate shop samples from gate-exclusive common/uncommon pools.
-// 2026-07-01 — It also carries a small Epic shelf so the base shop has
-// meaningful purple purchases between Mercator visits. ownedLegendaries kept
-// for back-compat with the call sites but unused (gate doesn't carry legendaries).
-export function buildGateShop(_refreshSeed = 0, _ownedLegendaries?: Set<string>): ShopState {
+// Gate stock rotates every four waves: 4 Common, 2 Uncommon, 2 Epic, and one
+// build-defining Legendary. The Legendary uses the same legal ordinary pool as
+// Mercator, excludes copies already held by the player, and never pulls an
+// event-exclusive reward.
+export function buildGateShop(_refreshSeed = 0, ownedLegendaries?: Set<string>): ShopState {
   const offers: ShopOffer[] = [];
   // Sample 4 commons. The pool only has 5, so the player sees 4-of-5
   // each visit — predictable enough that they know what's coming,
@@ -311,6 +304,13 @@ export function buildGateShop(_refreshSeed = 0, _ownedLegendaries?: Set<string>)
   const epics = sampleNWeightedItems(entries(GATE_EPIC), Math.min(2, GATE_EPIC.length));
   for (const [id] of epics) {
     offers.push({ itemId: id, rarity: 'EPIC', price: itemBuyPrice(id), isConsumable: false });
+  }
+  const eligibleLegendaries = MERCATOR_LEGENDARY.filter(id =>
+    ITEMS[id]?.rarity === 'LEGENDARY' && !ITEMS[id]?.eventExclusive && !ownedLegendaries?.has(id)
+  );
+  const legendary = sampleNWeightedItems(entries(eligibleLegendaries), 1);
+  for (const [id] of legendary) {
+    offers.push({ itemId: id, rarity: 'LEGENDARY', price: itemBuyPrice(id), isConsumable: isConsumable(id) });
   }
   // Final presentation shuffle: the stock contents are already sampled per
   // rarity, but the card order should also feel freshly rolled each refresh.

@@ -422,16 +422,21 @@ describe('Item rarity economy', () => {
 });
 
 describe('Merchant — gate shop', () => {
-  it('produces 8 offers (4 commons + 2 uncommons + 2 epics)', () => {
+  it('produces 9 offers (4 commons + 2 uncommons + 2 epics + 1 legendary)', () => {
     const shop = buildGateShop();
     expect(shop.type).toBe('GATE');
-    expect(shop.offers.length).toBe(8);
+    expect(shop.offers.length).toBe(9);
     const commons = shop.offers.filter(o => o.rarity === 'COMMON');
     const uncommons = shop.offers.filter(o => o.rarity === 'UNCOMMON');
     const epics = shop.offers.filter(o => o.rarity === 'EPIC');
+    const legendaries = shop.offers.filter(o => o.rarity === 'LEGENDARY');
     expect(commons.length).toBe(4);
     expect(uncommons.length).toBe(2);
     expect(epics.length).toBe(2);
+    expect(legendaries.length).toBe(1);
+    expect(MERCATOR_LEGENDARY).toContain(legendaries[0].itemId);
+    expect((itemsData as any)[legendaries[0].itemId]?.eventExclusive).toBeUndefined();
+    expect(legendaries[0].price).toBe(733);
     const gateIds = new Set([
       'SHARPENED_BLADE','WATCHTOWER_LENS',
       'PRAETORIAN_COIN','BRONZE_GREAVES','RUSTED_HASTA',
@@ -439,7 +444,24 @@ describe('Merchant — gate shop', () => {
       'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE',
       'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST'
     ]);
-    for (const o of shop.offers) expect(gateIds.has(o.itemId)).toBe(true);
+    for (const o of shop.offers.filter(o => o.rarity !== 'LEGENDARY')) {
+      expect(gateIds.has(o.itemId)).toBe(true);
+    }
+  });
+
+  it('does not offer a legendary the player already owns', () => {
+    const onlyAvailable = MERCATOR_LEGENDARY[0];
+    const owned = new Set(MERCATOR_LEGENDARY.filter(id => id !== onlyAvailable));
+    const shop = buildGateShop(0, owned);
+    const legendaries = shop.offers.filter(o => o.rarity === 'LEGENDARY');
+    expect(legendaries).toHaveLength(1);
+    expect(legendaries[0].itemId).toBe(onlyAvailable);
+  });
+
+  it('omits the legendary shelf safely when every legal legendary is owned', () => {
+    const shop = buildGateShop(0, new Set(MERCATOR_LEGENDARY));
+    expect(shop.offers.filter(o => o.rarity === 'LEGENDARY')).toHaveLength(0);
+    expect(shop.offers).toHaveLength(8);
   });
 
   it('contains no duplicate offers within a single visit', () => {
