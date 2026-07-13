@@ -189,7 +189,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
       'THIS IS THE FINAL WAVE.',
       'The Daemon Imperator himself cannot breach Rome. Escorts use normal life costs.',
       'The Daemon Imperator hellscapes your towers every 12 seconds.',
-      'He regenerates 2.8% maxHP per second out of combat — keep the pressure on.',
+      'He regenerates 2.24% maxHP per second out of combat. Keep the pressure on.',
       'No banner pitied you. The Senate stopped watching at wave 24.',
       'ARE YOU REALLY SURE?'
     ],

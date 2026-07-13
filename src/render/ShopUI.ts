@@ -20,6 +20,7 @@ import { markScrollable } from './ScrollCues';
 import { enhanceModalErgonomics } from './ModalErgonomics';
 import { HERO_FORGE_CAP, heroForgeNextCost } from '../systems/HeroSystem';
 import { heroIdForTowerType, isMercatorChampionType } from '../systems/HeroIdentity';
+import { towerBriefHtml } from './TowerCopy';
 import { recordMercatorBackRoomPurchase } from '../systems/SecretEventsSystem';
 import { towerName } from '../format';
 
@@ -667,7 +668,7 @@ function renderMercatorShop(
     const range = towerDef.range ?? '?';
     const atk = towerDef.attackSpeed ?? null;
     const atkText = atk != null ? `${atk.toFixed(1)}/s` : '?/s';
-    const ability = (towerDef.ability ?? '').replace(/"/g, "'");
+    const ability = towerBriefHtml(String(offer.type), towerDef);
     card.innerHTML = `
       ${recipeBadge}
       <div style="color:${TIER_COL[offer.tier]};font-weight:bold;font-size:13px;letter-spacing:2px">${isChampion ? 'HERO' : `T${offer.tier}`}</div>

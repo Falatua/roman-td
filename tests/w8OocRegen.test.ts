@@ -40,9 +40,9 @@ describe('W8 out-of-combat regen cut', () => {
     (e as any).__w8OocRegenCut = 0.015;       // the W8 stamp
     s.enemies.set(e.id, e);
     tickEnemies(s, 1.0, () => {}, () => {});
-    // 5% - 1.5% = 3.5%/sec → +35 HP over 1s on a 1000-maxHp enemy.
-    expect(e.hp).toBeGreaterThan(500 + 34);
-    expect(e.hp).toBeLessThan(500 + 36);
+    // (5% - 1.5%) × global 0.8 = 2.8%/sec → +28 HP.
+    expect(e.hp).toBeGreaterThan(500 + 27);
+    expect(e.hp).toBeLessThan(500 + 29);
   });
 
   it('regens MORE without the cut (baseline check, same enemy)', () => {
@@ -52,9 +52,9 @@ describe('W8 out-of-combat regen cut', () => {
     (e as any).outOfCombatRegen = 0.05;       // no __w8OocRegenCut stamp
     s.enemies.set(e.id, e);
     tickEnemies(s, 1.0, () => {}, () => {});
-    // Full 5%/sec → +50 HP. Confirms the cut above is what reduced it.
-    expect(e.hp).toBeGreaterThan(500 + 49);
-    expect(e.hp).toBeLessThan(500 + 51);
+    // Full authored 5% × global 0.8 = 4%/sec → +40 HP.
+    expect(e.hp).toBeGreaterThan(500 + 39);
+    expect(e.hp).toBeLessThan(500 + 41);
   });
 
   it('never grants regen to an enemy that has none (floored at 0)', () => {
@@ -77,8 +77,8 @@ describe('W8 out-of-combat regen cut', () => {
     (e as any).__w8OocRegenCut = 0.015;
     s.enemies.set(e.id, e);
     tickEnemies(s, 1.0, () => {}, () => {});
-    // 4.9% - 1.5% = 3.4%/sec → +34 HP.
-    expect(e.hp).toBeGreaterThan(500 + 33);
-    expect(e.hp).toBeLessThan(500 + 35);
+    // (4.9% - 1.5%) × global 0.8 = 2.72%/sec → +27.2 HP.
+    expect(e.hp).toBeGreaterThan(500 + 26);
+    expect(e.hp).toBeLessThan(500 + 28);
   });
 });

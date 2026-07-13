@@ -5,6 +5,7 @@ import { TIER_COLORS } from '../constants';
 import { closeGameModals } from './ModalManager';
 import { markScrollable } from './ScrollCues';
 import { enhanceModalErgonomics } from './ModalErgonomics';
+import { towerBriefText } from './TowerCopy';
 
 export interface ComboPickerHooks {
   onPick: (combo: AvailableCombo, resultTileTowerId: string) => void;
@@ -60,7 +61,7 @@ export function showComboPicker(parent: HTMLElement, combos: AvailableCombo[], s
     if (resultDef?.ability) {
       const abil = document.createElement('div');
       abil.style.cssText = `font-size:11px;opacity:0.85;color:#cdb887`;
-      abil.textContent = resultDef.ability;
+      abil.textContent = towerBriefText(String(cb.result), resultDef);
       card.appendChild(abil);
     }
 

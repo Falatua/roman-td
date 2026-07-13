@@ -16,6 +16,7 @@ import towersData from '../data/towers.json';
 import comboData from '../data/towerCombinations.json';
 import { texUrl } from './Assets';
 import { enhanceModalErgonomics } from './ModalErgonomics';
+import { towerBriefHtml } from './TowerCopy';
 
 /**
  * Build the collapsible preview block HTML for a combo tower by type id.
@@ -61,8 +62,8 @@ export function comboPreviewBlockHtml(comboType: string): string {
   const dpsText = def.baseDps != null ? `${Math.round(def.baseDps)}` : '—';
   // Ability text — show in full. These tooltips were authored to fit
   // the tower menu and Codex; they fit here too.
-  const abilityText: string = String(def.ability ?? '').trim();
-  const abilityBlock = abilityText
+  const abilityText = towerBriefHtml(String(comboType), def);
+  const abilityBlock = def.ability
     ? `<div style="font-size:10px;line-height:1.55;color:#cdb98a;margin-top:6px;padding-top:6px;border-top:1px dashed #3a3025">${abilityText}</div>`
     : '';
   return `
@@ -123,7 +124,7 @@ export function showComboInfoModal(comboType: string): void {
   const rangeText = def.range != null ? `${def.range.toFixed(1)} tiles` : '—';
   const rateText = def.attackSpeed ? `${def.attackSpeed.toFixed(2)}/s` : '—';
   const dpsText = def.baseDps != null ? `${Math.round(def.baseDps)}` : '—';
-  const abilityText: string = String(def.ability ?? '').trim();
+  const abilityText = towerBriefHtml(String(comboType), def);
   // Try to grab the sprite via the same texUrl path the renderer uses.
   // Falls through to "no image" if the lookup misses (unregistered key,
   // pre-asset-load, etc.).
@@ -186,7 +187,7 @@ export function showComboInfoModal(comboType: string): void {
         <div><span style="color:#aa9a4a;letter-spacing:1px;font-size:10px">CRIT</span><br/><span style="color:#cdb98a;font-weight:bold;font-size:16px">${critText}</span></div>
       </div>
 
-      ${abilityText ? `
+      ${def.ability ? `
         <div style="border-top:1px dashed #3a3025;padding-top:10px;margin-bottom:14px">
           <div style="font-size:10px;letter-spacing:2px;color:#aa9a4a;margin-bottom:6px">ABILITY</div>
           <div style="font-size:12px;line-height:1.55;color:#fff8e0">${abilityText}</div>

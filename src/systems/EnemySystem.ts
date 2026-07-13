@@ -28,6 +28,7 @@ import { commanderSpeedMult, isCommanderType, tickCommanderSupport } from './Com
 import { classifyEnemy } from './EnemyClassification';
 import { campaignPressureResistMult } from './CampaignDifficulty';
 import { shouldRespawnBossOnLeak } from './LeakRules';
+import { scaledEnemyRegenRate } from './EnemyHealing';
 
 // Pre-computed waypoint centers in WORLD pixel coordinates, used by the
 // per-frame proximity test so the checkpoint heal fires the instant an
@@ -755,8 +756,9 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
           if (h.pct > bestPct) bestPct = h.pct;
         }
       }
-      if (bestPct > 0) {
-        target.hp = Math.min(target.maxHp, target.hp + target.maxHp * bestPct * dt);
+      const targetHealingBlocked = ((target as any).__healingBlockedUntil ?? 0) > state.tick;
+      if (bestPct > 0 && !targetHealingBlocked) {
+        target.hp = Math.min(target.maxHp, target.hp + target.maxHp * scaledEnemyRegenRate(bestPct) * dt);
       }
     }
   }
@@ -1512,7 +1514,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // trivial for any DoT build. Now DoTs reduce regen by half, so
     // the player needs both DoT AND direct damage to outpace regen
     // bosses. Hannibal + Daemon Imperator keep their full base regen
-    // rates (1.68% and 2.8% OOC respectively); only the
+    // authored rates (globally reduced by EnemyHealing); only the
     // DoT-active multiplier changes.
     //
     // EXEMPTION (2026-05 v9 confirm): the CHECKPOINT touch heal
@@ -1537,7 +1539,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     const healingBlocked = ((e as any).__healingBlockedUntil ?? 0) > state.tick;
     // Constant regen (always-on, e.g. Iron Phalanx / Architectus).
     if (def.regenPctPerSec && !healingBlocked) {
-      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * def.regenPctPerSec * regenMult * dt);
+      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(def.regenPctPerSec) * regenMult * dt);
     }
     // 2026-05-22 — WAVE-LEVEL REGEN. Some W11+ waves stamp
     // `enemyRegenPctPerSec` on the wave def to give every spawn on
@@ -1546,7 +1548,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     const _curWave: any = (wavesData as any[])[(state.wave ?? 1) - 1];
     const waveRegen = _curWave?.enemyRegenPctPerSec ?? 0;
     if (waveRegen > 0 && !healingBlocked) {
-      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * waveRegen * regenMult * dt);
+      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(waveRegen) * regenMult * dt);
     }
     // 2026-05-22 — WAVE-LEVEL SPEED BOOST. Wave defs with
     // `enemySpeedBoostPct` apply a flat speed multiplier to every
@@ -1581,7 +1583,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     if (oocRegen > 0 && !healingBlocked) {
       const sinceHit = state.tick - (e.lastDamagedTick ?? -999);
       if (sinceHit > 1.0) {
-        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * oocRegen * regenMult * dt);
+        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(oocRegen) * regenMult * dt);
       }
     }
     // LOW-HP SPEED BOOST: berserker / hellhound / rabid surge to the gate when wounded.
@@ -1824,10 +1826,13 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
         if (dxw * dxw + dyw * dyw <= wp.r2) {
           const log = e.healedCheckpoints ?? (e.healedCheckpoints = []);
           if (!log.includes(wp.idx)) {
+            // Touching the coin spends this enemy's one use even at full HP.
+            // Otherwise a full-health first crossing could loop back after
+            // taking damage and incorrectly claim the same checkpoint later.
+            log.push(wp.idx);
             const before = e.hp;
             e.hp = Math.min(e.maxHp, e.hp + e.maxHp * e.checkpointHealPct);
             if (e.hp > before) {
-              log.push(wp.idx);
               e.hpFlashTimer = 0.35;
               const chq = (state as any).checkpointHealFxQueue = (state as any).checkpointHealFxQueue ?? [];
               chq.push({ x: e.x, y: e.y, bornTick: state.tick });

@@ -26,6 +26,7 @@ import { closeGameModals } from './ModalManager';
 import { itemIconSvg } from './ItemIcon';
 import { comboPreviewBlockHtml } from './ComboPreview';
 import { heroIdForTowerType } from '../systems/HeroIdentity';
+import { towerBriefHtml } from './TowerCopy';
 import { heroTierForTower, heroXpForTower } from '../systems/HeroScaling';
 import { towerDamageProfile, renderTowerDamageProfileHtml } from './TowerDamageProfile';
 import { applyEagleOfApotheosis, canApplyEagleOfApotheosis, EAGLE_OF_APOTHEOSIS_ITEM_ID } from '../systems/TierAscensionSystem';
@@ -257,7 +258,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
       <span style="font-size:10px;color:#1a1410;background:${tierColor};padding:3px 7px;font-weight:bold;letter-spacing:1px">TIER ${t.qualityTier}</span>
       <span style="font-size:10px;color:#aa9a4a;letter-spacing:1px">${damageTypeLabel(def.damageType)} · ${def.melee ? 'Melee' : 'Ranged'} · ${pretty(def.kind ?? 'BASE')}</span>
     </div>
-    <div style="font-size:11px;color:#cdb98a;margin-top:6px;font-style:italic">${def.ability ?? ''}</div>
+    <div style="font-size:11px;color:#cdb98a;margin-top:6px;line-height:1.45">${towerBriefHtml(String(t.type), def)}</div>
   `;
   head.appendChild(headInfo);
   panel.appendChild(head);

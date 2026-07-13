@@ -21,6 +21,8 @@ import { previewSpawnHp } from '../systems/WaveManager';
 import { itemBuyPrice, signatureLegendaryForBoss } from '../systems/LootSystem';
 import { FORTUNA_GAMBLE_COST } from '../systems/MerchantSystem';
 import { isBossEnemy, isEliteEnemy } from '../systems/EnemyClassification';
+import { towerBriefHtml } from './TowerCopy';
+import { scaledEnemyRegenRate } from '../systems/EnemyHealing';
 
 function spriteImg(key: string, size = 28): string {
   const t = tex(key);
@@ -245,7 +247,7 @@ function renderTab(tab: string): string {
           ${noteCard('Every tower is also a wall', 'A placed tower occupies its tile. Plan kept towers as path-benders AND damage sources. The best tiles are the ones enemies pass twice.')}
           ${noteCard('Slow towers want long lanes', 'Scorpio (0.35/s), Vulcan Engineer (0.20/s), Colossus Onager (0.15/s) reload like Roman engineering: slowly and on purpose. Park them along straight runs so they never miss their one shot. Every siege tower fires SLOWER and shoots FARTHER than non-siege — per-hit damage scales up to keep effective DPS competitive, but the play pattern is "big slow hits at long range."')}
           ${noteCard('Fast towers want tight turns', "Velites, Eques, Pugio Assassin, Stormcaller fire constantly — corner-park them where every enemy steps within 1-2 tiles. Every shot lands.")}
-          ${noteCard('W17 — Iron Phalanx will humble you', 'Melee-immune AND phase the first 2 ranged hits AND regen 4.2%/s out of combat. If your last leg is a single ranged tower with no DoT, the wave is going to walk straight to Rome.')}
+          ${noteCard('W17 — Iron Phalanx will humble you', 'Melee-immune, phases the first 2 ranged hits, and regenerates 3.36%/s out of combat. Bring sustained mixed damage or watch it march to Rome.')}
         </div>
       `, true)}
       ${foldSection('PROGRESSION — HOW YOU GROW (OR DO NOT)', `
@@ -558,7 +560,7 @@ function renderTab(tab: string): string {
       `)}
       ${foldSection('ENEMY SIGNATURES', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('Out-of-Combat Regen', 'Ghost Rider, Hannibal, and Daemon Imperator regen X% HP/s after 1.0s without taking <b>direct</b> damage. <b style="color:#ff7733">Active DoTs (burn / poison / bleed / hellfire) now reduce regen by 50%</b> (was 100% — they used to shut it off completely). Hannibal still heals at ~0.84%/s and Daemon Imperator at ~1.4%/s while burning, so you need <b style="color:#88ff88">DoT AND direct damage</b> to actually break a regen boss; a single Poisoned Blade alone is no longer enough. (<b style="color:#88ddff">Note:</b> Both druids — Gallic Druid AND Zombie Druid — no longer regenerate. Druid pressure is now strictly the shield/sleep curse/heal-aura layer, not a per-druid HP timer.)')}
+          ${noteCard('Out-of-Combat Regen', 'Passive enemy regeneration is globally reduced by 20%. It begins after 1.0s without <b>direct</b> damage; active Burn, Poison, Bleed, or Hellfire halves the remaining rate. Hannibal heals about 0.67%/s under DoT and Daemon Imperator about 1.12%/s. Keep direct pressure on regenerators.')}
           ${noteCard('Phoenix Rebirth', 'Spectral Scout, Celtic Fire Demon, and Undead Celt burst into <b style="color:#ffaa66">3 reduced-HP minions</b> on death — each at 40% / 35% / 25% HP respectively. The original kill still counts; the minions cannot chain-phoenix when killed. Orange impact ring marks the burst. Plan on roughly 3× the kill budget for these enemies and stack DoTs that tick through respawns.')}
           ${noteCard('Phase-Through Hits', 'Spectral Scout (2), Iron Phalanx (2), Celtic Berserker (1), Undead Berserker (1), Undead Spearman (1), Carthage Spearman (1) ignore the first N hits taken — a "MISS" floater pops on each phased shot.')}
           ${noteCard('Dodge (ranged)', 'Gallic Druid (30%), Numidian Rider (20%), Ghost Rider (15%), Shadow Cavalry (25%) have a chance to dodge incoming ranged / siege attacks. Melee always lands.')}
@@ -584,10 +586,10 @@ function renderTab(tab: string): string {
           ${noteCard('🐺 Alpha Dog (W3 champion)', 'Frenzy at 30% HP doubles speed. Pack Howl every 8s grants +50% speed to nearby Feral Dogs. Death spawns 3 Feral Dogs. <b style="color:#ff9933">Always drops a LEGENDARY on kill</b> — the first guaranteed marquee reward of the run.')}
           ${noteCard('⚔ Brennus (W5)', 'The Celtic chieftain who sacked Rome in 387 BC, named for the Senonian war-king. War Cry at 70% HP grants +30% speed to all Celts for 8s. Otherwise a clean straight-up fight to the death — no rebirth, no surge, no necromancy on his wave. <b style="color:#ff9933">Always drops a LEGENDARY on kill</b> — the first scheduled marquee boss reward of the run.')}
           ${noteCard('🐘 War Elephant (W9 + W10 boss adds)', 'STAMPEDE at 50% HP: status-immune + 75% speed for 4s; strips slow/freeze/stun. Permanently <b style="color:#88ddff">SLOW + FREEZE IMMUNE</b>. <b style="color:#ff7733">Tower-Slow Aura</b>: every tower within 2 tiles fires 20% slower. <b style="color:#ff5050">TUSK QUAKE</b>: every 6s silences every tower within 2 tiles for 0.6s (a dust-brown ring marks the pulse). The Undead variant cranks the aura to 25%. <b style="color:#cdb98a">DUST-SHIELD AURA</b>: a 4-tile dome around the elephant makes nearby GROUND allies untargetable by ranged towers until the elephant dies. Melee + the elephant itself stay targetable. <b style="color:#ff9933">HEAVY HIDE:</b> much higher HP, light sustain, and only +25% damage from SIEGE. Poison and bleed barely matter. <b style="color:#5ca0ff">W9/W10 elephant kills have an 80% chance to drop a RARE item.</b>')}
-          ${noteCard('⚔ Hannibal Barca (W10)', 'Heals 0.4%/s while War Elephants live (only when not taking DIRECT damage). Out-of-combat regen 1.7%/s. <b style="color:#ff7733">DoT (burn / poison / bleed / hellfire) reduces both heals to 50% (was 100% block).</b> A single Poisoned Blade alone is no longer enough — you need DoT + direct damage to actually break him. REBIRTH at 55% HP: heals to 65% HP, +60% speed, status-immune, summons 2 War Elephants. <b style="color:#ff5050">TELEGRAPH:</b> a shrinking red lock-on ring + crosshairs appear on him 1 second before rebirth fires — use that window to burst him into a different timeline.')}
+          ${noteCard('⚔ Hannibal Barca (W10)', 'While War Elephants live, Hannibal heals 0.32%/s after 1.0s without direct damage; his separate out-of-combat regen is 1.34%/s. DoT halves both. At 55% HP, a one-second red telegraph announces his rebirth: 65% HP, +60% speed, status immunity, and 2 War Elephants.')}
           ${noteCard('🐘💀 Undead War Elephant (W14 champion)', 'Stampede at 50% HP. REBIRTH at 40% HP: summons 2 Ghost Riders. Heavy regen. <b style="color:#cdb98a">DUST-SHIELD AURA</b>: a 4-tile dome around the elephant blocks ranged shots on nearby ground allies until it dies. Tower-slow aura cranked to 25% (vs 20% on the living variant). <b style="color:#ff9933">DENSE BONE HIDE:</b> higher HP and only +5% damage from SIEGE. Fire still helps; bleed and poison do nothing.')}
           ${noteCard('💀 Undead Warlords ×5 (W15)', '<b style="color:#ff5050">W15 now spawns FIVE Undead Warlords.</b> 5s after spawn each warlord triggers its own AMBUSH — <b>10 Undead Berserkers</b> rise at mid-path (50 berserkers total if all five fire). Each warlord also triggers NECROMANCY at 40% HP (6 Undead Celts at his position) and FINAL UPRISING at 15% HP (5 more Undead Celts). <b style="color:#ff5050">DEATH RATTLE:</b> the killing blow spits out <b>20 more undead</b> at the warlord\'s death tile (6 Undead Berserkers + 14 Undead Celts, each at 30% HP) — so a clean kill chain can summon <b>75+ risen units</b> per warlord. Plan a path-segregating maze and stagger the warlord kills — letting them all crater at once will flood the field. Heavy AoE / siege builds with Scipio active eat them; otherwise focus-fire one warlord clean before the next dips low.')}
-          ${noteCard('😈 Daemon Imperator (W30 — final boss)', 'Base speed 0.85 tiles/sec. HELLSCAPE every 12s stuns nearby tower cooldowns (towers within 5 tiles take a 1.5s cooldown stamp on each pulse). Out-of-combat regen 2.8%/sec. <b style="color:#aaffaa">DOT-RESISTANT:</b> poison and bleed both tick at 30% effectiveness (fire is fully immune). Direct damage + DIVINE (~1.40× final after faction × per-enemy damper) carry the fight, not chip ticks. <b style="color:#88ddff">W30 brings elite escorts, air pressure, and mythic bruisers.</b> <b style="color:#ff5050">The Daemon himself cannot breach Rome; escorts use normal leak costs.</b>')}
+          ${noteCard('😈 Daemon Imperator (W30 — final boss)', 'Every 12s, HELLSCAPE stamps 1.5s cooldown onto towers within 5 tiles. Out-of-combat regen is 2.24%/sec and active DoT halves it to 1.12%/sec. Fire is immune; Poison and Bleed operate at 30%. Direct and Divine damage carry this fight. The Daemon cannot breach Rome, but his escorts can.')}
         </div>
       `)}
       ${foldSection('⚔ v2 LATE-GAME GAUNTLET (W21-30) — NEW UNITS', `
@@ -885,7 +887,7 @@ function renderTab(tab: string): string {
       <td>${def.attackSpeed.toFixed(2)}/s</td>
       <td>${def.range}t</td>
       <td>${def.melee ? 'Melee' : 'Ranged'}</td>
-      <td style="opacity:0.85">${def.ability ?? ''}</td></tr>`;
+      <td style="opacity:0.9;line-height:1.4">${towerBriefHtml(id, def)}</td></tr>`;
     }).join('');
     return `${section('LEGION REFERENCE', '<div style="font-size:11px;color:#cdb98a">Towers grouped by <b style="color:#ffd34d">game stage</b> — when you naturally encounter them in a run. <b style="color:#88ff88">EARLY</b> covers everything you can build with pool L0-L4 (all BASE T1-T4 plus simple 2-3 ingredient combos). <b style="color:#ffaa55">MID</b> brings the T5 BASE apex units (pool L5+/Mercator) and the powerful named combos (Hannibal\'s Nightmare, God of War, Vexillation, Triplex Acies, etc.). <b style="color:#ff5050">LATE (APEX)</b> is reserved for the 5-ingredient cross-combo super-units that need other combos as ingredients — the win-condition towers of a high-end run. Within each stage: BASE units first, then COMBO units, sorted by tier band ascending. Melee entries cannot hit flyers unless their implementation is explicitly ranged.</div>')}
       <table style="width:100%;border-collapse:collapse;font-size:11px">
@@ -1459,7 +1461,7 @@ function renderTab(tab: string): string {
         ? ` <span style="color:#bb88ff;font-weight:bold;font-size:10px;letter-spacing:1px;background:#10071a;border:1px solid #8855cc;padding:1px 4px" title="Damage-over-time ticks are reduced ${Math.round(dotReduct * 100)}% on this wave.">☠ −${Math.round(dotReduct * 100)}% DOT</span>`
         : '';
       const regenTag = (typeof regen === 'number' && regen > 0)
-        ? ` <span style="color:#88ff88;font-weight:bold;font-size:10px;letter-spacing:1px;background:#061a08;border:1px solid #55aa55;padding:1px 4px" title="Enemies regenerate ${Math.round(regen * 1000) / 10}% max HP per second on this wave.">✚ REGEN</span>`
+        ? ` <span style="color:#88ff88;font-weight:bold;font-size:10px;letter-spacing:1px;background:#061a08;border:1px solid #55aa55;padding:1px 4px" title="Enemies regenerate ${Math.round(scaledEnemyRegenRate(regen) * 1000) / 10}% max HP per second on this wave.">✚ REGEN</span>`
         : '';
       // No HP-multiplier column — the value was an internal scaling
       // factor (1.0×, 2.5×, etc.) that confused players. Final on-spawn
@@ -1530,8 +1532,8 @@ const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
     'DENSE BONE HIDE: higher HP and only +5% damage from SIEGE; fire still helps'
   ],
   HANNIBAL_BARCA: [
-    'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit by DIRECT damage in 1.0s, heals 0.4% maxHP/sec (active DoT softens to 0.2%/sec)',
-    'OUT-OF-COMBAT REGEN — 1.7%/sec after 1.0s without DIRECT damage (active DoT softens to 0.85%/sec, was full block)',
+    'ELEPHANT HEAL — while any War Elephant lives and Hannibal goes 1.0s without DIRECT damage, heals 0.32% maxHP/sec; active DoT halves it to 0.16%/sec',
+    'OUT-OF-COMBAT REGEN — 1.34%/sec after 1.0s without DIRECT damage; active DoT halves it to 0.67%/sec',
     'TELEGRAPHED REBIRTH at 55% HP — 1s red lock-on warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
   ],
   BOSS_FLYER_VULTURE: [
@@ -1544,11 +1546,11 @@ const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
     'NECROMANCY at 40% HP — raises 6 Undead Celts at his position',
     'FINAL UPRISING at 15% HP — 5 more Undead Celts erupt at the Warlord',
     'DEATH RATTLE — killing blow spawns 20 more undead at the death tile (6 Undead Berserkers + 14 Undead Celts, each at 30% HP). They cannot chain-reanimate.',
-    'MID-FIGHT REGEN — 1.0% maxHP/sec while alive (active DoT halves to 0.5%/sec; fire / burn the clean counter at 1.25× damage)'
+    'MID-FIGHT REGEN — 0.8% maxHP/sec while alive; fire and burn remain the clean counter at 1.25× damage'
   ],
   DAEMON_IMPERATOR: [
     'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~5 tiles for 1.5s',
-    'OUT-OF-COMBAT REGEN — 2.8% maxHP/sec while not taking DIRECT damage (active DoT halves to 1.4%/sec)',
+    'OUT-OF-COMBAT REGEN — 2.24% maxHP/sec while not taking DIRECT damage; active DoT halves it to 1.12%/sec',
     'DOT-RESISTANT — takes only 30% poison and 30% bleed damage; fire-immune. Direct damage + DIVINE (~1.40× final after faction × per-enemy damper) carry this fight.',
     'W30 FINAL BOSS — Daemon breach ends the run; escorts use normal leak costs'
   ]
@@ -1625,10 +1627,10 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.immunePoison) traits.push('IMMUNE TO POISON');
   if (def.immuneFire) traits.push(def.immuneHellfire ? 'IMMUNE TO FIRE + HELLFIRE — direct fire, BURN, and HELLFIRE all deal 0' : 'IMMUNE TO FIRE — direct fire and BURN DoT both 0 (HELLFIRE divine-fire still applies)');
   // Healing / regen
-  if (def.regenPctPerSec) traits.push(`REGEN — ${(def.regenPctPerSec*100).toFixed(2)}% maxHP/sec always-on (reduced 50% by any active DoT, was 100% block pre-2026-05-21)`);
-  if (def.outOfCombatRegen) traits.push(`OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 1.0s without DIRECT damage (active DoT softens to ${(def.outOfCombatRegen*50).toFixed(2)}%/sec, was full block pre-2026-05-21)`);
+  if (def.regenPctPerSec) traits.push(`REGEN — ${(scaledEnemyRegenRate(def.regenPctPerSec)*100).toFixed(2)}% maxHP/sec always-on; active DoT halves it`);
+  if (def.outOfCombatRegen) traits.push(`OUT-OF-COMBAT REGEN — ${(scaledEnemyRegenRate(def.outOfCombatRegen)*100).toFixed(2)}% maxHP/sec after 1.0s without DIRECT damage; active DoT halves it to ${(scaledEnemyRegenRate(def.outOfCombatRegen)*50).toFixed(2)}%/sec`);
   if (def.checkpointHealPct) traits.push(`CHECKPOINT HEAL — restores ${Math.round(def.checkpointHealPct*100)}% maxHP first time it crosses each of the 7 waypoint coins`);
-  if (def.healAllyPctPerSec) traits.push(`HEALER — pulses ${(def.healAllyPctPerSec*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles (does NOT heal bosses, does NOT stack — multiple healers on the same target apply the highest rate, not the sum)`);
+  if (def.healAllyPctPerSec) traits.push(`HEALER — restores ${(scaledEnemyRegenRate(def.healAllyPctPerSec)*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles; does not heal bosses or stack`);
   // Movement modifiers
   if (def.lowHpSpeedBoost) traits.push(`LOW-HP SURGE — when below 30% HP, gains +${Math.round((def.lowHpSpeedBoost - 1) * 100)}% movement speed`);
   if (def.stealthInterval) traits.push(`STEALTH CYCLE — fades to untargetable for ${def.stealthInterval.duration.toFixed(1)}s every ${def.stealthInterval.period}s`);
@@ -1899,7 +1901,7 @@ function bindComboTooltipPortal(modalRoot: HTMLElement) {
   modalRoot.addEventListener('scroll', hide, true);
 }
 
-function comboTooltipHtml(def: any): string {
+function comboTooltipHtml(type: string, def: any): string {
   if (!def) return '';
   const tt = def.melee ? 'MELEE' : 'RANGED';
   const dps = def.baseDps ?? 0;
@@ -1921,7 +1923,7 @@ function comboTooltipHtml(def: any): string {
     <div class="ct-row"><span>Attack Speed</span><span><b>${aspd}/s</b></span></div>
     <div class="ct-row"><span>Range</span><span><b>${rng} tile${rng === 1 ? '' : 's'}</b></span></div>
     <div class="ct-row"><span>Crit</span><span><b>${cc}</b> × <b>${cm}</b></span></div>
-    ${def.ability ? `<div class="ct-ability">${def.ability}</div>` : ''}
+    ${def.ability ? `<div class="ct-ability">${towerBriefHtml(type, def)}</div>` : ''}
   </div>`;
 }
 
@@ -1987,7 +1989,7 @@ function renderComboCard(c: any, cs?: { state: 'ready'|'prospect'|'partial'|'non
     return `<div style="display:grid;grid-template-columns:42px 1fr;gap:8px;align-items:center;background:#0c0a08;border:1px solid ${ingBorder};padding:6px">
       <div class="combo-sprite-wrap" tabindex="0" style="width:42px;height:42px;border:2px solid ${ingBorder};background:#100c09;display:flex;align-items:center;justify-content:center">
         ${spriteImg(ing.type, 36)}
-        ${comboTooltipHtml(def)}
+        ${comboTooltipHtml(String(ing.type), def)}
       </div>
       <div>
         <div style="color:#d4af37;font-weight:bold;font-size:12px">${def.name ?? ing.type}</div>
@@ -2020,14 +2022,14 @@ function renderComboCard(c: any, cs?: { state: 'ready'|'prospect'|'partial'|'non
       <div style="background:#0c0a08;border:2px solid #d4af37;padding:8px;text-align:center">
         <div class="combo-sprite-wrap" tabindex="0" style="width:58px;height:58px;margin:0 auto 6px;border:2px solid #5a4a30;background:#100c09;display:flex;align-items:center;justify-content:center">
           ${spriteImg(c.result, 50)}
-          ${comboTooltipHtml(resultDef)}
+          ${comboTooltipHtml(String(c.result), resultDef)}
         </div>
         <div style="color:#ffd34d;font-weight:bold;font-size:14px">${resultDef.name ?? c.result}</div>
         <div style="font-size:11px;color:#9be0ff">Result: Tier ${c.tier}</div>
         ${damageTypeChips(resultDef)}
         <div style="font-size:10px;color:#88ff88;margin-top:3px;letter-spacing:1px">DPS: <b>${typeof resultDef.baseDps === 'number' ? Math.round(resultDef.baseDps) : '—'}</b> · Range: <b>${resultDef.range ?? '—'}</b> · Atk/s: <b>${resultDef.attackSpeed ?? '—'}</b></div>
         <div style="font-size:10px;color:#f0c040;margin-top:3px">Cost: ${c.cost}g</div>
-        <div style="font-size:10px;color:#cdb98a;margin-top:5px;line-height:1.35">${resultDef.ability ?? ''}</div>
+        <div style="font-size:10px;color:#cdb98a;margin-top:5px;line-height:1.4">${towerBriefHtml(String(c.result), resultDef)}</div>
         ${pinBtnHtml}
       </div>
     </div>

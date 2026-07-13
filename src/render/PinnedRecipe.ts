@@ -13,6 +13,7 @@
 import towersData from '../data/towers.json';
 import comboData from '../data/towerCombinations.json';
 import { tex } from './Assets';
+import { towerBriefHtml } from './TowerCopy';
 
 const LS_KEY = 'roman_td_pinned_recipe_v1';
 // Tutorial-style default — the recipe the player sees pinned on every
@@ -198,9 +199,9 @@ function buildChipHtml(pinnedId: string, state: any): { html: string; sig: strin
       : `<span style="background:#2a1a0e;color:#aa9a4a;padding:1px 6px;border:1px solid #5a4a30;letter-spacing:1px;font-size:10px;font-weight:bold">NEED ${totalIngredients - ownedCount - pendingCount}</span>`;
   sigParts.push(craftable ? 'CRAFT' : partial ? 'PART' : 'NEED');
 
-  const abilityText: string = resultDef.ability ?? '';
-  const abilityHtml = abilityText
-    ? `<div style="font-size:11px;color:#cdb98a;line-height:1.4;padding:6px 0 2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;word-break:break-word">${abilityText}</div>`
+  const abilityText = towerBriefHtml(String(recipe.result), resultDef);
+  const abilityHtml = resultDef.ability
+    ? `<div style="font-size:11px;color:#cdb98a;line-height:1.4;padding:6px 0 2px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;word-break:break-word">${abilityText}</div>`
     : '';
 
   // 2026-05-15 v6: each chip's UNPIN button carries a data-pin-id so the

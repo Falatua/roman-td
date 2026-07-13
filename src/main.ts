@@ -19,6 +19,7 @@ import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emit
 import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollApotheosisLuckyDrop, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, grantFirstFlyerApotheosis, grantWaveOneGiantsBane, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorChampionOffers, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_PRICE, MERCATOR_TOWER_OFFER_COUNT } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
+import { scaledEnemyRegenRate } from './systems/EnemyHealing';
 import wavesData from './data/waves.json';
 import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
 import { BASE_TOWER_TYPES, createTower, rollSoloDraw, findRandomBuildTiles, towerAuraTileKind, towerStatBreakdown } from './systems/TowerSystem';
@@ -1984,7 +1985,7 @@ async function boot() {
     // a checkpoint-healing enemy even when the wave-level flag was
     // suppressing the heal, lying to W11 players about a mechanic that
     // wasn't actually firing.
-    if (!w.disableCheckpointHeal && (enemiesInWave.has('CELTIC_BERSERKER') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('UNDEAD_SPEARMAN'))) enemyCallouts.push({ text: '🩸 CHECKPOINT HEAL · enemies regen 15% maxHP every checkpoint coin they cross — kill BEFORE the next coin or reset', cat: 'ENEMY' });
+    if (!w.disableCheckpointHeal && (enemiesInWave.has('CELTIC_BERSERKER') || enemiesInWave.has('CARTHAGE_ELITE_GUARD') || enemiesInWave.has('UNDEAD_CELT') || enemiesInWave.has('UNDEAD_BERSERKER') || enemiesInWave.has('UNDEAD_SPEARMAN'))) enemyCallouts.push({ text: '🩸 CHECKPOINT HEAL · tagged enemies heal once at each of the 7 checkpoint coins; looping over the same coin cannot heal them twice', cat: 'ENEMY' });
     // 2026-05-24 audit fix — old copy conflated Architectus's two distinct
     // mechanics. Reality (verified vs CombatResolver.ts:435-453 +
     // enemies.json:392-393): `auraNullifier` is a SINGLE 2-tile gate that
@@ -2000,7 +2001,7 @@ async function boot() {
     //  • W19 wave-level in-combat regen
     if (state.wave === 8) enemyCallouts.push({ text: '🛡 W8 SHIELD WALL · every enemy this wave has a 20% chance to BLOCK any ranged or siege hit (NUMIDIAN_RIDER stacks its own 20% dodge on top → ~36% effective whiff vs ranged). Bring melee or divine for the W8 stretch.', cat: 'ENEMY' });
     if (enemiesInWave.has('UNDEAD_SPEARMAN') || enemiesInWave.has('IRON_PHALANX')) enemyCallouts.push({ text: '🛡 ALL-ATTACK BLOCK · Undead Spearman / Iron Phalanx have a 20% chance per hit to deflect ANY damage type — melee, ranged, siege, fire, divine. Never expires. Stacks multiplicatively with shield-block (35% on Spearman). Spread the alpha across multiple towers.', cat: 'ENEMY' });
-    if ((w as any).enemyRegenPctPerSec) enemyCallouts.push({ text: `🩹 WAVE REGEN · every enemy on this wave regenerates ${Math.round(((w as any).enemyRegenPctPerSec) * 1000) / 10}% maxHP/sec continuously (not blocked by DoT). Sustained DPS only — chip damage gets undone every second.`, cat: 'ENEMY' });
+    if ((w as any).enemyRegenPctPerSec) enemyCallouts.push({ text: `🩹 WAVE REGEN · every enemy on this wave regenerates ${Math.round(scaledEnemyRegenRate((w as any).enemyRegenPctPerSec) * 1000) / 10}% maxHP/sec continuously. Sustained DPS beats chip damage.`, cat: 'ENEMY' });
     // 2026-05-21 — Ambush stealth + presence-silence aura callouts.
     if (enemiesInWave.has('CARTHAGE_SPEARMAN') || enemiesInWave.has('UNDEAD_BERSERKER')) enemyCallouts.push({ text: '🥷 AMBUSH STEALTH · Carthage Spearman / Undead Berserker spawning in the first 20s of this wave are UNTARGETABLE (40% alpha). At the 20s mark every alive instance becomes visible at once — be ready for the emergence wave. Spawns past 20s are normally visible.', cat: 'ENEMY' });
     if (enemiesInWave.has('ZOMBIE_DRUID') || enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '🤫 SILENCE AURA · Zombie Druid / Architectus silence every tower within 1.5 tiles while in range (pink X-mark). The silence ends ~0.6s after they walk past. Plant your power towers OFF the path so the aura misses.', cat: 'ENEMY' });
@@ -3887,7 +3888,7 @@ async function boot() {
         <div style="font-size:11px;letter-spacing:3px;color:#ff5050;font-weight:bold;margin-bottom:6px">⚔ WHAT WALKS ONTO THE FIELD</div>
         <div style="font-size:12px;color:#fff8e0;line-height:1.55;text-shadow:1px 1px 0 #000">
           <b style="color:#ff5050">Daemon Imperator</b> · final boss with elite escorts, anti-air pressure, and mythic bruisers. If the Daemon himself breaches Rome, the run ends; escorts use normal leak costs (bosses 10, elites/commanders 5, basics 1).<br/>
-          <b style="color:#ffaa55">HELLSCAPE</b> every 12s stuns towers within ~5 tiles for 1.5s. <b style="color:#88ff88">No rebirth — sustained burst sticks.</b> Out-of-combat regen 2.8%/sec — keep the pressure on.<br/>
+          <b style="color:#ffaa55">HELLSCAPE</b> every 12s stuns towers within ~5 tiles for 1.5s. <b style="color:#88ff88">No rebirth — sustained burst sticks.</b> Out-of-combat regen 2.24%/sec — keep the pressure on.<br/>
           <span style="color:#ff7766">Hellscape weather is already shortening your status durations 20%. There is no wave 31.</span>
         </div>
       </div>
@@ -6411,13 +6412,13 @@ async function boot() {
     const emblemLabel = WAYPOINT_EMBLEM_LABELS[wp.emblem] ?? `Checkpoint ${numeral}`;
     // Per the waves.json data, only wave 11 disables checkpoint heal
     // — surface that to players hovering the medallion mid-campaign.
-    const w11Note = state.wave >= 11
-      ? '<div style="margin-top:6px;font-size:9px;color:#8aff8a;letter-spacing:1px;font-style:italic">✓ W11+ disables checkpoint healing — push hard here.</div>'
-      : '<div style="margin-top:6px;font-size:9px;color:#aa9a4a;letter-spacing:1px;font-style:italic">Tip: stuns and knockback interrupt the heal.</div>';
+    const w11Note = state.wave === 11
+      ? '<div style="margin-top:6px;font-size:9px;color:#8aff8a;letter-spacing:1px;font-style:italic">✓ Wave 11 disables checkpoint healing.</div>'
+      : '<div style="margin-top:6px;font-size:9px;color:#aa9a4a;letter-spacing:1px;font-style:italic">Each enemy can claim this coin only once, even after a route loop.</div>';
     tip.innerHTML = `
       <div style="font-size:10px;letter-spacing:3px;color:#ffd34d;font-weight:bold;margin-bottom:2px">CHECKPOINT ${numeral}</div>
       <div style="font-size:13px;color:#fff8e0;font-weight:bold;margin-bottom:6px;letter-spacing:1px">${emblemLabel}</div>
-      <div style="font-size:11px;color:#cdb98a;line-height:1.45">Enemies travel from cave to gate through all 7 checkpoints in order. Elite enemies <b style="color:#ff8888">heal 15–18% HP</b> when they cross a medallion — kill them <b>before</b> they reach the tile to deny it.</div>
+      <div style="font-size:11px;color:#cdb98a;line-height:1.45">Enemies travel from cave to gate through all 7 checkpoints in order. Tagged enemies heal when they first cross each medallion. Re-crossing the same checkpoint never heals them again.</div>
       ${w11Note}`;
     // Position: slightly below-right of cursor, clamped to viewport.
     const w = 300, h = 130;

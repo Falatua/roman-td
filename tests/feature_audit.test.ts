@@ -1380,7 +1380,7 @@ describe('Modal ergonomics and popup stacking', () => {
     for (const label of ['DPS', 'ATK/S', 'RANGE', 'TYPE', 'CRIT', 'PLACE']) {
       expect(harborModal, `Harbor Draft should show ${label} detail`).toContain(`['${label}'`);
     }
-    expect(harborModal).toContain('<b style="color:#ffd34d">Ability:</b>');
+    expect(harborModal).toContain('towerBriefHtml(String(offer.type), def ?? {})');
     expect(harborModal).toContain('max-height:min(78vh,760px);overflow-y:auto');
     expect(harborModal).toContain('grid-template-columns:repeat(auto-fit,minmax(280px,1fr))');
   });

@@ -134,10 +134,10 @@ describe('B2 — DoT-suppresses-regen softening (100% → 50%)', () => {
     (e as any).outOfCombatRegen = 0.05;     // 5%/sec synthetic OOC regen
     s.enemies.set(e.id, e);
     tickEnemies(s, 1.0, () => {}, () => {});
-    // 5% of 1000 = 50 HP regen per second at full rate. No DoT
+    // Authored 5% × global 0.8 = 40 HP regen per second. No DoT
     // present, no recent direct damage → regenMult = 1.0.
-    expect(e.hp).toBeGreaterThan(500 + 49);
-    expect(e.hp).toBeLessThan(500 + 51);
+    expect(e.hp).toBeGreaterThan(500 + 39);
+    expect(e.hp).toBeLessThan(500 + 41);
   });
 
   it('regen ticks at HALF rate when a DoT is active (~25 HP/sec heal vs 50)', () => {
@@ -150,13 +150,13 @@ describe('B2 — DoT-suppresses-regen softening (100% → 50%)', () => {
     tickEnemies(s, 1.0, () => {}, () => {});
     // Expected math:
     //   DoT damage = 3% × 1000 = 30 HP/sec
-    //   Regen at half = 5% × 0.5 × 1000 = 25 HP/sec
-    //   Net = 30 - 25 = -5 HP/sec (enemy loses 5 HP)
+    //   Regen at half = 5% × 0.8 × 0.5 × 1000 = 20 HP/sec
+    //   Net = 30 - 20 = -10 HP/sec (enemy loses 10 HP)
     // Under the OLD 100% suppression rule, net would be -30 (full DoT, no regen).
     // Under no suppression, net would be +20 (full regen wins).
     // 50% suppression lands cleanly in the middle.
-    expect(e.hp).toBeGreaterThan(500 - 7);     // Allow tolerance for float drift
-    expect(e.hp).toBeLessThan(500 - 3);
+    expect(e.hp).toBeGreaterThan(500 - 12);     // Allow tolerance for float drift
+    expect(e.hp).toBeLessThan(500 - 8);
   });
 
   it('the DoT alone is not enough to overcome strong regen (DoT + direct damage required)', () => {
@@ -172,12 +172,12 @@ describe('B2 — DoT-suppresses-regen softening (100% → 50%)', () => {
     setStatus(e, StatusEffectKind.BURN, 0.02);   // 2%/sec BURN = 20 HP/sec damage
     s.enemies.set(e.id, e);
     tickEnemies(s, 1.0, () => {}, () => {});
-    // DoT damage = 20 HP/sec. Regen = 10% × 0.5 × 1000 = 50 HP/sec.
-    // Net = +30 HP/sec (enemy heals despite DoT ticking).
+    // DoT damage = 20 HP/sec. Regen = 10% × 0.8 × 0.5 × 1000 = 40 HP/sec.
+    // Net = +20 HP/sec (enemy heals despite DoT ticking).
     // Under the OLD 100% suppression rule this would be -20 (DoT-only
     // wins). The point is: DoT alone is no longer a hard counter.
-    expect(e.hp).toBeGreaterThan(500 + 25);
-    expect(e.hp).toBeLessThan(500 + 35);
+    expect(e.hp).toBeGreaterThan(500 + 15);
+    expect(e.hp).toBeLessThan(500 + 25);
   });
 
   it('DoT no longer refreshes lastDamagedTick (OOC quiet-window opens with DoT-only attack)', () => {
@@ -198,7 +198,7 @@ describe('B2 — DoT-suppresses-regen softening (100% → 50%)', () => {
     // lastDamagedTick should NOT have been refreshed by the DoT tick.
     expect(e.lastDamagedTick).toBe(lastDamagedBefore);
     // And the net HP change should reflect regen actually flowing
-    // (50% × 4% = 2%/sec heal) minus the DoT (2%/sec damage) = ~0.
+    // (50% × 4% × global 0.8 = 1.6%/sec heal) minus 2% DoT = -4 HP.
     // Not strict equality due to float math, but should be near 500.
     expect(e.hp).toBeGreaterThan(500 - 5);
     expect(e.hp).toBeLessThan(500 + 5);

@@ -16,6 +16,7 @@ import itemsData from '../data/items_permanent.json';
 import { signatureLegendaryForBoss } from '../systems/LootSystem';
 import { enhanceModalErgonomics } from './ModalErgonomics';
 import { classifyEnemy, isBossEnemy, isEliteEnemy } from '../systems/EnemyClassification';
+import { scaledEnemyRegenRate } from '../systems/EnemyHealing';
 
 const FACTION_KEY: Record<number, string> = {
   [EnemyFaction.DOGS]: 'DOGS',
@@ -273,10 +274,10 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // immuneHellfire as an explicit exception.
   if (def?.immuneFire) traits.push({ label: def?.immuneHellfire ? 'IMMUNE TO FIRE + HELLFIRE — direct fire, BURN, and HELLFIRE all deal 0' : 'IMMUNE TO FIRE — direct fire damage and BURN DoT both deal 0 (HELLFIRE divine-fire still applies)', color: '#ee5555' });
   // -- Healing / regen --
-  if (def?.regenPctPerSec) traits.push({ label: `REGEN — ${(def.regenPctPerSec*100).toFixed(2)}% maxHP/sec always-on (reduced 50% by any active DoT, was 100% block pre-2026-05-21)`, color: '#88ff88' });
-  if (def?.outOfCombatRegen) traits.push({ label: `OUT-OF-COMBAT REGEN — ${(def.outOfCombatRegen*100).toFixed(1)}% maxHP/sec after 1.0s without DIRECT damage (DoT ticks no longer refresh the quiet-window; active DoT halves the regen rate to ~${(def.outOfCombatRegen*50).toFixed(2)}%/sec)`, color: '#88ff88' });
+  if (def?.regenPctPerSec) traits.push({ label: `REGEN — ${(scaledEnemyRegenRate(def.regenPctPerSec)*100).toFixed(2)}% maxHP/sec always-on; active DoT halves it`, color: '#88ff88' });
+  if (def?.outOfCombatRegen) traits.push({ label: `OUT-OF-COMBAT REGEN — ${(scaledEnemyRegenRate(def.outOfCombatRegen)*100).toFixed(2)}% maxHP/sec after 1.0s without DIRECT damage; active DoT halves it to ${(scaledEnemyRegenRate(def.outOfCombatRegen)*50).toFixed(2)}%/sec`, color: '#88ff88' });
   if (def?.checkpointHealPct) traits.push({ label: `CHECKPOINT HEAL — restores ${Math.round(def.checkpointHealPct*100)}% maxHP the first time it crosses each of the 7 waypoint coins`, color: '#88ff88' });
-  if (def?.healAllyPctPerSec) traits.push({ label: `HEALER — pulses ${(def.healAllyPctPerSec*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles (does NOT heal bosses, does NOT stack — multiple healers use the highest rate, not the sum)`, color: '#88ff88' });
+  if (def?.healAllyPctPerSec) traits.push({ label: `HEALER — restores ${(scaledEnemyRegenRate(def.healAllyPctPerSec)*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles; does not heal bosses or stack`, color: '#88ff88' });
   // -- Movement modifiers --
   if (def?.lowHpSpeedBoost) traits.push({ label: `LOW-HP SURGE — when below 30% HP, gains +${Math.round((def.lowHpSpeedBoost - 1) * 100)}% movement speed`, color: '#ff8866' });
   if (def?.stealthInterval) traits.push({ label: `STEALTH CYCLE — fades to untargetable for ${def.stealthInterval.duration.toFixed(1)}s every ${def.stealthInterval.period}s (visual: alpha drops, towers can't target)`, color: '#a078d0' });
@@ -390,8 +391,8 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'DENSE BONE HIDE: higher HP and only +5% damage from SIEGE; fire still helps'
     ],
     HANNIBAL_BARCA: [
-      'ELEPHANT HEAL — while any War Elephant is alive AND Hannibal hasn\'t been hit by DIRECT damage in 1.0s, heals 0.4% maxHP/sec (active DoT softens to 0.2%/sec, was 0%)',
-      'OUT-OF-COMBAT REGEN — 1.7%/sec after 1.0s without DIRECT damage (active DoT softens to 0.85%/sec, was full block)',
+      'ELEPHANT HEAL — while any War Elephant lives and Hannibal goes 1.0s without DIRECT damage, heals 0.32% maxHP/sec; active DoT halves it to 0.16%/sec',
+      'OUT-OF-COMBAT REGEN — 1.34%/sec after 1.0s without DIRECT damage; active DoT halves it to 0.67%/sec',
       'TELEGRAPHED REBIRTH at 55% HP — 1-second red lock-on ring warning, then heals to 65% HP, status-immune, +60% speed for 10s, summons 2 War Elephants'
     ],
     BOSS_FLYER_VULTURE: [
@@ -404,12 +405,12 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'NECROMANCY at 40% HP — raises 6 Undead Celts at his position',
       'FINAL UPRISING at 15% HP — 5 more Undead Celts erupt at the Warlord',
       'DEATH RATTLE — on kill, 20 more undead rise (6 Berserkers + 14 Celts at 30% HP). Cannot chain-reanimate.',
-      'MID-FIGHT REGEN — 1.0% maxHP/sec while alive (active DoT halves to 0.5%/sec; fire / burn the clean counter at 1.25× damage)',
+      'MID-FIGHT REGEN — 0.8% maxHP/sec while alive; fire and burn remain the clean counter at 1.25× damage',
       'W15 spawns FIVE Undead Warlords — every per-warlord effect multiplies'
     ],
     DAEMON_IMPERATOR: [
       'HELLSCAPE — every 12s, stuns the attack cooldown of every tower within ~5 tiles for 1.5s',
-      'OUT-OF-COMBAT REGEN — 2.8% maxHP/sec while not taking DIRECT damage (active DoT halves to 1.4%/sec)',
+      'OUT-OF-COMBAT REGEN — 2.24% maxHP/sec while not taking DIRECT damage; active DoT halves it to 1.12%/sec',
       'DOT-RESISTANT — poison/bleed tick at 30% effectiveness, fire fully immune. Direct damage + DIVINE (~1.40× final after faction × per-enemy 0.70 damper) carry the fight, not chip ticks.',
       'W30 FINAL BOSS — Daemon breach ends the run; escorts use normal leak costs'
     ]

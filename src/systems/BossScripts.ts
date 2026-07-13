@@ -3,6 +3,7 @@ import { GameStateShape } from '../GameState';
 import { spawnEnemy, applyTowerAtkSpeedDebuff } from './EnemySystem';
 import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
+import { scaledEnemyRegenRate } from './EnemyHealing';
 
 interface BossRuntime {
   ambushFired: boolean;        // Undead Warlord ambush
@@ -414,7 +415,8 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
           )
         );
         const elephantHealMult = hasActiveDot ? 0.5 : 1.0;
-        if (hasElephants && !recentlyHit) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.004 * elephantHealMult * dt);
+        const healingBlocked = ((e as any).__healingBlockedUntil ?? 0) > state.tick;
+        if (hasElephants && !recentlyHit && !healingBlocked) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(0.004) * elephantHealMult * dt);
         // 2026-05 v6: TELEGRAPHED REBIRTH. When Hannibal first crosses
         // ~55% HP we arm a 1-second telegraph window — the renderer
         // paints a shrinking red ring on him so the player sees the
@@ -516,7 +518,9 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
         // need to land committed bursts to push him past each
         // necromancy threshold. Fire/burn still chunks at 1.25× so
         // sustained fire pressure overcomes the regen cleanly.
-        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.010 * dt);
+        if (((e as any).__healingBlockedUntil ?? 0) <= state.tick) {
+          e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(0.010) * dt);
+        }
         break;
 
       // ─── DAEMON IMPERATOR (W20 boss) ─────────────────────────────────────

@@ -5,6 +5,7 @@ import { enhanceModalErgonomics } from './ModalErgonomics';
 import { createTower, towerStatBreakdown } from '../systems/TowerSystem';
 import { ASSET_KEYS, texUrl } from './Assets';
 import { purchaseRecipeHints } from '../systems/CombinationEngine';
+import { towerBriefHtml } from './TowerCopy';
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
@@ -98,7 +99,7 @@ function navalContractDetailsHtml(state: GameStateShape, offer: HarborDraftOffer
       <b style="color:#88f7ff">Placement:</b> ${placementRule(def)}. Buy the contract, then click a valid ocean tile to place it.
     </div>
     <div style="margin-top:8px;border-left:3px solid #5fe6ff;background:rgba(0,0,0,0.32);padding:8px 9px;font-size:10.5px;color:#fff8e0;line-height:1.45">
-      <b style="color:#ffd34d">Ability:</b> ${def?.ability ?? 'No special ability text available.'}
+      ${towerBriefHtml(String(offer.type), def ?? {})}
     </div>`;
 }
 

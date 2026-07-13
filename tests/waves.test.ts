@@ -1101,6 +1101,38 @@ describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () =
     expect(elephant!.healedCheckpoints).toContain(1);
   });
 
+  it('spends each checkpoint on first touch and never heals twice after a route loop', () => {
+    const s = bootstrapState();
+    s.phase = GamePhase.BUILD_PHASE;
+    s.wave = 8;
+    startWave(s);
+    tickSpawns(s, 999);
+
+    const elephant = Array.from(s.enemies.values()).find(e => e.type === EnemyType.WAR_ELEPHANT)!;
+    expect(elephant).toBeDefined();
+
+    // First contact at full HP must still consume checkpoint I.
+    elephant.hp = elephant.maxHp;
+    elephant.x = 10 * 32 + 16;
+    elephant.y = 5 * 32 + 16;
+    tickEnemies(s, 0, () => {}, () => {});
+    expect(elephant.healedCheckpoints).toEqual([1]);
+
+    // A later loop over checkpoint I cannot heal after the enemy is damaged.
+    elephant.hp = elephant.maxHp * 0.50;
+    const afterDamage = elephant.hp;
+    tickEnemies(s, 0, () => {}, () => {});
+    expect(elephant.hp).toBe(afterDamage);
+    expect(elephant.healedCheckpoints).toEqual([1]);
+
+    // A different checkpoint remains available exactly once.
+    elephant.x = 10 * 32 + 16;
+    elephant.y = 13 * 32 + 16;
+    tickEnemies(s, 0, () => {}, () => {});
+    expect(elephant.hp).toBeGreaterThan(afterDamage);
+    expect(elephant.healedCheckpoints).toEqual([1, 2]);
+  });
+
   it('wave 10 makes only Hannibal eligible for legendary boss loot', () => {
     const s = bootstrapState();
     s.phase = GamePhase.BUILD_PHASE;
