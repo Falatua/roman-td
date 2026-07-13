@@ -407,11 +407,16 @@ describe('Harbor naval tower system', () => {
     pit.killCount = 36;
     const pitRamped = towerEffectiveStats(pit);
 
-    expect(hydraBase.range).toBeGreaterThanOrEqual(2.6);
+    expect((towersData as any).HYDRA_OF_LERNA.range).toBe(4);
+    expect((towersData as any).HYDRA_OF_LERNA.attackSpeed).toBe(1.65);
+    expect(hydraBase.range).toBe(4);
+    expect(hydraRamped.attackSpeed).toBeCloseTo(hydraBase.attackSpeed * 1.28, 4);
     expect(hydraBase.dps).toBeGreaterThan(towerEffectiveStats(charybdis).dps);
     expect(hydraRamped.dps).toBeGreaterThan(hydraBase.dps * 1.7);
     expect(hydraRamped.attackSpeed).toBeGreaterThan(hydraBase.attackSpeed * 1.25);
     expect(pitBase.dps).toBeGreaterThan(hydraBase.dps);
+    expect((towersData as any).HYDRA_BEAST_PIT.range).toBe(2.75);
+    expect((towersData as any).HYDRA_BEAST_PIT.attackSpeed).toBe(1.68);
     expect(pitRamped.dps).toBeGreaterThan(pitBase.dps * 1.9);
     expect(pitRamped.attackSpeed).toBeGreaterThan(pitBase.attackSpeed * 1.35);
   });
