@@ -155,7 +155,8 @@ function ensureStyle(): void {
       font-family: 'Courier New', monospace;
       font-size: 11.5px;
       z-index: 55;
-      pointer-events: auto;
+      /* Advice is allowed to sit over the battlefield without owning it. */
+      pointer-events: none;
       animation: waveTipEnter 0.32s ease-out both;
     }
     #${TIP_ID}.is-collapsed { width: auto; }
@@ -180,7 +181,12 @@ function ensureStyle(): void {
       text-shadow: 1px 1px 0 #000;
     }
     #${TIP_ID} .wt-icon { font-size: 14px; line-height: 1; }
-    #${TIP_ID} .wt-controls { display: flex; gap: 3px; flex-shrink: 0; }
+    #${TIP_ID} .wt-controls {
+      display: flex;
+      gap: 3px;
+      flex-shrink: 0;
+      pointer-events: auto;
+    }
     #${TIP_ID} .wt-btn {
       background: rgba(0,0,0,0.25);
       border: 1px solid rgba(212,175,55,0.35);

@@ -731,11 +731,13 @@ async function boot() {
     if (!next) return;
     next.node.style.position = 'relative';
     next.node.style.left = ''; next.node.style.top = ''; next.node.style.transform = '';
-    // All banners now accept pointer events so the player can click-skip
-    // through the queue when they've already read the headline. Modals still
-    // require the click to dismiss; non-modal banners simply finish early.
-    next.node.style.pointerEvents = 'auto';
-    next.node.style.cursor = 'pointer';
+    // Informational banners must never interrupt map play. Only real modals
+    // own their full rectangle; optional transient notices expose a small
+    // close control while the rest of the card remains click-through.
+    const isModal = next.opts.modal === true;
+    const canDismiss = next.opts.clickDismiss === true;
+    next.node.style.pointerEvents = isModal ? 'auto' : 'none';
+    next.node.style.cursor = isModal && canDismiss ? 'pointer' : 'default';
     const stack = ensureBannerStack();
     stack.appendChild(next.node);
     const finishCurrent = () => {
@@ -760,7 +762,19 @@ async function boot() {
       bannerQueue.length = 0;
       finishCurrent();
     };
-    next.node.addEventListener('click', finishAllOnClick, { once: true });
+    if (isModal && canDismiss) {
+      next.node.addEventListener('click', finishAllOnClick, { once: true });
+    } else if (!isModal && canDismiss) {
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'banner-notice-close';
+      close.title = 'Close';
+      close.setAttribute('aria-label', 'Close notice');
+      close.textContent = '✕';
+      close.style.cssText = `position:absolute;top:5px;right:5px;width:26px;height:26px;display:grid;place-items:center;padding:0;background:rgba(12,10,8,0.88);border:1px solid #d4af37;color:#ffd34d;font:700 13px/1 'Courier New',monospace;cursor:pointer;pointer-events:auto;z-index:2;`;
+      close.addEventListener('click', finishAllOnClick, { once: true });
+      next.node.appendChild(close);
+    }
     let timer: number | null = null;
     if (next.durationMs > 0 && !next.opts.modal) {
       timer = window.setTimeout(finishCurrent, next.durationMs);
@@ -1338,9 +1352,9 @@ async function boot() {
             You'll see <b style="color:#88ff88">live stats</b>, equipped items, and every <b style="color:#88ff88">combo recipe</b> that uses this tower.
           </div>
         </div>
-        <button id="inspect-tip-dismiss" style="background:#2a5520;color:#e8d6a8;border:2px solid #5a8a3a;padding:8px 14px;font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:1.5px;cursor:pointer;align-self:center">GOT IT</button>
+        <button id="inspect-tip-dismiss" style="background:#2a5520;color:#e8d6a8;border:2px solid #5a8a3a;padding:8px 14px;font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:1.5px;cursor:pointer;pointer-events:auto;align-self:center">GOT IT</button>
       </div>`;
-    banner.style.cssText = `position:absolute;left:50%;top:24px;transform:translateX(-50%);max-width:560px;background:linear-gradient(180deg,#1a2030,#0c1018);border:2px solid #88ddff;color:#fff8e0;font-family:'Courier New',monospace;box-shadow:0 0 24px rgba(136,221,255,0.45);z-index:90;animation:inspectTipFade 0.35s ease-out;`;
+    banner.style.cssText = `position:absolute;left:50%;top:24px;transform:translateX(-50%);max-width:560px;background:linear-gradient(180deg,#1a2030,#0c1018);border:2px solid #88ddff;color:#fff8e0;font-family:'Courier New',monospace;box-shadow:0 0 24px rgba(136,221,255,0.45);z-index:90;pointer-events:none;animation:inspectTipFade 0.35s ease-out;`;
     if (!document.getElementById('inspect-tip-style')) {
       const st = document.createElement('style');
       st.id = 'inspect-tip-style';
@@ -2403,13 +2417,14 @@ async function boot() {
       box-shadow:0 0 14px rgba(255,211,77,0.35);
       z-index:55;
       cursor:default;
+      pointer-events:none;
       animation:codexPinTipIn 0.45s ease-out both;
     `;
     tip.innerHTML = `
       <div style="font-size:10px;letter-spacing:2.5px;color:#ffd34d;font-weight:bold;margin-bottom:5px">📌 PRO TIP</div>
       <div>Pin recipes from the <b style="color:#ffd34d">CODEX → COMBINATIONS</b> tab. Click <b style="color:#ffd34d">📌 PIN</b> on any combo to keep its ingredients + cost visible in your side panel during battle — no more guessing which towers to merge.</div>
       <button id="codex-pin-tip-x" title="Dismiss"
-        style="position:absolute;top:4px;right:4px;background:transparent;border:none;color:#aa9a4a;font-size:14px;line-height:1;cursor:pointer;padding:2px 6px;font-weight:bold">×</button>
+        style="position:absolute;top:4px;right:4px;background:transparent;border:none;color:#aa9a4a;font-size:14px;line-height:1;cursor:pointer;pointer-events:auto;padding:2px 6px;font-weight:bold">×</button>
     `;
     // Inject one-shot fade-in keyframes if not already present.
     if (!document.getElementById('codex-pin-tip-style')) {
@@ -2480,14 +2495,15 @@ async function boot() {
       line-height:1.45;
       box-shadow:0 0 16px ${accent}55;
       z-index:58;
-      cursor:pointer;
+      cursor:default;
+      pointer-events:none;
       animation:surpriseChipIn 0.40s ease-out both;
     `;
     chip.innerHTML = `
       <div style="font-size:10px;letter-spacing:2.5px;color:${accent};font-weight:bold;margin-bottom:5px">${headline}</div>
       <div>${body}</div>
       <button id="surprise-info-x" title="Dismiss"
-        style="position:absolute;top:4px;right:4px;background:transparent;border:none;color:#aa9a4a;font-size:14px;line-height:1;cursor:pointer;padding:2px 6px;font-weight:bold">×</button>
+        style="position:absolute;top:4px;right:4px;background:transparent;border:none;color:#aa9a4a;font-size:14px;line-height:1;cursor:pointer;pointer-events:auto;padding:2px 6px;font-weight:bold">×</button>
     `;
     if (!document.getElementById('surprise-info-style')) {
       const s = document.createElement('style');
@@ -2532,9 +2548,9 @@ async function boot() {
   }
   // Pre-wave contextual tip — fires whenever we transition to prospect/build
   // phase. Scans the NEXT wave's spawn list for special enemy mechanics and
-  // pops a modal-style tip explaining what's coming and how to prepare. The
-  // player must click to dismiss before they can build, so they actually
-  // read it. Always cross-references the CODEX for deeper info.
+  // shows a non-blocking tip explaining what's coming and how to prepare.
+  // It stays readable while the player builds and cross-references the
+  // CODEX for deeper info.
   function showPreWaveTip(nextWave: number) {
     const w: any = wavesData[nextWave - 1];
     if (!w) return;
@@ -2724,9 +2740,9 @@ async function boot() {
       <div style="font-size:16px;font-weight:bold;letter-spacing:3px;color:${lead.color};text-shadow:2px 2px 0 #000">${lead.headline}</div>
       <div style="margin-top:10px;font-size:12px;letter-spacing:0.6px;color:#fff8e0;line-height:1.6">${lead.body}</div>
       ${moreLine}
-      <div style="margin-top:14px;font-size:10px;letter-spacing:2px;color:#aa9a4a">[ click anywhere to start preparing your defense ]</div>`;
-    b.style.cssText = `width:min(580px,86%);text-align:center;padding:18px 24px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid ${lead.color};box-shadow:0 0 28px ${lead.color}88,inset 0 0 18px rgba(0,0,0,0.6);font-family:'Courier New',monospace;cursor:pointer;`;
-    pushBanner(b, 0, { modal: true, clickDismiss: true });
+      <div style="margin-top:14px;font-size:10px;letter-spacing:2px;color:#aa9a4a">[ keep building while this notice is open ]</div>`;
+    b.style.cssText = `width:min(580px,86%);text-align:center;padding:18px 42px 18px 24px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid ${lead.color};box-shadow:0 0 28px ${lead.color}88,inset 0 0 18px rgba(0,0,0,0.6);font-family:'Courier New',monospace;`;
+    pushBanner(b, 12000, { modal: false, clickDismiss: true });
   }
   // Legacy generic boss/flyer warning. Subsumed entirely by showPreWaveTip
   // which produces a richer, mechanic-aware tip per wave. Kept as a no-op
@@ -2846,10 +2862,10 @@ async function boot() {
     b.innerHTML = `
       <div style="font-size:15px;font-weight:bold;letter-spacing:3px;color:#ffd34d;text-shadow:2px 2px 0 #000">${m.headline}</div>
       <div style="margin-top:8px;font-size:11px;letter-spacing:0.8px;color:#fff8e0;line-height:1.55">${m.body}</div>
-      <div style="margin-top:8px;font-size:9px;letter-spacing:1px;color:#aa9a4a">[ click to dismiss · ✕ to never show again ]</div>`;
-    b.style.cssText = `width:min(520px,82%);text-align:center;padding:14px 20px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid #ffd34d;box-shadow:0 0 22px rgba(255,211,77,0.45);font-family:'Courier New',monospace;text-shadow:1px 1px 0 #000;cursor:pointer;`;
+      <div style="margin-top:8px;font-size:9px;letter-spacing:1px;color:#aa9a4a">[ close ✕ to dismiss this reminder permanently ]</div>`;
+    b.style.cssText = `width:min(520px,82%);text-align:center;padding:14px 42px 14px 20px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:2px solid #ffd34d;box-shadow:0 0 22px rgba(255,211,77,0.45);font-family:'Courier New',monospace;text-shadow:1px 1px 0 #000;`;
     b.addEventListener('click', () => { markTipSeen(tipId); }, { once: true });
-    pushBanner(b, 4000);
+    pushBanner(b, 4000, { modal: false, clickDismiss: true });
   }
   // 2026-05-18 — Downgrade tip retired. Recipes no longer use "minTier",
   // they use "tier 2+ / 3+ at least one ingredient" semantics, so
@@ -2889,13 +2905,17 @@ async function boot() {
       // on smaller viewports. Now a compact pill stacked into a corner
       // with shorter copy. Top-right is clear of the wave-brief
       // (lower-left) and the right-side HUD column.
-      bar.style.cssText = `position:absolute;top:8px;right:14px;padding:6px 12px;background:linear-gradient(180deg,rgba(26,20,16,0.96),rgba(12,10,8,0.96));border:2px solid #ffd34d;color:#fff8e0;font-family:'Courier New',monospace;font-size:10.5px;font-weight:bold;letter-spacing:1.2px;z-index:75;cursor:pointer;text-shadow:1px 1px 0 #000;box-shadow:0 0 12px rgba(255,211,77,0.45);display:flex;flex-direction:column;align-items:center;gap:2px;max-width:200px;text-align:center;`;
-      bar.addEventListener('click', () => { bumpDismissCount(); bar?.remove(); }, { once: true });
+      bar.style.cssText = `position:absolute;top:8px;right:14px;padding:6px 30px 6px 12px;background:linear-gradient(180deg,rgba(26,20,16,0.96),rgba(12,10,8,0.96));border:2px solid #ffd34d;color:#fff8e0;font-family:'Courier New',monospace;font-size:10.5px;font-weight:bold;letter-spacing:1.2px;z-index:75;pointer-events:none;text-shadow:1px 1px 0 #000;box-shadow:0 0 12px rgba(255,211,77,0.45);display:flex;flex-direction:column;align-items:center;gap:2px;max-width:200px;text-align:center;`;
       document.getElementById('stage-wrap')?.appendChild(bar);
     }
     const left = state.keepsRemainingThisRound ?? 2;
     bar.innerHTML = `<span style="color:#ffd34d">⚠ KEEP <b>${left}</b> OF 2 PROSPECTS</span>
-      <span style="color:#aa9a4a;font-weight:normal;font-size:9px;letter-spacing:1px">rest cement → walls · click ✕</span>`;
+      <span style="color:#aa9a4a;font-weight:normal;font-size:9px;letter-spacing:1px">rest cement → walls</span>
+      <button type="button" class="prospect-reminder-close" title="Close" aria-label="Close prospect reminder" style="position:absolute;top:4px;right:4px;width:22px;height:22px;padding:0;background:transparent;border:1px solid #5a4a30;color:#ffd34d;font:700 11px/1 'Courier New',monospace;cursor:pointer;pointer-events:auto">✕</button>`;
+    bar.querySelector<HTMLButtonElement>('.prospect-reminder-close')?.addEventListener('click', () => {
+      bumpDismissCount();
+      bar?.remove();
+    }, { once: true });
   }
   // ─── Prospect sidebar ──────────────────────────────────────────────────
   // Right-edge vertical panel showing every prospect for the current round
@@ -3738,10 +3758,10 @@ async function boot() {
       <div style="margin-top:6px;font-size:11px;letter-spacing:0.5px;color:#fff8e0;line-height:1.55">
         Click <b style="color:#88ff88">QUESTS</b> to see what the Senate expects of you today. Gold, items, even free towers — but only if you actually do the work.
       </div>
-      <div style="margin-top:8px;font-size:9px;letter-spacing:1px;color:#aa9a4a">[ click to dismiss · won't show again ]</div>`;
-    b.style.cssText = `width:min(420px,80%);text-align:center;padding:12px 18px;background:linear-gradient(180deg,#0c1a08,#0c0a08);border:2px solid #88ff88;box-shadow:0 0 22px rgba(136,255,136,0.45);font-family:'Courier New',monospace;text-shadow:1px 1px 0 #000;cursor:pointer;`;
+      <div style="margin-top:8px;font-size:9px;letter-spacing:1px;color:#aa9a4a">[ close ✕ to dismiss · won't show again ]</div>`;
+    b.style.cssText = `width:min(420px,80%);text-align:center;padding:12px 42px 12px 18px;background:linear-gradient(180deg,#0c1a08,#0c0a08);border:2px solid #88ff88;box-shadow:0 0 22px rgba(136,255,136,0.45);font-family:'Courier New',monospace;text-shadow:1px 1px 0 #000;`;
     b.addEventListener('click', () => { markTipSeen('quest_tip'); }, { once: true });
-    pushBanner(b, 5500);
+    pushBanner(b, 5500, { modal: false, clickDismiss: true });
   }
   // Pool-upgrade celebration banner. Highlights every concrete benefit
   // the player just unlocked so the rising upgrade cost feels earned.
