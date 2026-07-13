@@ -40,6 +40,7 @@ import { heroAuraScaleForTier, heroAuraScaleForTower, heroTierForTower } from '.
 import HERO_DEFS from '../src/data/herodefs.json';
 import TOWERS from '../src/data/towers.json';
 import { eligibleBaseTowerTypesAtTier } from '../src/systems/BaseTowerRoster';
+import { tickBurnPatches } from '../src/systems/EnemySystem';
 
 function freshState(): GameStateShape {
   const s = createGameState();
@@ -484,8 +485,51 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(primary.statusEffects.some(st => st.kind === StatusEffectKind.BURN)).toBe(true);
     expect(nearby.statusEffects.some(st => st.kind === StatusEffectKind.BURN)).toBe(true);
     expect(far.statusEffects.some(st => st.kind === StatusEffectKind.BURN)).toBe(false);
+    expect(s.burnPatches).toHaveLength(1);
+    expect(s.burnPatches?.[0]).toMatchObject({ x: primary.x, y: primary.y, life: 4, sourceTier: 5 });
     expect(fx[0]?.ability).toBe('FORTUNES_BOLT');
     expect(fx[0]?.extras?.splashRadiusTiles).toBeCloseTo(1.35);
+  });
+
+  it('Sulla basic meteors leave burning ground in starter and Champion form', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    try {
+      for (const type of [TowerType.HERO_SULLA, TowerType.CHAMPION_SULLA]) {
+        const s = freshState();
+        s.phase = GamePhase.WAVE_PHASE;
+        s.tick = 1;
+        s.wave = 4;
+        const sulla = createTower(type, 5, 5, 5, 1);
+        sulla.attackCooldown = 0;
+        sulla.critChance = 0;
+        s.towers.set(sulla.id, sulla);
+        const target = testEnemy(`sulla-ground-${type}`, {
+          type: EnemyType.CELTIC_FOOTMAN,
+          faction: EnemyFaction.CELTS,
+          hp: 100_000,
+          maxHp: 100_000,
+          x: 7 * 32 + 16,
+          y: 5 * 32 + 16
+        });
+        s.enemies.set(target.id, target);
+
+        tickCombat(s, 0.016, {
+          onHit: () => {},
+          onMeleeSwing: () => {},
+          onProjectileFire: () => {},
+          onKill: () => {}
+        });
+
+        expect((TOWERS as any)[type].burnsGround, `${type} data flag`).toBe(true);
+        expect(s.burnPatches, `${type} patch`).toHaveLength(1);
+        expect(s.burnPatches?.[0]).toMatchObject({ x: target.x, y: target.y, life: 4, sourceTier: 5 });
+        const hpBeforeGroundFire = target.hp;
+        tickBurnPatches(s, 0.25);
+        expect(target.hp, `${type} burning-ground damage`).toBeLessThan(hpBeforeGroundFire);
+      }
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
   it('ranged heroes use named hero projectile sprites in starter and Champion form', () => {

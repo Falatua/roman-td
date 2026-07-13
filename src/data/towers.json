@@ -1110,7 +1110,8 @@
     "melee": false,
     "spriteSheet": 1,
     "spriteCell": 3,
-    "ability": "The Fortunate. PYRE WARD: every tower within 5.5 tiles keeps its own damage type and adds bonus FIRE damage on each hit. Meteor Slam calls down a burning meteor every 7s, splashing and burning enemies on impact. Proscription temporarily overrides every tower's base damage to DIVINE, bypassing all faction resistances. Heroic crit profile (50% × 2.0).",
+    "burnsGround": true,
+    "ability": "The Fortunate. Every basic meteor leaves BURNING GROUND for 4s. PYRE WARD: every tower within 5.5 tiles keeps its own damage type and adds bonus FIRE damage on each hit. Meteor Slam calls down a burning meteor every 7s, splashing, burning, and leaving another 4s fire patch on impact. Proscription temporarily overrides every tower's base damage to DIVINE, bypassing all faction resistances. Heroic crit profile (50% × 2.0).",
     "critChance": 0.5,
     "critMult": 2.0,
     "isHero": true,
@@ -1229,7 +1230,8 @@
     "isHero": true,
     "critChance": 0.5,
     "critMult": 2.0,
-    "ability": "Champion of Rome, recruited at Mercator for 1000g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
+    "burnsGround": true,
+    "ability": "Champion of Rome, recruited at Mercator for 1000g. Retains Pyre Ward, Meteor Slam, Proscription, and 4s BURNING GROUND on every basic meteor and Meteor Slam impact. Field all SIX Champions, then combine them into MARS VICTOR."
   },
   "PRAETORIAN_EXECUTIONER": {"name": "Praetorian Executioner", "damageType": "PHYS_MELEE", "baseDps": 135.0, "attackSpeed": 1.5, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.15, "critMult": 2.4, "ability": "Heavy maul. EXECUTIONER'S RHYTHM: every 2nd strike STUNS 0.8s — and he deals +40% damage to any STUNNED, SLOWED, or FROZEN target, caving in everything his own lockdown leaves helpless."},
   "SACRED_BAND": {"name": "Sacred Band", "damageType": "DIVINE", "baseDps": 165.0, "attackSpeed": 1.3, "range": 2.0, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.18, "critMult": 2.6, "ability": "Holy blade — DIVINE melee that bypasses most resistances. AEGIS NOVA: every 4th strike erupts a 2-tile divine shockwave for 2.2× damage that STUNS everything caught (0.4s). Elite anti-armor + area lockdown."},

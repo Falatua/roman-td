@@ -26,7 +26,7 @@ import towersData from '../data/towers.json';
 import { GameStateShape } from '../GameState';
 import { Tower, Enemy, DamageType, GamePhase, StatusEffectKind, TileType } from '../types';
 import { GRID } from '../constants';
-import { pushStatus } from './CombatResolver';
+import { pushStatus, spawnBurnPatch } from './CombatResolver';
 import { setTile } from './GridManager';
 import { buildGroundPath } from './PathFinder';
 import { HERO_IDS, HeroIdentityId, heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
@@ -834,6 +834,10 @@ function executeFORTUNES_BOLT(state: GameStateShape, hero: Tower, params: any, a
     e.lastDamagedTick = state.tick;
     pushStatus(e, StatusEffectKind.BURN, burnDur, burnMag, hero.qualityTier);
   }
+  // Meteor Slam resolves outside the normal tower projectile pipeline, so
+  // stamp its ground fire explicitly at the impact point. Basic Sulla
+  // meteors use the shared burnsGround tower flag instead.
+  spawnBurnPatch(state, nearest.x, nearest.y, hero.qualityTier, 4.0);
   // Signature VFX: falling meteor and slam explosion at the target.
   fireAbilityFx(hero, hooks, state.tick, ability, '#ff7733', 0.95, {
     target: { x: nearest.x, y: nearest.y },

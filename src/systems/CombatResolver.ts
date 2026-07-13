@@ -232,10 +232,10 @@ function divineDamageRiderPctForTower(tower: Tower): number {
   return pct;
 }
 
-// BURNING GROUND — fire-themed towers stamp a 3-second patch at the impact
+// BURNING GROUND — fire-themed towers stamp a 4-second patch at the impact
 // point. Any enemy within the patch radius takes burn DoT each frame.
 // Patches stack additively but each patch decays independently.
-function spawnBurnPatch(state: GameStateShape, x: number, y: number, sourceTier: number, life = 4.0) {
+export function spawnBurnPatch(state: GameStateShape, x: number, y: number, sourceTier: number, life = 4.0) {
   if (!state.burnPatches) state.burnPatches = [];
   state.burnPatches.push({
     id: newBurnPatchId(),
