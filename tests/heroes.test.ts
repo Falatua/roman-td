@@ -1449,6 +1449,16 @@ describe('herodefs.json shape (single source of tuning)', () => {
     expect(getTowerProjectileProfile(TowerType.CHAMPION_SCIPIO)).toBeNull();
   });
 
+  it('Agricola has 7-tile longbow range in starter and Champion form', () => {
+    const starter = createTower(TowerType.HERO_AGRICOLA, 5, 5, 5, 1);
+    const champion = createTower(TowerType.CHAMPION_AGRICOLA, 5, 6, 5, 1);
+
+    expect(starter.range).toBe(7);
+    expect(champion.range).toBe(7);
+    expect((TOWERS as any).HERO_AGRICOLA.ability).toContain('Seven-tile longbow reach');
+    expect((TOWERS as any).CHAMPION_AGRICOLA.ability).toContain('seven-tile longbow reach');
+  });
+
   it('Sulla has 6-tile range and 25 percent faster basic attacks in starter and Champion form', () => {
     const starter = createTower(TowerType.HERO_SULLA, 5, 5, 5, 1);
     const champion = createTower(TowerType.CHAMPION_SULLA, 5, 6, 5, 1);

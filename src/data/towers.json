@@ -1057,12 +1057,12 @@
     "damageType": "PHYS_RANGED",
     "baseDps": 93.2,
     "attackSpeed": 1.331,
-    "range": 5.0,
+    "range": 7.0,
     "kind": "BASE",
     "melee": false,
     "spriteSheet": 1,
     "spriteCell": 2,
-    "ability": "Governor of the Frontier. Global anti-air passive lets every tower target flyers and adds anti-flyer damage, plus abilities Eagle Scout (marks every flyer for +60% damage taken) and Frontier Wall (slows flyers 70% + every tower deals +25% vs flyers). Heroic crit profile (50% × 2.0).",
+    "ability": "Governor of the Frontier. Seven-tile longbow reach. Global anti-air passive lets every tower target flyers and adds anti-flyer damage, plus abilities Eagle Scout (marks every flyer for +60% damage taken) and Frontier Wall (slows flyers 70% + every tower deals +25% vs flyers). Heroic crit profile (50% × 2.0).",
     "critChance": 0.5,
     "critMult": 2.0,
     "isHero": true,
@@ -1169,7 +1169,7 @@
     "damageType": "PHYS_RANGED",
     "baseDps": 102.5,
     "attackSpeed": 1.21,
-    "range": 5.0,
+    "range": 7.0,
     "kind": "COMBO",
     "melee": false,
     "tierBand": 5,
@@ -1179,7 +1179,7 @@
     "isHero": true,
     "critChance": 0.5,
     "critMult": 2.0,
-    "ability": "Champion of Rome, recruited at Mercator for 1000g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
+    "ability": "Champion of Rome with seven-tile longbow reach, recruited at Mercator for 1000g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
   },
   "CHAMPION_SCIPIO": {
     "name": "Champion Scipio",
