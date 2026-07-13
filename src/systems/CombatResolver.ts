@@ -85,6 +85,14 @@ const SULLA_FIRE_RIDER_PCT = 0.22;
 export const CAPITOLINE_AEGIS_DIVINE_RIDER_PCT = 0.35;
 export const SIEGE_FLYER_MISS_CHANCE = 0.20;
 
+// Storm Ballista is a purpose-built anti-air combo. Ordinary siege engines
+// retain their heavy-projectile accuracy penalty against flyers, but this
+// tower's storm-guided bolts do not inherit that generic miss roll.
+export function siegeFlyerMissChanceForTower(tower: Pick<Tower, 'type' | 'damageType'>): number {
+  if (tower.damageType !== DamageType.SIEGE) return 0;
+  return tower.type === TowerType.STORM_BALLISTA ? 0 : SIEGE_FLYER_MISS_CHANCE;
+}
+
 export const FINAL_FIVE_APEX_WAVE = 26;
 
 export function isCasterTarget(enemy: Pick<Enemy, 'type'>): boolean {
@@ -712,7 +720,7 @@ function secondaryHitBlocked(t: Tower, target: Enemy, state: GameStateShape): bo
   // target with a heavy bolt/stone is clumsy compared with arrows or
   // divine strikes. This is an accuracy penalty, not a damage-resist
   // layer, so landed siege shots still keep their flyer-control identity.
-  if (t.damageType === DamageType.SIEGE && target.isFlyer && Math.random() < SIEGE_FLYER_MISS_CHANCE) return true;
+  if (target.isFlyer && Math.random() < siegeFlyerMissChanceForTower(t)) return true;
   // Per-enemy permanent dodge (Numidian Rider, Shadow Cavalry) — ranged only.
   const dodgeChance: number = (enemiesData as any)[target.type]?.dodgeChance ?? 0;
   if (dodgeChance > 0 && isRangedClass && Math.random() < dodgeChance) return true;
@@ -1898,9 +1906,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         (target as any).__weatherMissTick = state.tick;
       }
       const siegeFlyerMissed = !missed &&
-                               t.damageType === DamageType.SIEGE &&
                                target.isFlyer &&
-                               Math.random() < SIEGE_FLYER_MISS_CHANCE;
+                               Math.random() < siegeFlyerMissChanceForTower(t);
       if (siegeFlyerMissed) {
         damage = 0;
         (target as any).__weatherMissTick = state.tick;

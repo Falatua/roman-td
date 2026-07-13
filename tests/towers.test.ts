@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -657,6 +657,39 @@ describe('Anti-air tower signatures', () => {
     } finally {
       Math.random = originalRandom;
     }
+  });
+
+  it('lets Storm Ballista acquire and reliably fire on flyers', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    const tower = createTower(TowerType.STORM_BALLISTA, 4, 4, 4, 0);
+    tower.attackCooldown = 0;
+    tower.critChance = 0;
+    tower.targetingMode = TargetingMode.FLYERS;
+    state.towers.set(tower.id, tower);
+    const center = towerCenter(tower);
+    const target = flyerEnemy('storm-ballista-flyer', center.x + GRID.TILE * 2, center.y);
+    state.enemies.set(target.id, target);
+    let firedDamage: number | null = null;
+
+    const originalRandom = Math.random;
+    Math.random = () => 0;
+    try {
+      tickCombat(state, 0.016, {
+        ...noopCombatHooks(),
+        onProjectileFire: (_tower, enemy, damage) => {
+          expect(enemy.id).toBe(target.id);
+          firedDamage = damage;
+        }
+      });
+    } finally {
+      Math.random = originalRandom;
+    }
+
+    expect(siegeFlyerMissChanceForTower(tower)).toBe(0);
+    expect(firedDamage).not.toBeNull();
+    expect(firedDamage as unknown as number).toBeGreaterThan(0);
+    expect((target as any).__weatherMissTick).toBeUndefined();
   });
 
   it('zeros the fired projectile payload when a primary siege shot misses a flyer', () => {
