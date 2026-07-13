@@ -1309,6 +1309,15 @@ describe('Codex modal interaction layer', () => {
     expect(source).toContain('background:#0c0a08;border:1px solid #3a3025;padding:10px');
     expect(source).toContain('scrollbar-gutter:stable both-edges');
   });
+
+  it('shows every hero roster entry with its specific battlefield sprite', () => {
+    const source = readFileSync('src/render/Codex.ts', 'utf8');
+    expect(source).toContain('data-codex-hero-sprite="${id}"');
+    expect(source).toContain('${spriteImg(id, 104)}');
+    for (const heroId of Object.keys(HERO_DEFS)) {
+      expect(ASSET_KEYS[heroId], `${heroId} should have a dedicated Codex/map sprite`).toBeTruthy();
+    }
+  });
 });
 
 describe('Modal ergonomics and popup stacking', () => {

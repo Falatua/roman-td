@@ -1370,10 +1370,16 @@ function renderTab(tab: string): string {
             <span>⚔ ${(def.name ?? id).toUpperCase()}</span>
             <span>${def.specialty ?? ''}</span>
           </div>
-          <div style="padding:10px 14px;border-bottom:1px solid #3a3025">
-            <div style="font-size:11px;color:#cdb98a;letter-spacing:2px;margin-bottom:6px">${def.title ?? ''}</div>
-            <div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;margin-bottom:3px">BUILT FOR</div>
-            <div style="font-size:11px;color:#e8d6a8;line-height:1.5;font-style:italic;padding-left:10px;border-left:3px solid ${tint}">${def.playerProblemSolved ?? ''}</div>
+          <div class="codex-hero-overview" style="display:grid;grid-template-columns:116px minmax(0,1fr);gap:14px;align-items:center;padding:12px 14px;border-bottom:1px solid #3a3025">
+            <div data-codex-hero-sprite="${id}" role="img" aria-label="${def.name ?? id} battle sprite" style="width:112px;min-height:128px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 58%,${tint}22 0,transparent 66%),#080604;border:2px solid ${tint};box-shadow:inset 0 0 12px ${tint}44;overflow:hidden">
+              ${spriteImg(id, 104)}
+              <div style="margin-top:3px;color:${tint};font-size:8px;font-weight:bold;letter-spacing:1.5px;line-height:1">BATTLE SPRITE</div>
+            </div>
+            <div style="min-width:0">
+              <div style="font-size:11px;color:#cdb98a;letter-spacing:2px;margin-bottom:8px">${def.title ?? ''}</div>
+              <div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;margin-bottom:3px">BUILT FOR</div>
+              <div style="font-size:11px;color:#e8d6a8;line-height:1.5;font-style:italic;padding-left:10px;border-left:3px solid ${tint}">${def.playerProblemSolved ?? ''}</div>
+            </div>
           </div>
           <div style="padding:10px 14px;border-bottom:1px solid #3a3025">
             <div style="font-size:10px;color:#aa9a4a;letter-spacing:2px;margin-bottom:4px">⚜ PASSIVE</div>
