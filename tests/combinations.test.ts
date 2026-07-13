@@ -495,7 +495,7 @@ describe('Recipe combo detection', () => {
     for (const [type, expectedDps] of Object.entries(expectedBoosted)) {
       expect((towersData as any)[type].baseDps).toBe(expectedDps);
     }
-    expect((towersData as any)[TowerType.COHORT_GUARD].baseDps).toBe(79.9);
+    expect((towersData as any)[TowerType.COHORT_GUARD].baseDps).toBe(95.0);
   });
 
   it('keeps previously underpaying combo investments on the new payoff line', () => {
@@ -515,8 +515,28 @@ describe('Recipe combo detection', () => {
     const bestiarius = (towersData as any)[TowerType.BESTIARIUS];
     expect(bestiarius.kind).toBe('COMBO');
     expect(bestiarius.tierBand).toBe(4);
-    expect(bestiarius.attackSpeed).toBe(2.2);
-    expect(bestiarius.ability).toContain('rapid polearm strikes at 2.2/s');
+    expect(bestiarius.baseDps).toBe(105.0);
+    expect(bestiarius.attackSpeed).toBe(2.75);
+    expect(bestiarius.ability).toContain('rapid polearm strikes at 2.75/s');
+  });
+
+  it('keeps the requested combo-strength pass on its authored stat line', () => {
+    const expected = {
+      [TowerType.HORSEMAN]: { baseDps: 75.0, attackSpeed: 1.87, range: 2.0 },
+      [TowerType.COHORT_GUARD]: { baseDps: 95.0, attackSpeed: 1.65, range: 2.0 },
+      [TowerType.VEXILLATION]: { baseDps: 110.0, attackSpeed: 1.705, range: 2.0 },
+      [TowerType.AERARIUM]: { baseDps: 60.0, attackSpeed: 2.0, range: 4.5 },
+      [TowerType.PRAETORIAN_WALL]: { baseDps: 120.0, attackSpeed: 1.6, range: 2.0 },
+      [TowerType.CATAPHRACT_LANCER]: { baseDps: 185.0, attackSpeed: 1.1, range: 3.0 },
+      [TowerType.UNDEAD_GENERAL]: { baseDps: 120.0, attackSpeed: 1.4, range: 3.0 },
+    } as const;
+    for (const [type, stats] of Object.entries(expected)) {
+      const def = (towersData as any)[type];
+      expect(def.baseDps, type).toBe(stats.baseDps);
+      expect(def.attackSpeed, type).toBe(stats.attackSpeed);
+      expect(def.range, type).toBe(stats.range);
+    }
+    expect((towersData as any)[TowerType.PRAETORIAN_WALL].ability).toContain('every 8th attack');
   });
 
   it('boosts labeled supercombo towers by 10 percent without touching Hannibal Nightmare', () => {

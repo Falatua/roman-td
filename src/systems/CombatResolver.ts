@@ -1769,9 +1769,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         damage *= 2.0;
       }
       // UNDEAD GENERAL — Primus Pilus + Evocatus anti-beast command tower.
-      // Its neutral baseline matches Scorpion Bolt, while beasts take 2.25x
-      // and elephant variants take 3x. The elephant bonus replaces rather
-      // than stacks with the broader beast rider.
+      // Its strengthened neutral baseline sits above Scorpion Bolt, while
+      // beasts take 2.25x and elephant variants take 3x. The elephant bonus
+      // replaces rather than stacks with the broader beast rider.
       if (t.type === TowerType.UNDEAD_GENERAL) {
         damage *= undeadGeneralPreyDamageMult(target);
       }
@@ -3168,12 +3168,12 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       break;
     case TowerType.PRAETORIAN_WALL: {
       // Slow on every hit (45% magnitude). LAST STAND (2026-05 v7):
-      // every 10th attack knocks the target backward along the path —
+      // every 8th attack knocks the target backward along the path —
       // a heavy shield-wall shove that interrupts checkpoint-heals and
       // creates a brief breathing room behind the line.
       pushStatus(target, StatusEffectKind.SLOW, dur(2.5), 0.45, tier);
       const hc = (t as any).__hitCount ?? 0;
-      if (hc > 0 && hc % 10 === 0) {
+      if (hc > 0 && hc % 8 === 0) {
         pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.6, tier);
       }
       break;

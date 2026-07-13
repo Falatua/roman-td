@@ -90,14 +90,18 @@ describe('Undead General combo tower', () => {
     expect(result?.tileY).toBe(8);
   });
 
-  it('matches Scorpion Bolt baseline DPS while retaining a melee-cleave identity', () => {
+  it('has the stronger command cadence and three-tile melee-cleave reach', () => {
     const general = (towersData as any)[TowerType.UNDEAD_GENERAL];
     const scorpionBolt = (towersData as any)[TowerType.SCORPION_BOLT];
-    expect(general.baseDps).toBe(scorpionBolt.baseDps);
-    expect(general.baseDps).toBe(100.6);
+    expect(general.baseDps).toBe(120.0);
+    expect(general.baseDps).toBeGreaterThan(scorpionBolt.baseDps);
+    expect(general.attackSpeed).toBe(1.4);
+    expect(general.range).toBe(3.0);
     expect(general.damageType).toBe('PHYS_MELEE');
     expect(general.melee).toBe(true);
-    expect(hasCleave(createTower(TowerType.UNDEAD_GENERAL, 4, 0, 0, 0))).toBe(true);
+    const tower = createTower(TowerType.UNDEAD_GENERAL, 4, 0, 0, 0);
+    expect(hasCleave(tower)).toBe(true);
+    expect(tower.range).toBe(3.0);
   });
 
   it('specializes against beasts and both living and undead elephants', () => {

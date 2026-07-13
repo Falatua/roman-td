@@ -980,7 +980,10 @@ describe('Giant Killer transformation and combat wiring', () => {
     // The awakening is now a specialist, not a general-purpose early carry.
     // Its neutral sheet DPS only needs to improve meaningfully over Cohort
     // Guard; the giant-only combat multiplier supplies the legendary payoff.
-    expect(towerEffectiveStats(cohort).dps).toBeGreaterThan(cohortBefore.dps * 2);
+    // The source Cohort Guard was strengthened in the 2026-07-13 combo pass.
+    // Keep the awakened form's neutral damage restrained while its 9x giant
+    // specialization remains the reason to spend Giant's Bane.
+    expect(towerEffectiveStats(cohort).dps).toBeGreaterThan(cohortBefore.dps * 1.8);
   });
 
   it('transforms only legal Tier IV+ Witch\'s Brew Murmillo carriers and opens four total slots', () => {
@@ -1076,8 +1079,8 @@ describe('Giant Killer transformation and combat wiring', () => {
     const kingBattlefieldDps = kingStats.dps + sustainedSummonDps;
 
     expect(giantKillerDps).toBeGreaterThan(militesBefore * 11);
-    expect(giantsCohortDps).toBeGreaterThan(cohortBefore * 2);
-    expect(giantsCohortDps * GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT).toBeGreaterThan(cohortBefore * 20);
+    expect(giantsCohortDps).toBeGreaterThan(cohortBefore * 1.8);
+    expect(giantsCohortDps * GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT).toBeGreaterThan(cohortBefore * 16);
     expect(kingBattlefieldDps).toBeGreaterThan(murmilloBefore * 4.0);
     expect(kingBattlefieldDps).toBeGreaterThan(giantsCohortDps);
     expect(kingBattlefieldDps).toBeLessThan(giantsCohortDps * GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT);
