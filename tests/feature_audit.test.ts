@@ -1318,6 +1318,49 @@ describe('Codex modal interaction layer', () => {
       expect(ASSET_KEYS[heroId], `${heroId} should have a dedicated Codex/map sprite`).toBeTruthy();
     }
   });
+
+  it('keeps Systems and Mechanics copy player-facing instead of exposing patch or implementation language', () => {
+    const source = readFileSync('src/render/Codex.ts', 'utf8');
+    const systems = source.slice(
+      source.indexOf("if (tab === 'SYSTEMS')"),
+      source.indexOf("if (tab === 'QUESTS')")
+    );
+    const mechanics = source.slice(
+      source.indexOf("if (tab === 'MECHANICS')"),
+      source.indexOf("if (tab === 'POOL')")
+    );
+    const playerCopy = `${systems}\n${mechanics}`;
+    const forbidden = [
+      /\bv\d+\b/i,
+      /\bversions?\b/i,
+      /20\d{2}-\d{2}-\d{2}/,
+      /\bCUT\b/,
+      /\bEndless\b/i,
+      /towers\.json/i,
+      /\bbaseDps\b/,
+      /melee:false/i,
+      /kind:COMBO/i,
+      /\bhardcoded\b/i,
+      /\bhard-pinned\b/i,
+      /source-of-truth/i,
+      /\bauthored\b/i,
+      /\bruntime\b/i,
+      /procedural generator/i,
+      /prior gauntlet tuning/i,
+      /round\(wave/i,
+      /floor\(wave/i,
+      /\bmaxHp\b/,
+      /boss scripts/i,
+      /\bVFX\b/,
+      /reward modal/i,
+      /choice modal/i,
+      /\bHUD\b/,
+    ];
+
+    for (const phrase of forbidden) {
+      expect(playerCopy, `Codex player copy exposes ${phrase}`).not.toMatch(phrase);
+    }
+  });
 });
 
 describe('Modal ergonomics and popup stacking', () => {
