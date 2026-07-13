@@ -150,7 +150,7 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
   // 2026-06-28 — 4 new ranged combos.
   [TowerType.STORM_BALLISTA]:    { key: 'PROJ_BALLISTA',       arc: false, speed: 780, splash: 1.4, embed: true  },
   [TowerType.SKYREAPER_BATTERY]: { key: 'PROJ_ARROW',          arc: true,  speed: 640, splash: 0,   embed: true  },
-  [TowerType.PLAGUE_LOBBER]:     { key: 'PROJ_POISON_CLOUD',   arc: true,  speed: 340, splash: 1.2, embed: false },
+  [TowerType.PLAGUE_LOBBER]:     { key: 'PROJ_POISON_CLOUD',   arc: true,  speed: 340, splash: 1.5, embed: false },
   [TowerType.AUGURS_WRATH]:      { key: 'PROJ_DIVINE_APEX_ORB', arc: true, speed: 600, splash: 1.0, embed: false },
   // 2026-06-28 — 2 new combos + 2 new super-combos.
   [TowerType.EXPLORATORES]:      { key: 'PROJ_ARROW',          arc: true,  speed: 700, splash: 0,   embed: true  },

@@ -2,12 +2,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { itemFamily } from '../src/systems/ItemRules';
-import { spawnProjectile, tickProjectiles } from '../src/systems/ProjectileSystem';
+import { getTowerProjectileProfile, spawnProjectile, tickProjectiles } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind, TargetingMode } from '../src/types';
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS, GRID } from '../src/constants';
 import { createGameState } from '../src/GameState';
@@ -255,13 +255,57 @@ describe('Tower effective stats', () => {
       [TowerType.SCORPION_BOLT]: 100.6,
       [TowerType.NUMIDIAN_CAVALRY]: 285.0,
       [TowerType.NEMESIS_ENGINE]: 235.0,
-      [TowerType.BEASTLORD_CHAMPION]: 144.0,
+      [TowerType.BEASTLORD_CHAMPION]: 170.0,
       [TowerType.SKYREAPER_BATTERY]: 240.0
     };
     for (const [type, expectedDps] of Object.entries(expectedAntiAirDps)) {
       expect((towersData as any)[type].baseDps).toBe(expectedDps);
     }
     expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(235.0);
+  });
+
+  it('gives the strengthened standalone combos distinct combat payoffs', () => {
+    const beastlordDef = (towersData as any).BEASTLORD_CHAMPION;
+    const reaverDef = (towersData as any).MIRMILLO_REAVER;
+    const plagueDef = (towersData as any).PLAGUE_LOBBER;
+    const tribuneDef = (towersData as any).TRIBUNE_AVENGER;
+
+    expect([beastlordDef.baseDps, beastlordDef.attackSpeed]).toEqual([170, 1.9]);
+    expect([reaverDef.baseDps, reaverDef.attackSpeed, reaverDef.range]).toEqual([175, 2.1, 2.5]);
+    expect([plagueDef.baseDps, plagueDef.attackSpeed, plagueDef.range]).toEqual([125, 0.9, 5]);
+    expect([tribuneDef.baseDps, tribuneDef.attackSpeed, tribuneDef.range]).toEqual([175, 1.4, 2.5]);
+    expect((towersData as any).JOVIAN_SKY_HUNTER.baseDps).toBe(340);
+    expect(getTowerProjectileProfile(TowerType.PLAGUE_LOBBER)?.splash).toBe(1.5);
+
+    const beast = testEnemy('beast');
+    const elephant = testEnemy('elephant');
+    const ordinary = testEnemy('ordinary');
+    beast.type = EnemyType.FERAL_DOG;
+    elephant.type = EnemyType.WAR_ELEPHANT;
+    ordinary.type = EnemyType.CELTIC_FOOTMAN;
+    expect(beastlordPreyDamageMult(beast)).toBe(BEASTLORD_BEAST_DAMAGE_MULT);
+    expect(beastlordPreyDamageMult(elephant)).toBe(BEASTLORD_ELEPHANT_DAMAGE_MULT);
+    expect(beastlordPreyDamageMult(ordinary)).toBe(1);
+
+    expect(murmilloReaverPressureDamageMult(ordinary)).toBe(1);
+    ordinary.statusEffects.push({ kind: StatusEffectKind.BLEED, remaining: 2, magnitude: 0.012, sourceTier: 3 });
+    expect(murmilloReaverPressureDamageMult(ordinary)).toBe(MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT);
+
+    const state = createGameState();
+    const beastlord = createTower(TowerType.BEASTLORD_CHAMPION, 3, 2, 2, 1);
+    applyDamageAndStatus(state, beastlord, beast, 1, noopCombatHooks());
+    expect(beast.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.15)).toBe(true);
+
+    const tribune = createTower(TowerType.TRIBUNE_AVENGER, 4, 2, 2, 1);
+    (tribune as any).__hitCount = 4;
+    applyDamageAndStatus(state, tribune, ordinary, 1, noopCombatHooks());
+    expect(ordinary.statusEffects.some(s => s.kind === StatusEffectKind.POISON && s.magnitude === 0.05)).toBe(true);
+    expect(ordinary.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.18)).toBe(true);
+
+    const plagueTarget = testEnemy('plague-target');
+    const plague = createTower(TowerType.PLAGUE_LOBBER, 3, 2, 2, 1);
+    applyDamageAndStatus(state, plague, plagueTarget, 1, noopCombatHooks());
+    expect(plagueTarget.statusEffects.some(s => s.kind === StatusEffectKind.POISON && s.magnitude === 0.05)).toBe(true);
   });
 
   it('marks Sagittarius, Aquila Venator, and Skyreaper Battery as flyer-only targeting towers', () => {

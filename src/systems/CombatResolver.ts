@@ -353,12 +353,28 @@ export function isBeastEnemyType(type: EnemyType): boolean {
 
 export const UNDEAD_GENERAL_BEAST_DAMAGE_MULT = 2.25;
 export const UNDEAD_GENERAL_ELEPHANT_DAMAGE_MULT = 3.0;
+export const BEASTLORD_BEAST_DAMAGE_MULT = 1.75;
+export const BEASTLORD_ELEPHANT_DAMAGE_MULT = 2.25;
+export const MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT = 1.25;
 
 export function undeadGeneralPreyDamageMult(target: Pick<Enemy, 'type'>): number {
   if (target.type === EnemyType.WAR_ELEPHANT || target.type === EnemyType.UNDEAD_WAR_ELEPHANT) {
     return UNDEAD_GENERAL_ELEPHANT_DAMAGE_MULT;
   }
   return isBeastEnemyType(target.type) ? UNDEAD_GENERAL_BEAST_DAMAGE_MULT : 1;
+}
+
+export function beastlordPreyDamageMult(target: Pick<Enemy, 'type'>): number {
+  if (target.type === EnemyType.WAR_ELEPHANT || target.type === EnemyType.UNDEAD_WAR_ELEPHANT) {
+    return BEASTLORD_ELEPHANT_DAMAGE_MULT;
+  }
+  return isBeastEnemyType(target.type) ? BEASTLORD_BEAST_DAMAGE_MULT : 1;
+}
+
+export function murmilloReaverPressureDamageMult(target: Pick<Enemy, 'statusEffects'>): number {
+  return target.statusEffects.some(s => s.kind === StatusEffectKind.BLEED && s.remaining > 0)
+    ? MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT
+    : 1;
 }
 
 // Tower types that fight in melee (no projectile, instant damage with slash VFX).
@@ -1564,6 +1580,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if ((t.type === TowerType.BEAST_HUNTER || t.type === TowerType.BEAST_SLAYER) && isBeastEnemyType(target.type)) {
         damage *= 3.0;
       }
+      if (t.type === TowerType.BEASTLORD_CHAMPION) damage *= beastlordPreyDamageMult(target);
+      if (t.type === TowerType.MIRMILLO_REAVER) damage *= murmilloReaverPressureDamageMult(target);
       // 2026-05-17 — PUNIC HUNTER. The Murmillo gladiator's signature
       // anti-Carthage rage. +75% damage vs CARTHAGE faction (W7-W10 living
       // Punic columns) and +50% damage vs UNDEAD_CARTHAGE (W16-W18 risen
@@ -3011,16 +3029,19 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
     // SACRED_BAND + STORM_BALLISTA carry AOE signatures in the buff pass
     // (~line 1576), not a per-target on-hit status, so they're not here.
     case TowerType.MIRMILLO_REAVER:
-      // Sica — stacking BLEED DoT on every cut.
+      // Sica pressure: refresh BLEED, then future cuts gain a direct-damage rider.
       pushStatus(target, StatusEffectKind.BLEED, 6, 0.012, tier);
       break;
     case TowerType.TRIBUNE_AVENGER:
-      // Consecrated scepter — POISON DoT on every divine strike.
+      // Consecrated scepter: poison every hit, then expose prey every fourth hit.
       pushStatus(target, StatusEffectKind.POISON, dur(3), 0.05, tier);
+      if ((((t as any).__hitCount ?? 0) % 4) === 0) {
+        pushStatus(target, StatusEffectKind.MARK, dur(3), 0.18, tier);
+      }
       break;
     case TowerType.PLAGUE_LOBBER:
       // Toxin pot — POISON on the cluster (BURNING patch is auto-fired by burnsGround).
-      pushStatus(target, StatusEffectKind.POISON, dur(2.5), 0.05, tier);
+      pushStatus(target, StatusEffectKind.POISON, dur(3.5), 0.05, tier);
       break;
     case TowerType.AUGURS_WRATH:
       // Radiant omen-fire — BURN DoT on the struck cluster.
@@ -3350,6 +3371,9 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       if (target.isFlyer) {
         pushStatus(target, StatusEffectKind.STUN, dur(0.55), 0, tier);
         pushStatus(target, StatusEffectKind.MARK, dur(2.5), 0.20, tier);
+      }
+      if (isBeastEnemyType(target.type)) {
+        pushStatus(target, StatusEffectKind.MARK, dur(3), 0.15, tier);
       }
       break;
     case TowerType.SKYREAPER_BATTERY:
