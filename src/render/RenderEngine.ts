@@ -5456,27 +5456,6 @@ export class RenderEngine {
     this.overlayGfx.lineStyle(0);
   }
 
-  // Draw thin connecting lines between ingredients of an available combo,
-  // ending at a glowing centroid where the result will appear.
-  drawComboLinks(combos: any[], state: GameStateShape, tick: number) {
-    for (const cb of combos) {
-      const xs = cb.ingredients.map((i: any) => i.tileX * GRID.TILE + GRID.TILE / 2);
-      const ys = cb.ingredients.map((i: any) => i.tileY * GRID.TILE + GRID.TILE / 2);
-      const cx = xs.reduce((a: number, b: number) => a + b, 0) / xs.length;
-      const cy = ys.reduce((a: number, b: number) => a + b, 0) / ys.length;
-      const a = 0.55 + 0.35 * Math.sin(tick * 4);
-      this.comboGfx.lineStyle(1.5, 0xff8a44, a * 0.7);
-      for (let i = 0; i < xs.length; i++) {
-        this.comboGfx.moveTo(xs[i], ys[i]).lineTo(cx, cy);
-      }
-      this.comboGfx.lineStyle(0);
-      // Centroid crystal — pulses to suggest "the result will land here"
-      this.comboGfx.beginFill(0xff5533, a * 0.55).drawCircle(cx, cy, 7).endFill();
-      this.comboGfx.beginFill(0xffaa66, a * 0.85).drawCircle(cx, cy, 4).endFill();
-      this.comboGfx.beginFill(0xffffff, a).drawCircle(cx, cy, 1.5).endFill();
-    }
-  }
-
   // Visible aura rings for ALL support towers + aura items (2026-05 v6
   // unification). Every local aura source the game actually fires now
   // gets a ring drawn here so the player can read the buffed/debuffed
@@ -5565,7 +5544,7 @@ export class RenderEngine {
       if (tw.type === TowerType.COHORT_GUARD) {
         this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.85);
       }
-      // Giant's Cohort Guard — stronger local command aura from the awakened shield wall.
+      // Giant's Cohort Guard — broad but restrained +10% local damage aura.
       if (tw.type === TowerType.GIANTS_COHORT_GUARD) {
         this.drawAuraRing(cx, cy, 4 * GRID.TILE, ALLY, pulse * 0.9);
       }

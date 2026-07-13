@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -944,7 +944,10 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(cohort.equippedItemRarities).toEqual(['UNCOMMON', 'LEGENDARY']);
     expect(towerItemSlotCap(cohort)).toBe(4);
     expect(cohort.builtFrom).toContain(TowerType.COHORT_GUARD);
-    expect(towerEffectiveStats(cohort).dps).toBeGreaterThan(cohortBefore.dps * 4);
+    // The awakening is now a specialist, not a general-purpose early carry.
+    // Its neutral sheet DPS only needs to improve meaningfully over Cohort
+    // Guard; the giant-only combat multiplier supplies the legendary payoff.
+    expect(towerEffectiveStats(cohort).dps).toBeGreaterThan(cohortBefore.dps * 2);
   });
 
   it('transforms only legal Tier IV+ Witch\'s Brew Murmillo carriers and opens four total slots', () => {
@@ -1040,9 +1043,11 @@ describe('Giant Killer transformation and combat wiring', () => {
     const kingBattlefieldDps = kingStats.dps + sustainedSummonDps;
 
     expect(giantKillerDps).toBeGreaterThan(militesBefore * 11);
-    expect(giantsCohortDps).toBeGreaterThan(cohortBefore * 5);
+    expect(giantsCohortDps).toBeGreaterThan(cohortBefore * 2);
+    expect(giantsCohortDps * GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT).toBeGreaterThan(cohortBefore * 20);
     expect(kingBattlefieldDps).toBeGreaterThan(murmilloBefore * 4.0);
-    expect(kingBattlefieldDps).toBeLessThan(giantsCohortDps * 0.95);
+    expect(kingBattlefieldDps).toBeGreaterThan(giantsCohortDps);
+    expect(kingBattlefieldDps).toBeLessThan(giantsCohortDps * GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT);
     expect(towerItemSlotCap(milites)).toBe(4);
     expect(towerItemSlotCap(cohort)).toBe(4);
     expect(towerItemSlotCap(murmillo)).toBe(4);
@@ -1223,7 +1228,7 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(elephantShot!.damage / ordinaryShot!.damage).toBeCloseTo(6.5, 5);
   });
 
-  it('routes Giant\'s Cohort Guard through melee cleave with boss and giant specialization', () => {
+  it('routes Giant\'s Cohort Guard through restrained melee cleave and giant-only specialization', () => {
     function swingAt(type: EnemyType, opts: { boss?: boolean; faction?: EnemyFaction; archetype?: Enemy['archetype'] } = {}) {
       const state = createGameState();
       state.wave = 6;
@@ -1249,19 +1254,20 @@ describe('Giant Killer transformation and combat wiring', () => {
     let giant: ReturnType<typeof swingAt>;
     try {
       normal = swingAt(EnemyType.FERAL_DOG, { faction: EnemyFaction.DOGS, archetype: 'SWARM' });
-      boss = swingAt(EnemyType.HANNIBAL_BARCA, { boss: true, faction: EnemyFaction.CARTHAGE, archetype: 'BOSS' });
+      boss = swingAt(EnemyType.FERAL_DOG, { boss: true, faction: EnemyFaction.DOGS, archetype: 'BOSS' });
       giant = swingAt(EnemyType.SEA_GIANT, { faction: EnemyFaction.ROMAN_MYTH, archetype: 'ELITE' });
     } finally {
       randomSpy.mockRestore();
     }
 
-    expect(GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT).toBe(4.5);
-    expect(GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT).toBe(7.5);
+    expect(GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT).toBe(9);
     expect(normal.loss).toBeGreaterThan(0);
-    expect(boss.loss).toBeGreaterThan(normal.loss * 1.7);
-    expect(giant.loss).toBeGreaterThan(normal.loss * 3.0);
-    expect(normal.target.statusEffects.some(s => s.kind === StatusEffectKind.SLOW)).toBe(true);
-    expect(boss.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.18)).toBe(true);
+    expect(boss.loss).toBeCloseTo(normal.loss, 5);
+    // SEA_GIANT resists physical melee, so the authored 9x prey bonus
+    // resolves to roughly 3.8x actual damage after target resistances.
+    expect(giant.loss).toBeGreaterThan(normal.loss * 3.5);
+    expect(normal.target.statusEffects.some(s => s.kind === StatusEffectKind.SLOW)).toBe(false);
+    expect(boss.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK)).toBe(false);
     expect(giant.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.24)).toBe(true);
   });
 });

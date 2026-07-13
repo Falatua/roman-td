@@ -200,6 +200,12 @@ describe('Tower recipe names stay player-facing', () => {
     expect(main).toContain('${towerName(String(ing.type))}</span>');
     expect(main).not.toContain('${String(ing.type).replace(/_/g, \' \')}</span>');
   });
+
+  it('does not draw straight recipe connector lines between field towers', () => {
+    const renderer = readFileSync('src/render/RenderEngine.ts', 'utf8');
+    expect(renderer).not.toContain('drawComboLinks');
+    expect(renderer).not.toContain('ending at a glowing centroid');
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────

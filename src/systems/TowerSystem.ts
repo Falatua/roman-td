@@ -945,8 +945,7 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       }
       if (other.type === TowerType.COHORT_GUARD && within(other, 3)) addLocalDmg('Cohort Guard local', 0.15);
       if (other.type === TowerType.GIANTS_COHORT_GUARD && within(other, 4)) {
-        addLocalDmg("Giant's Cohort Guard local", 0.25);
-        addLocalSpeed("Giant's Cohort Guard local", 0.15);
+        addLocalDmg("Giant's Cohort Guard local", 0.10);
       }
       if (other.type === TowerType.TRIPLEX_ACIES && within(other, 3)) addLocalSpeed('Triplex Acies', 0.25);
       if (other.type === TowerType.LEGION_PRIME && within(other, 3)) addLocalDmg('Legion Prime', 0.25);

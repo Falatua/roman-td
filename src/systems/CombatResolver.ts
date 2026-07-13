@@ -502,7 +502,7 @@ export function hasCleave(t: Tower): boolean {
 // "wide arcing swing." Item-only cleavers without FALX hit only the
 // default cap.
 function meleeHitCap(t: Tower): number {
-  const base = t.type === TowerType.GIANTS_COHORT_GUARD ? 8 : 6;
+  const base = t.type === TowerType.GIANTS_COHORT_GUARD ? 4 : 6;
   const bonus = (t.equippedItems.includes('FALX_BLADE') ? 2 : 0)
               + (t.equippedItems.includes('EXECUTIONERS_FALX') ? 3 : 0);   // legendary: wider swing, up to 9
   return base + bonus;
@@ -516,7 +516,7 @@ function cleaveSecondaryMult(t: Tower): number {
   // 2026 v2 — Executioner's Falx (legendary) = full-power cleave, secondaries take 100%.
   if (t.equippedItems.includes('EXECUTIONERS_FALX')) return 1.0;
   if (t.type === TowerType.GIANTS_COHORT_GUARD) {
-    return t.equippedItems.includes('FALX_BLADE') ? 0.95 : 0.85;
+    return t.equippedItems.includes('FALX_BLADE') ? 0.70 : 0.50;
   }
   if (CLEAVE_MELEE.has(t.type)) {
     return t.equippedItems.includes('FALX_BLADE') ? 0.90 : 0.70;
@@ -561,8 +561,7 @@ function applyDamnatioExecution(t: Tower, target: Enemy, tick: number): void {
 
 export const STORMCALLER_OCEAN_THREAT_DAMAGE_MULT = 2.0;
 
-export const GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT = 4.5;
-export const GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT = 7.5;
+export const GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT = 9.0;
 export const UNDEAD_GLADIATOR_KING_SUMMON_COUNT = 3;
 export const UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL = 10.0;
 export const UNDEAD_GLADIATOR_KING_SUMMON_TTL = 20.0;
@@ -1077,7 +1076,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       localAuras.push({ x: cx, y: cy, r: 3 * GRID.TILE, dmg: 0.15 });
     }
     if (t.type === TowerType.GIANTS_COHORT_GUARD && !auraOff) {
-      localAuras.push({ x: cx, y: cy, r: 4 * GRID.TILE, dmg: 0.25, spd: 0.15 });
+      localAuras.push({ x: cx, y: cy, r: 4 * GRID.TILE, dmg: 0.10 });
     }
     // HANNIBALS_NIGHTMARE — periodic AoE freeze every 10s.
     if (t.type === TowerType.HANNIBALS_NIGHTMARE) {
@@ -1676,7 +1675,6 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.GIANT_KILLER) damage *= giantKillerPreyDamageMult(target);
       if (t.type === TowerType.GIANTS_COHORT_GUARD) {
         if (isGiantKillerTarget(target)) damage *= GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT;
-        else if (target.isBoss) damage *= GIANTS_COHORT_GUARD_BOSS_DAMAGE_MULT;
       }
       if ((t.type === TowerType.TRIREME_BALLISTA || t.type === TowerType.PRAETORIAN_FLEET)
           && (isEliteEnemy(target) || isBossEnemy(target) || isCommanderEnemy(target))) {
@@ -3052,9 +3050,9 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       }
       break;
     case TowerType.GIANTS_COHORT_GUARD:
-      pushStatus(target, StatusEffectKind.SLOW, dur(2.4), 0.36, tier);
-      if (target.isBoss || isGiantKillerTarget(target)) {
-        pushStatus(target, StatusEffectKind.MARK, dur(3.2), isGiantKillerTarget(target) ? 0.24 : 0.18, tier);
+      if (isGiantKillerTarget(target)) {
+        pushStatus(target, StatusEffectKind.SLOW, dur(2.4), 0.36, tier);
+        pushStatus(target, StatusEffectKind.MARK, dur(3.2), 0.24, tier);
         if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.45), 0, tier);
       }
       break;
