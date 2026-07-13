@@ -46,22 +46,14 @@
       /* #app is a flex-ROW with THREE columns: LEFT panel (HUD + status),
          CENTER stage (the canvas), RIGHT panel (buttons + actions).
          Nothing overlays the play area; everything sits in margins. */
-      /* 2026-05-15 v8: layout tightened — gap 14→10px, HUD column max
-         shrunk 240→210px so the map gets more relative space within the
-         #app row. Combined with the now-uncapped --app-scale in main.ts,
-         the canvas (1216px wide) takes ~74% of the total layout width
-         (up from 70.5%) and the whole thing scales up to fill big
-         monitors.
-         2026-05-15 v10: CRITICAL FIX — panels are now height-capped to
-         the canvas height (832px) so a tall right panel (e.g. two
-         pinned recipes pushing the column past the canvas) can no
-         longer force the entire #app box taller, which used to make
-         fitStageToViewport shrink the whole game including the map.
-         Excess content now scrolls INSIDE the panel instead of
-         pushing the layout outwards. The canvas stays the boss. */
+      /* Desktop rails reserve one stable, compact footprint. Their contents
+         scroll instead of renegotiating the flex row, so adding recipe pins
+         can never shrink or rescale the battlefield. */
       #app { display: flex; flex-direction: row; align-items: stretch; gap: 10px; padding: 0; transform: scale(var(--app-scale, 1)); transform-origin: center center; }
-      #left-panel  { display: flex; flex-direction: column; gap: 8px; min-width: 200px; max-width: 220px; max-height: 832px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #5a4a30 #1a1410; padding-right: 2px; }
-      #right-panel { display: flex; flex-direction: column; gap: 8px; min-width: 200px; max-width: 220px; max-height: 832px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #5a4a30 #1a1410; padding-right: 2px; }
+      #left-panel,
+      #right-panel { display: flex; flex: 0 0 190px; width: 190px; min-width: 190px; max-width: 190px; flex-direction: column; gap: 8px; max-height: 832px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #5a4a30 #1a1410; padding-right: 2px; }
+      #left-panel > *,
+      #right-panel > * { min-width: 0; max-width: 100%; }
       /* Gold-tinted scrollbar so the overflow doesn't look out of place
          next to the parchment HUD. WebKit needs explicit pseudo-elements
          (Firefox already styled by scrollbar-color above). */
@@ -73,7 +65,7 @@
       #right-panel::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #d4af37 0%, #5a4a30 100%); border: 1px solid #1a1410; }
       #left-panel::-webkit-scrollbar-thumb:hover,
       #right-panel::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #ffd34d 0%, #8a7a4a 100%); }
-      #buttons { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+      #buttons { display: flex; width: 100%; min-width: 0; flex-direction: column; gap: 8px; align-items: stretch; }
       #buttons button { width: 100%; }
       h1 { margin: 0; font-size: 22px; letter-spacing: 6px; color: #d4af37; text-shadow: 2px 2px 0 #000, 0 0 12px rgba(212,175,55,0.4); padding: 6px 18px; background: linear-gradient(180deg, #2a1f12, #1a1410); border: 2px solid #5a4a30; border-image: linear-gradient(180deg, #d4af37, #5a4a30) 1; }
 
@@ -1003,6 +995,8 @@
       }
       html.mobile-mode #left-panel,
       html.mobile-mode #right-panel {
+        flex: 0 0 88px !important;
+        width: 88px !important;
         min-width: 88px !important;
         max-width: 88px !important;
         max-height: 100dvh !important;
@@ -1128,7 +1122,7 @@
       html.reduce-motion-opt-in #hero-placement-banner,
       html.reduce-motion-opt-in button { animation: none !important; }
     </style>
-    <script type="module" crossorigin src="./assets/index-Cu6avSOz.js"></script>
+    <script type="module" crossorigin src="./assets/index-Blp3RZOi.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/pixi-CaEdeioT.js">
   </head>
   <body>
@@ -1137,7 +1131,7 @@
          position:fixed inset:0 covering the full viewport. -->
     <div id="loading">
       <div id="loading-stage">
-        <div id="loading-version">v0.7.0 · b25f2f7 · 2026-07-13</div>
+        <div id="loading-version">v0.7.0 · df9128d · 2026-07-13</div>
         <div id="loading-eagle"></div>
         <div id="loading-title-main">ROMAN TD</div>
         <div id="loading-subtitle">THIRTY WAVES. ONE ROME.</div>
