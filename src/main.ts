@@ -4935,8 +4935,11 @@ async function boot() {
     // ── DESKTOP PATH (unchanged from prior implementation) ───────────
     // Reset transform first to measure natural size, then re-apply scale.
     app.style.setProperty('--app-scale', '1');
-    const w = app.scrollWidth;
-    const h = app.scrollHeight;
+    // Measure the layout box, not descendant overflow. Sidebar content such
+    // as pinned recipes is intentionally scrollable and must never alter the
+    // battlefield scale when it is added or removed.
+    const w = app.offsetWidth;
+    const h = app.offsetHeight;
     const vv = window.visualViewport;
     const vw = (vv ? vv.width : window.innerWidth) - 16;
     const vh = (vv ? vv.height : window.innerHeight) - 16;

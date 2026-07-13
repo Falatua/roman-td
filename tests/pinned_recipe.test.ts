@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
 import {
   getPinnedRecipes,
   MAX_PINNED_RECIPES,
@@ -50,5 +51,19 @@ describe('pinned recipe tracker', () => {
   it('dedupes and caps saved recipes at four', () => {
     setPinnedRecipes(['SCORPION_BOLT', 'HORSEMAN', 'SCORPION_BOLT', 'PLAGUE_CART', 'AERARIUM', 'EAGLE_SCOUT']);
     expect(getPinnedRecipes()).toEqual(['SCORPION_BOLT', 'HORSEMAN', 'PLAGUE_CART', 'AERARIUM']);
+  });
+
+  it('cannot resize the desktop battlefield when pins add sidebar overflow', () => {
+    const html = readFileSync('index.html', 'utf8');
+    const main = readFileSync('src/main.ts', 'utf8');
+
+    expect(html).toContain('flex: 0 0 190px; width: 190px; min-width: 190px; max-width: 190px');
+    expect(html).toContain('#right-panel > * { min-width: 0; max-width: 100%; }');
+    expect(html).toContain('flex: 0 0 88px !important;');
+    expect(html).toContain('width: 88px !important;');
+    expect(main).toContain('const w = app.offsetWidth;');
+    expect(main).toContain('const h = app.offsetHeight;');
+    expect(main).not.toContain('const w = app.scrollWidth;');
+    expect(main).not.toContain('const h = app.scrollHeight;');
   });
 });
