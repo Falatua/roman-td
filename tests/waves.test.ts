@@ -356,7 +356,7 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(elephants?.count).toBe(2);
   });
 
-  it('stagger-releases every campaign elephant by at least two seconds', () => {
+  it('stagger-releases every campaign elephant by at least four seconds', () => {
     for (const wave of [9, 10, 14, 22, 30]) {
       const s = bootstrapState();
       s.wave = wave - 1;

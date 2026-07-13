@@ -1,4 +1,4 @@
-export const ELEPHANT_SPAWN_GAP_SECONDS = 2;
+export const ELEPHANT_SPAWN_GAP_SECONDS = 4;
 
 const ELEPHANT_TYPES = new Set<string>([
   'WAR_ELEPHANT',
