@@ -286,6 +286,9 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // -- Tower disruption --
   if (def?.auraTowerSlow) traits.push({ label: `TOWER-SLOW AURA — every tower within ~2 tiles fires ${Math.round(def.auraTowerSlow*100)}% slower while this enemy is in range`, color: '#a078d0' });
   if (def?.auraNullifier) traits.push({ label: `AURA NULLIFIER — every tower within 2 tiles loses its aura contributions while this enemy is in range. Global damage / atk-speed / enemy-debuff / item auras (Centurion\'s Trumpet, Battle Standard, etc.) all silently drop out. Walks past → auras return. Periodic abilities (Caesar stun pulse, freeze cycles) are NOT auras and still fire.`, color: '#a078d0' });
+  if (e.type === 'FERAL_DOG' || e.type === 'RABID_DOG' || e.type === 'ALPHA_DOG') {
+    traits.push({ label: 'FIRE WEAKNESS — direct FIRE and BURN deal 40% extra damage. Demon Hellhounds are fire-born and do not share this weakness.', color: '#ff8844' });
+  }
   const sleepRange = typeof def?.sleepDartRangeTiles === 'number'
     ? def.sleepDartRangeTiles
     : (e.type === 'GALLIC_DRUID' || e.type === 'ZOMBIE_DRUID' ? 3 : 0);
@@ -369,6 +372,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   const bossScripts: Record<string, string[]> = {
     ALPHA_DOG: [
       'CHAMPION — boss-tier HP',
+      'FIRE WEAKNESS — direct FIRE and BURN deal +40% damage',
       'FRENZY — at 30% HP, permanently doubles speed for the rest of the fight (no slow immunity, no timer)',
       'PACK HOWL — every 8s, gives nearby Feral Dogs +50% speed for 3s',
       'DEATH SPAWNS 3 FERAL DOGS at the boss\'s tile'

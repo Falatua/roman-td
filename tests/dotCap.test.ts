@@ -58,15 +58,15 @@ function setStatus(e: Enemy, kind: StatusEffectKind, magnitude: number, remainin
 describe('B1 — DoT aggregate cap (7% maxHp/sec) + HELLFIRE sub-cap (2%/sec)', () => {
   // 2026-06-29 — caps RAISED (4% → 7% aggregate, 1% → 2% Hellfire) to revive
   // the fire/poison DoT archetype so a 2nd-3rd DoT tower scales meaningfully.
-  it('single BURN at 3%/sec ticks at full rate (under cap)', () => {
+  it('single BURN at 3%/sec is amplified by the Feral Dog weakness (under cap)', () => {
     const s = createGameState();
     const e = makeEnemy(EnemyType.FERAL_DOG, EnemyFaction.DOGS, 1000);
     setStatus(e, StatusEffectKind.BURN, 0.03);
     s.enemies.set(e.id, e);
     tickEnemies(s, 1.0, () => {}, () => {});
-    // 3% of 1000 = 30 over 1 second. FERAL_DOG has no burn resist.
-    expect(e.hp).toBeGreaterThan(1000 - 31);
-    expect(e.hp).toBeLessThan(1000 - 29);
+    // 3% of 1000 x 1.40 weakness = 42 over 1 second.
+    expect(e.hp).toBeGreaterThan(1000 - 43);
+    expect(e.hp).toBeLessThan(1000 - 41);
   });
 
   it('stacked DoTs at 14% raw are clamped to 7% maxHp/sec aggregate', () => {
@@ -95,17 +95,17 @@ describe('B1 — DoT aggregate cap (7% maxHp/sec) + HELLFIRE sub-cap (2%/sec)', 
     expect(e.hp).toBeLessThan(1000 - 19);
   });
 
-  it('two BURN sources at 1.5% each stack additively to 3% (below cap)', () => {
-    // Two BURN statuses both land at full FERAL_DOG effectiveness (1.0).
-    // Total = 3% well under the 4% cap, so no clamp fires.
+  it('two BURN sources stack before the Feral Dog fire weakness (below cap)', () => {
+    // Two 1.5% BURN statuses stack to 3%, then the 1.40 weakness raises
+    // effective burn to 4.2%, still below the 7% aggregate cap.
     const s = createGameState();
     const e = makeEnemy(EnemyType.FERAL_DOG, EnemyFaction.DOGS, 1000);
     setStatus(e, StatusEffectKind.BURN, 0.015);
     setStatus(e, StatusEffectKind.BURN, 0.015);
     s.enemies.set(e.id, e);
     tickEnemies(s, 1.0, () => {}, () => {});
-    expect(e.hp).toBeGreaterThan(1000 - 31);
-    expect(e.hp).toBeLessThan(1000 - 29);
+    expect(e.hp).toBeGreaterThan(1000 - 43);
+    expect(e.hp).toBeLessThan(1000 - 41);
   });
 
   it('aggregate cap binds even when HELLFIRE is at exactly 2% (sub-cap pass-through)', () => {
@@ -124,12 +124,12 @@ describe('B1 — DoT aggregate cap (7% maxHp/sec) + HELLFIRE sub-cap (2%/sec)', 
 
 describe('B2 — DoT-suppresses-regen softening (100% → 50%)', () => {
   it('regen ticks at FULL rate when no DoT is active', () => {
-    // Use FERAL_DOG with a synthetic OOC regen override so the math
+    // Use a neutral Celtic Footman with a synthetic OOC regen override so the math
     // is independent of any boss/DoT-resist interaction. lastDamagedTick
     // is pinned to -999 in makeEnemy so the 0.5s quiet-window has
     // already elapsed and OOC regen is allowed to fire.
     const s = createGameState();
-    const e = makeEnemy(EnemyType.FERAL_DOG, EnemyFaction.DOGS, 1000);
+    const e = makeEnemy(EnemyType.CELTIC_FOOTMAN, EnemyFaction.CELTS, 1000);
     e.hp = 500;
     (e as any).outOfCombatRegen = 0.05;     // 5%/sec synthetic OOC regen
     s.enemies.set(e.id, e);
@@ -142,7 +142,7 @@ describe('B2 — DoT-suppresses-regen softening (100% → 50%)', () => {
 
   it('regen ticks at HALF rate when a DoT is active (~25 HP/sec heal vs 50)', () => {
     const s = createGameState();
-    const e = makeEnemy(EnemyType.FERAL_DOG, EnemyFaction.DOGS, 1000);
+    const e = makeEnemy(EnemyType.CELTIC_FOOTMAN, EnemyFaction.CELTS, 1000);
     e.hp = 500;
     (e as any).outOfCombatRegen = 0.05;     // 5%/sec OOC regen
     setStatus(e, StatusEffectKind.BURN, 0.03);   // 3%/sec BURN = 30 HP/sec damage
@@ -166,7 +166,7 @@ describe('B2 — DoT-suppresses-regen softening (100% → 50%)', () => {
     // wins. Player needs to add direct damage to actually break the
     // enemy. This is the core gameplay shift the change delivers.
     const s = createGameState();
-    const e = makeEnemy(EnemyType.FERAL_DOG, EnemyFaction.DOGS, 1000);
+    const e = makeEnemy(EnemyType.CELTIC_FOOTMAN, EnemyFaction.CELTS, 1000);
     e.hp = 500;
     (e as any).outOfCombatRegen = 0.10;     // 10%/sec OOC regen — strong
     setStatus(e, StatusEffectKind.BURN, 0.02);   // 2%/sec BURN = 20 HP/sec damage
@@ -188,7 +188,7 @@ describe('B2 — DoT-suppresses-regen softening (100% → 50%)', () => {
     // Verify: after a DoT-only tick, lastDamagedTick is still its
     // pre-tick value (no refresh), and OOC regen flowed.
     const s = createGameState();
-    const e = makeEnemy(EnemyType.FERAL_DOG, EnemyFaction.DOGS, 1000);
+    const e = makeEnemy(EnemyType.CELTIC_FOOTMAN, EnemyFaction.CELTS, 1000);
     e.hp = 500;
     (e as any).outOfCombatRegen = 0.04;
     setStatus(e, StatusEffectKind.BURN, 0.02);

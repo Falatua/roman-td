@@ -1916,6 +1916,7 @@ async function boot() {
     // Daemon Imperator's per-enemy 0.70 damper drops the boss to ~1.40×
     // final. DoT resists: Daemon takes only 30% poison/bleed.
     if (enemiesInWave.has('DEMON_HELLHOUND') || enemiesInWave.has('CELTIC_FIRE_DEMON') || enemiesInWave.has('SHADOW_CAVALRY') || enemiesInWave.has('DEMON_LEGATE') || enemiesInWave.has('DAEMON_IMPERATOR')) enemyCallouts.push({ text: '✨ DEMONS — DIVINE WEAKNESS · lesser demons take ~2.4× damage from divine sources (Flamen / Augur / Haruspex / Solar Priest / Pontifex). Fire deals 0 damage. Bleed and poison hit lesser demons hard, but the W30 Daemon Imperator boss takes only ~1.40× divine (per-enemy damper) and resists poison + bleed to 30%.', cat: 'ENEMY' });
+    if (enemiesInWave.has('FERAL_DOG') || enemiesInWave.has('RABID_DOG') || enemiesInWave.has('ALPHA_DOG')) enemyCallouts.push({ text: '🔥 DOG PACK — FIRE WEAKNESS · Feral Dogs, Rabid Dogs, and the Alpha Dog take +40% damage from direct FIRE and BURN.', cat: 'ENEMY' });
     // ELEPHANTS — siege weakness. 2026-06-25 heavy-hide pass: living
     // now take +25% siege, undead only +5%. Siege remains the best
     // answer, but neither variant should be trivial to burn down.

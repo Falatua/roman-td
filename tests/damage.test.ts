@@ -88,6 +88,21 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(enemyDamageMultiplier(e, DamageType.SIEGE)).toBe(1);
   });
 
+  it('makes fire and burn deal 40% extra damage to every natural dog type', () => {
+    for (const type of [EnemyType.FERAL_DOG, EnemyType.RABID_DOG, EnemyType.ALPHA_DOG]) {
+      const dog = makeEnemy(type, EnemyFaction.DOGS);
+      const directFire = resistanceModifier(dog.faction, DamageType.ELEMENTAL_FIRE)
+        * enemyDamageMultiplier(dog, DamageType.ELEMENTAL_FIRE);
+      expect(directFire, `${type} direct fire`).toBeCloseTo(1.40, 4);
+      expect(statusEffectiveness(dog, StatusEffectKind.BURN), `${type} burn`).toBeCloseTo(1.40, 4);
+      expect(armorProfile(type).find(row => row.damageType === 'ELEMENTAL_FIRE')?.armorPct, `${type} fire profile`).toBe(-40);
+    }
+
+    const hellhound = makeEnemy(EnemyType.DEMON_HELLHOUND, EnemyFaction.SUPER_DEMONS);
+    expect(enemyDamageMultiplier(hellhound, DamageType.ELEMENTAL_FIRE)).toBe(0);
+    expect(statusEffectiveness(hellhound, StatusEffectKind.BURN)).toBe(0);
+  });
+
   it('Drowned Manes can only be damaged by divine damage', () => {
     const spirit = makeEnemy(EnemyType.OCEAN_GHOST_SPIRIT, EnemyFaction.ROMAN_MYTH);
     expect((enemiesData as any).OCEAN_GHOST_SPIRIT.divineOnly).toBe(true);

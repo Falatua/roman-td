@@ -25,9 +25,12 @@ export interface EnemyResistProfile {
 // HARDENED PASS: every profile got tougher. The "best mazes and combinations
 // survive" — pure DPS spam without damage-type diversity will fail.
 const RESIST: Record<EnemyType, EnemyResistProfile> = {
-  [EnemyType.FERAL_DOG]: { poison: 0.85 },
-  [EnemyType.RABID_DOG]: { slow: 0.25, poison: 0.7, bleed: 0.7 },
-  [EnemyType.ALPHA_DOG]: { melee: 0.6, slow: 0.35, bleed: 0.5, poison: 0.7 },
+  // The natural dog pack is vulnerable to flame: direct FIRE and BURN
+  // deal +40% to Feral Dogs, Rabid Dogs, and the Alpha Dog. Demon
+  // Hellhounds remain a separate fire-born, fire-immune archetype.
+  [EnemyType.FERAL_DOG]: { fire: 1.40, burn: 1.40, poison: 0.85 },
+  [EnemyType.RABID_DOG]: { slow: 0.25, fire: 1.40, burn: 1.40, poison: 0.7, bleed: 0.7 },
+  [EnemyType.ALPHA_DOG]: { melee: 0.6, slow: 0.35, fire: 1.40, burn: 1.40, bleed: 0.5, poison: 0.7 },
 
   // W4 footman — armored linen kit. 2026-05-22: resistances softened
   // (ranged 0.55 → 0.80, melee 0.85 → 0.95, poison/bleed 0.85 → 0.95)
