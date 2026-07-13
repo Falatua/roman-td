@@ -178,6 +178,23 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(statusEffectiveness(undead, StatusEffectKind.BLEED)).toBe(0);
   });
 
+  it('makes direct fire and burn a considerable weakness for every elephant type', () => {
+    const living = makeEnemy(EnemyType.WAR_ELEPHANT, EnemyFaction.CARTHAGE);
+    const undead = makeEnemy(EnemyType.UNDEAD_WAR_ELEPHANT, EnemyFaction.UNDEAD_CARTHAGE);
+
+    const livingDirectFire = resistanceModifier(living.faction, DamageType.ELEMENTAL_FIRE)
+      * enemyDamageMultiplier(living, DamageType.ELEMENTAL_FIRE);
+    const undeadDirectFire = resistanceModifier(undead.faction, DamageType.ELEMENTAL_FIRE)
+      * enemyDamageMultiplier(undead, DamageType.ELEMENTAL_FIRE);
+
+    expect(livingDirectFire).toBeCloseTo(1.65, 4);
+    expect(undeadDirectFire).toBeCloseTo(2.145, 4);
+    expect(statusEffectiveness(living, StatusEffectKind.BURN)).toBeCloseTo(1.65, 4);
+    expect(statusEffectiveness(undead, StatusEffectKind.BURN)).toBeCloseTo(1.65, 4);
+    expect(armorProfile(EnemyType.WAR_ELEPHANT).find(row => row.damageType === 'ELEMENTAL_FIRE')?.armorPct).toBe(-65);
+    expect(armorProfile(EnemyType.UNDEAD_WAR_ELEPHANT).find(row => row.damageType === 'ELEMENTAL_FIRE')?.armorPct).toBe(-114);
+  });
+
   it('gives selected enemies and commanders true siege immunity', () => {
     const immuneTypes = [
       EnemyType.IRON_PHALANX,

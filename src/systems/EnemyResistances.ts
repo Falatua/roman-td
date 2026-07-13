@@ -77,11 +77,10 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   //   siege bumped from default 1.0 to 1.40× (+40%). Bronze armor cracks
   //   under crushing stone; this is the unit's hardest counter now.
   [EnemyType.CARTHAGE_ELITE_GUARD]: { melee: 0.6, ranged: 0.45, bleed: 0.5, fire: 0.6, divine: 0.55, siege: 1.40 },
-  // WAR ELEPHANT — heavy-hide pass (2026-06-25). Elephants should be
-  // hard to kill even when the player brought the right counter. Siege
-  // remains the intended answer, but it is no longer a huge +45% melt
-  // window; DoT and sword-chip are heavily damped.
-  [EnemyType.WAR_ELEPHANT]: { melee: 0.18, ranged: 0.5, slow: 0.20, burn: 0.45, poison: 0.05, bleed: 0.12, siege: 1.25 },
+  // WAR ELEPHANT — heavy hide resists steel and most DoT, but fire is
+  // now a decisive shared elephant weakness. Direct FIRE and BURN each
+  // deal +65%; poison, bleed, and sword-chip remain heavily damped.
+  [EnemyType.WAR_ELEPHANT]: { melee: 0.18, ranged: 0.5, slow: 0.20, fire: 1.65, burn: 1.65, poison: 0.05, bleed: 0.12, siege: 1.25 },
   // HANNIBAL_BARCA: 2026-05-17 — siege bumped from default 1.0 to 1.25×
   // (+25%). The whole Carthaginian roster is now siege-soft, the boss
   // included. Siege towers (Onager, Ballistarius, Carroballista, Vulcan
@@ -136,10 +135,10 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // becomes a real payoff angle through the late mid-game.
   [EnemyType.UNDEAD_SPEARMAN]: { ranged: 0.45, melee: 0.85, fire: 1.40, burn: 1.40, poison: 0, bleed: 0 },
   [EnemyType.GHOST_RIDER]: { melee: 0.2, ranged: 0.55, slow: 0.15, fire: 1.40, burn: 1.40, poison: 0, bleed: 0 },
-  // UNDEAD WAR ELEPHANT — denser bone-hide pass (2026-06-25). Nearly
-  // siege-neutral now, with fire still a modest vulnerability through
-  // undead faction pressure. Poison and bleed remain fully dead data.
-  [EnemyType.UNDEAD_WAR_ELEPHANT]: { melee: 0.15, ranged: 0.35, slow: 0.15, fire: 1.10, burn: 1.10, poison: 0, bleed: 0, siege: 1.05 },
+  // UNDEAD WAR ELEPHANT — dense bone hide remains nearly siege-neutral,
+  // while the shared +65% FIRE/BURN profile stacks with its undead
+  // faction weakness. Poison and bleed remain ineffective.
+  [EnemyType.UNDEAD_WAR_ELEPHANT]: { melee: 0.15, ranged: 0.35, slow: 0.15, fire: 1.65, burn: 1.65, poison: 0, bleed: 0, siege: 1.05 },
   [EnemyType.UNDEAD_GIANT]: { melee: 0.35, ranged: 0.45, slow: 0.20, fire: 1.25, burn: 1.25, poison: 0, bleed: 0, siege: 1.10, divine: 1.30 },
   [EnemyType.UNDEAD_CYCLOPS]: { melee: 0.30, ranged: 0.42, slow: 0.18, fire: 1.20, burn: 1.20, poison: 0, bleed: 0, siege: 1.15, divine: 1.35 },
   [EnemyType.DREAD_UNDEAD_GIANT]: { melee: 0.22, ranged: 0.34, slow: 0.12, fire: 1.15, burn: 1.15, poison: 0, bleed: 0, siege: 1.05, divine: 1.45 },

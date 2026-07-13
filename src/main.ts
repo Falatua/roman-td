@@ -1925,7 +1925,7 @@ async function boot() {
       const txt = livingOnly
         ? '🪨 WAR ELEPHANTS — HEAVY HIDE · take +25% damage from SIEGE (Librator, Turris, Carroballista, Vulcan Engineer, Colossus Onager, Siege Onager, War Chariot, Nemesis Engine), but have more HP and sustain now. Bleed and poison are barely useful.'
         : undeadOnly
-        ? '🪨 UNDEAD WAR ELEPHANTS — DENSE BONE HIDE · take only +5% damage from SIEGE. Fire still helps through undead faction pressure; bleed and poison deal 0.'
+        ? '🪨 UNDEAD WAR ELEPHANTS — DENSE BONE HIDE · take only +5% damage from SIEGE. FIRE/BURN is the decisive weakness; direct fire is amplified further by the undead faction. Bleed and poison deal 0.'
         : '🪨 ELEPHANTS — HEAVY HIDE · living take +25% SIEGE, undead only +5% SIEGE. Siege is still best, but bring sustained damage; DoT-stacker builds skip elephants.';
       enemyCallouts.push({ text: txt, cat: 'ENEMY' });
     }

@@ -6,7 +6,7 @@ import enemiesData from '../data/enemies.json';
 import factionRes from '../data/factionResistances.json';
 import wavesData from '../data/waves.json';
 import { tex } from './Assets';
-import { resistanceSummary, armorProfile, armorDamageTypeShortLabel } from '../systems/EnemyResistances';
+import { resistanceSummary, armorProfile, armorDamageTypeShortLabel, enemyResistanceProfile } from '../systems/EnemyResistances';
 import { damageTypeLabel } from '../format';
 import { closeGameModals } from './ModalManager';
 import { pretty } from '../format';
@@ -214,10 +214,10 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       { label: 'Bleed',  field: 'bleed' },
       { label: 'Poison', field: 'poison', flag: 'immunePoison' }
     ];
-    const summaryMap = new Map(specificRes.map(r => [r.label, r.value]));
+    const rawProfile = enemyResistanceProfile(e.type) as Record<string, number | undefined>;
     for (const d of dots) {
       const flagSet = d.flag ? !!def?.[d.flag] : false;
-      const v = summaryMap.get(d.label);
+      const v = rawProfile[d.field];
       const immune = flagSet || (typeof v === 'number' && v <= 0);
       const value = typeof v === 'number' ? v : 1;
       profile.push({ label: d.label, value, immune, note: flagSet ? 'data flag' : undefined });
@@ -296,6 +296,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   }
   // 2026-05 v10 — WAR ELEPHANT RANGED-PROTECT AURA (also hardcoded).
   if (e.type === 'WAR_ELEPHANT' || e.type === 'UNDEAD_WAR_ELEPHANT') {
+    traits.push({ label: 'FIRE WEAKNESS — direct FIRE and BURN are 65% more effective before wave pressure; the undead elephant also inherits its faction fire weakness.', color: '#ff8844' });
     traits.push({ label: 'DUST-SHIELD AURA — projects a 4-tile dust dome that makes every NEARBY GROUND enemy untargetable by ranged towers until the elephant dies. The elephant itself is still targetable (you have to be able to kill it). Melee towers ignore the dust and hit allies inside. Visual: dust-brown rotating dome around the elephant + small gold sparkle over each protected ally.', color: '#a078d0' });
   }
   // 2026-05 v10 — DEMON DIVINE VULNERABILITY. Final divine takes is ~3.0×
@@ -380,7 +381,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'IMMUNE TO SLOW & FREEZE (data flags)',
       'TUSK QUAKE — every 6s, silences every tower within 2 tiles for 0.6s (dust-brown ring)',
       'DUST-SHIELD AURA — 4-tile dome protects nearby ground allies from ranged attacks while alive (see SPECIAL TRAITS above)',
-      'HEAVY HIDE: higher HP, light sustain, and only +25% damage from SIEGE'
+      'HEAVY HIDE: higher HP and light sustain; takes +25% SIEGE and +65% FIRE/BURN damage'
     ],
     UNDEAD_WAR_ELEPHANT: [
       'STAMPEDE at 50% HP (status-immune + 75% speed for 4s)',
@@ -388,7 +389,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'IMMUNE TO SLOW & FREEZE',
       'TUSK QUAKE every 6s — silences nearby towers for 0.6s (25% stronger tower-slow aura than the living elephant)',
       'DUST-SHIELD AURA — 4-tile dome protects nearby ground allies from ranged attacks while alive',
-      'DENSE BONE HIDE: higher HP and only +5% damage from SIEGE; fire still helps'
+      'DENSE BONE HIDE: higher HP and only +5% damage from SIEGE; FIRE/BURN is the decisive weakness'
     ],
     HANNIBAL_BARCA: [
       'ELEPHANT HEAL — while any War Elephant lives and Hannibal goes 1.0s without DIRECT damage, heals 0.32% maxHP/sec; active DoT halves it to 0.16%/sec',
