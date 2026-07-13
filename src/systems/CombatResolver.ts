@@ -216,8 +216,11 @@ function sullaFireRiderPctForTower(
 }
 
 function divineDamageRiderPctForTower(tower: Tower): number {
+  if (tower.damageType === DamageType.NONE) return 0;
   let pct = tower.equippedItems.includes('CAPITOLINE_AEGIS') ? CAPITOLINE_AEGIS_DIVINE_RIDER_PCT : 0;
   if (tower.type === TowerType.SOL_INVICTUS_QUADRIGA) pct += 0.35;
+  const auraKind = towerAuraTileKind(tower);
+  if (auraKind) pct += AURA_TILE_EFFECTS[auraKind].divineRiderPct ?? 0;
   return pct;
 }
 
@@ -292,9 +295,12 @@ function divineImmuneBlocksTower(enemyType: string, towerDmgType: DamageType, to
 }
 
 function towerHasDivineDamageForTargeting(tower: Tower, towerDmgType: DamageType): boolean {
+  if (towerDmgType === DamageType.NONE) return false;
+  const auraKind = towerAuraTileKind(tower);
   return towerDmgType === DamageType.DIVINE
     || tower.type === TowerType.MARS_VICTOR
-    || tower.equippedItems.includes('CAPITOLINE_AEGIS');
+    || tower.equippedItems.includes('CAPITOLINE_AEGIS')
+    || (auraKind !== null && (AURA_TILE_EFFECTS[auraKind].divineRiderPct ?? 0) > 0);
 }
 
 function divineOnlyBlocksTower(enemyType: string, towerDmgType: DamageType, tower: Tower): boolean {
@@ -303,7 +309,6 @@ function divineOnlyBlocksTower(enemyType: string, towerDmgType: DamageType, towe
 }
 
 function targetingDamageType(state: GameStateShape, tower: Tower): DamageType {
-  if (towerAuraTileKind(tower) === 'IVORY') return DamageType.DIVINE;
   const proscriptionUntil = (state as any).__proscriptionUntilTick ?? 0;
   if (state.tick < proscriptionUntil) return DamageType.DIVINE;
   return tower.damageType;
@@ -1410,11 +1415,6 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // 2026-05-19 — Proscription (Sulla Tier 2) overrides this attack's
       // base damage type to DIVINE for the duration.
       let effectiveDmgType = t.damageType;
-      // 2026-06-27 — DIVINE TILE (IVORY). A tower standing on the divine
-      // tile resolves this attack as DIVINE damage, keeping all of its own
-      // stats + abilities. Mars Victor ignores
-      // effectiveDmgType entirely (it resolves Siege+Divine), so no clash.
-      if (towerAuraTileKind(t) === 'IVORY') effectiveDmgType = DamageType.DIVINE;
       const proscriptionUntil = (state as any).__proscriptionUntilTick ?? 0;
       if (state.tick < proscriptionUntil) effectiveDmgType = DamageType.DIVINE;
       let resMod: number;
@@ -1481,6 +1481,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         damage += preResDamage * sullaFireRiderPct * fireResMod;
       }
       const divineRiderPct = divineDamageRiderPctForTower(t);
+      (t as any).__divineRiderVfx = divineRiderPct > 0;
       if (divineRiderPct > 0) {
         const divineResMod = applyWaveResistRelief(
           state,

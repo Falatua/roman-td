@@ -61,11 +61,17 @@ export function elementalProjectileSpriteKey(tower: Tower, nativeKey: string): s
 
 export function triggerElementalHitVfx(tower: Tower, x: number, y: number, tick: number): void {
   const renderer: any = typeof globalThis !== 'undefined' ? (globalThis as any).__renderer : undefined;
-  if (!renderer?.triggerSpriteImpact) return;
+  if (!renderer) return;
   const families = elementalVfxFamiliesForTower(tower).slice(0, 2);
-  for (let i = 0; i < families.length; i++) {
-    const family = families[i];
-    const size = family === 'WATER' || family === 'FIRE' ? 1.55 : family === 'BLEED' ? 1.15 : 1.35;
-    renderer.triggerSpriteImpact(x, y, tick + i * 0.025, ELEMENTAL_VFX_ASSET[family], size, 0.34, 128, 128, 6, 3, 3);
+  if (renderer.triggerSpriteImpact) {
+    for (let i = 0; i < families.length; i++) {
+      const family = families[i];
+      const size = family === 'WATER' || family === 'FIRE' ? 1.55 : family === 'BLEED' ? 1.15 : 1.35;
+      renderer.triggerSpriteImpact(x, y, tick + i * 0.025, ELEMENTAL_VFX_ASSET[family], size, 0.34, 128, 128, 6, 3, 3);
+    }
+  }
+  if ((tower as any).__divineRiderVfx && renderer.triggerImpactRing) {
+    renderer.triggerImpactRing(x, y, tick, 22, 0xffe066);
+    renderer.triggerImpactRing(x, y, tick + 0.05, 36, 0xfff4a8);
   }
 }

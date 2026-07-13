@@ -48,20 +48,21 @@ describe('tower damage profile UI helper', () => {
     }));
   });
 
-  it('shows Divine Tile conversion and keeps the native type visible', () => {
+  it('shows Divine Tile as added damage while keeping the native type primary', () => {
     const state = createGameState();
     const ivory = AURA_TILES.find(tile => tile.kind === 'IVORY')!;
     const tower = createTower(TowerType.SCORPIO, 1, ivory.col, ivory.row, 1);
     const profile = towerDamageProfile(tower, state, towerStatBreakdown(tower, state));
-    expect(profile.summary).toBe('Divine');
+    expect(profile.summary).toContain('Siege');
+    expect(profile.summary).toContain('Divine');
     expect(profile.rows).toContainEqual(expect.objectContaining({
       kind: 'PRIMARY',
-      label: 'Divine',
-      detail: expect.stringContaining('converted from Siege')
+      label: 'Siege'
     }));
     expect(profile.rows).toContainEqual(expect.objectContaining({
-      kind: 'NATIVE',
-      label: 'Siege'
+      kind: 'EXTRA',
+      label: 'Divine',
+      detail: expect.stringContaining('separate Divine damage')
     }));
   });
 

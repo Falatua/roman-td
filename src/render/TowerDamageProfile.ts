@@ -70,12 +70,11 @@ export function towerDamageProfile(tower: Tower, state: GameStateShape, breakdow
       color: DAMAGE_COLORS[DamageType.NONE]
     });
     upsertSummaryPart(summaryParts, 'Support');
-  } else if (auraKind === 'IVORY' || proscriptionActive) {
-    const source = auraKind === 'IVORY' ? 'DIVINE TILE' : 'Sulla Proscription';
+  } else if (proscriptionActive) {
     rows.push({
       kind: 'PRIMARY',
       label: 'Divine',
-      detail: `Primary hits are converted from ${damageLabel(nativeType)} by ${source}.`,
+      detail: `Primary hits are converted from ${damageLabel(nativeType)} by Sulla Proscription.`,
       color: DAMAGE_COLORS[DamageType.DIVINE]
     });
     rows.push({
@@ -95,11 +94,32 @@ export function towerDamageProfile(tower: Tower, state: GameStateShape, breakdow
     upsertSummaryPart(summaryParts, damageLabel(nativeType).replace('Physical ', ''));
   }
 
+  const aura = auraKind ? AURA_TILE_EFFECTS[auraKind] : null;
+  if (nativeType !== DamageType.NONE && (aura?.divineRiderPct ?? 0) > 0) {
+    rows.push({
+      kind: 'EXTRA',
+      label: 'Divine',
+      detail: `${aura!.label} adds ${pctLabel(aura!.divineRiderPct!)} separate Divine damage; native ${damageLabel(nativeType)} remains.`,
+      color: DAMAGE_COLORS[DamageType.DIVINE]
+    });
+    upsertSummaryPart(summaryParts, 'Divine');
+  }
+
   if (tower.equippedItems.includes('CAPITOLINE_AEGIS')) {
     rows.push({
       kind: 'EXTRA',
       label: 'Divine',
       detail: 'Capitoline Aegis adds +35% separate Divine damage on hit.',
+      color: DAMAGE_COLORS[DamageType.DIVINE]
+    });
+    upsertSummaryPart(summaryParts, 'Divine');
+  }
+
+  if (tower.type === TowerType.SOL_INVICTUS_QUADRIGA) {
+    rows.push({
+      kind: 'EXTRA',
+      label: 'Divine',
+      detail: 'Sol Invictus adds +35% separate Divine damage on hit.',
       color: DAMAGE_COLORS[DamageType.DIVINE]
     });
     upsertSummaryPart(summaryParts, 'Divine');
@@ -116,7 +136,6 @@ export function towerDamageProfile(tower: Tower, state: GameStateShape, breakdow
     upsertSummaryPart(summaryParts, 'Fire');
   }
 
-  const aura = auraKind ? AURA_TILE_EFFECTS[auraKind] : null;
   if (aura?.hitSlowPct) {
     rows.push({
       kind: 'ON-HIT',

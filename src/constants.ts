@@ -364,7 +364,7 @@ export const AURA_TILES: AuraTile[] = [
   // instead of stacked in a column. They scatter with the other six rather
   // than lining up, while still anchoring the right-side WP3↔WP4 lanes. Both
   // on open buildable terrain (clear of every waypoint + structure footprint).
-  { col: 31, row: 5,  kind: 'IVORY'   },  // upper-right pocket · near WP4 · tower strikes as DIVINE (moved left 1)
+  { col: 31, row: 5,  kind: 'IVORY'   },  // upper-right pocket · near WP4 · adds a separate DIVINE damage rider (moved left 1)
   { col: 25, row: 15, kind: 'AMBER'   },  // centre-lower pocket · near WP3 · tower gains splash blast
   { col: 10, row: 16, kind: 'TIDE'    }   // ocean below WP2   · damaged enemies are slowed 30%
 ];
@@ -382,7 +382,7 @@ export const AURA_TILE_EFFECTS: Record<AuraTile['kind'], {
   goldPerKill?: number;   // optional gold-per-kill bonus
   meleeFlyer?: boolean;   // optional anti-air for melee towers
   rangeBonus?: number;    // optional flat range bonus in tiles
-  divineDamage?: boolean; // optional — tower's attacks resolve as DIVINE damage
+  divineRiderPct?: number;// optional — separate DIVINE damage added without replacing the native hit
   splashBonus?: number;   // optional — minimum splash (AoE) radius in tiles
   hitSlowPct?: number;    // optional — direct-damaged enemies receive SLOW
   hitSlowDuration?: number;
@@ -400,12 +400,12 @@ export const AURA_TILE_EFFECTS: Record<AuraTile['kind'], {
   EMERALD: { color: 0x66ff88, label: 'WATCHTOWER TILE', description: 'Tower on this tile gains +2 tiles of range — a commanding sight line.', rangeBonus: 2 },
   // 2026-06-27 — Two new keyword tiles. The tower keeps all of its own
   // stats and abilities; the tile only layers the extra effect on top.
-  // IVORY converts the attack's damage type to DIVINE (pierces most
-  // resistances). AMBER grants a splash blast (applied as a minimum
+  // IVORY adds a separate DIVINE packet while preserving the tower's
+  // native damage. AMBER grants a splash blast (applied as a minimum
   // projectile splash radius in ProjectileSystem.spawnProjectile).
   // TIDE is an ocean control tile: it keeps the tower's own identity,
   // but any enemy actually damaged by that tower is slowed.
-  IVORY:   { color: 0xfff2cc, label: 'DIVINE TILE',     description: 'Any tower on this tile strikes as DIVINE damage — bypasses most resistances.', divineDamage: true },
+  IVORY:   { color: 0xfff2cc, label: 'DIVINE TILE',     description: 'Tower keeps its normal damage and adds +35% separate DIVINE damage on every hit.', divineRiderPct: 0.35 },
   AMBER:   { color: 0xff8a3c, label: 'BLAST TILE',      description: 'Tower on this tile gains a splash blast — every hit also damages enemies within 1.2 tiles.', splashBonus: 1.2 },
   TIDE:    { color: 0x26f6e2, label: 'TIDE TILE',       description: 'Tower on this ocean tile keeps its normal attacks, and any enemy it damages is slowed 30%.', hitSlowPct: 0.30, hitSlowDuration: 2.5 }
 };

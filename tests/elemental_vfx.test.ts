@@ -99,6 +99,21 @@ describe('Elemental VFX classification and projectiles', () => {
     expect(calls.every(call => call.slice(6).join(',') === '128,128,6,3,3')).toBe(true);
   });
 
+  it('shows a gold impact ring for a separate divine damage rider', () => {
+    const rings: any[][] = [];
+    (globalThis as any).__renderer = {
+      triggerSpriteImpact: () => {},
+      triggerImpactRing: (...args: any[]) => rings.push(args)
+    };
+    const tower = createTower(TowerType.DECURION, 3, 1, 1, 10);
+    (tower as any).__divineRiderVfx = true;
+
+    triggerElementalHitVfx(tower, 100, 120, 4);
+
+    expect(rings).toHaveLength(2);
+    expect(rings.map(call => call[4])).toEqual([0xffe066, 0xfff4a8]);
+  });
+
   it('renders and applies an Inferno Standard aura burn on an allied tower hit', () => {
     const calls: any[][] = [];
     (globalThis as any).__renderer = { triggerSpriteImpact: (...args: any[]) => calls.push(args) };

@@ -823,7 +823,33 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
   // CombatResolver) — like FLYER_BANE / the boss trophies it is not part
   // of the unconditional stat breakdown.
   if (items.includes('SPEAR_OF_MARS')) { dmgMods.push({ source: 'Spear of Mars', multiplier: 1.60 }); rngMods.push({ source: 'Spear of Mars', flat: 7 }); }
-  if (items.includes('CAPITOLINE_AEGIS')) dmgMods.push({ source: 'Capitoline Aegis divine rider', multiplier: 1.35 });
+  // Separate Divine riders add to one another, then scale with the normal
+  // damage chain. One combined modifier keeps displayed DPS honest when
+  // the tile, Aegis, and Sol Invictus overlap (35% + 35%, not 1.35 x 1.35).
+  const divineRiderSources: string[] = [];
+  let divineRiderPct = 0;
+  if (t.damageType !== DamageType.NONE && items.includes('CAPITOLINE_AEGIS')) {
+    divineRiderSources.push('Capitoline Aegis');
+    divineRiderPct += 0.35;
+  }
+  if (t.damageType !== DamageType.NONE && t.type === TowerType.SOL_INVICTUS_QUADRIGA) {
+    divineRiderSources.push('Sol Invictus');
+    divineRiderPct += 0.35;
+  }
+  const tileKind = towerAuraTileKind(t);
+  if (tileKind) {
+    const tileRiderPct = AURA_TILE_EFFECTS[tileKind].divineRiderPct ?? 0;
+    if (t.damageType !== DamageType.NONE && tileRiderPct > 0) {
+      divineRiderSources.push('Divine Tile');
+      divineRiderPct += tileRiderPct;
+    }
+  }
+  if (divineRiderPct > 0) {
+    const source = divineRiderSources.length === 1
+      ? `${divineRiderSources[0]} divine rider`
+      : `Divine riders: ${divineRiderSources.join(' + ')}`;
+    dmgMods.push({ source, multiplier: 1 + divineRiderPct });
+  }
   if (items.includes('VANGUARD_PILUM')) { dmgMods.push({ source: 'Vanguard Pilum', multiplier: 1.75 }); rngMods.push({ source: 'Vanguard Pilum', flat: 2 }); }
   if (items.includes('PERIMETER_TORCH')) {
     dmgMods.push({ source: 'Perimeter Torch', multiplier: 1.50 });

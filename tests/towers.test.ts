@@ -1383,10 +1383,11 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
     expect(kinds.has('TIDE')).toBe(true);
   });
 
-  it('IVORY tile converts a tower\'s damage type to DIVINE', () => {
+  it('IVORY tile declares an additive DIVINE rider', () => {
     const ivory = AURA_TILES.find(t => t.kind === 'IVORY')!;
-    expect(AURA_TILE_EFFECTS.IVORY?.divineDamage).toBe(true);
+    expect(AURA_TILE_EFFECTS.IVORY?.divineRiderPct).toBeCloseTo(0.35, 4);
     expect(AURA_TILE_EFFECTS.IVORY?.label).toBe('DIVINE TILE');
+    expect(AURA_TILE_EFFECTS.IVORY?.description).toContain('keeps its normal damage');
     // The tile sits on open buildable terrain (clear of every waypoint).
     expect(ivory.col).toBe(31);
   });
@@ -1606,6 +1607,104 @@ describe('Aura mechanics and visibility', () => {
       enemyDamageMultiplier(target, DamageType.PHYS_MELEE);
     expect(hitDamage).toBeCloseTo(expectedNativeOnly, 4);
     expect(100000 - target.hp).toBeCloseTo(expectedNativeOnly, 4);
+  });
+
+  it('Divine Tile adds a separate divine packet without replacing native damage', () => {
+    const state = createGameState();
+    const ivory = AURA_TILES.find(tile => tile.kind === 'IVORY')!;
+    const attacker = createTower(TowerType.DECURION, 1, ivory.col, ivory.row, 0);
+    attacker.attackCooldown = 0;
+    state.towers.set(attacker.id, attacker);
+    const c = towerCenter(attacker);
+    const target = testEnemy('ivory-neutral', c.x + GRID.TILE, c.y);
+    target.faction = EnemyFaction.CARTHAGE;
+    target.hp = 100000;
+    target.maxHp = 100000;
+    state.enemies.set(target.id, target);
+    let hitDamage = 0;
+
+    tickCombat(state, 0.016, {
+      ...noopCombatHooks(),
+      onHit: (_tower, _enemy, damage) => { hitDamage = damage; }
+    });
+
+    const nativePacket = resistanceModifier(target.faction, DamageType.PHYS_MELEE) *
+      enemyDamageMultiplier(target, DamageType.PHYS_MELEE);
+    const divinePacket = AURA_TILE_EFFECTS.IVORY.divineRiderPct! *
+      resistanceModifier(target.faction, DamageType.DIVINE) *
+      enemyDamageMultiplier(target, DamageType.DIVINE);
+    const expected = towerPerAttackDamageBase(attacker) * (nativePacket + divinePacket);
+    expect(attacker.damageType).toBe(DamageType.PHYS_MELEE);
+    expect(hitDamage).toBeCloseTo(expected, 4);
+    expect((attacker as any).__divineRiderVfx).toBe(true);
+  });
+
+  it('Divine Tile lets native towers target divine-only spirits with only the rider', () => {
+    const state = createGameState();
+    const ivory = AURA_TILES.find(tile => tile.kind === 'IVORY')!;
+    const attacker = createTower(TowerType.DECURION, 1, ivory.col, ivory.row, 0);
+    attacker.attackCooldown = 0;
+    state.towers.set(attacker.id, attacker);
+    const c = towerCenter(attacker);
+    const target = testEnemy('ivory-spirit', c.x + GRID.TILE, c.y);
+    target.type = EnemyType.OCEAN_GHOST_SPIRIT;
+    target.faction = EnemyFaction.ROMAN_MYTH;
+    target.hp = 100000;
+    target.maxHp = 100000;
+    state.enemies.set(target.id, target);
+    let hitDamage = 0;
+
+    tickCombat(state, 0.016, {
+      ...noopCombatHooks(),
+      onHit: (_tower, _enemy, damage) => { hitDamage = damage; }
+    });
+
+    const expected = towerPerAttackDamageBase(attacker) *
+      AURA_TILE_EFFECTS.IVORY.divineRiderPct! *
+      resistanceModifier(target.faction, DamageType.DIVINE) *
+      enemyDamageMultiplier(target, DamageType.DIVINE);
+    expect(hitDamage).toBeCloseTo(expected, 4);
+    expect(100000 - target.hp).toBeCloseTo(expected, 4);
+  });
+
+  it('Divine immunity blocks only the Divine Tile rider, not the native hit', () => {
+    const state = createGameState();
+    const ivory = AURA_TILES.find(tile => tile.kind === 'IVORY')!;
+    const attacker = createTower(TowerType.DECURION, 1, ivory.col, ivory.row, 0);
+    attacker.attackCooldown = 0;
+    state.towers.set(attacker.id, attacker);
+    const c = towerCenter(attacker);
+    const target = testEnemy('ivory-divine-immune', c.x + GRID.TILE, c.y);
+    target.type = EnemyType.MONGOL_CAPTAIN;
+    target.faction = EnemyFaction.MONGOLS;
+    target.hp = 100000;
+    target.maxHp = 100000;
+    state.enemies.set(target.id, target);
+    let hitDamage = 0;
+
+    tickCombat(state, 0.016, {
+      ...noopCombatHooks(),
+      onHit: (_tower, _enemy, damage) => { hitDamage = damage; }
+    });
+
+    const expectedNative = towerPerAttackDamageBase(attacker) *
+      resistanceModifier(target.faction, DamageType.PHYS_MELEE) *
+      enemyDamageMultiplier(target, DamageType.PHYS_MELEE);
+    expect(hitDamage).toBeCloseTo(expectedNative, 4);
+    expect(100000 - target.hp).toBeCloseTo(expectedNative, 4);
+  });
+
+  it('adds Divine Tile and Capitoline Aegis riders instead of multiplying them', () => {
+    const state = createGameState();
+    const ivory = AURA_TILES.find(tile => tile.kind === 'IVORY')!;
+    const tower = createTower(TowerType.DECURION, 1, ivory.col, ivory.row, 0);
+    const base = displayedDpsFromBreakdown(createTower(TowerType.DECURION, 1, 0, 0, 0), state);
+    tower.equippedItems.push('CAPITOLINE_AEGIS');
+    const breakdown = towerStatBreakdown(tower, state);
+    const rider = breakdown.damageMods.find(mod => mod.source.startsWith('Divine riders:'));
+
+    expect(rider?.multiplier).toBeCloseTo(1.70, 4);
+    expect(displayedDpsFromBreakdown(tower, state)).toBeCloseTo(base * 1.70, 4);
   });
 
   it('burn rider items fail independently on fire-immune enemies without canceling native damage', () => {
