@@ -448,11 +448,25 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
 
   // Active status effects (only meaningful when inspecting a LIVE enemy
   // from the field — preview-stubs have an empty statusEffects array).
-  if (e.statusEffects.length > 0) {
+  // Fated Current and healing denial use compact runtime stamps instead of
+  // statusEffects because they are separate, non-stacking support layers.
+  const globalRef: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
+  const now = globalRef?.__game?.tick ?? globalRef?.__lastState?.tick ?? 0;
+  const supplementalStatuses: string[] = [];
+  const fated = (e as any).__fatedCurrent as { expiresAt?: number; pct?: number } | undefined;
+  if (fated && (fated.expiresAt ?? 0) > now) {
+    supplementalStatuses.push(`FATED CURRENT +${Math.round((fated.pct ?? 0) * 100)}% (${((fated.expiresAt ?? now) - now).toFixed(1)}s)`);
+  }
+  const healingBlockedUntil = (e as any).__healingBlockedUntil ?? 0;
+  if (healingBlockedUntil > now) {
+    supplementalStatuses.push(`HEALING DENIED (${(healingBlockedUntil - now).toFixed(1)}s)`);
+  }
+  if (e.statusEffects.length > 0 || supplementalStatuses.length > 0) {
     const sBox = document.createElement('div');
     sBox.style.cssText = 'padding:8px 12px;border-bottom:1px solid #3a3025';
     sBox.innerHTML = `<div style="font-size:9px;color:#aa9a4a;letter-spacing:1px;margin-bottom:4px">ACTIVE STATUS</div>` +
-      e.statusEffects.map(s => `<span style="display:inline-block;margin-right:8px;color:#9be0ff;font-size:11px">${s.kind} (${s.remaining.toFixed(1)}s)</span>`).join('');
+      e.statusEffects.map(s => `<span style="display:inline-block;margin-right:8px;color:#9be0ff;font-size:11px">${s.kind} (${s.remaining.toFixed(1)}s)</span>`).join('') +
+      supplementalStatuses.map(status => `<span style="display:inline-block;margin-right:8px;color:#d19cff;font-size:11px">${status}</span>`).join('');
     body.appendChild(sBox);
   }
 

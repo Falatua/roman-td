@@ -85,6 +85,31 @@ const SULLA_FIRE_RIDER_PCT = 0.22;
 export const CAPITOLINE_AEGIS_DIVINE_RIDER_PCT = 0.35;
 export const SIEGE_FLYER_MISS_CHANCE = 0.20;
 
+type FatedCurrentStamp = { expiresAt: number; pct: number };
+
+export function fatedCurrentDamageMult(enemy: Enemy, tick: number): number {
+  const stamp = (enemy as any).__fatedCurrent as FatedCurrentStamp | undefined;
+  if (!stamp || tick >= stamp.expiresAt) return 1;
+  return 1 + stamp.pct;
+}
+
+function stampFatedCurrent(enemy: Enemy, tick: number, duration: number, pct: number): void {
+  const current = (enemy as any).__fatedCurrent as FatedCurrentStamp | undefined;
+  if (!current || tick >= current.expiresAt) {
+    (enemy as any).__fatedCurrent = { expiresAt: tick + duration, pct } satisfies FatedCurrentStamp;
+    return;
+  }
+  current.expiresAt = Math.max(current.expiresAt, tick + duration);
+  current.pct = Math.max(current.pct, pct);
+}
+
+function stampHealingBlock(enemy: Enemy, tick: number, duration: number): void {
+  (enemy as any).__healingBlockedUntil = Math.max(
+    (enemy as any).__healingBlockedUntil ?? 0,
+    tick + duration
+  );
+}
+
 // Storm Ballista is a purpose-built anti-air combo. Ordinary siege engines
 // retain their heavy-projectile accuracy penalty against flyers, but this
 // tower's storm-guided bolts do not inherit that generic miss roll.
@@ -898,6 +923,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   const localAuras: Array<{ x: number; y: number; r: number; dmg?: number; spd?: number }> = [];
   const enemyTakenAuras: Array<{ x: number; y: number; r: number; pct: number }> = [];
   const infernoStandardAuras: Array<{ x: number; y: number; r: number }> = [];
+  const healingDenialAuras: Array<{ x: number; y: number; r: number }> = [];
   // AURA NULLIFIER enemies (Architectus on W16): if alive AND within 2 tiles
   // of an aura-emitting tower, that tower's aura contributions are silently
   // skipped this tick. The aura comes back the instant the enemy walks out
@@ -1222,6 +1248,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // in the on-hit pass.
     if (t.equippedItems.includes('NECROMANCERS_LANTERN') && !auraOff) {
       enemyTakenAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, pct: 0.45 });
+      healingDenialAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE });
     }
     if (t.equippedItems.includes('INFERNO_STANDARD') && !auraOff) {
       localAuras.push({ x: cx, y: cy, r: 3.5 * GRID.TILE, dmg: 0.40 });
@@ -1243,6 +1270,20 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     }
     // SACER_VESTAL — passive sanctum: nothing to push here (status durations
     // are doubled at apply time inside pushStatus when the target is in range).
+  }
+  // Necromancer's Lantern promises true regeneration denial, not merely a
+  // vulnerability aura. Refresh a short shared healing lock while an enemy is
+  // inside any active Lantern aura. The small grace period avoids frame-order
+  // gaps without letting the effect linger after the enemy leaves the radius.
+  if (healingDenialAuras.length > 0) {
+    for (const e of state.enemies.values()) {
+      if (e.hp <= 0) continue;
+      for (const aura of healingDenialAuras) {
+        if (Math.hypot(e.x - aura.x, e.y - aura.y) > aura.r) continue;
+        stampHealingBlock(e, state.tick, Math.max(0.2, dt * 2));
+        break;
+      }
+    }
   }
   // Cache effective multipliers per tower
   const towerDmgMult = new Map<string, number>();
@@ -1482,6 +1523,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       for (const a of enemyTakenAuras) {
         if (Math.hypot(a.x - target.x, a.y - target.y) <= a.r) takenMult *= 1 + a.pct;
       }
+      // Nereid Fated Current is a separate, non-stacking exposure layer.
+      // It can coexist with ordinary MARK but does not amplify DoT ticks.
+      takenMult *= fatedCurrentDamageMult(target, state.tick);
       // LATE-WAVE DAMAGE SCALING (20-WAVE CAMPAIGN, 2026-05): mirrors the
       // ×1.50 per-cleared-boss HP step in WaveManager.effectiveWaveHpMult.
       // Without a matching tower buff, base/non-combo towers fall off
@@ -2945,6 +2989,11 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       // Slow-buff pass v6.2: 35% → 50%.
       pushStatus(target, StatusEffectKind.POISON, dur(2.5), 0.06, tier);
       pushStatus(target, StatusEffectKind.SLOW, dur(3), 0.50, tier);
+      // A low-cadence field answer to regeneration. Mefitis remains the
+      // premium full-uptime specialist; Plague Cart only opens a brief window.
+      if ((((t as any).__hitCount ?? 0) % 3) === 0) {
+        stampHealingBlock(target, tick ?? 0, 2.0);
+      }
       break;
     case TowerType.SAGITTARIUS:
       if (target.isFlyer) pushStatus(target, StatusEffectKind.SLOW, dur(1.6), 0.35, tier);
@@ -3015,7 +3064,7 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       if (cycle === 1) pushStatus(target, StatusEffectKind.BURN, 4.0, 0.045, tier);
       else if (cycle === 2) pushStatus(target, StatusEffectKind.POISON, 4.0, 0.045, tier);
       else pushStatus(target, StatusEffectKind.ARMOR_SHRED, 4.0, 0, tier);
-      (target as any).__healingBlockedUntil = Math.max((target as any).__healingBlockedUntil ?? 0, (tick ?? 0) + 4.0);
+      stampHealingBlock(target, tick ?? 0, 4.0);
       break;
     }
     case TowerType.CATAPHRACT_LANCER:
@@ -3071,12 +3120,18 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       break;
     case TowerType.RAMMING_QUINQUEREME:
       pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.45, tier);
-      if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.45), 0, tier);
+      if ((((t as any).__hitCount ?? 0) % 3) === 0) {
+        pushStatus(target, StatusEffectKind.STUN, dur(0.45), 0, tier);
+        pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4.0), 0, tier);
+      }
       break;
     case TowerType.MARS_TIDAL_BASTION:
       pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, (t as any).placedOnWater ? 0.65 : 0.35, tier);
       pushStatus(target, StatusEffectKind.MARK, dur(3.0), 0.16, tier);
-      if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.65), 0, tier);
+      if ((((t as any).__hitCount ?? 0) % 3) === 0) {
+        pushStatus(target, StatusEffectKind.STUN, dur(0.65), 0, tier);
+        pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4.5), 0, tier);
+      }
       break;
     case TowerType.GIANT_KILLER:
       if (isGiantKillerTarget(target)) {
@@ -3095,6 +3150,9 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       pushStatus(target, StatusEffectKind.SLOW, dur(3.5), 0.48, tier);
       pushStatus(target, StatusEffectKind.KNOCKBACK, 0.05, 0.18, tier);
       if (target.isBoss || isCommanderType((target as any).type)) pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(3.5), 0, tier);
+      if ((((t as any).__hitCount ?? 0) % 4) === 0) {
+        stampHealingBlock(target, tick ?? 0, 2.25);
+      }
       {
         const renderer: any = typeof globalThis !== 'undefined' ? (globalThis as any).__renderer : undefined;
         renderer?.triggerCharybdisCurrent?.(target.x, target.y, tick ?? 0, GRID.TILE * 1.75);
@@ -3103,15 +3161,25 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
     case TowerType.ABYSSAL_ONAGER:
       pushStatus(target, StatusEffectKind.SLOW, dur((t as any).placedOnWater ? 4.0 : 2.6), (t as any).placedOnWater ? 0.55 : 0.32, tier);
       pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
-      if ((((t as any).__hitCount ?? 0) % 3) === 0) pushStatus(target, StatusEffectKind.STUN, dur(0.6), 0, tier);
+      if ((((t as any).__hitCount ?? 0) % 3) === 0) {
+        pushStatus(target, StatusEffectKind.STUN, dur(0.6), 0, tier);
+        stampHealingBlock(target, tick ?? 0, 3.0);
+      }
       break;
     case TowerType.NEREID_ORACLE:
       (target as any).__truesightRevealed = true;
       pushStatus(target, StatusEffectKind.MARK, dur(4.0), 0.20, tier);
+      stampFatedCurrent(target, tick ?? 0, 4.0, 0.10);
       break;
     case TowerType.ORACLE_LIGHTHOUSE:
       (target as any).__truesightRevealed = true;
       pushStatus(target, StatusEffectKind.MARK, dur((t as any).placedOnWater ? 5.5 : 4.0), (t as any).placedOnWater ? 0.28 : 0.36, tier);
+      stampFatedCurrent(
+        target,
+        tick ?? 0,
+        (t as any).placedOnWater ? 5.5 : 4.0,
+        (t as any).placedOnWater ? 0.14 : 0.18
+      );
       break;
     case TowerType.HYDRA_OF_LERNA:
     case TowerType.HYDRA_BEAST_PIT:

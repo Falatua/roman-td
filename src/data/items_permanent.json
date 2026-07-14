@@ -463,7 +463,7 @@
     "buy": 0,
     "sell": 60,
     "eventExclusive": "UPRISING",
-    "effect": "Aura 3.5 tiles: enemies in range take +45% damage from all sources and cannot regenerate."
+    "effect": "Aura 3.5 tiles: enemies take +45% direct damage and cannot regenerate or receive checkpoint healing while inside."
   },
   "HELLGATE_BRAND": {
     "name": "Hellgate Brand",

@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { GamePhase, EnemyFaction, EnemyType, TileType, TowerType, type Enemy, type Tower } from '../src/types';
+import { GamePhase, EnemyFaction, EnemyType, StatusEffectKind, TileType, TowerType, type Enemy, type Tower } from '../src/types';
 import { createGameState } from '../src/GameState';
 import { GRID, WATER_ZONE } from '../src/constants';
 import { initializeGrid, setTowerTile, tileAt } from '../src/systems/GridManager';
 import { buildGroundPath } from '../src/systems/PathFinder';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { executeCombo, scanCombos } from '../src/systems/CombinationEngine';
-import { applyDamageAndStatus, tickCombat, type CombatHooks } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, fatedCurrentDamageMult, tickCombat, type CombatHooks } from '../src/systems/CombatResolver';
 import { tickProjectiles } from '../src/systems/ProjectileSystem';
 import { commanderDamageTakenMult, commanderSpeedMult, isCommanderType, tickCommanderSupport } from '../src/systems/CommanderSystem';
 import towersData from '../src/data/towers.json';
@@ -358,6 +358,89 @@ describe('Harbor naval tower system', () => {
     } finally {
       (globalThis as any).__renderer = previousRenderer;
     }
+  });
+
+  it('distributes the full support toolkit across accessible naval specialists', () => {
+    const s = readyState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 10;
+    const hooks = leaderboardDamageHooks();
+
+    const nereid = createTower(TowerType.NEREID_ORACLE, 4, 2, 20, s.wave);
+    nereid.placedOnWater = true;
+    const exposed = combatTarget('fated-current', nereid);
+    applyDamageAndStatus(s, nereid, exposed, 10, hooks);
+    expect(exposed.statusEffects.some(effect => effect.kind === StatusEffectKind.MARK && effect.magnitude === 0.20)).toBe(true);
+    expect(fatedCurrentDamageMult(exposed, 10)).toBeCloseTo(1.10, 6);
+
+    const lighthouse = createTower(TowerType.ORACLE_LIGHTHOUSE, 5, 3, 20, s.wave);
+    lighthouse.placedOnWater = true;
+    applyDamageAndStatus(s, lighthouse, exposed, 10, hooks);
+    expect(fatedCurrentDamageMult(exposed, 10)).toBeCloseTo(1.14, 6);
+    expect(fatedCurrentDamageMult(exposed, 15.5)).toBe(1);
+
+    const ramming = createTower(TowerType.RAMMING_QUINQUEREME, 4, 4, 20, s.wave);
+    ramming.placedOnWater = true;
+    (ramming as any).__hitCount = 3;
+    const cracked = combatTarget('rammed-armor', ramming);
+    applyDamageAndStatus(s, ramming, cracked, 10, hooks);
+    expect(cracked.statusEffects.some(effect => effect.kind === StatusEffectKind.STUN)).toBe(true);
+    expect(cracked.statusEffects.some(effect => effect.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+
+    const charybdis = createTower(TowerType.CHARYBDIS_VORTEX, 4, 5, 20, s.wave);
+    charybdis.placedOnWater = true;
+    (charybdis as any).__hitCount = 4;
+    const drowned = combatTarget('drowned-recovery', charybdis);
+    applyDamageAndStatus(s, charybdis, drowned, 10, hooks);
+    expect(drowned.statusEffects.some(effect => effect.kind === StatusEffectKind.SLOW)).toBe(true);
+    expect((drowned as any).__healingBlockedUntil).toBeCloseTo(12.25, 6);
+
+    const abyssal = createTower(TowerType.ABYSSAL_ONAGER, 5, 6, 20, s.wave);
+    abyssal.placedOnWater = true;
+    (abyssal as any).__hitCount = 3;
+    const sealed = combatTarget('abyssal-heal-lock', abyssal);
+    applyDamageAndStatus(s, abyssal, sealed, 10, hooks);
+    expect(sealed.statusEffects.some(effect => effect.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+    expect(sealed.statusEffects.some(effect => effect.kind === StatusEffectKind.STUN)).toBe(true);
+    expect((sealed as any).__healingBlockedUntil).toBe(13);
+
+    const hydra = createTower(TowerType.HYDRA_OF_LERNA, 4, 7, 20, s.wave);
+    hydra.placedOnWater = true;
+    (hydra as any).__hitCount = 4;
+    const bleeding = combatTarget('hydra-bleed', hydra);
+    applyDamageAndStatus(s, hydra, bleeding, 10, hooks);
+    expect(bleeding.statusEffects.some(effect => effect.kind === StatusEffectKind.BLEED)).toBe(true);
+  });
+
+  it('keeps a low-uptime land healing-denial route through Plague Cart', () => {
+    const s = readyState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 20;
+    const cart = createTower(TowerType.PLAGUE_CART, 3, 10, 10, s.wave);
+    (cart as any).__hitCount = 3;
+    const target = combatTarget('plague-heal-lock', cart);
+
+    applyDamageAndStatus(s, cart, target, 10, leaderboardDamageHooks());
+
+    expect(target.statusEffects.some(effect => effect.kind === StatusEffectKind.POISON)).toBe(true);
+    expect(target.statusEffects.some(effect => effect.kind === StatusEffectKind.SLOW)).toBe(true);
+    expect((target as any).__healingBlockedUntil).toBe(22);
+  });
+
+  it('makes Necromancer Lantern regeneration denial match its item promise', () => {
+    const s = readyState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 30;
+    const bearer = createTower(TowerType.MILITES, 5, 10, 10, s.wave);
+    bearer.equippedItems.push('NECROMANCERS_LANTERN');
+    bearer.attackCooldown = 999;
+    s.towers.set(bearer.id, bearer);
+    const target = combatTarget('lantern-heal-lock', bearer, 2);
+    s.enemies.set(target.id, target);
+
+    tickCombat(s, 0.016, leaderboardDamageHooks());
+
+    expect((target as any).__healingBlockedUntil).toBeGreaterThan(s.tick);
   });
 
   it('rewards Tideforged combos for taking scarce ocean tiles', () => {
