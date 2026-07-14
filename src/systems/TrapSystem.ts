@@ -52,12 +52,12 @@ export const TRAP_DEFS: Record<string, TrapDef> = {
   },
   VENOM_TRAP: {
     name: 'Venom Trap', price: 60, color: 0x66dd44, spriteKey: 'TRAP_VENOM',
-    effect: 'POISON', blurb: 'A toxic cloud: a hit plus lingering POISON over 5s.',
+    effect: 'POISON', blurb: 'A toxic cloud: a hit plus lingering POISON over 5.5s.',
     pulse: true, triggerTiles: 0.8, radiusTiles: 1.4, damage: 360, dotDuration: 5, dotMag: 0.05,
   },
   TAR_FIRE_TRAP: {
     name: 'Tar Fire Trap', price: 60, color: 0xff7722, spriteKey: 'TRAP_TAR_FIRE',
-    effect: 'BURN', blurb: 'Ignites tar: a hit plus lingering BURN over 5s.',
+    effect: 'BURN', blurb: 'Ignites tar: a hit plus lingering BURN over 5.5s.',
     pulse: true, triggerTiles: 0.8, radiusTiles: 1.4, damage: 360, dotDuration: 5, dotMag: 0.05,
   },
   FROST_SNARE: {

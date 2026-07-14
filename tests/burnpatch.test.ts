@@ -2,7 +2,8 @@
 import { describe, it, expect } from 'vitest';
 import { createGameState } from '../src/GameState';
 import { tickBurnPatches } from '../src/systems/EnemySystem';
-import { Enemy, EnemyFaction, EnemyType } from '../src/types';
+import { DOT_DURATION_MULT, extendedDotDuration, pushStatus, spawnBurnPatch } from '../src/systems/CombatResolver';
+import { Enemy, EnemyFaction, EnemyType, StatusEffectKind } from '../src/types';
 
 function makeEnemy(x: number, y: number): Enemy {
   return {
@@ -15,6 +16,27 @@ function makeEnemy(x: number, y: number): Enemy {
 }
 
 describe('Burning Ground patches', () => {
+  it('extends finite DoTs by 10% without changing control or permanent effects', () => {
+    expect(DOT_DURATION_MULT).toBe(1.10);
+    expect(extendedDotDuration(StatusEffectKind.BURN, 4)).toBeCloseTo(4.4, 6);
+    expect(extendedDotDuration(StatusEffectKind.POISON, 5)).toBeCloseTo(5.5, 6);
+    expect(extendedDotDuration(StatusEffectKind.BLEED, 8)).toBeCloseTo(8.8, 6);
+    expect(extendedDotDuration(StatusEffectKind.SLOW, 4)).toBe(4);
+    expect(extendedDotDuration(StatusEffectKind.HELLFIRE, 999)).toBe(999);
+
+    const enemy = makeEnemy(100, 100);
+    pushStatus(enemy, StatusEffectKind.POISON, 5, 0.05, 1);
+    pushStatus(enemy, StatusEffectKind.SLOW, 5, 0.50, 1);
+    expect(enemy.statusEffects.find(s => s.kind === StatusEffectKind.POISON)?.remaining).toBeCloseTo(5.5, 6);
+    expect(enemy.statusEffects.find(s => s.kind === StatusEffectKind.SLOW)?.remaining).toBe(5);
+  });
+
+  it('extends newly spawned burning ground by the same 10%', () => {
+    const state = createGameState();
+    spawnBurnPatch(state, 100, 100, 3, 4);
+    expect(state.burnPatches?.[0]?.life).toBeCloseTo(4.4, 6);
+  });
+
   it('decays patches over time and removes them when life <= 0', () => {
     const s = createGameState();
     s.burnPatches = [{ id: 'p1', x: 50, y: 50, born: 0, life: 0.5, sourceTier: 1 }];

@@ -301,7 +301,7 @@
         "cooldownSec": 7,
         "durationSec": 0,
         "params": { "dmgMultiplier": 1.5, "splashRadiusTiles": 1.35, "splashDamagePercent": 45, "burnDurationSec": 3, "burnMagnitude": 0.04 },
-        "description": "Calls down a burning meteor on the nearest enemy in range, dealing 150% of Sulla's basic-attack damage to the main target, splashing 45% damage in 1.35 tiles, burning everything caught for 3s, and leaving BURNING GROUND for 4s.",
+        "description": "Calls down a burning meteor on the nearest enemy in range, dealing 150% of Sulla's basic-attack damage to the main target, splashing 45% damage in 1.35 tiles, burning everything caught for 3.3s, and leaving BURNING GROUND for 4.4s.",
         "vfxColor": "#fff5cc",
         "vfxStyle": "METEOR_SLAM"
       },

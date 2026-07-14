@@ -85,6 +85,20 @@ const SULLA_PASSIVE_RADIUS_TILES = 5.5;
 const SULLA_FIRE_RIDER_PCT = 0.22;
 export const CAPITOLINE_AEGIS_DIVINE_RIDER_PCT = 0.35;
 export const SIEGE_FLYER_MISS_CHANCE = 0.20;
+export const DOT_DURATION_MULT = 1.10;
+
+const FINITE_DOT_DURATION_LIMIT = 900;
+const DOT_STATUS_KINDS = new Set<StatusEffectKind>([
+  StatusEffectKind.BURN,
+  StatusEffectKind.POISON,
+  StatusEffectKind.BLEED,
+  StatusEffectKind.HELLFIRE
+]);
+
+export function extendedDotDuration(kind: StatusEffectKind, duration: number): number {
+  if (!DOT_STATUS_KINDS.has(kind) || duration >= FINITE_DOT_DURATION_LIMIT) return duration;
+  return duration * DOT_DURATION_MULT;
+}
 
 type FatedCurrentStamp = { expiresAt: number; pct: number };
 
@@ -258,7 +272,7 @@ function divineDamageRiderPctForTower(tower: Tower): number {
   return pct;
 }
 
-// BURNING GROUND — fire-themed towers stamp a 4-second patch at the impact
+// BURNING GROUND — fire-themed towers stamp a 4.4-second patch at the impact
 // point. Any enemy within the patch radius takes burn DoT each frame.
 // Patches stack additively but each patch decays independently.
 export function spawnBurnPatch(state: GameStateShape, x: number, y: number, sourceTier: number, life = 4.0) {
@@ -267,10 +281,10 @@ export function spawnBurnPatch(state: GameStateShape, x: number, y: number, sour
     id: newBurnPatchId(),
     x, y,
     born: state.tick,
-    // 2026-05 v11: 3s → 4s — single-DoT consolidation. Default for all fire
+    // 2026-05 v11: 3s → 4s base, then the shared +10% DoT duration pass.
     // towers; Inferno Cart passes a longer life (see call sites) since its
     // whole identity is the burning DoT.
-    life,
+    life: extendedDotDuration(StatusEffectKind.BURN, life),
     sourceTier
   });
   // Cap patches to avoid runaway accumulation (rare, but defensive).
@@ -3608,6 +3622,7 @@ function getWeatherStatusPenalty(): number {
 export function pushStatus(e: Enemy, kind: StatusEffectKind, duration: number, magnitude: number, sourceTier: number) {
   const globalRef: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
   if (statusEffectiveness(e, kind) <= 0) return;
+  duration = extendedDotDuration(kind, duration);
   // BOSSES ARE IMMUNE TO STUN. Stuns paired with splash/cleave were locking
   // bosses in place — boss mechanics (rebirth, stampede, summons) need the
   // boss to ACT, and the player has plenty of % HP DOT + direct damage to

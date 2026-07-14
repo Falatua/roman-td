@@ -28,7 +28,7 @@ import {
   tickHeroAbilities
 } from '../src/systems/HeroSystem';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
-import { pickTarget, tickCombat } from '../src/systems/CombatResolver';
+import { DOT_DURATION_MULT, pickTarget, tickCombat } from '../src/systems/CombatResolver';
 import { getTowerProjectileProfile } from '../src/systems/ProjectileSystem';
 import { createGameState, GameStateShape } from '../src/GameState';
 import { DamageType, Enemy, EnemyFaction, EnemyType, GamePhase, StatusEffectKind, TowerType } from '../src/types';
@@ -486,7 +486,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(nearby.statusEffects.some(st => st.kind === StatusEffectKind.BURN)).toBe(true);
     expect(far.statusEffects.some(st => st.kind === StatusEffectKind.BURN)).toBe(false);
     expect(s.burnPatches).toHaveLength(1);
-    expect(s.burnPatches?.[0]).toMatchObject({ x: primary.x, y: primary.y, life: 4, sourceTier: 5 });
+    expect(s.burnPatches?.[0]).toMatchObject({ x: primary.x, y: primary.y, life: 4 * DOT_DURATION_MULT, sourceTier: 5 });
     expect(fx[0]?.ability).toBe('FORTUNES_BOLT');
     expect(fx[0]?.extras?.splashRadiusTiles).toBeCloseTo(1.35);
   });
@@ -522,7 +522,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
 
         expect((TOWERS as any)[type].burnsGround, `${type} data flag`).toBe(true);
         expect(s.burnPatches, `${type} patch`).toHaveLength(1);
-        expect(s.burnPatches?.[0]).toMatchObject({ x: target.x, y: target.y, life: 4, sourceTier: 5 });
+        expect(s.burnPatches?.[0]).toMatchObject({ x: target.x, y: target.y, life: 4 * DOT_DURATION_MULT, sourceTier: 5 });
         const hpBeforeGroundFire = target.hp;
         tickBurnPatches(s, 0.25);
         expect(target.hp, `${type} burning-ground damage`).toBeLessThan(hpBeforeGroundFire);
