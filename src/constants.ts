@@ -95,6 +95,12 @@ export const ECONOMY = {
   // bonuses. Bosses get this baseline AND their separate scaled boss
   // bounty.
   BASE_GOLD_PER_KILL: 1,
+  // Commanders are rare priority targets whose support auras can reshape an
+  // entire wave. Their bounty is additive to the normal 1g kill payment so a
+  // commander visibly pays 26g before relic, trophy, item, or aura bonuses.
+  // Most of this income lands after W20, where Supercombo and Omega spending
+  // is expected, rather than accelerating the opening prospect economy.
+  COMMANDER_KILL_BOUNTY: 25,
   TIER_PLACE_COST: { 1: 4, 2: 7, 3: 11, 4: 15, 5: 19 } as Record<number, number>,
   TIER_SELL_REFUND: { 1: 1, 2: 3, 3: 5, 4: 7, 5: 9 } as Record<number, number>,
   STONE_COST: 1,

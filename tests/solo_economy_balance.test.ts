@@ -2,13 +2,20 @@ import { describe, expect, it } from 'vitest';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
 import { ECONOMY, LOOT_DROP_RATES } from '../src/constants';
-import { perfectWaveGoldBonus } from '../src/systems/EconomySystem';
+import { commanderKillGoldBounty, perfectWaveGoldBonus } from '../src/systems/EconomySystem';
 import { QUESTS } from '../src/systems/QuestSystem';
-import { isBossEnemy, isEliteEnemy } from '../src/systems/EnemyClassification';
+import { isBossEnemy, isCommanderEnemy, isEliteEnemy } from '../src/systems/EnemyClassification';
 
 describe('30-wave Solo economy envelope', () => {
   it('starts every Solo campaign with 150 gold', () => {
     expect(ECONOMY.STARTING_GOLD).toBe(150);
+  });
+
+  it('reserves a meaningful 25g bounty for commanders, not bosses or elites', () => {
+    expect(ECONOMY.COMMANDER_KILL_BOUNTY).toBe(25);
+    expect(commanderKillGoldBounty('STANDARD_BEARER_COMMANDER')).toBe(25);
+    expect(commanderKillGoldBounty('WAR_ELEPHANT')).toBe(0);
+    expect(commanderKillGoldBounty('HANNIBAL_BARCA')).toBe(0);
   });
 
   it('keeps a perfect early opener below the old runaway 700g feel', () => {
@@ -51,9 +58,10 @@ describe('30-wave Solo economy envelope', () => {
     expect(perfectOpenerGold).toBeLessThan(600);
   });
 
-  it('keeps guaranteed authored income below the premium-buyout threshold', () => {
+  it('keeps guaranteed full-run income in the late-combination investment range', () => {
     let authoredKills = 0;
     let goldKills = 0;
+    let authoredCommanderKills = 0;
     let waveGold = 0;
     let majorBossBounties = 0;
 
@@ -62,21 +70,31 @@ describe('30-wave Solo economy envelope', () => {
       for (const group of wave.spawns) {
         const def = (enemiesData as any)[group.type] ?? {};
         if (wave.type === 'B' && wave.wave <= 15 && !isBossEnemy(group.type) && !isEliteEnemy(group.type)) continue;
-        const lateSecondGateMirror = wave.wave >= 21 && !isBossEnemy(group.type) && !def.isFlyer;
+        const lateSecondGateMirror = wave.wave >= 21 && !(group as any).ocean && !isBossEnemy(group.type) && !def.isFlyer;
         const count = lateSecondGateMirror ? group.count * 2 : group.count;
         authoredKills += count;
         if (!def.noGoldReward) goldKills += count;
+        if (isCommanderEnemy(group.type)) authoredCommanderKills += count;
         if (wave.type === 'B' && isBossEnemy(group.type)) {
           majorBossBounties += group.count * (22 + Math.round(wave.wave * 3.5));
         }
       }
     }
 
-    const guaranteed = ECONOMY.STARTING_GOLD + goldKills + waveGold + majorBossBounties;
-    expect(authoredKills).toBe(2957);
-    expect(goldKills).toBe(2927);
-    expect(guaranteed).toBe(4054);
-    expect(guaranteed).toBeLessThan(4100);
+    // Live scheduling adds campaign commanders and boss escorts beyond the
+    // authored JSON groups. The CommanderSystem integration test locks the
+    // complete schedule at 88, split 18 before W21 and 70 afterward.
+    const scheduledCommanderKills = 88;
+    const injectedCommanderBaselineKills = scheduledCommanderKills - authoredCommanderKills;
+    const commanderBounties = scheduledCommanderKills * ECONOMY.COMMANDER_KILL_BOUNTY;
+    const guaranteed = ECONOMY.STARTING_GOLD + goldKills + injectedCommanderBaselineKills
+      + commanderBounties + waveGold + majorBossBounties;
+    expect(authoredKills).toBe(2940);
+    expect(goldKills).toBe(2910);
+    expect(authoredCommanderKills).toBe(69);
+    expect(guaranteed).toBe(6256);
+    expect(guaranteed).toBeGreaterThan(6200);
+    expect(guaranteed).toBeLessThan(6400);
   });
 
   it('keeps ordinary random drops rare outside bosses, commanders, and events', () => {

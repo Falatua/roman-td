@@ -45,6 +45,7 @@ import { grantTrapInventory } from '../src/systems/TrapInventorySystem';
 import { bossEscortCommandersForWave, commanderDamageTakenMult, commanderSpeedMult, commanderTrapRadiusDisabled, isCommanderType, tickCommanderSupport } from '../src/systems/CommanderSystem';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { canReceiveRunReward } from '../src/systems/RewardEligibility';
+import { commanderKillGoldBounty } from '../src/systems/EconomySystem';
 import enemiesData from '../src/data/enemies.json';
 
 beforeAll(() => {
@@ -682,7 +683,9 @@ describe('Boss trophies', () => {
     expect(bossTrophyDamageMult(s, divine, { type: 'UNDEAD_CELT' })).toBeCloseTo(1.12, 4);
 
     applyBossTrophy(s, 'PAYMASTER_SIGIL');
-    expect(bossTrophyKillGoldBonus(s, { isBoss: true })).toBe(8);
+    expect(bossTrophyKillGoldBonus(s, { isBoss: true })).toBe(0);
+    expect(bossTrophyKillGoldBonus(s, { type: 'PATHFINDER_COMMANDER' })).toBe(10);
+    expect(bossTrophyKillGoldBonus(s, { type: 'WAR_ELEPHANT' })).toBe(5);
     expect(bossTrophyKillGoldBonus(s, { type: 'FERAL_DOG' })).toBe(0);
 
     applyBossTrophy(s, 'WATCHTOWER_SURVEYORS');
@@ -692,6 +695,44 @@ describe('Boss trophies', () => {
 });
 
 describe('Enemy commanders', () => {
+  it('pays a 25g commander bounty without raising boss or ordinary kill rewards', () => {
+    expect(commanderKillGoldBounty({ type: 'PATHFINDER_COMMANDER' })).toBe(25);
+    expect(commanderKillGoldBounty({ type: 'STORMTIDE_WYVERN_COMMANDER' })).toBe(25);
+    expect(commanderKillGoldBounty({ type: 'CELTIC_WARLORD' })).toBe(0);
+    expect(commanderKillGoldBounty({ type: 'WAR_ELEPHANT' })).toBe(0);
+    expect(commanderKillGoldBounty({ type: 'FERAL_DOG' })).toBe(0);
+  });
+
+  it('concentrates commander bounty income in the late-game investment window', () => {
+    let throughWave20 = 0;
+    let waves21To30 = 0;
+    for (let wave = 1; wave <= 30; wave++) {
+      const s = bootstrapState();
+      s.phase = GamePhase.BUILD_PHASE;
+      s.wave = wave - 1;
+      startWave(s);
+      const count = s.spawnQueue.filter(q => isCommanderType(q.type as any)).length;
+      if (wave <= 20) throughWave20 += count;
+      else waves21To30 += count;
+    }
+    expect(throughWave20).toBe(18);
+    expect(waves21To30).toBe(70);
+    expect((throughWave20 + waves21To30) * 25).toBe(2200);
+  });
+
+  it('lets commander economy choices stack additively without paying bosses', () => {
+    const s = bootstrapState();
+    applyCampaignRelic(s, 'PUBLICANS_CONTRACT');
+    applyCampaignRelic(s, 'HARUSPEX_WARNING');
+    applyBossTrophy(s, 'PAYMASTER_SIGIL');
+    const commander = { type: 'PATHFINDER_COMMANDER' };
+    const boss = { type: 'CELTIC_WARLORD' };
+    expect(campaignRelicKillGoldBonus(s, commander)).toBe(12);
+    expect(bossTrophyKillGoldBonus(s, commander)).toBe(10);
+    expect(campaignRelicKillGoldBonus(s, boss)).toBe(2);
+    expect(bossTrophyKillGoldBonus(s, boss)).toBe(0);
+  });
+
   it('injects authored commander spawns into early, mid, and late campaign waves', () => {
     const expected: Record<number, string> = {
       8: 'SKY_PATHFINDER_COMMANDER',

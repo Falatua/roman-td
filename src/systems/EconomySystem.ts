@@ -1,5 +1,6 @@
 import { ECONOMY, HERO_XP_THRESHOLDS, POOL_PROBABILITIES } from '../constants';
 import { GameStateShape } from '../GameState';
+import { isBossEnemy, isCommanderEnemy } from './EnemyClassification';
 
 export function canAfford(state: GameStateShape, cost: number): boolean {
   return state.gold >= cost;
@@ -20,6 +21,14 @@ export function earnGold(state: GameStateShape, amount: number, opts?: { taxable
   void opts;
   state.gold += gross;
   return gross;
+}
+
+export function commanderKillGoldBounty(enemy: any): number {
+  // Bosses have their own authored bounty and guaranteed legendary reward.
+  // Keep that economy separate even if malformed runtime flags classify a
+  // boss as a commander too.
+  if (isBossEnemy(enemy)) return 0;
+  return isCommanderEnemy(enemy) ? ECONOMY.COMMANDER_KILL_BOUNTY : 0;
 }
 
 export function perfectWaveGoldBonus(wave: number): number {

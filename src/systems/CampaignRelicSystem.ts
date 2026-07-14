@@ -329,9 +329,9 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     name: 'Haruspex Warning',
     eyebrow: 'COMMANDER OMEN',
     blurb: 'The priests read the enemy officers in the entrails. The rank and file are harder to break.',
-    upside: 'Commanders take +125% damage.',
+    upside: 'Commanders take +125% damage and pay +10 gold.',
     caveat: 'Non-boss enemy HP +30%.',
-    effects: ['Commanders take +125% damage.', 'Non-boss enemy HP +30%.']
+    effects: ['Commanders take +125% damage.', 'Commander kills pay +10 gold.', 'Non-boss enemy HP +30%.']
   },
   {
     id: 'IMPERIAL_GRANARIES',
@@ -1261,11 +1261,12 @@ export function campaignRelicWaveGoldMult(state: GameStateShape): number {
   return mult;
 }
 
-export function campaignRelicKillGoldBonus(state: GameStateShape): number {
+export function campaignRelicKillGoldBonus(state: GameStateShape, enemy?: any): number {
   let bonus = 0;
   if (hasCampaignRelic(state, 'LAUREL_CENSUS')) bonus += 3;
   if (hasCampaignRelic(state, 'SENATE_AUDIT')) bonus += 2;
   if (hasCampaignRelic(state, 'PUBLICANS_CONTRACT')) bonus += 2;
+  if (enemy && !isBossEnemy(enemy) && isCommanderEnemy(enemy) && hasCampaignRelic(state, 'HARUSPEX_WARNING')) bonus += 10;
   return bonus;
 }
 

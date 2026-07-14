@@ -541,6 +541,7 @@ function renderTab(tab: string): string {
       `)}
       ${foldSection('ENEMY SIGNATURES', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${noteCard('Commander Bounties', 'Commanders are rare support leaders worth hunting first. Every commander kill pays a <b style="color:#ffd34d">+25g bounty</b> on top of the normal kill payment. Kill-gold relics and items stack with it. Bosses use their own bounty and legendary reward instead.')}
           ${noteCard('Out-of-Combat Regen', 'Passive enemy regeneration is globally reduced by 20%. It begins after 1.0s without <b>direct</b> damage; active Burn, Poison, Bleed, or Hellfire halves the remaining rate. Hannibal heals about 0.67%/s under DoT and Daemon Imperator about 1.12%/s. Keep direct pressure on regenerators.')}
           ${noteCard('Phoenix Rebirth', 'Spectral Scout, Celtic Fire Demon, and Undead Celt burst into <b style="color:#ffaa66">3 reduced-HP minions</b> on death — each at 40% / 35% / 25% HP respectively. The original kill still counts; the minions cannot chain-phoenix when killed. Orange impact ring marks the burst. Plan on roughly 3× the kill budget for these enemies and stack DoTs that tick through respawns.')}
           ${noteCard('Phase-Through Hits', 'Spectral Scout (2), Iron Phalanx (2), Celtic Berserker (1), Undead Berserker (1), Undead Spearman (1), Carthage Spearman (1) ignore the first N hits taken — a "MISS" floater pops on each phased shot.')}

@@ -21,7 +21,7 @@ import { buildGateShop, buildMercatorChampionOffers, buildMercatorStock, buildMe
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import { scaledEnemyRegenRate } from './systems/EnemyHealing';
 import wavesData from './data/waves.json';
-import { canAfford, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
+import { canAfford, commanderKillGoldBounty, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
 import { BASE_TOWER_TYPES, createTower, rollSoloDraw, findRandomBuildTiles, towerAuraTileKind, towerStatBreakdown } from './systems/TowerSystem';
 import { scanCombos, realizableCombos, executeCombo, resolveComboChoice, comboIngredientGlowIds } from './systems/CombinationEngine';
 // SANDBOX: dev-mode imports. Delete this line + every line tagged
@@ -7905,9 +7905,14 @@ async function boot() {
           // on top of every other gold-on-kill source below (Aerarium,
           // GOLD_PURSE, HANNIBALS_STRATEGY_SCROLL, PRAETORIAN_COIN,
           // GOLD aura tile). Boss kills still get their separate scaled
-          // bounty below — this baseline is flat.
+          // bounty below — this baseline is flat. True commanders also pay
+          // their separate 25g priority-target bounty; bosses do not receive
+          // it because their scaled bounty and legendary reward remain their
+          // own economy lane.
           if (killRewardsEnabled) goldEarnedHere += earnGold(state, ECONOMY.BASE_GOLD_PER_KILL, { taxable: true });
-          const relicKillGold = campaignRelicKillGoldBonus(state);
+          const commanderBounty = commanderKillGoldBounty(e);
+          if (killRewardsEnabled && commanderBounty > 0) { goldEarnedHere += earnGold(state, commanderBounty, { taxable: true }); }
+          const relicKillGold = campaignRelicKillGoldBonus(state, e);
           if (killRewardsEnabled && relicKillGold > 0) { goldEarnedHere += earnGold(state, relicKillGold, { taxable: true }); }
           const trophyKillGold = bossTrophyKillGoldBonus(state, e);
           if (killRewardsEnabled && trophyKillGold > 0) { goldEarnedHere += earnGold(state, trophyKillGold, { taxable: true }); }

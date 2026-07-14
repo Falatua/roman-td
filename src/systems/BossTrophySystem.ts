@@ -87,7 +87,7 @@ export const BOSS_TROPHIES: BossTrophyDef[] = [
     name: 'Paymaster Sigil',
     eyebrow: 'ECONOMY TROPHY',
     blurb: 'The quartermaster finds a terrifying use for trophies: receipts.',
-    effects: ['Boss, elite, and commander kills pay +8 gold.', 'Regular kills are unchanged.']
+    effects: ['Commander kills pay +10 gold; elite kills pay +5 gold.', 'Boss and regular kills are unchanged.']
   },
   {
     id: 'WATCHTOWER_SURVEYORS',
@@ -238,7 +238,9 @@ export function bossTrophyTowerRangeBonus(state: GameStateShape, tower: Tower): 
 
 export function bossTrophyKillGoldBonus(state: GameStateShape, enemy: any): number {
   if (!hasBossTrophy(state, 'PAYMASTER_SIGIL')) return 0;
-  return isBossEnemy(enemy) || isEliteEnemy(enemy) || isCommanderEnemy(enemy) ? 8 : 0;
+  if (isBossEnemy(enemy)) return 0;
+  if (isCommanderEnemy(enemy)) return 10;
+  return isEliteEnemy(enemy) ? 5 : 0;
 }
 
 export function bossTrophyTrapDamageMult(state: GameStateShape): number {
