@@ -278,6 +278,29 @@ describe('Inspection panels keep obvious close controls', () => {
     expect(helper).toContain('height: 34px');
   });
 
+  it('blocking banner popups bind actions before queueing and always provide a safe close path', () => {
+    const source = readFileSync('src/main.ts', 'utf8');
+    expect(source).toContain("close.className = 'banner-modal-close'");
+    expect(source).toContain("close.textContent = 'X'");
+    expect(source).toContain("close.setAttribute('aria-label', 'Close popup')");
+    expect(source).toContain("stack.style.pointerEvents = isModal ? 'auto' : 'none'");
+    expect(source).toContain('closeOnEscape?: boolean');
+    expect(source).toContain('if (isModal && next.opts.closeOnEscape !== false)');
+
+    for (const selector of ['#rpc-confirm', '#hpc-confirm', '#ppc-confirm', '#pkg-pick', '#upw-place']) {
+      expect(source).toContain(`b.querySelector<HTMLButtonElement>('${selector}')`);
+      expect(source).not.toContain(`document.getElementById('${selector.slice(1)}')`);
+    }
+    expect(source).toContain('onClose: restoreRampartPreview');
+    expect(source).toContain('onClose: cancelHeroPlacement');
+    expect(source).toContain('onClose: cancelPurchasedPlacement');
+    expect(source).toContain('onClose: returnToPlacement');
+    const manager = readFileSync('src/render/ModalManager.ts', 'utf8');
+    for (const id of ['rampart-place-confirm', 'hero-place-confirm', 'purchased-place-confirm', 'pick-keeper-guide', 'unplaced-prospects-warning']) {
+      expect(manager).toContain(`'${id}'`);
+    }
+  });
+
   it('choice-modal X buttons use safe decline or skip behavior instead of trapping progression', () => {
     const relic = readFileSync('src/render/CampaignRelicModal.ts', 'utf8');
     const trophy = readFileSync('src/render/BossTrophyModal.ts', 'utf8');

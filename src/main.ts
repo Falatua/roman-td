@@ -711,9 +711,16 @@ async function boot() {
   // Banners now play SEQUENTIALLY rather than piling up. The queue holds
   // pending banners and shows them one at a time; modal banners block until
   // the user dismisses them.
-  type BannerJob = { node: HTMLElement; durationMs: number; opts: { modal?: boolean; clickDismiss?: boolean } };
+  type BannerOptions = {
+    modal?: boolean;
+    clickDismiss?: boolean;
+    closeButton?: boolean;
+    closeOnEscape?: boolean;
+    onClose?: () => void;
+  };
+  type BannerJob = { node: HTMLElement; durationMs: number; opts: BannerOptions };
   const bannerQueue: BannerJob[] = [];
-  let bannerActive: { node: HTMLElement; timer: number | null } | null = null;
+  let bannerActive: { node: HTMLElement; timer: number | null; dismiss: (notifyClose?: boolean) => void } | null = null;
   function processBannerQueue() {
     // Self-heal: if a prior handler removed the active banner's node from the
     // DOM without nulling bannerActive (the old `b.remove(); processBannerQueue()`
@@ -723,8 +730,8 @@ async function boot() {
     // rest of the run. Treat a detached active node as already finished so the
     // queue can never get permanently stuck again.
     if (bannerActive && !bannerActive.node.isConnected) {
-      if (bannerActive.timer != null) clearTimeout(bannerActive.timer);
-      bannerActive = null;
+      bannerActive.dismiss(false);
+      return;
     }
     if (bannerActive) return;
     const next = bannerQueue.shift();
@@ -739,12 +746,23 @@ async function boot() {
     next.node.style.pointerEvents = isModal ? 'auto' : 'none';
     next.node.style.cursor = isModal && canDismiss ? 'pointer' : 'default';
     const stack = ensureBannerStack();
+    // A modal banner must make its container an explicit hit-test target.
+    // Relying only on a child overriding the stack's pointer-events:none was
+    // fragile under scaled layouts and could leave a visible card inert.
+    stack.style.pointerEvents = isModal ? 'auto' : 'none';
     stack.appendChild(next.node);
-    const finishCurrent = () => {
+    let finished = false;
+    let onEscape: ((ev: KeyboardEvent) => void) | null = null;
+    const finishCurrent = (notifyClose = false) => {
+      if (finished) return;
       if (bannerActive?.node !== next.node) return;
+      finished = true;
+      if (notifyClose) next.opts.onClose?.();
       if (bannerActive.timer != null) clearTimeout(bannerActive.timer);
+      if (onEscape) document.removeEventListener('keydown', onEscape);
       next.node.remove();
       bannerActive = null;
+      stack.style.pointerEvents = 'none';
       processBannerQueue();
     };
     // 2026-05-17 — ONE-CLICK QUEUE DISMISS. Previously, clicking the active
@@ -760,7 +778,7 @@ async function boot() {
       // player isn't ambushed by a fresh banner sliding in after the
       // click. Discarded nodes never attached to the DOM so no removal.
       bannerQueue.length = 0;
-      finishCurrent();
+      finishCurrent(false);
     };
     if (isModal && canDismiss) {
       next.node.addEventListener('click', finishAllOnClick, { once: true });
@@ -775,13 +793,42 @@ async function boot() {
       close.addEventListener('click', finishAllOnClick, { once: true });
       next.node.appendChild(close);
     }
+    // Blocking banner-modals use the same single X affordance as the rest
+    // of the game's windows. Closing is a safe decline/cancel supplied by
+    // the caller, never a destructive confirmation.
+    if (isModal && next.opts.closeButton !== false) {
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'banner-modal-close';
+      close.title = 'Close';
+      close.setAttribute('aria-label', 'Close popup');
+      close.textContent = 'X';
+      close.style.cssText = `position:absolute;top:8px;right:8px;width:34px;height:34px;display:grid;place-items:center;padding:0;background:linear-gradient(180deg,#2a1a0e,#0c0a08);border:2px solid #7a5a1a;color:#ffd34d;font:900 14px/1 'Courier New',monospace;cursor:pointer;pointer-events:auto;z-index:12;box-shadow:0 0 8px rgba(0,0,0,0.45);`;
+      close.addEventListener('click', ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        finishCurrent(true);
+      });
+      next.node.appendChild(close);
+      next.node.setAttribute('role', next.node.getAttribute('role') ?? 'dialog');
+      next.node.setAttribute('aria-modal', next.node.getAttribute('aria-modal') ?? 'true');
+    }
+    if (isModal && next.opts.closeOnEscape !== false) {
+      onEscape = (ev: KeyboardEvent) => {
+        if (ev.key !== 'Escape') return;
+        ev.preventDefault();
+        finishCurrent(true);
+      };
+      document.addEventListener('keydown', onEscape);
+    }
+    next.node.addEventListener('rtd:modal-force-close', () => finishCurrent(true), { once: true });
     let timer: number | null = null;
     if (next.durationMs > 0 && !next.opts.modal) {
-      timer = window.setTimeout(finishCurrent, next.durationMs);
+      timer = window.setTimeout(() => finishCurrent(false), next.durationMs);
     }
-    bannerActive = { node: next.node, timer };
+    bannerActive = { node: next.node, timer, dismiss: finishCurrent };
   }
-  function pushBanner(b: HTMLElement, durationMs: number, opts: { modal?: boolean; clickDismiss?: boolean } = {}) {
+  function pushBanner(b: HTMLElement, durationMs: number, opts: BannerOptions = {}) {
     // Trimmed minimum hold (2026-05) so banners don't linger on the queue
     // and pile up at wave start. Modals stay manual-dismiss.
     const dur = opts.modal ? 0 : Math.max(durationMs, 2400);
@@ -797,10 +844,7 @@ async function boot() {
   // towers" freeze reported after the confirmed-placement refactor.
   function dismissActiveBanner() {
     if (!bannerActive) return;
-    if (bannerActive.timer != null) clearTimeout(bannerActive.timer);
-    bannerActive.node.remove();
-    bannerActive = null;
-    processBannerQueue();
+    bannerActive.dismiss(false);
   }
   // ─── 2026-05 v11 DPS CHECK ────────────────────────────────────────────
   // Track the active training dummy + the tick it spawned, so the summary
@@ -1055,10 +1099,11 @@ async function boot() {
         <button id="rpc-cancel" style="background:#3a2010;color:#cdb98a;border:2px solid #7a5a1a;padding:10px 22px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">✕ CHOOSE ANOTHER TILE</button>
       </div>`;
     b.style.cssText = `width:min(580px,92%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #ffd34d;box-shadow:0 0 36px #ffd34d88,inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;`;
-    pushBanner(b, 0, { modal: true, clickDismiss: false });
-    setTimeout(() => {
-      const confirmBtn = document.getElementById('rpc-confirm');
-      const cancelBtn = document.getElementById('rpc-cancel');
+    const restoreRampartPreview = () => {
+      state.hint = `Rampart still armed (${RAMPART_ORIENT_LABEL[state.selectedRampart ?? orient]}). Move the cursor for preview, R to rotate, then click another tile.`;
+    };
+    const confirmBtn = b.querySelector<HTMLButtonElement>('#rpc-confirm');
+    const cancelBtn = b.querySelector<HTMLButtonElement>('#rpc-cancel');
       if (confirmBtn) confirmBtn.onclick = (ev) => {
         ev.stopPropagation();
         dismissActiveBanner();
@@ -1067,9 +1112,9 @@ async function boot() {
       if (cancelBtn) cancelBtn.onclick = (ev) => {
         ev.stopPropagation();
         dismissActiveBanner();
-        state.hint = `Rampart still armed (${RAMPART_ORIENT_LABEL[state.selectedRampart ?? orient]}). Move the cursor for preview, R to rotate, then click another tile.`;
+        restoreRampartPreview();
       };
-    }, 0);
+    pushBanner(b, 0, { modal: true, clickDismiss: false, onClose: restoreRampartPreview });
   }
 
   // ─── HERO PLACEMENT CONFIRMATION (2026-05-19 v2) ─────────────────────
@@ -1109,15 +1154,17 @@ async function boot() {
         <button id="hpc-cancel" style="background:#3a2010;color:#cdb98a;border:2px solid #7a5a1a;padding:10px 22px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">✕ CHOOSE ANOTHER TILE</button>
       </div>`;
     b.style.cssText = `width:min(560px,90%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid ${tint};box-shadow:0 0 36px ${tint}88,inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;`;
-    pushBanner(b, 0, { modal: true, clickDismiss: false });
     // Wire both action buttons. CONFIRM sets the per-state guard flag
-    // and re-runs the placement by simulating a click on the same tile
-    // — the click handler sees __heroPlacementConfirmed=true and skips
-    // the modal, committing the drop. CANCEL clears the flag and
-    // leaves the queue intact.
-    setTimeout(() => {
-      const confirmBtn = document.getElementById('hpc-confirm');
-      const cancelBtn = document.getElementById('hpc-cancel');
+    // before queueing the banner. Looking them up later through document
+    // failed whenever another banner was ahead in the queue: the timer ran
+    // while this card was detached, then the eventually-visible card had no
+    // handlers. Binding against the card itself is immediate and queue-safe.
+    const cancelHeroPlacement = () => {
+      (state as any).__heroPlacementConfirmed = false;
+      state.hint = `Cancelled. Click another tile to try a different spot for ${heroName}.`;
+    };
+    const confirmBtn = b.querySelector<HTMLButtonElement>('#hpc-confirm');
+    const cancelBtn = b.querySelector<HTMLButtonElement>('#hpc-cancel');
       if (confirmBtn) confirmBtn.onclick = (ev) => {
         ev.stopPropagation();
         if (!isPreWavePhase()) {
@@ -1195,11 +1242,10 @@ async function boot() {
       };
       if (cancelBtn) cancelBtn.onclick = (ev) => {
         ev.stopPropagation();
-        (state as any).__heroPlacementConfirmed = false;
         dismissActiveBanner();
-        state.hint = `Cancelled. Click another tile to try a different spot for ${heroName}.`;
+        cancelHeroPlacement();
       };
-    }, 0);
+    pushBanner(b, 0, { modal: true, clickDismiss: false, onClose: cancelHeroPlacement });
   }
 
   // ─── PURCHASED-TOWER PLACEMENT CONFIRMATION (2026-05-25) ─────────────
@@ -1257,10 +1303,12 @@ async function boot() {
         <button id="ppc-cancel" style="background:#3a2010;color:#cdb98a;border:2px solid #7a5a1a;padding:10px 22px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">✕ CHOOSE ANOTHER TILE</button>
       </div>`;
     b.style.cssText = `width:min(560px,90%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid ${tint};box-shadow:0 0 36px ${tint}88,inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;`;
-    pushBanner(b, 0, { modal: true, clickDismiss: false });
-    setTimeout(() => {
-      const confirmBtn = document.getElementById('ppc-confirm');
-      const cancelBtn = document.getElementById('ppc-cancel');
+    const cancelPurchasedPlacement = () => {
+      (state as any).__purchasedPlacementConfirmed = false;
+      state.hint = `Cancelled. Click another tile to drop ${towerDisplayName} T${tier}.`;
+    };
+    const confirmBtn = b.querySelector<HTMLButtonElement>('#ppc-confirm');
+    const cancelBtn = b.querySelector<HTMLButtonElement>('#ppc-cancel');
       if (confirmBtn) confirmBtn.onclick = (ev) => {
         ev.stopPropagation();
         if (!isPreWavePhase()) {
@@ -1323,11 +1371,10 @@ async function boot() {
       };
       if (cancelBtn) cancelBtn.onclick = (ev) => {
         ev.stopPropagation();
-        (state as any).__purchasedPlacementConfirmed = false;
         dismissActiveBanner();
-        state.hint = `Cancelled. Click another tile to drop ${towerName} T${tier}.`;
+        cancelPurchasedPlacement();
       };
-    }, 0);
+    pushBanner(b, 0, { modal: true, clickDismiss: false, onClose: cancelPurchasedPlacement });
   }
 
   // ─── First-time INSPECT tip (one-time teaching banner) ─────────────────
@@ -4169,13 +4216,11 @@ async function boot() {
         <button id="pkg-cement" style="background:#3a2010;color:#cdb98a;border:2px solid #7a5a1a;padding:8px 18px;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:2px">CEMENT ALL &amp; START</button>
       </div>`;
     b.style.cssText = `width:min(560px,90%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #ffd34d;box-shadow:0 0 36px rgba(255,170,0,0.55),inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;`;
-    pushBanner(b, 0, { modal: true, clickDismiss: false });
     // Wire the two action buttons. Both dismiss the banner; the PICK button
     // just closes so the player can click a prospect; CEMENT crystallizes
     // every pending prospect into stone walls and then starts the wave.
-    setTimeout(() => {
-      const pickBtn = document.getElementById('pkg-pick');
-      const cementBtn = document.getElementById('pkg-cement');
+    const pickBtn = b.querySelector<HTMLButtonElement>('#pkg-pick');
+    const cementBtn = b.querySelector<HTMLButtonElement>('#pkg-cement');
       if (pickBtn) pickBtn.onclick = (ev) => {
         ev.stopPropagation();
         // Must clear bannerActive (not just remove the node) or the queue
@@ -4193,7 +4238,7 @@ async function boot() {
         const startBtn = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent?.includes('START WAVE')) as HTMLButtonElement | undefined;
         startBtn?.click();
       };
-    }, 0);
+    pushBanner(b, 0, { modal: true, clickDismiss: false });
   }
 
   // PROSPECT QUEUE WARNING — catches the common "I hit START WAVE but
@@ -4220,15 +4265,16 @@ async function boot() {
         <button id="upw-continue" style="background:#3a2010;color:#cdb98a;border:2px solid #7a5a1a;padding:8px 18px;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:2px">CONTINUE ANYWAY</button>
       </div>`;
     b.style.cssText = `width:min(560px,90%);text-align:center;padding:22px 28px;background:linear-gradient(180deg,#1a1410,#0c0a08);border:3px solid #ffd34d;box-shadow:0 0 36px rgba(255,170,0,0.55),inset 0 0 24px rgba(0,0,0,0.6);font-family:'Courier New',monospace;`;
-    pushBanner(b, 0, { modal: true, clickDismiss: false });
     state.hint = `${count} prospect card${count === 1 ? '' : 's'} still unplaced. Place more, or continue anyway.`;
-    setTimeout(() => {
-      const placeBtn = document.getElementById('upw-place');
-      const continueBtn = document.getElementById('upw-continue');
+    const returnToPlacement = () => {
+      state.hint = `Place the remaining ${count} prospect card${count === 1 ? '' : 's'} on empty grass, then press START WAVE again.`;
+    };
+    const placeBtn = b.querySelector<HTMLButtonElement>('#upw-place');
+    const continueBtn = b.querySelector<HTMLButtonElement>('#upw-continue');
       if (placeBtn) placeBtn.onclick = (ev) => {
         ev.stopPropagation();
         dismissActiveBanner();
-        state.hint = `Place the remaining ${count} prospect card${count === 1 ? '' : 's'} on empty grass, then press START WAVE again.`;
+        returnToPlacement();
       };
       if (continueBtn) continueBtn.onclick = (ev) => {
         ev.stopPropagation();
@@ -4237,7 +4283,7 @@ async function boot() {
         const startBtn = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent?.includes('START WAVE')) as HTMLButtonElement | undefined;
         startBtn?.click();
       };
-    }, 0);
+    pushBanner(b, 0, { modal: true, clickDismiss: false, onClose: returnToPlacement });
   }
 
   function snapshotBuildPhase() {

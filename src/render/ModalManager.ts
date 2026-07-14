@@ -25,7 +25,16 @@ const GAME_MODAL_IDS = [
   'surprise-reward-modal',
   'sandbox-wave-picker',
   'sandbox-tower-picker',
-  'sandbox-password-modal'
+  'sandbox-password-modal',
+  // Decision banners share the banner queue rather than the ordinary modal
+  // mount, but they are still blocking windows. Register them so opening a
+  // shop, Codex, or other major panel safely cancels the prompt instead of
+  // leaving an unseen blocker behind it.
+  'rampart-place-confirm',
+  'hero-place-confirm',
+  'purchased-place-confirm',
+  'pick-keeper-guide',
+  'unplaced-prospects-warning'
 ];
 
 export function closeGameModals() {
