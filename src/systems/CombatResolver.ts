@@ -221,6 +221,7 @@ const COMBO_ANTI_AIR_TYPES = new Set<TowerType>([
   TowerType.NEMESIS_ENGINE,
   TowerType.HANNIBALS_NIGHTMARE,
   TowerType.BEASTLORD_CHAMPION,
+  TowerType.EXPLORATORES,
   TowerType.STORM_BALLISTA,
   TowerType.SKYREAPER_BATTERY,
   TowerType.SKY_DOMINION,
@@ -1772,7 +1773,6 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // ─── NEW COMBOS: identity damage multipliers ─────────────────────
       if (t.type === TowerType.PONTIFEX_MAXIMUS && target.isBoss) damage *= 3.0;         // RITE OF DOOM: +200% vs bosses
       if (t.type === TowerType.AURORA_LEGION && isEliteEnemy(target)) damage *= 1.50;
-      if (t.type === TowerType.EXPLORATORES && target.archetype === 'RUNNER') damage *= 1.50;   // RECON: +50% vs runners
       if (t.type === TowerType.VANGUARD_WING && isEliteEnemy(target)) damage *= 1.40;
       if (t.type === TowerType.SKY_DOMINION && isEliteEnemy(target)) damage *= 1.60;
       if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 2.00;                 // CITY-BREAKER: +100% vs bosses
@@ -3373,10 +3373,13 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       pushStatus(target, StatusEffectKind.SLOW, dur(2.5), 0.40, tier);
       break;
     case TowerType.EXPLORATORES:
-      // RECON VOLLEY: every hit MARKS the target (+15% taken). The stealth
-      // reveal + the +50%-vs-Runner rider live in the truesight scan and the
-      // damage-multiplier pass respectively.
-      pushStatus(target, StatusEffectKind.MARK, dur(3), 0.15, tier);
+      // AERIAL RECON VOLLEY: Exploratores is now a flyer-only scout tower.
+      // It keeps the old recon mark/reveal identity, but spends its utility
+      // budget on aerial control instead of a ground-runner damage rider.
+      if (target.isFlyer) {
+        pushStatus(target, StatusEffectKind.MARK, dur(3), 0.15, tier);
+        pushStatus(target, StatusEffectKind.SLOW, dur(2.0), 0.30, tier);
+      }
       break;
     case TowerType.VANGUARD_WING:
       // EAGLE-EYE BARRAGE: every hit MARKS and SHREDS armor. The reveal,

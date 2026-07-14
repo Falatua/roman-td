@@ -124,8 +124,9 @@ export function lateGameLayerMult(waveNumber: number, isBoss: boolean, isFlyer: 
   }
   // 2026-07-05 — W16+ flyers are the dedicated combo anti-air check.
   // Ground/bosses keep the softened campaign bridge, but flyers climb harder
-  // so W18+ air waves reward Scorpion Bolt, Storm Ballista, Skyreaper Battery,
-  // Sky Dominion, and other combo anti-air instead of plain archer stacking.
+  // so W18+ air waves reward Scorpion Bolt, Exploratores, Storm Ballista,
+  // Skyreaper Battery, Sky Dominion, and other combo anti-air instead of
+  // plain archer stacking.
   if (waveNumber > 15) {
     const late = waveNumber - 15;
     if (isBoss) m *= 1.05 + late * 0.06;

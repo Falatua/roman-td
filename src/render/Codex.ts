@@ -281,7 +281,7 @@ function renderTab(tab: string): string {
       ${foldSection('TOWER ROLES — KNOW WHO DOES WHAT', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           ${noteCard('Melee Swings At Air', 'Melee cannot reach flyers by default — plan ranged coverage before the flyer wave laughs at your sword wall. The lone exception is the legendary <b style="color:#ffd34d">Aquila Talons</b> item, which unlocks anti-air for one melee tower at a time.')}
-          ${noteCard('Anti-Air Specialists', 'Sagittarius, Aquila Venator, and Skyreaper Battery ONLY target flyers. Dead weight on ground waves, devastating on flyer waves. Choose your slot.')}
+          ${noteCard('Anti-Air Specialists', 'Sagittarius, Aquila Venator, Exploratores, and Skyreaper Battery ONLY target flyers. Dead weight on ground waves, devastating on flyer waves. Choose your slot.')}
           ${noteCard('🪙 Flyer Wave Payout Bonus', 'Surviving a flyer wave (W6 / W12 / W18) pays a <b style="color:#88ff88">+50% gold bonus</b> on top of the normal wave reward (rounded, min +5g). Flyers bypass your maze entirely, so dedicated anti-air investment (Storm Javelin, Flyer Bane, Aquila Talons, ranged pool depth) actually gets compensated. Plan to spend the bonus on the next round\'s build.')}
           ${noteCard('Tier Pips Do Not Lie', 'Every tower wears its tier — pip dots above, colored ring at its base. T5 = red ring. If you do not see red rings late game, that is the problem.')}
           ${noteCard('One Item Per Family', 'DAMAGE, SPEED, RANGE, AURA, ECONOMY, DEFENSE, SPECIAL — one item from each family per tower. SPECIAL trophies and triggered-effect items share the same limit, so one tower cannot carry every rare power at once.')}
@@ -601,8 +601,8 @@ function renderTab(tab: string): string {
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           ${noteCard('Cleave Melee', 'Hits ALL enemies in melee range, secondaries take 70%. Towers: Hastati, Triarius, Cohort Guard, Praetorian Wall, Imperator Guard, Vexillation, Triumphator, Triplex Acies.')}
           ${noteCard('Multi-Shot Ranged', 'Multiple bolts per attack. Decurion (2), Carroballista (2), Eques (3), Hannibal\'s Nightmare (2), Scorpion Bolt (3), Aurora Legion (4 piercing), Carthage Scourge (6).')}
-          ${noteCard('Anti-Air Only', 'Sagittarius, Aquila Venator, and Skyreaper Battery ignore ground entirely. Dead weight on ground waves, devastating on flyers.')}
-          ${noteCard('Aerial Plating (W12+)', 'Later flyer waves can carry <b style="color:#88ddff">COMBO-AA</b> plating. W12-W14 is the warning. W18+ is the wall: non-combo towers lose heavy direct damage into flyers, while combo anti-air pierces it: Scorpion Bolt, Eques, Nemesis Engine, Beastlord Champion, Storm Ballista, Skyreaper Battery, Sky Dominion, and higher apex towers.')}
+          ${noteCard('Anti-Air Only', 'Sagittarius, Aquila Venator, Exploratores, and Skyreaper Battery ignore ground entirely. Dead weight on ground waves, devastating on flyers.')}
+          ${noteCard('Aerial Plating (W12+)', 'Later flyer waves can carry <b style="color:#88ddff">COMBO-AA</b> plating. W12-W14 is the warning. W18+ is the wall: non-combo towers lose heavy direct damage into flyers, while combo anti-air pierces it: Scorpion Bolt, Eques, Exploratores, Nemesis Engine, Beastlord Champion, Storm Ballista, Skyreaper Battery, Sky Dominion, and higher apex towers.')}
           ${noteCard('Trident & Net (Retiarius)', 'First hit on a new target = 2× damage. Armor Shred every strike.')}
           ${noteCard('Brutal Opener (Accensus)', '+75% damage above 85% HP. Front-load damage on fresh enemies.')}
           ${noteCard('Backstab (Pugio Assassin)', '+50% vs Runner archetype.')}

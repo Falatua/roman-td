@@ -503,7 +503,8 @@ describe('Recipe combo detection', () => {
       [TowerType.PLAGUE_CART]: 42.0,
       [TowerType.NUMIDIAN_CAVALRY]: 285.0,
       [TowerType.TRIPLEX_ACIES]: 170.5,
-      [TowerType.SKYREAPER_BATTERY]: 240.0,
+      [TowerType.EXPLORATORES]: 275.0,
+      [TowerType.SKYREAPER_BATTERY]: 400.0,
       [TowerType.VULCAN_COLOSSUS]: 275.0
     };
     for (const [type, expectedDps] of Object.entries(expectedInvestmentDps)) {
