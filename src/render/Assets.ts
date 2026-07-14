@@ -107,6 +107,7 @@ const MANIFEST: Record<string, string> = {
   MURMILLO: 't_new_murmillo.png',
   // Enemies
   FERAL_DOG: 'e1_feral_dog.png', RABID_DOG: 'e1_rabid_dog.png', ALPHA_DOG: 'e1_alpha_dog.png',
+  ALPHA_DOG_RUN_SHEET: 'e1_alpha_dog_run_sheet.png',
   CELTIC_FOOTMAN: 'e1_celtic_footman.png', CELTIC_BERSERKER: 'e1_celtic_berserker.png', GALLIC_DRUID: 'e1_gallic_druid.png',
   CELTIC_SCOUT: 'e1_celtic_scout.png', CELTIC_WARLORD: 'e1_celtic_warlord.png', CARTHAGE_SPEARMAN: 'e1_carthage_spearman.png',
   NUMIDIAN_RIDER: 'e2_numidian_rider.png', CARTHAGE_ELITE_GUARD: 'e2_carthage_elite_guard.png', WAR_ELEPHANT: 'e2_war_elephant.png',
@@ -1067,6 +1068,7 @@ export function prewarmAttackFrameCache(): void {
     texFrame('SULLA_METEOR_IMPACT', frame, 128, 128);
   }
   for (let frame = 0; frame < 9; frame++) texGridFrame('FINAL_BOSS_DAEMON_PORTAL_SHEET', frame, 256, 256, 3);
+  for (let frame = 0; frame < 8; frame++) texGridFrame('ALPHA_DOG_RUN_SHEET', frame, 256, 256, 3);
   for (const type of BASE_TOWER_ATTACK_TYPES) {
     const key = `ATTACK_${type}`;
     for (let frame = 0; frame < 9; frame++) texGridFrame(key, frame, 128, 128, 3);

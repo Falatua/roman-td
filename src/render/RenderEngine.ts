@@ -21,6 +21,11 @@ import { heroIdForTowerType } from '../systems/HeroIdentity';
 import { baseTowerAttackFlashWindow, isBaseTowerAttackAnimated } from '../systems/BaseTowerAttackAnimation';
 import { isWaterPlacementBufferTile } from '../systems/GridManager';
 import { enemySpriteSizeTiles } from './EnemySpriteScale';
+import {
+  advanceEnemyMovementPhase,
+  enemyMovementAnimation,
+  enemyMovementFrame
+} from './EnemyMovementAnimations';
 import { shouldShowCyclopsFlies, shouldShowOpeningThundercloud } from './AmbientPropRules';
 import { apexAuraProfile, ApexAuraProfile } from './OmegaAuraProfiles';
 
@@ -161,6 +166,7 @@ export class RenderEngine {
     displayX: number;
     displayY: number;
     lastTick: number;
+    movementPhase?: number;
     knockX?: number;
     knockY?: number;
     knockTimer?: number;
@@ -4952,6 +4958,30 @@ export class RenderEngine {
       // stride, size, and footstep logic below all share the same flags.
       const isHellGate = e.type === 'HELL_GATE';
       const isFireGiant = e.type === 'FIRE_GIANT';
+      const movementSpec = enemyMovementAnimation(e.type);
+      const usesAuthoredMovement = !!movementSpec && e.currentSpeed > 0.05;
+      if (movementSpec) {
+        if (usesAuthoredMovement) {
+          entry.movementPhase = advanceEnemyMovementPhase(
+            movementSpec,
+            entry.movementPhase ?? 0,
+            frameDt,
+            e.currentSpeed
+          );
+          const movementTexture = texGridFrame(
+            movementSpec.sheetKey,
+            enemyMovementFrame(movementSpec, entry.movementPhase),
+            movementSpec.frameWidth,
+            movementSpec.frameHeight,
+            movementSpec.columns
+          );
+          if (movementTexture) entry.sp.texture = movementTexture;
+        } else {
+          entry.movementPhase = 0;
+          const idleTexture = tex(e.type);
+          if (idleTexture) entry.sp.texture = idleTexture;
+        }
+      }
       // Weight-based bob (game feel §6.2): boss = slow heavy sway, flyer = quick light hover, ground = mid
       const bobFreq = e.isBoss ? 1.4 : (e.isFlyer ? 6.0 : 3.4);
       // 2026-05-17 — FIRE_GIANT gets the slow-heavy boss-tier bob amp
@@ -4963,7 +4993,8 @@ export class RenderEngine {
                     : (e.isFlyer ? 4.0 : 0.8);
       const strideRate = Math.max(2.5, e.currentSpeed * 5.2);
       const stride = Math.sin(state.tick * strideRate + e.pathIndex * 0.7);
-      const bobOff = isHellGate ? 0
+      const bobOff = usesAuthoredMovement && movementSpec?.replacesProceduralStride ? 0
+                   : isHellGate ? 0
                    : e.currentSpeed > 0
                      ? Math.abs(stride) * bobAmp
                      : Math.sin(state.tick * bobFreq + (e.x + e.y) * 0.01) * bobAmp * 0.35;
@@ -4987,11 +5018,14 @@ export class RenderEngine {
       const dirY = (e.dirY ?? Math.sign(e.y - (e.prevY ?? e.y))) || 0;
       // Keep enemy body scale in sync with first-frame spawn sizing.
       const size = GRID.TILE * enemySpriteSizeTiles(e) * ((e as any).__renderScale ?? 1);
-      const baseScaleX = size / (entry.sp.texture?.width || 1);
-      const baseScaleY = size / (entry.sp.texture?.height || 1);
+      const visualWidth = size * (usesAuthoredMovement ? (movementSpec?.visualWidthMult ?? 1) : 1);
+      const visualHeight = size * (usesAuthoredMovement ? (movementSpec?.visualHeightMult ?? 1) : 1);
+      const baseScaleX = visualWidth / (entry.sp.texture?.width || 1);
+      const baseScaleY = visualHeight / (entry.sp.texture?.height || 1);
       const runAmt = e.currentSpeed > 0 ? Math.min(1, e.currentSpeed / 2.4) : 0;
-      const squash = 1 + Math.abs(stride) * 0.07 * runAmt;
-      const stretch = 1 - Math.abs(stride) * 0.05 * runAmt;
+      const authoredStride = usesAuthoredMovement && movementSpec?.replacesProceduralStride;
+      const squash = authoredStride ? 1 : 1 + Math.abs(stride) * 0.07 * runAmt;
+      const stretch = authoredStride ? 1 : 1 - Math.abs(stride) * 0.05 * runAmt;
       entry.sp.x = entry.displayX;
       // Apply UPRISING ground-rise offset (set by surprise-event emergence
       // VFX above). Defaults to 0 so non-surprise enemies render normally.
