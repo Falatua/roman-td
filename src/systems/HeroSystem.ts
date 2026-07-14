@@ -463,6 +463,10 @@ function heroBasicAttackDamage(state: GameStateShape, hero: Tower): number {
   return hero.baseDps * scale * heroForgeDmgMult(state);
 }
 
+function isBossOrCommanderTarget(enemy: Enemy): boolean {
+  return !!enemy.isBoss || !!(enemy as any).isCommander || isCommanderType((enemy as any).type);
+}
+
 // ─── Ability executors ──────────────────────────────────────────────
 //
 // Each executor implements the ability's mechanic. State-flag windows
@@ -548,6 +552,7 @@ function executeCAPITE_CENSI(state: GameStateShape, hero: Tower, params: any, ab
   const targetRangePx = targetRangeTiles * GRID.TILE;
   const targetRangeSq = targetRangePx * targetRangePx;
   const dmgPerThrow = heroBasicAttackDamage(state, hero) * dmgPct;
+  const leaderDmgMult = 1 + (params.bossCommanderDamageBonusPercent ?? 50) / 100;
   // Build candidate spawn tiles — empty grass within radius, not on path,
   // not occupied by a tower (including pending placements).
   const occupied = new Set<string>();
@@ -606,6 +611,7 @@ function executeCAPITE_CENSI(state: GameStateShape, hero: Tower, params: any, ab
       scheduleHeroTimedEvent(state, throwTick, () => {
         let closest: Enemy | null = null;
         let bestDsq = Infinity;
+        let bestPriority = -1;
         for (const e of state.enemies.values()) {
           if (e.hp <= 0) continue;
           const dx = e.x - aux.x;
@@ -616,12 +622,18 @@ function executeCAPITE_CENSI(state: GameStateShape, hero: Tower, params: any, ab
           // hurling a pilum across the map. Keeps the VFX localized
           // to the area around Marius.
           if (dsq > targetRangeSq) continue;
-          if (dsq < bestDsq) { bestDsq = dsq; closest = e; }
+          const priority = isBossOrCommanderTarget(e) ? 1 : 0;
+          if (priority > bestPriority || (priority === bestPriority && dsq < bestDsq)) {
+            bestPriority = priority;
+            bestDsq = dsq;
+            closest = e;
+          }
         }
         if (!closest) return;
         // Instant damage (matches PILUM_VOLLEY pattern — no resistance
         // routing). Floor at 0 so we never go negative.
-        closest.hp = Math.max(0, closest.hp - dmgPerThrow);
+        const throwDamage = dmgPerThrow * (isBossOrCommanderTarget(closest) ? leaderDmgMult : 1);
+        closest.hp = Math.max(0, closest.hp - throwDamage);
         // Per-throw pilum-arc VFX. Short lifetime so each arc draws
         // cleanly without overlapping the next throw.
         fireAbilityFx(hero, hooks, throwTick, ability, '#d4a76a', 0.45, {
@@ -709,15 +721,11 @@ function executeFRONTIER_WALL(state: GameStateShape, hero: Tower, params: any, a
 
 // ── SCIPIO ──
 
-function isScipioPriorityTarget(e: Enemy): boolean {
-  return !!e.isBoss || !!(e as any).isCommander || isCommanderType((e as any).type);
-}
-
 function executeCORNU_CHARGE(state: GameStateShape, hero: Tower, params: any, ability: any, hooks?: HeroHooks): void {
   // Find the boss or commander with highest current HP.
   let priorityTarget: Enemy | null = null;
   for (const e of state.enemies.values()) {
-    if (!isScipioPriorityTarget(e)) continue;
+    if (!isBossOrCommanderTarget(e)) continue;
     if (!priorityTarget || e.hp > priorityTarget.hp) priorityTarget = e;
   }
   if (!priorityTarget) return;
@@ -744,7 +752,7 @@ function executeSCIPIO_BRAND(state: GameStateShape, hero: Tower, params: any, ab
   const mag = (params.dmgTakenIncreasePercent ?? 30) / 100;
   const priorityPositions: Array<{ x: number; y: number }> = [];
   for (const e of state.enemies.values()) {
-    if (!isScipioPriorityTarget(e)) continue;
+    if (!isBossOrCommanderTarget(e)) continue;
     pushStatus(e, StatusEffectKind.MARK, dur, mag, hero.qualityTier);
     priorityPositions.push({ x: e.x, y: e.y });
   }

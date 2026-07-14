@@ -1030,7 +1030,7 @@
     "melee": true,
     "spriteSheet": 1,
     "spriteCell": 0,
-    "ability": "Father of the Legion. Melee veteran with a local +35% damage aura for melee towers, plus Marian Formation (5 nearest melee get +75% attack speed, +30% damage, shared crit, 5s) and Capite Censi (3 phantom auxilia rise adjacent to Marius and hurl pila at any enemy within 2.5 tiles for 6s, ~75% of basic damage per throw). Heroic crit profile (50% × 2.0).",
+    "ability": "Father of the Legion. Nearby melee towers gain +35% damage. MARIAN FORMATION: the 5 nearest melee towers gain +75% attack speed, +30% damage, and shared crit for 5s. CAPITE CENSI: 3 phantom auxilia hurl pila within 2.5 tiles, prioritize bosses and commanders, and deal +50% damage to those leaders. Heroic crit profile: 50% × 2.0.",
     "critChance": 0.5,
     "critMult": 2.0,
     "isHero": true,
@@ -1145,7 +1145,7 @@
     "isHero": true,
     "critChance": 0.5,
     "critMult": 2.0,
-    "ability": "Champion of Rome, recruited at Mercator for 1000g. Field all SIX Champions, then combine them into MARS VICTOR, the divine apex super-tower."
+    "ability": "Champion of Rome, recruited at Mercator for 1000g. Uses Marius's full aura and abilities, including Capite Censi's +50% damage against bosses and commanders. Field all SIX Champions, then combine them into MARS VICTOR."
   },
   "CHAMPION_AGRIPPA": {
     "name": "Champion Agrippa",

@@ -592,6 +592,65 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(boosted).toBeCloseTo(baseline * 1.35, 4);
   });
 
+  it('Capite Censi prioritizes bosses and commanders and deals 50% more damage to them', () => {
+    const def: any = (HERO_DEFS as any).HERO_MARIUS;
+    const capite = def.abilities.find((ability: any) => ability.id === 'CAPITE_CENSI');
+    expect(capite.params.bossCommanderDamageBonusPercent).toBe(50);
+    expect(capite.description).toContain('prioritize bosses and commanders');
+
+    function firstVolleyDamage(targetOpts: Partial<Enemy>, addOrdinaryDecoy = false): { target: number; decoy: number } {
+      const state = freshState();
+      state.phase = GamePhase.WAVE_PHASE;
+      state.tick = 1;
+      state.activeHeroId = 'HERO_MARIUS';
+      state.heroTier = 2;
+
+      const marius = createTower(TowerType.HERO_MARIUS, 1, 10, 10, 1);
+      marius.__heroCooldowns = { MARIAN_FORMATION: 999, CAPITE_CENSI: 0 };
+      state.activeHeroTowerId = marius.id;
+      state.towers.set(marius.id, marius);
+
+      const target = testEnemy('capite-target', {
+        hp: 1_000_000,
+        maxHp: 1_000_000,
+        x: 10 * 32 + 16,
+        y: 10 * 32 + 16,
+        ...targetOpts
+      });
+      state.enemies.set(target.id, target);
+
+      const decoy = testEnemy('capite-decoy', {
+        hp: 1_000_000,
+        maxHp: 1_000_000,
+        x: 10 * 32 + 16,
+        y: 10 * 32 + 16
+      });
+      if (addOrdinaryDecoy) state.enemies.set(decoy.id, decoy);
+
+      tickHeroAbilities(state);
+      state.tick = 1.5;
+      tickHeroAbilities(state);
+      return {
+        target: 1_000_000 - target.hp,
+        decoy: 1_000_000 - decoy.hp
+      };
+    }
+
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    try {
+      const ordinary = firstVolleyDamage({ type: EnemyType.FERAL_DOG });
+      const boss = firstVolleyDamage({ type: EnemyType.ALPHA_DOG, isBoss: true });
+      const commander = firstVolleyDamage({ type: EnemyType.STANDARD_BEARER_COMMANDER }, true);
+
+      expect(ordinary.target).toBeGreaterThan(0);
+      expect(boss.target).toBeCloseTo(ordinary.target * 1.5, 4);
+      expect(commander.target).toBeCloseTo(ordinary.target * 1.5, 4);
+      expect(commander.decoy).toBe(0);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
   it('buffs every starter and Champion hero except Marcus Agrippa', () => {
     const defs: any = TOWERS;
     const expected = {
