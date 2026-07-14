@@ -250,7 +250,7 @@ describe('Tower effective stats', () => {
     const expectedAntiAirDps: Partial<Record<TowerType, number>> = {
       [TowerType.SAGITTARIUS]: 89.4,
       [TowerType.SCORPIO]: 21.6,
-      [TowerType.VENATOR]: 15.9,
+      [TowerType.VENATOR]: 31.8,
       [TowerType.AQUILA_VENATOR]: 154.2,
       [TowerType.SCORPION_BOLT]: 100.6,
       [TowerType.NUMIDIAN_CAVALRY]: 285.0,
@@ -359,10 +359,10 @@ describe('Tower effective stats', () => {
     }
   });
 
-  it('marks Sagittarius, Aquila Venator, Exploratores, and Skyreaper Battery as flyer-only targeting towers', () => {
-    for (const type of [TowerType.SAGITTARIUS, TowerType.AQUILA_VENATOR, TowerType.EXPLORATORES, TowerType.SKYREAPER_BATTERY]) {
+  it('marks dedicated anti-air towers as flyer-only targeting towers', () => {
+    for (const type of [TowerType.SAGITTARIUS, TowerType.VENATOR, TowerType.AQUILA_VENATOR, TowerType.EXPLORATORES, TowerType.SKYREAPER_BATTERY]) {
       expect((towersData as any)[type].antiAirOnly).toBe(true);
-      const tier = type === TowerType.AQUILA_VENATOR || type === TowerType.EXPLORATORES ? 3 : type === TowerType.SKYREAPER_BATTERY ? 4 : 1;
+      const tier = type === TowerType.VENATOR || type === TowerType.AQUILA_VENATOR || type === TowerType.EXPLORATORES ? 3 : type === TowerType.SKYREAPER_BATTERY ? 4 : 1;
       expect(createTower(type, tier, 0, 0, 1).targetingMode).toBe(TargetingMode.FLYERS);
     }
   });

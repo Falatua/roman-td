@@ -139,7 +139,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     doom: [
       'You clicked yes. The bird noticed.',
       'Your melee towers look inspiring. They will be cheering from below.',
-      'If Sagittarius, Aquila Venator, Exploratores, and Skyreaper Battery are asleep, wake them now.',
+      'If Sagittarius, Venator, Aquila Venator, Exploratores, and Skyreaper Battery are asleep, wake them now.',
       'There are ten waves after this. Surviving this one is merely permission to suffer.',
       'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
     ]

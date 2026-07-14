@@ -275,13 +275,14 @@
   "VENATOR": {
     "name": "Venator",
     "damageType": "PHYS_RANGED",
-    "baseDps": 15.9,
+    "baseDps": 31.8,
     "attackSpeed": 1.85,
     "range": 4.9,
     "kind": "BASE",
     "melee": false,
     "tierBand": 3,
-    "ability": "MARKED PREY: flyer hits Slow briefly and mark them for +35% damage from all sources. Fast bow that turns one flying target into a kill callout for the whole maze.",
+    "antiAirOnly": true,
+    "ability": "FLYER-ONLY HUNTER: ignores ground enemies entirely. MARKED PREY: flyer hits Slow briefly and mark them for +35% damage from all sources. Fast bow that turns one flying target into a kill callout for the whole maze.",
     "critChance": 0.2,
     "critMult": 2
   },

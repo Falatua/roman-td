@@ -268,7 +268,7 @@ describe('Tower targeting modes', () => {
     expect(picked?.id).toBe('C');
   });
 
-  it('Sagittarius, Aquila Venator, Exploratores, and Skyreaper Battery can only target flyers in every targeting mode', () => {
+  it('dedicated anti-air towers can only target flyers in every targeting mode', () => {
     const { state, enemies } = setup();
     const groundOnly = enemies.filter(e => !e.isFlyer);
     const flyer = enemies.find(e => e.isFlyer)!;
@@ -283,8 +283,8 @@ describe('Tower targeting modes', () => {
       TargetingMode.FLYERS,
     ];
 
-    for (const type of [TowerType.SAGITTARIUS, TowerType.AQUILA_VENATOR, TowerType.EXPLORATORES, TowerType.SKYREAPER_BATTERY]) {
-      const tier = type === TowerType.AQUILA_VENATOR || type === TowerType.EXPLORATORES ? 3 : type === TowerType.SKYREAPER_BATTERY ? 4 : 1;
+    for (const type of [TowerType.SAGITTARIUS, TowerType.VENATOR, TowerType.AQUILA_VENATOR, TowerType.EXPLORATORES, TowerType.SKYREAPER_BATTERY]) {
+      const tier = type === TowerType.VENATOR || type === TowerType.AQUILA_VENATOR || type === TowerType.EXPLORATORES ? 3 : type === TowerType.SKYREAPER_BATTERY ? 4 : 1;
       const tower = createTower(type, tier, 5, 5, 1);
       for (const mode of modes) {
         tower.targetingMode = mode;

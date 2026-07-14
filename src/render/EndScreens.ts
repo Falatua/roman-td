@@ -82,7 +82,7 @@ function buildDeathAnalysis(state: GameStateShape): string {
   // ─── Cross-cutting "you missed this entirely" tips ────────────────────
   const tips: string[] = [];
   if (!hasAntiAir) {
-    tips.push('⚠ <b>NO ANTI-AIR TOWERS</b> — every run will see flyer waves. Sagittarius, Aquila Venator (AA-only), Eques, or the Nemesis Engine combo cover the sky.');
+    tips.push('⚠ <b>NO ANTI-AIR TOWERS</b> — every run will see flyer waves. Sagittarius, Venator, Aquila Venator, Eques, or the Nemesis Engine combo cover the sky.');
   }
   if (!hasBossKiller && wave >= 5) {
     tips.push('⚠ <b>NO BOSS-KILLER</b> — major bosses land at W5 / 10 / 20 / 24 / 30. Build at least one Scorpio / Primus Pilus / War Chariot / Pontifex before W10.');
