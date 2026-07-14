@@ -88,7 +88,7 @@
         "cooldownSec": 14,
         "durationSec": 0,
         "params": { "shellCount": 3, "targetType": "RANDOM_PATH_TILE", "splashRadiusTiles": 2, "stunSec": 1.5 },
-        "description": "3 mortar shells drop on random path tiles. Each shell deals 160% of Agrippa's basic-attack damage in a 2-tile splash and stuns survivors for 1.5s. Total burst: 4.8× Agrippa's basic damage across 3 splash zones, plus a 1.5s stun on every enemy caught — pairs well with direct-damage towers ready to capitalize on the stunned window.",
+        "description": "3 mortar shells drop on random path tiles. Each shell deals 160% of Agrippa's basic-attack damage in a 2-tile splash and stuns survivors for 1.8s. Total burst: 4.8× Agrippa's basic damage across 3 splash zones, plus a 1.8s stun on every enemy caught — pairs well with direct-damage towers ready to capitalize on the stunned window.",
         "vfxColor": "#4499ff",
         "vfxStyle": "MORTAR_SHELL_BURST"
       }

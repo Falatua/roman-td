@@ -86,6 +86,7 @@ const SULLA_FIRE_RIDER_PCT = 0.22;
 export const CAPITOLINE_AEGIS_DIVINE_RIDER_PCT = 0.35;
 export const SIEGE_FLYER_MISS_CHANCE = 0.20;
 export const DOT_DURATION_MULT = 1.10;
+export const TOWER_STUN_DURATION_MULT = 1.20;
 
 const FINITE_DOT_DURATION_LIMIT = 900;
 const DOT_STATUS_KINDS = new Set<StatusEffectKind>([
@@ -98,6 +99,10 @@ const DOT_STATUS_KINDS = new Set<StatusEffectKind>([
 export function extendedDotDuration(kind: StatusEffectKind, duration: number): number {
   if (!DOT_STATUS_KINDS.has(kind) || duration >= FINITE_DOT_DURATION_LIMIT) return duration;
   return duration * DOT_DURATION_MULT;
+}
+
+export function extendedTowerStunDuration(kind: StatusEffectKind, duration: number): number {
+  return kind === StatusEffectKind.STUN ? duration * TOWER_STUN_DURATION_MULT : duration;
 }
 
 type FatedCurrentStamp = { expiresAt: number; pct: number };
@@ -3635,6 +3640,7 @@ export function pushStatus(e: Enemy, kind: StatusEffectKind, duration: number, m
   const globalRef: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
   if (statusEffectiveness(e, kind) <= 0) return;
   duration = extendedDotDuration(kind, duration);
+  duration = extendedTowerStunDuration(kind, duration);
   // BOSSES ARE IMMUNE TO STUN. Stuns paired with splash/cleave were locking
   // bosses in place — boss mechanics (rebirth, stampede, summons) need the
   // boss to ACT, and the player has plenty of % HP DOT + direct damage to

@@ -193,7 +193,7 @@
     "rarity": "EPIC",
     "buy": 60,
     "sell": 30,
-    "effect": "Any tower: every 4th hit shield-bashes the target, stunning non-boss enemies for 1s."
+    "effect": "Any tower: every 4th hit shield-bashes the target, stunning non-boss enemies for 1.2s."
   },
   "DRUID_STAFF_FRAGMENT": {
     "name": "Druid Staff Fragment",
@@ -291,7 +291,7 @@
     "rarity": "LEGENDARY",
     "buy": 160,
     "sell": 50,
-    "effect": "Every attack arcs lightning to 3 nearby enemies (60% damage decay per jump) and stuns the primary 0.4s."
+    "effect": "Every attack arcs lightning to 3 nearby enemies (60% damage decay per jump) and stuns the primary for 0.48s."
   },
   "CAPITOLINE_AEGIS": {
     "name": "Capitoline Aegis",

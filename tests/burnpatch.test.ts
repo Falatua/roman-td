@@ -2,7 +2,14 @@
 import { describe, it, expect } from 'vitest';
 import { createGameState } from '../src/GameState';
 import { tickBurnPatches } from '../src/systems/EnemySystem';
-import { DOT_DURATION_MULT, extendedDotDuration, pushStatus, spawnBurnPatch } from '../src/systems/CombatResolver';
+import {
+  DOT_DURATION_MULT,
+  TOWER_STUN_DURATION_MULT,
+  extendedDotDuration,
+  extendedTowerStunDuration,
+  pushStatus,
+  spawnBurnPatch
+} from '../src/systems/CombatResolver';
 import { Enemy, EnemyFaction, EnemyType, StatusEffectKind } from '../src/types';
 
 function makeEnemy(x: number, y: number): Enemy {
@@ -86,5 +93,38 @@ describe('Burning Ground patches', () => {
     const s = createGameState();
     s.burnPatches = undefined;
     expect(() => tickBurnPatches(s, 0.1)).not.toThrow();
+  });
+});
+
+describe('Tower stun duration', () => {
+  it('extends tower-origin stuns by 20% without changing other control effects', () => {
+    expect(TOWER_STUN_DURATION_MULT).toBe(1.20);
+    expect(extendedTowerStunDuration(StatusEffectKind.STUN, 1)).toBeCloseTo(1.2, 6);
+    expect(extendedTowerStunDuration(StatusEffectKind.FREEZE, 1)).toBe(1);
+    expect(extendedTowerStunDuration(StatusEffectKind.SLOW, 1)).toBe(1);
+  });
+
+  it('applies the longer stun through the shared status pipeline', () => {
+    delete (globalThis as any).__game;
+    delete (globalThis as any).__lastState;
+    const enemy = makeEnemy(100, 100);
+
+    pushStatus(enemy, StatusEffectKind.STUN, 1, 0, 1);
+
+    expect(enemy.statusEffects.find(s => s.kind === StatusEffectKind.STUN)?.remaining).toBeCloseTo(1.2, 6);
+  });
+
+  it('keeps bosses and stun-immune enemies immune', () => {
+    delete (globalThis as any).__game;
+    delete (globalThis as any).__lastState;
+    const boss = makeEnemy(100, 100);
+    boss.isBoss = true;
+    pushStatus(boss, StatusEffectKind.STUN, 1, 0, 1);
+    expect(boss.statusEffects).toHaveLength(0);
+
+    const immune = makeEnemy(100, 100);
+    immune.type = EnemyType.UNDEAD_BERSERKER;
+    pushStatus(immune, StatusEffectKind.STUN, 1, 0, 1);
+    expect(immune.statusEffects).toHaveLength(0);
   });
 });
