@@ -800,7 +800,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 5,
-    "ability": "SKY-RIPPER: extreme 12-tile siege reach, no longer map-wide. +220% damage to Flyers, always prioritizes Flyers. SKYFALL briefly Stuns flyers, ARMOR SHREDS them, and marks them for +35% damage taken. Still a brutal air-wave opener, but placement matters.",
+    "ability": "SKY-RIPPER: extreme 12-tile siege reach. +220% damage to Flyers and always prioritizes Flyers. SKYFALL lands a long Stun on flyers, ARMOR SHREDS them, and marks them for +35% damage taken. A brutal air-wave opener built to pin priority flyers in place.",
     "critChance": 0.15,
     "critMult": 3.5
   },

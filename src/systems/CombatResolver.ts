@@ -3422,9 +3422,9 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       pushStatus(target, StatusEffectKind.SLOW, dur(3.0), 0.65, tier);
       break;
     case TowerType.NEMESIS_ENGINE:
-      // SKY-RIPPER: long-range flyer control, not map-wide cleanup.
+      // SKY-RIPPER: long-range flyer control.
       if (target.isFlyer) {
-        pushStatus(target, StatusEffectKind.STUN, dur(1.0), 0, tier);
+        pushStatus(target, StatusEffectKind.STUN, dur(1.5), 0, tier);
         pushStatus(target, StatusEffectKind.MARK, dur(4), 0.35, tier);
         pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
       }

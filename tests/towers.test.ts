@@ -633,7 +633,7 @@ describe('Anti-air tower signatures', () => {
     expect(dominion.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.60)).toBe(true);
     expect(dominion.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.20)).toBe(true);
     expect(dominion.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
-    expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
+    expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.STUN && s.remaining > 2.6)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.35)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
   });
