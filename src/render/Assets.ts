@@ -672,6 +672,7 @@ const MANIFEST: Record<string, string> = {
   OCEAN_DEAD_FISHLING_FLOAT: 'm_ocean_dead_fishling_float.png',
   OCEAN_DEAD_FISHLING_SHORE: 'm_ocean_dead_fishling_shore.png',
   OCEAN_DEAD_FISHLING_BLOOD: 'm_ocean_dead_fishling_blood.png',
+  OCEAN_DEAD_ROMANS_FLOAT: 'map_overhaul/m_ocean_dead_romans_float.png',
   OCEAN_ROCK: 'm_ocean_rock.png',
   OCEAN_SEA_GIANT_HEAD: 'm_ocean_sea_giant_head.png',
   OCEAN_LEVIATHAN_HEAD: 'map_overhaul/m_ocean_leviathan_head.png',

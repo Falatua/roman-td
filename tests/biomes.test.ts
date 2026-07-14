@@ -226,6 +226,7 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     'OCEAN_KELP', 'OCEAN_CORAL', 'OCEAN_FISH', 'OCEAN_ROCK', 'OCEAN_SEA_GIANT_HEAD',
     'OCEAN_LEVIATHAN_HEAD', 'OCEAN_LEVIATHAN_BACK', 'OCEAN_LEVIATHAN_TAIL',
     'OCEAN_DEAD_FISHLING_FLOAT', 'OCEAN_DEAD_FISHLING_SHORE', 'OCEAN_DEAD_FISHLING_BLOOD',
+    'OCEAN_DEAD_ROMANS_FLOAT',
     'OCEAN_SHORE_SHELLS', 'OCEAN_SHORE_STARFISH', 'OCEAN_SHORE_PEBBLES',
     'OCEAN_SHORE_DRIFTWOOD', 'OCEAN_SHORE_FOAM_BITS', 'OCEAN_SHORE_WET_ROCKS',
     'OCEAN_SHORE_ITALY_ROCKS_A', 'OCEAN_SHORE_ITALY_ROCKS_B', 'OCEAN_SHORE_ITALY_ROCKS_C',
@@ -242,7 +243,8 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     const sharp = require('sharp');
     const transparentOverlayKeys = oceanKeys.filter(key =>
       key.includes('FOAM') || key.includes('KELP') || key.includes('CORAL') || key.includes('FISH') ||
-      key.includes('ROCK') || key.includes('SHORE') || key.includes('SHIPWRECK') || key.includes('HEAD')
+      key.includes('ROCK') || key.includes('SHORE') || key.includes('SHIPWRECK') || key.includes('HEAD') ||
+      key.includes('ROMANS')
     );
     for (const key of oceanKeys) {
       const file = assetFileFor(key);
@@ -269,6 +271,9 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
       } else if (key === 'OCEAN_LEVIATHAN_TAIL') {
         expect(meta.width, `${key} width`).toBe(80);
         expect(meta.height, `${key} height`).toBe(72);
+      } else if (key === 'OCEAN_DEAD_ROMANS_FLOAT') {
+        expect(meta.width, `${key} width`).toBe(160);
+        expect(meta.height, `${key} height`).toBe(99);
       } else {
         expect(meta.width, `${key} width`).toBe(32);
         expect(meta.height, `${key} height`).toBe(32);
@@ -305,6 +310,9 @@ describe('Ocean reserve sprite manifest — cove water tiles are real pixel asse
     expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_FLOAT', terrain: 'water', alpha: 0.96");
     expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_BLOOD', terrain: 'water', alpha: 0.96");
     expect(source).toContain("key: 'OCEAN_DEAD_FISHLING_SHORE', terrain: 'water', alpha: 0.96");
+    expect(source).toContain("key: 'OCEAN_DEAD_ROMANS_FLOAT'");
+    expect(source).toMatch(/col: WATER_ZONE\.col \+ 1,[\s\S]*?key: 'OCEAN_DEAD_ROMANS_FLOAT'/);
+    expect(source).toMatch(/col: WATER_ZONE\.col \+ 6,[\s\S]*?key: 'OCEAN_DEAD_ROMANS_FLOAT'/);
     expect(source).toContain('fish.alpha = 0.96;');
     expect(source).toContain("key: 'OCEAN_LEVIATHAN_HEAD'");
     expect(source).toContain("key: 'OCEAN_LEVIATHAN_BACK'");
