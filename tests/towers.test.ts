@@ -15,7 +15,7 @@ import { initializeGrid, isBuildable, isWaterZoneTile, canBuildWaterTowerAt } fr
 import { ASSET_KEYS } from '../src/render/Assets';
 import towersData from '../src/data/towers.json';
 import wavesData from '../src/data/waves.json';
-import { GIANT_KILLER_SPLASH_DAMAGE_MULT, giantKillerSplashDamage, HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT, hannibalsNightmarePreyDamageMult, towerSpecialistDpsRows } from '../src/systems/TowerSpecialization';
+import { COMBO_FLYER_SPECIALIST_DAMAGE_MULT, GIANT_KILLER_SPLASH_DAMAGE_MULT, comboFlyerSpecialistDamageMult, giantKillerSplashDamage, HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT, hannibalsNightmarePreyDamageMult, towerSpecialistDpsRows } from '../src/systems/TowerSpecialization';
 
 function testEnemy(id: string, x = 160, y = 160): Enemy {
   return {
@@ -585,6 +585,61 @@ describe('Anti-air tower signatures', () => {
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.35)).toBe(true);
     expect(nemesis.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+  });
+
+  it('gives dedicated combo anti-air a stronger tiered flyer payoff without changing ground damage', () => {
+    const expected = new Map<TowerType, number>([
+      [TowerType.SCORPION_BOLT, 2.00],
+      [TowerType.NUMIDIAN_CAVALRY, 2.50],
+      [TowerType.NEMESIS_ENGINE, 3.20],
+      [TowerType.STORM_BALLISTA, 2.10],
+      [TowerType.SKYREAPER_BATTERY, 3.50],
+      [TowerType.SKY_DOMINION, 4.25],
+      [TowerType.JOVIAN_SKY_HUNTER, 1.35]
+    ]);
+
+    expect(Object.keys(COMBO_FLYER_SPECIALIST_DAMAGE_MULT)).toHaveLength(expected.size);
+    for (const [type, multiplier] of expected) {
+      expect(comboFlyerSpecialistDamageMult(type, { isFlyer: true }), type).toBeCloseTo(multiplier, 4);
+      expect(comboFlyerSpecialistDamageMult(type, { isFlyer: false }), type).toBe(1);
+      const bonusPct = Math.round((multiplier - 1) * 100);
+      expect((towersData as any)[type].ability, type).toContain(`+${bonusPct}%`);
+    }
+    expect(comboFlyerSpecialistDamageMult(TowerType.LEGATE, { isFlyer: true })).toBe(1);
+  });
+
+  it('applies every dedicated combo flyer multiplier through live combat', () => {
+    const originalRandom = Math.random;
+    Math.random = () => 0.99;
+    try {
+      for (const [typeKey, multiplier] of Object.entries(COMBO_FLYER_SPECIALIST_DAMAGE_MULT)) {
+        const type = typeKey as TowerType;
+        const state = createGameState();
+        const tower = createTower(type, 5, 4, 4, 0);
+        tower.critChance = 0;
+        tower.attackCooldown = 0;
+        state.towers.set(tower.id, tower);
+        const center = towerCenter(tower);
+        const target = flyerEnemy(`${type}-live-flyer`, center.x + GRID.TILE, center.y);
+        state.enemies.set(target.id, target);
+        let firedDamage: number | null = null;
+
+        tickCombat(state, 0.016, {
+          ...noopCombatHooks(),
+          onProjectileFire: (_tower, enemy, damage) => {
+            if (enemy.id === target.id && firedDamage === null) firedDamage = damage;
+          }
+        });
+
+        const basePerAttack = towerPerAttackDamageBase(tower);
+        const targetResistance = resistanceModifier(target.faction, tower.damageType, false)
+          * enemyDamageMultiplier(target, tower.damageType);
+        expect(firedDamage, type).not.toBeNull();
+        expect(firedDamage as unknown as number, type).toBeCloseTo(basePerAttack * multiplier! * targetResistance, 4);
+      }
+    } finally {
+      Math.random = originalRandom;
+    }
   });
 
   it('late aerial plating punishes plain anti-air but lets combo anti-air pierce', () => {

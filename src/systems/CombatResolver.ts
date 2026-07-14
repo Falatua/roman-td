@@ -22,6 +22,7 @@ import {
   GIANT_KILLER_ELEPHANT_DAMAGE_MULT,
   GIANT_KILLER_GIANT_DAMAGE_MULT,
   HANNIBALS_NIGHTMARE_TARGET_COUNT,
+  comboFlyerSpecialistDamageMult,
   giantKillerPreyDamageMult,
   hannibalsNightmarePreyDamageMult,
   isElephantEnemyTarget,
@@ -1578,16 +1579,14 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (target.statusEffects.some(s => s.kind === StatusEffectKind.STUN   && s.remaining > 0)) ccAmp += 0.10;
       if (ccAmp > 0) damage *= (1 + ccAmp);
       // Per-tower archetype/role bonuses + signatures
+      damage *= comboFlyerSpecialistDamageMult(t.type, target);
       if (t.type === TowerType.RORARIUS && target.archetype === 'RUNNER') damage *= 1.35;
       if ((t.type === TowerType.SAGITTARIUS || t.type === TowerType.VENATOR) && target.isFlyer) damage *= 1.45;
       // 2026-06-28 — new anti-flyer combos.
       if (t.type === TowerType.SKYREAPER_BATTERY && target.isFlyer) {
-        damage *= 2.80;
         if (isBossEnemy(target) || isCommanderEnemy(target)) damage *= 1.25;
       }
-      if (t.type === TowerType.SKY_DOMINION && target.isFlyer) damage *= 3.20;         // +220% vs flyers
       if (t.type === TowerType.BEASTLORD_CHAMPION && target.isFlyer) damage *= 2.00;  // +100% vs flyers
-      if (t.type === TowerType.STORM_BALLISTA && target.isFlyer) damage *= 1.70;       // +70% vs plated flyers
       if (t.type === TowerType.JOVIAN_SKY_HUNTER && target.isFlyer) {
         if (target.isBoss || isCommanderType((target as any).type) || (target as any).isCommander) damage *= 1.35;
         if (isOceanThreat(target) || (target as any).__oceanSpawn) damage *= 1.50;
@@ -1740,7 +1739,6 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
       if (t.type === TowerType.PRAEFECTUS && (isEliteEnemy(target) || isBossEnemy(target))) damage *= 1.45;
       // ─── NEW COMBOS: identity damage multipliers ─────────────────────
-      if (t.type === TowerType.NEMESIS_ENGINE && target.isFlyer) damage *= 2.6;          // SKY-RIPPER: +160% vs flyers
       if (t.type === TowerType.PONTIFEX_MAXIMUS && target.isBoss) damage *= 3.0;         // RITE OF DOOM: +200% vs bosses
       if (t.type === TowerType.AURORA_LEGION && isEliteEnemy(target)) damage *= 1.50;
       if (t.type === TowerType.EXPLORATORES && target.archetype === 'RUNNER') damage *= 1.50;   // RECON: +50% vs runners
@@ -1795,16 +1793,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         const bossMult = tier >= 5 ? 1.55 : 1.40;
         damage *= bossMult;
       }
-      // SCORPION_BOLT — split into TWO distinct multipliers (2026-05-15 buff):
-      // +65% vs Flyers + +50% vs Bosses, multiplicative. A flying boss
-      // takes the full +147.5% stack (1.65 × 1.50 = 2.475×). Earlier
-      // history: the +30% combined was trimmed to +12% in May 2026 v5
-      // (too dominant on every flyer + boss wave). This pass restores
-      // the specialist identity at higher per-archetype numbers but
-      // keeps the multiplicative split so anti-Flyer and anti-Boss
-      // contributions are independently auditable.
+      // SCORPION_BOLT keeps its separate boss rider. The shared specialist
+      // table applies the flyer component, so flying bosses receive both.
       if (t.type === TowerType.SCORPION_BOLT) {
-        if (target.isFlyer) damage *= 1.65;
         if (target.isBoss)  damage *= 1.50;
       }
       if (t.type === TowerType.WAR_CHARIOT && target.isBoss) damage *= 1.75;             // +75% vs Bosses
@@ -1899,17 +1890,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Eques crits = 3× per spec (2026-05 v11: rate 15% → 25%).
       // NUMIDIAN_CAVALRY signature crit (2026-05-15 v2 buff): 25%→30%.
       if (t.type === TowerType.NUMIDIAN_CAVALRY && Math.random() < 0.30) damage *= 3;
-      // NUMIDIAN_CAVALRY ("Eques") rider — vs-Flyer bonus bumped
-      // 1.40 → 1.75 (2026-05-19), then 1.75 → 2.10 (2026-05-25 per
-      // user direction "make Eques 20% stronger against flyers" —
-      // multiplicative on the existing rider, so +75% → +110% flat).
-      // Anti-boss rider removed so the tower's late identity stays cleanly
-      // weighted toward sky packs instead of becoming generic boss DPS.
-      // baseDps was simultaneously bumped 34 → 85 in towers.json to
-      // make its flyer control feel meaningful.
-      if (t.type === TowerType.NUMIDIAN_CAVALRY && target.isFlyer) {
-        damage *= 2.10;
-      }
+      // NUMIDIAN_CAVALRY's flyer rider is applied from the shared specialist
+      // table. Its signature crit remains separate for independent testing.
       // Evocatus tactical stacks: +5% per kill (cap 50%)
       if (t.type === TowerType.EVOCATUS) {
         const stacks = Math.min(10, ((t as any).__tacticalStacks ?? 0));

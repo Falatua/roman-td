@@ -14,11 +14,33 @@ export const HANNIBALS_NIGHTMARE_FLYER_DAMAGE_MULT = 1.60;
 export const HANNIBALS_NIGHTMARE_BOSS_DAMAGE_MULT = 1.30;
 export const HANNIBALS_NIGHTMARE_TARGET_COUNT = 2;
 
+// Dedicated combo anti-air should provide a clear payoff over generalist
+// ranged towers. These multipliers affect flyers only; ground output is
+// intentionally unchanged. Keep this table authoritative for combat, UI copy,
+// and balance tests so the specialist ladder cannot drift across systems.
+export const COMBO_FLYER_SPECIALIST_DAMAGE_MULT: Readonly<Partial<Record<TowerType, number>>> = {
+  [TowerType.SCORPION_BOLT]: 2.00,
+  [TowerType.NUMIDIAN_CAVALRY]: 2.50,
+  [TowerType.NEMESIS_ENGINE]: 3.20,
+  [TowerType.STORM_BALLISTA]: 2.10,
+  [TowerType.SKYREAPER_BATTERY]: 3.50,
+  [TowerType.SKY_DOMINION]: 4.25,
+  [TowerType.JOVIAN_SKY_HUNTER]: 1.35
+};
+
 type PreyTarget = {
   type: string;
   isFlyer?: boolean;
   isBoss?: boolean;
 };
+
+export function comboFlyerSpecialistDamageMult(
+  towerType: TowerType,
+  target: Pick<PreyTarget, 'isFlyer'>
+): number {
+  if (!target.isFlyer) return 1;
+  return COMBO_FLYER_SPECIALIST_DAMAGE_MULT[towerType] ?? 1;
+}
 
 export function isGiantKillerTarget(target: Pick<PreyTarget, 'type'>): boolean {
   return isGiantEnemy(String(target.type));
