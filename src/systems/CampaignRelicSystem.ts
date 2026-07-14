@@ -1,11 +1,12 @@
 import { DamageType, Tower, TowerType } from '../types';
 import { GameStateShape } from '../GameState';
-import { WAVE } from '../constants';
+import { SOLO_AEGIS_OVERCAP_LIVES, SOLO_MAX_LIVES, WAVE } from '../constants';
 import { canReceiveRunReward } from './RewardEligibility';
 import { grantTrapInventory } from './TrapInventorySystem';
 import towersData from '../data/towers.json';
 import { eligibleBaseTowerTypesAtTier } from './BaseTowerRoster';
 import { isBossEnemy, isCommanderEnemy, isEliteEnemy } from './EnemyClassification';
+import { restoreSoloLives } from './LifeSystem';
 
 export const CAMPAIGN_RELIC_IDS = [
   'JUPITERS_MANDATE',
@@ -651,7 +652,7 @@ export const CAMPAIGN_RELICS: CampaignRelicDef[] = [
     name: 'Colosseum Wager',
     eyebrow: 'BLOOD SPORT',
     blurb: 'The crowd pays to watch giants fall. Every boss you drop, the editor returns bodies to the walls.',
-    upside: 'Every boss kill restores +2 lives (capped at 30).',
+    upside: `Every boss kill restores +2 lives (capped at ${SOLO_MAX_LIVES}).`,
     caveat: 'Non-boss enemies spawn with +12% HP.',
     effects: ['+2 lives per boss kill.', 'Non-boss enemy HP +12%.']
   },
@@ -921,7 +922,9 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
   if (id === 'FORTUNAS_DICE') state.gold += 500;
   if (id === 'TEMPLE_LOAN') state.gold += 700;
   if (id === 'IMPERIAL_GRANARIES') state.gold += 500;
-  if (id === 'AEGIS_WALL') state.lives += 15;
+  if (id === 'AEGIS_WALL') {
+    state.lives = Math.min(SOLO_AEGIS_OVERCAP_LIVES, (state.lives ?? 0) + 15);
+  }
   if (id === 'QUARTERMASTER_LEDGER') {
     state.gold += 300;
     payRelicLives(state, id);
@@ -1025,7 +1028,7 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
     payRelicLives(state, id);
   }
   if (id === 'WATCHMANS_DUE') {
-    state.lives = (state.lives ?? 0) + 4;
+    restoreSoloLives(state, 4);
     payRelicGold(state, id);
   }
   if (id === 'SCRAP_REQUISITION') {
@@ -1054,7 +1057,7 @@ export function applyCampaignRelic(state: GameStateShape, id: CampaignRelicId): 
     payRelicGold(state, id);
   }
   if (id === 'CHAPEL_CANDLE') {
-    state.lives = (state.lives ?? 0) + 3;
+    restoreSoloLives(state, 3);
     payRelicGold(state, id);
   }
   // 2026-07-03 — mechanic-hook relics.
@@ -1271,7 +1274,7 @@ export function campaignRelicKillGoldBonus(state: GameStateShape, enemy?: any): 
 }
 
 // 2026-07-03 — COLOSSEUM_WAGER: lives restored on every boss kill. Caller
-// (main.ts boss-death paths) adds the return value, clamped to MAX_LIVES.
+// (main.ts boss-death paths) adds the return value through the Solo life cap.
 export function campaignRelicBossKillLives(state: GameStateShape): number {
   return hasCampaignRelic(state, 'COLOSSEUM_WAGER') ? 2 : 0;
 }

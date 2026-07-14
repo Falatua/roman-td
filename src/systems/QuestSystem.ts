@@ -451,8 +451,8 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'untouched_walls', tier: 'LATE',
     title: 'Untouched Walls',
-    blurb: 'Reach wave 27 with 27+ lives — lose no more than 3 all campaign. Purchased lives do not launder the record.',
-    condition: s => (s.wave >= 27 && s.lives >= 27 && (s.livesBoughtThisRun ?? 0) === 0) ? 1 : 0,
+    blurb: 'Reach wave 27 with 42+ lives — lose no more than 3 all campaign. Purchased lives do not launder the record.',
+    condition: s => (s.wave >= 27 && s.lives >= 42 && (s.livesBoughtThisRun ?? 0) === 0) ? 1 : 0,
     target: 1,
     reward: { kind: 'GOLD', amount: 300 }
   },

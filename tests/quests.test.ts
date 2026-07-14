@@ -53,8 +53,11 @@ describe('30-wave Solo quest pacing', () => {
     const s = createGameState();
     s.gold = 3000;
     expect(quest('croesus_of_rome').condition(s)).toBe(1);
-    s.wave = 27; s.lives = 27; s.livesBoughtThisRun = 0;
+    s.wave = 27; s.lives = 42; s.livesBoughtThisRun = 0;
     expect(quest('untouched_walls').condition(s)).toBe(1);
+    s.lives = 41;
+    expect(quest('untouched_walls').condition(s)).toBe(0);
+    s.lives = 42;
     s.livesBoughtThisRun = 1;   // purchased lives disqualify the record
     expect(quest('untouched_walls').condition(s)).toBe(0);
     (s as any).campaignRelicIds = ['MARS_TAX', 'COPPER_TITHE'];

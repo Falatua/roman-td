@@ -15,7 +15,10 @@ export function leakLifeCostFor(enemy: Pick<Enemy, 'type' | 'livesCost'>): numbe
   if (isEventStructure(enemy)) return 0;
   if (isBossEnemy(enemy)) return 10;
   if (isEliteEnemy(enemy) || isCommanderEnemy(enemy)) return 5;
-  return enemy.livesCost ?? 1;
+  // Solo leak damage is class-based, not authored per unit. Keeping this
+  // fallback fixed prevents a stale enemy definition from making an ordinary
+  // unit quietly cost two or three lives.
+  return enemy.type === EnemyType.TRAINING_DUMMY ? 0 : 1;
 }
 
 export function shouldRespawnBossOnLeak(enemy: Pick<Enemy, 'type' | 'isBoss'>): boolean {

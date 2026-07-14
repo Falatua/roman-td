@@ -1,7 +1,7 @@
 import {
   Tower, Enemy, Projectile, LootOrb, GamePhase, DrawCard, SurpriseEventState
 } from './types';
-import { ECONOMY, GRID } from './constants';
+import { ECONOMY, GRID, SOLO_STARTING_LIVES } from './constants';
 
 export interface GameStateShape {
   phase: GamePhase;
@@ -197,19 +197,15 @@ export interface GameStateShape {
   shopRefreshedUnopened?: boolean;
   // Permanent gold-purchased lives this run (caps at 5 to prevent runaway).
   livesBoughtThisRun?: number;
-  // Leaderboard tracking (2026-05): cumulative tower placements (every
-  // prospect revealed) + the wall-clock timestamp when the run started.
-  // Used by the Hall of Glory score formula.
+  // Legacy run telemetry: cumulative tower placements (every prospect
+  // revealed) plus the wall-clock timestamp when the run started.
   towersBuilt?: number;
   runStartedAt?: number;
-  // RNG-event survival counters (2026-05). Drive the score-formula
-  // bonuses for beating random events the run threw at the player.
+  // RNG-event survival counters retained for run history and save compatibility.
   bonusBossesKilled?: number;       // twin or ambush bosses defeated
   modifierWavesSurvived?: number;   // waves where state.waveModifier rolled
-  // Wave-clear timing (2026-05 v10) — duration (seconds) for each wave
-  // that the player has finished. waveDurations[i] = seconds spent on
-  // wave i+1 (1-indexed). Drives the SPEED BONUS in the final-score
-  // computation: clearing a wave faster awards more points.
+  // Wave-clear timing telemetry. waveDurations[i] is seconds spent on wave
+  // i+1 (1-indexed); timing does not affect the campaign leaderboard score.
   waveDurations?: number[];
   // ─── ENDLESS MODE (2026-05 v10) ─────────────────────────────────────
   // After clearing W20 the player can transition into Endless mode.
@@ -329,7 +325,7 @@ export function createGameState(): GameStateShape {
     phase: GamePhase.BUILD_PHASE,
     tick: 0,
     wave: 0,
-    lives: ECONOMY.STARTING_LIVES,
+    lives: SOLO_STARTING_LIVES,
     gold: ECONOMY.STARTING_GOLD,
     poolLevel: 0,
     heroLevel: 0,

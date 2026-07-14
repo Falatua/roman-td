@@ -474,9 +474,9 @@ describe('Campaign relics', () => {
 
   it('adds life-sacrifice hero and epic item relics', () => {
     const agricolaState = bootstrapState();
-    agricolaState.lives = 40;
+    agricolaState.lives = 30;
     applyCampaignRelic(agricolaState, 'AGRICOLA_LEVY');
-    expect(agricolaState.lives).toBe(11);
+    expect(agricolaState.lives).toBe(1);
     expect(agricolaState.pendingPurchasedTowers).toEqual([
       { type: TowerType.CHAMPION_AGRICOLA, tier: 2, source: 'relic' }
     ]);

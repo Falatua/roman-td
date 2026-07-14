@@ -15,6 +15,7 @@ import {
   primaryDamageTowerForState,
 } from '../src/render/Leaderboard';
 import { createGameState } from '../src/GameState';
+import { computeFinalScore, computeRank } from '../src/render/EndScreens';
 import { createTower } from '../src/systems/TowerSystem';
 import { TowerType } from '../src/types';
 
@@ -91,6 +92,38 @@ describe('Simplified scoring — computeScore', () => {
     expect(INVALIDATED_GLOBAL_SCORE_IDS.has('59674466-f16b-4022-bcc5-731d2c827a9a')).toBe(true);
     expect(INVALIDATED_GLOBAL_SCORE_IDS.has('0f32dab9-abcb-4cd0-843b-fb216ddffaf4')).toBe(true);
     expect(INVALIDATED_GLOBAL_SCORE_IDS.has('7ae16acf-e27c-4485-9118-e6baaa23c20f')).toBe(true);
+  });
+});
+
+describe('End-screen and leaderboard score parity', () => {
+  it('uses the leaderboard formula regardless of lives, gold, speed, or purchased lives', () => {
+    const state = createGameState();
+    state.wave = 18;
+    state.combosBuilt = 7;
+    state.completedQuests = Array.from({ length: 9 }, (_, i) => `quest-${i}`);
+    state.score = 999_999;
+    state.gold = 8_000;
+    state.lives = 45;
+    state.livesBoughtThisRun = 0;
+    state.waveDurations = Array.from({ length: 18 }, () => 5);
+
+    const expected = computeScore({ wave: 18, won: false, combos: 7, quests: 9 });
+    expect(computeFinalScore(state, false)).toBe(expected);
+
+    state.score = 0;
+    state.gold = 0;
+    state.lives = 1;
+    state.livesBoughtThisRun = 20;
+    state.waveDurations = Array.from({ length: 18 }, () => 600);
+    expect(computeFinalScore(state, false)).toBe(expected);
+  });
+
+  it('scales the Imperator life threshold to 15 under the 45-life Solo budget', () => {
+    const state = createGameState();
+    state.lives = 14;
+    expect(computeRank(state, true)).toBe('LEGATUS');
+    state.lives = 15;
+    expect(computeRank(state, true)).toBe('IMPERATOR');
   });
 });
 

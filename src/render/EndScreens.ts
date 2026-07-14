@@ -2,8 +2,11 @@ import { GameStateShape } from '../GameState';
 import { ECONOMY, WAVE } from '../constants';
 import { TowerType } from '../types';
 import { displayWaveNumber } from '../systems/TestYourMightLabels';
+import { computeFinalScoreBreakdown } from './Leaderboard';
 
-const HS_KEY = 'roman_td_highscore_v1';
+// v2 stores the authoritative leaderboard formula. The older key included
+// lives, unspent gold, and speed points that no longer belong in campaign score.
+const HS_KEY = 'roman_td_highscore_v2';
 
 export function loadHighScore(): { score: number; rank: string } {
   try {
@@ -18,58 +21,14 @@ export function saveHighScore(score: number, rank: string) {
   if (score > cur.score) localStorage.setItem(HS_KEY, JSON.stringify({ score, rank }));
 }
 
-// Threshold (seconds): clear a wave faster than this and you start
-// earning the speed bonus. 60s ≈ the natural duration of an average
-// mid-game wave with steady kills; tuned so casual play earns a small
-// bonus and very-fast clears earn a large one.
-const SPEED_BONUS_TARGET_SEC = 60;
-// Score awarded per FULL second saved against the target, per wave.
-const SPEED_BONUS_PER_SEC = 25;
-// Hard cap per-wave so a tiny early wave can't print 1500g of points.
-const SPEED_BONUS_MAX_PER_WAVE = 1200;
-
-// Detail of the wave-speed bonus — exposed for the end-screen breakdown
-// so the player can SEE how their pace stacked up vs. the target.
-export interface SpeedBonusBreakdown {
-  total: number;
-  perWave: Array<{ wave: number; sec: number; bonus: number }>;
-}
-
-export function computeSpeedBonus(state: GameStateShape): SpeedBonusBreakdown {
-  const durations = state.waveDurations ?? [];
-  let total = 0;
-  const perWave: SpeedBonusBreakdown['perWave'] = [];
-  for (let i = 0; i < durations.length; i++) {
-    const sec = durations[i] ?? 0;
-    if (sec <= 0) continue;
-    // Linear bonus = (target - actual) × per-sec, clamped 0..max.
-    const raw = (SPEED_BONUS_TARGET_SEC - sec) * SPEED_BONUS_PER_SEC;
-    const bonus = Math.max(0, Math.min(SPEED_BONUS_MAX_PER_WAVE, Math.round(raw)));
-    total += bonus;
-    perWave.push({ wave: i + 1, sec: Math.round(sec * 10) / 10, bonus });
-  }
-  return { total, perWave };
-}
-
 export function computeFinalScore(state: GameStateShape, won: boolean): number {
-  let s = state.score;
-  s += state.lives * 100;     // +100 per life remaining
-  s += state.gold * 10;    // +10 per unspent gold
-  // 2026-05 v10: speed bonus — clearing waves quickly is rewarded.
-  s += computeSpeedBonus(state).total;
-  if (won) s += 10000;
-  // 2026-05-22 V33 — Lives bought at gate / Mercator cost 300 score each.
-  // Mirrors the breakdown formula in computeFinalScoreBreakdown so the
-  // legacy end-screen path and the modern showEndSummary path apply the
-  // same penalty. Clamped to 0 so the run never goes negative.
-  s -= (state.livesBoughtThisRun ?? 0) * 300;
-  return Math.max(0, s);
+  return computeFinalScoreBreakdown(state, won).final;
 }
 
 export function computeRank(state: GameStateShape, won: boolean): string {
   const towersTypes = new Set(Array.from(state.towers.values()).map(t => t.type));
   if (won && towersTypes.has(TowerType.JULIUS_CAESAR) && towersTypes.has(TowerType.GOD_OF_WAR)) return 'DIVINUS';
-  if (won && state.lives >= 10) return 'IMPERATOR';
+  if (won && state.lives >= 15) return 'IMPERATOR';
   if (won) return 'LEGATUS';
   if (state.wave >= 14) return 'CENTURIO';
   if (state.wave >= 8) return 'MILES';
@@ -170,17 +129,6 @@ function buildDeathAnalysis(state: GameStateShape): string {
   </div>`;
 }
 
-// Compact end-screen line summarizing the speed bonus.
-function speedBonusLine(state: GameStateShape): string {
-  const sb = computeSpeedBonus(state);
-  if (sb.total <= 0 || sb.perWave.length === 0) return '';
-  const wavesEarning = sb.perWave.filter(w => w.bonus > 0).length;
-  const avgSec = sb.perWave.length > 0
-    ? sb.perWave.reduce((s, w) => s + w.sec, 0) / sb.perWave.length
-    : 0;
-  return `<div>Speed Bonus: <b style="color:#88ff88">+${sb.total.toLocaleString()}</b> <span style="color:#aa9a4a;font-size:12px">(${wavesEarning}/${sb.perWave.length} fast waves, avg ${avgSec.toFixed(1)}s)</span></div>`;
-}
-
 export function showGameOver(parent: HTMLElement, state: GameStateShape, onRestart: () => void) {
   const existing = document.getElementById('end-screen');
   if (existing) return;
@@ -189,7 +137,6 @@ export function showGameOver(parent: HTMLElement, state: GameStateShape, onResta
   saveHighScore(finalScore, rank);
   const hi = loadHighScore();
   const analysis = buildDeathAnalysis(state);
-  const speedLine = speedBonusLine(state);
   const modal = document.createElement('div');
   modal.id = 'end-screen';
   // 2026-05-19 — Responsive clamping (Codex pattern).
@@ -201,7 +148,6 @@ export function showGameOver(parent: HTMLElement, state: GameStateShape, onResta
     <div style="font-size:14px;line-height:1.7">
       <div>Wave reached: <b style="color:#d4af37">${displayWaveNumber(state)}</b> / ${WAVE.TOTAL}</div>
       <div>Score: <b style="color:#d4af37">${finalScore.toLocaleString()}</b></div>
-      ${speedLine}
       <div>Latin Rank: <b style="color:#d4af37">${rank}</b></div>
       <div>Best: <b style="color:#aa9a4a">${hi.score.toLocaleString()} (${hi.rank})</b></div>
     </div>
@@ -229,9 +175,8 @@ export function showVictory(parent: HTMLElement, state: GameStateShape, onRestar
     <h1 style="margin:0;font-size:32px;color:#ffd34d;letter-spacing:6px;text-shadow:3px 3px 0 #000">ROMA AETERNA</h1>
     <div style="margin:6px 0 18px;font-size:14px;color:#aa9a4a;letter-spacing:2px">CASTRUM LUNUM STANDS</div>
     <div style="font-size:14px;line-height:1.7">
-      <div>Wave 50 boss DEFEATED.</div>
+      <div>Wave ${WAVE.TOTAL} boss DEFEATED.</div>
       <div>Score: <b style="color:#ffd34d">${finalScore.toLocaleString()}</b></div>
-      ${speedBonusLine(state)}
       <div>Latin Rank: <b style="color:#ffd34d">${rank}</b></div>
       <div>Best: <b style="color:#aa9a4a">${hi.score.toLocaleString()} (${hi.rank})</b></div>
     </div>

@@ -2,7 +2,7 @@ import { GameStateShape } from '../GameState';
 import { GamePhase, ItemId, TowerType } from '../types';
 import towersData from '../data/towers.json';
 import itemsData from '../data/items_permanent.json';
-import { ECONOMY } from '../constants';
+import { restoreSoloLives } from './LifeSystem';
 import { clampQualityTierForTower } from './TowerSystem';
 import { eligibleBaseTowerTypesAtTier } from './BaseTowerRoster';
 import { itemBuyPrice, Rarity } from './LootSystem';
@@ -175,7 +175,7 @@ export function claimMercatorBackRoomOffer(
       source: 'backroom'
     });
   } else if (offer.kind === 'SUPPLIES') {
-    state.lives = Math.min(ECONOMY.MAX_LIVES, (state.lives ?? 0) + Math.max(0, Math.floor(offer.lifeBonus ?? 0)));
+    restoreSoloLives(state, offer.lifeBonus ?? 0);
   }
 
   state.mercatorBackRoomClaimed = true;

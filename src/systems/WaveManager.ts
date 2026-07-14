@@ -615,9 +615,8 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
     state.phase = GamePhase.BUILD_PHASE;
     // RNG-event reward (2026-05): if a wave modifier rolled and the
     // player cleared the wave, pay a generous bonus on top of the
-    // standard wave gold. Also bumps the score-formula counter.
-    // 2026-05-17 — score reward bumped 1500 → 4000 + gold 40 → 60 so
-    // the RNG modifier survival feels like a real payoff. Players also
+    // standard wave gold. The old run-points counter remains telemetry only;
+    // it does not affect the authoritative leaderboard score. Players also
     // get a free Uncommon item on launch (see main.ts launchWave).
     let modBonus = 0;
     let modScoreBonus = 0;
@@ -643,7 +642,7 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
       flyerBonus = Math.max(5, Math.round(w.gold * 0.5));
     }
     const totalWaveGold = Math.round((w.gold + flyerBonus) * campaignRelicWaveGoldMult(state));
-    const modSuffix = modBonus > 0 ? ` +${modBonus}g RNG bonus +${modScoreBonus} score.` : '';
+    const modSuffix = modBonus > 0 ? ` +${modBonus}g RNG bonus.` : '';
     const flyerSuffix = flyerBonus > 0 ? ` +${flyerBonus}g Flyer-Survival bonus.` : '';
     state.hint = `Wave ${state.wave} survived. +${totalWaveGold} Gold.${flyerSuffix}${modSuffix} The empire pretends not to be impressed.`;
     // Clear weather + modifier — sky clears between waves.

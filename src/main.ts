@@ -4,7 +4,7 @@ import { GamePhase, TileType, TowerType, TargetingMode, DrawCard, DamageType } f
 // on load and wires the rtd:viewport-change custom event used by
 // fitStageToViewport and (in later phases) touch handlers + modals.
 import { isMobile as isMobileDevice } from './Mobile';
-import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, TIER_COLORS, WAVE, INVENTORY_SIZE, POOL_PROBABILITIES } from './constants';
+import { ECONOMY, GRID, FACTION_WEATHER, WAVE_MODIFIERS, WORLD, AURA_TILES, AURA_TILE_EFFECTS, TIER_COLORS, WAVE, INVENTORY_SIZE, POOL_PROBABILITIES, SOLO_ENDLESS_RESTOCK_LIVES, SOLO_MAX_LIVES } from './constants';
 import { createGameState, isWaveModifierActive } from './GameState';
 import { initializeGrid, isBuildable, isWaterPlacementRestrictedTile, isWaterZoneTile, pixelToTile, setTile, tileAt } from './systems/GridManager';
 import { buildGroundPath, buildFlyerPath, canPlaceStone, resnapEnemiesToPath } from './systems/PathFinder';
@@ -22,6 +22,7 @@ import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } 
 import { scaledEnemyRegenRate } from './systems/EnemyHealing';
 import wavesData from './data/waves.json';
 import { canAfford, commanderKillGoldBounty, earnGold, poolUpgradeCost, spendGold, bumpHeroXP, effectivePoolLevel, perfectWaveGoldBonus } from './systems/EconomySystem';
+import { restoreSoloLives } from './systems/LifeSystem';
 import { BASE_TOWER_TYPES, createTower, rollSoloDraw, findRandomBuildTiles, towerAuraTileKind, towerStatBreakdown } from './systems/TowerSystem';
 import { scanCombos, realizableCombos, executeCombo, resolveComboChoice, comboIngredientGlowIds } from './systems/CombinationEngine';
 // SANDBOX: dev-mode imports. Delete this line + every line tagged
@@ -1586,7 +1587,7 @@ async function boot() {
     // Restock starting lives + a small gold boost so the player has a
     // launching pad for E1 (Endless explicitly punishes economy, so the
     // initial pad helps the transition feel like a reward).
-    state.lives = Math.max(state.lives, 25);
+    state.lives = Math.max(state.lives, SOLO_ENDLESS_RESTOCK_LIVES);
     state.gold += 100;
     // Banner: "CHAOS MODE" intro card.
     const b = document.createElement('div');
@@ -1826,7 +1827,7 @@ async function boot() {
       <div style="margin-top:12px;padding:10px 14px;background:rgba(0,0,0,0.55);border:1px solid ${colorHex};display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left">
         <div>
           <div style="font-size:10px;font-weight:bold;letter-spacing:3px;color:#88ff88;text-shadow:1px 1px 0 #000;margin-bottom:3px">★ SURVIVE</div>
-          <div style="font-size:11px;font-weight:bold;color:#cdffce;line-height:1.45;text-shadow:1px 1px 0 #000">Survive: +60g + 4000 score. Free Uncommon item is already in your inventory. The Senate notices.</div>
+          <div style="font-size:11px;font-weight:bold;color:#cdffce;line-height:1.45;text-shadow:1px 1px 0 #000">Survive: +60g. A free Uncommon item is already in your inventory. The Senate notices.</div>
         </div>
         <div>
           <div style="font-size:10px;font-weight:bold;letter-spacing:3px;color:#ff7766;text-shadow:1px 1px 0 #000;margin-bottom:3px">✗ FAIL</div>
@@ -2328,7 +2329,7 @@ async function boot() {
             <div style="font-size:10px;letter-spacing:2px;color:${colorHex};margin-bottom:5px;font-weight:bold">🎲 ${mod.name.toUpperCase()}</div>
             <div style="margin-bottom:6px">${blurbEsc}</div>
             ${extrasTooltip}
-            <div style="font-size:10px;color:#88ff88;letter-spacing:1px;border-top:1px solid #3a3025;padding-top:5px;margin-top:6px">SURVIVE → <b>+60g · +1 UNCOMMON ITEM · +4000 score</b></div>
+            <div style="font-size:10px;color:#88ff88;letter-spacing:1px;border-top:1px solid #3a3025;padding-top:5px;margin-top:6px">SURVIVE → <b>+60g · +1 UNCOMMON ITEM</b></div>
           </div>
         </div>
       `;
@@ -2422,7 +2423,7 @@ async function boot() {
       <div style="margin-top:12px;padding:10px 14px;background:rgba(0,0,0,0.55);border:1px solid #ffaa33;display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left">
         <div>
           <div style="font-size:10px;font-weight:bold;letter-spacing:3px;color:#88ff88;text-shadow:1px 1px 0 #000;margin-bottom:3px">★ KILL HIM</div>
-          <div style="font-size:11px;font-weight:bold;color:#cdffce;line-height:1.45;text-shadow:1px 1px 0 #000">2.5× wave gold +50g handler fee. +2 lives. +1 RARE+ item. +3000 score. The Senate orders a parade.</div>
+          <div style="font-size:11px;font-weight:bold;color:#cdffce;line-height:1.45;text-shadow:1px 1px 0 #000">2.5× wave gold +50g handler fee. +2 lives. +1 RARE+ item. The Senate orders a parade.</div>
         </div>
         <div>
           <div style="font-size:10px;font-weight:bold;letter-spacing:3px;color:#ff7766;text-shadow:1px 1px 0 #000;margin-bottom:3px">✗ LET HIM LEAK</div>
@@ -3738,9 +3739,13 @@ async function boot() {
       destination = `Added directly to your treasury (now ${state.gold}g).`;
       SFX.bossArrival();
     } else if (r.kind === 'LIFE') {
-      state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + (r.amount ?? 1));
-      rewardLabel = `+${r.amount ?? 1} life`;
-      destination = `Lives restored (now ${state.lives}/${ECONOMY.MAX_LIVES}).`;
+      const livesGained = restoreSoloLives(state, r.amount ?? 1);
+      rewardLabel = livesGained > 0
+        ? `+${livesGained} ${livesGained === 1 ? 'life' : 'lives'}`
+        : 'LIFE RESERVE FULL';
+      destination = livesGained > 0
+        ? `Lives restored (now ${state.lives}/${SOLO_MAX_LIVES}).`
+        : `Lives already at the normal ${SOLO_MAX_LIVES}-life cap.`;
       SFX.bossArrival();
     } else if (r.kind === 'ITEM' && r.item) {
       const itemName = r.item.replace(/_/g,' ').toLowerCase();
@@ -3894,7 +3899,7 @@ async function boot() {
       <div style="font-size:11px;letter-spacing:5px;color:#aa9a4a;font-weight:bold">⚔ ROME EXPECTS A LEGION ⚔</div>
       <div style="margin-top:6px;font-size:24px;font-weight:bold;letter-spacing:4px;color:#ffd34d;text-shadow:2px 2px 0 #000,0 0 18px rgba(255,211,77,0.55)">FORGE YOUR LEGION</div>
       <div style="margin-top:14px;font-size:13px;letter-spacing:0.5px;color:#fff8e0;line-height:1.7">
-        Every enemy must reach <b style="color:#ffd34d">all seven checkpoints</b> in order. If it completes the route and enters <b style="color:#ff7766">ROME</b>, you lose lives.
+        Rome begins with <b style="color:#88ff88">45 lives</b>. Every enemy must reach <b style="color:#ffd34d">all seven checkpoints</b> in order. If it completes the route and enters <b style="color:#ff7766">ROME</b>, you lose lives.
       </div>
       <div style="margin-top:14px;display:grid;grid-template-columns:32px 1fr;gap:10px 12px;text-align:left;font-size:11px;color:#cdb98a;line-height:1.55">
         <div style="color:#88ff88;font-size:18px;font-weight:bold;text-align:center">1</div>
@@ -7699,9 +7704,9 @@ async function boot() {
             state.totalKills = (state.totalKills ?? 0) + 1;
             if (e.isBoss) {
               state.bossesKilled = (state.bossesKilled ?? 0) + 1;
-              // COLOSSEUM_WAGER relic — +2 lives per boss kill (cap 30).
+              // COLOSSEUM_WAGER relic — +2 lives per boss kill (Solo cap 45).
               const wagerLives = campaignRelicBossKillLives(state);
-              if (wagerLives > 0) state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + wagerLives);
+              if (wagerLives > 0) restoreSoloLives(state, wagerLives);
             }
             if (state.activeHeroId) {
               heroAwardXp(state, !!e.isBoss, heroSystemHooks);
@@ -7986,11 +7991,13 @@ async function boot() {
           state.totalKills = (state.totalKills ?? 0) + 1;
           if (e.isBoss) {
             state.bossesKilled = (state.bossesKilled ?? 0) + 1;
-            // COLOSSEUM_WAGER relic — +2 lives per boss kill (cap 30).
+            // COLOSSEUM_WAGER relic — +2 lives per boss kill (Solo cap 45).
             const wagerLives = campaignRelicBossKillLives(state);
             if (wagerLives > 0) {
-              state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + wagerLives);
-              state.hint = `Colosseum Wager pays out — +${wagerLives} lives (now ${state.lives}/${ECONOMY.MAX_LIVES}).`;
+              const livesGained = restoreSoloLives(state, wagerLives);
+              state.hint = livesGained > 0
+                ? `Colosseum Wager pays out — +${livesGained} lives (now ${state.lives}/${SOLO_MAX_LIVES}).`
+                : `Colosseum Wager salutes a full ${SOLO_MAX_LIVES}-life reserve.`;
             }
           }
           // ── HERO SYSTEM (2026-05-19) ────────────────────────────
@@ -8066,19 +8073,17 @@ async function boot() {
             // 2026-05 v6: BONUS BOSS PAYOUT BUFFED — RNG threats should
             // feel like a JACKPOT not a tax. Bumped from 1.5× + 25g
             // back up to 2.5× wave gold + 50g flat. Plus +2 lives
-            // restored (capped at MAX_LIVES). Plus a free RARE+ item
-            // (one-shot, queued via grantBonusItem). Plus +3000 score.
+            // restored (capped at the Solo life limit). Plus a free RARE+ item
+            // (one-shot, queued via grantBonusItem). The legacy run-points
+            // counter below is telemetry only and never affects leaderboard score.
             // A W12 modifier-twin pays ~80g; a W20 ambush pays ~135g.
             const bonus = Math.round((w?.gold ?? 10) * 2.5) + 50;
             earnGold(state, bonus);
-            // Restore up to +2 lives (caps at MAX_LIVES).
-            const livesBefore = state.lives;
-            state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + 2);
-            const livesGained = state.lives - livesBefore;
+            // Restore up to +2 lives without erasing an Aegis overcap.
+            const livesGained = restoreSoloLives(state, 2);
             // Free RARE+ item drop.
             const grantedItem = grantBonusItem('RARE');
-            // RNG-event score tracking: each bonus boss the player puts
-            // in the dirt feeds the end-of-run score formula.
+            // Retain legacy run telemetry for save compatibility.
             state.score += 3000;
             state.bonusBossesKilled = (state.bonusBossesKilled ?? 0) + 1;
             const livesNote = livesGained > 0 ? ` +${livesGained} ❤️` : '';
@@ -8368,16 +8373,14 @@ async function boot() {
         // still-running track from an older build still buffered in
         // the player's cache.
         stopMusicTrack('boss20');
-        // 2026-05 v10: stamp wave-clear duration for the speed bonus that
-        // feeds into the final-score formula. 2026-05-15 fix: state.tick is
-        // already in seconds (advances by dt), so the old `/60` divisor
-        // made every wave look ~60× faster than it really was and the
-        // speed-bonus scoring was effectively dead.
+        // Preserve wave-clear duration as run telemetry. It is deliberately
+        // excluded from the authoritative leaderboard score.
         const waveSec = Math.max(0, state.tick - waveStartTick);
         if (!state.waveDurations) state.waveDurations = [];
         state.waveDurations[state.wave - 1] = waveSec;
-        // PERFECT WAVE BONUS: zero leaks pays +200 score and a staged gold
-        // bonus. Early perfect clears were flooding the opener when every
+        // PERFECT WAVE BONUS: zero leaks pays a staged gold bonus. The legacy
+        // run-points counter remains telemetry and does not affect leaderboard
+        // score. Early perfect clears were flooding the opener when every
         // wave paid the endgame +50g purse, so the reward now ramps by act.
         if (state.enemiesLeakedThisWave === 0 && !clearedTestYourMight) {
           const perfectBonus = perfectWaveGoldBonus(state.wave);
@@ -8392,7 +8395,7 @@ async function boot() {
         // 2026-05 v6: MODIFIER WAVE SURVIVED celebration. WaveManager
         // stamps __modifierJustSurvived with the modifier key when the
         // wave ends with the modifier flag still active. Show the player
-        // a real banner so the +60g / +4000 score / +1 item reward feels
+        // a real banner so the +60g / +1 item reward feels
         // like a victory, not just a number tick.
         const modSurvived = (state as any).__modifierJustSurvived;
         if (modSurvived) {

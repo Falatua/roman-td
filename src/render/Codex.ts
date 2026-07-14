@@ -189,7 +189,7 @@ function renderTab(tab: string): string {
     return `
       ${foldSection('NEW HERE? READ THIS BEFORE ROME FALLS', `
         <div style="font-size:11.5px;color:#cdb98a;line-height:1.65;background:#0c0a08;padding:10px 14px;border-left:3px solid #d4af37">
-          <b style="color:#ffd34d">Tower defense in 30 seconds:</b> enemies walk from the cave to your gate. If they reach the gate, you lose lives. If you run out of lives, Rome falls and the leaderboard remembers your name. Build towers to make them not get there.
+          <b style="color:#ffd34d">Tower defense in 30 seconds:</b> Rome begins with <b>45 lives</b>. Enemies walk from the cave to your gate. If they reach the gate, you lose lives. If you run out of lives, Rome falls and the leaderboard remembers your name. Build towers to make them not get there.
           <br/><br/>
           <b style="color:#ffd34d">The twist that breaks new players:</b> you don't pick which tower you place. Spend <b>1g</b> per roll and place up to <b>10 random prospects</b> each wave if you can afford them. Then KEEP up to <b>two</b>. Everything else turns to stone. The maze you build is the maze your enemies must walk.
           <br/><br/>
@@ -208,7 +208,7 @@ function renderTab(tab: string): string {
             <li><b style="color:#aa55ff">Necromancy waves (W11 + W13):</b> killed grunts spit a purple portal and <b>6-9 reanimated undead</b> rise at the death tile (85-100% HP each, beefier than the originals). Plan on 7-8× the kills, not 2. They don't chain — the risen form stays dead the second time. <b>Undead-faction waves</b> (W12, W14-W16) also reanimate on every kill regardless of the necromancy tag.</li>
             <li><b style="color:#66ff88">Checkpoint heal:</b> Celtic Berserkers, Sacred Band, Undead Celts, Undead Berserkers, and Undead Spearmen regain 15% HP the first time they cross each of the 7 waypoint coins. Pinch the path right BEFORE coins so the kill window stays narrow. W11 has the heal suppressed (Undead Celt intro is already a slog).</li>
             <li>Recipe wants T3 but your tower is T4? <b style="color:#ffd34d">DOWNGRADE</b> (2g, in the tower menu) drops it one tier. Pride loses runs.</li>
-            <li>This is a 30-wave run. Every leaked enemy hurts. <b style="color:#ff5050">Boss leaks cost 10 lives</b>. <b style="color:#ffd34d">Elite and commander leaks cost 5 lives</b>. Bosses also REBORN ON THE NEXT WAVE at the HP they had when they reached Rome (chip damage carries over — small consolation). The math is still not on your side.</li>
+            <li>This is a 30-wave run with <b style="color:#88ff88">45 starting lives</b>. Every leaked enemy hurts: ordinary enemies cost 1 life, <b style="color:#ffd34d">elites and commanders cost 5</b>, and <b style="color:#ff5050">bosses cost 10</b>. Bosses also REBORN ON THE NEXT WAVE at the HP they had when they reached Rome (chip damage carries over — small consolation).</li>
             <li><b style="color:#ffd34d">THE LATE GAME (W21-30):</b> clearing <b>W30</b> with the gate intact wins the campaign. <b>W21</b> brings the Khan, <b>W22-24</b> drive the Mongol and Egyptian assault toward the Anubis King, and <b>W25-29</b> unleash Chimera, Cerberus, Typhon, Giants, and Cyclopes. Roman-myth enemies resist steel and fire but remain <b style="color:#fff4a8">weak to DIVINE</b>. From W21, Cave B mirrors every ground non-boss group from the main cave, forcing you to defend both lanes before the <b style="color:#ff5050">W30 Daemon Imperator</b> finale.</li>
           </ul>
         </div>
@@ -224,7 +224,7 @@ function renderTab(tab: string): string {
           ${noteCard('Aura', 'A passive ring effect — yours buff, theirs debuff. The translucent circles on the field are real, not decoration.')}
           ${noteCard('DoT', 'Damage Over Time — burn, poison, bleed, and hellfire. Active DoT halves enemy regeneration. All DoTs together are capped at 7% max HP per second on one enemy, with hellfire capped at 2% per second.')}
           ${noteCard('Splash / AoE', 'Damage that ignores how many enemies are nearby. Swarm waves dissolve under this. T1 spam fights it.')}
-          ${noteCard('Leak', 'When an enemy reaches Rome. You lose lives equal to their cost. Bosses cost 10. Elites and commanders cost 5. Regular units are cheaper, but they still add up. The gate is not soundproof.')}
+          ${noteCard('Leak', 'Rome begins with 45 lives. An ordinary enemy costs 1 life when it reaches Rome, an elite or commander costs 5, and a boss costs 10. Normal healing caps at 45; Aegis Wall is the one relic that can raise the reserve to 60.')}
         </div>
       `)}
       ${foldSection('THE LOOP — DO THIS OR LOSE', `
@@ -329,7 +329,7 @@ function renderTab(tab: string): string {
       `)}
       ${foldSection('ECONOMY & VENDORS — WHERE THE GOLD GOES', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('Gate Shop', 'Refreshes every 4 waves with a freshly randomized lineup: 4 Common + 2 Uncommon + 2 Epic + <b style="color:#ff9933">1 Legendary</b>, no Rare and no duplicates within a visit, 9 offers total. The Legendary shelf excludes trophies already owned and never rolls event-exclusive rewards. Always available between waves via the <b>SHOP</b> button, the <b>B</b>/<b>G</b> hotkey, or clicking the gate tile. Lives are also purchasable here (55g/+1 life, capped per visit).')}
+          ${noteCard('Gate Shop', 'Refreshes every 4 waves with a freshly randomized lineup: 4 Common + 2 Uncommon + 2 Epic + <b style="color:#ff9933">1 Legendary</b>, no Rare and no duplicates within a visit, 9 offers total. The Legendary shelf excludes trophies already owned and never rolls event-exclusive rewards. Always available between waves via the <b>SHOP</b> button, the <b>B</b>/<b>G</b> hotkey, or clicking the gate tile. Lives are also purchasable here (55g/+1 life, normal cap 45).')}
           ${noteCard('Mercator (W4 / 9 / 14 / 19 / 23 / 27)', 'Traveling merchant. Stocks a freshly randomized item shelf: 4 LEGENDARY trophies at <b style="color:#f0c040">733g</b> each, 2 Rares, 2 Epics, 3 mid items, and guaranteed Truesight. His armory also carries recruitable Champions of Rome at 1000g and 10 random Tier 5 base towers at <b style="color:#f0c040">325g</b>. Bought Champions start as fresh level-0 recruits and level from future kills, so these are campaign investments now, not impulse purchases.')}
           ${noteCard('☠ Consumable Traps (Gate Shop only)', 'Buy traps from the <b>Gate Shop</b>, stockpile them, then <b style="color:#ffd34d">SELECT and place them between waves</b>. Trap placement is locked throughout an active wave, including while paused. Mercator does not sell traps. Each trap type is capped at <b style="color:#ffd34d">5 per campaign</b>. Deployed traps re-arm during that wave, then expire when it ends. They are drawn bright + pulsing so they are easy to spot, do NOT block the path, and pop a damage number on every hit. Six types: <b style="color:#c0c0c0">Iron Spike</b> (heavy hit), <b style="color:#66dd44">Venom</b> (hit + POISON), <b style="color:#ff7722">Tar Fire</b> (hit + BURN), <b style="color:#88ddff">Frost Snare</b> (wide SLOW), the BOSS-specialist <b style="color:#ffcc44">Ballista Snare</b> (3.5x vs bosses), and the FLYER-specialist <b style="color:#cfe0ff">Sky Net</b> (the only trap fliers can trip).')}
           ${noteCard('🎰 Fortuna\'s Wheel — Combo Tower Gamble', `Mercator offers one dangerous wager: pay <b style="color:#f0c040">${FORTUNA_GAMBLE_COST}g</b> for a <b>random regular combo tower</b>. Supercombo, Omega, Champion, and combo-of-combo towers must still be forged. Each spin has a <b style="color:#b87333">40% T2</b>, <b style="color:#c0c0c0">30% T3</b>, <b style="color:#ffd34d">20% T4</b>, and <b style="color:#ff5050">10% T5</b> chance. There is no guaranteed result or visit limit. The winning tower enters your placement queue.`)}
@@ -355,10 +355,10 @@ function renderTab(tab: string): string {
       `)}
       ${foldSection('📊 SCORE — HOW THE LEADERBOARD MEASURES YOU', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('Base Score', `Campaign score awards <b>${(2000).toLocaleString()}</b> per wave cleared, <b>500</b> per combo tower forged, and <b>400</b> per completed quest. Kills, gold, clear speed, and perfect-wave gold bonuses do not add leaderboard points.`)}
+          ${noteCard('Base Score', `Campaign score awards <b>${(2000).toLocaleString()}</b> per wave cleared, <b>500</b> per combo tower forged, and <b>400</b> per completed quest. Kills, gold, lives remaining, lives purchased, clear speed, and perfect-wave gold bonuses do not add or remove leaderboard points.`)}
           ${noteCard('Current Wave Rule', 'During a wave, the score assumes you have cleared through the previous wave. Between waves, it counts the wave you just cleared. This keeps the in-game score and leaderboard score aligned instead of showing two different totals.')}
           ${noteCard('Victory Bonus', 'Clearing <b style="color:#ffd34d">W30</b> awards a flat <b style="color:#ffd34d">+40,000</b> victory bonus.')}
-          ${noteCard('Latin Rank', 'TIRO < MILES (W8+) < CENTURIO (W14+) < LEGATUS (won) < IMPERATOR (won + ≥10 lives) < <b style="color:#ff5050">DIVINUS</b> (won with both Julius Caesar AND God of War on the field).')}
+          ${noteCard('Latin Rank', 'TIRO < MILES (W8+) < CENTURIO (W14+) < LEGATUS (won) < IMPERATOR (won + ≥15 lives) < <b style="color:#ff5050">DIVINUS</b> (won with both Julius Caesar AND God of War on the field).')}
         </div>
       `)}
       ${foldSection('⚡ TIPS & TRICKS — UNCOMFORTABLE TRUTHS', `

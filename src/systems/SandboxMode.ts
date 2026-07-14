@@ -34,7 +34,7 @@
 
 import { GameStateShape } from '../GameState';
 import { TowerType, Tower, TileType, GamePhase } from '../types';
-import { ECONOMY, GRID, TIER_MULTS, WAVE } from '../constants';
+import { ECONOMY, GRID, SOLO_STARTING_LIVES, TIER_MULTS, WAVE } from '../constants';
 import { createTower, maxQualityTierForTower } from './TowerSystem';
 import towersData from '../data/towers.json';
 import { TEST_YOUR_MIGHT_AFTER_WAVE } from './TestYourMightLabels';
@@ -53,7 +53,7 @@ export function activateSandbox(state: GameStateShape): void {
   state.poolLevel = ECONOMY.POOL_MAX_LEVEL;
   state.heroLevel = 5;
   state.keepsRemainingThisRound = 999;
-  state.lives = ECONOMY.STARTING_LIVES;
+  state.lives = SOLO_STARTING_LIVES;
   state.hasKeptAnyTowerEver = true;   // skip the W1 first-keep guard
 }
 
@@ -147,7 +147,7 @@ export function sandboxResetForWave(state: GameStateShape, targetWave: number): 
   state.tick = 0;
   state.phase = GamePhase.BUILD_PHASE;
   state.gold = 999_999;
-  state.lives = ECONOMY.STARTING_LIVES;
+  state.lives = SOLO_STARTING_LIVES;
   state.score = 0;
   state.totalKills = 0;
   state.enemiesKilledThisWave = 0;

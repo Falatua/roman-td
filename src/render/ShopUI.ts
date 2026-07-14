@@ -3,7 +3,7 @@ import { TRAP_DEFS, TRAP_IDS, armTrapFromInventory, buyTraps, canDeployTraps, tr
 import { TRAP_PURCHASE_CAP_PER_TYPE, trapPurchasesRemaining, trapsPurchasedByType } from '../systems/TrapInventorySystem';
 import { RAMPART_COST, RAMPART_MAX_PER_RUN, RAMPART_ORIENT_LABEL, armRampartFromInventory, buyRampart, rampartsOwned, rampartsRemainingThisRun } from '../systems/RampartSystem';
 import { GameStateShape } from '../GameState';
-import { INVENTORY_SIZE, ECONOMY } from '../constants';
+import { INVENTORY_SIZE, ECONOMY, SOLO_MAX_LIVES } from '../constants';
 import { SFX } from './AudioManager';
 import { spendGold } from '../systems/EconomySystem';
 import { InventoryState, inventoryAdd, isConsumable, itemBuyPrice } from '../systems/LootSystem';
@@ -23,6 +23,7 @@ import { heroIdForTowerType, isMercatorChampionType } from '../systems/HeroIdent
 import { towerBriefHtml } from './TowerCopy';
 import { recordMercatorBackRoomPurchase } from '../systems/SecretEventsSystem';
 import { towerName } from '../format';
+import { restoreSoloLives } from '../systems/LifeSystem';
 
 // Inject the recipe-ready pulse keyframes once. Mirrors the green glow used on
 // pending prospects whose `id` lands in scanCombos's ingredient set, so the
@@ -996,7 +997,7 @@ function renderMercatorShop(
   const livesCard = document.createElement('div');
   livesCard.className = 'merc-card';
   livesCard.style.cssText = `border:2px solid #7a1a1a;padding:10px 14px;background:#0c0a08;display:flex;justify-content:space-between;align-items:center;gap:12px;`;
-  const livesCapped = shop.livesBoughtThisVisit >= shop.livesMaxThisVisit;
+  const livesCapped = state.lives >= SOLO_MAX_LIVES || shop.livesBoughtThisVisit >= shop.livesMaxThisVisit;
   const livesCanAfford = state.gold >= shop.livesPrice;
   livesCard.innerHTML = `
     <div>
@@ -1023,15 +1024,13 @@ function renderMercatorShop(
       (window as any).__showInsufficientGoldToast?.(shop.livesPrice, ax, ay);
       return;
     }
-    if (state.lives >= ECONOMY.MAX_LIVES) { state.hint = `Lives capped at ${ECONOMY.MAX_LIVES}.`; return; }
+    if (state.lives >= SOLO_MAX_LIVES) { state.hint = `Lives capped at ${SOLO_MAX_LIVES}.`; return; }
     spendGold(state, shop.livesPrice);
     recordMercatorBackRoomPurchase(state, shop.livesPrice);
-    state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + 1);
+    restoreSoloLives(state, 1);
     shop.livesBoughtThisVisit += 1;
-    // 2026-05-22 V33 — Track total lives purchased this run for the
-    // end-of-game score penalty. Buying lives is a survival lever but
-    // costs ~300 score per life on the leaderboard so the "I bought
-    // my way through" run can't outscore the "I held the line" run.
+    // Track purchases for life-sensitive quests such as Untouched Walls.
+    // The authoritative leaderboard score does not use lives or purchases.
     state.livesBoughtThisRun = (state.livesBoughtThisRun ?? 0) + 1;
     state.hint = '+1 Life.';
     SFX.buy();
@@ -1197,8 +1196,10 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
   livesRow.style.cssText = `margin-top:12px;padding:8px;border:1px dashed #5a4a30;display:flex;justify-content:space-between;align-items:center;`;
   livesRow.innerHTML = `<span>Buy Life: <b style="color:#ee5555">+1 Life</b> for ${shop.livesPrice}g (${shop.livesBoughtThisVisit}/${shop.livesMaxThisVisit} this visit)</span>`;
   const buyLifeBtn = document.createElement('button');
-  buyLifeBtn.textContent = 'BUY LIFE';
-  buyLifeBtn.style.cssText = `background:#7a1a1a;color:#e8d6a8;border:1px solid #5a4a30;padding:4px 10px;cursor:pointer;font-family:inherit;font-size:11px;`;
+  const atLifeCap = state.lives >= SOLO_MAX_LIVES;
+  buyLifeBtn.textContent = atLifeCap ? 'MAX REACHED' : 'BUY LIFE';
+  buyLifeBtn.disabled = atLifeCap;
+  buyLifeBtn.style.cssText = `background:${atLifeCap ? '#2a2a2a' : '#7a1a1a'};color:${atLifeCap ? '#666' : '#e8d6a8'};border:1px solid #5a4a30;padding:4px 10px;cursor:${atLifeCap ? 'not-allowed' : 'pointer'};font-family:inherit;font-size:11px;`;
   buyLifeBtn.onclick = (ev) => {
     if (shop.livesBoughtThisVisit >= shop.livesMaxThisVisit) { state.hint = 'Life purchase cap reached.'; return; }
     if (state.gold < shop.livesPrice) {
@@ -1210,12 +1211,11 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
       state.hint = `Need ${shop.livesPrice}g.`;
       return;
     }
-    if (state.lives >= ECONOMY.MAX_LIVES) { state.hint = `Lives capped at ${ECONOMY.MAX_LIVES}. The empire trusts you with no more.`; return; }
+    if (state.lives >= SOLO_MAX_LIVES) { state.hint = `Lives capped at ${SOLO_MAX_LIVES}. The empire trusts you with no more.`; return; }
     spendGold(state, shop.livesPrice);
-    state.lives = Math.min(ECONOMY.MAX_LIVES, state.lives + 1);
+    restoreSoloLives(state, 1);
     shop.livesBoughtThisVisit += 1;
-    // 2026-05-22 V33 — Same run-total tracking on the Mercator path.
-    // -300 score per life applies regardless of which shop sold it.
+    // Same quest-integrity tracking on the Mercator path.
     state.livesBoughtThisRun = (state.livesBoughtThisRun ?? 0) + 1;
     state.hint = '+1 Life.';
     SFX.buy();

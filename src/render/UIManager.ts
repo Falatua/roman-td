@@ -436,7 +436,7 @@ export class UIManager {
     const STAT_HELP: Record<string, { title: string; body: string }> = {
       wave:    { title: 'WAVE',     body: 'Current wave out of 30. Survive all 30 to clear the campaign. Bosses arrive at major milestones; the difficulty curve steepens hard after W15.' },
       endless: { title: 'ENDLESS',  body: 'Endless mode in progress. HP scales +50% per endless wave; rewards stack with the campaign score on the leaderboard.' },
-      lives:   { title: 'LIVES',    body: 'How many enemies can reach your gate before Rome falls. Bosses cost 10 lives if they leak. Buy more lives in the SHOP — but each purchased life dings your score.' },
+      lives:   { title: 'LIVES',    body: 'Rome begins with 45 lives. Ordinary leaks cost 1, elites and commanders cost 5, and bosses cost 10. Shop purchases restore lives but disqualify no-purchase life challenges.' },
       gold:    { title: 'GOLD',     body: 'Spent on placing prospects (1 g per roll), buying items in the SHOP, and upgrading your draw POOL. Earned from kills and quests.' },
       pool:    { title: 'POOL',     body: 'Draw-pool level. Higher levels skew prospect rolls toward rarer, stronger towers. Upgrade with the UPGRADE POOL button between waves.' },
       probs:   { title: 'TIER ODDS', body: 'Chance of rolling each tier when you spend 1 g on an empty tile. Reading left to right: T1 · T2 · T3 · T4 · T5. CODEX → POOL has the full curve.' },

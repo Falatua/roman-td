@@ -62,6 +62,9 @@ export const WORLD = {
 } as const;
 
 export const ECONOMY = {
+  // Shared/Circle modes retain their established 30-life pool. The Solo
+  // campaign uses SOLO_STARTING_LIVES / SOLO_MAX_LIVES below so campaign
+  // tuning never silently changes multiplayer.
   STARTING_LIVES: 30,
   // Hard cap on lives. Quest rewards, shop purchases, and the +1 life from
   // Quest +life rewards clamp to this so the player can't
@@ -109,6 +112,15 @@ export const ECONOMY = {
   JULIUS_CAESAR_COST: 20,
   DOWNGRADE_COST: 2
 } as const;
+
+// Solo campaign life budget. Forty-five lives intentionally makes leaks more
+// forgiving while preserving the authored leak costs: ordinary 1, elite and
+// commander 5, boss 10. Normal healing caps here; Aegis Wall may temporarily
+// overcap by its explicit +15-life bargain.
+export const SOLO_STARTING_LIVES = 45;
+export const SOLO_MAX_LIVES = 45;
+export const SOLO_AEGIS_OVERCAP_LIVES = SOLO_MAX_LIVES + 15;
+export const SOLO_ENDLESS_RESTOCK_LIVES = 38;
 
 export const WAVE = {
   TOTAL: 30,           // 2026 v2 spec Ch4: campaign expanded 20 -> 30 waves; Endless removed.
