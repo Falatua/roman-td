@@ -12,6 +12,7 @@ import { displayWaveNumber } from '../systems/TestYourMightLabels';
 import { factionName, enemyName, damageTypeLabel } from '../format';
 import towersData from '../data/towers.json';
 import { computeLeaderboardScoreForState } from './Leaderboard';
+import { SOLO_DEFAULT_GAME_SPEED, soloGameSpeedPresentation } from '../GameSpeed';
 
 function targetingModeLabel(mode: TargetingMode): string {
   return mode === TargetingMode.CLOSE ? 'CLOSEST' : TargetingMode[mode];
@@ -176,9 +177,10 @@ export class UIManager {
     // master/music/sfx volumes. Removed from the HUD stack to keep the
     // right column cleaner; the existing `onToggleMute` callback path
     // stays available so the Settings panel checkbox can call it.
-    const speedBtn = mkBtn('▶ 1×', '#222');
+    const initialSpeed = soloGameSpeedPresentation(SOLO_DEFAULT_GAME_SPEED);
+    const speedBtn = mkBtn(initialSpeed.label, initialSpeed.background);
     speedBtn.id = 'speed-btn';
-    speedBtn.title = 'Cycle game speed: 1× → 2× → 4× → 1×. Same simulation, just faster. 4× is noticeably less readable mid-boss but saves real time on routine clear-up waves and replays.';
+    speedBtn.title = 'New runs begin at 2×. Cycle game speed: 2× → 4× → 1× → 2×. Same simulation, just faster. 4× is noticeably less readable mid-boss but saves real time on routine clear-up waves and replays.';
     speedBtn.onclick = () => (cb as any).onToggleSpeed?.(speedBtn);
     // 2026-05 v11 (B1 Pause): pause button. Click or press P to toggle.
     // Auto-pause on tab blur is wired separately in main.ts.

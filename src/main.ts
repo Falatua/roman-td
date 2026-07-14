@@ -1,4 +1,5 @@
 import { GamePhase, TileType, TowerType, TargetingMode, DrawCard, DamageType } from './types';
+import { nextSoloGameSpeed, SOLO_DEFAULT_GAME_SPEED, soloGameSpeedPresentation, type SoloGameSpeed } from './GameSpeed';
 // 2026-05-22 M1 — Mobile detection + orientation hooks. Importing for
 // side effects: the module sets window.__isMobile / window.__isTouch
 // on load and wires the rtd:viewport-change custom event used by
@@ -629,7 +630,7 @@ async function boot() {
   // (stoneMode removed — stones merged into prospect placement)
   let lastComboCount = 0;    // for one-shot audio cue when combo becomes newly available
   let nextUiRefreshAt = 0;
-  let speedMult = 1;          // 1× / 2× / 4× cycle (2026-05-20: 4× added)
+  let speedMult: SoloGameSpeed = SOLO_DEFAULT_GAME_SPEED;
   // 2026-05 v11 (B1 Pause). Manual pause toggled by HUD button or P key.
   // autoPaused fires on tab blur via visibilitychange; resumes only if
   // the user didn't also click PAUSE in between.
@@ -5937,14 +5938,12 @@ async function boot() {
       // 4× is intended for routine clear-up waves and replay/grind runs;
       // it's noticeably less readable in the heat of a boss wave but
       // saves real time when the player knows the wave is handled.
-      const NEXT: Record<number, number> = { 1: 2, 2: 4, 4: 1 };
-      speedMult = NEXT[speedMult] ?? 1;
-      const label = speedMult === 4 ? '▶▶▶ 4×' : speedMult === 2 ? '▶▶ 2×' : '▶ 1×';
-      btn.textContent = label;
+      speedMult = nextSoloGameSpeed(speedMult);
+      const presentation = soloGameSpeedPresentation(speedMult);
+      btn.textContent = presentation.label;
       // Brighter tint at higher speeds so the player's eye catches that
       // the sim is running hot. 4× is gold, 2× is the familiar copper.
-      const bg = speedMult === 4 ? '#7a5a14' : speedMult === 2 ? '#5a3a1a' : '#222';
-      btn.style.background = bg;
+      btn.style.background = presentation.background;
     },
     onTogglePause: (btn: HTMLButtonElement) => {
       paused = !paused;
