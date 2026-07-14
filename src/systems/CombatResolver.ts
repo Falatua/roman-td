@@ -395,6 +395,7 @@ export const UNDEAD_GENERAL_BEAST_DAMAGE_MULT = 2.25;
 export const UNDEAD_GENERAL_ELEPHANT_DAMAGE_MULT = 3.0;
 export const BEASTLORD_BEAST_DAMAGE_MULT = 1.75;
 export const BEASTLORD_ELEPHANT_DAMAGE_MULT = 2.25;
+export const MURMILLO_BEAST_DAMAGE_MULT = 1.50;
 export const MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT = 1.25;
 
 export function undeadGeneralPreyDamageMult(target: Pick<Enemy, 'type'>): number {
@@ -409,6 +410,10 @@ export function beastlordPreyDamageMult(target: Pick<Enemy, 'type'>): number {
     return BEASTLORD_ELEPHANT_DAMAGE_MULT;
   }
   return isBeastEnemyType(target.type) ? BEASTLORD_BEAST_DAMAGE_MULT : 1;
+}
+
+export function murmilloBeastDamageMult(target: Pick<Enemy, 'type'>): number {
+  return isBeastEnemyType(target.type) ? MURMILLO_BEAST_DAMAGE_MULT : 1;
 }
 
 export function murmilloReaverPressureDamageMult(target: Pick<Enemy, 'statusEffects'>): number {
@@ -1638,7 +1643,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         damage *= 3.0;
       }
       if (t.type === TowerType.BEASTLORD_CHAMPION) damage *= beastlordPreyDamageMult(target);
-      if (t.type === TowerType.MIRMILLO_REAVER) damage *= murmilloReaverPressureDamageMult(target);
+      if (t.type === TowerType.MIRMILLO_REAVER) {
+        damage *= murmilloBeastDamageMult(target) * murmilloReaverPressureDamageMult(target);
+      }
       // 2026-05-17 — PUNIC HUNTER. The Murmillo gladiator's signature
       // anti-Carthage rage. +75% damage vs CARTHAGE faction (W7-W10 living
       // Punic columns) and +50% damage vs UNDEAD_CARTHAGE (W16-W18 risen
@@ -1649,6 +1656,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // the Murmillo, so this combo is a deliberate counter-pick — strong
       // on Punic Wars waves, fine elsewhere.
       if (t.type === TowerType.MURMILLO || t.type === TowerType.UNDEAD_GLADIATOR_KING) {
+        // Murmillo consumes a veteran Beast Hunter and retains a measured
+        // version of that training. The awakened King inherits the same
+        // bloodline; dedicated Beastlord and elephant apex towers remain the
+        // stronger specialists.
+        damage *= murmilloBeastDamageMult(target);
         const kingMult = t.type === TowerType.UNDEAD_GLADIATOR_KING ? 1.18 : 1.0;
         if (target.faction === EnemyFaction.CARTHAGE)              damage *= 1.75 * kingMult;
         else if (target.faction === EnemyFaction.UNDEAD_CARTHAGE)  damage *= 1.50 * kingMult;

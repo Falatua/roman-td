@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -287,6 +287,14 @@ describe('Tower effective stats', () => {
     expect(beastlordPreyDamageMult(elephant)).toBe(BEASTLORD_ELEPHANT_DAMAGE_MULT);
     expect(beastlordPreyDamageMult(ordinary)).toBe(1);
 
+    expect(MURMILLO_BEAST_DAMAGE_MULT).toBe(1.5);
+    expect(murmilloBeastDamageMult(beast)).toBe(1.5);
+    expect(murmilloBeastDamageMult(elephant)).toBe(1.5);
+    expect(murmilloBeastDamageMult(ordinary)).toBe(1);
+    expect(reaverDef.ability).toContain('+50% damage to all beasts');
+    expect((towersData as any).MURMILLO.ability).toContain('+50% damage to all beasts');
+    expect((towersData as any).UNDEAD_GLADIATOR_KING.ability).toContain('+50% damage to all beasts');
+
     expect(murmilloReaverPressureDamageMult(ordinary)).toBe(1);
     ordinary.statusEffects.push({ kind: StatusEffectKind.BLEED, remaining: 2, magnitude: 0.012, sourceTier: 3 });
     expect(murmilloReaverPressureDamageMult(ordinary)).toBe(MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT);
@@ -306,6 +314,48 @@ describe('Tower effective stats', () => {
     const plague = createTower(TowerType.PLAGUE_LOBBER, 3, 2, 2, 1);
     applyDamageAndStatus(state, plague, plagueTarget, 1, noopCombatHooks());
     expect(plagueTarget.statusEffects.some(s => s.kind === StatusEffectKind.POISON && s.magnitude === 0.05)).toBe(true);
+  });
+
+  it('applies the Murmillo beast bonus through live combat and preserves Reaver bleed pressure', () => {
+    const strike = (towerType: TowerType, targetType: EnemyType, preBleeding = false) => {
+      const state = createGameState();
+      state.tick = 1;
+      const tier = towerType === TowerType.MURMILLO ? 4 : towerType === TowerType.UNDEAD_GLADIATOR_KING ? 5 : 3;
+      const tower = createTower(towerType, tier, 5, 5, 0);
+      tower.attackCooldown = 0;
+      (tower as any).__undeadNextSummonAt = 999;
+      state.towers.set(tower.id, tower);
+      const center = towerCenter(tower);
+      const target = testEnemy(`${towerType}-${targetType}`, center.x + GRID.TILE, center.y);
+      target.type = targetType;
+      target.faction = EnemyFaction.DOGS;
+      target.hp = 100000;
+      target.maxHp = 100000;
+      if (preBleeding) {
+        target.statusEffects.push({ kind: StatusEffectKind.BLEED, remaining: 2, magnitude: 0.012, sourceTier: 3 });
+      }
+      state.enemies.set(target.id, target);
+      const before = target.hp;
+      tickCombat(state, 0.016, noopCombatHooks());
+      return before - target.hp;
+    };
+
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    try {
+      for (const towerType of [TowerType.MURMILLO, TowerType.MIRMILLO_REAVER, TowerType.UNDEAD_GLADIATOR_KING]) {
+        const ordinary = strike(towerType, EnemyType.CELTIC_FOOTMAN);
+        const beast = strike(towerType, EnemyType.FERAL_DOG);
+        // Feral Dogs also carry a small native physical-melee weakness, so
+        // live damage lands slightly above the authored 1.50x tower rider.
+        expect(beast / ordinary, towerType).toBeGreaterThan(MURMILLO_BEAST_DAMAGE_MULT);
+        expect(beast / ordinary, towerType).toBeLessThan(1.7);
+      }
+      const reaverBeast = strike(TowerType.MIRMILLO_REAVER, EnemyType.FERAL_DOG);
+      const bleedingReaverBeast = strike(TowerType.MIRMILLO_REAVER, EnemyType.FERAL_DOG, true);
+      expect(bleedingReaverBeast / reaverBeast).toBeCloseTo(MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, 4);
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
   it('marks Sagittarius, Aquila Venator, and Skyreaper Battery as flyer-only targeting towers', () => {
