@@ -173,7 +173,6 @@
     "livesCost": 10,
     "spriteSheet": 5,
     "spriteCell": 3,
-    "outOfCombatRegen": 0.0168,
     "campaignHpScaleByWave": { "10": 5.0 }
   },
   "UNDEAD_CELT": {

@@ -36,7 +36,7 @@ export const TEST_YOUR_MIGHT_SPAWNS: TestYourMightSpawn[] = [
   // challenge-only resistance stamps, but with a prep window after
   // accepting. Only Hannibal is marked as the scheduled reward boss so the
   // run still pays exactly one randomized Legendary item.
-  { type: 'HANNIBAL_BARCA', count: 1, gap: 0, start: 0.0, hpMult: 75, speedMult: 1.04, majorReward: true, resistMult: 0.84, statusGuard: 0.46, rangedBlock: 0.08, checkpointHeal: 0.035, outOfCombatRegen: 0.018 },
+  { type: 'HANNIBAL_BARCA', count: 1, gap: 0, start: 0.0, hpMult: 75, speedMult: 1.04, majorReward: true, resistMult: 0.84, statusGuard: 0.46, rangedBlock: 0.08, checkpointHeal: 0.035 },
   { type: 'UNDEAD_WAR_ELEPHANT', count: 1, gap: 3.4, start: 3.8, hpMult: 44, speedMult: 1.01, resistMult: 0.84, statusGuard: 0.48, rangedBlock: 0.08, checkpointHeal: 0.05, outOfCombatRegen: 0.018 },
   { type: 'WAR_ELEPHANT', count: 2, gap: 3.0, start: 5.0, hpMult: 45, speedMult: 1.02, resistMult: 0.84, statusGuard: 0.50, rangedBlock: 0.08, checkpointHeal: 0.05, outOfCombatRegen: 0.018 },
   { type: 'OCEAN_FISHLING', count: 12, gap: 0.34, start: 4.4, hpMult: 34, speedMult: 1.16, resistMult: 0.88, statusGuard: 0.60, ocean: true },

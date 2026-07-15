@@ -1479,10 +1479,9 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       // `regenMult` multiplier in the regen block below (0.5× during
       // DoT, 1.0× otherwise), so a DoT no longer needs to gate the
       // OOC quiet-window. lastDamagedTick now means strictly
-      // "last DIRECT damage tick" — used by BossScripts.recentlyHit
-      // and the OOC quiet-window gate. This is the change that lets
-      // Hannibal + Daemon Imperator OOC regen actually flow at 50%
-      // during DoT instead of being silently locked at 0%.
+      // "last DIRECT damage tick" for the OOC quiet-window gate. This
+      // is the change that lets regenerators like Daemon Imperator
+      // heal at 50% during DoT instead of being silently locked at 0%.
     }
     // 2026-05-22 V34 — DOT floating-number emit removed per user
     // feedback. The POISON green numbers read as healing rather than
@@ -1510,12 +1509,11 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     //
     // 2026-05-21 — Suppression softened from 100% (full block) to
     // 50% (half rate). Background: a single applied DoT used to fully
-    // shut down Hannibal + Daemon Imperator healing, making them
-    // trivial for any DoT build. Now DoTs reduce regen by half, so
-    // the player needs both DoT AND direct damage to outpace regen
-    // bosses. Hannibal + Daemon Imperator keep their full base regen
-    // authored rates (globally reduced by EnemyHealing); only the
-    // DoT-active multiplier changes.
+    // shut down boss healing, making regen enemies trivial for any DoT
+    // build. Now DoTs reduce regen by half, so the player needs both
+    // DoT AND direct damage to outpace regenerators. Authored rates are
+    // still globally reduced by EnemyHealing; only the DoT-active
+    // multiplier changes.
     //
     // EXEMPTION (2026-05 v9 confirm): the CHECKPOINT touch heal
     // (`checkpointHealPct`) is intentionally NOT suppressed by ordinary DoT.
@@ -1566,8 +1564,8 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // the gate reads pure "no direct damage in the last quiet window."
     // A DoT-only attack DOES satisfy the gate, and OOC regen then
     // ticks at the softened 50% rate via regenMult below. This is how
-    // Hannibal + Daemon Imperator actually heal at half rate during
-    // DoT instead of being fully locked down by a single Poisoned Blade.
+    // Daemon Imperator and other OOC regenerators heal at half rate
+    // during DoT instead of being fully locked down by one poison.
     // 2026-05-22 V28 — Quiet-window doubled 0.5s → 1.0s per user
     // tuning. Half a second wasn't enough breathing room for the
     // player to commit to a target before the enemy started healing;

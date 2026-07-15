@@ -396,8 +396,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'DENSE BONE HIDE: higher HP and only +5% damage from SIEGE; FIRE/BURN is the decisive weakness'
     ],
     HANNIBAL_BARCA: [
-      'ELEPHANT HEAL — while any War Elephant lives and Hannibal goes 1.0s without DIRECT damage, heals 0.32% maxHP/sec; active DoT halves it to 0.16%/sec',
-      'OUT-OF-COMBAT REGEN — 1.34%/sec after 1.0s without DIRECT damage; active DoT halves it to 0.67%/sec',
+      'NO PASSIVE HEALTH REGEN — escort elephants no longer heal Hannibal and he has no out-of-combat regen',
       'TELEGRAPHED REBIRTH at 55% HP — 1-second red lock-on ring warning, then heals to 65% HP, clears statuses, and gains +60% speed for 10s'
     ],
     BOSS_FLYER_VULTURE: [

@@ -2032,7 +2032,7 @@ async function boot() {
     // long ago (data has no regenPctPerSecOutOfCombat field) but
     // this brief still listed them, which confused the player into
     // thinking the Zombie Druid was self-healing on W13.
-    if (enemiesInWave.has('HANNIBAL_BARCA') || enemiesInWave.has('DAEMON_IMPERATOR') || enemiesInWave.has('GHOST_RIDER')) enemyCallouts.push({ text: '💚 OOC REGEN · pressure constantly to deny heal', cat: 'ENEMY' });
+    if (enemiesInWave.has('DAEMON_IMPERATOR') || enemiesInWave.has('GHOST_RIDER')) enemyCallouts.push({ text: '💚 OOC REGEN · pressure constantly to deny heal', cat: 'ENEMY' });
     // 2026-05-15: checkpoint regen — enemies that gain HP every time
     // they cross a checkpoint coin on the path. Listed here per-wave
     // so the player knows to burst them BETWEEN checkpoints rather
@@ -2614,7 +2614,7 @@ async function boot() {
     const hasNaga = types.has('NAGA_ADEPT') || types.has('NAGA_SLEEPWEAVER') || types.has('NAGA_ORACLE');
     const hasPhoenix = types.has('SPECTRAL_SCOUT') || types.has('CELTIC_FIRE_DEMON');
     const hasRunners = types.has('RABID_DOG') || types.has('CELTIC_BERSERKER') || types.has('DEMON_HELLHOUND');
-    const hasRegen = types.has('HANNIBAL_BARCA') || types.has('DAEMON_IMPERATOR') || types.has('GALLIC_DRUID');
+    const hasRegen = types.has('DAEMON_IMPERATOR') || types.has('GALLIC_DRUID');
     const isBossWave = w.type === 'B';
     const isPhalanx = nextWave === 17;
     const isDecade = nextWave === 5 || nextWave === 10 || nextWave === 15 || nextWave === 20 || nextWave === 25 || nextWave === 30;

@@ -345,6 +345,7 @@ describe('Test Your Might bonus wave', () => {
     expect(hannibal.__lateStatusGuard).toBeLessThanOrEqual(0.46);
     expect(enemyDamageMultiplier(hannibal, DamageType.PHYS_RANGED)).toBeLessThan(0.5);
     expect(statusEffectiveness(hannibal, StatusEffectKind.SLOW)).toBeLessThan(0.2);
+    expect(hannibal.outOfCombatRegen).toBeUndefined();
     expect(elite.mutation).toBe('WARDED');
     expect(elite.__lateRangedBlock).toBeGreaterThanOrEqual(0.10);
     expect(elite.outOfCombatRegen).toBeGreaterThanOrEqual(0.018);

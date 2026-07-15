@@ -1161,6 +1161,28 @@ describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () =
     }
   });
 
+  it('keeps Hannibal free of passive health regeneration', () => {
+    const def: any = (enemiesData as any).HANNIBAL_BARCA;
+    expect(def.regenPctPerSec).toBeUndefined();
+    expect(def.outOfCombatRegen).toBeUndefined();
+
+    const s = bootstrapState();
+    s.wave = 10;
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 20;
+    const hannibal = spawnEnemy(s, EnemyType.HANNIBAL_BARCA, 1);
+    const elephant = spawnEnemy(s, EnemyType.WAR_ELEPHANT, 1);
+    const runtime = createBossRuntime();
+
+    hannibal.hp = hannibal.maxHp * 0.5;
+    hannibal.lastDamagedTick = -999;
+    const before = hannibal.hp;
+    tickBossScripts(s, 5, runtime, 0);
+
+    expect(elephant.type).toBe(EnemyType.WAR_ELEPHANT);
+    expect(hannibal.hp).toBe(before);
+  });
+
   it('does not summon replacement elephants when Hannibal enters his low-health phase', () => {
     const s = bootstrapState();
     s.wave = 10;
