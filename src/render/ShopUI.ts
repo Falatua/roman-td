@@ -25,6 +25,10 @@ import { recordMercatorBackRoomPurchase } from '../systems/SecretEventsSystem';
 import { towerName } from '../format';
 import { restoreSoloLives } from '../systems/LifeSystem';
 
+function playPurchaseConfirm(): void {
+  try { SFX.buy(); } catch { /* audio feedback is optional */ }
+}
+
 // Inject the recipe-ready pulse keyframes once. Mirrors the green glow used on
 // pending prospects whose `id` lands in scanCombos's ingredient set, so the
 // Mercator shop carries the same visual language.
@@ -293,7 +297,7 @@ function renderHeroForgeSection(contentRoot: HTMLElement, state: GameStateShape,
         if (!state.heroForgeStacks) state.heroForgeStacks = { dmg: 0, cd: 0, aura: 0 };
         (state.heroForgeStacks as any)[pathKey] = cur + 1;
         state.heroForgeGoldSpent = (state.heroForgeGoldSpent ?? 0) + cost;
-        try { (SFX as any).comboSuccess?.(); } catch { /* ignore */ }
+        playPurchaseConfirm();
         // Hide any tooltip that was up before the refresh wipes the DOM.
         hideForgeTooltip();
         refresh();
@@ -469,7 +473,7 @@ function renderRampartSection(root: HTMLElement, state: GameStateShape, refresh:
       return;
     }
     state.hint = 'Bought a Stone Rampart. It is in your Armarium inventory. Open inventory and click it, or hit PLACE here.';
-    SFX.buy();
+    playPurchaseConfirm();
     refresh();
   };
   row.appendChild(buyBtn);
@@ -543,7 +547,7 @@ function renderTrapSection(root: HTMLElement, state: GameStateShape, refresh: ()
         if (spent <= 0) { (window as any).__showInsufficientGoldToast?.(price * buyQty); return; }
         recordMercatorBackRoomPurchase(state, spent);
         state.hint = `Bought ${buyQty}x ${def.name}. Open inventory and click it to arm placement.`;
-        SFX.buy();
+        playPurchaseConfirm();
         refresh();
       };
       return b;
@@ -725,6 +729,7 @@ function renderMercatorShop(
       state.hint = qLen > 1
         ? `${verb} ${towerName(String(offer.type))}. ${qLen} placements queued — click empty tiles to place.`
         : `${verb} ${towerName(String(offer.type))}. Click an empty tile to place it.`;
+      playPurchaseConfirm();
       SFX.itemPickup(isChampion ? 'LEGENDARY' : tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
       if (isChampion) {
         shop.championOffers = (shop.championOffers ?? []).filter(o => o !== offer);
@@ -839,6 +844,7 @@ function renderMercatorShop(
         recordMercatorBackRoomPurchase(state, offer.price);
         inventoryAdd(inv, offer.itemId, offer.rarity, offer.isConsumable, offer.price);
         state.hint = `Bought ${def?.name ?? offer.itemId}.`;
+        playPurchaseConfirm();
         SFX.itemPickup(offer.rarity);
         shop.offers = shop.offers.filter(o => o !== offer);
         refresh();
@@ -941,7 +947,7 @@ function renderMercatorShop(
       reelImg.innerHTML = src
         ? `<img src="${src}" style="width:72px;height:72px;image-rendering:pixelated"/>`
         : '🎲';
-      SFX.buy();
+      playPurchaseConfirm();
       i++;
       if (i < frames.length) {
         setTimeout(tick, frames[i]);
@@ -1033,7 +1039,7 @@ function renderMercatorShop(
     // The authoritative leaderboard score does not use lives or purchases.
     state.livesBoughtThisRun = (state.livesBoughtThisRun ?? 0) + 1;
     state.hint = '+1 Life.';
-    SFX.buy();
+    playPurchaseConfirm();
     refresh();
   };
   (livesCard.querySelector('div:last-child') as HTMLElement).appendChild(buyLifeBtn);
@@ -1179,6 +1185,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
       state.hint = `Bought ${def?.name ?? offer.itemId}.`;
       // Rarity-flavored purchase sound — higher rarities trigger the
       // extra-fanfare branch in SFX.itemPickup.
+      playPurchaseConfirm();
       SFX.itemPickup(offer.rarity);
       shop.offers = shop.offers.filter(o => o !== offer);
       refresh();
@@ -1218,7 +1225,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
     // Same quest-integrity tracking on the Mercator path.
     state.livesBoughtThisRun = (state.livesBoughtThisRun ?? 0) + 1;
     state.hint = '+1 Life.';
-    SFX.buy();
+    playPurchaseConfirm();
     refresh();
   };
   livesRow.appendChild(buyLifeBtn);
@@ -1283,6 +1290,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
           : `Bought ${towerName(String(offer.type))} T${offer.tier}. Click an empty tile to place it.`;
         // Tier-flavored purchase sound (T1=COMMON, T5=UNIQUE)
         const tierToRarity = ['COMMON','UNCOMMON','RARE','LEGENDARY','UNIQUE'];
+        playPurchaseConfirm();
         SFX.itemPickup(tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
         // Mercator Champions are one recruit per run. Remove the bought
         // offer immediately; restockMercator also excludes it forever after.

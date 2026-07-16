@@ -1137,6 +1137,21 @@ describe('Sample SFX wiring', () => {
     expect(towerMenu).toContain('__showInsufficientGoldToast?.(resolved.cost, ax, ay)');
   });
 
+  it('successful shop, Mercator, and Harbor purchases play a confirmation chime', () => {
+    const fs = require('fs');
+    const shop = fs.readFileSync('src/render/ShopUI.ts', 'utf8');
+    const harbor = fs.readFileSync('src/render/HarborDraftModal.ts', 'utf8');
+
+    expect(shop).toContain('function playPurchaseConfirm');
+    expect(shop).toContain('SFX.buy();');
+    expect(shop.split('playPurchaseConfirm();').length - 1, 'shop and Mercator buy branches should confirm successful purchases').toBeGreaterThanOrEqual(9);
+    expect(shop).toContain('state.heroForgeGoldSpent = (state.heroForgeGoldSpent ?? 0) + cost;');
+    expect(shop).toContain('playPurchaseConfirm();\n        // Hide any tooltip');
+    expect(harbor).toContain("import { SFX } from './AudioManager';");
+    expect(harbor).toContain('queueHarborDraftPurchase(state, offer)');
+    expect(harbor).toContain('SFX.buy();');
+  });
+
   it('Supercombo and Omega crafted towers play their dedicated MP3 cue', () => {
     const fs = require('fs');
     const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');

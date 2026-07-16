@@ -6,6 +6,7 @@ import { createTower, towerStatBreakdown } from '../systems/TowerSystem';
 import { ASSET_KEYS, texUrl } from './Assets';
 import { purchaseRecipeHints } from '../systems/CombinationEngine';
 import { towerBriefHtml } from './TowerCopy';
+import { SFX } from './AudioManager';
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
@@ -225,6 +226,7 @@ export function showHarborDraftModal(state: GameStateShape, offers: HarborDraftO
         return;
       }
       if (offer && queueHarborDraftPurchase(state, offer)) {
+        try { SFX.buy(); } catch { /* audio feedback is optional */ }
         wrap.remove();
         onUpdate?.();
       }
