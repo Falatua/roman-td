@@ -640,13 +640,16 @@ describe('Anti-air tower signatures', () => {
 
   it('gives dedicated combo anti-air a stronger tiered flyer payoff without changing ground damage', () => {
     const expected = new Map<TowerType, number>([
-      [TowerType.SCORPION_BOLT, 2.00],
-      [TowerType.NUMIDIAN_CAVALRY, 2.50],
-      [TowerType.NEMESIS_ENGINE, 3.20],
-      [TowerType.STORM_BALLISTA, 2.10],
-      [TowerType.SKYREAPER_BATTERY, 3.50],
-      [TowerType.SKY_DOMINION, 4.25],
-      [TowerType.JOVIAN_SKY_HUNTER, 1.35]
+      [TowerType.SCORPION_BOLT, 2.40],
+      [TowerType.NUMIDIAN_CAVALRY, 3.00],
+      [TowerType.EXPLORATORES, 1.60],
+      [TowerType.NEMESIS_ENGINE, 4.40],
+      [TowerType.STORM_BALLISTA, 2.80],
+      [TowerType.SKYREAPER_BATTERY, 5.00],
+      [TowerType.SKY_DOMINION, 6.00],
+      [TowerType.JOVIAN_SKY_HUNTER, 2.00],
+      [TowerType.ROMAN_TRANSFORMER, 1.75],
+      [TowerType.NEPTUNES_LEVIATHAN, 1.50]
     ]);
 
     expect(Object.keys(COMBO_FLYER_SPECIALIST_DAMAGE_MULT)).toHaveLength(expected.size);
@@ -667,26 +670,35 @@ describe('Anti-air tower signatures', () => {
         const type = typeKey as TowerType;
         const state = createGameState();
         const tower = createTower(type, 5, 4, 4, 0);
+        if (type === TowerType.ROMAN_TRANSFORMER || type === TowerType.NEPTUNES_LEVIATHAN) {
+          const cyan = AURA_TILES.find(tile => tile.kind === 'CYAN')!;
+          tower.tileX = cyan.col;
+          tower.tileY = cyan.row;
+        }
         tower.critChance = 0;
         tower.attackCooldown = 0;
         state.towers.set(tower.id, tower);
         const center = towerCenter(tower);
         const target = flyerEnemy(`${type}-live-flyer`, center.x + GRID.TILE, center.y);
         state.enemies.set(target.id, target);
-        let firedDamage: number | null = null;
+        let dealtDamage: number | null = null;
 
         tickCombat(state, 0.016, {
           ...noopCombatHooks(),
+          onHit: (_tower, enemy, damage) => {
+            if (enemy.id === target.id && dealtDamage === null) dealtDamage = damage;
+          },
           onProjectileFire: (_tower, enemy, damage) => {
-            if (enemy.id === target.id && firedDamage === null) firedDamage = damage;
+            if (enemy.id === target.id && dealtDamage === null) dealtDamage = damage;
           }
         });
 
         const basePerAttack = towerPerAttackDamageBase(tower);
         const targetResistance = resistanceModifier(target.faction, tower.damageType, false)
           * enemyDamageMultiplier(target, tower.damageType);
-        expect(firedDamage, type).not.toBeNull();
-        expect(firedDamage as unknown as number, type).toBeCloseTo(basePerAttack * multiplier! * targetResistance, 4);
+        const towerSpecificAmp = type === TowerType.ROMAN_TRANSFORMER ? 1.55 : 1;
+        expect(dealtDamage, type).not.toBeNull();
+        expect(dealtDamage as unknown as number, type).toBeCloseTo(basePerAttack * multiplier! * targetResistance * towerSpecificAmp, 4);
       }
     } finally {
       Math.random = originalRandom;

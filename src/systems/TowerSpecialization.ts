@@ -19,13 +19,16 @@ export const HANNIBALS_NIGHTMARE_TARGET_COUNT = 2;
 // intentionally unchanged. Keep this table authoritative for combat, UI copy,
 // and balance tests so the specialist ladder cannot drift across systems.
 export const COMBO_FLYER_SPECIALIST_DAMAGE_MULT: Readonly<Partial<Record<TowerType, number>>> = {
-  [TowerType.SCORPION_BOLT]: 2.00,
-  [TowerType.NUMIDIAN_CAVALRY]: 2.50,
-  [TowerType.NEMESIS_ENGINE]: 3.20,
-  [TowerType.STORM_BALLISTA]: 2.10,
-  [TowerType.SKYREAPER_BATTERY]: 3.50,
-  [TowerType.SKY_DOMINION]: 4.25,
-  [TowerType.JOVIAN_SKY_HUNTER]: 1.35
+  [TowerType.SCORPION_BOLT]: 2.40,
+  [TowerType.NUMIDIAN_CAVALRY]: 3.00,
+  [TowerType.EXPLORATORES]: 1.60,
+  [TowerType.NEMESIS_ENGINE]: 4.40,
+  [TowerType.STORM_BALLISTA]: 2.80,
+  [TowerType.SKYREAPER_BATTERY]: 5.00,
+  [TowerType.SKY_DOMINION]: 6.00,
+  [TowerType.JOVIAN_SKY_HUNTER]: 2.00,
+  [TowerType.ROMAN_TRANSFORMER]: 1.75,
+  [TowerType.NEPTUNES_LEVIATHAN]: 1.50
 };
 
 type PreyTarget = {
