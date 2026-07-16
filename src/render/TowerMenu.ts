@@ -53,6 +53,9 @@ export interface TowerMenuHooks {
 function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title: string, onClose: () => void): void {
   const existingBody = panel.querySelector<HTMLElement>('.rtd-tower-menu-scroll-body');
   const body = existingBody ?? document.createElement('div');
+  const stickyActions = Array.from(panel.children).filter((child): child is HTMLElement =>
+    child instanceof HTMLElement && child.classList.contains('rtd-tower-menu-sticky-actions')
+  );
   if (!existingBody) {
     body.className = 'rtd-tower-menu-scroll-body rtd-tower-menu-collapse';
     body.style.cssText = [
@@ -64,14 +67,18 @@ function enhanceTowerInspectModal(modal: HTMLElement, panel: HTMLElement, title:
       '-webkit-overflow-scrolling:touch',
       'overscroll-behavior:contain'
     ].join(';');
-    const detailChildren = Array.from(panel.children).slice(2);
+    const detailChildren = Array.from(panel.children).slice(2).filter(child => !stickyActions.includes(child as HTMLElement));
     for (const child of detailChildren) body.appendChild(child);
     panel.appendChild(body);
+    for (const actions of stickyActions) panel.appendChild(actions);
   }
   panel.style.display = 'flex';
   panel.style.flexDirection = 'column';
-  panel.style.maxHeight = 'calc(100vh - 8px)';
-  panel.style.height = `min(${TOWER_INSPECT_PANEL_MAX_HEIGHT_PX}px, calc(100vh - 8px))`;
+  // Tower menus are mounted inside the scaled game stage. On ultrawide
+  // displays, viewport-based heights can extend below that stage and hide
+  // the keep/footer actions, so size against the modal's own frame instead.
+  panel.style.maxHeight = `min(${TOWER_INSPECT_PANEL_MAX_HEIGHT_PX}px, calc(100% - 8px))`;
+  panel.style.height = `min(${TOWER_INSPECT_PANEL_MAX_HEIGHT_PX}px, calc(100% - 8px))`;
   panel.style.overflow = 'hidden';
   enhanceModalErgonomics(modal, panel, {
     bodySelector: '.rtd-tower-menu-collapse',
