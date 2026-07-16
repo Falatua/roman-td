@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { effectiveWaveHpMult, nominalWaveThreatHp, previewSpawnHp, startWave, tickSpawns, checkWaveEnd } from '../src/systems/WaveManager';
 import { campaignPressureHpMult, campaignPressureResistMult } from '../src/systems/CampaignDifficulty';
 import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
+import { tickSurpriseEvents } from '../src/systems/SurpriseEvents';
 import { createGameState } from '../src/GameState';
 import { EnemyType, GamePhase, SurpriseEventKind } from '../src/types';
 import { initializeGrid } from '../src/systems/GridManager';
@@ -936,6 +937,91 @@ describe('Wave 22 regression guards', () => {
 });
 
 describe('Campaign opening leak audit', () => {
+  it('keeps Wave 14 Dead Uprising from draining lives during the first 30 seconds', () => {
+    const prevWindow = (globalThis as any).window;
+    (globalThis as any).window = prevWindow ?? {};
+    try {
+      const s = bootstrapState();
+      s.phase = GamePhase.BUILD_PHASE;
+      s.wave = 13;
+      s.lives = 30;
+      startWave(s);
+
+      const leaks: string[] = [];
+      for (let i = 0; i < 30 * 60; i++) {
+        s.tick += 1 / 60;
+        tickSpawns(s, 1 / 60);
+        tickSurpriseEvents(s);
+        tickEnemies(
+          s,
+          1 / 60,
+          e => {
+            const pathLen = e.isFlyer ? s.flyerPath.length : ((e as any).__caveB ? s.groundPathB.length : s.groundPath.length);
+            leaks.push(`${String(e.type)}@${s.tick.toFixed(2)}#${e.pathIndex}/${pathLen - 1}+${e.pathProgress.toFixed(2)}`);
+            s.lives -= leakLifeCostFor(e);
+            if (s.lives <= 0 && s.gameOverAt < 0) s.gameOverAt = s.tick;
+          },
+          e => s.enemies.delete(e.id)
+        );
+      }
+
+      expect(leaks).toEqual([]);
+      expect(s.lives).toBe(30);
+      expect(s.gameOverAt).toBeLessThan(0);
+    } finally {
+      if (prevWindow === undefined) delete (globalThis as any).window;
+      else (globalThis as any).window = prevWindow;
+    }
+  }, 15000);
+
+  it('keeps Wave 14 rebirth and reanimation chains from causing hidden leaks', () => {
+    const prevWindow = (globalThis as any).window;
+    (globalThis as any).window = prevWindow ?? {};
+    try {
+      const s = bootstrapState();
+      s.phase = GamePhase.BUILD_PHASE;
+      s.wave = 13;
+      s.lives = 30;
+      startWave(s);
+
+      const leaks: string[] = [];
+      const deaths: Record<string, number> = {};
+      for (let i = 0; i < 30 * 60; i++) {
+        s.tick += 1 / 60;
+        tickSpawns(s, 1 / 60);
+        tickSurpriseEvents(s);
+        for (const e of s.enemies.values()) {
+          if (!e.risingUntil || s.tick >= e.risingUntil) e.hp = 0;
+        }
+        tickEnemies(
+          s,
+          1 / 60,
+          e => {
+            const pathLen = e.isFlyer ? s.flyerPath.length : ((e as any).__caveB ? s.groundPathB.length : s.groundPath.length);
+            leaks.push(`${String(e.type)}@${s.tick.toFixed(2)}#${e.pathIndex}/${pathLen - 1}+${e.pathProgress.toFixed(2)}`);
+            s.lives -= leakLifeCostFor(e);
+            if (s.lives <= 0 && s.gameOverAt < 0) s.gameOverAt = s.tick;
+          },
+          e => {
+            deaths[String(e.type)] = (deaths[String(e.type)] ?? 0) + 1;
+            s.enemies.delete(e.id);
+          }
+        );
+      }
+
+      expect(leaks).toEqual([]);
+      expect(s.lives).toBe(30);
+      expect(s.gameOverAt).toBeLessThan(0);
+      expect(deaths.UNDEAD_CELT).toBe(54);
+      expect(deaths.REANIMATED_ZOMBIE).toBeGreaterThan(300);
+      expect(deaths.SPECTRAL_SCOUT).toBe(8);
+      expect(deaths.GRAVE_LEGION_DRAGON).toBe(1);
+    } finally {
+      if (prevWindow === undefined) delete (globalThis as any).window;
+      else (globalThis as any).window = prevWindow;
+    }
+  }, 15000);
+
   it('does not leak or set game over in the opening seconds of any authored wave', () => {
     const prevWindow = (globalThis as any).window;
     (globalThis as any).window = prevWindow ?? {};
