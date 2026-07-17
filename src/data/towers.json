@@ -687,7 +687,7 @@
   },
   "HANNIBALS_NIGHTMARE": {
     "name": "Hannibal's Nightmare",
-    "damageType": "SIEGE",
+    "damageType": "PHYS_RANGED",
     "baseDps": 235,
     "attackSpeed": 0.386,
     "range": 7.0,
@@ -695,7 +695,7 @@
     "melee": false,
     "spriteSheet": 3,
     "spriteCell": 6,
-    "ability": "TWIN SIEGE JAVELINS (SIEGE): fires at 2 targets per shot. Deals 6.5x damage vs War Elephants and Undead War Elephants, +60% vs Flyers, and +30% vs true Bosses. Every 10s it freezes nearby enemies and briefly concussion-stuns freeze-immune elephants. The apex anti-elephant T5, built for cracking elite elephant packs. Siege damage bypasses ranged-resistant armor.",
+    "ability": "TWIN JAVELINS (PHYSICAL RANGED): fires at 2 targets per shot. Deals 6.5x damage vs War Elephants and Undead War Elephants, +60% vs Flyers, and +30% vs true Bosses. Every 10s it freezes nearby enemies and briefly concussion-stuns freeze-immune elephants. The apex anti-elephant T5, built for cracking elite elephant packs while scaling with ranged-item support.",
     "critChance": 0.18,
     "critMult": 2.8
   },
@@ -886,14 +886,14 @@
   },
   "CARTHAGE_SCOURGE": {
     "name": "Carthage Scourge",
-    "damageType": "SIEGE",
+    "damageType": "PHYS_RANGED",
     "baseDps": 390,
     "attackSpeed": 0.386,
     "range": 7,
     "kind": "COMBO",
     "melee": false,
     "tierBand": 5,
-    "ability": "COMBO-OF-COMBO (T5 SIEGE): SIX-bolt volley at distinct targets per attack. +320% vs Bosses. AoE freeze every 5s. Siege damage bypasses ranged resists. Expensive enough that it should feel like a real late boss answer.",
+    "ability": "COMBO-OF-COMBO (T5 PHYSICAL RANGED): SIX-bolt volley at distinct targets per attack. +320% vs Bosses. AoE freeze every 5s. Armor-piercing ballista fire now fills the late physical-ranged boss-killer role instead of another siege slot.",
     "critChance": 0.22,
     "critMult": 3
   },
@@ -1261,7 +1261,7 @@
   "CHARYBDIS_VORTEX": {"name": "Charybdis Vortex", "damageType": "DIVINE", "baseDps": 88, "attackSpeed": 0.85, "range": 5.2, "kind": "NAVAL", "melee": false, "tierBand": 4, "waterOnly": true, "critChance": 0.08, "critMult": 2.2, "ability": "OCEAN ONLY. 5.2-tile DIVINE control with 0.8-tile splash. Every hit SLOWS 48% for 3.5s and pulls slightly; bosses and commanders also receive ARMOR SHRED. Every 4th hit blocks regeneration and checkpoint healing for 2.25s. Its visible current confirms control."},
   "NEREID_ORACLE": {"name": "Nereid Oracle", "damageType": "DIVINE", "baseDps": 84, "attackSpeed": 1.0, "range": 6.0, "kind": "NAVAL", "melee": false, "tierBand": 4, "waterOnly": true, "critChance": 0.22, "critMult": 2.2, "ability": "OCEAN ONLY. 6-tile DIVINE support shot that reveals stealth and resistance information. FATED CURRENT applies MARK +20% and a separate, non-stacking +10% direct-damage vulnerability for 4s. DoT is not amplified."},
   "HYDRA_OF_LERNA": {"name": "Hydra of Lerna", "damageType": "DIVINE", "baseDps": 142, "attackSpeed": 1.65, "range": 4.0, "kind": "NAVAL", "melee": true, "tierBand": 4, "waterOnly": true, "critChance": 0.16, "critMult": 2.6, "ability": "OCEAN ONLY. 4-tile DIVINE hydra attacking at 1.65/s, with +35% damage against elites and beasts. Every 4 kills grows a head: +11% damage and +4% speed, up to 7. Every 4th hit applies 6.05s BLEED, halving continuous regeneration."},
-  "PRAETORIAN_FLEET": {"name": "Praetorian Fleet", "damageType": "SIEGE", "baseDps": 230, "attackSpeed": 0.86, "range": 8.5, "kind": "COMBO", "melee": false, "tierBand": 5, "amphibious": true, "critChance": 0.14, "critMult": 2.8, "ability": "TIDEFORGED COMBO: Trireme Ballista + Scorpio. 8.5-tile, 1.1-tile SIEGE splash applies ARMOR SHRED and MARK. Ocean stance grants +34.4% damage, +0.65 range, and +45% against priority targets. Land grants +8% speed and +25% against priority targets."},
+  "PRAETORIAN_FLEET": {"name": "Praetorian Fleet", "damageType": "PHYS_RANGED", "baseDps": 230, "attackSpeed": 0.86, "range": 8.5, "kind": "COMBO", "melee": false, "tierBand": 5, "amphibious": true, "critChance": 0.14, "critMult": 2.8, "ability": "TIDEFORGED COMBO: Trireme Ballista + Scorpio. 8.5-tile, 1.1-tile PHYSICAL-RANGED ballista splash applies ARMOR SHRED and MARK. Ocean stance grants +34.4% damage, +0.65 range, and +45% against priority targets. Land grants +8% speed and +25% against priority targets."},
   "CORVUS_LEGION_DOCK": {"name": "Corvus Legion Dock", "damageType": "PHYS_MELEE", "baseDps": 205, "attackSpeed": 1.45, "range": 2.6, "kind": "COMBO", "melee": true, "tierBand": 5, "amphibious": true, "critChance": 0.18, "critMult": 2.4, "ability": "TIDEFORGED COMBO: Corvus Boarding Ship + Cohort Guard. Can be placed on ocean or land. Ocean deployment grants +20% damage; its Tideforged stance adds another +12% damage and +0.65 range. Land placement gives +8% attack speed. Ground hits STUN 0.66s and MARK +24% on water, or STUN 0.42s and MARK +18% on land. Use as a melee control anchor."},
   "ORACLE_LIGHTHOUSE": {"name": "Oracle Lighthouse", "damageType": "DIVINE", "baseDps": 198, "attackSpeed": 1.2, "range": 7.2, "kind": "COMBO", "melee": false, "tierBand": 5, "amphibious": true, "critChance": 0.25, "critMult": 2.6, "ability": "TIDEFORGED COMBO: Nereid Oracle + Speculator. Reveals stealth. Ocean stance grants +34.4% damage, +0.65 range, MARK +28%, and Fated Current +14% for 5.5s. Land grants +8% speed, MARK +36%, and Fated Current +18% for 4s."},
   "ABYSSAL_ONAGER": {"name": "Abyssal Onager", "damageType": "SIEGE", "baseDps": 255, "attackSpeed": 0.5, "range": 8.5, "kind": "COMBO", "melee": false, "tierBand": 5, "amphibious": true, "critChance": 0.06, "critMult": 3.6, "ability": "TIDEFORGED COMBO: Charybdis Vortex + Siege Onager. 2.2-tile SIEGE splash applies ARMOR SHRED. Ocean stance SLOWS 55% for 4s; land SLOWS 32% for 2.6s. Every 3rd shot STUNS 0.72s and blocks regeneration plus checkpoint healing for 3s."},

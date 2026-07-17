@@ -71,7 +71,7 @@ function parseMech(id: string, def: any): Mech {
   if (mm) multi = parseInt(mm[1]) || wordN[mm[1].toUpperCase()] || 0;
   if (/SIX-bolt volley/i.test(a)) multi = 6;
   if (/six-target/i.test(a)) multi = 6;
-  if (/TWIN (?:ARTILLERY|SIEGE)/i.test(a)) multi = 2;
+  if (/TWIN (?:ARTILLERY|SIEGE|JAVELINS)/i.test(a)) multi = 2;
   if (/TRIPLE BOLT/i.test(a)) multi = 3;
   const pierce = num(/[Pp]ierces (\d+) targets/);
   if (pierce) multi = Math.max(multi, pierce);

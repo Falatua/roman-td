@@ -265,6 +265,23 @@ describe('Tower effective stats', () => {
     expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(235.0);
   });
 
+  it('moves select high-tier bolt and javelin combos into the physical ranged role', () => {
+    for (const type of [
+      TowerType.HANNIBALS_NIGHTMARE,
+      TowerType.CARTHAGE_SCOURGE,
+      TowerType.PRAETORIAN_FLEET
+    ]) {
+      expect((towersData as any)[type].damageType).toBe('PHYS_RANGED');
+      expect(createTower(type, 5, 0, 0, 0).damageType).toBe(DamageType.PHYS_RANGED);
+    }
+
+    expect(getTowerProjectileProfile(TowerType.CARTHAGE_SCOURGE)?.splash).toBeCloseTo(0.5, 5);
+    expect(getTowerProjectileProfile(TowerType.PRAETORIAN_FLEET)?.splash).toBeCloseTo(1.1, 5);
+    expect((towersData as any)[TowerType.SIEGE_ONAGER].damageType).toBe('SIEGE');
+    expect((towersData as any)[TowerType.VULCAN_COLOSSUS].damageType).toBe('SIEGE');
+    expect((towersData as any)[TowerType.INFERNAL_COLOSSUS].damageType).toBe('SIEGE');
+  });
+
   it('gives the strengthened standalone combos distinct combat payoffs', () => {
     const beastlordDef = (towersData as any).BEASTLORD_CHAMPION;
     const reaverDef = (towersData as any).MIRMILLO_REAVER;
