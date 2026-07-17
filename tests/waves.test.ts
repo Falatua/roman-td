@@ -19,6 +19,7 @@ import waypointsData from '../src/data/waypoints.json';
 import { GRID, WATER_ZONE, WAVE } from '../src/constants';
 import { ELEPHANT_SPAWN_GAP_SECONDS } from '../src/systems/ElephantPacing';
 import { createBossRuntime, tickBossScripts } from '../src/systems/BossScripts';
+import { isCommanderEnemy, isEliteEnemy } from '../src/systems/EnemyClassification';
 
 function bootstrapState() {
   const s = createGameState();
@@ -330,6 +331,36 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
       expect(strongestBoss, `W${wave.wave} should have a scheduled boss`).toBeGreaterThan(0);
       if (strongestNonBoss > 0) {
         expect(strongestBoss, `W${wave.wave} boss should not be easier to kill than the strongest non-boss enemy`).toBeGreaterThan(strongestNonBoss);
+      }
+    }
+  });
+
+  it('keeps authored enemy role hierarchy readable: base below commanders below bosses', () => {
+    for (const wave of wavesData as any[]) {
+      let strongestBase = 0;
+      let strongestCommander = 0;
+      let strongestBoss = 0;
+      let strongestNonBoss = 0;
+      for (const spawn of wave.spawns ?? []) {
+        const def: any = (enemiesData as any)[spawn.type];
+        if (!def) continue;
+        const hp = previewSpawnHp(def, wave.wave, wave.type, wave.hpMult, true);
+        if (def.isBoss) {
+          strongestBoss = Math.max(strongestBoss, hp);
+        } else {
+          strongestNonBoss = Math.max(strongestNonBoss, hp);
+          if (isCommanderEnemy(spawn.type)) {
+            strongestCommander = Math.max(strongestCommander, hp);
+          } else if (!isEliteEnemy(spawn.type) && def.isElite !== true) {
+            strongestBase = Math.max(strongestBase, hp);
+          }
+        }
+      }
+      if (strongestCommander > 0 && strongestBase > 0) {
+        expect(strongestCommander, `W${wave.wave} commanders should be tougher than ordinary base enemies`).toBeGreaterThan(strongestBase);
+      }
+      if (strongestBoss > 0 && strongestNonBoss > 0) {
+        expect(strongestBoss, `W${wave.wave} bosses should be tougher than every non-boss escort`).toBeGreaterThan(strongestNonBoss);
       }
     }
   });

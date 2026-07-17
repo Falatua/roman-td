@@ -500,7 +500,8 @@
     "immuneFire": true,
     "spriteSheet": 6,
     "spriteCell": 7,
-    "outOfCombatRegen": 0.028
+    "outOfCombatRegen": 0.028,
+    "campaignHpScaleByWave": { "30": 3.04 }
   },
   "ARCHITECTUS": {
     "nullifyAuraRadiusTiles": 2,
@@ -534,7 +535,8 @@
     "siegeImmune": true,
     "phaseHits": 2,
     "allAttackBlockChance": 0.2,
-    "outOfCombatRegen": 0.042
+    "outOfCombatRegen": 0.042,
+    "campaignHpScaleByWave": { "30": 0.01 }
   },
   "HELL_GATE": {
     "name": "Hell Gate",
@@ -700,7 +702,8 @@
     "rangedImmune": true,
     "siegeImmune": true,
     "outOfCombatRegen": 0.04,
-    "reanimateAs": "MUMMY_WARRIOR"
+    "reanimateAs": "MUMMY_WARRIOR",
+    "campaignHpScaleByWave": { "18": 0.90 }
   },
   "SPHINX": {
     "name": "Sphinx",
@@ -841,7 +844,8 @@
     "outOfCombatRegen": 0.025,
     "renderScale": 0.9,
     "divineImmune": true,
-    "rangedImmune": true
+    "rangedImmune": true,
+    "campaignHpScaleByWave": { "17": 0.94, "21": 0.90 }
   },
   "BOSS_FLYER_VULTURE": {
     "name": "Vulture Imperator",
@@ -1139,7 +1143,8 @@
     "isElite": true,
     "bigGlow": true,
     "renderScale": 1.25,
-    "outOfCombatRegen": 0.015
+    "outOfCombatRegen": 0.015,
+    "campaignHpScaleByWave": { "17": 1.35 }
   },
   "PATHFINDER_COMMANDER": {
     "name": "Commander: Pathfinder",
@@ -1151,7 +1156,8 @@
     "livesCost": 5,
     "isElite": true,
     "dodgeChance": 0.2,
-    "renderScale": 1.15
+    "renderScale": 1.15,
+    "campaignHpScaleByWave": { "21": 2.50 }
   },
   "ANUBIS_PRIEST_COMMANDER": {
     "nullifyAuraRadiusTiles": 2,
@@ -1250,6 +1256,7 @@
     "renderScale": 1.28,
     "immuneFire": true,
     "immuneHellfire": true,
+    "campaignHpScaleByWave": { "8": 1.35 },
     "immuneSlow": true,
     "outOfCombatRegen": 0.012
   },
