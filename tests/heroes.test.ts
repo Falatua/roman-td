@@ -34,7 +34,7 @@ import { createGameState, GameStateShape } from '../src/GameState';
 import { DamageType, Enemy, EnemyFaction, EnemyType, GamePhase, StatusEffectKind, TowerType } from '../src/types';
 import { toRemoteRow } from '../src/services/SupabaseLeaderboard';
 import { previewSpawnHp, startWave } from '../src/systems/WaveManager';
-import { buildMercatorChampionOffers, buildMercatorTowerOffers, CHAMPION_PRICE, CHAMPION_TYPES, MERCATOR_TOWER_OFFER_COUNT } from '../src/systems/MerchantSystem';
+import { buildGateShop, buildMercatorChampionOffers, buildMercatorTowerOffers, CHAMPION_PRICE, CHAMPION_TYPES, MERCATOR_TOWER_OFFER_COUNT, removeMercatorPlaceableOfferForVisit, removeShopOfferForVisit } from '../src/systems/MerchantSystem';
 import { championForHero, heroIdForTowerType } from '../src/systems/HeroIdentity';
 import { heroAuraScaleForTier, heroAuraScaleForTower, heroTierForTower } from '../src/systems/HeroScaling';
 import HERO_DEFS from '../src/data/herodefs.json';
@@ -341,6 +341,66 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     expect(offers).toHaveLength(MERCATOR_TOWER_OFFER_COUNT);
     expect(MERCATOR_TOWER_OFFER_COUNT).toBe(12);
     expect(offers.every(o => o.tier === 5)).toBe(true);
+  });
+
+  it('removes bought Gate Shop item offers from the current rotation only', () => {
+    const shop = buildGateShop(4);
+    const bought = shop.offers[0];
+    expect(bought).toBeTruthy();
+    const originalIds = shop.offers.map(o => o.itemId);
+
+    removeShopOfferForVisit(shop, bought);
+
+    expect(shop.offers.map(o => o.itemId)).not.toContain(bought.itemId);
+    expect(shop.offers).toHaveLength(originalIds.length - 1);
+    const laterShop = buildGateShop(8);
+    expect(laterShop.offers.some(o => originalIds.includes(o.itemId))).toBe(true);
+  });
+
+  it('removes bought Mercator T5 tower offers from the current visit snapshot without future-banning them', () => {
+    const state = createGameState();
+    const towerOffers = buildMercatorTowerOffers(23, 6, { fullLegionRoster: true });
+    const bought = towerOffers[0];
+    const shop = {
+      type: 'MERCATOR' as const,
+      offers: [],
+      livesPrice: 83,
+      livesMaxThisVisit: 3,
+      livesBoughtThisVisit: 0,
+      championOffers: [],
+      towerOffers: towerOffers.slice(),
+      gambleSpinsThisVisit: 0,
+      gambleWinsThisVisit: []
+    };
+    state.mercatorTowerOffers = towerOffers.slice();
+
+    removeMercatorPlaceableOfferForVisit(shop, state, bought, 'mercator');
+
+    expect(shop.towerOffers?.map(o => o.type)).not.toContain(bought.type);
+    expect(state.mercatorTowerOffers?.map(o => o.type)).not.toContain(bought.type);
+    expect(state.mercatorPurchasedChampionTypes ?? []).not.toContain(bought.type);
+  });
+
+  it('removes bought Mercator Champion offers from the current visit', () => {
+    const state = createGameState();
+    const championOffers = buildMercatorChampionOffers({ activeHeroId: null });
+    const bought = championOffers[0];
+    const shop = {
+      type: 'MERCATOR' as const,
+      offers: [],
+      livesPrice: 83,
+      livesMaxThisVisit: 3,
+      livesBoughtThisVisit: 0,
+      championOffers: championOffers.slice(),
+      towerOffers: [],
+      gambleSpinsThisVisit: 0,
+      gambleWinsThisVisit: []
+    };
+
+    removeMercatorPlaceableOfferForVisit(shop, state, bought, 'hero');
+
+    expect(shop.championOffers?.map(o => o.type)).not.toContain(bought.type);
+    expect(state.mercatorTowerOffers).toBeUndefined();
   });
 
   it('every Mercator Champion resolves to a full hero kit for shop details', () => {

@@ -1,4 +1,4 @@
-import { ShopState, FORTUNA_APEX_BLOCKLIST, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds } from '../systems/MerchantSystem';
+import { ShopState, FORTUNA_APEX_BLOCKLIST, FORTUNA_GAMBLE_COST, FORTUNA_GAMBLE_POOL, rollFortunaCombo, getFortunaTierOdds, removeMercatorPlaceableOfferForVisit, removeShopOfferForVisit } from '../systems/MerchantSystem';
 import { TRAP_DEFS, TRAP_IDS, armTrapFromInventory, buyTraps, canDeployTraps, trapPrice } from '../systems/TrapSystem';
 import { TRAP_PURCHASE_CAP_PER_TYPE, trapPurchasesRemaining, trapsPurchasedByType } from '../systems/TrapInventorySystem';
 import { RAMPART_COST, RAMPART_MAX_PER_RUN, RAMPART_ORIENT_LABEL, armRampartFromInventory, buyRampart, rampartsOwned, rampartsRemainingThisRun } from '../systems/RampartSystem';
@@ -731,11 +731,7 @@ function renderMercatorShop(
         : `${verb} ${towerName(String(offer.type))}. Click an empty tile to place it.`;
       playPurchaseConfirm();
       SFX.itemPickup(isChampion ? 'LEGENDARY' : tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
-      if (isChampion) {
-        shop.championOffers = (shop.championOffers ?? []).filter(o => o !== offer);
-      } else {
-        shop.towerOffers = (shop.towerOffers ?? []).filter(o => o !== offer);
-      }
+      removeMercatorPlaceableOfferForVisit(shop, state, offer, purchaseKind);
       refresh();
     };
     card.appendChild(buy);
@@ -846,7 +842,7 @@ function renderMercatorShop(
         state.hint = `Bought ${def?.name ?? offer.itemId}.`;
         playPurchaseConfirm();
         SFX.itemPickup(offer.rarity);
-        shop.offers = shop.offers.filter(o => o !== offer);
+        removeShopOfferForVisit(shop, offer);
         refresh();
       };
       // Attach the BUY button to the bottom row by replacing the placeholder.
@@ -1187,7 +1183,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
       // extra-fanfare branch in SFX.itemPickup.
       playPurchaseConfirm();
       SFX.itemPickup(offer.rarity);
-      shop.offers = shop.offers.filter(o => o !== offer);
+      removeShopOfferForVisit(shop, offer);
       refresh();
     };
     card.appendChild(buyBtn);
@@ -1292,11 +1288,9 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
         const tierToRarity = ['COMMON','UNCOMMON','RARE','LEGENDARY','UNIQUE'];
         playPurchaseConfirm();
         SFX.itemPickup(tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
-        // Mercator Champions are one recruit per run. Remove the bought
-        // offer immediately; restockMercator also excludes it forever after.
-        if (shop.towerOffers) {
-          shop.towerOffers = shop.towerOffers.filter(o => o !== offer);
-        }
+        // Remove this T5 tower from the current Mercator visit. Future visits
+        // can still roll it again through normal RNG.
+        removeMercatorPlaceableOfferForVisit(shop, state, offer, 'mercator');
         refresh();
       };
       card.appendChild(buy);

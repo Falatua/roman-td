@@ -5,6 +5,7 @@ import { championForHero } from './HeroIdentity';
 import { itemRandomSelectionWeight } from './ItemRules';
 import { maxQualityTierForTower } from './TowerSystem';
 import { ALL_LEGION_BASE_TOWER_TYPES } from './BaseTowerRoster';
+import type { GameStateShape } from '../GameState';
 
 export interface ShopOffer {
   itemId: ItemId;
@@ -167,6 +168,27 @@ export interface ShopState {
   // round. No cap — pure RNG, by design.
   gambleSpinsThisVisit?: number;
   gambleWinsThisVisit?: string[];
+}
+
+export function removeShopOfferForVisit(shop: ShopState, offer: ShopOffer): void {
+  shop.offers = shop.offers.filter(o => o !== offer);
+}
+
+export function removeMercatorPlaceableOfferForVisit(
+  shop: ShopState,
+  state: GameStateShape,
+  offer: MercatorTowerOffer,
+  purchaseKind: 'hero' | 'mercator'
+): void {
+  if (purchaseKind === 'hero') {
+    shop.championOffers = (shop.championOffers ?? []).filter(o => o !== offer);
+    return;
+  }
+  shop.towerOffers = (shop.towerOffers ?? []).filter(o => o !== offer);
+  // Keep the visit snapshot in sync with the visible shelf. This removes the
+  // bought tower for the current Mercator stop without banning it from future
+  // RNG visits.
+  state.mercatorTowerOffers = (state.mercatorTowerOffers ?? []).filter(o => o !== offer);
 }
 
 // Mercator tower offerings (2026-05): Mercator now ONLY stocks T5 base towers
