@@ -1210,11 +1210,8 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(towerItemSlotCap(cohort)).toBe(4);
     expect(cohort.builtFrom).toContain(TowerType.COHORT_GUARD);
     // The awakening is now a specialist, not a general-purpose early carry.
-    // Its neutral sheet DPS only needs to improve meaningfully over Cohort
-    // Guard; the giant-only combat multiplier supplies the legendary payoff.
-    // The source Cohort Guard was strengthened in the 2026-07-13 combo pass.
-    // Keep the awakened form's neutral damage restrained while its 9x giant
-    // specialization remains the reason to spend Giant's Bane.
+    // Its neutral sheet DPS improves meaningfully over Cohort Guard; the
+    // giant-only combat multiplier supplies the premium legendary payoff.
     expect(towerEffectiveStats(cohort).dps).toBeGreaterThan(cohortBefore.dps * 1.8);
   });
 
@@ -1313,6 +1310,7 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(giantKillerDps).toBeGreaterThan(militesBefore * 11);
     expect(giantsCohortDps).toBeGreaterThan(cohortBefore * 1.8);
     expect(giantsCohortDps * GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT).toBeGreaterThan(cohortBefore * 16);
+    expect(giantsCohortDps * GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT).toBeGreaterThan(giantKillerDps * GIANT_KILLER_GIANT_DAMAGE_MULT);
     expect(kingBattlefieldDps).toBeGreaterThan(murmilloBefore * 4.0);
     expect(kingBattlefieldDps).toBeGreaterThan(giantsCohortDps);
     expect(kingBattlefieldDps).toBeLessThan(giantsCohortDps * GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT);
@@ -1531,12 +1529,15 @@ describe('Giant Killer transformation and combat wiring', () => {
       randomSpy.mockRestore();
     }
 
-    expect(GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT).toBe(9);
+    expect(GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT).toBe(12);
+    expect((towersData as any)[TowerType.GIANTS_COHORT_GUARD].baseDps).toBe(220);
+    expect((towersData as any)[TowerType.GIANTS_COHORT_GUARD].ability).toContain('outscaling Giant Killer');
     expect(normal.loss).toBeGreaterThan(0);
     expect(boss.loss).toBeCloseTo(normal.loss, 5);
-    // SEA_GIANT resists physical melee, so the authored 9x prey bonus
-    // resolves to roughly 3.8x actual damage after target resistances.
-    expect(giant.loss).toBeGreaterThan(normal.loss * 3.5);
+    // SEA_GIANT resists physical melee, so the authored 12x prey bonus
+    // resolves lower after target resistances but still reads as the premium
+    // anti-giant transform.
+    expect(giant.loss).toBeGreaterThan(normal.loss * 4.8);
     expect(normal.target.statusEffects.some(s => s.kind === StatusEffectKind.SLOW)).toBe(false);
     expect(boss.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK)).toBe(false);
     expect(giant.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.24)).toBe(true);

@@ -652,7 +652,7 @@ function applyDamnatioExecution(t: Tower, target: Enemy, tick: number): void {
 
 export const STORMCALLER_OCEAN_THREAT_DAMAGE_MULT = 2.0;
 
-export const GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT = 9.0;
+export const GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT = 12.0;
 export const UNDEAD_GLADIATOR_KING_SUMMON_COUNT = 3;
 export const UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL = 10.0;
 export const UNDEAD_GLADIATOR_KING_SUMMON_TTL = 20.0;
