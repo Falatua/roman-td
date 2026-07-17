@@ -516,9 +516,10 @@ describe('Recipe combo detection', () => {
     const bestiarius = (towersData as any)[TowerType.BESTIARIUS];
     expect(bestiarius.kind).toBe('COMBO');
     expect(bestiarius.tierBand).toBe(4);
-    expect(bestiarius.baseDps).toBe(105.0);
-    expect(bestiarius.attackSpeed).toBe(2.75);
-    expect(bestiarius.ability).toContain('rapid polearm strikes at 2.75/s');
+    expect(bestiarius.baseDps).toBe(135.0);
+    expect(bestiarius.attackSpeed).toBe(3.0);
+    expect(bestiarius.ability).toContain('VENATIO ARENA');
+    expect(bestiarius.ability).toContain('TROPHY STRIKE');
   });
 
   it('keeps the requested combo-strength pass on its authored stat line', () => {

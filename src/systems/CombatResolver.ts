@@ -403,6 +403,12 @@ export const BEASTLORD_BEAST_DAMAGE_MULT = 1.75;
 export const BEASTLORD_ELEPHANT_DAMAGE_MULT = 2.25;
 export const MURMILLO_BEAST_DAMAGE_MULT = 1.50;
 export const MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT = 1.25;
+export const BESTIARIUS_TROPHY_STACKS = 6;
+export const BESTIARIUS_NET_STACKS = 3;
+export const BESTIARIUS_TROPHY_MULT = 4.0;
+export const BESTIARIUS_PREY_TROPHY_MULT = 6.0;
+export const BESTIARIUS_TROPHY_SPLASH_MULT = 0.55;
+export const BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES = 1.65;
 
 export function undeadGeneralPreyDamageMult(target: Pick<Enemy, 'type'>): number {
   if (target.type === EnemyType.WAR_ELEPHANT || target.type === EnemyType.UNDEAD_WAR_ELEPHANT) {
@@ -426,6 +432,10 @@ export function murmilloReaverPressureDamageMult(target: Pick<Enemy, 'statusEffe
   return target.statusEffects.some(s => s.kind === StatusEffectKind.BLEED && s.remaining > 0)
     ? MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT
     : 1;
+}
+
+function isBestiariusPrey(target: Pick<Enemy, 'type' | 'isBoss'>): boolean {
+  return !!target.isBoss || isCommanderType((target as any).type) || !!(target as any).isCommander || isBeastEnemyType(target.type);
 }
 
 // Tower types that fight in melee (no projectile, instant damage with slash VFX).
@@ -469,8 +479,8 @@ const MELEE_TYPES = new Set<TowerType>([
   // every melee gating (isMeleeRange, isMelee in pickTarget, isMeleeRow
   // in tickCombat) read false. It fell into the ranged else-branch with
   // no PROJ_FOR_TOWER entry — spawned no projectile, applied no damage,
-  // never reached the fury gauge code. Adding it here flips on the
-  // entire melee swing path including the FRENZY/STUN logic.
+  // never reached its hunt-momentum code. Adding it here flips on the
+  // entire melee swing path including NET and TROPHY STRIKE logic.
   TowerType.BESTIARIUS,
   // 2026-05-17 — MURMILLO (T4 mid-game combo). Roman heavy gladiator
   // with scutum + gladius; Punic Hunter damage bonus + Scutum Bash stun-
@@ -1425,15 +1435,13 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       continue;
     }
     t.attackCooldown -= dt;
-    // 2026-05-15 BESTIARIUS BEAST FURY decay: if the Bestiarius has been
-    // sitting idle (no hit) for >4 s, reset its accumulated rage so the
-    // FRENZY payoff has to be earned in a fresh streak. Same idea as
-    // Triumphator's NOVA counter, scoped to one target+tower pair.
+    // BESTIARIUS VENATIO decay: if the Bestiarius has been sitting idle
+    // for >4 s, reset its hunt momentum so the Trophy Strike still has to
+    // be earned in live combat instead of pre-charged between trickles.
     if (t.type === TowerType.BESTIARIUS) {
       const lastHit = (t as any).__furyLastHitTick;
       if (typeof lastHit === 'number' && state.tick - lastHit > 4) {
         (t as any).__furyStacks = 0;
-        (t as any).__furyTarget = undefined;
       }
     }
     // 2026-05-15 DRACONARIUS PROXIMITY BURN: the dragon-banner unit is
@@ -2131,34 +2139,35 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         // hit while the shield is still up — the bash that breaks it.
         const shieldedTarget = requiresMeleeBreak(target.type) && !target.shieldBroken;
         if (shieldedTarget) damage *= 1.50;
-        // ─── BESTIARIUS BEAST FURY (2026-05-15) ────────────────────────
-        // Per-target rage gauge. Each consecutive hit on the SAME enemy
-        // adds 1 stack (or 2 on a boss); at 8 stacks the next strike
-        // becomes a FRENZY: 6× damage + 1s STUN (8× damage on bosses).
-        // Stacks reset when the target dies, when the Bestiarius
-        // re-targets, or 4s of no-hit decay. State stored on the tower
-        // as __furyTarget (id) + __furyStacks (0-8) so it survives across
-        // tick frames without leaking onto unrelated enemies.
-        let bestiariusFrenzyStun = false;
+        // ─── BESTIARIUS VENATIO (2026-07-17) ───────────────────────────
+        // Hunt momentum is tower-wide instead of locked to one enemy, so
+        // target swaps no longer waste the mechanic. Hit 3 throws a net
+        // (slow + mark); hit 6 becomes a Trophy Strike. Beasts,
+        // commanders, and bosses are prized prey: they build 2 momentum
+        // and take the stronger Trophy multiplier.
+        let bestiariusNetStrike = false;
+        let bestiariusTrophyStrike = false;
         if (t.type === TowerType.BESTIARIUS && !phasedThisHit && damage > 0) {
-          const ft = (t as any).__furyTarget as string | undefined;
-          const cur = (t as any).__furyStacks ?? 0;
-          let stacks = (ft === target.id) ? cur : 0;
-          const stackGain = target.isBoss ? 2 : 1;
-          stacks = Math.min(8, stacks + stackGain);
-          if (stacks >= 8) {
-            // FRENZY STRIKE — payoff hit, then reset.
-            const frenzyMult = target.isBoss ? 8.0 : 6.0;
-            damage *= frenzyMult;
-            bestiariusFrenzyStun = true;
-            stacks = 0;
-            // Visual punch — extra gold impact ring so the player sees
-            // the burst land. Reuses the existing tower-render shake
-            // path via attackFlash, no new VFX wiring needed.
-            const r: any = globalRef?.__renderer;
-            if (r?.triggerImpactRing) r.triggerImpactRing(target.x, target.y, state.tick, 40, 0xffd34d);
+          const cur = Math.max(0, (t as any).__furyStacks ?? 0);
+          const prizedPrey = isBestiariusPrey(target);
+          let stacks = Math.min(BESTIARIUS_TROPHY_STACKS, cur + (prizedPrey ? 2 : 1));
+          bestiariusNetStrike = cur < BESTIARIUS_NET_STACKS && stacks >= BESTIARIUS_NET_STACKS;
+          bestiariusTrophyStrike = stacks >= BESTIARIUS_TROPHY_STACKS;
+
+          if (bestiariusNetStrike) {
+            pushStatus(target, StatusEffectKind.SLOW, 2.6, 0.45, t.qualityTier);
+            pushStatus(target, StatusEffectKind.MARK, 3.5, prizedPrey ? 0.28 : 0.18, t.qualityTier);
           }
-          (t as any).__furyTarget = target.id;
+          if (bestiariusTrophyStrike) {
+            damage *= prizedPrey ? BESTIARIUS_PREY_TROPHY_MULT : BESTIARIUS_TROPHY_MULT;
+            pushStatus(target, StatusEffectKind.ARMOR_SHRED, 3.0, 0, t.qualityTier);
+            if (!target.isBoss) pushStatus(target, StatusEffectKind.STUN, 0.55, 0, t.qualityTier);
+            stacks = 0;
+            // Visual punch — gold impact ring so the player sees the
+            // trophy hit land. Reuses the existing renderer hook.
+            const r: any = globalRef?.__renderer;
+            if (r?.triggerImpactRing) r.triggerImpactRing(target.x, target.y, state.tick, 44, 0xffd34d);
+          }
           (t as any).__furyStacks = stacks;
           (t as any).__furyLastHitTick = state.tick;
         }
@@ -2190,15 +2199,6 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           // mount it; the damageType guard below is a defense-in-depth
           // belt to match the player-facing copy "MELEE ONLY").
           applyDamnatioExecution(t, target, state.tick);
-          // Apply the 1s STUN from a frenzy strike, after damage so kill
-          // detection still fires on the same hit (a stunned-but-dead
-          // enemy still counts as killed). Route through pushStatus so
-          // boss-stun immunity, DR, and statusEffectiveness work
-          // uniformly — direct array.push would bypass all of that.
-          // Bosses are stun-immune by design (see pushStatus internals).
-          if (bestiariusFrenzyStun && target.hp > 0) {
-            pushStatus(target, StatusEffectKind.STUN, 1.0, 0, t.qualityTier);
-          }
         }
         // Melee always breaks shielded units' guard so ranged can take over.
         if (requiresMeleeBreak(target.type) && !target.shieldBroken) {
@@ -2219,6 +2219,25 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           fireJupitersWrathChain(state, t, target, damage, hooks, resMod);
         }
         if (target.hp <= 0 && !checkRebirth(state, target, state.tick)) hooks.onKill(t, target);
+        // Trophy Roar: the payoff strike splashes a compact burst into
+        // nearby enemies and briefly sets them up for the rest of the
+        // defense. Uses the final dealt damage so all live modifiers are
+        // represented, but at a tight radius and 55% transfer.
+        if (bestiariusTrophyStrike && damage > 0) {
+          const splashRadius = BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES * GRID.TILE;
+          const splashDamage = damage * BESTIARIUS_TROPHY_SPLASH_MULT;
+          for (const e of state.enemies.values()) {
+            if (e.id === target.id || e.hp <= 0) continue;
+            if (Math.hypot(e.x - target.x, e.y - target.y) > splashRadius) continue;
+            e.hp -= splashDamage;
+            e.hpFlashTimer = 0.16;
+            e.lastDamagedTick = state.tick;
+            pushStatus(e, StatusEffectKind.SLOW, 2.2, 0.40, t.qualityTier);
+            pushStatus(e, StatusEffectKind.MARK, 3.0, 0.16, t.qualityTier);
+            hooks.onHit(t, e, splashDamage, resMod, false);
+            if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
+          }
+        }
         // TRIUMPHATOR — every 5th hit, radial NOVA: 4× damage to everything in 2.5 tiles.
         if (t.type === TowerType.TRIUMPHATOR) {
           const hc = (t as any).__hitCount ?? 0;

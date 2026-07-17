@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -332,6 +332,59 @@ describe('Tower effective stats', () => {
     const plague = createTower(TowerType.PLAGUE_LOBBER, 3, 2, 2, 1);
     applyDamageAndStatus(state, plague, plagueTarget, 1, noopCombatHooks());
     expect(plagueTarget.statusEffects.some(s => s.kind === StatusEffectKind.POISON && s.magnitude === 0.05)).toBe(true);
+  });
+
+  it('turns Bestiarius hunt momentum into nets, trophy strikes, and splash setup', () => {
+    const strike = (startingMomentum: number, targetType: EnemyType, sideTarget = false) => {
+      const state = createGameState();
+      state.tick = 1;
+      const tower = createTower(TowerType.BESTIARIUS, 4, 5, 5, 0);
+      tower.attackCooldown = 0;
+      (tower as any).__furyStacks = startingMomentum;
+      state.towers.set(tower.id, tower);
+      const center = towerCenter(tower);
+      const target = testEnemy(`bestiarius-${startingMomentum}`, center.x + GRID.TILE, center.y);
+      target.type = targetType;
+      target.hp = 100000;
+      target.maxHp = 100000;
+      state.enemies.set(target.id, target);
+      const splash = testEnemy('bestiarius-splash', target.x + GRID.TILE * 0.4, target.y);
+      splash.type = EnemyType.CELTIC_FOOTMAN;
+      splash.hp = 100000;
+      splash.maxHp = 100000;
+      if (sideTarget) state.enemies.set(splash.id, splash);
+
+      const before = target.hp;
+      const splashBefore = splash.hp;
+      tickCombat(state, 0.016, noopCombatHooks());
+      return {
+        tower,
+        target,
+        splash,
+        primaryDamage: before - target.hp,
+        splashDamage: splashBefore - splash.hp
+      };
+    };
+
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    try {
+      const net = strike(BESTIARIUS_NET_STACKS - 1, EnemyType.CELTIC_FOOTMAN);
+      expect((net.tower as any).__furyStacks).toBe(BESTIARIUS_NET_STACKS);
+      expect(net.target.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.45)).toBe(true);
+      expect(net.target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.18)).toBe(true);
+
+      const ordinaryHit = strike(0, EnemyType.WAR_ELEPHANT);
+      const trophy = strike(BESTIARIUS_TROPHY_STACKS - 2, EnemyType.WAR_ELEPHANT, true);
+      expect((trophy.tower as any).__furyStacks).toBe(0);
+      expect(trophy.primaryDamage / ordinaryHit.primaryDamage).toBeCloseTo(BESTIARIUS_PREY_TROPHY_MULT, 4);
+      expect(trophy.target.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+      expect(trophy.target.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
+      expect(trophy.splashDamage / trophy.primaryDamage).toBeCloseTo(BESTIARIUS_TROPHY_SPLASH_MULT, 4);
+      expect(trophy.splash.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.40)).toBe(true);
+      expect(trophy.splash.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.16)).toBe(true);
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
   it('applies the Murmillo beast bonus through live combat and preserves Reaver bleed pressure', () => {

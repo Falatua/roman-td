@@ -971,13 +971,13 @@
   "BESTIARIUS": {
     "name": "Bestiarius",
     "damageType": "PHYS_MELEE",
-    "baseDps": 105.0,
-    "attackSpeed": 2.75,
+    "baseDps": 135.0,
+    "attackSpeed": 3.0,
     "range": 2.0,
     "kind": "COMBO",
     "melee": true,
     "tierBand": 4,
-    "ability": "BEAST FURY (fast gauge): rapid polearm strikes at 2.75/s. Each consecutive attack on the SAME target builds 1 fury stack (max 8). At 8, the strike becomes a FRENZY: 6× damage + 1.2s STUN, then the gauge resets. Against Bosses, the gauge fills 2× faster and FRENZY rises to 8×. Polearm reach 2.0. No aura; this is sustained stack-payoff damage.",
+    "ability": "VENATIO ARENA: rapid polearm strikes at 3.0/s build hunt momentum. At 3 momentum he throws a NET: 45% SLOW + MARK. At 6 momentum he lands a TROPHY STRIKE: 4× damage, ARMOR SHRED, brief STUN, and a 1.65-tile Trophy Roar splash for 55% damage. Beasts, Commanders, and Bosses count as prized prey: they build 2 momentum per hit, receive the stronger 6× Trophy Strike, and take the heavier NET MARK. Bosses ignore the stun but still take the damage, mark, shred, and splash payoff. Polearm reach 2.0.",
     "critChance": 0.18,
     "critMult": 2.2
   },

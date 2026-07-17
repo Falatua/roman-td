@@ -187,8 +187,8 @@ export enum TowerType {
   // designs. Both are intentionally boss-strong.
   //   • SIGNIFERS_DRACONARIUS — first tower with a CONE-shape attack
   //     (60° forward arc) + stacking DRAGON MARK debuff on hit.
-  //   • BESTIARIUS — first tower with a RAGE GAUGE that builds per-hit
-  //     and unleashes a high-multiplier FRENZY STRIKE + stun.
+  //   • BESTIARIUS — arena hunter that builds hunt momentum into NET
+  //     control and a high-multiplier TROPHY STRIKE splash payoff.
   SIGNIFERS_DRACONARIUS = 'SIGNIFERS_DRACONARIUS',
   BESTIARIUS = 'BESTIARIUS',
   // 2026-05-17 — two early-game beast-hunter towers (T1 + T2). Specialize
