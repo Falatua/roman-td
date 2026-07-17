@@ -556,7 +556,7 @@ describe('Recipe combo detection', () => {
       else if (isSuperComboRecipeResult(recipe.result)) seen.super++;
       else seen.base++;
     }
-    expect(seen).toEqual({ base: 42, super: 22, omega: 2 });
+    expect(seen).toEqual({ base: 42, super: 22, omega: 4 });
   });
 
   it('charges the full 200g when Hannibal\'s Nightmare is actually created', () => {
@@ -623,14 +623,20 @@ describe('Recipe combo detection', () => {
     }
   });
 
-  it('adds Roman Transformer as the first Omega combo from Hannibal and Caesar', () => {
-    const recipe = comboData.find((r: any) => r.result === 'ROMAN_TRANSFORMER') as any;
-    expect(recipe).toBeTruthy();
-    expect(recipe.tier).toBe(5);
-    expect(recipe.cost).toBe(OMEGA_COMBO_RECIPE_COST);
-    expect(recipe.ingredients).toEqual([
+  it('adds Roman Transformer Omega routes from rival-slayer and imperial-law Super Combos', () => {
+    const recipes = (comboData as any[]).filter(r => r.result === 'ROMAN_TRANSFORMER');
+    expect(recipes).toHaveLength(2);
+    for (const recipe of recipes) {
+      expect(recipe.tier).toBe(5);
+      expect(recipe.cost).toBe(OMEGA_COMBO_RECIPE_COST);
+    }
+    expect(recipes.map(recipe => recipe.ingredients)).toContainEqual([
       { type: 'HANNIBALS_NIGHTMARE', minTier: 5 },
       { type: 'JULIUS_CAESAR', minTier: 5 }
+    ]);
+    expect(recipes.map(recipe => recipe.ingredients)).toContainEqual([
+      { type: 'IMPERIUM_ETERNUM', minTier: 5 },
+      { type: 'CONSULAR_FATEBINDER', minTier: 5 }
     ]);
 
     const def = (towersData as any)[TowerType.ROMAN_TRANSFORMER];
@@ -640,16 +646,23 @@ describe('Recipe combo detection', () => {
     expect(def?.melee).toBe(true);
     expect(def?.range).toBe(6.0);
     expect(def?.ability).toContain('OMEGA COMBO');
+    expect(def?.ability).toContain('Imperium Eternum + Consular Fatebinder');
   });
 
-  it('adds Neptune\'s Leviathan as a water-only Harbor Omega combo', () => {
-    const recipe = comboData.find((r: any) => r.result === 'NEPTUNES_LEVIATHAN') as any;
-    expect(recipe).toBeTruthy();
-    expect(recipe.tier).toBe(5);
-    expect(recipe.cost).toBe(OMEGA_COMBO_RECIPE_COST);
-    expect(recipe.ingredients).toEqual([
+  it('adds Neptune\'s Leviathan Omega routes from abyssal and storm-priesthood Super Combos', () => {
+    const recipes = (comboData as any[]).filter(r => r.result === 'NEPTUNES_LEVIATHAN');
+    expect(recipes).toHaveLength(2);
+    for (const recipe of recipes) {
+      expect(recipe.tier).toBe(5);
+      expect(recipe.cost).toBe(OMEGA_COMBO_RECIPE_COST);
+    }
+    expect(recipes.map(recipe => recipe.ingredients)).toContainEqual([
       { type: 'ABYSSAL_ONAGER', minTier: 5 },
       { type: 'HYDRA_BEAST_PIT', minTier: 5 }
+    ]);
+    expect(recipes.map(recipe => recipe.ingredients)).toContainEqual([
+      { type: 'STORM_VEXILLATION', minTier: 5 },
+      { type: 'PONTIFEX_MAXIMUS', minTier: 5 }
     ]);
 
     const def = (towersData as any)[TowerType.NEPTUNES_LEVIATHAN];
@@ -661,6 +674,34 @@ describe('Recipe combo detection', () => {
     expect(def?.range).toBe(2.5);
     expect(def?.baseDps).toBeGreaterThanOrEqual(1200);
     expect(def?.ability).toContain('WATER-ONLY OMEGA');
+    expect(def?.ability).toContain('Storm Vexilla + Pontifex');
+  });
+
+  it('keeps each new alternate Omega route built from Super Combo towers', () => {
+    const expectedAlternateRoutes = [
+      {
+        result: 'ROMAN_TRANSFORMER',
+        ingredients: ['IMPERIUM_ETERNUM', 'CONSULAR_FATEBINDER']
+      },
+      {
+        result: 'NEPTUNES_LEVIATHAN',
+        ingredients: ['STORM_VEXILLATION', 'PONTIFEX_MAXIMUS']
+      }
+    ];
+
+    for (const expected of expectedAlternateRoutes) {
+      const recipe = (comboData as any[]).find(candidate =>
+        candidate.result === expected.result &&
+        candidate.ingredients.map((ingredient: any) => ingredient.type).join('|') === expected.ingredients.join('|')
+      );
+      expect(recipe).toBeTruthy();
+      expect(recipe.tier).toBe(5);
+      expect(recipe.cost).toBe(OMEGA_COMBO_RECIPE_COST);
+      for (const ingredient of recipe.ingredients) {
+        expect(ingredient.minTier, `${recipe.result} ${ingredient.type}`).toBe(5);
+        expect(SUPER_COMBO_RECIPE_RESULTS.has(ingredient.type), `${ingredient.type} must be a Super Combo route into ${recipe.result}`).toBe(true);
+      }
+    }
   });
 
   it('ships transparent sprite assets for the new supercombo towers', () => {
