@@ -1161,10 +1161,9 @@
     "livesCost": 5,
     "isElite": true,
     "meleeImmune": true,
-    "dotImmune": true,
     "divineImmune": true,
     "immuneFire": true,
-    "immunePoison": true,
+    "immuneBleed": true,
     "renderScale": 1.2
   },
   "SIEGE_CAPTAIN_COMMANDER": {

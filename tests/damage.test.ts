@@ -318,7 +318,6 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     const dotImmuneTypes = [
       EnemyType.MONGOL_SHAMAN,
       EnemyType.ANUBIS_PRIEST,
-      EnemyType.ANUBIS_PRIEST_COMMANDER,
       EnemyType.DUNE_STALKER,
       EnemyType.STONE_JUGGERNAUT
     ];
@@ -339,6 +338,20 @@ describe('Enemy resistances — per-enemy multipliers', () => {
         `${type} should still have at least one direct-damage answer`
       ).toBe(true);
     }
+  });
+
+  it('lets poison damage hit the Anubis Priest commander while preserving its other warding', () => {
+    const type = EnemyType.ANUBIS_PRIEST_COMMANDER;
+    const def: any = (enemiesData as any)[type];
+    const enemy = makeEnemy(type, def.faction as EnemyFaction);
+    expect(def.dotImmune, `${type} should not carry broad DoT immunity`).not.toBe(true);
+    expect(def.immunePoison, `${type} should not hard-block poison`).not.toBe(true);
+    expect(statusEffectiveness(enemy, StatusEffectKind.POISON), `${type} poison should land`).toBeGreaterThan(0);
+    expect(resistanceSummary(type).some(row => row.label === 'Poison' && row.value === 0), `${type} poison summary`).toBe(false);
+    expect(statusEffectiveness(enemy, StatusEffectKind.BURN), `${type} burn remains blocked`).toBe(0);
+    expect(statusEffectiveness(enemy, StatusEffectKind.BLEED), `${type} bleed remains blocked`).toBe(0);
+    expect(enemyDamageMultiplier(enemy, DamageType.PHYS_MELEE), `${type} melee remains blocked`).toBe(0);
+    expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine remains blocked`).toBe(0);
   });
 
   it('gives selected post-W15 enemies true divine immunity with readable UI armor', () => {

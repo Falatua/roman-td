@@ -326,7 +326,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // boss-grade. Killing them should feel like solving the wave.
   [EnemyType.STANDARD_BEARER_COMMANDER]: { melee: 0.55, ranged: 0.5, slow: 0.35, burn: 0.75, poison: 0.65, bleed: 0.60, divine: 1.25 },
   [EnemyType.PATHFINDER_COMMANDER]:      { ranged: 0.65, slow: 0.25, burn: 0.90, poison: 0.75, bleed: 0.65 },
-  [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { melee: 0, ranged: 0.5, slow: 0.3, burn: 0, poison: 0, bleed: 0, divine: 0 },
+  [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { melee: 0, ranged: 0.5, slow: 0.3, burn: 0, poison: 0.75, bleed: 0, divine: 0 },
   [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0, burn: 0, poison: 1.15, bleed: 1.10, divine: 1.20 },
   [EnemyType.SKY_STANDARD_COMMANDER]:     { melee: 0.7, ranged: 0.55, slow: 0.35, siege: 1.2, burn: 0.8, poison: 0.65, bleed: 0.6, divine: 1.2 },
   [EnemyType.SKY_PATHFINDER_COMMANDER]:   { ranged: 0.7, slow: 0.3, siege: 0, burn: 0.85, poison: 0.75, bleed: 0.75 },

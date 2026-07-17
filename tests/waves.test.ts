@@ -197,7 +197,7 @@ describe('Late-wave DoT profile coverage', () => {
     }
   });
 
-  it('keeps damage-over-time immune threats present after the W16 bridge', () => {
+  it('keeps damage-over-time immune threats present after the W16 bridge except poison-vulnerable Anubis commander waves', () => {
     const dotImmuneTypes = new Set(
       Object.entries(enemiesData as any)
         .filter(([, def]: any) => def?.dotImmune === true)
@@ -206,6 +206,14 @@ describe('Late-wave DoT profile coverage', () => {
 
     for (const wave of (wavesData as any[]).filter(w => w.wave >= 17 && w.wave <= 30)) {
       const types = [...new Set((wave.spawns ?? []).map((spawn: any) => spawn.type))];
+      if (types.includes(EnemyType.ANUBIS_PRIEST_COMMANDER) && !types.some(type => dotImmuneTypes.has(type))) {
+        expect(types).toContain(EnemyType.ANUBIS_PRIEST_COMMANDER);
+        const profile = enemyResistanceProfile(EnemyType.ANUBIS_PRIEST_COMMANDER);
+        expect(profile.poison, `W${wave.wave} Anubis commander poison should land`).toBeGreaterThan(0);
+        expect(profile.burn, `W${wave.wave} Anubis commander burn remains blocked`).toBe(0);
+        expect(profile.bleed, `W${wave.wave} Anubis commander bleed remains blocked`).toBe(0);
+        continue;
+      }
       expect(
         types.some(type => dotImmuneTypes.has(type)),
         `W${wave.wave} should include at least one damage-over-time immune threat`
