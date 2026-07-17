@@ -140,7 +140,7 @@
         "minTier": 2
       },
       {
-        "type": "TRIARIUS",
+        "type": "ACCENSUS",
         "minTier": 2
       }
     ],
@@ -347,8 +347,8 @@
         "minTier": 3
       },
       {
-        "type": "EVOCATUS",
-        "minTier": 4
+        "type": "ACCENSUS",
+        "minTier": 3
       },
       {
         "type": "PRAEFECTUS",
@@ -529,7 +529,7 @@
         "minTier": 2
       },
       {
-        "type": "CENTURION",
+        "type": "ACCENSUS",
         "minTier": 2
       },
       {

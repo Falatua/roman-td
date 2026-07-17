@@ -170,6 +170,32 @@ describe('Recipe combo detection', () => {
     }
   });
 
+  it('keeps Legion base tower recipe demand in the 2-4 use sweet spot', () => {
+    const recipeUseCounts = new Map<string, number>();
+    for (const [type, def] of Object.entries(towersData as Record<string, any>)) {
+      if (def?.kind === 'BASE' && !def?.isHero && !type.startsWith('HERO_') && !type.startsWith('CHAMPION_')) {
+        recipeUseCounts.set(type, 0);
+      }
+    }
+
+    for (const recipe of comboData as any[]) {
+      for (const ingredient of recipe.ingredients) {
+        if (recipeUseCounts.has(ingredient.type)) {
+          recipeUseCounts.set(ingredient.type, recipeUseCounts.get(ingredient.type)! + 1);
+        }
+      }
+    }
+
+    for (const [type, count] of recipeUseCounts) {
+      expect(count, `${type} should not be underused in recipes`).toBeGreaterThanOrEqual(2);
+      expect(count, `${type} should not appear in too many recipes`).toBeLessThanOrEqual(4);
+    }
+    expect(recipeUseCounts.get('ACCENSUS')).toBe(4);
+    expect(recipeUseCounts.get('CENTURION')).toBe(4);
+    expect(recipeUseCounts.get('EVOCATUS')).toBe(4);
+    expect(recipeUseCounts.get('TRIARIUS')).toBe(4);
+  });
+
   it('detects HORSEMAN recipe (3x MILITES T2)', () => {
     const s = bootstrapState();
     placeTower(s, TowerType.MILITES, 2, 1, 1);
@@ -775,9 +801,10 @@ describe('Combo execution', () => {
     const s = bootstrapState();
     s.goldTowerCount = 3;
     placeTower(s, TowerType.LEGATE, 2, 1, 1);
-    placeTower(s, TowerType.TRIARIUS, 2, 1, 2);
+    placeTower(s, TowerType.ACCENSUS, 2, 1, 2);
     const combos = scanCombos(s);
     const aer = combos.find(c => c.result === TowerType.AERARIUM);
+    expect(aer).toBeTruthy();
     if (aer) {
       const ok = executeCombo(s, aer, aer.ingredients[0].id);
       expect(ok).toBe(false);
