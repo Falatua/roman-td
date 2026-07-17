@@ -241,9 +241,10 @@ describe('30-wave Solo quest pacing', () => {
   });
 });
 
-describe('W21 Khan boss integrity', () => {
-  it('marks Khan Rider as a boss so the Solo boss-wave filter keeps the wave', () => {
+describe('W21 Keshig Noyan boss integrity', () => {
+  it('marks Keshig Noyan as a boss so the Solo boss-wave filter keeps the wave', () => {
     expect((enemiesData as any).KHAN_RIDER.isBoss).toBe(true);
+    expect((enemiesData as any).KHAN_RIDER.name).toBe('Keshig Noyan');
     const state = createGameState();
     state.phase = GamePhase.BUILD_PHASE;
     state.wave = 20;

@@ -145,18 +145,18 @@ const BOSS_DATA: Record<number, BossDossier> = {
     ]
   },
   21: {
-    name: 'KHAN RIDER',
+    name: 'KESHIG NOYAN',
     faction: 'MONGOLS',
     sprite: 'KHAN_RIDER',
     portrait: 'assets/bosses/boss_khan.png',
     warning: [
       'The second cave opens and the riders do not wait politely.',
-      'Khan Rider brings late-campaign speed, commander pressure, and no patience.',
+      'Keshig Noyan brings late-campaign speed, commander pressure, and no patience.',
       'Your maze now has two mouths to feed. One of them bites.',
       'ARE YOU REALLY SURE?'
     ],
     doom: [
-      'You clicked yes. The Khan appreciates punctual generals.',
+      'You clicked yes. The Noyan appreciates punctual generals.',
       'Your slows are weaker now. Your excuses remain fully effective.',
       'Watch both lanes or the second cave will write your ending.',
       'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'

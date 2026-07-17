@@ -313,6 +313,27 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(nominalWaveThreatHp(24)).toBeGreaterThan(nominalWaveThreatHp(23) * 1.4);
   });
 
+  it('keeps post-W18 scheduled bosses tougher than every non-boss in their wave bodies', () => {
+    for (const wave of (wavesData as any[]).filter(w => w.wave > 18 && w.type === 'B')) {
+      let strongestBoss = 0;
+      let strongestNonBoss = 0;
+      for (const spawn of wave.spawns ?? []) {
+        const def: any = (enemiesData as any)[spawn.type];
+        if (!def) continue;
+        const hp = previewSpawnHp(def, wave.wave, wave.type, wave.hpMult, true);
+        if (def.isBoss) {
+          strongestBoss = Math.max(strongestBoss, hp);
+        } else {
+          strongestNonBoss = Math.max(strongestNonBoss, hp);
+        }
+      }
+      expect(strongestBoss, `W${wave.wave} should have a scheduled boss`).toBeGreaterThan(0);
+      if (strongestNonBoss > 0) {
+        expect(strongestBoss, `W${wave.wave} boss should not be easier to kill than the strongest non-boss enemy`).toBeGreaterThan(strongestNonBoss);
+      }
+    }
+  });
+
   it('makes Wave 25 escalate after Wave 24 instead of dipping', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     const w24 = byWave.get(24);
