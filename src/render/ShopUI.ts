@@ -51,6 +51,47 @@ function ensureRecipeBlinkStyle() {
   document.head.appendChild(st);
 }
 
+function ensureMercatorPurchaseAnimationStyle() {
+  if (document.getElementById('mercator-purchase-animation-style')) return;
+  const st = document.createElement('style');
+  st.id = 'mercator-purchase-animation-style';
+  st.textContent = `
+    @keyframes mercatorOfferBoughtAway {
+      0%   { opacity:1; transform:translateY(0) scale(1); filter:brightness(1); }
+      35%  { opacity:1; transform:translateY(-3px) scale(1.025); filter:brightness(1.45) drop-shadow(0 0 10px #ffd34d); }
+      100% { opacity:0; transform:translateX(28px) translateY(-8px) scale(0.86); filter:brightness(0.75) drop-shadow(0 0 0 #000); }
+    }
+    .merc-card-purchased {
+      animation: mercatorOfferBoughtAway 0.34s ease-in forwards !important;
+      pointer-events:none !important;
+      overflow:hidden;
+    }
+    .merc-card-purchased::after {
+      content:'PURCHASED';
+      position:absolute;
+      inset:40% 8px auto 8px;
+      background:rgba(12,10,8,0.92);
+      border:1px solid #ffd34d;
+      color:#ffd34d;
+      font-size:10px;
+      letter-spacing:2px;
+      font-weight:bold;
+      padding:4px 6px;
+      box-shadow:0 0 14px rgba(255,211,77,0.45);
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function animateMercatorPurchaseAndRefresh(card: HTMLElement, button: HTMLButtonElement, refresh: () => void): void {
+  ensureMercatorPurchaseAnimationStyle();
+  button.disabled = true;
+  button.textContent = 'PURCHASED';
+  card.classList.add('merc-card-purchased');
+  const timer = typeof window !== 'undefined' ? window.setTimeout.bind(window) : setTimeout;
+  timer(refresh, 360);
+}
+
 function imgSrcFromTex(key: string): string | null {
   // 2026 v2 Ch8 — Champions of Rome reuse the hero portraits in the shop.
   if (key.startsWith('CHAMPION_')) key = 'HERO_' + key.slice('CHAMPION_'.length);
@@ -732,7 +773,7 @@ function renderMercatorShop(
       playPurchaseConfirm();
       SFX.itemPickup(isChampion ? 'LEGENDARY' : tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
       removeMercatorPlaceableOfferForVisit(shop, state, offer, purchaseKind);
-      refresh();
+      animateMercatorPurchaseAndRefresh(card, buy, refresh);
     };
     card.appendChild(buy);
     listEl.appendChild(card);
@@ -1291,7 +1332,7 @@ export function renderShop(parent: HTMLElement, shop: ShopState, state: GameStat
         // Remove this T5 tower from the current Mercator visit. Future visits
         // can still roll it again through normal RNG.
         removeMercatorPlaceableOfferForVisit(shop, state, offer, 'mercator');
-        refresh();
+        animateMercatorPurchaseAndRefresh(card, buy, refresh);
       };
       card.appendChild(buy);
       tList.appendChild(card);

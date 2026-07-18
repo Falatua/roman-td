@@ -1152,6 +1152,19 @@ describe('Sample SFX wiring', () => {
     expect(harbor).toContain('SFX.buy();');
   });
 
+  it('Mercator tower buys animate away before the current visit shelf redraws', () => {
+    const fs = require('fs');
+    const shop = fs.readFileSync('src/render/ShopUI.ts', 'utf8');
+
+    expect(shop).toContain('function animateMercatorPurchaseAndRefresh');
+    expect(shop).toContain('@keyframes mercatorOfferBoughtAway');
+    expect(shop).toContain("card.classList.add('merc-card-purchased')");
+    expect(shop).toContain("button.textContent = 'PURCHASED'");
+    expect(shop).toContain("timer(refresh, 360)");
+    expect(shop).toMatch(/removeMercatorPlaceableOfferForVisit\(shop, state, offer, purchaseKind\);\s+animateMercatorPurchaseAndRefresh\(card, buy, refresh\);/);
+    expect(shop).toMatch(/removeMercatorPlaceableOfferForVisit\(shop, state, offer, 'mercator'\);\s+animateMercatorPurchaseAndRefresh\(card, buy, refresh\);/);
+  });
+
   it('Supercombo and Omega crafted towers play their dedicated MP3 cue', () => {
     const fs = require('fs');
     const audio = fs.readFileSync('src/render/AudioManager.ts', 'utf8');
