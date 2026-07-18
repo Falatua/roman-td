@@ -2,12 +2,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, applyResistanceBreakRelief, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
 import { itemFamily } from '../src/systems/ItemRules';
-import { getTowerProjectileProfile, spawnProjectile, tickProjectiles } from '../src/systems/ProjectileSystem';
+import { CONCUSSIVE_WARHEAD_SPLASH_RADIUS_TILES, enlargedProjectileSplashRadius, getTowerProjectileProfile, PROJECTILE_SPLASH_RADIUS_MULT, spawnProjectile, tickProjectiles } from '../src/systems/ProjectileSystem';
 import { TowerType, DamageType, Enemy, EnemyFaction, EnemyType, StatusEffectKind, TargetingMode } from '../src/types';
 import { TIER_MULTS, ECONOMY, AURA_TILES, AURA_TILE_EFFECTS, GRID } from '../src/constants';
 import { createGameState } from '../src/GameState';
@@ -279,8 +279,9 @@ describe('Tower effective stats', () => {
       expect(createTower(type, 5, 0, 0, 0).damageType).toBe(DamageType.PHYS_RANGED);
     }
 
-    expect(getTowerProjectileProfile(TowerType.CARTHAGE_SCOURGE)?.splash).toBeCloseTo(0.5, 5);
-    expect(getTowerProjectileProfile(TowerType.PRAETORIAN_FLEET)?.splash).toBeCloseTo(1.1, 5);
+    expect(PROJECTILE_SPLASH_RADIUS_MULT).toBeCloseTo(1.15, 5);
+    expect(getTowerProjectileProfile(TowerType.CARTHAGE_SCOURGE)?.splash).toBeCloseTo(enlargedProjectileSplashRadius(0.5), 5);
+    expect(getTowerProjectileProfile(TowerType.PRAETORIAN_FLEET)?.splash).toBeCloseTo(enlargedProjectileSplashRadius(1.1), 5);
     expect((towersData as any)[TowerType.SIEGE_ONAGER].damageType).toBe('SIEGE');
     expect((towersData as any)[TowerType.VULCAN_COLOSSUS].damageType).toBe('SIEGE');
     expect((towersData as any)[TowerType.INFERNAL_COLOSSUS].damageType).toBe('SIEGE');
@@ -297,7 +298,7 @@ describe('Tower effective stats', () => {
     expect([plagueDef.baseDps, plagueDef.attackSpeed, plagueDef.range]).toEqual([125, 0.9, 5]);
     expect([tribuneDef.baseDps, tribuneDef.attackSpeed, tribuneDef.range]).toEqual([175, 1.4, 2.5]);
     expect((towersData as any).JOVIAN_SKY_HUNTER.baseDps).toBe(340);
-    expect(getTowerProjectileProfile(TowerType.PLAGUE_LOBBER)?.splash).toBe(1.5);
+    expect(getTowerProjectileProfile(TowerType.PLAGUE_LOBBER)?.splash).toBe(enlargedProjectileSplashRadius(1.5));
 
     const beast = testEnemy('beast');
     const elephant = testEnemy('elephant');
@@ -383,6 +384,8 @@ describe('Tower effective stats', () => {
       expect(trophy.primaryDamage / ordinaryHit.primaryDamage).toBeCloseTo(BESTIARIUS_PREY_TROPHY_MULT, 4);
       expect(trophy.target.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
       expect(trophy.target.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
+      expect(BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES).toBeCloseTo(2.0, 5);
+      expect((towersData as any).BESTIARIUS.ability).toContain('2.0-tile Trophy Roar splash');
       expect(trophy.splashDamage / trophy.primaryDamage).toBeCloseTo(BESTIARIUS_TROPHY_SPLASH_MULT, 4);
       expect(trophy.splash.statusEffects.some(s => s.kind === StatusEffectKind.SLOW && s.magnitude === 0.40)).toBe(true);
       expect(trophy.splash.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.16)).toBe(true);
@@ -1130,7 +1133,7 @@ describe('Giant Killer transformation and combat wiring', () => {
     state.enemies.set(giant.id, giant);
     spawnProjectile(state, tower, giant, 550);
 
-    expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(1.6, 6);
+    expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(enlargedProjectileSplashRadius(1.6), 6);
     expect(GIANT_KILLER_SPLASH_DAMAGE_MULT).toBe(0.5);
     expect(giantKillerSplashDamage(550, giant, { type: EnemyType.FERAL_DOG })).toBeCloseTo(50, 6);
     expect(giantKillerSplashDamage(550, giant, { type: EnemyType.CYCLOPS })).toBeCloseTo(275, 6);
@@ -1712,7 +1715,55 @@ describe('Aura tiles (EMERALD watchtower +2 range)', () => {
 
     const onager = createTower(TowerType.COLOSSUS_ONAGER, 5, 4, 4, 1);
     spawnProjectile(state, onager, target, 100);
-    expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(2.4, 5);
+    expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(enlargedProjectileSplashRadius(2.4), 5);
+  });
+
+  it('widens splash-granting items, aura tiles, and named burst radii', () => {
+    expect(AURA_TILE_EFFECTS.AMBER.splashBonus).toBeCloseTo(1.5, 5);
+    expect(CONCUSSIVE_WARHEAD_SPLASH_RADIUS_TILES).toBeCloseTo(2.0, 5);
+    expect(FIRE_OIL_FLASK_SPLASH_RADIUS_TILES).toBeCloseTo(1.35, 5);
+    expect(AOE_BURST_RADIUS_MULT).toBeCloseTo(1.15, 5);
+    expect(enlargedAoEBurstRadiusTiles(2.5)).toBeCloseTo(2.875, 5);
+
+    const state = createGameState();
+    const target = testEnemy('target');
+    state.enemies.set(target.id, target);
+
+    const archer = createTower(TowerType.SAGITTARIUS, 1, 4, 4, 1);
+    archer.equippedItems.push('CONCUSSIVE_WARHEAD');
+    spawnProjectile(state, archer, target, 100);
+    expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(CONCUSSIVE_WARHEAD_SPLASH_RADIUS_TILES, 5);
+
+    const amber = AURA_TILES.find(t => t.kind === 'AMBER')!;
+    const amberArcher = createTower(TowerType.SAGITTARIUS, 1, amber.col, amber.row, 1);
+    spawnProjectile(state, amberArcher, target, 100);
+    expect(state.projectiles[state.projectiles.length - 1]?.splash).toBeCloseTo(AURA_TILE_EFFECTS.AMBER.splashBonus!, 5);
+  });
+
+  it('widens native cleave and Falx cleave reach', () => {
+    const hastati = createTower(TowerType.HASTATI, 3, 5, 5, 0);
+    const baseRange = towerEffectiveStats(hastati).range;
+    expect(meleeCleaveRadiusTiles(hastati, baseRange)).toBeCloseTo(baseRange + CLEAVE_RADIUS_BONUS_TILES, 5);
+
+    hastati.equippedItems.push('FALX_BLADE');
+    expect(meleeCleaveRadiusTiles(hastati, baseRange)).toBeCloseTo(
+      baseRange + CLEAVE_RADIUS_BONUS_TILES + FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES,
+      5
+    );
+
+    hastati.equippedItems.push('EXECUTIONERS_FALX');
+    expect(meleeCleaveRadiusTiles(hastati, baseRange)).toBeCloseTo(
+      baseRange + CLEAVE_RADIUS_BONUS_TILES + FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES + EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES,
+      5
+    );
+
+    const nonCleave = createTower(TowerType.MILITES, 1, 5, 5, 0);
+    expect(meleeCleaveRadiusTiles(nonCleave, towerEffectiveStats(nonCleave).range)).toBeCloseTo(towerEffectiveStats(nonCleave).range, 5);
+    nonCleave.equippedItems.push('FALX_BLADE');
+    expect(meleeCleaveRadiusTiles(nonCleave, towerEffectiveStats(nonCleave).range)).toBeCloseTo(
+      towerEffectiveStats(nonCleave).range + CLEAVE_RADIUS_BONUS_TILES + FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES,
+      5
+    );
   });
 });
 

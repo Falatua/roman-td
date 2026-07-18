@@ -60,7 +60,7 @@
     "rarity": "UNCOMMON",
     "buy": 16,
     "sell": 6,
-    "effect": "RANGED ONLY: applies Burn (4% HP/sec, 3.3s) with 1-tile splash on impact."
+    "effect": "RANGED ONLY: applies Burn (4% HP/sec, 3.3s) with 1.35-tile splash on impact."
   },
   "POISONED_BLADE": {
     "name": "Poisoned Blade",
@@ -305,7 +305,7 @@
     "rarity": "RARE",
     "buy": 32,
     "sell": 11,
-    "effect": "MELEE ONLY: grants CLEAVE. Each swing hits every enemy in melee range; secondary targets take 60% damage. On native cleave towers, upgrades secondary damage from 70% to 90%."
+    "effect": "MELEE ONLY: grants wider CLEAVE. Each swing reaches +0.6 tile beyond normal melee range; secondary targets take 60% damage. On native cleave towers, upgrades secondary damage from 70% to 90%."
   },
   "VOLLEY_QUIVER": {
     "name": "Volley Quiver",
@@ -529,14 +529,14 @@
     "rarity": "LEGENDARY",
     "buy": 145,
     "sell": 46,
-    "effect": "MELEE ONLY: grants full-power CLEAVE. Every swing hits up to 9 enemies in melee range and secondary targets take FULL (100%) damage."
+    "effect": "MELEE ONLY: grants full-power WIDE CLEAVE. Every swing reaches +0.8 tile beyond normal melee range, hits up to 11 enemies, and secondary targets take FULL (100%) damage."
   },
   "CONCUSSIVE_WARHEAD": {
     "name": "Concussive Warhead",
     "rarity": "LEGENDARY",
     "buy": 150,
     "sell": 48,
-    "effect": "RANGED ONLY: every shot detonates in a 1.6-tile blast, dealing SPLASH damage to all enemies caught in it."
+    "effect": "RANGED ONLY: every shot detonates in a 2.0-tile blast, dealing SPLASH damage to all enemies caught in it."
   },
   "BRINEHOOK_ROPE": {
     "name": "Brinehook Rope",

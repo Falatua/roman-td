@@ -208,11 +208,25 @@ const PROJ_FOR_TOWER: Partial<Record<TowerType, { key: string; arc: boolean; spe
 };
 
 export function getTowerProjectileProfile(type: TowerType) {
-  return PROJ_FOR_TOWER[type] ?? null;
+  const profile = PROJ_FOR_TOWER[type];
+  if (!profile) return null;
+  return {
+    ...profile,
+    splash: enlargedProjectileSplashRadius(profile.splash)
+  };
+}
+
+export const PROJECTILE_SPLASH_RADIUS_MULT = 1.15;
+export const CONCUSSIVE_WARHEAD_SPLASH_RADIUS_TILES = 2.0;
+
+export function enlargedProjectileSplashRadius(baseRadiusTiles: number): number {
+  if (baseRadiusTiles <= 0) return 0;
+  return Number((baseRadiusTiles * PROJECTILE_SPLASH_RADIUS_MULT).toFixed(3));
 }
 
 export function spawnProjectile(state: GameStateShape, tower: Tower, target: Enemy, damage: number) {
-  const def = PROJ_FOR_TOWER[tower.type];
+  const rawDef = PROJ_FOR_TOWER[tower.type];
+  const def = rawDef ? { ...rawDef, splash: enlargedProjectileSplashRadius(rawDef.splash) } : null;
   if (!def) return; // melee — no projectile (handled separately as slash VFX)
   const siegeSplash = tower.damageType === DamageType.SIEGE ? 0.8 : 0;
 
@@ -256,7 +270,7 @@ export function spawnProjectile(state: GameStateShape, tower: Tower, target: Ene
     splash: Math.max(
       def.splash,
       siegeSplash,
-      tower.equippedItems.includes('CONCUSSIVE_WARHEAD') ? 1.6 : 0,   // 2026 v2 legendary splash
+      tower.equippedItems.includes('CONCUSSIVE_WARHEAD') ? CONCUSSIVE_WARHEAD_SPLASH_RADIUS_TILES : 0,   // 2026 v2 legendary splash
       (() => { const k = towerAuraTileKind(tower); return (k && AURA_TILE_EFFECTS[k].splashBonus) || 0; })()
     ),
     embedAfter: def.embed && !elementalSwap

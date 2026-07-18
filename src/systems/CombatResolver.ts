@@ -436,7 +436,12 @@ export const BESTIARIUS_NET_STACKS = 3;
 export const BESTIARIUS_TROPHY_MULT = 4.0;
 export const BESTIARIUS_PREY_TROPHY_MULT = 6.0;
 export const BESTIARIUS_TROPHY_SPLASH_MULT = 0.55;
-export const BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES = 1.65;
+export const BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES = 2.0;
+export const CLEAVE_RADIUS_BONUS_TILES = 0.25;
+export const FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES = 0.35;
+export const EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES = 0.55;
+export const FIRE_OIL_FLASK_SPLASH_RADIUS_TILES = 1.35;
+export const AOE_BURST_RADIUS_MULT = 1.15;
 
 export function undeadGeneralPreyDamageMult(target: Pick<Enemy, 'type'>): number {
   if (target.type === EnemyType.WAR_ELEPHANT || target.type === EnemyType.UNDEAD_WAR_ELEPHANT) {
@@ -621,10 +626,22 @@ export function hasCleave(t: Tower): boolean {
 // "wide arcing swing." Item-only cleavers without FALX hit only the
 // default cap.
 function meleeHitCap(t: Tower): number {
-  const base = t.type === TowerType.GIANTS_COHORT_GUARD ? 4 : 6;
-  const bonus = (t.equippedItems.includes('FALX_BLADE') ? 2 : 0)
-              + (t.equippedItems.includes('EXECUTIONERS_FALX') ? 3 : 0);   // legendary: wider swing, up to 9
+  const base = t.type === TowerType.GIANTS_COHORT_GUARD ? 5 : 7;
+  const bonus = (t.equippedItems.includes('FALX_BLADE') ? 3 : 0)
+              + (t.equippedItems.includes('EXECUTIONERS_FALX') ? 4 : 0);   // legendary: wider swing, up to 11
   return base + bonus;
+}
+
+export function meleeCleaveRadiusTiles(t: Tower, baseRangeTiles: number): number {
+  if (!hasCleave(t)) return baseRangeTiles;
+  const itemBonus =
+    (t.equippedItems.includes('FALX_BLADE') ? FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES : 0) +
+    (t.equippedItems.includes('EXECUTIONERS_FALX') ? EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES : 0);
+  return baseRangeTiles + CLEAVE_RADIUS_BONUS_TILES + itemBonus;
+}
+
+export function enlargedAoEBurstRadiusTiles(baseRadiusTiles: number): number {
+  return Number((baseRadiusTiles * AOE_BURST_RADIUS_MULT).toFixed(3));
 }
 
 function cleaveSecondaryMult(t: Tower): number {
@@ -2106,8 +2123,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Compute "in melee/range" enemies once for cleave + multi-shot lookups.
       const tcx = tilePxX(t);
       const tcy = tilePxY(t);
-      const rPx = stats.range * GRID.TILE;
       const isMeleeRow = isMeleeTowerType(t.type);
+      const rPx = (isMeleeRow ? meleeCleaveRadiusTiles(t, stats.range) : stats.range) * GRID.TILE;
       // AQUILA TALONS unlocks anti-air for melee towers — eagle talons let
       // the gladius claw down passing flyers at melee range.
       // 2026-05-19 — AETHER TILE (CYAN) also unlocks anti-air for any
@@ -2261,10 +2278,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           fireJupitersWrathChain(state, t, target, damage, hooks, resMod);
         }
         if (target.hp <= 0 && !checkRebirth(state, target, state.tick)) hooks.onKill(t, target);
-        // Trophy Roar: the payoff strike splashes a compact burst into
+        // Trophy Roar: the payoff strike splashes a wider burst into
         // nearby enemies and briefly sets them up for the rest of the
         // defense. Uses the final dealt damage so all live modifiers are
-        // represented, but at a tight radius and 55% transfer.
+        // represented, but at a measured radius and 55% transfer.
         if (bestiariusTrophyStrike && damage > 0) {
           const splashRadius = BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES * GRID.TILE;
           const splashDamage = damage * BESTIARIUS_TROPHY_SPLASH_MULT;
@@ -2280,11 +2297,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
           }
         }
-        // TRIUMPHATOR — every 5th hit, radial NOVA: 4× damage to everything in 2.5 tiles.
+        // TRIUMPHATOR — every 5th hit, radial NOVA: 4× damage to everything in a wide burst.
         if (t.type === TowerType.TRIUMPHATOR) {
           const hc = (t as any).__hitCount ?? 0;
           if (hc > 0 && hc % 5 === 0) {
-            const novaR = 2.5 * GRID.TILE;
+            const novaR = enlargedAoEBurstRadiusTiles(2.5) * GRID.TILE;
             const novaDmg = damage * 4;
             for (const e of state.enemies.values()) {
               if (e.hp <= 0) continue;
@@ -2302,7 +2319,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (t.type === TowerType.MARS_VICTOR) {
           const hc = (t as any).__hitCount ?? 0;
           if (hc > 0 && hc % 3 === 0) {
-            const novaR = 3.5 * GRID.TILE;
+            const novaR = enlargedAoEBurstRadiusTiles(3.5) * GRID.TILE;
             const novaDmg = damage * 3;
             for (const e of state.enemies.values()) {
               if (e.hp <= 0) continue;
@@ -2321,7 +2338,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (t.type === TowerType.AURORA_LEGION) {
           const hc = (t as any).__hitCount ?? 0;
           if (hc > 0 && hc % 4 === 0) {
-            const novaR = 1.8 * GRID.TILE;
+            const novaR = enlargedAoEBurstRadiusTiles(1.8) * GRID.TILE;
             const novaDmg = damage * 2.5;
             for (const e of state.enemies.values()) {
               if (e.hp <= 0) continue;
@@ -2344,7 +2361,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (t.type === TowerType.SACRED_BAND) {
           const hc = (t as any).__hitCount ?? 0;
           if (hc > 0 && hc % 4 === 0) {
-            const novaR = 2.0 * GRID.TILE; const novaDmg = damage * 2.2;
+            const novaR = enlargedAoEBurstRadiusTiles(2.0) * GRID.TILE; const novaDmg = damage * 2.2;
             for (const e of state.enemies.values()) {
               if (e.hp <= 0) continue;
               if (Math.hypot(e.x - target.x, e.y - target.y) > novaR) continue;
@@ -2363,7 +2380,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (t.type === TowerType.STORM_BALLISTA) {
           const hc = (t as any).__hitCount ?? 0;
           if (hc > 0 && hc % 3 === 0) {
-            const burstR = 1.4 * GRID.TILE;
+            const burstR = enlargedAoEBurstRadiusTiles(1.4) * GRID.TILE;
             for (const e of state.enemies.values()) {
               if (e.hp <= 0) continue;
               if (Math.hypot(e.x - target.x, e.y - target.y) > burstR) continue;
@@ -2374,9 +2391,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           }
         }
         // VULCAN BOMBARD · MAGMA BARRAGE: every blast stamps ARMOR SHRED
-        // in the 2.6-tile crater and briefly stuns the primary.
+        // across a widened crater and briefly stuns the primary.
         if (t.type === TowerType.VULCAN_BOMBARD) {
-          const crater = 2.6 * GRID.TILE;
+          const crater = enlargedAoEBurstRadiusTiles(2.6) * GRID.TILE;
           for (const e of state.enemies.values()) {
             if (e.hp <= 0) continue;
             if (Math.hypot(e.x - target.x, e.y - target.y) > crater) continue;
@@ -2385,10 +2402,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           pushStatus(target, StatusEffectKind.STUN, 0.45, 0, t.qualityTier);
         }
         // 2026-06-28 — VULCAN COLOSSUS · CITY-BREAKER: every blast stamps
-        // ARMOR SHRED + a 0.8s AoE STUN across the 3.5-tile splash. Every 3rd
+        // ARMOR SHRED + a 0.8s AoE STUN across the widened splash. Every 3rd
         // shot is a TITAN ROUND dealing +150% bonus damage to the whole crater.
         if (t.type === TowerType.VULCAN_COLOSSUS) {
-          const crater = 3.5 * GRID.TILE;
+          const crater = enlargedAoEBurstRadiusTiles(3.5) * GRID.TILE;
           const hc = (t as any).__hitCount ?? 0;
           const titan = hc > 0 && hc % 3 === 0;
           for (const e of state.enemies.values()) {
@@ -2897,9 +2914,9 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
       if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
     }
   }
-  // LEGION_PRIME — heavy AoE divine: 2.5-tile splash on every hit at 70%.
+  // LEGION_PRIME — heavy AoE divine: widened splash on every hit at 70%.
   if (t.type === TowerType.LEGION_PRIME) {
-    const r = 2.5 * GRID.TILE;
+    const r = enlargedAoEBurstRadiusTiles(2.5) * GRID.TILE;
     const splash = damage * 0.70;
     for (const e of state.enemies.values()) {
       if (e.id === target.id || e.hp <= 0) continue;
@@ -2913,9 +2930,9 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
       if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
     }
   }
-  // IMPERIUM_ETERNUM — divine quake on every hit: 3-tile AoE, true damage.
+  // IMPERIUM_ETERNUM — divine quake on every hit: widened AoE, true damage.
   if (t.type === TowerType.IMPERIUM_ETERNUM) {
-    const r = 3 * GRID.TILE;
+    const r = enlargedAoEBurstRadiusTiles(3) * GRID.TILE;
     const aoe = damage * 0.90;
     for (const e of state.enemies.values()) {
       if (e.id === target.id || e.hp <= 0) continue;
@@ -3590,11 +3607,11 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
     }
     // 2026-05 v6: FIRE_OIL_FLASK is ranged-only (gated in ItemRules) and
     // applies a burn to the target PLUS splashes the same burn to enemies
-    // within 1 tile of impact. Bigger envelope, lower per-target DPS than
+    // within a widened impact radius. Bigger envelope, lower per-target DPS than
     // POISONED_BLADE. Identity: AoE "oil ignition" wave.
     if (t.equippedItems.includes('FIRE_OIL_FLASK')) {
       pushStatus(target, StatusEffectKind.BURN, 3, 0.04, tier);
-      const splashR = 32 * 1;     // 1-tile splash
+      const splashR = GRID.TILE * FIRE_OIL_FLASK_SPLASH_RADIUS_TILES;
       const stateRef = typeof globalThis !== 'undefined' ? (globalThis as any).__lastState : undefined;
       if (stateRef?.enemies) {
         for (const other of stateRef.enemies.values()) {

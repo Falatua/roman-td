@@ -424,6 +424,6 @@ export const AURA_TILE_EFFECTS: Record<AuraTile['kind'], {
   // TIDE is an ocean control tile: it keeps the tower's own identity,
   // but any enemy actually damaged by that tower is slowed.
   IVORY:   { color: 0xfff2cc, label: 'DIVINE TILE',     description: 'Tower keeps its normal damage and adds +35% separate DIVINE damage on every hit.', divineRiderPct: 0.35 },
-  AMBER:   { color: 0xff8a3c, label: 'BLAST TILE',      description: 'Tower on this tile gains a splash blast — every hit also damages enemies within 1.2 tiles.', splashBonus: 1.2 },
+  AMBER:   { color: 0xff8a3c, label: 'BLAST TILE',      description: 'Tower on this tile gains a splash blast — every hit also damages enemies within 1.5 tiles.', splashBonus: 1.5 },
   TIDE:    { color: 0x26f6e2, label: 'TIDE TILE',       description: 'Tower on this ocean tile keeps its normal attacks, and any enemy it damages is slowed 30%.', hitSlowPct: 0.30, hitSlowDuration: 2.5 }
 };
