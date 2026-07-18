@@ -4,6 +4,7 @@ import { resistanceModifier, damageTypeFromString } from '../src/systems/DamageT
 import { armorProfile, enemyDamageMultiplier, isHellfireImmune, resistanceSummary, statusEffectiveness } from '../src/systems/EnemyResistances';
 import { DamageType, EnemyFaction, EnemyType, StatusEffectKind, Enemy } from '../src/types';
 import enemiesData from '../src/data/enemies.json';
+import { applyResistanceBreakRelief } from '../src/systems/CombatResolver';
 
 function makeEnemy(type: EnemyType, faction: EnemyFaction = EnemyFaction.DOGS): Enemy {
   return {
@@ -56,6 +57,13 @@ describe('DamageType — faction resistance modifier', () => {
     const before = resistanceModifier(EnemyFaction.CARTHAGE, DamageType.PHYS_MELEE, false);
     const after = resistanceModifier(EnemyFaction.CARTHAGE, DamageType.PHYS_MELEE, true);
     if (before < 1) expect(after).toBeGreaterThanOrEqual(before);
+  });
+
+  it('resistance-break relief softens only actual resistance, not immunity or weakness', () => {
+    expect(applyResistanceBreakRelief(0.50, 0.20)).toBeCloseTo(0.60, 6);
+    expect(applyResistanceBreakRelief(0, 0.50)).toBe(0);
+    expect(applyResistanceBreakRelief(1, 0.50)).toBe(1);
+    expect(applyResistanceBreakRelief(1.25, 0.50)).toBe(1.25);
   });
 });
 

@@ -43,4 +43,18 @@ describe('Omega and apex signature auras', () => {
     expect(source).toContain('drawApexSignatureAura');
     expect(source).toContain('__reduceMotion');
   });
+
+  it('draws amber resistance-break rings for selected Super Combo towers', () => {
+    const source = fs.readFileSync('src/render/RenderEngine.ts', 'utf8');
+    expect(source).toContain('RESIST_BREAK');
+    for (const type of [
+      TowerType.LEGION_PRIME,
+      TowerType.CONSULAR_FATEBINDER,
+      TowerType.AUREATE_TRIBUNAL,
+      TowerType.GLACIAL_PALISADE,
+      TowerType.INFERNAL_COLOSSUS
+    ]) {
+      expect(source, `${type} should have a visible resistance-break aura ring`).toContain(`tw.type === TowerType.${type}`);
+    }
+  });
 });

@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, applyResistanceBreakRelief, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, damnatioExecuteThreshold, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -154,6 +154,8 @@ function singleSwingDamage(opts: {
   support?: Array<{ type: TowerType; x: number; y: number; tier?: 1|2|3|4|5; items?: string[] }>;
   nullifierAt?: { x: number; y: number };
   targetOffsetPx?: { x: number; y: number };
+  targetType?: EnemyType;
+  targetFaction?: EnemyFaction;
 } = {}) {
   const state = createGameState();
   (globalThis as any).__lastState = state;
@@ -174,6 +176,8 @@ function singleSwingDamage(opts: {
     c.x + (opts.targetOffsetPx?.x ?? 0),
     c.y + (opts.targetOffsetPx?.y ?? 0)
   );
+  if (opts.targetType) target.type = opts.targetType;
+  if (opts.targetFaction) target.faction = opts.targetFaction;
   target.hp = 100000;
   target.maxHp = 100000;
   state.enemies.set(target.id, target);
@@ -2015,6 +2019,47 @@ describe('Aura mechanics and visibility', () => {
 
     expect(cursed.damage / base.damage).toBeCloseTo(1.35, 4);
     expect(lantern.damage / base.damage).toBeCloseTo(1.45, 4);
+  });
+
+  it('lets selected Super Combo auras reduce nearby non-immune enemy armor', () => {
+    const base = singleSwingDamage({
+      targetType: EnemyType.CELTIC_FOOTMAN,
+      targetFaction: EnemyFaction.CELTS
+    });
+    const legion = singleSwingDamage({
+      support: [{ type: TowerType.LEGION_PRIME, x: 8, y: 10, tier: 5 }],
+      targetType: EnemyType.CELTIC_FOOTMAN,
+      targetFaction: EnemyFaction.CELTS
+    });
+    const farLegion = singleSwingDamage({
+      support: [{ type: TowerType.LEGION_PRIME, x: 1, y: 1, tier: 5 }],
+      targetType: EnemyType.CELTIC_FOOTMAN,
+      targetFaction: EnemyFaction.CELTS
+    });
+
+    const baseRes = resistanceModifier(EnemyFaction.CELTS, DamageType.PHYS_MELEE) *
+      enemyDamageMultiplier({
+        ...testEnemy('expected-res'),
+        type: EnemyType.CELTIC_FOOTMAN,
+        faction: EnemyFaction.CELTS
+      }, DamageType.PHYS_MELEE);
+    const expectedLegionRatio = 1.25 * applyResistanceBreakRelief(
+      baseRes,
+      SUPERCOMBO_RESISTANCE_BREAK_AURAS[TowerType.LEGION_PRIME]!.reliefPct
+    ) / baseRes;
+
+    expect(legion.damage / base.damage).toBeCloseTo(expectedLegionRatio, 4);
+    expect(farLegion.damage / base.damage).toBeCloseTo(1, 4);
+  });
+
+  it('does not let resistance-break auras damage truly immune armor', () => {
+    const immune = singleSwingDamage({
+      support: [{ type: TowerType.AUREATE_TRIBUNAL, x: 8, y: 10, tier: 5 }],
+      targetType: EnemyType.STONE_JUGGERNAUT,
+      targetFaction: EnemyFaction.ROMAN_MYTH
+    });
+
+    expect(immune.damage).toBe(0);
   });
 
   it('suppresses tower and item auras when an aura nullifier reaches the emitter', () => {

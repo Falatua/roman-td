@@ -574,6 +574,20 @@ describe('Recipe combo detection', () => {
     expect((towersData as any)[TowerType.HANNIBALS_NIGHTMARE].baseDps).toBe(235.0);
   });
 
+  it('labels selected Super Combo resistance-break aura towers', () => {
+    for (const type of [
+      TowerType.LEGION_PRIME,
+      TowerType.CONSULAR_FATEBINDER,
+      TowerType.AUREATE_TRIBUNAL,
+      TowerType.GLACIAL_PALISADE,
+      TowerType.INFERNAL_COLOSSUS
+    ]) {
+      const ability = String((towersData as any)[type].ability);
+      expect(ability, `${type} should explain its resistance-break aura`).toContain('RESISTANCE BREAK aura');
+      expect(ability, `${type} should preserve immunity counterplay`).toContain('non-immune armor/resists');
+    }
+  });
+
   it('prices authored combo recipes by class: base 50g, super 200g, omega 500g', () => {
     const seen = { base: 0, super: 0, omega: 0 };
     for (const recipe of comboData as any[]) {

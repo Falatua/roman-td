@@ -5616,6 +5616,7 @@ export class RenderEngine {
     const pulse = 0.55 + Math.sin(tick * 2.2) * 0.20;
     const ALLY = 0xc070ff;        // violet — ally buff
     const ENEMY = 0xff5566;       // crimson — enemy debuff
+    const RESIST_BREAK = 0xffc35a; // amber — enemy armor/resistance break
     for (const tw of state.towers.values()) {
       if (tw.pending) continue;
       const cx = tw.tileX * GRID.TILE + GRID.TILE / 2;
@@ -5691,6 +5692,7 @@ export class RenderEngine {
       // Legion Prime super combo — +25% damage aura (3 tiles).
       if (tw.type === TowerType.LEGION_PRIME) {
         this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.9);
+        this.drawAuraRing(cx, cy, 3 * GRID.TILE, RESIST_BREAK, pulse * 0.72, true, false);
       }
       // Sacer Vestal — doubles status durations in range (4.5 tiles).
       if (tw.type === TowerType.SACER_VESTAL) {
@@ -5700,10 +5702,19 @@ export class RenderEngine {
       if (tw.type === TowerType.AUREATE_TRIBUNAL) {
         this.drawAuraRing(cx, cy, 6.5 * GRID.TILE, ALLY, pulse * 0.9);
         this.drawAuraRing(cx, cy, 6.5 * GRID.TILE, ENEMY, pulse * 0.85, true);
+        this.drawAuraRing(cx, cy, 6.5 * GRID.TILE, RESIST_BREAK, pulse * 0.76, true, false);
       }
       // Glacial Palisade — nearby towers fight behind the frost shield.
       if (tw.type === TowerType.GLACIAL_PALISADE) {
         this.drawAuraRing(cx, cy, 3 * GRID.TILE, ALLY, pulse * 0.8);
+        this.drawAuraRing(cx, cy, 3 * GRID.TILE, RESIST_BREAK, pulse * 0.66, true, false);
+      }
+      // Fatebinder and Infernal Colossus project resistance-break pressure.
+      if (tw.type === TowerType.CONSULAR_FATEBINDER) {
+        this.drawAuraRing(cx, cy, 5.5 * GRID.TILE, RESIST_BREAK, pulse * 0.72, true, false);
+      }
+      if (tw.type === TowerType.INFERNAL_COLOSSUS) {
+        this.drawAuraRing(cx, cy, 4 * GRID.TILE, RESIST_BREAK, pulse * 0.78, true, false);
       }
       // Roman Transformer — Omega vulnerability field plus close immolation.
       if (tw.type === TowerType.ROMAN_TRANSFORMER) {

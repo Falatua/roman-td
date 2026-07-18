@@ -87,6 +87,13 @@ export const CAPITOLINE_AEGIS_DIVINE_RIDER_PCT = 0.35;
 export const SIEGE_FLYER_MISS_CHANCE = 0.20;
 export const DOT_DURATION_MULT = 1.10;
 export const TOWER_STUN_DURATION_MULT = 1.20;
+export const SUPERCOMBO_RESISTANCE_BREAK_AURAS: Partial<Record<TowerType, { radiusTiles: number; reliefPct: number }>> = {
+  [TowerType.LEGION_PRIME]: { radiusTiles: 3.0, reliefPct: 0.18 },
+  [TowerType.CONSULAR_FATEBINDER]: { radiusTiles: 5.5, reliefPct: 0.16 },
+  [TowerType.AUREATE_TRIBUNAL]: { radiusTiles: 6.5, reliefPct: 0.22 },
+  [TowerType.GLACIAL_PALISADE]: { radiusTiles: 3.0, reliefPct: 0.14 },
+  [TowerType.INFERNAL_COLOSSUS]: { radiusTiles: 4.0, reliefPct: 0.20 }
+};
 
 const FINITE_DOT_DURATION_LIMIT = 900;
 const DOT_STATUS_KINDS = new Set<StatusEffectKind>([
@@ -251,6 +258,27 @@ function applyWaveResistRelief(state: GameStateShape, resMod: number): number {
     return 1 - (1 - resMod) * (1 - waveResistReduction);
   }
   return resMod;
+}
+
+export function applyResistanceBreakRelief(resMod: number, reliefPct: number): number {
+  if (resMod <= 0 || resMod >= 1) return resMod;
+  const pct = Math.max(0, Math.min(0.75, reliefPct));
+  if (pct <= 0) return resMod;
+  return 1 - (1 - resMod) * (1 - pct);
+}
+
+function applyResistanceBreakAuras(
+  resMod: number,
+  target: Enemy,
+  auras: Array<{ x: number; y: number; r: number; pct: number }>
+): number {
+  if (resMod <= 0 || resMod >= 1 || auras.length === 0) return resMod;
+  let strongest = 0;
+  for (const aura of auras) {
+    if (aura.pct <= strongest) continue;
+    if (Math.hypot(aura.x - target.x, aura.y - target.y) <= aura.r) strongest = aura.pct;
+  }
+  return applyResistanceBreakRelief(resMod, strongest);
 }
 
 function sullaFireRiderPctForTower(
@@ -958,6 +986,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // below. Avoids a per-tower state.towers.get lookup.
   const localAuras: Array<{ x: number; y: number; r: number; dmg?: number; spd?: number }> = [];
   const enemyTakenAuras: Array<{ x: number; y: number; r: number; pct: number }> = [];
+  const resistanceBreakAuras: Array<{ x: number; y: number; r: number; pct: number }> = [];
   const infernoStandardAuras: Array<{ x: number; y: number; r: number }> = [];
   const healingDenialAuras: Array<{ x: number; y: number; r: number }> = [];
   // AURA NULLIFIER enemies (Architectus on W16): if alive AND within 2 tiles
@@ -993,6 +1022,15 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // Stamp on the tower so the render layer can dim the aura ring as a
     // visual cue that this tower is currently silenced.
     (t as any).__auraNullified = auraOff;
+    const resistanceBreak = SUPERCOMBO_RESISTANCE_BREAK_AURAS[t.type];
+    if (resistanceBreak && !auraOff) {
+      resistanceBreakAuras.push({
+        x: cx,
+        y: cy,
+        r: resistanceBreak.radiusTiles * GRID.TILE,
+        pct: resistanceBreak.reliefPct
+      });
+    }
     if (t.type === TowerType.EAGLE_STANDARD && !auraOff) {
       // Aura-only support tower. Global damage is a flat +10% at every
       // tier. Its separate local +22% attack-speed aura remains intact
@@ -1551,7 +1589,11 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // other resistance layer so it captures the stack: faction
       // table × per-enemy modifier × Actium bypass × post-W7 +25%
       // ranged shield × IRON_TIP shred. Wave 8 currently uses 0.15.
-      resMod = applyWaveResistRelief(state, resMod);
+      resMod = applyResistanceBreakAuras(
+        applyWaveResistRelief(state, resMod),
+        target,
+        resistanceBreakAuras
+      );
       // Aquilifer Titan vulnerability: +25% taken if enemy is near the Titan
       let takenMult = 1;
       for (const a of enemyTakenAuras) {
@@ -1580,7 +1622,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           resistanceModifier(target.faction, DamageType.ELEMENTAL_FIRE, armorShred)
             * enemyDamageMultiplier(target, DamageType.ELEMENTAL_FIRE)
         );
-        damage += preResDamage * sullaFireRiderPct * fireResMod;
+        damage += preResDamage * sullaFireRiderPct * applyResistanceBreakAuras(fireResMod, target, resistanceBreakAuras);
       }
       const divineRiderPct = divineDamageRiderPctForTower(t);
       (t as any).__divineRiderVfx = divineRiderPct > 0;
@@ -1590,7 +1632,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
           resistanceModifier(target.faction, DamageType.DIVINE, armorShred)
             * enemyDamageMultiplier(target, DamageType.DIVINE)
         );
-        damage += preResDamage * divineRiderPct * divineResMod;
+        damage += preResDamage * divineRiderPct * applyResistanceBreakAuras(divineResMod, target, resistanceBreakAuras);
       }
       damage *= campaignRelicDamageMult(state, t, target) * bossTrophyDamageMult(state, t, target) * commanderDamageTakenMult(state, target);
       // MARK debuff: marked targets take +mag% damage from ANY tower.
