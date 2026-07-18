@@ -1225,7 +1225,6 @@
     "isBoss": false,
     "livesCost": 5,
     "isElite": true,
-    "immunePoison": true,
     "renderScale": 1.12
   },
   "TIDECALLER_COMMANDER": {
@@ -1304,9 +1303,7 @@
     "renderScale": 0.92,
     "dodgeChance": 0.15,
     "lowHpSpeedBoost": 1.5,
-    "dotImmune": true,
     "siegeImmune": true,
-    "immuneFire": true,
     "stealthInterval": { "period": 4.5, "duration": 2.0 }
   },
   "STONE_JUGGERNAUT": {
@@ -1322,7 +1319,6 @@
     "shieldBlockChance": 0.35,
     "meleeImmune": true,
     "rangedImmune": true,
-    "dotImmune": true,
     "immuneFire": true,
     "immuneSlow": true,
     "immuneStun": true

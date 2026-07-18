@@ -317,9 +317,7 @@ describe('Enemy resistances — per-enemy multipliers', () => {
   it('gives selected post-W15 enemies true damage-over-time immunity with readable UI summary', () => {
     const dotImmuneTypes = [
       EnemyType.MONGOL_SHAMAN,
-      EnemyType.ANUBIS_PRIEST,
-      EnemyType.DUNE_STALKER,
-      EnemyType.STONE_JUGGERNAUT
+      EnemyType.ANUBIS_PRIEST
     ];
 
     for (const type of dotImmuneTypes) {
@@ -333,6 +331,28 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       expect(resistanceSummary(type).some(row => row.label === 'Burn' && row.value === 0), `${type} burn summary`).toBe(true);
       expect(resistanceSummary(type).some(row => row.label === 'Bleed' && row.value === 0), `${type} bleed summary`).toBe(true);
       expect(resistanceSummary(type).some(row => row.label === 'Poison' && row.value === 0), `${type} poison summary`).toBe(true);
+      expect(
+        hasDirectDamageAnswer(enemy, [DamageType.PHYS_MELEE, DamageType.PHYS_RANGED, DamageType.SIEGE, DamageType.ELEMENTAL_FIRE, DamageType.DIVINE]),
+        `${type} should still have at least one direct-damage answer`
+      ).toBe(true);
+    }
+  });
+
+  it('softens selected post-W22 DoT walls into heavy resistance instead of full immunity', () => {
+    const checks: Array<{ type: EnemyType; burn: number; bleed: number; poison: number }> = [
+      { type: EnemyType.DUNE_STALKER, burn: 0.35, bleed: 0.30, poison: 0.30 },
+      { type: EnemyType.STONE_JUGGERNAUT, burn: 0, bleed: 0.20, poison: 0.20 },
+      { type: EnemyType.SKY_ANUBIS_COMMANDER, burn: 0.75, bleed: 0.55, poison: 0.35 }
+    ];
+
+    for (const { type, burn, bleed, poison } of checks) {
+      const def: any = (enemiesData as any)[type];
+      const enemy = makeEnemy(type, def.faction as EnemyFaction);
+      expect(def.dotImmune, `${type} should not carry broad DoT immunity`).not.toBe(true);
+      expect(def.immunePoison, `${type} should not hard-block poison`).not.toBe(true);
+      expect(statusEffectiveness(enemy, StatusEffectKind.BURN), `${type} burn`).toBeCloseTo(burn, 6);
+      expect(statusEffectiveness(enemy, StatusEffectKind.BLEED), `${type} bleed`).toBeCloseTo(bleed, 6);
+      expect(statusEffectiveness(enemy, StatusEffectKind.POISON), `${type} poison`).toBeCloseTo(poison, 6);
       expect(
         hasDirectDamageAnswer(enemy, [DamageType.PHYS_MELEE, DamageType.PHYS_RANGED, DamageType.SIEGE, DamageType.ELEMENTAL_FIRE, DamageType.DIVINE]),
         `${type} should still have at least one direct-damage answer`
@@ -417,7 +437,6 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       EnemyType.MONGOL_SHAMAN,
       EnemyType.ANUBIS_PRIEST,
       EnemyType.ANUBIS_PRIEST_COMMANDER,
-      EnemyType.DUNE_STALKER,
       EnemyType.STONE_JUGGERNAUT,
       EnemyType.DEMON_HELLHOUND,
       EnemyType.CERBERUS,

@@ -198,7 +198,7 @@ describe('Late-wave DoT profile coverage', () => {
     }
   });
 
-  it('keeps damage-over-time immune threats present after the W16 bridge except poison-vulnerable Anubis commander waves', () => {
+  it('keeps damage-over-time counterplay present after the W16 bridge without overloading late hard immunities', () => {
     const dotImmuneTypes = new Set(
       Object.entries(enemiesData as any)
         .filter(([, def]: any) => def?.dotImmune === true)
@@ -207,7 +207,8 @@ describe('Late-wave DoT profile coverage', () => {
 
     for (const wave of (wavesData as any[]).filter(w => w.wave >= 17 && w.wave <= 30)) {
       const types = [...new Set((wave.spawns ?? []).map((spawn: any) => spawn.type))];
-      if (types.includes(EnemyType.ANUBIS_PRIEST_COMMANDER) && !types.some(type => dotImmuneTypes.has(type))) {
+      const hasDotImmune = types.some(type => dotImmuneTypes.has(type));
+      if (types.includes(EnemyType.ANUBIS_PRIEST_COMMANDER) && !hasDotImmune) {
         expect(types).toContain(EnemyType.ANUBIS_PRIEST_COMMANDER);
         const profile = enemyResistanceProfile(EnemyType.ANUBIS_PRIEST_COMMANDER);
         expect(profile.poison, `W${wave.wave} Anubis commander poison should land`).toBeGreaterThan(0);
@@ -215,10 +216,15 @@ describe('Late-wave DoT profile coverage', () => {
         expect(profile.bleed, `W${wave.wave} Anubis commander bleed remains blocked`).toBe(0);
         continue;
       }
-      expect(
-        types.some(type => dotImmuneTypes.has(type)),
-        `W${wave.wave} should include at least one damage-over-time immune threat`
-      ).toBe(true);
+      if (wave.wave <= 22) {
+        expect(hasDotImmune, `W${wave.wave} should include at least one damage-over-time immune threat`).toBe(true);
+      } else {
+        const hasHardOrHeavySoftCounter = hasDotImmune || types.some(type => {
+          const profile = enemyResistanceProfile(type as EnemyType);
+          return (profile.burn ?? 1) <= 0.35 || (profile.poison ?? 1) <= 0.35 || (profile.bleed ?? 1) <= 0.35;
+        });
+        expect(hasHardOrHeavySoftCounter, `W${wave.wave} should include at least one hard or heavy-soft DoT counter`).toBe(true);
+      }
     }
   });
 
@@ -275,12 +281,14 @@ describe('Late-wave DoT profile coverage', () => {
     expect(enemyResistanceProfile(EnemyType.MUMMY_WARRIOR).burn).toBeGreaterThan(1);
     expect(enemyResistanceProfile(EnemyType.MUMMY_WARRIOR).poison).toBe(0);
     expect(enemyResistanceProfile(EnemyType.STONE_JUGGERNAUT).poison).toBeLessThan(0.5);
-    expect(enemyResistanceProfile(EnemyType.DUNE_STALKER).bleed).toBe(0);
+    expect(enemyResistanceProfile(EnemyType.DUNE_STALKER).bleed).toBeGreaterThan(0);
+    expect(enemyResistanceProfile(EnemyType.DUNE_STALKER).bleed).toBeLessThan(0.5);
     expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).burn).toBe(0);
     expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).siege).toBe(0);
     expect(enemyResistanceProfile(EnemyType.SIEGE_CAPTAIN_COMMANDER).bleed).toBeGreaterThan(1);
     expect(enemyResistanceProfile(EnemyType.SKY_PATHFINDER_COMMANDER).siege).toBe(0);
-    expect(enemyResistanceProfile(EnemyType.SKY_ANUBIS_COMMANDER).poison).toBe(0);
+    expect(enemyResistanceProfile(EnemyType.SKY_ANUBIS_COMMANDER).poison).toBeGreaterThan(0);
+    expect(enemyResistanceProfile(EnemyType.SKY_ANUBIS_COMMANDER).poison).toBeLessThan(0.5);
     expect(enemyResistanceProfile(EnemyType.SKY_BARGE).bleed).toBeLessThan(1);
   });
 });

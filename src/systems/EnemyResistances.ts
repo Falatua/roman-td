@@ -330,7 +330,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0, burn: 0, poison: 1.15, bleed: 1.10, divine: 1.20 },
   [EnemyType.SKY_STANDARD_COMMANDER]:     { melee: 0.7, ranged: 0.55, slow: 0.35, siege: 1.2, burn: 0.8, poison: 0.65, bleed: 0.6, divine: 1.2 },
   [EnemyType.SKY_PATHFINDER_COMMANDER]:   { ranged: 0.7, slow: 0.3, siege: 0, burn: 0.85, poison: 0.75, bleed: 0.75 },
-  [EnemyType.SKY_ANUBIS_COMMANDER]:       { ranged: 0.55, slow: 0.35, siege: 1.15, burn: 0.75, poison: 0, bleed: 0.55, divine: 1.25 },
+  [EnemyType.SKY_ANUBIS_COMMANDER]:       { ranged: 0.55, slow: 0.35, siege: 1.15, burn: 0.75, poison: 0.35, bleed: 0.55, divine: 1.25 },
   [EnemyType.TIDECALLER_COMMANDER]:        { melee: 0.55, ranged: 0.50, siege: 1.20, fire: 0, divine: 1.30, slow: 0.30, burn: 0, poison: 0.45, bleed: 0.45 },
   [EnemyType.STORMTIDE_WYVERN_COMMANDER]:  { melee: 0.45, ranged: 0.50, siege: 1.10, fire: 0, divine: 1.25, slow: 0.20, burn: 0, poison: 0.35, bleed: 0.35 },
   // 2026-06-26 variety roster.
@@ -338,11 +338,11 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.SIEGE_WAGON]:      { melee: 0.65, ranged: 0.6, slow: 0.5, burn: 0.55, poison: 0.35, bleed: 0.25, siege: 1.75 },
   // Sky Barge: heavy flyer. Ranged/anti-air must do the work; divine and siege help crack the hull.
   [EnemyType.SKY_BARGE]:        { melee: 0.35, ranged: 0.55, slow: 0.3, burn: 0.7, poison: 0.55, bleed: 0.55, siege: 1.15, divine: 1.2 },
-  // Dune Stalker: sand-wrapped ambusher. DoT falls off it, but siege immunity
-  // is the only hard direct-damage shield.
-  [EnemyType.DUNE_STALKER]:     { siege: 0, slow: 0.6, burn: 0, poison: 0, bleed: 0 },
+  // Dune Stalker: sand-wrapped ambusher. DoT no longer falls off it entirely;
+  // it seeps through at reduced strength while siege stays its hard shield.
+  [EnemyType.DUNE_STALKER]:     { siege: 0, slow: 0.6, burn: 0.35, poison: 0.30, bleed: 0.30 },
   // Stone Juggernaut: living granite — resists physical + DoT, cracked by siege/divine.
-  [EnemyType.STONE_JUGGERNAUT]: { melee: 0, ranged: 0, burn: 0, bleed: 0, poison: 0, siege: 1.75, divine: 1.75 }
+  [EnemyType.STONE_JUGGERNAUT]: { melee: 0, ranged: 0, burn: 0, bleed: 0.20, poison: 0.20, siege: 1.75, divine: 1.75 }
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
