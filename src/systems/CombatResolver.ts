@@ -34,7 +34,19 @@ export {
   giantKillerPreyDamageMult
 } from './TowerSpecialization';
 import { GRID, KILL_BONUS_RATE, KILL_BONUS_MAX_PCT, FACTION_WEATHER, AURA_TILE_EFFECTS } from '../constants';
-import { EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, towerEffectiveStats, towerPerAttackDamageBase, towerAuraTileKind } from './TowerSystem';
+import {
+  EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS,
+  MARS_VICTOR_FIRE_RIDER_PCT,
+  MARS_VICTOR_FLYER_DAMAGE_BONUS,
+  MARS_VICTOR_GLOBAL_DAMAGE_BONUS,
+  MARS_VICTOR_GLOBAL_SPEED_MULT,
+  MARS_VICTOR_MELEE_DAMAGE_BONUS,
+  MARS_VICTOR_PRIORITY_DAMAGE_BONUS,
+  MARS_VICTOR_SIEGE_DAMAGE_BONUS,
+  towerEffectiveStats,
+  towerPerAttackDamageBase,
+  towerAuraTileKind
+} from './TowerSystem';
 import { resistanceModifier } from './DamageTypeSystem';
 import { spawnPhoenixMinions } from './EnemySystem';
 import { spawnProjectile, spawnCosmeticProjectile } from './ProjectileSystem';
@@ -283,11 +295,12 @@ function applyResistanceBreakAuras(
 
 function sullaFireRiderPctForTower(
   tower: Tower,
-  heroAuraSources: Array<{ heroId: string; tower: Tower; auraScale: number }>
+  heroAuraSources: Array<{ heroId: string; tower: Tower; auraScale: number }>,
+  marsVictorActive = false
 ): number {
   const tcx = tilePxX(tower);
   const tcy = tilePxY(tower);
-  let pct = 0;
+  let pct = marsVictorActive && tower.damageType !== DamageType.NONE ? MARS_VICTOR_FIRE_RIDER_PCT : 0;
   for (const h of heroAuraSources) {
     if (h.heroId !== 'HERO_SULLA' || h.tower.id === tower.id) continue;
     if (Math.hypot(tilePxX(h.tower) - tcx, tilePxY(h.tower) - tcy) <= SULLA_PASSIVE_RADIUS_TILES * GRID.TILE) {
@@ -442,6 +455,13 @@ export const FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES = 0.35;
 export const EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES = 0.55;
 export const FIRE_OIL_FLASK_SPLASH_RADIUS_TILES = 1.35;
 export const AOE_BURST_RADIUS_MULT = 1.15;
+export const MARS_VICTOR_MARK_PCT = 0.35;
+export const MARS_VICTOR_MARK_DURATION = 4.0;
+export const MARS_VICTOR_ARMOR_SHRED_DURATION = 4.0;
+export const MARS_VICTOR_STUN_DURATION = 0.5;
+export const MARS_VICTOR_BURN_DURATION = 3.0;
+export const MARS_VICTOR_BURN_MAGNITUDE = 0.08;
+export const MARS_VICTOR_HELLFIRE_MAGNITUDE = 0.012;
 
 export function undeadGeneralPreyDamageMult(target: Pick<Enemy, 'type'>): number {
   if (target.type === EnemyType.WAR_ELEPHANT || target.type === EnemyType.UNDEAD_WAR_ELEPHANT) {
@@ -993,12 +1013,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   const scipioBossDamageMult = 1 + 0.33 * scipioAuraScale;
   const agricolaFlyerDamageMult = 1 + 0.15 * agricolaAuraScale;
   // 2026 v2 — Mars Victor fuses the 6 hero passives into one global buff while
-  // it stands on the board (its own DPS is already capstone-tier). Computed
-  // once; the dmg/speed halves apply in the aura loop below, the vs-boss +
-  // melee-vs-flyers halves in the damage/targeting passes.
-  const marsVictorActive = towers.some(t => t.type === TowerType.MARS_VICTOR);
-  // Stash for pickTarget() (a separate function) so melee-vs-flyers can read it.
-  (state as any).__marsVictorActive = marsVictorActive;
+  // it stands active on the board (its own DPS is already capstone-tier). The
+  // flag is finalized after aura-nullifier checks below so the inheritance
+  // follows the same suppression rules as other aura powers.
+  let marsVictorActive = false;
   // Resolve hero tower position ONCE for per-tower local-aura checks
   // below. Avoids a per-tower state.towers.get lookup.
   const localAuras: Array<{ x: number; y: number; r: number; dmg?: number; spd?: number }> = [];
@@ -1061,11 +1079,12 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       enemyTakenAuras.push({ x: cx, y: cy, r: 5 * GRID.TILE, pct: 0.25 });
     }
     if (t.type === TowerType.MARS_VICTOR && !auraOff) {
-      // The fused war-god aura: Caesar's global tempo + the legions' offense,
-      // granted to EVERY tower on the board (the vs-boss + melee-vs-flyers
-      // halves of the fusion fire in the damage / targeting passes below).
-      globalDmgBonus += 0.35;
-      globalSpeedMult *= 1.20;
+      // The fused war-god aura grants Caesar's command tempo globally.
+      // Marius, Agrippa, Scipio, Agricola, and Sulla inheritance is applied
+      // in the damage/range passes where each hero's filter belongs.
+      marsVictorActive = true;
+      globalDmgBonus += MARS_VICTOR_GLOBAL_DAMAGE_BONUS;
+      globalSpeedMult *= MARS_VICTOR_GLOBAL_SPEED_MULT;
     }
     // JULIUS_CAESAR (2026-05 v6 audit fix): the global damage aura
     // was only wired into the stat-breakdown UI, not the combat math.
@@ -1362,6 +1381,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // SACER_VESTAL — passive sanctum: nothing to push here (status durations
     // are doubled at apply time inside pushStatus when the target is in range).
   }
+  // Stash for pickTarget() (a separate function) so melee-vs-flyers can read it.
+  (state as any).__marsVictorActive = marsVictorActive;
   // Necromancer's Lantern promises true regeneration denial, not merely a
   // vulnerability aura. Refresh a short shared healing lock while an enemy is
   // inside any active Lantern aura. The small grace period avoids frame-order
@@ -1432,6 +1453,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // intact for Marius/Agrippa/Sulla which still use local auras.
       // Sulla's Pyre Ward is applied as a separate FIRE rider at the
       // per-hit damage site below, not as a generic aura multiplier.
+    }
+    if (marsVictorActive) {
+      if (t.damageType === DamageType.PHYS_MELEE) dm *= 1 + MARS_VICTOR_MELEE_DAMAGE_BONUS;
+      if (t.damageType === DamageType.SIEGE) dm *= 1 + MARS_VICTOR_SIEGE_DAMAGE_BONUS;
     }
     // Marian Formation per-tower stamp: N nearest melee get +X% speed,
     // +Y% damage, and shared-crit access during the window. Crit comes
@@ -1631,7 +1656,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Additive damage riders are separate packets. If the target is
       // immune to the rider's type, only that rider drops to 0; the tower's
       // native hit above still resolves through its own damage type.
-      const sullaFireRiderPct = sullaFireRiderPctForTower(t, heroAuraSources);
+      const sullaFireRiderPct = sullaFireRiderPctForTower(t, heroAuraSources, marsVictorActive);
       (t as any).__sullaFireVfx = sullaFireRiderPct > 0;
       if (sullaFireRiderPct > 0) {
         const fireResMod = applyWaveResistRelief(
@@ -1783,7 +1808,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const isScipioPriorityTarget = !!target.isBoss || !!(target as any).isCommander || isCommanderType((target as any).type);
       if (isScipioPriorityTarget) damage *= scipioBossDamageMult;
       if (target.isFlyer) damage *= agricolaFlyerDamageMult;
-      if (marsVictorActive && isScipioPriorityTarget) damage *= 1.25;   // Mars Victor fuses Scipio's boss/commander passive
+      if (marsVictorActive && isScipioPriorityTarget) damage *= 1 + MARS_VICTOR_PRIORITY_DAMAGE_BONUS;
+      if (marsVictorActive && target.isFlyer) damage *= 1 + MARS_VICTOR_FLYER_DAMAGE_BONUS;
       // 2026-05-21 — Zama (Scipio tier-3) + Triumph (Marius tier-3)
       // damage windows removed alongside the tier-3 ability deletion.
       // The Scipio passive boss bonus above still fires; the per-
@@ -2314,8 +2340,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             }
           }
         }
-        // 2026 v2 — MARS VICTOR · TRIUMPH OF MARS: every 3rd hit a divine
-        // shockwave smites all enemies within 3.5 tiles for 3× damage.
+        // MARS VICTOR · TRIUMPH OF MARS: every 3rd hit smites the cluster
+        // and stamps the war-god setup package across the shockwave.
         if (t.type === TowerType.MARS_VICTOR) {
           const hc = (t as any).__hitCount ?? 0;
           if (hc > 0 && hc % 3 === 0) {
@@ -2325,6 +2351,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
               if (e.hp <= 0) continue;
               if (Math.hypot(e.x - target.x, e.y - target.y) > novaR) continue;
               e.hp -= novaDmg;
+              pushStatus(e, StatusEffectKind.MARK, MARS_VICTOR_MARK_DURATION, MARS_VICTOR_MARK_PCT, t.qualityTier);
+              pushStatus(e, StatusEffectKind.ARMOR_SHRED, MARS_VICTOR_ARMOR_SHRED_DURATION, 0, t.qualityTier);
+              pushStatus(e, StatusEffectKind.STUN, MARS_VICTOR_STUN_DURATION, 0, t.qualityTier);
               e.hpFlashTimer = 0.20;
               e.lastDamagedTick = state.tick;
               hooks.onHit(t, e, novaDmg, resMod);
@@ -2899,6 +2928,25 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   hooks.onHit(t, target, damage, resMod, !!(t as any).__lastWasCrit);
   applyOnHitEffects(t, target, state.tick);
   triggerElementalHitVfx(t, target.x, target.y, state.tick);
+  if (t.type === TowerType.MARS_VICTOR) {
+    const hc = (t as any).__hitCount ?? 0;
+    if (hc > 0 && hc % 3 === 0) {
+      const novaR = enlargedAoEBurstRadiusTiles(3.5) * GRID.TILE;
+      const novaDmg = damage * 3;
+      for (const e of state.enemies.values()) {
+        if (e.hp <= 0) continue;
+        if (Math.hypot(e.x - target.x, e.y - target.y) > novaR) continue;
+        e.hp -= novaDmg;
+        pushStatus(e, StatusEffectKind.MARK, MARS_VICTOR_MARK_DURATION, MARS_VICTOR_MARK_PCT, t.qualityTier);
+        pushStatus(e, StatusEffectKind.ARMOR_SHRED, MARS_VICTOR_ARMOR_SHRED_DURATION, 0, t.qualityTier);
+        pushStatus(e, StatusEffectKind.STUN, MARS_VICTOR_STUN_DURATION, 0, t.qualityTier);
+        e.hpFlashTimer = 0.20;
+        e.lastDamagedTick = state.tick;
+        hooks.onHit(t, e, novaDmg, resMod);
+        if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
+      }
+    }
+  }
   if (target.hp <= 0 && !checkRebirth(state, target, state.tick)) hooks.onKill(t, target);
   // CONSULAR_FATEBINDER — every shot strikes EVERY enemy on the map. The
   // initial target gets the full hit; every other enemy alive takes 45% of
@@ -3557,6 +3605,13 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
     case TowerType.INFERNAL_COLOSSUS:
       pushStatus(target, StatusEffectKind.HELLFIRE, 999, 0.015, tier);
       pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(4), 0, tier);
+      break;
+    case TowerType.MARS_VICTOR:
+      pushStatus(target, StatusEffectKind.MARK, dur(MARS_VICTOR_MARK_DURATION), MARS_VICTOR_MARK_PCT, tier);
+      pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(MARS_VICTOR_ARMOR_SHRED_DURATION), 0, tier);
+      pushStatus(target, StatusEffectKind.STUN, dur(MARS_VICTOR_STUN_DURATION), 0, tier);
+      pushStatus(target, StatusEffectKind.BURN, dur(MARS_VICTOR_BURN_DURATION), MARS_VICTOR_BURN_MAGNITUDE, tier);
+      pushStatus(target, StatusEffectKind.HELLFIRE, 999, MARS_VICTOR_HELLFIRE_MAGNITUDE, tier);
       break;
     case TowerType.ROMAN_TRANSFORMER:
       pushStatus(target, StatusEffectKind.MARK, dur(4), 0.35, tier);

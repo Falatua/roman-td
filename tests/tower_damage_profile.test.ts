@@ -48,6 +48,22 @@ describe('tower damage profile UI helper', () => {
     }));
   });
 
+  it('shows Mars Victor inherited Sulla fire as separate fire damage', () => {
+    const state = createGameState();
+    const tower = createTower(TowerType.VELITES, 1, 5, 5, 1);
+    const mars = createTower(TowerType.MARS_VICTOR, 5, 1, 1, 1);
+    state.towers.set(tower.id, tower);
+    state.towers.set(mars.id, mars);
+    const breakdown = towerStatBreakdown(tower, state);
+    const profile = towerDamageProfile(tower, state, breakdown);
+    expect(profile.summary).toContain('Fire');
+    expect(profile.rows).toContainEqual(expect.objectContaining({
+      kind: 'EXTRA',
+      label: 'Elemental Fire',
+      detail: expect.stringContaining("Mars Victor's fused Sulla passive")
+    }));
+  });
+
   it('shows Divine Tile as added damage while keeping the native type primary', () => {
     const state = createGameState();
     const ivory = AURA_TILES.find(tile => tile.kind === 'IVORY')!;

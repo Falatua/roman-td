@@ -1,8 +1,8 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
-import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, MARS_VICTOR_FIRE_RIDER_PCT, MARS_VICTOR_FLYER_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_SPEED_MULT, MARS_VICTOR_MELEE_DAMAGE_BONUS, MARS_VICTOR_PRIORITY_DAMAGE_BONUS, MARS_VICTOR_SIEGE_DAMAGE_BONUS, MARS_VICTOR_SIEGE_RANGE_BONUS_TILES, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
+import { applyDamageAndStatus, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MARS_VICTOR_BURN_MAGNITUDE, MARS_VICTOR_HELLFIRE_MAGNITUDE, MARS_VICTOR_MARK_PCT, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -156,6 +156,9 @@ function singleSwingDamage(opts: {
   targetOffsetPx?: { x: number; y: number };
   targetType?: EnemyType;
   targetFaction?: EnemyFaction;
+  targetIsBoss?: boolean;
+  targetIsCommander?: boolean;
+  targetIsFlyer?: boolean;
 } = {}) {
   const state = createGameState();
   (globalThis as any).__lastState = state;
@@ -178,6 +181,12 @@ function singleSwingDamage(opts: {
   );
   if (opts.targetType) target.type = opts.targetType;
   if (opts.targetFaction) target.faction = opts.targetFaction;
+  if (opts.targetIsBoss) {
+    target.isBoss = true;
+    target.archetype = 'BOSS';
+  }
+  if (opts.targetIsCommander) (target as any).isCommander = true;
+  if (opts.targetIsFlyer) target.isFlyer = true;
   target.hp = 100000;
   target.maxHp = 100000;
   state.enemies.set(target.id, target);
@@ -1012,6 +1021,45 @@ describe('Sacred Band combat wiring', () => {
 });
 
 describe('Roman Transformer omega combat wiring', () => {
+  it('gives Mars Victor its own decree status package', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    const tower = createTower(TowerType.MARS_VICTOR, 5, 4, 4, 0);
+    const target = testEnemy('mars-victor-target');
+    state.enemies.set(target.id, target);
+
+    applyDamageAndStatus(state, tower, target, 1, noopCombatHooks());
+
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === MARS_VICTOR_MARK_PCT)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.BURN && s.magnitude === MARS_VICTOR_BURN_MAGNITUDE)).toBe(true);
+    expect(target.statusEffects.some(s => s.kind === StatusEffectKind.HELLFIRE && s.magnitude === MARS_VICTOR_HELLFIRE_MAGNITUDE)).toBe(true);
+  });
+
+  it('spreads Mars Victor shockwave setup on every third hit', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    const tower = createTower(TowerType.MARS_VICTOR, 5, 4, 4, 0);
+    (tower as any).__hitCount = 3;
+    state.towers.set(tower.id, tower);
+    const c = towerCenter(tower);
+    const primary = testEnemy('mars-primary', c.x + GRID.TILE, c.y);
+    const splash = testEnemy('mars-splash', c.x + GRID.TILE * 2, c.y);
+    primary.hp = primary.maxHp = 100000;
+    splash.hp = splash.maxHp = 100000;
+    state.enemies.set(primary.id, primary);
+    state.enemies.set(splash.id, splash);
+
+    applyDamageAndStatus(state, tower, primary, 100, noopCombatHooks());
+
+    expect((tower as any).__hitCount).toBe(3);
+    expect(splash.hp).toBeLessThan(100000);
+    expect(splash.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === MARS_VICTOR_MARK_PCT)).toBe(true);
+    expect(splash.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+    expect(splash.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
+  });
+
   it('applies its omega on-hit pressure package', () => {
     const state = createGameState();
     (globalThis as any).__lastState = state;
@@ -1808,7 +1856,8 @@ describe('Aura mechanics and visibility', () => {
       ]
     });
 
-    expect(capped.damage / base.damage).toBeCloseTo(2.0, 4);
+    expect(capped.damage / base.damage).toBeGreaterThan(2.0);
+    expect(capped.damage / base.damage).toBeLessThan(2.0 * (1 + MARS_VICTOR_FIRE_RIDER_PCT) * 1.25);
     expect(base.cooldown / capped.cooldown).toBeCloseTo(2.0, 4);
   });
 
@@ -1836,6 +1885,60 @@ describe('Aura mechanics and visibility', () => {
     expect(speedAura?.multiplier).toBeCloseTo(2.0, 4);
     expect(damageAura?.source).toContain('capped');
     expect(speedAura?.source).toContain('capped');
+  });
+
+  it('shows Mars Victor inheriting every hero passive family map-wide', () => {
+    const state = createGameState();
+    const mars = createTower(TowerType.MARS_VICTOR, 5, 1, 1, 0);
+    const melee = createTower(TowerType.MILITES, 1, 5, 5, 0);
+    const siege = createTower(TowerType.SCORPIO, 1, 7, 5, 0);
+    const ranged = createTower(TowerType.VELITES, 1, 9, 5, 0);
+    state.towers.set(mars.id, mars);
+    state.towers.set(melee.id, melee);
+    state.towers.set(siege.id, siege);
+    state.towers.set(ranged.id, ranged);
+
+    const meleeBreakdown = towerStatBreakdown(melee, state);
+    const siegeBreakdown = towerStatBreakdown(siege, state);
+    const rangedBreakdown = towerStatBreakdown(ranged, state);
+    const meleeAura = meleeBreakdown.damageMods.find(m => m.source.startsWith('Aura stack'));
+    const siegeAura = siegeBreakdown.damageMods.find(m => m.source.startsWith('Aura stack'));
+    const rangedSpeedAura = rangedBreakdown.speedMods.find(m => m.source.startsWith('Aura stack'));
+
+    expect(meleeAura?.source).toContain('Mars Victor');
+    expect(meleeAura?.source).toContain('Mars Victor Marius melee inheritance');
+    expect(meleeAura?.source).toContain('Mars Victor Sulla fire rider');
+    expect(meleeAura?.multiplier).toBeCloseTo(2.0, 4);
+    expect(siegeBreakdown.damageMods.some(m => m.source.includes('Mars Victor Agrippa siege inheritance'))).toBe(true);
+    expect(siegeAura?.source).toContain(`Mars Victor Agrippa siege inheritance +${Math.round(MARS_VICTOR_SIEGE_DAMAGE_BONUS * 100)}%`);
+    expect(siegeBreakdown.rangeMods).toContainEqual(expect.objectContaining({
+      source: 'Mars Victor Agrippa range inheritance',
+      flat: MARS_VICTOR_SIEGE_RANGE_BONUS_TILES
+    }));
+    expect(rangedSpeedAura?.multiplier).toBeCloseTo(MARS_VICTOR_GLOBAL_SPEED_MULT, 4);
+    expect(rangedBreakdown.damageMods.some(m => m.source.includes('Mars Victor Sulla fire rider'))).toBe(true);
+    expect((towersData as any).MARS_VICTOR.ability).toContain('Inherits every hero passive');
+  });
+
+  it('applies Mars Victor inherited Scipio and Agricola combat bonuses', () => {
+    const bossBase = singleSwingDamage({ targetIsBoss: true });
+    const bossWithMars = singleSwingDamage({
+      support: [{ type: TowerType.MARS_VICTOR, x: 1, y: 1, tier: 5 }],
+      targetIsBoss: true
+    });
+    const flyerBase = singleSwingDamage({ targetIsFlyer: true });
+    const flyerWithMars = singleSwingDamage({
+      support: [{ type: TowerType.MARS_VICTOR, x: 1, y: 1, tier: 5 }],
+      targetIsFlyer: true
+    });
+
+    expect(bossWithMars.damage / bossBase.damage).toBeGreaterThan(
+      (1 + MARS_VICTOR_GLOBAL_DAMAGE_BONUS) * (1 + MARS_VICTOR_PRIORITY_DAMAGE_BONUS)
+    );
+    expect(flyerBase.damage).toBe(0);
+    expect(flyerWithMars.damage).toBeGreaterThan(
+      bossBase.damage * (1 + MARS_VICTOR_FLYER_DAMAGE_BONUS)
+    );
   });
 
   it('applies local ally item auras to damage and attack speed', () => {

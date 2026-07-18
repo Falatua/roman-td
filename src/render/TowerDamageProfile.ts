@@ -136,6 +136,17 @@ export function towerDamageProfile(tower: Tower, state: GameStateShape, breakdow
     upsertSummaryPart(summaryParts, 'Fire');
   }
 
+  const marsFirePct = firstDamageModPct(breakdown, 'Mars Victor Sulla fire rider');
+  if (marsFirePct > 0) {
+    rows.push({
+      kind: 'EXTRA',
+      label: 'Elemental Fire',
+      detail: `Mars Victor's fused Sulla passive adds ${pctLabel(marsFirePct)} separate Fire damage on hit.`,
+      color: DAMAGE_COLORS[DamageType.ELEMENTAL_FIRE]
+    });
+    upsertSummaryPart(summaryParts, 'Fire');
+  }
+
   if (aura?.hitSlowPct) {
     rows.push({
       kind: 'ON-HIT',

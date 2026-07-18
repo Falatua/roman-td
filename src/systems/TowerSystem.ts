@@ -71,6 +71,14 @@ const MELEE_MIN_RANGE_TILES = 2.0;
 const AURA_STACK_CAP = 2.00;
 const SULLA_PASSIVE_RADIUS_TILES = 5.5;
 export const EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS = 0.10;
+export const MARS_VICTOR_GLOBAL_DAMAGE_BONUS = 0.45;
+export const MARS_VICTOR_GLOBAL_SPEED_MULT = 1.25;
+export const MARS_VICTOR_MELEE_DAMAGE_BONUS = 0.35;
+export const MARS_VICTOR_SIEGE_DAMAGE_BONUS = 0.30;
+export const MARS_VICTOR_SIEGE_RANGE_BONUS_TILES = 1.0;
+export const MARS_VICTOR_FIRE_RIDER_PCT = 0.22;
+export const MARS_VICTOR_PRIORITY_DAMAGE_BONUS = 0.33;
+export const MARS_VICTOR_FLYER_DAMAGE_BONUS = 0.30;
 export const GIANTS_BANE_ITEM_ID = 'GIANTS_BANE';
 export const WITCHS_BREW_ITEM_ID = 'WITCHS_BREW';
 export const CENSER_OF_MEFITIS_ITEM_ID = 'CENSER_OF_MEFITIS';
@@ -575,7 +583,9 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
       const gs: any = g?.__game;
       if (!gs) return 0;
       if (t.damageType !== DamageType.SIEGE) return 0;
-      for (const hero of gs.towers?.values?.() ?? []) {
+      if ((gs as any).__marsVictorActive) return MARS_VICTOR_SIEGE_RANGE_BONUS_TILES;
+      for (const hero of ((gs.towers?.values?.() ?? []) as Iterable<Tower>)) {
+        if (hero.type === TowerType.MARS_VICTOR && !hero.pending) return MARS_VICTOR_SIEGE_RANGE_BONUS_TILES;
         if (heroIdForTowerType(String(hero.type)) !== 'HERO_AGRIPPA') continue;
         if (hero.id !== gs.activeHeroTowerId && !isMercatorChampionType(String(hero.type))) continue;
         const dx = (hero.tileX - t.tileX);
@@ -951,8 +961,8 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
         addGlobalDmg(`Aquilifer Titan T${oTier}`, 0.35 * (1 + 0.05 * (oTier - 1)));
       }
       if (other.type === TowerType.MARS_VICTOR) {
-        addGlobalDmg('Mars Victor', 0.35);
-        addGlobalSpeed('Mars Victor', 1.20);
+        addGlobalDmg('Mars Victor', MARS_VICTOR_GLOBAL_DAMAGE_BONUS);
+        addGlobalSpeed('Mars Victor', MARS_VICTOR_GLOBAL_SPEED_MULT);
       }
       if (other.type === TowerType.JULIUS_CAESAR) addGlobalDmg('Julius Caesar', 0.55);
       if (other.type === TowerType.TRIUMVIRATE) {
@@ -1017,6 +1027,17 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       if (h.heroId === 'HERO_SULLA' && dh <= SULLA_PASSIVE_RADIUS_TILES * GRID.TILE) {
         addLocalDmg('Hero Sulla fire rider', 0.22 * h.auraScale);
       }
+    }
+    const marsVictorActive = Array.from(state.towers.values() as Iterable<Tower>).some(other =>
+      other.type === TowerType.MARS_VICTOR && !other.pending && !isAuraOff(other)
+    );
+    if (marsVictorActive) {
+      if (t.damageType === DamageType.PHYS_MELEE) addLocalDmg('Mars Victor Marius melee inheritance', MARS_VICTOR_MELEE_DAMAGE_BONUS);
+      if (t.damageType === DamageType.SIEGE) {
+        addLocalDmg('Mars Victor Agrippa siege inheritance', MARS_VICTOR_SIEGE_DAMAGE_BONUS);
+        rngMods.push({ source: 'Mars Victor Agrippa range inheritance', flat: MARS_VICTOR_SIEGE_RANGE_BONUS_TILES });
+      }
+      if (t.damageType !== DamageType.NONE) addLocalDmg('Mars Victor Sulla fire rider', MARS_VICTOR_FIRE_RIDER_PCT);
     }
 
     const marianUntil = (t as any).__marianFormationUntilTick ?? 0;
