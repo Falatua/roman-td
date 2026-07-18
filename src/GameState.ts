@@ -146,6 +146,9 @@ export interface GameStateShape {
   // One emergency trap crate is awarded after clearing W20, right as the
   // second-gate late campaign begins. Gifts do not count as purchases.
   wave20TrapGiftGranted?: boolean;
+  // One Witch's Brew is awarded after W22 so Murmillo builds have a clear
+  // late-campaign awakening route before the undead-heavy pressure spikes.
+  wave22WitchsBrewGranted?: boolean;
   combosBuilt?: number;
   combosBuiltUniqueTypes?: string[];
   // Lifetime kills of enemies that emerged from the ocean/shipwreck lane.
@@ -407,6 +410,7 @@ export function createGameState(): GameStateShape {
     firstFlyerApotheosisGranted: false,
     waveOneGiantsBaneGranted: false,
     wave20TrapGiftGranted: false,
+    wave22WitchsBrewGranted: false,
     testYourMightOffered: false,
     testYourMightDeclined: false,
     testYourMightActive: false,

@@ -6,6 +6,7 @@ import { inventorySellPrice } from '../src/render/ShopUI';
 import {
   autoPickupOnBuildPhase,
   createInventory,
+  grantWave22WitchsBrew,
   grantWaveOneGiantsBane,
   inventoryAdd,
   inventoryRemove,
@@ -64,5 +65,51 @@ describe("Wave 1 Giant's Bane ceremonial gift", () => {
     expect(shopSource).toContain('CEREMONIAL GIFT');
     expect(towerSource).toContain('__itemSellLockById');
     expect(towerSource).toContain('sellLockedReason');
+  });
+});
+
+describe("Wave 22 Witch's Brew gift", () => {
+  it("grants exactly one Witch's Brew after Wave 22", () => {
+    const state = createGameState();
+    const inv = createInventory();
+    state.wave = 21;
+    expect(grantWave22WitchsBrew(state, inv)).toBe('none');
+
+    state.wave = 22;
+    expect(grantWave22WitchsBrew(state, inv)).toBe('inventory');
+    expect(inv.slots).toHaveLength(1);
+    expect(inv.slots[0]).toMatchObject({
+      itemId: 'WITCHS_BREW',
+      rarity: 'LEGENDARY',
+      isConsumable: false
+    });
+    expect(grantWave22WitchsBrew(state, inv)).toBe('none');
+    expect(inv.slots).toHaveLength(1);
+  });
+
+  it("preserves the Witch's Brew gift as a loot orb when inventory is full", () => {
+    const state = createGameState();
+    state.wave = 22;
+    const inv = createInventory();
+    for (let i = 0; i < INVENTORY_SIZE; i++) inventoryAdd(inv, 'SHARPENED_BLADE', 'COMMON');
+
+    expect(grantWave22WitchsBrew(state, inv)).toBe('loot_orb');
+    expect(state.lootOrbs).toHaveLength(1);
+    expect(state.lootOrbs[0]).toMatchObject({
+      itemId: 'WITCHS_BREW',
+      rarity: 'LEGENDARY'
+    });
+  });
+
+  it('does not grant in sandbox or endless modes', () => {
+    const sandboxState = createGameState();
+    sandboxState.wave = 22;
+    sandboxState.sandboxMode = true;
+    expect(grantWave22WitchsBrew(sandboxState, createInventory())).toBe('none');
+
+    const endlessState = createGameState();
+    endlessState.wave = 22;
+    endlessState.endlessMode = true;
+    expect(grantWave22WitchsBrew(endlessState, createInventory())).toBe('none');
   });
 });

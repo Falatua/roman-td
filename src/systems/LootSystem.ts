@@ -430,7 +430,10 @@ export function isConsumable(itemId: ItemId): boolean {
 }
 
 export type FirstFlyerApotheosisGrant = 'inventory' | 'loot_orb' | 'none';
+export type Wave22WitchsBrewGrant = 'inventory' | 'loot_orb' | 'none';
 export const WAVE_ONE_GIANTS_BANE_GIFT_REASON = 'Gift of the Senate: this ceremonial copy cannot be sold.';
+export const WAVE_22_WITCHS_BREW_GIFT_WAVE = 22;
+export const WITCHS_BREW_GIFT_ITEM_ID: ItemId = 'WITCHS_BREW';
 export type WaveOneGiantsBaneGrant = 'inventory' | 'loot_orb' | 'none';
 
 export function grantWaveOneGiantsBane(state: GameStateShape, inv: InventoryState): WaveOneGiantsBaneGrant {
@@ -444,6 +447,20 @@ export function grantWaveOneGiantsBane(state: GameStateShape, inv: InventoryStat
     itemId: 'GIANTS_BANE',
     rarity: 'LEGENDARY',
     sellLockedReason: WAVE_ONE_GIANTS_BANE_GIFT_REASON
+  });
+  return 'loot_orb';
+}
+
+export function grantWave22WitchsBrew(state: GameStateShape, inv: InventoryState): Wave22WitchsBrewGrant {
+  if (state.wave !== WAVE_22_WITCHS_BREW_GIFT_WAVE || state.wave22WitchsBrewGranted || state.sandboxMode || state.endlessMode) return 'none';
+  state.wave22WitchsBrewGranted = true;
+  if (inventoryAdd(inv, WITCHS_BREW_GIFT_ITEM_ID, 'LEGENDARY', false)) return 'inventory';
+  state.lootOrbs.push({
+    id: newId(),
+    x: GRID.CANVAS_W - GRID.TILE * 1.5,
+    y: GRID.CANVAS_H - GRID.TILE * 1.5,
+    itemId: WITCHS_BREW_GIFT_ITEM_ID,
+    rarity: 'LEGENDARY'
   });
   return 'loot_orb';
 }

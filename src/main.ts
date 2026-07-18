@@ -17,7 +17,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollApotheosisLuckyDrop, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, grantFirstFlyerApotheosis, grantWaveOneGiantsBane, grantSoloStartingItems, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollApotheosisLuckyDrop, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, grantFirstFlyerApotheosis, grantWaveOneGiantsBane, grantWave22WitchsBrew, grantSoloStartingItems, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorChampionOffers, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_PRICE, MERCATOR_TOWER_OFFER_COUNT } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import { scaledEnemyRegenRate } from './systems/EnemyHealing';
@@ -8521,6 +8521,15 @@ async function boot() {
           SFX.itemPickup('RARE');
           state.hint = `Wave 20 cleared. Rome sends emergency traps: ${giftLabel}. Open the Armarium to deploy them before Wave 21.`;
           showBonusBossBanner('★ WAVE 20 CLEARED · EMERGENCY TRAPS DELIVERED ★');
+        }
+        const witchsBrewGift = grantWave22WitchsBrew(state, inventory);
+        if (witchsBrewGift !== 'none') {
+          SFX.itemPickup('LEGENDARY');
+          const delivery = witchsBrewGift === 'inventory'
+            ? 'It waits in the Armarium.'
+            : 'Your Armarium is full, so it waits beside Rome as a loot orb.';
+          state.hint = `Witch's Brew earned after Wave 22. ${delivery} Give it to a Tier IV or V Murmillo to awaken the Undead Gladiator King.`;
+          showBonusBossBanner("★ WAVE 22 CLEARED · WITCH'S BREW DELIVERED ★");
         }
         const offerCampaignRelic = () => {
           if (!shouldOfferCampaignRelics(state)) return;
