@@ -27,6 +27,7 @@ import { campaignPressureHpMult } from './CampaignDifficulty';
 import { routeOceanSpawnToPath } from './OceanSpawnSystem';
 import { isBossEnemy, isCommanderEnemy, isEliteEnemy } from './EnemyClassification';
 import { staggerElephantSpawns } from './ElephantPacing';
+import { grantTrapGiftInventory } from './TrapInventorySystem';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
 const FACTION_BOSS: Record<string, string> = {
@@ -39,6 +40,13 @@ const FACTION_BOSS: Record<string, string> = {
 };
 
 type SpawnQueueItem = GameStateShape['spawnQueue'][number];
+
+export const WAVE_20_TRAP_GIFT_WAVE = 20;
+export const WAVE_20_TRAP_GIFT = [
+  { id: 'BALLISTA_SNARE', qty: 1 },
+  { id: 'SKY_NET', qty: 1 },
+  { id: 'FROST_SNARE', qty: 1 },
+] as const;
 
 function sortSpawnQueue(queue: SpawnQueueItem[]): void {
   queue.sort((a, b) => (a.spawnAt - b.spawnAt) || (Number(!!a.caveB) - Number(!!b.caveB)));
@@ -62,6 +70,19 @@ function mirrorGroundSpawnsToCaveB(state: GameStateShape): void {
   if (mirrors.length === 0) return;
   state.spawnQueue.push(...mirrors);
   sortSpawnQueue(state.spawnQueue);
+}
+
+export function grantWave20TrapGift(state: GameStateShape): Array<{ id: string; qty: number }> {
+  if (state.wave !== WAVE_20_TRAP_GIFT_WAVE || state.wave20TrapGiftGranted) return [];
+  if (state.sandboxMode || state.endlessMode) return [];
+  state.wave20TrapGiftGranted = true;
+  const granted: Array<{ id: string; qty: number }> = [];
+  for (const gift of WAVE_20_TRAP_GIFT) {
+    const qty = grantTrapGiftInventory(state, gift.id, gift.qty);
+    if (qty > 0) granted.push({ id: gift.id, qty });
+  }
+  (state as any).__wave20TrapGiftJustGranted = granted;
+  return granted;
 }
 
 export function effectiveWaveHpMult(waveNumber: number, baseHpMult: number, isBoss = false, isElite = false): number {
@@ -646,6 +667,7 @@ export function checkWaveEnd(state: GameStateShape, onWaveEnd: (gold: number) =>
     const modSuffix = modBonus > 0 ? ` +${modBonus}g RNG bonus.` : '';
     const flyerSuffix = flyerBonus > 0 ? ` +${flyerBonus}g Flyer-Survival bonus.` : '';
     state.hint = `Wave ${state.wave} survived. +${totalWaveGold} Gold.${flyerSuffix}${modSuffix} The empire pretends not to be impressed.`;
+    grantWave20TrapGift(state);
     // Clear weather + modifier — sky clears between waves.
     state.weatherKey = null;
     state.weatherIntensity = 1;

@@ -8512,6 +8512,16 @@ async function boot() {
           // glows until the player opens it. Cleared in onOpenShop below.
           state.shopRefreshedUnopened = true;
         }
+        const wave20TrapGift = (((state as any).__wave20TrapGiftJustGranted ?? []) as Array<{ id: string; qty: number }>);
+        if (wave20TrapGift.length > 0) {
+          (state as any).__wave20TrapGiftJustGranted = [];
+          const giftLabel = wave20TrapGift
+            .map(({ id, qty }) => `${qty} ${TRAP_DEFS[id]?.name ?? String(id).replace(/_/g, ' ')}`)
+            .join(' · ');
+          SFX.itemPickup('RARE');
+          state.hint = `Wave 20 cleared. Rome sends emergency traps: ${giftLabel}. Open the Armarium to deploy them before Wave 21.`;
+          showBonusBossBanner('★ WAVE 20 CLEARED · EMERGENCY TRAPS DELIVERED ★');
+        }
         const offerCampaignRelic = () => {
           if (!shouldOfferCampaignRelics(state)) return;
           const stage = document.getElementById('stage-wrap');

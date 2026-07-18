@@ -1,7 +1,7 @@
 // Tests for the wave system: HP scaling, wave-end conditions, win/loss state.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { effectiveWaveHpMult, nominalWaveThreatHp, previewSpawnHp, startWave, tickSpawns, checkWaveEnd } from '../src/systems/WaveManager';
+import { effectiveWaveHpMult, nominalWaveThreatHp, previewSpawnHp, startWave, tickSpawns, checkWaveEnd, grantWave20TrapGift } from '../src/systems/WaveManager';
 import { campaignPressureHpMult, campaignPressureResistMult } from '../src/systems/CampaignDifficulty';
 import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
 import { tickSurpriseEvents } from '../src/systems/SurpriseEvents';
@@ -826,6 +826,41 @@ describe('Wave end — gold reward + reset', () => {
     s.enemies.clear();
     checkWaveEnd(s, () => {});
     expect(s.weatherKey).toBeNull();
+  });
+
+  it('grants a free emergency trap crate after clearing wave 20 without counting purchases', () => {
+    const s: any = bootstrapState();
+    s.phase = GamePhase.WAVE_PHASE;
+    s.wave = 20;
+    s.spawnQueue = [];
+    s.enemies.clear();
+
+    checkWaveEnd(s, () => {});
+
+    expect(s.wave20TrapGiftGranted).toBe(true);
+    expect(s.trapInventory.BALLISTA_SNARE).toBe(1);
+    expect(s.trapInventory.SKY_NET).toBe(1);
+    expect(s.trapInventory.FROST_SNARE).toBe(1);
+    expect(s.trapsPurchased).toBe(0);
+    expect(s.trapPurchasesByType.BALLISTA_SNARE ?? 0).toBe(0);
+    expect(s.__wave20TrapGiftJustGranted).toEqual([
+      { id: 'BALLISTA_SNARE', qty: 1 },
+      { id: 'SKY_NET', qty: 1 },
+      { id: 'FROST_SNARE', qty: 1 },
+    ]);
+  });
+
+  it('does not repeat the wave 20 trap gift and respects held trap caps', () => {
+    const s: any = bootstrapState();
+    s.wave = 20;
+    s.trapInventory.SKY_NET = 5;
+
+    expect(grantWave20TrapGift(s)).toEqual([
+      { id: 'BALLISTA_SNARE', qty: 1 },
+      { id: 'FROST_SNARE', qty: 1 },
+    ]);
+    expect(s.trapInventory.SKY_NET).toBe(5);
+    expect(grantWave20TrapGift(s)).toEqual([]);
   });
 });
 

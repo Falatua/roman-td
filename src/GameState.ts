@@ -143,6 +143,9 @@ export interface GameStateShape {
   // The first cleared wave awards one ceremonial Giant's Bane. This flag
   // prevents duplicate grants across saves/repeated wave-end callbacks.
   waveOneGiantsBaneGranted?: boolean;
+  // One emergency trap crate is awarded after clearing W20, right as the
+  // second-gate late campaign begins. Gifts do not count as purchases.
+  wave20TrapGiftGranted?: boolean;
   combosBuilt?: number;
   combosBuiltUniqueTypes?: string[];
   // Lifetime kills of enemies that emerged from the ocean/shipwreck lane.
@@ -403,6 +406,7 @@ export function createGameState(): GameStateShape {
     towerDamageByType: {},
     firstFlyerApotheosisGranted: false,
     waveOneGiantsBaneGranted: false,
+    wave20TrapGiftGranted: false,
     testYourMightOffered: false,
     testYourMightDeclined: false,
     testYourMightActive: false,

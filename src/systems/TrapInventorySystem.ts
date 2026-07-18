@@ -27,6 +27,17 @@ export function grantTrapInventory(state: GameStateShape, id: string, qty: numbe
   return granted;
 }
 
+export function grantTrapGiftInventory(state: GameStateShape, id: string, qty: number): number {
+  const desired = cleanQty(qty);
+  if (desired <= 0) return 0;
+  const owned = Math.max(0, Math.floor((state.trapInventory ?? {})[id] ?? 0));
+  const granted = Math.min(desired, Math.max(0, TRAP_PURCHASE_CAP_PER_TYPE - owned));
+  if (granted <= 0) return 0;
+  state.trapInventory = state.trapInventory ?? {};
+  state.trapInventory[id] = owned + granted;
+  return granted;
+}
+
 export function recordTrapDamage(state: GameStateShape, id: string, damage: number): void {
   const dealt = Math.max(0, damage);
   if (dealt <= 0) return;
