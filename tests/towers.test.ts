@@ -220,14 +220,14 @@ describe('Tower creation', () => {
     expect(t5.costPaid).toBe(ECONOMY.TIER_PLACE_COST[5]);
   });
 
-  it('caps Velites and Scorpio at Tier 4 so they no longer consume Tier 5 slots', () => {
-    expect(maxQualityTierForTower(TowerType.VELITES)).toBe(4);
-    expect(maxQualityTierForTower(TowerType.SCORPIO)).toBe(4);
+  it('allows Velites and Scorpio to reach Tier 5 like other base towers', () => {
+    expect(maxQualityTierForTower(TowerType.VELITES)).toBe(5);
+    expect(maxQualityTierForTower(TowerType.SCORPIO)).toBe(5);
     expect(maxQualityTierForTower(TowerType.LEGATE)).toBe(5);
-    expect(clampQualityTierForTower(TowerType.VELITES, 5)).toBe(4);
-    expect(clampQualityTierForTower(TowerType.SCORPIO, 5)).toBe(4);
-    expect(createTower(TowerType.VELITES, 5, 0, 0, 0).qualityTier).toBe(4);
-    expect(createTower(TowerType.SCORPIO, 5, 0, 0, 0).qualityTier).toBe(4);
+    expect(clampQualityTierForTower(TowerType.VELITES, 5)).toBe(5);
+    expect(clampQualityTierForTower(TowerType.SCORPIO, 5)).toBe(5);
+    expect(createTower(TowerType.VELITES, 5, 0, 0, 0).qualityTier).toBe(5);
+    expect(createTower(TowerType.SCORPIO, 5, 0, 0, 0).qualityTier).toBe(5);
   });
 
   it('generates unique IDs for sequential towers', () => {
@@ -2142,22 +2142,24 @@ describe('Pool draw — base tower types', () => {
     expect(BASE_TOWER_TYPES).toContain(TowerType.LEGATE);
   });
 
-  it('does not roll Tier 5 Velites or Scorpio even when the tier roll lands on T5', () => {
+  it('can roll Tier 5 Velites or Scorpio when the tier roll lands on T5', () => {
     const state = createGameState();
     state.poolLevel = ECONOMY.POOL_MAX_LEVEL;
     state.heroLevel = ECONOMY.POOL_MAX_LEVEL;
     const randomSpy = vi.spyOn(Math, 'random');
     try {
-      randomSpy.mockReturnValue(0.99);
+      randomSpy
+        .mockReturnValueOnce(0.99)
+        .mockReturnValueOnce(0.00)
+        .mockReturnValue(0.20);
       const draw = rollDraw(state, [TowerType.VELITES, TowerType.SCORPIO, TowerType.LEGATE]);
-      expect(draw.every(card => !(card.tier === 5 && [TowerType.VELITES, TowerType.SCORPIO].includes(card.type)))).toBe(true);
-      expect(draw.some(card => card.tier === 5)).toBe(true);
+      expect(draw[0]).toEqual({ type: TowerType.VELITES, tier: 5 });
     } finally {
       randomSpy.mockRestore();
     }
   });
 
-  it('keeps capped-only input pools from producing illegal Tier 5 capped cards', () => {
+  it('keeps Velites and Scorpio legal in narrow input pools', () => {
     const state = createGameState();
     state.poolLevel = ECONOMY.POOL_MAX_LEVEL;
     state.heroLevel = ECONOMY.POOL_MAX_LEVEL;
@@ -2165,8 +2167,9 @@ describe('Pool draw — base tower types', () => {
     try {
       randomSpy.mockReturnValue(0.99);
       const draw = rollDraw(state, [TowerType.VELITES, TowerType.SCORPIO]);
-      expect(draw.every(card => !(card.tier === 5 && [TowerType.VELITES, TowerType.SCORPIO].includes(card.type)))).toBe(true);
       expect(draw.every(card => card.tier <= maxQualityTierForTower(card.type))).toBe(true);
+      expect(maxQualityTierForTower(TowerType.VELITES)).toBe(5);
+      expect(maxQualityTierForTower(TowerType.SCORPIO)).toBe(5);
     } finally {
       randomSpy.mockRestore();
     }

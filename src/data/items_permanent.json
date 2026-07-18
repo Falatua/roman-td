@@ -600,6 +600,6 @@
     "buy": 210,
     "sell": 70,
     "consumable": true,
-    "effect": "ONE USE: Rome's eagle lifts a kept non-hero tower to Tier V during preparation, then vanishes without taking an item slot. It cannot break Scorpio or Velites beyond Tier IV. One is promised after the first Flyer wave; later Eagles are rare."
+    "effect": "ONE USE: Rome's eagle lifts a kept non-hero tower to Tier V during preparation, then vanishes without taking an item slot. One is promised after the first Flyer wave; later Eagles are rare."
   }
 }

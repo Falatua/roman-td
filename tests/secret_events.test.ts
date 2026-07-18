@@ -60,8 +60,8 @@ describe('Mercator Back Room hidden event', () => {
     expect((itemsData as any)[item.itemId!]?.rarity).toBe('LEGENDARY');
     expect((towersData as any)[tower.towerType!]?.kind ?? 'BASE').toBe('BASE');
     expect(tower.tier).toBe(5);
-    expect(tower.towerType).not.toBe(TowerType.VELITES);
-    expect(tower.towerType).not.toBe(TowerType.SCORPIO);
+    expect(eligibleBaseTowerTypesAtTier(5)).toContain(TowerType.VELITES);
+    expect(eligibleBaseTowerTypesAtTier(5)).toContain(TowerType.SCORPIO);
   });
 
   it('randomizes the Backroom chit across the complete legal T5 base roster and caches one visit', () => {
@@ -98,7 +98,7 @@ describe('Mercator Back Room hidden event', () => {
     expect(claimMercatorBackRoomOffer(s, 'armory-chit-t5').ok).toBe(false);
   });
 
-  it('defensively clamps legacy hidden T5 Scorpio and Velites offers to Tier 4', () => {
+  it('allows hidden T5 Scorpio and Velites offers to stay Tier 5', () => {
     const s = createGameState();
     s.gold = 500;
     s.mercatorBackRoomOffers = [{
@@ -113,7 +113,7 @@ describe('Mercator Back Room hidden event', () => {
     }];
     const result = claimMercatorBackRoomOffer(s, 'armory-chit-t5');
     expect(result.ok).toBe(true);
-    expect(s.pendingPurchasedTowers).toEqual([{ type: TowerType.SCORPIO, tier: 4, source: 'backroom' }]);
+    expect(s.pendingPurchasedTowers).toEqual([{ type: TowerType.SCORPIO, tier: 5, source: 'backroom' }]);
   });
 
   it('does not charge gold for a secret item when inventory is full', () => {

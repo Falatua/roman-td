@@ -89,11 +89,7 @@ describe('Sandbox tower spawning', () => {
     const all = sandboxAllTowerOptions();
     expect(all.length).toBeGreaterThan(20);   // base + combo towers
     for (const t of all) {
-      const expectedTiers = [1, 2, 3, 4, 5].filter(tier => {
-        if (t.type === TowerType.VELITES || t.type === TowerType.SCORPIO) return tier <= 4;
-        return true;
-      });
-      expect(t.tiers).toEqual(expectedTiers);
+      expect(t.tiers).toEqual([1, 2, 3, 4, 5]);
     }
     // BASE entries appear before COMBO entries (UI scan order).
     const firstCombo = all.findIndex(t => t.kind === 'COMBO');

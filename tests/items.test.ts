@@ -7,6 +7,7 @@ import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { TowerType } from '../src/types';
 import { createInventory, grantSoloStartingItems, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop, LEGENDARY_DROP_ITEM_POOL, SOLO_STARTING_ITEM_LOADOUT } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, MERCATOR_LEGENDARY } from '../src/systems/MerchantSystem';
+import { eligibleBaseTowerTypesAtTier } from '../src/systems/BaseTowerRoster';
 import itemsData from '../src/data/items_permanent.json';
 import towersData from '../src/data/towers.json';
 import { LOOT_DROP_RATES } from '../src/constants';
@@ -561,8 +562,8 @@ describe('Merchant — Mercator stock', () => {
     expect(new Set(armory.map(o => o.type)).size).toBe(10);
     expect(armory.every(o => (towersData as any)[o.type]?.kind === 'BASE')).toBe(true);
     expect(armory.every(o => !o.type.startsWith('CHAMPION_'))).toBe(true);
-    expect(armory.map(o => o.type)).not.toContain('VELITES');
-    expect(armory.map(o => o.type)).not.toContain('SCORPIO');
+    expect(eligibleBaseTowerTypesAtTier(5)).toContain('VELITES');
+    expect(eligibleBaseTowerTypesAtTier(5)).toContain('SCORPIO');
   });
 
   it('re-randomizes the T5 armory: excludeTypes bars last visit’s lineup', () => {

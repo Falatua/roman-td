@@ -15,7 +15,7 @@ describe('Eagle of Apotheosis', () => {
     expect(tower.equippedItems).toEqual(['SHARPENED_BLADE']);
   });
 
-  it('rejects pending prospects, heroes, existing Tier V towers, and Tier-IV-capped lines', () => {
+  it('rejects pending prospects, heroes, and existing Tier V towers while allowing Scorpio to reach Tier V', () => {
     const pending = createTower(TowerType.MILITES, 1, 1, 1, 1, true);
     expect(canApplyEagleOfApotheosis(pending).ok).toBe(false);
 
@@ -26,9 +26,10 @@ describe('Eagle of Apotheosis', () => {
     const apex = createTower(TowerType.MILITES, 5, 1, 1, 1, false);
     expect(canApplyEagleOfApotheosis(apex).ok).toBe(false);
 
-    const capped = createTower(TowerType.SCORPIO, 4, 1, 1, 1, false);
-    expect(canApplyEagleOfApotheosis(capped).ok).toBe(false);
-    expect(capped.qualityTier).toBe(4);
+    const scorpio = createTower(TowerType.SCORPIO, 4, 1, 1, 1, false);
+    expect(canApplyEagleOfApotheosis(scorpio).ok).toBe(true);
+    expect(applyEagleOfApotheosis(scorpio).ok).toBe(true);
+    expect(scorpio.qualityTier).toBe(5);
   });
 
   it('guarantees exactly one after the first authored Flyer wave', () => {

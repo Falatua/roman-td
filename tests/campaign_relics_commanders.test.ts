@@ -462,7 +462,7 @@ describe('Campaign relics', () => {
     expect(guardState.pendingPurchasedTowers?.[0]).toEqual({ type: TowerType.IMPERATOR_GUARD, tier: 5, source: 'relic' });
   });
 
-  it('Triumphal Spoils grants a legal Tier-5 siege engine instead of capped Scorpio', () => {
+  it('Triumphal Spoils grants its authored Tier-5 siege engine', () => {
     const spoilsState = bootstrapState();
     applyCampaignRelic(spoilsState, 'TRIUMPHAL_SPOILS');
     expect(spoilsState.pendingPurchasedTowers?.[0]).toEqual({
