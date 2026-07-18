@@ -357,7 +357,7 @@ export function showMercatorBanner(parent: HTMLElement, visitWave: number, hooks
     <div class="merc-body">
       <div class="merc-row is-tower">
         <span class="merc-row-label">★ ARMORY</span>
-        <span class="merc-row-body">10 random <b style="color:#ff5050">T5</b> base towers · <b style="color:#f0c040">325g</b> each</span>
+        <span class="merc-row-body">16 random <b style="color:#ff5050">T5</b> base towers · <b style="color:#f0c040">325g</b> each</span>
       </div>
       <div class="merc-row is-item">
         <span class="merc-row-label">★ TROPHIES</span>

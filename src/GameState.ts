@@ -161,7 +161,7 @@ export interface GameStateShape {
   // the run's true primary damage dealer.
   towerDamageByType?: Record<string, number>;
   stonesPlaced?: number;
-  // Mercator persistent tower offers — when a Mercator visits, 12 random T5
+  // Mercator persistent tower offers — when a Mercator visits, 16 random T5
   // base tower offers are generated. Champions are tracked separately as hero
   // recruits and are not part of this randomized tower shelf.
   mercatorTowerOffers?: { type: string; tier: number; price: number }[];

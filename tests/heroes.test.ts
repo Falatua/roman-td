@@ -339,7 +339,7 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
     });
     expect(offers.some(o => CHAMPION_TYPES.includes(o.type))).toBe(false);
     expect(offers).toHaveLength(MERCATOR_TOWER_OFFER_COUNT);
-    expect(MERCATOR_TOWER_OFFER_COUNT).toBe(12);
+    expect(MERCATOR_TOWER_OFFER_COUNT).toBe(16);
     expect(offers.every(o => o.tier === 5)).toBe(true);
   });
 

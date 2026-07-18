@@ -193,7 +193,7 @@ export function removeMercatorPlaceableOfferForVisit(
 
 // Mercator tower offerings (2026-05): Mercator now ONLY stocks T5 base towers
 // and every offer has a flat armory price. The player still gets variety in
-// tower TYPE (the pool below picks 12 distinct types per visit) — they just
+// tower TYPE (the pool below picks distinct types per visit) — they just
 // always arrive at apex tier and at the same price tag.
 // 2026-07-07 — T5 Mercator armory towers lifted to 325g after the ocean /
 // late-wave enemy count expansion. Still a bargain, but no longer cheaper
@@ -234,7 +234,7 @@ export const CHAMPION_TYPES = [
   'CHAMPION_SCIPIO', 'CHAMPION_CAESAR', 'CHAMPION_SULLA'
 ];
 export const CHAMPION_PRICE = 1000;
-export const MERCATOR_TOWER_OFFER_COUNT = 12;
+export const MERCATOR_TOWER_OFFER_COUNT = 16;
 
 export interface MercatorTowerOfferOptions {
   activeHeroId?: string | null;
