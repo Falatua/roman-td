@@ -261,16 +261,19 @@ describe('Tower effective stats', () => {
 
   it('keeps anti-air specialist towers on the boosted DPS line', () => {
     const expectedAntiAirDps: Partial<Record<TowerType, number>> = {
-      [TowerType.SAGITTARIUS]: 89.4,
-      [TowerType.SCORPIO]: 21.6,
-      [TowerType.VENATOR]: 31.8,
-      [TowerType.AQUILA_VENATOR]: 154.2,
-      [TowerType.SCORPION_BOLT]: 100.6,
-      [TowerType.NUMIDIAN_CAVALRY]: 285.0,
-      [TowerType.NEMESIS_ENGINE]: 235.0,
+      [TowerType.SAGITTARIUS]: 98.34,
+      [TowerType.SCORPIO]: 23.76,
+      [TowerType.VENATOR]: 34.98,
+      [TowerType.AQUILA_VENATOR]: 169.62,
+      [TowerType.SCORPION_BOLT]: 110.66,
+      [TowerType.NUMIDIAN_CAVALRY]: 313.5,
+      [TowerType.NEMESIS_ENGINE]: 258.5,
       [TowerType.BEASTLORD_CHAMPION]: 170.0,
-      [TowerType.EXPLORATORES]: 275.0,
-      [TowerType.SKYREAPER_BATTERY]: 400.0
+      [TowerType.STORM_BALLISTA]: 176.0,
+      [TowerType.EXPLORATORES]: 302.5,
+      [TowerType.SKYREAPER_BATTERY]: 440.0,
+      [TowerType.SKY_DOMINION]: 561.0,
+      [TowerType.JOVIAN_SKY_HUNTER]: 374.0
     };
     for (const [type, expectedDps] of Object.entries(expectedAntiAirDps)) {
       expect((towersData as any)[type].baseDps).toBe(expectedDps);
@@ -306,7 +309,7 @@ describe('Tower effective stats', () => {
     expect([reaverDef.baseDps, reaverDef.attackSpeed, reaverDef.range]).toEqual([175, 2.1, 2.5]);
     expect([plagueDef.baseDps, plagueDef.attackSpeed, plagueDef.range]).toEqual([125, 0.9, 5]);
     expect([tribuneDef.baseDps, tribuneDef.attackSpeed, tribuneDef.range]).toEqual([175, 1.4, 2.5]);
-    expect((towersData as any).JOVIAN_SKY_HUNTER.baseDps).toBe(340);
+    expect((towersData as any).JOVIAN_SKY_HUNTER.baseDps).toBe(374);
     expect(getTowerProjectileProfile(TowerType.PLAGUE_LOBBER)?.splash).toBe(enlargedProjectileSplashRadius(1.5));
 
     const beast = testEnemy('beast');

@@ -527,10 +527,10 @@ describe('Recipe combo detection', () => {
   it('keeps previously underpaying combo investments on the new payoff line', () => {
     const expectedInvestmentDps: Partial<Record<TowerType, number>> = {
       [TowerType.PLAGUE_CART]: 42.0,
-      [TowerType.NUMIDIAN_CAVALRY]: 285.0,
+      [TowerType.NUMIDIAN_CAVALRY]: 313.5,
       [TowerType.TRIPLEX_ACIES]: 170.5,
-      [TowerType.EXPLORATORES]: 275.0,
-      [TowerType.SKYREAPER_BATTERY]: 400.0,
+      [TowerType.EXPLORATORES]: 302.5,
+      [TowerType.SKYREAPER_BATTERY]: 440.0,
       [TowerType.VULCAN_COLOSSUS]: 275.0
     };
     for (const [type, expectedDps] of Object.entries(expectedInvestmentDps)) {
