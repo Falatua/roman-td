@@ -442,8 +442,8 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
   });
 
   it('keeps elite elephants deliberately slower than ordinary heavy units', () => {
-    expect((enemiesData as any).WAR_ELEPHANT.speed).toBe(1.3);
-    expect((enemiesData as any).UNDEAD_WAR_ELEPHANT.speed).toBe(1.35);
+    expect((enemiesData as any).WAR_ELEPHANT.speed).toBe(1.43);
+    expect((enemiesData as any).UNDEAD_WAR_ELEPHANT.speed).toBe(1.485);
   });
 
   it('adds shipwreck ocean spawns and Stormtide Wyvern commanders across the campaign', () => {
@@ -677,35 +677,109 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect((enemiesData as any).CHIMERA.phaseHits).toBeGreaterThanOrEqual(3);
   });
 
-  it('keeps the full flyer roster on the authored 10% faster speed pass', () => {
-    const expectedFlyerSpeeds: Record<string, number> = {
-      CELTIC_SCOUT: 1.98,
-      NUMIDIAN_RIDER: 1.98,
-      SPECTRAL_SCOUT: 1.98,
-      GHOST_RIDER: 2.86,
-      BONEWING_DRAKE: 0.682,
-      GRAVE_LEGION_DRAGON: 0.605,
-      DREAD_UPRISING_DRAGON: 0.528,
-      SHADOW_CAVALRY: 3.52,
-      SPHINX: 1.43,
-      BOSS_FLYER_VULTURE: 0.66,
-      CHIMERA: 1.43,
-      SKY_STANDARD_COMMANDER: 0.902,
-      SKY_PATHFINDER_COMMANDER: 1.045,
-      SKY_ANUBIS_COMMANDER: 0.858,
-      STORMTIDE_WYVERN_COMMANDER: 0.77,
-      SKY_BARGE: 0.572
+  it('keeps the complete authored enemy roster on the 10% faster speed pass', () => {
+    const expectedEnemySpeeds: Record<string, number> = {
+      FERAL_DOG: 2.64,
+      RABID_DOG: 2.2,
+      ALPHA_DOG: 2.2,
+      CELTIC_FOOTMAN: 1.54,
+      CELTIC_BERSERKER: 1.98,
+      GALLIC_DRUID: 1.32,
+      CELTIC_SCOUT: 2.178,
+      CELTIC_WARLORD: 1.54,
+      CARTHAGE_SPEARMAN: 1.54,
+      NUMIDIAN_RIDER: 2.178,
+      CARTHAGE_ELITE_GUARD: 1.54,
+      WAR_ELEPHANT: 1.43,
+      HANNIBAL_BARCA: 1.87,
+      UNDEAD_CELT: 1.54,
+      ZOMBIE_DRUID: 1.32,
+      UNDEAD_BERSERKER: 1.98,
+      SPECTRAL_SCOUT: 2.178,
+      UNDEAD_WARLORD: 1.54,
+      UNDEAD_SPEARMAN: 1.54,
+      GHOST_RIDER: 3.146,
+      UNDEAD_WAR_ELEPHANT: 1.485,
+      UNDEAD_GIANT: 0.902,
+      UNDEAD_CYCLOPS: 0.968,
+      DREAD_UNDEAD_GIANT: 0.825,
+      DREAD_UNDEAD_CYCLOPS: 0.902,
+      BONEWING_DRAKE: 0.7502,
+      GRAVE_LEGION_DRAGON: 0.6655,
+      DREAD_UPRISING_DRAGON: 0.5808,
+      DEMON_HELLHOUND: 3.52,
+      CELTIC_FIRE_DEMON: 1.98,
+      SHADOW_CAVALRY: 3.872,
+      DEMON_LEGATE: 1.54,
+      DAEMON_IMPERATOR: 0.935,
+      ARCHITECTUS: 1.1,
+      IRON_PHALANX: 1.1,
+      HELL_GATE: 0,
+      FIRE_GIANT: 0.715,
+      REANIMATED_SKELETON: 1.87,
+      REANIMATED_ZOMBIE: 1.43,
+      REANIMATED_LICH: 1.1,
+      TRAINING_DUMMY: 3.3,
+      EGYPTIAN_ARCHER: 1.32,
+      EGYPTIAN_SPEARMAN: 1.1,
+      EGYPTIAN_CHARIOT: 1.87,
+      PHARAOH_GUARD: 0.935,
+      ANUBIS_PRIEST: 0.99,
+      SOBEK_WARRIOR: 1.045,
+      MUMMY_WARRIOR: 0.935,
+      SPHINX: 1.573,
+      ANUBIS_KING: 1.045,
+      MONGOL_HORSE_ARCHER: 1.76,
+      MONGOL_SPEAR_RIDER: 1.65,
+      KHAN_RIDER: 1.43,
+      MONGOL_FOOTMAN: 1.21,
+      MONGOL_SPEARMAN: 1.1,
+      MONGOL_BERSERKER: 1.54,
+      MONGOL_SCOUT: 1.87,
+      MONGOL_SHAMAN: 0.99,
+      MONGOL_CAPTAIN: 1.21,
+      BOSS_FLYER_VULTURE: 0.726,
+      CHIMERA: 1.573,
+      CERBERUS: 1.65,
+      TYPHON: 1.1,
+      GIANT_GIGAS: 1.1,
+      CYCLOPS: 1.21,
+      SUPER_GIANT_COLOSSUS: 1.1,
+      OCEAN_FISHLING: 1.485,
+      OCEAN_GHOST_SPIRIT: 1.485,
+      SEA_GIANT: 0.638,
+      SEA_GIANT_WARBRINGER: 0.682,
+      NETHER_AMPHIBIOUS_GIANT: 0.792,
+      NAGA_ADEPT: 0.968,
+      NAGA_SLEEPWEAVER: 0.858,
+      NAGA_ORACLE: 0.77,
+      PLAGUE_BEARER: 1.045,
+      MEDJAY_SOLDIER: 1.21,
+      STANDARD_BEARER_COMMANDER: 0.99,
+      PATHFINDER_COMMANDER: 1.98,
+      ANUBIS_PRIEST_COMMANDER: 1.1,
+      SIEGE_CAPTAIN_COMMANDER: 0.935,
+      SKY_STANDARD_COMMANDER: 0.9922,
+      SKY_PATHFINDER_COMMANDER: 1.1495,
+      SKY_ANUBIS_COMMANDER: 0.9438,
+      TIDECALLER_COMMANDER: 0.858,
+      STORMTIDE_WYVERN_COMMANDER: 0.847,
+      SIEGE_WAGON: 0.66,
+      SKY_BARGE: 0.6292,
+      DUNE_STALKER: 2.09,
+      STONE_JUGGERNAUT: 0.55,
     };
 
-    const authoredFlyers = Object.entries(enemiesData as Record<string, any>)
-      .filter(([, def]) => def.isFlyer === true)
-      .map(([type]) => type)
-      .sort();
+    const authoredEnemies = Object.keys(enemiesData as Record<string, any>).sort();
+    expect(authoredEnemies).toEqual(Object.keys(expectedEnemySpeeds).sort());
+    expect(authoredEnemies).toHaveLength(89);
 
-    expect(authoredFlyers).toEqual(Object.keys(expectedFlyerSpeeds).sort());
-    for (const [type, expectedSpeed] of Object.entries(expectedFlyerSpeeds)) {
+    for (const [type, expectedSpeed] of Object.entries(expectedEnemySpeeds)) {
       expect((enemiesData as any)[type].speed, type).toBe(expectedSpeed);
     }
+
+    expect((enemiesData as any).HELL_GATE.speed).toBe(0);
+    expect(Object.values(enemiesData as Record<string, any>).filter(def => def.speed > 0)).toHaveLength(88);
   });
 
   it('turns W12+ flyer pressure into combo anti-air checks while leaving W6 fair', () => {
