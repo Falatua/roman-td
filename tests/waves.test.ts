@@ -680,6 +680,37 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect((enemiesData as any).CHIMERA.phaseHits).toBeGreaterThanOrEqual(3);
   });
 
+  it('keeps the full flyer roster on the authored 10% faster speed pass', () => {
+    const expectedFlyerSpeeds: Record<string, number> = {
+      CELTIC_SCOUT: 1.98,
+      NUMIDIAN_RIDER: 1.98,
+      SPECTRAL_SCOUT: 1.98,
+      GHOST_RIDER: 2.86,
+      BONEWING_DRAKE: 0.682,
+      GRAVE_LEGION_DRAGON: 0.605,
+      DREAD_UPRISING_DRAGON: 0.528,
+      SHADOW_CAVALRY: 3.52,
+      SPHINX: 1.43,
+      BOSS_FLYER_VULTURE: 0.66,
+      CHIMERA: 1.43,
+      SKY_STANDARD_COMMANDER: 0.902,
+      SKY_PATHFINDER_COMMANDER: 1.045,
+      SKY_ANUBIS_COMMANDER: 0.858,
+      STORMTIDE_WYVERN_COMMANDER: 0.77,
+      SKY_BARGE: 0.572
+    };
+
+    const authoredFlyers = Object.entries(enemiesData as Record<string, any>)
+      .filter(([, def]) => def.isFlyer === true)
+      .map(([type]) => type)
+      .sort();
+
+    expect(authoredFlyers).toEqual(Object.keys(expectedFlyerSpeeds).sort());
+    for (const [type, expectedSpeed] of Object.entries(expectedFlyerSpeeds)) {
+      expect((enemiesData as any)[type].speed, type).toBe(expectedSpeed);
+    }
+  });
+
   it('turns W12+ flyer pressure into combo anti-air checks while leaving W6 fair', () => {
     const byWave = new Map((wavesData as any[]).map(w => [w.wave, w]));
     expect(byWave.get(6).comboAntiAirArmorPct).toBeUndefined();
