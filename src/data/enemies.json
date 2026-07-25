@@ -614,7 +614,7 @@
   },
   "TRAINING_DUMMY": {
     "name": "Training Dummy",
-    "faction": "DOGS",
+    "faction": "NEUTRAL",
     "baseHp": 15000000,
     "speed": 3,
     "isFlyer": false,
@@ -945,7 +945,7 @@
   },
   "OCEAN_FISHLING": {
     "name": "Shipwreck Fishling",
-    "faction": "DOGS",
+    "faction": "OCEAN",
     "baseHp": 120,
     "speed": 1.35,
     "isFlyer": false,
@@ -955,7 +955,7 @@
   },
   "OCEAN_GHOST_SPIRIT": {
     "name": "Drowned Manes",
-    "faction": "ROMAN_MYTH",
+    "faction": "OCEAN",
     "baseHp": 520,
     "speed": 1.35,
     "isFlyer": false,
@@ -974,7 +974,7 @@
   },
   "SEA_GIANT": {
     "name": "Sea Giant",
-    "faction": "ROMAN_MYTH",
+    "faction": "OCEAN",
     "baseHp": 2400,
     "speed": 0.58,
     "isFlyer": false,
@@ -997,7 +997,7 @@
   },
   "SEA_GIANT_WARBRINGER": {
     "name": "Sea Giant Warbringer",
-    "faction": "ROMAN_MYTH",
+    "faction": "OCEAN",
     "baseHp": 8800,
     "speed": 0.62,
     "isFlyer": false,
@@ -1023,7 +1023,7 @@
   "NETHER_AMPHIBIOUS_GIANT": {
     "nullifyAuraRadiusTiles": 2,
     "name": "Nether Amphibious Giant",
-    "faction": "ROMAN_MYTH",
+    "faction": "OCEAN",
     "baseHp": 14500,
     "speed": 0.72,
     "isFlyer": false,
@@ -1050,7 +1050,7 @@
   },
   "NAGA_ADEPT": {
     "name": "Naga Adept",
-    "faction": "ROMAN_MYTH",
+    "faction": "OCEAN",
     "baseHp": 620,
     "speed": 0.88,
     "isFlyer": false,
@@ -1068,7 +1068,7 @@
   },
   "NAGA_SLEEPWEAVER": {
     "name": "Naga Sleepweaver",
-    "faction": "ROMAN_MYTH",
+    "faction": "OCEAN",
     "baseHp": 1800,
     "speed": 0.78,
     "isFlyer": false,
@@ -1087,7 +1087,7 @@
   },
   "NAGA_ORACLE": {
     "name": "Naga Oracle",
-    "faction": "ROMAN_MYTH",
+    "faction": "OCEAN",
     "baseHp": 6200,
     "speed": 0.7,
     "isFlyer": false,
@@ -1229,7 +1229,7 @@
   },
   "TIDECALLER_COMMANDER": {
     "name": "Commander: Tidecaller",
-    "faction": "ROMAN_MYTH",
+    "faction": "OCEAN",
     "baseHp": 4200,
     "speed": 0.78,
     "isFlyer": false,
@@ -1244,7 +1244,7 @@
   },
   "STORMTIDE_WYVERN_COMMANDER": {
     "name": "Commander: Stormtide Wyvern",
-    "faction": "ROMAN_MYTH",
+    "faction": "OCEAN",
     "baseHp": 2550,
     "speed": 0.77,
     "isFlyer": true,

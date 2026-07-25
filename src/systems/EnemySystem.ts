@@ -517,6 +517,8 @@ function factionFromString(s: string): EnemyFaction {
     case 'MONGOLS': return EnemyFaction.MONGOLS;
     case 'EGYPTIANS': return EnemyFaction.EGYPTIANS;
     case 'ROMAN_MYTH': return EnemyFaction.ROMAN_MYTH;
+    case 'OCEAN': return EnemyFaction.OCEAN;
+    case 'NEUTRAL': return EnemyFaction.NEUTRAL;
     default: return EnemyFaction.DOGS;
   }
 }

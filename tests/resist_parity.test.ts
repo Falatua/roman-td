@@ -14,14 +14,15 @@
 // These tests pin the whole seam so a new faction / damage type / display
 // surface can't silently drift again.
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import enemiesData from '../src/data/enemies.json';
 import factionRes from '../src/data/factionResistances.json';
 import wavesData from '../src/data/waves.json';
 import towersData from '../src/data/towers.json';
 import combosData from '../src/data/towerCombinations.json';
-import { DamageType, EnemyFaction, EnemyType } from '../src/types';
-import { resistanceModifier } from '../src/systems/DamageTypeSystem';
-import { armorProfile, enemyDamageMultiplier } from '../src/systems/EnemyResistances';
+import { DamageType, EnemyFaction, EnemyType, StatusEffectKind } from '../src/types';
+import { factionStatusModifier, resistanceModifier } from '../src/systems/DamageTypeSystem';
+import { armorProfile, enemyDamageMultiplier, statusEffectiveness } from '../src/systems/EnemyResistances';
 
 const DAMAGE_TYPES: Array<[string, DamageType]> = [
   ['PHYS_MELEE', DamageType.PHYS_MELEE],
@@ -55,7 +56,7 @@ describe('faction resist wiring', () => {
         const actual = resistanceModifier(enumVal, dt);
         const raw = row[key];
         const expected = dt === DamageType.DIVINE
-          ? 1.0 // combat rule: DIVINE ignores the faction layer entirely
+          ? 1 + Math.max(0, typeof raw === 'number' ? raw : 0)
           : raw === 'IMMUNE' ? 0
           : typeof raw === 'number' ? 1 + raw
           : 1.0;
@@ -67,6 +68,79 @@ describe('faction resist wiring', () => {
   it('ROMAN_MYTH faction resists are live (regression: missing FACTION_KEYS entry)', () => {
     expect(resistanceModifier(EnemyFaction.ROMAN_MYTH, DamageType.PHYS_MELEE)).toBeCloseTo(0.85, 9);
     expect(resistanceModifier(EnemyFaction.ROMAN_MYTH, DamageType.SIEGE)).toBeCloseTo(0.80, 9);
+    expect(resistanceModifier(EnemyFaction.ROMAN_MYTH, DamageType.DIVINE)).toBeCloseTo(1.40, 9);
+  });
+
+  it('gives every faction a complete and unique direct plus status profile', () => {
+    const factions = new Set(Object.values(enemiesData as any).map((e: any) => e.faction as string));
+    const signatures = new Set<string>();
+    for (const faction of factions) {
+      const row: any = (factionRes as any)[faction];
+      expect(row.identity, `${faction} identity`).toBeTruthy();
+      expect(row.counterplay, `${faction} counterplay`).toBeTruthy();
+      for (const key of DAMAGE_TYPES.map(([key]) => key)) {
+        expect(row[key], `${faction} ${key}`).not.toBeUndefined();
+      }
+      for (const key of ['SLOW', 'BURN', 'BLEED', 'POISON']) {
+        expect(row.STATUS?.[key], `${faction} STATUS.${key}`).not.toBeUndefined();
+      }
+      const signature = JSON.stringify({
+        direct: DAMAGE_TYPES.map(([key]) => row[key]),
+        status: ['SLOW', 'BURN', 'BLEED', 'POISON'].map(key => row.STATUS[key])
+      });
+      expect(signatures.has(signature), `${faction} duplicates another faction profile`).toBe(false);
+      signatures.add(signature);
+    }
+    expect(signatures.size).toBe(factions.size);
+  });
+
+  it('applies faction status modifiers and immunities at runtime', () => {
+    expect(factionStatusModifier(EnemyFaction.UNDEAD_CELTS, StatusEffectKind.POISON)).toBe(0);
+    expect(factionStatusModifier(EnemyFaction.UNDEAD_CARTHAGE, StatusEffectKind.BLEED)).toBe(0);
+    expect(factionStatusModifier(EnemyFaction.SUPER_DEMONS, StatusEffectKind.BURN)).toBe(0);
+    expect(factionStatusModifier(EnemyFaction.SUPER_DEMONS, StatusEffectKind.POISON)).toBeCloseTo(1.2, 9);
+
+    const undeadDragon: any = {
+      type: EnemyType.BONEWING_DRAKE,
+      faction: EnemyFaction.UNDEAD_CELTS,
+      isFlyer: true,
+      isBoss: false,
+      statusEffects: []
+    };
+    expect(statusEffectiveness(undeadDragon, StatusEffectKind.POISON)).toBe(0);
+    expect(statusEffectiveness(undeadDragon, StatusEffectKind.BLEED)).toBe(0);
+  });
+
+  it('publishes the complete faction profile system in the Codex and live inspect panel', () => {
+    const codex = readFileSync('src/render/Codex.ts', 'utf8');
+    const inspect = readFileSync('src/render/EnemyInspect.ts', 'utf8');
+    expect(codex).toContain('FACTION RESISTANCES, WEAKNESSES, AND IMMUNITIES');
+    expect(codex).toContain('data-faction-profile');
+    expect(codex).toContain('Faction profiles apply to every member');
+    expect(inspect).toContain('[EnemyFaction.ROMAN_MYTH]');
+    expect(inspect).toContain('statusEffectiveness(e, d.kind)');
+  });
+
+  it('keeps training controls neutral and all tideborn enemies in the Ocean faction', () => {
+    expect((enemiesData as any).TRAINING_DUMMY.faction).toBe('NEUTRAL');
+    const oceanTypes = [
+      EnemyType.OCEAN_FISHLING,
+      EnemyType.OCEAN_GHOST_SPIRIT,
+      EnemyType.SEA_GIANT,
+      EnemyType.SEA_GIANT_WARBRINGER,
+      EnemyType.NETHER_AMPHIBIOUS_GIANT,
+      EnemyType.NAGA_ADEPT,
+      EnemyType.NAGA_SLEEPWEAVER,
+      EnemyType.NAGA_ORACLE,
+      EnemyType.TIDECALLER_COMMANDER,
+      EnemyType.STORMTIDE_WYVERN_COMMANDER
+    ];
+    for (const type of oceanTypes) {
+      expect((enemiesData as any)[type].faction, type).toBe('OCEAN');
+    }
+    const visibleProfiles = Object.values(factionRes as any)
+      .filter((row: any) => row.codexVisible !== false);
+    expect(visibleProfiles).toHaveLength(10);
   });
 });
 

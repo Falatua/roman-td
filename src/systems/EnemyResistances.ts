@@ -1,6 +1,7 @@
 import { DamageType, Enemy, EnemyType, StatusEffectKind } from '../types';
 import enemiesData from '../data/enemies.json';
 import factionRes from '../data/factionResistances.json';
+import { factionStatusModifier } from './DamageTypeSystem';
 
 export interface EnemyResistProfile {
   melee?: number;
@@ -28,9 +29,9 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // The natural dog pack is vulnerable to flame: direct FIRE and BURN
   // deal +40% to Feral Dogs, Rabid Dogs, and the Alpha Dog. Demon
   // Hellhounds remain a separate fire-born, fire-immune archetype.
-  [EnemyType.FERAL_DOG]: { fire: 1.40, burn: 1.40, poison: 0.85 },
-  [EnemyType.RABID_DOG]: { slow: 0.25, fire: 1.40, burn: 1.40, poison: 0.7, bleed: 0.7 },
-  [EnemyType.ALPHA_DOG]: { melee: 0.6, slow: 0.35, fire: 1.40, burn: 1.40, bleed: 0.5, poison: 0.7 },
+  [EnemyType.FERAL_DOG]: { poison: 0.85 },
+  [EnemyType.RABID_DOG]: { slow: 0.25, poison: 0.7, bleed: 0.7 },
+  [EnemyType.ALPHA_DOG]: { melee: 0.6, slow: 0.35, bleed: 0.5, poison: 0.7 },
 
   // W4 footman — armored linen kit. 2026-05-22: resistances softened
   // (ranged 0.55 → 0.80, melee 0.85 → 0.95, poison/bleed 0.85 → 0.95)
@@ -455,6 +456,7 @@ export function statusEffectiveness(enemy: Enemy, kind: StatusEffectKind): numbe
   else if (kind === StatusEffectKind.BURN) base = r.burn ?? 1;
   else if (kind === StatusEffectKind.BLEED) base = r.bleed ?? 1;
   else if (kind === StatusEffectKind.POISON) base = r.poison ?? 1;
+  base *= factionStatusModifier(enemy.faction, kind);
   // WARDED elite mutation: cuts all status effectiveness to 30% of normal,
   // making slow/freeze/stun much weaker. Combined with the existing immune
   // flags on certain enemies, this adds tactical bite.
@@ -543,14 +545,13 @@ export function armorProfile(type: EnemyType): ArmorRow[] {
     if (factionVal === 'IMMUNE') { factionMult = 0; factionImmune = true; }
     else if (typeof factionVal === 'number') factionMult = 1 + factionVal;
     else factionMult = 1.0;
-    // 2026-07-09 QC fix — combat's resistanceModifier hard-returns 1.0 for
-    // DIVINE ("true damage": faction rows never resist OR boost it; only the
-    // per-enemy `divine` profile entry applies, via enemyDamageMultiplier).
-    // The display was multiplying the faction DIVINE column in anyway, so the
-    // UI advertised e.g. +100% divine vs SUPER_DEMONS and +40% vs the Daemon
-    // Imperator — damage the engine never deals (the Imperator actually
-    // RESISTS divine at 0.70 per-enemy). Mirror combat: faction layer = 1.0.
-    if (dt === 'DIVINE') { factionMult = 1.0; factionImmune = false; }
+    // Divine ignores resistance but may receive an authored faction weakness.
+    // Clamp negative or immune faction data to neutral so the armor display
+    // mirrors the true-damage rule in resistanceModifier.
+    if (dt === 'DIVINE') {
+      factionMult = typeof factionVal === 'number' ? 1 + Math.max(0, factionVal) : 1.0;
+      factionImmune = false;
+    }
     // 2026-05 v9: per-enemy multipliers now cover melee + ranged AND
     // siege / fire / divine. Used by the W6-W9 resist pass so the
     // armor strip / Codex / inspect panel all reflect the new

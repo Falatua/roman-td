@@ -35,7 +35,9 @@ export enum EnemyFaction {
   EGYPTIANS,
   // 2026 v2 spec Ch10-11 — Roman-myth elite creatures (W25-29). Tough vs
   // steel/fire, but weak to DIVINE (Rome's gods smite the old monsters).
-  ROMAN_MYTH
+  ROMAN_MYTH,
+  OCEAN,
+  NEUTRAL
 }
 
 export enum EntityType {

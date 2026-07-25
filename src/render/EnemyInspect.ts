@@ -1,12 +1,12 @@
 // Enemy inspection panel (Enemy Doc §14.1).
 // Click an enemy → see its identity, stats, resistances, weaknesses, recommended counter.
 
-import { Enemy, EnemyFaction, DamageType } from '../types';
+import { Enemy, EnemyFaction, StatusEffectKind } from '../types';
 import enemiesData from '../data/enemies.json';
 import factionRes from '../data/factionResistances.json';
 import wavesData from '../data/waves.json';
 import { tex } from './Assets';
-import { resistanceSummary, armorProfile, armorDamageTypeShortLabel, enemyResistanceProfile } from '../systems/EnemyResistances';
+import { resistanceSummary, armorProfile, armorDamageTypeShortLabel, statusEffectiveness } from '../systems/EnemyResistances';
 import { damageTypeLabel } from '../format';
 import { closeGameModals } from './ModalManager';
 import { pretty } from '../format';
@@ -28,7 +28,10 @@ const FACTION_KEY: Record<number, string> = {
   // 2026-05 v10 — Endless factions, so the Mongol/Egyptian inspect
   // panel correctly reads its faction-resistance row.
   [EnemyFaction.MONGOLS]: 'MONGOLS',
-  [EnemyFaction.EGYPTIANS]: 'EGYPTIANS'
+  [EnemyFaction.EGYPTIANS]: 'EGYPTIANS',
+  [EnemyFaction.ROMAN_MYTH]: 'ROMAN_MYTH',
+  [EnemyFaction.OCEAN]: 'OCEAN',
+  [EnemyFaction.NEUTRAL]: 'NEUTRAL'
 };
 
 // 2026-05 v6: ARCHETYPE_HINT removed along with the "Recommended Counter"
@@ -57,7 +60,7 @@ function fmtRes(v: number | 'IMMUNE'): { label: string; color: string } {
 export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: number) {
   closeGameModals();
   const def: any = (enemiesData as any)[e.type];
-  const fk = FACTION_KEY[e.faction];
+  const fk = def?.faction ?? FACTION_KEY[e.faction];
   const row: any = (factionRes as any)[fk] ?? {};
   const portrait = (() => {
     const t = tex(e.type);
@@ -202,22 +205,18 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // flags from enemies.json (immunePoison / immuneFire / immuneFreeze /
   // immuneStun / immuneSlow) which the per-type multiplier can't carry.
   const fullProfile = (() => {
-    const profile: Array<{ label: string; value: number; immune: boolean; note?: string }> = [];
-    const dots: Array<{ label: string; field: string; flag?: string }> = [
-      { label: 'Slow',   field: 'slow',   flag: 'immuneSlow' },
-      { label: 'Stun',   field: 'stun',   flag: 'immuneStun' },
-      { label: 'Freeze', field: 'freeze', flag: 'immuneFreeze' },
-      { label: 'Burn',   field: 'burn',   flag: 'immuneFire' },
-      { label: 'Bleed',  field: 'bleed' },
-      { label: 'Poison', field: 'poison', flag: 'immunePoison' }
+    const profile: Array<{ label: string; value: number; immune: boolean }> = [];
+    const dots: Array<{ label: string; kind: StatusEffectKind }> = [
+      { label: 'Slow',   kind: StatusEffectKind.SLOW },
+      { label: 'Stun',   kind: StatusEffectKind.STUN },
+      { label: 'Freeze', kind: StatusEffectKind.FREEZE },
+      { label: 'Burn',   kind: StatusEffectKind.BURN },
+      { label: 'Bleed',  kind: StatusEffectKind.BLEED },
+      { label: 'Poison', kind: StatusEffectKind.POISON }
     ];
-    const rawProfile = enemyResistanceProfile(e.type) as Record<string, number | undefined>;
     for (const d of dots) {
-      const flagSet = d.flag ? !!def?.[d.flag] : false;
-      const v = rawProfile[d.field];
-      const immune = flagSet || (typeof v === 'number' && v <= 0);
-      const value = typeof v === 'number' ? v : 1;
-      profile.push({ label: d.label, value, immune, note: flagSet ? 'data flag' : undefined });
+      const value = statusEffectiveness(e, d.kind);
+      profile.push({ label: d.label, value, immune: value <= 0 });
     }
     return profile;
   })();

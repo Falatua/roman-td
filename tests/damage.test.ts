@@ -20,10 +20,10 @@ function hasDirectDamageAnswer(enemy: Enemy, damageTypes: DamageType[]): boolean
 }
 
 describe('DamageType — faction resistance modifier', () => {
-  it('DIVINE always returns 1.0 (true damage)', () => {
+  it('DIVINE ignores resistance but activates authored faction weaknesses', () => {
     expect(resistanceModifier(EnemyFaction.DOGS, DamageType.DIVINE)).toBe(1);
-    expect(resistanceModifier(EnemyFaction.UNDEAD_CELTS, DamageType.DIVINE)).toBe(1);
-    expect(resistanceModifier(EnemyFaction.SUPER_DEMONS, DamageType.DIVINE)).toBe(1);
+    expect(resistanceModifier(EnemyFaction.UNDEAD_CELTS, DamageType.DIVINE)).toBe(1.5);
+    expect(resistanceModifier(EnemyFaction.SUPER_DEMONS, DamageType.DIVINE)).toBe(2);
   });
 
   it('NONE damage type returns 0 (no damage)', () => {
@@ -112,7 +112,7 @@ describe('Enemy resistances — per-enemy multipliers', () => {
   });
 
   it('Drowned Manes can only be damaged by divine damage', () => {
-    const spirit = makeEnemy(EnemyType.OCEAN_GHOST_SPIRIT, EnemyFaction.ROMAN_MYTH);
+    const spirit = makeEnemy(EnemyType.OCEAN_GHOST_SPIRIT, EnemyFaction.OCEAN);
     expect((enemiesData as any).OCEAN_GHOST_SPIRIT.divineOnly).toBe(true);
     expect(enemyDamageMultiplier(spirit, DamageType.PHYS_MELEE)).toBe(0);
     expect(enemyDamageMultiplier(spirit, DamageType.PHYS_RANGED)).toBe(0);
@@ -213,7 +213,7 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(livingDirectFire).toBeCloseTo(1.65, 4);
     expect(undeadDirectFire).toBeCloseTo(2.145, 4);
     expect(statusEffectiveness(living, StatusEffectKind.BURN)).toBeCloseTo(1.65, 4);
-    expect(statusEffectiveness(undead, StatusEffectKind.BURN)).toBeCloseTo(1.65, 4);
+    expect(statusEffectiveness(undead, StatusEffectKind.BURN)).toBeCloseTo(2.145, 4);
     expect(armorProfile(EnemyType.WAR_ELEPHANT).find(row => row.damageType === 'ELEMENTAL_FIRE')?.armorPct).toBe(-65);
     expect(armorProfile(EnemyType.UNDEAD_WAR_ELEPHANT).find(row => row.damageType === 'ELEMENTAL_FIRE')?.armorPct).toBe(-114);
   });
@@ -445,7 +445,7 @@ describe('Enemy resistances — per-enemy multipliers', () => {
   });
 
   it('gives the Tidecaller commander a naval-counter resistance profile', () => {
-    const tidecaller = makeEnemy(EnemyType.TIDECALLER_COMMANDER, EnemyFaction.ROMAN_MYTH);
+    const tidecaller = makeEnemy(EnemyType.TIDECALLER_COMMANDER, EnemyFaction.OCEAN);
     expect(enemyDamageMultiplier(tidecaller, DamageType.ELEMENTAL_FIRE)).toBe(0);
     expect(statusEffectiveness(tidecaller, StatusEffectKind.BURN)).toBe(0);
     expect(enemyDamageMultiplier(tidecaller, DamageType.SIEGE)).toBeGreaterThan(1);
@@ -453,7 +453,7 @@ describe('Enemy resistances — per-enemy multipliers', () => {
   });
 
   it('gives the Stormtide Wyvern commander ocean flyer weaknesses and fire immunity', () => {
-    const wyvern = makeEnemy(EnemyType.STORMTIDE_WYVERN_COMMANDER, EnemyFaction.ROMAN_MYTH);
+    const wyvern = makeEnemy(EnemyType.STORMTIDE_WYVERN_COMMANDER, EnemyFaction.OCEAN);
     wyvern.isFlyer = true;
     expect(enemyDamageMultiplier(wyvern, DamageType.ELEMENTAL_FIRE)).toBe(0);
     expect(statusEffectiveness(wyvern, StatusEffectKind.BURN)).toBe(0);

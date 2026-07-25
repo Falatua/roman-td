@@ -1,11 +1,113 @@
 {
-  "DOGS":           { "PHYS_MELEE": 0.0,  "PHYS_RANGED": 0.0,  "SIEGE": -0.15,  "ELEMENTAL_FIRE": 0.0,  "DIVINE": 0.0 },
-  "CELTS":          { "PHYS_MELEE": -0.20, "PHYS_RANGED": 0.05, "SIEGE": 0.0, "ELEMENTAL_FIRE": 0.0, "DIVINE": 0.0 },
-  "CARTHAGE":       { "PHYS_MELEE": -0.30, "PHYS_RANGED": -0.20, "SIEGE": -0.15, "ELEMENTAL_FIRE": 0.0, "DIVINE": 0.0 },
-  "UNDEAD_CELTS":   { "PHYS_MELEE": 0.0,  "PHYS_RANGED": 0.0,  "SIEGE": 0.0,  "ELEMENTAL_FIRE": 0.25,  "DIVINE": 0.50 },
-  "UNDEAD_CARTHAGE":{ "PHYS_MELEE": -0.25, "PHYS_RANGED": 0.0, "SIEGE": 0.0, "ELEMENTAL_FIRE": 0.30, "DIVINE": 0.0 },
-  "SUPER_DEMONS":   { "PHYS_MELEE": -0.15, "PHYS_RANGED": -0.15, "SIEGE": -0.15, "ELEMENTAL_FIRE": "IMMUNE", "DIVINE": 1.0 },
-  "MONGOLS":        { "PHYS_MELEE": -0.10, "PHYS_RANGED": -0.15, "SIEGE": 0.10,  "ELEMENTAL_FIRE": 0.0,  "DIVINE": 0.0 },
-  "EGYPTIANS":      { "PHYS_MELEE": 0.0,   "PHYS_RANGED": -0.10, "SIEGE": 0.0,   "ELEMENTAL_FIRE": -0.15, "DIVINE": 0.30 },
-  "ROMAN_MYTH":     { "PHYS_MELEE": -0.15, "PHYS_RANGED": -0.10, "SIEGE": -0.20, "ELEMENTAL_FIRE": -0.10, "DIVINE": 0.40 }
+  "DOGS": {
+    "identity": "Pack Beasts",
+    "counterplay": "Fire, Burn, Bleed, and Slow punish the pack. Their speed helps them avoid heavy Siege.",
+    "PHYS_MELEE": 0.0,
+    "PHYS_RANGED": 0.0,
+    "SIEGE": -0.15,
+    "ELEMENTAL_FIRE": 0.40,
+    "DIVINE": 0.0,
+    "STATUS": { "SLOW": 0.10, "BURN": 0.40, "BLEED": 0.15, "POISON": 0.0 }
+  },
+  "CELTS": {
+    "identity": "Woad Warbands",
+    "counterplay": "Their close-order toughness resists Melee and control. Ranged volleys and Siege break the formation.",
+    "PHYS_MELEE": -0.20,
+    "PHYS_RANGED": 0.05,
+    "SIEGE": 0.10,
+    "ELEMENTAL_FIRE": 0.0,
+    "DIVINE": 0.0,
+    "STATUS": { "SLOW": -0.10, "BURN": 0.0, "BLEED": 0.10, "POISON": -0.10 }
+  },
+  "CARTHAGE": {
+    "identity": "Armored War Machine",
+    "counterplay": "Disciplined armor resists physical attacks and lingering effects. Siege is the clean formation breaker.",
+    "PHYS_MELEE": -0.30,
+    "PHYS_RANGED": -0.20,
+    "SIEGE": 0.15,
+    "ELEMENTAL_FIRE": 0.0,
+    "DIVINE": 0.0,
+    "STATUS": { "SLOW": -0.10, "BURN": 0.0, "BLEED": -0.10, "POISON": -0.15 }
+  },
+  "UNDEAD_CELTS": {
+    "identity": "Restless Dead",
+    "counterplay": "Poison and Bleed cannot harm the dead. Fire, Burn, and Divine judgment are their faction counters.",
+    "PHYS_MELEE": 0.0,
+    "PHYS_RANGED": 0.0,
+    "SIEGE": 0.0,
+    "ELEMENTAL_FIRE": 0.25,
+    "DIVINE": 0.50,
+    "STATUS": { "SLOW": -0.20, "BURN": 0.25, "BLEED": "IMMUNE", "POISON": "IMMUNE" }
+  },
+  "UNDEAD_CARTHAGE": {
+    "identity": "Bone Legions",
+    "counterplay": "Bone armor resists Melee and control while ignoring Poison and Bleed. Fire, Burn, and Divine damage crack the legion.",
+    "PHYS_MELEE": -0.25,
+    "PHYS_RANGED": 0.0,
+    "SIEGE": 0.0,
+    "ELEMENTAL_FIRE": 0.30,
+    "DIVINE": 0.25,
+    "STATUS": { "SLOW": -0.25, "BURN": 0.30, "BLEED": "IMMUNE", "POISON": "IMMUNE" }
+  },
+  "SUPER_DEMONS": {
+    "identity": "Hellborn",
+    "counterplay": "Fire and Burn are useless. Divine punishment is strongest, while Poison and Bleed remain effective alternatives.",
+    "PHYS_MELEE": -0.15,
+    "PHYS_RANGED": -0.15,
+    "SIEGE": -0.15,
+    "ELEMENTAL_FIRE": "IMMUNE",
+    "DIVINE": 1.0,
+    "STATUS": { "SLOW": -0.25, "BURN": "IMMUNE", "BLEED": 0.15, "POISON": 0.20 }
+  },
+  "MONGOLS": {
+    "identity": "Steppe Vanguard",
+    "counterplay": "Mobile discipline resists physical chip, Slow, Bleed, and Poison. Siege disrupts their fast formations.",
+    "PHYS_MELEE": -0.10,
+    "PHYS_RANGED": -0.15,
+    "SIEGE": 0.10,
+    "ELEMENTAL_FIRE": 0.0,
+    "DIVINE": 0.0,
+    "STATUS": { "SLOW": -0.25, "BURN": 0.0, "BLEED": 0.0, "POISON": 0.0 }
+  },
+  "EGYPTIANS": {
+    "identity": "Tomb Guard",
+    "counterplay": "Tomb wards resist Ranged attacks, Fire, Burn, and Poison. Divine damage breaks their ritual protection.",
+    "PHYS_MELEE": 0.0,
+    "PHYS_RANGED": -0.10,
+    "SIEGE": 0.0,
+    "ELEMENTAL_FIRE": -0.15,
+    "DIVINE": 0.30,
+    "STATUS": { "SLOW": -0.10, "BURN": -0.20, "BLEED": -0.10, "POISON": -0.25 }
+  },
+  "ROMAN_MYTH": {
+    "identity": "Ancient Colossi",
+    "counterplay": "Mythic bodies resist steel, Siege, Fire, and most status pressure. Divine damage is the reliable answer.",
+    "PHYS_MELEE": -0.15,
+    "PHYS_RANGED": -0.10,
+    "SIEGE": -0.20,
+    "ELEMENTAL_FIRE": -0.10,
+    "DIVINE": 0.40,
+    "STATUS": { "SLOW": -0.15, "BURN": -0.15, "BLEED": -0.20, "POISON": -0.20 }
+  },
+  "OCEAN": {
+    "identity": "Tideborn",
+    "counterplay": "Waterlogged bodies resist Fire, Burn, and status attrition. Siege and Divine damage break their tide armor.",
+    "PHYS_MELEE": -0.10,
+    "PHYS_RANGED": -0.10,
+    "SIEGE": 0.15,
+    "ELEMENTAL_FIRE": -0.25,
+    "DIVINE": 0.15,
+    "STATUS": { "SLOW": -0.15, "BURN": -0.30, "BLEED": -0.10, "POISON": -0.20 }
+  },
+  "NEUTRAL": {
+    "codexVisible": false,
+    "identity": "Training Control",
+    "counterplay": "Neutral controls take unmodified direct damage so testing remains accurate.",
+    "PHYS_MELEE": 0.0,
+    "PHYS_RANGED": 0.0,
+    "SIEGE": 0.0,
+    "ELEMENTAL_FIRE": 0.0,
+    "DIVINE": 0.0,
+    "STATUS": { "SLOW": 0.0, "BURN": 0.0, "BLEED": 0.0, "POISON": 0.0 }
+  }
 }

@@ -2028,12 +2028,50 @@ function renderComboCard(c: any, cs?: { state: 'ready'|'prospect'|'partial'|'non
 }
 
 function renderFactionResistances(): string {
-  const rows = Object.entries(factionRes as any).map(([faction, row]: any) => {
-    const vals = ['PHYS_MELEE','PHYS_RANGED','SIEGE','ELEMENTAL_FIRE','DIVINE']
-      .map(k => `<td>${row[k] === 'IMMUNE' ? '<span style="color:#ee5555">IMMUNE</span>' : `${Math.round(row[k] * 100)}%`}</td>`).join('');
-    const prettyFaction = faction.split('_').map((w: string) => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
-    return `<tr><td style="color:#9be0ff">${prettyFaction}</td>${vals}</tr>`;
+  const chip = (label: string, raw: number | 'IMMUNE', status = false): string => {
+    if (raw === 'IMMUNE') {
+      return `<span style="display:inline-block;margin:0 4px 4px 0;padding:2px 6px;border:1px solid #aa3a3a;color:#ff6666;background:#1b0b0b;font-size:9px"><b>${label}</b> IMMUNE</span>`;
+    }
+    if (raw === 0) return '';
+    const pct = Math.round(Math.abs(raw) * 100);
+    const vulnerable = raw > 0;
+    const color = vulnerable ? '#66ccff' : '#ffd34d';
+    const word = vulnerable ? (status ? 'MORE EFFECTIVE' : 'WEAK') : 'RESIST';
+    return `<span style="display:inline-block;margin:0 4px 4px 0;padding:2px 6px;border:1px solid ${color};color:${color};background:#0c0a08;font-size:9px"><b>${label}</b> ${pct}% ${word}</span>`;
+  };
+  const directLabels: Record<string, string> = {
+    PHYS_MELEE: 'MELEE',
+    PHYS_RANGED: 'RANGED',
+    SIEGE: 'SIEGE',
+    ELEMENTAL_FIRE: 'FIRE',
+    DIVINE: 'DIVINE'
+  };
+  const rows = Object.entries(factionRes as any)
+    .filter(([, row]: any) => row.codexVisible !== false)
+    .map(([faction, row]: any) => {
+    const direct = Object.entries(directLabels)
+      .map(([key, label]) => chip(label, row[key]))
+      .filter(Boolean)
+      .join('');
+    const statuses = ['SLOW', 'BURN', 'BLEED', 'POISON']
+      .map(key => chip(key, row.STATUS?.[key] ?? 0, true))
+      .filter(Boolean)
+      .join('');
+    return `<div data-faction-profile="${faction}" style="background:#0c0a08;border:1px solid #5a4a30;padding:10px">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:5px">
+        <b style="color:#9be0ff;font-size:12px;letter-spacing:1px">${factionName(faction).toUpperCase()}</b>
+        <span style="color:#d4af37;font-size:10px">${row.identity}</span>
+      </div>
+      <div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;margin-bottom:3px">DAMAGE PROFILE</div>
+      <div>${direct || '<span style="color:#777;font-size:9px">No faction-wide direct modifier</span>'}</div>
+      <div style="font-size:10px;color:#aa9a4a;letter-spacing:1px;margin:4px 0 3px">STATUS PROFILE</div>
+      <div>${statuses || '<span style="color:#777;font-size:9px">No faction-wide status modifier</span>'}</div>
+      <div style="font-size:10px;color:#cdb98a;line-height:1.45;margin-top:5px">${row.counterplay}</div>
+    </div>`;
   }).join('');
-  return `${section('FACTION RESISTANCE MODIFIERS', `<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="color:#aa9a4a"><th style="text-align:left">Faction</th><th>Melee</th><th>Ranged</th><th>Siege</th><th>Fire</th><th>Divine</th></tr></thead><tbody>${rows}</tbody></table>`)}
+  const intro = `<div style="font-size:10px;color:#cdb98a;line-height:1.5;margin-bottom:8px">
+    Faction profiles apply to every member, then stack with that enemy's own armor and traits. Divine ignores resistance but still triggers an authored faction weakness. IMMUNE always wins.
+  </div>`;
+  return `${section('FACTION RESISTANCES, WEAKNESSES, AND IMMUNITIES', `${intro}<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:7px">${rows}</div>`)}
   `;
 }

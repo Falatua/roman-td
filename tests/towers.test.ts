@@ -1459,7 +1459,7 @@ describe('Giant Killer transformation and combat wiring', () => {
     let undeadElephant: ReturnType<typeof fireAt>;
     try {
       nonGiantMyth = fireAt(EnemyType.CHIMERA, EnemyFaction.ROMAN_MYTH, 'ELITE');
-      seaGiant = fireAt(EnemyType.SEA_GIANT, EnemyFaction.ROMAN_MYTH, 'ELITE');
+      seaGiant = fireAt(EnemyType.SEA_GIANT, EnemyFaction.OCEAN, 'ELITE');
       cyclops = fireAt(EnemyType.CYCLOPS, EnemyFaction.ROMAN_MYTH, 'ELITE');
       warElephant = fireAt(EnemyType.WAR_ELEPHANT, EnemyFaction.CARTHAGE, 'ELITE');
       undeadElephant = fireAt(EnemyType.UNDEAD_WAR_ELEPHANT, EnemyFaction.UNDEAD_CARTHAGE, 'ELITE');
@@ -1582,7 +1582,7 @@ describe('Giant Killer transformation and combat wiring', () => {
     try {
       normal = swingAt(EnemyType.FERAL_DOG, { faction: EnemyFaction.DOGS, archetype: 'SWARM' });
       boss = swingAt(EnemyType.FERAL_DOG, { boss: true, faction: EnemyFaction.DOGS, archetype: 'BOSS' });
-      giant = swingAt(EnemyType.SEA_GIANT, { faction: EnemyFaction.ROMAN_MYTH, archetype: 'ELITE' });
+      giant = swingAt(EnemyType.SEA_GIANT, { faction: EnemyFaction.OCEAN, archetype: 'ELITE' });
     } finally {
       randomSpy.mockRestore();
     }
