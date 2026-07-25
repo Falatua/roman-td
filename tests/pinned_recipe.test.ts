@@ -35,22 +35,54 @@ describe('pinned recipe tracker', () => {
     });
   });
 
-  it('allows four pinned recipes before replacing the oldest', () => {
-    expect(MAX_PINNED_RECIPES).toBe(4);
+  it('allows six pinned recipes before replacing the oldest', () => {
+    expect(MAX_PINNED_RECIPES).toBe(6);
 
     togglePinnedRecipe('SCORPION_BOLT');
     togglePinnedRecipe('HORSEMAN');
     togglePinnedRecipe('PLAGUE_CART');
     togglePinnedRecipe('AERARIUM');
-    expect(getPinnedRecipes()).toEqual(['SCORPION_BOLT', 'HORSEMAN', 'PLAGUE_CART', 'AERARIUM']);
+    togglePinnedRecipe('EAGLE_STANDARD');
+    togglePinnedRecipe('BESTIARIUS');
+    expect(getPinnedRecipes()).toEqual([
+      'SCORPION_BOLT',
+      'HORSEMAN',
+      'PLAGUE_CART',
+      'AERARIUM',
+      'EAGLE_STANDARD',
+      'BESTIARIUS'
+    ]);
 
-    togglePinnedRecipe('EAGLE_SCOUT');
-    expect(getPinnedRecipes()).toEqual(['HORSEMAN', 'PLAGUE_CART', 'AERARIUM', 'EAGLE_SCOUT']);
+    togglePinnedRecipe('SIEGE_ONAGER');
+    expect(getPinnedRecipes()).toEqual([
+      'HORSEMAN',
+      'PLAGUE_CART',
+      'AERARIUM',
+      'EAGLE_STANDARD',
+      'BESTIARIUS',
+      'SIEGE_ONAGER'
+    ]);
   });
 
-  it('dedupes and caps saved recipes at four', () => {
-    setPinnedRecipes(['SCORPION_BOLT', 'HORSEMAN', 'SCORPION_BOLT', 'PLAGUE_CART', 'AERARIUM', 'EAGLE_SCOUT']);
-    expect(getPinnedRecipes()).toEqual(['SCORPION_BOLT', 'HORSEMAN', 'PLAGUE_CART', 'AERARIUM']);
+  it('dedupes and caps saved recipes at six', () => {
+    setPinnedRecipes([
+      'SCORPION_BOLT',
+      'HORSEMAN',
+      'SCORPION_BOLT',
+      'PLAGUE_CART',
+      'AERARIUM',
+      'EAGLE_STANDARD',
+      'BESTIARIUS',
+      'SIEGE_ONAGER'
+    ]);
+    expect(getPinnedRecipes()).toEqual([
+      'SCORPION_BOLT',
+      'HORSEMAN',
+      'PLAGUE_CART',
+      'AERARIUM',
+      'EAGLE_STANDARD',
+      'BESTIARIUS'
+    ]);
   });
 
   it('cannot resize the desktop battlefield when pins add sidebar overflow', () => {
