@@ -208,22 +208,19 @@ describe('Late-wave DoT profile coverage', () => {
     for (const wave of (wavesData as any[]).filter(w => w.wave >= 17 && w.wave <= 30)) {
       const types = [...new Set((wave.spawns ?? []).map((spawn: any) => spawn.type))];
       const hasDotImmune = types.some(type => dotImmuneTypes.has(type));
-      if (types.includes(EnemyType.ANUBIS_PRIEST_COMMANDER) && !hasDotImmune) {
-        expect(types).toContain(EnemyType.ANUBIS_PRIEST_COMMANDER);
-        const profile = enemyResistanceProfile(EnemyType.ANUBIS_PRIEST_COMMANDER);
-        expect(profile.poison, `W${wave.wave} Anubis commander poison should land`).toBeGreaterThan(0);
-        expect(profile.burn, `W${wave.wave} Anubis commander burn remains blocked`).toBe(0);
-        expect(profile.bleed, `W${wave.wave} Anubis commander bleed remains blocked`).toBe(0);
-        continue;
-      }
+      const hasSplitDotCounter = types.some(type => {
+        const profile = enemyResistanceProfile(type as EnemyType);
+        const guardedDots = [profile.burn, profile.poison, profile.bleed]
+          .filter(value => (value ?? 1) <= 0.35).length;
+        return guardedDots >= (wave.wave <= 22 ? 2 : 1);
+      });
       if (wave.wave <= 22) {
-        expect(hasDotImmune, `W${wave.wave} should include at least one damage-over-time immune threat`).toBe(true);
+        expect(
+          hasDotImmune || hasSplitDotCounter,
+          `W${wave.wave} should include a full DoT immunity or a threat strongly warded against at least two DoT families`
+        ).toBe(true);
       } else {
-        const hasHardOrHeavySoftCounter = hasDotImmune || types.some(type => {
-          const profile = enemyResistanceProfile(type as EnemyType);
-          return (profile.burn ?? 1) <= 0.35 || (profile.poison ?? 1) <= 0.35 || (profile.bleed ?? 1) <= 0.35;
-        });
-        expect(hasHardOrHeavySoftCounter, `W${wave.wave} should include at least one hard or heavy-soft DoT counter`).toBe(true);
+        expect(hasDotImmune || hasSplitDotCounter, `W${wave.wave} should include at least one hard or heavy-soft DoT counter`).toBe(true);
       }
     }
   });

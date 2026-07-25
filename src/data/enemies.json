@@ -675,7 +675,6 @@
     "healAllyPctPerSec": 0.02,
     "siegeWeaknessPct": 200,
     "meleeImmune": true,
-    "dotImmune": true,
     "divineImmune": true,
     "immuneFire": true,
     "immunePoison": true

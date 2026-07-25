@@ -324,8 +324,7 @@ describe('Enemy resistances — per-enemy multipliers', () => {
 
   it('gives selected post-W15 enemies true damage-over-time immunity with readable UI summary', () => {
     const dotImmuneTypes = [
-      EnemyType.MONGOL_SHAMAN,
-      EnemyType.ANUBIS_PRIEST
+      EnemyType.MONGOL_SHAMAN
     ];
 
     for (const type of dotImmuneTypes) {
@@ -382,10 +381,10 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine remains blocked`).toBe(0);
   });
 
-  it('gives the ordinary Anubis Priest a 200% siege damage weakness', () => {
+  it('gives the ordinary Anubis Priest a 200% siege weakness and allows Bleed damage', () => {
     const type = EnemyType.ANUBIS_PRIEST;
     const def: any = (enemiesData as any)[type];
-    const priest = makeEnemy(type, def.faction as EnemyFaction);
+    const priest = makeEnemy(type, EnemyFaction.EGYPTIANS);
     const siegeArmor = armorProfile(type).find(row => row.damageType === 'SIEGE');
 
     expect(def.siegeWeaknessPct).toBe(200);
@@ -394,6 +393,11 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(siegeArmor).toMatchObject({ finalMult: 3, armorPct: -200, immune: false });
     expect(enemyDamageMultiplier(priest, DamageType.PHYS_MELEE)).toBe(0);
     expect(enemyDamageMultiplier(priest, DamageType.DIVINE)).toBe(0);
+    expect(def.dotImmune).not.toBe(true);
+    expect(statusEffectiveness(priest, StatusEffectKind.BLEED)).toBeGreaterThan(0);
+    expect(statusEffectiveness(priest, StatusEffectKind.BURN)).toBe(0);
+    expect(statusEffectiveness(priest, StatusEffectKind.POISON)).toBe(0);
+    expect(resistanceSummary(type).some(row => row.label === 'Bleed' && row.value === 0)).toBe(false);
 
     const commander = makeEnemy(EnemyType.ANUBIS_PRIEST_COMMANDER, EnemyFaction.EGYPTIANS);
     expect(enemyDamageMultiplier(commander, DamageType.SIEGE)).toBe(1);

@@ -281,7 +281,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.EGYPTIAN_SPEARMAN]: { melee: 0.8, ranged: 0.6, burn: 0.85, poison: 0.90, bleed: 0.75 },
   [EnemyType.EGYPTIAN_CHARIOT]:  { ranged: 0.5, slow: 0.35, burn: 0.95, poison: 0.85, bleed: 0.6 },
   [EnemyType.PHARAOH_GUARD]:     { melee: 0.55, ranged: 0, burn: 0.55, poison: 0.45, bleed: 0.60, divine: 0.7 },
-  [EnemyType.ANUBIS_PRIEST]:     { melee: 0, ranged: 0.5, slow: 0.3, burn: 0, poison: 0, bleed: 0, divine: 0 },
+  [EnemyType.ANUBIS_PRIEST]:     { melee: 0, ranged: 0.5, slow: 0.3, burn: 0, poison: 0, bleed: 1, divine: 0 },
   [EnemyType.SOBEK_WARRIOR]:     { melee: 0.45, ranged: 0, slow: 0.3, burn: 0.5, poison: 0.55, bleed: 0.65 },
   [EnemyType.MUMMY_WARRIOR]:     { ranged: 0, siege: 0, slow: 0.5, poison: 0, bleed: 0.4, burn: 1.30 },
   [EnemyType.SPHINX]:            { melee: 0, ranged: 0.55, slow: 0.25, burn: 0.75, poison: 0.50, bleed: 0.40, divine: 1.30 },
