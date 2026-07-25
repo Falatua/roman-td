@@ -355,10 +355,14 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
   // auto-crit) — surface that as a footnote.
   const critChance = (def.critChance ?? 0) as number;
   const critMult   = (def.critMult ?? 1.5) as number;
+  const critPenalty = Math.max(0, Math.min(1, t.__critChancePenalty ?? 0));
+  const liveCritChance = Math.max(0, critChance - critPenalty);
   const critLabel  = critChance > 0
-    ? `${Math.round(critChance * 100)}% · ${critMult.toFixed(2)}×`
+    ? critPenalty > 0
+      ? `${Math.round(liveCritChance * 100)}% · ${critMult.toFixed(2)}× (−${Math.round(critPenalty * 100)}pt ${t.__critChancePenaltySource ?? 'Tomb Omen'})`
+      : `${Math.round(critChance * 100)}% · ${critMult.toFixed(2)}×`
     : (def.ability && /every \d+(th|nd|rd|st) hit|every \d+th/i.test(def.ability) ? 'special' : '—');
-  const critColor  = critChance >= 0.18 ? '#ffd34d' : (critChance > 0 ? '#ffbe7a' : '#aa9a4a');
+  const critColor  = critPenalty > 0 ? '#ee7777' : (critChance >= 0.18 ? '#ffd34d' : (critChance > 0 ? '#ffbe7a' : '#aa9a4a'));
   statsGrid.innerHTML =
     statBox('Tier', `T${t.qualityTier}`, tierColor) +
     statBox('Splash', projectile ? (projectile.splash > 0 ? `${projectile.splash} tiles` : 'Single target') : 'Melee') +

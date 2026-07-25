@@ -705,6 +705,7 @@ export class UIManager {
         if (seen(d => d.dodgeChance))                      tags.push({ txt: 'DODGES', color: '#cc88cc' });
         if (seen(d => d.stealthInterval))                  tags.push({ txt: 'STEALTH', color: '#aaaaff' });
         if (seen(d => d.auraTowerSlow))                    tags.push({ txt: 'TOWER-SLOW-AURA', color: '#ff7733' });
+        if (seen(d => d.auraTowerCritPenalty))             tags.push({ txt: 'CRIT-SUPPRESS', color: '#d4af37' });
         if ((w as any).necromancy)                         tags.push({ txt: 'NECROMANCY', color: '#aa55ff' });
         const tagBar = tags.length > 0
           ? `<div style="margin-top:3px;font-size:9.5px;letter-spacing:1.5px">THREATS: ${tags.map(t => `<span style="color:${t.color};font-weight:bold;border:1px solid ${t.color}55;padding:1px 4px;margin:0 2px">${t.txt}</span>`).join('')}</div>`

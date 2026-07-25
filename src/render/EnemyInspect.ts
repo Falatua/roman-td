@@ -282,6 +282,10 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   if (def?.silenceAuraRadiusTiles) traits.push({ label: `SILENCE AURA — every tower within ${def.silenceAuraRadiusTiles} tiles is SILENCED while this enemy is in range. Refreshes each frame in range; expires ~0.6s after the enemy walks out. Pink X-mark icon over silenced towers. Plant power towers OFF the path to avoid the aura.`, color: '#a078d0' });
   // -- Tower disruption --
   if (def?.auraTowerSlow) traits.push({ label: `TOWER-SLOW AURA — every tower within ~2 tiles fires ${Math.round(def.auraTowerSlow*100)}% slower while this enemy is in range`, color: '#a078d0' });
+  if (def?.auraTowerCritPenalty && def?.auraTowerCritRadiusTiles) {
+    const omenName = def.auraTowerCritName ?? 'TOMB OMEN';
+    traits.push({ label: `${omenName} — towers within ${def.auraTowerCritRadiusTiles} tiles lose ${Math.round(def.auraTowerCritPenalty * 100)} percentage points of standard CRIT chance. Strongest aura wins; guaranteed signature attacks are unaffected.`, color: '#d4af37' });
+  }
   if (def?.auraNullifier) traits.push({ label: `AURA NULLIFIER — every tower within 2 tiles loses its aura contributions while this enemy is in range. Global damage / atk-speed / enemy-debuff / item auras (Centurion\'s Trumpet, Battle Standard, etc.) all silently drop out. Walks past → auras return. Periodic abilities (Caesar stun pulse, freeze cycles) are NOT auras and still fire.`, color: '#a078d0' });
   if (e.type === 'FERAL_DOG' || e.type === 'RABID_DOG' || e.type === 'ALPHA_DOG') {
     traits.push({ label: 'FIRE WEAKNESS — direct FIRE and BURN deal 40% extra damage. Demon Hellhounds are fire-born and do not share this weakness.', color: '#ff8844' });

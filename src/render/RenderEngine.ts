@@ -133,6 +133,8 @@ export class RenderEngine {
   // 2026-06-25 — constant violet "Nullifying Aura" dome around late-game
   // carriers that disable towers standing inside it. Cleared each frame.
   nullifyAuraGfx: Graphics;
+  // 2026-07-24 — broken-gold Tomb Omen ring around anti-crit carriers.
+  critSuppressionAuraGfx: Graphics;
   // 2026-05 v6 polish
   bossAuraGfx: Graphics;
   bossVignetteGfx: Graphics;
@@ -245,6 +247,8 @@ export class RenderEngine {
     // on the overlay so the violet ring reads clearly under the carriers.
     this.nullifyAuraGfx = new Graphics();
     this.layers.overlay.addChild(this.nullifyAuraGfx);
+    this.critSuppressionAuraGfx = new Graphics();
+    this.layers.overlay.addChild(this.critSuppressionAuraGfx);
     // 2026-05 v6: shared Graphics for the boss low-HP red pulse aura.
     // Sits in the overlay layer below the enemy sprite so the ring
     // appears behind the boss but above the terrain. Cleared each frame.
@@ -1568,6 +1572,7 @@ export class RenderEngine {
     // so a stale source list can't leave a ghost ring. Towers inside are
     // disabled (see EnemySystem) and show the silence X-mark.
     this.nullifyAuraGfx.clear();
+    this.critSuppressionAuraGfx.clear();
     for (const e of state.enemies.values()) {
       const nr = (enemiesData as any)[e.type]?.nullifyAuraRadiusTiles;
       if (!nr || e.hp <= 0) continue;
@@ -1583,6 +1588,42 @@ export class RenderEngine {
       this.nullifyAuraGfx.lineStyle(1.5, 0x9933ff, 0.6);
       this.nullifyAuraGfx.arc(e.x, e.y, rad * 0.9, Math.PI - tk * 1.0, Math.PI - tk * 1.0 + halfArc);
       this.nullifyAuraGfx.lineStyle(0);
+    }
+    const omenTargetTowers = Array.from(state.towers.values()).filter(tower => !tower.pending);
+    const omenCarriers = Array.from(state.enemies.values())
+      .filter(e => e.hp > 0 && Number((enemiesData as any)[e.type]?.auraTowerCritRadiusTiles ?? 0) > 0)
+      .sort((a, b) =>
+        Number((enemiesData as any)[b.type]?.auraTowerCritPenalty ?? 0)
+        - Number((enemiesData as any)[a.type]?.auraTowerCritPenalty ?? 0)
+      );
+    const drawnOmenCenters: Array<{ x: number; y: number }> = [];
+    for (const e of omenCarriers) {
+      const def: any = (enemiesData as any)[e.type];
+      const radiusTiles = Number(def.auraTowerCritRadiusTiles);
+      const rad = GRID.TILE * radiusTiles;
+      const activeOnTower = omenTargetTowers.some(t => {
+        const cx = t.tileX * GRID.TILE + GRID.TILE / 2;
+        const cy = t.tileY * GRID.TILE + GRID.TILE / 2;
+        const dx = cx - e.x;
+        const dy = cy - e.y;
+        return dx * dx + dy * dy <= rad * rad;
+      });
+      if (!activeOnTower) continue;
+      if (drawnOmenCenters.some(center => Math.hypot(center.x - e.x, center.y - e.y) < GRID.TILE * 1.5)) continue;
+      if (drawnOmenCenters.length >= 8) break;
+      drawnOmenCenters.push({ x: e.x, y: e.y });
+      const pulse = 0.72 + Math.sin(state.tick * 2.6 + e.y * 0.03) * 0.16;
+      this.critSuppressionAuraGfx.beginFill(0x24384a, 0.08 * pulse).drawCircle(e.x, e.y, rad).endFill();
+      const turn = state.tick * 0.45;
+      const arc = Math.PI * 0.34;
+      this.critSuppressionAuraGfx.lineStyle(2.2, 0xd4af37, 0.78);
+      for (let i = 0; i < 4; i++) {
+        const start = turn + i * Math.PI / 2;
+        this.critSuppressionAuraGfx.arc(e.x, e.y, rad, start, start + arc);
+      }
+      this.critSuppressionAuraGfx.lineStyle(1.2, 0x8fb8d8, 0.55);
+      this.critSuppressionAuraGfx.arc(e.x, e.y, rad * 0.82, -turn, -turn + Math.PI * 1.35);
+      this.critSuppressionAuraGfx.lineStyle(0);
     }
     this.elephantAuraGfx.clear();
     // 2026-05-17 — Re-validate sources against state.enemies every frame

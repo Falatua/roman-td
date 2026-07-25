@@ -72,7 +72,7 @@ export function classifyEnemy(value: EnemyClassifiable): EnemyClassification {
     boss: hasAuthoredDef ? def.isBoss === true : runtime.isBoss === true,
     elite: runtime.isElite === true || def.isElite === true || ELITE_ENEMY_TYPES.has(type),
     commander: runtime.isCommander === true || COMMANDER_ENEMY_TYPES.has(type),
-    caster: runtime.isCaster === true || def.caster === true || def.towerSleepCaster === true || def.auraNullifier === true || CASTER_ENEMY_TYPES.has(type),
+    caster: runtime.isCaster === true || def.caster === true || def.towerSleepCaster === true || def.auraNullifier === true || def.auraTowerCritPenalty > 0 || CASTER_ENEMY_TYPES.has(type),
     giant: GIANT_ENEMY_TYPES.has(type),
     beast: BEAST_ENEMY_TYPES.has(type),
     ocean: runtime.isOceanEnemy === true || runtime.__oceanSpawn === true || OCEAN_ENEMY_TYPES.has(type),

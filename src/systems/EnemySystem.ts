@@ -887,6 +887,35 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     }
   }
   (state as any).__nullifyAuraSources = nullSources;
+  // ─── TOMB OMEN / CRIT-SUPPRESSION AURA (2026-07-24) ────────────────
+  // Selected otherwise-plain post-W15 enemies reduce the standard crit
+  // chance of nearby towers by a flat number of percentage points. Auras
+  // never stack: the strongest in-range penalty wins. Clear and restamp
+  // each frame so towers recover immediately after the carrier moves on.
+  for (const t of state.towers.values()) {
+    t.__critChancePenalty = 0;
+    t.__critChancePenaltySource = undefined;
+  }
+  for (const e of state.enemies.values()) {
+    if (e.hp <= 0) continue;
+    const def: any = (enemiesData as any)[e.type];
+    const penalty = Number(def?.auraTowerCritPenalty ?? 0);
+    const radiusTiles = Number(def?.auraTowerCritRadiusTiles ?? 0);
+    if (penalty <= 0 || radiusTiles <= 0) continue;
+    const radiusPxSq = Math.pow(GRID.TILE * radiusTiles, 2);
+    for (const t of state.towers.values()) {
+      if (t.pending) continue;
+      const cx = t.tileX * GRID.TILE + GRID.TILE / 2;
+      const cy = t.tileY * GRID.TILE + GRID.TILE / 2;
+      const dx = cx - e.x;
+      const dy = cy - e.y;
+      if (dx * dx + dy * dy > radiusPxSq) continue;
+      if (penalty > (t.__critChancePenalty ?? 0)) {
+        t.__critChancePenalty = penalty;
+        t.__critChancePenaltySource = String(def.auraTowerCritName ?? def.name ?? e.type);
+      }
+    }
+  }
   // ─── TOWER SILENCE: Spectral Scout / Ghost Rider passing within 1.0 tile
   // of a tower forces the tower into a 0.6s cooldown spike. They literally
   // walk past and disrupt the legion's rhythm.

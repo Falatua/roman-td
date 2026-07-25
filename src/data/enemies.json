@@ -630,7 +630,10 @@
     "speed": 1.32,
     "isFlyer": false,
     "isBoss": false,
-    "livesCost": 1
+    "livesCost": 1,
+    "auraTowerCritPenalty": 0.1,
+    "auraTowerCritRadiusTiles": 2.5,
+    "auraTowerCritName": "EVIL-EYE VOLLEY"
   },
   "EGYPTIAN_SPEARMAN": {
     "name": "Egyptian Spearman",
@@ -639,7 +642,10 @@
     "speed": 1.1,
     "isFlyer": false,
     "isBoss": false,
-    "livesCost": 1
+    "livesCost": 1,
+    "auraTowerCritPenalty": 0.15,
+    "auraTowerCritRadiusTiles": 2,
+    "auraTowerCritName": "TOMB-WARD FORMATION"
   },
   "EGYPTIAN_CHARIOT": {
     "name": "Egyptian Chariot",

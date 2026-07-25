@@ -497,6 +497,8 @@ export interface Tower {
   __lastTargetId?: string;        // for "first hit on new target" bonuses (Retiarius Trident & Net)
   __tacticalStacks?: number;      // Evocatus tactical stack count
   __auraSpeedDebuff?: number;     // 0..1 multiplier reduction from druid auras
+  __critChancePenalty?: number;   // flat crit-chance reduction from enemy anti-crit auras
+  __critChancePenaltySource?: string;
   duplicateBumped?: number;       // tier bump from duplicate-card upgrade
   isAerarium: boolean;      // shortcut
   pending: boolean;         // Gem TD: just-placed, awaiting KEEP-or-convert decision
