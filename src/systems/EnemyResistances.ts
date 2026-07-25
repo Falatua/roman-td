@@ -346,7 +346,12 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
 };
 
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
-  return RESIST[type] ?? {};
+  const profile = RESIST[type] ?? {};
+  const def: any = (enemiesData as any)[type];
+  if (typeof def?.siegeWeaknessPct === 'number') {
+    return { ...profile, siege: 1 + def.siegeWeaknessPct / 100 };
+  }
+  return profile;
 }
 
 export function isHellfireImmune(enemy: Enemy): boolean {

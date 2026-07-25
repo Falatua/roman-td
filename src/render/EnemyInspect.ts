@@ -140,18 +140,15 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     const label = armorDamageTypeShortLabel(r.damageType);
     let display: string;
     let color: string;
-    // 2026-05-18 — Sign convention is the player's defense-stat read:
-    //   "+"  = positive defense, enemy RESISTS this type (avoid)
-    //   "−"  = less defense,     enemy is VULNERABLE to this type (use)
-    // armorPct is positive when the enemy resists (damage reduction) and
-    // negative when the enemy takes extra damage. We always display the
-    // magnitude with the appropriate sign in front.
+    // Positive armor means resistance. Negative armor means the enemy takes
+    // extra damage, so state that outcome directly instead of showing a
+    // confusing negative-damage label.
     if (r.immune) { display = 'IMMUNE'; color = '#ee2a2a'; }
     else if (r.armorPct >= 70) { display = `+${r.armorPct}% armor`; color = '#ff6b3a'; }
     else if (r.armorPct >= 30) { display = `+${r.armorPct}% armor`; color = '#ffaa55'; }
     else if (r.armorPct > 0)   { display = `+${r.armorPct}% armor`; color = '#ffd34d'; }
     else if (r.armorPct === 0) { display = 'no armor';             color = '#cdb98a'; }
-    else                       { display = `−${Math.abs(r.armorPct)}% damage`; color = '#7896c8'; }
+    else                       { display = `+${Math.abs(r.armorPct)}% damage taken`; color = '#7896c8'; }
     return `<div style="background:#0c0a08;padding:8px 6px;text-align:center;font-size:11px">
       <div style="color:#aa9a4a;letter-spacing:1px;font-size:9px">${label}</div>
       <div style="color:${color};font-size:12px;font-weight:bold;margin-top:3px;letter-spacing:0.5px">${display}</div>
@@ -273,6 +270,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // tick. HELLFIRE divine-fire is separate unless a rare unit declares
   // immuneHellfire as an explicit exception.
   if (def?.immuneFire) traits.push({ label: def?.immuneHellfire ? 'IMMUNE TO FIRE + HELLFIRE — direct fire, BURN, and HELLFIRE all deal 0' : 'IMMUNE TO FIRE — direct fire damage and BURN DoT both deal 0 (HELLFIRE divine-fire still applies)', color: '#ee5555' });
+  if (typeof def?.siegeWeaknessPct === 'number') traits.push({ label: `SIEGE WEAKNESS — takes +${def.siegeWeaknessPct}% SIEGE damage. Heavy bolts, stones, and bombardment deal ${1 + def.siegeWeaknessPct / 100}× their otherwise-final damage.`, color: '#66ccff' });
   // -- Healing / regen --
   if (def?.regenPctPerSec) traits.push({ label: `REGEN — ${(scaledEnemyRegenRate(def.regenPctPerSec)*100).toFixed(2)}% maxHP/sec always-on; active DoT halves it`, color: '#88ff88' });
   if (def?.outOfCombatRegen) traits.push({ label: `OUT-OF-COMBAT REGEN — ${(scaledEnemyRegenRate(def.outOfCombatRegen)*100).toFixed(2)}% maxHP/sec after 1.0s without DIRECT damage; active DoT halves it to ${(scaledEnemyRegenRate(def.outOfCombatRegen)*50).toFixed(2)}%/sec`, color: '#88ff88' });

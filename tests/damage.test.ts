@@ -1,7 +1,7 @@
 // Tests for damage type math: faction resistance matrix + status effectiveness.
 import { describe, it, expect } from 'vitest';
 import { resistanceModifier, damageTypeFromString } from '../src/systems/DamageTypeSystem';
-import { armorProfile, enemyDamageMultiplier, isHellfireImmune, resistanceSummary, statusEffectiveness } from '../src/systems/EnemyResistances';
+import { armorProfile, enemyDamageMultiplier, enemyResistanceProfile, isHellfireImmune, resistanceSummary, statusEffectiveness } from '../src/systems/EnemyResistances';
 import { DamageType, EnemyFaction, EnemyType, StatusEffectKind, Enemy } from '../src/types';
 import enemiesData from '../src/data/enemies.json';
 import { applyResistanceBreakRelief } from '../src/systems/CombatResolver';
@@ -380,6 +380,23 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(statusEffectiveness(enemy, StatusEffectKind.BLEED), `${type} bleed remains blocked`).toBe(0);
     expect(enemyDamageMultiplier(enemy, DamageType.PHYS_MELEE), `${type} melee remains blocked`).toBe(0);
     expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine remains blocked`).toBe(0);
+  });
+
+  it('gives the ordinary Anubis Priest a 200% siege damage weakness', () => {
+    const type = EnemyType.ANUBIS_PRIEST;
+    const def: any = (enemiesData as any)[type];
+    const priest = makeEnemy(type, def.faction as EnemyFaction);
+    const siegeArmor = armorProfile(type).find(row => row.damageType === 'SIEGE');
+
+    expect(def.siegeWeaknessPct).toBe(200);
+    expect(enemyResistanceProfile(type).siege).toBe(3);
+    expect(enemyDamageMultiplier(priest, DamageType.SIEGE)).toBe(3);
+    expect(siegeArmor).toMatchObject({ finalMult: 3, armorPct: -200, immune: false });
+    expect(enemyDamageMultiplier(priest, DamageType.PHYS_MELEE)).toBe(0);
+    expect(enemyDamageMultiplier(priest, DamageType.DIVINE)).toBe(0);
+
+    const commander = makeEnemy(EnemyType.ANUBIS_PRIEST_COMMANDER, EnemyFaction.EGYPTIANS);
+    expect(enemyDamageMultiplier(commander, DamageType.SIEGE)).toBe(1);
   });
 
   it('gives selected post-W15 enemies true divine immunity with readable UI armor', () => {

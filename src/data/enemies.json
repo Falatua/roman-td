@@ -673,6 +673,7 @@
     "livesCost": 1,
     "auraTowerSlow": 0.25,
     "healAllyPctPerSec": 0.02,
+    "siegeWeaknessPct": 200,
     "meleeImmune": true,
     "dotImmune": true,
     "divineImmune": true,

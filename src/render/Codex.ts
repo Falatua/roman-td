@@ -1630,6 +1630,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.auraTowerSlow) traits.push(`TOWER-SLOW AURA — every tower within ~2 tiles fires ${Math.round(def.auraTowerSlow*100)}% slower while this enemy is in range`);
   if (def.silenceAuraRadiusTiles) traits.push(`SILENCE AURA — every tower within ${def.silenceAuraRadiusTiles} tiles is SILENCED while this enemy is in range (pink X-mark). Expires ~0.6s after the enemy leaves. Distinct from the pass-by silence — this is sustained denial-while-near.`);
   if (def.auraNullifier) traits.push('AURA NULLIFIER — silences every tower aura within 2 tiles (damage/atk-speed/debuff/item auras all drop out). Periodic abilities like Caesar stun pulse and freeze cycles are NOT auras and still fire.');
+  if (typeof def.siegeWeaknessPct === 'number') traits.push(`SIEGE WEAKNESS — takes +${def.siegeWeaknessPct}% SIEGE damage. Heavy bolts, stones, and bombardment deal ${1 + def.siegeWeaknessPct / 100}× their otherwise-final damage.`);
   const sleepRange = typeof def.sleepDartRangeTiles === 'number'
     ? def.sleepDartRangeTiles
     : (id === 'GALLIC_DRUID' || id === 'ZOMBIE_DRUID' ? 3 : 0);
@@ -1756,15 +1757,14 @@ function renderArmorChips(id: string): string {
   return rows.map(r => {
     let display: string;
     let color: string;
-    // 2026-05-18 — Defense-stat sign convention. "+" = positive defense
-    // (resists), "−" = less defense (vulnerable). Color also differs:
-    // warm = resist, blue = vulnerable.
+    // Positive values are armor. Vulnerabilities state the extra damage
+    // taken directly so a large weakness cannot read like damage reduction.
     if (r.immune)              { display = 'IMM';                          color = '#ee2a2a'; }
     else if (r.armorPct >= 70) { display = `+${r.armorPct}%`;              color = '#ff6b3a'; }
     else if (r.armorPct >= 30) { display = `+${r.armorPct}%`;              color = '#ffaa55'; }
     else if (r.armorPct > 0)   { display = `+${r.armorPct}%`;              color = '#ffd34d'; }
     else if (r.armorPct === 0) { display = '0%';                           color = '#cdb98a'; }
-    else                       { display = `−${Math.abs(r.armorPct)}%`;    color = '#7896c8'; }
+    else                       { display = `+${Math.abs(r.armorPct)}% DMG`; color = '#7896c8'; }
     return `<span title="${armorDamageTypeShortLabel(r.damageType)}" style="display:inline-block;margin:0 2px 2px 0;padding:1px 4px;background:#0c0a08;border:1px solid #3a3025;color:${color};font-size:9.5px;line-height:1.2"><b style="color:#aa9a4a;font-size:8px;letter-spacing:0.5px">${armorDamageTypeShortLabel(r.damageType).slice(0,3).toUpperCase()}</b> ${display}</span>`;
   }).join('');
 }
