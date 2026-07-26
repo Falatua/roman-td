@@ -167,6 +167,7 @@ export enum TowerType {
   GIANT_KILLER = 'GIANT_KILLER',
   GIANTS_COHORT_GUARD = 'GIANTS_COHORT_GUARD',
   UNDEAD_GLADIATOR_KING = 'UNDEAD_GLADIATOR_KING',
+  DRACONIS_VEXILLATIO = 'DRACONIS_VEXILLATIO',
   IMPERIAL_HEADSMAN = 'IMPERIAL_HEADSMAN',
   SOL_INVICTUS_QUADRIGA = 'SOL_INVICTUS_QUADRIGA',
   JOVIAN_SKY_HUNTER = 'JOVIAN_SKY_HUNTER',
@@ -652,8 +653,8 @@ export interface LootOrb {
   y: number;
   itemId: ItemId;
   rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'UNIQUE';
-  // Instance-level sale lock for ceremonial gifts. Ordinary copies of the
-  // same item remain sellable because the restriction travels with the orb.
+  // Legacy instance metadata retained for save compatibility. Current resale
+  // prices gifts and drops at half value regardless of this field.
   sellLockedReason?: string;
 }
 

@@ -47,8 +47,8 @@ export interface InventorySlot {
   // Gold paid for this item, when known. Sell refund = floor(buyPrice / 2).
   // Loot drops have no buyPrice; those fall back to a rarity-based default.
   buyPrice?: number;
-  // Instance-level restriction. Used by the one ceremonial Wave 1 Giant's
-  // Bane; later copies of Giant's Bane do not carry this field.
+  // Legacy instance metadata retained for save compatibility. Current resale
+  // ignores it and gives purchases, drops, and gifts the same half-cost rule.
   sellLockedReason?: string;
 }
 
@@ -431,7 +431,9 @@ export function isConsumable(itemId: ItemId): boolean {
 
 export type FirstFlyerApotheosisGrant = 'inventory' | 'loot_orb' | 'none';
 export type Wave22WitchsBrewGrant = 'inventory' | 'loot_orb' | 'none';
-export const WAVE_ONE_GIANTS_BANE_GIFT_REASON = 'Gift of the Senate: this ceremonial copy cannot be sold.';
+export type Wave18DracoStandardGrant = 'inventory' | 'loot_orb' | 'none';
+export const WAVE_18_DRACO_STANDARD_GIFT_WAVE = 18;
+export const DRACO_STANDARD_GIFT_ITEM_ID: ItemId = 'DRACO_STANDARD';
 export const WAVE_22_WITCHS_BREW_GIFT_WAVE = 22;
 export const WITCHS_BREW_GIFT_ITEM_ID: ItemId = 'WITCHS_BREW';
 export type WaveOneGiantsBaneGrant = 'inventory' | 'loot_orb' | 'none';
@@ -439,14 +441,27 @@ export type WaveOneGiantsBaneGrant = 'inventory' | 'loot_orb' | 'none';
 export function grantWaveOneGiantsBane(state: GameStateShape, inv: InventoryState): WaveOneGiantsBaneGrant {
   if (state.wave !== 1 || state.waveOneGiantsBaneGranted || state.sandboxMode || state.endlessMode) return 'none';
   state.waveOneGiantsBaneGranted = true;
-  if (inventoryAdd(inv, 'GIANTS_BANE', 'LEGENDARY', false, undefined, WAVE_ONE_GIANTS_BANE_GIFT_REASON)) return 'inventory';
+  if (inventoryAdd(inv, 'GIANTS_BANE', 'LEGENDARY', false)) return 'inventory';
   state.lootOrbs.push({
     id: newId(),
     x: GRID.CANVAS_W - GRID.TILE * 1.5,
     y: GRID.CANVAS_H - GRID.TILE * 1.5,
     itemId: 'GIANTS_BANE',
-    rarity: 'LEGENDARY',
-    sellLockedReason: WAVE_ONE_GIANTS_BANE_GIFT_REASON
+    rarity: 'LEGENDARY'
+  });
+  return 'loot_orb';
+}
+
+export function grantWave18DracoStandard(state: GameStateShape, inv: InventoryState): Wave18DracoStandardGrant {
+  if (state.wave !== WAVE_18_DRACO_STANDARD_GIFT_WAVE || state.wave18DracoStandardGranted || state.sandboxMode || state.endlessMode) return 'none';
+  state.wave18DracoStandardGranted = true;
+  if (inventoryAdd(inv, DRACO_STANDARD_GIFT_ITEM_ID, 'LEGENDARY', false)) return 'inventory';
+  state.lootOrbs.push({
+    id: newId(),
+    x: GRID.CANVAS_W - GRID.TILE * 1.5,
+    y: GRID.CANVAS_H - GRID.TILE * 1.5,
+    itemId: DRACO_STANDARD_GIFT_ITEM_ID,
+    rarity: 'LEGENDARY'
   });
   return 'loot_orb';
 }

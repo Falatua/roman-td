@@ -587,6 +587,13 @@
     "sell": 65,
     "effect": "Arena sand and bone ash churn inside. Give it to a Tier IV or V Murmillo, and the dead may crown a new gladiator king. The awakened tower holds four items; Witch's Brew remains bound."
   },
+  "DRACO_STANDARD": {
+    "name": "Draco Standard",
+    "rarity": "LEGENDARY",
+    "buy": 814,
+    "sell": 407,
+    "effect": "The dragon standard thirsts for a legion. Give it to a Tier IV or V Vexillation, and the cohort may awaken as Draconis Vexillatio. The awakened tower holds four items; the standard remains bound."
+  },
   "CENSER_OF_MEFITIS": {
     "name": "Censer of Mefitis",
     "rarity": "LEGENDARY",

@@ -17,7 +17,7 @@ import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } 
 import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
-import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollApotheosisLuckyDrop, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, grantFirstFlyerApotheosis, grantWaveOneGiantsBane, grantWave22WitchsBrew, grantSoloStartingItems, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
+import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollApotheosisLuckyDrop, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, grantFirstFlyerApotheosis, grantWaveOneGiantsBane, grantWave18DracoStandard, grantWave22WitchsBrew, grantSoloStartingItems, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
 import { buildGateShop, buildMercatorChampionOffers, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, ShopState, CHAMPION_PRICE, MERCATOR_TOWER_OFFER_COUNT } from './systems/MerchantSystem';
 import { createBossRuntime, tickBossScripts, handleBossDeath, applyEnemyAuras } from './systems/BossScripts';
 import { scaledEnemyRegenRate } from './systems/EnemyHealing';
@@ -132,6 +132,8 @@ function meleeSlashTintFor(towerType: TowerType | string): number | undefined {
       return 0xff7733;                          // hellfire orange-red
     case TowerType.UNDEAD_GLADIATOR_KING:
       return 0x75ff66;                          // necromantic arena green
+    case TowerType.DRACONIS_VEXILLATIO:
+      return 0xff5a28;                          // draconic ember-red
     default:
       if (heroId === 'HERO_CAESAR') return 0xffd34d;
       return undefined;                         // PHYS_MELEE default
@@ -5900,11 +5902,6 @@ async function boot() {
         }
         const slot = inventory.slots[idx];
         if (!slot) return;
-        if (slot.sellLockedReason) {
-          state.hint = slot.sellLockedReason;
-          showActionBlockedToast(slot.sellLockedReason);
-          return;
-        }
         const refund = inventorySellPrice(slot);
         const removed = inventoryRemove(inventory, slot.id);
         if (!removed) return;
@@ -8470,7 +8467,7 @@ async function boot() {
           const delivery = giantsBaneGift === 'inventory'
             ? 'It waits in the Armarium.'
             : 'Your Armarium is full, so it waits beside Rome as a loot orb.';
-          state.hint = `The Senate grants Giant's Bane. ${delivery} This ceremonial copy cannot be sold.`;
+          state.hint = `The Senate grants Giant's Bane. ${delivery} Free gifts sell for half of their standard cost.`;
           showBonusBossBanner("★ WAVE 1 CLEARED · THE SENATE GRANTS GIANT'S BANE ★");
         }
         const clearedWaveDef: any = (wavesData as any[])[state.wave - 1];
@@ -8525,13 +8522,22 @@ async function boot() {
           state.hint = `Wave 20 cleared. Rome sends emergency traps: ${giftLabel}. Open the Armarium to deploy them before Wave 21.`;
           showBonusBossBanner('★ WAVE 20 CLEARED · EMERGENCY TRAPS DELIVERED ★');
         }
+        const dracoStandardGift = grantWave18DracoStandard(state, inventory);
+        if (dracoStandardGift !== 'none') {
+          SFX.itemPickup('LEGENDARY');
+          const delivery = dracoStandardGift === 'inventory'
+            ? 'It waits in the Armarium.'
+            : 'Your Armarium is full, so it waits beside Rome as a loot orb.';
+          state.hint = `Draco Standard earned after Wave 18. ${delivery} Give it to a Tier IV or V Vexillation to awaken Draconis Vexillatio. Free gifts sell for half value.`;
+          showBonusBossBanner('★ WAVE 18 CLEARED · DRACO STANDARD DELIVERED ★');
+        }
         const witchsBrewGift = grantWave22WitchsBrew(state, inventory);
         if (witchsBrewGift !== 'none') {
           SFX.itemPickup('LEGENDARY');
           const delivery = witchsBrewGift === 'inventory'
             ? 'It waits in the Armarium.'
             : 'Your Armarium is full, so it waits beside Rome as a loot orb.';
-          state.hint = `Witch's Brew earned after Wave 22. ${delivery} Give it to a Tier IV or V Murmillo to awaken the Undead Gladiator King.`;
+          state.hint = `Witch's Brew earned after Wave 22. ${delivery} Give it to a Tier IV or V Murmillo to awaken the Undead Gladiator King. Free gifts sell for half value.`;
           showBonusBossBanner("★ WAVE 22 CLEARED · WITCH'S BREW DELIVERED ★");
         }
         const offerCampaignRelic = () => {

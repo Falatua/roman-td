@@ -631,6 +631,7 @@ describe('Recipe combo detection', () => {
     expect(paidRecipeResults.has(TowerType.GIANT_KILLER)).toBe(false);
     expect(paidRecipeResults.has(TowerType.GIANTS_COHORT_GUARD)).toBe(false);
     expect(paidRecipeResults.has(TowerType.UNDEAD_GLADIATOR_KING)).toBe(false);
+    expect(paidRecipeResults.has(TowerType.DRACONIS_VEXILLATIO)).toBe(false);
   });
 
   it('adds four new recipe-only supercombo towers from previously unused combo ingredients', () => {

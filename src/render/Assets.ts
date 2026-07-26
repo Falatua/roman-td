@@ -85,6 +85,7 @@ const MANIFEST: Record<string, string> = {
   GIANT_KILLER: 'naval/t_tideforged_giant_killer.png',
   GIANTS_COHORT_GUARD: 't_giants_cohort_guard.png',
   UNDEAD_GLADIATOR_KING: 't_undead_gladiator_king.png',
+  DRACONIS_VEXILLATIO: 't_draconis_vexillatio.png',
   SUMMON_UNDEAD_GLADIATOR: 's_undead_gladiator.png',
   IMPERIAL_HEADSMAN: 't_super_imperial_headsman.png',
   SOL_INVICTUS_QUADRIGA: 't_super_sol_invictus_quadriga.png',
@@ -528,6 +529,7 @@ const MANIFEST: Record<string, string> = {
   ITEM_NEPTUNES_TRIDENT: 'inew_neptunes_trident.png',
   ITEM_GIANTS_BANE: 'inew_giants_bane.png',
   ITEM_WITCHS_BREW: 'inew_witchs_brew.png',
+  ITEM_DRACO_STANDARD: 'inew_draco_standard.png',
   ITEM_EAGLE_OF_APOTHEOSIS: 'inew_eagle_of_apotheosis.png',
   // Legacy keys preserved for backward compatibility — some are
   // referenced by event-reward modals or older tower-info panels.

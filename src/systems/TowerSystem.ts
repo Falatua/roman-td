@@ -82,11 +82,13 @@ export const MARS_VICTOR_FLYER_DAMAGE_BONUS = 0.30;
 export const GIANTS_BANE_ITEM_ID = 'GIANTS_BANE';
 export const WITCHS_BREW_ITEM_ID = 'WITCHS_BREW';
 export const CENSER_OF_MEFITIS_ITEM_ID = 'CENSER_OF_MEFITIS';
+export const DRACO_STANDARD_ITEM_ID = 'DRACO_STANDARD';
 
 const LEGENDARY_AWAKENINGS: ReadonlyArray<{ source: TowerType; itemId: string; result: TowerType }> = [
   { source: TowerType.MILITES, itemId: GIANTS_BANE_ITEM_ID, result: TowerType.GIANT_KILLER },
   { source: TowerType.COHORT_GUARD, itemId: GIANTS_BANE_ITEM_ID, result: TowerType.GIANTS_COHORT_GUARD },
   { source: TowerType.MURMILLO, itemId: WITCHS_BREW_ITEM_ID, result: TowerType.UNDEAD_GLADIATOR_KING },
+  { source: TowerType.VEXILLATION, itemId: DRACO_STANDARD_ITEM_ID, result: TowerType.DRACONIS_VEXILLATIO },
   { source: TowerType.PRAETORIAN_EXECUTIONER, itemId: 'DAMNATIO_MEMORIAE', result: TowerType.IMPERIAL_HEADSMAN },
   { source: TowerType.WAR_CHARIOT, itemId: 'SIGIL_OF_SOL_INVICTUS', result: TowerType.SOL_INVICTUS_QUADRIGA },
   { source: TowerType.BEASTLORD_CHAMPION, itemId: 'STORM_AQUILA_TALONS', result: TowerType.JOVIAN_SKY_HUNTER },

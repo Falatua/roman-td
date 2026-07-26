@@ -129,6 +129,8 @@ export const MERCATOR_LEGENDARY = [
   'GIANTS_BANE',
   // Murmillo T4-T5 transformation relic: creates the Undead Gladiator King.
   'WITCHS_BREW',
+  // Vexillation T4-T5 transformation relic: creates Draconis Vexillatio.
+  'DRACO_STANDARD',
   // One-use Tier V ascension relic. It competes for the randomized
   // Legendary shelf instead of becoming guaranteed Mercator stock.
   'EAGLE_OF_APOTHEOSIS'

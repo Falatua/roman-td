@@ -1,7 +1,7 @@
 // Tower placement, removal, upgrade math, and downgrade tests.
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
-import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, MARS_VICTOR_FIRE_RIDER_PCT, MARS_VICTOR_FLYER_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_SPEED_MULT, MARS_VICTOR_MELEE_DAMAGE_BONUS, MARS_VICTOR_PRIORITY_DAMAGE_BONUS, MARS_VICTOR_SIEGE_DAMAGE_BONUS, MARS_VICTOR_SIEGE_RANGE_BONUS_TILES, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
+import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, DRACO_STANDARD_ITEM_ID, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, MARS_VICTOR_FIRE_RIDER_PCT, MARS_VICTOR_FLYER_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_SPEED_MULT, MARS_VICTOR_MELEE_DAMAGE_BONUS, MARS_VICTOR_PRIORITY_DAMAGE_BONUS, MARS_VICTOR_SIEGE_DAMAGE_BONUS, MARS_VICTOR_SIEGE_RANGE_BONUS_TILES, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
 import { applyDamageAndStatus, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EPIC_ITEM_REGEN_DENIAL_SEC, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MARS_VICTOR_BURN_MAGNITUDE, MARS_VICTOR_HELLFIRE_MAGNITUDE, MARS_VICTOR_MARK_PCT, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
@@ -73,7 +73,8 @@ describe('legendary item-awakened Supercombos', () => {
     [TowerType.PRAETORIAN_EXECUTIONER, 'DAMNATIO_MEMORIAE', TowerType.IMPERIAL_HEADSMAN],
     [TowerType.WAR_CHARIOT, 'SIGIL_OF_SOL_INVICTUS', TowerType.SOL_INVICTUS_QUADRIGA],
     [TowerType.BEASTLORD_CHAMPION, 'STORM_AQUILA_TALONS', TowerType.JOVIAN_SKY_HUNTER],
-    [TowerType.PLAGUE_LOBBER, 'CENSER_OF_MEFITIS', TowerType.MEFITIS_PLAGUE_ENGINE]
+    [TowerType.PLAGUE_LOBBER, 'CENSER_OF_MEFITIS', TowerType.MEFITIS_PLAGUE_ENGINE],
+    [TowerType.VEXILLATION, DRACO_STANDARD_ITEM_ID, TowerType.DRACONIS_VEXILLATIO]
   ] as const;
 
   it.each(cases)('awakens %s with its bound relic', (source, itemId, result) => {
@@ -100,6 +101,7 @@ describe('legendary item-awakened Supercombos', () => {
     expect((spawnProjectile as any)).toBeTypeOf('function');
     expect(ASSET_KEYS.JOVIAN_SKY_HUNTER).toBe('t_super_jovian_sky_hunter.png');
     expect(ASSET_KEYS.MEFITIS_PLAGUE_ENGINE).toBe('t_super_mefitis_plague_engine.png');
+    expect(ASSET_KEYS.DRACONIS_VEXILLATIO).toBe('t_draconis_vexillatio.png');
     expect(sky.damageType).toBe(DamageType.PHYS_RANGED);
     expect(plague.damageType).toBe(DamageType.SIEGE);
   });
@@ -1388,6 +1390,12 @@ describe('Giant Killer transformation and combat wiring', () => {
     const sustainedSummonDps = UNDEAD_GLADIATOR_KING_SUMMON_COUNT * (Math.max(12, kingStats.dps * UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR) / 0.85);
     const kingBattlefieldDps = kingStats.dps + sustainedSummonDps;
 
+    const vexillation = createTower(TowerType.VEXILLATION, 4, 4, 4, 0);
+    const vexillationBefore = towerEffectiveStats(vexillation).dps;
+    vexillation.equippedItems.push(DRACO_STANDARD_ITEM_ID);
+    expect(transformWithLegendaryAwakening(vexillation, DRACO_STANDARD_ITEM_ID)).toBe(true);
+    const draconisDps = towerEffectiveStats(vexillation).dps;
+
     expect(giantKillerDps).toBeGreaterThan(militesBefore * 11);
     expect(giantsCohortDps).toBeGreaterThan(cohortBefore * 1.8);
     expect(giantsCohortDps * GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT).toBeGreaterThan(cohortBefore * 16);
@@ -1395,9 +1403,15 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(kingBattlefieldDps).toBeGreaterThan(murmilloBefore * 4.0);
     expect(kingBattlefieldDps).toBeGreaterThan(giantsCohortDps);
     expect(kingBattlefieldDps).toBeLessThan(giantsCohortDps * GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT);
+    expect(draconisDps).toBeGreaterThan(vexillationBefore * 3);
+    expect(SUPERCOMBO_RESISTANCE_BREAK_AURAS[TowerType.DRACONIS_VEXILLATIO]).toEqual({
+      radiusTiles: 3.5,
+      reliefPct: 0.12
+    });
     expect(towerItemSlotCap(milites)).toBe(4);
     expect(towerItemSlotCap(cohort)).toBe(4);
     expect(towerItemSlotCap(murmillo)).toBe(4);
+    expect(towerItemSlotCap(vexillation)).toBe(4);
   });
 
   it('evolves into the new tower sprite when the legendary transform item is equipped', () => {
@@ -1425,6 +1439,14 @@ describe('Giant Killer transformation and combat wiring', () => {
         transform: transformWithWitchsBrew,
         result: TowerType.UNDEAD_GLADIATOR_KING,
         resultSprite: 't_undead_gladiator_king.png'
+      },
+      {
+        source: TowerType.VEXILLATION,
+        tier: 4,
+        item: DRACO_STANDARD_ITEM_ID,
+        transform: (tower: ReturnType<typeof createTower>) => transformWithLegendaryAwakening(tower, DRACO_STANDARD_ITEM_ID),
+        result: TowerType.DRACONIS_VEXILLATIO,
+        resultSprite: 't_draconis_vexillatio.png'
       }
     ] as const;
 
@@ -1441,6 +1463,48 @@ describe('Giant Killer transformation and combat wiring', () => {
       expect(evolvedSprite, `${c.result} should have a registered evolved sprite`).toBe(c.resultSprite);
       expect(evolvedSprite, `${c.result} should not keep the ${c.source} sprite after evolving`).not.toBe(originalSprite);
       expect(fs.existsSync(`public/assets/sprites/${evolvedSprite}`), `${c.result} evolved sprite file should exist`).toBe(true);
+    }
+  });
+
+  it('turns every fourth Draconis Vexillatio swing into a marked dragon-breath shockwave', () => {
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    state.wave = 1;
+    const tower = createTower(TowerType.DRACONIS_VEXILLATIO, 5, 4, 4, 0);
+    tower.attackCooldown = 0;
+    tower.critChance = 0;
+    state.towers.set(tower.id, tower);
+    const center = towerCenter(tower);
+    const enemies = [
+      testEnemy('dragon-primary', center.x + GRID.TILE, center.y),
+      testEnemy('dragon-cleave-a', center.x + GRID.TILE * 1.4, center.y),
+      testEnemy('dragon-cleave-b', center.x + GRID.TILE * 1.8, center.y)
+    ];
+    for (const enemy of enemies) {
+      enemy.hp = 100000;
+      enemy.maxHp = 100000;
+      state.enemies.set(enemy.id, enemy);
+    }
+
+    const originalRandom = Math.random;
+    Math.random = () => 0.99;
+    try {
+      for (let swing = 0; swing < 4; swing++) {
+        tower.attackCooldown = 0;
+        tickCombat(state, 0.016, noopCombatHooks());
+        state.tick += 0.05;
+      }
+    } finally {
+      Math.random = originalRandom;
+    }
+
+    expect((tower as any).__hitCount).toBe(4);
+    for (const enemy of enemies) {
+      expect(enemy.hp).toBeLessThan(100000);
+      expect(enemy.statusEffects.some(s => s.kind === StatusEffectKind.BURN && s.magnitude === 0.04)).toBe(true);
+      expect(enemy.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED)).toBe(true);
+      expect(enemy.statusEffects.some(s => s.kind === StatusEffectKind.MARK && s.magnitude === 0.25)).toBe(true);
+      expect(enemy.statusEffects.some(s => s.kind === StatusEffectKind.STUN)).toBe(true);
     }
   });
 

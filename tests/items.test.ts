@@ -41,6 +41,7 @@ describe('Item families', () => {
     expect(itemFamily('GIANTS_BANE')).toBe('SPECIAL');
     expect(itemFamily('WITCHS_BREW')).toBe('SPECIAL');
     expect(itemFamily('CENSER_OF_MEFITIS')).toBe('SPECIAL');
+    expect(itemFamily('DRACO_STANDARD')).toBe('SPECIAL');
   });
 
   it('unknown items default to SPECIAL', () => {
@@ -56,6 +57,14 @@ describe('Mefitis awakening relic availability', () => {
   });
 });
 
+describe('Draco Standard availability', () => {
+  it('is a Legendary drop and Mercator offering in addition to its guaranteed Wave 18 gift', () => {
+    expect(LEGENDARY_DROP_ITEM_POOL).toContain('DRACO_STANDARD');
+    expect(MERCATOR_LEGENDARY).toContain('DRACO_STANDARD');
+    expect(itemBuyPrice('DRACO_STANDARD')).toBe(RARITY_BUY_PRICE.LEGENDARY);
+  });
+});
+
 describe('Legendary mystery copy', () => {
   const awakeningClues: Record<string, string> = {
     GIANTS_BANE: 'Milites or Cohort Guard',
@@ -63,7 +72,8 @@ describe('Legendary mystery copy', () => {
     CENSER_OF_MEFITIS: 'Plague Lobber',
     DAMNATIO_MEMORIAE: 'Praetorian Executioner',
     SIGIL_OF_SOL_INVICTUS: 'War Chariot',
-    STORM_AQUILA_TALONS: 'Beastlord Champion'
+    STORM_AQUILA_TALONS: 'Beastlord Champion',
+    DRACO_STANDARD: 'Vexillation'
   };
 
   it('keeps awakening clues concise, mysterious, and mechanically useful', () => {
@@ -177,7 +187,8 @@ describe('Item equip family exclusivity', () => {
       'JUPITERS_WRATH',
       'EXECUTIONERS_FALX',
       'CONCUSSIVE_WARHEAD',
-      'DAMNATIO_MEMORIAE'
+      'DAMNATIO_MEMORIAE',
+      'DRACO_STANDARD'
     ]));
     expect(specialLegendaryIds.length).toBeLessThan(legendaryIds.length / 2);
     expect([...nonSpecialFamilies]).toEqual(expect.arrayContaining(['DAMAGE', 'AURA', 'SPEED', 'RANGE', 'ECONOMY', 'DEFENSE']));
@@ -535,14 +546,20 @@ describe('Merchant — Mercator stock', () => {
     expect(merc.livesPrice).toBe(83);
   });
 
-  it('can roll Neptune\'s Trident in Mercator legendary stock', () => {
+  it('keeps the major awakening and ocean relics in Mercator legendary stock', () => {
+    expect(MERCATOR_LEGENDARY).toEqual(expect.arrayContaining([
+      'NEPTUNES_TRIDENT',
+      'GIANTS_BANE',
+      'WITCHS_BREW',
+      'DRACO_STANDARD'
+    ]));
     const randomSpy = vi.spyOn(Math, 'random');
     try {
       randomSpy.mockReturnValue(0.999);
       const merc = buildMercatorStock();
-      expect(merc.offers.some(o => o.itemId === 'NEPTUNES_TRIDENT' && o.rarity === 'LEGENDARY')).toBe(true);
-      expect(merc.offers.some(o => o.itemId === 'GIANTS_BANE' && o.rarity === 'LEGENDARY')).toBe(true);
-      expect(merc.offers.some(o => o.itemId === 'WITCHS_BREW' && o.rarity === 'LEGENDARY')).toBe(true);
+      const legendaryIds = merc.offers.filter(o => o.rarity === 'LEGENDARY').map(o => o.itemId);
+      expect(legendaryIds).toHaveLength(4);
+      expect(legendaryIds.every(id => MERCATOR_LEGENDARY.includes(id))).toBe(true);
     } finally {
       randomSpy.mockRestore();
     }

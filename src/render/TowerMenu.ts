@@ -5,7 +5,7 @@ import { damageTypeLabel, pretty } from '../format';
 import { canDowngrade, downgradeTower } from '../systems/DowngradeSystem';
 import { earnGold } from '../systems/EconomySystem';
 import { setTile } from '../systems/GridManager';
-import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, CENSER_OF_MEFITIS_ITEM_ID, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, transformWithLegendaryAwakening, WITCHS_BREW_ITEM_ID, StatModifier } from '../systems/TowerSystem';
+import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, CENSER_OF_MEFITIS_ITEM_ID, DRACO_STANDARD_ITEM_ID, GIANTS_BANE_ITEM_ID, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, transformWithLegendaryAwakening, WITCHS_BREW_ITEM_ID, StatModifier } from '../systems/TowerSystem';
 import { getTowerProjectileProfile } from '../systems/ProjectileSystem';
 import { TileType } from '../types';
 import { InventoryState, inventoryAdd, inventoryRemove, isConsumable, itemBuyPrice, Rarity } from '../systems/LootSystem';
@@ -633,6 +633,9 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
       } else if (slot.itemId === WITCHS_BREW_ITEM_ID && !canTransformWithWitchsBrew(t)) {
         blocker = "Witch's Brew only fits a Tier IV or Tier V Murmillo.";
         blockerShort = 'MURMILLO';
+      } else if (slot.itemId === DRACO_STANDARD_ITEM_ID && !canAwakenWithLegendaryItem(t, slot.itemId)) {
+        blocker = 'The Draco Standard only fits a Tier IV or Tier V Vexillation.';
+        blockerShort = 'VEXILLATIO T4+';
       } else if (slot.itemId === CENSER_OF_MEFITIS_ITEM_ID && !canAwakenWithLegendaryItem(t, slot.itemId)) {
         blocker = 'The Censer of Mefitis only fits a Tier IV or Tier V Plague Lobber.';
         blockerShort = 'PLAGUE T4+';
@@ -1327,6 +1330,9 @@ function showHeroInspectPanel(parent: HTMLElement, t: Tower, state: GameStateSha
       } else if (slot.itemId === WITCHS_BREW_ITEM_ID) {
         blocker = "Witch's Brew only fits a Tier IV or Tier V Murmillo.";
         blockerShort = 'MURMILLO';
+      } else if (slot.itemId === DRACO_STANDARD_ITEM_ID) {
+        blocker = 'The Draco Standard only fits a Tier IV or Tier V Vexillation.';
+        blockerShort = 'VEXILLATIO T4+';
       } else if (slot.itemId === CENSER_OF_MEFITIS_ITEM_ID) {
         blocker = 'The Censer of Mefitis only fits a Tier IV or Tier V Plague Lobber.';
         blockerShort = 'PLAGUE T4+';

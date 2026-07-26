@@ -149,6 +149,9 @@ export interface GameStateShape {
   // One Witch's Brew is awarded after W22 so Murmillo builds have a clear
   // late-campaign awakening route before the undead-heavy pressure spikes.
   wave22WitchsBrewGranted?: boolean;
+  // One Draco Standard is awarded after W18 so a developed Vexillatio can
+  // awaken into its dragon-themed Supercombo before the final campaign arc.
+  wave18DracoStandardGranted?: boolean;
   combosBuilt?: number;
   combosBuiltUniqueTypes?: string[];
   // Lifetime kills of enemies that emerged from the ocean/shipwreck lane.
@@ -411,6 +414,7 @@ export function createGameState(): GameStateShape {
     waveOneGiantsBaneGranted: false,
     wave20TrapGiftGranted: false,
     wave22WitchsBrewGranted: false,
+    wave18DracoStandardGranted: false,
     testYourMightOffered: false,
     testYourMightDeclined: false,
     testYourMightActive: false,

@@ -103,6 +103,7 @@ export const SUPERCOMBO_RESISTANCE_BREAK_AURAS: Partial<Record<TowerType, { radi
   [TowerType.LEGION_PRIME]: { radiusTiles: 3.0, reliefPct: 0.18 },
   [TowerType.CONSULAR_FATEBINDER]: { radiusTiles: 5.5, reliefPct: 0.16 },
   [TowerType.AUREATE_TRIBUNAL]: { radiusTiles: 6.5, reliefPct: 0.22 },
+  [TowerType.DRACONIS_VEXILLATIO]: { radiusTiles: 3.5, reliefPct: 0.12 },
   [TowerType.GLACIAL_PALISADE]: { radiusTiles: 3.0, reliefPct: 0.14 },
   [TowerType.INFERNAL_COLOSSUS]: { radiusTiles: 4.0, reliefPct: 0.20 }
 };
@@ -207,6 +208,7 @@ const SUPER_COMBO_CLASS_TYPES = new Set<TowerType>([
   TowerType.SOL_INVICTUS_QUADRIGA,
   TowerType.JOVIAN_SKY_HUNTER,
   TowerType.MEFITIS_PLAGUE_ENGINE,
+  TowerType.DRACONIS_VEXILLATIO,
   TowerType.MARS_VICTOR
 ]);
 
@@ -520,7 +522,7 @@ const MELEE_TYPES = new Set<TowerType>([
   TowerType.EVOCATUS, TowerType.IMPERATOR_GUARD,
   TowerType.UNDEAD_GENERAL,
   TowerType.IMPERIAL_HEADSMAN, TowerType.SOL_INVICTUS_QUADRIGA,
-  TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
+  TowerType.VEXILLATION, TowerType.DRACONIS_VEXILLATIO, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
   TowerType.TURMA_LANCERS,
   // 2026-05-17 — Pontifex Maximus converted to melee. The High Priest now
   // wields a sanctified ritual blade; the Rite of Doom + Hellfire curse
@@ -644,7 +646,7 @@ export const ANTI_AIR_ONLY_TYPES = new Set<TowerType>(
 const CLEAVE_MELEE = new Set<TowerType>([
   TowerType.HASTATI, TowerType.TRIARIUS, TowerType.COHORT_GUARD,
   TowerType.GIANTS_COHORT_GUARD, TowerType.PRAETORIAN_WALL, TowerType.IMPERATOR_GUARD,
-  TowerType.VEXILLATION, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
+  TowerType.VEXILLATION, TowerType.DRACONIS_VEXILLATIO, TowerType.TRIUMPHATOR, TowerType.TRIPLEX_ACIES,
   TowerType.PONTIFEX_MAXIMUS, TowerType.GLACIAL_PALISADE, TowerType.ROMAN_TRANSFORMER,
   TowerType.NEPTUNES_LEVIATHAN, TowerType.UNDEAD_GLADIATOR_KING,
   TowerType.IMPERIAL_HEADSMAN,
@@ -666,7 +668,9 @@ export function hasCleave(t: Tower): boolean {
 // "wide arcing swing." Item-only cleavers without FALX hit only the
 // default cap.
 function meleeHitCap(t: Tower): number {
-  const base = t.type === TowerType.GIANTS_COHORT_GUARD ? 5 : 7;
+  const base = t.type === TowerType.DRACONIS_VEXILLATIO
+    ? 11
+    : t.type === TowerType.GIANTS_COHORT_GUARD ? 5 : 7;
   const bonus = (t.equippedItems.includes('FALX_BLADE') ? 3 : 0)
               + (t.equippedItems.includes('EXECUTIONERS_FALX') ? 4 : 0);   // legendary: wider swing, up to 11
   return base + bonus;
@@ -691,6 +695,7 @@ function cleaveSecondaryMult(t: Tower): number {
   // at 60% so they're a step below natives without the item.
   // 2026 v2 — Executioner's Falx (legendary) = full-power cleave, secondaries take 100%.
   if (t.equippedItems.includes('EXECUTIONERS_FALX')) return 1.0;
+  if (t.type === TowerType.DRACONIS_VEXILLATIO) return 1.0;
   if (t.type === TowerType.GIANTS_COHORT_GUARD) {
     return t.equippedItems.includes('FALX_BLADE') ? 0.70 : 0.50;
   }
@@ -2001,14 +2006,20 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
       if (t.type === TowerType.TRIBUNUS_LATICLAVIUS && (isEliteEnemy(target) || isCommanderEnemy(target))) damage *= 1.45;
       if (t.type === TowerType.GOD_OF_WAR && (isBossEnemy(target) || isEliteEnemy(target) || isCommanderEnemy(target))) damage *= 1.35;
-      if (t.type === TowerType.VEXILLATION) {
-        // MOB CRUSHER: +18% damage per OTHER enemy in melee range, capped at +90%.
+      if (t.type === TowerType.VEXILLATION || t.type === TowerType.DRACONIS_VEXILLATIO) {
+        // MOB CRUSHER: the ordinary Vexillatio gains +18% per nearby enemy
+        // up to +90%. Its Draco awakening widens the count radius and earns
+        // +15% per nearby enemy up to +120%.
+        const awakened = t.type === TowerType.DRACONIS_VEXILLATIO;
+        const countRadius = awakened ? 2.5 : 1.5;
+        const perEnemy = awakened ? 0.15 : 0.18;
+        const cap = awakened ? 1.20 : 0.90;
         let nearby = 0;
         for (const e of state.enemies.values()) {
           if (e.id === target.id || e.hp <= 0) continue;
-          if (Math.hypot(e.x - t.tileX * GRID.TILE - GRID.TILE / 2, e.y - t.tileY * GRID.TILE - GRID.TILE / 2) <= 1.5 * GRID.TILE) nearby++;
+          if (Math.hypot(e.x - t.tileX * GRID.TILE - GRID.TILE / 2, e.y - t.tileY * GRID.TILE - GRID.TILE / 2) <= countRadius * GRID.TILE) nearby++;
         }
-        damage *= 1 + Math.min(0.90, nearby * 0.18);
+        damage *= 1 + Math.min(cap, nearby * perEnemy);
       }
       if (t.type === TowerType.PUGIO_ASSASSIN && target.archetype === 'RUNNER') damage *= 1.5;          // BACKSTAB
       if (t.type === TowerType.ACCENSUS && target.hp / target.maxHp > 0.85) damage *= 1.6;              // BRUTAL OPENER
@@ -2491,6 +2502,30 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             }
             const r6: any = globalRef?.__renderer;
             if (r6?.triggerImpactRing) r6.triggerImpactRing(target.x, target.y, state.tick, 44, 0x99ddff);
+          }
+        }
+        // DRACONIS VEXILLATIO — every fourth swing turns the full formation
+        // into a dragon-breath shockwave. The normal full-power cleave still
+        // lands afterward, so this is the Legendary investment's burst turn.
+        if (t.type === TowerType.DRACONIS_VEXILLATIO) {
+          const hc = (t as any).__hitCount ?? 0;
+          if (hc > 0 && hc % 4 === 0) {
+            const breathDamage = damage * 1.25;
+            for (const e of inRange) {
+              if (e.hp <= 0) continue;
+              e.hp -= breathDamage;
+              e.hpFlashTimer = 0.22;
+              e.lastDamagedTick = state.tick;
+              pushStatus(e, StatusEffectKind.MARK, 4.0, 0.25, t.qualityTier);
+              if (!e.isBoss) pushStatus(e, StatusEffectKind.STUN, 0.6, 0, t.qualityTier);
+              hooks.onHit(t, e, breathDamage, resMod);
+              if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
+            }
+            const dragonRenderer: any = globalRef?.__renderer;
+            if (dragonRenderer?.triggerImpactRing) {
+              dragonRenderer.triggerImpactRing(tcx, tcy, state.tick, 58, 0xff5a28);
+              dragonRenderer.triggerImpactRing(tcx, tcy, state.tick + 0.04, 78, 0xffd34d);
+            }
           }
         }
         // INFERNAL COLOSSUS — every 3rd shot is a wider doom round.
@@ -3205,6 +3240,10 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
       stampHealingBlock(target, tick ?? 0, 4.0);
       break;
     }
+    case TowerType.DRACONIS_VEXILLATIO:
+      pushStatus(target, StatusEffectKind.BURN, 4.0, 0.04, tier);
+      pushStatus(target, StatusEffectKind.ARMOR_SHRED, 4.0, 0, tier);
+      break;
     case TowerType.CATAPHRACT_LANCER:
       // LANCE CHARGE — every 3rd couched thrust STUNS 1.0s AND knocks the
       // target back ~0.5 tiles. Stun+knockback together is its signature.
