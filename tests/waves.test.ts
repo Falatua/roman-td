@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { effectiveWaveHpMult, nominalWaveThreatHp, previewSpawnHp, startWave, tickSpawns, checkWaveEnd, grantWave20TrapGift } from '../src/systems/WaveManager';
-import { campaignPressureHpMult, campaignPressureResistMult } from '../src/systems/CampaignDifficulty';
+import { CAMPAIGN_RESISTANCE_GAIN_PER_WAVE, campaignPressureHpMult, campaignPressureResistMult } from '../src/systems/CampaignDifficulty';
 import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
 import { tickSurpriseEvents } from '../src/systems/SurpriseEvents';
 import { createGameState } from '../src/GameState';
@@ -119,15 +119,22 @@ describe('Wave HP scaling — 30-wave linear + mid-late accelerator + boss-clear
     }
   });
 
-  it('adds a modest linear campaign pressure layer after W5', () => {
+  it('adds one exact linear resistance step from W1 through W30', () => {
     expect(campaignPressureHpMult(5)).toBe(1);
     expect(campaignPressureHpMult(6)).toBeCloseTo(1.012, 4);
     expect(campaignPressureHpMult(20)).toBeCloseTo(1.18, 4);
     expect(campaignPressureHpMult(30)).toBeCloseTo(1.25, 4);
-    expect(campaignPressureResistMult(5)).toBe(1);
-    expect(campaignPressureResistMult(6)).toBeCloseTo(0.9945, 4);
-    expect(campaignPressureResistMult(30)).toBeCloseTo(0.8625, 4);
-    expect(campaignPressureResistMult(30, true)).toBeCloseTo(0.9125, 4);
+    expect(campaignPressureResistMult(1)).toBe(1);
+    expect(campaignPressureResistMult(5)).toBeCloseTo(0.94, 4);
+    expect(campaignPressureResistMult(10)).toBeCloseTo(0.865, 4);
+    expect(campaignPressureResistMult(20)).toBeCloseTo(0.715, 4);
+    expect(campaignPressureResistMult(30)).toBeCloseTo(0.565, 4);
+    for (let wave = 2; wave <= 30; wave++) {
+      expect(
+        campaignPressureResistMult(wave - 1) - campaignPressureResistMult(wave),
+        `W${wave} should add exactly one resistance step`
+      ).toBeCloseTo(CAMPAIGN_RESISTANCE_GAIN_PER_WAVE, 8);
+    }
   });
 
   it('keeps W6-W15 meaningfully hardened after the first boss', () => {

@@ -273,34 +273,12 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
   //   • Bosses: gain +20% base speed. Bosses already have lots of HP;
   //     the extra speed means leak-pressure is real and the player
   //     can't just sit on top of them safely.
-  // Late-game resistance stamp — starts ramping at W6 and gets harsher
-  // through W30. Multiplies into every damage-type mult AND DoT
-  // effectiveness via EnemyResistances. Flyers stay at 1.0 (no stamp)
-  // since they're already balanced against ranged-only counterplay.
-  if (!derived && !e.isFlyer && (state.wave ?? 1) >= 6) {
-    const w = state.wave ?? 1;
-    let mult = 1.0;
-    // Tiered staircase. Each milestone wave shaves a chunk off — the
-    // result is a smooth curve across W6-W20 rather than a sudden
-    // cliff at W11.
-    if (w >= 6) mult -= 0.04;   // W6  → 0.96
-    if (w >= 7) mult -= 0.04;   // W7  → 0.92  (W7-W9 resist bump)
-    if (w >= 11) mult -= 0.07;  // W11 → 0.85  (existing breakpoint)
-    if (w >= 16) mult -= 0.04;  // W16 is now a bridge wave, not a cliff
-    if (w >= 18) mult -= 0.04;  // W18+ restores the full late-campaign bite
-    if (w >= 21) mult -= 0.07;  // W21+ second-cave era
-    if (w >= 25) mult -= 0.06;  // W25+ mythic finale
-    if (e.isBoss) mult -= (w >= 21 ? 0.15 : 0.10); // bosses always tougher than ground
-    mult = Math.max(w >= 25 ? 0.34 : w >= 21 ? 0.38 : 0.45, mult);
-    (e as any).__lateResistMult = mult;
-  }
-  // Smooth post-W5 campaign pressure. The existing stamps above create
-  // authored difficulty breakpoints; this adds a small linear layer so W6+
-  // health/resistance pressure rises every wave instead of only at milestones.
-  if (!derived && (state.wave ?? 1) > 5) {
-    const pressure = campaignPressureResistMult(state.wave ?? 1, e.isFlyer);
-    (e as any).__lateResistMult = ((e as any).__lateResistMult ?? 1) * pressure;
-  }
+  // LINEAR CAMPAIGN RESISTANCE. Every spawn receives the same wave layer:
+  // W1 is neutral, then resistance rises exactly 1.5 percentage points per
+  // wave to 43.5% on W30. Ground, flyer, boss, commander, and derived
+  // enemies all follow this curve. EnemyResistances composes the stamp with
+  // faction and per-enemy profiles for direct damage and status pressure.
+  (e as any).__lateResistMult = campaignPressureResistMult(state.wave ?? 1);
   // Other W11+ creative buffs — OOC regen + boss speed.
   if (!derived && (state.wave ?? 1) >= 11) {
     if (!e.isFlyer && !e.isBoss) {

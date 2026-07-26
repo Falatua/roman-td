@@ -1,10 +1,10 @@
 {
   "DOGS": {
     "identity": "Pack Beasts",
-    "counterplay": "Fire, Burn, Bleed, and Slow punish the pack. Their speed helps them avoid heavy Siege.",
+    "counterplay": "Fire, Burn, Bleed, and Slow punish the pack. They begin without armor and rely on speed.",
     "PHYS_MELEE": 0.0,
     "PHYS_RANGED": 0.0,
-    "SIEGE": -0.15,
+    "SIEGE": 0.0,
     "ELEMENTAL_FIRE": 0.40,
     "DIVINE": 0.0,
     "STATUS": { "SLOW": 0.10, "BURN": 0.40, "BLEED": 0.15, "POISON": 0.0 }

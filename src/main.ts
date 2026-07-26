@@ -73,6 +73,7 @@ import { Logger } from './Logger';
 import { towerName, enemyName, itemName, factionName, pretty } from './format';
 import { showEnemyInspect, showEnemyInspectByType } from './render/EnemyInspect';
 import { armorProfileForGroup, armorDamageTypeShortLabel } from './systems/EnemyResistances';
+import { campaignPressureResistMult, campaignPressureResistancePct } from './systems/CampaignDifficulty';
 import { SFX, setFactionBGM, setMuted, isMuted, playMusicTrack, stopMusicTrack, stopAllMusicTracks, surpriseEventSting, sfx, preloadAllSamples, unmuteAndRestartMusicTrack } from './render/AudioManager';
 import { tickSurpriseEvents, notifySurpriseEnemyResolved, clearSurpriseEventsForWaveEnd, notifyHellGateDestroyed } from './systems/SurpriseEvents';
 import { showSurpriseRewardModal } from './render/SurpriseReward';
@@ -1936,12 +1937,11 @@ async function boot() {
       if ((w as any).necromancy) briefLines.push({ text: '💀 NECROMANCY · slain grunts rise as 6-9 undead per kill', cat: 'MECHANIC' });
       if (state.wave === 17) briefLines.push({ text: '🛡 IRON PHALANX · melee-immune armored at end', cat: 'MECHANIC' });
       if (w.type === 'B') briefLines.push({ text: '⚔ BOSS WAVE · faction signature mechanics', cat: 'BOSS' });
-      // Late-stage resistance buff — surfaced once the W11+ cohort starts
-      // spawning so the player isn't surprised by chip damage suddenly
-      // doing less. Ground non-flyers absorb 15% more from every damage
-      // type AND resist DoTs 15% harder; bosses absorb 25% more on both
-      // axes. Flyers are unaffected.
-      if (state.wave >= 11) briefLines.push({ text: '🛡 LATE-STAGE RESISTANCE · ground enemies take −15% damage + DoT, bosses take −25%. Flyers unaffected. Diversify damage types or stack tier-ups to punch through.', cat: 'MECHANIC' });
+      const campaignResistancePct = campaignPressureResistancePct(state.wave) * 100;
+      briefLines.push({
+        text: `🛡 CAMPAIGN RESISTANCE · W${state.wave}: ${campaignResistancePct.toFixed(1)}%. The shared layer rises exactly 1.5 points per wave from 0% on W1 to 43.5% on W30, affecting ground, flyers, bosses, direct damage, and status pressure.`,
+        cat: 'MECHANIC'
+      });
       // Defensive: state.waveModifier should always be null in
       // campaign (set explicitly in WaveManager.ts:234), but if any
       // future code path stamps it, surface the modifier text. The
@@ -2148,7 +2148,10 @@ async function boot() {
     // unique enemy type in the wave, then condensed into a 5-chip strip
     // (Melee · Ranged · Siege · Fire · Divine). Chip color follows the
     // same EnemyInspect taxonomy so the visual language is consistent.
-    const armorByType = armorProfileForGroup(Array.from(enemiesInWave) as any);
+    const armorByType = armorProfileForGroup(
+      Array.from(enemiesInWave) as any,
+      campaignPressureResistMult(w.wave)
+    );
     const armorChips = armorByType.map(r => {
       const label = armorDamageTypeShortLabel(r.damageType);
       let display: string;

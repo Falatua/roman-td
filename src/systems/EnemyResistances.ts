@@ -1,7 +1,7 @@
 import { DamageType, Enemy, EnemyType, StatusEffectKind } from '../types';
 import enemiesData from '../data/enemies.json';
 import factionRes from '../data/factionResistances.json';
-import { factionStatusModifier } from './DamageTypeSystem';
+import { factionStatusModifier, resistanceModifier } from './DamageTypeSystem';
 
 export interface EnemyResistProfile {
   melee?: number;
@@ -31,7 +31,9 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // The natural dog pack is vulnerable to flame: direct FIRE and BURN
   // deal +40% to Feral Dogs, Rabid Dogs, and the Alpha Dog. Demon
   // Hellhounds remain a separate fire-born, fire-immune archetype.
-  [EnemyType.FERAL_DOG]: { poison: 0.85 },
+  // Wave 1 is the neutral resistance tutorial. Feral Dogs keep the pack's
+  // Fire/Burn vulnerabilities but carry no soft resistance of their own.
+  [EnemyType.FERAL_DOG]: {},
   [EnemyType.RABID_DOG]: { slow: 0.25, poison: 0.7, bleed: 0.7 },
   [EnemyType.ALPHA_DOG]: { melee: 0.6, slow: 0.35, bleed: 0.5, poison: 0.7 },
 
@@ -438,12 +440,9 @@ export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): num
   }
   else if (damageType === DamageType.ELEMENTAL_FIRE) base = r.fire ?? 1;
   else if (damageType === DamageType.DIVINE) base = r.divine ?? 1;
-  // Late-stage W11+ resistance buff (set by spawnEnemy on ground / boss
-  // non-flyers). Stamps `__lateResistMult` on the enemy at spawn time,
-  // typically 0.85 (ground) or 0.75 (boss). Multiplies through every
-  // damage type uniformly, including siege / fire / divine that have
-  // no per-enemy melee/ranged entry. Flyers don't get this stamp so
-  // late-game flyer waves are untouched.
+  // Linear campaign resistance stamp. spawnEnemy sets the same Wave 1-30
+  // multiplier on ground enemies, flyers, bosses, commanders, and derived
+  // spawns. It composes with faction and per-enemy profiles uniformly.
   const lateMult = (enemy as any).__lateResistMult;
   if (typeof lateMult === 'number') base *= lateMult;
   return base;
@@ -491,10 +490,8 @@ export function statusEffectiveness(enemy: Enemy, kind: StatusEffectKind): numbe
   // making slow/freeze/stun much weaker. Combined with the existing immune
   // flags on certain enemies, this adds tactical bite.
   if (enemy.mutation === 'WARDED') base *= 0.30;
-  // Late-stage W11+ resistance buff: same stamp the damage-mult helper
-  // reads. Drops DoT effectiveness 15-25% on ground/boss enemies so
-  // sustained-DoT builds need more sources or higher tiers to overcome
-  // the late-game wall.
+  // The same linear Wave 1-30 campaign resistance applies to status and
+  // DoT effectiveness, so every damage lane hardens at the same cadence.
   const lateMult = (enemy as any).__lateResistMult;
   if (typeof lateMult === 'number') base *= lateMult;
   const statusGuard = (enemy as any).__lateStatusGuard;
@@ -609,11 +606,31 @@ export function armorProfile(type: EnemyType): ArmorRow[] {
   });
 }
 
+// Runtime armor profile for a live enemy. Unlike the static Codex profile,
+// this includes the enemy's current campaign-wave resistance stamp and
+// flyer-specific Siege interaction, so inspection mirrors actual combat.
+export function armorProfileForEnemy(enemy: Enemy): ArmorRow[] {
+  const damageTypes: Array<[string, DamageType]> = [
+    ['PHYS_MELEE', DamageType.PHYS_MELEE],
+    ['PHYS_RANGED', DamageType.PHYS_RANGED],
+    ['SIEGE', DamageType.SIEGE],
+    ['ELEMENTAL_FIRE', DamageType.ELEMENTAL_FIRE],
+    ['DIVINE', DamageType.DIVINE]
+  ];
+  return damageTypes.map(([damageType, damageTypeEnum]) => {
+    const finalMult = resistanceModifier(enemy.faction, damageTypeEnum)
+      * enemyDamageMultiplier(enemy, damageTypeEnum);
+    const immune = finalMult <= 0;
+    const armorPct = immune ? 100 : Math.round((1 - finalMult) * 100);
+    return { damageType, finalMult, armorPct, immune };
+  });
+}
+
 // Aggregate armor across a SET of enemy types (e.g. all the types in a
 // wave) by taking the average finalMult per damage type, then deriving
 // armorPct from that. Used by the wave-preview armor strip so the
 // player gets a single "this wave's armor profile" line.
-export function armorProfileForGroup(types: EnemyType[]): ArmorRow[] {
+export function armorProfileForGroup(types: EnemyType[], waveResistanceMult = 1): ArmorRow[] {
   if (types.length === 0) return [];
   const damageTypes = ['PHYS_MELEE', 'PHYS_RANGED', 'SIEGE', 'ELEMENTAL_FIRE', 'DIVINE'];
   return damageTypes.map(dt => {
@@ -623,7 +640,7 @@ export function armorProfileForGroup(types: EnemyType[]): ArmorRow[] {
     for (const t of types) {
       const row = armorProfile(t).find(r => r.damageType === dt);
       if (!row) continue;
-      sum += row.finalMult;
+      sum += row.immune ? 0 : row.finalMult * waveResistanceMult;
       count++;
       if (!row.immune) allImmune = false;
     }

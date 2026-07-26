@@ -6,7 +6,7 @@ import enemiesData from '../data/enemies.json';
 import factionRes from '../data/factionResistances.json';
 import wavesData from '../data/waves.json';
 import { tex } from './Assets';
-import { resistanceSummary, armorProfile, armorDamageTypeShortLabel, statusEffectiveness } from '../systems/EnemyResistances';
+import { resistanceSummary, armorProfileForEnemy, armorDamageTypeShortLabel, statusEffectiveness } from '../systems/EnemyResistances';
 import { damageTypeLabel } from '../format';
 import { closeGameModals } from './ModalManager';
 import { pretty } from '../format';
@@ -17,6 +17,7 @@ import { signatureLegendaryForBoss } from '../systems/LootSystem';
 import { enhanceModalErgonomics } from './ModalErgonomics';
 import { classifyEnemy, isBossEnemy, isEliteEnemy } from '../systems/EnemyClassification';
 import { scaledEnemyRegenRate } from '../systems/EnemyHealing';
+import { campaignPressureResistMult } from '../systems/CampaignDifficulty';
 
 const FACTION_KEY: Record<number, string> = {
   [EnemyFaction.DOGS]: 'DOGS',
@@ -138,7 +139,11 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   //   • medium armor (30-69%)            — orange (mediocre)
   //   • low armor (0-29%)                — gold/cream (acceptable)
   //   • vulnerable (<0%)                 — sky blue (preferred type)
-  const armorRows = armorProfile(e.type);
+  const armorRows = armorProfileForEnemy(e);
+  const waveResistanceMult = typeof (e as any).__lateResistMult === 'number'
+    ? (e as any).__lateResistMult
+    : 1;
+  const waveResistancePct = Math.round((1 - waveResistanceMult) * 1000) / 10;
   const armorCells = armorRows.map(r => {
     const label = armorDamageTypeShortLabel(r.damageType);
     let display: string;
@@ -160,8 +165,9 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   const armorBlock = document.createElement('div');
   armorBlock.style.cssText = 'border-bottom:1px solid #3a3025';
   armorBlock.innerHTML = `
-    <div style="padding:8px 12px 4px;font-size:9px;color:#ffd34d;letter-spacing:2px;background:#1a1208">🛡 ARMOR (faction × per-enemy combined)</div>
+    <div style="padding:8px 12px 4px;font-size:9px;color:#ffd34d;letter-spacing:2px;background:#1a1208">🛡 LIVE ARMOR (faction × unit × wave)</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:1px;background:#3a3025">${armorCells}</div>
+    <div style="padding:5px 12px;background:#12100d;color:#9be0ff;font-size:9px;letter-spacing:1px">WAVE LAYER: ${waveResistancePct.toFixed(1)}% resistance${hpWaveTag ? ` on W${hpWaveTag}` : ''}</div>
   `;
   body.appendChild(armorBlock);
 
@@ -566,14 +572,18 @@ export function showEnemyInspectByType(parent: HTMLElement, type: string, forWav
     REANIMATED_SKELETON: 'RUNNER', REANIMATED_ZOMBIE: 'SWARM', REANIMATED_LICH: 'ELITE',
     NAGA_ADEPT: 'ELITE', NAGA_SLEEPWEAVER: 'ELITE', NAGA_ORACLE: 'ELITE'
   };
-  // EnemyFaction enum: DOGS=0, CELTS=1, CARTHAGE=2, UNDEAD_CELTS=3,
-  // UNDEAD_CARTHAGE=4, SUPER_DEMONS=5. Resolve from string for the stub.
-  const FACTION_ENUM: Record<string, number> = {
-    DOGS: 0, CELTS: 1, CARTHAGE: 2, UNDEAD_CELTS: 3,
-    UNDEAD_CARTHAGE: 4, SUPER_DEMONS: 5,
-    // 2026-05 v10 — Endless factions. Keep in sync with EnemyFaction
-    // enum order in types.ts.
-    MONGOLS: 6, EGYPTIANS: 7
+  const FACTION_ENUM: Record<string, EnemyFaction> = {
+    DOGS: EnemyFaction.DOGS,
+    CELTS: EnemyFaction.CELTS,
+    CARTHAGE: EnemyFaction.CARTHAGE,
+    UNDEAD_CELTS: EnemyFaction.UNDEAD_CELTS,
+    UNDEAD_CARTHAGE: EnemyFaction.UNDEAD_CARTHAGE,
+    SUPER_DEMONS: EnemyFaction.SUPER_DEMONS,
+    MONGOLS: EnemyFaction.MONGOLS,
+    EGYPTIANS: EnemyFaction.EGYPTIANS,
+    ROMAN_MYTH: EnemyFaction.ROMAN_MYTH,
+    OCEAN: EnemyFaction.OCEAN,
+    NEUTRAL: EnemyFaction.NEUTRAL
   };
   // Stub mirrors the fields showEnemyInspect actually reads off Enemy.
   // Missing fields like baseSpeed would silently throw inside the modal
@@ -605,7 +615,8 @@ export function showEnemyInspectByType(parent: HTMLElement, type: string, forWav
     hpFlashTimer: 0,
     lastDamagedTick: 0,
     shieldBroken: false,
-    isBonusBoss: false
+    isBonusBoss: false,
+    __lateResistMult: campaignPressureResistMult(waveCtx?.wave ?? 1)
   };
   showEnemyInspect(parent, stub, waveCtx?.wave);
 }
