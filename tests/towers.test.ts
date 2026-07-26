@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, MARS_VICTOR_FIRE_RIDER_PCT, MARS_VICTOR_FLYER_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_SPEED_MULT, MARS_VICTOR_MELEE_DAMAGE_BONUS, MARS_VICTOR_PRIORITY_DAMAGE_BONUS, MARS_VICTOR_SIEGE_DAMAGE_BONUS, MARS_VICTOR_SIEGE_RANGE_BONUS_TILES, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MARS_VICTOR_BURN_MAGNITUDE, MARS_VICTOR_HELLFIRE_MAGNITUDE, MARS_VICTOR_MARK_PCT, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EPIC_ITEM_REGEN_DENIAL_SEC, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MARS_VICTOR_BURN_MAGNITUDE, MARS_VICTOR_HELLFIRE_MAGNITUDE, MARS_VICTOR_MARK_PCT, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -640,8 +640,9 @@ describe('Tower effective stats', () => {
     expect(towerEffectiveStats(fascesTower).range).toBeCloseTo(before.range + 2, 4);
   });
 
-  it('Gallic Shield Boss stuns on every fourth hit', () => {
+  it('Gallic Shield Boss stuns and denies regeneration on every fourth hit', () => {
     const state = createGameState();
+    state.tick = 10;
     (globalThis as any).__lastState = state;
     const tower = createTower(TowerType.SAGITTARIUS, 1, 4, 4, 0);
     tower.equippedItems.push('GALLIC_SHIELD_BOSS');
@@ -657,6 +658,28 @@ describe('Tower effective stats', () => {
     });
 
     expect(target.statusEffects.some(s => s.kind === StatusEffectKind.STUN && s.remaining > 0.9)).toBe(true);
+    expect((target as any).__healingBlockedUntil).toBe(
+      state.tick + EPIC_ITEM_REGEN_DENIAL_SEC.GALLIC_SHIELD_BOSS
+    );
+  });
+
+  it('Necrotic Longsword denies regeneration on every melee hit', () => {
+    const state = createGameState();
+    state.tick = 20;
+    const tower = createTower(TowerType.MILITES, 1, 4, 4, 0);
+    tower.equippedItems.push('NECROTIC_LONGSWORD');
+    const target = testEnemy('necrotic-regen-denial');
+
+    applyDamageAndStatus(state, tower, target, 1, {
+      onKill: () => {},
+      onHit: () => {},
+      onMeleeSwing: () => {},
+      onProjectileFire: () => {}
+    });
+
+    expect((target as any).__healingBlockedUntil).toBe(
+      state.tick + EPIC_ITEM_REGEN_DENIAL_SEC.NECROTIC_LONGSWORD
+    );
   });
 });
 

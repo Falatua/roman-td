@@ -164,6 +164,11 @@ function stampHealingBlock(enemy: Enemy, tick: number, duration: number): void {
   );
 }
 
+export const EPIC_ITEM_REGEN_DENIAL_SEC = Object.freeze({
+  NECROTIC_LONGSWORD: 1.5,
+  GALLIC_SHIELD_BOSS: 3
+});
+
 // Storm Ballista is a purpose-built anti-air combo. Ordinary siege engines
 // retain their heavy-projectile accuracy penalty against flyers, but this
 // tower's storm-guided bolts do not inherit that generic miss roll.
@@ -3646,13 +3651,22 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
   if (canApplyItems) {
     // GALLIC_SHIELD_BOSS used to duplicate Lictor's Fasces (+damage/+range).
     // It is now a distinct control item: every 4th hit shield-bashes the
-    // target for a fixed 1s stun. pushStatus keeps boss stun immunity and
-    // lockdown diminishing returns centralized.
+    // target for a fixed 1s stun and opens a 3s regeneration-denial window.
+    // pushStatus keeps boss stun immunity and lockdown diminishing returns
+    // centralized; healing denial still applies to bosses.
     if (t.equippedItems.includes('GALLIC_SHIELD_BOSS')) {
       const hc = (t as any).__hitCount ?? 0;
       if (hc > 0 && hc % 4 === 0) {
         pushStatus(target, StatusEffectKind.STUN, 1.0, 0, tier);
+        stampHealingBlock(target, tick ?? 0, EPIC_ITEM_REGEN_DENIAL_SEC.GALLIC_SHIELD_BOSS);
       }
+    }
+    // NECROTIC_LONGSWORD gives melee builds a sustained Epic answer to
+    // regenerators. The short window refreshes on each connected hit, so
+    // active melee pressure nullifies regeneration without creating a
+    // permanent map-wide lock.
+    if (t.equippedItems.includes('NECROTIC_LONGSWORD')) {
+      stampHealingBlock(target, tick ?? 0, EPIC_ITEM_REGEN_DENIAL_SEC.NECROTIC_LONGSWORD);
     }
     // 2026-05 v6: FIRE_OIL_FLASK is ranged-only (gated in ItemRules) and
     // applies a burn to the target PLUS splashes the same burn to enemies

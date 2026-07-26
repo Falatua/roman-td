@@ -94,7 +94,7 @@ describe('tower damage profile UI helper', () => {
     }));
     expect(profile.rows).toContainEqual(expect.objectContaining({
       kind: 'ON-HIT',
-      label: 'Stun'
+      label: 'Stun + Healing Denial'
     }));
     const html = renderTowerDamageProfileHtml(profile);
     expect(html).toContain('Damage Profile');

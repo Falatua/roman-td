@@ -193,7 +193,7 @@
     "rarity": "EPIC",
     "buy": 60,
     "sell": 30,
-    "effect": "Any tower: every 4th hit shield-bashes the target, stunning non-boss enemies for 1.2s."
+    "effect": "Any tower: every 4th hit shield-bashes the target, stunning non-boss enemies for 1.2s and blocking enemy regeneration and checkpoint healing for 3s."
   },
   "DRUID_STAFF_FRAGMENT": {
     "name": "Druid Staff Fragment",
@@ -256,7 +256,7 @@
     "rarity": "EPIC",
     "buy": 60,
     "sell": 30,
-    "effect": "MELEE ONLY: +55% damage."
+    "effect": "MELEE ONLY: +55% damage. Hits block enemy regeneration and checkpoint healing for 1.5s."
   },
   "UNDEAD_ELEPHANT_BONE": {
     "name": "Undead Elephant Bone",

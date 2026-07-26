@@ -158,7 +158,8 @@ export function towerDamageProfile(tower: Tower, state: GameStateShape, breakdow
 
   const itemSet = new Set(tower.equippedItems ?? []);
   const onHitItems: Array<[string, string, string, string]> = [
-    ['GALLIC_SHIELD_BOSS', 'Stun', 'Gallic Shield Boss: every 4th hit stuns non-boss enemies for 1.2s.', '#ffd34d'],
+    ['GALLIC_SHIELD_BOSS', 'Stun + Healing Denial', 'Gallic Shield Boss: every 4th hit stuns non-boss enemies for 1.2s and blocks regeneration for 3s.', '#ffd34d'],
+    ['NECROTIC_LONGSWORD', 'Healing Denial', 'Necrotic Longsword: melee hits block regeneration for 1.5s.', '#b56cff'],
     ['JUPITERS_WRATH', 'Lightning + Stun', "Jupiter's Wrath: chains lightning to nearby enemies and stuns the primary target.", '#fff2a8'],
     ['FIRE_OIL_FLASK', 'Burn', 'Fire Oil Flask: burns the target and nearby enemies on impact.', DAMAGE_COLORS[DamageType.ELEMENTAL_FIRE]],
     ['VESTAL_PYRE', 'Burn', 'Vestal Pyre: adds Fire burn damage on hit.', DAMAGE_COLORS[DamageType.ELEMENTAL_FIRE]],

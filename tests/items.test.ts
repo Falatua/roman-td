@@ -415,10 +415,25 @@ describe('Item rarity economy', () => {
     const shield = (itemsData as any).GALLIC_SHIELD_BOSS.effect as string;
     const fasces = (itemsData as any).LICTOR_FASCES.effect as string;
     expect(shield.toLowerCase()).toContain('stun');
+    expect(shield).toContain('regeneration');
+    expect(shield).toContain('3s');
     expect(shield).not.toContain('+40% damage');
     expect(shield).not.toContain('+2');
     expect(fasces).toContain('+40% damage');
     expect(fasces).toContain('+2');
+  });
+
+  it('provides two ordinary Epic item routes for regeneration denial', () => {
+    const ids = ['NECROTIC_LONGSWORD', 'GALLIC_SHIELD_BOSS'];
+    for (const id of ids) {
+      const def = (itemsData as any)[id];
+      expect(def.rarity, id).toBe('EPIC');
+      expect(def.eventExclusive, id).toBeUndefined();
+      expect(def.effect.toLowerCase(), id).toContain('regeneration');
+      expect(def.effect.toLowerCase(), id).toContain('checkpoint healing');
+    }
+    expect((itemsData as any).NECROTIC_LONGSWORD.effect).toContain('1.5s');
+    expect((itemsData as any).GALLIC_SHIELD_BOSS.effect).toContain('3s');
   });
 });
 
