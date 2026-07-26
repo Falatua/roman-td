@@ -270,11 +270,18 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // immuneHellfire as an explicit exception.
   if (def?.immuneFire) traits.push({ label: def?.immuneHellfire ? 'IMMUNE TO FIRE + HELLFIRE — direct fire, BURN, and HELLFIRE all deal 0' : 'IMMUNE TO FIRE — direct fire damage and BURN DoT both deal 0 (HELLFIRE divine-fire still applies)', color: '#ee5555' });
   if (typeof def?.siegeWeaknessPct === 'number') traits.push({ label: `SIEGE WEAKNESS — takes +${def.siegeWeaknessPct}% SIEGE damage. Heavy bolts, stones, and bombardment deal ${1 + def.siegeWeaknessPct / 100}× their otherwise-final damage.`, color: '#66ccff' });
+  if (typeof def?.poisonWeaknessPct === 'number') traits.push({ label: `POISON WEAKNESS — this unit's Poison multiplier is ${1 + def.poisonWeaknessPct / 100}× before faction and wave modifiers. The live DAMAGE-OVER-TIME PROFILE above shows the final vulnerability.`, color: '#88ff88' });
   // -- Healing / regen --
   if (def?.regenPctPerSec) traits.push({ label: `REGEN — ${(scaledEnemyRegenRate(def.regenPctPerSec)*100).toFixed(2)}% maxHP/sec always-on; active DoT halves it`, color: '#88ff88' });
   if (def?.outOfCombatRegen) traits.push({ label: `OUT-OF-COMBAT REGEN — ${(scaledEnemyRegenRate(def.outOfCombatRegen)*100).toFixed(2)}% maxHP/sec after 1.0s without DIRECT damage; active DoT halves it to ${(scaledEnemyRegenRate(def.outOfCombatRegen)*50).toFixed(2)}%/sec`, color: '#88ff88' });
   if (def?.checkpointHealPct) traits.push({ label: `CHECKPOINT HEAL — restores ${Math.round(def.checkpointHealPct*100)}% maxHP the first time it crosses each of the 7 waypoint coins`, color: '#88ff88' });
   if (def?.healAllyPctPerSec) traits.push({ label: `HEALER — restores ${(scaledEnemyRegenRate(def.healAllyPctPerSec)*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles; does not heal bosses or stack`, color: '#88ff88' });
+  if (typeof def?.healthRecoveryMult === 'number' && def.healthRecoveryMult < 1) traits.push({ label: `REDUCED HEALTH RECOVERY — receives only ${Math.round(def.healthRecoveryMult * 100)}% of passive, wave, out-of-combat, and allied healing`, color: '#88ff88' });
+  if (def?.commanderHealPulsePeriodSec && def?.commanderHealPulsePct && def?.commanderHealPulseRadiusTiles) {
+    const pulsePct = def.commanderHealPulsePct * 100;
+    const pulsePctLabel = Number.isInteger(pulsePct) ? pulsePct.toFixed(0) : pulsePct.toFixed(1);
+    traits.push({ label: `PRIEST HEALING PULSE — restores ${pulsePctLabel}% max HP to eligible non-boss, non-commander allies within ${def.commanderHealPulseRadiusTiles} tiles every ${def.commanderHealPulsePeriodSec}s`, color: '#88ff88' });
+  }
   // -- Movement modifiers --
   if (def?.lowHpSpeedBoost) traits.push({ label: `LOW-HP SURGE — when below 30% HP, gains +${Math.round((def.lowHpSpeedBoost - 1) * 100)}% movement speed`, color: '#ff8866' });
   if (def?.stealthInterval) traits.push({ label: `STEALTH CYCLE — fades to untargetable for ${def.stealthInterval.duration.toFixed(1)}s every ${def.stealthInterval.period}s (visual: alpha drops, towers can't target)`, color: '#a078d0' });
@@ -286,6 +293,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
     const omenName = def.auraTowerCritName ?? 'TOMB OMEN';
     traits.push({ label: `${omenName} — towers within ${def.auraTowerCritRadiusTiles} tiles lose ${Math.round(def.auraTowerCritPenalty * 100)} percentage points of standard CRIT chance. Strongest aura wins; guaranteed signature attacks are unaffected.`, color: '#d4af37' });
   }
+  if (def?.nullifyAuraRadiusTiles) traits.push({ label: `NULLIFYING AURA — disables towers within ${def.nullifyAuraRadiusTiles} tiles while this enemy remains nearby`, color: '#a078d0' });
   if (def?.auraNullifier) traits.push({ label: `AURA NULLIFIER — every tower within 2 tiles loses its aura contributions while this enemy is in range. Global damage / atk-speed / enemy-debuff / item auras (Centurion\'s Trumpet, Battle Standard, etc.) all silently drop out. Walks past → auras return. Periodic abilities (Caesar stun pulse, freeze cycles) are NOT auras and still fire.`, color: '#a078d0' });
   if (e.type === 'FERAL_DOG' || e.type === 'RABID_DOG' || e.type === 'ALPHA_DOG') {
     traits.push({ label: 'FIRE WEAKNESS — direct FIRE and BURN deal 40% extra damage. Demon Hellhounds are fire-born and do not share this weakness.', color: '#ff8844' });

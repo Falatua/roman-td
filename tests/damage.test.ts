@@ -348,8 +348,7 @@ describe('Enemy resistances — per-enemy multipliers', () => {
   it('softens selected post-W22 DoT walls into heavy resistance instead of full immunity', () => {
     const checks: Array<{ type: EnemyType; burn: number; bleed: number; poison: number }> = [
       { type: EnemyType.DUNE_STALKER, burn: 0.35, bleed: 0.30, poison: 0.30 },
-      { type: EnemyType.STONE_JUGGERNAUT, burn: 0, bleed: 0.20, poison: 0.20 },
-      { type: EnemyType.SKY_ANUBIS_COMMANDER, burn: 0.75, bleed: 0.55, poison: 0.35 }
+      { type: EnemyType.STONE_JUGGERNAUT, burn: 0, bleed: 0.20, poison: 0.20 }
     ];
 
     for (const { type, burn, bleed, poison } of checks) {
@@ -367,13 +366,13 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     }
   });
 
-  it('lets poison damage hit the Anubis Priest commander while preserving its other warding', () => {
+  it('makes poison the Anubis Priest commander weakness while preserving its other warding', () => {
     const type = EnemyType.ANUBIS_PRIEST_COMMANDER;
     const def: any = (enemiesData as any)[type];
-    const enemy = makeEnemy(type, def.faction as EnemyFaction);
+    const enemy = makeEnemy(type, EnemyFaction.EGYPTIANS);
     expect(def.dotImmune, `${type} should not carry broad DoT immunity`).not.toBe(true);
     expect(def.immunePoison, `${type} should not hard-block poison`).not.toBe(true);
-    expect(statusEffectiveness(enemy, StatusEffectKind.POISON), `${type} poison should land`).toBeGreaterThan(0);
+    expect(statusEffectiveness(enemy, StatusEffectKind.POISON), `${type} poison should land`).toBeCloseTo(3.75, 6);
     expect(resistanceSummary(type).some(row => row.label === 'Poison' && row.value === 0), `${type} poison summary`).toBe(false);
     expect(statusEffectiveness(enemy, StatusEffectKind.BURN), `${type} burn remains blocked`).toBe(0);
     expect(statusEffectiveness(enemy, StatusEffectKind.BLEED), `${type} bleed remains blocked`).toBe(0);
@@ -381,7 +380,7 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine remains blocked`).toBe(0);
   });
 
-  it('gives the ordinary Anubis Priest a 200% siege weakness and allows Bleed damage', () => {
+  it('keeps the ordinary Anubis Priest siege weakness while making Poison its strongest counter', () => {
     const type = EnemyType.ANUBIS_PRIEST;
     const def: any = (enemiesData as any)[type];
     const priest = makeEnemy(type, EnemyFaction.EGYPTIANS);
@@ -396,7 +395,8 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(def.dotImmune).not.toBe(true);
     expect(statusEffectiveness(priest, StatusEffectKind.BLEED)).toBeGreaterThan(0);
     expect(statusEffectiveness(priest, StatusEffectKind.BURN)).toBe(0);
-    expect(statusEffectiveness(priest, StatusEffectKind.POISON)).toBe(0);
+    expect(statusEffectiveness(priest, StatusEffectKind.POISON)).toBeCloseTo(3.75, 6);
+    expect(statusEffectiveness(priest, StatusEffectKind.POISON)).toBeGreaterThan(enemyDamageMultiplier(priest, DamageType.SIEGE));
     expect(resistanceSummary(type).some(row => row.label === 'Bleed' && row.value === 0)).toBe(false);
 
     const commander = makeEnemy(EnemyType.ANUBIS_PRIEST_COMMANDER, EnemyFaction.EGYPTIANS);

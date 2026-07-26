@@ -282,7 +282,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.EGYPTIAN_SPEARMAN]: { melee: 0.8, ranged: 0.6, burn: 0.85, poison: 0.90, bleed: 0.75 },
   [EnemyType.EGYPTIAN_CHARIOT]:  { ranged: 0.5, slow: 0.35, burn: 0.95, poison: 0.85, bleed: 0.6 },
   [EnemyType.PHARAOH_GUARD]:     { melee: 0.55, ranged: 0, burn: 0.55, poison: 0.45, bleed: 0.60, divine: 0.7 },
-  [EnemyType.ANUBIS_PRIEST]:     { melee: 0, ranged: 0.5, slow: 0.3, burn: 0, poison: 0, bleed: 1, divine: 0 },
+  [EnemyType.ANUBIS_PRIEST]:     { melee: 0, ranged: 0.5, slow: 0.3, burn: 0, bleed: 1, divine: 0 },
   [EnemyType.SOBEK_WARRIOR]:     { melee: 0.45, ranged: 0, slow: 0.3, burn: 0.5, poison: 0.55, bleed: 0.65 },
   [EnemyType.MUMMY_WARRIOR]:     { ranged: 0, siege: 0, slow: 0.5, poison: 0, bleed: 0.4, burn: 1.30 },
   [EnemyType.SPHINX]:            { melee: 0, ranged: 0.55, slow: 0.25, burn: 0.75, poison: 0.50, bleed: 0.40, divine: 1.30 },
@@ -327,11 +327,11 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   // boss-grade. Killing them should feel like solving the wave.
   [EnemyType.STANDARD_BEARER_COMMANDER]: { melee: 0.55, ranged: 0.5, slow: 0.35, burn: 0.75, poison: 0.65, bleed: 0.60, divine: 1.25 },
   [EnemyType.PATHFINDER_COMMANDER]:      { ranged: 0.65, slow: 0.25, burn: 0.90, poison: 0.75, bleed: 0.65 },
-  [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { melee: 0, ranged: 0.5, slow: 0.3, burn: 0, poison: 0.75, bleed: 0, divine: 0 },
+  [EnemyType.ANUBIS_PRIEST_COMMANDER]:   { melee: 0, ranged: 0.5, slow: 0.3, burn: 0, bleed: 0, divine: 0 },
   [EnemyType.SIEGE_CAPTAIN_COMMANDER]:   { melee: 0.55, ranged: 0.35, slow: 0.35, siege: 0, burn: 0, poison: 1.15, bleed: 1.10, divine: 1.20 },
   [EnemyType.SKY_STANDARD_COMMANDER]:     { melee: 0.7, ranged: 0.55, slow: 0.35, siege: 1.2, burn: 0.8, poison: 0.65, bleed: 0.6, divine: 1.2 },
   [EnemyType.SKY_PATHFINDER_COMMANDER]:   { ranged: 0.7, slow: 0.3, siege: 0, burn: 0.85, poison: 0.75, bleed: 0.75 },
-  [EnemyType.SKY_ANUBIS_COMMANDER]:       { ranged: 0.55, slow: 0.35, siege: 1.15, burn: 0.75, poison: 0.35, bleed: 0.55, divine: 1.25 },
+  [EnemyType.SKY_ANUBIS_COMMANDER]:       { ranged: 0.55, slow: 0.35, siege: 1.15, burn: 0.75, bleed: 0.55, divine: 1.25 },
   [EnemyType.TIDECALLER_COMMANDER]:        { melee: 0.55, ranged: 0.50, siege: 1.20, fire: 0, divine: 1.30, slow: 0.30, burn: 0, poison: 0.45, bleed: 0.45 },
   [EnemyType.STORMTIDE_WYVERN_COMMANDER]:  { melee: 0.45, ranged: 0.50, siege: 1.10, fire: 0, divine: 1.25, slow: 0.20, burn: 0, poison: 0.35, bleed: 0.35 },
   // 2026-06-26 variety roster.
@@ -349,10 +349,14 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
   const profile = RESIST[type] ?? {};
   const def: any = (enemiesData as any)[type];
+  const resolved: EnemyResistProfile = { ...profile };
   if (typeof def?.siegeWeaknessPct === 'number') {
-    return { ...profile, siege: 1 + def.siegeWeaknessPct / 100 };
+    resolved.siege = 1 + def.siegeWeaknessPct / 100;
   }
-  return profile;
+  if (typeof def?.poisonWeaknessPct === 'number') {
+    resolved.poison = 1 + def.poisonWeaknessPct / 100;
+  }
+  return resolved;
 }
 
 export function isHellfireImmune(enemy: Enemy): boolean {

@@ -1,7 +1,9 @@
 import { EnemyType } from '../types';
 import { GRID } from '../constants';
 import { GameStateShape } from '../GameState';
+import enemiesData from '../data/enemies.json';
 import { COMMANDER_ENEMY_TYPES, isCommanderEnemy } from './EnemyClassification';
+import { scaleEnemyHealthRecovery } from './EnemyHealing';
 
 export type CommanderType =
   | 'STANDARD_BEARER_COMMANDER'
@@ -146,15 +148,20 @@ export function tickCommanderSupport(state: GameStateShape, dt: number): void {
     ...activeCommanders(state, 'SKY_ANUBIS_COMMANDER').map(commander => ({ commander, sky: true }))
   ];
   for (const { commander, sky } of healers) {
+    const def: any = (enemiesData as any)[commander.type] ?? {};
+    const pulsePeriod = Number(def.commanderHealPulsePeriodSec ?? 3.5);
+    const pulseRadiusTiles = Number(def.commanderHealPulseRadiusTiles ?? (sky ? 4.5 : 3.5));
+    const healPct = Number(def.commanderHealPulsePct ?? (sky
+      ? ((state.wave ?? 1) >= 21 ? 0.07 : 0.045)
+      : ((state.wave ?? 1) >= 21 ? 0.08 : 0.06)));
     const next = (commander as any).__anubisPulseAt ?? 0;
     if (state.tick < next) continue;
-    (commander as any).__anubisPulseAt = state.tick + 3.5;
+    (commander as any).__anubisPulseAt = state.tick + pulsePeriod;
     for (const e of state.enemies.values()) {
       if (e.hp <= 0 || e.isBoss || isCommanderType(e.type as any)) continue;
       if (sky && !e.isFlyer) continue;
-      if (Math.hypot(e.x - commander.x, e.y - commander.y) > (sky ? 4.5 : 3.5) * GRID.TILE) continue;
-      const healPct = sky ? ((state.wave ?? 1) >= 21 ? 0.07 : 0.045) : ((state.wave ?? 1) >= 21 ? 0.08 : 0.06);
-      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * healPct);
+      if (Math.hypot(e.x - commander.x, e.y - commander.y) > pulseRadiusTiles * GRID.TILE) continue;
+      e.hp = Math.min(e.maxHp, e.hp + scaleEnemyHealthRecovery(e.type, e.maxHp * healPct));
       (e as any).__commanderHealedUntil = state.tick + 0.35;
     }
   }

@@ -28,7 +28,7 @@ import { commanderSpeedMult, isCommanderType, tickCommanderSupport } from './Com
 import { classifyEnemy } from './EnemyClassification';
 import { campaignPressureResistMult } from './CampaignDifficulty';
 import { shouldRespawnBossOnLeak } from './LeakRules';
-import { scaledEnemyRegenRate } from './EnemyHealing';
+import { enemyHealthRecoveryMult, scaledEnemyRegenRate } from './EnemyHealing';
 
 // Pre-computed waypoint centers in WORLD pixel coordinates, used by the
 // per-frame proximity test so the checkpoint heal fires the instant an
@@ -760,7 +760,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       }
       const targetHealingBlocked = ((target as any).__healingBlockedUntil ?? 0) > state.tick;
       if (bestPct > 0 && !targetHealingBlocked) {
-        target.hp = Math.min(target.maxHp, target.hp + target.maxHp * scaledEnemyRegenRate(bestPct) * dt);
+        target.hp = Math.min(target.maxHp, target.hp + target.maxHp * scaledEnemyRegenRate(bestPct) * enemyHealthRecoveryMult(target.type) * dt);
       }
     }
   }
@@ -1565,10 +1565,11 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       )
     );
     const regenMult = hasActiveDot ? 0.5 : 1.0;
+    const healthRecoveryMult = enemyHealthRecoveryMult(e.type);
     const healingBlocked = ((e as any).__healingBlockedUntil ?? 0) > state.tick;
     // Constant regen (always-on, e.g. Iron Phalanx / Architectus).
     if (def.regenPctPerSec && !healingBlocked) {
-      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(def.regenPctPerSec) * regenMult * dt);
+      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(def.regenPctPerSec) * healthRecoveryMult * regenMult * dt);
     }
     // 2026-05-22 — WAVE-LEVEL REGEN. Some W11+ waves stamp
     // `enemyRegenPctPerSec` on the wave def to give every spawn on
@@ -1577,7 +1578,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     const _curWave: any = (wavesData as any[])[(state.wave ?? 1) - 1];
     const waveRegen = _curWave?.enemyRegenPctPerSec ?? 0;
     if (waveRegen > 0 && !healingBlocked) {
-      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(waveRegen) * regenMult * dt);
+      e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(waveRegen) * healthRecoveryMult * regenMult * dt);
     }
     // 2026-05-22 — WAVE-LEVEL SPEED BOOST. Wave defs with
     // `enemySpeedBoostPct` apply a flat speed multiplier to every
@@ -1612,7 +1613,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     if (oocRegen > 0 && !healingBlocked) {
       const sinceHit = state.tick - (e.lastDamagedTick ?? -999);
       if (sinceHit > 1.0) {
-        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(oocRegen) * regenMult * dt);
+        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(oocRegen) * healthRecoveryMult * regenMult * dt);
       }
     }
     // LOW-HP SPEED BOOST: berserker / hellhound / rabid surge to the gate when wounded.

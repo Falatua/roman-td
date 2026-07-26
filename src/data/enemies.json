@@ -677,13 +677,14 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
-    "auraTowerSlow": 0.25,
-    "healAllyPctPerSec": 0.02,
+    "auraTowerSlow": 0.15,
+    "healAllyPctPerSec": 0.01,
+    "healthRecoveryMult": 0.5,
+    "poisonWeaknessPct": 400,
     "siegeWeaknessPct": 200,
     "meleeImmune": true,
     "divineImmune": true,
-    "immuneFire": true,
-    "immunePoison": true
+    "immuneFire": true
   },
   "SOBEK_WARRIOR": {
     "name": "Sobek Warrior",
@@ -1166,7 +1167,7 @@
     "campaignHpScaleByWave": { "21": 2.50 }
   },
   "ANUBIS_PRIEST_COMMANDER": {
-    "nullifyAuraRadiusTiles": 2,
+    "nullifyAuraRadiusTiles": 1.5,
     "name": "Commander: Anubis Priest",
     "faction": "EGYPTIANS",
     "baseHp": 2700,
@@ -1179,6 +1180,11 @@
     "divineImmune": true,
     "immuneFire": true,
     "immuneBleed": true,
+    "healthRecoveryMult": 0.5,
+    "poisonWeaknessPct": 400,
+    "commanderHealPulsePeriodSec": 5,
+    "commanderHealPulsePct": 0.04,
+    "commanderHealPulseRadiusTiles": 3,
     "renderScale": 1.2
   },
   "SIEGE_CAPTAIN_COMMANDER": {
@@ -1222,7 +1228,7 @@
     "siegeImmune": true
   },
   "SKY_ANUBIS_COMMANDER": {
-    "nullifyAuraRadiusTiles": 1.5,
+    "nullifyAuraRadiusTiles": 1.25,
     "name": "Commander: Wind Priest",
     "faction": "EGYPTIANS",
     "baseHp": 2600,
@@ -1231,6 +1237,11 @@
     "isBoss": false,
     "livesCost": 5,
     "isElite": true,
+    "healthRecoveryMult": 0.5,
+    "poisonWeaknessPct": 400,
+    "commanderHealPulsePeriodSec": 5,
+    "commanderHealPulsePct": 0.035,
+    "commanderHealPulseRadiusTiles": 4,
     "renderScale": 1.12
   },
   "TIDECALLER_COMMANDER": {

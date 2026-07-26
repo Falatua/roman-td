@@ -543,6 +543,7 @@ function renderTab(tab: string): string {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           ${noteCard('Commander Bounties', 'Commanders are rare support leaders worth hunting first. Every commander kill pays a <b style="color:#ffd34d">+25g bounty</b> on top of the normal kill payment. Kill-gold relics and items stack with it. Bosses use their own bounty and legendary reward instead.')}
           ${noteCard('Out-of-Combat Regen', 'Passive enemy regeneration is globally reduced by 20%. It begins after 1.0s without <b>direct</b> damage; active Burn, Poison, Bleed, or Hellfire halves the remaining rate. Daemon Imperator heals about 1.12%/s under DoT. Keep direct pressure on regenerators.')}
+          ${noteCard('☠ Anubis Priest Poison Counter', '<b style="color:#88ff88">Anubis Priest, Commander: Anubis Priest, and Commander: Wind Priest are all heavily vulnerable to POISON.</b> Their per-unit 5× weakness combines with the Egyptian faction baseline for <b>3.75× Poison effectiveness before wave guardrails</b>. They also receive only 50% health recovery. The base priest now slows towers by 15% and heals allies for 0.8% HP/sec; commander pulses fire every 5s for 4% ground or 3.5% flyer healing, with smaller nullifying auras. Target these casters and poison them first.')}
           ${noteCard('Phoenix Rebirth', 'Spectral Scout, Celtic Fire Demon, and Undead Celt burst into <b style="color:#ffaa66">3 reduced-HP minions</b> on death — each at 40% / 35% / 25% HP respectively. The original kill still counts; the minions cannot chain-phoenix when killed. Orange impact ring marks the burst. Plan on roughly 3× the kill budget for these enemies and stack DoTs that tick through respawns.')}
           ${noteCard('Phase-Through Hits', 'Spectral Scout (2), Iron Phalanx (2), Celtic Berserker (1), Undead Berserker (1), Undead Spearman (1), Carthage Spearman (1) ignore the first N hits taken — a "MISS" floater pops on each phased shot.')}
           ${noteCard('Dodge (ranged)', 'Gallic Druid (30%), Numidian Rider (20%), Ghost Rider (15%), Shadow Cavalry (25%) have a chance to dodge incoming ranged / siege attacks. Melee always lands.')}
@@ -1618,11 +1619,18 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.immuneStun) traits.push('IMMUNE TO STUN');
   if (def.immunePoison) traits.push('IMMUNE TO POISON');
   if (def.immuneFire) traits.push(def.immuneHellfire ? 'IMMUNE TO FIRE + HELLFIRE — direct fire, BURN, and HELLFIRE all deal 0' : 'IMMUNE TO FIRE — direct fire and BURN DoT both 0 (HELLFIRE divine-fire still applies)');
+  if (typeof def.poisonWeaknessPct === 'number') traits.push(`POISON WEAKNESS — this unit's Poison multiplier is ${1 + def.poisonWeaknessPct / 100}× before faction and wave modifiers. The live DoT profile shows the final vulnerability.`);
   // Healing / regen
   if (def.regenPctPerSec) traits.push(`REGEN — ${(scaledEnemyRegenRate(def.regenPctPerSec)*100).toFixed(2)}% maxHP/sec always-on; active DoT halves it`);
   if (def.outOfCombatRegen) traits.push(`OUT-OF-COMBAT REGEN — ${(scaledEnemyRegenRate(def.outOfCombatRegen)*100).toFixed(2)}% maxHP/sec after 1.0s without DIRECT damage; active DoT halves it to ${(scaledEnemyRegenRate(def.outOfCombatRegen)*50).toFixed(2)}%/sec`);
   if (def.checkpointHealPct) traits.push(`CHECKPOINT HEAL — restores ${Math.round(def.checkpointHealPct*100)}% maxHP first time it crosses each of the 7 waypoint coins`);
   if (def.healAllyPctPerSec) traits.push(`HEALER — restores ${(scaledEnemyRegenRate(def.healAllyPctPerSec)*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles; does not heal bosses or stack`);
+  if (typeof def.healthRecoveryMult === 'number' && def.healthRecoveryMult < 1) traits.push(`REDUCED HEALTH RECOVERY — receives only ${Math.round(def.healthRecoveryMult * 100)}% of passive, wave, out-of-combat, and allied healing`);
+  if (def.commanderHealPulsePeriodSec && def.commanderHealPulsePct && def.commanderHealPulseRadiusTiles) {
+    const pulsePct = def.commanderHealPulsePct * 100;
+    const pulsePctLabel = Number.isInteger(pulsePct) ? pulsePct.toFixed(0) : pulsePct.toFixed(1);
+    traits.push(`PRIEST HEALING PULSE — restores ${pulsePctLabel}% max HP to eligible non-boss, non-commander allies within ${def.commanderHealPulseRadiusTiles} tiles every ${def.commanderHealPulsePeriodSec}s`);
+  }
   // Movement modifiers
   if (def.lowHpSpeedBoost) traits.push(`LOW-HP SURGE — when below 30% HP, gains +${Math.round((def.lowHpSpeedBoost - 1) * 100)}% movement speed`);
   if (def.stealthInterval) traits.push(`STEALTH CYCLE — fades to untargetable for ${def.stealthInterval.duration.toFixed(1)}s every ${def.stealthInterval.period}s`);
@@ -1633,6 +1641,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
     const omenName = def.auraTowerCritName ?? 'TOMB OMEN';
     traits.push(`${omenName} — towers within ${def.auraTowerCritRadiusTiles} tiles lose ${Math.round(def.auraTowerCritPenalty * 100)} percentage points of standard CRIT chance. Strongest aura wins; guaranteed signature attacks are unaffected.`);
   }
+  if (def.nullifyAuraRadiusTiles) traits.push(`NULLIFYING AURA — disables towers within ${def.nullifyAuraRadiusTiles} tiles while this enemy remains nearby`);
   if (def.silenceAuraRadiusTiles) traits.push(`SILENCE AURA — every tower within ${def.silenceAuraRadiusTiles} tiles is SILENCED while this enemy is in range (pink X-mark). Expires ~0.6s after the enemy leaves. Distinct from the pass-by silence — this is sustained denial-while-near.`);
   if (def.auraNullifier) traits.push('AURA NULLIFIER — silences every tower aura within 2 tiles (damage/atk-speed/debuff/item auras all drop out). Periodic abilities like Caesar stun pulse and freeze cycles are NOT auras and still fire.');
   if (typeof def.siegeWeaknessPct === 'number') traits.push(`SIEGE WEAKNESS — takes +${def.siegeWeaknessPct}% SIEGE damage. Heavy bolts, stones, and bombardment deal ${1 + def.siegeWeaknessPct / 100}× their otherwise-final damage.`);
