@@ -209,7 +209,7 @@ function renderTab(tab: string): string {
             <li><b style="color:#66ff88">Checkpoint heal:</b> Celtic Berserkers, Sacred Band, Undead Celts, Undead Berserkers, and Undead Spearmen regain 15% HP the first time they cross each of the 7 waypoint coins. Pinch the path right BEFORE coins so the kill window stays narrow. W11 has the heal suppressed (Undead Celt intro is already a slog).</li>
             <li>Recipe wants T3 but your tower is T4? <b style="color:#ffd34d">DOWNGRADE</b> (2g, in the tower menu) drops it one tier. Pride loses runs.</li>
             <li>This is a 30-wave run with <b style="color:#88ff88">45 starting lives</b>. Every leaked enemy hurts: ordinary enemies cost 1 life, <b style="color:#ffd34d">elites and commanders cost 5</b>, and <b style="color:#ff5050">bosses cost 10</b>. Bosses also REBORN ON THE NEXT WAVE at the HP they had when they reached Rome (chip damage carries over — small consolation).</li>
-            <li><b style="color:#ffd34d">THE LATE GAME (W21-30):</b> clearing <b>W30</b> with the gate intact wins the campaign. <b>W21</b> brings the Keshig Noyan, <b>W22-24</b> drive the Mongol and Egyptian assault toward the Anubis King, and <b>W25-29</b> unleash Chimera, Cerberus, Typhon, Giants, and Cyclopes. Roman-myth enemies resist steel and fire but remain <b style="color:#fff4a8">weak to DIVINE</b>. From W21, Cave B mirrors every ground non-boss group from the main cave, forcing you to defend both lanes before the <b style="color:#ff5050">W30 Daemon Imperator</b> finale.</li>
+            <li><b style="color:#ffd34d">THE LATE GAME (W21-30):</b> clearing <b>W30</b> with the gate intact wins the campaign. <b>W21</b> brings the Keshig Noyan, <b>W22-24</b> drive the Mongol and Egyptian assault toward the Anubis King, and <b>W25-29</b> unleash Chimera, Cerberus, Typhon, Giants, and Cyclopes. Most Roman-myth enemies resist steel and fire but remain <b style="color:#fff4a8">weak to DIVINE</b>. <b style="color:#9be0ff">Colossus Gigas is the exception: use SIEGE for 3x final damage; Divine lands at only 20%.</b> From W21, Cave B mirrors every ground non-boss group from the main cave, forcing you to defend both lanes before the <b style="color:#ff5050">W30 Daemon Imperator</b> finale.</li>
           </ul>
         </div>
       `, true)}
@@ -1608,6 +1608,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.meleeImmune) traits.push('MELEE-IMMUNE — physical melee deals 0 damage');
   if (def.divineOnly) traits.push('DIVINE-ONLY — can only be targeted and damaged by divine attacks');
   if (def.divineImmune) traits.push('DIVINE-IMMUNE — divine damage deals 0 damage');
+  if (typeof def.divineResistancePct === 'number') traits.push(`DIVINE RESISTANCE — takes ${100 - def.divineResistancePct}% DIVINE damage after faction modifiers (${def.divineResistancePct}% final resistance); not immune`);
   if (def.requiresMeleeBreak) traits.push('SHIELD — ranged & siege ignored until a melee tower cracks the shield');
   if (def.shieldBlockChance) traits.push(`SHIELD BLOCK — ${Math.round(def.shieldBlockChance*100)}% chance to fully block ranged/siege hits (until shield breaks)`);
   if (def.allAttackBlockChance) traits.push(`ALL-ATTACK BLOCK — ${Math.round(def.allAttackBlockChance*100)}% chance per hit to deflect ANY incoming damage (melee, ranged, siege, fire, divine). Never expires, independent of shield state.`);
@@ -1644,7 +1645,11 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.nullifyAuraRadiusTiles) traits.push(`NULLIFYING AURA — disables towers within ${def.nullifyAuraRadiusTiles} tiles while this enemy remains nearby`);
   if (def.silenceAuraRadiusTiles) traits.push(`SILENCE AURA — every tower within ${def.silenceAuraRadiusTiles} tiles is SILENCED while this enemy is in range (pink X-mark). Expires ~0.6s after the enemy leaves. Distinct from the pass-by silence — this is sustained denial-while-near.`);
   if (def.auraNullifier) traits.push('AURA NULLIFIER — silences every tower aura within 2 tiles (damage/atk-speed/debuff/item auras all drop out). Periodic abilities like Caesar stun pulse and freeze cycles are NOT auras and still fire.');
-  if (typeof def.siegeWeaknessPct === 'number') traits.push(`SIEGE WEAKNESS — takes +${def.siegeWeaknessPct}% SIEGE damage. Heavy bolts, stones, and bombardment deal ${1 + def.siegeWeaknessPct / 100}× their otherwise-final damage.`);
+  if (typeof def.siegeWeaknessPct === 'number') {
+    const finalSiegeMult = armorProfile(id as any).find(row => row.damageType === 'SIEGE')?.finalMult ?? (1 + def.siegeWeaknessPct / 100);
+    const finalSiegeLabel = Number.isInteger(finalSiegeMult) ? finalSiegeMult.toFixed(0) : finalSiegeMult.toFixed(2);
+    traits.push(`SIEGE WEAKNESS — takes +${Math.round((finalSiegeMult - 1) * 100)}% final SIEGE damage. Heavy bolts, stones, and bombardment deal ${finalSiegeLabel}× damage after faction modifiers.`);
+  }
   const sleepRange = typeof def.sleepDartRangeTiles === 'number'
     ? def.sleepDartRangeTiles
     : (id === 'GALLIC_DRUID' || id === 'ZOMBIE_DRUID' ? 3 : 0);

@@ -13,9 +13,10 @@ export interface EnemyResistProfile {
   // 2026-05 v9 — per-enemy elemental/specialty resists. Faction rows in
   // factionResistances.json still apply; these stack multiplicatively on
   // top so a specific unit can be more resistant to siege / fire /
-  // divine than its faction baseline. Added so mid-game enemies (W6-W9
-  // CARTHAGE / CELTIC tribes) can resist the universal answer-key damage
-  // types instead of taking flat 100% from siege / fire / divine.
+  // divine than its faction baseline. An authored divineResistancePct can
+  // instead pin an exact final Divine resistance after faction weakness.
+  // Added so mid-game enemies (W6-W9 CARTHAGE / CELTIC tribes) can resist
+  // the universal answer-key damage types instead of taking flat 100%.
   siege?: number;
   fire?: number;
   divine?: number;
@@ -310,8 +311,9 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.TYPHON]:      { melee: 0, slow: 0.6, ranged: 0.3, siege: 0, burn: 0.65, poison: 0.55, bleed: 0.45 },
   [EnemyType.GIANT_GIGAS]: { slow: 0.7, melee: 0.3, burn: 0.80, poison: 0.35, bleed: 0.30 },
   [EnemyType.CYCLOPS]:     { melee: 0.3, siege: 0, slow: 0.4, burn: 0.85, poison: 0.60, bleed: 0.50, divine: 0 },
-  // Colossus Gigas — the fused Super-Giant: very tough all-round.
-  [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0, slow: 0.8, burn: 0.65, poison: 0.25, bleed: 0.20, divine: 0 },
+  // Colossus Gigas — the fused Super-Giant. Its exact final Siege weakness
+  // and Divine resistance are authored in enemies.json.
+  [EnemyType.SUPER_GIANT_COLOSSUS]: { melee: 0.4, ranged: 0, slow: 0.8, burn: 0.65, poison: 0.25, bleed: 0.20 },
   [EnemyType.OCEAN_FISHLING]: { fire: 1.15, burn: 1.15, poison: 0.8, slow: 0.7 },
   [EnemyType.OCEAN_GHOST_SPIRIT]: { melee: 0, ranged: 0, siege: 0, fire: 0, divine: 1.25, slow: 0, burn: 0, bleed: 0, poison: 0 },
   [EnemyType.SEA_GIANT]: { melee: 0.50, ranged: 0.50, siege: 1.05, fire: 0, divine: 1.10, slow: 0.30, burn: 0, poison: 0.34, bleed: 0.30 },
@@ -346,6 +348,11 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.STONE_JUGGERNAUT]: { melee: 0, ranged: 0, burn: 0, bleed: 0.20, poison: 0.20, siege: 1.75, divine: 1.75 }
 };
 
+function finalDamageTakenFromResistancePct(raw: unknown): number | undefined {
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return undefined;
+  return 1 - Math.min(100, Math.max(0, raw)) / 100;
+}
+
 export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
   const profile = RESIST[type] ?? {};
   const def: any = (enemiesData as any)[type];
@@ -355,6 +362,14 @@ export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
   }
   if (typeof def?.poisonWeaknessPct === 'number') {
     resolved.poison = 1 + def.poisonWeaknessPct / 100;
+  }
+  const finalDivineMult = finalDamageTakenFromResistancePct(def?.divineResistancePct);
+  if (typeof finalDivineMult === 'number') {
+    const factionDivine = (factionRes as any)[def?.faction]?.DIVINE;
+    const factionDivineMult = typeof factionDivine === 'number'
+      ? 1 + Math.max(0, factionDivine)
+      : 1;
+    resolved.divine = finalDivineMult / factionDivineMult;
   }
   return resolved;
 }
@@ -488,7 +503,7 @@ export function resistanceSummary(type: EnemyType): Array<{ label: string; value
     // Codex / EnemyInspect lists them alongside melee/ranged when set.
     ['Siege', divineOnly || def?.siegeImmune ? 0 : r.siege],
     ['Fire', divineOnly || def?.immuneFire ? 0 : r.fire],
-    ['Divine', def?.divineImmune ? 0 : r.divine],
+    ['Divine', def?.divineImmune ? 0 : (finalDamageTakenFromResistancePct(def?.divineResistancePct) ?? r.divine)],
     ['Slow', r.slow],
     ['Burn', divineOnly || dotImmune || def?.immuneBurn || def?.immuneFire ? 0 : r.burn],
     ['Bleed', divineOnly || dotImmune || def?.immuneBleed ? 0 : r.bleed],

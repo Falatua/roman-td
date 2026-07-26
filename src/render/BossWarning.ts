@@ -93,7 +93,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
       'The myth-age opens and the ground files a complaint.',
       'Wave 25 fields TWO Colossus Gigas — each two Giants fused into one titan.',
       'Titan Stomp slows your towers. Colossal Regen heals what you fail to finish.',
-      'Bring DIVINE. Bring burst. Bring an apology to the Senate, just in case.',
+      'Bring SIEGE: it deals 3x final damage. DIVINE still lands, but 80% is resisted.',
       'ARE YOU REALLY SURE?'
     ],
     doom: [

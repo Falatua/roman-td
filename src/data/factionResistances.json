@@ -81,7 +81,7 @@
   },
   "ROMAN_MYTH": {
     "identity": "Ancient Colossi",
-    "counterplay": "Mythic bodies resist steel, Siege, Fire, and most status pressure. Divine damage is the reliable answer.",
+    "counterplay": "Mythic bodies resist steel, Siege, Fire, and most status pressure. Divine answers most of them, but Colossus Gigas is the Siege exception: it takes 3x Siege damage and resists 80% of Divine.",
     "PHYS_MELEE": -0.15,
     "PHYS_RANGED": -0.10,
     "SIEGE": -0.20,

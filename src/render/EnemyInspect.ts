@@ -249,6 +249,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // -- Combat / damage interaction --
   if (def?.meleeImmune) traits.push({ label: 'MELEE-IMMUNE — physical melee deals 0 damage', color: '#ee5555' });
   if (def?.divineImmune) traits.push({ label: 'DIVINE-IMMUNE — divine damage deals 0 damage', color: '#ffd34d' });
+  if (typeof def?.divineResistancePct === 'number') traits.push({ label: `DIVINE RESISTANCE — takes ${100 - def.divineResistancePct}% DIVINE damage after faction modifiers (${def.divineResistancePct}% final resistance); not immune`, color: '#ffd34d' });
   if (def?.requiresMeleeBreak) traits.push({ label: 'SHIELD — ranged & siege ignored until a melee tower cracks the shield', color: '#ee5555' });
   if (def?.divineOnly) traits.push({ label: 'DIVINE-ONLY — can only be targeted and damaged by divine attacks', color: '#d8c76b' });
   if (def?.shieldBlockChance) traits.push({ label: `SHIELD BLOCK — ${Math.round(def.shieldBlockChance*100)}% chance to fully block ranged/siege hits (until shield breaks)`, color: '#ee5555' });
@@ -269,7 +270,11 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // tick. HELLFIRE divine-fire is separate unless a rare unit declares
   // immuneHellfire as an explicit exception.
   if (def?.immuneFire) traits.push({ label: def?.immuneHellfire ? 'IMMUNE TO FIRE + HELLFIRE — direct fire, BURN, and HELLFIRE all deal 0' : 'IMMUNE TO FIRE — direct fire damage and BURN DoT both deal 0 (HELLFIRE divine-fire still applies)', color: '#ee5555' });
-  if (typeof def?.siegeWeaknessPct === 'number') traits.push({ label: `SIEGE WEAKNESS — takes +${def.siegeWeaknessPct}% SIEGE damage. Heavy bolts, stones, and bombardment deal ${1 + def.siegeWeaknessPct / 100}× their otherwise-final damage.`, color: '#66ccff' });
+  if (typeof def?.siegeWeaknessPct === 'number') {
+    const finalSiegeMult = armorRows.find(row => row.damageType === 'SIEGE')?.finalMult ?? (1 + def.siegeWeaknessPct / 100);
+    const finalSiegeLabel = Number.isInteger(finalSiegeMult) ? finalSiegeMult.toFixed(0) : finalSiegeMult.toFixed(2);
+    traits.push({ label: `SIEGE WEAKNESS — takes +${Math.round((finalSiegeMult - 1) * 100)}% final SIEGE damage. Heavy bolts, stones, and bombardment deal ${finalSiegeLabel}× damage after faction modifiers.`, color: '#66ccff' });
+  }
   if (typeof def?.poisonWeaknessPct === 'number') traits.push({ label: `POISON WEAKNESS — this unit's Poison multiplier is ${1 + def.poisonWeaknessPct / 100}× before faction and wave modifiers. The live DAMAGE-OVER-TIME PROFILE above shows the final vulnerability.`, color: '#88ff88' });
   // -- Healing / regen --
   if (def?.regenPctPerSec) traits.push({ label: `REGEN — ${(scaledEnemyRegenRate(def.regenPctPerSec)*100).toFixed(2)}% maxHP/sec always-on; active DoT halves it`, color: '#88ff88' });

@@ -408,8 +408,7 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       EnemyType.MONGOL_CAPTAIN,
       EnemyType.ANUBIS_PRIEST,
       EnemyType.ANUBIS_PRIEST_COMMANDER,
-      EnemyType.CYCLOPS,
-      EnemyType.SUPER_GIANT_COLOSSUS
+      EnemyType.CYCLOPS
     ];
 
     for (const type of divineImmuneTypes) {
