@@ -248,6 +248,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   const traits: { label: string; color?: string }[] = [];
   // -- Combat / damage interaction --
   if (def?.meleeImmune) traits.push({ label: 'MELEE-IMMUNE — physical melee deals 0 damage', color: '#ee5555' });
+  if (typeof def?.meleeResistancePct === 'number') traits.push({ label: `MELEE RESISTANCE — takes ${100 - def.meleeResistancePct}% physical melee damage after faction modifiers (${def.meleeResistancePct}% final resistance); not immune`, color: '#ffaa55' });
   if (def?.divineImmune) traits.push({ label: 'DIVINE-IMMUNE — divine damage deals 0 damage', color: '#ffd34d' });
   if (typeof def?.divineResistancePct === 'number') traits.push({ label: `DIVINE RESISTANCE — takes ${100 - def.divineResistancePct}% DIVINE damage after faction modifiers (${def.divineResistancePct}% final resistance); not immune`, color: '#ffd34d' });
   if (def?.requiresMeleeBreak) traits.push({ label: 'SHIELD — ranged & siege ignored until a melee tower cracks the shield', color: '#ee5555' });

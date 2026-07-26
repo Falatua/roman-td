@@ -13,8 +13,9 @@ export interface EnemyResistProfile {
   // 2026-05 v9 — per-enemy elemental/specialty resists. Faction rows in
   // factionResistances.json still apply; these stack multiplicatively on
   // top so a specific unit can be more resistant to siege / fire /
-  // divine than its faction baseline. An authored divineResistancePct can
-  // instead pin an exact final Divine resistance after faction weakness.
+  // divine than its faction baseline. Authored meleeResistancePct and
+  // divineResistancePct values can instead pin exact final resistance
+  // after the corresponding faction modifier.
   // Added so mid-game enemies (W6-W9 CARTHAGE / CELTIC tribes) can resist
   // the universal answer-key damage types instead of taking flat 100%.
   siege?: number;
@@ -321,7 +322,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.NETHER_AMPHIBIOUS_GIANT]: { melee: 0.25, ranged: 0.30, siege: 0.55, fire: 0, divine: 1.35, slow: 0.18, burn: 0, poison: 0.16, bleed: 0.20 },
   [EnemyType.NAGA_ADEPT]: { ranged: 0.8, fire: 0.75, burn: 0.75, poison: 0.65, slow: 0.55, divine: 1.10 },
   [EnemyType.NAGA_SLEEPWEAVER]: { ranged: 0.65, fire: 0.6, burn: 0.6, poison: 0.45, slow: 0.45, divine: 1.15 },
-  [EnemyType.NAGA_ORACLE]: { melee: 0, ranged: 0.45, siege: 0.75, fire: 0, burn: 0, poison: 0.25, slow: 0.35, divine: 1.25 },
+  [EnemyType.NAGA_ORACLE]: { ranged: 0.45, siege: 0.75, fire: 0, burn: 0, poison: 0.25, slow: 0.35, divine: 1.25 },
   // 2026 v2 spec Ch14 — Egyptian roster expansion.
   [EnemyType.PLAGUE_BEARER]:  { ranged: 0.2, poison: 0.8, bleed: 0.65, burn: 0.3 },
   [EnemyType.MEDJAY_SOLDIER]: { melee: 0.5, ranged: 0.3, slow: 0.3, burn: 0.80, poison: 0.85, bleed: 0.65 },
@@ -362,6 +363,16 @@ export function enemyResistanceProfile(type: EnemyType): EnemyResistProfile {
   }
   if (typeof def?.poisonWeaknessPct === 'number') {
     resolved.poison = 1 + def.poisonWeaknessPct / 100;
+  }
+  const finalMeleeMult = finalDamageTakenFromResistancePct(def?.meleeResistancePct);
+  if (typeof finalMeleeMult === 'number') {
+    const factionMelee = (factionRes as any)[def?.faction]?.PHYS_MELEE;
+    const factionMeleeMult = typeof factionMelee === 'number'
+      ? 1 + factionMelee
+      : 1;
+    resolved.melee = factionMeleeMult > 0
+      ? finalMeleeMult / factionMeleeMult
+      : finalMeleeMult;
   }
   const finalDivineMult = finalDamageTakenFromResistancePct(def?.divineResistancePct);
   if (typeof finalDivineMult === 'number') {
@@ -497,7 +508,7 @@ export function resistanceSummary(type: EnemyType): Array<{ label: string; value
   const dotImmune = !!def?.dotImmune;
   const divineOnly = !!def?.divineOnly;
   return [
-    ['Melee', divineOnly || def?.meleeImmune ? 0 : r.melee],
+    ['Melee', divineOnly || def?.meleeImmune ? 0 : (finalDamageTakenFromResistancePct(def?.meleeResistancePct) ?? r.melee)],
     ['Ranged', divineOnly || def?.rangedImmune ? 0 : r.ranged],
     // 2026-05 v9: include the three new per-enemy elemental resists so
     // Codex / EnemyInspect lists them alongside melee/ranged when set.

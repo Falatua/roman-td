@@ -274,7 +274,6 @@ describe('Enemy resistances — per-enemy multipliers', () => {
       EnemyType.BOSS_FLYER_VULTURE,
       EnemyType.ANUBIS_PRIEST_COMMANDER,
       EnemyType.TYPHON,
-      EnemyType.NAGA_ORACLE,
       EnemyType.STONE_JUGGERNAUT
     ];
 
@@ -292,6 +291,24 @@ describe('Enemy resistances — per-enemy multipliers', () => {
         expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine answer`).toBeGreaterThan(0);
       }
     }
+  });
+
+  it('gives Naga Oracle 85% final melee resistance without melee immunity', () => {
+    const type = EnemyType.NAGA_ORACLE;
+    const def: any = (enemiesData as any)[type];
+    const enemy = makeEnemy(type, EnemyFaction.OCEAN);
+    const perEnemy = enemyDamageMultiplier(enemy, DamageType.PHYS_MELEE);
+    const final = resistanceModifier(enemy.faction, DamageType.PHYS_MELEE) * perEnemy;
+    const armor = armorProfile(type).find(row => row.damageType === 'PHYS_MELEE');
+    const summary = resistanceSummary(type).find(row => row.label === 'Melee');
+
+    expect(def.meleeImmune).not.toBe(true);
+    expect(def.meleeResistancePct).toBe(85);
+    expect(perEnemy).toBeCloseTo(1 / 6, 6);
+    expect(final).toBeCloseTo(0.15, 6);
+    expect(armor).toMatchObject({ armorPct: 85, immune: false });
+    expect(armor?.finalMult).toBeCloseTo(0.15, 6);
+    expect(summary?.value).toBeCloseTo(0.15, 6);
   });
 
   it('gives selected post-W15 enemies true physical-ranged immunity with readable UI armor', () => {

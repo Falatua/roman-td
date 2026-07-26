@@ -1111,7 +1111,7 @@
     "sleepDartTravelTilesPerSec": 5.2,
     "sleepDartDurationSec": 3.25,
     "sleepDartLandOnly": true,
-    "meleeImmune": true,
+    "meleeResistancePct": 85,
     "immuneFire": true,
     "immuneHellfire": true
   },

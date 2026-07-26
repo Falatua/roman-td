@@ -1606,6 +1606,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   const traits: string[] = [];
   // Combat / damage
   if (def.meleeImmune) traits.push('MELEE-IMMUNE — physical melee deals 0 damage');
+  if (typeof def.meleeResistancePct === 'number') traits.push(`MELEE RESISTANCE — takes ${100 - def.meleeResistancePct}% physical melee damage after faction modifiers (${def.meleeResistancePct}% final resistance); not immune`);
   if (def.divineOnly) traits.push('DIVINE-ONLY — can only be targeted and damaged by divine attacks');
   if (def.divineImmune) traits.push('DIVINE-IMMUNE — divine damage deals 0 damage');
   if (typeof def.divineResistancePct === 'number') traits.push(`DIVINE RESISTANCE — takes ${100 - def.divineResistancePct}% DIVINE damage after faction modifiers (${def.divineResistancePct}% final resistance); not immune`);
