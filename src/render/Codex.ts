@@ -1025,6 +1025,9 @@ function renderTab(tab: string): string {
         <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ff9933;display:inline-block;border:1px solid #000"></span> NEEDS PROSPECT — keep a prospect to unlock</span>
         <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ffd34d;display:inline-block;border:1px solid #000"></span> PARTIAL — have some, missing some</span>
         <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#5a4a30;display:inline-block;border:1px solid #000"></span> LOCKED — none owned</span>
+      </div>
+      <div style="margin:-2px 0 10px;padding:8px 10px;background:#171208;border:1px solid #5a4a30;color:#cdb98a;font-size:11px;line-height:1.5">
+        📌 Pin up to <b style="color:#ffd34d">${MAX_PINNED_RECIPES} recipes</b> to the right-side rail. If every slot is full, pinning another recipe replaces the oldest. The rail scrolls independently so extra cards never resize the battlefield.
       </div>`;
     return `${section('COMBINATION LOGIC',
       `<div style="font-size:11px;color:#cdb98a;line-height:1.5">Recipes listed in DIFFICULTY ORDER — easiest single-step builds first, cross-combos and super combos at the bottom. Color-coded against the towers you have: <b style="color:#88ff88">Green</b> = committed towers, <b style="color:#ff9933">orange</b> = pending prospects (you'll have to KEEP them first). Each result card carries a <b style="color:#c4731a">DAMAGE-TYPE</b> chip (Melee / Ranged / Siege / Fire / Divine) and a <b style="color:#5aa6d4">MODE</b> chip (Melee swing vs Projectile) so you can spot a combo's role at a glance before reading the ability.</div>${legend}

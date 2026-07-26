@@ -35,8 +35,8 @@ describe('pinned recipe tracker', () => {
     });
   });
 
-  it('allows six pinned recipes before replacing the oldest', () => {
-    expect(MAX_PINNED_RECIPES).toBe(6);
+  it('allows eight pinned recipes before replacing the oldest', () => {
+    expect(MAX_PINNED_RECIPES).toBe(8);
 
     togglePinnedRecipe('SCORPION_BOLT');
     togglePinnedRecipe('HORSEMAN');
@@ -44,27 +44,33 @@ describe('pinned recipe tracker', () => {
     togglePinnedRecipe('AERARIUM');
     togglePinnedRecipe('EAGLE_STANDARD');
     togglePinnedRecipe('BESTIARIUS');
+    togglePinnedRecipe('SIEGE_ONAGER');
+    togglePinnedRecipe('COHORT_GUARD');
     expect(getPinnedRecipes()).toEqual([
       'SCORPION_BOLT',
       'HORSEMAN',
       'PLAGUE_CART',
       'AERARIUM',
       'EAGLE_STANDARD',
-      'BESTIARIUS'
+      'BESTIARIUS',
+      'SIEGE_ONAGER',
+      'COHORT_GUARD'
     ]);
 
-    togglePinnedRecipe('SIEGE_ONAGER');
+    togglePinnedRecipe('WAR_CHARIOT');
     expect(getPinnedRecipes()).toEqual([
       'HORSEMAN',
       'PLAGUE_CART',
       'AERARIUM',
       'EAGLE_STANDARD',
       'BESTIARIUS',
-      'SIEGE_ONAGER'
+      'SIEGE_ONAGER',
+      'COHORT_GUARD',
+      'WAR_CHARIOT'
     ]);
   });
 
-  it('dedupes and caps saved recipes at six', () => {
+  it('dedupes and caps saved recipes at eight', () => {
     setPinnedRecipes([
       'SCORPION_BOLT',
       'HORSEMAN',
@@ -73,7 +79,9 @@ describe('pinned recipe tracker', () => {
       'AERARIUM',
       'EAGLE_STANDARD',
       'BESTIARIUS',
-      'SIEGE_ONAGER'
+      'SIEGE_ONAGER',
+      'COHORT_GUARD',
+      'WAR_CHARIOT'
     ]);
     expect(getPinnedRecipes()).toEqual([
       'SCORPION_BOLT',
@@ -81,7 +89,9 @@ describe('pinned recipe tracker', () => {
       'PLAGUE_CART',
       'AERARIUM',
       'EAGLE_STANDARD',
-      'BESTIARIUS'
+      'BESTIARIUS',
+      'SIEGE_ONAGER',
+      'COHORT_GUARD'
     ]);
   });
 
