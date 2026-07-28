@@ -15,6 +15,8 @@ export interface HarborDraftOffer {
   recipeAssisted?: boolean;
 }
 
+export const HARBOR_DRAFT_OFFER_COUNT = 3;
+
 export const NAVAL_TOWER_TYPES: TowerType[] = [
   TowerType.TRIREME_BALLISTA,
   TowerType.CORVUS_BOARDING_SHIP,
@@ -156,7 +158,7 @@ export function buildHarborDraftOffers(state: GameStateShape, forceRefresh = fal
       recipeAssisted: true
     });
   }
-  while (pool.length > 0 && offers.length < 3) {
+  while (pool.length > 0 && offers.length < HARBOR_DRAFT_OFFER_COUNT) {
     const idx = Math.floor(Math.random() * pool.length);
     const type = pool.splice(idx, 1)[0];
     offers.push({ type, tier, price: harborDraftPrice(tier, type) });
@@ -171,6 +173,16 @@ export function buildHarborDraftOffers(state: GameStateShape, forceRefresh = fal
 }
 
 export function queueHarborDraftPurchase(state: GameStateShape, offer: HarborDraftOffer): boolean {
+  const activeOffers = (state as any).__harborDraftOffers;
+  const isActiveOffer = Array.isArray(activeOffers) && activeOffers.some((active: HarborDraftOffer) =>
+    active.type === offer.type &&
+    active.tier === offer.tier &&
+    active.price === offer.price
+  );
+  if (!isActiveOffer) {
+    state.hint = 'That naval contract is no longer available in this Harbor draft.';
+    return false;
+  }
   if (!canAfford(state, offer.price)) {
     state.hint = `The Harbor wants ${offer.price}g. You have ${state.gold}g.`;
     return false;

@@ -170,6 +170,16 @@ export interface ShopState {
   // round. No cap — pure RNG, by design.
   gambleSpinsThisVisit?: number;
   gambleWinsThisVisit?: string[];
+  // Mercator-only: persistent confirmation shown after a Champion or T5
+  // tower purchase so the player can see what was paid for and queued even
+  // after the bought card leaves the current visit shelf.
+  lastPlaceablePurchase?: {
+    type: string;
+    name: string;
+    tier: number;
+    price: number;
+    kind: 'hero' | 'mercator';
+  };
 }
 
 export function removeShopOfferForVisit(shop: ShopState, offer: ShopOffer): void {

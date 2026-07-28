@@ -1161,8 +1161,12 @@ describe('Sample SFX wiring', () => {
     expect(shop).toContain('function animateMercatorPurchaseAndRefresh');
     expect(shop).toContain('@keyframes mercatorOfferBoughtAway');
     expect(shop).toContain("card.classList.add('merc-card-purchased')");
-    expect(shop).toContain("button.textContent = 'PURCHASED'");
-    expect(shop).toContain("timer(refresh, 360)");
+    expect(shop).toContain("button.textContent = 'PURCHASED · QUEUED'");
+    expect(shop).toContain("timer(refresh, 680)");
+    expect(shop).toContain("receiptRow.setAttribute('aria-live', 'polite')");
+    expect(shop).toContain('PURCHASE CONFIRMED');
+    expect(shop).toContain('PLACEMENT QUEUE');
+    expect(shop).toContain('shop.lastPlaceablePurchase = {');
     expect(shop).toMatch(/removeMercatorPlaceableOfferForVisit\(shop, state, offer, purchaseKind\);\s+animateMercatorPurchaseAndRefresh\(card, buy, refresh\);/);
     expect(shop).toMatch(/removeMercatorPlaceableOfferForVisit\(shop, state, offer, 'mercator'\);\s+animateMercatorPurchaseAndRefresh\(card, buy, refresh\);/);
   });
@@ -1465,8 +1469,14 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(harborModal).toContain('PASS THIS DRAFT');
     expect(harborModal).toContain('showHarborWaveClearModal(state: GameStateShape, clearedWave: number, onOpenDraft?: () => void)');
     expect(harborModal).toContain('onOpenDraft?.();');
+    expect(harborModal).toContain('You may buy one, two, or all three');
     expect(harborModal).toContain('You may also pass. The Harbor quartermaster returns with a refreshed draft after the next cleared wave that included water-based enemies.');
     expect(harborModal).toContain('A fresh draft appears after every cleared water-enemy wave.');
+    expect(harborModal).toContain('CONTRACTS LEFT');
+    expect(harborModal).toContain('harbor-contract-purchased');
+    expect(harborModal).toContain('CONTRACT SIGNED');
+    expect(harborModal).toContain('showHarborDraftModal(state, remainingOffers, onUpdate, nextReceipt)');
+    expect(harborModal).toContain('if (remainingOffers.length === 0)');
   });
 
   it('shows full naval contract stats and details in the Harbor Draft', () => {
@@ -1481,7 +1491,7 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(harborModal).toContain('Does not complete a recipe with your current towers yet.');
     expect(harborModal).toContain('function navalContractDetailsHtml');
     expect(harborModal).toContain('towerStatBreakdown(preview, state as any)');
-    expect(harborModal).toContain('Each card shows the tier-adjusted stats you are buying and whether the contract completes a recipe right now.');
+    expect(harborModal).toContain('Each card shows the tier-adjusted stats and current recipe value.');
     for (const label of ['DPS', 'ATK/S', 'RANGE', 'TYPE', 'CRIT', 'PLACE']) {
       expect(harborModal, `Harbor Draft should show ${label} detail`).toContain(`['${label}'`);
     }

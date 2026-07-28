@@ -58,16 +58,16 @@ function ensureMercatorPurchaseAnimationStyle() {
   st.textContent = `
     @keyframes mercatorOfferBoughtAway {
       0%   { opacity:1; transform:translateY(0) scale(1); filter:brightness(1); }
-      35%  { opacity:1; transform:translateY(-3px) scale(1.025); filter:brightness(1.45) drop-shadow(0 0 10px #ffd34d); }
+      18%, 62% { opacity:1; transform:translateY(-3px) scale(1.025); filter:brightness(1.45) drop-shadow(0 0 10px #ffd34d); }
       100% { opacity:0; transform:translateX(28px) translateY(-8px) scale(0.86); filter:brightness(0.75) drop-shadow(0 0 0 #000); }
     }
     .merc-card-purchased {
-      animation: mercatorOfferBoughtAway 0.34s ease-in forwards !important;
+      animation: mercatorOfferBoughtAway 0.66s ease-in forwards !important;
       pointer-events:none !important;
       overflow:hidden;
     }
     .merc-card-purchased::after {
-      content:'PURCHASED';
+      content:'PURCHASE CONFIRMED';
       position:absolute;
       inset:40% 8px auto 8px;
       background:rgba(12,10,8,0.92);
@@ -86,10 +86,10 @@ function ensureMercatorPurchaseAnimationStyle() {
 function animateMercatorPurchaseAndRefresh(card: HTMLElement, button: HTMLButtonElement, refresh: () => void): void {
   ensureMercatorPurchaseAnimationStyle();
   button.disabled = true;
-  button.textContent = 'PURCHASED';
+  button.textContent = 'PURCHASED · QUEUED';
   card.classList.add('merc-card-purchased');
   const timer = typeof window !== 'undefined' ? window.setTimeout.bind(window) : setTimeout;
-  timer(refresh, 360);
+  timer(refresh, 680);
 }
 
 function imgSrcFromTex(key: string): string | null {
@@ -664,8 +664,9 @@ function renderMercatorShop(
   const goldFill = state.gold;
   const invUsed = inv.slots.length;
   const invCap = INVENTORY_SIZE;
+  const pendingPlacementCount = state.pendingPurchasedTowers?.length ?? 0;
   const resourcesBar = document.createElement('div');
-  resourcesBar.style.cssText = `background:#0c0a08;border-bottom:2px solid #5a4a30;padding:10px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;flex-shrink:0;font-size:11px;letter-spacing:1px`;
+  resourcesBar.style.cssText = `background:#0c0a08;border-bottom:2px solid #5a4a30;padding:10px 18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;flex-shrink:0;font-size:11px;letter-spacing:1px`;
   resourcesBar.innerHTML = `
     <div>
       <div style="color:#aa9a4a;font-size:9px;letter-spacing:2px">GOLD</div>
@@ -678,8 +679,27 @@ function renderMercatorShop(
     <div>
       <div style="color:#aa9a4a;font-size:9px;letter-spacing:2px">LIVES BOUGHT</div>
       <div style="color:#fff8e0;font-size:18px;font-weight:bold">${shop.livesBoughtThisVisit} / ${shop.livesMaxThisVisit}</div>
+    </div>
+    <div>
+      <div style="color:#aa9a4a;font-size:9px;letter-spacing:2px">PLACEMENT QUEUE</div>
+      <div style="color:${pendingPlacementCount > 0 ? '#88ff88' : '#fff8e0'};font-size:18px;font-weight:bold">${pendingPlacementCount}</div>
     </div>`;
   panel.appendChild(resourcesBar);
+  if (shop.lastPlaceablePurchase) {
+    const receipt = shop.lastPlaceablePurchase;
+    const receiptSprite = imgSrcFromTex(receipt.type);
+    const receiptRow = document.createElement('div');
+    receiptRow.setAttribute('role', 'status');
+    receiptRow.setAttribute('aria-live', 'polite');
+    receiptRow.style.cssText = `background:#17210d;border-bottom:2px solid #6f8b32;padding:8px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0;box-shadow:inset 0 0 14px rgba(136,255,136,0.12)`;
+    receiptRow.innerHTML = `
+      ${receiptSprite ? `<img src="${receiptSprite}" alt="" style="width:42px;height:42px;image-rendering:pixelated;border:1px solid #88ff88;background:#0c0a08"/>` : ''}
+      <div style="min-width:0;flex:1">
+        <div style="font-size:9px;color:#88ff88;font-weight:bold;letter-spacing:2px">PURCHASE CONFIRMED</div>
+        <div style="margin-top:2px;color:#fff8e0;font-size:12px;line-height:1.35"><b>${escapeHtml(receipt.name)} ${receipt.kind === 'hero' ? 'Champion' : `T${receipt.tier}`}</b> purchased for <b style="color:#f0c040">${receipt.price}g</b>. ${pendingPlacementCount > 0 ? `${pendingPlacementCount} paid tower${pendingPlacementCount === 1 ? '' : 's'} waiting for placement.` : 'Purchase recorded.'}</div>
+      </div>`;
+    panel.appendChild(receiptRow);
+  }
 
   // ── Scrollable body ───────────────────────────────────────────────
   const body = document.createElement('div');
@@ -700,12 +720,12 @@ function renderMercatorShop(
     card.style.cssText = `border:2px solid ${completesRecipe ? '#66ff88' : TIER_COL[offer.tier]};padding:10px 8px 8px;background:${completesRecipe ? '#0c1a10' : '#0c0a08'};display:flex;flex-direction:column;gap:4px;text-align:center;align-items:center;position:relative;`;
     const spriteSrc = imgSrcFromTex(offer.type);
     const towerDef: any = (towersData as any)[offer.type] ?? {};
-    const towerName = towerDef.name ?? offer.type.replace(/_/g,' ');
+    const displayName = towerDef.name ?? offer.type.replace(/_/g,' ');
     const championDetails = isChampion
       ? championHeroDetailsHtml(offer.type, towerDef, towerDef.tint ?? TIER_COL[offer.tier])
       : '';
     const portrait = spriteSrc
-      ? `<div style="width:64px;height:64px;border:1px solid ${TIER_COL[offer.tier]};background:#1a1410;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 8px ${TIER_COL[offer.tier]}55"><img src="${spriteSrc}" style="width:56px;height:56px;image-rendering:pixelated" alt="${towerName}"/></div>`
+      ? `<div style="width:64px;height:64px;border:1px solid ${TIER_COL[offer.tier]};background:#1a1410;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 8px ${TIER_COL[offer.tier]}55"><img src="${spriteSrc}" style="width:56px;height:56px;image-rendering:pixelated" alt="${displayName}"/></div>`
       : `<div style="width:64px;height:64px;border:1px solid ${TIER_COL[offer.tier]};background:#1a1410;color:#cdb98a;font-size:9px;display:flex;align-items:center;justify-content:center;letter-spacing:1px">NO IMG</div>`;
     const recipeBadge = completesRecipe
       ? `<div class="recipe-ready-badge" style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#0c1a10;border:1.5px solid #66ff88;color:#bbffcc;font-size:9px;font-weight:bold;letter-spacing:1px;padding:2px 6px;white-space:nowrap;text-shadow:0 0 4px #66ff88">★ COMPLETES RECIPE</div>`
@@ -719,7 +739,7 @@ function renderMercatorShop(
       ${recipeBadge}
       <div style="color:${TIER_COL[offer.tier]};font-weight:bold;font-size:13px;letter-spacing:2px">${isChampion ? 'HERO' : `T${offer.tier}`}</div>
       ${portrait}
-      <div style="color:#fff8e0;font-size:12px;font-weight:bold;line-height:1.25;margin-top:2px">${towerName}</div>
+      <div style="color:#fff8e0;font-size:12px;font-weight:bold;line-height:1.25;margin-top:2px">${displayName}</div>
       <div style="display:flex;gap:6px;font-size:9px;color:#cdb98a;letter-spacing:0.5px">
         <span title="Base DPS">⚔ ${dps}</span>
         <span title="Attack Speed">⏱ ${atkText}</span>
@@ -767,9 +787,16 @@ function renderMercatorShop(
       if (isChampion) recordMercatorChampionPurchase(state, offer.type);
       const qLen = state.pendingPurchasedTowers.length;
       const verb = isChampion ? 'Recruited' : 'Bought';
+      shop.lastPlaceablePurchase = {
+        type: String(offer.type),
+        name: displayName,
+        tier: offer.tier,
+        price: offer.price,
+        kind: purchaseKind
+      };
       state.hint = qLen > 1
-        ? `${verb} ${towerName(String(offer.type))}. ${qLen} placements queued — click empty tiles to place.`
-        : `${verb} ${towerName(String(offer.type))}. Click an empty tile to place it.`;
+        ? `${verb} ${displayName}. ${qLen} placements queued — click empty tiles to place.`
+        : `${verb} ${displayName}. Click an empty tile to place it.`;
       playPurchaseConfirm();
       SFX.itemPickup(isChampion ? 'LEGENDARY' : tierToRarity[Math.max(0, Math.min(4, offer.tier - 1))]);
       removeMercatorPlaceableOfferForVisit(shop, state, offer, purchaseKind);

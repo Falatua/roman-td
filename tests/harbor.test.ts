@@ -12,6 +12,7 @@ import { commanderDamageTakenMult, commanderSpeedMult, isCommanderType, tickComm
 import towersData from '../src/data/towers.json';
 import {
   buildHarborDraftOffers,
+  HARBOR_DRAFT_OFFER_COUNT,
   harborDraftTierForWave,
   harborTowerCanUseTile,
   isHarborTowerType,
@@ -241,14 +242,33 @@ describe('Harbor naval tower system', () => {
 
   it('queues Harbor purchases and only lets naval towers use water tiles', () => {
     const s = readyState();
-    markHarborUnlocked(s);
+    s.wave = 3;
+    queueHarborDraftForClearedOceanWave(s);
     const tile = waterTile();
-    const offer = { type: TowerType.TRIREME_BALLISTA, tier: 2 as const, price: 100 };
+    const offer = buildHarborDraftOffers(s)[0];
     expect(queueHarborDraftPurchase(s, offer)).toBe(true);
-    expect(s.pendingPurchasedTowers?.[0]).toMatchObject({ type: TowerType.TRIREME_BALLISTA, tier: 2, source: 'harbor' });
-    expect(harborTowerCanUseTile(s, TowerType.TRIREME_BALLISTA, tile.col, tile.row)).toBe(true);
+    expect(s.pendingPurchasedTowers?.[0]).toMatchObject({ type: offer.type, tier: 2, source: 'harbor' });
+    expect(harborTowerCanUseTile(s, offer.type, tile.col, tile.row)).toBe(true);
     expect(harborTowerCanUseTile(s, TowerType.MILITES, tile.col, tile.row)).toBe(false);
-    expect(harborTowerCanUseTile(s, TowerType.TRIREME_BALLISTA, WATER_ZONE.col + WATER_ZONE.width + 1, WATER_ZONE.row)).toBe(false);
+    expect(harborTowerCanUseTile(s, offer.type, WATER_ZONE.col + WATER_ZONE.width + 1, WATER_ZONE.row)).toBe(false);
+  });
+
+  it('allows one purchase from each of the three contracts in a Harbor draft', () => {
+    const s = readyState();
+    s.wave = 12;
+    queueHarborDraftForClearedOceanWave(s);
+    const offers = buildHarborDraftOffers(s);
+    expect(offers).toHaveLength(HARBOR_DRAFT_OFFER_COUNT);
+
+    for (let i = 0; i < offers.length; i++) {
+      expect(queueHarborDraftPurchase(s, offers[i]), `purchase ${i + 1}`).toBe(true);
+      expect((s as any).__harborDraftOffers).toHaveLength(HARBOR_DRAFT_OFFER_COUNT - i - 1);
+      expect(s.pendingPurchasedTowers).toHaveLength(i + 1);
+    }
+
+    expect(new Set(s.pendingPurchasedTowers?.map(t => t.type)).size).toBe(HARBOR_DRAFT_OFFER_COUNT);
+    expect(queueHarborDraftPurchase(s, offers[0])).toBe(false);
+    expect(s.pendingPurchasedTowers).toHaveLength(HARBOR_DRAFT_OFFER_COUNT);
   });
 
   it('tideforged combos preserve ocean tiles instead of turning them into stones', () => {
