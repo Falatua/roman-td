@@ -265,6 +265,23 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     }
   });
 
+  it('gives Cyclops 95% final Divine resistance without hard immunity', () => {
+    const type = EnemyType.CYCLOPS;
+    const def: any = (enemiesData as any)[type];
+    const enemy = makeEnemy(type, EnemyFaction.ROMAN_MYTH);
+    const final = resistanceModifier(enemy.faction, DamageType.DIVINE)
+      * enemyDamageMultiplier(enemy, DamageType.DIVINE);
+    const armor = armorProfile(type).find(row => row.damageType === 'DIVINE');
+    const summary = resistanceSummary(type).find(row => row.label === 'Divine');
+
+    expect(def.divineImmune).not.toBe(true);
+    expect(def.divineResistancePct).toBe(95);
+    expect(final).toBeCloseTo(0.05, 8);
+    expect(armor).toMatchObject({ armorPct: 95, immune: false });
+    expect(armor?.finalMult).toBeCloseTo(0.05, 8);
+    expect(summary?.value).toBeCloseTo(0.05, 8);
+  });
+
   it('gives selected post-W15 enemies true physical-melee immunity with readable UI armor', () => {
     const meleeImmuneTypes = [
       EnemyType.MONGOL_SCOUT,
@@ -424,8 +441,7 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     const divineImmuneTypes = [
       EnemyType.MONGOL_CAPTAIN,
       EnemyType.ANUBIS_PRIEST,
-      EnemyType.ANUBIS_PRIEST_COMMANDER,
-      EnemyType.CYCLOPS
+      EnemyType.ANUBIS_PRIEST_COMMANDER
     ];
 
     for (const type of divineImmuneTypes) {

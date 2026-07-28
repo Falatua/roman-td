@@ -929,7 +929,7 @@
     "isBoss": false,
     "livesCost": 5,
     "isElite": true,
-    "divineImmune": true,
+    "divineResistancePct": 95,
     "siegeImmune": true
   },
   "SUPER_GIANT_COLOSSUS": {
