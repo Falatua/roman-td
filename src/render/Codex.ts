@@ -12,7 +12,13 @@ import { POOL_PROBABILITIES, ECONOMY, HERO_XP_THRESHOLDS } from '../constants';
 import { tex } from './Assets';
 import { closeGameModals } from './ModalManager';
 import { itemFamily } from '../systems/ItemRules';
-import { resistanceSummary, armorProfile, armorDamageTypeShortLabel } from '../systems/EnemyResistances';
+import {
+  BOSS_DOT_DAMAGE_TAKEN_PCT,
+  BOSS_DOT_RESISTANCE_PCT,
+  armorDamageTypeShortLabel,
+  armorProfile,
+  resistanceSummary
+} from '../systems/EnemyResistances';
 import { markScrollable } from './ScrollCues';
 import { enhanceModalErgonomics } from './ModalErgonomics';
 import { togglePinnedRecipe, getPinnedRecipes, MAX_PINNED_RECIPES } from './PinnedRecipe';
@@ -629,11 +635,11 @@ function renderTab(tab: string): string {
           ${noteCard('FREEZE', 'Enemy is fully locked in place for the duration — zero movement, and knockback cannot displace them either. Bosses take half-duration freezes. <b style="color:#88ddff">+10% direct damage taken</b> while frozen (DoT ticks unaffected) — see HARD-CC DAMAGE AMP below.')}
           ${noteCard('STUN', 'Briefly halts an enemy. All tower, hero, and item-granted stuns last <b style="color:#88ddff">20% longer</b>. <b style="color:#ff7766">Bosses are immune to stun</b> so their signature abilities remain active; freeze affects them for half duration. Stunned enemies take <b style="color:#88ddff">+10% direct damage</b>, while DoT damage is unchanged.')}
           ${noteCard('Stun / Freeze Diminishing Returns', 'After a STUN or FREEZE expires on an enemy, that enemy gains a brief immunity to new stuns/freezes — duration equal to the just-expired lockdown (capped 1.5s). Stops multi-tower stun chains from locking enemies in place permanently. Tower mechanics still fire and damage normally; only the lockdown itself caps out at ~50% uptime when multiple lockdown towers stack on the same target.')}
-          ${noteCard('BURN / BURNING GROUND', 'Fire towers deal their direct hit plus one burning-ground effect on impact. The patch deals <b style="color:#ff8833">4%-7% max HP per second for 4 seconds</b>, rising from 4% at T1 to 7% at T5, and bypasses faction resistance. Bosses reduce this damage to 18%.')}
+          ${noteCard('BURN / BURNING GROUND', `Fire towers deal their direct hit plus one burning-ground effect on impact. The patch deals <b style="color:#ff8833">4%-7% max HP per second for 4 seconds</b>, rising from 4% at T1 to 7% at T5. It honors Burn resistance and immunity. Bosses take ${BOSS_DOT_DAMAGE_TAKEN_PCT}% of eligible damage.`)}
           ${noteCard('POISON (burst)', 'Poison deals high damage over a short duration. Poisoned Blade applies 6% max HP damage per second on hit.')}
           ${noteCard('BLEED (sustained DoT)', 'Bleed lasts longer than poison. Barbed Gladius deals 2% max HP per second for 10 seconds. Alpha Pack Fang deals 2.4% for 14 seconds. Falcata Blade deals 3% for 8 seconds. Undead and other bleed-immune enemies ignore it.')}
           ${noteCard('HELLFIRE', 'Hellfire is permanent true damage that lasts until the target dies. God of War applies 1% max HP per second on every hit. Pontifex applies 1%-5% per second to bosses as its tier rises. Multiple applications stack only until the DoT limits below are reached.')}
-          ${noteCard('AGGREGATE DOT CAP (7% max HP/sec)', 'Burn, poison, bleed, and hellfire together can deal at most <b style="color:#88ff88">7% of one enemy\'s max HP per second</b>. Sources add together until the cap; extra DoT beyond it adds no damage. Hellfire has its own 2% per-second limit inside that total. Bosses also reduce DoT damage to 18% of its normal value.')}
+          ${noteCard('AGGREGATE DOT CAP (7% max HP/sec)', `Burn, poison, bleed, and hellfire together can deal at most <b style="color:#88ff88">7% of one enemy's max HP per second</b>. Sources add together until the cap; extra DoT beyond it adds no damage. Hellfire has its own 2% per-second limit inside that total. Every boss takes only <b style="color:#a078d0">${BOSS_DOT_DAMAGE_TAKEN_PCT}%</b> of eligible DoT damage (${BOSS_DOT_RESISTANCE_PCT}% resisted), before its own faction, wave, and immunity rules.`)}
           ${noteCard('STUN & FREEZE DAMAGE BONUS', 'A frozen enemy takes +10% direct damage, and a stunned enemy takes +10%. An enemy affected by both takes +20%. Burn, poison, bleed, and hellfire do not gain this bonus. Pair control towers such as Frozen Legion, Augur, Stormcaller, Imperator Guard, Librator, or Naval Bombardment with strong direct hitters.')}
           ${noteCard('Armor Shred', 'Restores resisted Physical Melee and Physical Ranged faction damage to normal for the duration. It does not improve Siege, Fire, Divine, or DoT damage and cannot bypass a hard immunity.')}
           ${noteCard('FEAR', 'Enemy walks AWAY from gate briefly.')}
@@ -1611,6 +1617,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   // Trait list — exact mirror of EnemyInspect's traits[] construction.
   const traits: string[] = [];
   // Combat / damage
+  if (def.isBoss) traits.push(`BOSS DOT WARD — takes ${BOSS_DOT_DAMAGE_TAKEN_PCT}% damage from Burn, Poison, Bleed, Hellfire, and burning ground (${BOSS_DOT_RESISTANCE_PCT}% resisted)`);
   if (def.meleeImmune) traits.push('MELEE-IMMUNE — physical melee deals 0 damage');
   if (typeof def.meleeResistancePct === 'number') traits.push(`MELEE RESISTANCE — takes ${100 - def.meleeResistancePct}% physical melee damage after faction modifiers (${def.meleeResistancePct}% final resistance); not immune`);
   if (def.divineOnly) traits.push('DIVINE-ONLY — can only be targeted and damaged by divine attacks');

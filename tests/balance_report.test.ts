@@ -4,7 +4,7 @@
 // Not a pass/fail test — it prints a phase-weighted effective-power model
 // for every tower using the REAL resist pipeline (resistanceModifier ×
 // enemyDamageMultiplier), the real 30-wave spawn tables, crits, AoE/multi-
-// target expectations, DoT (%maxHP/sec vs phase-average HP, boss ×0.18),
+// target expectations, DoT (%maxHP/sec vs phase-average HP, shared boss ward),
 // the post-W7 ranged/siege ground haircut, and flyer-coverage rules.
 // Mechanics that live only in ability prose (splash tiles, bolt counts,
 // chains, DoT magnitudes, boss/flyer bonuses) are regex-extracted from the
@@ -17,7 +17,7 @@ import enemiesData from '../src/data/enemies.json';
 import itemsData from '../src/data/items_permanent.json';
 import { DamageType, EnemyFaction, StatusEffectKind } from '../src/types';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
-import { enemyDamageMultiplier, statusEffectiveness } from '../src/systems/EnemyResistances';
+import { bossDotDamageMultiplier, enemyDamageMultiplier, statusEffectiveness } from '../src/systems/EnemyResistances';
 
 const RUN = !!process.env.BALANCE_REPORT;
 
@@ -142,7 +142,7 @@ function score(id: string, def: any, m: Mech, pool: PoolEntry[], phaseIdx: numbe
     dmgSum += e.weight * res * bonus;
     if (m.dot) {
       const eff = statusEffectiveness(fake, KIND_OF[m.dot.kind]);
-      const bossMod = e.isBoss ? 0.18 : 1;
+      const bossMod = bossDotDamageMultiplier(fake);
       const mag = Math.min(m.dot.mag, m.dot.kind === 'HELLFIRE' ? 0.02 : 0.07);
       dotSum += e.weight * mag * e.hp * eff * bossMod;
       hpSum += e.weight;

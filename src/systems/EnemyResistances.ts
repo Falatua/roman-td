@@ -3,6 +3,18 @@ import enemiesData from '../data/enemies.json';
 import factionRes from '../data/factionResistances.json';
 import { factionStatusModifier, resistanceModifier } from './DamageTypeSystem';
 
+// Bosses share one additional damage-over-time ward on top of faction,
+// per-enemy, wave, and immunity rules. Keep this separate from
+// statusEffectiveness: that function also controls status application,
+// while this multiplier only reduces damage ticks.
+export const BOSS_DOT_DAMAGE_MULTIPLIER = 0.18;
+export const BOSS_DOT_DAMAGE_TAKEN_PCT = Math.round(BOSS_DOT_DAMAGE_MULTIPLIER * 100);
+export const BOSS_DOT_RESISTANCE_PCT = 100 - BOSS_DOT_DAMAGE_TAKEN_PCT;
+
+export function bossDotDamageMultiplier(enemy: Pick<Enemy, 'isBoss'>): number {
+  return enemy.isBoss ? BOSS_DOT_DAMAGE_MULTIPLIER : 1;
+}
+
 export interface EnemyResistProfile {
   melee?: number;
   ranged?: number;

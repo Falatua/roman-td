@@ -6,7 +6,15 @@ import enemiesData from '../data/enemies.json';
 import factionRes from '../data/factionResistances.json';
 import wavesData from '../data/waves.json';
 import { tex } from './Assets';
-import { resistanceSummary, armorProfileForEnemy, armorDamageTypeShortLabel, statusEffectiveness } from '../systems/EnemyResistances';
+import {
+  BOSS_DOT_DAMAGE_TAKEN_PCT,
+  BOSS_DOT_RESISTANCE_PCT,
+  armorDamageTypeShortLabel,
+  armorProfileForEnemy,
+  bossDotDamageMultiplier,
+  resistanceSummary,
+  statusEffectiveness
+} from '../systems/EnemyResistances';
 import { damageTypeLabel } from '../format';
 import { closeGameModals } from './ModalManager';
 import { pretty } from '../format';
@@ -221,7 +229,11 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       { label: 'Poison', kind: StatusEffectKind.POISON }
     ];
     for (const d of dots) {
-      const value = statusEffectiveness(e, d.kind);
+      const isDamageOverTime = d.kind === StatusEffectKind.BURN ||
+        d.kind === StatusEffectKind.BLEED ||
+        d.kind === StatusEffectKind.POISON;
+      const value = statusEffectiveness(e, d.kind) *
+        (isDamageOverTime ? bossDotDamageMultiplier(e) : 1);
       profile.push({ label: d.label, value, immune: value <= 0 });
     }
     return profile;
@@ -253,6 +265,10 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // data shown. The traits are grouped by category so reading is fast.
   const traits: { label: string; color?: string }[] = [];
   // -- Combat / damage interaction --
+  if (isBossEnemy(e)) traits.push({
+    label: `BOSS DOT WARD — takes ${BOSS_DOT_DAMAGE_TAKEN_PCT}% damage from Burn, Poison, Bleed, Hellfire, and burning ground (${BOSS_DOT_RESISTANCE_PCT}% resisted)`,
+    color: '#a078d0'
+  });
   if (def?.meleeImmune) traits.push({ label: 'MELEE-IMMUNE — physical melee deals 0 damage', color: '#ee5555' });
   if (typeof def?.meleeResistancePct === 'number') traits.push({ label: `MELEE RESISTANCE — takes ${100 - def.meleeResistancePct}% physical melee damage after faction modifiers (${def.meleeResistancePct}% final resistance); not immune`, color: '#ffaa55' });
   if (def?.divineImmune) traits.push({ label: 'DIVINE-IMMUNE — divine damage deals 0 damage', color: '#ffd34d' });

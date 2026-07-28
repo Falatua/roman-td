@@ -21,7 +21,7 @@ import { GameStateShape, isWaveModifierActive } from '../GameState';
 import enemiesData from '../data/enemies.json';
 import waypointsData from '../data/waypoints.json';
 import wavesData from '../data/waves.json';
-import { isHellfireImmune, statusEffectiveness } from './EnemyResistances';
+import { bossDotDamageMultiplier, isHellfireImmune, statusEffectiveness } from './EnemyResistances';
 import { buildGroundPathB } from './PathFinder';
 import { campaignRelicEnemyHpMult, campaignRelicEnemySpeedMult } from './CampaignRelicSystem';
 import { commanderSpeedMult, isCommanderType, tickCommanderSupport } from './CommanderSystem';
@@ -536,7 +536,7 @@ export function tickBurnPatches(state: GameStateShape, dt: number) {
     // progression, just at slightly lower absolute output.
     //   Per-tier tick rates: T1 4.0% · T2 4.6% · T3 5.2% · T4 5.8% · T5 7.0%
     //
-    // Boss DoT reduction (×0.18) applies to burning ground.
+    // The shared boss DoT ward applies to burning ground too.
     //
     // 2026-05-20 — FIRE-DAMAGE CATEGORIZATION. The burning-ground tick
     // is FIRE damage by nature (Ignifer / Inferno Cart / Colossus
@@ -557,7 +557,7 @@ export function tickBurnPatches(state: GameStateShape, dt: number) {
     if (def?.immuneFire) continue;
     const burnMult = statusEffectiveness(e, StatusEffectKind.BURN);
     if (burnMult <= 0) continue;
-    const bossMod = e.isBoss ? 0.18 : 1.0;
+    const bossMod = bossDotDamageMultiplier(e);
     const dps = e.maxHp * 0.04 * (1 + (bestTier - 1) * 0.15) * bossMod * burnMult;
     e.hp -= dps * dt;
     e.lastDamagedTick = state.tick;
@@ -1365,7 +1365,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       // DOT vs BOSS (2026-05 v6): bosses were melting under stacked DOTs
       // late game. Trimmed boss DOT effectiveness from 30% → 18% so bosses
       // need direct damage to fall, not just a poisoned blade and patience.
-      const dotBossMod = e.isBoss ? 0.18 : 1.0;
+      const dotBossMod = bossDotDamageMultiplier(e);
       // BURN nerf (2026-05): 8% → 6%/sec to match the smaller DOT family
       // (poison was 7→6, bleed 1.2→1.0). Tick honors s.magnitude so any
       // future variant can scale around the new baseline.
@@ -1413,7 +1413,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // 2026-05-21 — DoT AGGREGATE CAP. Sum of all DoT ticks on one enemy
     // is clamped to a fraction of maxHP/sec, with HELLFIRE carving out
     // a tighter sub-cap. Caps the "stack 4 DoT sources and melt
-    // anything" pattern. Boss `dotBossMod = 0.18` is already folded
+    // anything" pattern. The shared boss DoT ward is already folded
     // into dotByKind above — this caps the FINAL tick.
     //
     // 2026-05-22 — Caps halved. Player reported killing the W20 boss
