@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import enemiesData from '../src/data/enemies.json';
 import { EnemyType } from '../src/types';
 import {
   classifyEnemy,
@@ -18,6 +20,16 @@ describe('authoritative enemy classification', () => {
     expect(classifyEnemy(EnemyType.UNDEAD_WAR_ELEPHANT)).toMatchObject({ boss: false, elite: true, beast: true });
     expect(isBossEnemy(EnemyType.HANNIBAL_BARCA)).toBe(true);
     expect(isEliteEnemy(EnemyType.HANNIBAL_BARCA)).toBe(false);
+  });
+
+  it('keeps the Sphinx a one-life elite flyer instead of a boss flyer in the Codex', () => {
+    const def: any = (enemiesData as any).SPHINX;
+    const codex = readFileSync('src/render/Codex.ts', 'utf8');
+
+    expect(def).toMatchObject({ isFlyer: true, isBoss: false, livesCost: 1 });
+    expect(isBossEnemy(EnemyType.SPHINX)).toBe(false);
+    expect(codex).toContain("SPHINX: 'ELITE'");
+    expect(codex).not.toContain("SPHINX: 'BOSS'");
   });
 
   it('provides one shared answer for tactical families', () => {
