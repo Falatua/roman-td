@@ -54,7 +54,7 @@ const GATE_EPIC = [
 ];
 const MERCATOR_RARE = [
   'HOURGLASS_OF_SATURN','STORM_JAVELIN','BATTLE_STANDARD','CENTURIONS_TRUMPET',
-  'GOLD_PURSE'
+  'GOLD_PURSE','SAPPERS_CHISEL','CALTROP_SATCHEL'
 ];
 const MERCATOR_MID = [
   'CAVALRY_SPUR','MERCURY_FEATHER','QUICKDRAW_GLOVES','FLYER_BANE',
@@ -89,16 +89,16 @@ const MERCATOR_EXCLUSIVE_RARE = [
   'BRINEHOOK_ROPE',
   'TIDEPIERCER_HARPOON'
 ];
-// 2026-05-18 — NEW EPIC TIER. Six items live here: 3 demoted legendary
-// melee items (Berserker's Muzzle, Celtic Longsword, Necrotic Longsword)
-// and 3 brand-new 60g picks (Lictor's Fasces, Auxiliary Sling, Optio's
-// Whistle). Mercator-exclusive — gate never carries Epic items.
+// The Epic shelf mixes raw power with anti-air, naval, and strategic
+// support options. Censor's Seal and Vulcan's Temper keep this tier from
+// collapsing into damage/range stat sticks.
 const MERCATOR_EPIC = [
   'BERSERKERS_MUZZLE','CELTIC_LONGSWORD','NECROTIC_LONGSWORD',
   'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE',
   // 2026 v2 — anti-air EPIC options.
   'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST',
-  'AEGEAN_PEARL','STORMGLASS_AMPHORA'
+  'AEGEAN_PEARL','STORMGLASS_AMPHORA',
+  'CENSORS_SEAL','VULCANS_TEMPER'
 ];
 // Premium Legendary stock shared by Mercator and the Gate Shop's single
 // rotating Legendary shelf. Event-exclusive rewards are intentionally absent.

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { APOTHEOSIS_ITEM_RANDOM_WEIGHT, AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, DOT_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, isDotItem, itemRandomSelectionWeight, itemEquipMode } from '../src/systems/ItemRules';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
-import { TowerType } from '../src/types';
+import { EnemyFaction, EnemyType, StatusEffectKind, TowerType } from '../src/types';
 import { createInventory, grantSoloStartingItems, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop, LEGENDARY_DROP_ITEM_POOL, SOLO_STARTING_ITEM_LOADOUT, ITEM_REWARD_VARIETY_WINDOW } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, MERCATOR_LEGENDARY } from '../src/systems/MerchantSystem';
 import { eligibleBaseTowerTypesAtTier } from '../src/systems/BaseTowerRoster';
@@ -12,6 +12,7 @@ import itemsData from '../src/data/items_permanent.json';
 import towersData from '../src/data/towers.json';
 import { LOOT_DROP_RATES } from '../src/constants';
 import { createGameState } from '../src/GameState';
+import { applyStrategicItemOnHit, applyStrategicItemResistanceRelief, STRATEGIC_ITEM_PROCS } from '../src/systems/CombatResolver';
 
 function itemAssetMap(): Record<string, string> {
   const source = readFileSync(path.join(process.cwd(), 'src/render/Assets.ts'), 'utf8');
@@ -33,6 +34,10 @@ describe('Item families', () => {
     expect(itemFamily('CENTURIONS_TRUMPET')).toBe('AURA');
     expect(itemFamily('GOLD_PURSE')).toBe('ECONOMY');
     expect(itemFamily('GALLIC_SHIELD_BOSS')).toBe('UTILITY');
+    expect(itemFamily('SAPPERS_CHISEL')).toBe('UTILITY');
+    expect(itemFamily('CALTROP_SATCHEL')).toBe('UTILITY');
+    expect(itemFamily('CENSORS_SEAL')).toBe('UTILITY');
+    expect(itemFamily('VULCANS_TEMPER')).toBe('DAMAGE');
     expect(itemFamily('CAPITOLINE_AEGIS')).toBe('SPECIAL');
     expect(itemFamily('BRINEHOOK_ROPE')).toBe('DAMAGE');
     expect(itemFamily('TIDEPIERCER_HARPOON')).toBe('DAMAGE');
@@ -47,6 +52,67 @@ describe('Item families', () => {
 
   it('unknown items default to SPECIAL', () => {
     expect(itemFamily('UNKNOWN_ITEM')).toBe('SPECIAL');
+  });
+});
+
+describe('Rare and Epic strategic item effects', () => {
+  function enemy() {
+    return {
+      id: 'item-target',
+      type: EnemyType.FERAL_DOG,
+      faction: EnemyFaction.DOGS,
+      hp: 100,
+      maxHp: 100,
+      baseSpeed: 1,
+      currentSpeed: 1,
+      isFlyer: false,
+      x: 0,
+      y: 0,
+      pathIndex: 0,
+      pathProgress: 0,
+      statusEffects: [],
+      hasFeared: false,
+      livesCost: 1,
+      isBoss: false,
+      reward: 1,
+      archetype: 'SWARM',
+      hpFlashTimer: 0
+    } as any;
+  }
+
+  it('keeps all three support procs periodic and mechanically distinct', () => {
+    const cases = [
+      ['SAPPERS_CHISEL', 3, StatusEffectKind.ARMOR_SHRED, 0],
+      ['CALTROP_SATCHEL', 4, StatusEffectKind.SLOW, STRATEGIC_ITEM_PROCS.CALTROP_SATCHEL.slowPct],
+      ['CENSORS_SEAL', 4, StatusEffectKind.MARK, STRATEGIC_ITEM_PROCS.CENSORS_SEAL.markPct]
+    ] as const;
+
+    for (const [itemId, procHit, statusKind, magnitude] of cases) {
+      const target = enemy();
+      const tower = { equippedItems: [itemId], qualityTier: 3, __hitCount: procHit - 1 };
+      applyStrategicItemOnHit(tower, target);
+      expect(target.statusEffects, `${itemId} before proc`).toHaveLength(0);
+      tower.__hitCount = procHit;
+      applyStrategicItemOnHit(tower, target);
+      expect(target.statusEffects, `${itemId} proc`).toEqual([
+        expect.objectContaining({ kind: statusKind, magnitude })
+      ]);
+    }
+  });
+
+  it("lets Vulcan's Temper relieve resistance without piercing immunity", () => {
+    const tower = { equippedItems: ['VULCANS_TEMPER'] };
+    expect(applyStrategicItemResistanceRelief(tower, 0.5)).toBeCloseTo(0.64);
+    expect(applyStrategicItemResistanceRelief(tower, 0)).toBe(0);
+    expect(applyStrategicItemResistanceRelief(tower, 1)).toBe(1);
+    expect(applyStrategicItemResistanceRelief({ equippedItems: [] }, 0.5)).toBe(0.5);
+  });
+
+  it('adds two Rare and two Epic choices to the ordinary item collection', () => {
+    expect((itemsData as any).SAPPERS_CHISEL.rarity).toBe('RARE');
+    expect((itemsData as any).CALTROP_SATCHEL.rarity).toBe('RARE');
+    expect((itemsData as any).CENSORS_SEAL.rarity).toBe('EPIC');
+    expect((itemsData as any).VULCANS_TEMPER.rarity).toBe('EPIC');
   });
 });
 

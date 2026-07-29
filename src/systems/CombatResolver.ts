@@ -301,6 +301,62 @@ export function applyResistanceBreakRelief(resMod: number, reliefPct: number): n
   return 1 - (1 - resMod) * (1 - pct);
 }
 
+export const STRATEGIC_ITEM_PROCS = {
+  SAPPERS_CHISEL: { every: 3, duration: 3.5 },
+  CALTROP_SATCHEL: { every: 4, duration: 2.6, slowPct: 0.25 },
+  CENSORS_SEAL: { every: 4, duration: 4, markPct: 0.20 },
+  VULCANS_TEMPER: { resistanceReliefPct: 0.28 }
+} as const;
+
+export function applyStrategicItemResistanceRelief(tower: Pick<Tower, 'equippedItems'>, resMod: number): number {
+  if (!tower.equippedItems.includes('VULCANS_TEMPER')) return resMod;
+  return applyResistanceBreakRelief(resMod, STRATEGIC_ITEM_PROCS.VULCANS_TEMPER.resistanceReliefPct);
+}
+
+export function applyStrategicItemOnHit(
+  tower: Pick<Tower, 'equippedItems' | 'qualityTier'> & { __hitCount?: number },
+  target: Enemy
+): void {
+  const hitCount = tower.__hitCount ?? 0;
+  if (hitCount <= 0) return;
+  if (
+    tower.equippedItems.includes('SAPPERS_CHISEL') &&
+    hitCount % STRATEGIC_ITEM_PROCS.SAPPERS_CHISEL.every === 0
+  ) {
+    pushStatus(
+      target,
+      StatusEffectKind.ARMOR_SHRED,
+      STRATEGIC_ITEM_PROCS.SAPPERS_CHISEL.duration,
+      0,
+      tower.qualityTier
+    );
+  }
+  if (
+    tower.equippedItems.includes('CALTROP_SATCHEL') &&
+    hitCount % STRATEGIC_ITEM_PROCS.CALTROP_SATCHEL.every === 0
+  ) {
+    pushStatus(
+      target,
+      StatusEffectKind.SLOW,
+      STRATEGIC_ITEM_PROCS.CALTROP_SATCHEL.duration,
+      STRATEGIC_ITEM_PROCS.CALTROP_SATCHEL.slowPct,
+      tower.qualityTier
+    );
+  }
+  if (
+    tower.equippedItems.includes('CENSORS_SEAL') &&
+    hitCount % STRATEGIC_ITEM_PROCS.CENSORS_SEAL.every === 0
+  ) {
+    pushStatus(
+      target,
+      StatusEffectKind.MARK,
+      STRATEGIC_ITEM_PROCS.CENSORS_SEAL.duration,
+      STRATEGIC_ITEM_PROCS.CENSORS_SEAL.markPct,
+      tower.qualityTier
+    );
+  }
+}
+
 function applyResistanceBreakAuras(
   resMod: number,
   target: Enemy,
@@ -1648,6 +1704,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.equippedItems.includes('IRON_TIP') && (t.damageType === DamageType.PHYS_MELEE || t.damageType === DamageType.PHYS_RANGED) && resMod < 1) {
         resMod += (1 - resMod) * 0.15;
       }
+      resMod = applyStrategicItemResistanceRelief(t, resMod);
       // 2026-05-20 — Per-wave resistance relief. If the current wave
       // carries a `resistReduction` value, bring the effective resMod
       // 15% closer to 1.0 — but only when the enemy is RESISTANT
@@ -3688,6 +3745,7 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
   // (Pure support towers with damageType NONE still skip — they don't hit.)
   const canApplyItems = t.damageType !== DamageType.NONE;
   if (canApplyItems) {
+    applyStrategicItemOnHit(t, target);
     // GALLIC_SHIELD_BOSS used to duplicate Lictor's Fasces (+damage/+range).
     // It is now a distinct control item: every 4th hit shield-bashes the
     // target for a fixed 1s stun and opens a 3s regeneration-denial window.

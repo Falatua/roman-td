@@ -159,6 +159,9 @@ export function towerDamageProfile(tower: Tower, state: GameStateShape, breakdow
   const itemSet = new Set(tower.equippedItems ?? []);
   const onHitItems: Array<[string, string, string, string]> = [
     ['GALLIC_SHIELD_BOSS', 'Stun + Healing Denial', 'Gallic Shield Boss: every 4th hit stuns non-boss enemies for 1.2s and blocks regeneration for 3s.', '#ffd34d'],
+    ['SAPPERS_CHISEL', 'Armor Shred', "Sapper's Chisel: every 3rd hit applies Armor Shred for 3.5s.", '#d9a35f'],
+    ['CALTROP_SATCHEL', 'Slow', 'Caltrop Satchel: every 4th hit slows the enemy by 25% for 2.6s.', '#78d8ff'],
+    ['CENSORS_SEAL', 'Mark', "Censor's Seal: every 4th hit marks the enemy to take 20% more damage for 4s.", '#ff6f61'],
     ['NECROTIC_LONGSWORD', 'Healing Denial', 'Necrotic Longsword: melee hits block regeneration for 1.5s.', '#b56cff'],
     ['JUPITERS_WRATH', 'Lightning + Stun', "Jupiter's Wrath: chains lightning to nearby enemies and stuns the primary target.", '#fff2a8'],
     ['FIRE_OIL_FLASK', 'Burn', 'Fire Oil Flask: burns the target and nearby enemies on impact.', DAMAGE_COLORS[DamageType.ELEMENTAL_FIRE]],
@@ -180,6 +183,14 @@ export function towerDamageProfile(tower: Tower, state: GameStateShape, breakdow
     else if (label === 'Hellfire') upsertSummaryPart(summaryParts, 'Hellfire');
     else if (label === 'Poison') upsertSummaryPart(summaryParts, 'Poison');
     else if (label === 'Bleed') upsertSummaryPart(summaryParts, 'Bleed');
+  }
+  if (itemSet.has('VULCANS_TEMPER')) {
+    rows.push({
+      kind: 'EXTRA',
+      label: 'Resistance Breach',
+      detail: "Vulcan's Temper: attacks ignore 28% of reducible resistance, but never immunity.",
+      color: '#ff9b4a'
+    });
   }
 
   return {

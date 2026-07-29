@@ -138,6 +138,9 @@ const FAMILY: Record<string, ItemFamily> = {
   GILDED_SCALE_ARMOR: 'DEFENSE',
   TRUESIGHT_LENS: 'UTILITY',
   GALLIC_SHIELD_BOSS: 'UTILITY',
+  SAPPERS_CHISEL: 'UTILITY',
+  CALTROP_SATCHEL: 'UTILITY',
+  CENSORS_SEAL: 'UTILITY',
 
   BERSERKERS_MUZZLE: 'SPEED',
   // DRUIDS_TORC moved to AURA (was SPECIAL self-buff).
@@ -190,6 +193,7 @@ const FAMILY: Record<string, ItemFamily> = {
   TIDEPIERCER_HARPOON: 'DAMAGE',
   AEGEAN_PEARL: 'DAMAGE',
   STORMGLASS_AMPHORA: 'DAMAGE',
+  VULCANS_TEMPER: 'DAMAGE',
   NEPTUNES_TRIDENT: 'DAMAGE',
   // 2026-05-19 — GATE-EXCLUSIVE STARTER ITEMS. Five new items only
   // sold at the gate shop. Family assignments keep them slotted with

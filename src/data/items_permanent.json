@@ -111,6 +111,20 @@
     "sell": 12,
     "effect": "+40% attack speed"
   },
+  "SAPPERS_CHISEL": {
+    "name": "Sapper's Chisel",
+    "rarity": "RARE",
+    "buy": 38,
+    "sell": 14,
+    "effect": "A legionary engineer's answer to stubborn armor. Every 3rd hit applies Armor Shred for 3.5s."
+  },
+  "CALTROP_SATCHEL": {
+    "name": "Caltrop Satchel",
+    "rarity": "RARE",
+    "buy": 38,
+    "sell": 14,
+    "effect": "The road itself joins the defense. Every 4th hit slows the enemy by 25% for 2.6s."
+  },
   "STORM_JAVELIN": {
     "name": "Storm Javelin",
     "rarity": "RARE",
@@ -194,6 +208,20 @@
     "buy": 60,
     "sell": 30,
     "effect": "Any tower: every 4th hit shield-bashes the target, stunning non-boss enemies for 1.2s and blocking enemy regeneration and checkpoint healing for 3s."
+  },
+  "CENSORS_SEAL": {
+    "name": "Censor's Seal",
+    "rarity": "EPIC",
+    "buy": 70,
+    "sell": 25,
+    "effect": "The seal names an enemy of Rome. Every 4th hit marks the target to take 20% more damage from all towers for 4s."
+  },
+  "VULCANS_TEMPER": {
+    "name": "Vulcan's Temper",
+    "rarity": "EPIC",
+    "buy": 72,
+    "sell": 26,
+    "effect": "Tempered iron finds the weakness in every defense. Attacks breach 28% of reducible resistance, but never pierce immunity."
   },
   "DRUID_STAFF_FRAGMENT": {
     "name": "Druid Staff Fragment",
