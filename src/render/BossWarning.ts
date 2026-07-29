@@ -132,7 +132,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     warning: [
       'The sky has developed an opinion about your anti-air coverage.',
       'Wave 20 is a flyer boss. Ground-only confidence will not be accepted.',
-      'The Vulture Imperator dives past sloppy lanes and punishes lazy target modes.',
+      'The Vulture Imperator brings two Sphinx flocks and repeatedly dives your proven carry.',
       'If your ranged towers are ornamental, Rome is about to learn bird law.',
       'ARE YOU REALLY SURE?'
     ],
@@ -151,7 +151,7 @@ const BOSS_DATA: Record<number, BossDossier> = {
     portrait: 'assets/bosses/boss_khan.png',
     warning: [
       'The second cave opens and the riders do not wait politely.',
-      'Keshig Noyan brings late-campaign speed, commander pressure, and no patience.',
+      'Keshig Noyan can feign retreat, recover, and reform with fresh cavalry.',
       'Your maze now has two mouths to feed. One of them bites.',
       'ARE YOU REALLY SURE?'
     ],

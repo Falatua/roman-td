@@ -5,6 +5,13 @@ import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
 import { scaledEnemyRegenRate } from './EnemyHealing';
 
+export const VULTURE_DIVE_PERIOD_SECONDS = 6;
+export const VULTURE_DIVE_SLOW_PCT = 0.50;
+export const VULTURE_DIVE_DURATION_SECONDS = 5;
+export const VULTURE_FIRST_FLOCK_COUNT = 4;
+export const VULTURE_FINAL_FLOCK_COUNT = 3;
+export const KESHIG_RALLY_HEAL_PCT = 0.12;
+
 interface BossRuntime {
   ambushFired: boolean;        // Undead Warlord ambush
   necromancyFired: boolean;    // Undead Warlord raise dead — first wave at 40% HP
@@ -46,6 +53,23 @@ export function createBossRuntime(): BossRuntime {
   };
 }
 
+function spawnBossEscort(
+  state: GameStateShape,
+  boss: Enemy,
+  type: EnemyType,
+  bossHpFraction: number
+): Enemy {
+  const escort = spawnEnemy(state, type, 1);
+  const escortHp = Math.max(1, Math.round(boss.maxHp * bossHpFraction));
+  escort.maxHp = escortHp;
+  escort.hp = escortHp;
+  escort.x = escort.prevX = boss.x;
+  escort.y = escort.prevY = boss.y;
+  escort.pathIndex = boss.pathIndex;
+  escort.pathProgress = boss.pathProgress;
+  return escort;
+}
+
 // Tick boss-specific scripts. Called each frame from main loop in WAVE phase.
 export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRuntime, waveStartTick: number) {
   for (const e of state.enemies.values()) {
@@ -53,23 +77,69 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
 
       // ─── VULTURE IMPERATOR (W20 boss flyer, 2026 v2 spec Ch6) ───────────
       case EnemyType.BOSS_FLYER_VULTURE: {
-        // DIVE BOMB — every 8s: -40% attack speed for 4s on the highest-kill tower.
-        const nextDive = (e as any).__nextDiveBomb ?? (waveStartTick + 8);
+        // DIVE BOMB — pressures the player's proven carry rather than a
+        // random tower. The shorter cadence makes the boss survive long
+        // enough for both flock phases without adding another immunity.
+        const nextDive = (e as any).__nextDiveBomb ?? (waveStartTick + VULTURE_DIVE_PERIOD_SECONDS);
         if (state.tick >= nextDive) {
-          (e as any).__nextDiveBomb = state.tick + 8;
+          (e as any).__nextDiveBomb = state.tick + VULTURE_DIVE_PERIOD_SECONDS;
           let best: any = null, bestKills = -1;
           for (const tw of state.towers.values()) {
             const kc = (tw as any).killCount ?? 0;
             if (kc > bestKills) { bestKills = kc; best = tw; }
           }
-          if (best) applyTowerAtkSpeedDebuff(best, 0.40, 4, state.tick);
+          if (best) applyTowerAtkSpeedDebuff(best, VULTURE_DIVE_SLOW_PCT, VULTURE_DIVE_DURATION_SECONDS, state.tick);
         }
-        // FLOCK CALL — once at <=50% HP: summon 3 escort flyers (Sphinx).
-        if (!(e as any).__flockCalled && e.hp / e.maxHp <= 0.5) {
+        // FLOCK CALL — two readable air phases. Escorts inherit a bounded
+        // fraction of boss HP so they stay relevant without silently picking
+        // up every ordinary-wave multiplier.
+        if (!(e as any).__flockCalled && e.hp / e.maxHp <= 0.6) {
           (e as any).__flockCalled = true;
-          const hpM = (wavesData[Math.min(state.wave - 1, wavesData.length - 1)] as any)?.hpMult ?? 1;
-          for (let i = 0; i < 3; i++) spawnEnemy(state, EnemyType.SPHINX, hpM);
-          state.hint = '🦅 FLOCK CALL — the Vulture summons its murder!';
+          for (let i = 0; i < VULTURE_FIRST_FLOCK_COUNT; i++) {
+            spawnBossEscort(state, e, EnemyType.SPHINX, 0.05);
+          }
+          state.hint = '🦅 FLOCK CALL — four Sphinx escorts descend around the Imperator!';
+        }
+        if (!(e as any).__finalFlockCalled && e.hp / e.maxHp <= 0.25) {
+          (e as any).__finalFlockCalled = true;
+          for (let i = 0; i < VULTURE_FINAL_FLOCK_COUNT; i++) {
+            spawnBossEscort(state, e, EnemyType.SPHINX, 0.05);
+          }
+          state.hint = '🦅 LAST MURDER — the Vulture calls its final three Sphinx!';
+        }
+        break;
+      }
+
+      // ─── KESHIG NOYAN (W21 Mongol boss) ────────────────────────────────
+      case EnemyType.KHAN_RIDER: {
+        // FEIGNED RETREAT — at 60%, shed hard control, recover 12% max HP,
+        // and reform with a mixed cavalry guard. The recovery is visible and
+        // finite, unlike passive regeneration.
+        if (!(e as any).__noyanRallied && e.hp / e.maxHp <= 0.6) {
+          (e as any).__noyanRallied = true;
+          e.statusEffects = e.statusEffects.filter(status =>
+            status.kind !== 'SLOW' &&
+            status.kind !== 'FREEZE' &&
+            status.kind !== 'STUN' &&
+            status.kind !== 'KNOCKBACK'
+          );
+          e.hp = Math.min(e.maxHp, e.hp + e.maxHp * KESHIG_RALLY_HEAL_PCT);
+          for (let i = 0; i < 3; i++) spawnBossEscort(state, e, EnemyType.MONGOL_HORSE_ARCHER, 0.035);
+          for (let i = 0; i < 2; i++) spawnBossEscort(state, e, EnemyType.MONGOL_SPEAR_RIDER, 0.035);
+          state.hint = '⚔ FEIGNED RETREAT — Keshig Noyan reforms with five cavalry guards!';
+        }
+        // LAST RIDE — the authored low-HP speed boost supplies the charge;
+        // this phase clears control once and adds a compact spear escort.
+        if (!(e as any).__noyanLastRide && e.hp / e.maxHp <= 0.25) {
+          (e as any).__noyanLastRide = true;
+          e.statusEffects = e.statusEffects.filter(status =>
+            status.kind !== 'SLOW' &&
+            status.kind !== 'FREEZE' &&
+            status.kind !== 'STUN' &&
+            status.kind !== 'KNOCKBACK'
+          );
+          for (let i = 0; i < 3; i++) spawnBossEscort(state, e, EnemyType.MONGOL_SPEAR_RIDER, 0.035);
+          state.hint = '⚔ LAST RIDE — Keshig Noyan and three lancers charge Rome!';
         }
         break;
       }

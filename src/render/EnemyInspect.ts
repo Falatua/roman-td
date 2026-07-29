@@ -437,9 +437,14 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
       'TELEGRAPHED REBIRTH at 55% HP — 1-second red lock-on ring warning, then heals to 65% HP, clears statuses, and gains +60% speed for 10s'
     ],
     BOSS_FLYER_VULTURE: [
-      'DIVE BOMB — every 8s, stamps -40% attack speed for 4s on your highest-kill tower',
-      'FLOCK CALL — at 50% HP, summons 3 escort Sphinx flyers',
+      'DIVE BOMB — every 6s, stamps -50% attack speed for 5s on your highest-kill tower',
+      'FLOCK CALL — at 60% HP, summons 4 Sphinx escorts; at 25%, summons 3 more',
       'SIEGE-IMMUNE — siege damage deals 0. Bring anti-air DIVINE, storm, marks, and non-siege flyer killers.'
+    ],
+    KHAN_RIDER: [
+      'FEIGNED RETREAT — at 60% HP, clears hard control, restores 12% max HP, and calls 5 cavalry guards',
+      'LAST RIDE — at 25% HP, clears hard control and calls 3 Hun Spear Riders',
+      'NOYAN\'S MOMENTUM — 30% dodge, a tower-nullifying aura, and +65% speed below 30% HP'
     ],
     UNDEAD_WARLORD: [
       'AMBUSH — 5s after spawn, 10 Undead Berserkers rise mid-path',

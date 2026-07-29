@@ -770,10 +770,10 @@
     "isFlyer": false,
     "isBoss": true,
     "livesCost": 10,
-    "dodgeChance": 0.25,
+    "dodgeChance": 0.3,
     "outOfCombatRegen": 0.03,
-    "lowHpSpeedBoost": 1.5,
-    "campaignHpScaleByWave": { "21": 28 }
+    "lowHpSpeedBoost": 1.65,
+    "campaignHpScaleByWave": { "21": 50 }
   },
   "MONGOL_FOOTMAN": {
     "name": "Hun Footman",
@@ -866,7 +866,7 @@
     "siegeImmune": true,
     "immuneFire": true,
     "renderScale": 1.5,
-    "campaignHpScaleByWave": { "20": 2.0 }
+    "campaignHpScaleByWave": { "20": 2.8 }
   },
   "CHIMERA": {
     "name": "Chimera",

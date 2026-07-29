@@ -18,7 +18,16 @@ import enemiesData from '../src/data/enemies.json';
 import waypointsData from '../src/data/waypoints.json';
 import { GRID, WATER_ZONE, WAVE } from '../src/constants';
 import { ELEPHANT_SPAWN_GAP_SECONDS } from '../src/systems/ElephantPacing';
-import { createBossRuntime, tickBossScripts } from '../src/systems/BossScripts';
+import {
+  createBossRuntime,
+  KESHIG_RALLY_HEAL_PCT,
+  tickBossScripts,
+  VULTURE_DIVE_DURATION_SECONDS,
+  VULTURE_DIVE_PERIOD_SECONDS,
+  VULTURE_DIVE_SLOW_PCT,
+  VULTURE_FINAL_FLOCK_COUNT,
+  VULTURE_FIRST_FLOCK_COUNT
+} from '../src/systems/BossScripts';
 import { isCommanderEnemy, isEliteEnemy } from '../src/systems/EnemyClassification';
 
 function bootstrapState() {
@@ -1515,6 +1524,81 @@ describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () =
       expect(source).not.toMatch(/Hannibal[\s\S]{0,220}summons? 2 War Elephants/i);
       expect(source).not.toMatch(/summons? 2 War Elephants[\s\S]{0,220}Hannibal/i);
     }
+  });
+});
+
+describe('Wave 20-21 boss durability and phase pressure', () => {
+  it('keeps Keshig Noyan above the strengthened Vulture health step', () => {
+    const w20: any = (wavesData as any[]).find(wave => wave.wave === 20);
+    const w21: any = (wavesData as any[]).find(wave => wave.wave === 21);
+    const vultureDef: any = (enemiesData as any).BOSS_FLYER_VULTURE;
+    const keshigDef: any = (enemiesData as any).KHAN_RIDER;
+    const vultureHp = previewSpawnHp(vultureDef, 20, w20.type, w20.hpMult, true);
+    const keshigHp = previewSpawnHp(keshigDef, 21, w21.type, w21.hpMult, true);
+
+    expect(vultureHp).toBeGreaterThan(3_000_000);
+    expect(keshigHp).toBeGreaterThan(vultureHp);
+    expect(keshigHp).toBeLessThan(4_000_000);
+    expect(keshigDef.dodgeChance).toBe(0.3);
+    expect(keshigDef.lowHpSpeedBoost).toBe(1.65);
+  });
+
+  it('makes the Vulture pressure the carry and summon both bounded Sphinx flocks', () => {
+    const state = bootstrapState();
+    state.wave = 20;
+    state.phase = GamePhase.WAVE_PHASE;
+    state.tick = VULTURE_DIVE_PERIOD_SECONDS;
+    state.towers.set('carry', { id: 'carry', killCount: 100 } as any);
+    const vulture = spawnEnemy(state, EnemyType.BOSS_FLYER_VULTURE, 1);
+    vulture.hp = vulture.maxHp * 0.59;
+    const runtime = createBossRuntime();
+
+    tickBossScripts(state, 0.016, runtime, 0);
+
+    const carry: any = state.towers.get('carry');
+    expect(carry.__atkSpeedDebuffPct).toBe(VULTURE_DIVE_SLOW_PCT);
+    expect(carry.__atkSpeedDebuffUntil).toBe(
+      VULTURE_DIVE_PERIOD_SECONDS + VULTURE_DIVE_DURATION_SECONDS
+    );
+    let sphinxes = Array.from(state.enemies.values()).filter(enemy => enemy.type === EnemyType.SPHINX);
+    expect(sphinxes).toHaveLength(VULTURE_FIRST_FLOCK_COUNT);
+    for (const sphinx of sphinxes) {
+      expect(sphinx.maxHp).toBeCloseTo(vulture.maxHp * 0.05, -1);
+      expect(sphinx.pathIndex).toBe(vulture.pathIndex);
+    }
+
+    state.tick += 1;
+    vulture.hp = vulture.maxHp * 0.24;
+    tickBossScripts(state, 0.016, runtime, 0);
+    sphinxes = Array.from(state.enemies.values()).filter(enemy => enemy.type === EnemyType.SPHINX);
+    expect(sphinxes).toHaveLength(VULTURE_FIRST_FLOCK_COUNT + VULTURE_FINAL_FLOCK_COUNT);
+  });
+
+  it('gives Keshig Noyan a finite rally and a separate last-ride escort', () => {
+    const state = bootstrapState();
+    state.wave = 21;
+    state.phase = GamePhase.WAVE_PHASE;
+    state.tick = 10;
+    const keshig = spawnEnemy(state, EnemyType.KHAN_RIDER, 1);
+    keshig.statusEffects.push({ kind: 'STUN' } as any, { kind: 'BLEED' } as any);
+    keshig.hp = keshig.maxHp * 0.59;
+    const runtime = createBossRuntime();
+
+    tickBossScripts(state, 0.016, runtime, 0);
+
+    expect(keshig.hp).toBeCloseTo(keshig.maxHp * (0.59 + KESHIG_RALLY_HEAL_PCT), 4);
+    expect(keshig.statusEffects.some(status => status.kind === 'STUN')).toBe(false);
+    expect(keshig.statusEffects.some(status => status.kind === 'BLEED')).toBe(true);
+    expect(Array.from(state.enemies.values()).filter(enemy => enemy.type === EnemyType.MONGOL_HORSE_ARCHER)).toHaveLength(3);
+    expect(Array.from(state.enemies.values()).filter(enemy => enemy.type === EnemyType.MONGOL_SPEAR_RIDER)).toHaveLength(2);
+
+    state.tick += 1;
+    keshig.statusEffects.push({ kind: 'FREEZE' } as any);
+    keshig.hp = keshig.maxHp * 0.24;
+    tickBossScripts(state, 0.016, runtime, 0);
+
+    expect(keshig.statusEffects.some(status => status.kind === 'FREEZE')).toBe(false);
+    expect(Array.from(state.enemies.values()).filter(enemy => enemy.type === EnemyType.MONGOL_SPEAR_RIDER)).toHaveLength(5);
   });
 });
 

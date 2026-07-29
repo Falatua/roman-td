@@ -586,7 +586,7 @@ function renderTab(tab: string): string {
       ${foldSection('⚔ LATE-GAME GAUNTLET (W21-30)', `
         <div style="font-size:11px;color:#cdb98a;margin-bottom:6px">The campaign ends at <b>W30</b>. Cave B erupts open on the left at W21 and mirrors every ground non-boss group from the main cave. Hold both lanes because each cave sends the full ground formation.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${noteCard('🦅 Vulture Imperator (W20 boss flyer)', 'Egyptian undead vulture. <b>DIVE BOMB</b> every 8s: -40% attack speed for 4s on your highest-kill tower. <b>FLOCK CALL</b> at 50% HP: summons 3 escort Sphinx flyers. Melee-untargetable + fire-immune + ranged-resistant + <b style="color:#ff5050">SIEGE-IMMUNE</b> — answer it with anti-air DIVINE, storm, marks, and non-siege flyer killers.')}
+          ${noteCard('🦅 Vulture Imperator (W20 boss flyer)', 'Egyptian undead vulture. <b>DIVE BOMB</b> every 6s: -50% attack speed for 5s on your highest-kill tower. <b>FLOCK CALL</b> at 60% HP summons 4 Sphinx escorts, then 3 more at 25%. Melee-untargetable + fire-immune + ranged-resistant + <b style="color:#ff5050">SIEGE-IMMUNE</b> — answer it with anti-air DIVINE, storm, marks, and non-siege flyer killers.')}
           ${noteCard('🗿 ROMAN-MYTH faction (W25-29)', 'The old monsters of legend. <b style="color:#cdb98a">Tough vs steel / fire / siege</b> but <b style="color:#fff4a8">+40% WEAK to DIVINE</b> — the gods smite them. Bring Solar Priest, Augur, Pontifex, or Mars Victor.')}
           ${noteCard('🦁 Chimera + 🐺 Cerberus', 'Chimera <b>FIRE BREATH</b>: every 3s, -30% atk speed for 2s on towers within ~2 tiles. Cerberus <b>TRIPLE HOWL</b>: a one-time +25% speed surge to nearby myth allies.')}
           ${noteCard('🐍 Typhon + 👁 Cyclops', 'Typhon <b>SERPENT STORM</b>: every 5s, silences towers within ~3 tiles for 1.5s — the W29 capstone. Cyclops <b>EYE BLAST</b>: every 6s, fully blinds the single nearest tower for 2s.')}
@@ -1542,9 +1542,14 @@ const BOSS_SCRIPTS_FOR_CODEX: Record<string, string[]> = {
     'TELEGRAPHED REBIRTH at 55% HP — 1s red lock-on warning, then heals to 65% HP, clears statuses, and gains +60% speed for 10s'
   ],
   BOSS_FLYER_VULTURE: [
-    'DIVE BOMB — every 8s, stamps -40% attack speed for 4s on your highest-kill tower',
-    'FLOCK CALL — at 50% HP, summons 3 escort Sphinx flyers',
+    'DIVE BOMB — every 6s, stamps -50% attack speed for 5s on your highest-kill tower',
+    'FLOCK CALL — at 60% HP, summons 4 Sphinx escorts; at 25%, summons 3 more',
     'SIEGE-IMMUNE — siege damage deals 0. Bring anti-air DIVINE, storm, marks, and non-siege flyer killers.'
+  ],
+  KHAN_RIDER: [
+    'FEIGNED RETREAT — at 60% HP, clears hard control, restores 12% max HP, and calls 5 cavalry guards',
+    'LAST RIDE — at 25% HP, clears hard control and calls 3 Hun Spear Riders',
+    'NOYAN\'S MOMENTUM — 30% dodge, a tower-nullifying aura, and +65% speed below 30% HP'
   ],
   UNDEAD_WARLORD: [
     'AMBUSH — 5s after spawn, 10 Undead Berserkers rise mid-path',
