@@ -32,7 +32,7 @@ const MANIFEST: Record<string, string> = {
   VENATOR: 't_new_venator.png', IGNIFER: 't_new_ignifer.png',
   SPECULATOR: 't_new_speculator.png', FLAMEN: 't_new_flamen.png', CARROBALLISTA: 't_new_carroballista.png',
   CATAPHRACT: 't_new_cataphract.png', AUGUR: 't_new_augur.png',
-  EVOCATUS: 't_new_evocatus.png', HARUSPEX: 't_new_haruspex.png', CLIBANARIUS: 't_new_clibanarius_v2.png',
+  EVOCATUS: 't_new_evocatus.png', HARUSPEX: 't_new_haruspex.png', CLIBANARIUS: 't_new_clibanarius_v3.png',
   PRAEFECTUS: 't_new_praefectus.png', VULCAN_ENGINEER: 't_new_vulcan_engineer.png',
   IMPERATOR_GUARD: 't_new_imperator_guard.png', SOLAR_PRIEST: 't_new_solar_priest.png', COLOSSUS_ONAGER: 't_new_colossus_onager.png',
   AQUILA_VENATOR: 't_new_aquila_venator.png',

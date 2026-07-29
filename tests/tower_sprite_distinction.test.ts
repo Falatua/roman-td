@@ -23,6 +23,35 @@ async function silhouetteMask(file: string) {
   return mask;
 }
 
+async function alphaBounds(file: string) {
+  const sharp = (await import('sharp')).default;
+  const { data, info } = await sharp(file)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  let minX = info.width;
+  let minY = info.height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      if (data[((y * info.width + x) * 4) + 3] <= 8) continue;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    width: Math.max(0, maxX - minX + 1),
+    height: Math.max(0, maxY - minY + 1)
+  };
+}
+
 function silhouetteOverlap(a: number[], b: number[]) {
   let shared = 0;
   let combined = 0;
@@ -42,7 +71,7 @@ describe('cavalry tower sprite distinction', () => {
     const clibanariusFile = path.join(spriteDir, assets.CLIBANARIUS);
 
     expect(assets.CATAPHRACT).toBe('t_new_cataphract.png');
-    expect(assets.CLIBANARIUS).toBe('t_new_clibanarius_v2.png');
+    expect(assets.CLIBANARIUS).toBe('t_new_clibanarius_v3.png');
 
     const meta = await sharp(clibanariusFile).metadata();
     const { data, info } = await sharp(clibanariusFile)
@@ -73,6 +102,13 @@ describe('cavalry tower sprite distinction', () => {
     ];
     const cataphractMask = await silhouetteMask(cataphractFile);
     const clibanariusMask = await silhouetteMask(clibanariusFile);
+    const clibanariusBounds = await alphaBounds(clibanariusFile);
+    const cavalryBounds = await Promise.all([
+      alphaBounds(path.join(spriteDir, assets.CATAPHRACT)),
+      alphaBounds(path.join(spriteDir, assets.HORSEMAN)),
+      alphaBounds(path.join(spriteDir, assets.RORARIUS)),
+      alphaBounds(path.join(spriteDir, assets.NUMIDIAN_CAVALRY))
+    ]);
 
     expect(meta).toMatchObject({ width: 256, height: 214, hasAlpha: true });
     expect(Math.max(...corners), 'Clibanarius corners should remain transparent').toBe(0);
@@ -83,5 +119,17 @@ describe('cavalry tower sprite distinction', () => {
       silhouetteOverlap(cataphractMask, clibanariusMask),
       'Clibanarius should not reuse the Cataphract silhouette'
     ).toBeLessThan(0.75);
+    expect(
+      clibanariusBounds.width / clibanariusBounds.height,
+      'Clibanarius should keep its compact upright armored-fortress silhouette'
+    ).toBeLessThan(0.9);
+    for (const bounds of cavalryBounds) {
+      expect(
+        bounds.width / bounds.height - clibanariusBounds.width / clibanariusBounds.height,
+        'Clibanarius should remain substantially taller and more compact than ordinary cavalry'
+      ).toBeGreaterThan(0.18);
+    }
+    expect(clibanariusBounds.minY, 'The upright kontos should remain visible above the rider').toBeLessThanOrEqual(8);
+    expect(clibanariusBounds.height, 'The complete rider, horse, lance, and hooves should remain visible').toBeGreaterThan(195);
   });
 });
