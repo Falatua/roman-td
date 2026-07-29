@@ -728,7 +728,7 @@
     "nullifyAuraRadiusTiles": 2,
     "name": "Anubis Death-Lord",
     "faction": "EGYPTIANS",
-    "baseHp": 23760,
+    "baseHp": 30000,
     "speed": 1.045,
     "isFlyer": false,
     "isBoss": true,
@@ -737,6 +737,20 @@
     "immuneStun": true,
     "outOfCombatRegen": 0.022,
     "auraTowerSlow": 0.3,
+    "bossAbilities": [
+      {
+        "name": "DEATH SENTENCE",
+        "description": "Every 8 seconds, the two towers with the most lifetime damage fire 45% slower for 4 seconds."
+      },
+      {
+        "name": "TOMB RECONSTITUTION",
+        "description": "At 62% health, clears hard control and restores 16% max health. Healing denial prevents the restoration."
+      },
+      {
+        "name": "FINAL JUDGMENT",
+        "description": "At 28% health, gains 30% movement speed and curses three damage leaders every 5.5 seconds."
+      }
+    ],
     "campaignHpScaleByWave": { "24": 8.0 }
   },
   "MONGOL_HORSE_ARCHER": {

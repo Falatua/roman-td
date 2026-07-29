@@ -1665,6 +1665,9 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.nullifyAuraRadiusTiles) traits.push(`NULLIFYING AURA — disables towers within ${def.nullifyAuraRadiusTiles} tiles while this enemy remains nearby`);
   if (def.silenceAuraRadiusTiles) traits.push(`SILENCE AURA — every tower within ${def.silenceAuraRadiusTiles} tiles is SILENCED while this enemy is in range (pink X-mark). Expires ~0.6s after the enemy leaves. Distinct from the pass-by silence — this is sustained denial-while-near.`);
   if (def.auraNullifier) traits.push('AURA NULLIFIER — silences every tower aura within 2 tiles (damage/atk-speed/debuff/item auras all drop out). Periodic abilities like Caesar stun pulse and freeze cycles are NOT auras and still fire.');
+  for (const ability of def.bossAbilities ?? []) {
+    traits.push(`${ability.name} — ${ability.description}`);
+  }
   if (typeof def.siegeWeaknessPct === 'number') {
     const finalSiegeMult = armorProfile(id as any).find(row => row.damageType === 'SIEGE')?.finalMult ?? (1 + def.siegeWeaknessPct / 100);
     const finalSiegeLabel = Number.isInteger(finalSiegeMult) ? finalSiegeMult.toFixed(0) : finalSiegeMult.toFixed(2);

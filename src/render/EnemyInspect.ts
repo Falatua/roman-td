@@ -323,6 +323,12 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   }
   if (def?.nullifyAuraRadiusTiles) traits.push({ label: `NULLIFYING AURA — disables towers within ${def.nullifyAuraRadiusTiles} tiles while this enemy remains nearby`, color: '#a078d0' });
   if (def?.auraNullifier) traits.push({ label: `AURA NULLIFIER — every tower within 2 tiles loses its aura contributions while this enemy is in range. Global damage / atk-speed / enemy-debuff / item auras (Centurion\'s Trumpet, Battle Standard, etc.) all silently drop out. Walks past → auras return. Periodic abilities (Caesar stun pulse, freeze cycles) are NOT auras and still fire.`, color: '#a078d0' });
+  for (const ability of def?.bossAbilities ?? []) {
+    traits.push({
+      label: `${ability.name} — ${ability.description}`,
+      color: '#ffb84d'
+    });
+  }
   if (e.type === 'FERAL_DOG' || e.type === 'RABID_DOG' || e.type === 'ALPHA_DOG') {
     traits.push({ label: 'FIRE WEAKNESS — direct FIRE and BURN deal 40% extra damage. Demon Hellhounds are fire-born and do not share this weakness.', color: '#ff8844' });
   }

@@ -11,6 +11,12 @@ export const VULTURE_DIVE_DURATION_SECONDS = 5;
 export const VULTURE_FIRST_FLOCK_COUNT = 4;
 export const VULTURE_FINAL_FLOCK_COUNT = 3;
 export const KESHIG_RALLY_HEAL_PCT = 0.12;
+export const ANUBIS_DEATH_SENTENCE_PERIOD_SECONDS = 8;
+export const ANUBIS_FINAL_SENTENCE_PERIOD_SECONDS = 5.5;
+export const ANUBIS_DEATH_SENTENCE_SLOW_PCT = 0.45;
+export const ANUBIS_DEATH_SENTENCE_DURATION_SECONDS = 4;
+export const ANUBIS_RECONSTITUTION_HEAL_PCT = 0.16;
+export const ANUBIS_FINAL_SPEED_MULT = 1.30;
 
 interface BossRuntime {
   ambushFired: boolean;        // Undead Warlord ambush
@@ -68,6 +74,29 @@ function spawnBossEscort(
   escort.pathIndex = boss.pathIndex;
   escort.pathProgress = boss.pathProgress;
   return escort;
+}
+
+function sentenceDamageLeaders(
+  state: GameStateShape,
+  count: number
+): number {
+  const leaders = Array.from(state.towers.values())
+    .filter(tower => !tower.pending)
+    .sort((a, b) =>
+      (b.totalDamageDealt - a.totalDamageDealt) ||
+      (b.damageThisWave - a.damageThisWave) ||
+      (b.killCount - a.killCount)
+    )
+    .slice(0, count);
+  for (const tower of leaders) {
+    applyTowerAtkSpeedDebuff(
+      tower,
+      ANUBIS_DEATH_SENTENCE_SLOW_PCT,
+      ANUBIS_DEATH_SENTENCE_DURATION_SECONDS,
+      state.tick
+    );
+  }
+  return leaders.length;
 }
 
 // Tick boss-specific scripts. Called each frame from main loop in WAVE phase.
@@ -140,6 +169,70 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
           );
           for (let i = 0; i < 3; i++) spawnBossEscort(state, e, EnemyType.MONGOL_SPEAR_RIDER, 0.035);
           state.hint = '⚔ LAST RIDE — Keshig Noyan and three lancers charge Rome!';
+        }
+        break;
+      }
+
+      // ─── ANUBIS DEATH-LORD (W24 Egyptian boss) ────────────────────────
+      case EnemyType.ANUBIS_KING: {
+        // DEATH SENTENCE attacks concentration rather than adding another
+        // immunity. The boss curses the player's proven damage leaders, so
+        // a diversified late-game army keeps functioning while one stacked
+        // carry cannot erase the encounter uncontested.
+        const finalJudgment = !!(e as any).__anubisFinalJudgment;
+        const sentencePeriod = finalJudgment
+          ? ANUBIS_FINAL_SENTENCE_PERIOD_SECONDS
+          : ANUBIS_DEATH_SENTENCE_PERIOD_SECONDS;
+        const nextSentence = (e as any).__nextAnubisDeathSentence ?? (state.tick + sentencePeriod);
+        if ((e as any).__nextAnubisDeathSentence === undefined) {
+          (e as any).__nextAnubisDeathSentence = nextSentence;
+        }
+        if (state.tick >= nextSentence) {
+          (e as any).__nextAnubisDeathSentence = state.tick + sentencePeriod;
+          const hit = sentenceDamageLeaders(state, finalJudgment ? 3 : 2);
+          if (hit > 0) {
+            state.hint = `☥ DEATH SENTENCE — Anubis curses ${hit} damage leader${hit === 1 ? '' : 's'}!`;
+          }
+        }
+
+        // TOMB RECONSTITUTION is a finite second health beat, not passive
+        // regeneration. Existing healing-denial towers can prevent the heal,
+        // preserving a deliberate counter to the boss mechanic.
+        if (!(e as any).__anubisReconstituted && e.hp / e.maxHp <= 0.62) {
+          (e as any).__anubisReconstituted = true;
+          e.statusEffects = e.statusEffects.filter(status =>
+            status.kind !== 'SLOW' &&
+            status.kind !== 'FREEZE' &&
+            status.kind !== 'STUN' &&
+            status.kind !== 'KNOCKBACK'
+          );
+          const healingBlocked = ((e as any).__healingBlockedUntil ?? 0) > state.tick;
+          if (!healingBlocked) {
+            e.hp = Math.min(e.maxHp, e.hp + e.maxHp * ANUBIS_RECONSTITUTION_HEAL_PCT);
+            state.hint = '☥ TOMB RECONSTITUTION — Anubis restores 16% max health!';
+          } else {
+            state.hint = '☥ TOMB RECONSTITUTION DENIED — the Death-Lord cannot restore himself!';
+          }
+        }
+
+        // FINAL JUDGMENT is a one-way execution phase. It adds urgency and a
+        // faster three-target sentence without making Anubis untargetable or
+        // changing Divine from the encounter's strongest damage answer.
+        if (!(e as any).__anubisFinalJudgment && e.hp / e.maxHp <= 0.28) {
+          (e as any).__anubisFinalJudgment = true;
+          e.statusEffects = e.statusEffects.filter(status =>
+            status.kind !== 'SLOW' &&
+            status.kind !== 'FREEZE' &&
+            status.kind !== 'STUN' &&
+            status.kind !== 'KNOCKBACK'
+          );
+          e.baseSpeed *= ANUBIS_FINAL_SPEED_MULT;
+          e.currentSpeed *= ANUBIS_FINAL_SPEED_MULT;
+          (e as any).__nextAnubisDeathSentence = Math.min(
+            (e as any).__nextAnubisDeathSentence ?? Infinity,
+            state.tick + 3
+          );
+          state.hint = '☥ FINAL JUDGMENT — Anubis surges forward and widens his curse!';
         }
         break;
       }

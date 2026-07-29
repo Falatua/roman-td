@@ -169,13 +169,13 @@ const BOSS_DATA: Record<number, BossDossier> = {
     portrait: 'assets/bosses/boss_anubis.png',
     warning: [
       'The desert has upgraded from unpleasant to theological.',
-      'Anubis King arrives after priests, plague, sphinxes, and checkpoint-healing guards.',
-      'Status builds still help, but the late campaign no longer lets them do all the work.',
+      'The Death-Lord curses your strongest damage dealers and reconstitutes at 62% health.',
+      'Healing denial stops the restoration. Divine damage remains his clearest weakness.',
       'ARE YOU REALLY SURE?'
     ],
     doom: [
       'You clicked yes. Anubis has opened the ledger.',
-      'Your towers may continue firing while judgment is processed.',
+      'At 28% health, Final Judgment makes him faster and broadens the curse.',
       'If this boss leaks, the Hall of Glory will not be gentle.',
       'ARE YOU ABSOLUTELY CERTAIN YOU WANT TO DIE TODAY?'
     ]

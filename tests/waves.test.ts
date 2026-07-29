@@ -19,6 +19,11 @@ import waypointsData from '../src/data/waypoints.json';
 import { GRID, WATER_ZONE, WAVE } from '../src/constants';
 import { ELEPHANT_SPAWN_GAP_SECONDS } from '../src/systems/ElephantPacing';
 import {
+  ANUBIS_DEATH_SENTENCE_DURATION_SECONDS,
+  ANUBIS_DEATH_SENTENCE_PERIOD_SECONDS,
+  ANUBIS_DEATH_SENTENCE_SLOW_PCT,
+  ANUBIS_FINAL_SPEED_MULT,
+  ANUBIS_RECONSTITUTION_HEAL_PCT,
   createBossRuntime,
   KESHIG_RALLY_HEAL_PCT,
   tickBossScripts,
@@ -1599,6 +1604,99 @@ describe('Wave 20-21 boss durability and phase pressure', () => {
 
     expect(keshig.statusEffects.some(status => status.kind === 'FREEZE')).toBe(false);
     expect(Array.from(state.enemies.values()).filter(enemy => enemy.type === EnemyType.MONGOL_SPEAR_RIDER)).toHaveLength(5);
+  });
+});
+
+describe('Wave 24 Anubis Death-Lord durability and judgment phases', () => {
+  it('keeps the strengthened boss below the Wave 25 apex body', () => {
+    const w24: any = (wavesData as any[]).find(wave => wave.wave === 24);
+    const w25: any = (wavesData as any[]).find(wave => wave.wave === 25);
+    const anubisDef: any = (enemiesData as any).ANUBIS_KING;
+    const colossusDef: any = (enemiesData as any).SUPER_GIANT_COLOSSUS;
+    const anubisHp = previewSpawnHp(anubisDef, 24, w24.type, w24.hpMult, true);
+    const colossusHp = previewSpawnHp(colossusDef, 25, w25.type, w25.hpMult, true);
+
+    expect(anubisHp).toBeGreaterThan(14_000_000);
+    expect(anubisHp).toBeLessThan(16_000_000);
+    expect(colossusHp).toBeGreaterThan(anubisHp);
+    expect(anubisDef.bossAbilities).toHaveLength(3);
+  });
+
+  it('curses damage leaders, reconstitutes once, and enters Final Judgment once', () => {
+    const state = bootstrapState();
+    state.wave = 24;
+    state.phase = GamePhase.WAVE_PHASE;
+    const tower = (id: string, totalDamageDealt: number, damageThisWave: number, killCount: number) => ({
+      id,
+      pending: false,
+      totalDamageDealt,
+      damageThisWave,
+      killCount
+    } as any);
+    state.towers.set('first', tower('first', 2_000_000, 200_000, 100));
+    state.towers.set('second', tower('second', 1_000_000, 100_000, 50));
+    state.towers.set('third', tower('third', 500_000, 50_000, 25));
+    const anubis = spawnEnemy(state, EnemyType.ANUBIS_KING, 1);
+    const runtime = createBossRuntime();
+
+    state.tick = 0;
+    tickBossScripts(state, 0.016, runtime, 0);
+    state.tick = ANUBIS_DEATH_SENTENCE_PERIOD_SECONDS;
+    tickBossScripts(state, 0.016, runtime, 0);
+
+    for (const id of ['first', 'second']) {
+      const cursed: any = state.towers.get(id);
+      expect(cursed.__atkSpeedDebuffPct).toBe(ANUBIS_DEATH_SENTENCE_SLOW_PCT);
+      expect(cursed.__atkSpeedDebuffUntil).toBe(
+        ANUBIS_DEATH_SENTENCE_PERIOD_SECONDS + ANUBIS_DEATH_SENTENCE_DURATION_SECONDS
+      );
+    }
+    expect((state.towers.get('third') as any).__atkSpeedDebuffPct).toBeUndefined();
+
+    anubis.statusEffects.push(
+      { kind: 'FREEZE', remaining: 2, magnitude: 1, sourceTier: 5 } as any,
+      { kind: 'BLEED', remaining: 2, magnitude: 1, sourceTier: 5 } as any
+    );
+    anubis.hp = anubis.maxHp * 0.61;
+    state.tick += 0.1;
+    tickBossScripts(state, 0.016, runtime, 0);
+    expect(anubis.hp).toBeCloseTo(
+      anubis.maxHp * (0.61 + ANUBIS_RECONSTITUTION_HEAL_PCT),
+      4
+    );
+    expect(anubis.statusEffects.some(status => status.kind === 'FREEZE')).toBe(false);
+    expect(anubis.statusEffects.some(status => status.kind === 'BLEED')).toBe(true);
+
+    const speedBeforeFinal = anubis.baseSpeed;
+    anubis.hp = anubis.maxHp * 0.27;
+    state.tick += 0.1;
+    tickBossScripts(state, 0.016, runtime, 0);
+    expect(anubis.baseSpeed).toBeCloseTo(speedBeforeFinal * ANUBIS_FINAL_SPEED_MULT, 6);
+
+    state.tick += 3.1;
+    tickBossScripts(state, 0.016, runtime, 0);
+    expect((state.towers.get('third') as any).__atkSpeedDebuffPct).toBe(ANUBIS_DEATH_SENTENCE_SLOW_PCT);
+
+    const finalSpeed = anubis.baseSpeed;
+    state.tick += 0.1;
+    tickBossScripts(state, 0.016, runtime, 0);
+    expect(anubis.baseSpeed).toBe(finalSpeed);
+  });
+
+  it('lets healing denial prevent Tomb Reconstitution', () => {
+    const state = bootstrapState();
+    state.wave = 24;
+    state.phase = GamePhase.WAVE_PHASE;
+    state.tick = 10;
+    const anubis = spawnEnemy(state, EnemyType.ANUBIS_KING, 1);
+    const runtime = createBossRuntime();
+    anubis.hp = anubis.maxHp * 0.61;
+    (anubis as any).__healingBlockedUntil = state.tick + 5;
+
+    tickBossScripts(state, 0.016, runtime, 0);
+
+    expect(anubis.hp).toBeCloseTo(anubis.maxHp * 0.61, 4);
+    expect(state.hint).toContain('DENIED');
   });
 });
 
