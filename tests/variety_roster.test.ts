@@ -49,6 +49,28 @@ function alphaBounds(data: Buffer, width: number, height: number) {
   return { minX, minY, maxX, maxY, width: Math.max(0, maxX - minX + 1), height: Math.max(0, maxY - minY + 1) };
 }
 
+async function silhouetteMask(file: string) {
+  const sharp = (await import('sharp')).default;
+  const { data } = await sharp(file)
+    .resize(64, 64, { fit: 'contain' })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const mask: number[] = [];
+  for (let i = 3; i < data.length; i += 4) mask.push(data[i] > 24 ? 1 : 0);
+  return mask;
+}
+
+function silhouetteOverlap(a: number[], b: number[]) {
+  let shared = 0;
+  let combined = 0;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] || b[i]) combined++;
+    if (a[i] && b[i]) shared++;
+  }
+  return combined > 0 ? shared / combined : 0;
+}
+
 describe('late-campaign variety roster', () => {
   beforeEach(() => {
     (globalThis as any).window = (globalThis as any).window ?? {};
@@ -80,6 +102,50 @@ describe('late-campaign variety roster', () => {
       const file = assets[type];
       expect(file, `${type} is missing an Assets.ts sprite mapping`).toBeTruthy();
       expect(existsSync(path.join(process.cwd(), 'public/assets/sprites', file)), `${type} -> ${file}`).toBe(true);
+    }
+  });
+
+  it('keeps Sky Standard and Sky Barge visually distinct from the Sphinx', async () => {
+    const sharp = (await import('sharp')).default;
+    const assets = enemyAssetMap();
+    const spriteDir = path.join(process.cwd(), 'public/assets/sprites');
+    const sphinx = await silhouetteMask(path.join(spriteDir, assets.SPHINX));
+    const replacements = [
+      ['SKY_STANDARD_COMMANDER', 'e_sky_standard_commander.png'],
+      ['SKY_BARGE', 'e_sky_barge.png']
+    ] as const;
+
+    for (const [type, expectedFile] of replacements) {
+      expect(assets[type]).toBe(expectedFile);
+      const file = path.join(spriteDir, expectedFile);
+      const meta = await sharp(file).metadata();
+      const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      const bounds = alphaBounds(data, info.width, info.height);
+      const mask = await silhouetteMask(file);
+      let visible = 0;
+      let tinyAlpha = 0;
+      let chromaGreen = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] > 0 && data[i + 3] <= 4) tinyAlpha++;
+        if (data[i + 3] > 16) {
+          visible++;
+          if (data[i + 1] > 150 && data[i + 1] > data[i] * 1.45 && data[i + 1] > data[i + 2] * 1.45) {
+            chromaGreen++;
+          }
+        }
+      }
+
+      expect(meta.width).toBe(128);
+      expect(meta.height).toBe(128);
+      expect(meta.hasAlpha).toBe(true);
+      expect(bounds.minX).toBeGreaterThanOrEqual(6);
+      expect(bounds.minY).toBeGreaterThanOrEqual(6);
+      expect(bounds.maxX).toBeLessThanOrEqual(121);
+      expect(bounds.maxY).toBeLessThanOrEqual(121);
+      expect(visible / (info.width * info.height), `${type} should remain readable at game scale`).toBeGreaterThan(0.18);
+      expect(tinyAlpha, `${type} should not leave alpha dust around its silhouette`).toBe(0);
+      expect(chromaGreen, `${type} should not retain its generation background`).toBe(0);
+      expect(silhouetteOverlap(sphinx, mask), `${type} should not reuse the Sphinx silhouette`).toBeLessThan(0.5);
     }
   });
 
