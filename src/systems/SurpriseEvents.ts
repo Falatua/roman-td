@@ -27,7 +27,7 @@ import { GameStateShape } from '../GameState';
 import { SurpriseEventKind, SurpriseEventState, SurpriseEventSpawnPoint, SurpriseAtmosProp, EnemyType, TileType } from '../types';
 import { GRID } from '../constants';
 import { spawnEnemy } from './EnemySystem';
-import { effectiveWaveHpMult, lateGameLayerMult } from './WaveManager';
+import { effectiveWaveHpMult, lateGameLayerMult, previewSpawnHp } from './WaveManager';
 import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
 import waypointsData from '../data/waypoints.json';
@@ -105,6 +105,24 @@ export function surpriseEventHpMult(kind: SurpriseEventKind | string | undefined
   if (kind === SurpriseEventKind.UPRISING || kind === 'UPRISING') return 1.65;
   if (kind === SurpriseEventKind.GATES_OF_HELL || kind === 'GATES_OF_HELL') return 1.35;
   return 1;
+}
+
+export function previewGatesOfHellFinalHp(
+  type: EnemyType.HELL_GATE | EnemyType.FIRE_GIANT,
+  waveNumber: number,
+  heroActive = false
+): number {
+  const def: any = (enemiesData as any)[type];
+  const wave: any = (wavesData as any[])[waveNumber - 1];
+  if (!def || !wave) return 0;
+  // Event enemies are absent from waves.json, but their runtime spawn still
+  // receives the current wave/class layers before this multiplier and floor.
+  // Supplying `type` preserves Fire Giant's authoritative elite curve.
+  const waveHp = previewSpawnHp({ ...def, type }, waveNumber, wave.type, wave.hpMult, heroActive);
+  return Math.max(
+    GATES_OF_HELL_MIN_HEALTH,
+    Math.round(waveHp * surpriseEventHpMult(SurpriseEventKind.GATES_OF_HELL))
+  );
 }
 
 // Triggered from WaveManager.startWave after the standard spawn queue

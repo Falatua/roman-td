@@ -1377,6 +1377,13 @@ describe('Codex modal interaction layer', () => {
     }
   });
 
+  it('shows final Gates of Hell health instead of the 5k and 6k internal seeds', () => {
+    const source = readFileSync('src/render/Codex.ts', 'utf8');
+    expect(source).toContain('hp: previewGatesOfHellFinalHp(eventType, 16, codexHeroActive)');
+    expect(source).toContain('Final HP on the first Gates of Hell event after wave and event scaling.');
+    expect(source).not.toContain('before the event HP modifier');
+  });
+
   it('keeps Systems and Mechanics copy player-facing instead of exposing patch or implementation language', () => {
     const source = readFileSync('src/render/Codex.ts', 'utf8');
     const systems = source.slice(

@@ -29,6 +29,8 @@ import { FORTUNA_GAMBLE_COST } from '../systems/MerchantSystem';
 import { isBossEnemy, isEliteEnemy } from '../systems/EnemyClassification';
 import { towerBriefHtml } from './TowerCopy';
 import { scaledEnemyRegenRate } from '../systems/EnemyHealing';
+import { previewGatesOfHellFinalHp } from '../systems/SurpriseEvents';
+import { EnemyType } from '../types';
 
 function spriteImg(key: string, size = 28): string {
   const t = tex(key);
@@ -1190,13 +1192,12 @@ function renderTab(tab: string): string {
       // event fires (see SURPRISE_EVENT_SCHEDULE).
       const SURPRISE_W16 = new Set(['HELL_GATE', 'FIRE_GIANT']);
       if (SURPRISE_W16.has(id)) {
-        // Use stored baseHp for the Codex baseline. Gates of Hell spawns
-        // then receive the event HP multiplier in SurpriseEvents.
+        const eventType = id === 'HELL_GATE' ? EnemyType.HELL_GATE : EnemyType.FIRE_GIANT;
         return {
-          hp: def.baseHp,
+          hp: previewGatesOfHellFinalHp(eventType, 16, codexHeroActive),
           wave: 16,
-          explain: `Spawned by the W16 Gates of Hell surprise event before the event HP modifier.`,
-          note: 'spawned by the W16 Gates of Hell surprise event'
+          explain: 'Final HP on the first Gates of Hell event after wave and event scaling. W27 versions scale substantially higher.',
+          note: 'spawned by the W16 Gates of Hell event; returns stronger on W27'
         };
       }
       // 5. True orphan (no wave, no reanim source, no split parent, not

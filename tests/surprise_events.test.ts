@@ -12,7 +12,7 @@
 // all 8 leaked on spawn AND the 27 UNDEAD_CELTs reanimated/rebirthed
 // cascade pushed the player to 0 lives without a fair shot.
 import { describe, it, expect } from 'vitest';
-import { deadUprisingDragonTypeForWave, deadUprisingTitanTypesForWave, GATES_OF_HELL_MIN_HEALTH, maybeTriggerSurpriseEventForWave, SURPRISE_EVENT_SCHEDULE, spawnAtSurpriseEventPoint, spawnUprisingDragonAtEventPoint, surpriseEventHpMult, tickSurpriseEvents } from '../src/systems/SurpriseEvents';
+import { deadUprisingDragonTypeForWave, deadUprisingTitanTypesForWave, GATES_OF_HELL_MIN_HEALTH, maybeTriggerSurpriseEventForWave, previewGatesOfHellFinalHp, SURPRISE_EVENT_SCHEDULE, spawnAtSurpriseEventPoint, spawnUprisingDragonAtEventPoint, surpriseEventHpMult, tickSurpriseEvents } from '../src/systems/SurpriseEvents';
 import { EnemyType, GamePhase, SurpriseEventKind, TileType, TowerType } from '../src/types';
 import { createGameState } from '../src/GameState';
 import { GRID } from '../src/constants';
@@ -168,6 +168,44 @@ describe('Surprise event spawn redirect — flyer guard (2026-05-19)', () => {
       expect(enemy, `${type} should spawn from Gates of Hell`).toBeTruthy();
       expect(enemy.maxHp, `${type} event HP`).toBeGreaterThanOrEqual(GATES_OF_HELL_MIN_HEALTH);
       expect(enemy.maxHp, `${type} receives Gates HP multiplier and wave scaling`).toBeGreaterThan(def.baseHp);
+      expect(enemy.maxHp, `${type} Codex preview should match W16 runtime HP`).toBe(
+        previewGatesOfHellFinalHp(type, 16)
+      );
+    }
+  });
+
+  it('previews the stronger W27 Gates health through the live spawn formula', () => {
+    for (const type of [EnemyType.HELL_GATE, EnemyType.FIRE_GIANT]) {
+      const s: any = makeEventState(27);
+      s.activeHeroId = 'GAIUS_MARIUS';
+      s.activeSurpriseEvent = {
+        kind: SurpriseEventKind.GATES_OF_HELL,
+        waveOverride: false,
+        spawnPoints: [{
+          vfxX: 100,
+          vfxY: 100,
+          pathTileX: 5,
+          pathTileY: 5,
+          pathIndex: 4,
+          spawnAt: 0,
+          enemyType: type,
+          fired: false,
+          pointId: 0,
+        }],
+        spawnedEnemyIds: new Set(),
+        lastSpawnFiredAt: 0,
+        vfxFadeOutAt: 0,
+        startedAt: 0,
+      };
+
+      tickSurpriseEvents(s);
+      const enemy = [...s.enemies.values()].find((candidate: any) => candidate.type === type) as any;
+      expect(Math.round(enemy.maxHp), `${type} Codex formula should match W27 hero-active runtime HP`).toBe(
+        previewGatesOfHellFinalHp(type, 27, true)
+      );
+      expect(enemy.maxHp, `${type} should be stronger on W27 than W16`).toBeGreaterThan(
+        previewGatesOfHellFinalHp(type, 16, true)
+      );
     }
   });
 
