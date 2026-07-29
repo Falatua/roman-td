@@ -1045,7 +1045,8 @@
     "immuneSlow": true,
     "immuneStun": true,
     "immuneFreeze": true,
-    "regenPctPerSec": 0.008,
+    "poisonWeaknessPct": 400,
+    "regenPctPerSec": 0.003125,
     "outOfCombatRegen": 0.018,
     "checkpointHealPct": 0.12,
     "deathBurst": {

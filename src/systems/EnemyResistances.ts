@@ -333,7 +333,7 @@ const RESIST: Record<EnemyType, EnemyResistProfile> = {
   [EnemyType.OCEAN_GHOST_SPIRIT]: { melee: 0, ranged: 0, siege: 0, fire: 0, divine: 1.25, slow: 0, burn: 0, bleed: 0, poison: 0 },
   [EnemyType.SEA_GIANT]: { melee: 0.50, ranged: 0.50, siege: 1.05, fire: 0, divine: 1.10, slow: 0.30, burn: 0, poison: 0.34, bleed: 0.30 },
   [EnemyType.SEA_GIANT_WARBRINGER]: { melee: 0.35, ranged: 0.40, siege: 0.95, fire: 0, divine: 1.15, slow: 0.22, burn: 0, poison: 0.25, bleed: 0.25 },
-  [EnemyType.NETHER_AMPHIBIOUS_GIANT]: { melee: 0.25, ranged: 0.30, siege: 0.55, fire: 0, divine: 1.35, slow: 0.18, burn: 0, poison: 0.16, bleed: 0.20 },
+  [EnemyType.NETHER_AMPHIBIOUS_GIANT]: { melee: 0.25, ranged: 0.30, siege: 0.55, fire: 0, divine: 1.35, slow: 0.18, burn: 0, bleed: 0.20 },
   [EnemyType.NAGA_ADEPT]: { ranged: 0.8, fire: 0.75, burn: 0.75, poison: 0.65, slow: 0.55, divine: 1.10 },
   [EnemyType.NAGA_SLEEPWEAVER]: { ranged: 0.65, fire: 0.6, burn: 0.6, poison: 0.45, slow: 0.45, divine: 1.15 },
   [EnemyType.NAGA_ORACLE]: { ranged: 0.45, siege: 0.75, fire: 0, burn: 0, poison: 0.25, slow: 0.35, divine: 1.25 },
