@@ -685,7 +685,9 @@ describe('Recipe combo detection', () => {
     expect(def?.omega).toBe(true);
     expect(def?.damageType).toBe('DIVINE');
     expect(def?.melee).toBe(true);
-    expect(def?.range).toBe(6.0);
+    expect(def?.range).toBe(3.0);
+    expect(def?.ability).toContain('DIVINE MELEE at 3 tiles');
+    expect(def?.ability).toContain('6-tile enemy vulnerability aura');
     expect(def?.ability).toContain('OMEGA COMBO');
     expect(def?.ability).toContain('Imperium Eternum + Consular Fatebinder');
   });

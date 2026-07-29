@@ -352,7 +352,9 @@ describe('Harbor naval tower system', () => {
     expect(towerEffectiveStats(oracle).dps).toBeLessThan(towerEffectiveStats(fleet).dps);
     expect(towerEffectiveStats(leviathan).dps).toBeGreaterThan(3000);
     expect(towerEffectiveStats(leviathan).dps).toBeGreaterThan(towerEffectiveStats(transformer).dps);
-    expect(towerEffectiveStats(leviathan).range).toBeLessThan(towerEffectiveStats(transformer).range / 2);
+    expect(towerEffectiveStats(transformer).range).toBe(3);
+    expect(towerEffectiveStats(leviathan).range).toBe(2.5);
+    expect(towerEffectiveStats(leviathan).range).toBeLessThan(towerEffectiveStats(transformer).range);
   });
 
   it('keeps Harbor tower ability copy practical instead of flavor-only', () => {
