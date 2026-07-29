@@ -28,6 +28,7 @@ import { routeOceanSpawnToPath } from './OceanSpawnSystem';
 import { isBossEnemy, isCommanderEnemy, isEliteEnemy } from './EnemyClassification';
 import { staggerElephantSpawns } from './ElephantPacing';
 import { grantTrapGiftInventory } from './TrapInventorySystem';
+import { expireHarborDraftForNewWave } from './HarborSystem';
 
 // Faction → boss enemy ID. Used to pick a thematically-appropriate bonus boss.
 const FACTION_BOSS: Record<string, string> = {
@@ -242,6 +243,9 @@ export function startWave(state: GameStateShape) {
     state.phase !== GamePhase.PROSPECT_PLACEMENT &&
     state.phase !== GamePhase.PICK_KEEPER
   ) return;
+  // Closing the Harbor panel keeps its contracts during preparation, but
+  // launching any next wave ends that merchant visit.
+  expireHarborDraftForNewWave(state);
   // Deployment is a preparation decision. Clear any armed trap before every
   // normal, bonus, endless, or sandbox wave so pausing combat cannot revive
   // a placement cursor that was armed during the preceding build phase.

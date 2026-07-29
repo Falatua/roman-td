@@ -9,8 +9,10 @@ import { executeCombo, scanCombos } from '../src/systems/CombinationEngine';
 import { applyDamageAndStatus, fatedCurrentDamageMult, tickCombat, type CombatHooks } from '../src/systems/CombatResolver';
 import { tickProjectiles } from '../src/systems/ProjectileSystem';
 import { commanderDamageTakenMult, commanderSpeedMult, isCommanderType, tickCommanderSupport } from '../src/systems/CommanderSystem';
+import { startWave } from '../src/systems/WaveManager';
 import towersData from '../src/data/towers.json';
 import {
+  activeHarborDraftOffers,
   buildHarborDraftOffers,
   HARBOR_DRAFT_OFFER_COUNT,
   harborDraftTierForWave,
@@ -269,6 +271,27 @@ describe('Harbor naval tower system', () => {
     expect(new Set(s.pendingPurchasedTowers?.map(t => t.type)).size).toBe(HARBOR_DRAFT_OFFER_COUNT);
     expect(queueHarborDraftPurchase(s, offers[0])).toBe(false);
     expect(s.pendingPurchasedTowers).toHaveLength(HARBOR_DRAFT_OFFER_COUNT);
+  });
+
+  it('keeps remaining contracts reopenable until the next wave starts', () => {
+    const s = readyState();
+    s.wave = 12;
+    queueHarborDraftForClearedOceanWave(s);
+    const original = buildHarborDraftOffers(s);
+
+    expect(activeHarborDraftOffers(s)).toBe(original);
+    expect(queueHarborDraftPurchase(s, original[0])).toBe(true);
+    const remaining = activeHarborDraftOffers(s);
+    expect(remaining).toHaveLength(2);
+    expect(remaining.map(offer => offer.type)).toEqual(original.slice(1).map(offer => offer.type));
+
+    // Closing and reopening the UI performs no refresh or state mutation.
+    expect(activeHarborDraftOffers(s)).toBe(remaining);
+
+    startWave(s);
+    expect(activeHarborDraftOffers(s)).toEqual([]);
+    expect((s as any).__harborDraftOffers).toBeUndefined();
+    expect((s as any).__harborDraftWave).toBeUndefined();
   });
 
   it('tideforged combos preserve ocean tiles instead of turning them into stones', () => {

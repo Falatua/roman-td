@@ -172,9 +172,24 @@ export function buildHarborDraftOffers(state: GameStateShape, forceRefresh = fal
   return offers;
 }
 
+export function activeHarborDraftOffers(state: GameStateShape): HarborDraftOffer[] {
+  const scratch = state as any;
+  if (scratch.__harborDraftWave !== state.wave) return [];
+  if (!Array.isArray(scratch.__harborDraftOffers)) return [];
+  return scratch.__harborDraftOffers;
+}
+
+export function expireHarborDraftForNewWave(state: GameStateShape): void {
+  const scratch = state as any;
+  scratch.__harborDraftOffers = undefined;
+  scratch.__harborDraftWave = undefined;
+  scratch.__pendingHarborWaveDraft = undefined;
+  scratch.__pendingHarborUnlockNotice = false;
+}
+
 export function queueHarborDraftPurchase(state: GameStateShape, offer: HarborDraftOffer): boolean {
-  const activeOffers = (state as any).__harborDraftOffers;
-  const isActiveOffer = Array.isArray(activeOffers) && activeOffers.some((active: HarborDraftOffer) =>
+  const activeOffers = activeHarborDraftOffers(state);
+  const isActiveOffer = activeOffers.some((active: HarborDraftOffer) =>
     active.type === offer.type &&
     active.tier === offer.tier &&
     active.price === offer.price

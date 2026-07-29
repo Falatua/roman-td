@@ -13,6 +13,7 @@ import { factionName, enemyName, damageTypeLabel } from '../format';
 import towersData from '../data/towers.json';
 import { computeLeaderboardScoreForState } from './Leaderboard';
 import { SOLO_DEFAULT_GAME_SPEED, soloGameSpeedPresentation } from '../GameSpeed';
+import { activeHarborDraftOffers } from '../systems/HarborSystem';
 
 function targetingModeLabel(mode: TargetingMode): string {
   return mode === TargetingMode.CLOSE ? 'CLOSEST' : TargetingMode[mode];
@@ -25,6 +26,7 @@ export interface UICallbacks {
   onComboList: () => void;
   onOpenShop: () => void;
   onOpenMercator?: () => void;
+  onOpenHarbor?: () => void;
   onToggleStone?: () => void;       // legacy hook — stone button removed in 2026-05
   onToggleSpeed?: (btn: HTMLButtonElement) => void;
   onUndo?: () => void;
@@ -62,6 +64,7 @@ export class UIManager {
   // `setMercatorAvailable()` when a Mercator visit lands and dismisses it
   // when the player presses START WAVE.
   mercatorBtn: HTMLButtonElement;
+  harborBtn: HTMLButtonElement;
   cb: UICallbacks;
   // 2026-05-25 — track the last bulk-set targeting mode so the TARGET
   // ALL picker can highlight the "currently on" option. Without this
@@ -77,6 +80,7 @@ export class UIManager {
   private targetAllBtn: HTMLButtonElement | null = null;
   private showScore: boolean;
   private showTierOdds: boolean;
+  private harborWasAvailable = false;
 
   constructor(parent: HTMLElement, cb: UICallbacks, opts?: { leftPanel?: HTMLElement; rightPanel?: HTMLElement; showScore?: boolean; showTierOdds?: boolean }) {
     this.cb = cb;
@@ -140,6 +144,18 @@ export class UIManager {
     this.mercatorBtn.style.border = '2px solid #d4af37';
     this.mercatorBtn.style.boxShadow = '0 0 10px rgba(212,175,55,0.45)';
     this.mercatorBtn.style.display = 'none';     // hidden until Mercator arrives
+    // HARBOR appears only while the current preparation phase still has
+    // naval contracts. Closing the modal preserves those offers.
+    this.harborBtn = mkBtn('HARBOR', '#123f4a');
+    this.harborBtn.id = 'harbor-btn';
+    this.harborBtn.title = 'Reopen this wave\'s remaining naval contracts.';
+    this.harborBtn.onclick = () => cb.onOpenHarbor?.();
+    this.harborBtn.style.color = '#bff7ff';
+    this.harborBtn.style.fontWeight = 'bold';
+    this.harborBtn.style.letterSpacing = '2px';
+    this.harborBtn.style.border = '2px solid #5fe6ff';
+    this.harborBtn.style.boxShadow = '0 0 10px rgba(95,230,255,0.42)';
+    this.harborBtn.style.display = 'none';
     // STONE button removed — placing a prospect now costs 1g directly,
     // unifying "stone or prospect" into one click flow. Unkept prospects
     // still convert to walls automatically when the wave starts.
@@ -331,7 +347,7 @@ export class UIManager {
     };
     buttons.append(
       this.startBtn, speedBtn, pauseBtn, this.upgradeBtn,
-      shopBtn, this.mercatorBtn, questsBtn, codexBtn,
+      shopBtn, this.mercatorBtn, this.harborBtn, questsBtn, codexBtn,
       overflowToggle, overflowGroup
     );
 
@@ -355,6 +371,22 @@ export class UIManager {
     }
   }
 
+  setHarborAvailable(on: boolean, remaining = 0) {
+    const becameAvailable = on && !this.harborWasAvailable;
+    this.harborWasAvailable = on;
+    this.harborBtn.style.display = on ? '' : 'none';
+    this.harborBtn.textContent = on ? `HARBOR · ${remaining}` : 'HARBOR';
+    this.harborBtn.setAttribute('aria-label', on
+      ? `Open Harbor Draft, ${remaining} contract${remaining === 1 ? '' : 's'} remaining`
+      : 'Harbor Draft unavailable');
+    if (becameAvailable) {
+      this.harborBtn.animate(
+        [{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }],
+        { duration: 650, iterations: 2, easing: 'ease-in-out' }
+      );
+    }
+  }
+
   update(state: GameStateShape, selectedTowerInfo: string | null) {
     this.hud.innerHTML = '';
     const left = document.createElement('div');
@@ -365,6 +397,11 @@ export class UIManager {
       state.phase === GamePhase.PICK_KEEPER ? 'PICK KEEPER' :
       state.phase === GamePhase.GAME_OVER ? 'CASTRUM LUNUM HAS FALLEN' :
       state.phase === GamePhase.VICTORY ? 'IMPERATOR' : 'BUILD';
+    const harborPreWave = state.phase === GamePhase.BUILD_PHASE
+      || state.phase === GamePhase.PROSPECT_PLACEMENT
+      || state.phase === GamePhase.PICK_KEEPER;
+    const harborOffers = activeHarborDraftOffers(state);
+    this.setHarborAvailable(harborPreWave && harborOffers.length > 0, harborOffers.length);
     // Live enemy counter + threat summary during waves (§7.1, §16.1)
     let waveCounter = '';
     if (state.phase === GamePhase.WAVE_PHASE) {

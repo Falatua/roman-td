@@ -326,7 +326,8 @@ describe('Inspection panels keep obvious close controls', () => {
     expect(source).toContain('closeButton: false');
     const harbor = readFileSync('src/render/HarborDraftModal.ts', 'utf8');
     expect(harbor).not.toContain('id="harbor-close"');
-    expect(harbor).toContain('onClose: () => wrap.remove()');
+    expect(harbor).toContain('onClose: () => {');
+    expect(harbor).toContain('Harbor Draft closed, not forfeited.');
     expect(readFileSync('src/render/SecretEvents.ts', 'utf8')).toContain('id="mercator-backroom-x"');
     expect(readFileSync('src/render/ComboPreview.ts', 'utf8')).toContain('id="combo-info-close"');
     expect(readFileSync('src/main.ts', 'utf8')).toContain('id="dps-summary-close"');
@@ -1441,6 +1442,8 @@ describe('Modal ergonomics and popup stacking', () => {
     const main = readFileSync('src/main.ts', 'utf8');
     const harborSystem = readFileSync('src/systems/HarborSystem.ts', 'utf8');
     const harborModal = readFileSync('src/render/HarborDraftModal.ts', 'utf8');
+    const uiManager = readFileSync('src/render/UIManager.ts', 'utf8');
+    const waveManager = readFileSync('src/systems/WaveManager.ts', 'utf8');
     const killBlock = main.slice(
       main.indexOf('if (shouldUnlockHarborFromKill(state, e.type) && markHarborUnlocked(state))'),
       main.indexOf('// 2026-05-16', main.indexOf('if (shouldUnlockHarborFromKill(state, e.type) && markHarborUnlocked(state))'))
@@ -1466,17 +1469,25 @@ describe('Modal ergonomics and popup stacking', () => {
     expect(main).not.toContain("showHarborDraftModal(state, buildHarborDraftOffers(state), () => updateHeroPlacementBanner());");
     expect(main).toContain('Buy naval contracts from the Harbor panel after clearing water-enemy waves');
     expect(harborModal).toContain('VIEW NAVAL CONTRACTS');
-    expect(harborModal).toContain('PASS THIS DRAFT');
+    expect(harborModal).toContain('VIEW LATER');
     expect(harborModal).toContain('showHarborWaveClearModal(state: GameStateShape, clearedWave: number, onOpenDraft?: () => void)');
     expect(harborModal).toContain('onOpenDraft?.();');
     expect(harborModal).toContain('You may buy one, two, or all three');
-    expect(harborModal).toContain('You may also pass. The Harbor quartermaster returns with a refreshed draft after the next cleared wave that included water-based enemies.');
-    expect(harborModal).toContain('A fresh draft appears after every cleared water-enemy wave.');
+    expect(harborModal).toContain('return from the <b style="color:#88f7ff">HARBOR</b> button');
+    expect(harborModal).toContain('Harbor Draft closed, not forfeited.');
     expect(harborModal).toContain('CONTRACTS LEFT');
     expect(harborModal).toContain('harbor-contract-purchased');
     expect(harborModal).toContain('CONTRACT SIGNED');
     expect(harborModal).toContain('showHarborDraftModal(state, remainingOffers, onUpdate, nextReceipt)');
     expect(harborModal).toContain('if (remainingOffers.length === 0)');
+    expect(harborSystem).toContain('export function activeHarborDraftOffers');
+    expect(harborSystem).toContain('export function expireHarborDraftForNewWave');
+    expect(waveManager).toContain('expireHarborDraftForNewWave(state);');
+    expect(uiManager).toContain("this.harborBtn = mkBtn('HARBOR', '#123f4a')");
+    expect(uiManager).toContain('this.setHarborAvailable(harborPreWave && harborOffers.length > 0, harborOffers.length)');
+    expect(uiManager).toContain('Open Harbor Draft, ${remaining} contract');
+    expect(main).toContain('onOpenHarbor: () => {');
+    expect(main).toContain('const offers = activeHarborDraftOffers(state);');
   });
 
   it('shows full naval contract stats and details in the Harbor Draft', () => {

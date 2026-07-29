@@ -183,7 +183,7 @@ export function showHarborWaveClearModal(state: GameStateShape, clearedWave: num
         Wave <b style="color:#ffd34d">${clearedWave}</b> brought ocean-born enemies, and Rome survived them.
         The Harbor Draft is available <b style="color:#88f7ff">now, after the water threat is defeated</b>.
         The Draft shows <b style="color:#ffd34d">three freshly randomized naval contracts</b>. You may buy one, two, or all three, then place each purchased tower on the ocean.
-        You may also pass. The Harbor quartermaster returns with a refreshed draft after the next cleared wave that included water-based enemies.
+        You may close this notice and return from the <b style="color:#88f7ff">HARBOR</b> button on the right until the next wave begins. The quartermaster refreshes after the next cleared wave that included water-based enemies.
       </div>
       <div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:left;font-size:10.5px;line-height:1.45;color:#cdefff">
         <div style="background:#07141c;border:1px solid #285a68;padding:8px"><b style="color:#88f7ff">1.</b> Buy up to three.</div>
@@ -192,7 +192,7 @@ export function showHarborWaveClearModal(state: GameStateShape, clearedWave: num
       </div>
       <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button id="harbor-unlock-open-draft" style="background:#17394a;color:#fff8e0;border:2px solid #88f7ff;padding:10px 24px;cursor:pointer;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;letter-spacing:2px">VIEW NAVAL CONTRACTS</button>
-        <button id="harbor-unlock-later" style="background:#241810;color:#ffd34d;border:2px solid #7a5a1a;padding:10px 18px;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:2px">PASS THIS DRAFT</button>
+        <button id="harbor-unlock-later" style="background:#241810;color:#ffd34d;border:2px solid #7a5a1a;padding:10px 18px;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:2px">VIEW LATER</button>
       </div>
     </div>`;
   wrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:130;pointer-events:auto';
@@ -203,8 +203,11 @@ export function showHarborWaveClearModal(state: GameStateShape, clearedWave: num
     wrap.remove();
     onOpenDraft?.();
   };
-  wrap.querySelector<HTMLButtonElement>('#harbor-unlock-later')!.onclick = () => wrap.remove();
-  state.hint = `Fresh Harbor contracts are available after clearing ocean wave ${clearedWave}. View contracts now, or pass for the next water-enemy wave.`;
+  wrap.querySelector<HTMLButtonElement>('#harbor-unlock-later')!.onclick = () => {
+    wrap.remove();
+    state.hint = 'Harbor contracts saved for this preparation phase. Use HARBOR on the right to return before starting the next wave.';
+  };
+  state.hint = `Fresh Harbor contracts are available after clearing ocean wave ${clearedWave}. View them now or return from HARBOR before the next wave.`;
 }
 
 export function showHarborDraftModal(
@@ -264,7 +267,7 @@ export function showHarborDraftModal(
           <div style="font-size:9px;letter-spacing:2px;color:#88f7ff;font-weight:bold">PURCHASE CONFIRMED</div>
           <div style="margin-top:3px;color:#fff8e0;font-size:12px"><b>${escapeHtml(receipt.name)} T${receipt.tier}</b> signed for <b style="color:#ffd34d">${receipt.price}g</b>. ${receipt.queued} purchased tower${receipt.queued === 1 ? '' : 's'} waiting for placement.</div>
         </div>` : ''}
-        <div style="font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Buy any or all remaining contracts. A purchased card signs, disappears, and joins your placement queue. The panel closes after all three are bought, or you may close it early to pass on the rest. A fresh draft appears after every cleared water-enemy wave. Each card shows the tier-adjusted stats and current recipe value.</div>
+        <div style="font-size:12px;color:#cdefff;text-align:left;line-height:1.5">Buy any or all remaining contracts. A purchased card signs, disappears, and joins your placement queue. Need more gold? Close this panel, sell from the Armarium, then use <b style="color:#88f7ff">HARBOR</b> on the right to reopen the same offers before starting the next wave. Each card shows the tier-adjusted stats and current recipe value.</div>
         <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">${cards}</div>
       </div>
     </div>`;
@@ -275,7 +278,11 @@ export function showHarborDraftModal(
     enhanceModalErgonomics(wrap, panel, {
       bodySelector: '#harbor-draft-body',
       title: 'Harbor Draft',
-      onClose: () => wrap.remove()
+      onClose: () => {
+        wrap.remove();
+        state.hint = 'Harbor Draft closed, not forfeited. Reopen it from HARBOR on the right before starting the next wave.';
+        onUpdate?.();
+      }
     });
   }
   wrap.querySelectorAll<HTMLButtonElement>('[data-harbor-buy]').forEach(btn => {

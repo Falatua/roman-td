@@ -97,6 +97,7 @@ import {
   shouldOfferMercatorBackRoom
 } from './systems/SecretEventsSystem';
 import {
+  activeHarborDraftOffers,
   buildHarborDraftOffers,
   harborTowerCanUseTile,
   isHarborTowerType,
@@ -5624,6 +5625,9 @@ async function boot() {
           mercatorShop = null;
           ui.setMercatorAvailable(false);
         }
+        document.getElementById('harbor-draft-modal')?.remove();
+        document.getElementById('harbor-unlock-modal')?.remove();
+        ui.setHarborAvailable(false);
         startWave(state);
         // User-supplied wave-start bumper SFX (plays the moment the wave starts).
         SFX.waveStartBlast();
@@ -5886,6 +5890,20 @@ async function boot() {
       renderShop(app, mercatorShop!, state, inventory, {
         onClose: () => document.getElementById('shop-modal')?.remove()
       });
+    },
+    onOpenHarbor: () => {
+      if (!isPreWavePhase()) {
+        state.hint = 'The Harbor only signs contracts between waves.';
+        showActionBlockedToast('Naval contracts can only be purchased during preparation.');
+        return;
+      }
+      const offers = activeHarborDraftOffers(state);
+      if (offers.length === 0) {
+        state.hint = 'No Harbor contracts remain for this wave. Fresh contracts follow cleared ocean-threat waves.';
+        showActionBlockedToast('No Harbor contracts remain this wave.');
+        return;
+      }
+      showHarborDraftModal(state, offers, () => updateHeroPlacementBanner());
     },
     onOpenInventory: () => showInventoryModal(app, inventory, state, {
       onClose: () => document.getElementById('inventory-modal')?.remove(),
