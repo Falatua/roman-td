@@ -1,5 +1,5 @@
 import {
-  Tower, Enemy, Projectile, LootOrb, GamePhase, DrawCard, SurpriseEventState
+  Tower, Enemy, Projectile, LootOrb, GamePhase, DrawCard, SurpriseEventState, ItemId
 } from './types';
 import { ECONOMY, GRID, SOLO_STARTING_LIVES } from './constants';
 
@@ -24,6 +24,12 @@ export interface GameStateShape {
   projectiles: Projectile[];
   // Loot orbs on the ground
   lootOrbs: LootOrb[];
+  // Run-scoped anti-streak memory for random Common through Epic rewards.
+  // Duplicates remain possible later without appearing in short streaks.
+  recentRandomItemRewards?: Partial<Record<'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC', ItemId[]>>;
+  // Previous vendor lineups let a new visit prefer genuinely fresh stock.
+  gateShopPreviousItemIds?: string[];
+  mercatorPreviousItemIds?: string[];
   // 5-card draw for current build phase
   draw: DrawCard[];
   // Selected card index

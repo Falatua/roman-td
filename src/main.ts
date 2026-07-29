@@ -306,12 +306,26 @@ async function boot() {
   let gateShop: ShopState | null = null;
   let mercatorShop: ShopState | null = null;
   let mercatorActive = false;
+  function restockGateShop(): ShopState {
+    gateShop = buildGateShop(
+      state.wave,
+      currentlyOwnedLegendarySet(state, inventory),
+      new Set(state.gateShopPreviousItemIds ?? [])
+    );
+    state.gateShopPreviousItemIds = gateShop.offers.map(offer => String(offer.itemId));
+    return gateShop;
+  }
   // 2026-07-03 — single chokepoint for (re)stocking the Mercator. Passes the
   // PREVIOUS visit's random T5 lineup as excludeTypes so each stop rolls a
   // genuinely fresh armory (no back-to-back repeats), then remembers the new
   // lineup on state (survives save/load) for the next visit's exclusion.
   function restockMercator(): void {
-    mercatorShop = buildMercatorStock(state.wave, currentlyOwnedLegendarySet(state, inventory));
+    mercatorShop = buildMercatorStock(
+      state.wave,
+      currentlyOwnedLegendarySet(state, inventory),
+      new Set(state.mercatorPreviousItemIds ?? [])
+    );
+    state.mercatorPreviousItemIds = mercatorShop.offers.map(offer => String(offer.itemId));
     mercatorShop.championOffers = buildMercatorChampionOffers({
       activeHeroId: state.activeHeroId,
       purchasedChampionTypes: state.mercatorPurchasedChampionTypes ?? []
@@ -5862,10 +5876,10 @@ async function boot() {
       // buy something without waiting for the wave to end. Purchases
       // still land in the inventory the same way; equipping happens
       // through the tower menu which is already mid-wave accessible.
-      if (!gateShop) gateShop = buildGateShop(state.wave, currentlyOwnedLegendarySet(state, inventory));
+      const currentGateShop = gateShop ?? restockGateShop();
       // 2026-05 v11: clear the "NEW STOCK" badge — player has now seen the rotation.
       state.shopRefreshedUnopened = false;
-      renderShop(app, gateShop, state, inventory, {
+      renderShop(app, currentGateShop, state, inventory, {
         onClose: () => {
           const m = document.getElementById('shop-modal');
           if (m) m.remove();
@@ -6863,8 +6877,8 @@ async function boot() {
     // 2026-05-19 — Gate shop access is no longer phase-gated. Both this
     // canvas click and the right-panel SHOP button work mid-wave.
     if (tile === TileType.GATE) {
-      if (!gateShop) gateShop = buildGateShop(state.wave, currentlyOwnedLegendarySet(state, inventory));
-      renderShop(app, gateShop, state, inventory, {
+      const currentGateShop = gateShop ?? restockGateShop();
+      renderShop(app, currentGateShop, state, inventory, {
         onClose: () => { document.getElementById('shop-modal')?.remove(); }
       });
       return;
@@ -7284,8 +7298,8 @@ async function boot() {
       // B / G: always the gate shop. Mercator has its own button + the
       // floating banner, so keys don't fight over which vendor opens.
       if (state.phase === GamePhase.BUILD_PHASE) {
-        if (!gateShop) gateShop = buildGateShop(state.wave, currentlyOwnedLegendarySet(state, inventory));
-        renderShop(app, gateShop, state, inventory, { onClose: () => document.getElementById('shop-modal')?.remove() });
+        const currentGateShop = gateShop ?? restockGateShop();
+        renderShop(app, currentGateShop, state, inventory, { onClose: () => document.getElementById('shop-modal')?.remove() });
       }
     }
     else if (k === 'm') {
@@ -8187,7 +8201,7 @@ async function boot() {
             // Pure mechanic-check enemies do not add extra item lottery rolls.
           } else if (isRareOnlyBossDropEnemy(e)) {
             if (shouldDropRareOnlyBossLoot(e)) {
-              const drop = rollRareDrop();
+              const drop = rollRareDrop(state);
               if (drop) spawnLootAt(state, e, drop);
             }
           } else if (e.type === 'DAEMON_IMPERATOR') {
@@ -8208,7 +8222,7 @@ async function boot() {
             // anti-ocean tools. Fishlings are intentionally excluded by
             // oceanSpecialistDropChance so early showpiece waves do not
             // flood the board with rare loot.
-            const drop = rollOceanSpecialistDrop(e);
+            const drop = rollOceanSpecialistDrop(e, state);
             if (drop) spawnLootAt(state, e, drop);
           } else if (e.isBoss && premiumDropRoll(0.12)) {
             const drop = rollEpicDrop(state, inventory);
@@ -8583,7 +8597,7 @@ async function boot() {
                 (state as any).__pendingRelicItemRarities = [];
                 for (const rarity of pendingRelicItems) {
                   const drop = rarity === 'EPIC' ? rollEpicDrop(state, inventory)
-                    : rarity === 'RARE' ? rollRareDrop()
+                    : rarity === 'RARE' ? rollRareDrop(state)
                     : null;
                   if (!drop) continue;
                   const ok = inventoryAdd(inventory, drop.itemId as any, drop.rarity, false);

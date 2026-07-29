@@ -321,28 +321,32 @@ export const MERCATOR_WAVES = [4, 9, 14, 19, 23, 27];
 // build-defining Legendary. The Legendary uses the same legal ordinary pool as
 // Mercator, excludes copies already held by the player, and never pulls an
 // event-exclusive reward.
-export function buildGateShop(_refreshSeed = 0, ownedLegendaries?: Set<string>): ShopState {
+export function buildGateShop(
+  _refreshSeed = 0,
+  ownedLegendaries?: Set<string>,
+  previousItemIds?: ReadonlySet<string>
+): ShopState {
   const offers: ShopOffer[] = [];
   // Sample 4 commons. The pool only has 5, so the player sees 4-of-5
   // each visit — predictable enough that they know what's coming,
   // varied enough that they don't always see the same lineup.
-  const commons = sampleN(entries(GATE_COMMON), Math.min(4, GATE_COMMON.length));
+  const commons = sampleN(entries(GATE_COMMON), Math.min(4, GATE_COMMON.length), previousItemIds);
   for (const [id, def] of commons) {
     offers.push({ itemId: id, rarity: 'COMMON', price: itemBuyPrice(id), isConsumable: false });
   }
   // Sample 2 uncommons (the pool has 2, so always both for now).
-  const uncommons = sampleN(entries(GATE_UNCOMMON), Math.min(2, GATE_UNCOMMON.length));
+  const uncommons = sampleN(entries(GATE_UNCOMMON), Math.min(2, GATE_UNCOMMON.length), previousItemIds);
   for (const [id, def] of uncommons) {
     offers.push({ itemId: id, rarity: 'UNCOMMON', price: itemBuyPrice(id), isConsumable: false });
   }
-  const epics = sampleNWeightedItems(entries(GATE_EPIC), Math.min(2, GATE_EPIC.length));
+  const epics = sampleNWeightedItems(entries(GATE_EPIC), Math.min(2, GATE_EPIC.length), previousItemIds);
   for (const [id] of epics) {
     offers.push({ itemId: id, rarity: 'EPIC', price: itemBuyPrice(id), isConsumable: false });
   }
   const eligibleLegendaries = MERCATOR_LEGENDARY.filter(id =>
     ITEMS[id]?.rarity === 'LEGENDARY' && !ITEMS[id]?.eventExclusive && !ownedLegendaries?.has(id)
   );
-  const legendary = sampleNWeightedItems(entries(eligibleLegendaries), 1);
+  const legendary = sampleNWeightedItems(entries(eligibleLegendaries), 1, previousItemIds);
   for (const [id] of legendary) {
     offers.push({ itemId: id, rarity: 'LEGENDARY', price: itemBuyPrice(id), isConsumable: isConsumable(id) });
   }
@@ -354,7 +358,11 @@ export function buildGateShop(_refreshSeed = 0, ownedLegendaries?: Set<string>):
   return { type: 'GATE', offers, livesPrice: 55, livesMaxThisVisit: 5, livesBoughtThisVisit: 0 };
 }
 
-export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): ShopState {
+export function buildMercatorStock(
+  _seed = 0,
+  ownedLegendaries?: Set<string>,
+  previousItemIds?: ReadonlySet<string>
+): ShopState {
   // Mercator is the high-tier vendor. Each `sampleN` call is wrapped in a
   // length check so a partially-populated items.json can't crash the build.
   const offers: ShopOffer[] = [];
@@ -373,13 +381,13 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   // 2026-05 v6: bumped 2 → 4 legendary slots so each Mercator visit
   // actually feels like a trophy haul. Still filtered against owned
   // legendaries so no duplicates land in the stock.
-  const legs = sampleNWeightedItems(entries(filteredLegendaryIds), 4);
+  const legs = sampleNWeightedItems(entries(filteredLegendaryIds), 4, previousItemIds);
   for (const [id] of legs) {
     offers.push({ itemId: id, rarity: 'LEGENDARY', price: itemBuyPrice(id), isConsumable: isConsumable(id) });
   }
 
   // 1 guaranteed Rare with a steep markup.
-  const rares = sampleNWeightedItems(entries(MERCATOR_RARE), 1);
+  const rares = sampleNWeightedItems(entries(MERCATOR_RARE), 1, previousItemIds);
   if (rares.length > 0) {
     const [rId, rDef] = rares[0];
     offers.push({ itemId: rId, rarity: 'RARE', price: itemBuyPrice(rId) + 28, isConsumable: false });
@@ -389,7 +397,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   // Aquilifer's Banner, or Punic Ledger). These never appear in the gate
   // shop, so the player has a reason to actually visit the Mercator beyond
   // the legendary slots.
-  const excl = sampleNWeightedItems(entries(MERCATOR_EXCLUSIVE_RARE), 1);
+  const excl = sampleNWeightedItems(entries(MERCATOR_EXCLUSIVE_RARE), 1, previousItemIds);
   if (excl.length > 0) {
     const [eId, eDef] = excl[0];
     offers.push({ itemId: eId, rarity: 'RARE', price: itemBuyPrice(eId), isConsumable: false });
@@ -400,7 +408,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   // size remains stable.
 
   // 3 mid items (was 2 + 1 consumable), all marked up.
-  const mids = sampleNWeightedItems(entries(MERCATOR_MID), 3);
+  const mids = sampleNWeightedItems(entries(MERCATOR_MID), 3, previousItemIds);
   for (const [id, def] of mids) {
     if (!def) continue;
     offers.push({ itemId: id, rarity: asRarity(def.rarity), price: itemBuyPrice(id) + 18, isConsumable: false });
@@ -410,7 +418,7 @@ export function buildMercatorStock(_seed = 0, ownedLegendaries?: Set<string>): S
   // tier (3 demoted melee legendaries + 3 new Epics). Price is the
   // flat 60g baseline from items_permanent.json, no markup — the
   // user set the Epic price specifically.
-  const epics = sampleNWeightedItems(entries(MERCATOR_EPIC), 2);
+  const epics = sampleNWeightedItems(entries(MERCATOR_EPIC), 2, previousItemIds);
   for (const [id, def] of epics) {
     if (!def) continue;
     offers.push({ itemId: id, rarity: 'EPIC' as Rarity, price: itemBuyPrice(id), isConsumable: false });
@@ -564,17 +572,30 @@ function entries(ids: string[]): [string, any][] {
   return ids.map(id => [id, ITEMS[id]] as [string, any]).filter(([, def]) => !!def);
 }
 
-// Fisher-Yates shuffle, take first N. Guarantees distinct picks within a single visit.
-function sampleN<T>(arr: [string, T][], n: number): [string, T][] {
-  const a = arr.slice();
-  shuffleInPlace(a);
-  return a.slice(0, Math.min(n, a.length));
+// Prefer stock that was absent from the previous visit, then fill from the
+// previous lineup only when a small pool cannot supply the requested count.
+function sampleN<T>(arr: [string, T][], n: number, previousIds?: ReadonlySet<string>): [string, T][] {
+  const target = Math.min(n, arr.length);
+  if (!previousIds || previousIds.size === 0) {
+    const a = arr.slice();
+    shuffleInPlace(a);
+    return a.slice(0, target);
+  }
+  const fresh = shuffleInPlace(arr.filter(([id]) => !previousIds.has(id)));
+  const previous = shuffleInPlace(arr.filter(([id]) => previousIds.has(id)));
+  return [...fresh, ...previous].slice(0, target);
 }
 
-function sampleNWeightedItems<T>(arr: [string, T][], n: number): [string, T][] {
-  const pool = arr.slice();
+function sampleNWeightedItems<T>(
+  arr: [string, T][],
+  n: number,
+  previousIds?: ReadonlySet<string>
+): [string, T][] {
+  const target = Math.min(n, arr.length);
+  const fresh = previousIds ? arr.filter(([id]) => !previousIds.has(id)) : arr;
+  const prior = previousIds ? arr.filter(([id]) => previousIds.has(id)) : [];
+  const pool = (fresh.length >= target ? fresh : [...fresh, ...prior]).slice();
   const out: [string, T][] = [];
-  const target = Math.min(n, pool.length);
   while (out.length < target && pool.length > 0) {
     let total = 0;
     for (const [id] of pool) total += Math.max(0, itemRandomSelectionWeight(id));

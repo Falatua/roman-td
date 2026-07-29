@@ -5,12 +5,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { APOTHEOSIS_ITEM_RANDOM_WEIGHT, AURA_ITEM_RANDOM_WEIGHT, OCEAN_SPECIALIST_ITEM_RANDOM_WEIGHT, DOT_ITEM_RANDOM_WEIGHT, itemFamily, canEquipItemFamily, isAuraItem, isOceanSpecialistItem, isDotItem, itemRandomSelectionWeight, itemEquipMode } from '../src/systems/ItemRules';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { TowerType } from '../src/types';
-import { createInventory, grantSoloStartingItems, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop, LEGENDARY_DROP_ITEM_POOL, SOLO_STARTING_ITEM_LOADOUT } from '../src/systems/LootSystem';
+import { createInventory, grantSoloStartingItems, inventoryAdd, inventoryRemove, isPermanent, isConsumable, itemBuyPrice, premiumDropRoll, RARITY_BUY_PRICE, rollDrop, rollRareDrop, rollEpicDrop, PREMIUM_NON_BOSS_DROP_CHANCES, premiumNonBossDropChance, rollPremiumNonBossDrop, itemLootPoolCoverage, oceanSpecialistDropChance, rollOceanSpecialistDrop, LEGENDARY_DROP_ITEM_POOL, SOLO_STARTING_ITEM_LOADOUT, ITEM_REWARD_VARIETY_WINDOW } from '../src/systems/LootSystem';
 import { buildGateShop, buildMercatorStock, buildMercatorTowerOffers, isMercatorWave, gateShopRefreshDue, MERCATOR_LEGENDARY } from '../src/systems/MerchantSystem';
 import { eligibleBaseTowerTypesAtTier } from '../src/systems/BaseTowerRoster';
 import itemsData from '../src/data/items_permanent.json';
 import towersData from '../src/data/towers.json';
 import { LOOT_DROP_RATES } from '../src/constants';
+import { createGameState } from '../src/GameState';
 
 function itemAssetMap(): Record<string, string> {
   const source = readFileSync(path.join(process.cwd(), 'src/render/Assets.ts'), 'utf8');
@@ -407,6 +408,41 @@ describe('Loot drop rolling', () => {
       expect(expected.has(drop!.itemId as string)).toBe(true);
     }
   });
+
+  it('uses run-level rarity memory to prevent short random-reward streaks', () => {
+    expect(ITEM_REWARD_VARIETY_WINDOW).toEqual({
+      COMMON: 4,
+      UNCOMMON: 5,
+      RARE: 6,
+      EPIC: 7
+    });
+    const state = createGameState();
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    try {
+      const commons = Array.from({ length: 5 }, () => rollDrop(state)!.itemId);
+      const rares = Array.from({ length: 7 }, () => rollRareDrop(state)!.itemId);
+      const epics = Array.from({ length: 8 }, () => rollEpicDrop(state)!.itemId);
+      expect(new Set(commons).size).toBe(commons.length);
+      expect(new Set(rares).size).toBe(rares.length);
+      expect(new Set(epics).size).toBe(epics.length);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it('alternates each two-item ocean specialist pool instead of repeating immediately', () => {
+    const state = createGameState();
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    try {
+      const drops = Array.from({ length: 4 }, () => rollOceanSpecialistDrop({ type: 'SEA_GIANT' }, state)!.itemId);
+      expect(drops[0]).not.toBe(drops[1]);
+      expect(drops[1]).not.toBe(drops[2]);
+      expect(drops[2]).not.toBe(drops[3]);
+      expect(new Set(drops)).toEqual(new Set(['BRINEHOOK_ROPE', 'TIDEPIERCER_HARPOON']));
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
 });
 
 describe('Item rarity economy', () => {
@@ -511,6 +547,18 @@ describe('Merchant — gate shop', () => {
       randomSpy.mockRestore();
     }
   });
+
+  it('prioritizes fresh Epic and Legendary stock on the next Gate refresh', () => {
+    const first = buildGateShop();
+    const previous = new Set(first.offers.map(o => String(o.itemId)));
+    const second = buildGateShop(4, undefined, previous);
+    const firstEpics = new Set(first.offers.filter(o => o.rarity === 'EPIC').map(o => o.itemId));
+    const secondEpics = second.offers.filter(o => o.rarity === 'EPIC').map(o => o.itemId);
+    expect(secondEpics.every(id => !firstEpics.has(id))).toBe(true);
+    expect(second.offers.find(o => o.rarity === 'LEGENDARY')?.itemId)
+      .not.toBe(first.offers.find(o => o.rarity === 'LEGENDARY')?.itemId);
+    expect(second.offers.some(o => o.rarity === 'COMMON' && !previous.has(String(o.itemId)))).toBe(true);
+  });
 });
 
 describe('Merchant — Mercator stock', () => {
@@ -585,6 +633,16 @@ describe('Merchant — Mercator stock', () => {
     } finally {
       randomSpy.mockRestore();
     }
+  });
+
+  it('avoids the previous Mercator item lineup wherever alternatives exist', () => {
+    const first = buildMercatorStock();
+    const previous = new Set(first.offers.map(o => String(o.itemId)));
+    const second = buildMercatorStock(9, undefined, previous);
+    const repeated = second.offers
+      .map(o => String(o.itemId))
+      .filter(id => previous.has(id));
+    expect(repeated).toEqual(['TRUESIGHT_LENS']);
   });
 
   it('prices Mercator T5 towers as campaign investments', () => {

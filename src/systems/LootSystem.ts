@@ -114,6 +114,13 @@ const OCEAN_SPECIALIST_RARE_ITEMS: readonly ItemId[] = ['BRINEHOOK_ROPE', 'TIDEP
 const OCEAN_SPECIALIST_EPIC_ITEMS: readonly ItemId[] = ['AEGEAN_PEARL', 'STORMGLASS_AMPHORA']
   .filter(id => (items as any)[id]?.rarity === 'EPIC') as ItemId[];
 
+export const ITEM_REWARD_VARIETY_WINDOW: Readonly<Record<'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC', number>> = Object.freeze({
+  COMMON: 4,
+  UNCOMMON: 5,
+  RARE: 6,
+  EPIC: 7
+});
+
 export const EVENT_EXCLUSIVE_ITEMS_BY_EVENT: Readonly<Record<string, readonly ItemId[]>> = Object.freeze(
   Object.keys(items).reduce((acc, id) => {
     const def: any = (items as any)[id];
@@ -138,20 +145,56 @@ export function itemLootPoolCoverage() {
 
 const GLOBAL_NON_EVENT_LEGENDARY_ITEMS: readonly ItemId[] = LEGENDARY_DROP_ITEM_POOL;
 
-function rollFromPool(rarity: Rarity, pool: readonly ItemId[]): { itemId: ItemId; rarity: Rarity } | null {
-  if (pool.length === 0) return null;
-  return { itemId: pickWeightedItem(pool), rarity };
+function recentRewardExclusions(
+  state: GameStateShape | null | undefined,
+  rarity: Rarity,
+  pool: readonly ItemId[]
+): Set<ItemId> {
+  if (!state || !(rarity in ITEM_REWARD_VARIETY_WINDOW) || pool.length <= 1) return new Set();
+  const typedRarity = rarity as keyof typeof ITEM_REWARD_VARIETY_WINDOW;
+  const history = state.recentRandomItemRewards?.[typedRarity] ?? [];
+  const poolSet = new Set(pool);
+  const relevant = history.filter(id => poolSet.has(id));
+  const maxExcluded = Math.min(ITEM_REWARD_VARIETY_WINDOW[typedRarity], pool.length - 1);
+  return new Set(relevant.slice(-maxExcluded));
 }
 
-function fallbackDrop(): { itemId: ItemId; rarity: Rarity } | null {
-  return rollFromPool('COMMON', COMMON_ITEMS)
-    ?? rollFromPool('UNCOMMON', UNCOMMON_ITEMS)
-    ?? rollFromPool('RARE', RARE_ITEMS)
-    ?? rollFromPool('EPIC', ORDINARY_EPIC_ITEMS)
+function rememberRandomReward(
+  state: GameStateShape | null | undefined,
+  rarity: Rarity,
+  itemId: ItemId
+): void {
+  if (!state || !(rarity in ITEM_REWARD_VARIETY_WINDOW)) return;
+  const typedRarity = rarity as keyof typeof ITEM_REWARD_VARIETY_WINDOW;
+  const history = state.recentRandomItemRewards ??= {};
+  const queue = history[typedRarity] ??= [];
+  queue.push(itemId);
+  const cap = ITEM_REWARD_VARIETY_WINDOW[typedRarity];
+  if (queue.length > cap) queue.splice(0, queue.length - cap);
+}
+
+function rollFromPool(
+  rarity: Rarity,
+  pool: readonly ItemId[],
+  state?: GameStateShape | null
+): { itemId: ItemId; rarity: Rarity } | null {
+  if (pool.length === 0) return null;
+  const exclusions = recentRewardExclusions(state, rarity, pool);
+  const freshPool = exclusions.size > 0 ? pool.filter(id => !exclusions.has(id)) : pool;
+  const itemId = pickWeightedItem(freshPool.length > 0 ? freshPool : pool);
+  rememberRandomReward(state, rarity, itemId);
+  return { itemId, rarity };
+}
+
+function fallbackDrop(state?: GameStateShape | null): { itemId: ItemId; rarity: Rarity } | null {
+  return rollFromPool('COMMON', COMMON_ITEMS, state)
+    ?? rollFromPool('UNCOMMON', UNCOMMON_ITEMS, state)
+    ?? rollFromPool('RARE', RARE_ITEMS, state)
+    ?? rollFromPool('EPIC', ORDINARY_EPIC_ITEMS, state)
     ?? null;
 }
 
-export function rollDrop(): { itemId: ItemId; rarity: Rarity } | null {
+export function rollDrop(state?: GameStateShape | null): { itemId: ItemId; rarity: Rarity } | null {
   // Ordinary kill drops are intentionally rare; the reliable loot moments
   // are commanders, bosses, and special-event enemies. When a normal enemy
   // does hit the small drop chance, keep the payload mostly Common/Uncommon
@@ -160,15 +203,15 @@ export function rollDrop(): { itemId: ItemId; rarity: Rarity } | null {
   // EPIC tail shrinks 1%→0.75% here to hold epic's absolute drop rate
   // constant; the extra frequency all flows to Common/Uncommon/Rare.
   const r = Math.random();
-  if (r < 0.68) return rollFromPool('COMMON', COMMON_ITEMS) ?? fallbackDrop();
-  if (r < 0.94) return rollFromPool('UNCOMMON', UNCOMMON_ITEMS) ?? fallbackDrop();
-  if (r < 0.9925 || ORDINARY_EPIC_ITEMS.length === 0) return rollFromPool('RARE', RARE_ITEMS) ?? fallbackDrop();
-  return rollFromPool('EPIC', ORDINARY_EPIC_ITEMS) ?? fallbackDrop();
+  if (r < 0.68) return rollFromPool('COMMON', COMMON_ITEMS, state) ?? fallbackDrop(state);
+  if (r < 0.94) return rollFromPool('UNCOMMON', UNCOMMON_ITEMS, state) ?? fallbackDrop(state);
+  if (r < 0.9925 || ORDINARY_EPIC_ITEMS.length === 0) return rollFromPool('RARE', RARE_ITEMS, state) ?? fallbackDrop(state);
+  return rollFromPool('EPIC', ORDINARY_EPIC_ITEMS, state) ?? fallbackDrop(state);
 }
 
 // Guaranteed RARE-tier drop (used by the Fire Giant kill hook).
-export function rollRareDrop(): { itemId: ItemId; rarity: Rarity } | null {
-  return rollFromPool('RARE', RARE_ITEMS);
+export function rollRareDrop(state?: GameStateShape | null): { itemId: ItemId; rarity: Rarity } | null {
+  return rollFromPool('RARE', RARE_ITEMS, state);
 }
 
 export function premiumDropRoll(chance: number, randomValue = Math.random()): boolean {
@@ -192,16 +235,19 @@ export function oceanSpecialistDropChance(enemy: Partial<Enemy> | any): number {
   }
 }
 
-export function rollOceanSpecialistDrop(enemy: Partial<Enemy> | any): { itemId: ItemId; rarity: Rarity } | null {
+export function rollOceanSpecialistDrop(
+  enemy: Partial<Enemy> | any,
+  state?: GameStateShape | null
+): { itemId: ItemId; rarity: Rarity } | null {
   const type = String(enemy?.type ?? '');
   const epicChance =
     type === 'SEA_GIANT_WARBRINGER' || type === 'NETHER_AMPHIBIOUS_GIANT' || type === 'TIDECALLER_COMMANDER' || type === 'STORMTIDE_WYVERN_COMMANDER'
       ? 0.35
       : 0.10;
   if (premiumDropRoll(epicChance)) {
-    return rollFromPool('EPIC', OCEAN_SPECIALIST_EPIC_ITEMS) ?? rollFromPool('RARE', OCEAN_SPECIALIST_RARE_ITEMS);
+    return rollFromPool('EPIC', OCEAN_SPECIALIST_EPIC_ITEMS, state) ?? rollFromPool('RARE', OCEAN_SPECIALIST_RARE_ITEMS, state);
   }
-  return rollFromPool('RARE', OCEAN_SPECIALIST_RARE_ITEMS) ?? rollFromPool('EPIC', OCEAN_SPECIALIST_EPIC_ITEMS);
+  return rollFromPool('RARE', OCEAN_SPECIALIST_RARE_ITEMS, state) ?? rollFromPool('EPIC', OCEAN_SPECIALIST_EPIC_ITEMS, state);
 }
 
 function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -319,7 +365,7 @@ export function currentlyOwnedLegendarySet(
  * from. The caller owns the chance roll.
  */
 export function rollEpicDrop(_state?: GameStateShape | null, _inv?: InventoryState | null): { itemId: ItemId; rarity: Rarity } | null {
-  return rollFromPool('EPIC', EPIC_ITEM_POOL);
+  return rollFromPool('EPIC', EPIC_ITEM_POOL, _state);
 }
 
 export const PREMIUM_NON_BOSS_DROP_CHANCES = Object.freeze({
@@ -348,18 +394,18 @@ export function rollPremiumNonBossDrop(
   const chance = premiumNonBossDropChance(enemy);
   if (chance <= 0) return null;
 
-  if (enemy?.__bossEscortCommander) return rollRareDrop();
+  if (enemy?.__bossEscortCommander) return rollRareDrop(state);
   if (isCommanderEnemy(enemy)) {
-    return premiumDropRoll(0.30) ? rollEpicDrop(state, inv) : rollRareDrop();
+    return premiumDropRoll(0.30) ? rollEpicDrop(state, inv) : rollRareDrop(state);
   }
   if (enemy?.type === 'FIRE_GIANT') {
-    return premiumDropRoll(0.35) ? rollEpicDrop(state, inv) : rollRareDrop();
+    return premiumDropRoll(0.35) ? rollEpicDrop(state, inv) : rollRareDrop(state);
   }
   if (isEliteEnemy(enemy)) {
-    return premiumDropRoll(0.30) ? rollEpicDrop(state, inv) : rollRareDrop();
+    return premiumDropRoll(0.30) ? rollEpicDrop(state, inv) : rollRareDrop(state);
   }
   if (enemy?.mutation) {
-    return premiumDropRoll(0.15) ? rollEpicDrop(state, inv) : rollRareDrop();
+    return premiumDropRoll(0.15) ? rollEpicDrop(state, inv) : rollRareDrop(state);
   }
   return null;
 }
@@ -416,7 +462,7 @@ export function spawnLootAt(state: GameStateShape, e: Enemy, drop: { itemId: Ite
 export function maybeRollLootOnKill(state: GameStateShape, e: Enemy) {
   const rate = e.isFlyer ? LOOT_DROP_RATES.FLYER : LOOT_DROP_RATES.GROUND;
   if (Math.random() >= rate) return;
-  const drop = rollDrop();
+  const drop = rollDrop(state);
   if (drop) spawnLootAt(state, e, drop);
 }
 
