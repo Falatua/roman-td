@@ -2,6 +2,7 @@ import { DamageType, Enemy, EnemyType, StatusEffectKind } from '../types';
 import enemiesData from '../data/enemies.json';
 import factionRes from '../data/factionResistances.json';
 import { factionStatusModifier, resistanceModifier } from './DamageTypeSystem';
+import { midCampaignDirectDamageMultiplier } from './MidCampaignEnemyAbilities';
 
 // Bosses share one additional damage-over-time ward on top of faction,
 // per-enemy, wave, and immunity rules. Keep this separate from
@@ -457,6 +458,9 @@ export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): num
   // spawns. It composes with faction and per-enemy profiles uniformly.
   const lateMult = (enemy as any).__lateResistMult;
   if (typeof lateMult === 'number') base *= lateMult;
+  // Mid-campaign guards and survival hardening reduce direct hits only.
+  // Burn, Bleed, Poison, and Hellfire remain deliberate counters.
+  base *= midCampaignDirectDamageMultiplier(enemy);
   return base;
 }
 

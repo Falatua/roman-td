@@ -31,6 +31,7 @@ import { towerBriefHtml } from './TowerCopy';
 import { scaledEnemyRegenRate } from '../systems/EnemyHealing';
 import { previewGatesOfHellFinalHp } from '../systems/SurpriseEvents';
 import { EnemyType } from '../types';
+import { midCampaignAbilitiesFor } from '../systems/MidCampaignEnemyAbilities';
 
 function spriteImg(key: string, size = 28): string {
   const t = tex(key);
@@ -1665,6 +1666,9 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   if (def.nullifyAuraRadiusTiles) traits.push(`NULLIFYING AURA — disables towers within ${def.nullifyAuraRadiusTiles} tiles while this enemy remains nearby`);
   if (def.silenceAuraRadiusTiles) traits.push(`SILENCE AURA — every tower within ${def.silenceAuraRadiusTiles} tiles is SILENCED while this enemy is in range (pink X-mark). Expires ~0.6s after the enemy leaves. Distinct from the pass-by silence — this is sustained denial-while-near.`);
   if (def.auraNullifier) traits.push('AURA NULLIFIER — silences every tower aura within 2 tiles (damage/atk-speed/debuff/item auras all drop out). Periodic abilities like Caesar stun pulse and freeze cycles are NOT auras and still fire.');
+  for (const ability of midCampaignAbilitiesFor(id)) {
+    traits.push(`${ability.name} — ${ability.description}`);
+  }
   for (const ability of def.bossAbilities ?? []) {
     traits.push(`${ability.name} — ${ability.description}`);
   }

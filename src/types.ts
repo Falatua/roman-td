@@ -610,6 +610,16 @@ export interface Enemy {
   // doesn't double-dip. Pulled from enemies.json `checkpointHealPct`.
   checkpointHealPct?: number;
   healedCheckpoints?: number[];
+  // Mid-campaign active ability state. These transient multipliers are
+  // recalculated by MidCampaignEnemyAbilities each frame and never replace
+  // the enemy's authored base stats or damage profile.
+  __midAbilitySpawnTick?: number;
+  __midDirectDamageMult?: number;
+  __midSpeedMult?: number;
+  __midVisualScale?: number;
+  __midRouteStage?: number;
+  __midWasVeiled?: boolean;
+  __midBurstUntil?: number;
   // NECROMANCY (2026-05): when a tagged enemy dies on a `necromancy: true`
   // wave, a reanimated copy spawns at the same path tile. While rising,
   // `risingUntil` holds a future game-tick value during which the enemy

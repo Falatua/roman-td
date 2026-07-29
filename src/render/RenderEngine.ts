@@ -28,6 +28,7 @@ import {
 } from './EnemyMovementAnimations';
 import { shouldShowCyclopsFlies, shouldShowOpeningThundercloud } from './AmbientPropRules';
 import { apexAuraProfile, ApexAuraProfile } from './OmegaAuraProfiles';
+import { midCampaignEnemyVisualScale } from '../systems/MidCampaignEnemyAbilities';
 
 // 2026-05-20 v2 — Per-hero halo ring assignment. Each ring style was
 // hand-picked to match the hero's color tint + thematic identity:
@@ -5077,7 +5078,8 @@ export class RenderEngine {
         // Initial-claim sizing matches the per-frame sizing logic below
         // so large enemies don't pop in at the wrong size for frame one.
         const size = GRID.TILE * enemySpriteSizeTiles(e) * ((e as any).__renderScale ?? 1);
-        sp.width = size; sp.height = size;
+        const abilitySize = size * midCampaignEnemyVisualScale(e);
+        sp.width = abilitySize; sp.height = abilitySize;
         const hp = new Graphics();
         const statusBar = new Container();
         const wounds = new Container();
@@ -5161,8 +5163,9 @@ export class RenderEngine {
       const dirY = (e.dirY ?? Math.sign(e.y - (e.prevY ?? e.y))) || 0;
       // Keep enemy body scale in sync with first-frame spawn sizing.
       const size = GRID.TILE * enemySpriteSizeTiles(e) * ((e as any).__renderScale ?? 1);
-      const visualWidth = size * (usesAuthoredMovement ? (movementSpec?.visualWidthMult ?? 1) : 1);
-      const visualHeight = size * (usesAuthoredMovement ? (movementSpec?.visualHeightMult ?? 1) : 1);
+      const abilitySize = size * midCampaignEnemyVisualScale(e);
+      const visualWidth = abilitySize * (usesAuthoredMovement ? (movementSpec?.visualWidthMult ?? 1) : 1);
+      const visualHeight = abilitySize * (usesAuthoredMovement ? (movementSpec?.visualHeightMult ?? 1) : 1);
       const baseScaleX = visualWidth / (entry.sp.texture?.width || 1);
       const baseScaleY = visualHeight / (entry.sp.texture?.height || 1);
       const runAmt = e.currentSpeed > 0 ? Math.min(1, e.currentSpeed / 2.4) : 0;

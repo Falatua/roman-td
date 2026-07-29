@@ -29,6 +29,10 @@ import { classifyEnemy } from './EnemyClassification';
 import { campaignPressureResistMult } from './CampaignDifficulty';
 import { shouldRespawnBossOnLeak } from './LeakRules';
 import { enemyHealthRecoveryMult, scaledEnemyRegenRate } from './EnemyHealing';
+import {
+  midCampaignEnemySpeedMultiplier,
+  tickMidCampaignEnemyAbilities
+} from './MidCampaignEnemyAbilities';
 
 // Pre-computed waypoint centers in WORLD pixel coordinates, used by the
 // per-frame proximity test so the checkpoint heal fires the instant an
@@ -224,7 +228,8 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     // CHECKPOINT HEAL: per-type opt-in from enemies.json. Boss enemies and
     // flyers are barred regardless of the data flag — see tickEnemies guard.
     checkpointHealPct: def.checkpointHealPct,
-    healedCheckpoints: []
+    healedCheckpoints: [],
+    __midAbilitySpawnTick: state.tick
   };
   if (classification.commander) {
     (e as any).__commanderSpawnWave = state.wave;
@@ -707,6 +712,10 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       (e as any).__veiled = veil;
     }
   }
+  // Waves 15-24 use readable, bounded formation, growth, route-surge, and
+  // tower-pressure abilities. Resolve them after every stealth source so
+  // reveal-triggered movement reacts to the final targetable state.
+  tickMidCampaignEnemyAbilities(state);
   // ─── HEALER ENEMIES (2026-05): enemies with healAllyPctPerSec emit a
   //   gentle 1.5-tile heal ring that restores HP to nearby living allies
   //   (NOT themselves). Doesn't heal bosses to avoid trivializing them.
@@ -1633,7 +1642,9 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       }
       if (near >= 2) e.currentSpeed *= 1.20;
     }
-    e.currentSpeed *= campaignRelicEnemySpeedMult(state, e) * commanderSpeedMult(state, e);
+    e.currentSpeed *= campaignRelicEnemySpeedMult(state, e)
+      * commanderSpeedMult(state, e)
+      * midCampaignEnemySpeedMultiplier(e);
 
     // Move along path. Preserve leftover distance across segment boundaries so
     // fast enemies glide through turns instead of pausing on tile centers.
