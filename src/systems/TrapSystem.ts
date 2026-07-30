@@ -16,7 +16,7 @@ import { GamePhase, StatusEffectKind } from '../types';
 import { pushStatus } from './CombatResolver';
 import { campaignRelicTrapDamageMult, campaignRelicTrapPriceMult, campaignRelicTrapRadiusMult } from './CampaignRelicSystem';
 import { bossTrophyTrapDamageMult, bossTrophyTrapRadiusMult } from './BossTrophySystem';
-import { commanderTrapRadiusDisabled } from './CommanderSystem';
+import { commanderTrapRadiusDisabled, prepareCommanderFrame } from './CommanderSystem';
 import { isBuildable, isWaterPlacementRestrictedTile } from './GridManager';
 import { grantTrapInventory } from './TrapInventorySystem';
 
@@ -191,6 +191,7 @@ export function tickTraps(
   const fired: Array<{ x: number; y: number; color: number; radius: number }> = [];
   const traps = state.placedTraps;
   if (!traps || traps.length === 0) return fired;
+  prepareCommanderFrame(state);
   const survivors: PlacedTrap[] = [];
   for (const trap of traps) {
     const def = TRAP_DEFS[trap.type];

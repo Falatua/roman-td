@@ -708,8 +708,10 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   };
 }
 
-export function towerPerAttackDamageBase(t: Tower): number {
-  const stats = towerEffectiveStats(t);
+export function towerPerAttackDamageBase(
+  t: Tower,
+  stats = towerEffectiveStats(t),
+): number {
   const meleeTempo = isMeleeClassTower(t) ? MELEE_ATTACK_SPEED_MULT : 1;
   const effectiveBaseSpeed = Math.max(0.05, t.attackSpeed * TIER_MULTS.speed[t.qualityTier] * meleeTempo);
   return stats.dps / effectiveBaseSpeed;

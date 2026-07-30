@@ -42,7 +42,7 @@ import {
 } from '../src/systems/BossTrophySystem';
 import { buyTraps, trapPrice, TRAP_DEFS } from '../src/systems/TrapSystem';
 import { grantTrapInventory } from '../src/systems/TrapInventorySystem';
-import { bossEscortCommandersForWave, commanderDamageTakenMult, commanderSpeedMult, commanderTrapRadiusDisabled, isCommanderType, tickCommanderSupport } from '../src/systems/CommanderSystem';
+import { bossEscortCommandersForWave, commanderDamageTakenMult, commanderSpeedMult, commanderTrapRadiusDisabled, isCommanderType, prepareCommanderFrame, tickCommanderSupport } from '../src/systems/CommanderSystem';
 import { createTower, towerEffectiveStats } from '../src/systems/TowerSystem';
 import { canReceiveRunReward } from '../src/systems/RewardEligibility';
 import { commanderKillGoldBounty } from '../src/systems/EconomySystem';
@@ -836,6 +836,19 @@ describe('Enemy commanders', () => {
     expect(commanderSpeedMult(s, { type: EnemyType.MONGOL_FOOTMAN, hp: 100 })).toBeCloseTo(1.12, 4);
     expect(commanderTrapRadiusDisabled(s, 210, 210)).toBe(true);
     expect(commanderTrapRadiusDisabled(s, 500, 500)).toBe(false);
+  });
+
+  it('stops cached commander support immediately when the commander dies in the same tick', () => {
+    const s = bootstrapState();
+    const pathfinder: any = { id: 'p', type: EnemyType.PATHFINDER_COMMANDER, hp: 100, x: 100, y: 100 };
+    const ally: any = { type: EnemyType.MONGOL_FOOTMAN, hp: 100 };
+    s.enemies.set(pathfinder.id, pathfinder);
+
+    prepareCommanderFrame(s);
+    expect(commanderSpeedMult(s, ally)).toBeCloseTo(1.12, 4);
+
+    pathfinder.hp = 0;
+    expect(commanderSpeedMult(s, ally)).toBe(1);
   });
 
   it('flying commanders specialize in flyer support', () => {

@@ -53,7 +53,7 @@ import { spawnProjectile, spawnCosmeticProjectile } from './ProjectileSystem';
 import { enemyDamageMultiplier, statusEffectiveness } from './EnemyResistances';
 import { campaignRelicDamageMult } from './CampaignRelicSystem';
 import { bossTrophyDamageMult } from './BossTrophySystem';
-import { commanderDamageTakenMult, isCommanderType } from './CommanderSystem';
+import { commanderDamageTakenMult, isCommanderType, prepareCommanderFrame } from './CommanderSystem';
 import { isBeastEnemy, isBossEnemy, isCasterEnemy, isCommanderEnemy, isEliteEnemy, isOceanEnemy } from './EnemyClassification';
 import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 import { heroAuraScaleForTower } from './HeroScaling';
@@ -983,6 +983,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
   // can read live tower data without changing every signature. Cheap and safe.
   const globalRef: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
   if (globalRef) globalRef.__lastState = state;
+  prepareCommanderFrame(state);
   // Sort towers by placement age for deterministic kill credit (oldest first).
   // Pending towers (Gem TD pre-keep) don't fight.
   const towers = activeTowerScratch;
@@ -1670,7 +1671,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const effSpeed = Math.max(0.05, stats.attackSpeed * (1 - debuff) * supportSpeed * (1 - wAtkSpeedPenalty));
       const interval = 1 / effSpeed;
       t.attackCooldown = interval;
-      const perAttackBase = towerPerAttackDamageBase(t);
+      const perAttackBase = towerPerAttackDamageBase(t, stats);
       const armorShred = target.statusEffects.some(s => s.kind === StatusEffectKind.ARMOR_SHRED);
       // 2026-05-19 — Proscription (Sulla Tier 2) overrides this attack's
       // base damage type to DIVINE for the duration.

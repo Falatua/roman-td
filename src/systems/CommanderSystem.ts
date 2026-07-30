@@ -18,6 +18,43 @@ export type CommanderType =
 
 export const COMMANDER_TYPES = COMMANDER_ENEMY_TYPES;
 
+interface CommanderFrameCache {
+  tick: number;
+  all: any[];
+  byType: Map<CommanderType, any[]>;
+}
+
+// Commander auras are queried from several hot paths each frame: enemy
+// movement, damage resolution, traps, and support pulses. Re-scanning the
+// entire enemy map for every query turns dense waves into quadratic work.
+// Runtime systems explicitly prepare this cache once per frame; direct helper
+// calls (including tests and prep-time inspection) retain the uncached path.
+const commanderFrameCaches = new WeakMap<GameStateShape, CommanderFrameCache>();
+
+export function prepareCommanderFrame(state: GameStateShape): void {
+  let cache = commanderFrameCaches.get(state);
+  if (!cache) {
+    cache = { tick: Number.NaN, all: [], byType: new Map() };
+    commanderFrameCaches.set(state, cache);
+  }
+  if (cache.tick === state.tick) return;
+
+  cache.tick = state.tick;
+  cache.all.length = 0;
+  for (const list of cache.byType.values()) list.length = 0;
+  for (const enemy of state.enemies.values()) {
+    if (enemy.hp <= 0 || !isCommanderType(enemy.type as any)) continue;
+    cache.all.push(enemy);
+    const type = enemy.type as CommanderType;
+    let list = cache.byType.get(type);
+    if (!list) {
+      list = [];
+      cache.byType.set(type, list);
+    }
+    list.push(enemy);
+  }
+}
+
 const CAMPAIGN_COMMANDERS: Record<number, CommanderType> = {
   8: 'SKY_PATHFINDER_COMMANDER',
   18: 'SKY_STANDARD_COMMANDER',
@@ -76,6 +113,10 @@ export function injectCampaignCommanders(state: GameStateShape, queue: { type: s
 }
 
 function activeCommanders(state: GameStateShape, type?: CommanderType): any[] {
+  const cache = commanderFrameCaches.get(state);
+  if (cache?.tick === state.tick) {
+    return type ? (cache.byType.get(type) ?? []) : cache.all;
+  }
   const out: any[] = [];
   for (const e of state.enemies.values()) {
     if (e.hp <= 0) continue;
@@ -86,26 +127,37 @@ function activeCommanders(state: GameStateShape, type?: CommanderType): any[] {
   return out;
 }
 
+function hasLivingCommander(commanders: any[]): boolean {
+  for (const commander of commanders) {
+    if (commander.hp > 0) return true;
+  }
+  return false;
+}
+
 export function commanderDamageTakenMult(state: GameStateShape, target: any): number {
   if (!target || target.hp <= 0 || target.isBoss || isCommanderType(target.type)) return 1;
   let mult = 1;
   for (const commander of activeCommanders(state, 'STANDARD_BEARER_COMMANDER')) {
+    if (commander.hp <= 0) continue;
     if (Math.hypot(commander.x - target.x, commander.y - target.y) <= 4 * GRID.TILE) {
       mult = Math.min(mult, (state.wave ?? 1) >= 21 ? 0.80 : 0.85);
     }
   }
   for (const commander of activeCommanders(state, 'SKY_STANDARD_COMMANDER')) {
+    if (commander.hp <= 0) continue;
     if (Math.hypot(commander.x - target.x, commander.y - target.y) <= 4.5 * GRID.TILE) {
       mult = Math.min(mult, target.isFlyer ? 0.82 : 0.92);
     }
   }
   for (const commander of activeCommanders(state, 'TIDECALLER_COMMANDER')) {
+    if (commander.hp <= 0) continue;
     if (!(target as any).__oceanSpawn) continue;
     if (Math.hypot(commander.x - target.x, commander.y - target.y) <= 5 * GRID.TILE) {
       mult = Math.min(mult, (state.wave ?? 1) >= 25 ? 0.80 : 0.88);
     }
   }
   for (const commander of activeCommanders(state, 'STORMTIDE_WYVERN_COMMANDER')) {
+    if (commander.hp <= 0) continue;
     if (!target.isFlyer && !(target as any).__oceanSpawn) continue;
     if (Math.hypot(commander.x - target.x, commander.y - target.y) <= 5 * GRID.TILE) {
       const wave = state.wave ?? 1;
@@ -118,16 +170,17 @@ export function commanderDamageTakenMult(state: GameStateShape, target: any): nu
 export function commanderSpeedMult(state: GameStateShape, enemy: any): number {
   if (!enemy || enemy.hp <= 0 || isCommanderType(enemy.type)) return 1;
   let mult = 1;
-  if (activeCommanders(state, 'PATHFINDER_COMMANDER').length > 0) {
+  if (hasLivingCommander(activeCommanders(state, 'PATHFINDER_COMMANDER'))) {
     mult *= (state.wave ?? 1) >= 25 ? 1.20 : (state.wave ?? 1) >= 21 ? 1.16 : 1.12;
   }
-  if (enemy.isFlyer && activeCommanders(state, 'SKY_PATHFINDER_COMMANDER').length > 0) {
+  if (enemy.isFlyer && hasLivingCommander(activeCommanders(state, 'SKY_PATHFINDER_COMMANDER'))) {
     mult *= (state.wave ?? 1) >= 21 ? 1.13 : 1.08;
   }
-  if ((enemy as any).__oceanSpawn && activeCommanders(state, 'TIDECALLER_COMMANDER').length > 0) {
+  if ((enemy as any).__oceanSpawn && hasLivingCommander(activeCommanders(state, 'TIDECALLER_COMMANDER'))) {
     mult *= (state.wave ?? 1) >= 25 ? 1.14 : 1.09;
   }
-  if ((enemy.isFlyer || (enemy as any).__oceanSpawn) && activeCommanders(state, 'STORMTIDE_WYVERN_COMMANDER').length > 0) {
+  if ((enemy.isFlyer || (enemy as any).__oceanSpawn)
+      && hasLivingCommander(activeCommanders(state, 'STORMTIDE_WYVERN_COMMANDER'))) {
     const wave = state.wave ?? 1;
     mult *= wave >= 25 ? 1.14 : wave >= 16 ? 1.10 : 1.06;
   }
@@ -136,6 +189,7 @@ export function commanderSpeedMult(state: GameStateShape, enemy: any): number {
 
 export function commanderTrapRadiusDisabled(state: GameStateShape, x: number, y: number): boolean {
   for (const commander of activeCommanders(state, 'SIEGE_CAPTAIN_COMMANDER')) {
+    if (commander.hp <= 0) continue;
     if (Math.hypot(commander.x - x, commander.y - y) <= 4 * GRID.TILE) return true;
   }
   return false;
@@ -143,6 +197,7 @@ export function commanderTrapRadiusDisabled(state: GameStateShape, x: number, y:
 
 export function tickCommanderSupport(state: GameStateShape, dt: number): void {
   if (dt <= 0) return;
+  prepareCommanderFrame(state);
   const healers = [
     ...activeCommanders(state, 'ANUBIS_PRIEST_COMMANDER').map(commander => ({ commander, sky: false })),
     ...activeCommanders(state, 'SKY_ANUBIS_COMMANDER').map(commander => ({ commander, sky: true }))
