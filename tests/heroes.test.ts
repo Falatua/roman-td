@@ -1275,12 +1275,16 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
 
     const castIds: string[] = [];
     const fxIds: string[] = [];
+    const fxSpecs: any[] = [];
     const castsPerTick: number[] = [];
     for (let i = 0; i < 80 && new Set(castIds).size < 12; i++) {
       const before = castIds.length;
       tickHeroAbilities(s, {
         onAbilityCast: (abilityId: string) => castIds.push(abilityId),
-        triggerHeroAbilityFx: (fx: any) => fxIds.push(fx.ability)
+        triggerHeroAbilityFx: (fx: any) => {
+          fxIds.push(fx.ability);
+          fxSpecs.push(fx);
+        }
       });
       castsPerTick.push(castIds.length - before);
       s.tick += 0.1;
@@ -1317,6 +1321,9 @@ describe('Hero tower rules (isHero / no sell / no combine / no move / free)', ()
       'FORTUNES_BOLT',
       'PROSCRIPTION'
     ]));
+    expect(fxSpecs.length).toBeGreaterThanOrEqual(12);
+    expect(fxSpecs.every(fx => fx.extras !== null && typeof fx.extras === 'object')).toBe(true);
+    expect(fxSpecs.find(fx => fx.ability === 'PAX_ROMANA')?.extras).toEqual({});
     expect((melee as any).__marianFormationUntilTick).toBeGreaterThan(s.tick);
     expect((s as any).__heroTimedEvents?.length).toBeGreaterThan(0);
     expect((flyer as any).__eagleScoutUntilTick).toBeGreaterThan(s.tick);

@@ -899,6 +899,19 @@ describe('Tower roster integrity', () => {
     }
     expect(Object.keys(HERO_ABILITY_VFX_ASSETS).sort(), 'ability VFX registry should not carry stale abilities').toEqual([...abilityIds].sort());
   });
+
+  it('normalizes payload-free hero effects before sprite renderers cache assets', () => {
+    const renderer = readFileSync('src/render/RenderEngine.ts', 'utf8');
+    const heroSystem = readFileSync('src/systems/HeroSystem.ts', 'utf8');
+
+    // PAX_ROMANA is intentionally map-wide and supplies no target payload.
+    // Its renderer still caches a laurel sprite on `extras`, so both queue
+    // insertion and draw-time handling must tolerate null/undefined payloads.
+    expect(heroSystem).toContain("fireAbilityFx(hero, hooks, state.tick, ability, '#ffe066', 1.6, null)");
+    expect(heroSystem).toContain('extras: extras ?? {}');
+    expect(renderer).toContain('extras: spec.extras ?? {}');
+    expect(renderer).toContain('fx.extras ??= {}');
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────

@@ -8901,13 +8901,25 @@ async function boot() {
     // 2026-05-16 — Surprise event VFX (fires/urns/scars + screen tint).
     // Sits between burn patches and weather so the event tint sits over
     // the play area but under the weather overlay (rain still reads).
-    renderer.drawSurpriseEvents(state, state.tick);
-    renderer.drawOceanEmergenceFx(state, state.tick);
-    renderer.drawWeather(state, state.tick);
-    renderer.drawAuras(state, state.tick);
-    renderer.drawTierPips(state);
-    renderer.drawLootOrbs(state, state.tick);
-    renderer.emitBloodDripsForWounded(state, gore, state.tick);
+    //
+    // Keep this second presentation group isolated too. Wave 14 combines
+    // uprising art, several hero auras, tier pips, and loot in one frame;
+    // one optional visual must not abort the frame before Pixi presents the
+    // already-updated tower and enemy sprites.
+    try {
+      renderer.drawSurpriseEvents(state, state.tick);
+      renderer.drawOceanEmergenceFx(state, state.tick);
+      renderer.drawWeather(state, state.tick);
+      renderer.drawAuras(state, state.tick);
+      renderer.drawTierPips(state);
+      renderer.drawLootOrbs(state, state.tick);
+      renderer.emitBloodDripsForWounded(state, gore, state.tick);
+    } catch (drawErr: any) {
+      if (!(window as any).__lastFrameError) {
+        (window as any).__lastFrameError = String((drawErr && drawErr.stack) || drawErr);
+        console.error('[Roman TD] PRESENTATION EXCEPTION (caught, frame continues):', drawErr);
+      }
+    }
     updateLowLivesVignette();
     updateFinalHourAura();
     updateWeatherChip();

@@ -947,7 +947,10 @@ function fireAbilityFx(
       tick,
       life,
       color,
-      extras
+      // Map-wide abilities such as PAX_ROMANA have no target payload, but
+      // renderer hooks cache their sprite assets on this object. Keep the
+      // hook contract object-shaped for every hero ability.
+      extras: extras ?? {}
     });
   } else if (hooks?.triggerImpactRing) {
     // Pre-renderer fallback so tests still see something queued and

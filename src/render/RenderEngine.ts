@@ -1895,7 +1895,10 @@ export class RenderEngine {
       born: spec.tick,
       life: spec.life ?? 0.9,
       color: spec.color ?? 0xffffff,
-      extras: spec.extras
+      // Ability executors may have no positional payload (PAX_ROMANA is
+      // intentionally map-wide). Keep a real object here because the sprite
+      // renderers cache their Pixi assets on `extras` during the first frame.
+      extras: spec.extras ?? {}
     });
     this.trimHeroFxQueue();
   }
@@ -1932,6 +1935,10 @@ export class RenderEngine {
       }
       const t = Math.max(0, Math.min(1, age / fx.life));
       const fade = 1 - t;
+      // Be defensive with already-queued effects as well. This protects a
+      // live run across hot updates and keeps direct/test callers from
+      // turning one missing optional payload into a repeated frame failure.
+      fx.extras ??= {};
       switch (fx.ability) {
         // ── MARIUS ───────────────────────────────────────────────────
         case 'MARIAN_FORMATION': {
