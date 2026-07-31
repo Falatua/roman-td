@@ -133,3 +133,65 @@ describe('cavalry tower sprite distinction', () => {
     expect(clibanariusBounds.height, 'The complete rider, horse, lance, and hooves should remain visible').toBeGreaterThan(195);
   });
 });
+
+describe('Vulcan Bombard sprite distinction', () => {
+  it('uses a clean compact forge-mortar silhouette below the Vulcan Colossus', async () => {
+    const sharp = (await import('sharp')).default;
+    const assets = towerAssetMap();
+    const spriteDir = path.join(process.cwd(), 'public/assets/sprites');
+    const bombardFile = path.join(spriteDir, assets.VULCAN_BOMBARD);
+    const oldBombardFile = path.join(spriteDir, 'tc_vulcan_bombard.png');
+    const colossusFile = path.join(spriteDir, assets.VULCAN_COLOSSUS);
+
+    expect(assets.VULCAN_BOMBARD).toBe('tc_vulcan_bombard_v2.png');
+
+    const meta = await sharp(bombardFile).metadata();
+    const { data, info } = await sharp(bombardFile)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    let visible = 0;
+    let tinyAlpha = 0;
+    let chromaMagenta = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3];
+      if (alpha > 0 && alpha <= 4) tinyAlpha++;
+      if (alpha > 16) {
+        visible++;
+        if (data[i] > 150 && data[i + 2] > 150
+          && data[i] > data[i + 1] * 1.45
+          && data[i + 2] > data[i + 1] * 1.45) {
+          chromaMagenta++;
+        }
+      }
+    }
+
+    const corners = [
+      data[3],
+      data[((info.width - 1) * 4) + 3],
+      data[(((info.height - 1) * info.width) * 4) + 3],
+      data[(((info.width * info.height) - 1) * 4) + 3]
+    ];
+    const bombardMask = await silhouetteMask(bombardFile);
+    const oldBombardMask = await silhouetteMask(oldBombardFile);
+    const colossusMask = await silhouetteMask(colossusFile);
+    const bounds = await alphaBounds(bombardFile);
+
+    expect(meta).toMatchObject({ width: 512, height: 512, hasAlpha: true });
+    expect(Math.max(...corners), 'Vulcan Bombard corners should remain transparent').toBe(0);
+    expect(visible / (info.width * info.height), 'Vulcan Bombard should remain readable at board scale')
+      .toBeGreaterThan(0.35);
+    expect(visible / (info.width * info.height), 'Vulcan Bombard should retain transparent breathing room')
+      .toBeLessThan(0.55);
+    expect(tinyAlpha, 'Vulcan Bombard should not leave alpha dust around the silhouette').toBe(0);
+    expect(chromaMagenta, 'Vulcan Bombard should not retain its generation background').toBe(0);
+    expect(silhouetteOverlap(bombardMask, oldBombardMask), 'The replacement should not reuse the old catapult silhouette')
+      .toBeLessThan(0.70);
+    expect(silhouetteOverlap(bombardMask, colossusMask), 'The Tier 3 Bombard should remain distinct from Vulcan Colossus')
+      .toBeLessThan(0.68);
+    expect(bounds.minX).toBeGreaterThanOrEqual(35);
+    expect(bounds.minY).toBeGreaterThanOrEqual(12);
+    expect(bounds.maxX).toBeLessThanOrEqual(476);
+    expect(bounds.maxY).toBeLessThanOrEqual(496);
+  });
+});

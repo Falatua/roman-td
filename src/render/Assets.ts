@@ -64,7 +64,7 @@ const MANIFEST: Record<string, string> = {
   STORM_BALLISTA: 'tc_storm_ballista.png', SKYREAPER_BATTERY: 'tc_skyreaper_battery.png',
   PLAGUE_LOBBER: 'tc_plague_lobber.png', AUGURS_WRATH: 'tc_augurs_wrath.png',
   UNDEAD_GENERAL: 't_undead_general.png',
-  EXPLORATORES: 'tc_exploratores.png', VULCAN_BOMBARD: 'tc_vulcan_bombard.png',
+  EXPLORATORES: 'tc_exploratores.png', VULCAN_BOMBARD: 'tc_vulcan_bombard_v2.png',
   VANGUARD_WING: 'tcc_vanguard_wing.png', VULCAN_COLOSSUS: 'tcc_vulcan_colossus.png',
   SKY_DOMINION: 'ts_sky_dominion.png', AUREATE_TRIBUNAL: 'ts_aureate_tribunal.png',
   GLACIAL_PALISADE: 'ts_glacial_palisade.png', INFERNAL_COLOSSUS: 'ts_infernal_colossus.png',
