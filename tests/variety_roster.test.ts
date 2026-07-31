@@ -149,6 +149,70 @@ describe('late-campaign variety roster', () => {
     }
   });
 
+  it('keeps the Anubis Priest commander recognizable but visibly ranked above the base priest', async () => {
+    const sharp = (await import('sharp')).default;
+    const assets = enemyAssetMap();
+    const spriteDir = path.join(process.cwd(), 'public/assets/sprites');
+    const baseFile = path.join(spriteDir, assets.ANUBIS_PRIEST);
+    const commanderFile = path.join(spriteDir, assets.ANUBIS_PRIEST_COMMANDER);
+
+    expect(assets.ANUBIS_PRIEST).toBe('endless/e_endless_anubis_priest.png');
+    expect(assets.ANUBIS_PRIEST_COMMANDER).toBe('endless/e_anubis_priest_commander.png');
+    expect(commanderFile).not.toBe(baseFile);
+
+    const base = await sharp(baseFile).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const commander = await sharp(commanderFile).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    expect([commander.info.width, commander.info.height]).toEqual([base.info.width, base.info.height]);
+    expect([commander.info.width, commander.info.height]).toEqual([528, 800]);
+
+    let sharedSilhouette = 0;
+    let silhouetteUnion = 0;
+    let visiblyDifferent = 0;
+    let visibleCommanderPixels = 0;
+    let tinyAlpha = 0;
+    let chromaGreen = 0;
+    for (let i = 0; i < commander.data.length; i += 4) {
+      const baseVisible = base.data[i + 3] > 24;
+      const commanderVisible = commander.data[i + 3] > 24;
+      if (baseVisible || commanderVisible) {
+        silhouetteUnion++;
+        if (baseVisible && commanderVisible) sharedSilhouette++;
+        const delta = Math.abs(base.data[i] - commander.data[i])
+          + Math.abs(base.data[i + 1] - commander.data[i + 1])
+          + Math.abs(base.data[i + 2] - commander.data[i + 2])
+          + Math.abs(base.data[i + 3] - commander.data[i + 3]);
+        if (delta > 80) visiblyDifferent++;
+      }
+      if (commander.data[i + 3] > 16) {
+        visibleCommanderPixels++;
+        if (commander.data[i + 1] > 150
+          && commander.data[i + 1] > commander.data[i] * 1.45
+          && commander.data[i + 1] > commander.data[i + 2] * 1.45) {
+          chromaGreen++;
+        }
+      }
+      if (commander.data[i + 3] > 0 && commander.data[i + 3] <= 4) tinyAlpha++;
+    }
+
+    const corners = [
+      commander.data[3],
+      commander.data[((commander.info.width - 1) * 4) + 3],
+      commander.data[(((commander.info.height - 1) * commander.info.width) * 4) + 3],
+      commander.data[(((commander.info.height * commander.info.width) - 1) * 4) + 3]
+    ];
+    const overlap = sharedSilhouette / silhouetteUnion;
+    const difference = visiblyDifferent / silhouetteUnion;
+    const coverage = visibleCommanderPixels / (commander.info.width * commander.info.height);
+
+    expect(Math.max(...corners), 'commander sprite corners should stay transparent').toBe(0);
+    expect(tinyAlpha, 'commander sprite should not leave alpha dust').toBe(0);
+    expect(chromaGreen, 'commander sprite should not retain its chroma background').toBe(0);
+    expect(coverage, 'commander should remain readable at game scale').toBeGreaterThan(0.30);
+    expect(overlap, 'commander should remain recognizably Anubis Priest').toBeGreaterThan(0.78);
+    expect(overlap, 'commander should not be an exact silhouette copy').toBeLessThan(0.96);
+    expect(difference, 'commander armor and command colors should be visibly distinct').toBeGreaterThan(0.30);
+  });
+
   it('keeps Cyclops as an uncropped full-body enemy sprite', async () => {
     const sharp = (await import('sharp')).default;
     const file = path.join(process.cwd(), 'public/assets/sprites/e3_cyclops.png');

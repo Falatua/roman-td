@@ -183,7 +183,7 @@ const MANIFEST: Record<string, string> = {
   MONGOL_CAPTAIN: 'endless/e_endless_mongol_captain.png',
   STANDARD_BEARER_COMMANDER: 'endless/e_endless_mongol_captain.png',
   PATHFINDER_COMMANDER: 'endless/e_endless_mongol_scout.png',
-  ANUBIS_PRIEST_COMMANDER: 'endless/e_endless_anubis_priest.png',
+  ANUBIS_PRIEST_COMMANDER: 'endless/e_anubis_priest_commander.png',
   SIEGE_CAPTAIN_COMMANDER: 'e3_demon_legate.png',
   TIDECALLER_COMMANDER: 'e3_tidecaller_commander.png',
   STORMTIDE_WYVERN_COMMANDER: 'e3_stormtide_wyvern_commander.png',
