@@ -405,7 +405,7 @@ export function isHellfireImmune(enemy: Enemy): boolean {
   return !!def?.immuneHellfire;
 }
 
-export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): number {
+export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType, rangedImmunityFloor = 0): number {
   // 2026-05-17 — `immuneFire` JSON flag is a hard short-circuit for
   // ELEMENTAL_FIRE damage. The 6 undead types (Undead Celt, Undead
   // Berserker, Reanimated Berserker, Undead Spearman, Undead Warlord,
@@ -419,7 +419,7 @@ export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): num
   if (def?.divineOnly && damageType !== DamageType.DIVINE) return 0;
   if (def?.immuneFire && damageType === DamageType.ELEMENTAL_FIRE) return 0;
   if (def?.meleeImmune && damageType === DamageType.PHYS_MELEE) return 0;
-  if (def?.rangedImmune && damageType === DamageType.PHYS_RANGED) return 0;
+  if (def?.rangedImmune && damageType === DamageType.PHYS_RANGED && rangedImmunityFloor <= 0) return 0;
   if (def?.siegeImmune && damageType === DamageType.SIEGE) return 0;
   if (def?.divineImmune && damageType === DamageType.DIVINE) return 0;
   const r = enemyResistanceProfile(enemy.type);
@@ -433,7 +433,15 @@ export function enemyDamageMultiplier(enemy: Enemy, damageType: DamageType): num
     const w7Melee = (enemy as any).__w7MeleeResist;
     if (typeof w7Melee === 'number') base *= w7Melee;
   }
-  else if (damageType === DamageType.PHYS_RANGED) base = r.ranged ?? 1;
+  else if (damageType === DamageType.PHYS_RANGED) {
+    base = r.ranged ?? 1;
+    // A small number of explicitly authored anti-air specialists can
+    // penetrate flyer ranged immunity at reduced strength. The caller owns
+    // that tower-specific rule; ordinary ranged towers still stop at 0.
+    if (def?.rangedImmune && rangedImmunityFloor > 0) {
+      base = Math.max(base, rangedImmunityFloor);
+    }
+  }
   // 2026-05 v9 — per-enemy SIEGE / FIRE / DIVINE multipliers. Used by
   // the W6-W9 resist pass to break the "siege+fire+divine is a universal
   // answer key" feel of the mid game. Multiplies BEFORE the late-game

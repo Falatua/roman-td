@@ -447,8 +447,19 @@ function meleeImmuneBlocksTower(enemyType: string, towerDmgType: DamageType): bo
   if (!isMeleeImmune(enemyType)) return false;
   return towerDmgType === DamageType.PHYS_MELEE;
 }
-function rangedImmuneBlocksTower(enemyType: string, towerDmgType: DamageType): boolean {
-  if (!(enemiesData as any)[enemyType]?.rangedImmune) return false;
+export const EXPLORATORES_FLYER_RANGED_IMMUNITY_FLOOR = 0.35;
+
+function rangedImmunityFloorForTower(tower: Tower, target: Enemy, towerDmgType: DamageType): number {
+  if (towerDmgType !== DamageType.PHYS_RANGED || !target.isFlyer) return 0;
+  if (!(enemiesData as any)[target.type]?.rangedImmune) return 0;
+  return tower.type === TowerType.EXPLORATORES
+    ? EXPLORATORES_FLYER_RANGED_IMMUNITY_FLOOR
+    : 0;
+}
+
+function rangedImmuneBlocksTower(target: Enemy, towerDmgType: DamageType, tower: Tower): boolean {
+  if (!(enemiesData as any)[target.type]?.rangedImmune) return false;
+  if (rangedImmunityFloorForTower(tower, target, towerDmgType) > 0) return false;
   return towerDmgType === DamageType.PHYS_RANGED;
 }
 function siegeImmuneBlocksTower(enemyType: string, towerDmgType: DamageType): boolean {
@@ -1701,7 +1712,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         const rD = resistanceModifier(target.faction, DamageType.DIVINE, armorShred) * enemyDamageMultiplier(target, DamageType.DIVINE);
         resMod = Math.max(rS, rD);
       } else {
-        resMod = resistanceModifier(target.faction, effectiveDmgType, armorShred) * enemyDamageMultiplier(target, effectiveDmgType);
+        resMod = resistanceModifier(target.faction, effectiveDmgType, armorShred)
+          * enemyDamageMultiplier(target, effectiveDmgType, rangedImmunityFloorForTower(t, target, effectiveDmgType));
       }
       // 2026-05-21 — Battle of Actium resistance-bypass window
       // removed alongside the tier-3 ability deletion.
@@ -2269,7 +2281,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
         if (isMeleeRow && meleeImmuneBlocksTower(e.type, acquireDmgType)) continue;
         if (divineOnlyBlocksTower(e.type, acquireDmgType, t)) continue;
         if (fireImmuneBlocksTower(e.type, acquireDmgType)) continue;
-        if (rangedImmuneBlocksTower(e.type, acquireDmgType)) continue;
+        if (rangedImmuneBlocksTower(e, acquireDmgType, t)) continue;
         if (siegeImmuneBlocksTower(e.type, acquireDmgType)) continue;
         if (divineImmuneBlocksTower(e.type, acquireDmgType, t.type)) continue;
         inRange.push(e);
@@ -2753,11 +2765,16 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
             // Otherwise an elephant selected first lent its 6.5x bonus to
             // the ordinary unit beside it, while an elephant selected second
             // could lose its specialization entirely.
-            const targetDamage = t.type === TowerType.HANNIBALS_NIGHTMARE
+            let targetDamage = t.type === TowerType.HANNIBALS_NIGHTMARE
               ? damage
                 / hannibalsNightmarePreyDamageMult(target)
                 * hannibalsNightmarePreyDamageMult(tgt)
               : damage;
+            if (t.type === TowerType.EXPLORATORES) {
+              const primaryFloor = rangedImmunityFloorForTower(t, target, effectiveDmgType) || 1;
+              const volleyFloor = rangedImmunityFloorForTower(t, tgt, effectiveDmgType) || 1;
+              targetDamage *= volleyFloor / primaryFloor;
+            }
             spawnProjectile(state, t, tgt, targetDamage);
             (tgt as any).__lastResMod = resMod;
             hooks.onProjectileFire(t, tgt, targetDamage);
@@ -2837,7 +2854,7 @@ export function pickTarget(state: GameStateShape, t: Tower, enemies: Enemy[], ra
     const revealed = !!(e as any).__truesightRevealed;
     if (divineOnlyBlocksTower(e.type, acquireDmgType, t)) continue;
     if (fireImmuneBlocksTower(e.type, acquireDmgType)) continue;
-    if (rangedImmuneBlocksTower(e.type, acquireDmgType)) continue;
+    if (rangedImmuneBlocksTower(e, acquireDmgType, t)) continue;
     if (siegeImmuneBlocksTower(e.type, acquireDmgType)) continue;
     if (divineImmuneBlocksTower(e.type, acquireDmgType, t.type)) continue;
     if (antiAirOnly) {

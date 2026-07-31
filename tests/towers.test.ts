@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, DRACO_STANDARD_ITEM_ID, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, MARS_VICTOR_FIRE_RIDER_PCT, MARS_VICTOR_FLYER_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_SPEED_MULT, MARS_VICTOR_MELEE_DAMAGE_BONUS, MARS_VICTOR_PRIORITY_DAMAGE_BONUS, MARS_VICTOR_SIEGE_DAMAGE_BONUS, MARS_VICTOR_SIEGE_RANGE_BONUS_TILES, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EPIC_ITEM_REGEN_DENIAL_SEC, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MARS_VICTOR_BURN_MAGNITUDE, MARS_VICTOR_HELLFIRE_MAGNITUDE, MARS_VICTOR_MARK_PCT, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, rollsWave3ShipwreckFishlingDodge, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL, wave3ShipwreckFishlingDodgeChance } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EPIC_ITEM_REGEN_DENIAL_SEC, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, EXPLORATORES_FLYER_RANGED_IMMUNITY_FLOOR, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MARS_VICTOR_BURN_MAGNITUDE, MARS_VICTOR_HELLFIRE_MAGNITUDE, MARS_VICTOR_MARK_PCT, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, rollsWave3ShipwreckFishlingDodge, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL, wave3ShipwreckFishlingDodgeChance } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -456,6 +456,60 @@ describe('Tower effective stats', () => {
       const tier = type === TowerType.VENATOR || type === TowerType.AQUILA_VENATOR || type === TowerType.EXPLORATORES ? 3 : type === TowerType.SKYREAPER_BATTERY ? 4 : 1;
       expect(createTower(type, tier, 0, 0, 1).targetingMode).toBe(TargetingMode.FLYERS);
     }
+  });
+
+  it('lets Exploratores acquire and damage every flyer, including ranged-immune flyers', () => {
+    const state = createGameState();
+    state.wave = 29;
+    const tower = createTower(TowerType.EXPLORATORES, 3, 5, 5, 1);
+    tower.attackCooldown = 0;
+    tower.critChance = 0;
+    state.towers.set(tower.id, tower);
+
+    const center = towerCenter(tower);
+    const ordinaryFlyer = flyerEnemy('ordinary-flyer', center.x + GRID.TILE, center.y);
+    ordinaryFlyer.type = EnemyType.CELTIC_SCOUT;
+    ordinaryFlyer.faction = EnemyFaction.CELTS;
+    ordinaryFlyer.hp = ordinaryFlyer.maxHp = 100_000;
+
+    const immuneFlyer = flyerEnemy('immune-flyer', center.x + GRID.TILE * 1.5, center.y);
+    immuneFlyer.type = EnemyType.SHADOW_CAVALRY;
+    immuneFlyer.faction = EnemyFaction.SUPER_DEMONS;
+    immuneFlyer.hp = immuneFlyer.maxHp = 100_000;
+
+    const ground = testEnemy('ground', center.x + GRID.TILE * 0.5, center.y);
+    ground.hp = ground.maxHp = 100_000;
+    state.enemies.set(ordinaryFlyer.id, ordinaryFlyer);
+    state.enemies.set(immuneFlyer.id, immuneFlyer);
+    state.enemies.set(ground.id, ground);
+
+    const damageByTarget = new Map<string, number>();
+    const hooks = {
+      ...noopCombatHooks(),
+      onHit: (_tower: any, enemy: Enemy, damage: number) => {
+        damageByTarget.set(enemy.id, (damageByTarget.get(enemy.id) ?? 0) + damage);
+      }
+    };
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    try {
+      tickCombat(state, 0.016, hooks);
+      expect(state.projectiles.map(p => p.targetId).sort()).toEqual(['immune-flyer', 'ordinary-flyer']);
+      tickProjectiles(state, 10, {
+        onImpact: (projectile, target) => {
+          if (target) applyDamageAndStatus(state, tower, target, projectile.damage, hooks);
+        }
+      });
+    } finally {
+      randomSpy.mockRestore();
+    }
+
+    expect(damageByTarget.get(ordinaryFlyer.id)).toBeGreaterThan(0);
+    expect(damageByTarget.get(immuneFlyer.id)).toBeGreaterThan(0);
+    expect(damageByTarget.get(immuneFlyer.id)! / damageByTarget.get(ordinaryFlyer.id)!)
+      .toBeCloseTo(EXPLORATORES_FLYER_RANGED_IMMUNITY_FLOOR, 4);
+    expect(ground.hp).toBe(ground.maxHp);
+    expect(immuneFlyer.statusEffects.some(effect => effect.kind === StatusEffectKind.MARK)).toBe(true);
+    expect(immuneFlyer.statusEffects.some(effect => effect.kind === StatusEffectKind.SLOW)).toBe(true);
   });
 
   it('makes Stormcaller a lightning specialist against ocean threats', () => {
