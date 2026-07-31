@@ -201,9 +201,11 @@ describe('Test Your Might bonus wave', () => {
     expect(types).toContain('PATHFINDER_COMMANDER');
     expect(types).toContain('STANDARD_BEARER_COMMANDER');
     expect(types).toContain('SIEGE_CAPTAIN_COMMANDER');
-    expect(types).toContain('ANUBIS_PRIEST_COMMANDER');
+    expect(types).not.toContain('CARTHAGE_ELITE_GUARD');
+    expect(types).not.toContain('ANUBIS_PRIEST_COMMANDER');
+    expect(types).not.toContain('ANUBIS_KING');
     expect(types).toContain('CELTIC_BERSERKER');
-    expect(totalCount).toBe(66);
+    expect(totalCount).toBe(56);
     for (const type of types) {
       expect(enemyDefs[type]?.ambushStealth, `${type} should not ambush-stealth in W10.5`).not.toBe(true);
       expect(enemyDefs[type]?.stealthInterval, `${type} should not stealth-cycle in W10.5`).toBeUndefined();
@@ -213,17 +215,15 @@ describe('Test Your Might bonus wave', () => {
     expect(byType.get('HANNIBAL_BARCA')?.majorReward).toBe(true);
     expect(TEST_YOUR_MIGHT_SPAWNS.filter(g => g.majorReward).map(g => g.type)).toEqual(['HANNIBAL_BARCA']);
     expect(byType.get('CELTIC_BERSERKER')?.count).toBe(18);
-    expect(byType.get('CARTHAGE_ELITE_GUARD')?.count).toBe(8);
     expect(byType.get('OCEAN_FISHLING')?.count).toBe(12);
     expect(byType.get('SPECTRAL_SCOUT')?.count).toBe(7);
     expect(byType.get('OCEAN_GHOST_SPIRIT')?.count).toBe(6);
     expect(byType.get('IRON_PHALANX')?.count).toBe(5);
     expect(byType.get('CELTIC_BERSERKER')?.hpMult).toBeGreaterThanOrEqual(405);
-    expect(byType.get('CARTHAGE_ELITE_GUARD')?.hpMult).toBeGreaterThanOrEqual(425);
     expect(byType.get('PATHFINDER_COMMANDER')?.hpMult).toBeGreaterThanOrEqual(315);
     expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.resistMult ?? 1) <= 0.82)).toBe(true);
     expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.statusGuard ?? 1) <= 0.46)).toBe(true);
-    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.rangedBlock ?? 0) >= 0.10)).toBe(true);
+    expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.rangedBlock ?? 0) >= 0.08)).toBe(true);
     expect(TEST_YOUR_MIGHT_SPAWNS.some(g => (g.checkpointHeal ?? 0) >= 0.05)).toBe(true);
   });
 
@@ -338,17 +338,21 @@ describe('Test Your Might bonus wave', () => {
     tickTestYourMightSpawns(s);
     const enemies = Array.from(s.enemies.values()) as any[];
     const hannibal = enemies.find(e => e.type === 'HANNIBAL_BARCA');
-    const elite = enemies.find(e => e.type === 'CARTHAGE_ELITE_GUARD');
+    const pathfinder = enemies.find(e => e.type === 'PATHFINDER_COMMANDER');
+    const siegeCaptain = enemies.find(e => e.type === 'SIEGE_CAPTAIN_COMMANDER');
     const elephant = enemies.find(e => e.type === 'WAR_ELEPHANT');
 
+    expect(enemies.some(e => e.type === 'CARTHAGE_ELITE_GUARD')).toBe(false);
+    expect(enemies.some(e => e.type === 'ANUBIS_PRIEST_COMMANDER')).toBe(false);
+    expect(enemies.some(e => e.type === 'ANUBIS_KING')).toBe(false);
     expect(hannibal.__lateResistMult).toBeLessThanOrEqual(0.84);
     expect(hannibal.__lateStatusGuard).toBeLessThanOrEqual(0.46);
     expect(enemyDamageMultiplier(hannibal, DamageType.PHYS_RANGED)).toBeLessThan(0.5);
     expect(statusEffectiveness(hannibal, StatusEffectKind.SLOW)).toBeLessThan(0.2);
     expect(hannibal.outOfCombatRegen).toBeUndefined();
-    expect(elite.mutation).toBe('WARDED');
-    expect(elite.__lateRangedBlock).toBeGreaterThanOrEqual(0.10);
-    expect(elite.outOfCombatRegen).toBeGreaterThanOrEqual(0.018);
+    expect(pathfinder.mutation).toBe('AURA_STAR');
+    expect(siegeCaptain.__lateRangedBlock).toBeGreaterThanOrEqual(0.08);
+    expect(siegeCaptain.outOfCombatRegen).toBeGreaterThanOrEqual(0.012);
     expect(elephant.checkpointHealPct).toBeGreaterThanOrEqual(0.05);
   });
 

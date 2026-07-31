@@ -42,15 +42,12 @@ export const TEST_YOUR_MIGHT_SPAWNS: TestYourMightSpawn[] = [
   { type: 'OCEAN_FISHLING', count: 12, gap: 0.34, start: 4.4, hpMult: 34, speedMult: 1.16, resistMult: 0.88, statusGuard: 0.60, ocean: true },
   { type: 'SPECTRAL_SCOUT', count: 7, gap: 0.72, start: 7.0, hpMult: 24, speedMult: 1.02, resistMult: 0.88, statusGuard: 0.56, rangedBlock: 0.04 },
   { type: 'CELTIC_BERSERKER', count: 18, gap: 0.40, start: 6.2, hpMult: 405, speedMult: 1.04, resistMult: 0.88, statusGuard: 0.64, rangedBlock: 0.05, checkpointHeal: 0.035 },
-  { type: 'CARTHAGE_ELITE_GUARD', count: 8, gap: 0.58, start: 10.2, hpMult: 428, speedMult: 1.03, resistMult: 0.86, statusGuard: 0.58, rangedBlock: 0.10, checkpointHeal: 0.04, outOfCombatRegen: 0.018, mutation: 'WARDED' },
   { type: 'OCEAN_GHOST_SPIRIT', count: 6, gap: 0.70, start: 13.0, hpMult: 13, speedMult: 1.02, resistMult: 0.82, statusGuard: 0.42, ocean: true },
   { type: 'IRON_PHALANX', count: 5, gap: 0.92, start: 14.8, hpMult: 48, speedMult: 1.0, resistMult: 0.84, statusGuard: 0.50, checkpointHeal: 0.04, outOfCombatRegen: 0.012 },
   { type: 'PATHFINDER_COMMANDER', count: 1, gap: 0, start: 8.4, hpMult: 315, speedMult: 1.04, resistMult: 0.86, statusGuard: 0.56, rangedBlock: 0.06, mutation: 'AURA_STAR' },
   { type: 'STANDARD_BEARER_COMMANDER', count: 1, gap: 0, start: 12.4, hpMult: 300, speedMult: 1.01, resistMult: 0.84, statusGuard: 0.52, rangedBlock: 0.06, outOfCombatRegen: 0.012 },
   { type: 'SIEGE_CAPTAIN_COMMANDER', count: 1, gap: 0, start: 16.4, hpMult: 293, speedMult: 1.0, resistMult: 0.84, statusGuard: 0.54, rangedBlock: 0.08, outOfCombatRegen: 0.012 },
-  { type: 'STORMTIDE_WYVERN_COMMANDER', count: 1, gap: 0, start: 18.2, hpMult: 44, speedMult: 1.00, resistMult: 0.82, statusGuard: 0.48, rangedBlock: 0.06, outOfCombatRegen: 0.014, ocean: true },
-  { type: 'ANUBIS_PRIEST_COMMANDER', count: 1, gap: 0, start: 20.0, hpMult: 308, speedMult: 1.02, resistMult: 0.82, statusGuard: 0.50, rangedBlock: 0.06, outOfCombatRegen: 0.018 },
-  { type: 'ANUBIS_KING', count: 1, gap: 0, start: 29.0, hpMult: 30, speedMult: 1.03, resistMult: 0.82, statusGuard: 0.46, rangedBlock: 0.08, checkpointHeal: 0.035, outOfCombatRegen: 0.018 }
+  { type: 'STORMTIDE_WYVERN_COMMANDER', count: 1, gap: 0, start: 18.2, hpMult: 44, speedMult: 1.00, resistMult: 0.82, statusGuard: 0.48, rangedBlock: 0.06, outOfCombatRegen: 0.014, ocean: true }
 ];
 
 export function shouldOfferTestYourMight(state: GameStateShape): boolean {
