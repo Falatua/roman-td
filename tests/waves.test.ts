@@ -530,6 +530,24 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect(sea.y).toBeLessThanOrEqual(wreckY + GRID.TILE * 3.375);
   });
 
+  it('gives only Wave 3 Shipwreck Fishlings a 20% all-attack dodge stamp', () => {
+    const wave3 = bootstrapState();
+    wave3.wave = 2;
+    startWave(wave3);
+    tickSpawns(wave3, 0.01);
+    const earlyFishling = Array.from(wave3.enemies.values())
+      .find(enemy => enemy.type === EnemyType.OCEAN_FISHLING) as any;
+
+    expect((enemiesData as any).OCEAN_FISHLING.wave3AllAttackDodgeChance).toBe(0.20);
+    expect((enemiesData as any).OCEAN_FISHLING.dodgeChance).toBeUndefined();
+    expect(earlyFishling.__wave3AllAttackDodgeChance).toBe(0.20);
+
+    const laterWave = bootstrapState();
+    laterWave.wave = 10;
+    const laterFishling = spawnEnemy(laterWave, EnemyType.OCEAN_FISHLING, 1) as any;
+    expect(laterFishling.__wave3AllAttackDodgeChance).toBeUndefined();
+  });
+
   it('routes every authored ocean-marked campaign spawn past the first two checkpoints', () => {
     const oceanWaves = (wavesData as any[]).filter(wave => (wave.spawns ?? []).some((spawn: any) => spawn.ocean));
     expect(oceanWaves.length, 'campaign should include ocean threat waves').toBeGreaterThan(0);

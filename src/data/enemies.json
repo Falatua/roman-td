@@ -973,7 +973,8 @@
     "isFlyer": false,
     "isBoss": false,
     "livesCost": 1,
-    "renderScale": 0.7
+    "renderScale": 0.7,
+    "wave3AllAttackDodgeChance": 0.2
   },
   "OCEAN_GHOST_SPIRIT": {
     "name": "Drowned Manes",

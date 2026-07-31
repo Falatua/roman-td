@@ -741,6 +741,7 @@ export class UIManager {
         if (seen(d => d.splitOnDeath))                     tags.push({ txt: 'SPLIT-ON-DEATH', color: '#ff8855' });
         if (seen(d => d.rebirthAtPct))                     tags.push({ txt: 'REBIRTH', color: '#aa55ff' });
         if (seen(d => d.dodgeChance))                      tags.push({ txt: 'DODGES', color: '#cc88cc' });
+        if (idx + 1 === 3 && seen(d => d.wave3AllAttackDodgeChance)) tags.push({ txt: 'ALL-ATTACK DODGE', color: '#66d9e8' });
         if (seen(d => d.stealthInterval))                  tags.push({ txt: 'STEALTH', color: '#aaaaff' });
         if (seen(d => d.auraTowerSlow))                    tags.push({ txt: 'TOWER-SLOW-AURA', color: '#ff7733' });
         if (seen(d => d.auraTowerCritPenalty))             tags.push({ txt: 'CRIT-SUPPRESS', color: '#d4af37' });

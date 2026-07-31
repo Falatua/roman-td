@@ -284,6 +284,14 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   if (def?.allAttackBlockChance) traits.push({ label: `ALL-ATTACK BLOCK — ${Math.round(def.allAttackBlockChance*100)}% chance per hit to deflect ANY incoming damage (melee, ranged, siege, fire, divine). Never expires, independent of shield state.`, color: '#ee5555' });
   if (def?.phaseHits) traits.push({ label: `PHASE — ignores the first ${def.phaseHits} hit${def.phaseHits === 1 ? '' : 's'} (MISS floater appears)`, color: '#ee5555' });
   if (def?.dodgeChance) traits.push({ label: `DODGE — ${Math.round(def.dodgeChance*100)}% chance to evade ranged & siege attacks (melee always lands)`, color: '#ff8866' });
+  const wave3FishlingDodge = Number(
+    (e as any).__wave3AllAttackDodgeChance ??
+    (hpWaveTag === 3 ? def?.wave3AllAttackDodgeChance : 0)
+  );
+  if (wave3FishlingDodge > 0) traits.push({
+    label: `SHIPWRECK DODGE — ${Math.round(wave3FishlingDodge * 100)}% chance to evade any direct tower attack on Wave 3`,
+    color: '#66d9e8'
+  });
   // -- Status immunities --
   if (def?.immuneSlow) traits.push({ label: 'IMMUNE TO SLOW' });
   if (def?.immuneFreeze) traits.push({ label: 'IMMUNE TO FREEZE' });

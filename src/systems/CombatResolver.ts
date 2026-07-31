@@ -925,6 +925,15 @@ function tickUndeadGladiatorKingSummons(state: GameStateShape, dt: number, tower
   }
 }
 
+export function wave3ShipwreckFishlingDodgeChance(target: Enemy): number {
+  return Math.max(0, Math.min(1, Number((target as any).__wave3AllAttackDodgeChance ?? 0)));
+}
+
+export function rollsWave3ShipwreckFishlingDodge(target: Enemy, roll = Math.random()): boolean {
+  const chance = wave3ShipwreckFishlingDodgeChance(target);
+  return chance > 0 && roll < chance;
+}
+
 // 2026-05-23 — SECONDARY HIT BLOCK ROLL. Re-runs the dodge / W8-block /
 // shield-block / all-attack-block rolls for damage paths that bypass
 // tickCombat's primary block-roll: cleave secondaries, splash, cone
@@ -938,6 +947,11 @@ function tickUndeadGladiatorKingSummons(state: GameStateShape, dt: number, tower
 // `target.__weatherMissTick` and skip damage application.
 function secondaryHitBlocked(t: Tower, target: Enemy, state: GameStateShape): boolean {
   if (target.hp <= 0) return false;
+  // Wave 3 Shipwreck Fishlings evade every direct attack family. This roll
+  // lives on impact for projectiles and secondary hits, while direct melee
+  // primaries roll once in tickCombat below. Keeping those paths separate
+  // prevents ranged attacks from receiving two independent dodge rolls.
+  if (rollsWave3ShipwreckFishlingDodge(target)) return true;
   const isRangedClass = t.damageType === DamageType.PHYS_RANGED || t.damageType === DamageType.SIEGE;
   // Siege engines are brutal when they connect, but leading a flying
   // target with a heavy bolt/stone is clumsy compared with arrows or
@@ -2214,6 +2228,16 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
       const hasBaseAttackSheet = isBaseTowerAttackAnimated(String(t.type));
       t.attackFlash = t.isHero ? 0.50 : hasBaseAttackSheet ? baseTowerAttackFlashWindow(String(t.type)) : 0.18;     // game-feel flash on every attack; heroes + base towers get readable attack VFX
+      // Direct melee attacks do not pass through applyDamageAndStatus, so
+      // resolve the Wave 3 Fishling's all-attack dodge here. The attack still
+      // animates and consumes its normal cooldown, but no damage, statuses,
+      // cleave, or on-hit abilities are allowed through.
+      if (isMeleeTowerType(t.type) && damage > 0 && rollsWave3ShipwreckFishlingDodge(target)) {
+        (target as any).__weatherMissTick = state.tick;
+        hooks.onHit(t, target, 0, resMod, false);
+        hooks.onMeleeSwing(t, target, 0);
+        continue;
+      }
       // Compute "in melee/range" enemies once for cleave + multi-shot lookups.
       const tcx = tilePxX(t);
       const tcy = tilePxY(t);

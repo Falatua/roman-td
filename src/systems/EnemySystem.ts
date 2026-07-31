@@ -348,6 +348,15 @@ export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: numbe
     // both, so we stamp at spawn exactly like __w8RangedBlock above.
     (e as any).__w8OocRegenCut = 0.015;
   }
+  // Shipwreck Fishlings teach players that ocean waves can carry their own
+  // rules. The same enemy also appears in later encounters, so stamp this at
+  // spawn instead of making the dodge a permanent property of the species.
+  if ((state.wave ?? 1) === 3 && type === EnemyType.OCEAN_FISHLING) {
+    (e as any).__wave3AllAttackDodgeChance = Math.max(
+      0,
+      Math.min(1, Number(def.wave3AllAttackDodgeChance ?? 0))
+    );
+  }
   // 2026-05-25 — W7 MELEE-RESIST STAMP. Per user request: "give enemies
   // on wave 7 slightly more melee resistance - 10%." Every enemy spawned
   // during W7 takes 10% less PHYS_MELEE damage (effectiveness × 0.90).

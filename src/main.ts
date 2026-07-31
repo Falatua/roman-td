@@ -2073,6 +2073,7 @@ async function boot() {
     //  • W8 universal ranged-block (set on every spawn in EnemySystem)
     //  • UNDEAD_SPEARMAN / IRON_PHALANX 0.20 all-attack-block (every type)
     //  • W19 wave-level in-combat regen
+    if (state.wave === 3 && enemiesInWave.has('OCEAN_FISHLING')) enemyCallouts.push({ text: 'SHIPWRECK DODGE · Fishlings have a 20% chance to evade any direct tower attack this wave.', cat: 'ENEMY' });
     if (state.wave === 8) enemyCallouts.push({ text: '🛡 W8 SHIELD WALL · every enemy this wave has a 20% chance to BLOCK any ranged or siege hit (NUMIDIAN_RIDER stacks its own 20% dodge on top → ~36% effective whiff vs ranged). Bring melee or divine for the W8 stretch.', cat: 'ENEMY' });
     if (enemiesInWave.has('UNDEAD_SPEARMAN') || enemiesInWave.has('IRON_PHALANX')) enemyCallouts.push({ text: '🛡 ALL-ATTACK BLOCK · Undead Spearman / Iron Phalanx have a 20% chance per hit to deflect ANY damage type — melee, ranged, siege, fire, divine. Never expires. Stacks multiplicatively with shield-block (35% on Spearman). Spread the alpha across multiple towers.', cat: 'ENEMY' });
     if ((w as any).enemyRegenPctPerSec) enemyCallouts.push({ text: `🩹 WAVE REGEN · every enemy on this wave regenerates ${Math.round(scaledEnemyRegenRate((w as any).enemyRegenPctPerSec) * 1000) / 10}% maxHP/sec continuously. Sustained DPS beats chip damage.`, cat: 'ENEMY' });
