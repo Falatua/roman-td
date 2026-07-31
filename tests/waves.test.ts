@@ -1,7 +1,7 @@
 // Tests for the wave system: HP scaling, wave-end conditions, win/loss state.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { effectiveWaveHpMult, nominalWaveThreatHp, previewSpawnHp, startWave, tickSpawns, checkWaveEnd, grantWave20TrapGift } from '../src/systems/WaveManager';
+import { effectiveWaveHpMult, nominalWaveThreatHp, previewSpawnHp, REBORN_BOSS_OPENING_GAP_SECONDS, startWave, tickSpawns, checkWaveEnd, grantWave20TrapGift } from '../src/systems/WaveManager';
 import { CAMPAIGN_RESISTANCE_GAIN_PER_WAVE, campaignPressureHpMult, campaignPressureResistMult } from '../src/systems/CampaignDifficulty';
 import { spawnEnemy, tickEnemies } from '../src/systems/EnemySystem';
 import { tickSurpriseEvents } from '../src/systems/SurpriseEvents';
@@ -1179,6 +1179,69 @@ describe('Wave 22 regression guards', () => {
       if (prevWindow === undefined) delete (globalThis as any).window;
       else (globalThis as any).window = prevWindow;
     }
+  });
+
+  it('returns a leaked boss at the opening of the next wave with carried HP', () => {
+    const prevWindow = (globalThis as any).window;
+    (globalThis as any).window = prevWindow ?? {};
+    try {
+      const s = bootstrapState();
+      s.phase = GamePhase.WAVE_PHASE;
+      s.wave = 10;
+      const hannibal = spawnEnemy(s, EnemyType.HANNIBAL_BARCA, 1);
+      hannibal.isScheduledBoss = true;
+      hannibal.hp = Math.round(hannibal.maxHp * 0.37);
+      const hpAtLeak = hannibal.hp;
+      hannibal.pathIndex = s.groundPath.length - 1;
+      hannibal.pathProgress = 0;
+
+      tickEnemies(s, 1 / 60, () => {}, e => s.enemies.delete(e.id));
+      expect(s.bossRespawnQueue).toEqual([{
+        type: EnemyType.HANNIBAL_BARCA,
+        hpAtLeak,
+        hpFraction: expect.closeTo(0.37, 2),
+        wasScheduled: true
+      }]);
+
+      s.phase = GamePhase.BUILD_PHASE;
+      startWave(s);
+      const returnSpawn = s.spawnQueue.find(item => item.rebornBoss);
+      expect(returnSpawn).toMatchObject({
+        type: EnemyType.HANNIBAL_BARCA,
+        spawnAt: 0,
+        rebornBoss: true
+      });
+      expect(s.spawnQueue[0]).toBe(returnSpawn);
+
+      tickSpawns(s, 1 / 60);
+      const returned = Array.from(s.enemies.values())
+        .find(enemy => (enemy as any).__rebornFromLeak) as any;
+      expect(returned).toBeDefined();
+      expect(returned.type).toBe(EnemyType.HANNIBAL_BARCA);
+      expect(returned.hp).toBe(hpAtLeak);
+      expect(returned.isScheduledBoss).toBe(true);
+      expect(returned.hasRebirthed).toBe(true);
+    } finally {
+      if (prevWindow === undefined) delete (globalThis as any).window;
+      else (globalThis as any).window = prevWindow;
+    }
+  });
+
+  it('keeps multiple leaked bosses inside the next wave opening window', () => {
+    const s = bootstrapState();
+    s.wave = 10;
+    s.bossRespawnQueue = [
+      { type: EnemyType.HANNIBAL_BARCA, hpAtLeak: 100, hpFraction: 0.5 },
+      { type: EnemyType.CELTIC_WARLORD, hpAtLeak: 80, hpFraction: 0.4 }
+    ];
+
+    startWave(s);
+    const returns = s.spawnQueue.filter(item => item.rebornBoss);
+    expect(returns.map(item => item.spawnAt)).toEqual([
+      0,
+      REBORN_BOSS_OPENING_GAP_SECONDS
+    ]);
+    expect(returns[1].spawnAt).toBeLessThan(1);
   });
 });
 

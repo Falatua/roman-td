@@ -42,6 +42,8 @@ const FACTION_BOSS: Record<string, string> = {
 
 type SpawnQueueItem = GameStateShape['spawnQueue'][number];
 
+export const REBORN_BOSS_OPENING_GAP_SECONDS = 0.75;
+
 export const WAVE_20_TRAP_GIFT_WAVE = 20;
 export const WAVE_20_TRAP_GIFT = [
   { id: 'BALLISTA_SNARE', qty: 1 },
@@ -50,7 +52,11 @@ export const WAVE_20_TRAP_GIFT = [
 ] as const;
 
 function sortSpawnQueue(queue: SpawnQueueItem[]): void {
-  queue.sort((a, b) => (a.spawnAt - b.spawnAt) || (Number(!!a.caveB) - Number(!!b.caveB)));
+  queue.sort((a, b) =>
+    (a.spawnAt - b.spawnAt) ||
+    (Number(!!b.rebornBoss) - Number(!!a.rebornBoss)) ||
+    (Number(!!a.caveB) - Number(!!b.caveB))
+  );
 }
 
 function shouldMirrorToCaveB(state: GameStateShape, type: string): boolean {
@@ -340,11 +346,11 @@ export function startWave(state: GameStateShape) {
   // schedule instead of getting blindsided.
   const bonusBossType: string | null = null;
   const bonusReason = '';
-  // BOSS REBIRTH (2026-05 v6): any boss that leaked to Rome on a prior
-  // wave is queued here with the HP it had at leak time. We append each
-  // to this wave's spawn schedule and stash the HP carry on a sibling
-  // map so tickSpawns can apply it the moment the boss spawns. Bosses
-  // arrive AFTER authored spawns so they don't double-up at t=0.
+  // BOSS REBIRTH: any boss that leaked to Rome on a prior wave returns at
+  // the opening of the next wave with its carried HP. The old schedule
+  // appended these bosses after the complete authored roster, which could
+  // delay a return deep into dense waves. `rebornBoss` gives opening spawns
+  // priority over an authored t=0 spawn and makes HP carry assignment exact.
   //
   // ORDER: reborn bosses are appended BEFORE the bonus boss (if any) so
   // the bonus-boss-tagging logic in tickSpawns ("flag the LAST boss to
@@ -356,14 +362,19 @@ export function startWave(state: GameStateShape) {
     // matching boss type spawns. Stack semantics keep it ordered if the
     // same boss type leaked multiple times (rare but possible on twins).
     const carry: { type: string; hpAtLeak: number; hpFraction: number; wasScheduled?: boolean }[] = [];
-    for (const entry of respawnQueue) {
-      t += 2.0;     // 2-second gap between rebirthed bosses
-      state.spawnQueue.push({ type: entry.type as EnemyType, spawnAt: t });
+    for (let i = 0; i < respawnQueue.length; i++) {
+      const entry = respawnQueue[i];
+      state.spawnQueue.push({
+        type: entry.type as EnemyType,
+        spawnAt: i * REBORN_BOSS_OPENING_GAP_SECONDS,
+        rebornBoss: true
+      });
       carry.push(entry);
     }
     (state as any).__pendingBossCarry = carry;
     state.bossRespawnQueue = [];
     (state as any).pendingRebornBosses = respawnQueue.length;     // banner hook for main.ts
+    sortSpawnQueue(state.spawnQueue);
   }
   if (bonusBossType && (enemiesData as any)[bonusBossType]) {
     // Append the bonus boss LAST in the queue so the "last-boss-in-queue"
@@ -415,6 +426,9 @@ export function startWave(state: GameStateShape) {
   // bursts or Cave B release several elephants together. Apply this after all
   // campaign queue transformations so every elephant enters at least 2s apart.
   staggerElephantSpawns(state.spawnQueue);
+  // Elephant pacing owns its own chronological sort. Re-apply the shared
+  // opening priority afterward so a reborn boss always wins a t=0 tie.
+  sortSpawnQueue(state.spawnQueue);
   // Surprise events may append event-only elites after the authored wave
   // roster has been counted. Refresh the HUD denominator so Uprising giants
   // and dragons cannot drive "enemies remaining" below zero.
@@ -546,7 +560,7 @@ export function tickSpawns(state: GameStateShape, dt: number) {
         e.isScheduledBoss = true;
       }
       const carry: { type: string; hpAtLeak: number; hpFraction: number; wasScheduled?: boolean }[] | undefined = (state as any).__pendingBossCarry;
-      if (carry && carry.length > 0) {
+      if (item.rebornBoss && carry && carry.length > 0) {
         const idx = carry.findIndex(c => c.type === item.type);
         if (idx >= 0) {
           const entry = carry[idx];
