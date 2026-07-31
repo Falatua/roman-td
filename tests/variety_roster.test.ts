@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import enemiesData from '../src/data/enemies.json';
 import { createGameState } from '../src/GameState';
@@ -102,6 +103,79 @@ describe('late-campaign variety roster', () => {
       const file = assets[type];
       expect(file, `${type} is missing an Assets.ts sprite mapping`).toBeTruthy();
       expect(existsSync(path.join(process.cwd(), 'public/assets/sprites', file)), `${type} -> ${file}`).toBe(true);
+    }
+  });
+
+  it('gives every authored enemy its own sprite identity', () => {
+    const assets = enemyAssetMap();
+    const spriteDir = path.join(process.cwd(), 'public/assets/sprites');
+    const paths = new Map<string, string>();
+    const hashes = new Map<string, string>();
+
+    for (const type of Object.keys(enemiesData as any)) {
+      const file = assets[type];
+      const previousType = paths.get(file);
+      expect(previousType, `${type} and ${previousType} share ${file}`).toBeUndefined();
+      paths.set(file, type);
+
+      const hash = createHash('sha256')
+        .update(readFileSync(path.join(spriteDir, file)))
+        .digest('hex');
+      const matchingType = hashes.get(hash);
+      expect(matchingType, `${type} and ${matchingType} use byte-identical sprite art`).toBeUndefined();
+      hashes.set(hash, type);
+    }
+  });
+
+  it('keeps commander and phalanx silhouettes distinct from their former source art', async () => {
+    const sharp = (await import('sharp')).default;
+    const assets = enemyAssetMap();
+    const spriteDir = path.join(process.cwd(), 'public/assets/sprites');
+    const variants = [
+      ['STANDARD_BEARER_COMMANDER', 'MONGOL_CAPTAIN', 'endless/e_standard_bearer_commander.png', 605, 800],
+      ['PATHFINDER_COMMANDER', 'MONGOL_SCOUT', 'endless/e_pathfinder_commander.png', 595, 800],
+      ['SIEGE_CAPTAIN_COMMANDER', 'DEMON_LEGATE', 'e3_siege_captain_commander.png', 192, 161],
+      ['IRON_PHALANX', 'CARTHAGE_ELITE_GUARD', 'e2_iron_phalanx_distinct.png', 192, 161]
+    ] as const;
+
+    for (const [type, formerSource, expectedFile, width, height] of variants) {
+      expect(assets[type]).toBe(expectedFile);
+      expect(assets[type]).not.toBe(assets[formerSource]);
+      const file = path.join(spriteDir, expectedFile);
+      const meta = await sharp(file).metadata();
+      const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      const sourceMask = await silhouetteMask(path.join(spriteDir, assets[formerSource]));
+      const variantMask = await silhouetteMask(file);
+      let visible = 0;
+      let tinyAlpha = 0;
+      let chromaGreen = 0;
+
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] > 0 && data[i + 3] <= 4) tinyAlpha++;
+        if (data[i + 3] > 16) {
+          visible++;
+          if (data[i + 1] > 150
+            && data[i + 1] > data[i] * 1.45
+            && data[i + 1] > data[i + 2] * 1.45) {
+            chromaGreen++;
+          }
+        }
+      }
+
+      const corners = [
+        data[3],
+        data[((info.width - 1) * 4) + 3],
+        data[(((info.height - 1) * info.width) * 4) + 3],
+        data[(((info.height * info.width) - 1) * 4) + 3]
+      ];
+
+      expect([meta.width, meta.height]).toEqual([width, height]);
+      expect(meta.hasAlpha).toBe(true);
+      expect(Math.max(...corners), `${type} corners should stay transparent`).toBe(0);
+      expect(tinyAlpha, `${type} should not leave alpha dust`).toBe(0);
+      expect(chromaGreen, `${type} should not retain its generation background`).toBe(0);
+      expect(visible / (info.width * info.height), `${type} should remain readable at game scale`).toBeGreaterThan(0.20);
+      expect(silhouetteOverlap(sourceMask, variantMask), `${type} should read apart from ${formerSource}`).toBeLessThan(0.82);
     }
   });
 

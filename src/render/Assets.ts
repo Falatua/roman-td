@@ -121,7 +121,7 @@ const MANIFEST: Record<string, string> = {
   DREAD_UPRISING_DRAGON: 'e3_dread_uprising_dragon.png',
   DEMON_HELLHOUND: 'e3_demon_hellhound.png', CELTIC_FIRE_DEMON: 'e3_celtic_fire_demon.png', SHADOW_CAVALRY: 'e3_shadow_cavalry.png',
   DEMON_LEGATE: 'e3_demon_legate.png', DAEMON_IMPERATOR: 'e3_daemon_imperator.png', ARCHITECTUS: 'e3_architectus.png',
-  IRON_PHALANX: 'e2_iron_phalanx.png',
+  IRON_PHALANX: 'e2_iron_phalanx_distinct.png',
   // 2026-05-17 — GATES OF HELL surprise event (W16 only). Hell gate is
   // a stationary "enemy" with HP that pumps out fire giants every 2s
   // alternating; fire giant is the bulky slow semi-boss.
@@ -181,10 +181,10 @@ const MANIFEST: Record<string, string> = {
   MONGOL_SCOUT: 'endless/e_endless_mongol_scout.png',
   MONGOL_SHAMAN: 'endless/e_endless_mongol_shaman.png',
   MONGOL_CAPTAIN: 'endless/e_endless_mongol_captain.png',
-  STANDARD_BEARER_COMMANDER: 'endless/e_endless_mongol_captain.png',
-  PATHFINDER_COMMANDER: 'endless/e_endless_mongol_scout.png',
+  STANDARD_BEARER_COMMANDER: 'endless/e_standard_bearer_commander.png',
+  PATHFINDER_COMMANDER: 'endless/e_pathfinder_commander.png',
   ANUBIS_PRIEST_COMMANDER: 'endless/e_anubis_priest_commander.png',
-  SIEGE_CAPTAIN_COMMANDER: 'e3_demon_legate.png',
+  SIEGE_CAPTAIN_COMMANDER: 'e3_siege_captain_commander.png',
   TIDECALLER_COMMANDER: 'e3_tidecaller_commander.png',
   STORMTIDE_WYVERN_COMMANDER: 'e3_stormtide_wyvern_commander.png',
   SKY_BARGE: 'e_sky_barge.png',
