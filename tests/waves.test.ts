@@ -246,12 +246,12 @@ describe('Late-wave DoT profile coverage', () => {
     }
   });
 
-  it('keeps divine-immune or near-immune threats present after the W16 bridge', () => {
+  it('keeps divine-immune or heavily Divine-resistant threats present after the W16 bridge', () => {
     const divineCounterTypes = new Set(
       Object.entries(enemiesData as any)
         .filter(([, def]: any) =>
           def?.divineImmune === true
-          || (typeof def?.divineResistancePct === 'number' && def.divineResistancePct >= 95)
+          || (typeof def?.divineResistancePct === 'number' && def.divineResistancePct >= 90)
         )
         .map(([type]) => type)
     );
@@ -260,7 +260,7 @@ describe('Late-wave DoT profile coverage', () => {
       const types = [...new Set((wave.spawns ?? []).map((spawn: any) => spawn.type))];
       expect(
         types.some(type => divineCounterTypes.has(type)),
-        `W${wave.wave} should include at least one divine-immune or 95%-resistant threat`
+        `W${wave.wave} should include at least one divine-immune or at least 90%-resistant threat`
       ).toBe(true);
     }
   });

@@ -683,7 +683,7 @@
     "poisonWeaknessPct": 400,
     "siegeWeaknessPct": 200,
     "meleeImmune": true,
-    "divineImmune": true,
+    "divineResistancePct": 90,
     "immuneFire": true
   },
   "SOBEK_WARRIOR": {
@@ -1194,7 +1194,7 @@
     "livesCost": 5,
     "isElite": true,
     "meleeImmune": true,
-    "divineImmune": true,
+    "divineResistancePct": 90,
     "immuneFire": true,
     "immuneBleed": true,
     "healthRecoveryMult": 0.5,

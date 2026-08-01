@@ -5,10 +5,12 @@ import { createGameState } from '../src/GameState';
 import { tickCommanderSupport } from '../src/systems/CommanderSystem';
 import { enemyHealthRecoveryMult, scaleEnemyHealthRecovery } from '../src/systems/EnemyHealing';
 import {
+  armorProfile,
   enemyDamageMultiplier,
   enemyResistanceProfile,
   statusEffectiveness
 } from '../src/systems/EnemyResistances';
+import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import {
   DamageType,
   EnemyFaction,
@@ -22,6 +24,11 @@ const ANUBIS_PRIEST_FAMILY = [
   EnemyType.SKY_ANUBIS_COMMANDER
 ] as const;
 
+const GROUND_ANUBIS_PRIESTS = [
+  EnemyType.ANUBIS_PRIEST,
+  EnemyType.ANUBIS_PRIEST_COMMANDER
+] as const;
+
 function resistanceEnemy(type: EnemyType): any {
   const def: any = (enemiesData as any)[type];
   return {
@@ -33,6 +40,23 @@ function resistanceEnemy(type: EnemyType): any {
 }
 
 describe('Anubis Priest family counterplay', () => {
+  it('gives both ground priests 90% Divine resistance without immunity', () => {
+    for (const type of GROUND_ANUBIS_PRIESTS) {
+      const def: any = (enemiesData as any)[type];
+      const enemy = resistanceEnemy(type);
+      const divineArmor = armorProfile(type).find(row => row.damageType === 'DIVINE');
+
+      expect(def.divineImmune, type).not.toBe(true);
+      expect(def.divineResistancePct, type).toBe(90);
+      expect(
+        resistanceModifier(enemy.faction, DamageType.DIVINE) * enemyDamageMultiplier(enemy, DamageType.DIVINE),
+        type
+      ).toBeCloseTo(0.1, 8);
+      expect(divineArmor, type).toMatchObject({ armorPct: 90, immune: false });
+      expect(divineArmor?.finalMult, type).toBeCloseTo(0.1, 8);
+    }
+  });
+
   it('makes Poison the decisive weakness for every base and commander variant', () => {
     for (const type of ANUBIS_PRIEST_FAMILY) {
       const def: any = (enemiesData as any)[type];
@@ -148,5 +172,6 @@ describe('Anubis Priest family counterplay', () => {
     expect(inspect).toContain('NULLIFYING AURA');
     expect(codex).toContain('Anubis Priest Poison Counter');
     expect(codex).toContain('3.75× Poison effectiveness');
+    expect(codex).toContain('resist 90% of Divine damage but are not immune');
   });
 });

@@ -411,7 +411,12 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(statusEffectiveness(enemy, StatusEffectKind.BURN), `${type} burn remains blocked`).toBe(0);
     expect(statusEffectiveness(enemy, StatusEffectKind.BLEED), `${type} bleed remains blocked`).toBe(0);
     expect(enemyDamageMultiplier(enemy, DamageType.PHYS_MELEE), `${type} melee remains blocked`).toBe(0);
-    expect(enemyDamageMultiplier(enemy, DamageType.DIVINE), `${type} divine remains blocked`).toBe(0);
+    expect(def.divineImmune, `${type} should not hard-block divine`).not.toBe(true);
+    expect(def.divineResistancePct, `${type} divine resistance`).toBe(90);
+    expect(
+      resistanceModifier(enemy.faction, DamageType.DIVINE) * enemyDamageMultiplier(enemy, DamageType.DIVINE),
+      `${type} divine should deal 10% final damage`
+    ).toBeCloseTo(0.1, 8);
   });
 
   it('keeps the ordinary Anubis Priest siege weakness while making Poison its strongest counter', () => {
@@ -425,7 +430,11 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(enemyDamageMultiplier(priest, DamageType.SIEGE)).toBe(3);
     expect(siegeArmor).toMatchObject({ finalMult: 3, armorPct: -200, immune: false });
     expect(enemyDamageMultiplier(priest, DamageType.PHYS_MELEE)).toBe(0);
-    expect(enemyDamageMultiplier(priest, DamageType.DIVINE)).toBe(0);
+    expect(def.divineImmune).not.toBe(true);
+    expect(def.divineResistancePct).toBe(90);
+    expect(
+      resistanceModifier(priest.faction, DamageType.DIVINE) * enemyDamageMultiplier(priest, DamageType.DIVINE)
+    ).toBeCloseTo(0.1, 8);
     expect(def.dotImmune).not.toBe(true);
     expect(statusEffectiveness(priest, StatusEffectKind.BLEED)).toBeGreaterThan(0);
     expect(statusEffectiveness(priest, StatusEffectKind.BURN)).toBe(0);
@@ -437,11 +446,9 @@ describe('Enemy resistances — per-enemy multipliers', () => {
     expect(enemyDamageMultiplier(commander, DamageType.SIEGE)).toBe(1);
   });
 
-  it('gives selected post-W15 enemies true divine immunity with readable UI armor', () => {
+  it('keeps the selected post-W15 hard Divine immunity readable in UI armor', () => {
     const divineImmuneTypes = [
-      EnemyType.MONGOL_CAPTAIN,
-      EnemyType.ANUBIS_PRIEST,
-      EnemyType.ANUBIS_PRIEST_COMMANDER
+      EnemyType.MONGOL_CAPTAIN
     ];
 
     for (const type of divineImmuneTypes) {
