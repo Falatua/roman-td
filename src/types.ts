@@ -655,6 +655,8 @@ export interface Projectile {
   // thrown-spear, JUPITER'S WRATH thunder bolt). Impact handler skips
   // the damage/status application so on-hit effects don't double-fire.
   cosmetic?: boolean;
+  // Snapshotted at fire time so later attacks cannot alter an in-flight shell.
+  doomRound?: boolean;
 }
 
 export interface LootOrb {

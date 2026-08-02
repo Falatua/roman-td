@@ -105,7 +105,7 @@ export const SUPERCOMBO_RESISTANCE_BREAK_AURAS: Partial<Record<TowerType, { radi
   [TowerType.AUREATE_TRIBUNAL]: { radiusTiles: 6.5, reliefPct: 0.22 },
   [TowerType.DRACONIS_VEXILLATIO]: { radiusTiles: 3.5, reliefPct: 0.12 },
   [TowerType.GLACIAL_PALISADE]: { radiusTiles: 3.0, reliefPct: 0.14 },
-  [TowerType.INFERNAL_COLOSSUS]: { radiusTiles: 4.0, reliefPct: 0.20 }
+  [TowerType.INFERNAL_COLOSSUS]: { radiusTiles: 4.0, reliefPct: 0.25 }
 };
 
 const FINITE_DOT_DURATION_LIMIT = 900;
@@ -2124,6 +2124,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       const hitN = (((t as any).__hitCount = ((t as any).__hitCount ?? 0) + 1));
       if (t.type === TowerType.DECURION && hitN % 5 === 0) damage *= 3;                                 // existing crit
       if (t.type === TowerType.SCORPIO && hitN % 5 === 0) damage *= 3;                                  // HEAVY BOLT
+      if (t.type === TowerType.INFERNAL_COLOSSUS && hitN % 3 === 0) damage *= 2.5;                      // DOOM ROUND
       if (t.type === TowerType.RETIARIUS && (t as any).__lastTargetId !== target.id) damage *= 2;      // TRIDENT & NET first-hit
       (t as any).__lastTargetId = target.id;
       // Eques crits = 3× per spec (2026-05 v11: rate 15% → 25%).
@@ -2620,29 +2621,6 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
               dragonRenderer.triggerImpactRing(tcx, tcy, state.tick, 58, 0xff5a28);
               dragonRenderer.triggerImpactRing(tcx, tcy, state.tick + 0.04, 78, 0xffd34d);
             }
-          }
-        }
-        // INFERNAL COLOSSUS — every 3rd shot is a wider doom round.
-        if (t.type === TowerType.INFERNAL_COLOSSUS) {
-          const crater = 4.0 * GRID.TILE;
-          const hc = (t as any).__hitCount ?? 0;
-          const doom = hc > 0 && hc % 3 === 0;
-          for (const e of state.enemies.values()) {
-            if (e.hp <= 0) continue;
-            if (Math.hypot(e.x - target.x, e.y - target.y) > crater) continue;
-            pushStatus(e, StatusEffectKind.ARMOR_SHRED, 4, 0, t.qualityTier);
-            pushStatus(e, StatusEffectKind.HELLFIRE, 999, 0.012, t.qualityTier);
-            if (doom) {
-              const bonus = damage * 1.5;
-              e.hp -= bonus; e.hpFlashTimer = 0.22; e.lastDamagedTick = state.tick;
-              pushStatus(e, StatusEffectKind.STUN, 1.0, 0, t.qualityTier);
-              hooks.onHit(t, e, bonus, resMod);
-              if (e.hp <= 0 && !checkRebirth(state, e, state.tick)) hooks.onKill(t, e);
-            }
-          }
-          if (doom) {
-            const r7: any = globalRef?.__renderer;
-            if (r7?.triggerImpactRing) r7.triggerImpactRing(target.x, target.y, state.tick, 56, 0xff5533);
           }
         }
         // Cleave melee — hit every other enemy in melee range. Native
@@ -3934,6 +3912,19 @@ function getWeatherStatusPenalty(): number {
   if (!w) return 0;
   return w.statusDurationPenalty * (gs.weatherIntensity ?? 1);
 }
+
+export function applyInfernalColossusDoomRoundImpact(
+  tower: Tower,
+  target: Enemy,
+  doomRound: boolean | undefined
+): boolean {
+  if (tower.type !== TowerType.INFERNAL_COLOSSUS || !doomRound) return false;
+  // The shared stun-duration multiplier turns this one-second base into the
+  // advertised 1.2-second crater stun. Boss stun immunity remains authoritative.
+  pushStatus(target, StatusEffectKind.STUN, 1.0, 0, tower.qualityTier);
+  return true;
+}
+
 export function pushStatus(e: Enemy, kind: StatusEffectKind, duration: number, magnitude: number, sourceTier: number) {
   const globalRef: any = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
   if (statusEffectiveness(e, kind) <= 0) return;

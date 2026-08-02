@@ -14,7 +14,7 @@ import { tickTraps, placeTrap, trapOwned, TRAP_DEFS, clearPlacedTrapsForWaveEnd 
 import { recordTrapDamage } from './systems/TrapInventorySystem';
 import { canPlaceRampart, placeRampart, rampartPreviewTiles, rampartTiles, rampartsOwned, RAMPART_LENGTH, RAMPART_ORIENTATIONS, nextRampartOrientation, RAMPART_ORIENT_LABEL, RampartOrientation } from './systems/RampartSystem';
 import { startWave, tickSpawns, checkWaveEnd, getNextWaveInfo, previewSpawnHp } from './systems/WaveManager';
-import { tickCombat, awardKillBonus, applyDamageAndStatus, hasCleave } from './systems/CombatResolver';
+import { tickCombat, awardKillBonus, applyDamageAndStatus, applyInfernalColossusDoomRoundImpact, hasCleave } from './systems/CombatResolver';
 import { tickProjectiles } from './systems/ProjectileSystem';
 import { createGoreState, emitDeathSplatter, emitHitSplatter, emitHitSpark, emitTypedImpact, emitStatusImpact, emitFloatingNumber, fadeCorpsesAtWaveEnd, pruneCorpses, tickGore } from './systems/GoreSystem';
 import { createInventory, maybeRollLootOnKill, oceanSpecialistDropChance, premiumDropRoll, premiumNonBossDropChance, rollApotheosisLuckyDrop, rollBossDrop, rollEpicDrop, rollRareDrop, rollPremiumNonBossDrop, rollOceanSpecialistDrop, rollFinalBossPreludeDrop, spawnLootAt, autoPickupOnBuildPhase, grantFirstFlyerApotheosis, grantWaveOneGiantsBane, grantWave18DracoStandard, grantWave22WitchsBrew, grantSoloStartingItems, inventoryAdd, inventoryRemove, currentlyOwnedLegendarySet } from './systems/LootSystem';
@@ -8286,7 +8286,13 @@ async function boot() {
           if (p.cosmetic) return;
           if (target && target.hp > 0) {
             const tw = state.towers.get(p.sourceTowerId);
-            if (tw) applyDamageAndStatus(state, tw, target, p.damage, combatHooks);
+            if (tw) {
+              applyDamageAndStatus(state, tw, target, p.damage, combatHooks);
+              if (applyInfernalColossusDoomRoundImpact(tw, target, p.doomRound) && renderer?.triggerImpactRing) {
+                renderer.triggerImpactRing(hx, hy, state.tick, 56, 0xff5533);
+                renderer.triggerImpactRing(hx, hy, state.tick + 0.04, 82, 0x9e241d);
+              }
+            }
             if (tw?.isHero && allowHeroBasicVisualFx(tw, 0.08)) {
               triggerHeroHitImpact(tw, hx, hy);
             }
@@ -8317,6 +8323,7 @@ async function boot() {
                           ) * 0.6
                         : p.damage * 0.6;
                     applyDamageAndStatus(state, tw, other, splashDamage, combatHooks);
+                    applyInfernalColossusDoomRoundImpact(tw, other, p.doomRound);
                   }
                 }
               }
@@ -8749,7 +8756,13 @@ async function boot() {
           if (p.cosmetic) return;
           if (target && target.hp > 0) {
             const tw = state.towers.get(p.sourceTowerId);
-            if (tw) applyDamageAndStatus(state, tw, target, p.damage, dpsCombatHooks);
+            if (tw) {
+              applyDamageAndStatus(state, tw, target, p.damage, dpsCombatHooks);
+              if (applyInfernalColossusDoomRoundImpact(tw, target, p.doomRound) && renderer?.triggerImpactRing) {
+                renderer.triggerImpactRing(hx, hy, state.tick, 56, 0xff5533);
+                renderer.triggerImpactRing(hx, hy, state.tick + 0.04, 82, 0x9e241d);
+              }
+            }
             if (tw?.isHero && allowHeroBasicVisualFx(tw, 0.08)) {
               triggerHeroHitImpact(tw, hx, hy);
             }

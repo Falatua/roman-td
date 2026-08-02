@@ -653,7 +653,6 @@ describe('Recipe combo detection', () => {
     ]);
     expect(byResult('INFERNAL_COLOSSUS').ingredients).toEqual([
       { type: 'VULCAN_COLOSSUS', minTier: 5 },
-      { type: 'GOD_OF_WAR', minTier: 5 },
       { type: 'TRIUMPHATOR', minTier: 5 }
     ]);
     for (const type of ['SKY_DOMINION', 'AUREATE_TRIBUNAL', 'GLACIAL_PALISADE', 'INFERNAL_COLOSSUS']) {

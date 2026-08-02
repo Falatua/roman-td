@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, DRACO_STANDARD_ITEM_ID, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, MARS_VICTOR_FIRE_RIDER_PCT, MARS_VICTOR_FLYER_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_SPEED_MULT, MARS_VICTOR_MELEE_DAMAGE_BONUS, MARS_VICTOR_PRIORITY_DAMAGE_BONUS, MARS_VICTOR_SIEGE_DAMAGE_BONUS, MARS_VICTOR_SIEGE_RANGE_BONUS_TILES, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EPIC_ITEM_REGEN_DENIAL_SEC, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, EXPLORATORES_FLYER_RANGED_IMMUNITY_FLOOR, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MARS_VICTOR_BURN_MAGNITUDE, MARS_VICTOR_HELLFIRE_MAGNITUDE, MARS_VICTOR_MARK_PCT, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, rollsWave3ShipwreckFishlingDodge, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL, wave3ShipwreckFishlingDodgeChance } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, applyInfernalColossusDoomRoundImpact, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EPIC_ITEM_REGEN_DENIAL_SEC, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, EXPLORATORES_FLYER_RANGED_IMMUNITY_FLOOR, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MARS_VICTOR_BURN_MAGNITUDE, MARS_VICTOR_HELLFIRE_MAGNITUDE, MARS_VICTOR_MARK_PCT, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, rollsWave3ShipwreckFishlingDodge, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL, wave3ShipwreckFishlingDodgeChance } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -299,6 +299,46 @@ describe('Tower effective stats', () => {
     expect((towersData as any)[TowerType.SIEGE_ONAGER].damageType).toBe('SIEGE');
     expect((towersData as any)[TowerType.VULCAN_COLOSSUS].damageType).toBe('SIEGE');
     expect((towersData as any)[TowerType.INFERNAL_COLOSSUS].damageType).toBe('SIEGE');
+  });
+
+  it('makes Infernal Colossus every third shell a real Doom Round', () => {
+    const def = (towersData as any)[TowerType.INFERNAL_COLOSSUS];
+    expect(def.baseDps).toBe(720);
+    expect(def.ability).toContain('SUPERCOMBO APEX SIEGE (2 COMBOS)');
+    expect(def.ability).toContain('reduced 25%');
+    expect(SUPERCOMBO_RESISTANCE_BREAK_AURAS[TowerType.INFERNAL_COLOSSUS]).toEqual({
+      radiusTiles: 4.0,
+      reliefPct: 0.25
+    });
+
+    const state = createGameState();
+    (globalThis as any).__lastState = state;
+    const tower = createTower(TowerType.INFERNAL_COLOSSUS, 5, 5, 5, 1);
+    tower.critChance = 0;
+    state.towers.set(tower.id, tower);
+    const center = towerCenter(tower);
+    const target = testEnemy('infernal-doom-target', center.x + GRID.TILE * 2, center.y);
+    target.hp = target.maxHp = 1_000_000;
+    state.enemies.set(target.id, target);
+
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    try {
+      for (let shot = 0; shot < 3; shot++) {
+        tower.attackCooldown = 0;
+        tickCombat(state, 0.016, noopCombatHooks());
+      }
+    } finally {
+      randomSpy.mockRestore();
+    }
+
+    expect(state.projectiles).toHaveLength(3);
+    expect(state.projectiles.map(projectile => projectile.doomRound)).toEqual([false, false, true]);
+    expect(state.projectiles[1].damage).toBeCloseTo(state.projectiles[0].damage, 5);
+    expect(state.projectiles[2].damage / state.projectiles[0].damage).toBeCloseTo(2.5, 5);
+    expect(applyInfernalColossusDoomRoundImpact(tower, target, state.projectiles[0].doomRound)).toBe(false);
+    expect(target.statusEffects.some(effect => effect.kind === StatusEffectKind.STUN)).toBe(false);
+    expect(applyInfernalColossusDoomRoundImpact(tower, target, state.projectiles[2].doomRound)).toBe(true);
+    expect(target.statusEffects.find(effect => effect.kind === StatusEffectKind.STUN)?.remaining).toBeCloseTo(1.2, 5);
   });
 
   it('gives the strengthened standalone combos distinct combat payoffs', () => {

@@ -27,6 +27,8 @@ export interface FlyingProjectile {
   // JUPITER'S WRATH chain bolt). The impact handler skips damage/status
   // application so we don't double-apply on-hit effects.
   cosmetic?: boolean;
+  // Infernal Colossus every-third-shot signature, captured at fire time.
+  doomRound?: boolean;
 }
 
 let nextId = 1;
@@ -273,7 +275,10 @@ export function spawnProjectile(state: GameStateShape, tower: Tower, target: Ene
       tower.equippedItems.includes('CONCUSSIVE_WARHEAD') ? CONCUSSIVE_WARHEAD_SPLASH_RADIUS_TILES : 0,   // 2026 v2 legendary splash
       (() => { const k = towerAuraTileKind(tower); return (k && AURA_TILE_EFFECTS[k].splashBonus) || 0; })()
     ),
-    embedAfter: def.embed && !elementalSwap
+    embedAfter: def.embed && !elementalSwap,
+    doomRound: tower.type === TowerType.INFERNAL_COLOSSUS
+      && ((tower as Tower & { __hitCount?: number }).__hitCount ?? 0) > 0
+      && ((tower as Tower & { __hitCount?: number }).__hitCount ?? 0) % 3 === 0
   });
 }
 
