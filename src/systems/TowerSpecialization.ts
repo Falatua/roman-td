@@ -23,7 +23,9 @@ export const COMBO_FLYER_SPECIALIST_DAMAGE_MULT: Readonly<Partial<Record<TowerTy
   [TowerType.NUMIDIAN_CAVALRY]: 3.50,
   [TowerType.EXPLORATORES]: 2.25,
   [TowerType.NEMESIS_ENGINE]: 5.25,
-  [TowerType.STORM_BALLISTA]: 3.40,
+  [TowerType.STORMCALLER]: 2.50,
+  [TowerType.STORM_BALLISTA]: 4.00,
+  [TowerType.STORM_VEXILLATION]: 4.50,
   [TowerType.SKYREAPER_BATTERY]: 6.25,
   [TowerType.SKY_DOMINION]: 7.50,
   [TowerType.JOVIAN_SKY_HUNTER]: 2.75,
@@ -37,12 +39,63 @@ type PreyTarget = {
   isBoss?: boolean;
 };
 
+export type StormSpecialistProfile = {
+  flyer: number;
+  ocean: number;
+};
+
+// Ocean flyers carry both tags, but only the stronger storm bonus applies.
+// This preserves the counter identity without creating a runaway product of
+// two already-large multipliers.
+export const STORM_SPECIALIST_DAMAGE_MULT: Readonly<Partial<Record<TowerType, StormSpecialistProfile>>> = {
+  [TowerType.STORMCALLER]: { flyer: 2.50, ocean: 2.50 },
+  [TowerType.STORM_BALLISTA]: { flyer: 4.00, ocean: 3.00 },
+  [TowerType.STORM_VEXILLATION]: { flyer: 4.50, ocean: 3.50 }
+};
+
 export function comboFlyerSpecialistDamageMult(
   towerType: TowerType,
   target: Pick<PreyTarget, 'isFlyer'>
 ): number {
   if (!target.isFlyer) return 1;
   return COMBO_FLYER_SPECIALIST_DAMAGE_MULT[towerType] ?? 1;
+}
+
+export function stormSpecialistDamageMult(
+  towerType: TowerType,
+  target: Pick<PreyTarget, 'isFlyer'>,
+  oceanThreat: boolean
+): number {
+  const profile = STORM_SPECIALIST_DAMAGE_MULT[towerType];
+  if (!profile) return 1;
+  return Math.max(
+    target.isFlyer ? profile.flyer : 1,
+    oceanThreat ? profile.ocean : 1
+  );
+}
+
+export function towerTargetSpecialistDamageMult(
+  towerType: TowerType,
+  target: Pick<PreyTarget, 'isFlyer'>,
+  oceanThreat: boolean
+): number {
+  return Math.max(
+    comboFlyerSpecialistDamageMult(towerType, target),
+    stormSpecialistDamageMult(towerType, target, oceanThreat)
+  );
+}
+
+export function retargetTowerSpecialistDamage(
+  specializedDamage: number,
+  towerType: TowerType,
+  primary: Pick<PreyTarget, 'isFlyer'>,
+  primaryOceanThreat: boolean,
+  secondary: Pick<PreyTarget, 'isFlyer'>,
+  secondaryOceanThreat: boolean
+): number {
+  const primaryMult = towerTargetSpecialistDamageMult(towerType, primary, primaryOceanThreat);
+  const secondaryMult = towerTargetSpecialistDamageMult(towerType, secondary, secondaryOceanThreat);
+  return specializedDamage / primaryMult * secondaryMult;
 }
 
 export function isGiantKillerTarget(target: Pick<PreyTarget, 'type'>): boolean {
@@ -91,6 +144,24 @@ export type SpecialistDpsRow = {
 // These are sheet-DPS estimates. Crits, enemy resistance, marks, and other
 // target-side effects remain separate so the displayed math matches General DPS.
 export function towerSpecialistDpsRows(type: TowerType, generalDps: number): SpecialistDpsRow[] {
+  const stormProfile = STORM_SPECIALIST_DAMAGE_MULT[type];
+  if (stormProfile) {
+    return [
+      {
+        label: 'Flyer DPS',
+        dps: generalDps * stormProfile.flyer,
+        multiplier: stormProfile.flyer,
+        detail: 'Against all airborne enemies'
+      },
+      {
+        label: 'Ocean-enemy DPS',
+        dps: generalDps * stormProfile.ocean,
+        multiplier: stormProfile.ocean,
+        detail: 'Against ocean-spawn enemies; dual tags use the higher bonus'
+      }
+    ];
+  }
+
   if (type === TowerType.GIANT_KILLER) {
     return [
       {

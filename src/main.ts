@@ -84,7 +84,7 @@ import { showLastStandTrove } from './render/LastStandTrove';
 import { showMercatorBackRoomModal } from './render/SecretEvents';
 import { showHarborDraftModal, showHarborWaveClearModal } from './render/HarborDraftModal';
 import { towerDamageProfile, renderTowerDamageProfileHtml } from './render/TowerDamageProfile';
-import { giantKillerSplashDamage, towerSpecialistDpsRows } from './systems/TowerSpecialization';
+import { giantKillerSplashDamage, retargetTowerSpecialistDamage, towerSpecialistDpsRows } from './systems/TowerSpecialization';
 import { campaignRelicKillGoldBonus, campaignRelicBossKillLives, campaignRelicVestalRescue, shouldOfferCampaignRelics } from './systems/CampaignRelicSystem';
 import { bossTrophyKillGoldBonus, consumePendingBossTrophyOffer, queueBossTrophyOfferForWave } from './systems/BossTrophySystem';
 import { failTestYourMight, isTestYourMightLeakEnemy, shouldDeferSurpriseRewardForTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
@@ -8306,7 +8306,16 @@ async function boot() {
                   if (tw) {
                     const splashDamage = tw.type === TowerType.GIANT_KILLER
                       ? giantKillerSplashDamage(p.damage, target, other)
-                      : p.damage * 0.6;
+                      : tw.type === TowerType.STORM_BALLISTA
+                        ? retargetTowerSpecialistDamage(
+                            p.damage,
+                            tw.type,
+                            target,
+                            isOceanThreatEnemy(target),
+                            other,
+                            isOceanThreatEnemy(other)
+                          ) * 0.6
+                        : p.damage * 0.6;
                     applyDamageAndStatus(state, tw, other, splashDamage, combatHooks);
                   }
                 }

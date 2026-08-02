@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import { boundAwakeningItemForTowerType, canAwakenWithLegendaryItem, canTransformWithGiantsBane, canTransformWithWitchsBrew, createTower, DRACO_STANDARD_ITEM_ID, EAGLE_STANDARD_GLOBAL_DAMAGE_BONUS, GIANTS_BANE_ITEM_ID, MARS_VICTOR_FIRE_RIDER_PCT, MARS_VICTOR_FLYER_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_DAMAGE_BONUS, MARS_VICTOR_GLOBAL_SPEED_MULT, MARS_VICTOR_MELEE_DAMAGE_BONUS, MARS_VICTOR_PRIORITY_DAMAGE_BONUS, MARS_VICTOR_SIEGE_DAMAGE_BONUS, MARS_VICTOR_SIEGE_RANGE_BONUS_TILES, towerEffectiveStats, towerItemSlotCap, towerPerAttackDamageBase, towerStatBreakdown, placeCost, BASE_TOWER_TYPES, clampQualityTierForTower, maxQualityTierForTower, rollDraw, rollSoloDraw, soloProspectTierPool, soloTowerTypeChance, transformWithGiantsBane, transformWithLegendaryAwakening, transformWithWitchsBrew, WITCHS_BREW_ITEM_ID } from '../src/systems/TowerSystem';
-import { applyDamageAndStatus, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EPIC_ITEM_REGEN_DENIAL_SEC, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, EXPLORATORES_FLYER_RANGED_IMMUNITY_FLOOR, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MARS_VICTOR_BURN_MAGNITUDE, MARS_VICTOR_HELLFIRE_MAGNITUDE, MARS_VICTOR_MARK_PCT, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, rollsWave3ShipwreckFishlingDodge, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL, wave3ShipwreckFishlingDodgeChance } from '../src/systems/CombatResolver';
+import { applyDamageAndStatus, applyResistanceBreakRelief, AOE_BURST_RADIUS_MULT, BEASTLORD_BEAST_DAMAGE_MULT, BEASTLORD_ELEPHANT_DAMAGE_MULT, beastlordPreyDamageMult, BESTIARIUS_NET_STACKS, BESTIARIUS_PREY_TROPHY_MULT, BESTIARIUS_TROPHY_SPLASH_MULT, BESTIARIUS_TROPHY_SPLASH_RADIUS_TILES, BESTIARIUS_TROPHY_STACKS, CAPITOLINE_AEGIS_DIVINE_RIDER_PCT, CLEAVE_RADIUS_BONUS_TILES, damnatioExecuteThreshold, enlargedAoEBurstRadiusTiles, EPIC_ITEM_REGEN_DENIAL_SEC, EXECUTIONERS_FALX_CLEAVE_RADIUS_BONUS_TILES, EXPLORATORES_FLYER_RANGED_IMMUNITY_FLOOR, FALX_BLADE_CLEAVE_RADIUS_BONUS_TILES, FINAL_FIVE_APEX_WAVE, finalFiveApexDamageMult, FIRE_OIL_FLASK_SPLASH_RADIUS_TILES, GIANT_KILLER_ELEPHANT_DAMAGE_MULT, GIANT_KILLER_GIANT_DAMAGE_MULT, giantKillerPreyDamageMult, GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT, isBeastEnemyType, MARS_VICTOR_BURN_MAGNITUDE, MARS_VICTOR_HELLFIRE_MAGNITUDE, MARS_VICTOR_MARK_PCT, meleeCleaveRadiusTiles, MIRMILLO_REAVER_BLEEDING_DAMAGE_MULT, MURMILLO_BEAST_DAMAGE_MULT, murmilloBeastDamageMult, murmilloReaverPressureDamageMult, rollsWave3ShipwreckFishlingDodge, siegeFlyerMissChanceForTower, SIEGE_FLYER_MISS_CHANCE, SUPERCOMBO_RESISTANCE_BREAK_AURAS, tickCombat, UNDEAD_GLADIATOR_KING_SUMMON_COUNT, UNDEAD_GLADIATOR_KING_SUMMON_DAMAGE_SCALAR, UNDEAD_GLADIATOR_KING_SUMMON_INTERVAL, UNDEAD_GLADIATOR_KING_SUMMON_SLOW, UNDEAD_GLADIATOR_KING_SUMMON_TTL, wave3ShipwreckFishlingDodgeChance } from '../src/systems/CombatResolver';
 import { resistanceModifier } from '../src/systems/DamageTypeSystem';
 import { enemyDamageMultiplier } from '../src/systems/EnemyResistances';
 import { canDowngrade, downgradeTower } from '../src/systems/DowngradeSystem';
@@ -15,7 +15,7 @@ import { initializeGrid, isBuildable, isWaterZoneTile, canBuildWaterTowerAt } fr
 import { ASSET_KEYS } from '../src/render/Assets';
 import towersData from '../src/data/towers.json';
 import wavesData from '../src/data/waves.json';
-import { COMBO_FLYER_SPECIALIST_DAMAGE_MULT, GIANT_KILLER_SPLASH_DAMAGE_MULT, comboFlyerSpecialistDamageMult, giantKillerSplashDamage, HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT, hannibalsNightmarePreyDamageMult, towerSpecialistDpsRows } from '../src/systems/TowerSpecialization';
+import { COMBO_FLYER_SPECIALIST_DAMAGE_MULT, GIANT_KILLER_SPLASH_DAMAGE_MULT, STORM_SPECIALIST_DAMAGE_MULT, comboFlyerSpecialistDamageMult, giantKillerSplashDamage, HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT, hannibalsNightmarePreyDamageMult, retargetTowerSpecialistDamage, stormSpecialistDamageMult, towerSpecialistDpsRows, towerTargetSpecialistDamageMult } from '../src/systems/TowerSpecialization';
 
 function testEnemy(id: string, x = 160, y = 160): Enemy {
   return {
@@ -512,15 +512,17 @@ describe('Tower effective stats', () => {
     expect(immuneFlyer.statusEffects.some(effect => effect.kind === StatusEffectKind.SLOW)).toBe(true);
   });
 
-  it('makes Stormcaller a lightning specialist against ocean threats', () => {
-    const stormDamage = (oceanSpawn: boolean) => {
+  it('makes all three storm towers strong against flyers and ocean threats without multiplying dual tags', () => {
+    const stormDamage = (type: TowerType, oceanSpawn: boolean, flyer: boolean) => {
       const state = createGameState();
-      const stormcaller = createTower(TowerType.STORMCALLER, 3, 5, 5, 0);
-      stormcaller.attackCooldown = 0;
-      state.towers.set(stormcaller.id, stormcaller);
+      const tower = createTower(type, 3, 5, 5, 0);
+      tower.attackCooldown = 0;
+      tower.critChance = 0;
+      state.towers.set(tower.id, tower);
 
-      const c = towerCenter(stormcaller);
+      const c = towerCenter(tower);
       const target = testEnemy(oceanSpawn ? 'drenched-target' : 'dry-target', c.x + GRID.TILE, c.y);
+      target.isFlyer = flyer;
       target.hp = 100000;
       target.maxHp = 100000;
       if (oceanSpawn) (target as any).__oceanSpawn = true;
@@ -540,10 +542,82 @@ describe('Tower effective stats', () => {
       return firedDamage;
     };
 
-    const ability = String((towersData as any)[TowerType.STORMCALLER].ability);
-    expect(ability).toContain('+100% damage vs ocean / sea-based enemies');
-    expect(ability).toContain('Fire, burn, and hellfire still do zero damage');
-    expect(stormDamage(true)).toBeCloseTo(stormDamage(false) * STORMCALLER_OCEAN_THREAT_DAMAGE_MULT, 4);
+    for (const [typeKey, profile] of Object.entries(STORM_SPECIALIST_DAMAGE_MULT)) {
+      const type = typeKey as TowerType;
+      const dryGround = stormDamage(type, false, false);
+      const damageType = createTower(type, 3, 0, 0, 0).damageType;
+      const groundBaseline = enemyDamageMultiplier(testEnemy(`${type}-ground-baseline`), damageType);
+      const flyerBaseline = enemyDamageMultiplier(flyerEnemy(`${type}-flyer-baseline`), damageType);
+      const flyerProfileRatio = flyerBaseline / groundBaseline;
+      expect(stormDamage(type, false, true), `${type} flyer`).toBeCloseTo(
+        dryGround * profile!.flyer * flyerProfileRatio,
+        4
+      );
+      expect(stormDamage(type, true, false), `${type} ocean`).toBeCloseTo(dryGround * profile!.ocean, 4);
+      expect(stormDamage(type, true, true), `${type} ocean flyer`).toBeCloseTo(
+        dryGround * Math.max(profile!.flyer, profile!.ocean) * flyerProfileRatio,
+        4
+      );
+      expect(stormSpecialistDamageMult(type, { isFlyer: true }, true)).toBe(
+        Math.max(profile!.flyer, profile!.ocean)
+      );
+
+      const ability = String((towersData as any)[type].ability);
+      expect(ability, type).toContain(`+${Math.round((profile!.flyer - 1) * 100)}%`);
+      expect(ability, type).toContain(`+${Math.round((profile!.ocean - 1) * 100)}%`);
+      expect(ability, type).toContain('bonuses do not stack');
+
+      const rows = towerSpecialistDpsRows(type, 100);
+      expect(rows.map(row => row.dps)).toEqual([100 * profile!.flyer, 100 * profile!.ocean]);
+
+      const flyer = flyerEnemy(`${type}-retarget-flyer`);
+      const ground = testEnemy(`${type}-retarget-ground`);
+      expect(retargetTowerSpecialistDamage(100 * profile!.flyer, type, flyer, false, ground, false))
+        .toBeCloseTo(100, 4);
+      expect(retargetTowerSpecialistDamage(100, type, ground, false, flyer, true))
+        .toBeCloseTo(100 * Math.max(profile!.flyer, profile!.ocean), 4);
+    }
+  });
+
+  it.each([
+    [TowerType.STORMCALLER, 0.75],
+    [TowerType.STORM_VEXILLATION, 0.85]
+  ] as const)('recalculates %s chain specialization for each jumped target', (type, firstJumpScale) => {
+    const hitSecondary = (primaryOceanFlyer: boolean, secondaryOceanFlyer: boolean) => {
+      const state = createGameState();
+      const tower = createTower(type, 4, 4, 4, 0);
+      const center = towerCenter(tower);
+      const primary = testEnemy('storm-primary', center.x + GRID.TILE, center.y);
+      const secondary = testEnemy('storm-secondary', center.x + GRID.TILE * 1.5, center.y);
+      primary.hp = primary.maxHp = 100000;
+      secondary.hp = secondary.maxHp = 100000;
+      primary.isFlyer = primaryOceanFlyer;
+      secondary.isFlyer = secondaryOceanFlyer;
+      if (primaryOceanFlyer) (primary as any).__oceanSpawn = true;
+      if (secondaryOceanFlyer) (secondary as any).__oceanSpawn = true;
+      state.enemies.set(primary.id, primary);
+      state.enemies.set(secondary.id, secondary);
+
+      let secondaryDamage = 0;
+      const originalRandom = Math.random;
+      Math.random = () => 0.99;
+      try {
+        const primaryMult = towerTargetSpecialistDamageMult(type, primary, primaryOceanFlyer);
+        applyDamageAndStatus(state, tower, primary, 100 * primaryMult, {
+          ...noopCombatHooks(),
+          onHit: (_tower, enemy, damage) => {
+            if (enemy.id === secondary.id) secondaryDamage += damage;
+          }
+        });
+      } finally {
+        Math.random = originalRandom;
+      }
+      return secondaryDamage;
+    };
+
+    const profile = STORM_SPECIALIST_DAMAGE_MULT[type]!;
+    expect(hitSecondary(true, false)).toBeCloseTo(100 * firstJumpScale, 4);
+    expect(hitSecondary(false, true)).toBeCloseTo(100 * firstJumpScale * Math.max(profile.flyer, profile.ocean), 4);
   });
 
   it('applies a linear tier damage ramp (T5 hits 2.5x T1)', () => {
@@ -812,7 +886,9 @@ describe('Anti-air tower signatures', () => {
       [TowerType.NUMIDIAN_CAVALRY, 3.50],
       [TowerType.EXPLORATORES, 2.25],
       [TowerType.NEMESIS_ENGINE, 5.25],
-      [TowerType.STORM_BALLISTA, 3.40],
+      [TowerType.STORMCALLER, 2.50],
+      [TowerType.STORM_BALLISTA, 4.00],
+      [TowerType.STORM_VEXILLATION, 4.50],
       [TowerType.SKYREAPER_BATTERY, 6.25],
       [TowerType.SKY_DOMINION, 7.50],
       [TowerType.JOVIAN_SKY_HUNTER, 2.75],
@@ -881,25 +957,28 @@ describe('Anti-air tower signatures', () => {
 
     const plain = createTower(TowerType.SAGITTARIUS, 5, 0, 0, 0);
     const combo = createTower(TowerType.SCORPION_BOLT, 4, 0, 0, 0);
-    const storm = createTower(TowerType.STORM_BALLISTA, 4, 0, 0, 0);
+    const stormTypes = [TowerType.STORMCALLER, TowerType.STORM_BALLISTA, TowerType.STORM_VEXILLATION];
+    const stormTowers = stormTypes.map(type => createTower(type, 4, 0, 0, 0));
 
     const plainTarget = flyerEnemy('plated-plain');
     const comboTarget = flyerEnemy('plated-combo');
-    const stormTarget = flyerEnemy('plated-storm');
+    const stormTargets = stormTypes.map(type => flyerEnemy(`plated-${type}`));
 
     const originalRandom = Math.random;
     Math.random = () => 0.99;
     try {
       applyDamageAndStatus(state, plain, plainTarget, 100, noopCombatHooks());
       applyDamageAndStatus(state, combo, comboTarget, 100, noopCombatHooks());
-      applyDamageAndStatus(state, storm, stormTarget, 100, noopCombatHooks());
+      stormTowers.forEach((tower, index) => {
+        applyDamageAndStatus(state, tower, stormTargets[index], 100, noopCombatHooks());
+      });
     } finally {
       Math.random = originalRandom;
     }
 
     expect(1000 - plainTarget.hp).toBeCloseTo(100 * (1 - armor), 4);
     expect(1000 - comboTarget.hp).toBeCloseTo(100, 4);
-    expect(1000 - stormTarget.hp).toBeCloseTo(100, 4);
+    stormTargets.forEach(target => expect(1000 - target.hp).toBeCloseTo(100, 4));
   });
 
   it('early flyer teaching waves do not carry combo anti-air plating', () => {

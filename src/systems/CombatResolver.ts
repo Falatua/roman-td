@@ -22,11 +22,11 @@ import {
   GIANT_KILLER_ELEPHANT_DAMAGE_MULT,
   GIANT_KILLER_GIANT_DAMAGE_MULT,
   HANNIBALS_NIGHTMARE_TARGET_COUNT,
-  comboFlyerSpecialistDamageMult,
   giantKillerPreyDamageMult,
   hannibalsNightmarePreyDamageMult,
   isElephantEnemyTarget,
-  isGiantKillerTarget
+  isGiantKillerTarget,
+  towerTargetSpecialistDamageMult
 } from './TowerSpecialization';
 export {
   GIANT_KILLER_ELEPHANT_DAMAGE_MULT,
@@ -263,7 +263,9 @@ const COMBO_ANTI_AIR_TYPES = new Set<TowerType>([
   TowerType.HANNIBALS_NIGHTMARE,
   TowerType.BEASTLORD_CHAMPION,
   TowerType.EXPLORATORES,
+  TowerType.STORMCALLER,
   TowerType.STORM_BALLISTA,
+  TowerType.STORM_VEXILLATION,
   TowerType.SKYREAPER_BATTERY,
   TowerType.SKY_DOMINION,
   TowerType.VANGUARD_WING,
@@ -806,8 +808,6 @@ function applyDamnatioExecution(t: Tower, target: Enemy, tick: number): void {
     renderer?.triggerSpriteImpact?.(target.x, target.y, tick, 'VFX_IMPERIAL_EXECUTION', 2.2, 0.28, 128, 128, 1);
   }
 }
-
-export const STORMCALLER_OCEAN_THREAT_DAMAGE_MULT = 2.0;
 
 export const GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT = 12.0;
 export const UNDEAD_GLADIATOR_KING_SUMMON_COUNT = 3;
@@ -1804,8 +1804,10 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (target.statusEffects.some(s => s.kind === StatusEffectKind.FREEZE && s.remaining > 0)) ccAmp += 0.10;
       if (target.statusEffects.some(s => s.kind === StatusEffectKind.STUN   && s.remaining > 0)) ccAmp += 0.10;
       if (ccAmp > 0) damage *= (1 + ccAmp);
-      // Per-tower archetype/role bonuses + signatures
-      damage *= comboFlyerSpecialistDamageMult(t.type, target);
+      // Per-tower archetype/role bonuses + signatures. Storm specialists use
+      // the higher flyer/ocean bonus when a target carries both tags.
+      const oceanThreat = isOceanThreat(target);
+      damage *= towerTargetSpecialistDamageMult(t.type, target, oceanThreat);
       if (t.type === TowerType.RORARIUS && target.archetype === 'RUNNER') damage *= 1.35;
       if ((t.type === TowerType.SAGITTARIUS || t.type === TowerType.VENATOR) && target.isFlyer) damage *= 1.45;
       // 2026-06-28 — new anti-flyer combos.
@@ -1832,7 +1834,6 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.equippedItems.includes('JUPITERS_SKYFIRE') && target.isFlyer) damage *= 2.40;
       if (t.equippedItems.includes('STORM_AQUILA_TALONS') && target.isFlyer) damage *= 1.90;
       if (t.equippedItems.includes('AQUILA_TALONS') && target.isFlyer) damage *= 1.90;  // 2026-06-23 LEG 1.60→1.90: beat EPIC Skypiercer (+85%)
-      const oceanThreat = isOceanThreat(target);
       if (t.equippedItems.includes('BRINEHOOK_ROPE') && (oceanThreat || (target as any).isCommander || isCommanderType((target as any).type))) {
         damage *= 1.30;
       }
@@ -1979,7 +1980,6 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.SKY_DOMINION && isEliteEnemy(target)) damage *= 1.60;
       if (t.type === TowerType.VULCAN_COLOSSUS && target.isBoss) damage *= 2.00;                 // CITY-BREAKER: +100% vs bosses
       if (t.type === TowerType.INFERNAL_COLOSSUS && target.isBoss) damage *= 3.00;                // +200% vs bosses
-      if (t.type === TowerType.STORMCALLER && oceanThreat) damage *= STORMCALLER_OCEAN_THREAT_DAMAGE_MULT; // +100% vs drenched ocean threats
       if (t.type === TowerType.GIANT_KILLER) damage *= giantKillerPreyDamageMult(target);
       if (t.type === TowerType.GIANTS_COHORT_GUARD) {
         if (isGiantKillerTarget(target)) damage *= GIANTS_COHORT_GUARD_GIANT_DAMAGE_MULT;
@@ -3128,7 +3128,8 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   // STORM_VEXILLATION — wider chain lightning (6 jumps) on every hit.
   if (t.type === TowerType.STORM_VEXILLATION) {
     let prevX = target.x, prevY = target.y;
-    let chainDmg = damage * 0.85;
+    const primaryStormMult = towerTargetSpecialistDamageMult(t.type, target, isOceanThreat(target));
+    let neutralChainDmg = damage / primaryStormMult * 0.85;
     const visited = new Set<string>([target.id]);
     for (let jump = 0; jump < 6; jump++) {
       let nearest: Enemy | null = null; let bestD = 4 * GRID.TILE;
@@ -3139,6 +3140,8 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
       }
       if (!nearest) break;
       visited.add(nearest.id);
+      const chainDmg = neutralChainDmg
+        * towerTargetSpecialistDamageMult(t.type, nearest, isOceanThreat(nearest));
       nearest.hp -= chainDmg;
       nearest.hpFlashTimer = 0.18;
       nearest.lastDamagedTick = state.tick;
@@ -3146,7 +3149,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
       queueChainLightningFx(state, prevX, prevY, nearest.x, nearest.y, jump);
       if (nearest.hp <= 0 && !checkRebirth(state, nearest, state.tick)) hooks.onKill(t, nearest);
       prevX = nearest.x; prevY = nearest.y;
-      chainDmg *= 0.80;
+      neutralChainDmg *= 0.80;
     }
   }
   // JUPITER'S WRATH (legendary item) — handled by the shared helper so
@@ -3157,7 +3160,8 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
   // STORMCALLER — chain lightning: 4 jumps, decaying 25% per jump.
   if (t.type === TowerType.STORMCALLER) {
     let prevX = target.x, prevY = target.y;
-    let chainDmg = damage * 0.75;
+    const primaryStormMult = towerTargetSpecialistDamageMult(t.type, target, isOceanThreat(target));
+    let neutralChainDmg = damage / primaryStormMult * 0.75;
     const visited = new Set<string>([target.id]);
     for (let jump = 0; jump < 4; jump++) {
       let nearest: Enemy | null = null; let bestD = 3.5 * GRID.TILE;
@@ -3168,6 +3172,8 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
       }
       if (!nearest) break;
       visited.add(nearest.id);
+      const chainDmg = neutralChainDmg
+        * towerTargetSpecialistDamageMult(t.type, nearest, isOceanThreat(nearest));
       nearest.hp -= chainDmg;
       nearest.hpFlashTimer = 0.18;
       nearest.lastDamagedTick = state.tick;
@@ -3175,7 +3181,7 @@ export function applyDamageAndStatus(state: GameStateShape, t: Tower, target: En
       queueChainLightningFx(state, prevX, prevY, nearest.x, nearest.y, jump);
       if (nearest.hp <= 0 && !checkRebirth(state, nearest, state.tick)) hooks.onKill(t, nearest);
       prevX = nearest.x; prevY = nearest.y;
-      chainDmg *= 0.75;
+      neutralChainDmg *= 0.75;
     }
   }
 }

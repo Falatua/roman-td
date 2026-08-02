@@ -762,7 +762,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 3,
-    "ability": "ARC LIGHTNING: each shot chains to 4 nearby enemies, decaying 25% per jump. Stuns the primary target. STORM CONDUCTOR: +100% damage vs ocean / sea-based enemies - soaked bodies carry the lightning. Fire, burn, and hellfire still do zero damage to those water-born threats.",
+    "ability": "ARC LIGHTNING: each shot chains to 4 nearby enemies, decaying 25% per jump. Stuns the primary target. STORM CONDUCTOR: +150% damage vs FLYERS and ocean / sea-based enemies. An ocean flyer uses the higher single storm bonus; bonuses do not stack. Fire, burn, and hellfire still do zero damage to water-born threats.",
     "critChance": 0.18,
     "critMult": 2.4
   },
@@ -866,7 +866,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 4,
-    "ability": "COMBO-OF-COMBO (T4): Stormcaller forged into a banner. Heavy divine bolt that chains to 6 enemies, retaining 80% damage per jump (20% decay) — a real step up from the Stormcaller it was forged from.",
+    "ability": "COMBO-OF-COMBO (T4): Stormcaller forged into a banner. Heavy divine bolt chains to 6 enemies, retaining 80% damage per jump. SKY-TIDE JUDGMENT: +350% damage vs FLYERS and +250% vs ocean / sea-based enemies. An ocean flyer uses +350%; bonuses do not stack.",
     "critChance": 0.2,
     "critMult": 2.5
   },
@@ -1240,7 +1240,7 @@
   "MIRMILLO_REAVER": {"name": "Murmillo Reaver", "damageType": "PHYS_MELEE", "baseDps": 175.0, "attackSpeed": 2.1, "range": 2.5, "kind": "COMBO", "melee": true, "tierBand": 3, "critChance": 0.22, "critMult": 2.1, "ability": "BEAST REAVER: +50% damage to all beasts, including dogs, Hellhounds, and living or undead War Elephants. SICA PRESSURE: every hit refreshes BLEED at 1.2% max HP per second for 6.6s; an already bleeding target takes +25% direct damage."},
   "TRIBUNE_AVENGER": {"name": "Tribune Avenger", "damageType": "DIVINE", "baseDps": 175.0, "attackSpeed": 1.4, "range": 2.5, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.15, "critMult": 2.3, "ability": "AVENGER'S EDICT: DIVINE melee with 2.5-tile reach. Every strike applies POISON at 5% max HP per second for 3.3s, halving continuous regeneration. Every 4th strike also MARKS the target +18% for 3s."},
   "CATAPHRACT_LANCER": {"name": "Cataphract Lancer", "damageType": "PHYS_MELEE", "baseDps": 185.0, "attackSpeed": 1.1, "range": 3.0, "kind": "COMBO", "melee": true, "tierBand": 4, "critChance": 0.14, "critMult": 2.5, "ability": "LONG LANCE (3.0-tile reach). LANCE CHARGE: every 3rd couched thrust STUNS 1.2s and knocks the target back about 0.5 tiles. Slow, devastating swings make it a second-rank wall anchor that pins and shoves bosses down the lane."},
-  "STORM_BALLISTA": {"name": "Storm Ballista", "damageType": "SIEGE", "baseDps": 176.0, "attackSpeed": 0.648, "range": 6.0, "kind": "COMBO", "melee": false, "tierBand": 4, "critChance": 0.12, "critMult": 3.0, "ability": "Long-range SIEGE bolt-thrower with 1.61-tile splash. AERIAL BREACH: targets FLYERS without the normal siege miss penalty, pierces aerial plating, and deals +240% damage to them. SHOCK BURST: every 3rd bolt STUNS every enemy in the splash for 0.72s."},
+  "STORM_BALLISTA": {"name": "Storm Ballista", "damageType": "SIEGE", "baseDps": 176.0, "attackSpeed": 0.648, "range": 6.0, "kind": "COMBO", "melee": false, "tierBand": 4, "critChance": 0.12, "critMult": 3.0, "ability": "Long-range SIEGE bolt-thrower with 1.61-tile splash. AERIAL BREACH: targets FLYERS without the normal siege miss penalty, pierces aerial plating, and deals +300% damage to them. STORM-TIDE BOLTS: +200% damage vs ocean / sea-based enemies. An ocean flyer uses +300%; bonuses do not stack. SHOCK BURST: every 3rd bolt STUNS every enemy in the splash for 0.72s."},
   "SKYREAPER_BATTERY": {"name": "Skyreaper Battery", "damageType": "PHYS_RANGED", "baseDps": 440.0, "attackSpeed": 1.65, "range": 5.5, "kind": "COMBO", "melee": false, "tierBand": 4, "antiAirOnly": true, "critChance": 0.2, "critMult": 2.5, "ability": "Eagle-eyed volley. Targets flyers only and ignores ground enemies entirely. Pierces aerial plating for +525% damage vs FLYERS and another +25% against flying bosses and commanders. FLAK WEB: hits slow flyers by 55% and apply ARMOR SHRED, opening them to the whole defense."},
   "PLAGUE_LOBBER": {"name": "Plague Lobber", "damageType": "ELEMENTAL_FIRE", "baseDps": 125.0, "attackSpeed": 0.9, "range": 5.0, "kind": "COMBO", "melee": false, "tierBand": 3, "critChance": 0.1, "critMult": 2.0, "burnsGround": true, "ability": "CONTAGION POT: 5-tile lob with 1.73-tile splash. Impact leaves BURNING GROUND for 4.4s and applies POISON at 5% max HP per second for 3.85s. Either DoT halves continuous regeneration while active."},
   "AUGURS_WRATH": {"name": "Augur's Wrath", "damageType": "DIVINE", "baseDps": 150.0, "attackSpeed": 0.7, "range": 4.8, "kind": "COMBO", "melee": false, "tierBand": 5, "critChance": 0.2, "critMult": 2.6, "ability": "Hurls a radiant omen-fireball. DIVINE damage with 1.15-tile splash that sets the struck cluster BURNING. Strong magic artillery, now priced as a real T3-priest investment instead of a cheap early skip."},
