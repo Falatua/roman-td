@@ -89,10 +89,10 @@ describe('30-wave Solo economy envelope', () => {
     const commanderBounties = scheduledCommanderKills * ECONOMY.COMMANDER_KILL_BOUNTY;
     const guaranteed = ECONOMY.STARTING_GOLD + goldKills + injectedCommanderBaselineKills
       + commanderBounties + waveGold + majorBossBounties;
-    expect(authoredKills).toBe(2940);
-    expect(goldKills).toBe(2910);
+    expect(authoredKills).toBe(2923);
+    expect(goldKills).toBe(2893);
     expect(authoredCommanderKills).toBe(69);
-    expect(guaranteed).toBe(6256);
+    expect(guaranteed).toBe(6239);
     expect(guaranteed).toBeGreaterThan(6200);
     expect(guaranteed).toBeLessThan(6400);
   });

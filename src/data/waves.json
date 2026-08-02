@@ -926,7 +926,7 @@
       },
       {
         "type": "CHIMERA",
-        "count": 5
+        "count": 2
       },
       {
         "type": "DEMON_HELLHOUND",
@@ -975,7 +975,7 @@
       },
       {
         "type": "CHIMERA",
-        "count": 6
+        "count": 3
       },
       {
         "type": "STANDARD_BEARER_COMMANDER",
@@ -991,7 +991,7 @@
       },
       {
         "type": "SHADOW_CAVALRY",
-        "count": 8
+        "count": 4
       },
       {
         "type": "SKY_BARGE",
@@ -1037,7 +1037,7 @@
       },
       {
         "type": "CHIMERA",
-        "count": 2
+        "count": 1
       },
       {
         "type": "STANDARD_BEARER_COMMANDER",
@@ -1049,7 +1049,7 @@
       },
       {
         "type": "SHADOW_CAVALRY",
-        "count": 10
+        "count": 4
       }
     ],
     "enemySpeedBoostPct": 0.08,

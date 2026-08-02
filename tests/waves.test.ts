@@ -718,6 +718,34 @@ describe('Late-campaign mechanic variety after combo tower buffs', () => {
     expect((enemiesData as any).CHIMERA.phaseHits).toBeGreaterThanOrEqual(3);
   });
 
+  it('halves the actual flyer roster after Wave 27 while preserving late air roles', () => {
+    const expected = new Map<number, Record<string, number>>([
+      [28, { SKY_PATHFINDER_COMMANDER: 1, CHIMERA: 2 }],
+      [29, { CHIMERA: 3, SHADOW_CAVALRY: 4, SKY_BARGE: 1 }],
+      [30, { CHIMERA: 1, SHADOW_CAVALRY: 4, SKY_STANDARD_COMMANDER: 1, SKY_PATHFINDER_COMMANDER: 1 }]
+    ]);
+    const expectedTotals = new Map([[28, 3], [29, 8], [30, 7]]);
+
+    for (const [wave, expectedByType] of expected) {
+      const state = bootstrapState();
+      state.wave = wave - 1;
+      state.phase = GamePhase.BUILD_PHASE;
+      startWave(state);
+
+      const actualByType: Record<string, number> = {};
+      for (const spawn of state.spawnQueue) {
+        if (!(enemiesData as any)[spawn.type]?.isFlyer) continue;
+        actualByType[spawn.type] = (actualByType[spawn.type] ?? 0) + 1;
+      }
+
+      expect(actualByType, `W${wave} flyer composition`).toEqual(expectedByType);
+      expect(
+        Object.values(actualByType).reduce((sum, count) => sum + count, 0),
+        `W${wave} actual flyer total`
+      ).toBe(expectedTotals.get(wave));
+    }
+  });
+
   it('keeps the complete authored enemy roster on the 10% faster speed pass', () => {
     const expectedEnemySpeeds: Record<string, number> = {
       FERAL_DOG: 2.64,
