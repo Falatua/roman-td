@@ -496,6 +496,25 @@ describe('Recipe combo detection', () => {
     expect(plagueCart).toBeTruthy();
   });
 
+  it('unlocks Carthage Scourge with two Tier 4 ingredients but not Tier 3 ingredients', () => {
+    const recipe = comboData.find((r: any) => r.result === 'CARTHAGE_SCOURGE') as any;
+    expect(recipe.ingredients).toEqual([
+      { type: 'HANNIBALS_NIGHTMARE', minTier: 4 },
+      { type: 'NEMESIS_ENGINE', minTier: 4 }
+    ]);
+
+    const eligible = bootstrapState();
+    placeTower(eligible, TowerType.HANNIBALS_NIGHTMARE, 4, 5, 5);
+    placeTower(eligible, TowerType.NEMESIS_ENGINE, 4, 7, 5);
+    const scourge = scanCombos(eligible).find(combo => combo.result === TowerType.CARTHAGE_SCOURGE);
+    expect(scourge?.ingredients.map(tower => tower.qualityTier)).toEqual([4, 4]);
+
+    const ineligible = bootstrapState();
+    placeTower(ineligible, TowerType.HANNIBALS_NIGHTMARE, 3, 5, 5);
+    placeTower(ineligible, TowerType.NEMESIS_ENGINE, 3, 7, 5);
+    expect(scanCombos(ineligible).some(combo => combo.result === TowerType.CARTHAGE_SCOURGE)).toBe(false);
+  });
+
   it('rewards harder-to-assemble nested combos with higher DPS', () => {
     // 2026-06-29 — JB: combos whose recipes are rarer/harder (nested combo
     // ingredients, high min-tiers, big cost) should be stronger. DPS now

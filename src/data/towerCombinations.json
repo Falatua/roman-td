@@ -484,11 +484,11 @@
     "ingredients": [
       {
         "type": "HANNIBALS_NIGHTMARE",
-        "minTier": 5
+        "minTier": 4
       },
       {
         "type": "NEMESIS_ENGINE",
-        "minTier": 5
+        "minTier": 4
       }
     ],
     "cost": 200
