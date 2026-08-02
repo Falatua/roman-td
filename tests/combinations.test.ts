@@ -647,10 +647,12 @@ describe('Recipe combo detection', () => {
       { type: 'SACER_VESTAL', minTier: 4 }
     ]);
     expect(byResult('GLACIAL_PALISADE').ingredients).toEqual([
-      { type: 'FROZEN_LEGION', minTier: 4 },
-      { type: 'SACRED_BAND', minTier: 4 },
-      { type: 'CATAPHRACT_LANCER', minTier: 4 }
+      { type: 'FROZEN_LEGION', minTier: 3 },
+      { type: 'SACRED_BAND', minTier: 3 },
+      { type: 'CATAPHRACT_LANCER', minTier: 3 }
     ]);
+    expect((towersData as any).GLACIAL_PALISADE.range).toBe(5.2);
+    expect((towersData as any).GLACIAL_PALISADE.ability).toContain('5.2-tile reach');
     expect(byResult('INFERNAL_COLOSSUS').ingredients).toEqual([
       { type: 'VULCAN_COLOSSUS', minTier: 5 },
       { type: 'TRIUMPHATOR', minTier: 5 }
@@ -661,6 +663,21 @@ describe('Recipe combo detection', () => {
       expect(def?.tierBand).toBe(5);
       expect(def?.ability).toContain('SUPERCOMBO');
     }
+  });
+
+  it('unlocks Glacial Palisade with three Tier 3 ingredients but not Tier 2 ingredients', () => {
+    const eligible = bootstrapState();
+    placeTower(eligible, TowerType.FROZEN_LEGION, 3, 5, 5);
+    placeTower(eligible, TowerType.SACRED_BAND, 3, 7, 5);
+    placeTower(eligible, TowerType.CATAPHRACT_LANCER, 3, 9, 5);
+    const glacial = scanCombos(eligible).find(combo => combo.result === TowerType.GLACIAL_PALISADE);
+    expect(glacial?.ingredients.map(tower => tower.qualityTier)).toEqual([3, 3, 3]);
+
+    const ineligible = bootstrapState();
+    placeTower(ineligible, TowerType.FROZEN_LEGION, 2, 5, 5);
+    placeTower(ineligible, TowerType.SACRED_BAND, 2, 7, 5);
+    placeTower(ineligible, TowerType.CATAPHRACT_LANCER, 2, 9, 5);
+    expect(scanCombos(ineligible).some(combo => combo.result === TowerType.GLACIAL_PALISADE)).toBe(false);
   });
 
   it('adds Roman Transformer Omega routes from rival-slayer and imperial-law Super Combos', () => {

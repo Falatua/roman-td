@@ -967,15 +967,15 @@
     "ingredients": [
       {
         "type": "FROZEN_LEGION",
-        "minTier": 4
+        "minTier": 3
       },
       {
         "type": "SACRED_BAND",
-        "minTier": 4
+        "minTier": 3
       },
       {
         "type": "CATAPHRACT_LANCER",
-        "minTier": 4
+        "minTier": 3
       }
     ]
   },
