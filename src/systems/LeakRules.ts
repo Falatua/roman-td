@@ -7,6 +7,14 @@ export function isFinalBossBreach(state: GameStateShape, enemy: Pick<Enemy, 'typ
   return state.wave === WAVE.TOTAL && !state.endlessMode && enemy.type === EnemyType.DAEMON_IMPERATOR;
 }
 
+export function applyFinalBossBreachDefeat(state: GameStateShape, enemy: Pick<Enemy, 'type'>): boolean {
+  if (!isFinalBossBreach(state, enemy)) return false;
+  state.lives = 0;
+  if (state.gameOverAt < 0) state.gameOverAt = state.tick;
+  (state as GameStateShape & { __finalBossBreachDefeat?: boolean }).__finalBossBreachDefeat = true;
+  return true;
+}
+
 export function isElephantEliteLeak(enemy: Pick<Enemy, 'type'>): boolean {
   return isEliteEnemy(enemy) && (enemy.type === EnemyType.WAR_ELEPHANT || enemy.type === EnemyType.UNDEAD_WAR_ELEPHANT);
 }

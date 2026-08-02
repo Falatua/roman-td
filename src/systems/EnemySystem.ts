@@ -27,7 +27,7 @@ import { campaignRelicEnemyHpMult, campaignRelicEnemySpeedMult } from './Campaig
 import { commanderSpeedMult, isCommanderType, tickCommanderSupport } from './CommanderSystem';
 import { classifyEnemy } from './EnemyClassification';
 import { campaignPressureResistMult } from './CampaignDifficulty';
-import { shouldRespawnBossOnLeak } from './LeakRules';
+import { isFinalBossBreach, shouldRespawnBossOnLeak } from './LeakRules';
 import { enemyHealthRecoveryMult, scaledEnemyRegenRate } from './EnemyHealing';
 import {
   midCampaignEnemySpeedMultiplier,
@@ -1676,7 +1676,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       // 5% HP keep that progress across many "loops" — now leaking
       // resets that progress entirely. The boss is essentially saying
       // "you didn't kill me in time. I'm coming back fresh next wave."
-      if (shouldRespawnBossOnLeak(e)) {
+      if (shouldRespawnBossOnLeak(e) && !isFinalBossBreach(state, e)) {
         if (!state.bossRespawnQueue) state.bossRespawnQueue = [];
         // 2026-05 v6: carry the HP across rebirth. Cap to 1 so a quirky
         // overheal can't bank > 100%. fraction recorded for the banner

@@ -11,7 +11,7 @@ import { initializeGrid } from '../src/systems/GridManager';
 import { buildGroundPath, buildGroundPathB, buildFlyerPath } from '../src/systems/PathFinder';
 import { enemyResistanceProfile } from '../src/systems/EnemyResistances';
 import { isLegendaryBossDropEnemy, isRareOnlyBossDropEnemy } from '../src/systems/RewardEligibility';
-import { isFinalBossBreach, leakLifeCostFor, shouldRespawnBossOnLeak } from '../src/systems/LeakRules';
+import { applyFinalBossBreachDefeat, isFinalBossBreach, leakLifeCostFor, shouldRespawnBossOnLeak } from '../src/systems/LeakRules';
 import { failTestYourMight, isTestYourMightLeakEnemy, startTestYourMight } from '../src/systems/TestYourMightSystem';
 import wavesData from '../src/data/waves.json';
 import enemiesData from '../src/data/enemies.json';
@@ -1051,12 +1051,40 @@ describe('Win/Loss conditions', () => {
     const s: any = bootstrapState();
     s.wave = 30;
     s.endlessMode = false;
+    s.lives = 45;
+    s.tick = 123;
 
     expect(isFinalBossBreach(s, { type: EnemyType.DAEMON_IMPERATOR } as any)).toBe(true);
     expect(isFinalBossBreach(s, { type: EnemyType.SHADOW_CAVALRY } as any)).toBe(false);
     expect(isFinalBossBreach(s, { type: EnemyType.CHIMERA } as any)).toBe(false);
     expect(isFinalBossBreach(s, { type: EnemyType.PATHFINDER_COMMANDER } as any)).toBe(false);
     expect(isFinalBossBreach(s, { type: EnemyType.UNDEAD_WAR_ELEPHANT } as any)).toBe(false);
+    expect(applyFinalBossBreachDefeat(s, { type: EnemyType.DAEMON_IMPERATOR } as any)).toBe(true);
+    expect(s.lives).toBe(0);
+    expect(s.gameOverAt).toBe(123);
+    expect(s.__finalBossBreachDefeat).toBe(true);
+  });
+
+  it('ends the run and never queues a rebirth when the Wave 30 boss reaches Rome', () => {
+    const s: any = bootstrapState();
+    s.wave = 30;
+    s.phase = GamePhase.WAVE_PHASE;
+    s.lives = 45;
+    s.tick = 60;
+    const boss = spawnEnemy(s, EnemyType.DAEMON_IMPERATOR, 1);
+    boss.pathIndex = s.groundPath.length - 1;
+
+    tickEnemies(
+      s,
+      0,
+      enemy => { applyFinalBossBreachDefeat(s, enemy); },
+      () => {}
+    );
+
+    expect(s.lives).toBe(0);
+    expect(s.__finalBossBreachDefeat).toBe(true);
+    expect(s.enemies.has(boss.id)).toBe(false);
+    expect(s.bossRespawnQueue ?? []).toHaveLength(0);
   });
 
   it('does not use final-boss lockdown in Endless mode', () => {

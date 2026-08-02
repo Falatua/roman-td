@@ -90,7 +90,7 @@ import { bossTrophyKillGoldBonus, consumePendingBossTrophyOffer, queueBossTrophy
 import { failTestYourMight, isTestYourMightLeakEnemy, shouldDeferSurpriseRewardForTestYourMight, shouldOfferTestYourMight, TEST_YOUR_MIGHT_REWARD_GOLD, TEST_YOUR_MIGHT_DISPLAY_WAVE } from './systems/TestYourMightSystem';
 import { displayWaveNumber } from './systems/TestYourMightLabels';
 import { canReceiveRunReward, isLegendaryBossDropEnemy, isMajorBossRewardEnemy, isRareOnlyBossDropEnemy, shouldDropRareOnlyBossLoot } from './systems/RewardEligibility';
-import { isFinalBossBreach, leakLifeCostFor, shouldRespawnBossOnLeak } from './systems/LeakRules';
+import { applyFinalBossBreachDefeat, leakLifeCostFor, shouldRespawnBossOnLeak } from './systems/LeakRules';
 import { claimLastStandTroveTower, markLastStandTroveOffered, shouldOfferLastStandTrove } from './systems/LastStandTroveSystem';
 import {
   markMercatorBackRoomOffered,
@@ -3988,7 +3988,7 @@ async function boot() {
         <div style="font-size:11px;letter-spacing:3px;color:#ff5050;font-weight:bold;margin-bottom:6px">⚔ WHAT WALKS ONTO THE FIELD</div>
         <div style="font-size:12px;color:#fff8e0;line-height:1.55;text-shadow:1px 1px 0 #000">
           <b style="color:#ff5050">Daemon Imperator</b> · final boss with elite escorts, anti-air pressure, and mythic bruisers. If the Daemon himself breaches Rome, the run ends; escorts use normal leak costs (bosses 10, elites/commanders 5, basics 1).<br/>
-          <b style="color:#ffaa55">HELLSCAPE</b> every 12s stuns towers within ~5 tiles for 1.5s. <b style="color:#88ff88">No rebirth — sustained burst sticks.</b> Out-of-combat regen 2.24%/sec — keep the pressure on.<br/>
+          <b style="color:#ffaa55">HELLSCAPE</b> every 12s stuns towers within ~5 tiles for 1.5s. <b style="color:#88ff88">No health regeneration.</b> If the Daemon reaches Rome, the run ends immediately regardless of remaining lives.<br/>
           <span style="color:#ff7766">Hellscape weather is already shortening your status durations 20%. There is no wave 31.</span>
         </div>
       </div>
@@ -7636,23 +7636,21 @@ async function boot() {
             showDpsCheckSummary(e, /*killed=*/false);
             return;
           }
-          // FINAL-BOSS LOCKDOWN: the Daemon Imperator cannot be allowed to
-          // breach Rome, but W30 escorts use the normal per-leak life costs.
+          // FINAL-BOSS BREACH: Daemon Imperator reaching Rome ends the run,
+          // while W30 escorts continue to use normal per-leak life costs.
           //
           // 2026-05-22 BUGFIX: previously this fired on the final campaign
           // number alone. In Endless mode the campaign counter stayed there
           // while endlessWave incremented, so later leaks could instantly
           // zero lives. This stays non-endless and now applies only to the
           // actual final boss.
-          if (isFinalBossBreach(state, e)) {
-            state.lives = 0;
+          if (applyFinalBossBreachDefeat(state, e)) {
             state.enemiesLeakedThisWave++;
             state.leaksByArchetype[e.archetype] = (state.leaksByArchetype[e.archetype] ?? 0) + 1;
             renderer.triggerGateImpact();
             renderer.triggerShake(8, 1.0);
             SFX.gateBreach(true);
             state.hint = `☠ DAEMON IMPERATOR BREACHED ROME — the final boss cannot leak.`;
-            if (state.gameOverAt < 0) state.gameOverAt = state.tick;
             return;
           }
           if (state.testYourMightActive) {
@@ -8811,7 +8809,7 @@ async function boot() {
       document.getElementById('test-your-might-modal')?.remove();
       document.getElementById('last-stand-trove-modal')?.remove();
       // Brief delay so the death animation can be seen, then snap to GAME_OVER.
-      if (state.tick - state.gameOverAt > 1.0) state.phase = GamePhase.GAME_OVER;
+      if ((state as any).__finalBossBreachDefeat || state.tick - state.gameOverAt > 1.0) state.phase = GamePhase.GAME_OVER;
     }
     // End-screen triggers (one-shot per phase). New flow (2026-05): show
     // a single recap card with a count-up score, then prompt for a
