@@ -377,7 +377,7 @@ function renderTab(tab: string): string {
           ${noteCard('PLACEMENT > QUANTITY', 'Fewer towers in smart spots beats more towers in dumb ones.')}
           ${noteCard('COMBINE OR LOSE', 'Combo towers carry the mid + late game. Refuse to combine and the wave does it for you.')}
           ${noteCard('CHECK RESISTANCES', 'Read the enemy tab before placing. Wrong damage type = enemies walk past unbothered.')}
-          ${noteCard('DOT HALVES REGEN', 'Burn, poison, bleed, and hellfire cut enemy regeneration in half, but do not stop it. Combine DoT with repeated direct hits to break Hannibal, Daemon Imperator, and hellhound recovery.')}
+          ${noteCard('DOT HALVES REGEN', 'Burn, poison, bleed, and hellfire cut enemy regeneration in half, but do not stop it. Combine DoT with repeated direct hits to break regenerating giants, armored formations, and hellhound recovery.')}
           ${noteCard('DOWNGRADE FOR RECIPES', 'A T4 → T3 for 2g slots into the recipe you were hoarding for. Pride loses runs.')}
           ${noteCard('FLYERS ARRIVE W6 / W12 / W18', 'W6 teaches air. W12-W14 warns with light COMBO-AA plating. After W15, flyers get heavy plating and extra HP, so combo anti-air becomes the primary answer.')}
           ${noteCard('BOSSES REBORN ON LEAK', '10 lives per leak. Boss returns next wave at the HP he had at the gate. Chip damage carries.')}
@@ -551,7 +551,7 @@ function renderTab(tab: string): string {
       ${foldSection('ENEMY SIGNATURES', `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           ${noteCard('Commander Bounties', 'Commanders are rare support leaders worth hunting first. Every commander kill pays a <b style="color:#ffd34d">+25g bounty</b> on top of the normal kill payment. Kill-gold relics and items stack with it. Bosses use their own bounty and legendary reward instead.')}
-          ${noteCard('Out-of-Combat Regen', 'Passive enemy regeneration is globally reduced by 20%. It begins after 1.0s without <b>direct</b> damage; active Burn, Poison, Bleed, or Hellfire halves the remaining rate. Daemon Imperator heals about 1.12%/s under DoT. Keep direct pressure on regenerators.')}
+          ${noteCard('Out-of-Combat Regen', 'Passive enemy regeneration is globally reduced by 20%. It begins after 1.0s without <b>direct</b> damage; active Burn, Poison, Bleed, or Hellfire halves the remaining rate. Enemies explicitly marked NO HEALTH REGEN ignore personal and wave-wide regeneration.')}
           ${noteCard('☠ Anubis Priest Poison Counter', '<b style="color:#88ff88">Anubis Priest, Commander: Anubis Priest, and Commander: Wind Priest are all heavily vulnerable to POISON.</b> Their per-unit 5× weakness combines with the Egyptian faction baseline for <b>3.75× Poison effectiveness before wave guardrails</b>. The ground priest and its commander resist 90% of Divine damage but are not immune. They also receive only 50% health recovery. The base priest now slows towers by 15% and heals allies for 0.8% HP/sec; commander pulses fire every 5s for 4% ground or 3.5% flyer healing, with smaller nullifying auras. Target these casters and poison them first.')}
           ${noteCard('Phoenix Rebirth', 'Spectral Scout, Celtic Fire Demon, and Undead Celt burst into <b style="color:#ffaa66">3 reduced-HP minions</b> on death — each at 40% / 35% / 25% HP respectively. The original kill still counts; the minions cannot chain-phoenix when killed. Orange impact ring marks the burst. Plan on roughly 3× the kill budget for these enemies and stack DoTs that tick through respawns.')}
           ${noteCard('Phase-Through Hits', 'Spectral Scout (2), Iron Phalanx (2), Celtic Berserker (1), Undead Berserker (1), Undead Spearman (1), Carthage Spearman (1) ignore the first N hits taken — a "MISS" floater pops on each phased shot.')}
@@ -583,7 +583,7 @@ function renderTab(tab: string): string {
           ${noteCard('⚔ Hannibal Barca (W10)', 'Hannibal no longer has passive health regeneration. His listed War Elephant escorts still bring dust-shield pressure and rare drops. At 55% HP, a one-second red telegraph announces his rebirth: 65% HP, cleared statuses, and +60% speed for 10 seconds.')}
           ${noteCard('🐘💀 Undead War Elephant (W14 champion)', 'Stampede at 50% HP. REBIRTH at 40% HP: summons 2 Ghost Riders. Heavy regen. <b style="color:#cdb98a">DUST-SHIELD AURA</b>: a 4-tile dome around the elephant blocks ranged shots on nearby ground allies until it dies. Tower-slow aura cranked to 25% (vs 20% on the living variant). <b style="color:#ff9933">DENSE BONE HIDE:</b> higher HP and only +5% damage from SIEGE. <b style="color:#ff8844">FIRE/BURN is its decisive weakness</b>; direct fire is amplified further by its undead faction. Bleed and poison do nothing.')}
           ${noteCard('💀 Undead Warlords ×5 (W15)', '<b style="color:#ff5050">W15 sends five Undead Warlords.</b> Five seconds after spawning, each raises <b>10 Undead Berserkers</b> at mid-path. At 40% HP, each summons 6 Undead Celts; at 15%, another 5. On death, each raises 6 Undead Berserkers and 14 Undead Celts at 30% HP. Stagger the warlord kills so their armies do not flood the path together. Heavy splash and siege excel; otherwise focus one warlord at a time.')}
-          ${noteCard('😈 Daemon Imperator (W30 — final boss)', 'Every 12s, HELLSCAPE stamps 1.5s cooldown onto towers within 5 tiles. Out-of-combat regen is 2.24%/sec and active DoT halves it to 1.12%/sec. Fire is immune; Poison and Bleed operate at 30%. Direct and Divine damage carry this fight. The Daemon cannot breach Rome, but his escorts can.')}
+          ${noteCard('😈 Daemon Imperator (W30 — final boss)', 'Every 12s, HELLSCAPE stamps 1.5s cooldown onto towers within 5 tiles. The Daemon has NO HEALTH REGEN and ignores Wave 30 regeneration. Fire is immune; Poison and Bleed operate at 30%. Direct and Divine damage carry this fight. The Daemon cannot breach Rome, but his escorts can.')}
         </div>
       `)}
       ${foldSection('⚔ LATE-GAME GAUNTLET (W21-30)', `
@@ -1468,7 +1468,7 @@ function renderTab(tab: string): string {
         ? ` <span style="color:#bb88ff;font-weight:bold;font-size:10px;letter-spacing:1px;background:#10071a;border:1px solid #8855cc;padding:1px 4px" title="Damage-over-time ticks are reduced ${Math.round(dotReduct * 100)}% on this wave.">☠ −${Math.round(dotReduct * 100)}% DOT</span>`
         : '';
       const regenTag = (typeof regen === 'number' && regen > 0)
-        ? ` <span style="color:#88ff88;font-weight:bold;font-size:10px;letter-spacing:1px;background:#061a08;border:1px solid #55aa55;padding:1px 4px" title="Enemies regenerate ${Math.round(scaledEnemyRegenRate(regen) * 1000) / 10}% max HP per second on this wave.">✚ REGEN</span>`
+        ? ` <span style="color:#88ff88;font-weight:bold;font-size:10px;letter-spacing:1px;background:#061a08;border:1px solid #55aa55;padding:1px 4px" title="Eligible enemies regenerate ${Math.round(scaledEnemyRegenRate(regen) * 1000) / 10}% max HP per second on this wave. Enemies marked NO HEALTH REGEN are excluded.">✚ REGEN</span>`
         : '';
       // No HP-multiplier column — the value was an internal scaling
       // factor (1.0×, 2.5×, etc.) that confused players. Final on-spawn
@@ -1646,6 +1646,7 @@ function renderEnemyCard(id: string, def: any, ctx: any, allWaves: number[]): st
   // Healing / regen
   if (def.regenPctPerSec) traits.push(`REGEN — ${(scaledEnemyRegenRate(def.regenPctPerSec)*100).toFixed(2)}% maxHP/sec always-on; active DoT halves it`);
   if (def.outOfCombatRegen) traits.push(`OUT-OF-COMBAT REGEN — ${(scaledEnemyRegenRate(def.outOfCombatRegen)*100).toFixed(2)}% maxHP/sec after 1.0s without DIRECT damage; active DoT halves it to ${(scaledEnemyRegenRate(def.outOfCombatRegen)*50).toFixed(2)}%/sec`);
+  if (def.disableHealthRegen) traits.push('NO HEALTH REGEN — ignores personal, wave-wide, and out-of-combat regeneration');
   if (def.checkpointHealPct) traits.push(`CHECKPOINT HEAL — restores ${Math.round(def.checkpointHealPct*100)}% maxHP first time it crosses each of the 7 waypoint coins`);
   if (def.healAllyPctPerSec) traits.push(`HEALER — restores ${(scaledEnemyRegenRate(def.healAllyPctPerSec)*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles; does not heal bosses or stack`);
   if (typeof def.healthRecoveryMult === 'number' && def.healthRecoveryMult < 1) traits.push(`REDUCED HEALTH RECOVERY — receives only ${Math.round(def.healthRecoveryMult * 100)}% of passive, wave, out-of-combat, and allied healing`);

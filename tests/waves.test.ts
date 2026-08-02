@@ -1606,6 +1606,38 @@ describe('Per-wave checkpoint-heal override (disableCheckpointHeal field)', () =
     expect(hannibal.hp).toBe(before);
   });
 
+  it('keeps the Wave 30 Daemon Imperator free of all passive health regeneration', () => {
+    const def: any = (enemiesData as any).DAEMON_IMPERATOR;
+    expect(def.disableHealthRegen).toBe(true);
+    expect(def.regenPctPerSec).toBeUndefined();
+    expect(def.outOfCombatRegen).toBeUndefined();
+
+    const s = bootstrapState();
+    s.wave = 30;
+    s.phase = GamePhase.WAVE_PHASE;
+    s.tick = 20;
+    const boss = spawnEnemy(s, EnemyType.DAEMON_IMPERATOR, 1);
+    const ordinary = spawnEnemy(s, EnemyType.SHADOW_CAVALRY, 1);
+    boss.hp = boss.maxHp * 0.5;
+    ordinary.hp = ordinary.maxHp * 0.5;
+    boss.lastDamagedTick = -999;
+    ordinary.lastDamagedTick = -999;
+    const bossBefore = boss.hp;
+    const ordinaryBefore = ordinary.hp;
+
+    tickEnemies(s, 1, () => {}, () => {});
+
+    expect(boss.hp).toBe(bossBefore);
+    expect(ordinary.hp).toBeGreaterThan(ordinaryBefore);
+
+    const codex = readFileSync('src/render/Codex.ts', 'utf8');
+    const briefing = readFileSync('src/main.ts', 'utf8');
+    expect(codex).toContain('The Daemon has NO HEALTH REGEN and ignores Wave 30 regeneration.');
+    expect(codex).not.toContain('Out-of-combat regen is 2.24%/sec');
+    expect(briefing).toContain('eligible enemies on this wave regenerate');
+    expect(briefing).toContain('cannot regenerate');
+  });
+
   it('does not summon replacement elephants when Hannibal enters his low-health phase', () => {
     const s = bootstrapState();
     s.wave = 10;

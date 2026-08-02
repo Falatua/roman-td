@@ -311,6 +311,7 @@ export function showEnemyInspect(parent: HTMLElement, e: Enemy, hpWaveTag?: numb
   // -- Healing / regen --
   if (def?.regenPctPerSec) traits.push({ label: `REGEN — ${(scaledEnemyRegenRate(def.regenPctPerSec)*100).toFixed(2)}% maxHP/sec always-on; active DoT halves it`, color: '#88ff88' });
   if (def?.outOfCombatRegen) traits.push({ label: `OUT-OF-COMBAT REGEN — ${(scaledEnemyRegenRate(def.outOfCombatRegen)*100).toFixed(2)}% maxHP/sec after 1.0s without DIRECT damage; active DoT halves it to ${(scaledEnemyRegenRate(def.outOfCombatRegen)*50).toFixed(2)}%/sec`, color: '#88ff88' });
+  if (def?.disableHealthRegen) traits.push({ label: 'NO HEALTH REGEN — ignores personal, wave-wide, and out-of-combat regeneration', color: '#ffcc66' });
   if (def?.checkpointHealPct) traits.push({ label: `CHECKPOINT HEAL — restores ${Math.round(def.checkpointHealPct*100)}% maxHP the first time it crosses each of the 7 waypoint coins`, color: '#88ff88' });
   if (def?.healAllyPctPerSec) traits.push({ label: `HEALER — restores ${(scaledEnemyRegenRate(def.healAllyPctPerSec)*100).toFixed(2)}% maxHP/sec to allies within 1.8 tiles; does not heal bosses or stack`, color: '#88ff88' });
   if (typeof def?.healthRecoveryMult === 'number' && def.healthRecoveryMult < 1) traits.push({ label: `REDUCED HEALTH RECOVERY — receives only ${Math.round(def.healthRecoveryMult * 100)}% of passive, wave, out-of-combat, and allied healing`, color: '#88ff88' });

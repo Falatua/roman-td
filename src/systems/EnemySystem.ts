@@ -1563,8 +1563,9 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     const regenMult = hasActiveDot ? 0.5 : 1.0;
     const healthRecoveryMult = enemyHealthRecoveryMult(e.type);
     const healingBlocked = ((e as any).__healingBlockedUntil ?? 0) > state.tick;
+    const healthRegenDisabled = def.disableHealthRegen === true;
     // Constant regen (always-on, e.g. Iron Phalanx / Architectus).
-    if (def.regenPctPerSec && !healingBlocked) {
+    if (def.regenPctPerSec && !healingBlocked && !healthRegenDisabled) {
       e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(def.regenPctPerSec) * healthRecoveryMult * regenMult * dt);
     }
     // 2026-05-22 — WAVE-LEVEL REGEN. Some W11+ waves stamp
@@ -1573,7 +1574,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // outOfCombatRegen). Same DoT-suppression rule (50% under DoT).
     const _curWave: any = (wavesData as any[])[(state.wave ?? 1) - 1];
     const waveRegen = _curWave?.enemyRegenPctPerSec ?? 0;
-    if (waveRegen > 0 && !healingBlocked) {
+    if (waveRegen > 0 && !healingBlocked && !healthRegenDisabled) {
       e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(waveRegen) * healthRecoveryMult * regenMult * dt);
     }
     // 2026-05-22 — WAVE-LEVEL SPEED BOOST. Wave defs with
@@ -1592,8 +1593,8 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // the gate reads pure "no direct damage in the last quiet window."
     // A DoT-only attack DOES satisfy the gate, and OOC regen then
     // ticks at the softened 50% rate via regenMult below. This is how
-    // Daemon Imperator and other OOC regenerators heal at half rate
-    // during DoT instead of being fully locked down by one poison.
+    // OOC regenerators heal at half rate during DoT instead of being fully
+    // locked down by one poison. Explicit no-regeneration enemies skip it.
     // 2026-05-22 V28 — Quiet-window doubled 0.5s → 1.0s per user
     // tuning. Half a second wasn't enough breathing room for the
     // player to commit to a target before the enemy started healing;
@@ -1606,7 +1607,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
     // regen by the reduction.
     const w8OocCut = (e as any).__w8OocRegenCut ?? 0;
     if (w8OocCut > 0 && oocRegen > 0) oocRegen = Math.max(0, oocRegen - w8OocCut);
-    if (oocRegen > 0 && !healingBlocked) {
+    if (oocRegen > 0 && !healingBlocked && !healthRegenDisabled) {
       const sinceHit = state.tick - (e.lastDamagedTick ?? -999);
       if (sinceHit > 1.0) {
         e.hp = Math.min(e.maxHp, e.hp + e.maxHp * scaledEnemyRegenRate(oocRegen) * healthRecoveryMult * regenMult * dt);

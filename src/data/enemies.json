@@ -500,7 +500,7 @@
     "immuneFire": true,
     "spriteSheet": 6,
     "spriteCell": 7,
-    "outOfCombatRegen": 0.028,
+    "disableHealthRegen": true,
     "campaignHpScaleByWave": { "30": 3.04 }
   },
   "ARCHITECTUS": {

@@ -2076,7 +2076,16 @@ async function boot() {
     if (state.wave === 3 && enemiesInWave.has('OCEAN_FISHLING')) enemyCallouts.push({ text: 'SHIPWRECK DODGE · Fishlings have a 20% chance to evade any direct tower attack this wave.', cat: 'ENEMY' });
     if (state.wave === 8) enemyCallouts.push({ text: '🛡 W8 SHIELD WALL · every enemy this wave has a 20% chance to BLOCK any ranged or siege hit (NUMIDIAN_RIDER stacks its own 20% dodge on top → ~36% effective whiff vs ranged). Bring melee or divine for the W8 stretch.', cat: 'ENEMY' });
     if (enemiesInWave.has('UNDEAD_SPEARMAN') || enemiesInWave.has('IRON_PHALANX')) enemyCallouts.push({ text: '🛡 ALL-ATTACK BLOCK · Undead Spearman / Iron Phalanx have a 20% chance per hit to deflect ANY damage type — melee, ranged, siege, fire, divine. Never expires. Stacks multiplicatively with shield-block (35% on Spearman). Spread the alpha across multiple towers.', cat: 'ENEMY' });
-    if ((w as any).enemyRegenPctPerSec) enemyCallouts.push({ text: `🩹 WAVE REGEN · every enemy on this wave regenerates ${Math.round(scaledEnemyRegenRate((w as any).enemyRegenPctPerSec) * 1000) / 10}% maxHP/sec continuously. Sustained DPS beats chip damage.`, cat: 'ENEMY' });
+    if ((w as any).enemyRegenPctPerSec) {
+      const noRegenNames = Array.from(enemiesInWave)
+        .map(type => (enemiesData as any)[String(type)])
+        .filter(def => def?.disableHealthRegen === true)
+        .map(def => def.name);
+      const exemption = noRegenNames.length > 0
+        ? ` ${noRegenNames.join(', ')} cannot regenerate.`
+        : '';
+      enemyCallouts.push({ text: `🩹 WAVE REGEN · eligible enemies on this wave regenerate ${Math.round(scaledEnemyRegenRate((w as any).enemyRegenPctPerSec) * 1000) / 10}% maxHP/sec continuously.${exemption} Sustained DPS beats chip damage.`, cat: 'ENEMY' });
+    }
     // 2026-05-21 — Ambush stealth + presence-silence aura callouts.
     if (enemiesInWave.has('CARTHAGE_SPEARMAN') || enemiesInWave.has('UNDEAD_BERSERKER')) enemyCallouts.push({ text: '🥷 AMBUSH STEALTH · Carthage Spearman / Undead Berserker spawning in the first 20s of this wave are UNTARGETABLE (40% alpha). At the 20s mark every alive instance becomes visible at once — be ready for the emergence wave. Spawns past 20s are normally visible.', cat: 'ENEMY' });
     if (enemiesInWave.has('ZOMBIE_DRUID') || enemiesInWave.has('ARCHITECTUS')) enemyCallouts.push({ text: '🤫 SILENCE AURA · Zombie Druid / Architectus silence every tower within 1.5 tiles while in range (pink X-mark). The silence ends ~0.6s after they walk past. Plant your power towers OFF the path so the aura misses.', cat: 'ENEMY' });
