@@ -400,7 +400,7 @@
     "kind": "COMBO",
     "melee": true,
     "tierBand": 4,
-    "ability": "POLEARM REACH (range 2.0). BOSS HUNTER: +75% damage vs Bosses. Every 4th hit on a Boss is a CHARGED LANCE EXECUTE — 3× damage (rhythm: 3 stabs → 1 lance strike). BEAST RIDER: +100% damage vs animal-faction enemies (Feral / Rabid / Alpha Dog · Demon Hellhound · War Elephant · Undead War Elephant) — the heavy lance skewers four-legged beasts.",
+    "ability": "POLEARM REACH (range 2.0). SHOCK LANCE: every 4th strike STUNS non-boss enemies for 1.2s at T4, improving slightly at T5. BOSS HUNTER: +75% damage vs Bosses; every 4th boss hit is a 3× CHARGED LANCE EXECUTE. BEAST RIDER: +100% damage vs dogs, Hellhounds, and living or undead War Elephants.",
     "critChance": 0.2,
     "critMult": 2.7
   },

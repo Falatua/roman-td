@@ -3282,6 +3282,15 @@ function applyOnHitEffects(t: Tower, target: Enemy, tick?: number) {
         pushStatus(target, StatusEffectKind.ARMOR_SHRED, dur(3), 0, tier);
       }
       break;
+    case TowerType.CLIBANARIUS:
+      // SHOCK LANCE: the heavy cavalry rhythm culminates in a control hit.
+      // At T4, tier scaling plus the shared +20% stun-duration rule turns
+      // 0.625s into the player-facing 1.2s. Boss immunity and lockdown
+      // diminishing returns remain authoritative in pushStatus.
+      if ((((t as any).__hitCount ?? 0) % 4) === 0) {
+        pushStatus(target, StatusEffectKind.STUN, dur(0.625), 0, tier);
+      }
+      break;
     case TowerType.INFERNO_CART:
     case TowerType.IGNIFER:
     case TowerType.VULCAN_ENGINEER:

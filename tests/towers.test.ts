@@ -725,6 +725,39 @@ describe('Tower effective stats', () => {
     expect(towerEffectiveStats(decurion).attackSpeed).toBeCloseTo(decurion.attackSpeed * 1.06, 4);
   });
 
+  it('gives Clibanarius a fourth-strike Shock Lance stun while bosses remain immune', () => {
+    const runFourStrikes = (boss: boolean) => {
+      const state = createGameState();
+      (globalThis as any).__lastState = state;
+      const tower = createTower(TowerType.CLIBANARIUS, 4, 4, 4, 0);
+      tower.critChance = 0;
+      const center = towerCenter(tower);
+      const target = testEnemy(boss ? 'clibanarius-boss' : 'clibanarius-target', center.x + GRID.TILE, center.y);
+      target.hp = target.maxHp = 1_000_000_000;
+      target.isBoss = boss;
+      state.towers.set(tower.id, tower);
+      state.enemies.set(target.id, target);
+
+      const originalRandom = Math.random;
+      Math.random = () => 0.99;
+      try {
+        for (let hit = 1; hit <= 4; hit++) {
+          tower.attackCooldown = 0;
+          tickCombat(state, 0.016, noopCombatHooks());
+          const stun = target.statusEffects.find(effect => effect.kind === StatusEffectKind.STUN);
+          if (hit < 4) expect(stun, `premature stun on hit ${hit}`).toBeUndefined();
+        }
+      } finally {
+        Math.random = originalRandom;
+      }
+      return target.statusEffects.find(effect => effect.kind === StatusEffectKind.STUN);
+    };
+
+    expect(String((towersData as any)[TowerType.CLIBANARIUS].ability)).toContain('SHOCK LANCE');
+    expect(runFourStrikes(false)?.remaining).toBeCloseTo(1.2, 4);
+    expect(runFourStrikes(true)).toBeUndefined();
+  });
+
   it('keeps a visible Common to Legendary attack-speed ladder', () => {
     const multiplier = (item: string) => {
       const tower = createTower(TowerType.SAGITTARIUS, 1, 0, 0, 0);
