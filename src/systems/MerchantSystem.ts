@@ -48,9 +48,10 @@ const GATE_UNCOMMON: string[] = [
   'AUGUR_SCROLL','CONSULAR_TOKEN'
 ];
 const GATE_RARE: string[] = [];
-const GATE_EPIC = [
+export const GATE_EPIC = [
   'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE',
-  'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST'
+  'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST',
+  'JANUS_MIRROR','SIBYLLINE_WARD'
 ];
 const MERCATOR_RARE = [
   'HOURGLASS_OF_SATURN','STORM_JAVELIN','BATTLE_STANDARD','CENTURIONS_TRUMPET',
@@ -92,13 +93,13 @@ const MERCATOR_EXCLUSIVE_RARE = [
 // The Epic shelf mixes raw power with anti-air, naval, and strategic
 // support options. Censor's Seal and Vulcan's Temper keep this tier from
 // collapsing into damage/range stat sticks.
-const MERCATOR_EPIC = [
+export const MERCATOR_EPIC = [
   'BERSERKERS_MUZZLE','CELTIC_LONGSWORD','NECROTIC_LONGSWORD',
   'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE',
   // 2026 v2 — anti-air EPIC options.
   'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST',
   'AEGEAN_PEARL','STORMGLASS_AMPHORA',
-  'CENSORS_SEAL','VULCANS_TEMPER'
+  'CENSORS_SEAL','VULCANS_TEMPER','JANUS_MIRROR','SIBYLLINE_WARD'
 ];
 // Premium Legendary stock shared by Mercator and the Gate Shop's single
 // rotating Legendary shelf. Event-exclusive rewards are intentionally absent.

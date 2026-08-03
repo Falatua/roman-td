@@ -10,6 +10,7 @@ import { heroIdForTowerType, isMercatorChampionType } from './HeroIdentity';
 import { heroAuraScaleForTower, heroBasicAttackScaleForTower } from './HeroScaling';
 import enemiesData from '../data/enemies.json';
 import { maxQualityTierForTower, TIER_FOUR_MAX_TOWER_TYPES } from './BaseTowerRoster';
+import { towerHasEnemySpellWard } from './ItemRules';
 
 export { maxQualityTierForTower, TIER_FOUR_MAX_TOWER_TYPES } from './BaseTowerRoster';
 
@@ -543,6 +544,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
   // HELLGATE_BRAND   (gates):      +40% atk speed (damage in CombatResolver)
   if (t.equippedItems.includes('PERIMETER_TORCH')) itemSpeedMult *= 1.50;
   if (t.equippedItems.includes('HELLGATE_BRAND')) itemSpeedMult *= 1.40;
+  if (t.equippedItems.includes('JANUS_MIRROR')) itemSpeedMult *= 1.12;
   // CURSED_TORC, LICH_GENERALS_SEAL, BARCA_WAR_HORN all converted to
   // AURA emitters in CombatResolver (2026-05). Self-buff lines removed
   // so a tower no longer double-dips its own aura.
@@ -560,6 +562,7 @@ export function towerEffectiveStats(t: Tower): { dps: number; attackSpeed: numbe
     (t.equippedItems.includes('BRONZE_GREAVES') ? 0.5 : 0) +
     (t.equippedItems.includes('AUGUR_SCROLL') ? 0.5 : 0) +
     (t.equippedItems.includes('CONSULAR_TOKEN') ? 0.75 : 0) +
+    (t.equippedItems.includes('SIBYLLINE_WARD') ? 0.75 : 0) +
     (isHarborOrTideforged && t.equippedItems.includes('AEGEAN_PEARL') ? 0.75 : 0) +
     (isHarborOrTideforged && t.equippedItems.includes('NEPTUNES_TRIDENT') ? 1.0 : 0) +
     // 2026 v2 — anti-air items add reach to catch fliers.
@@ -831,6 +834,8 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
   if (items.includes('LICTOR_FASCES')) { dmgMods.push({ source: "Lictor's Fasces", multiplier: 1.40 }); rngMods.push({ source: "Lictor's Fasces", flat: 2 }); }
   if (items.includes('AUXILIARY_SLING') && t.damageType === DamageType.PHYS_RANGED) dmgMods.push({ source: 'Auxiliary Sling', multiplier: 1.55 });
   if (items.includes('FALCONERS_WATCHPOST')) { spdMods.push({ source: "Falconer's Watchpost", multiplier: 1.40 }); rngMods.push({ source: "Falconer's Watchpost", flat: 3 }); }
+  if (items.includes('JANUS_MIRROR')) spdMods.push({ source: 'Janus Mirror', multiplier: 1.12 });
+  if (items.includes('SIBYLLINE_WARD')) rngMods.push({ source: 'Sibylline Ward', flat: 0.75 });
   if (items.includes('AUGUR_SCROLL')) { spdMods.push({ source: "Augur's Scroll", multiplier: 1.18 }); rngMods.push({ source: "Augur's Scroll", flat: 0.5 }); }
   if (items.includes('CONSULAR_TOKEN')) { dmgMods.push({ source: 'Consular Token', multiplier: 1.15 }); rngMods.push({ source: 'Consular Token', flat: 0.75 }); }
   // RUSTED_HASTA is a target-conditional per-hit bonus (+14% vs ground,
@@ -898,7 +903,8 @@ export function towerStatBreakdown(t: Tower, state: any): StatBreakdown {
       if (enemyDef?.auraNullifier) nullifiers.push({ x: e.x, y: e.y });
     }
     const isAuraOff = (other: Tower): boolean => {
-      if (((other as any).asleepUntil ?? 0) > tick) return true;
+      if (towerHasEnemySpellWard(other)) return false;
+      if ((other.asleepUntil ?? 0) > tick) return true;
       if (nullifiers.length === 0) return false;
       const ox = other.tileX * GRID.TILE + GRID.TILE / 2;
       const oy = other.tileY * GRID.TILE + GRID.TILE / 2;

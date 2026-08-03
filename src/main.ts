@@ -110,6 +110,7 @@ import {
 } from './systems/HarborSystem';
 import { canPlaceTowersOrProspects } from './systems/PlacementPhase';
 import { isBossEnemy, isEliteEnemy } from './systems/EnemyClassification';
+import { applyTowerSilence } from './systems/TowerDebuffSystem';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -7831,8 +7832,7 @@ async function boot() {
               if (d < bestD) { bestD = d; closest = tw; }
             }
             if (closest && bestD < 5 * GRID.TILE) {
-              closest.silencedUntil = state.tick + 1.5;
-              closest.attackCooldown = Math.max(closest.attackCooldown, 1.5);
+              applyTowerSilence(closest, 1.5, state.tick);
             }
           }
         }

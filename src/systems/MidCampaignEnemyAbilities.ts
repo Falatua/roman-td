@@ -1,6 +1,7 @@
 import { DamageType, Enemy, EnemyFaction, EnemyType, Tower } from '../types';
 import { GRID } from '../constants';
 import { GameStateShape } from '../GameState';
+import { applyTowerAtkSpeedDebuff } from './TowerDebuffSystem';
 
 export interface MidCampaignEnemyAbility {
   id: string;
@@ -97,13 +98,6 @@ function routeProgress(state: GameStateShape, enemy: Enemy): number {
     : ((enemy as any).__caveB ? state.groundPathB.length : state.groundPath.length);
   if (pathLength <= 1) return 0;
   return Math.max(0, Math.min(1, (enemy.pathIndex + enemy.pathProgress) / (pathLength - 1)));
-}
-
-function applyTowerAttackSuppression(tower: Tower, pct: number, duration: number, tick: number): void {
-  const target = tower as Tower & { __atkSpeedDebuffPct?: number; __atkSpeedDebuffUntil?: number };
-  const active = tick < (target.__atkSpeedDebuffUntil ?? 0);
-  target.__atkSpeedDebuffPct = active ? Math.max(target.__atkSpeedDebuffPct ?? 0, pct) : pct;
-  target.__atkSpeedDebuffUntil = Math.max(active ? (target.__atkSpeedDebuffUntil ?? 0) : 0, tick + duration);
 }
 
 export function tickMidCampaignEnemyAbilities(state: GameStateShape): void {
@@ -250,7 +244,7 @@ export function tickMidCampaignEnemyAbilities(state: GameStateShape): void {
         if (!target || tower.totalDamageDealt > target.totalDamageDealt) target = tower;
       }
       if (target) {
-        applyTowerAttackSuppression(target, 0.30, 3, state.tick);
+        applyTowerAtkSpeedDebuff(target, 0.30, 3, state.tick);
         leader.hpFlashTimer = Math.max(leader.hpFlashTimer, 0.24);
         const renderer = (globalThis as any).__renderer;
         renderer?.triggerImpactRing?.(

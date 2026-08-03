@@ -136,6 +136,8 @@ const FAMILY: Record<string, ItemFamily> = {
   AQUILIFER_BANNER: 'AURA',
 
   GILDED_SCALE_ARMOR: 'DEFENSE',
+  JANUS_MIRROR: 'DEFENSE',
+  SIBYLLINE_WARD: 'DEFENSE',
   TRUESIGHT_LENS: 'UTILITY',
   GALLIC_SHIELD_BOSS: 'UTILITY',
   SAPPERS_CHISEL: 'UTILITY',
@@ -208,6 +210,16 @@ const FAMILY: Record<string, ItemFamily> = {
 
 export function itemFamily(itemId: ItemId): ItemFamily {
   return FAMILY[itemId] ?? 'SPECIAL';
+}
+
+export const ENEMY_SPELL_WARD_ITEM_IDS: ReadonlySet<string> = new Set([
+  'JANUS_MIRROR',
+  'SIBYLLINE_WARD',
+  'HELLGATE_BRAND'
+]);
+
+export function towerHasEnemySpellWard(tower: { equippedItems?: readonly ItemId[] }): boolean {
+  return tower.equippedItems?.some(itemId => ENEMY_SPELL_WARD_ITEM_IDS.has(itemId)) ?? false;
 }
 
 export const AURA_ITEM_RANDOM_WEIGHT = 0.10;

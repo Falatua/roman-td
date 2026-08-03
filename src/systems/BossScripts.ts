@@ -1,9 +1,15 @@
 import { Enemy, EnemyType, EnemyFaction } from '../types';
 import { GameStateShape } from '../GameState';
-import { spawnEnemy, applyTowerAtkSpeedDebuff } from './EnemySystem';
+import { spawnEnemy } from './EnemySystem';
 import wavesData from '../data/waves.json';
 import enemiesData from '../data/enemies.json';
 import { scaledEnemyRegenRate } from './EnemyHealing';
+import {
+  applyTowerAtkSpeedDebuff,
+  applyTowerAuraSpeedDebuff,
+  applyTowerCooldownDisruption,
+  applyTowerSilence
+} from './TowerDebuffSystem';
 
 export const VULTURE_DIVE_PERIOD_SECONDS = 6;
 export const VULTURE_DIVE_SLOW_PCT = 0.50;
@@ -88,15 +94,16 @@ function sentenceDamageLeaders(
       (b.killCount - a.killCount)
     )
     .slice(0, count);
+  let affected = 0;
   for (const tower of leaders) {
-    applyTowerAtkSpeedDebuff(
+    if (applyTowerAtkSpeedDebuff(
       tower,
       ANUBIS_DEATH_SENTENCE_SLOW_PCT,
       ANUBIS_DEATH_SENTENCE_DURATION_SECONDS,
       state.tick
-    );
+    )) affected++;
   }
-  return leaders.length;
+  return affected;
 }
 
 // Tick boss-specific scripts. Called each frame from main loop in WAVE phase.
@@ -310,7 +317,7 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
           for (const tw of state.towers.values()) {
             if (tw.pending) continue;
             if (Math.hypot(tw.tileX * 32 + 16 - e.x, tw.tileY * 32 + 16 - e.y) <= r) {
-              applyTowerAtkSpeedDebuff(tw, 0.35, 2.5, state.tick); hit++;
+              if (applyTowerAtkSpeedDebuff(tw, 0.35, 2.5, state.tick)) hit++;
             }
           }
           if (hit > 0) {
@@ -334,7 +341,7 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
           for (const tw of state.towers.values()) {
             if (tw.pending) continue;
             if (Math.hypot(tw.tileX * 32 + 16 - e.x, tw.tileY * 32 + 16 - e.y) <= r) {
-              applyTowerAtkSpeedDebuff(tw, 0.45, 3, state.tick); hit++;
+              if (applyTowerAtkSpeedDebuff(tw, 0.45, 3, state.tick)) hit++;
             }
           }
           if (hit > 0) {
@@ -357,9 +364,7 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
             const d = Math.hypot(tw.tileX * 32 + 16 - e.x, tw.tileY * 32 + 16 - e.y);
             if (d < bestD) { bestD = d; best = tw; }
           }
-          if (best) {
-            best.silencedUntil = Math.max(best.silencedUntil ?? 0, state.tick + 2);
-            best.attackCooldown = Math.max(best.attackCooldown, 2);
+          if (best && applyTowerSilence(best, 2, state.tick)) {
             const renderer = (window as any).__renderer;
             renderer?.triggerImpactRing?.(best.tileX * 32 + 16, best.tileY * 32 + 16, state.tick, 24, 0xE87020);
             state.hint = '👁 EYE BLAST — a tower is struck blind!';
@@ -377,8 +382,7 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
           for (const tw of state.towers.values()) {
             if (tw.pending) continue;
             if (Math.hypot(tw.tileX * 32 + 16 - e.x, tw.tileY * 32 + 16 - e.y) <= r) {
-              tw.silencedUntil = Math.max(tw.silencedUntil ?? 0, state.tick + 1.5);
-              tw.attackCooldown = Math.max(tw.attackCooldown, 1.5); silenced++;
+              if (applyTowerSilence(tw, 1.5, state.tick)) silenced++;
             }
           }
           if (silenced > 0) {
@@ -422,7 +426,7 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
           for (const tw of state.towers.values()) {
             if (tw.pending) continue;
             if (Math.hypot(tw.tileX * 32 + 16 - e.x, tw.tileY * 32 + 16 - e.y) <= r) {
-              applyTowerAtkSpeedDebuff(tw, 0.40, 5, state.tick); hit++;
+              if (applyTowerAtkSpeedDebuff(tw, 0.40, 5, state.tick)) hit++;
             }
           }
           const renderer = (window as any).__renderer;
@@ -516,9 +520,7 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
             const tx = tw.tileX * 32 + 16;
             const ty = tw.tileY * 32 + 16;
             if (Math.hypot(tx - e.x, ty - e.y) <= r) {
-              tw.silencedUntil = Math.max(tw.silencedUntil ?? 0, state.tick + 0.6);
-              tw.attackCooldown = Math.max(tw.attackCooldown, 0.6);
-              silenced++;
+              if (applyTowerSilence(tw, 0.6, state.tick)) silenced++;
             }
           }
           if (silenced > 0) {
@@ -664,14 +666,15 @@ export function tickBossScripts(state: GameStateShape, dt: number, rt: BossRunti
       case EnemyType.DAEMON_IMPERATOR:
         if (state.tick >= rt.daemonNextHellscape) {
           rt.daemonNextHellscape = state.tick + 12;
+          let disrupted = 0;
           for (const t of state.towers.values()) {
             const cx = t.tileX * 32 + 16;
             const cy = t.tileY * 32 + 16;
             if (Math.hypot(cx - e.x, cy - e.y) <= 5 * 32) {
-              t.attackCooldown += 1.5;       // skip ~1 attack cycle
+              if (applyTowerCooldownDisruption(t, 1.5, state.tick, 'ADD')) disrupted++;
             }
           }
-          state.hint = '🔥 HELLSCAPE — towers near the Daemon are stunned!';
+          if (disrupted > 0) state.hint = '🔥 HELLSCAPE — towers near the Daemon are stunned!';
         }
         break;
     }
@@ -725,7 +728,7 @@ export function applyEnemyAuras(state: GameStateShape) {
       const cx = t.tileX * 32 + 16;
       const cy = t.tileY * 32 + 16;
       if (Math.hypot(en.x - cx, en.y - cy) <= radius) {
-        (t as any).__auraSpeedDebuff = Math.max((t as any).__auraSpeedDebuff ?? 0, def.auraTowerSlow);
+        applyTowerAuraSpeedDebuff(t, def.auraTowerSlow, state.tick);
       }
     }
   }

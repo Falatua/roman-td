@@ -62,6 +62,8 @@ import { triggerElementalHitVfx } from './ElementalVfx';
 import enemiesData from '../data/enemies.json';
 import towersData from '../data/towers.json';
 import wavesData from '../data/waves.json';
+import { towerHasEnemySpellWard } from './ItemRules';
+import { markTowerEnemySpellBlocked } from './TowerDebuffSystem';
 
 // 2026-05-20 — Per-wave resistance relief lookup. A wave entry can carry
 // an optional `resistReduction` field (0-1) that brings the effective
@@ -136,7 +138,9 @@ export function effectiveTowerCritChance(state: GameStateShape, tower: Tower, ta
     const shared = (tower as any).__marianSharedCrit;
     if (typeof shared === 'number' && shared > critChance) critChance = shared;
   }
-  const penalty = Math.max(0, Math.min(1, tower.__critChancePenalty ?? 0));
+  const penalty = towerHasEnemySpellWard(tower)
+    ? 0
+    : Math.max(0, Math.min(1, tower.__critChancePenalty ?? 0));
   return Math.max(0, Math.min(1, critChance - penalty));
 }
 
@@ -1143,10 +1147,15 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     if (def?.auraNullifier) nullifierEnemies.push({ x: e.x, y: e.y });
   }
   const NULLIFIER_RADIUS = 2 * GRID.TILE;
-  function isAuraNullified(cx: number, cy: number): boolean {
+  function isAuraNullified(tower: Tower, cx: number, cy: number): boolean {
     if (nullifierEnemies.length === 0) return false;
     for (const n of nullifierEnemies) {
-      if (Math.hypot(n.x - cx, n.y - cy) <= NULLIFIER_RADIUS) return true;
+      if (Math.hypot(n.x - cx, n.y - cy) > NULLIFIER_RADIUS) continue;
+      if (towerHasEnemySpellWard(tower)) {
+        markTowerEnemySpellBlocked(tower, state.tick);
+        return false;
+      }
+      return true;
     }
     return false;
   }
@@ -1159,8 +1168,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // its aura contributions. Same downstream flag (`auraOff`) so all
     // the existing `&& !auraOff` checks below cover both cases without
     // an additional gate per emitter.
-    const asleep = (t.asleepUntil ?? 0) > state.tick;
-    const auraOff = asleep || isAuraNullified(cx, cy);
+    const spellWarded = towerHasEnemySpellWard(t);
+    const asleep = !spellWarded && (t.asleepUntil ?? 0) > state.tick;
+    const auraOff = asleep || isAuraNullified(t, cx, cy);
     // Stamp on the tower so the render layer can dim the aura ring as a
     // visual cue that this tower is currently silenced.
     (t as any).__auraNullified = auraOff;
@@ -1459,8 +1469,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // damage from all sources. Regen-block is enforced separately
     // in EnemySystem via the existing __regenBlocked flag (set below
     // when this aura is active).
-    // HELLGATE_BRAND immunity to silence/tower-slow is set on the
-    // tower as __silenceImmune so EnemySystem's silence loop skips it.
+    // HELLGATE_BRAND's enemy-spell ward is enforced centrally by
+    // TowerDebuffSystem alongside the two Epic ward items.
     // INFERNO_STANDARD: +40% damage aura, 3.5 tiles. Burn-on-hit handled
     // in the on-hit pass.
     if (t.equippedItems.includes('NECROMANCERS_LANTERN') && !auraOff) {
@@ -1618,7 +1628,8 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
     // sleeping tower shouldn't snap-rotate to a different enemy each
     // frame while it dreams. Attack-flash timers are decremented before
     // this branch so sleep can never freeze a hero or tower mid-swing.
-    if ((t.asleepUntil ?? 0) > state.tick) {
+    const spellWarded = towerHasEnemySpellWard(t);
+    if (!spellWarded && (t.asleepUntil ?? 0) > state.tick) {
       continue;
     }
     t.attackCooldown -= dt;
@@ -1686,9 +1697,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       // Fire Breath / Shriek / Titan Stomp set __atkSpeedDebuffUntil + Pct via
       // applyTowerAtkSpeedDebuff). Take the worst, don't stack, so overlapping
       // sources can't zero a tower out.
-      const auraDebuff = ((t as any).__auraSpeedDebuff ?? 0) as number;
-      const timedDebuff = (state.tick < ((t as any).__atkSpeedDebuffUntil ?? 0))
-        ? (((t as any).__atkSpeedDebuffPct ?? 0) as number) : 0;
+      const auraDebuff = spellWarded ? 0 : (t.__auraSpeedDebuff ?? 0);
+      const timedDebuff = !spellWarded && state.tick < (t.__atkSpeedDebuffUntil ?? 0)
+        ? (t.__atkSpeedDebuffPct ?? 0) : 0;
       const debuff = Math.min(0.85, Math.max(auraDebuff, timedDebuff));
       const supportSpeed = towerSpeedMult.get(t.id) ?? 1;
       const supportDmg = towerDmgMult.get(t.id) ?? 1;
@@ -1964,7 +1975,7 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       }
       //
       // GATES OF HELL rewards:
-      //   • HELLGATE_BRAND: +80% damage (atk speed in stats, silence imm in flag)
+      //   • HELLGATE_BRAND: +80% damage (attack speed and spell ward elsewhere)
       //   • DEMONSWORN_CROWN: +100% vs demons, +50% vs bosses (stacks)
       //   • INFERNO_STANDARD: aura applied separately
       if (t.equippedItems.includes('HELLGATE_BRAND')) damage *= 1.80;

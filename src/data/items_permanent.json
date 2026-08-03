@@ -223,6 +223,20 @@
     "sell": 26,
     "effect": "Tempered iron finds the weakness in every defense. Attacks breach 28% of reducible resistance, but never pierce immunity."
   },
+  "JANUS_MIRROR": {
+    "name": "Janus Mirror",
+    "rarity": "EPIC",
+    "buy": 78,
+    "sell": 26,
+    "effect": "Enemy-spell ward: immune to sleep, silence, nullification, attack-speed slows, crit suppression, and hostile cooldown stuns. Also grants +12% attack speed. Does not block weather or relic penalties."
+  },
+  "SIBYLLINE_WARD": {
+    "name": "Sibylline Ward",
+    "rarity": "EPIC",
+    "buy": 78,
+    "sell": 26,
+    "effect": "Enemy-spell ward: immune to sleep, silence, nullification, attack-speed slows, crit suppression, and hostile cooldown stuns. Also grants +0.75 tile range. Does not block weather or relic penalties."
+  },
   "DRUID_STAFF_FRAGMENT": {
     "name": "Druid Staff Fragment",
     "rarity": "EPIC",
@@ -499,7 +513,7 @@
     "buy": 0,
     "sell": 60,
     "eventExclusive": "GATES_OF_HELL",
-    "effect": "Any tower: +80% damage, +40% attack speed. Immune to silence and tower-slow auras."
+    "effect": "Any tower: +80% damage and +40% attack speed. Enemy-spell ward blocks sleep, silence, nullification, attack-speed slows, crit suppression, and hostile cooldown stuns."
   },
   "DEMONSWORN_CROWN": {
     "name": "Demonsworn Crown",

@@ -33,6 +33,12 @@ import {
   midCampaignEnemySpeedMultiplier,
   tickMidCampaignEnemyAbilities
 } from './MidCampaignEnemyAbilities';
+import {
+  applyTowerCritChancePenalty,
+  applyTowerSilence,
+  applyTowerSleep
+} from './TowerDebuffSystem';
+export { applyTowerAtkSpeedDebuff } from './TowerDebuffSystem';
 
 // Pre-computed waypoint centers in WORLD pixel coordinates, used by the
 // per-frame proximity test so the checkpoint heal fires the instant an
@@ -141,15 +147,6 @@ const ARCHETYPE: Record<string, Enemy['archetype']> = {
   // 2026-06-26 variety roster
   SIEGE_WAGON: 'BULKY', SKY_BARGE: 'BULKY', DUNE_STALKER: 'RUNNER', STONE_JUGGERNAUT: 'ARMORED'
 };
-
-// 2026 v2 spec — TIMED tower attack-speed debuff (Dive Bomb / Ground Slam /
-// Fire Breath / Shriek / Titan Stomp). CombatResolver MAX-combines this with
-// the proximity aura debuff. Refresh keeps the stronger pct while active.
-export function applyTowerAtkSpeedDebuff(t: any, pct: number, durationSec: number, tick: number): void {
-  const active = tick < (t.__atkSpeedDebuffUntil ?? 0);
-  t.__atkSpeedDebuffPct = active ? Math.max(t.__atkSpeedDebuffPct ?? 0, pct) : pct;
-  t.__atkSpeedDebuffUntil = Math.max(active ? (t.__atkSpeedDebuffUntil ?? 0) : 0, tick + durationSec);
-}
 
 export function spawnEnemy(state: GameStateShape, type: EnemyType, hpMult: number, derived?: boolean, caveB?: boolean): Enemy {
   const def: any = (enemiesData as any)[type];
@@ -846,10 +843,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
         // frame after the enemy leaves the radius, the stamp expires
         // naturally and the tower fires again.
         const until = t.silencedUntil ?? 0;
-        if (state.tick > until - 0.4) {
-          t.silencedUntil = state.tick + 0.6;
-          if (t.attackCooldown < 0.6) t.attackCooldown = 0.6;
-        }
+        if (state.tick > until - 0.4) applyTowerSilence(t, 0.6, state.tick);
       }
     }
   }
@@ -875,10 +869,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       const dx = cx - e.x, dy = cy - e.y;
       if (dx * dx + dy * dy <= radiusPxSq) {
         const until = t.silencedUntil ?? 0;
-        if (state.tick > until - 0.4) {
-          t.silencedUntil = state.tick + 0.5;
-          if (t.attackCooldown < 0.5) t.attackCooldown = 0.5;
-        }
+        if (state.tick > until - 0.4) applyTowerSilence(t, 0.5, state.tick);
       }
     }
   }
@@ -906,10 +897,12 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       const dx = cx - e.x;
       const dy = cy - e.y;
       if (dx * dx + dy * dy > radiusPxSq) continue;
-      if (penalty > (t.__critChancePenalty ?? 0)) {
-        t.__critChancePenalty = penalty;
-        t.__critChancePenaltySource = String(def.auraTowerCritName ?? def.name ?? e.type);
-      }
+      applyTowerCritChancePenalty(
+        t,
+        penalty,
+        String(def.auraTowerCritName ?? def.name ?? e.type),
+        state.tick
+      );
     }
   }
   // ─── TOWER SILENCE: Spectral Scout / Ghost Rider passing within 1.0 tile
@@ -929,10 +922,7 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
       // off-path towers.
       if (Math.hypot(cx - e.x, cy - e.y) <= GRID.TILE * 1.0) {
         const until = t.silencedUntil ?? 0;
-        if (state.tick > until - 0.2) {
-          t.silencedUntil = state.tick + 0.6;
-          t.attackCooldown = Math.max(t.attackCooldown, 0.6);
-        }
+        if (state.tick > until - 0.2) applyTowerSilence(t, 0.6, state.tick);
       }
     }
   }
@@ -1038,14 +1028,15 @@ export function tickEnemies(state: GameStateShape, dt: number, onLeak: (e: Enemy
         const dd = Math.hypot(ddx, ddy);
         if (dd <= 10) {
           const sleepDuration = typeof d.sleepDurationSec === 'number' ? d.sleepDurationSec : 3.0;
-          tw.asleepUntil = state.tick + sleepDuration;
-          tw.attackCooldown = Math.max(tw.attackCooldown, sleepDuration);
+          const slept = applyTowerSleep(tw, sleepDuration, state.tick);
           hit = true;
-          // Queue a render-side "zzz" pop so the player gets a juicy
-          // confirmation frame. Cap the queue size to avoid runaway growth.
-          const fxq = (state as any).__sleepFxQueue ?? ((state as any).__sleepFxQueue = []);
-          fxq.push({ x: cx, y: cy - 16, bornTick: state.tick });
-          if (fxq.length > 16) fxq.shift();
+          if (slept) {
+            // Queue a render-side "zzz" pop so the player gets a juicy
+            // confirmation frame. Cap the queue size to avoid runaway growth.
+            const fxq = (state as any).__sleepFxQueue ?? ((state as any).__sleepFxQueue = []);
+            fxq.push({ x: cx, y: cy - 16, bornTick: state.tick });
+            if (fxq.length > 16) fxq.shift();
+          }
         } else {
           // Mild homing: blend current velocity toward bearing on the tower.
           const speed = Math.hypot(d.vx, d.vy);

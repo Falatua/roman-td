@@ -498,8 +498,12 @@ export interface Tower {
   __lastTargetId?: string;        // for "first hit on new target" bonuses (Retiarius Trident & Net)
   __tacticalStacks?: number;      // Evocatus tactical stack count
   __auraSpeedDebuff?: number;     // 0..1 multiplier reduction from druid auras
+  __atkSpeedDebuffPct?: number;   // strongest active enemy ability slowdown
+  __atkSpeedDebuffUntil?: number; // expiry tick for timed attack-speed suppression
   __critChancePenalty?: number;   // flat crit-chance reduction from enemy anti-crit auras
   __critChancePenaltySource?: string;
+  __auraNullified?: boolean;      // enemy nullifier/sleep currently suppresses this tower's aura
+  __spellWardBlockedUntil?: number; // short visual confirmation after a hostile spell is blocked
   duplicateBumped?: number;       // tier bump from duplicate-card upgrade
   isAerarium: boolean;      // shortcut
   pending: boolean;         // Gem TD: just-placed, awaiting KEEP-or-convert decision

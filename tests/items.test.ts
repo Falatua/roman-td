@@ -571,7 +571,8 @@ describe('Merchant — gate shop', () => {
       'PRAETORIAN_COIN','BRONZE_GREAVES','RUSTED_HASTA',
       'AUGUR_SCROLL','CONSULAR_TOKEN',
       'LICTOR_FASCES','AUXILIARY_SLING','OPTIO_WHISTLE',
-      'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST'
+      'SKYPIERCER_BOLTS','FALCONERS_WATCHPOST',
+      'JANUS_MIRROR','SIBYLLINE_WARD'
     ]);
     for (const o of shop.offers.filter(o => o.rarity !== 'LEGENDARY')) {
       expect(gateIds.has(o.itemId)).toBe(true);

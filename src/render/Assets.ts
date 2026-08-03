@@ -526,6 +526,8 @@ const MANIFEST: Record<string, string> = {
   ITEM_DAMNATIO_MEMORIAE: 'inew_damnatio_memoriae.png',
   ITEM_CENSORS_SEAL: 'inew_censors_seal.png',
   ITEM_VULCANS_TEMPER: 'inew_vulcans_temper.png',
+  ITEM_JANUS_MIRROR: 'inew_janus_mirror.png',
+  ITEM_SIBYLLINE_WARD: 'inew_sibylline_ward.png',
   ITEM_BRINEHOOK_ROPE: 'inew_brinehook_rope.png',
   ITEM_TIDEPIERCER_HARPOON: 'inew_tidepiercer_harpoon.png',
   ITEM_AEGEAN_PEARL: 'inew_aegean_pearl.png',

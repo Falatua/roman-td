@@ -6025,6 +6025,17 @@ export class RenderEngine {
       this.tierPipGfx.lineStyle(2, color, 0.95);
       this.tierPipGfx.drawCircle(cx, cy + GRID.TILE * 0.36, GRID.TILE * 0.42);
       this.tierPipGfx.lineStyle(0);
+      const spellWardBlockedUntil = tw.__spellWardBlockedUntil ?? 0;
+      if (spellWardBlockedUntil > state.tick) {
+        const life = Math.min(1, (spellWardBlockedUntil - state.tick) / 0.45);
+        const pulse = 0.7 + Math.sin(state.tick * 18) * 0.2;
+        this.tierPipGfx.beginFill(0x77eeff, 0.10 * life).drawCircle(cx, cy, GRID.TILE * 0.62).endFill();
+        this.tierPipGfx.lineStyle(3, 0xaef7ff, pulse * life);
+        this.tierPipGfx.drawCircle(cx, cy, GRID.TILE * 0.58);
+        this.tierPipGfx.lineStyle(1.5, 0xb06cff, 0.8 * life);
+        this.tierPipGfx.drawCircle(cx, cy, GRID.TILE * 0.48);
+        this.tierPipGfx.lineStyle(0);
+      }
       // Weather speed-debuff badge: small pulsing icon to the upper-left.
       if (slowAffected) {
         const pulse = 0.55 + Math.sin(state.tick * 4 + cx * 0.01) * 0.30;
