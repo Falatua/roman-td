@@ -15,7 +15,7 @@ import { initializeGrid, isBuildable, isWaterZoneTile, canBuildWaterTowerAt } fr
 import { ASSET_KEYS } from '../src/render/Assets';
 import towersData from '../src/data/towers.json';
 import wavesData from '../src/data/waves.json';
-import { COMBO_FLYER_SPECIALIST_DAMAGE_MULT, GIANT_KILLER_SPLASH_DAMAGE_MULT, STORM_SPECIALIST_DAMAGE_MULT, comboFlyerSpecialistDamageMult, giantKillerSplashDamage, HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT, hannibalsNightmarePreyDamageMult, retargetTowerSpecialistDamage, stormSpecialistDamageMult, towerSpecialistDpsRows, towerTargetSpecialistDamageMult } from '../src/systems/TowerSpecialization';
+import { COMBO_FLYER_SPECIALIST_DAMAGE_MULT, GIANT_KILLER_SPLASH_DAMAGE_MULT, STORM_SPECIALIST_DAMAGE_MULT, comboFlyerSpecialistDamageMult, giantKillerSplashDamage, HANNIBALS_NIGHTMARE_BEAST_DAMAGE_MULT, HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT, hannibalsNightmarePreyDamageMult, retargetTowerSpecialistDamage, stormSpecialistDamageMult, towerSpecialistDpsRows, towerTargetSpecialistDamageMult } from '../src/systems/TowerSpecialization';
 
 function testEnemy(id: string, x = 160, y = 160): Enemy {
   return {
@@ -1838,16 +1838,24 @@ describe('Giant Killer transformation and combat wiring', () => {
   });
 
   it('keeps Hannibal Nightmare decisively strongest against elephant packs', () => {
-    const elephant = { type: EnemyType.WAR_ELEPHANT, isBoss: false, isFlyer: false };
+    const ordinary = { type: EnemyType.CELTIC_FOOTMAN, isBoss: false, isFlyer: false };
+    expect(HANNIBALS_NIGHTMARE_BEAST_DAMAGE_MULT).toBe(2.25);
     expect(HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT).toBe(6.5);
-    expect(hannibalsNightmarePreyDamageMult(elephant)).toBeCloseTo(6.5, 6);
+    for (const type of [EnemyType.FERAL_DOG, EnemyType.RABID_DOG, EnemyType.ALPHA_DOG, EnemyType.DEMON_HELLHOUND]) {
+      expect(hannibalsNightmarePreyDamageMult({ type, isBoss: false, isFlyer: false })).toBeCloseTo(2.25, 6);
+    }
+    for (const type of [EnemyType.WAR_ELEPHANT, EnemyType.UNDEAD_WAR_ELEPHANT]) {
+      expect(hannibalsNightmarePreyDamageMult({ type, isBoss: false, isFlyer: false })).toBeCloseTo(6.5, 6);
+    }
+    expect(hannibalsNightmarePreyDamageMult(ordinary)).toBe(1);
 
     const hannibalRows = towerSpecialistDpsRows(TowerType.HANNIBALS_NIGHTMARE, 235);
     const giantKillerRows = towerSpecialistDpsRows(TowerType.GIANT_KILLER, 390);
-    expect(hannibalRows[0].dps).toBeCloseTo(1527.5, 4);
-    expect(hannibalRows[1].dps).toBeCloseTo(3055, 4);
-    expect(hannibalRows[1].dps).toBeGreaterThan(giantKillerRows[1].dps * 2);
-    expect(giantKillerRows[0].dps).toBeGreaterThan(hannibalRows[0].dps);
+    expect(hannibalRows[0]).toMatchObject({ label: 'Beast DPS / target', multiplier: 2.25, dps: 528.75 });
+    expect(hannibalRows[1].dps).toBeCloseTo(1527.5, 4);
+    expect(hannibalRows[2].dps).toBeCloseTo(3055, 4);
+    expect(hannibalRows[2].dps).toBeGreaterThan(giantKillerRows[1].dps * 2);
+    expect(giantKillerRows[0].dps).toBeGreaterThan(hannibalRows[1].dps);
   });
 
   it('calculates Hannibal prey damage independently for every twin-shot target', () => {
@@ -1884,6 +1892,36 @@ describe('Giant Killer transformation and combat wiring', () => {
     expect(ordinary.statusEffects.some(status => status.kind === StatusEffectKind.FREEZE)).toBe(true);
     expect(elephant.statusEffects.some(status => status.kind === StatusEffectKind.STUN)).toBe(true);
     expect(elephant.statusEffects.some(status => status.kind === StatusEffectKind.FREEZE)).toBe(false);
+  });
+
+  it('recalculates Hannibal Nightmare beast damage independently across twin shots', () => {
+    const state = createGameState();
+    state.wave = 5;
+    const tower = createTower(TowerType.HANNIBALS_NIGHTMARE, 5, 4, 4, 0);
+    tower.attackCooldown = 0;
+    state.towers.set(tower.id, tower);
+    const c = towerCenter(tower);
+
+    const ordinary = testEnemy('hannibal-neutral', c.x + GRID.TILE * 2, c.y);
+    ordinary.type = EnemyType.CELTIC_FOOTMAN;
+    ordinary.pathIndex = 5;
+    ordinary.hp = ordinary.maxHp = 100000;
+    const beast = testEnemy('hannibal-beast', c.x + GRID.TILE * 2.5, c.y);
+    beast.type = EnemyType.RABID_DOG;
+    beast.pathIndex = 4;
+    beast.hp = beast.maxHp = 100000;
+    state.enemies.set(ordinary.id, ordinary);
+    state.enemies.set(beast.id, beast);
+
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    tickCombat(state, 0.016, noopCombatHooks());
+    randomSpy.mockRestore();
+
+    const ordinaryShot = state.projectiles.find(projectile => projectile.targetId === ordinary.id);
+    const beastShot = state.projectiles.find(projectile => projectile.targetId === beast.id);
+    expect(ordinaryShot).toBeDefined();
+    expect(beastShot).toBeDefined();
+    expect(beastShot!.damage / ordinaryShot!.damage).toBeCloseTo(2.25, 5);
   });
 
   it('routes Giant\'s Cohort Guard through restrained melee cleave and giant-only specialization', () => {

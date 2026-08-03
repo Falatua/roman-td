@@ -2061,9 +2061,9 @@ export function tickCombat(state: GameStateShape, dt: number, hooks: CombatHooks
       if (t.type === TowerType.UNDEAD_GENERAL) {
         damage *= undeadGeneralPreyDamageMult(target);
       }
-      // HANNIBAL'S NIGHTMARE — dedicated anti-elephant apex. Both elite
-      // elephant variants receive the full explicit prey bonus. The twin-shot
-      // branch below recalculates this factor for each projectile target.
+      // HANNIBAL'S NIGHTMARE — broad anti-beast Supercombo with a stronger
+      // explicit payoff against both elephant variants. The twin-shot branch
+      // below recalculates this factor for each projectile target.
       if (t.type === TowerType.HANNIBALS_NIGHTMARE) {
         damage *= hannibalsNightmarePreyDamageMult(target);
       }

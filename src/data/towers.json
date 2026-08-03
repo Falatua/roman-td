@@ -695,7 +695,7 @@
     "melee": false,
     "spriteSheet": 3,
     "spriteCell": 6,
-    "ability": "TWIN JAVELINS (PHYSICAL RANGED): fires at 2 targets per shot. Deals 6.5x damage vs War Elephants and Undead War Elephants, +60% vs Flyers, and +30% vs true Bosses. Every 10s it freezes nearby enemies and briefly concussion-stuns freeze-immune elephants. The apex anti-elephant T5, built for cracking elite elephant packs while scaling with ranged-item support.",
+    "ability": "TWIN JAVELINS (PHYSICAL RANGED): fires at 2 targets per shot. Deals 2.25x damage vs every Beast, increased to 6.5x vs War Elephants and Undead War Elephants; also +60% vs Flyers and +30% vs true Bosses. Every 10s it freezes nearby enemies and briefly concussion-stuns freeze-immune elephants.",
     "critChance": 0.18,
     "critMult": 2.8
   },

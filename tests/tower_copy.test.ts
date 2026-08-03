@@ -21,7 +21,7 @@ describe('canonical player-facing tower field notes', () => {
 
   it('preserves the defining mechanic in complex late-game examples', () => {
     expect(towerMechanicsSummary('GIANT_KILLER', (towersData as any).GIANT_KILLER)).toMatch(/giant|cyclops/i);
-    expect(towerMechanicsSummary('HANNIBALS_NIGHTMARE', (towersData as any).HANNIBALS_NIGHTMARE)).toMatch(/elephant/i);
+    expect(towerMechanicsSummary('HANNIBALS_NIGHTMARE', (towersData as any).HANNIBALS_NIGHTMARE)).toMatch(/every Beast/i);
     expect(towerMechanicsSummary('ROMAN_TRANSFORMER', (towersData as any).ROMAN_TRANSFORMER)).toMatch(/25%|slash|immolation/i);
   });
 });

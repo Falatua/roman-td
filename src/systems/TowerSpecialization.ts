@@ -1,5 +1,5 @@
 import { TowerType } from '../types';
-import { isGiantEnemy } from './EnemyClassification';
+import { isBeastEnemy, isGiantEnemy } from './EnemyClassification';
 
 const GIANT_KILLER_ELEPHANT_TYPES = new Set<string>([
   'WAR_ELEPHANT',
@@ -9,6 +9,7 @@ const GIANT_KILLER_ELEPHANT_TYPES = new Set<string>([
 export const GIANT_KILLER_GIANT_DAMAGE_MULT = 5.5;
 export const GIANT_KILLER_ELEPHANT_DAMAGE_MULT = 3.5;
 export const GIANT_KILLER_SPLASH_DAMAGE_MULT = 0.5;
+export const HANNIBALS_NIGHTMARE_BEAST_DAMAGE_MULT = 2.25;
 export const HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT = 6.5;
 export const HANNIBALS_NIGHTMARE_FLYER_DAMAGE_MULT = 1.60;
 export const HANNIBALS_NIGHTMARE_BOSS_DAMAGE_MULT = 1.30;
@@ -126,6 +127,8 @@ export function hannibalsNightmarePreyDamageMult(target: PreyTarget): number {
   const isElephant = isElephantEnemyTarget(target);
   if (isElephant) {
     multiplier *= HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT;
+  } else if (isBeastEnemy(target.type)) {
+    multiplier *= HANNIBALS_NIGHTMARE_BEAST_DAMAGE_MULT;
   }
   if (target.isFlyer) multiplier *= HANNIBALS_NIGHTMARE_FLYER_DAMAGE_MULT;
   // Elephants have an explicit 6.5x payoff. They are elites, not bosses, and
@@ -182,6 +185,12 @@ export function towerSpecialistDpsRows(type: TowerType, generalDps: number): Spe
   if (type === TowerType.HANNIBALS_NIGHTMARE) {
     const elephantPerTargetMult = HANNIBALS_NIGHTMARE_ELEPHANT_DAMAGE_MULT;
     return [
+      {
+        label: 'Beast DPS / target',
+        dps: generalDps * HANNIBALS_NIGHTMARE_BEAST_DAMAGE_MULT,
+        multiplier: HANNIBALS_NIGHTMARE_BEAST_DAMAGE_MULT,
+        detail: 'All beast-family enemies; elephants use the stronger bonus'
+      },
       {
         label: 'Elephant DPS / target',
         dps: generalDps * elephantPerTargetMult,
