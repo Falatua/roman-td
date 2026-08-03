@@ -27,7 +27,9 @@ import {
   OMEGA_COMBO_RECIPE_COST,
   SUPER_COMBO_RECIPE_RESULTS,
   OMEGA_COMBO_RECIPE_RESULTS,
-  comboRecipeCost
+  FREE_COMBO_RECIPE_RESULTS,
+  comboRecipeCost,
+  comboCostLabel
 } from '../src/systems/ComboPricing';
 
 function bootstrapState() {
@@ -281,6 +283,8 @@ describe('Recipe combo detection', () => {
 
     const mars = scanCombos(s).find(c => c.result === TowerType.MARS_VICTOR);
     expect(mars, 'starter hero should satisfy the matching Champion slot').toBeTruthy();
+    expect(mars!.cost).toBe(0);
+    expect(comboCostLabel(mars!.cost)).toBe('FREE');
     expect(mars!.ingredients.map(t => t.type)).toEqual(expect.arrayContaining([
       TowerType.HERO_MARIUS,
       TowerType.CHAMPION_AGRIPPA,
@@ -299,6 +303,29 @@ describe('Recipe combo detection', () => {
     expect(s.combosBuiltUniqueTypes).toContain(TowerType.MARS_VICTOR);
     expect(s.completedQuests).toContain('super_combo_commission');
     expect(s.gold).toBe(expectedGoldAfterForge);
+  });
+
+  it('forms Mars Victor at zero gold and automatically consumes all six heroes', () => {
+    const s = bootstrapState();
+    s.gold = 0;
+    s.activeHeroId = 'HERO_MARIUS';
+    const starter = placeTower(s, TowerType.HERO_MARIUS, 5, 1, 5);
+    placeTower(s, TowerType.CHAMPION_AGRIPPA, 2, 2, 5);
+    placeTower(s, TowerType.CHAMPION_AGRICOLA, 2, 3, 5);
+    placeTower(s, TowerType.CHAMPION_SCIPIO, 2, 4, 5);
+    placeTower(s, TowerType.CHAMPION_CAESAR, 2, 5, 5);
+    placeTower(s, TowerType.CHAMPION_SULLA, 2, 6, 5);
+
+    const mars = scanCombos(s).find(c => c.result === TowerType.MARS_VICTOR);
+    expect(mars?.cost).toBe(0);
+    expect(executeCombo(s, mars!, starter.id)).toBe(true);
+    expect(s.gold).toBe(0);
+    expect(s.towers.size).toBe(1);
+    expect(Array.from(s.towers.values())[0]).toMatchObject({
+      type: TowerType.MARS_VICTOR,
+      tileX: starter.tileX,
+      tileY: starter.tileY
+    });
   });
 
   it('detects SCORPION_BOLT recipe (Scorpio T2 + Velites T2)', () => {
@@ -607,7 +634,7 @@ describe('Recipe combo detection', () => {
     }
   });
 
-  it('prices authored combo recipes by class: base 50g, super 200g, omega 500g', () => {
+  it('prices authored recipes by class with a free Mars Victor fusion', () => {
     const seen = { base: 0, super: 0, omega: 0 };
     for (const recipe of comboData as any[]) {
       expect(recipe.cost, `${recipe.result} should use the class price`).toBe(expectedRecipeCost(recipe.result));
@@ -616,6 +643,9 @@ describe('Recipe combo detection', () => {
       else seen.base++;
     }
     expect(seen).toEqual({ base: 42, super: 22, omega: 4 });
+    expect(SUPER_COMBO_RECIPE_RESULTS.has(TowerType.MARS_VICTOR)).toBe(true);
+    expect(FREE_COMBO_RECIPE_RESULTS.has(TowerType.MARS_VICTOR)).toBe(true);
+    expect(comboRecipeCost(TowerType.MARS_VICTOR)).toBe(0);
   });
 
   it('charges the full 200g when Hannibal\'s Nightmare is actually created', () => {

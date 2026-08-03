@@ -31,6 +31,7 @@ import { heroTierForTower, heroXpForTower } from '../systems/HeroScaling';
 import { towerDamageProfile, renderTowerDamageProfileHtml } from './TowerDamageProfile';
 import { applyEagleOfApotheosis, canApplyEagleOfApotheosis, EAGLE_OF_APOTHEOSIS_ITEM_ID } from '../systems/TierAscensionSystem';
 import { towerSpecialistDpsRows } from '../systems/TowerSpecialization';
+import { comboCostLabel } from '../systems/ComboPricing';
 
 const RAR: Record<string, string> = { COMMON:'#cccccc', UNCOMMON:'#5cd05c', RARE:'#5ca0ff', EPIC:'#a060ff', LEGENDARY:'#ff9933', UNIQUE:'#ffd34d' };
 const TOWER_INSPECT_PANEL_MAX_HEIGHT_PX = 1152;
@@ -781,7 +782,7 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
             ${legendHtml}
           </div>
           <div style="text-align:right">
-            <div style="color:#f0c040;font-size:12px;font-weight:bold">${resolved.cost}g</div>
+            <div style="color:#f0c040;font-size:12px;font-weight:bold">${comboCostLabel(resolved.cost)}</div>
             ${canAfford ? '<div style="color:#66cc55;font-size:10px;letter-spacing:1px">▶ COMBINE</div>' : `<div style="color:#cc6666;font-size:9px">NEED ${resolved.cost - state.gold}g</div>`}
           </div>`;
         card.onmouseenter = () => { if (canAfford) card.style.background = '#1d1714'; };
@@ -893,10 +894,10 @@ export function showTowerMenu(parent: HTMLElement, t: Tower, state: GameStateSha
           </div>
           <div style="text-align:right">
             ${fullyKeptReady
-              ? `<span style="color:#66cc55;font-weight:bold;font-size:10px;letter-spacing:1px">READY</span><div style="font-size:10px;color:#aa9a4a">${rcp.cost}g</div>`
+              ? `<span style="color:#66cc55;font-weight:bold;font-size:10px;letter-spacing:1px">READY</span><div style="font-size:10px;color:#aa9a4a">${comboCostLabel(rcp.cost)}</div>`
               : conditionallyReady
-                ? `<span style="color:#ff9933;font-weight:bold;font-size:10px;letter-spacing:1px">READY IF KEPT</span><div style="font-size:10px;color:#aa9a4a">${rcp.cost}g</div>`
-              : `<span style="font-size:10px;color:#666">Cost ${rcp.cost}g</span>`}
+                ? `<span style="color:#ff9933;font-weight:bold;font-size:10px;letter-spacing:1px">READY IF KEPT</span><div style="font-size:10px;color:#aa9a4a">${comboCostLabel(rcp.cost)}</div>`
+              : `<span style="font-size:10px;color:#666">Cost ${comboCostLabel(rcp.cost)}</span>`}
           </div>
           <div class="rcp-chev" title="Show / hide combo details" style="font-size:14px;color:${headerColor};padding:2px 6px;border:1px solid ${headerColor};line-height:1;align-self:center;user-select:none">▶</div>
         </div>

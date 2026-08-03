@@ -32,6 +32,7 @@ import { scaledEnemyRegenRate } from '../systems/EnemyHealing';
 import { previewGatesOfHellFinalHp } from '../systems/SurpriseEvents';
 import { EnemyType } from '../types';
 import { midCampaignAbilitiesFor } from '../systems/MidCampaignEnemyAbilities';
+import { comboCostLabel } from '../systems/ComboPricing';
 
 function spriteImg(key: string, size = 28): string {
   const t = tex(key);
@@ -595,7 +596,7 @@ function renderTab(tab: string): string {
           ${noteCard('🐍 Typhon + 👁 Cyclops', 'Typhon <b>SERPENT STORM</b>: every 5s, silences towers within ~3 tiles for 1.5s — the W29 capstone. Cyclops <b>EYE BLAST</b>: every 6s, fully blinds the single nearest tower for 2s.')}
           ${noteCard('🪨 Giant + COLOSSUS MERGE (W28)', 'Giant <b>GROUND SLAM</b>: a -35% atk-speed aura. <b style="color:#ff5050">MERGE</b>: two Giants within 1.5 tiles past Checkpoint 2 fuse over 1.5s into <b>COLOSSUS GIGAS</b> (sumHP×1.3 + Titan Stomp + Colossal Regen). Kill the Giants apart, or DIVINE them down before they meet.')}
           ${noteCard('☠ Plague Bearer + 🛡 Medjay', 'Plague Bearer: a continuous <b>PLAGUE AURA</b> (-25% tower atk speed) plus a <b>PLAGUE BURST</b> at ≤20% HP (-40% atk speed for 5s, ~2.5 tiles); poison-immune. Medjay Soldier: a shield-block tank that needs a melee break.')}
-          ${noteCard('🏛 Mars Victor (Siege+Divine apex — fuses all 6 heroes)', 'Recruit the <b>6 CHAMPIONS OF ROME</b> at Mercator (1000g each: Marius, Agrippa, Agricola, Scipio, Caesar, Sulla) and combine all six → <b>MARS VICTOR</b>. <b style="color:#ffd34d">2400 DPS</b>, range 9, crit 35% × 3.6, and every hit lands as <b style="color:#fff4a8">BOTH Siege and Divine</b>. <b style="color:#fff4a8">INHERITS EVERY HERO PASSIVE MAP-WIDE:</b> +45% damage, +25% attack speed, +35% melee damage, +30% siege damage, +1 siege range, all towers may hit flyers with +30% flyer damage, +33% vs bosses and commanders, and every tower adds +22% FIRE damage on hit. <b style="color:#ff8844">MARS DECREE:</b> every hit marks, shreds armor, briefly stuns, burns, and stamps permanent hellfire. <b style="color:#ff8844">TRIUMPH OF MARS:</b> every 3rd hit unleashes a 4.03-tile divine shockwave for TRIPLE damage and spreads mark, armor shred, and stun through the blast. Never gambled or bought, only forged from the six Champions. The single biggest power spike in the game.')}
+          ${noteCard('🏛 Mars Victor (Siege+Divine apex — fuses all 6 heroes)', 'Recruit the <b>6 CHAMPIONS OF ROME</b> at Mercator (1000g each: Marius, Agrippa, Agricola, Scipio, Caesar, Sulla) and combine all six → <b>MARS VICTOR</b>. The final fusion is <b style="color:#88ff88">FREE</b>: the six heroes are the full investment. <b style="color:#ffd34d">2400 DPS</b>, range 9, crit 35% × 3.6, and every hit lands as <b style="color:#fff4a8">BOTH Siege and Divine</b>. <b style="color:#fff4a8">INHERITS EVERY HERO PASSIVE MAP-WIDE:</b> +45% damage, +25% attack speed, +35% melee damage, +30% siege damage, +1 siege range, all towers may hit flyers with +30% flyer damage, +33% vs bosses and commanders, and every tower adds +22% FIRE damage on hit. <b style="color:#ff8844">MARS DECREE:</b> every hit marks, shreds armor, briefly stuns, burns, and stamps permanent hellfire. <b style="color:#ff8844">TRIUMPH OF MARS:</b> every 3rd hit unleashes a 4.03-tile divine shockwave for TRIPLE damage and spreads mark, armor shred, and stun through the blast. Never gambled or bought, only forged from the six Champions. The single biggest power spike in the game.')}
         </div>
       `)}
       ${foldSection('ELITE MUTATIONS (4-20% chance, mid-late game)', `
@@ -2067,7 +2068,7 @@ function renderComboCard(c: any, cs?: { state: 'ready'|'prospect'|'partial'|'non
         <div style="font-size:11px;color:#9be0ff">Result: Tier ${c.tier}</div>
         ${damageTypeChips(resultDef)}
         <div style="font-size:10px;color:#88ff88;margin-top:3px;letter-spacing:1px">DPS: <b>${typeof resultDef.baseDps === 'number' ? Math.round(resultDef.baseDps) : '—'}</b> · Range: <b>${resultDef.range ?? '—'}</b> · Atk/s: <b>${resultDef.attackSpeed ?? '—'}</b></div>
-        <div style="font-size:10px;color:#f0c040;margin-top:3px">Cost: ${c.cost}g</div>
+        <div style="font-size:10px;color:#f0c040;margin-top:3px">Cost: ${comboCostLabel(c.cost)}</div>
         <div style="font-size:10px;color:#cdb98a;margin-top:5px;line-height:1.4">${towerBriefHtml(String(c.result), resultDef)}</div>
         ${pinBtnHtml}
       </div>

@@ -111,6 +111,7 @@ import {
 import { canPlaceTowersOrProspects } from './systems/PlacementPhase';
 import { isBossEnemy, isEliteEnemy } from './systems/EnemyClassification';
 import { applyTowerSilence } from './systems/TowerDebuffSystem';
+import { comboCostLabel } from './systems/ComboPricing';
 
 // 2026-05-20 — Damage-type tint for the melee slash VFX. The default
 // (undefined) leaves the slash white/silver — the standard look for
@@ -3157,7 +3158,7 @@ async function boot() {
           <div style="font-size:11px;line-height:1.35;padding:6px 8px">
             <div style="color:${headerColor};font-weight:bold;letter-spacing:1px">${resultName}</div>
             <div style="font-size:10px;letter-spacing:0.5px;word-break:break-word;margin-top:2px">${ingTxt}</div>
-            <div style="font-size:9px;color:${headerColor};letter-spacing:1.2px;margin-top:2px;font-weight:bold">${statusTag} · ${cb.cost}g <span style="opacity:0.6;font-weight:normal">· click for details</span></div>
+            <div style="font-size:9px;color:${headerColor};letter-spacing:1.2px;margin-top:2px;font-weight:bold">${statusTag} · ${comboCostLabel(cb.cost)} <span style="opacity:0.6;font-weight:normal">· click for details</span></div>
           </div>
         </div>`;
       }).join('');
@@ -4583,15 +4584,12 @@ async function boot() {
         const anchor = mv.ingredients.find(t => t.id === state.activeHeroTowerId) ?? mv.ingredients[0];
         const sx = anchor.tileX * 32 + 16;
         const sy = anchor.tileY * 32 + 16;
-        if (executeCombo(state, mv, anchor.id)) {
-          playComboCreationSfx(mv.result, !!mv.isSameTierMerge);
+        executeCombineFromMenu(mv.recipeIndex, !!mv.isSameTierMerge, anchor.id);
+        if (Array.from(state.towers.values()).some(t => t.type === TowerType.MARS_VICTOR)) {
           if (renderer?.triggerImpactRing) {
             renderer.triggerImpactRing(sx, sy, state.tick, 42, 0xffd34d);
             renderer.triggerImpactRing(sx, sy, state.tick + 0.1, 72, 0xffe88c);
           }
-          const np = buildGroundPath(state);
-          if (np) { state.groundPath = np; resnapEnemiesToPath(state, np); }
-          renderer.drawStatic(state);
           state.hint = 'MARS VICTOR rises — the god of war takes the field.';
         }
       }

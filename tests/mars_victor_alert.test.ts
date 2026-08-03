@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { createGameState } from '../src/GameState';
 import { createTower } from '../src/systems/TowerSystem';
 import { GamePhase, TowerType } from '../src/types';
@@ -11,6 +12,14 @@ function addTower(state: any, type: TowerType, pending = false) {
 }
 
 describe('Mars Victor readiness alert', () => {
+  it('labels the one-click fusion as free and wires it directly to the fuse callback', () => {
+    const source = readFileSync('src/render/MarsVictorAlert.ts', 'utf8');
+    const main = readFileSync('src/main.ts', 'utf8');
+    expect(source).toContain('FORM MARS VICTOR · FREE');
+    expect(source).toContain('fuse.onclick = () => { overlay.remove(); onFuse(); };');
+    expect(main).toContain('executeCombineFromMenu(mv.recipeIndex, !!mv.isSameTierMerge, anchor.id);');
+  });
+
   it('counts starter heroes and Mercator Champions by distinct hero identity', () => {
     const s = createGameState();
     addTower(s, TowerType.HERO_MARIUS);

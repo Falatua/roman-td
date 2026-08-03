@@ -15,6 +15,7 @@ import towersData from '../data/towers.json';
 import comboData from '../data/towerCombinations.json';
 import { tex } from './Assets';
 import { towerBriefHtml } from './TowerCopy';
+import { comboCostLabel } from '../systems/ComboPricing';
 
 const LS_KEY = 'roman_td_pinned_recipe_v1';
 // Tutorial-style default — the recipe the player sees pinned on every
@@ -220,7 +221,7 @@ function buildChipHtml(pinnedId: string, state: any): { html: string; sig: strin
         <div style="flex:1;min-width:0;line-height:1.3">
           <div style="color:${resultColor};font-weight:bold;font-size:13px;word-break:break-word;letter-spacing:1px">${resultDef.name ?? recipe.result}</div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:3px">
-            <span style="font-size:11px;color:#9be0ff;letter-spacing:1.5px;white-space:nowrap">T${recipe.tier} · ${recipe.cost}g</span>
+            <span style="font-size:11px;color:#9be0ff;letter-spacing:1.5px;white-space:nowrap">T${recipe.tier} · ${comboCostLabel(recipe.cost)}</span>
             ${statusBadge}
           </div>
         </div>

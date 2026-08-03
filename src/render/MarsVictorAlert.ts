@@ -110,7 +110,7 @@ export function showMarsVictorReady(parent: HTMLElement, onFuse: () => void, onD
   card.appendChild(headline);
 
   const sub = document.createElement('div');
-  sub.textContent = 'All six heroes of Rome stand as one. Fuse them into the god of war.';
+  sub.textContent = 'All six heroes of Rome stand as one. The final fusion costs no gold.';
   sub.style.cssText = `position:relative;margin-top:6px;font-size:11px;color:#e8d6a8;line-height:1.4;`;
   card.appendChild(sub);
 
@@ -131,7 +131,7 @@ export function showMarsVictorReady(parent: HTMLElement, onFuse: () => void, onD
   btnRow.style.cssText = `position:relative;display:flex;gap:10px;justify-content:center;margin-top:14px;`;
 
   const fuse = document.createElement('button');
-  fuse.textContent = '⚔ FORM MARS VICTOR';
+  fuse.textContent = '⚔ FORM MARS VICTOR · FREE';
   fuse.style.cssText = `flex:0 0 auto;padding:10px 18px;font-family:inherit;font-size:13px;font-weight:bold;letter-spacing:1px;color:#1a0f02;background:linear-gradient(180deg,#ffe082,#d4901f);border:1px solid #fff2c0;border-radius:6px;cursor:pointer;text-shadow:0 1px 0 #ffefb0;`;
   fuse.onmouseenter = () => { fuse.style.filter = 'brightness(1.12)'; };
   fuse.onmouseleave = () => { fuse.style.filter = 'none'; };

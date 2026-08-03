@@ -674,7 +674,7 @@
         "minTier": 1
       }
     ],
-    "cost": 200
+    "cost": 0
   },
   {
     "result": "PRAETORIAN_EXECUTIONER",

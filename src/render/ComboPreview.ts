@@ -17,6 +17,7 @@ import comboData from '../data/towerCombinations.json';
 import { texUrl } from './Assets';
 import { enhanceModalErgonomics } from './ModalErgonomics';
 import { towerBriefHtml } from './TowerCopy';
+import { comboCostLabel } from '../systems/ComboPricing';
 
 /**
  * Build the collapsible preview block HTML for a combo tower by type id.
@@ -138,7 +139,7 @@ export function showComboInfoModal(comboType: string): void {
         return `<span style="padding:3px 8px;border:1.5px solid ${ingTier};color:${ingTier};font-size:11px;font-weight:bold;letter-spacing:0.5px">${ingName} T${ing.minTier}+</span>`;
       }).join('<span style="color:#cdb98a;margin:0 4px">+</span>')
     : '<span style="color:#aa9a4a">No recipe data.</span>';
-  const cost = recipe?.cost != null ? `${recipe.cost}g` : '—';
+  const cost = recipe?.cost != null ? comboCostLabel(recipe.cost) : '—';
   // Build the modal DOM.
   const modal = document.createElement('div');
   modal.id = 'combo-info-modal';

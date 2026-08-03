@@ -4,6 +4,12 @@ export const BASE_COMBO_RECIPE_COST = 50;
 export const SUPER_COMBO_RECIPE_COST = 200;
 export const OMEGA_COMBO_RECIPE_COST = 500;
 
+// Mars Victor is earned by assembling all six heroes. The heroes themselves
+// are the investment, so the final fusion never charges an additional fee.
+export const FREE_COMBO_RECIPE_RESULTS = new Set<string>([
+  TowerType.MARS_VICTOR
+]);
+
 // Item-triggered evolutions are intentionally absent: the item already pays
 // their conversion cost. This list covers authored, gold-paid recipes only.
 export const SUPER_COMBO_RECIPE_RESULTS = new Set<string>([
@@ -37,7 +43,12 @@ export const OMEGA_COMBO_RECIPE_RESULTS = new Set<string>([
 ]);
 
 export function comboRecipeCost(result: TowerType | string): number {
+  if (FREE_COMBO_RECIPE_RESULTS.has(result)) return 0;
   if (OMEGA_COMBO_RECIPE_RESULTS.has(result)) return OMEGA_COMBO_RECIPE_COST;
   if (SUPER_COMBO_RECIPE_RESULTS.has(result)) return SUPER_COMBO_RECIPE_COST;
   return BASE_COMBO_RECIPE_COST;
+}
+
+export function comboCostLabel(cost: number): string {
+  return cost <= 0 ? 'FREE' : `${cost}g`;
 }

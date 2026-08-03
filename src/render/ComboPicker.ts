@@ -6,6 +6,7 @@ import { closeGameModals } from './ModalManager';
 import { markScrollable } from './ScrollCues';
 import { enhanceModalErgonomics } from './ModalErgonomics';
 import { towerBriefText } from './TowerCopy';
+import { comboCostLabel } from '../systems/ComboPricing';
 
 export interface ComboPickerHooks {
   onPick: (combo: AvailableCombo, resultTileTowerId: string) => void;
@@ -55,7 +56,7 @@ export function showComboPicker(parent: HTMLElement, combos: AvailableCombo[], s
       : `${resultDef?.name ?? cb.result} <span style="color:${tierColor}">T${cb.resultTier}</span>`;
     const head = document.createElement('div');
     head.style.cssText = `display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:bold;`;
-    head.innerHTML = `<span>${headLabel}</span><span style="color:#f0c040">${cb.cost}g</span>`;
+    head.innerHTML = `<span>${headLabel}</span><span style="color:#f0c040">${comboCostLabel(cb.cost)}</span>`;
     card.appendChild(head);
 
     if (resultDef?.ability) {

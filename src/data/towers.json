@@ -1127,7 +1127,7 @@
     "kind": "COMBO",
     "melee": false,
     "tierBand": 5,
-    "ability": "THE WAR-GOD INCARNATE, forged from all 6 Champions of Rome. 2400 DPS, strikes as BOTH Siege and Divine. Inherits every hero passive as a map-wide command: +45% damage and +25% attack speed to all towers, +35% melee damage, +30% siege damage and +1 siege range, all towers may strike flyers with +30% flyer damage, +33% vs bosses and commanders, and every tower adds +22% FIRE damage on hit. MARS DECREE: every hit MARKS, ARMOR SHREDS, briefly STUNS, BURNS, and stamps permanent HELLFIRE. TRIUMPH OF MARS: every 3rd hit unleashes a 4.03-tile divine shockwave for TRIPLE damage and spreads MARK, ARMOR SHRED, and STUN through the blast. Worth far more than the six heroes combined after a 6000g recruitment path.",
+    "ability": "THE WAR-GOD INCARNATE, forged FREE from all 6 Champions of Rome; the final fusion costs 0g. 2400 DPS, strikes as BOTH Siege and Divine. Inherits every hero passive as a map-wide command: +45% damage and +25% attack speed to all towers, +35% melee damage, +30% siege damage and +1 siege range, all towers may strike flyers with +30% flyer damage, +33% vs bosses and commanders, and every tower adds +22% FIRE damage on hit. MARS DECREE: every hit MARKS, ARMOR SHREDS, briefly STUNS, BURNS, and stamps permanent HELLFIRE. TRIUMPH OF MARS: every 3rd hit unleashes a 4.03-tile divine shockwave for TRIPLE damage and spreads MARK, ARMOR SHRED, and STUN through the blast. Worth far more than the six heroes combined after a 6000g recruitment path.",
     "critChance": 0.35,
     "critMult": 3.6
   },
